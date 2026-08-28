@@ -7,6 +7,7 @@ import {
   startOfDay,
 } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { isSet } from '@/lib/util/value';
 import type { ClientPlannedSession } from '@/lib/query/types';
 
 type PlannedSessionLike = Pick<ClientPlannedSession, 'date' | 'completed' | 'activityId'>;
@@ -32,15 +33,14 @@ export function filterUpcomingPlannedSessions<T extends PlannedSessionLike>(
   options?: { horizonDays?: number },
 ): T[] {
   const horizonDays = options?.horizonDays;
-  const horizonEnd =
-    (horizonDays !== undefined && horizonDays !== null) ? startOfDay(addDays(startOfDay(ref), horizonDays)) : null;
+  const horizonEnd = isSet(horizonDays) ? startOfDay(addDays(startOfDay(ref), horizonDays)) : null;
 
   return sessions
     .filter((s) => {
       if (!isUpcomingPlannedSession(s, ref)) {
         return false;
       }
-      if ((horizonEnd === undefined || horizonEnd === null)) {
+      if (horizonEnd === undefined || horizonEnd === null) {
         return true;
       }
       return startOfDay(new Date(s.date)).getTime() <= horizonEnd.getTime();

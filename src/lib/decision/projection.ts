@@ -15,6 +15,7 @@ import type {
 import type { DailyPhaseWhyFocus } from '@/lib/daily-phase/types';
 import { resolve, resolveCode } from '@/lib/french';
 import { TWIN_DRILL_DOWN } from '@/lib/today/today-twin-navigation';
+import { isSet } from '@/lib/util/value';
 import type { OverallVerdict } from '@/lib/today/today-mapping';
 
 /** Minimum decision confidence before any training advice is emitted. */
@@ -65,15 +66,13 @@ export function isAdviceActionableFromDecision(decision: DecisionData | null | u
   if (decision.priority.confidenceGated) {
     return false;
   }
-  if ((decision.confidence === undefined || decision.confidence === null) || decision.confidence < MIN_DECISION_ADVICE_CONFIDENCE) {
+  if (!isSet(decision.confidence) || decision.confidence < MIN_DECISION_ADVICE_CONFIDENCE) {
     return false;
   }
   return true;
 }
 
-function physicalHealthRecommendation(
-  todayState: TodayState,
-): EngineRecommendation | null {
+function physicalHealthRecommendation(todayState: TodayState): EngineRecommendation | null {
   const recommendation = todayState.physicalHealth?.recommendation;
   if (!recommendation) {
     return null;
@@ -114,20 +113,28 @@ export function resolveRecommendationFromDecision(
   return recommendationForAttentionDomain(decision.priority.attentionDomain, todayState);
 }
 
-const CONFIDENCE_HREF_BY_DOMAIN: Record<string, string> = {
-  FATIGUE: TWIN_DRILL_DOWN.effort,
-  ADAPTATION: TWIN_DRILL_DOWN.adaptation,
-  PHYSICAL_HEALTH: TWIN_DRILL_DOWN.physical,
-  ENVIRONMENT: TWIN_DRILL_DOWN.recovery,
-  RECOVERY: TWIN_DRILL_DOWN.recovery,
-  BALANCED: TWIN_DRILL_DOWN.recovery,
-};
+function confidenceHrefForDomain(domain: string): string {
+  switch (domain) {
+    case 'FATIGUE':
+      return TWIN_DRILL_DOWN.effort;
+    case 'ADAPTATION':
+      return TWIN_DRILL_DOWN.adaptation;
+    case 'PHYSICAL_HEALTH':
+      return TWIN_DRILL_DOWN.physical;
+    case 'ENVIRONMENT':
+    case 'RECOVERY':
+    case 'BALANCED':
+      return TWIN_DRILL_DOWN.recovery;
+    default:
+      return TWIN_DRILL_DOWN.recovery;
+  }
+}
 
 export function resolveConfidenceHrefFromDecision(
   decision: DecisionData | null | undefined,
 ): string {
   const domain = decision?.priority.attentionDomain ?? decision?.systemAttentionPriority;
-  return CONFIDENCE_HREF_BY_DOMAIN[domain ?? 'RECOVERY'] ?? TWIN_DRILL_DOWN.recovery;
+  return confidenceHrefForDomain(domain ?? 'RECOVERY');
 }
 
 export function resolveLimitingFactorHrefFromDecision(

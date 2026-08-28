@@ -1,3 +1,4 @@
+import { isSet } from '@/lib/util/value';
 /**
  * Presentation helpers for effort load reading — turn ACWR / TSB / capacity
  * into short explained facts (numbers + meaning), not generic coach slogans.
@@ -53,7 +54,7 @@ export function rampChipLabel(acwr: number): string {
 
 /** Chip label for form / freshness from TSB — French first. */
 export function formChipLabel(tsb: number | null): string {
-  if ((tsb === undefined || tsb === null)) {
+  if (tsb === undefined || tsb === null) {
     return '—';
   }
   if (tsb <= -20) {
@@ -69,7 +70,7 @@ export function formChipLabel(tsb: number | null): string {
 }
 
 export function formChipTone(tsb: number | null): 'good' | 'warn' | 'neutral' {
-  if ((tsb === undefined || tsb === null)) {
+  if (tsb === undefined || tsb === null) {
     return 'neutral';
   }
   if (tsb < 0) {
@@ -97,7 +98,7 @@ export function tssGapToSweetSpotFloor(
   weeklyLoad: number,
   chronicWeeklyAvg: number | null,
 ): number | null {
-  if ((chronicWeeklyAvg === undefined || chronicWeeklyAvg === null) || chronicWeeklyAvg <= 0) {
+  if (chronicWeeklyAvg === undefined || chronicWeeklyAvg === null || chronicWeeklyAvg <= 0) {
     return null;
   }
   const target = Math.round(chronicWeeklyAvg * 0.9);
@@ -120,7 +121,7 @@ export function explainAcwr(input: {
   const gap = tssGapToSweetSpotFloor(weeklyLoad, chronicWeeklyAvg);
 
   if (zone === 'under') {
-    if ((gap !== undefined && gap !== null) && gap > 0 && (chronicWeeklyAvg !== undefined && chronicWeeklyAvg !== null)) {
+    if (isSet(gap) && gap > 0 && isSet(chronicWeeklyAvg)) {
       return `ACWR ${acwr.toFixed(2)} — ${weeklyLoad} TSS sur 7j vs base ${chronicWeeklyAvg} TSS/sem. Encore ≈${gap} TSS pour rejoindre le plancher du sweet spot (0.9).`;
     }
     return `ACWR ${acwr.toFixed(2)} — charge aiguë nettement sous la base chronique (sweet spot 0.9–1.3).`;
@@ -135,7 +136,7 @@ export function explainAcwr(input: {
 }
 
 export function explainTsb(tsb: number | null): string | null {
-  if ((tsb === undefined || tsb === null)) {
+  if (tsb === undefined || tsb === null) {
     return null;
   }
   if (tsb <= -20) {
@@ -173,17 +174,17 @@ function zoneFallbackReading(zone: ReturnType<typeof classifyAcwrZone>): string 
 }
 
 function plainMaintainUnderReading(gap: number | null, tsb: number | null): string {
-  if ((tsb !== undefined && tsb !== null) && tsb < 0) {
+  if (isSet(tsb) && tsb < 0) {
     return 'Sous-charge, mais la forme n’est pas encore revenue — on maintient pour laisser remonter.';
   }
-  if ((gap !== undefined && gap !== null) && gap > 0) {
+  if (isSet(gap) && gap > 0) {
     return `Sous-charge mesurée : encore ≈${gap} TSS pour rejoindre la zone utile, sans accélérer d’un coup.`;
   }
   return 'Charge sous la base : maintenir le niveau actuel plutôt que tout remonter d’un coup.';
 }
 
 function plainBuildUnderReading(gap: number | null): string {
-  if ((gap !== undefined && gap !== null) && gap > 0) {
+  if (isSet(gap) && gap > 0) {
     return `Marge claire : ≈${gap} TSS possibles avant le plancher de la zone utile.`;
   }
   return 'Charge sous la zone utile — la progression reste possible.';
@@ -192,7 +193,8 @@ function plainBuildUnderReading(gap: number | null): string {
 const PLAIN_VERDICT_READINGS: Record<string, (gap: number | null, tsb: number | null) => string> = {
   'REDUCE:*': () => 'Montée trop rapide : réduire la charge pour protéger la récupération.',
   'REST_WEEK:*': () => 'Semaine de récupération : laisser digérer la charge accumulée.',
-  'TAPER:*': () => 'Affûtage : la baisse de volume est volontaire, pas une sous-charge accidentelle.',
+  'TAPER:*': () =>
+    'Affûtage : la baisse de volume est volontaire, pas une sous-charge accidentelle.',
   'BUILD:optimal': () =>
     'Montée dans la zone utile — la progression reste compatible avec la récupération.',
 };
@@ -210,7 +212,8 @@ function plainVerdictReading(
     return plainBuildUnderReading(gap);
   }
 
-  const fixed = PLAIN_VERDICT_READINGS[`${verdictKey}:*`] ?? PLAIN_VERDICT_READINGS[`${verdictKey}:${zone}`];
+  const fixed =
+    PLAIN_VERDICT_READINGS[`${verdictKey}:*`] ?? PLAIN_VERDICT_READINGS[`${verdictKey}:${zone}`];
   return fixed ? fixed(gap, tsb) : null;
 }
 
@@ -224,10 +227,10 @@ type DetailedVerdictInput = {
 
 function detailedMaintainUnderReading(input: DetailedVerdictInput): string {
   const { acwr, gap, tsb } = input;
-  if ((tsb !== undefined && tsb !== null) && tsb < 0) {
+  if (isSet(tsb) && tsb < 0) {
     return `Sous-charge (ACWR ${acwr.toFixed(2)}) mais TSB ${tsb} : on ne force pas la remontée — on maintient pour laisser la forme remonter.`;
   }
-  if ((gap !== undefined && gap !== null) && gap > 0) {
+  if (isSet(gap) && gap > 0) {
     return `Sous-charge mesurée : ≈${gap} TSS manquent pour le sweet spot, mais la directive reste de maintenir — pas d’accélération brutale.`;
   }
   return `Charge sous la base (ACWR ${acwr.toFixed(2)}) : maintenir le niveau actuel plutôt que tout remonter d’un coup.`;
@@ -251,7 +254,7 @@ function detailedVerdictReading(input: DetailedVerdictInput): string | null {
 }
 
 function detailedBuildUnderReading(acwr: number, gap: number | null): string {
-  if ((gap !== undefined && gap !== null) && gap > 0) {
+  if (isSet(gap) && gap > 0) {
     return `Marge claire : ACWR ${acwr.toFixed(2)}, ≈${gap} TSS possibles avant le plancher du sweet spot.`;
   }
   return `ACWR ${acwr.toFixed(2)} sous le sweet spot — la charge peut progresser.`;
@@ -261,9 +264,7 @@ export function synthesizeLoadReadingPlain(input: LoadReadingInput): string {
   const { verdictKey, acwr, weeklyLoad, chronicWeeklyAvg, tsb } = input;
   const zone = classifyAcwrZone(acwr);
   const gap = tssGapToSweetSpotFloor(weeklyLoad, chronicWeeklyAvg);
-  return (
-    plainVerdictReading(verdictKey, zone, gap, tsb) ?? zoneFallbackReading(zone)
-  );
+  return plainVerdictReading(verdictKey, zone, gap, tsb) ?? zoneFallbackReading(zone);
 }
 
 export function synthesizeLoadReading(input: LoadReadingInput): string {

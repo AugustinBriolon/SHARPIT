@@ -15,6 +15,7 @@ import type {
   WeatherField,
 } from './types';
 import type { ApplicabilityInput } from './applicability';
+import { isSet } from '@/lib/util/value';
 import { resolveEnvironmentalApplicability, isEnvironmentApplicable } from './applicability';
 import { confidenceFromRecords } from './quality';
 import { extractWeatherFromRecords, isRecordActive } from './record';
@@ -38,7 +39,7 @@ function assessCompleteness(
   records: readonly EnvironmentalObservationRecord[],
 ): EnvironmentalDataCompleteness {
   const weather = extractWeatherFromRecords(records);
-  const present = CORE_WEATHER_FIELDS.filter((f) => (weather[f] !== undefined && weather[f] !== null)).length;
+  const present = CORE_WEATHER_FIELDS.filter((f) => isSet(weather[f])).length;
   if (present === 0) {
     return records.length === 0 ? 'NONE' : 'MINIMAL';
   }
@@ -70,7 +71,7 @@ function providerIdsFromRecords(
     ...new Set(
       activeRecords(records)
         .map((r) => r.providerId)
-        .filter((id): id is EnvironmentalProviderId => (id !== undefined && id !== null)),
+        .filter((id): id is EnvironmentalProviderId => isSet(id)),
     ),
   ];
 }

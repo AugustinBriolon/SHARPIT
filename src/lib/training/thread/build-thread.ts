@@ -1,4 +1,5 @@
 import { startOfWeek } from 'date-fns';
+import { isSet } from '@/lib/util/value';
 import type { ClientActivity, ClientPlannedSession } from '@/lib/query/types';
 import { activityTypeLabels } from '@/lib/format';
 import { dayKeyFromDate } from '@/lib/date/day-key';
@@ -128,7 +129,7 @@ function buildThreadWeek(input: {
       return {
         done: acc.done + done,
         planned: acc.planned + planned,
-        doneKnown: acc.doneKnown || (entry.activity?.load !== undefined && entry.activity?.load !== null),
+        doneKnown: acc.doneKnown || isSet(entry.activity?.load),
       };
     },
     { done: 0, planned: 0, doneKnown: false },

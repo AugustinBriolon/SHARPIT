@@ -7,6 +7,7 @@
  * much volume — and this score is the floor the AI verdict may not go under.
  */
 import { parseExercisePhrase } from '@/lib/exercises/lexicon';
+import { isSet } from '@/lib/util/value';
 import type { SessionAnalysis } from '@/lib/validators/coach';
 import { normalizeExerciseKey } from '@/lib/exercises/normalize';
 
@@ -41,7 +42,7 @@ const WEIGHT_VOLUME = 0.3;
 
 function workUnits(set: ComparableStrengthSet): number {
   const perSet =
-    (set.durationSec !== undefined && set.durationSec !== null) && set.durationSec > 0
+    isSet(set.durationSec) && set.durationSec > 0
       ? set.durationSec
       : Math.max(1, set.reps) * SECONDS_PER_REP;
   return Math.max(1, set.sets) * perSet;
@@ -168,10 +169,9 @@ export function applyStrengthScoringGuards(
     return analysis;
   }
 
-  const complianceScore =
-    (compliance !== undefined && compliance !== null)
-      ? Math.max(analysis.complianceScore, compliance.score)
-      : analysis.complianceScore;
+  const complianceScore = isSet(compliance)
+    ? Math.max(analysis.complianceScore, compliance.score)
+    : analysis.complianceScore;
 
   const isDurationVerdict = analysis.verdict === 'SHORTER' || analysis.verdict === 'LONGER';
   const replacement = complianceScore >= AS_PLANNED_SCORE ? 'AS_PLANNED' : 'DIFFERENT';

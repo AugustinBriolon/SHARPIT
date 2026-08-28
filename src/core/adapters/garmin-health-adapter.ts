@@ -20,6 +20,7 @@
  */
 
 import type { GarminDailyHealth } from '@/lib/integrations/garmin/garmin';
+import { isSet } from '@/lib/util/value';
 
 import type {
   RawSleepObservation,
@@ -72,14 +73,14 @@ function resolveSleepTimestamps(
   sleep: GarminDailyHealth['sleep'],
   nightMinutes: number,
 ): { timestamp: Date; wakeTimestamp: Date } {
-  if ((sleep.sleepBedtimeMin !== undefined && sleep.sleepBedtimeMin !== null) && (sleep.sleepWakeMin !== undefined && sleep.sleepWakeMin !== null)) {
+  if (isSet(sleep.sleepBedtimeMin) && isSet(sleep.sleepWakeMin)) {
     return {
       timestamp: bedtimeToDate(calendarDate, sleep.sleepBedtimeMin),
       wakeTimestamp: addMinutes(calendarDate, sleep.sleepWakeMin),
     };
   }
 
-  if ((sleep.sleepWakeMin !== undefined && sleep.sleepWakeMin !== null)) {
+  if (isSet(sleep.sleepWakeMin)) {
     const wakeTimestamp = addMinutes(calendarDate, sleep.sleepWakeMin);
     return {
       timestamp: new Date(wakeTimestamp.getTime() - nightMinutes * 60_000),
@@ -132,23 +133,24 @@ function toSleepObservation(
   };
 }
 
+function hrvObservationTimestamp(health: GarminDailyHealth, calendarDate: Date): Date {
+  const wakeMin = health.sleep.sleepWakeMin;
+  if (isSet(wakeMin)) {
+    return addMinutes(calendarDate, wakeMin);
+  }
+  return addMinutes(calendarDate, 360);
+}
+
 function toHrvObservation(
   health: GarminDailyHealth,
   calendarDate: Date,
   receivedAt: Date,
 ): RawHrvObservation | null {
-  if ((health.hrv === undefined || health.hrv === null) || health.hrv <= 0) {
+  if (health.hrv === undefined || health.hrv === null || health.hrv <= 0) {
     return null;
   }
 
-  // HRV is measured overnight — we use the wake time as the observation timestamp
-  // (this is the point at which the overnight HRV becomes a "readiness indicator")
-  const { sleep } = health;
-  const timestamp =
-    (sleep.sleepWakeMin !== undefined && sleep.sleepWakeMin !== null)
-      ? addMinutes(calendarDate, sleep.sleepWakeMin)
-      : // Fallback: 06:00 on the report day (typical morning measurement)
-        addMinutes(calendarDate, 360);
+  const timestamp = hrvObservationTimestamp(health, calendarDate);
 
   return {
     type: 'HRV',
@@ -168,16 +170,15 @@ function toRestingHrObservation(
   calendarDate: Date,
   receivedAt: Date,
 ): RawRestingHrObservation | null {
-  if ((health.restingHr === undefined || health.restingHr === null) || health.restingHr <= 0) {
+  if (health.restingHr === undefined || health.restingHr === null || health.restingHr <= 0) {
     return null;
   }
 
   // Resting HR is typically measured in the early morning
   const { sleep } = health;
-  const timestamp =
-    (sleep.sleepWakeMin !== undefined && sleep.sleepWakeMin !== null)
-      ? addMinutes(calendarDate, sleep.sleepWakeMin)
-      : addMinutes(calendarDate, 360); // fallback: 06:00
+  const timestamp = isSet(sleep.sleepWakeMin)
+    ? addMinutes(calendarDate, sleep.sleepWakeMin)
+    : addMinutes(calendarDate, 360); // fallback: 06:00
 
   return {
     type: 'RESTING_HR',
@@ -193,7 +194,7 @@ function toReadinessObservation(
   calendarDate: Date,
   receivedAt: Date,
 ): RawGarminReadinessObservation | null {
-  if ((health.readinessScore === undefined || health.readinessScore === null)) {
+  if (health.readinessScore === undefined || health.readinessScore === null) {
     return null;
   }
 
@@ -219,7 +220,7 @@ function toBodyBatteryObservation(
   calendarDate: Date,
   receivedAt: Date,
 ): RawBodyBatteryObservation | null {
-  if ((health.bodyBattery === undefined || health.bodyBattery === null)) {
+  if (health.bodyBattery === undefined || health.bodyBattery === null) {
     return null;
   }
 
@@ -260,5 +261,5 @@ export function garminHealthToObservations(
     toBodyBatteryObservation(health, calendarDate, receivedAt),
   ];
 
-  return observations.filter((o): o is RawObservation => (o !== undefined && o !== null));
+  return observations.filter((o): o is RawObservation => isSet(o));
 }

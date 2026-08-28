@@ -1,4 +1,5 @@
 import type { PlannedSession } from '@prisma/client';
+import { isSet } from '@/lib/util/value';
 import { dayKeyFromDate } from '@/lib/date/day-key';
 import { prisma } from '@/lib/prisma';
 import {
@@ -372,7 +373,11 @@ async function applyGoogleEventToSession(input: {
     await unlinkGoogleSession(input.session.id);
     return 'unlinked';
   }
-  const patch = googleSessionSchedulePatch({ session: input.session, event, timeZone: input.timeZone });
+  const patch = googleSessionSchedulePatch({
+    session: input.session,
+    event,
+    timeZone: input.timeZone,
+  });
   if (!patch) {
     return 'unchanged';
   }
@@ -452,9 +457,7 @@ export interface CalendarEventView {
  * déjà représenté par les séances planifiées) sur une période, pour les afficher
  * dans la page Calendrier et visualiser les occupations perso.
  */
-async function pushUnsyncedSessionsToGoogle(
-  unsynced: PlannedSession[],
-): Promise<number> {
+async function pushUnsyncedSessionsToGoogle(unsynced: PlannedSession[]): Promise<number> {
   let pushed = 0;
   for (const session of unsynced) {
     try {
@@ -515,7 +518,7 @@ async function fetchCalendarEventViews(
   const events = await listEvents(token, cal.id, from, to);
   return events
     .map((e) => mapGoogleEventToView(cal, e))
-    .filter((view): view is CalendarEventView => (view !== undefined && view !== null));
+    .filter((view): view is CalendarEventView => isSet(view));
 }
 
 export async function getCalendarEvents(

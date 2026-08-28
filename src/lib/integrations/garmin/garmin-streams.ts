@@ -1,4 +1,5 @@
 import type { GarminConnect } from '@flow-js/garmin-connect';
+import { isSet } from '@/lib/util/value';
 
 type GCClient = InstanceType<typeof GarminConnect>;
 
@@ -72,7 +73,7 @@ function unwrapGarminDetails(raw: unknown): GarminDetailsBody | null {
 function metricIndexMap(descriptors: MetricDescriptor[]): Map<string, number> {
   const map = new Map<string, number>();
   for (const d of descriptors) {
-    if ((d.key !== undefined && d.key !== null) && (d.metricsIndex !== undefined && d.metricsIndex !== null)) {
+    if (isSet(d.key) && isSet(d.metricsIndex)) {
       map.set(d.key, d.metricsIndex);
     }
   }
@@ -80,16 +81,20 @@ function metricIndexMap(descriptors: MetricDescriptor[]): Map<string, number> {
 }
 
 function numAt(metrics: Array<number | null>, idx: number | undefined): number | null {
-  if ((idx === undefined || idx === null) || idx < 0 || idx >= metrics.length) {
+  if (idx === undefined || idx === null || idx < 0 || idx >= metrics.length) {
     return null;
   }
   const v = metrics[idx];
-  return (v !== undefined && v !== null) && Number.isFinite(v) ? v : null;
+  return isSet(v) && Number.isFinite(v) ? v : null;
 }
 
-function pushPolylineTime(p: PolylinePoint, t0: number | null, series: { time: number[] }): number | null {
-  if ((p.time !== undefined && p.time !== null)) {
-    if ((t0 === undefined || t0 === null)) {
+function pushPolylineTime(
+  p: PolylinePoint,
+  t0: number | null,
+  series: { time: number[] },
+): number | null {
+  if (isSet(p.time)) {
+    if (t0 === undefined || t0 === null) {
       t0 = p.time;
     }
     const sec = p.time > 1_000_000_000_000 ? (p.time - t0) / 1000 : p.time - t0;
@@ -129,7 +134,7 @@ function appendPolylinePoint(
 ): number | null {
   const { lat } = p;
   const lon = p.lng ?? p.lon;
-  if ((lat === undefined || lat === null) || (lon === undefined || lon === null)) {
+  if (lat === undefined || lat === null || lon === undefined || lon === null) {
     return t0;
   }
 
@@ -199,12 +204,9 @@ function metricIndices(idx: Map<string, number>): MetricIndices {
   };
 }
 
-function pushMetricTime(
-  ts: number | null,
-  series: { time: number[]; t0: number | null },
-): void {
-  if ((ts !== undefined && ts !== null)) {
-    if ((series.t0 === undefined || series.t0 === null)) {
+function pushMetricTime(ts: number | null, series: { time: number[]; t0: number | null }): void {
+  if (isSet(ts)) {
+    if (series.t0 === undefined || series.t0 === null) {
       series.t0 = ts;
     }
     const sec = ts > 1_000_000_000_000 ? (ts - series.t0) / 1000 : ts - (series.t0 ?? 0);
@@ -269,7 +271,7 @@ function pushMetricLatLng(
 ): void {
   const lat = numAt(m, indices.latIdx);
   const lon = numAt(m, indices.lonIdx);
-  if ((lat !== undefined && lat !== null) && (lon !== undefined && lon !== null)) {
+  if (isSet(lat) && isSet(lon)) {
     latlng.push([lat, lon]);
   }
 }
@@ -318,7 +320,7 @@ function appendPolylineLatLng(details: GarminDetailsBody, latlng: [number, numbe
   for (const p of details.geoPolylineDTO?.polyline ?? []) {
     const { lat } = p;
     const lon = p.lng ?? p.lon;
-    if ((lat !== undefined && lat !== null) && (lon !== undefined && lon !== null)) {
+    if (isSet(lat) && isSet(lon)) {
       latlng.push([lat, lon]);
     }
   }
@@ -363,7 +365,7 @@ export function parseGarminDetailsToRawStreams(details: GarminDetailsBody): RawS
 }
 
 export function rawStreamsHaveSignal(raw: RawStreams): boolean {
-  const has = (arr: number[]) => arr.length > 0 && arr.some((v) => (v !== undefined && v !== null) && v !== 0);
+  const has = (arr: number[]) => arr.length > 0 && arr.some((v) => isSet(v) && v !== 0);
   return (
     raw.latlng.length > 0 ||
     has(raw.heartrate) ||
@@ -414,10 +416,10 @@ export async function fetchGarminActivityWeather(
     if (raw.weatherTypeDTO?.desc) {
       parts.push(raw.weatherTypeDTO.desc);
     }
-    if ((raw.temp !== undefined && raw.temp !== null)) {
+    if (isSet(raw.temp)) {
       parts.push(`${Math.round(raw.temp)}°C`);
     }
-    if ((raw.windSpeed !== undefined && raw.windSpeed !== null)) {
+    if (isSet(raw.windSpeed)) {
       parts.push(`vent ${Math.round(raw.windSpeed)} km/h`);
     }
     return parts.length ? parts.join(' · ') : null;

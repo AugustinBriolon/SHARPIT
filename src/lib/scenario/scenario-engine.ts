@@ -3,6 +3,7 @@
  */
 
 import type { ProjectionHorizonDays } from '@/core/projection/types';
+import { isSet } from '@/lib/util/value';
 import type { ScenarioComparison, ScenarioDefinition } from '@/core/scenario/types';
 import {
   buildProjectionBaseContext,
@@ -62,7 +63,7 @@ export async function runScenarioComparison(
 
   const scenarioRuns = definitions
     .map((definition) => runScenarioProjection(definition, base, futureDayIds))
-    .filter((run): run is NonNullable<typeof run> => (run !== undefined && run !== null));
+    .filter((run): run is NonNullable<typeof run> => isSet(run));
 
   return compareScenarioProjections({
     athleteId: base.athleteId,

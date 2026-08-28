@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import { isSet } from '@/lib/util/value';
 import { createThresholdSnapshot, getAthleteProfile, upsertAthleteProfile } from '@/lib/queries';
 import { getStoredRecords } from '@/lib/training/records';
 import { SWIM_CSS_MIN_DISTANCE_M, type SwimCssSample } from '@/lib/threshold/swim-css';
@@ -31,7 +32,7 @@ async function loadSwimCssSamples(athleteId: string): Promise<SwimCssSample[]> {
   });
 
   return rows.flatMap((row) =>
-    (row.avgPaceSecPer100m !== undefined && row.avgPaceSecPer100m !== null) && (row.distanceM !== undefined && row.distanceM !== null)
+    isSet(row.avgPaceSecPer100m) && isSet(row.distanceM)
       ? [
           {
             paceSecPer100m: row.avgPaceSecPer100m,
@@ -83,13 +84,13 @@ function buildThresholdUpdate(fields: {
     runThresholdPaceSecPerKm?: number;
     swimCssSecPer100m?: number;
   } = {};
-  if ((fields.ftpW !== undefined && fields.ftpW !== null)) {
+  if (isSet(fields.ftpW)) {
     update.ftpW = fields.ftpW;
   }
-  if ((fields.runThresholdPaceSecPerKm !== undefined && fields.runThresholdPaceSecPerKm !== null)) {
+  if (isSet(fields.runThresholdPaceSecPerKm)) {
     update.runThresholdPaceSecPerKm = fields.runThresholdPaceSecPerKm;
   }
-  if ((fields.swimCssSecPer100m !== undefined && fields.swimCssSecPer100m !== null)) {
+  if (isSet(fields.swimCssSecPer100m)) {
     update.swimCssSecPer100m = fields.swimCssSecPer100m;
   }
   return update;

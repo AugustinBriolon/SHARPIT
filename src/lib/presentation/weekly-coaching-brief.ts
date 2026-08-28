@@ -8,6 +8,7 @@
  */
 
 import { addDays, format } from 'date-fns';
+import { isSet } from '@/lib/util/value';
 import { fr } from 'date-fns/locale';
 import type { ActivityType, GoalHorizon, PlanPhase, SessionIntensity } from '@prisma/client';
 import { activityTypeLabels } from '@/lib/format';
@@ -110,7 +111,7 @@ function buildKeySessions(
   goalTitleById: ReadonlyMap<string, string> | undefined,
 ): WeeklyBriefKeySession[] {
   const durationMedian = median(
-    plannedSessions.map((s) => s.durationMin).filter((d): d is number => (d !== undefined && d !== null)),
+    plannedSessions.map((s) => s.durationMin).filter((d): d is number => isSet(d)),
   );
 
   return plannedSessions
@@ -189,7 +190,9 @@ const WHAT_WOULD_CHANGE_RULE_CODES = new Set([
   'DECISION_INTENSITY_CONFLICT',
 ]);
 
-function collectWeeklyBriefGateSignals(sessionDecisions: WeeklyCoachingBriefInput['sessionDecisions']) {
+function collectWeeklyBriefGateSignals(
+  sessionDecisions: WeeklyCoachingBriefInput['sessionDecisions'],
+) {
   const assumptions = new Set<string>();
   const dataGaps = new Set<string>();
   const whatWouldChange = new Set<string>();

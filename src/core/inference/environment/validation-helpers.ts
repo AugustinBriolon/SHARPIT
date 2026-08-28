@@ -12,6 +12,7 @@ import {
   type WeatherMeasurements,
 } from '@/core/environment';
 import type { EnvironmentalApplicability } from '@/core/environment';
+import { isSet } from '@/lib/util/value';
 import { environmentalImpactIsSignificant } from './apply-impact';
 
 export type ScenarioOutput = {
@@ -72,7 +73,7 @@ export function isImpactSignificant(impact: EnvironmentalImpact): boolean {
 export function intensityBand(
   value: number | null,
 ): 'LOW' | 'MODERATE' | 'HIGH' | 'EXTREME' | 'SUPPRESSED' | 'UNKNOWN' {
-  if ((value === undefined || value === null)) {
+  if (value === undefined || value === null) {
     return 'SUPPRESSED';
   }
   if (value < 0.35) {
@@ -88,7 +89,7 @@ export function intensityBand(
 }
 
 export function assertMonotonicIncreasing(values: readonly (number | null)[]): boolean {
-  const available = values.filter((v): v is number => (v !== undefined && v !== null));
+  const available = values.filter((v): v is number => isSet(v));
   for (let i = 1; i < available.length; i++) {
     if (available[i] < available[i - 1]) {
       return false;

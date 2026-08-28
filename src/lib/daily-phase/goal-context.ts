@@ -1,4 +1,5 @@
 import { GoalKind } from '@prisma/client';
+import { isSet } from '@/lib/util/value';
 import { format } from 'date-fns';
 import { daysUntil } from '@/lib/goals/goals';
 import { isGoalExpired } from '@/lib/goals/goal-metric-config';
@@ -29,7 +30,7 @@ function goalById(goals: ClientGoal[], id: string): ClientGoal | undefined {
 function toContext(goal: ClientGoal, linkedToTodaySession: boolean): TodayGoalContext {
   const d = daysUntil(goal.targetDate ? new Date(goal.targetDate) : null);
   let badge: string | null = null;
-  if ((d !== undefined && d !== null)) {
+  if (isSet(d)) {
     badge = d >= 0 ? `J-${d}` : `J+${Math.abs(d)}`;
   }
   return {

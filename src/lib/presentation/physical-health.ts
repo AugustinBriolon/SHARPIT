@@ -4,6 +4,7 @@
  */
 
 import { format } from 'date-fns';
+import { isSet } from '@/lib/util/value';
 import { fr } from 'date-fns/locale';
 import type { PhysicalHealthViewModel } from '@/core/presentation/physical-health-view-model';
 import { isActiveCondition } from '@/core/inference/physical-health/scoring';
@@ -127,9 +128,7 @@ function toDomainCondition(row: {
   };
 }
 
-function buildConditionDomainModels(
-  row: Awaited<ReturnType<typeof loadConditions>>[number],
-) {
+function buildConditionDomainModels(row: Awaited<ReturnType<typeof loadConditions>>[number]) {
   const condition = toDomainCondition(row);
   const episodes: ConditionEpisode[] = row.episodes.map((ep) => ({
     id: ep.id,
@@ -176,7 +175,7 @@ function buildConditionDomainModels(
 
 function buildConditionSparkline(observations: ConditionObservation[]) {
   return observations
-    .filter((o) => (o.severityReported !== undefined && o.severityReported !== null))
+    .filter((o) => isSet(o.severityReported))
     .slice(-14)
     .map((o) => ({
       date: format(o.observedAt, 'dd MMM', { locale: fr }),
@@ -275,7 +274,9 @@ function buildConditionCard(
     confidenceTone: confidenceTone(state.confidence),
     estimatedRecoveryDays: state.estimatedRecoveryDays,
     affectsTraining: row.affectsTraining,
-    isActive: isActiveCondition(state.status as import('@/core/physical-health/types').ConditionStatus),
+    isActive: isActiveCondition(
+      state.status as import('@/core/physical-health/types').ConditionStatus,
+    ),
     observationCount: row.observationCount,
     sparkline,
     timelinePreview: timeline.events.slice(-5).map((e) => ({
@@ -419,7 +420,8 @@ function buildPopulatedPhysicalHealthViewModel(input: {
     resolvedConditions: input.resolvedConditions,
     primaryCondition: input.primaryCondition,
   });
-  const hasNoConditions = input.activeConditions.length === 0 && input.resolvedConditions.length === 0;
+  const hasNoConditions =
+    input.activeConditions.length === 0 && input.resolvedConditions.length === 0;
 
   return {
     aggregate,

@@ -6,6 +6,7 @@
  */
 
 import type { ActivityType, SessionIntensity } from '@prisma/client';
+import { isSet } from '@/lib/util/value';
 import type { OutcomeEvaluation } from './types';
 
 /** Below this sample count in a category, there's nothing honest to say about it yet. */
@@ -72,15 +73,15 @@ function evaluateCategory(
 
   const complianceScores = evaluated
     .map((e) => e.outcome.executionMatch?.complianceScore)
-    .filter((v): v is number => (v !== undefined && v !== null));
+    .filter((v): v is number => isSet(v));
   const verdicts = evaluated
     .map((e) => e.outcome.executionMatch?.verdict)
-    .filter((v): v is NonNullable<typeof v> => (v !== undefined && v !== null));
+    .filter((v): v is NonNullable<typeof v> => isSet(v));
   const avgCompliance = mean(complianceScores);
   const modalVerdict = mode(verdicts);
 
   if (
-    (avgCompliance !== undefined && avgCompliance !== null) &&
+    isSet(avgCompliance) &&
     avgCompliance < HARDER_COMPLIANCE_THRESHOLD &&
     modalVerdict === 'HARDER'
   ) {
@@ -89,19 +90,19 @@ function evaluateCategory(
 
   const recoveryResponses = evaluated
     .map((e) => e.outcome.shortTermRecoveryResponse)
-    .filter((r): r is NonNullable<typeof r> => (r !== undefined && r !== null));
+    .filter((r): r is NonNullable<typeof r> => isSet(r));
   if (recoveryResponses.length >= MIN_SAMPLES) {
     const deltas = recoveryResponses
       .map((r) => {
-        const readings = r.readinessValues.filter((v): v is number => (v !== undefined && v !== null));
+        const readings = r.readinessValues.filter((v): v is number => isSet(v));
         if (readings.length < 2) {
           return null;
         }
         return readings[readings.length - 1] - readings[0];
       })
-      .filter((d): d is number => (d !== undefined && d !== null));
+      .filter((d): d is number => isSet(d));
     const avgDelta = mean(deltas);
-    if ((avgDelta !== undefined && avgDelta !== null) && avgDelta >= -5) {
+    if (isSet(avgDelta) && avgDelta >= -5) {
       return {
         kind: 'RECOVERED_WITHIN_EXPECTED_WINDOW',
         type,

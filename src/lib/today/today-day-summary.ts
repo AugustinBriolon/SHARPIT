@@ -1,4 +1,5 @@
 import { isSameDay, startOfDay } from 'date-fns';
+import { isSet } from '@/lib/util/value';
 import type { ActivityType } from '@prisma/client';
 import type { ClientActivity, ClientPlannedSession } from '@/lib/query/types';
 import {
@@ -66,7 +67,7 @@ export function buildTodayDaySummary(
     [
       ...plannedSessions.map((s) => (s.activityId ? s.id : null)),
       ...activities.map((a) => a.plannedSession?.id ?? null),
-    ].filter((id): id is string => (id !== undefined && id !== null)),
+    ].filter((id): id is string => isSet(id)),
   );
 
   const todayPlanned = plannedSessions.filter(
@@ -188,10 +189,10 @@ function activityMeta(activity: ClientActivity): string | undefined {
   if (activity.duration) {
     parts.push(formatDuration(activity.duration));
   }
-  if ((activity.load !== undefined && activity.load !== null)) {
+  if (isSet(activity.load)) {
     parts.push(`${Math.round(activity.load)} TSS`);
   }
-  if ((activity.rpe !== undefined && activity.rpe !== null)) {
+  if (isSet(activity.rpe)) {
     parts.push(`RPE ${activity.rpe}`);
   }
   return parts.length > 0 ? parts.join(' · ') : undefined;
@@ -208,7 +209,7 @@ function plannedMeta(
   if (session.durationMin) {
     parts.push(formatPlannedDuration(session.durationMin));
   }
-  if ((session.load !== undefined && session.load !== null)) {
+  if (isSet(session.load)) {
     parts.push(`${Math.round(session.load)} TSS`);
   }
   if (session.goalId) {

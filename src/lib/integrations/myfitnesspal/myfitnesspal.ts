@@ -1,3 +1,5 @@
+import { isSet } from '@/lib/util/value';
+
 const MFP_BASE = 'https://www.myfitnesspal.com';
 const SESSION_COOKIE_NAME = '__Secure-next-auth.session-token';
 
@@ -232,7 +234,10 @@ function selectNutrientGoalBundle(
       if (!item.valid_from) {
         return true;
       }
-      return item.valid_from <= dateStr && ((item.valid_to === undefined || item.valid_to === null) || item.valid_to >= dateStr);
+      return (
+        item.valid_from <= dateStr &&
+        (item.valid_to === undefined || item.valid_to === null || item.valid_to >= dateStr)
+      );
     }) ?? bundles[0]!
   );
 }
@@ -250,8 +255,8 @@ function nutrientGoalsFromDayGoal(
     protein: Math.round(num(dayGoal.protein)),
     carbohydrates: Math.round(num(dayGoal.carbohydrates)),
     fat: Math.round(num(dayGoal.fat)),
-    fiber: (dayGoal.fiber !== undefined && dayGoal.fiber !== null) ? Math.round(dayGoal.fiber) : null,
-    sugar: (dayGoal.sugar !== undefined && dayGoal.sugar !== null) ? Math.round(dayGoal.sugar) : null,
+    fiber: isSet(dayGoal.fiber) ? Math.round(dayGoal.fiber) : null,
+    sugar: isSet(dayGoal.sugar) ? Math.round(dayGoal.sugar) : null,
   };
 }
 

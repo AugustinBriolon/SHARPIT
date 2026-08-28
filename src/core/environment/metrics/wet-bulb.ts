@@ -4,8 +4,30 @@
 
 import type { MetricValue, WeatherMeasurements } from '../types';
 
+function isSet<T>(value: T | null | undefined): value is T {
+  return value !== undefined && value !== null;
+}
+
+function missingWetBulbInput(
+  temp: number | null | undefined,
+  rh: number | null | undefined,
+): MetricValue<number> {
+  return {
+    available: false,
+    quality: 'MISSING',
+    confidence: 0,
+    reason: 'MISSING_INPUT',
+    explanation:
+      'Température de bulbe humide indisponible : mesure directe ou couple température/humidité requis.',
+    missingFields: [
+      ...(!isSet(temp) ? (['airTemperatureC'] as const) : []),
+      ...(!isSet(rh) ? (['relativeHumidityPct'] as const) : []),
+    ],
+  };
+}
+
 export function computeEstimatedWetBulbC(measurements: WeatherMeasurements): MetricValue<number> {
-  if ((measurements.wetBulbC !== undefined && measurements.wetBulbC !== null)) {
+  if (isSet(measurements.wetBulbC)) {
     return {
       available: true,
       value: measurements.wetBulbC,
@@ -19,19 +41,8 @@ export function computeEstimatedWetBulbC(measurements: WeatherMeasurements): Met
   const temp = measurements.airTemperatureC;
   const rh = measurements.relativeHumidityPct;
 
-  if ((temp === undefined || temp === null) || (rh === undefined || rh === null)) {
-    return {
-      available: false,
-      quality: 'MISSING',
-      confidence: 0,
-      reason: 'MISSING_INPUT',
-      explanation:
-        'Température de bulbe humide indisponible : mesure directe ou couple température/humidité requis.',
-      missingFields: [
-        ...((temp === undefined || temp === null) ? (['airTemperatureC'] as const) : []),
-        ...((rh === undefined || rh === null) ? (['relativeHumidityPct'] as const) : []),
-      ],
-    };
+  if (!isSet(temp) || !isSet(rh)) {
+    return missingWetBulbInput(temp, rh);
   }
 
   const tw =

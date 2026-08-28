@@ -1,4 +1,5 @@
 import { ActivityType } from '@prisma/client';
+import { isSet } from '@/lib/util/value';
 import { addDays, format, startOfDay } from 'date-fns';
 import { parsePlannedStart } from '@/lib/daily-phase/day-context';
 import { activityTypeLabels } from '@/lib/format';
@@ -37,7 +38,7 @@ function restDayBilanHeadline(tomorrowSession: TomorrowSessionHint | null): stri
   if (!tomorrowSession) {
     return 'Journée de repos — recharge pour demain';
   }
-  if ((tomorrowSession.startHour !== undefined && tomorrowSession.startHour !== null) && tomorrowSession.startHour < 9) {
+  if (isSet(tomorrowSession.startHour) && tomorrowSession.startHour < 9) {
     return `Repos aujourd'hui — ${tomorrowSession.sportLabel} tôt demain`;
   }
   return `Repos aujourd'hui — ${tomorrowSession.sportLabel} au programme demain`;
@@ -53,10 +54,7 @@ function multiSessionBilanHeadline(
   return 'Double entraînement — le sommeil consolidera tout';
 }
 
-function moderateEffortHeadline(
-  load: string,
-  tomorrowSession: TomorrowSessionHint | null,
-): string {
+function moderateEffortHeadline(load: string, tomorrowSession: TomorrowSessionHint | null): string {
   if (tomorrowSession) {
     return `${load} — prépare le ${tomorrowSession.sportLabel.toLowerCase()} de demain`;
   }
@@ -77,8 +75,11 @@ function recoveryStressBilanHeadline(
   return null;
 }
 
-function earlyTomorrowHeadline(load: string, tomorrowSession: TomorrowSessionHint | null): string | null {
-  if ((tomorrowSession?.startHour !== undefined && tomorrowSession?.startHour !== null) && tomorrowSession.startHour < 9) {
+function earlyTomorrowHeadline(
+  load: string,
+  tomorrowSession: TomorrowSessionHint | null,
+): string | null {
+  if (isSet(tomorrowSession?.startHour) && tomorrowSession.startHour < 9) {
     return `${load} — couche-toi tôt pour demain`;
   }
   return null;
@@ -163,10 +164,10 @@ function initialTonightBedtime(
   tomorrow: TomorrowSessionHint | null,
 ): number | null {
   const recommended = sleep.recommendedBedtimeMin ?? sleep.bedtimeTargetMin;
-  if ((recommended !== undefined && recommended !== null)) {
+  if (isSet(recommended)) {
     return recommended;
   }
-  if ((tomorrow?.startHour === undefined || tomorrow?.startHour === null) || tomorrow?.startHour === undefined) {
+  if (!isSet(tomorrow?.startHour)) {
     return null;
   }
   const sessionMin = tomorrow.startHour * 60;
@@ -174,11 +175,8 @@ function initialTonightBedtime(
   return ((raw % 1440) + 1440) % 1440;
 }
 
-function adjustBedtimeForTomorrow(
-  bed: number,
-  tomorrow: TomorrowSessionHint | null,
-): number {
-  if ((tomorrow?.startHour === undefined || tomorrow?.startHour === null) || tomorrow?.startHour === undefined) {
+function adjustBedtimeForTomorrow(bed: number, tomorrow: TomorrowSessionHint | null): number {
+  if (!isSet(tomorrow?.startHour)) {
     return bed;
   }
   if (tomorrow.startHour < 8) {
@@ -196,7 +194,7 @@ function resolveTonightBedtime(
   recoveryStress: boolean,
 ): number | null {
   let bed = initialTonightBedtime(sleep, tomorrow);
-  if ((bed === undefined || bed === null)) {
+  if (bed === undefined || bed === null) {
     return null;
   }
   if (recoveryStress) {
@@ -206,7 +204,7 @@ function resolveTonightBedtime(
 }
 
 function tomorrowSessionWhen(tomorrow: TomorrowSessionHint): string {
-  if ((tomorrow.startTime !== undefined && tomorrow.startTime !== null)) {
+  if (isSet(tomorrow.startTime)) {
     return `séance demain à ${tomorrow.startTime}`;
   }
   return `séance demain (${tomorrow.sportLabel})`;
@@ -225,7 +223,7 @@ function focusWithTomorrowSession(
 }
 
 function focusFromSleepDebt(sleep: EveningSleepHints, clock: string | null): string | null {
-  const debt = (sleep.debt7Min !== undefined && sleep.debt7Min !== null) && sleep.debt7Min > 30;
+  const debt = isSet(sleep.debt7Min) && sleep.debt7Min > 30;
   if (!debt || sleep.recommendedDurationMin <= 0) {
     return null;
   }
@@ -261,7 +259,7 @@ function resolveTonightFocus(
   todayHadTraining: boolean,
 ): string {
   const bedtime = resolveTonightBedtime(sleep, tomorrow, recoveryStress);
-  const clockLabel = (bedtime !== undefined && bedtime !== null) ? formatClock(bedtime) : null;
+  const clockLabel = isSet(bedtime) ? formatClock(bedtime) : null;
 
   if (clockLabel) {
     const clockFocus = focusWhenClockAvailable({
@@ -312,7 +310,7 @@ export function buildEndOfDayNarrativeCopy(input: {
     completedSessionCount: input.completedSessionCount,
     tomorrowSession: input.tomorrowSession,
     recoveryStress: input.recoveryStress,
-    sleepDebt: (input.sleep.debt7Min !== undefined && input.sleep.debt7Min !== null) && input.sleep.debt7Min > 30,
+    sleepDebt: isSet(input.sleep.debt7Min) && input.sleep.debt7Min > 30,
   });
 
   const focusPriority = buildTonightFocus(

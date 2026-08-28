@@ -1,4 +1,5 @@
 import type { OutcomeEvaluation, OutcomeEvaluationInput } from './types';
+import { isSet } from '@/lib/util/value';
 
 const MIN_RECOVERY_DAYS_WITH_DATA = 2;
 const RECOVERY_WINDOW_DAYS = 3;
@@ -36,7 +37,10 @@ function evaluateSubjectiveResponse(
   if (!input.linkedActivity) {
     return null;
   }
-  if ((input.linkedActivity.rpe === undefined || input.linkedActivity.rpe === null) && (input.linkedActivity.feeling === undefined || input.linkedActivity.feeling === null)) {
+  if (
+    (input.linkedActivity.rpe === undefined || input.linkedActivity.rpe === null) &&
+    (input.linkedActivity.feeling === undefined || input.linkedActivity.feeling === null)
+  ) {
     return null;
   }
   return { rpe: input.linkedActivity.rpe, feeling: input.linkedActivity.feeling };
@@ -46,7 +50,7 @@ function evaluateShortTermRecoveryResponse(
   input: OutcomeEvaluationInput,
 ): OutcomeEvaluation['shortTermRecoveryResponse'] {
   const daysWithData = input.recoverySnapshots.filter(
-    (s) => (s.readiness !== undefined && s.readiness !== null) || (s.fatigueIndex !== undefined && s.fatigueIndex !== null),
+    (s) => isSet(s.readiness) || isSet(s.fatigueIndex),
   );
   if (daysWithData.length < MIN_RECOVERY_DAYS_WITH_DATA) {
     return null;
@@ -74,8 +78,7 @@ function evaluateSafetySignal(input: OutcomeEvaluationInput): OutcomeEvaluation[
 }
 
 function countRecoveryDaysWithData(input: OutcomeEvaluationInput): number {
-  return input.recoverySnapshots.filter((s) => (s.readiness !== undefined && s.readiness !== null) || (s.fatigueIndex !== undefined && s.fatigueIndex !== null))
-    .length;
+  return input.recoverySnapshots.filter((s) => isSet(s.readiness) || isSet(s.fatigueIndex)).length;
 }
 
 function buildEvaluationLimitations(input: OutcomeEvaluationInput): string[] {
@@ -121,7 +124,7 @@ function countEvidenceCategories(evaluation: {
     evaluation.subjectiveResponse,
     evaluation.shortTermRecoveryResponse,
     evaluation.safetySignal,
-  ].filter((entry) => (entry !== undefined && entry !== null)).length;
+  ].filter((entry) => isSet(entry)).length;
 }
 
 /**
@@ -137,7 +140,7 @@ export function evaluateOutcome(input: OutcomeEvaluationInput): OutcomeEvaluatio
   const shortTermRecoveryResponse = evaluateShortTermRecoveryResponse(input);
   const safetySignal = evaluateSafetySignal(input);
 
-  const hasMinimumEvidence = (executionMatch !== undefined && executionMatch !== null) || (shortTermRecoveryResponse !== undefined && shortTermRecoveryResponse !== null);
+  const hasMinimumEvidence = isSet(executionMatch) || isSet(shortTermRecoveryResponse);
   const outcomeStatus = hasMinimumEvidence ? 'EVALUATED' : 'INCONCLUSIVE';
 
   if (outcomeStatus === 'INCONCLUSIVE') {

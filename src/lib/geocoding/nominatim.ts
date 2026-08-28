@@ -1,4 +1,5 @@
 import type { GeocodedPlace } from './types';
+import { isSet } from '@/lib/util/value';
 
 const NOMINATIM_BASE = 'https://nominatim.openstreetmap.org';
 const USER_AGENT = 'SHARPIT/1.0 (training-app; contact@sharpit.local)';
@@ -74,7 +75,7 @@ export async function searchPlaces(query: string, limit = 6): Promise<GeocodedPl
 
   const res = await nominatimFetch(`/search?${params.toString()}`);
   const rows = (await res.json()) as NominatimSearchResult[];
-  return rows.map(toPlace).filter((p): p is GeocodedPlace => (p !== undefined && p !== null));
+  return rows.map(toPlace).filter((p): p is GeocodedPlace => isSet(p));
 }
 
 export async function geocodePlaceLabel(label: string): Promise<GeocodedPlace | null> {

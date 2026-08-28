@@ -1,5 +1,6 @@
 import { ActivityType, SessionIntensity } from '@prisma/client';
 import { z } from 'zod';
+import { isSet } from '@/lib/util/value';
 import { isEquipmentItemId } from '@/lib/equipment/catalog';
 import { endurancePrescriptionSchema } from '@/lib/planned-session/endurance/endurance-prescription';
 import { strengthPrescriptionSchema } from '@/lib/planned-session/strength/strength-prescription';
@@ -37,7 +38,7 @@ const optionalStrengthPrescription = strengthPrescriptionSchema
   .nullable()
   .optional()
   .transform((v) => {
-    if ((v === undefined || v === null)) {
+    if (v === undefined || v === null) {
       return null;
     }
     if (v.sets.length === 0) {
@@ -50,7 +51,7 @@ const optionalEndurancePrescription = endurancePrescriptionSchema
   .nullable()
   .optional()
   .transform((v) => {
-    if ((v === undefined || v === null)) {
+    if (v === undefined || v === null) {
       return null;
     }
     if (v.blocks.length === 0) {
@@ -65,7 +66,7 @@ const optionalAccessories = z
   .nullable()
   .optional()
   .transform((v) => {
-    if ((v === undefined || v === null)) {
+    if (v === undefined || v === null) {
       return null;
     }
     const ids = v.filter(isEquipmentItemId);
@@ -149,28 +150,37 @@ export const createPlannedSessionSchema = basePlannedSessionSchema
     endurancePrescription: data.type === ActivityType.STRENGTH ? null : data.endurancePrescription,
   }));
 
+function shouldSkipSessionPatchRefine(data: {
+  type?: ActivityType | null;
+  description?: string | null;
+  strengthPrescription?: unknown;
+}): boolean {
+  return (
+    !isSet(data.type) && data.description === undefined && data.strengthPrescription === undefined
+  );
+}
+
 export const updatePlannedSessionSchema = basePlannedSessionSchema
   .partial()
   .superRefine((data, ctx) => {
-    // Only enforce when type/description/prescription are part of the patch.
-    if (
-      (data.type === undefined || data.type === null) &&
-      data.description === undefined &&
-      data.strengthPrescription === undefined
-    ) {
+    if (shouldSkipSessionPatchRefine(data)) {
       return;
     }
     const { type } = data;
-    if ((type === undefined || type === null)) {
+    if (!isSet(type)) {
       return;
     }
+    const sessionType = type;
     const issues = [
       requireSessionDetails({
-        type,
+        type: sessionType,
         description: data.description,
         strengthPrescription: data.strengthPrescription,
       }),
-      requireMatchingEnduranceSport({ type, endurancePrescription: data.endurancePrescription }),
+      requireMatchingEnduranceSport({
+        type: sessionType,
+        endurancePrescription: data.endurancePrescription,
+      }),
     ];
     for (const issue of issues) {
       if (!issue) {
@@ -180,7 +190,7 @@ export const updatePlannedSessionSchema = basePlannedSessionSchema
     }
   })
   .transform((data) => {
-    if ((data.type === undefined || data.type === null)) {
+    if (data.type === undefined || data.type === null) {
       return data;
     }
     return data.type === ActivityType.STRENGTH

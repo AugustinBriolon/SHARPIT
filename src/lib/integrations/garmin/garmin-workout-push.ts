@@ -1,4 +1,5 @@
 import { format } from 'date-fns';
+import { isSet } from '@/lib/util/value';
 import { currentTokens, type GarminTokens } from '@/lib/integrations/garmin/garmin';
 import { encryptGarminToken, getGarminClient } from '@/lib/integrations/garmin/garmin-sync';
 import {
@@ -58,7 +59,7 @@ export async function workoutActiveOnCalendar(
     return calendar.calendarItems.some(
       (item) =>
         item.date === scheduledDate &&
-        (item.workoutId !== undefined && item.workoutId !== null) &&
+        isSet(item.workoutId) &&
         (String(item.workoutId) === workoutId || item.workoutId === idNumber),
     );
   } catch {
@@ -147,7 +148,7 @@ export async function createAndScheduleWorkout(
   const workoutId = created.workoutId ?? null;
   let scheduledDate: string | null = null;
 
-  if (options.schedule !== false && (workoutId !== undefined && workoutId !== null)) {
+  if (options.schedule !== false && isSet(workoutId)) {
     scheduledDate = options.scheduleDate?.trim() || format(new Date(), 'yyyy-MM-dd');
     await client.scheduleWorkout({ workoutId: String(workoutId) }, scheduledDate);
   }

@@ -23,25 +23,47 @@ function pendingNightReason(nightStatus: SleepNightStatus): string | null {
   return null;
 }
 
+import { isSet } from '@/lib/util/value';
+
+function debtNightReason(debt7Min: number | null): string | null {
+  if (isSet(debt7Min) && debt7Min > 30) {
+    return `Dette de ${formatDuration(debt7Min)} sur 7 jours — à résorber sur les prochaines nuits.`;
+  }
+  return null;
+}
+
+function targetNightReason(targetDeltaMin: number | null): string | null {
+  if (isSet(targetDeltaMin) && targetDeltaMin < 0) {
+    return `${formatSleepDuration(Math.abs(targetDeltaMin))} sous l’objectif la nuit dernière.`;
+  }
+  return null;
+}
+
+function restorativeNightReason(restorativeRatio: number | null): string | null {
+  if (isSet(restorativeRatio) && restorativeRatio < 40) {
+    return `Part restauratrice à ${restorativeRatio} % la nuit dernière — profond et paradoxal en retrait.`;
+  }
+  return null;
+}
+
+function regularityNightReason(regularityMin: number | null): string | null {
+  return isSet(regularityMin)
+    ? `Régularité ±${regularityMin} min autour de ton réveil habituel.`
+    : null;
+}
+
 function syncedNightReason(input: {
   debt7Min: number | null;
   targetDeltaMin: number | null;
   restorativeRatio: number | null;
   regularityMin: number | null;
 }): string | null {
-  if ((input.debt7Min !== undefined && input.debt7Min !== null) && input.debt7Min > 30) {
-    return `Dette de ${formatDuration(input.debt7Min)} sur 7 jours — à résorber sur les prochaines nuits.`;
-  }
-  if ((input.targetDeltaMin !== undefined && input.targetDeltaMin !== null) && input.targetDeltaMin < 0) {
-    return `${formatSleepDuration(Math.abs(input.targetDeltaMin))} sous l’objectif la nuit dernière.`;
-  }
-  if ((input.restorativeRatio !== undefined && input.restorativeRatio !== null) && input.restorativeRatio < 40) {
-    return `Part restauratrice à ${input.restorativeRatio} % la nuit dernière — profond et paradoxal en retrait.`;
-  }
-  if ((input.regularityMin !== undefined && input.regularityMin !== null)) {
-    return `Régularité ±${input.regularityMin} min autour de ton réveil habituel.`;
-  }
-  return null;
+  return (
+    debtNightReason(input.debt7Min) ??
+    targetNightReason(input.targetDeltaMin) ??
+    restorativeNightReason(input.restorativeRatio) ??
+    regularityNightReason(input.regularityMin)
+  );
 }
 
 export function tonightReason({

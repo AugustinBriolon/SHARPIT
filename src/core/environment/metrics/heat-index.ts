@@ -6,23 +6,34 @@ import type { MetricValue, WeatherMeasurements } from '../types';
 
 const MIN_AIR_TEMP_C = 27;
 
+function isSet<T>(value: T | null | undefined): value is T {
+  return value !== undefined && value !== null;
+}
+
+function missingHeatIndexInput(
+  temp: number | null | undefined,
+  rh: number | null | undefined,
+): MetricValue<number> {
+  return {
+    available: false,
+    quality: 'MISSING',
+    confidence: 0,
+    reason: 'MISSING_INPUT',
+    explanation:
+      'Indice de chaleur indisponible : température de l’air et humidité relative requises.',
+    missingFields: [
+      ...(!isSet(temp) ? (['airTemperatureC'] as const) : []),
+      ...(!isSet(rh) ? (['relativeHumidityPct'] as const) : []),
+    ],
+  };
+}
+
 export function computeHeatIndexC(measurements: WeatherMeasurements): MetricValue<number> {
   const temp = measurements.airTemperatureC;
   const rh = measurements.relativeHumidityPct;
 
-  if ((temp === undefined || temp === null) || (rh === undefined || rh === null)) {
-    return {
-      available: false,
-      quality: 'MISSING',
-      confidence: 0,
-      reason: 'MISSING_INPUT',
-      explanation:
-        'Indice de chaleur indisponible : température de l’air et humidité relative requises.',
-      missingFields: [
-        ...((temp === undefined || temp === null) ? (['airTemperatureC'] as const) : []),
-        ...((rh === undefined || rh === null) ? (['relativeHumidityPct'] as const) : []),
-      ],
-    };
+  if (!isSet(temp) || !isSet(rh)) {
+    return missingHeatIndexInput(temp, rh);
   }
 
   if (temp < MIN_AIR_TEMP_C) {

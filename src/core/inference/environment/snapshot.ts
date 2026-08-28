@@ -12,7 +12,7 @@ import type {
 } from './types';
 
 function thermalLevelFromStress(stress: EnvironmentalStress): ThermalStressLevel {
-  if ((stress.suppressionReason !== undefined && stress.suppressionReason !== null)) {
+  if (isSet(stress.suppressionReason)) {
     return 'NOT_APPLICABLE';
   }
   const thermal = getEnvironmentalStressor(stress, 'THERMAL');
@@ -41,17 +41,22 @@ function adjustmentDelta(
   return Math.round((multiplier.value! - 1) * 100) / 100;
 }
 
+import { isSet } from '@/lib/util/value';
+
+function absDeltaOrZero(delta: number | null): number {
+  return isSet(delta) ? Math.abs(delta) : 0;
+}
+
 function trainingImpactFromAdjustments(
   recoveryDelta: number | null,
   fatigueDelta: number | null,
   performanceDelta: number | null,
 ): TrainingEnvironmentalImpact {
-  const magnitudes = [
-    (recoveryDelta !== undefined && recoveryDelta !== null) ? Math.abs(recoveryDelta) : 0,
-    (fatigueDelta !== undefined && fatigueDelta !== null) ? Math.abs(fatigueDelta) : 0,
-    (performanceDelta !== undefined && performanceDelta !== null) ? Math.abs(performanceDelta) : 0,
-  ];
-  const max = Math.max(...magnitudes);
+  const max = Math.max(
+    absDeltaOrZero(recoveryDelta),
+    absDeltaOrZero(fatigueDelta),
+    absDeltaOrZero(performanceDelta),
+  );
   if (max >= 0.15) {
     return 'SIGNIFICANT';
   }

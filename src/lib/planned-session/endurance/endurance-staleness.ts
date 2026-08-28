@@ -10,8 +10,11 @@ import type {
   EnduranceStep,
 } from '@/lib/planned-session/endurance/endurance-prescription';
 import type { AthleteThresholds } from '@/lib/planned-session/endurance/endurance-targets';
+import { isSet } from '@/lib/util/value';
 
-function hrThresholdKeys(ref: EnduranceStep['target']['hrRef'] | undefined): Array<keyof AthleteThresholds> {
+function hrThresholdKeys(
+  ref: EnduranceStep['target']['hrRef'] | undefined,
+): Array<keyof AthleteThresholds> {
   if (ref === 'maxhr') {
     return ['maxHr'];
   }
@@ -21,7 +24,9 @@ function hrThresholdKeys(ref: EnduranceStep['target']['hrRef'] | undefined): Arr
   return ['lthr', 'maxHr'];
 }
 
-function metricThresholdKey(metric: EnduranceStep['target']['metric']): keyof AthleteThresholds | null {
+function metricThresholdKey(
+  metric: EnduranceStep['target']['metric'],
+): keyof AthleteThresholds | null {
   if (metric === 'pace') {
     return 'runThresholdPaceSecPerKm';
   }
@@ -36,7 +41,7 @@ function metricThresholdKey(metric: EnduranceStep['target']['metric']): keyof At
 
 function keysFromStepTarget(step: EnduranceStep): Array<keyof AthleteThresholds> {
   const { target } = step;
-  if ((target.absEasy !== undefined && target.absEasy !== null) && (target.absHard !== undefined && target.absHard !== null)) {
+  if (isSet(target.absEasy) && isSet(target.absHard)) {
     return [];
   }
   if (target.metric === 'hr') {

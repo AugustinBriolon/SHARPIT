@@ -1,3 +1,4 @@
+import { isSet } from '@/lib/util/value';
 /**
  * Text alternatives for the analysis charts.
  *
@@ -22,7 +23,7 @@ export type ChartSeries = {
 };
 
 function definedValues(points: readonly ChartSeriesPoint[]): number[] {
-  return points.map((p) => p.value).filter((v): v is number => (v !== undefined && v !== null));
+  return points.map((p) => p.value).filter((v): v is number => isSet(v));
 }
 
 function formatValue(value: number, unit?: string): string {
@@ -51,8 +52,8 @@ export function describeChartSeries(series: ChartSeries): string {
     return `${series.name} : aucune donnée.`;
   }
 
-  const first = series.points.find((p) => (p.value !== undefined && p.value !== null))!;
-  const last = [...series.points].reverse().find((p) => (p.value !== undefined && p.value !== null))!;
+  const first = series.points.find((p) => isSet(p.value))!;
+  const last = [...series.points].reverse().find((p) => isSet(p.value))!;
   const min = Math.min(...values);
   const max = Math.max(...values);
 

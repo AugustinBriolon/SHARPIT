@@ -15,6 +15,7 @@
  * one-rep-max estimate (`centrality: 0`).
  */
 import taxonomyJson from '@/data/movement-taxonomy.json';
+import { isSet } from '@/lib/util/value';
 import { EXERCISE_ALIASES } from '@/lib/exercises/aliases';
 import { normalizeExerciseKey } from '@/lib/exercises/normalize';
 import { getExerciseMediaByCatalogId } from '@/lib/exercises/resolve';
@@ -97,7 +98,7 @@ function validateMobilityEntry(
   entry: TaxonomyValidationEntry,
   fail: (message: string) => void,
 ): void {
-  if (entry.intent === 'MOBILITY' && ((entry.pattern !== undefined && entry.pattern !== null) || entry.modality !== 'NONE')) {
+  if (entry.intent === 'MOBILITY' && (isSet(entry.pattern) || entry.modality !== 'NONE')) {
     fail(`${entry.id}: mobility carries no pattern and no load axis`);
   }
 }
@@ -106,7 +107,11 @@ function validatePatternEntry(
   entry: TaxonomyValidationEntry,
   fail: (message: string) => void,
 ): void {
-  if ((entry.pattern === undefined || entry.pattern === null) && entry.intent !== 'MOBILITY' && entry.intent !== 'CONDITIONING') {
+  if (
+    (entry.pattern === undefined || entry.pattern === null) &&
+    entry.intent !== 'MOBILITY' &&
+    entry.intent !== 'CONDITIONING'
+  ) {
     fail(`${entry.id}: only mobility and conditioning may have no pattern`);
   }
 }
@@ -128,7 +133,7 @@ function validateLeverageEntry(
   if (needsLeverage && (entry.leverageFactor === undefined || entry.leverageFactor === null)) {
     fail(`${entry.id}: ${entry.modality} requires a leverageFactor`);
   }
-  if (!needsLeverage && (entry.leverageFactor !== undefined && entry.leverageFactor !== null)) {
+  if (!needsLeverage && isSet(entry.leverageFactor)) {
     fail(`${entry.id}: ${entry.modality} carries no bodyweight term`);
   }
 }

@@ -1,4 +1,5 @@
 import type { AthleteSnapshot } from '@/core/athlete-state/snapshot';
+import { isSet } from '@/lib/util/value';
 import type { DecisionData, TodayState } from '@/hooks/use-today';
 import { isForwardAdvicePhase } from '@/lib/daily-phase/resolve';
 import { isAdviceActionableFromDecision } from '@/lib/decision/projection';
@@ -37,7 +38,7 @@ function missingSignals(decision: DecisionData | null): string[] {
     graphContributionMissing(decision.evidenceGraph, 'recoveryContribution', 'récupération'),
     graphContributionMissing(decision.evidenceGraph, 'fatigueContribution', 'charge / fatigue'),
     graphContributionMissing(decision.evidenceGraph, 'adaptationContribution', 'adaptation'),
-  ].filter((value): value is string => (value !== undefined && value !== null));
+  ].filter((value): value is string => isSet(value));
   if (missing.length === 3) {
     return ['synthèse du jour'];
   }
@@ -90,7 +91,7 @@ export function buildInsufficientDataMessage(
 }
 
 export function confidenceLabelFor(confidence: number | null): string | null {
-  if ((confidence === undefined || confidence === null)) {
+  if (confidence === undefined || confidence === null) {
     return null;
   }
   if (confidence >= 0.75) {
@@ -106,7 +107,7 @@ export function effortUnavailableMessage(
   dailyStrain: TodayState['dailyStrain'],
   domainMessages: Partial<Record<string, string>>,
 ): string | null {
-  if (dailyStrain?.available && (dailyStrain.strainScore !== undefined && dailyStrain.strainScore !== null)) {
+  if (dailyStrain?.available && isSet(dailyStrain.strainScore)) {
     return null;
   }
   return domainMessages.training ?? "La charge d'entraînement du jour n'a pas encore été mesurée.";

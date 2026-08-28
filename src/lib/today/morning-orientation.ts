@@ -4,6 +4,7 @@
  */
 
 import type { AthleteSnapshot } from '@/core/athlete-state/snapshot';
+import { isSet } from '@/lib/util/value';
 import type { FreshnessLevel } from '@/core/athlete-state/freshness';
 import { isForwardAdvicePhase } from '@/lib/daily-phase/resolve';
 import type { DailyPhase } from '@/lib/daily-phase/types';
@@ -102,7 +103,7 @@ export function nightEvidenceReady(snapshot: AthleteSnapshot): boolean {
 
   for (const domain of ['sleep', 'recovery'] as const) {
     const level = domainFreshness(snapshot, domain);
-    if ((level !== undefined && level !== null) && BLOCKING_EVIDENCE.has(level)) {
+    if (isSet(level) && BLOCKING_EVIDENCE.has(level)) {
       return false;
     }
   }
@@ -149,7 +150,7 @@ function sessionSide(input: SessionSideInput): MorningSessionSide {
   return {
     intensityLabel: morningIntensityLabel(input.sessionType as ActivityType, input.intensity),
     durationMin: input.durationMin,
-    load: (input.load !== undefined && input.load !== null) ? Math.round(input.load) : null,
+    load: isSet(input.load) ? Math.round(input.load) : null,
     description: input.description?.trim() || null,
   };
 }
@@ -260,7 +261,7 @@ function resolveOrientationReady(
     phase: 'ORIENTATION_READY',
     evidenceLine: null,
     showRefreshEvidence: false,
-    showFirmActions: (confirmEase !== undefined && confirmEase !== null) || (confirmIncrease !== undefined && confirmIncrease !== null),
+    showFirmActions: isSet(confirmEase) || isSet(confirmIncrease),
     hideHeroConfidence: false,
     heroHeadline: null,
     heroSubline: null,

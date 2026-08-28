@@ -1,4 +1,5 @@
 import type { TodayGoalContext } from '@/lib/daily-phase/goal-context';
+import { isSet } from '@/lib/util/value';
 import {
   buildEndOfDayNarrativeCopy,
   isRecoveryStress,
@@ -171,7 +172,7 @@ function goalLineForPhase(input: PhaseNarrativeInput): string | null {
     return `${goalContext.title}${goalSuffix(goalContext)}`;
   }
 
-  if ((goalContext.daysUntil !== undefined && goalContext.daysUntil !== null) && goalContext.daysUntil <= 21) {
+  if (isSet(goalContext.daysUntil) && goalContext.daysUntil <= 21) {
     return `${goalContext.title}${goalSuffix(goalContext)}`;
   }
 
@@ -232,7 +233,7 @@ function focusPriorityForPhase(
 }
 
 function inferEffortFromTss(totalTssToday: number | null): TodayEffortLevel | null {
-  if ((totalTssToday === undefined || totalTssToday === null)) {
+  if (totalTssToday === undefined || totalTssToday === null) {
     return null;
   }
   if (totalTssToday >= 65) {
@@ -343,7 +344,10 @@ function insufficientDataHeadline(input: PhaseNarrativeInput): string | null {
   return null;
 }
 
-function phaseHeadlineForPostTraining(input: PhaseNarrativeInput, posture: TodayPosture): string | null {
+function phaseHeadlineForPostTraining(
+  input: PhaseNarrativeInput,
+  posture: TodayPosture,
+): string | null {
   const phase = phaseOf(input);
   if (phase === 'SESSION_COMPLETED') {
     return postTrainingHeadline('SESSION_COMPLETED', input, posture);

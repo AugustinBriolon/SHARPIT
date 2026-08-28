@@ -6,6 +6,7 @@
  */
 
 import type { DataCompleteness } from '@/core/digital-twin/types';
+import { isSet } from '@/lib/util/value';
 import type { I18nItem } from '@/core/inference/shared/types';
 import type {
   ConditionStatus,
@@ -46,7 +47,7 @@ function inferSeverityFromObservations(
   const symptomatic = observations.filter(
     (o) =>
       o.symptomPresent &&
-      (o.severityReported !== undefined && o.severityReported !== null) &&
+      isSet(o.severityReported) &&
       daysBetween(o.observedAt, referenceAt) <= windowDays &&
       daysBetween(o.observedAt, referenceAt) >= 0,
   );
@@ -59,7 +60,7 @@ function inferSeverityFromObservations(
     // - Otherwise, carry the last known severity forward — the athlete
     //   simply hasn't checked in recently, not improved.
     const sorted = [...observations]
-      .filter((o) => (o.severityReported !== undefined && o.severityReported !== null) && daysBetween(o.observedAt, referenceAt) >= 0)
+      .filter((o) => isSet(o.severityReported) && daysBetween(o.observedAt, referenceAt) >= 0)
       .sort((a, b) => b.observedAt.getTime() - a.observedAt.getTime());
 
     if (sorted.length === 0) {
@@ -108,7 +109,7 @@ export function inferTrend(
     .filter(
       (o) =>
         o.symptomPresent &&
-        (o.severityReported !== undefined && o.severityReported !== null) &&
+        isSet(o.severityReported) &&
         daysBetween(o.observedAt, referenceAt) <= 14 &&
         daysBetween(o.observedAt, referenceAt) >= 0,
     )
@@ -201,7 +202,7 @@ function inferRecurrentStatus(
   condition: ConditionInferenceInput,
   veryRecentSymptom: boolean,
 ): { status: ConditionStatus; recurrenceCount: number } | null {
-  const wasResolved = (condition.resolvedAt !== undefined && condition.resolvedAt !== null) || condition.episodes.some((e) => e.resolvedAt);
+  const wasResolved = isSet(condition.resolvedAt) || condition.episodes.some((e) => e.resolvedAt);
   if (wasResolved && veryRecentSymptom) {
     return { status: 'RECURRENT', recurrenceCount: condition.recurrenceCount + 1 };
   }

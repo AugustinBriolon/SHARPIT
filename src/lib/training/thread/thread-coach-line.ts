@@ -1,4 +1,5 @@
 import type { ThreadEntry, ThreadWeek } from './thread-model';
+import { isSet } from '@/lib/util/value';
 
 /**
  * One sentence about the week, naming the session it turns on.
@@ -39,6 +40,18 @@ export function findPivotEntry(week: ThreadWeek | null): ThreadEntry | null {
   );
 }
 
+function threadLineWithoutPivot(held: number | null): ThreadCoachLine | null {
+  if (!isSet(held)) {
+    return null;
+  }
+  return held >= 0.9
+    ? { text: 'Semaine bouclée — la charge prévue est tenue.', pivotEntryId: null }
+    : {
+        text: `Semaine terminée à ${Math.round(held * 100)} % de la charge prévue.`,
+        pivotEntryId: null,
+      };
+}
+
 export function buildThreadCoachLine(week: ThreadWeek | null): ThreadCoachLine | null {
   if (!week) {
     return null;
@@ -48,20 +61,11 @@ export function buildThreadCoachLine(week: ThreadWeek | null): ThreadCoachLine |
   const held = week.plannedLoad > 0 ? week.doneLoad / week.plannedLoad : null;
 
   if (!pivot) {
-    if ((held === undefined || held === null)) {
-      return null;
-    }
-    // Nothing left to do: the only honest thing left to say is how it landed.
-    return held >= 0.9
-      ? { text: 'Semaine bouclée — la charge prévue est tenue.', pivotEntryId: null }
-      : {
-          text: `Semaine terminée à ${Math.round(held * 100)} % de la charge prévue.`,
-          pivotEntryId: null,
-        };
+    return threadLineWithoutPivot(held);
   }
 
   const lead =
-    (held !== undefined && held !== null) && held < 0.5
+    isSet(held) && held < 0.5
       ? 'Le gros de la semaine est encore devant toi.'
       : 'Ta semaine tient.';
 

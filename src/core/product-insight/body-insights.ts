@@ -1,14 +1,15 @@
 import { buildProductInsightBundle } from '@/core/product-insight/build-product-insight-bundle';
+import { isSet } from '@/lib/util/value';
 import type { BodyInsightInput, ProductInsight } from '@/core/product-insight/types';
 
 function buildTrajectoryEvidence(input: BodyInsightInput): string[] {
   const evidence: string[] = [];
-  if ((input.weightDelta7d !== undefined && input.weightDelta7d !== null)) {
+  if (isSet(input.weightDelta7d)) {
     evidence.push(
       `Poids : ${input.weightDelta7d > 0 ? '+' : ''}${input.weightDelta7d.toFixed(1)} kg / 7j`,
     );
   }
-  if ((input.bodyFatDelta7d !== undefined && input.bodyFatDelta7d !== null)) {
+  if (isSet(input.bodyFatDelta7d)) {
     evidence.push(
       `Masse grasse : ${input.bodyFatDelta7d > 0 ? '+' : ''}${input.bodyFatDelta7d.toFixed(1)} pt / 7j`,
     );
@@ -17,7 +18,7 @@ function buildTrajectoryEvidence(input: BodyInsightInput): string[] {
 }
 
 function summarizeTrajectory(weightDelta7d: number | null): string {
-  if ((weightDelta7d === undefined || weightDelta7d === null)) {
+  if (weightDelta7d === undefined || weightDelta7d === null) {
     return 'Pas encore assez de recul';
   }
   if (Math.abs(weightDelta7d) < 0.3) {
@@ -105,10 +106,10 @@ function collectOptionalBodyInsights(input: BodyInsightInput) {
   const supporting: ProductInsight[] = [];
   const contextual: ProductInsight[] = [];
 
-  if ((input.waterPercent !== undefined && input.waterPercent !== null)) {
+  if (isSet(input.waterPercent)) {
     supporting.push(buildHydrationInsight(input.waterPercent));
   }
-  if ((input.visceralFat !== undefined && input.visceralFat !== null)) {
+  if (isSet(input.visceralFat)) {
     contextual.push(buildVisceralInsight(input.visceralFat));
   }
   if (input.sourceLabel || input.measuredAtLabel) {

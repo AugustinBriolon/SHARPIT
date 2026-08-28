@@ -4,6 +4,7 @@ import type {
   SnapshotPlannedSessionInput,
 } from '@/core/athlete-state/snapshot';
 import type { PhaseNarrative } from '@/lib/daily-phase/narrative';
+import { isSet } from '@/lib/util/value';
 import { buildPhaseNarrative } from '@/lib/daily-phase/narrative';
 import { buildDailyPhaseDayContext, minutesBetween } from '@/lib/daily-phase/day-context';
 import { resolveDailyPhase, isForwardAdvicePhase } from '@/lib/daily-phase/resolve';
@@ -56,7 +57,9 @@ function isAfterPriorSnapshot(
   priorGeneratedAt: string | null,
 ): boolean {
   return Boolean(
-    timestamp && priorGeneratedAt && new Date(timestamp).getTime() > new Date(priorGeneratedAt).getTime(),
+    timestamp &&
+    priorGeneratedAt &&
+    new Date(timestamp).getTime() > new Date(priorGeneratedAt).getTime(),
   );
 }
 
@@ -68,7 +71,7 @@ function recommendationAvailableForDecision(decision: TodayState['decision']): b
 }
 
 function dailyStrainAvailableForState(dailyStrain: TodayState['dailyStrain']): boolean {
-  return Boolean(dailyStrain?.available && (dailyStrain.strainScore !== undefined && dailyStrain.strainScore !== null));
+  return Boolean(dailyStrain?.available && isSet(dailyStrain.strainScore));
 }
 
 function minutesSinceLastActivity(
@@ -85,8 +88,14 @@ function buildPhaseAthleteSignals(
   params: SnapshotPhaseBuildParams,
   dayContext: ReturnType<typeof buildDailyPhaseDayContext>,
 ) {
-  const { refDate, todayState, priorSnapshot, latestSessionObservationAt, sleepLoggedTonight, adviceActionable } =
-    params;
+  const {
+    refDate,
+    todayState,
+    priorSnapshot,
+    latestSessionObservationAt,
+    sleepLoggedTonight,
+    adviceActionable,
+  } = params;
   const priorGeneratedAt = priorSnapshot?.generatedAt ?? null;
   const newSessionSincePriorSnapshot = isAfterPriorSnapshot(
     latestSessionObservationAt,
@@ -120,8 +129,9 @@ function buildEveningNarrativeContext(
   const { refDate, plannedSessions, sleepCoach, sleepBedtimeTargetMin } = params;
   return {
     effortLevel: effort?.level ?? null,
-    totalDurationMin:
-      (effort?.totalDurationSec !== undefined && effort?.totalDurationSec !== null) ? Math.round(effort.totalDurationSec / 60) : null,
+    totalDurationMin: isSet(effort?.totalDurationSec)
+      ? Math.round(effort.totalDurationSec / 60)
+      : null,
     completedSessionCount: resolution.signals.completedSessionCount,
     tomorrowSession: pickTomorrowSessionHint(refDate, plannedSessions),
     sleep: {
@@ -144,8 +154,16 @@ function buildPhaseNarrativeInput(input: {
   actionLine: string | null;
   verdict: ReturnType<typeof decisionVerdict>;
 }): PhaseNarrative {
-  const { params, resolution, effort, athleteSignals, limitingFactorMessage, goalContext, actionLine, verdict } =
-    input;
+  const {
+    params,
+    resolution,
+    effort,
+    athleteSignals,
+    limitingFactorMessage,
+    goalContext,
+    actionLine,
+    verdict,
+  } = input;
   const { trainingDayId, todayState, activities, adviceActionable } = params;
 
   return buildPhaseNarrative({

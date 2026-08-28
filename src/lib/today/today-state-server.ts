@@ -1,4 +1,5 @@
 import type { AdaptationInferenceResult } from '@/core/inference/adaptation-orchestrator';
+import { isSet } from '@/lib/util/value';
 import type { FatigueInferenceResult } from '@/core/inference/fatigue-orchestrator';
 import type { RecoveryInferenceResult } from '@/core/inference/orchestrator';
 import type { ReasoningInferenceResult } from '@/core/inference/reasoning-orchestrator';
@@ -67,7 +68,7 @@ async function isReasoningStale(athleteId: string, reasoningComputedAt: Date): P
     readStateComputedAt(twin.adaptationState),
     readStateComputedAt(twin.physicalHealthState),
     readStateComputedAt(twin.environmentalStateMeta),
-  ].filter((d): d is Date => (d !== undefined && d !== null));
+  ].filter((d): d is Date => isSet(d));
 
   return subModelTimes.some((computedAt) => computedAt > reasoningComputedAt);
 }
@@ -471,7 +472,7 @@ async function isCachedReasoningUsable(
   athleteId: string,
   cached: ReasoningInferenceResult,
 ): Promise<boolean> {
-  const cachedHasI18nTopAction = (cached.output.reasoningState.topAction?.verbCode !== undefined && cached.output.reasoningState.topAction?.verbCode !== null);
+  const cachedHasI18nTopAction = isSet(cached.output.reasoningState.topAction?.verbCode);
   if (cached.output.reasoningState.overallVerdict === 'INSUFFICIENT_DATA') {
     return false;
   }

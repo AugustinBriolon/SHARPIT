@@ -1,4 +1,5 @@
 import type { AdaptationData, TopAction } from '@/hooks/use-today';
+import { isSet } from '@/lib/util/value';
 import type { DailyPhase } from '@/lib/daily-phase/types';
 import { isForwardAdvicePhase } from '@/lib/daily-phase/resolve';
 import { resolveCode } from '@/lib/french';
@@ -127,8 +128,7 @@ export function buildProgressionSummary(
   const trendClass = adaptationTrendClass(adaptation.adaptationTrend);
 
   const headline = status?.label ?? adaptation.adaptationStatus;
-  const index =
-    (adaptation.adaptationIndex !== undefined && adaptation.adaptationIndex !== null) ? ` · indice ${adaptation.adaptationIndex}` : '';
+  const index = isSet(adaptation.adaptationIndex) ? ` · indice ${adaptation.adaptationIndex}` : '';
   const load = weeklyLoad > 0 ? `${weeklyLoad} TSS cette semaine` : null;
 
   return {

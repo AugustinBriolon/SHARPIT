@@ -160,24 +160,34 @@ export {
 } from '@/lib/integrations/withings/withings-measures';
 export type { WithingsHeartRecord } from '@/lib/integrations/withings/withings-measures';
 
-function buildWithingsMeasureParams(
-  options?: { startdate?: number; enddate?: number; lastupdate?: number },
-): Record<string, string> {
+import { isSet } from '@/lib/util/value';
+
+function appendUnixParam(
+  params: Record<string, string>,
+  key: string,
+  value: number | null | undefined,
+): void {
+  if (isSet(value)) {
+    params[key] = String(value);
+  }
+}
+
+function buildWithingsMeasureParams(options?: {
+  startdate?: number;
+  enddate?: number;
+  lastupdate?: number;
+}): Record<string, string> {
   const params: Record<string, string> = {
     action: 'getmeas',
     category: '1',
     meastypes: WITHINGS_BODY_SCAN_MEASTYPES,
   };
-  if ((options?.lastupdate !== undefined && options?.lastupdate !== null)) {
+  if (isSet(options?.lastupdate)) {
     params.lastupdate = String(options.lastupdate);
     return params;
   }
-  if ((options?.startdate !== undefined && options?.startdate !== null)) {
-    params.startdate = String(options.startdate);
-  }
-  if ((options?.enddate !== undefined && options?.enddate !== null)) {
-    params.enddate = String(options.enddate);
-  }
+  appendUnixParam(params, 'startdate', options?.startdate);
+  appendUnixParam(params, 'enddate', options?.enddate);
   return params;
 }
 
@@ -202,7 +212,7 @@ async function paginateWithingsMeasurements(
       all.push(parseWithingsMeasureGroup(group));
     }
     const { more, offset: nextOffset } = body;
-    if (more !== 1 || (nextOffset === undefined || nextOffset === null)) {
+    if (more !== 1 || nextOffset === undefined || nextOffset === null) {
       break;
     }
     offset = nextOffset;
@@ -219,16 +229,13 @@ export async function fetchWithingsMeasurements(
   return all.sort((a, b) => b.measuredAt.getTime() - a.measuredAt.getTime());
 }
 
-function buildWithingsHeartParams(
-  options?: { startdate?: number; enddate?: number },
-): Record<string, string> {
+function buildWithingsHeartParams(options?: {
+  startdate?: number;
+  enddate?: number;
+}): Record<string, string> {
   const params: Record<string, string> = { action: 'list' };
-  if ((options?.startdate !== undefined && options?.startdate !== null)) {
-    params.startdate = String(options.startdate);
-  }
-  if ((options?.enddate !== undefined && options?.enddate !== null)) {
-    params.enddate = String(options.enddate);
-  }
+  appendUnixParam(params, 'startdate', options?.startdate);
+  appendUnixParam(params, 'enddate', options?.enddate);
   return params;
 }
 
@@ -249,7 +256,7 @@ async function paginateWithingsHeartList(
     }>(WITHINGS_HEART, params, accessToken);
     all.push(...(body.series ?? []));
     const { more, offset: nextOffset } = body;
-    if (more !== 1 || (nextOffset === undefined || nextOffset === null)) {
+    if (more !== 1 || nextOffset === undefined || nextOffset === null) {
       break;
     }
     offset = nextOffset;

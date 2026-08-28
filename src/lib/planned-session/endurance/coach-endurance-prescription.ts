@@ -7,6 +7,7 @@
  * stays the app's physiological commitment, not the model's.
  */
 import type { SessionIntensity } from '@prisma/client';
+import { isSet } from '@/lib/util/value';
 import { z } from 'zod';
 import {
   enduranceSportFromActivityType,
@@ -20,6 +21,7 @@ import {
   type EnduranceSport,
   type EnduranceStep,
   type EnduranceStepKind,
+  type EnduranceTarget,
   type SwimStroke,
 } from '@/lib/planned-session/endurance/endurance-prescription';
 import {
@@ -129,10 +131,10 @@ function durationOf(step: CoachEnduranceStep): EnduranceDuration {
   if (step.lap) {
     return { type: 'lap' };
   }
-  if ((step.meters !== undefined && step.meters !== null)) {
+  if (isSet(step.meters)) {
     return { type: 'distance', meters: step.meters };
   }
-  if ((step.minutes !== undefined && step.minutes !== null)) {
+  if (isSet(step.minutes)) {
     return { type: 'time', seconds: clampSeconds(step.minutes) };
   }
   // A step with no stated end is an athlete-driven one — Lap is the honest reading.
@@ -164,7 +166,7 @@ function reclassifyRecoverySteps(
   const effortOf = (step: CoachEnduranceStep) => step.effort ?? sessionIntensity ?? null;
   const ranks = steps
     .map(effortOf)
-    .filter((effort): effort is CoachEffort => (effort !== undefined && effort !== null))
+    .filter((effort): effort is CoachEffort => isSet(effort))
     .map((effort) => EFFORT_RANK[effort]);
   if (ranks.length === 0) {
     return steps;
@@ -177,11 +179,23 @@ function reclassifyRecoverySteps(
 
   return steps.map((step) => {
     const effort = effortOf(step);
-    if (step.kind !== 'interval' || (effort === undefined || effort === null)) {
+    if (step.kind !== 'interval' || effort === undefined || effort === null) {
       return step;
     }
     return EFFORT_RANK[effort] === EFFORT_RANK.RECOVERY ? { ...step, kind: 'recovery' } : step;
   });
+}
+
+function stepTarget(
+  step: CoachEnduranceStep,
+  sport: EnduranceSport,
+  sessionIntensity: SessionIntensity | null,
+): EnduranceTarget {
+  const effort = step.effort ?? sessionIntensity;
+  if (UNGUIDED_KINDS.has(step.kind) || !isSet(effort)) {
+    return NO_TARGET;
+  }
+  return defaultTargetForIntensity(sport, effort).target;
 }
 
 function normalizeStep(
@@ -190,11 +204,7 @@ function normalizeStep(
   sessionIntensity: SessionIntensity | null,
 ): EnduranceStep {
   const { kind } = step;
-  const effort = step.effort ?? sessionIntensity;
-  const target =
-    UNGUIDED_KINDS.has(kind) || (effort === undefined || effort === null)
-      ? NO_TARGET
-      : defaultTargetForIntensity(sport, effort).target;
+  const target = stepTarget(step, sport, sessionIntensity);
 
   return {
     kind,
@@ -214,7 +224,7 @@ function appendCoachBlock(
   if (steps.length === 0) {
     return;
   }
-  if ((block.times !== undefined && block.times !== null) && block.times > 1) {
+  if (isSet(block.times) && block.times > 1) {
     blocks.push({ kind: 'repeat', iterations: block.times, steps });
     return;
   }
@@ -231,7 +241,7 @@ function buildStoredPrescription(
   return {
     version: 1,
     sport,
-    ...(sport === 'SWIM' && (poolLengthM !== undefined && poolLengthM !== null) ? { poolLengthM } : {}),
+    ...(sport === 'SWIM' && isSet(poolLengthM) ? { poolLengthM } : {}),
     blocks: blocks.slice(0, 30),
   };
 }
@@ -243,7 +253,7 @@ function processCoachBlock(
   intensity: SessionIntensity | null,
 ): void {
   const authored =
-    (block.times !== undefined && block.times !== null) && block.times > 1
+    isSet(block.times) && block.times > 1
       ? reclassifyRecoverySteps(block.steps, intensity)
       : block.steps;
   const steps = authored.map((step) => normalizeStep(step, sport, intensity));
@@ -362,7 +372,7 @@ export function formatEndurancePrescriptionSummary(prescription: EndurancePrescr
 function storedEndurancePrescription(
   raw: CoachEndurancePrescription | EndurancePrescription | null | undefined,
 ): EndurancePrescription | null {
-  if ((raw !== undefined && raw !== null) && typeof raw === 'object' && 'version' in raw) {
+  if (isSet(raw) && typeof raw === 'object' && 'version' in raw) {
     return raw as EndurancePrescription;
   }
   return null;

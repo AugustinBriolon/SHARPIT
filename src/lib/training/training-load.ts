@@ -1,4 +1,5 @@
 import { format as formatDate } from 'date-fns';
+import { isSet } from '@/lib/util/value';
 import { addTrainingDays, computeTrainingDayId } from './training-day';
 
 /**
@@ -133,7 +134,7 @@ function buildTrainingLoadResult(input: {
   const avgDailyLoad = mean(dailyLoads7d);
   const sdDailyLoad = stdDev(dailyLoads7d);
   const loadMonotony = sdDailyLoad > 0 ? avgDailyLoad / sdDailyLoad : null;
-  const loadStrain = (loadMonotony !== undefined && loadMonotony !== null) ? acuteLoad * loadMonotony : null;
+  const loadStrain = isSet(loadMonotony) ? acuteLoad * loadMonotony : null;
   const acwr = chronicWeeklyAvg > 0 ? acuteLoad / chronicWeeklyAvg : 0;
 
   return {
@@ -141,8 +142,8 @@ function buildTrainingLoadResult(input: {
     weeklyLoad: Math.round(acuteLoad),
     acwr: Number(acwr.toFixed(2)),
     fatigue: fatigueFromAcwr(acwr),
-    loadMonotony: (loadMonotony !== undefined && loadMonotony !== null) ? Number(loadMonotony.toFixed(2)) : null,
-    loadStrain: (loadStrain !== undefined && loadStrain !== null) ? Math.round(loadStrain) : null,
+    loadMonotony: isSet(loadMonotony) ? Number(loadMonotony.toFixed(2)) : null,
+    loadStrain: isSet(loadStrain) ? Math.round(loadStrain) : null,
   };
 }
 

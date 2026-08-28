@@ -3,6 +3,7 @@
  */
 
 import type { EnvironmentalApplicability, ExposureSetting } from './types';
+import { isSet } from '@/lib/util/value';
 
 export type ApplicabilityInput = {
   readonly sportType:
@@ -32,7 +33,7 @@ function isIndoorContext(input: ApplicabilityInput): boolean {
   if (input.indoorFlag === true || input.athleteDeclaredExposure === 'INDOOR') {
     return true;
   }
-  return (input.locationType !== undefined && input.locationType !== null) && INDOOR_LOCATIONS.has(input.locationType);
+  return isSet(input.locationType) && INDOOR_LOCATIONS.has(input.locationType);
 }
 
 function isOutdoorContext(input: ApplicabilityInput): boolean {

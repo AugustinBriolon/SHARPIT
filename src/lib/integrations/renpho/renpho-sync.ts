@@ -1,4 +1,5 @@
 import { BodyCompositionSource, Prisma } from '@prisma/client';
+import { isSet } from '@/lib/util/value';
 import {
   isProviderAuthFailure,
   isRenphoAccountConnected,
@@ -110,7 +111,7 @@ const RENPHO_SCALAR_FIELDS: Array<{
   { key: 'bmr', read: (m) => m.bmr ?? null },
   { key: 'visceralFat', read: (m) => m.visceral_fat ?? null },
   { key: 'proteinPct', read: (m) => m.protein ?? null },
-  { key: 'bodyAge', read: (m) => ((m.body_age !== undefined && m.body_age !== null) ? Math.round(m.body_age) : null) },
+  { key: 'bodyAge', read: (m) => (isSet(m.body_age) ? Math.round(m.body_age) : null) },
   { key: 'subcutaneousFatPct', read: (m) => m.subcutaneous_fat ?? null },
   { key: 'skeletalMusclePct', read: (m) => m.skeletal_muscle ?? null },
   { key: 'fatFreeWeightKg', read: (m) => m.fat_free_weight ?? null },
@@ -186,7 +187,7 @@ async function upsertDailyWeightFromMeasurement(
   m: RenphoMeasurement,
   withingsDays: Set<string>,
 ) {
-  if ((m.weight === undefined || m.weight === null)) {
+  if (m.weight === undefined || m.weight === null) {
     return;
   }
 
@@ -232,7 +233,7 @@ async function persistRenphoMeasurements(input: {
     select: { externalId: true },
   });
   const existingIds = new Set(
-    existingRows.map((r) => r.externalId).filter((id): id is string => (id !== undefined && id !== null)),
+    existingRows.map((r) => r.externalId).filter((id): id is string => isSet(id)),
   );
 
   const toCreate: Prisma.BodyCompositionMeasurementCreateManyInput[] = [];
@@ -278,10 +279,7 @@ function fullRenphoSyncWindow() {
   };
 }
 
-function partialRenphoSyncWindow(
-  lastSyncAt: Date | null,
-  days: number,
-) {
+function partialRenphoSyncWindow(lastSyncAt: Date | null, days: number) {
   const since = syncSinceFromLastSync(lastSyncAt, days);
   const windowDays = syncWindowDays(since);
   return {

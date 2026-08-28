@@ -1,4 +1,5 @@
 import type { ActivityType } from '@prisma/client';
+import { isSet } from '@/lib/util/value';
 import { differenceInCalendarDays, format, startOfDay } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { pmcTsb, type PmcState } from '@/lib/training/pmc';
@@ -67,7 +68,7 @@ function avg(values: number[]): number | null {
 }
 
 function fmtPace(secPerKm?: number | null): string | null {
-  if ((secPerKm === undefined || secPerKm === null) || secPerKm <= 0) {
+  if (secPerKm === undefined || secPerKm === null || secPerKm <= 0) {
     return null;
   }
   const m = Math.floor(secPerKm / 60);
@@ -76,7 +77,7 @@ function fmtPace(secPerKm?: number | null): string | null {
 }
 
 function fmtSleep(minutes: number | null): string | null {
-  if ((minutes === undefined || minutes === null)) {
+  if (minutes === undefined || minutes === null) {
     return null;
   }
   const h = Math.floor(minutes / 60);
@@ -99,13 +100,11 @@ function formatDayBeforeRecoveryLine(
     return 'Pas de données santé la veille de la séance.';
   }
   const bits = [
-    (dayBefore.sleepMinutes !== undefined && dayBefore.sleepMinutes !== null) ? `sommeil ${fmtSleep(dayBefore.sleepMinutes)}` : null,
-    (dayBefore.hrv !== undefined && dayBefore.hrv !== null) ? `HRV ${Math.round(dayBefore.hrv)} ms` : null,
-    (dayBefore.restingHr !== undefined && dayBefore.restingHr !== null) ? `FC repos ${Math.round(dayBefore.restingHr)} bpm` : null,
-    (dayBefore.recoveryScore !== undefined && dayBefore.recoveryScore !== null)
-      ? `readiness ${Math.round(dayBefore.recoveryScore)}/100`
-      : null,
-    (dayBefore.bodyBattery !== undefined && dayBefore.bodyBattery !== null) ? `body battery ${Math.round(dayBefore.bodyBattery)}` : null,
+    isSet(dayBefore.sleepMinutes) ? `sommeil ${fmtSleep(dayBefore.sleepMinutes)}` : null,
+    isSet(dayBefore.hrv) ? `HRV ${Math.round(dayBefore.hrv)} ms` : null,
+    isSet(dayBefore.restingHr) ? `FC repos ${Math.round(dayBefore.restingHr)} bpm` : null,
+    isSet(dayBefore.recoveryScore) ? `readiness ${Math.round(dayBefore.recoveryScore)}/100` : null,
+    isSet(dayBefore.bodyBattery) ? `body battery ${Math.round(dayBefore.bodyBattery)}` : null,
   ].filter(Boolean);
   if (!bits.length) {
     return null;
@@ -115,23 +114,23 @@ function formatDayBeforeRecoveryLine(
 
 function formatSevenDayTrendLine(beforeActivity: NarrativeHealthRow[]): string | null {
   const last7 = beforeActivity.slice(0, 7);
-  const avgSleep = avg(last7.map((row) => row.sleepMinutes).filter((v): v is number => (v !== undefined && v !== null)));
-  const avgHrv = avg(last7.map((row) => row.hrv).filter((v): v is number => (v !== undefined && v !== null)));
+  const avgSleep = avg(last7.map((row) => row.sleepMinutes).filter((v): v is number => isSet(v)));
+  const avgHrv = avg(last7.map((row) => row.hrv).filter((v): v is number => isSet(v)));
   const avgReadiness = avg(
-    last7.map((row) => row.recoveryScore).filter((v): v is number => (v !== undefined && v !== null)),
+    last7.map((row) => row.recoveryScore).filter((v): v is number => isSet(v)),
   );
-  const avgRhr = avg(last7.map((row) => row.restingHr).filter((v): v is number => (v !== undefined && v !== null)));
+  const avgRhr = avg(last7.map((row) => row.restingHr).filter((v): v is number => isSet(v)));
   const trendBits = [
-    (avgSleep !== undefined && avgSleep !== null) ? `sommeil moy. 7j ${fmtSleep(Math.round(avgSleep))}` : null,
-    (avgHrv !== undefined && avgHrv !== null) ? `HRV moy. 7j ${Math.round(avgHrv)} ms` : null,
-    (avgReadiness !== undefined && avgReadiness !== null) ? `readiness moy. 7j ${Math.round(avgReadiness)}/100` : null,
-    (avgRhr !== undefined && avgRhr !== null) ? `FC repos moy. 7j ${Math.round(avgRhr)} bpm` : null,
+    isSet(avgSleep) ? `sommeil moy. 7j ${fmtSleep(Math.round(avgSleep))}` : null,
+    isSet(avgHrv) ? `HRV moy. 7j ${Math.round(avgHrv)} ms` : null,
+    isSet(avgReadiness) ? `readiness moy. 7j ${Math.round(avgReadiness)}/100` : null,
+    isSet(avgRhr) ? `FC repos moy. 7j ${Math.round(avgRhr)} bpm` : null,
   ].filter(Boolean);
   return trendBits.length ? `Tendance 7 jours avant séance : ${trendBits.join(', ')}.` : null;
 }
 
 function formatSleepDebtLine(avgSleep: number | null): string | null {
-  if ((avgSleep === undefined || avgSleep === null)) {
+  if (avgSleep === undefined || avgSleep === null) {
     return null;
   }
   const debtMin = SLEEP_TARGET_MIN - avgSleep;
@@ -145,7 +144,7 @@ function formatSleepDebtLine(avgSleep: number | null): string | null {
 }
 
 function formatReadinessDeltaLine(recent: number | null, prior: number | null): string | null {
-  if ((recent === undefined || recent === null) || (prior === undefined || prior === null)) {
+  if (recent === undefined || recent === null || prior === undefined || prior === null) {
     return null;
   }
   const diff = Math.round(recent - prior);
@@ -158,7 +157,7 @@ function formatReadinessDeltaLine(recent: number | null, prior: number | null): 
 }
 
 function formatHrvDeltaLine(recent: number | null, prior: number | null): string | null {
-  if ((recent === undefined || recent === null) || (prior === undefined || prior === null)) {
+  if (recent === undefined || recent === null || prior === undefined || prior === null) {
     return null;
   }
   const diff = Math.round(recent - prior);
@@ -192,7 +191,7 @@ export function buildRecoveryContextFacts(
   }
 
   const last7 = beforeActivity.slice(0, 7);
-  const avgSleep = avg(last7.map((row) => row.sleepMinutes).filter((v): v is number => (v !== undefined && v !== null)));
+  const avgSleep = avg(last7.map((row) => row.sleepMinutes).filter((v): v is number => isSet(v)));
   const sleepDebtLine = formatSleepDebtLine(avgSleep);
   if (sleepDebtLine) {
     lines.push(sleepDebtLine);
@@ -201,18 +200,18 @@ export function buildRecoveryContextFacts(
   const recent3 = beforeActivity.slice(0, 3);
   const prior7 = beforeActivity.slice(3, 10);
   const readinessRecent = avg(
-    recent3.map((row) => row.recoveryScore).filter((v): v is number => (v !== undefined && v !== null)),
+    recent3.map((row) => row.recoveryScore).filter((v): v is number => isSet(v)),
   );
   const readinessPrior = avg(
-    prior7.map((row) => row.recoveryScore).filter((v): v is number => (v !== undefined && v !== null)),
+    prior7.map((row) => row.recoveryScore).filter((v): v is number => isSet(v)),
   );
   const readinessLine = formatReadinessDeltaLine(readinessRecent, readinessPrior);
   if (readinessLine) {
     lines.push(readinessLine);
   }
 
-  const hrvRecent = avg(recent3.map((row) => row.hrv).filter((v): v is number => (v !== undefined && v !== null)));
-  const hrvPrior = avg(prior7.map((row) => row.hrv).filter((v): v is number => (v !== undefined && v !== null)));
+  const hrvRecent = avg(recent3.map((row) => row.hrv).filter((v): v is number => isSet(v)));
+  const hrvPrior = avg(prior7.map((row) => row.hrv).filter((v): v is number => isSet(v)));
   const hrvLine = formatHrvDeltaLine(hrvRecent, hrvPrior);
   if (hrvLine) {
     lines.push(hrvLine);
@@ -236,7 +235,7 @@ export function buildTrainingLoadFacts(
     `ACWR au jour de la séance : ${load.acwr} (fatigue estimée : ${load.fatigue}).`,
   ];
 
-  if ((load.loadMonotony !== undefined && load.loadMonotony !== null)) {
+  if (isSet(load.loadMonotony)) {
     lines.push(`Monotonie de charge 7j : ${load.loadMonotony}.`);
   }
 
@@ -294,9 +293,9 @@ function interpretTsb(tsb: number): string {
 
 function profileThresholdSummary(profile: NarrativeAthleteProfile): string | null {
   const seuils = [
-    (profile.ftpW !== undefined && profile.ftpW !== null) ? `FTP ${profile.ftpW} W` : null,
-    (profile.lthr !== undefined && profile.lthr !== null) ? `LTHR ${profile.lthr} bpm` : null,
-    (profile.maxHr !== undefined && profile.maxHr !== null) ? `FC max ${profile.maxHr} bpm` : null,
+    isSet(profile.ftpW) ? `FTP ${profile.ftpW} W` : null,
+    isSet(profile.lthr) ? `LTHR ${profile.lthr} bpm` : null,
+    isSet(profile.maxHr) ? `FC max ${profile.maxHr} bpm` : null,
     fmtPace(profile.runThresholdPaceSecPerKm)
       ? `allure seuil ${fmtPace(profile.runThresholdPaceSecPerKm)}`
       : null,
@@ -304,10 +303,7 @@ function profileThresholdSummary(profile: NarrativeAthleteProfile): string | nul
   return seuils.length ? `Seuils personnels : ${seuils.join(', ')}.` : null;
 }
 
-function runPaceThresholdFact(
-  paceSecPerKm: number,
-  thresholdPace: number,
-): string {
+function runPaceThresholdFact(paceSecPerKm: number, thresholdPace: number): string {
   const delta = pctDelta(paceSecPerKm, thresholdPace);
   if (delta > 0) {
     return `Allure séance ${fmtPace(paceSecPerKm)} : ~${delta}% plus lente que l’allure seuil personnelle.`;
@@ -331,7 +327,9 @@ function runThresholdFacts(
     lines.push(runPaceThresholdFact(paceSecPerKm, profile.runThresholdPaceSecPerKm));
   }
   if (profile.lthr && avgHr) {
-    lines.push(`FC moyenne ${Math.round(avgHr)} bpm = ${Math.round((avgHr / profile.lthr) * 100)}% LTHR.`);
+    lines.push(
+      `FC moyenne ${Math.round(avgHr)} bpm = ${Math.round((avgHr / profile.lthr) * 100)}% LTHR.`,
+    );
   }
   return lines;
 }
@@ -371,18 +369,31 @@ export function buildThresholdPerformanceFacts(
   lines.push(...runThresholdFacts(activity, profile));
   lines.push(...bikeThresholdFacts(activity, profile));
 
-  if (
-    activity.runMetrics?.avgHr &&
-    profile.maxHr &&
-    !profile.lthr &&
-    activity.type !== 'BIKE'
-  ) {
+  if (activity.runMetrics?.avgHr && profile.maxHr && !profile.lthr && activity.type !== 'BIKE') {
     lines.push(
       `FC moyenne ${Math.round(activity.runMetrics.avgHr)} bpm (~${Math.round((activity.runMetrics.avgHr / profile.maxHr) * 100)}% FC max).`,
     );
   }
 
   return lines;
+}
+
+function physicalNoteTrend(checkins: NarrativePhysicalNote['checkins']): string | null {
+  if (checkins.length < 2) {
+    return null;
+  }
+  const last = checkins[0]?.severity;
+  const prev = checkins[1]?.severity;
+  if (!isSet(last) || !isSet(prev)) {
+    return null;
+  }
+  if (last < prev) {
+    return 'tendance amélioration';
+  }
+  if (last > prev) {
+    return 'tendance aggravation';
+  }
+  return 'tendance stable';
 }
 
 export function buildPhysicalConditionFacts(notes: NarrativePhysicalNote[]): string[] {
@@ -392,30 +403,14 @@ export function buildPhysicalConditionFacts(notes: NarrativePhysicalNote[]): str
   }
 
   return active.map((note) => {
-    const trend =
-      note.checkins.length >= 2
-        ? (() => {
-            const last = note.checkins[0]?.severity;
-            const prev = note.checkins[1]?.severity;
-            if ((last === undefined || last === null) || (prev === undefined || prev === null)) {
-              return null;
-            }
-            if (last < prev) {
-              return 'tendance amélioration';
-            }
-            if (last > prev) {
-              return 'tendance aggravation';
-            }
-            return 'tendance stable';
-          })()
-        : null;
+    const trend = physicalNoteTrend(note.checkins);
 
     const bits = [
       `${categoryLabels[note.category]} · ${note.title}`,
       note.bodyPart
         ? `zone ${note.bodyPart}${note.side !== 'NA' ? ` (${sideLabels[note.side]})` : ''}`
         : null,
-      (note.severity !== undefined && note.severity !== null) ? `sévérité ${note.severity}/10` : null,
+      isSet(note.severity) ? `sévérité ${note.severity}/10` : null,
       `statut ${statusLabels[note.status]}`,
       trend,
       note.description ? `note : ${note.description}` : null,

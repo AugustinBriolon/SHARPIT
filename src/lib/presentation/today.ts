@@ -1,4 +1,5 @@
 import type { AthleteSnapshot } from '@/core/athlete-state/snapshot';
+import { isSet } from '@/lib/util/value';
 import type { DailyPhase } from '@/lib/daily-phase/types';
 import type { MorningOrientationResolved } from '@/lib/today/morning-orientation';
 import { snapshotHasDisplayableContent } from '@/core/athlete-state/snapshot';
@@ -93,10 +94,7 @@ type SnapshotStatusInput = {
   reconnectNames: string[];
 };
 
-function snapshotStatusCandidate(
-  snapshot: AthleteSnapshot,
-  hasContent: boolean,
-): string | null {
+function snapshotStatusCandidate(snapshot: AthleteSnapshot, hasContent: boolean): string | null {
   if (hasContent) {
     return snapshot.freshness.primaryProductMessage;
   }
@@ -177,7 +175,7 @@ function buildTodayScores(
   const sleepScoreSharpit = computeSharpitSleepScoreForDay(healthEntries, day, sleepTargetMin);
   const sleepScore = sleepScoreSharpit ?? effectiveSnapshot.sleepScore;
   const effortScore =
-    effectiveSnapshot.dailyStrain?.available && (effectiveSnapshot.dailyStrain.strainScore !== undefined && effectiveSnapshot.dailyStrain.strainScore !== null)
+    effectiveSnapshot.dailyStrain?.available && isSet(effectiveSnapshot.dailyStrain.strainScore)
       ? effectiveSnapshot.dailyStrain.strainScore
       : null;
   return {
@@ -186,7 +184,9 @@ function buildTodayScores(
     effortScore,
     adaptationScore: effectiveSnapshot.adaptationIndex,
     adaptationUnavailableCaption:
-      (effectiveSnapshot.adaptationIndex === undefined || effectiveSnapshot.adaptationIndex === null) ? 'Historique insuffisant' : null,
+      effectiveSnapshot.adaptationIndex === undefined || effectiveSnapshot.adaptationIndex === null
+        ? 'Historique insuffisant'
+        : null,
   };
 }
 
@@ -230,11 +230,10 @@ function buildTodayLimitingSection(input: {
     limitingFactor: preferReminders ? null : input.effectiveSnapshot.limitingFactor,
     reminders: preferReminders ? input.adaptationHints : [],
   });
-  const limitingHref =
-    (input.effectiveSnapshot.limitingFactor !== undefined && input.effectiveSnapshot.limitingFactor !== null)
-      ? (resolveLimitingFactorHrefFromDecision(input.effectiveSnapshot.decision) ??
-        TWIN_DRILL_DOWN.recovery)
-      : null;
+  const limitingHref = isSet(input.effectiveSnapshot.limitingFactor)
+    ? (resolveLimitingFactorHrefFromDecision(input.effectiveSnapshot.decision) ??
+      TWIN_DRILL_DOWN.recovery)
+    : null;
 
   return {
     limitingMode:
@@ -285,10 +284,11 @@ function mapDaySummaryLineForView(
   };
 }
 
-function buildPlateLimiter(
-  effectiveSnapshot: AthleteSnapshot,
-): { text: string | null; href: string | null } {
-  if ((effectiveSnapshot.limitingFactor === undefined || effectiveSnapshot.limitingFactor === null)) {
+function buildPlateLimiter(effectiveSnapshot: AthleteSnapshot): {
+  text: string | null;
+  href: string | null;
+} {
+  if (effectiveSnapshot.limitingFactor === undefined || effectiveSnapshot.limitingFactor === null) {
     return { text: null, href: null };
   }
   const text =
@@ -338,10 +338,7 @@ function buildHeroCopy(
   };
 }
 
-function buildFocusPriority(
-  effectiveSnapshot: AthleteSnapshot,
-  phase: DailyPhase,
-): string | null {
+function buildFocusPriority(effectiveSnapshot: AthleteSnapshot, phase: DailyPhase): string | null {
   if (effectiveSnapshot.phaseNarrative?.focusPriority) {
     return effectiveSnapshot.phaseNarrative.focusPriority;
   }
@@ -354,20 +351,19 @@ function buildFocusPriority(
 
 function buildConfidenceFields(effectiveSnapshot: AthleteSnapshot) {
   const adviceActionable = Boolean(effectiveSnapshot.adviceActionable);
-  const confidenceTier =
-    (effectiveSnapshot.confidence !== undefined && effectiveSnapshot.confidence !== null)
-      ? mapConfidenceToTier(effectiveSnapshot.confidence)
-      : null;
+  const confidenceTier = isSet(effectiveSnapshot.confidence)
+    ? mapConfidenceToTier(effectiveSnapshot.confidence)
+    : null;
   const confidenceLabel = resolveVisibleConfidenceLabel(
     effectiveSnapshot.confidenceLabel ?? null,
     confidenceTier,
     adviceActionable,
   );
   return {
-    confidenceTone: (confidenceTier !== undefined && confidenceTier !== null) ? mapConfidenceTone(confidenceTier) : 'neutral',
+    confidenceTone: isSet(confidenceTier) ? mapConfidenceTone(confidenceTier) : 'neutral',
     confidenceLabel,
     confidencePctRounded:
-      (confidenceLabel !== undefined && confidenceLabel !== null) && (effectiveSnapshot.confidence !== undefined && effectiveSnapshot.confidence !== null)
+      isSet(confidenceLabel) && isSet(effectiveSnapshot.confidence)
         ? Math.round(effectiveSnapshot.confidence * 100)
         : null,
     confidenceHref: resolveConfidenceHrefFromDecision(effectiveSnapshot.decision),
@@ -432,9 +428,7 @@ function prepareTodayActionFields(input: {
   };
 }
 
-function mapPostSessionActivities(
-  activities: TodayPresentationInputs['activities'],
-) {
+function mapPostSessionActivities(activities: TodayPresentationInputs['activities']) {
   return (
     activities as unknown as Array<{
       id: string;
@@ -454,10 +448,7 @@ function mapPostSessionActivities(
   }));
 }
 
-function resolveMorningEyebrow(
-  evidencePending: boolean,
-  heroEyebrow: string,
-): string {
+function resolveMorningEyebrow(evidencePending: boolean, heroEyebrow: string): string {
   if (evidencePending && !heroEyebrow) {
     return 'Ce matin';
   }
@@ -492,18 +483,16 @@ function morningPresentationFromOrientation(
   };
 }
 
-function prepareTodayMorningFields(
-  input: {
-    phase: DailyPhase;
-    effectiveSnapshot: AthleteSnapshot;
-    morningRecalibration: MorningRecalibrationInput | null;
-    heroHeadline: string;
-    heroSubline: string;
-    heroEyebrow: string;
-    day: Date;
-    activities: TodayPresentationInputs['activities'];
-  },
-) {
+function prepareTodayMorningFields(input: {
+  phase: DailyPhase;
+  effectiveSnapshot: AthleteSnapshot;
+  morningRecalibration: MorningRecalibrationInput | null;
+  heroHeadline: string;
+  heroSubline: string;
+  heroEyebrow: string;
+  day: Date;
+  activities: TodayPresentationInputs['activities'];
+}) {
   const morningOrientation = resolveMorningOrientation({
     phase: input.phase,
     snapshot: input.effectiveSnapshot,
@@ -524,10 +513,7 @@ function prepareTodayMorningFields(
   };
 }
 
-function buildTodayEmptyState(
-  effectiveSnapshot: AthleteSnapshot,
-  statusMessage: string | null,
-) {
+function buildTodayEmptyState(effectiveSnapshot: AthleteSnapshot, statusMessage: string | null) {
   if (snapshotHasDisplayableContent(effectiveSnapshot)) {
     return null;
   }
@@ -687,9 +673,7 @@ function assembleTodayViewModel(
       daySummaryEmptyHref: TWIN_DRILL_DOWN.planning,
       sessionLinkSuggestions: ctx.sessionLinkSuggestions.map(mapSessionLinkSuggestion),
       daySummaryLines: [
-        ...ctx.daySummary.lines.map((line) =>
-          mapDaySummaryLineForView(line, ctx.sessionChoice),
-        ),
+        ...ctx.daySummary.lines.map((line) => mapDaySummaryLineForView(line, ctx.sessionChoice)),
         ...ctx.missedSessions.map((s) => ({
           id: s.id,
           activityType: s.type,

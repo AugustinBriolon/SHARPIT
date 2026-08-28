@@ -5,7 +5,11 @@ import { isCoachConfigured } from '@/lib/ai';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { recordAiUsage } from '@/lib/ai-usage';
 import { checkRateLimit, rateLimitResponseBody, rateLimiters } from '@/lib/rate-limit';
-import { buildCoachContext, formatCoachContext, type CoachContext } from '@/lib/coach/context/coach-context';
+import {
+  buildCoachContext,
+  formatCoachContext,
+  type CoachContext,
+} from '@/lib/coach/context/coach-context';
 import {
   COACH_PROGRESS_HEADERS,
   encodeCoachProgressEvent,
@@ -55,10 +59,7 @@ ${formatStrengthSessionRules()}
 
 Sortie : le schéma fait autorité pour les noms de champs, les types et les valeurs d'énumération — jamais ce texte. N'ajoute aucun champ hors schéma. Séance STRENGTH : strengthPrescription obligatoire (noms français, blocs et volume ci-dessus) ; RUN/BIKE/SWIM : null. Séance RUN ou BIKE structurée (fractionné, blocs au seuil, progressif) : remplis endurancePrescription — étapes et groupes répétés avec leur intensité, jamais d'allure ni de watts, l'app les dérive des seuils.`;
 
-function buildGoalBlock(
-  goal: NonNullable<Awaited<ReturnType<typeof getGoalById>>>,
-  start: Date,
-) {
+function buildGoalBlock(goal: NonNullable<Awaited<ReturnType<typeof getGoalById>>>, start: Date) {
   const daysToGo = goal.targetDate
     ? Math.round((startOfDay(goal.targetDate).getTime() - start.getTime()) / 86400_000)
     : null;
@@ -142,20 +143,12 @@ ${focus ? `Demande spécifique de l'athlète : ${focus}\n\n` : ''}Données de l'
 ${contextText}${goalBlock}${macroBlock}${agendaBlock}`;
 }
 
-async function preparePlanGeneration(athleteId: string, parsed: z.infer<typeof coachPlanRequestSchema>) {
-  const { startDate, days = 7, focus, goalId, targetLoad, planPhase, planFocus } = parsed;
-  const start = startOfDay(startDate ?? new Date());
-
-  const rateLimit = await checkRateLimit(rateLimiters.coachPlan, athleteId);
-  if (!rateLimit.ok) {
-    return {
-      ok: false as const,
-      response: NextResponse.json(rateLimitResponseBody(rateLimit.retryAfterSeconds), {
-        status: 429,
-      }),
-    };
-  }
-
+async function buildPlanGenerationContext(
+  athleteId: string,
+  parsed: z.infer<typeof coachPlanRequestSchema>,
+  start: Date,
+) {
+  const { days = 7, focus, goalId, targetLoad, planPhase, planFocus } = parsed;
   const [ctx, busySummary, goal] = await Promise.all([
     buildCoachContext(athleteId, start, { includeScenario: true }),
     buildBusySummary(athleteId, start, days),
@@ -176,6 +169,28 @@ async function preparePlanGeneration(athleteId: string, parsed: z.infer<typeof c
     planFocus,
     travels: travelWindows,
   });
+
+  return { ctx, busySummary, goal, days, focus, goalId, travelResolved, planPhase };
+}
+
+async function preparePlanGeneration(
+  athleteId: string,
+  parsed: z.infer<typeof coachPlanRequestSchema>,
+) {
+  const start = startOfDay(parsed.startDate ?? new Date());
+
+  const rateLimit = await checkRateLimit(rateLimiters.coachPlan, athleteId);
+  if (!rateLimit.ok) {
+    return {
+      ok: false as const,
+      response: NextResponse.json(rateLimitResponseBody(rateLimit.retryAfterSeconds), {
+        status: 429,
+      }),
+    };
+  }
+
+  const { ctx, busySummary, goal, days, focus, goalId, travelResolved, planPhase } =
+    await buildPlanGenerationContext(athleteId, parsed, start);
 
   const goalBlock = goal ? buildGoalBlock(goal, start) : '';
   const macroBlock = buildMacroBlock({

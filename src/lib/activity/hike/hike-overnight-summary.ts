@@ -1,3 +1,4 @@
+import { isSet } from '@/lib/util/value';
 // Single-session overnight/day window. Multi-session: `buildHikeTripSummary`.
 
 const OVERNIGHT_DURATION_SEC = 8 * 3600;
@@ -47,7 +48,7 @@ function resolveHikeVariant(
   startAt: Date,
   endAt: Date,
 ): 'overnight' | 'day' {
-  if ((durationSec === undefined || durationSec === null)) {
+  if (durationSec === undefined || durationSec === null) {
     return 'day';
   }
   if (durationSec >= OVERNIGHT_DURATION_SEC) {
@@ -56,7 +57,9 @@ function resolveHikeVariant(
   return crossesLocalMidnight(startAt, endAt) ? 'overnight' : 'day';
 }
 
-function endPointFromPath(path: [number, number][] | null | undefined): { lat: number; lng: number } | null {
+function endPointFromPath(
+  path: [number, number][] | null | undefined,
+): { lat: number; lng: number } | null {
   const last = path && path.length > 0 ? path[path.length - 1] : null;
   return last ? { lat: last[0], lng: last[1] } : null;
 }
@@ -99,10 +102,10 @@ export function buildHikeOvernightSummary(
   },
 ): HikeOvernightSummary {
   const startAt = asDate(activity.date);
-  const durationSec =
-    (activity.duration !== undefined && activity.duration !== null) && activity.duration > 0 ? activity.duration : null;
-  const endAt =
-    (durationSec !== undefined && durationSec !== null) ? new Date(startAt.getTime() + durationSec * 1000) : new Date(startAt);
+  const durationSec = isSet(activity.duration) && activity.duration > 0 ? activity.duration : null;
+  const endAt = isSet(durationSec)
+    ? new Date(startAt.getTime() + durationSec * 1000)
+    : new Date(startAt);
 
   return {
     variant: resolveHikeVariant(durationSec, startAt, endAt),

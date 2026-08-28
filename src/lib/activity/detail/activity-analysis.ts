@@ -1,4 +1,5 @@
 import { ActivityType } from '@prisma/client';
+import { isSet } from '@/lib/util/value';
 
 /** Seuils athlète pour le calcul des zones et métriques avancées. */
 export interface AthleteThresholds {
@@ -232,7 +233,7 @@ function zoneIndex(value: number, ref: number, defs: ZoneDef[]): number {
   const pct = (value / ref) * 100;
   for (let i = 0; i < defs.length; i++) {
     const z = defs[i];
-    if (pct >= z.minPct && ((z.maxPct === undefined || z.maxPct === null) || pct < z.maxPct)) {
+    if (pct >= z.minPct && (z.maxPct === undefined || z.maxPct === null || pct < z.maxPct)) {
       return i;
     }
   }
@@ -301,7 +302,9 @@ function computeNormalizedPower(watts: number[], time: number[]): number | null 
   return Math.round(Math.pow(fourth.reduce((s, v) => s + v, 0) / fourth.length, 0.25));
 }
 
-function splitDecouplingSegments(points: RawPoint[]): { first: RawPoint[]; second: RawPoint[] } | null {
+function splitDecouplingSegments(
+  points: RawPoint[],
+): { first: RawPoint[]; second: RawPoint[] } | null {
   const duration = points[points.length - 1].t - points[0].t;
   const warmupEnd = points[0].t + 10 * 60;
   const mid = points[0].t + duration / 2;
@@ -354,7 +357,7 @@ function computeDecoupling(points: RawPoint[], mode: 'pace' | 'power'): number |
 
   const ef1 = segmentEfficiency(segments.first, mode);
   const ef2 = segmentEfficiency(segments.second, mode);
-  if ((ef1 === undefined || ef1 === null) || (ef2 === undefined || ef2 === null) || ef1 === 0) {
+  if (!isSet(ef1) || !isSet(ef2) || ef1 === 0) {
     return null;
   }
   return Number((((ef1 - ef2) / ef1) * 100).toFixed(1));
@@ -371,7 +374,12 @@ function splitElevationGain(points: RawPoint[], startIdx: number, endIdx: number
   return elevGain;
 }
 
-function splitLabel(target: number, splitM: number, isPartialTailSplit: boolean, totalDistance: number): string {
+function splitLabel(
+  target: number,
+  splitM: number,
+  isPartialTailSplit: boolean,
+  totalDistance: number,
+): string {
   if (isPartialTailSplit) {
     return formatSplitDistanceLabel(totalDistance);
   }
@@ -400,7 +408,7 @@ function buildSplitRow(input: {
     label: splitLabel(target, splitM, isPartialTailSplit, points[endIdx].d),
     distanceM: Math.round(dist),
     durationSec: Math.round(dur),
-    paceSecPerKm: (pace !== undefined && pace !== null) ? Math.round(pace) : null,
+    paceSecPerKm: isSet(pace) ? Math.round(pace) : null,
     avgHr: segmentMean(
       points.map((p) => p.hr),
       startIdx,
@@ -579,7 +587,7 @@ function computeSessionLoad(input: {
   powerIf: number | null;
 }): { loadTss: number | null; loadIf: number | null; loadMethod: 'power' | 'hr' | null } {
   const { duration, avgHr, lthr, powerTss, powerIf } = input;
-  if ((powerTss !== undefined && powerTss !== null) && (powerIf !== undefined && powerIf !== null)) {
+  if (isSet(powerTss) && isSet(powerIf)) {
     return { loadTss: powerTss, loadIf: powerIf, loadMethod: 'power' };
   }
   if (avgHr && lthr && lthr > 0) {
@@ -642,7 +650,7 @@ function computePowerTss(
   ftp: number | null,
   duration: number,
 ): number | null {
-  if (!np || (powerIf === undefined || powerIf === null) || !ftp) {
+  if (!np || powerIf === undefined || powerIf === null || !ftp) {
     return null;
   }
   return Math.round(((duration * np * powerIf) / (ftp * 3600)) * 100);
@@ -681,9 +689,7 @@ function buildPowerAnalysis(
 ) {
   const metrics = computePowerMetrics(raw, isBike, duration, ftp);
   const powerZones =
-    ftp && metrics.watts.length
-      ? computeZoneTimes(raw.watts, raw.time, ftp, POWER_ZONE_DEFS)
-      : [];
+    ftp && metrics.watts.length ? computeZoneTimes(raw.watts, raw.time, ftp, POWER_ZONE_DEFS) : [];
 
   return {
     np: metrics.np,
@@ -730,7 +736,7 @@ function buildHrAnalysis(input: {
       decouplingPct: decoupling,
       efficiencyFactor: efficiency.efficiencyFactor,
       efficiencyLabel: efficiency.efficiencyLabel,
-      avgHr: (avgHr !== undefined && avgHr !== null) ? Math.round(avgHr) : null,
+      avgHr: isSet(avgHr) ? Math.round(avgHr) : null,
       maxHr: hrs.length ? Math.max(...hrs) : null,
     },
   };

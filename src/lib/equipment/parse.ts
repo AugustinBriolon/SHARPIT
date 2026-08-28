@@ -6,6 +6,7 @@ import {
   type StrengthVenue,
 } from '@/lib/equipment/catalog';
 import { EMPTY_ATHLETE_EQUIPMENT, type AthleteEquipment } from '@/lib/equipment/types';
+import { isSet } from '@/lib/util/value';
 
 function uniqueOwned(ids: EquipmentItemId[]): EquipmentItemId[] {
   return [...new Set(ids)];
@@ -21,7 +22,7 @@ export function sanitizeOwnedForVenue(
     if (!item?.requiresStrengthVenue) {
       return true;
     }
-    if ((strengthVenue === undefined || strengthVenue === null)) {
+    if (strengthVenue === undefined || strengthVenue === null) {
       return false;
     }
     return item.requiresStrengthVenue.includes(strengthVenue as 'home' | 'both');
@@ -29,7 +30,7 @@ export function sanitizeOwnedForVenue(
 }
 
 export function normalizeAthleteEquipment(raw: unknown): AthleteEquipment {
-  if ((raw === undefined || raw === null) || typeof raw !== 'object' || Array.isArray(raw)) {
+  if (raw === undefined || raw === null || typeof raw !== 'object' || Array.isArray(raw)) {
     return { ...EMPTY_ATHLETE_EQUIPMENT };
   }
 
@@ -52,7 +53,7 @@ export function normalizeAthleteEquipment(raw: unknown): AthleteEquipment {
 }
 
 export function hasConfiguredEquipment(equipment: AthleteEquipment): boolean {
-  return (equipment.strengthVenue !== undefined && equipment.strengthVenue !== null) || equipment.owned.length > 0;
+  return isSet(equipment.strengthVenue) || equipment.owned.length > 0;
 }
 
 export function toggleOwnedItem(

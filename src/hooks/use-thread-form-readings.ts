@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
+import { isSet } from '@/lib/util/value';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useAthleteProfile, useRecords, useThresholdHistory } from '@/hooks/use-data';
@@ -37,7 +38,7 @@ function thresholdSeries(
   pick: (snapshot: ThresholdSnapshot) => number | null | undefined,
 ): Array<number | null> | null {
   const points = history.map((snapshot) => pick(snapshot) ?? null);
-  const known = points.filter((value): value is number => (value !== undefined && value !== null));
+  const known = points.filter((value): value is number => isSet(value));
   if (known.length < 2) {
     return null;
   }

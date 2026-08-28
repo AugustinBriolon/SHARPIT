@@ -27,6 +27,7 @@ import type {
   SubjectiveObservation,
 } from '@/core/observation/types';
 import type { ExtractionContext } from '../context';
+import { isSet } from '@/lib/util/value';
 import { effectiveSleepTarget } from '../context';
 import type { RecoveryFeatureSet, RecoveryHistory, SubjectiveWellnessComponents } from '../types';
 import { QUALITY_CONFIDENCE } from '../types';
@@ -102,7 +103,7 @@ function computeSleepDebt(
 
 function computeSleepOnsetConsistency(sleep14d: RecoveryHistory['sleep14d']): number | null {
   const bedtimes = sleep14d
-    .filter((s) => (s.bedtimeMinFromMidnight !== undefined && s.bedtimeMinFromMidnight !== null))
+    .filter((s) => isSet(s.bedtimeMinFromMidnight))
     .map((s) => s.bedtimeMinFromMidnight!);
 
   if (bedtimes.length < 4) {
@@ -122,6 +123,22 @@ function computeSleepDurationTrend(sleep14d: RecoveryHistory['sleep14d']): numbe
 
 const HRV_BASELINE_MIN_POINTS = 7;
 
+function garminHrvDelta(hrv: HrvObservation): number | null {
+  const { garminBaselineLow, garminBaselineHigh } = hrv;
+  if (
+    garminBaselineLow === undefined ||
+    garminBaselineLow === null ||
+    garminBaselineHigh === undefined ||
+    garminBaselineHigh === null ||
+    garminBaselineLow <= 0 ||
+    garminBaselineHigh <= 0
+  ) {
+    return null;
+  }
+  const garminBaseline = (garminBaselineLow + garminBaselineHigh) / 2;
+  return ((hrv.valueMsRmssd - garminBaseline) / garminBaseline) * 100;
+}
+
 function computeHrvDelta(
   hrv: HrvObservation | null,
   hrv14d: RecoveryHistory['hrv14d'],
@@ -130,7 +147,6 @@ function computeHrvDelta(
     return null;
   }
 
-  // Primary: SHARPIT 14-day rolling personal baseline (≥ 7 prior nights)
   const prior = hrv14d.filter((h) => h.timestamp.getTime() !== hrv.timestamp.getTime());
   if (prior.length >= HRV_BASELINE_MIN_POINTS) {
     const baseline = mean(prior.map((h) => h.valueMsRmssd));
@@ -139,19 +155,7 @@ function computeHrvDelta(
     }
   }
 
-  // Fallback: Garmin personal baseline band (midpoint of balanced zone)
-  const { garminBaselineLow, garminBaselineHigh } = hrv;
-  if (
-    (garminBaselineLow !== undefined && garminBaselineLow !== null) &&
-    (garminBaselineHigh !== undefined && garminBaselineHigh !== null) &&
-    garminBaselineLow > 0 &&
-    garminBaselineHigh > 0
-  ) {
-    const garminBaseline = (garminBaselineLow + garminBaselineHigh) / 2;
-    return ((hrv.valueMsRmssd - garminBaseline) / garminBaseline) * 100;
-  }
-
-  return null;
+  return garminHrvDelta(hrv);
 }
 
 function computeHrvCv(hrv14d: RecoveryHistory['hrv14d']): number | null {
@@ -238,7 +242,7 @@ function computeWellnessIndex(subjective: SubjectiveObservation | null): {
 
   const dims = WELLNESS_DIMENSIONS.flatMap(({ key, weight, score }) => {
     const raw = components[key];
-    return (raw === undefined || raw === null) ? [] : [{ value: score(raw), weight }];
+    return raw === undefined || raw === null ? [] : [{ value: score(raw), weight }];
   });
 
   if (dims.length === 0) {
@@ -395,7 +399,12 @@ export function computeRpeVsTargetZone(
   sessionRpe: number | null,
   sessionSportType: import('@/core/observation/types').SportType | null,
 ): number | null {
-  if ((sessionRpe === undefined || sessionRpe === null) || (sessionSportType === undefined || sessionSportType === null)) {
+  if (
+    sessionRpe === undefined ||
+    sessionRpe === null ||
+    sessionSportType === undefined ||
+    sessionSportType === null
+  ) {
     return null;
   }
 

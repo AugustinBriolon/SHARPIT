@@ -3,6 +3,7 @@ import type {
   GarminMatchConfidence,
 } from '@/lib/integrations/garmin/garmin-exercise-map';
 import { canonicalizeGarminExerciseRef } from '@/lib/integrations/garmin/garmin-exercise-map';
+import { isSet } from '@/lib/util/value';
 import { getGarminTaxonomyEntry } from '@/lib/integrations/garmin/garmin-exercise-taxonomy';
 import type { StrengthRestMode } from '@/lib/planned-session/strength/strength-prescription';
 import {
@@ -72,17 +73,31 @@ function kgToLbs(kg: number): number {
 }
 
 function usesDurationForSet(set: StrengthWorkoutSetInput, garmin: GarminExerciseRef): boolean {
-  return (set.reps === undefined || set.reps === null) || set.reps <= 0 || (garmin.category === MOBILITY_CATEGORY && set.reps <= 1);
+  return (
+    set.reps === undefined ||
+    set.reps === null ||
+    set.reps <= 0 ||
+    (garmin.category === MOBILITY_CATEGORY && set.reps <= 1)
+  );
 }
 
-function applyDurationEndCondition(step: StepBag, set: StrengthWorkoutSetInput, garmin: GarminExerciseRef): void {
-  const defaultSec = garmin.category === MOBILITY_CATEGORY ? DEFAULT_MOBILITY_SEC : DEFAULT_ISOMETRIC_SEC;
+function applyDurationEndCondition(
+  step: StepBag,
+  set: StrengthWorkoutSetInput,
+  garmin: GarminExerciseRef,
+): void {
+  const defaultSec =
+    garmin.category === MOBILITY_CATEGORY ? DEFAULT_MOBILITY_SEC : DEFAULT_ISOMETRIC_SEC;
   step.endCondition = TIME_CONDITION;
   step.endConditionValue =
-    (set.durationSec !== undefined && set.durationSec !== null) && set.durationSec > 0 ? set.durationSec : defaultSec;
+    isSet(set.durationSec) && set.durationSec > 0 ? set.durationSec : defaultSec;
 }
 
-function applyExerciseEndCondition(step: StepBag, set: StrengthWorkoutSetInput, garmin: GarminExerciseRef): void {
+function applyExerciseEndCondition(
+  step: StepBag,
+  set: StrengthWorkoutSetInput,
+  garmin: GarminExerciseRef,
+): void {
   if (usesDurationForSet(set, garmin)) {
     applyDurationEndCondition(step, set, garmin);
     return;
@@ -106,7 +121,7 @@ function buildExerciseStep(
 
   applyExerciseEndCondition(step, set, garmin);
 
-  if ((set.weightKg !== undefined && set.weightKg !== null) && set.weightKg > 0) {
+  if (isSet(set.weightKg) && set.weightKg > 0) {
     step.weightValue = kgToLbs(set.weightKg);
     step.weightUnit = POUND_UNIT;
   }
@@ -115,7 +130,7 @@ function buildExerciseStep(
 }
 
 function resolveRestMode(set: StrengthWorkoutSetInput): StrengthRestMode {
-  if (set.restMode === 'time' && (set.restSec !== undefined && set.restSec !== null) && set.restSec > 0) {
+  if (set.restMode === 'time' && isSet(set.restSec) && set.restSec > 0) {
     return 'time';
   }
   return 'lap';
@@ -129,7 +144,7 @@ function buildRestStep(
 ): StepBag {
   const step = baseExecutableStep(order.nextOrder(), STEP_REST, childStepId);
   const mode = resolveRestMode(set);
-  if (mode === 'time' && (set.restSec !== undefined && set.restSec !== null) && set.restSec > 0) {
+  if (mode === 'time' && isSet(set.restSec) && set.restSec > 0) {
     step.endCondition = TIME_CONDITION;
     step.endConditionValue = set.restSec;
     step.description = `Repos ${set.restSec}s`;

@@ -1,4 +1,5 @@
 import { BodyCompositionSource, Prisma } from '@prisma/client';
+import { isSet } from '@/lib/util/value';
 import {
   isOAuthAccountConnected,
   isProviderAuthFailure,
@@ -98,7 +99,13 @@ export async function getValidWithingsAccessToken(athleteId: string): Promise<st
 }
 
 function computeMusclePct(m: WithingsParsedMeasurement): number | null {
-  if ((m.muscleKg === undefined || m.muscleKg === null) || (m.weightKg === undefined || m.weightKg === null) || m.weightKg <= 0) {
+  if (
+    m.muscleKg === undefined ||
+    m.muscleKg === null ||
+    m.weightKg === undefined ||
+    m.weightKg === null ||
+    m.weightKg <= 0
+  ) {
     return null;
   }
   return (m.muscleKg / m.weightKg) * 100;
@@ -120,9 +127,9 @@ function measurementToPrisma(
     visceralFat: m.visceralFat,
     waterPct: m.waterPct,
     fatFreeWeightKg: m.fatFreeWeightKg,
-    heartRate: (m.heartRate !== undefined && m.heartRate !== null) ? Math.round(m.heartRate) : null,
-    bodyAge: (m.metabolicAge !== undefined && m.metabolicAge !== null) ? Math.round(m.metabolicAge) : null,
-    vascularAgeYears: (m.vascularAgeYears !== undefined && m.vascularAgeYears !== null) ? Math.round(m.vascularAgeYears) : null,
+    heartRate: isSet(m.heartRate) ? Math.round(m.heartRate) : null,
+    bodyAge: isSet(m.metabolicAge) ? Math.round(m.metabolicAge) : null,
+    vascularAgeYears: isSet(m.vascularAgeYears) ? Math.round(m.vascularAgeYears) : null,
     pulseWaveVelocity: m.pulseWaveVelocity,
     vo2Max: m.vo2Max,
     nerveHealthScore: m.nerveHealthScore,
@@ -130,7 +137,7 @@ function measurementToPrisma(
     nerveHealthRight: m.nerveHealthRight,
     nerveResponseScore: m.nerveResponseScore,
     skinConductance: m.skinConductance,
-    metabolicAge: (m.metabolicAge !== undefined && m.metabolicAge !== null) ? Math.round(m.metabolicAge) : null,
+    metabolicAge: isSet(m.metabolicAge) ? Math.round(m.metabolicAge) : null,
     hydrationKg: m.hydrationKg,
     fatMassKg: m.fatMassKg,
     extracellularWaterKg: m.extracellularWaterKg,
@@ -140,7 +147,7 @@ function measurementToPrisma(
 }
 
 async function upsertDailyWeightFromWithings(athleteId: string, m: WithingsParsedMeasurement) {
-  if ((m.weightKg === undefined || m.weightKg === null)) {
+  if (m.weightKg === undefined || m.weightKg === null) {
     return;
   }
 
@@ -184,7 +191,7 @@ async function persistWithingsMeasurements(
     select: { externalId: true },
   });
   const existingIds = new Set(
-    existingRows.map((r) => r.externalId).filter((id): id is string => (id !== undefined && id !== null)),
+    existingRows.map((r) => r.externalId).filter((id): id is string => isSet(id)),
   );
 
   const toCreate: Prisma.BodyCompositionMeasurementCreateManyInput[] = [];

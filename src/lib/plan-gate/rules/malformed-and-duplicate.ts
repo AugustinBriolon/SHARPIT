@@ -1,4 +1,5 @@
 import { startOfDay } from 'date-fns';
+import { isSet } from '@/lib/util/value';
 import type { GateContext, GateProposal, PlanGateRule, RuleFinding } from '../types';
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
@@ -14,10 +15,10 @@ function validateMalformedDate(proposal: GateProposal): string | null {
 }
 
 function validateMalformedFields(proposal: GateProposal): string | null {
-  if ((proposal.durationMin !== undefined && proposal.durationMin !== null) && proposal.durationMin <= 0) {
+  if (isSet(proposal.durationMin) && proposal.durationMin <= 0) {
     return 'non-positive duration';
   }
-  if ((proposal.load !== undefined && proposal.load !== null) && proposal.load < 0) {
+  if (isSet(proposal.load) && proposal.load < 0) {
     return 'negative load';
   }
   if (proposal.action === 'MODIFY' && !proposal.sessionId) {

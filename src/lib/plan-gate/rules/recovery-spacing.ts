@@ -1,4 +1,5 @@
 import type { GateContext, GateProposal, PlanGateRule, RuleFinding } from '../types';
+import { isSet } from '@/lib/util/value';
 
 const HIGH_INTENSITY = new Set(['THRESHOLD', 'VO2MAX', 'RACE']);
 const MIN_SPACING_MS = 24 * 60 * 60 * 1000;
@@ -8,7 +9,11 @@ export const recoverySpacingRule: PlanGateRule = (
   context: GateContext,
   proposal: GateProposal,
 ): RuleFinding[] => {
-  if ((proposal.intensity === undefined || proposal.intensity === null) || !HIGH_INTENSITY.has(proposal.intensity)) {
+  if (
+    proposal.intensity === undefined ||
+    proposal.intensity === null ||
+    !HIGH_INTENSITY.has(proposal.intensity)
+  ) {
     return [];
   }
 
@@ -17,7 +22,7 @@ export const recoverySpacingRule: PlanGateRule = (
   const nearbyExisting = context.existingSessions.find(
     (s) =>
       s.id !== proposal.sessionId &&
-      (s.intensity !== undefined && s.intensity !== null) &&
+      isSet(s.intensity) &&
       HIGH_INTENSITY.has(s.intensity) &&
       Math.abs(s.date.getTime() - proposedTime) < MIN_SPACING_MS &&
       s.date.getTime() !== proposedTime,

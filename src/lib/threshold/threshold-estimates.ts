@@ -1,4 +1,5 @@
 import type { AthleteProfile } from '@prisma/client';
+import { isSet } from '@/lib/util/value';
 import {
   estimateFtp,
   estimateRunThresholdPace,
@@ -158,7 +159,7 @@ export function computeThresholdEstimates(
 }
 
 function fmtFtp(w: number | null): string {
-  return (w !== undefined && w !== null) ? `${w} W` : '—';
+  return isSet(w) ? `${w} W` : '—';
 }
 
 /** True when |estimated − current| clears both the relative and absolute FTP gates. */
@@ -174,34 +175,34 @@ export function isMaterialPaceChange(current: number, estimated: number): boolea
 }
 
 function shouldSuggestFtp(current: number | null, estimated: number | null): boolean {
-  if ((estimated === undefined || estimated === null)) {
+  if (estimated === undefined || estimated === null) {
     return false;
   }
-  if ((current === undefined || current === null)) {
+  if (current === undefined || current === null) {
     return true;
   }
   return isMaterialFtpChange(current, estimated);
 }
 
 function shouldSuggestThresholdPace(current: number | null, estimated: number | null): boolean {
-  if ((estimated === undefined || estimated === null)) {
+  if (estimated === undefined || estimated === null) {
     return false;
   }
-  if ((current === undefined || current === null)) {
+  if (current === undefined || current === null) {
     return true;
   }
   return isMaterialPaceChange(current, estimated);
 }
 
 function ftpDirection(current: number | null, estimated: number): ThresholdChangeDirection {
-  if ((current === undefined || current === null)) {
+  if (current === undefined || current === null) {
     return 'set';
   }
   return estimated > current ? 'up' : 'down';
 }
 
 function paceDirection(current: number | null, estimated: number): ThresholdChangeDirection {
-  if ((current === undefined || current === null)) {
+  if (current === undefined || current === null) {
     return 'set';
   }
   // Lower s/km = faster = "up" in performance terms
@@ -209,7 +210,7 @@ function paceDirection(current: number | null, estimated: number): ThresholdChan
 }
 
 function buildFtpChange(current: number | null, estimated: number | null): ThresholdChange | null {
-  if (!shouldSuggestFtp(current, estimated) || (estimated === undefined || estimated === null)) {
+  if (!shouldSuggestFtp(current, estimated) || estimated === undefined || estimated === null) {
     return null;
   }
   return {
@@ -222,7 +223,11 @@ function buildFtpChange(current: number | null, estimated: number | null): Thres
 }
 
 function buildPaceChange(current: number | null, estimated: number | null): ThresholdChange | null {
-  if (!shouldSuggestThresholdPace(current, estimated) || (estimated === undefined || estimated === null)) {
+  if (
+    !shouldSuggestThresholdPace(current, estimated) ||
+    estimated === undefined ||
+    estimated === null
+  ) {
     return null;
   }
   return {
@@ -238,7 +243,7 @@ function buildSwimCssChange(
   current: number | null,
   estimated: number | null,
 ): ThresholdChange | null {
-  if (!shouldSuggestSwimCss(current, estimated) || (estimated === undefined || estimated === null)) {
+  if (!shouldSuggestSwimCss(current, estimated) || estimated === undefined || estimated === null) {
     return null;
   }
   return {
@@ -258,7 +263,7 @@ function buildThresholdChanges(
     buildFtpChange(current.ftpW, estimates.ftpW),
     buildPaceChange(current.runThresholdPaceSecPerKm, estimates.runThresholdPaceSecPerKm),
     buildSwimCssChange(current.swimCssSecPer100m, estimates.swimCssSecPer100m),
-  ].filter((change): change is ThresholdChange => (change !== undefined && change !== null));
+  ].filter((change): change is ThresholdChange => isSet(change));
 }
 
 /** Compare windowed estimates to the athlete's current thresholds. */

@@ -1,4 +1,5 @@
 import type { GeoLocation } from '@/core/environment';
+import { isSet } from '@/lib/util/value';
 import type { PrismaClient } from '@prisma/client';
 
 const DEFAULT_HOME: GeoLocation = {
@@ -36,8 +37,8 @@ export async function resolveHomeLocation(
   });
 
   if (
-    (profile?.homeLocationLat !== undefined && profile?.homeLocationLat !== null) &&
-    (profile.homeLocationLng !== undefined && profile.homeLocationLng !== null) &&
+    isSet(profile?.homeLocationLat) &&
+    isSet(profile.homeLocationLng) &&
     Number.isFinite(profile.homeLocationLat) &&
     Number.isFinite(profile.homeLocationLng)
   ) {

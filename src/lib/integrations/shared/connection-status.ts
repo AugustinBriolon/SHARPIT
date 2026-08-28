@@ -5,6 +5,8 @@
  * and non-null on a provider account row.
  */
 
+import { isSet } from '@/lib/util/value';
+
 // ---------------------------------------------------------------------------
 // Auth error
 // ---------------------------------------------------------------------------
@@ -71,7 +73,7 @@ export function isRenphoAccountConnected(account: MaybeAccount): boolean {
     return false;
   }
   return (
-    (account.email !== undefined && account.email !== null) &&
+    isSet(account.email) &&
     typeof account.passwordEnc === 'string' &&
     account.passwordEnc.length > 0
   );

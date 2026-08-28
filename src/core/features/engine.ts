@@ -19,6 +19,7 @@
  */
 
 import { randomUUID } from 'node:crypto';
+import { isSet } from '@/lib/util/value';
 
 import type { ObservationRepository } from '@/core/observation/repository';
 import type {
@@ -148,7 +149,7 @@ function hasValidSessionFeatureShape(data: Record<string, unknown> | null | unde
   hrDriftPercent?: number | null;
 } {
   return (
-    (data !== undefined && data !== null) &&
+    isSet(data) &&
     typeof data.trainingDayId === 'string' &&
     typeof data.sportType === 'string' &&
     typeof data.durationSec === 'number' &&
@@ -177,7 +178,7 @@ function sessionFeaturesNeedStreamRefresh(
   if (data.durationSec < 30 * 60) {
     return false;
   }
-  return (data.hrDriftPercent === undefined || data.hrDriftPercent === null);
+  return data.hrDriftPercent === undefined || data.hrDriftPercent === null;
 }
 
 type SaveFeatureSetInput = {
@@ -230,7 +231,8 @@ function needsFuelRecompute(
     return false;
   }
   const fuelData = fuelRecord?.data as { proteinGPerKg?: number | null } | undefined;
-  return !fuelRecord || ((fuelData?.proteinGPerKg === undefined || fuelData?.proteinGPerKg === null) && (latestWeightKg !== undefined && latestWeightKg !== null));
+  const proteinMissing = !isSet(fuelData?.proteinGPerKg);
+  return !fuelRecord || (proteinMissing && isSet(latestWeightKg));
 }
 
 function needsDayFeaturesRecompute(input: {
@@ -256,6 +258,37 @@ function needsDayFeaturesRecompute(input: {
     hasSessionMismatch ||
     needsFuelRecompute(input.fuelRecord, input.nutritionObs, input.latestWeightKg)
   );
+}
+
+function cachedFeature<T>(record: FeatureSetRecord | null | undefined): T | 'PENDING' {
+  if (!record?.data) {
+    return 'PENDING';
+  }
+  return record.data as T;
+}
+
+function cachedDayFeatureFields(
+  sessions: FeatureSetRecord[],
+  records: {
+    loadRecord: FeatureSetRecord | null | undefined;
+    recoveryRecord: FeatureSetRecord | null | undefined;
+    bodyRecord: FeatureSetRecord | null | undefined;
+    conditionRecord: FeatureSetRecord | null | undefined;
+    fuelRecord: FeatureSetRecord | null | undefined;
+  },
+) {
+  return {
+    sessions: sessions.map((r) => r.data as import('@/core/features/types').SessionFeatureSet),
+    load: cachedFeature<import('@/core/features/types').LoadFeatureSet>(records.loadRecord),
+    recovery: cachedFeature<import('@/core/features/types').RecoveryFeatureSet>(
+      records.recoveryRecord,
+    ),
+    body: cachedFeature<import('@/core/features/types').BodyFeatureSet>(records.bodyRecord),
+    condition: cachedFeature<import('@/core/features/types').ConditionFeatureSet>(
+      records.conditionRecord,
+    ),
+    fuel: cachedFeature<import('@/core/features/types').FuelFeatureSet>(records.fuelRecord),
+  };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -321,7 +354,12 @@ export class FeatureEngine {
 
     const full = await this.obsRepo.findById(observation.id);
     const session = (full ?? observation) as SessionObservation;
-    if ((session.durationSec === undefined || session.durationSec === null) || (session.sportType === undefined || session.sportType === null)) {
+    if (
+      session.durationSec === undefined ||
+      session.durationSec === null ||
+      session.sportType === undefined ||
+      session.sportType === null
+    ) {
       console.error(
         `[FeatureEngine] SESSION ${observation.id} has no sportType/durationSec — skipping extraction`,
       );
@@ -471,7 +509,7 @@ export class FeatureEngine {
 
     const ctx = await this.ctxProvider.getContext(athleteId, observation.trainingDayId);
     const stream = await this.sessionStreamProvider.getSessionStream(observation, ctx);
-    return (stream?.hrDriftPercent !== undefined && stream?.hrDriftPercent !== null);
+    return isSet(stream?.hrDriftPercent);
   }
 
   private async ensureSessionFeaturesInRange(
@@ -600,7 +638,7 @@ export class FeatureEngine {
     });
 
     const [primarySession] = sessionFeatures;
-    if ((primarySession?.subjectiveRpe !== undefined && primarySession?.subjectiveRpe !== null)) {
+    if (isSet(primarySession?.subjectiveRpe)) {
       recoveryFeatureSet = {
         ...recoveryFeatureSet,
         rpeVsTargetZone: computeRpeVsTargetZone(
@@ -749,6 +787,37 @@ export class FeatureEngine {
    * Returns COMPUTED records from cache, or triggers lazy computation when stale.
    * Models should call this — not computeDayFeatures — to benefit from caching.
    */
+  private async loadNutritionContext(
+    athleteId: string,
+    trainingDayId: string,
+    nutritionObs: NutritionObservation | null,
+  ): Promise<number | null> {
+    if (!nutritionObs) {
+      return null;
+    }
+    return this.loadLatestWeightKg(athleteId, trainingDayId);
+  }
+
+  private buildCachedDayFeatures(
+    athleteId: string,
+    trainingDayId: string,
+    sessions: FeatureSetRecord[],
+    records: {
+      loadRecord: FeatureSetRecord | null | undefined;
+      recoveryRecord: FeatureSetRecord | null | undefined;
+      bodyRecord: FeatureSetRecord | null | undefined;
+      conditionRecord: FeatureSetRecord | null | undefined;
+      fuelRecord: FeatureSetRecord | null | undefined;
+    },
+  ): DayFeatures {
+    return {
+      athleteId,
+      trainingDayId,
+      retrievedAt: new Date(),
+      ...cachedDayFeatureFields(sessions, records),
+    };
+  }
+
   async getDayFeatures(athleteId: string, trainingDayId: string): Promise<DayFeatures> {
     // Check if we have fresh COMPUTED records for all categories
     const [
@@ -779,9 +848,7 @@ export class FeatureEngine {
     }
 
     const nutritionObs = await this.loadNutritionObservation(athleteId, trainingDayId);
-    const latestWeightKg = nutritionObs
-      ? await this.loadLatestWeightKg(athleteId, trainingDayId)
-      : null;
+    const latestWeightKg = await this.loadNutritionContext(athleteId, trainingDayId, nutritionObs);
 
     if (
       needsDayFeaturesRecompute({
@@ -798,17 +865,13 @@ export class FeatureEngine {
       return this.computeDayFeatures(athleteId, trainingDayId);
     }
 
-    return {
-      athleteId,
-      trainingDayId,
-      retrievedAt: new Date(),
-      sessions: sessions.map((r) => r.data),
-      load: loadRecord?.data ?? 'PENDING',
-      recovery: recoveryRecord?.data ?? 'PENDING',
-      body: bodyRecord?.data ?? 'PENDING',
-      condition: conditionRecord?.data ?? 'PENDING',
-      fuel: fuelRecord?.data ?? 'PENDING',
-    };
+    return this.buildCachedDayFeatures(athleteId, trainingDayId, sessions, {
+      loadRecord,
+      recoveryRecord,
+      bodyRecord,
+      conditionRecord,
+      fuelRecord,
+    });
   }
 
   // ─────────────────────────────────────────────────────────────────────────

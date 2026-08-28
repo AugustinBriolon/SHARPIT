@@ -1,4 +1,5 @@
 import { GarminConnect, type IGarminTokens } from '@flow-js/garmin-connect';
+import { isSet } from '@/lib/util/value';
 import { format } from 'date-fns';
 import { pickCurrentBodyBattery } from '@/lib/integrations/garmin/garmin-body-battery';
 import {
@@ -261,7 +262,9 @@ const PREFERRED_HR_ZONE_SPORTS = ['DEFAULT', 'RUNNING'] as const;
 
 function zoneMaxHeartRate(row: GarminHeartRateZoneRow | undefined): number | null {
   const value = row?.maxHeartRateUsed;
-  return typeof value === 'number' && Number.isFinite(value) && value > 0 ? Math.round(value) : null;
+  return typeof value === 'number' && Number.isFinite(value) && value > 0
+    ? Math.round(value)
+    : null;
 }
 
 export function pickMaxHeartRateFromZones(
@@ -272,7 +275,7 @@ export function pickMaxHeartRateFromZones(
   }
   for (const sport of PREFERRED_HR_ZONE_SPORTS) {
     const fromPreferred = zoneMaxHeartRate(zones.find((z) => z.sport === sport));
-    if ((fromPreferred !== undefined && fromPreferred !== null)) {
+    if (isSet(fromPreferred)) {
       return fromPreferred;
     }
   }
@@ -284,7 +287,7 @@ function runThresholdPaceSecPerKm(
   num: (v: unknown) => number | null,
 ): number | null {
   let speed = num(rawSpeed);
-  if ((speed === undefined || speed === null)) {
+  if (speed === undefined || speed === null) {
     return null;
   }
   if (speed < 1.5) {
@@ -449,7 +452,7 @@ async function parseSleepDto(
   const awake = secToMin(dto.awakeSleepSeconds);
   const sleepMinutes = await resolveSleepMinutes({ dto, deep, light, rem, client, date });
   const napMinutesRaw = secToMin(dto.napTimeSeconds);
-  const napMinutes = (napMinutesRaw !== undefined && napMinutesRaw !== null) && napMinutesRaw > 0 ? napMinutesRaw : null;
+  const napMinutes = isSet(napMinutesRaw) && napMinutesRaw > 0 ? napMinutesRaw : null;
 
   return {
     sleepMinutes,
@@ -463,8 +466,7 @@ async function parseSleepDto(
     sleepWakeMin: localMinutesOfDay(dto.sleepEndTimestampLocal),
     sleepRespiration: num(dto.averageRespirationValue),
     sleepAvgStress: num(dto.avgSleepStress),
-    sleepScoreFeedback:
-      typeof dto.sleepScoreFeedback === 'string' ? dto.sleepScoreFeedback : null,
+    sleepScoreFeedback: typeof dto.sleepScoreFeedback === 'string' ? dto.sleepScoreFeedback : null,
   };
 }
 
@@ -480,7 +482,7 @@ type ResolveSleepMinutesInput = {
 async function resolveSleepMinutes(input: ResolveSleepMinutesInput): Promise<number | null> {
   const { dto, deep, light, rem, client, date } = input;
   const sleepMinutes = secToMin(dto.sleepTimeSeconds);
-  if ((sleepMinutes !== undefined && sleepMinutes !== null)) {
+  if (isSet(sleepMinutes)) {
     return sleepMinutes;
   }
   const sum = (deep ?? 0) + (light ?? 0) + (rem ?? 0);
@@ -537,7 +539,7 @@ function addWeightDayToMap(
 ): void {
   const grams = day?.latestWeight?.weight;
   const key = weightDayKey(day);
-  if ((grams !== undefined && grams !== null) && !Number.isNaN(grams) && key) {
+  if (isSet(grams) && !Number.isNaN(grams) && key) {
     map.set(key, Number((grams / 1000).toFixed(1)));
   }
 }
@@ -619,7 +621,7 @@ async function fetchTrainingReadiness(client: GCClient, date: Date): Promise<Rea
         percent: num(r.sleepHistoryFactorPercent),
         feedback: str(r.sleepHistoryFactorFeedback),
       },
-    ].filter((f) => (f.percent !== undefined && f.percent !== null) || (f.feedback !== undefined && f.feedback !== null));
+    ].filter((f) => isSet(f.percent) || isSet(f.feedback));
 
     return {
       readinessScore: num(r.score),
@@ -639,7 +641,8 @@ interface HrvStatusResult {
 }
 
 function hrvStatusFromSummary(
-  summary: { status?: string; baseline?: { balancedLow?: number; balancedUpper?: number } } | undefined,
+  summary:
+    { status?: string; baseline?: { balancedLow?: number; balancedUpper?: number } } | undefined,
 ): HrvStatusResult {
   const baseline = summary?.baseline;
   return {
@@ -722,7 +725,9 @@ function normalizeStepsRows(
 function stepsFromRows(rows: GarminDailyStepsRow[], dateKey: string): number | null {
   const match = rows.find((row) => row.calendarDate === dateKey) ?? rows[0];
   const steps = match?.totalSteps;
-  return typeof steps === 'number' && Number.isFinite(steps) && steps >= 0 ? Math.round(steps) : null;
+  return typeof steps === 'number' && Number.isFinite(steps) && steps >= 0
+    ? Math.round(steps)
+    : null;
 }
 
 async function fetchTotalSteps(client: GCClient, date: Date): Promise<number | null> {

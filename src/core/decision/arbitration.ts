@@ -12,6 +12,7 @@ import type {
   ReasoningState,
 } from '@/core/digital-twin/types';
 import type { PhysicalHealthState } from '@/core/inference/physical-health/types';
+import { isSet } from '@/lib/util/value';
 import type { EnvironmentalDecisionSnapshot } from '@/core/inference/environment/types';
 import {
   buildTopAction,
@@ -140,7 +141,7 @@ function fromBaseLimitingFactor(
     system: base.system,
     description: base.description,
     actionable: base.actionable,
-    priority: (domain !== undefined && domain !== null) ? domainPriorityIndex(domain) : 99,
+    priority: isSet(domain) ? domainPriorityIndex(domain) : 99,
   };
 }
 

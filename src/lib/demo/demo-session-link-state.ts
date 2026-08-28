@@ -2,6 +2,7 @@ const STORAGE_KEY = 'sharpit:demo-session-links';
 const CHANGE_EVENT = 'sharpit:demo-session-links';
 
 import type { DemoLinkPlannedSnapshot } from '@/lib/demo/demo-session-link-overlay';
+import { isSet } from '@/lib/util/value';
 import type { ActivityNarrative, SessionAnalysis } from '@/lib/validators/coach';
 
 export type DemoSessionLinkReading = {
@@ -29,7 +30,7 @@ function parseStored(raw: string | null): DemoLinkEntry[] {
     return parsed.filter(
       (item): item is DemoLinkEntry =>
         typeof item === 'object' &&
-        (item !== undefined && item !== null) &&
+        isSet(item) &&
         typeof (item as DemoLinkEntry).plannedSessionId === 'string' &&
         typeof (item as DemoLinkEntry).activityId === 'string',
     );

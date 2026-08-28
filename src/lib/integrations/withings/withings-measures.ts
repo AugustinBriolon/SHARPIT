@@ -1,3 +1,4 @@
+import { isSet } from '@/lib/util/value';
 /**
  * Types de mesure Withings — Body Scan & balances compatibles.
  * @see https://developer.withings.com/developer-guide/v3/integration-guide/onsite-mode/data-api/all-available-health-data-body-scan/
@@ -99,7 +100,11 @@ export function mergeWithingsMeasureGroups(
   for (const group of sorted) {
     const last = clusters[clusters.length - 1];
     const clusterStart = last?.[0]?.date;
-    if ((clusterStart === undefined || clusterStart === null) || group.date - clusterStart > WITHINGS_SESSION_MERGE_SEC) {
+    if (
+      clusterStart === undefined ||
+      clusterStart === null ||
+      group.date - clusterStart > WITHINGS_SESSION_MERGE_SEC
+    ) {
       clusters.push([group]);
     } else {
       last.push(group);
@@ -154,7 +159,7 @@ function decodeEcgStoredValue(m: {
   fm?: number;
 }): number {
   const decoded = decodeWithingsValue(m.value, m.unit);
-  if (AFIB_CLASSIFICATION_TYPES.has(m.type) && (m.fm !== undefined && m.fm !== null) && m.fm >= 0 && m.fm <= 20) {
+  if (AFIB_CLASSIFICATION_TYPES.has(m.type) && isSet(m.fm) && m.fm >= 0 && m.fm <= 20) {
     return m.fm;
   }
   return decoded;
@@ -174,7 +179,7 @@ function findBestHeartEcgMatch(
   let bestDelta = Infinity;
 
   for (const record of heartRecords) {
-    if ((record.ecg?.afib === undefined || record.ecg?.afib === null)) {
+    if (record.ecg?.afib === undefined || record.ecg?.afib === null) {
       continue;
     }
     const delta = Math.abs(record.timestamp * 1000 - measuredAtMs);
@@ -196,7 +201,7 @@ function applyHeartEcgToMeasurement(
     ...(extras.ecg ?? {}),
     [String(WITHINGS_MEASURE.AFIB_ECG)]: heartRecord.ecg!.afib,
   };
-  if ((heartRecord.heart_rate !== undefined && heartRecord.heart_rate !== null) && (m.heartRate === undefined || m.heartRate === null)) {
+  if (isSet(heartRecord.heart_rate) && (m.heartRate === undefined || m.heartRate === null)) {
     return { ...m, heartRate: heartRecord.heart_rate, withingsExtras: extras };
   }
   return { ...m, withingsExtras: extras };
@@ -261,7 +266,7 @@ export function decodeWithingsValue(value: number, unit: number): number {
 
 function getScalar(byType: Map<number, number>, type: number): number | null {
   const v = byType.get(type);
-  return (v !== undefined && v !== null) ? v : null;
+  return isSet(v) ? v : null;
 }
 
 function computeWaterPct(
@@ -270,20 +275,26 @@ function computeWaterPct(
   extraKg: number | null,
   intraKg: number | null,
 ): number | null {
-  if ((weightKg === undefined || weightKg === null) || weightKg <= 0) {
+  if (weightKg === undefined || weightKg === null || weightKg <= 0) {
     return null;
   }
-  if ((hydrationKg !== undefined && hydrationKg !== null)) {
+  if (isSet(hydrationKg)) {
     return Number(((hydrationKg / weightKg) * 100).toFixed(1));
   }
-  if ((extraKg !== undefined && extraKg !== null) && (intraKg !== undefined && intraKg !== null)) {
+  if (isSet(extraKg) && isSet(intraKg)) {
     return Number((((extraKg + intraKg) / weightKg) * 100).toFixed(1));
   }
   return null;
 }
 
 function computeBmi(weightKg: number | null, heightM: number | null): number | null {
-  if ((weightKg === undefined || weightKg === null) || (heightM === undefined || heightM === null) || heightM <= 0) {
+  if (
+    weightKg === undefined ||
+    weightKg === null ||
+    heightM === undefined ||
+    heightM === null ||
+    heightM <= 0
+  ) {
     return null;
   }
   return Number((weightKg / (heightM * heightM)).toFixed(1));
@@ -327,11 +338,11 @@ export function parseWithingsMeasureGroup(group: {
   const intraKg = getScalar(byType, WITHINGS_MEASURE.INTRACELLULAR_WATER);
 
   const withingsExtras: WithingsExtras | null =
-    segmental!.length > 0 || Object.keys(ecg).length > 0 || (heightM !== undefined && heightM !== null)
+    segmental!.length > 0 || Object.keys(ecg).length > 0 || isSet(heightM)
       ? {
           ...(segmental!.length > 0 ? { segmental: segmental! } : {}),
           ...(Object.keys(ecg).length > 0 ? { ecg } : {}),
-          ...((heightM !== undefined && heightM !== null) ? { heightM } : {}),
+          ...(isSet(heightM) ? { heightM } : {}),
         }
       : null;
 

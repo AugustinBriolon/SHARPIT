@@ -6,6 +6,7 @@
  */
 
 import { runProjectedDecision } from '@/core/decision/projected-decision';
+import { isSet } from '@/lib/util/value';
 import type {
   ProjectionAssumption,
   ProjectedAthleteState,
@@ -76,7 +77,7 @@ function buildFutureDayIds(anchorTrainingDayId: string, horizonDays: number): st
 }
 
 function findPeakReadinessDay(days: readonly ProjectedDayState[]): string | null {
-  const withReadiness = days.filter((d) => (d.physiology.expectedReadiness !== undefined && d.physiology.expectedReadiness !== null));
+  const withReadiness = days.filter((d) => isSet(d.physiology.expectedReadiness));
   if (withReadiness.length === 0) {
     return null;
   }
@@ -203,18 +204,15 @@ function synthesizeProjectedTwinStates(input: {
     expectedAdaptationIndex,
     tsb,
   } = input;
-  const projectedRecovery =
-    (ctx.recovery !== undefined && ctx.recovery !== null)
-      ? synthesizeProjectedRecovery(ctx.recovery, expectedReadiness, trainingDayId)
-      : null;
-  const projectedFatigue =
-    (ctx.fatigue !== undefined && ctx.fatigue !== null)
-      ? synthesizeProjectedFatigue(ctx.fatigue, expectedFatigueIndex, trainingDayId, tsb)
-      : null;
-  const projectedAdaptation =
-    (ctx.adaptation !== undefined && ctx.adaptation !== null)
-      ? synthesizeProjectedAdaptation(ctx.adaptation, expectedAdaptationIndex, trainingDayId)
-      : null;
+  const projectedRecovery = isSet(ctx.recovery)
+    ? synthesizeProjectedRecovery(ctx.recovery, expectedReadiness, trainingDayId)
+    : null;
+  const projectedFatigue = isSet(ctx.fatigue)
+    ? synthesizeProjectedFatigue(ctx.fatigue, expectedFatigueIndex, trainingDayId, tsb)
+    : null;
+  const projectedAdaptation = isSet(ctx.adaptation)
+    ? synthesizeProjectedAdaptation(ctx.adaptation, expectedAdaptationIndex, trainingDayId)
+    : null;
   return { projectedRecovery, projectedFatigue, projectedAdaptation };
 }
 

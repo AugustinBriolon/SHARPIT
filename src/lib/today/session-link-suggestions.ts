@@ -1,4 +1,5 @@
 import { isSameDay, startOfDay } from 'date-fns';
+import { isSet } from '@/lib/util/value';
 import type { ActivityType } from '@prisma/client';
 import type { ClientActivity, ClientPlannedSession } from '@/lib/query/types';
 import {
@@ -36,10 +37,10 @@ function activitySecondary(activity: ClientActivity): string | undefined {
   if (activity.duration) {
     parts.push(formatDuration(activity.duration));
   }
-  if ((activity.load !== undefined && activity.load !== null)) {
+  if (isSet(activity.load)) {
     parts.push(`${Math.round(activity.load)} TSS`);
   }
-  if ((activity.rpe !== undefined && activity.rpe !== null)) {
+  if (isSet(activity.rpe)) {
     parts.push(`RPE ${activity.rpe}`);
   }
   return parts.length > 0 ? parts.join(' · ') : undefined;
@@ -58,7 +59,7 @@ function plannedSecondary(session: ClientPlannedSession): string | undefined {
   if (session.durationMin) {
     parts.push(formatPlannedDuration(session.durationMin));
   }
-  if ((session.load !== undefined && session.load !== null)) {
+  if (isSet(session.load)) {
     parts.push(`${Math.round(session.load)} TSS`);
   }
   return parts.length > 0 ? parts.join(' · ') : undefined;
@@ -82,15 +83,14 @@ function collectLinkedPlannedIds(
     [
       ...plannedSessions.map((session) => (session.activityId ? session.id : null)),
       ...activities.map((activity) => activity.plannedSession?.id ?? null),
-    ].filter((id): id is string => (id !== undefined && id !== null)),
+    ].filter((id): id is string => isSet(id)),
   );
 }
 
-function filterTodayActivities(
-  activities: ClientActivity[],
-  refDay: Date,
-): ClientActivity[] {
-  return activities.filter((activity) => isSameDay(new Date(activity.date), refDay) && !activity.plannedSession);
+function filterTodayActivities(activities: ClientActivity[], refDay: Date): ClientActivity[] {
+  return activities.filter(
+    (activity) => isSameDay(new Date(activity.date), refDay) && !activity.plannedSession,
+  );
 }
 
 function filterTodayPlanned(
@@ -135,7 +135,11 @@ function buildLinkCandidates(
   usedActivities: Set<string>,
   usedPlanned: Set<string>,
 ): Array<{ activity: ClientActivity; planned: ClientPlannedSession; score: number }> {
-  const candidates: Array<{ activity: ClientActivity; planned: ClientPlannedSession; score: number }> = [];
+  const candidates: Array<{
+    activity: ClientActivity;
+    planned: ClientPlannedSession;
+    score: number;
+  }> = [];
   for (const activity of todayActivities) {
     if (usedActivities.has(activity.id)) {
       continue;
@@ -199,7 +203,12 @@ export function findSessionLinkSuggestions(
     usedActivities,
     usedPlanned,
   );
-  const candidates = buildLinkCandidates(todayActivities, todayPlanned, usedActivities, usedPlanned);
+  const candidates = buildLinkCandidates(
+    todayActivities,
+    todayPlanned,
+    usedActivities,
+    usedPlanned,
+  );
   return [...demoSuggestions, ...greedyMatchCandidates(candidates, usedActivities, usedPlanned)];
 }
 

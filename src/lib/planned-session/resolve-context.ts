@@ -3,6 +3,7 @@
  */
 
 import type { ActivityType, PlannedSession, SessionIntensity } from '@prisma/client';
+import { isSet } from '@/lib/util/value';
 import {
   buildForecastEnvironment,
   isEnvironmentApplicable,
@@ -98,7 +99,7 @@ function resolveLocationFromRecord(
   session: PlannedSessionRecord,
   fallback: GeoLocation,
 ): GeoLocation | null {
-  if ((session.locationLat !== undefined && session.locationLat !== null) && (session.locationLng !== undefined && session.locationLng !== null)) {
+  if (isSet(session.locationLat) && isSet(session.locationLng)) {
     return {
       latitude: session.locationLat,
       longitude: session.locationLng,
@@ -113,7 +114,7 @@ async function resolveSessionGeoLocation(
   sessionDate: Date,
 ): Promise<GeoLocation> {
   const { athleteId } = session;
-  if ((session.locationLat !== undefined && session.locationLat !== null) && (session.locationLng !== undefined && session.locationLng !== null)) {
+  if (isSet(session.locationLat) && isSet(session.locationLng)) {
     return {
       latitude: session.locationLat,
       longitude: session.locationLng,

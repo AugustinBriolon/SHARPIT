@@ -3,6 +3,7 @@
  */
 
 import type { PlannedSessionViewModel } from '@/core/presentation/planned-session-view-model';
+import { isSet } from '@/lib/util/value';
 import type {
   PlannedSessionContext,
   PlannedSessionCompletionComparison,
@@ -123,11 +124,14 @@ function mapPlannedSessionAdvisories(
   }));
 }
 
-function coalesceLocationField<T>(sessionValue: T | null | undefined, contextValue: T | null | undefined) {
-  if ((sessionValue !== undefined && sessionValue !== null) && sessionValue !== undefined) {
+function coalesceLocationField<T>(
+  sessionValue: T | null | undefined,
+  contextValue: T | null | undefined,
+) {
+  if (isSet(sessionValue) && sessionValue !== undefined) {
     return sessionValue;
   }
-  if ((contextValue !== undefined && contextValue !== null) && contextValue !== undefined) {
+  if (isSet(contextValue) && contextValue !== undefined) {
     return contextValue;
   }
   return null;

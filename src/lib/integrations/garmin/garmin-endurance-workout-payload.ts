@@ -47,6 +47,7 @@ import {
   type AthleteThresholds,
   type ResolvedTarget,
 } from '@/lib/planned-session/endurance/endurance-targets';
+import { isSet } from '@/lib/util/value';
 
 const SPORT_BY_KEY: Record<EnduranceSport, GarminSportTypeDto> = {
   RUN: SPORT_RUNNING,
@@ -237,7 +238,7 @@ export function buildEnduranceWorkoutPayload(
     estimatedDistanceInMeters: endurancePlannedMeters(prescription),
   };
 
-  if (prescription.sport === 'SWIM' && (prescription.poolLengthM !== undefined && prescription.poolLengthM !== null)) {
+  if (prescription.sport === 'SWIM' && isSet(prescription.poolLengthM)) {
     payload.poolLength = prescription.poolLengthM;
     payload.poolLengthUnit = METER_UNIT;
   }

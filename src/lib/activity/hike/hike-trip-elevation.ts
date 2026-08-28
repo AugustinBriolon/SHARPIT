@@ -1,4 +1,5 @@
 import type { HikeTripMemberInput } from '@/lib/activity/hike/hike-trip-summary';
+import { isSet } from '@/lib/util/value';
 
 /**
  * Relative elevation profile for a hike trip.
@@ -31,7 +32,7 @@ function asTime(value: Date | string): number {
 }
 
 function positive(value: number | null | undefined): number {
-  return (value !== undefined && value !== null) && Number.isFinite(value) && value > 0 ? value : 0;
+  return isSet(value) && Number.isFinite(value) && value > 0 ? value : 0;
 }
 
 /**

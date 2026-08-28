@@ -15,6 +15,7 @@
  */
 
 import type { FeatureRepository } from '@/core/features/repository';
+import { isSet } from '@/lib/util/value';
 import type {
   FeatureSetRecord,
   FeatureCategory,
@@ -141,7 +142,7 @@ function toOptionalView(record: FeatureSetRecord | null | undefined): FeatureSet
 }
 
 function collectNonNullViews(...views: Array<FeatureSetView | null>): FeatureSetView[] {
-  return views.filter((view): view is FeatureSetView => (view !== undefined && view !== null));
+  return views.filter((view): view is FeatureSetView => isSet(view));
 }
 
 function summaryFromViews(views: FeatureSetView[]) {
@@ -285,7 +286,7 @@ export class FeatureExplorer {
         dayIds.map((dayId) => this.fetchByCategory(athleteId, category, dayId)),
       );
 
-      const found = records.filter((r): r is FeatureSetRecord => (r !== undefined && r !== null));
+      const found = records.filter((r): r is FeatureSetRecord => isSet(r));
       if (found.length === 0) {
         continue;
       }

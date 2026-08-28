@@ -3,6 +3,7 @@
  */
 
 import type { EnvironmentalProviderAdapter, AdapterMeta } from '@/core/environment/provider';
+import { isSet } from '@/lib/util/value';
 import type { ExposureSetting, WeatherMeasurements } from '@/core/environment/types';
 import { weatherFieldQuality } from '@/core/environment/quality';
 import type { ObservationRecordDraft } from '@/core/environment/record';
@@ -22,7 +23,7 @@ function isManualPayload(payload: unknown): payload is ManualEnvironmentalPayloa
     return false;
   }
   const p = payload as ManualEnvironmentalPayload;
-  return (p.observedAt !== undefined && p.observedAt !== null) && typeof p.measurements === 'object';
+  return isSet(p.observedAt) && typeof p.measurements === 'object';
 }
 
 export const manualEnvironmentalAdapter: EnvironmentalProviderAdapter = {

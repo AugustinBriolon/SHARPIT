@@ -1,3 +1,4 @@
+import { isSet } from '@/lib/util/value';
 /**
  * Helpers de rendu Markdown pour les messages du coach.
  *
@@ -33,7 +34,7 @@ function fenceMarker(line: string): string | null {
 
 function closesFence(line: string, open: string): boolean {
   const marker = fenceMarker(line);
-  return (marker !== undefined && marker !== null) && marker[0] === open[0] && marker.length >= open.length;
+  return isSet(marker) && marker[0] === open[0] && marker.length >= open.length;
 }
 
 function lineKind(line: string): BlockKind {
@@ -75,10 +76,10 @@ function findUnclosedFence(source: string): string | null {
   let openFence: string | null = null;
   for (const line of source.split('\n')) {
     const marker = fenceMarker(line);
-    if ((marker === undefined || marker === null)) {
+    if (marker === undefined || marker === null) {
       continue;
     }
-    if ((openFence === undefined || openFence === null)) {
+    if (openFence === undefined || openFence === null) {
       openFence = marker;
     } else if (marker[0] === openFence[0] && marker.length >= openFence.length) {
       openFence = null;
@@ -107,7 +108,7 @@ function processMarkdownBlankLine(input: {
   buffer: string[];
 }): boolean {
   const next = nextContentLine(input.lines, input.index + 1);
-  if ((next === undefined || next === null)) {
+  if (next === undefined || next === null) {
     return true;
   }
   if (continuesBlock(input.kind, next)) {
@@ -124,7 +125,7 @@ function appendMarkdownLine(input: {
   buffer: string[];
   kind: BlockKind;
 }): { openFence: string | null; kind: BlockKind } {
-  if ((input.openFence !== undefined && input.openFence !== null)) {
+  if (isSet(input.openFence)) {
     input.buffer.push(input.line);
     const marker = fenceMarker(input.line);
     if (marker && closesFence(input.line, input.openFence)) {
@@ -168,7 +169,7 @@ export function splitMarkdownBlocks(source: string): string[] {
   for (let index = 0; index < lines.length; index += 1) {
     const line = lines[index]!;
 
-    if ((openFence !== undefined && openFence !== null)) {
+    if (isSet(openFence)) {
       ({ openFence, kind } = appendMarkdownLine({ line, openFence, buffer, kind }));
       continue;
     }
@@ -197,7 +198,7 @@ export function closeOpenMarkdown(source: string): string {
   }
 
   const openFence = findUnclosedFence(source);
-  if ((openFence !== undefined && openFence !== null)) {
+  if (isSet(openFence)) {
     return `${source}${source.endsWith('\n') ? '' : '\n'}${openFence}`;
   }
 

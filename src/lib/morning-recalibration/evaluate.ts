@@ -8,6 +8,7 @@
  */
 
 import type { ActivityType, SessionIntensity } from '@prisma/client';
+import { isSet } from '@/lib/util/value';
 import { adaptMorningSessionDescription } from '@/lib/morning-recalibration/adapt-session-description';
 import {
   isEnduranceMorningSport,
@@ -81,14 +82,24 @@ type ChangeSummaryInput = {
   structureChanged: boolean;
 };
 
-function summarizeIntensityChange(type: ActivityType, from: SessionIntensity, to: SessionIntensity): string {
+function summarizeIntensityChange(
+  type: ActivityType,
+  from: SessionIntensity,
+  to: SessionIntensity,
+): string {
   const fromLabel = morningIntensityLabel(type, from) ?? from;
   const toLabel = morningIntensityLabel(type, to) ?? to;
   return `${fromLabel} → ${toLabel}`;
 }
 
 function summarizeLoadChange(fromLoad: number | null, toLoad: number | null): string | null {
-  if ((fromLoad === undefined || fromLoad === null) || (toLoad === undefined || toLoad === null) || fromLoad === toLoad) {
+  if (
+    fromLoad === undefined ||
+    fromLoad === null ||
+    toLoad === undefined ||
+    toLoad === null ||
+    fromLoad === toLoad
+  ) {
     return null;
   }
   return `charge ${Math.round(fromLoad)} → ${Math.round(toLoad)}`;
@@ -98,7 +109,13 @@ function summarizeDurationChange(
   fromDuration: number | null,
   toDuration: number | null,
 ): string | null {
-  if ((fromDuration === undefined || fromDuration === null) || (toDuration === undefined || toDuration === null) || fromDuration === toDuration) {
+  if (
+    fromDuration === undefined ||
+    fromDuration === null ||
+    toDuration === undefined ||
+    toDuration === null ||
+    fromDuration === toDuration
+  ) {
     return null;
   }
   return `${fromDuration} → ${toDuration} min`;
@@ -195,11 +212,13 @@ function buildProposal(input: BuildProposalInput): MorningRecalibrationProposal 
   });
 }
 
-function hasEligibleSession(session: MorningRecalibrationSessionInput | null): session is MorningRecalibrationSessionInput {
+function hasEligibleSession(
+  session: MorningRecalibrationSessionInput | null,
+): session is MorningRecalibrationSessionInput {
   if (!session || session.completed || session.activityId) {
     return false;
   }
-  return isMorningRecalibrationEligibleSport(session.type) && (session.intensity !== undefined && session.intensity !== null);
+  return isMorningRecalibrationEligibleSport(session.type) && isSet(session.intensity);
 }
 
 function hasEligibleDecision(
@@ -223,14 +242,14 @@ function isEligibleForRecalibration(input: {
     confidenceTier: string;
   };
 } {
-  return input.wellnessCompleted && hasEligibleSession(input.session) && hasEligibleDecision(input.decision);
+  return (
+    input.wellnessCompleted &&
+    hasEligibleSession(input.session) &&
+    hasEligibleDecision(input.decision)
+  );
 }
 
-function protectWhy(
-  strengthLike: boolean,
-  verdict: string,
-  capacity: string | null,
-): string {
+function protectWhy(strengthLike: boolean, verdict: string, capacity: string | null): string {
   const protectVerdict = verdict === 'RECOVER' || verdict === 'CAUTION';
   if (strengthLike && protectVerdict) {
     return `Verdict du matin « ${verdict} » — alléger les charges et prioriser le contrôle du mouvement.`;
@@ -252,14 +271,12 @@ function buildRestOnlyProposal(
     return null;
   }
   const strengthLike = isStrengthLikeMorningSport(session.type);
-  const toDuration =
-    (session.durationMin !== undefined && session.durationMin !== null)
-      ? Math.min(session.durationMin, strengthLike ? 35 : 30)
-      : session.durationMin;
-  const toLoad =
-    (session.load !== undefined && session.load !== null)
-      ? Math.min(Math.round(session.load * 0.35), strengthLike ? 18 : 25)
-      : null;
+  const toDuration = isSet(session.durationMin)
+    ? Math.min(session.durationMin, strengthLike ? 35 : 30)
+    : session.durationMin;
+  const toLoad = isSet(session.load)
+    ? Math.min(Math.round(session.load * 0.35), strengthLike ? 18 : 25)
+    : null;
   return buildProposal({
     session,
     direction: 'DOWN',
@@ -284,7 +301,7 @@ function buildHighIntensityDowngrade(
   if (capacity !== 'LIGHT_ONLY' && !PROTECT_VERDICTS.has(verdict)) {
     return null;
   }
-  const toLoad = (load !== undefined && load !== null) ? Math.round(load * 0.6) : null;
+  const toLoad = isSet(load) ? Math.round(load * 0.6) : null;
   return buildProposal({
     session,
     direction: 'DOWN',
@@ -306,7 +323,7 @@ function buildTempoDowngrade(
   if (!toIntensity) {
     return null;
   }
-  const toLoad = (session.load !== undefined && session.load !== null) ? Math.round(session.load * 0.75) : null;
+  const toLoad = isSet(session.load) ? Math.round(session.load * 0.75) : null;
   const strengthLike = isStrengthLikeMorningSport(session.type);
   return buildProposal({
     session,
@@ -331,7 +348,7 @@ function buildStrengthEnduranceDowngrade(
   ) {
     return null;
   }
-  const toLoad = (session.load !== undefined && session.load !== null) ? Math.round(session.load * 0.7) : null;
+  const toLoad = isSet(session.load) ? Math.round(session.load * 0.7) : null;
   return buildProposal({
     session,
     direction: 'DOWN',
@@ -350,7 +367,7 @@ function buildRecoveryUpgrade(
     return null;
   }
   const strengthLike = isStrengthLikeMorningSport(session.type);
-  const toLoad = (session.load !== undefined && session.load !== null) ? Math.round(session.load * 1.15) : null;
+  const toLoad = isSet(session.load) ? Math.round(session.load * 1.15) : null;
   return buildProposal({
     session,
     direction: 'UP',
@@ -371,7 +388,7 @@ function buildEnduranceUpgrade(
     return null;
   }
   const strengthLike = isStrengthLikeMorningSport(session.type);
-  const toLoad = (session.load !== undefined && session.load !== null) ? Math.round(session.load * 1.12) : null;
+  const toLoad = isSet(session.load) ? Math.round(session.load * 1.12) : null;
   return buildProposal({
     session,
     direction: 'UP',

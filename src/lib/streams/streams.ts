@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import { isSet } from '@/lib/util/value';
 import {
   analyzeActivityStreams,
   resolveThresholds,
@@ -145,7 +146,7 @@ function normalizeStravaStreams(set: StravaStreamSet): RawStreams {
 }
 
 function hasSignal(arr: number[]): boolean {
-  return arr.length > 0 && arr.some((v) => (v !== undefined && v !== null) && v !== 0);
+  return arr.length > 0 && arr.some((v) => isSet(v) && v !== 0);
 }
 
 /** Échantillonnage régulier en conservant le dernier point. */
@@ -163,7 +164,7 @@ function downsample<T>(arr: T[], max: number): T[] {
 }
 
 function mean(arr: number[]): number | null {
-  const valid = arr.filter((v) => (v !== undefined && v !== null) && !Number.isNaN(v));
+  const valid = arr.filter((v) => isSet(v) && !Number.isNaN(v));
   if (!valid.length) {
     return null;
   }
@@ -171,7 +172,7 @@ function mean(arr: number[]): number | null {
 }
 
 function max(arr: number[]): number | null {
-  const valid = arr.filter((v) => (v !== undefined && v !== null) && !Number.isNaN(v));
+  const valid = arr.filter((v) => isSet(v) && !Number.isNaN(v));
   if (!valid.length) {
     return null;
   }
@@ -463,7 +464,7 @@ export async function getMultisportLegStreams(
   const legStreams = await Promise.all(
     sportLegs.map((leg) => buildMultisportLegStream(athleteId, leg, profile)),
   );
-  const results = legStreams.filter((stream): stream is MultisportLegStream => (stream !== undefined && stream !== null));
+  const results = legStreams.filter((stream): stream is MultisportLegStream => isSet(stream));
 
   return results.length > 0 ? { legs: results } : null;
 }
@@ -509,7 +510,7 @@ async function persistStream(
   activityId: string,
   raw: RawStreams | null,
 ): Promise<boolean> {
-  const available = (raw !== undefined && raw !== null) && rawStreamsHaveSignal(raw);
+  const available = isSet(raw) && rawStreamsHaveSignal(raw);
   const stored = available && raw ? compactRawStreamsForStorage(raw) : null;
   await prisma.activityStream.create({
     data: {
@@ -613,7 +614,7 @@ export async function getActivityStreams(
   }
 
   const cached = await loadCachedActivityStream(activity, profile);
-  if ((cached !== undefined && cached !== null)) {
+  if (isSet(cached)) {
     return cached;
   }
 
@@ -654,7 +655,11 @@ export async function getCachedActivityStreams(
     }),
     getAthleteProfile(athleteId),
   ]);
-  if (!activity?.stream?.available || (activity.stream.data === undefined || activity.stream.data === null)) {
+  if (
+    !activity?.stream?.available ||
+    activity.stream.data === undefined ||
+    activity.stream.data === null
+  ) {
     return null;
   }
 

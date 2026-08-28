@@ -114,15 +114,20 @@ export type AthleteSnapshotEnvelope = {
   isRefreshing: boolean;
 };
 
-export function snapshotHasDisplayableContent(snapshot: AthleteSnapshot): boolean {
-  const hasRecoverySignal =
-    (snapshot.recovery?.readinessScore !== undefined && snapshot.recovery?.readinessScore !== null) &&
-    snapshot.recovery.readinessCategory !== 'INSUFFICIENT_DATA';
+function hasRecoveryDisplaySignal(snapshot: AthleteSnapshot): boolean {
+  const readiness = snapshot.recovery?.readinessScore;
+  return (
+    readiness !== undefined &&
+    readiness !== null &&
+    snapshot.recovery?.readinessCategory !== 'INSUFFICIENT_DATA'
+  );
+}
 
+export function snapshotHasDisplayableContent(snapshot: AthleteSnapshot): boolean {
   return (
     snapshot.adviceActionable ||
     Boolean(snapshot.briefing?.content) ||
-    hasRecoverySignal ||
+    hasRecoveryDisplaySignal(snapshot) ||
     Boolean(snapshot.primaryProductMessage || snapshot.insufficientDataMessage)
   );
 }

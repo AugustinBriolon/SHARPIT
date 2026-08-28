@@ -1,4 +1,5 @@
 import { hasConfiguredEquipment, normalizeAthleteEquipment } from '@/lib/equipment/parse';
+import { isSet } from '@/lib/util/value';
 
 export type SettingsHubAccountFacts = {
   heightCm: number | null | undefined;
@@ -31,10 +32,10 @@ export type SettingsHubEquipmentFacts = {
 /** Stable French status chips for the settings hub — pure, testable. */
 export function accountStatusLabel(facts: SettingsHubAccountFacts): string {
   const filled = [
-    (facts.heightCm !== undefined && facts.heightCm !== null),
-    (facts.birthDate !== undefined && facts.birthDate !== null) && String(facts.birthDate).length > 0,
-    (facts.sleepTargetMinutes !== undefined && facts.sleepTargetMinutes !== null),
-    (facts.sleepBedtimeTargetMin !== undefined && facts.sleepBedtimeTargetMin !== null),
+    isSet(facts.heightCm),
+    isSet(facts.birthDate) && String(facts.birthDate).length > 0,
+    isSet(facts.sleepTargetMinutes),
+    isSet(facts.sleepBedtimeTargetMin),
   ].filter(Boolean).length;
 
   if (filled === 0) {

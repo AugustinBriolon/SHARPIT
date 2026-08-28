@@ -1,4 +1,5 @@
 import type { DataProvider } from '@/core/athlete-state/events';
+import { isSet } from '@/lib/util/value';
 import {
   isGarminAccountConnected,
   isOAuthAccountConnected,
@@ -50,7 +51,7 @@ export async function syncProviders(
     }),
   );
 
-  return settled.filter((r): r is ProviderSyncResult => (r !== undefined && r !== null));
+  return settled.filter((r): r is ProviderSyncResult => isSet(r));
 }
 
 async function syncGarminProvider(athleteId: string): Promise<ProviderSyncResult | null> {

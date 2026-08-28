@@ -1,4 +1,5 @@
 import { ActivityType } from '@prisma/client';
+import { isSet } from '@/lib/util/value';
 import { prisma } from '@/lib/prisma';
 import { rawStreamsHaveSignal } from '@/lib/integrations/garmin/garmin-streams';
 import { fetchAndCacheActivityStreams } from '@/lib/streams/streams';
@@ -50,7 +51,7 @@ async function processBackfillCandidate(
     stravaId: activity.stravaId,
   });
 
-  const withData = available && (raw !== undefined && raw !== null) && rawStreamsHaveSignal(raw);
+  const withData = available && isSet(raw) && rawStreamsHaveSignal(raw);
   return { processed: true, withData };
 }
 

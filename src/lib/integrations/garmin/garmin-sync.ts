@@ -1,4 +1,5 @@
 import { Prisma } from '@prisma/client';
+import { isSet } from '@/lib/util/value';
 import { format, startOfDay, subDays } from 'date-fns';
 import { prisma } from '@/lib/prisma';
 import { syncSinceFromLastSync, syncWindowDays } from '@/lib/integrations/shared/sync-since';
@@ -195,7 +196,7 @@ function buildThresholdProfileUpdate(
     ['vo2maxCycling', thresholds.vo2maxCycling],
   ];
   for (const [key, value] of fields) {
-    if ((value !== undefined && value !== null)) {
+    if (isSet(value)) {
       data[key] = value as never;
     }
   }
@@ -210,7 +211,7 @@ function thresholdsWereImported(thresholds: GarminAthleteThresholds): boolean {
     thresholds.runThresholdPaceSecPerKm,
     thresholds.vo2maxRunning,
     thresholds.vo2maxCycling,
-  ].some((value) => (value !== undefined && value !== null));
+  ].some((value) => isSet(value));
 }
 
 async function importGarminThresholdsForAccount(
@@ -268,7 +269,7 @@ function healthHasData(health: GarminDailyHealth): boolean {
     health.bodyBattery,
     health.totalSteps,
     sleep.sleepScore,
-  ].some((value) => (value !== undefined && value !== null));
+  ].some((value) => isSet(value));
 }
 
 function assignHealthScalars(
@@ -294,13 +295,16 @@ function assignHealthScalars(
     ['totalSteps', health.totalSteps],
   ];
   for (const [key, value] of scalarFields) {
-    if ((value !== undefined && value !== null) && value !== undefined) {
+    if (isSet(value) && value !== undefined) {
       data[key] = value as never;
     }
   }
 }
 
-function assignSleepScalars(data: Prisma.DailyHealthUpdateInput, sleep: GarminDailyHealth['sleep']): void {
+function assignSleepScalars(
+  data: Prisma.DailyHealthUpdateInput,
+  sleep: GarminDailyHealth['sleep'],
+): void {
   const sleepFields: Array<[keyof Prisma.DailyHealthUpdateInput, unknown]> = [
     ['sleepScore', sleep.sleepScore],
     ['sleepDeepMin', sleep.sleepDeepMin],
@@ -314,17 +318,16 @@ function assignSleepScalars(data: Prisma.DailyHealthUpdateInput, sleep: GarminDa
     ['sleepScoreFeedback', sleep.sleepScoreFeedback],
   ];
   for (const [key, value] of sleepFields) {
-    if ((value !== undefined && value !== null)) {
+    if (isSet(value)) {
       data[key] = value as never;
     }
   }
 }
 
 function buildGarminHealthUpdateData(health: GarminDailyHealth): Prisma.DailyHealthUpdateInput {
-  const factors =
-    (health.readinessFactors !== undefined && health.readinessFactors !== null)
-      ? (health.readinessFactors as unknown as Prisma.InputJsonValue)
-      : undefined;
+  const factors = isSet(health.readinessFactors)
+    ? (health.readinessFactors as unknown as Prisma.InputJsonValue)
+    : undefined;
   const data: Prisma.DailyHealthUpdateInput = {};
   assignHealthScalars(data, health, factors);
   assignSleepScalars(data, health.sleep);
@@ -381,10 +384,9 @@ async function upsertGarminHealthDay(
   }
 
   const day = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
-  const factors =
-    (health.readinessFactors !== undefined && health.readinessFactors !== null)
-      ? (health.readinessFactors as unknown as Prisma.InputJsonValue)
-      : undefined;
+  const factors = isSet(health.readinessFactors)
+    ? (health.readinessFactors as unknown as Prisma.InputJsonValue)
+    : undefined;
 
   await prisma.dailyHealth.upsert({
     where: { athleteId_date: { athleteId, date: day } },

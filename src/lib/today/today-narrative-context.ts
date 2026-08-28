@@ -1,4 +1,5 @@
 import { isSameDay, startOfDay } from 'date-fns';
+import { isSet } from '@/lib/util/value';
 import { ActivityType } from '@prisma/client';
 import type { TodayDaySummary } from '@/lib/today/today-day-summary';
 import { activityTypeLabels } from '@/lib/format';
@@ -108,7 +109,7 @@ function plannedSportLabel(daySummary: TodayDaySummary): string {
   const types = daySummary.lines
     .filter((line) => line.kind === 'planned')
     .map((line) => line.plannedSession?.type)
-    .filter((t): t is ActivityType => (t !== undefined && t !== null));
+    .filter((t): t is ActivityType => isSet(t));
   if (types.length > 0) {
     return formatSportLabel(types);
   }

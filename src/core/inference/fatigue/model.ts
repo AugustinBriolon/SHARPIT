@@ -103,8 +103,9 @@ function buildFatigueSignals(
       context.consecutiveAccumulationDays,
     ),
     estimatedTimeToFresh: estimateTimeToFresh(dims, fatigueLevel),
-    performanceImpairmentEstimate:
-      (fatigueIndex !== undefined && fatigueIndex !== null) ? Math.min((fatigueIndex / 100) * 0.25, 0.25) : 0,
+    performanceImpairmentEstimate: isSet(fatigueIndex)
+      ? Math.min((fatigueIndex / 100) * 0.25, 0.25)
+      : 0,
     trainingCapacity: classifyTrainingCapacity(fatigueLevel, trainingBlockedByCondition),
     isAccumulating: trajectory === 'ACCUMULATING' || trajectory === 'ACCELERATING',
     consecutiveAccumulationDays: context.consecutiveAccumulationDays,
@@ -189,7 +190,7 @@ function dimensionResultStatus(d: import('./types').DimensionScore): string {
   if (!d.available) {
     return 'unavailable';
   }
-  if ((d.score !== undefined && d.score !== null)) {
+  if (isSet(d.score)) {
     return `score=${d.score}`;
   }
   return 'computed';
@@ -256,7 +257,11 @@ function computeOverreachingRisk(
   recoveryState: import('./types').RecoveryState | null,
   consecutiveDays: number,
 ): OverreachingRisk {
-  if ((fatigueIndex === undefined || fatigueIndex === null) || recoveryState?.illnessRisk === 'HIGH') {
+  if (
+    fatigueIndex === undefined ||
+    fatigueIndex === null ||
+    recoveryState?.illnessRisk === 'HIGH'
+  ) {
     return 'LOW';
   }
 
@@ -316,7 +321,7 @@ function resolveHighRiskLevelDecision(signals: FatigueSignals): FatigueDecision 
 
 function resolveAccumulatedDecision(signals: FatigueSignals): FatigueDecision {
   const rationale: I18nItem[] = [{ code: 'fatigue.rationale.accumulatedFatigue' }];
-  if ((signals.estimatedTimeToFresh !== undefined && signals.estimatedTimeToFresh !== null)) {
+  if (isSet(signals.estimatedTimeToFresh)) {
     rationale.push({
       code: 'fatigue.rationale.estimatedFresh',
       params: { days: signals.estimatedTimeToFresh },
@@ -343,12 +348,14 @@ function resolveFunctionalHighDecision(signals: FatigueSignals): FatigueDecision
   };
 }
 
+import { isSet } from '@/lib/util/value';
+
 function resolveFunctionalLowDecision(
   signals: FatigueSignals,
   load: import('@/core/features/types').LoadFeatureSet | null,
 ): FatigueDecision {
   const isRising = isAccumulatingTrajectory(signals.fatigueTrajectory);
-  const canBuild = (load?.acwr !== undefined && load?.acwr !== null) && load?.acwr !== undefined && load.acwr < 0.8 && !isRising;
+  const canBuild = isSet(load?.acwr) && load.acwr < 0.8 && !isRising;
   return {
     verdict: canBuild ? 'BUILD' : 'MAINTAIN',
     trainingCapacity: signals.trainingCapacity,
@@ -364,7 +371,7 @@ function resolveFreshDecision(
   signals: FatigueSignals,
   load: import('@/core/features/types').LoadFeatureSet | null,
 ): FatigueDecision {
-  const elevatedLoad = (load?.acwr !== undefined && load?.acwr !== null) && load?.acwr !== undefined && load.acwr > 1.2;
+  const elevatedLoad = isSet(load?.acwr) && load.acwr > 1.2;
   return {
     verdict: elevatedLoad ? 'MAINTAIN' : 'BUILD',
     trainingCapacity: signals.trainingCapacity,
@@ -423,7 +430,7 @@ function buildRecommendation(
       params: { dimension: signals.dominantFatigueDimension },
     },
   ];
-  if ((signals.estimatedTimeToFresh !== undefined && signals.estimatedTimeToFresh !== null)) {
+  if (isSet(signals.estimatedTimeToFresh)) {
     keyEvidence.push({
       code: 'fatigue.evidence.timeToFresh',
       params: { days: signals.estimatedTimeToFresh },

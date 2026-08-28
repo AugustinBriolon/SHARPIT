@@ -1,4 +1,5 @@
 import type { UIMessage } from 'ai';
+import { isSet } from '@/lib/util/value';
 
 export type ToolPartLite = {
   type: string;
@@ -24,11 +25,11 @@ const TERMINAL_TOOL_STATES = new Set(['output-available', 'output-error', 'outpu
 const PENDING_APPROVAL_STATES = new Set(['approval-requested', 'approval-responded']);
 
 export function isTerminalToolState(state: string | undefined): boolean {
-  return (state !== undefined && state !== null) && TERMINAL_TOOL_STATES.has(state);
+  return isSet(state) && TERMINAL_TOOL_STATES.has(state);
 }
 
 export function isPendingApprovalToolState(state: string | undefined): boolean {
-  return (state !== undefined && state !== null) && PENDING_APPROVAL_STATES.has(state);
+  return isSet(state) && PENDING_APPROVAL_STATES.has(state);
 }
 
 /**

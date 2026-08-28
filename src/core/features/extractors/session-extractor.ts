@@ -20,6 +20,7 @@
  */
 
 import type { SessionFeatureSet, TssMethod, SessionExtractorInput } from '../types';
+import { isSet } from '@/lib/util/value';
 import type { ExtractionContext } from '../context';
 import { canUsePowerTss, canUseTrimpTss, canUsePaceTss } from '../context';
 import type { SportType } from '@/core/observation/types';
@@ -217,7 +218,8 @@ function tryPowerTss(input: SessionExtractorInput, ctx: ExtractionContext): TssR
   if (
     !POWER_TSS_SPORTS.includes(session.sportType) ||
     !canUsePowerTss(ctx) ||
-    (normalizedPower === undefined || normalizedPower === null) ||
+    normalizedPower === undefined ||
+    normalizedPower === null ||
     normalizedPower === undefined ||
     normalizedPower <= 0
   ) {
@@ -231,7 +233,7 @@ function tryTrimpTss(input: SessionExtractorInput, ctx: ExtractionContext): TssR
   const { session } = input;
   const { durationSec } = session;
   const avgBpm = session.hrData?.avgBpm;
-  if (!canUseTrimpTss(ctx) || (avgBpm === undefined || avgBpm === null) || avgBpm === undefined) {
+  if (!canUseTrimpTss(ctx) || avgBpm === undefined || avgBpm === null || avgBpm === undefined) {
     return null;
   }
 
@@ -249,10 +251,10 @@ function tryTrimpTss(input: SessionExtractorInput, ctx: ExtractionContext): TssR
 function hasPaceData(session: SessionExtractorInput['session']): boolean {
   const pace = session.paceData;
   return (
-    (pace?.avgMinPerKm !== undefined && pace?.avgMinPerKm !== null) &&
     pace?.avgMinPerKm !== undefined &&
-    (pace?.distanceM !== undefined && pace?.distanceM !== null) &&
-    pace?.distanceM !== undefined
+    pace.avgMinPerKm !== null &&
+    pace.distanceM !== undefined &&
+    pace.distanceM !== null
   );
 }
 
@@ -284,7 +286,11 @@ function tryPaceTss(input: SessionExtractorInput, ctx: ExtractionContext): TssRe
 function tryRpeTss(input: SessionExtractorInput): TssResult | null {
   const { linkedSubjective, session } = input;
   const { durationSec } = session;
-  if ((linkedSubjective?.rpe === undefined || linkedSubjective?.rpe === null) || linkedSubjective?.rpe === undefined) {
+  if (
+    linkedSubjective?.rpe === undefined ||
+    linkedSubjective?.rpe === null ||
+    linkedSubjective?.rpe === undefined
+  ) {
     return null;
   }
   return computeRpeTss(durationSec, linkedSubjective.rpe);
@@ -316,7 +322,7 @@ function selectBestTss(input: SessionExtractorInput, ctx: ExtractionContext): Ts
 // ─────────────────────────────────────────────────────────────────────────────
 
 function computeMechanicalLoad(durationSec: number, avgWatts: number | undefined): number | null {
-  if ((avgWatts === undefined || avgWatts === null) || avgWatts <= 0) {
+  if (avgWatts === undefined || avgWatts === null || avgWatts <= 0) {
     return null;
   }
   return (avgWatts * durationSec) / 1000; // kJ
@@ -326,7 +332,7 @@ function computeElevationStressScore(
   elevationM: number | undefined,
   sportType: SportType,
 ): number | null {
-  if ((elevationM === undefined || elevationM === null) || elevationM <= 0) {
+  if (elevationM === undefined || elevationM === null || elevationM <= 0) {
     return null;
   }
   const factor = ELEVATION_STRESS_FACTOR[sportType];
@@ -494,8 +500,9 @@ function buildSessionFeatureSet(
     elevationStressScore: metrics.elevationStressScore,
     efficiencyFactor: metrics.efficiencyFactor,
     subjectiveRpe,
-    fosterSessionLoad:
-      (subjectiveRpe !== undefined && subjectiveRpe !== null) ? computeFosterSessionLoad(session.durationSec, subjectiveRpe) : null,
+    fosterSessionLoad: isSet(subjectiveRpe)
+      ? computeFosterSessionLoad(session.durationSec, subjectiveRpe)
+      : null,
     sourceProvidedTss: session.sourceProvidedStress?.value ?? null,
     confidence: metrics.tssResult.confidence,
     algorithmId: 'session-features-v1',

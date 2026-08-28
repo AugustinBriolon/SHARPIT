@@ -1,4 +1,5 @@
 import type { AthleteStateDomain, FreshnessLevel } from '@/core/athlete-state/freshness';
+import { isSet } from '@/lib/util/value';
 
 const MESSAGES: Record<FreshnessLevel, Partial<Record<AthleteStateDomain, string>>> = {
   fresh: {},
@@ -46,5 +47,5 @@ export function productMessageForDomain(
 }
 
 export function pickPrimaryProductMessage(messages: Array<string | null>): string | null {
-  return messages.find((m) => (m !== undefined && m !== null)) ?? null;
+  return messages.find((m) => isSet(m)) ?? null;
 }

@@ -1,4 +1,5 @@
 import type { RecoveryTone } from '@/lib/recovery/recovery';
+import { isSet } from '@/lib/util/value';
 import { buildSleepScoreBreakdown } from './sleep-scoring';
 
 /**
@@ -93,7 +94,7 @@ const PHASE_COLORS = {
 } as const;
 
 export function formatClock(min: number | null): string {
-  if ((min === undefined || min === null)) {
+  if (min === undefined || min === null) {
     return '—';
   }
   const norm = ((Math.round(min) % 1440) + 1440) % 1440;
@@ -103,7 +104,7 @@ export function formatClock(min: number | null): string {
 }
 
 export function formatDuration(min: number | null): string {
-  if ((min === undefined || min === null)) {
+  if (min === undefined || min === null) {
     return '—';
   }
   const h = Math.floor(min / 60);
@@ -146,7 +147,7 @@ function normalizeBedtime(min: number): number {
 }
 
 function scoreTone(score: number | null): RecoveryTone {
-  if ((score === undefined || score === null)) {
+  if (score === undefined || score === null) {
     return 'neutral';
   }
   if (score >= 80) {
@@ -259,7 +260,7 @@ type InsightParams = {
 function buildDebtInsights(params: InsightParams): SleepInsight[] {
   const { debt7Min, debt14Min, targetDuration, recommendedDuration } = params;
   const targetLabel = formatDuration(targetDuration);
-  if ((debt7Min !== undefined && debt7Min !== null) && debt7Min > 60) {
+  if (isSet(debt7Min) && debt7Min > 60) {
     return [
       {
         tone: debt7Min > 180 ? 'low' : 'moderate',
@@ -272,7 +273,7 @@ function buildDebtInsights(params: InsightParams): SleepInsight[] {
       },
     ];
   }
-  if ((debt14Min !== undefined && debt14Min !== null) && debt14Min > 120) {
+  if (isSet(debt14Min) && debt14Min > 120) {
     return [
       {
         tone: 'moderate',
@@ -289,7 +290,7 @@ function buildDebtInsights(params: InsightParams): SleepInsight[] {
 function buildDurationInsights(params: InsightParams): SleepInsight[] {
   const { avgDuration, targetDuration } = params;
   const targetLabel = formatDuration(targetDuration);
-  if ((avgDuration === undefined || avgDuration === null)) {
+  if (avgDuration === undefined || avgDuration === null) {
     return [];
   }
   if (avgDuration < targetDuration - 30) {
@@ -320,7 +321,7 @@ function buildDurationInsights(params: InsightParams): SleepInsight[] {
 function buildBedtimeInsights(params: InsightParams): SleepInsight[] {
   const insights: SleepInsight[] = [];
   const { bedtimeGoal, avgBedtime, recommendedBedtime } = params;
-  if ((bedtimeGoal !== undefined && bedtimeGoal !== null) && (avgBedtime !== undefined && avgBedtime !== null)) {
+  if (isSet(bedtimeGoal) && isSet(avgBedtime)) {
     const diff = Math.abs(normalizeBedtime(avgBedtime) - normalizeBedtime(bedtimeGoal));
     if (diff > 45) {
       insights.push({
@@ -331,8 +332,8 @@ function buildBedtimeInsights(params: InsightParams): SleepInsight[] {
     }
   }
   if (
-    (avgBedtime !== undefined && avgBedtime !== null) &&
-    (recommendedBedtime !== undefined && recommendedBedtime !== null) &&
+    isSet(avgBedtime) &&
+    isSet(recommendedBedtime) &&
     normalizeBedtime(avgBedtime) - normalizeBedtime(recommendedBedtime) > 45
   ) {
     insights.push({
@@ -351,7 +352,7 @@ function buildBedtimeInsights(params: InsightParams): SleepInsight[] {
 function buildPhaseInsights(params: InsightParams): SleepInsight[] {
   const insights: SleepInsight[] = [];
   const { avgDeepPct, avgRemPct } = params;
-  if ((avgDeepPct !== undefined && avgDeepPct !== null) && avgDeepPct < 13) {
+  if (isSet(avgDeepPct) && avgDeepPct < 13) {
     insights.push({
       tone: avgDeepPct < 9 ? 'low' : 'moderate',
       title: 'Sommeil profond bas',
@@ -360,7 +361,7 @@ function buildPhaseInsights(params: InsightParams): SleepInsight[] {
       )} % (cible 13-23 %). Le profond se joue en début de nuit : évite l'alcool et les repas lourds le soir, baisse la température de la chambre (~18 °C) et évite les séances très intenses juste avant le coucher.`,
     });
   }
-  if ((avgRemPct !== undefined && avgRemPct !== null) && avgRemPct < 18) {
+  if (isSet(avgRemPct) && avgRemPct < 18) {
     insights.push({
       tone: avgRemPct < 15 ? 'low' : 'moderate',
       title: 'Sommeil paradoxal (REM) bas',
@@ -373,7 +374,7 @@ function buildPhaseInsights(params: InsightParams): SleepInsight[] {
 }
 
 function buildRegularityInsight(regularity: number | null): SleepInsight[] {
-  if ((regularity === undefined || regularity === null) || regularity <= 60) {
+  if (regularity === undefined || regularity === null || regularity <= 60) {
     return [];
   }
   return [
@@ -388,7 +389,7 @@ function buildRegularityInsight(regularity: number | null): SleepInsight[] {
 }
 
 function buildStressInsight(avgStress: number | null): SleepInsight[] {
-  if ((avgStress === undefined || avgStress === null) || avgStress <= 30) {
+  if (avgStress === undefined || avgStress === null || avgStress <= 30) {
     return [];
   }
   return [
@@ -432,7 +433,7 @@ export interface SleepGoals {
 }
 
 function computeCumulativeDebt(nights: SleepEntryInput[], targetMin: number): number | null {
-  const valid = nights.filter((n) => (n.sleepMinutes !== undefined && n.sleepMinutes !== null));
+  const valid = nights.filter((n) => isSet(n.sleepMinutes));
   if (valid.length === 0) {
     return null;
   }
@@ -502,10 +503,10 @@ export function toSleepEntryInputs(
 
 function isCoachNight(entry: SleepEntryInput): boolean {
   return (
-    (entry.sleepScore !== undefined && entry.sleepScore !== null) ||
-    (entry.sleepDeepMin !== undefined && entry.sleepDeepMin !== null) ||
-    (entry.sleepRemMin !== undefined && entry.sleepRemMin !== null) ||
-    (entry.sleepMinutes !== undefined && entry.sleepMinutes !== null)
+    isSet(entry.sleepScore) ||
+    isSet(entry.sleepDeepMin) ||
+    isSet(entry.sleepRemMin) ||
+    isSet(entry.sleepMinutes)
   );
 }
 
@@ -520,10 +521,10 @@ function computePhasePercentages(recent7: SleepEntryInput[]): {
     if (sleep <= 0) {
       continue;
     }
-    if ((night.sleepDeepMin !== undefined && night.sleepDeepMin !== null)) {
+    if (isSet(night.sleepDeepMin)) {
       deepPcts.push((night.sleepDeepMin / sleep) * 100);
     }
-    if ((night.sleepRemMin !== undefined && night.sleepRemMin !== null)) {
+    if (isSet(night.sleepRemMin)) {
       remPcts.push((night.sleepRemMin / sleep) * 100);
     }
   }
@@ -537,20 +538,17 @@ function computeRecommendedBedtimeMin(
   debt7Min: number | null,
 ): number | null {
   let recommendedBedtime: number | null = null;
-  if ((medianWake !== undefined && medianWake !== null)) {
+  if (isSet(medianWake)) {
     const raw = medianWake - recommendedDurationMin - FALL_ASLEEP_BUFFER_MIN;
     recommendedBedtime = ((raw % 1440) + 1440) % 1440;
   }
-  if ((goals?.bedtimeTargetMin !== undefined && goals?.bedtimeTargetMin !== null) && (debt7Min !== undefined && debt7Min !== null) && debt7Min <= 30) {
+  if (isSet(goals?.bedtimeTargetMin) && isSet(debt7Min) && debt7Min <= 30) {
     recommendedBedtime = goals.bedtimeTargetMin;
   }
   return recommendedBedtime;
 }
 
-function buildLatestSleep(
-  latestNight: SleepEntryInput,
-  targetMin: number,
-): SleepLatest {
+function buildLatestSleep(latestNight: SleepEntryInput, targetMin: number): SleepLatest {
   const latestBreakdown = buildSleepScoreBreakdown({
     deepMin: latestNight.sleepDeepMin,
     remMin: latestNight.sleepRemMin,
@@ -605,7 +603,7 @@ function computeDebtAndRecommendedDuration(
   const debt7Min = computeCumulativeDebt(recent7, targetDuration);
   const debt14Min = computeCumulativeDebt(nights, targetDuration);
   const recoveryBoost =
-    (debt7Min !== undefined && debt7Min !== null) && debt7Min > 30
+    isSet(debt7Min) && debt7Min > 30
       ? Math.min(Math.ceil(debt7Min / RECENT_WINDOW_NIGHTS), MAX_RECOVERY_BOOST_MIN)
       : 0;
   return {
@@ -625,11 +623,11 @@ function computeRecentNightAverages(recent7: SleepEntryInput[]): {
   const { avgDeepPct, avgRemPct } = computePhasePercentages(recent7);
   const stresses = recent7
     .map((night) => night.sleepAvgStress)
-    .filter((value): value is number => (value !== undefined && value !== null));
+    .filter((value): value is number => isSet(value));
   return {
-    avgScore: avg(recent7.map((night) => night.sleepScore).filter((v): v is number => (v !== undefined && v !== null))),
+    avgScore: avg(recent7.map((night) => night.sleepScore).filter((v): v is number => isSet(v))),
     avgDuration: avg(
-      recent7.map((night) => night.sleepMinutes).filter((v): v is number => (v !== undefined && v !== null)),
+      recent7.map((night) => night.sleepMinutes).filter((v): v is number => isSet(v)),
     ),
     avgDeepPct,
     avgRemPct,
@@ -649,12 +647,14 @@ function computeBedtimeStats(
 } {
   const bedtimes = nights
     .map((night) => night.sleepBedtimeMin)
-    .filter((value): value is number => (value !== undefined && value !== null))
+    .filter((value): value is number => isSet(value))
     .map(normalizeBedtime);
-  const wakes = nights.map((night) => night.sleepWakeMin).filter((value): value is number => (value !== undefined && value !== null));
+  const wakes = nights
+    .map((night) => night.sleepWakeMin)
+    .filter((value): value is number => isSet(value));
   const regularity = medianAbsoluteDeviation(bedtimes);
   const medianBedtimeNorm = median(bedtimes);
-  const avgBedtime = (medianBedtimeNorm !== undefined && medianBedtimeNorm !== null) ? medianBedtimeNorm % 1440 : null;
+  const avgBedtime = isSet(medianBedtimeNorm) ? medianBedtimeNorm % 1440 : null;
   const recommendedBedtime = computeRecommendedBedtimeMin(
     median(wakes),
     recommendedDurationMin,
@@ -667,15 +667,15 @@ function computeBedtimeStats(
 function hasDetailedNightData(nights: SleepEntryInput[]): boolean {
   return nights.some(
     (night) =>
-      (night.sleepScore !== undefined && night.sleepScore !== null) ||
-      (night.sleepDeepMin !== undefined && night.sleepDeepMin !== null) ||
-      (night.sleepBedtimeMin !== undefined && night.sleepBedtimeMin !== null) ||
-      (night.sleepWakeMin !== undefined && night.sleepWakeMin !== null),
+      isSet(night.sleepScore) ||
+      isSet(night.sleepDeepMin) ||
+      isSet(night.sleepBedtimeMin) ||
+      isSet(night.sleepWakeMin),
   );
 }
 
 function roundNullable(value: number | null): number | null {
-  return (value !== undefined && value !== null) ? Math.round(value) : null;
+  return isSet(value) ? Math.round(value) : null;
 }
 
 function buildSleepCoachResult(input: {

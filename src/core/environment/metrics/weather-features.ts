@@ -10,6 +10,7 @@ import type {
   WeatherMeasurements,
 } from '../types';
 import { computeHeatIndexC } from './heat-index';
+import { isSet } from '@/lib/util/value';
 import { computeEstimatedWetBulbC } from './wet-bulb';
 import { computeWbgtC } from './wbgt';
 
@@ -78,7 +79,7 @@ export function computeThermalStressBand(
   }
 
   const temp = measurements.airTemperatureC;
-  if ((temp !== undefined && temp !== null) && exposure !== 'INDOOR') {
+  if (isSet(temp) && exposure !== 'INDOOR') {
     const band = thermalBandFromAirTemp(temp);
     return {
       available: true,
@@ -100,22 +101,29 @@ export function computeThermalStressBand(
   };
 }
 
+function missingWindChillInput(
+  temp: number | null | undefined,
+  wind: number | null | undefined,
+): MetricValue<number> {
+  return {
+    available: false,
+    quality: 'MISSING',
+    confidence: 0,
+    reason: 'MISSING_INPUT',
+    explanation: 'Refroidissement éolien indisponible : température et vent requis.',
+    missingFields: [
+      ...(!isSet(temp) ? (['airTemperatureC'] as const) : []),
+      ...(!isSet(wind) ? (['windSpeedMps'] as const) : []),
+    ],
+  };
+}
+
 export function computeWindChillC(measurements: WeatherMeasurements): MetricValue<number> {
   const temp = measurements.airTemperatureC;
   const wind = measurements.windSpeedMps;
 
-  if ((temp === undefined || temp === null) || (wind === undefined || wind === null)) {
-    return {
-      available: false,
-      quality: 'MISSING',
-      confidence: 0,
-      reason: 'MISSING_INPUT',
-      explanation: 'Refroidissement éolien indisponible : température et vent requis.',
-      missingFields: [
-        ...((temp === undefined || temp === null) ? (['airTemperatureC'] as const) : []),
-        ...((wind === undefined || wind === null) ? (['windSpeedMps'] as const) : []),
-      ],
-    };
+  if (!isSet(temp) || !isSet(wind)) {
+    return missingWindChillInput(temp, wind);
   }
 
   if (temp > 10 || wind < 1.3) {

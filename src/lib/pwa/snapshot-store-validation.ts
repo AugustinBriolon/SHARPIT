@@ -7,6 +7,7 @@
  */
 
 import type { AthleteSnapshot } from '@/core/athlete-state/snapshot';
+import { isSet } from '@/lib/util/value';
 
 /** Bump when AthleteSnapshot's shape changes incompatibly with older persisted entries. */
 export const OFFLINE_SNAPSHOT_SCHEMA_VERSION = 1;
@@ -33,7 +34,7 @@ export type SnapshotValidationResult =
   { readonly valid: true } | { readonly valid: false; readonly reason: SnapshotInvalidReason };
 
 function isPersistedEntryRecord(entry: unknown): entry is Record<string, unknown> {
-  return typeof entry === 'object' && (entry !== undefined && entry !== null);
+  return typeof entry === 'object' && isSet(entry);
 }
 
 function hasPersistedEntryShape(entry: unknown): entry is PersistedSnapshotEntry {
@@ -44,7 +45,7 @@ function hasPersistedEntryShape(entry: unknown): entry is PersistedSnapshotEntry
     typeof entry.schemaVersion === 'number' &&
     typeof entry.ownerKey === 'string' &&
     typeof entry.snapshot === 'object' &&
-    (entry.snapshot !== undefined && entry.snapshot !== null) &&
+    isSet(entry.snapshot) &&
     typeof entry.generatedAt === 'string' &&
     typeof entry.freshnessComputedAt === 'string' &&
     typeof entry.cachedAt === 'string'

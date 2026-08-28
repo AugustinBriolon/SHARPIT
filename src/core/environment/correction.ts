@@ -24,6 +24,7 @@ import {
   roundImpact,
 } from './calibration';
 import { getEnvironmentalStressor } from './stress';
+import { isSet } from '@/lib/util/value';
 
 function unavailableEffect(explanation: string): MetricValue<number> {
   return {
@@ -63,6 +64,17 @@ function intensityOf(stressor: EnvironmentalStressor | undefined): number {
   return stressor.intensity.value;
 }
 
+function multiplierExceedsThreshold(
+  value: number | null,
+  threshold: number,
+  mode: 'gte' | 'lte',
+): boolean {
+  if (value === null) {
+    return false;
+  }
+  return mode === 'gte' ? value >= threshold : value <= threshold;
+}
+
 function impactIsMaterial(impact: EnvironmentalImpact): boolean {
   const recovery = readMultiplier(impact.recovery.demandMultiplier);
   const fatigue = readMultiplier(impact.fatigue.accumulationMultiplier);
@@ -71,16 +83,16 @@ function impactIsMaterial(impact: EnvironmentalImpact): boolean {
   const thresholds = ENVIRONMENTAL_SIGNIFICANCE_THRESHOLDS;
 
   return (
-    ((recovery !== undefined && recovery !== null) && recovery >= thresholds.recoveryDemand) ||
-    ((fatigue !== undefined && fatigue !== null) && fatigue >= thresholds.fatigueAccumulation) ||
-    ((performance !== undefined && performance !== null) && performance <= thresholds.performanceRatio) ||
-    ((hydration !== undefined && hydration !== null) && hydration >= thresholds.hydrationDemand)
+    multiplierExceedsThreshold(recovery, thresholds.recoveryDemand, 'gte') ||
+    multiplierExceedsThreshold(fatigue, thresholds.fatigueAccumulation, 'gte') ||
+    multiplierExceedsThreshold(performance, thresholds.performanceRatio, 'lte') ||
+    multiplierExceedsThreshold(hydration, thresholds.hydrationDemand, 'gte')
   );
 }
 
 function performancePenalty(impact: EnvironmentalImpact): number {
   const ratio = readMultiplier(impact.performance.expectedOutputRatio);
-  if ((ratio === undefined || ratio === null) || ratio >= 1) {
+  if (ratio === undefined || ratio === null || ratio >= 1) {
     return 0;
   }
   return roundImpact(1 - ratio);
@@ -290,7 +302,7 @@ export function buildActivityEnvironmentalCorrection(
 ): ActivityEnvironmentalCorrection {
   const { activityId, stress, impact } = input;
 
-  if ((stress.suppressionReason !== undefined && stress.suppressionReason !== null)) {
+  if (isSet(stress.suppressionReason)) {
     return buildSuppressedCorrection(activityId);
   }
 

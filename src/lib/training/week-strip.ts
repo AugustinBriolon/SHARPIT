@@ -1,4 +1,5 @@
 import { endOfWeek, format, startOfWeek, subWeeks } from 'date-fns';
+import { isSet } from '@/lib/util/value';
 
 const WEEK_OPTS = { weekStartsOn: 1 as const };
 
@@ -104,7 +105,7 @@ export function buildWeekSummary(days: WeekStripDay[]): WeekSummary {
     doneCount += day.activities.length;
     plannedCount += day.planned.length;
     for (const activity of day.activities) {
-      if ((activity.load !== undefined && activity.load !== null)) {
+      if (isSet(activity.load)) {
         weekLoad += activity.load;
       }
     }

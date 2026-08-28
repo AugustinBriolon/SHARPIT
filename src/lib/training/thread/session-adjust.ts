@@ -1,4 +1,5 @@
 import type { ClientPlannedSession } from '@/lib/query/types';
+import { isSet } from '@/lib/util/value';
 import {
   easeEndurancePrescription,
   easeStrengthPrescription,
@@ -79,8 +80,8 @@ function buildEaseAdjustment(
   easedEndurance: ReturnType<typeof easeEndurancePrescription>,
   easedStrength: ReturnType<typeof easeStrengthPrescription>,
 ): SessionAdjustment {
-  const hasDuration = (session.durationMin !== undefined && session.durationMin !== null) && session.durationMin > 0;
-  const hasLoad = (session.load !== undefined && session.load !== null) && session.load > 0;
+  const hasDuration = isSet(session.durationMin) && session.durationMin > 0;
+  const hasLoad = isSet(session.load) && session.load > 0;
   const adjustment: SessionAdjustment = {
     durationMin: hasDuration
       ? roundMinutes(session.durationMin! * EASE_FACTOR)
@@ -101,8 +102,8 @@ function hasEaseableContent(
   easedEndurance: unknown,
   easedStrength: unknown,
 ): boolean {
-  const hasDuration = (session.durationMin !== undefined && session.durationMin !== null) && session.durationMin > 0;
-  const hasLoad = (session.load !== undefined && session.load !== null) && session.load > 0;
+  const hasDuration = isSet(session.durationMin) && session.durationMin > 0;
+  const hasLoad = isSet(session.load) && session.load > 0;
   return Boolean(hasDuration || hasLoad || easedEndurance || easedStrength);
 }
 

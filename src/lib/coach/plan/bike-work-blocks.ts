@@ -1,4 +1,5 @@
 import type { SessionIntensity } from '@prisma/client';
+import { isSet } from '@/lib/util/value';
 
 /** Intensities where whole-session avg/NP are diluted by warm-up & recovery. */
 const QUALITY_INTENSITIES = new Set<SessionIntensity>(['TEMPO', 'THRESHOLD', 'VO2MAX', 'RACE']);
@@ -65,7 +66,7 @@ export function parsePrescriptionTargets(
   const repsMatch = text.match(/(\d{1,2})\s*[x×]\s*(\d{1,3})\s*(?:min|m\b)/i);
   const reps = repsMatch ? clampInt(Number(repsMatch[1]), 1, 30) : null;
   const repDurationMin = repsMatch ? clampInt(Number(repsMatch[2]), 1, 180) : null;
-  const plannedWorkMin = (reps !== undefined && reps !== null) && (repDurationMin !== undefined && repDurationMin !== null) ? reps * repDurationMin : null;
+  const plannedWorkMin = isSet(reps) && isSet(repDurationMin) ? reps * repDurationMin : null;
 
   return { ftpPct, reps, repDurationMin, plannedWorkMin };
 }
@@ -78,7 +79,7 @@ export function shouldAnalyzeBikeWorkBlocks(input: {
     return true;
   }
   const p = parsePrescriptionTargets(input.description);
-  return (p.ftpPct !== undefined && p.ftpPct !== null) || (p.plannedWorkMin !== undefined && p.plannedWorkMin !== null);
+  return isSet(p.ftpPct) || isSet(p.plannedWorkMin);
 }
 
 /**
@@ -110,7 +111,7 @@ function resolveBikeWorkThresholds(input: {
     prescription.ftpPct ?? (input.intensity ? (DEFAULT_TARGET_PCT[input.intensity] ?? null) : null);
   const floorPctFtp = resolveFloorPct(input.intensity, targetPctFtp);
   const workFloorWatts = Math.round((floorPctFtp / 100) * input.ftpW);
-  const targetWatts = (targetPctFtp !== undefined && targetPctFtp !== null) ? Math.round((targetPctFtp / 100) * input.ftpW) : null;
+  const targetWatts = isSet(targetPctFtp) ? Math.round((targetPctFtp / 100) * input.ftpW) : null;
   return { prescription, targetPctFtp, floorPctFtp, workFloorWatts, targetWatts };
 }
 
@@ -143,7 +144,7 @@ export function summarizeBikeWorkBlocks(input: {
     workFloorPctFtp: floorPctFtp,
     totalWorkSec: workCount,
     workAvgWatts,
-    workAvgPctFtp: (workAvgWatts !== undefined && workAvgWatts !== null) ? Math.round((workAvgWatts / ftpW) * 100) : null,
+    workAvgPctFtp: isSet(workAvgWatts) ? Math.round((workAvgWatts / ftpW) * 100) : null,
     blocks,
     plannedWorkMin: prescription.plannedWorkMin,
     prescription,
@@ -154,15 +155,15 @@ export function summarizeBikeWorkBlocks(input: {
 export function describeBikeWorkBlocks(summary: BikeWorkSummary): string {
   const lines: string[] = [
     `FTP athlète : ${summary.ftpW} W`,
-    (summary.targetWatts !== undefined && summary.targetWatts !== null) && (summary.targetPctFtp !== undefined && summary.targetPctFtp !== null)
+    isSet(summary.targetWatts) && isSet(summary.targetPctFtp)
       ? `Cible intensité (estimée) : ${summary.targetPctFtp}% FTP ≈ ${summary.targetWatts} W`
       : null,
     `Seuil de détection des blocs de travail : ≥ ${summary.workFloorPctFtp}% FTP (${summary.workFloorWatts} W)`,
     `Temps passé au-dessus de ce seuil : ${fmtMin(summary.totalWorkSec)}`,
-    (summary.workAvgWatts !== undefined && summary.workAvgWatts !== null) && (summary.workAvgPctFtp !== undefined && summary.workAvgPctFtp !== null)
+    isSet(summary.workAvgWatts) && isSet(summary.workAvgPctFtp)
       ? `Puissance moyenne sur ce temps de travail : ${summary.workAvgWatts} W (${summary.workAvgPctFtp}% FTP)`
       : null,
-    (summary.plannedWorkMin !== undefined && summary.plannedWorkMin !== null)
+    isSet(summary.plannedWorkMin)
       ? `Volume de travail suggéré par la consigne (lecture texte) : ~${summary.plannedWorkMin} min — heuristique, pas une preuve structurée`
       : null,
   ].filter(Boolean) as string[];
@@ -187,11 +188,11 @@ export function describeBikeWorkBlocks(summary: BikeWorkSummary): string {
 }
 
 function resolveFloorPct(intensity: SessionIntensity | null, targetPctFtp: number | null): number {
-  if ((targetPctFtp !== undefined && targetPctFtp !== null)) {
+  if (isSet(targetPctFtp)) {
     // Allow mild undershoot vs prescription while staying in quality territory.
     return Math.max(70, targetPctFtp - 8);
   }
-  if (intensity && (DEFAULT_FLOOR_PCT[intensity] !== undefined && DEFAULT_FLOOR_PCT[intensity] !== null)) {
+  if (intensity && isSet(DEFAULT_FLOOR_PCT[intensity])) {
     return DEFAULT_FLOOR_PCT[intensity]!;
   }
   return 75;

@@ -3,6 +3,7 @@
  */
 
 import type { EnvironmentalDecisionSnapshot } from '@/core/inference/environment/types';
+import { isSet } from '@/lib/util/value';
 import type {
   TrainingEnvironmentalImpact,
   ThermalStressLevel,
@@ -37,15 +38,17 @@ function buildEnvironmentDetailLine(
   performanceAdjustment: number | null,
 ): string | null {
   const detailParts: string[] = [];
-  const recoveryPct =
-    (recoveryDemandAdjustment !== undefined && recoveryDemandAdjustment !== null) ? Math.round(recoveryDemandAdjustment * 100) : null;
-  const performancePct =
-    (performanceAdjustment !== undefined && performanceAdjustment !== null) ? Math.round(Math.abs(performanceAdjustment) * 100) : null;
+  const recoveryPct = isSet(recoveryDemandAdjustment)
+    ? Math.round(recoveryDemandAdjustment * 100)
+    : null;
+  const performancePct = isSet(performanceAdjustment)
+    ? Math.round(Math.abs(performanceAdjustment) * 100)
+    : null;
 
-  if ((recoveryPct !== undefined && recoveryPct !== null) && recoveryPct > 0) {
+  if (isSet(recoveryPct) && recoveryPct > 0) {
     detailParts.push(`demande de récupération +${recoveryPct} %`);
   }
-  if ((performancePct !== undefined && performancePct !== null) && performancePct > 0) {
+  if (isSet(performancePct) && performancePct > 0) {
     detailParts.push(`performance attendue −${performancePct} %`);
   }
   return detailParts.length > 0 ? detailParts.join(' · ') : null;
@@ -106,6 +109,6 @@ export function resolveEnvironmentalExplanation(
 
   return template.replace(/\{(\w+)\}/g, (_, key: string) => {
     const value = params?.[key];
-    return (value !== undefined && value !== null) ? String(value) : '';
+    return isSet(value) ? String(value) : '';
   });
 }

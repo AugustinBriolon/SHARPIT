@@ -21,6 +21,7 @@
  */
 
 import { randomUUID } from 'node:crypto';
+import { isSet } from '@/lib/util/value';
 
 import type { FeatureEngine } from '@/core/features/engine';
 import type { DigitalTwinRepository } from '@/core/digital-twin/repository';
@@ -261,7 +262,7 @@ export class AdaptationInferenceOrchestrator {
     const history: number[] = [];
     for (const r of records) {
       const idx = (r.stateUpdate as { adaptationIndex?: number | null }).adaptationIndex;
-      if ((idx !== undefined && idx !== null) && idx !== undefined) {
+      if (isSet(idx) && idx !== undefined) {
         history.push(idx);
       }
     }

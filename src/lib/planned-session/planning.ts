@@ -1,4 +1,5 @@
 import { ActivityType } from '@prisma/client';
+import { isSet } from '@/lib/util/value';
 import {
   addWeeks,
   differenceInCalendarWeeks,
@@ -28,7 +29,7 @@ export function estimatePlannedLoad(session: {
   load: number | null;
   durationMin: number | null;
 }): number {
-  if ((session.load !== undefined && session.load !== null) && session.load > 0) {
+  if (isSet(session.load) && session.load > 0) {
     return session.load;
   }
   if (!session.durationMin) {

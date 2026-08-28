@@ -1,4 +1,5 @@
 import { ActivityType } from '@prisma/client';
+import { isSet } from '@/lib/util/value';
 import { NEUROMUSCULAR_EFFICIENCY_LOOKBACK_DAYS } from '@/core/inference/adaptation/constants';
 import { prisma } from '@/lib/prisma';
 import { fetchAndCacheActivityStreams } from '@/lib/streams/streams';
@@ -125,7 +126,7 @@ async function sessionFeaturesHaveHrDrift(
 
   return sessionFeatures.some((record) => {
     const data = record.data as { hrDriftPercent?: number | null } | null;
-    return (data?.hrDriftPercent !== undefined && data?.hrDriftPercent !== null) && Number.isFinite(data.hrDriftPercent);
+    return isSet(data?.hrDriftPercent) && Number.isFinite(data.hrDriftPercent);
   });
 }
 

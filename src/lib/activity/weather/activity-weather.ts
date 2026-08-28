@@ -1,4 +1,5 @@
 import type { EnvironmentalPrediction } from '@/core/environment';
+import { isSet } from '@/lib/util/value';
 import type { WeatherMeasurements } from '@/core/environment/types';
 import type { LucideIcon } from 'lucide-react';
 import { Cloud, CloudDrizzle, CloudFog, CloudRain, CloudSun, Sun } from 'lucide-react';
@@ -78,11 +79,11 @@ function cloudConditionFromCover(cloud: number): ActivityWeatherCondition {
 }
 
 function cloudCondition(cloud: number | null, solar: number | null): ActivityWeatherCondition {
-  if ((solar !== undefined && solar !== null) && solar >= 350 && ((cloud === undefined || cloud === null) || cloud < 45)) {
+  if (isSet(solar) && solar >= 350 && (!isSet(cloud) || cloud < 45)) {
     return 'clear';
   }
-  if ((cloud === undefined || cloud === null)) {
-    return (solar !== undefined && solar !== null) && solar >= 250 ? 'clear' : 'unknown';
+  if (!isSet(cloud)) {
+    return isSet(solar) && solar >= 250 ? 'clear' : 'unknown';
   }
   return cloudConditionFromCover(cloud);
 }
@@ -112,17 +113,17 @@ function appendWeatherSample(
     maxPrecipitationMm: number | null;
   },
 ): void {
-  if ((data.airTemperatureC !== undefined && data.airTemperatureC !== null)) {
+  if (isSet(data.airTemperatureC)) {
     samples.temperatures.push(data.airTemperatureC);
   }
-  if ((data.cloudCoverPct !== undefined && data.cloudCoverPct !== null)) {
+  if (isSet(data.cloudCoverPct)) {
     samples.cloudSamples.push(data.cloudCoverPct);
   }
-  if ((data.precipitationMm !== undefined && data.precipitationMm !== null)) {
+  if (isSet(data.precipitationMm)) {
     samples.precipSamples.push(data.precipitationMm);
     samples.maxPrecipitationMm = Math.max(samples.maxPrecipitationMm ?? 0, data.precipitationMm);
   }
-  if ((data.solarRadiationWm2 !== undefined && data.solarRadiationWm2 !== null)) {
+  if (isSet(data.solarRadiationWm2)) {
     samples.solarSamples.push(data.solarRadiationWm2);
   }
 }
@@ -161,7 +162,7 @@ export function extractActivityWeatherSnapshot(
 
   const samples = collectWeatherSamples(predictions);
   const avgTempC = average(samples.temperatures);
-  if ((avgTempC === undefined || avgTempC === null)) {
+  if (avgTempC === undefined || avgTempC === null) {
     return null;
   }
 
@@ -217,7 +218,7 @@ function parseLegacyWeather(raw: string): ActivityWeatherSnapshot | null {
 
   const tempMatch = raw.match(/(-?\d+(?:[.,]\d+)?)\s*°C/i);
   const avgTempC = tempMatch ? Number(tempMatch[1].replace(',', '.')) : null;
-  if ((avgTempC === undefined || avgTempC === null) || !Number.isFinite(avgTempC)) {
+  if (avgTempC === undefined || avgTempC === null || !Number.isFinite(avgTempC)) {
     return null;
   }
 

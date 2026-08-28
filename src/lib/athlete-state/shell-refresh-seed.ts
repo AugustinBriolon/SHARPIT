@@ -29,6 +29,28 @@ export function peekShellAthleteRefreshInFlight(): Promise<ShellRefreshSeed | nu
   return inFlight;
 }
 
+import { isSet } from '@/lib/util/value';
+
+function resolveTodayPresentation(
+  queryClient: QueryClient,
+  trainingDayId: string,
+  data: {
+    todayPresentation?: TodayViewModel | null;
+    presentationSkipped?: boolean;
+  },
+): TodayViewModel | null {
+  let todayPresentation = data.todayPresentation ?? null;
+  if (data.presentationSkipped && !isSet(todayPresentation)) {
+    return (
+      queryClient.getQueryData<TodayViewModel>(queryKeys.presentationToday(trainingDayId)) ?? null
+    );
+  }
+  if (todayPresentation) {
+    queryClient.setQueryData(queryKeys.presentationToday(trainingDayId), todayPresentation);
+  }
+  return todayPresentation;
+}
+
 function cacheShellRefreshData(
   queryClient: QueryClient,
   trainingDayId: string,
@@ -49,13 +71,7 @@ function cacheShellRefreshData(
     queryClient.setQueryData(queryKeys.today(trainingDayId), data.todayState);
   }
 
-  let todayPresentation = data.todayPresentation ?? null;
-  if (data.presentationSkipped && (todayPresentation === undefined || todayPresentation === null)) {
-    todayPresentation =
-      queryClient.getQueryData<TodayViewModel>(queryKeys.presentationToday(trainingDayId)) ?? null;
-  } else if (todayPresentation) {
-    queryClient.setQueryData(queryKeys.presentationToday(trainingDayId), todayPresentation);
-  }
+  let todayPresentation = resolveTodayPresentation(queryClient, trainingDayId, data);
 
   return todayPresentation;
 }

@@ -8,22 +8,34 @@
  */
 
 import { SESSION_VERDICT_LABELS } from '@/lib/planned-session/display/session-analysis-display';
+import { isSet } from '@/lib/util/value';
 import type { OutcomeEvaluation, ExecutionMatch, ShortTermRecoveryResponse } from './types';
 
 const INCONCLUSIVE_WORDING = 'Preuves encore insuffisantes pour conclure.';
 
 function describeDurationMatch(match: ExecutionMatch): string | null {
   const plannedMin = match.plannedDurationMin;
-  const actualMin =
-    (match.actualDurationSec !== undefined && match.actualDurationSec !== null) ? Math.round(match.actualDurationSec / 60) : null;
-  if ((plannedMin === undefined || plannedMin === null) || (actualMin === undefined || actualMin === null)) {
+  const actualMin = isSet(match.actualDurationSec)
+    ? Math.round(match.actualDurationSec / 60)
+    : null;
+  if (
+    plannedMin === undefined ||
+    plannedMin === null ||
+    actualMin === undefined ||
+    actualMin === null
+  ) {
     return null;
   }
   return `${actualMin} min réalisées (${plannedMin} min prévues)`;
 }
 
 function describeLoadMatch(match: ExecutionMatch): string | null {
-  if ((match.plannedLoad === undefined || match.plannedLoad === null) || (match.actualLoad === undefined || match.actualLoad === null)) {
+  if (
+    match.plannedLoad === undefined ||
+    match.plannedLoad === null ||
+    match.actualLoad === undefined ||
+    match.actualLoad === null
+  ) {
     return null;
   }
   return `${Math.round(match.actualLoad)} TSS réalisés (${Math.round(match.plannedLoad)} TSS prévus)`;
@@ -31,7 +43,7 @@ function describeLoadMatch(match: ExecutionMatch): string | null {
 
 function describeExecutionMatch(match: ExecutionMatch): string | null {
   const parts = [describeDurationMatch(match), describeLoadMatch(match)].filter(
-    (part): part is string => (part !== undefined && part !== null),
+    (part): part is string => isSet(part),
   );
   if (parts.length === 0) {
     return null;
@@ -42,7 +54,7 @@ function describeExecutionMatch(match: ExecutionMatch): string | null {
 }
 
 function describeRecoveryResponse(response: ShortTermRecoveryResponse): string | null {
-  const readings = response.readinessValues.filter((v): v is number => (v !== undefined && v !== null));
+  const readings = response.readinessValues.filter((v): v is number => isSet(v));
   if (readings.length < 2) {
     return null;
   }
@@ -80,7 +92,7 @@ export function describeOutcome(evaluation: OutcomeEvaluation): string[] {
       ? describeRecoveryResponse(evaluation.shortTermRecoveryResponse)
       : null,
     describeSafetySignalLine(evaluation.safetySignal),
-  ].filter((line): line is string => (line !== undefined && line !== null));
+  ].filter((line): line is string => isSet(line));
 
   return lines.length > 0 ? lines : [INCONCLUSIVE_WORDING];
 }

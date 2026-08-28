@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import { isSet } from '@/lib/util/value';
 
 const API_BASE = 'https://cloud.renpho.com';
 const ENCRYPTION_SECRET = 'ed*wijdi$h6fe3ew';
@@ -303,11 +304,11 @@ export class RenphoClient {
 
     return parsed.map((entry, index) => ({
       ...entry,
-      __idString: ids[index] || ((entry.id !== undefined && entry.id !== null) ? String(entry.id) : undefined),
+      __idString: ids[index] || (isSet(entry.id) ? String(entry.id) : undefined),
       __bUserIdString:
-        boundUserIds[index] || ((entry.bUserId !== undefined && entry.bUserId !== null) ? String(entry.bUserId) : undefined),
+        boundUserIds[index] || (isSet(entry.bUserId) ? String(entry.bUserId) : undefined),
       __subUserIdString:
-        scaleUserIds[index] || ((entry.subUserId !== undefined && entry.subUserId !== null) ? String(entry.subUserId) : undefined),
+        scaleUserIds[index] || (isSet(entry.subUserId) ? String(entry.subUserId) : undefined),
     }));
   }
 

@@ -111,21 +111,23 @@ export function mapGarminSportType(typeKey: string): SportType | null {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /** Extracts the most appropriate duration in seconds from a Garmin activity. */
+function normalizeDurationCandidate(v: number | null | undefined): number | null {
+  if (v === undefined || v === null || !Number.isFinite(v) || v <= 0) {
+    return null;
+  }
+  const sec = v > 1_000_000 ? Math.round(v / 1000) : Math.round(v);
+  return sec > 0 ? sec : null;
+}
+
 function extractDurationSec(activity: IActivity, sportType: SportType): number | null {
-  // Strength: use elapsed time (includes rest periods between sets)
-  // All others: use moving time (excludes pauses)
   const candidates =
     sportType === 'STRENGTH'
       ? [activity.elapsedDuration, activity.duration, activity.movingDuration]
       : [activity.movingDuration, activity.duration, activity.elapsedDuration];
 
   for (const v of candidates) {
-    if ((v === undefined || v === null) || !Number.isFinite(v) || v <= 0) {
-      continue;
-    }
-    // Garmin sometimes returns milliseconds instead of seconds
-    const sec = v > 1_000_000 ? Math.round(v / 1000) : Math.round(v);
-    if (sec > 0) {
+    const sec = normalizeDurationCandidate(v);
+    if (sec !== null) {
       return sec;
     }
   }
@@ -263,25 +265,31 @@ export function garminActivityToSession(
  * RawSubjectiveObservation linked to the session via sessionExternalId.
  * Returns null if neither RPE nor feeling is available.
  */
+const GARMIN_MOOD_MAP: Record<string, number> = {
+  'Très mal': 1,
+  Mal: 2,
+  Correct: 3,
+  Bien: 4,
+  'Très bien': 5,
+};
+
+function hasGarminEvaluation(evaluation: { rpe: number | null; feeling: string | null }): boolean {
+  return evaluation.rpe !== undefined && evaluation.rpe !== null
+    ? true
+    : evaluation.feeling !== undefined && evaluation.feeling !== null;
+}
+
 export function garminEvaluationToSubjective(
   evaluation: { rpe: number | null; feeling: string | null; notes: string | null },
   sessionExternalId: string,
   sessionTimestamp: Date,
   receivedAt: Date,
 ): RawSubjectiveObservation | null {
-  if ((evaluation.rpe === undefined || evaluation.rpe === null) && (evaluation.feeling === undefined || evaluation.feeling === null)) {
+  if (!hasGarminEvaluation(evaluation)) {
     return null;
   }
 
-  // Map Garmin feeling label to mood scale (1–5)
-  const moodMap: Record<string, number> = {
-    'Très mal': 1,
-    Mal: 2,
-    Correct: 3,
-    Bien: 4,
-    'Très bien': 5,
-  };
-  const mood = evaluation.feeling ? (moodMap[evaluation.feeling] ?? undefined) : undefined;
+  const mood = evaluation.feeling ? (GARMIN_MOOD_MAP[evaluation.feeling] ?? undefined) : undefined;
 
   return {
     type: 'SUBJECTIVE',

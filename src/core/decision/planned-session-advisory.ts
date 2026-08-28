@@ -6,6 +6,7 @@
  */
 
 import type { SessionIntensity } from '@prisma/client';
+import { isSet } from '@/lib/util/value';
 import type {
   PlannedSessionAdvisory,
   PlannedSessionEnvironmentalProjection,
@@ -49,30 +50,47 @@ function indoorProceedAdvisory(): PlannedSessionAdvisory {
   };
 }
 
+function appendRainAdvisory(
+  advisories: PlannedSessionAdvisory[],
+  signals: BuildPlannedSessionAdvisoriesInput['weatherSignals'],
+  env: PlannedSessionEnvironmentalProjection,
+): void {
+  if (!isSet(signals?.maxPrecipitationMm) || signals.maxPrecipitationMm < 1.5) {
+    return;
+  }
+  advisories.push({
+    kind: 'RAIN_RISK',
+    priority: 2,
+    headlineCode: 'planned.advisory.rainRisk.headline',
+    rationaleCode: 'planned.advisory.rainRisk.rationale',
+    confidence: env.confidence,
+  });
+}
+
+function appendColdAdvisory(
+  advisories: PlannedSessionAdvisory[],
+  signals: BuildPlannedSessionAdvisoriesInput['weatherSignals'],
+  env: PlannedSessionEnvironmentalProjection,
+): void {
+  if (!isSet(signals?.minTemperatureC) || signals.minTemperatureC > 2) {
+    return;
+  }
+  advisories.push({
+    kind: 'COLD_RISK',
+    priority: 2,
+    headlineCode: 'planned.advisory.coldRisk.headline',
+    rationaleCode: 'planned.advisory.coldRisk.rationale',
+    confidence: env.confidence,
+  });
+}
+
 function appendWeatherAdvisories(
   advisories: PlannedSessionAdvisory[],
   input: BuildPlannedSessionAdvisoriesInput,
   env: PlannedSessionEnvironmentalProjection,
 ): void {
-  const signals = input.weatherSignals;
-  if ((signals?.maxPrecipitationMm !== undefined && signals?.maxPrecipitationMm !== null) && signals.maxPrecipitationMm >= 1.5) {
-    advisories.push({
-      kind: 'RAIN_RISK',
-      priority: 2,
-      headlineCode: 'planned.advisory.rainRisk.headline',
-      rationaleCode: 'planned.advisory.rainRisk.rationale',
-      confidence: env.confidence,
-    });
-  }
-  if ((signals?.minTemperatureC !== undefined && signals?.minTemperatureC !== null) && signals.minTemperatureC <= 2) {
-    advisories.push({
-      kind: 'COLD_RISK',
-      priority: 2,
-      headlineCode: 'planned.advisory.coldRisk.headline',
-      rationaleCode: 'planned.advisory.coldRisk.rationale',
-      confidence: env.confidence,
-    });
-  }
+  appendRainAdvisory(advisories, input.weatherSignals, env);
+  appendColdAdvisory(advisories, input.weatherSignals, env);
 }
 
 function appendThermalAdvisories(
@@ -93,7 +111,7 @@ function appendThermalAdvisories(
       confidence: env.confidence,
     });
   }
-  if ((input.scheduledHourLocal !== undefined && input.scheduledHourLocal !== null) && input.scheduledHourLocal >= 11) {
+  if (isSet(input.scheduledHourLocal) && input.scheduledHourLocal >= 11) {
     advisories.push({
       kind: 'SHIFT_EARLIER',
       priority: 2,
@@ -125,7 +143,8 @@ function appendRecoveryDemandAdvisory(
   env: PlannedSessionEnvironmentalProjection,
 ): void {
   if (
-    (env.recoveryDemandAdjustment === undefined || env.recoveryDemandAdjustment === null) ||
+    env.recoveryDemandAdjustment === undefined ||
+    env.recoveryDemandAdjustment === null ||
     env.recoveryDemandAdjustment < 0.1 ||
     env.trainingImpact === 'NONE'
   ) {

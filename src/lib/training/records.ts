@@ -1,4 +1,5 @@
 import { ActivityType, Prisma } from '@prisma/client';
+import { isSet } from '@/lib/util/value';
 import { prisma } from '@/lib/prisma';
 
 /**
@@ -179,7 +180,7 @@ function fmtDistance(m: number): string {
 // ---------------------------------------------------------------------------
 
 function hasSignal(arr: number[]): boolean {
-  return arr.length > 0 && arr.some((v) => (v !== undefined && v !== null) && v !== 0);
+  return arr.length > 0 && arr.some((v) => isSet(v) && v !== 0);
 }
 
 /** Ré-échantillonne une série (time, values) à 1 Hz par maintien de la valeur. */
@@ -287,7 +288,7 @@ function topNEntries(input: TopNEntriesInput): RecordEntry[] {
   const { activities, accessor, mode, format, sublabel } = input;
   const cands = activities
     .map((a) => ({ value: accessor(a), activity: a }))
-    .filter((c): c is Candidate => (c.value !== undefined && c.value !== null) && !Number.isNaN(c.value) && c.value > 0);
+    .filter((c): c is Candidate => isSet(c.value) && !Number.isNaN(c.value) && c.value > 0);
   cands.sort((a, b) => (mode === 'max' ? b.value - a.value : a.value - b.value));
   return cands.slice(0, TOP_N).map((c, i) => ({
     rank: i + 1,
@@ -334,9 +335,7 @@ const DURATION_PR_CATEGORIES = Object.keys(DURATION_PR_TYPE);
  * sports, or a leader whose activity type does not match its category.
  * Pure helper — used by getStoredRecords to trigger a one-shot repair in prod.
  */
-function hasLegacyDurationLabel(
-  leaders: ReadonlyArray<{ label: string }>,
-): boolean {
+function hasLegacyDurationLabel(leaders: ReadonlyArray<{ label: string }>): boolean {
   return leaders.some((row) => row.label === 'Plus longue durée');
 }
 
@@ -355,7 +354,7 @@ function hasMismatchedDurationLeaderType(
   }>,
 ): boolean {
   for (const row of leaders) {
-    if (!row.activityId || (row.activityType === undefined || row.activityType === null)) {
+    if (!row.activityId || row.activityType === undefined || row.activityType === null) {
       continue;
     }
     const expected = DURATION_PR_TYPE[row.category];
@@ -524,7 +523,10 @@ function streamSelect() {
 }
 
 /** Courbe de puissance (meilleur effort par durée) à partir des streams vélo. */
-function canCollectPowerStream(activity: StreamActivity, raw: RawStreams | null): raw is RawStreams {
+function canCollectPowerStream(
+  activity: StreamActivity,
+  raw: RawStreams | null,
+): raw is RawStreams {
   return Boolean(
     raw?.time?.length && activity.type === ActivityType.BIKE && hasSignal(raw.watts ?? []),
   );
@@ -537,11 +539,16 @@ function pushPowerCandidatesFromGrid(
 ): void {
   for (const dur of POWER_DURATIONS) {
     const avg = bestAverage(grid, dur);
-    if ((avg === undefined || avg === null) || avg <= 0) {
+    if (avg === undefined || avg === null || avg <= 0) {
       continue;
     }
     const list = powerCand.get(dur) ?? [];
-    list.push({ value: Math.round(avg), id: activity.id, date: activity.date, title: activity.title });
+    list.push({
+      value: Math.round(avg),
+      id: activity.id,
+      date: activity.date,
+      title: activity.title,
+    });
     powerCand.set(dur, list);
   }
 }
@@ -581,7 +588,7 @@ function computePowerCurveFrom(streamActivities: StreamActivity[]): PowerCurvePo
     collectPowerCandidates(activity, powerCand);
   }
   return POWER_DURATIONS.map((d) => powerCurvePointFromDuration(d, powerCand)).filter(
-    (p): p is PowerCurvePoint => (p !== undefined && p !== null),
+    (p): p is PowerCurvePoint => isSet(p),
   );
 }
 
@@ -603,7 +610,7 @@ function pushRunCandidatesFromGrid(
       continue;
     }
     const secs = fastestTime(distGrid, meters);
-    if ((secs === undefined || secs === null) || secs <= 0) {
+    if (secs === undefined || secs === null || secs <= 0) {
       continue;
     }
     const list = runCand.get(meters) ?? [];
@@ -652,7 +659,7 @@ function computeRunBestsFrom(streamActivities: StreamActivity[]): RunBestCategor
     collectRunCandidates(activity, runCand);
   }
   return RUN_DISTANCES.map((meters) => runBestCategoryFromDistance(meters, runCand)).filter(
-    (r): r is RunBestCategory => (r !== undefined && r !== null),
+    (r): r is RunBestCategory => isSet(r),
   );
 }
 
@@ -1025,7 +1032,9 @@ async function appendEffortGroupRows(
     rows.push(...effortsToRows(athleteId, runEfforts, []).filter((r) => r.group === 'run-effort'));
   }
   if (groups.has('bike-effort')) {
-    rows.push(...effortsToRows(athleteId, [], bikeEfforts).filter((r) => r.group === 'bike-effort'));
+    rows.push(
+      ...effortsToRows(athleteId, [], bikeEfforts).filter((r) => r.group === 'bike-effort'),
+    );
   }
 }
 
@@ -1124,7 +1133,7 @@ export function filterRecordChangesByActivities(
   activityIds: Iterable<string>,
 ): RecordChange[] {
   const ids = new Set(activityIds);
-  return changes.filter((c) => (c.activityId !== undefined && c.activityId !== null) && ids.has(c.activityId));
+  return changes.filter((c) => isSet(c.activityId) && ids.has(c.activityId));
 }
 
 /** Records personnels (#1) détenus par une séance. */

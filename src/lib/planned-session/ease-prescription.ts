@@ -3,6 +3,7 @@ import type {
   EndurancePrescription,
 } from '@/lib/planned-session/endurance/endurance-prescription';
 import type { StrengthPrescription } from '@/lib/planned-session/strength/strength-prescription';
+import { isSet } from '@/lib/util/value';
 
 /**
  * Easing the workout itself, not just the figures above it.
@@ -99,11 +100,11 @@ function describeDuration(
     ? never
     : { type: string; seconds?: number; meters?: number },
 ): string {
-  if (duration.type === 'time' && (duration.seconds !== undefined && duration.seconds !== null)) {
+  if (duration.type === 'time' && isSet(duration.seconds)) {
     const minutes = Math.round(duration.seconds / 60);
     return `${minutes} min`;
   }
-  if (duration.type === 'distance' && (duration.meters !== undefined && duration.meters !== null)) {
+  if (duration.type === 'distance' && isSet(duration.meters)) {
     return duration.meters >= 1000
       ? `${(duration.meters / 1000).toFixed(1).replace('.', ',')} km`
       : `${duration.meters} m`;

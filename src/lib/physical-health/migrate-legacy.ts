@@ -1,3 +1,4 @@
+import { isSet } from '@/lib/util/value';
 /**
  * Phase 1 legacy migration — pure transforms.
  * Produces insert payloads without side effects (testable, reviewable).
@@ -87,8 +88,8 @@ export type MigrationReportRow = {
 function peakSeverity(note: LegacyPhysicalNote): number | null {
   const values = [
     note.severity,
-    ...note.checkins.map((c) => c.severity).filter((s): s is number => (s !== undefined && s !== null)),
-  ].filter((s): s is number => (s !== undefined && s !== null));
+    ...note.checkins.map((c) => c.severity).filter((s): s is number => isSet(s)),
+  ].filter((s): s is number => isSet(s));
 
   return values.length > 0 ? Math.max(...values) : null;
 }
@@ -118,7 +119,13 @@ function findReassessmentForCheckin(
 
 function buildMigrationCondition(
   note: LegacyPhysicalNote,
-  ids: { conditionId: string; type: ReturnType<typeof mapLegacyCategoryToConditionType>; scope: ReturnType<typeof resolveConditionScope>; bodyRegion: ReturnType<typeof resolveBodyRegion>; status: ReturnType<typeof mapLegacyStatusToConditionStatus> },
+  ids: {
+    conditionId: string;
+    type: ReturnType<typeof mapLegacyCategoryToConditionType>;
+    scope: ReturnType<typeof resolveConditionScope>;
+    bodyRegion: ReturnType<typeof resolveBodyRegion>;
+    status: ReturnType<typeof mapLegacyStatusToConditionStatus>;
+  },
 ): MigrationConditionBundle['condition'] {
   return {
     id: ids.conditionId,
@@ -205,7 +212,11 @@ function migrateLegacyCheckin(input: {
   bodyRegion: ReturnType<typeof resolveBodyRegion>;
   type: ReturnType<typeof mapLegacyCategoryToConditionType>;
   idFactory: (prefix: string) => string;
-}): { observation: MigrationConditionBundle['observations'][number]; capacity: MigrationConditionBundle['functionalCapacities'][number] | null; report: MigrationReportRow } {
+}): {
+  observation: MigrationConditionBundle['observations'][number];
+  capacity: MigrationConditionBundle['functionalCapacities'][number] | null;
+  report: MigrationReportRow;
+} {
   const reassessment = findReassessmentForCheckin(input.checkin, input.reassessments);
   const obsId = input.idFactory('obs');
   const context = resolveLegacyCheckinContext({
@@ -227,18 +238,17 @@ function migrateLegacyCheckin(input: {
     type: input.type,
   });
 
-  const capacity =
-    (input.checkin.severity !== undefined && input.checkin.severity !== null)
-      ? {
-          id: input.idFactory('fc'),
-          conditionId: input.conditionId,
-          observationId: obsId,
-          assessedAt: input.checkin.date,
-          painSeverity: input.checkin.severity,
-          trainingCapacity: inferTrainingCapacityFromSeverity(input.checkin.severity),
-          comment: null,
-        }
-      : null;
+  const capacity = isSet(input.checkin.severity)
+    ? {
+        id: input.idFactory('fc'),
+        conditionId: input.conditionId,
+        observationId: obsId,
+        assessedAt: input.checkin.date,
+        painSeverity: input.checkin.severity,
+        trainingCapacity: inferTrainingCapacityFromSeverity(input.checkin.severity),
+        comment: null,
+      }
+    : null;
 
   return {
     observation,

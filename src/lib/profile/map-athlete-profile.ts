@@ -1,4 +1,5 @@
 import { birthDateToInput } from '@/lib/profile/athlete-profile-utils';
+import { isSet } from '@/lib/util/value';
 
 /** Shape consumed by settings / progression profile forms. */
 export type AthleteProfileFormData = {
@@ -34,7 +35,7 @@ type ProfileRow = {
 };
 
 function toIsoOrNull(value: Date | string | null | undefined): string | null {
-  if ((value === undefined || value === null)) {
+  if (value === undefined || value === null) {
     return null;
   }
   if (typeof value === 'string') {
@@ -78,5 +79,5 @@ export function mapAthleteProfileToFormData(
 export function shouldHydrateProfileForm(
   initial: AthleteProfileFormData | null | undefined,
 ): initial is AthleteProfileFormData {
-  return (initial !== undefined && initial !== null);
+  return isSet(initial);
 }

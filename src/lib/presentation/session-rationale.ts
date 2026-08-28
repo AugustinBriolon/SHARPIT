@@ -8,6 +8,7 @@
  */
 
 import type { ActivityType, SessionIntensity } from '@prisma/client';
+import { isSet } from '@/lib/util/value';
 import { activityTypeLabels } from '@/lib/format';
 import { formatDate } from '@/lib/format';
 import { intensityLabels } from '@/lib/planned-session/sessions';
@@ -61,7 +62,7 @@ function buildGate(decision: CoachingDecisionWithHistory): SessionRationaleGate 
           gateResult.saferAlternative.intensity
             ? intensityLabels[gateResult.saferAlternative.intensity]
             : null,
-          (gateResult.saferAlternative.load !== undefined && gateResult.saferAlternative.load !== null)
+          isSet(gateResult.saferAlternative.load)
             ? `~${gateResult.saferAlternative.load} TSS`
             : null,
         ]

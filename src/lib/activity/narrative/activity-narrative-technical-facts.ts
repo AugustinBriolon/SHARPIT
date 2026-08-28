@@ -8,6 +8,7 @@
  */
 
 import type { ActivityAnalysis, ZoneBucket } from '@/lib/activity/detail/activity-analysis';
+import { isSet } from '@/lib/util/value';
 
 export type TechnicalSport = 'RUN' | 'BIKE' | 'SWIM';
 
@@ -46,7 +47,11 @@ function dominantZone(zones: ZoneBucket[]): ZoneBucket | null {
   return zones.reduce((best, z) => (z.percent > best.percent ? z : best), zones[0]!);
 }
 
-function appendHrZoneFacts(lines: string[], hr: ActivityAnalysis['hr'], thresholds: ActivityAnalysis['thresholds']): void {
+function appendHrZoneFacts(
+  lines: string[],
+  hr: ActivityAnalysis['hr'],
+  thresholds: ActivityAnalysis['thresholds'],
+): void {
   if (hr.zones.length === 0 || !thresholds.lthr) {
     return;
   }
@@ -73,7 +78,11 @@ function appendHrZoneFacts(lines: string[], hr: ActivityAnalysis['hr'], threshol
 }
 
 function appendHrDecouplingFact(lines: string[], decouplingPct: number | null): void {
-  if ((decouplingPct === undefined || decouplingPct === null) || Math.abs(decouplingPct) < DECOUPLING_NOTEWORTHY_PCT) {
+  if (
+    decouplingPct === undefined ||
+    decouplingPct === null ||
+    Math.abs(decouplingPct) < DECOUPLING_NOTEWORTHY_PCT
+  ) {
     return;
   }
   const sign = decouplingPct > 0 ? '+' : '';
@@ -93,10 +102,10 @@ function appendHrTechnicalFacts(lines: string[], input: TechnicalFactInput): voi
 
 function appendRunVariabilityFacts(lines: string[], analysis: ActivityAnalysis): void {
   const { run, power } = analysis;
-  if ((run?.paceVariabilityPct !== undefined && run?.paceVariabilityPct !== null) && run.paceVariabilityPct >= PACE_VARIABILITY_NOTEWORTHY_PCT) {
+  if (isSet(run?.paceVariabilityPct) && run.paceVariabilityPct >= PACE_VARIABILITY_NOTEWORTHY_PCT) {
     lines.push(`Variabilité d’allure : ${run.paceVariabilityPct.toFixed(0)}% (rythme irrégulier).`);
   }
-  if ((power?.variabilityIndex !== undefined && power?.variabilityIndex !== null) && power.variabilityIndex >= VI_NOTEWORTHY) {
+  if (isSet(power?.variabilityIndex) && power.variabilityIndex >= VI_NOTEWORTHY) {
     lines.push(
       `Variabilité de puissance (VI) : ${power.variabilityIndex.toFixed(2)} (effort irrégulier).`,
     );

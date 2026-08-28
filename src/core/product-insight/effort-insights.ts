@@ -1,14 +1,14 @@
 import { buildProductInsightBundle } from '@/core/product-insight/build-product-insight-bundle';
+import { isSet } from '@/lib/util/value';
 import type { EffortInsightInput, ProductInsight } from '@/core/product-insight/types';
 
 function buildDailyCostInsight(input: EffortInsightInput): ProductInsight {
   return {
     id: 'effort:daily-cost',
     title: 'Coût du jour',
-    summary:
-      (input.strainScore !== undefined && input.strainScore !== null)
-        ? `${input.strainScore}/21 · ${input.fatigueTypeLabel}`
-        : input.fatigueTypeLabel,
+    summary: isSet(input.strainScore)
+      ? `${input.strainScore}/21 · ${input.fatigueTypeLabel}`
+      : input.fatigueTypeLabel,
     explanation:
       "La lecture utile n'est pas seulement la charge accomplie, mais le type de coût que cette charge impose à ton organisme.",
     evidence: input.rationale,
@@ -24,12 +24,11 @@ function buildTrainingCapacityInsight(input: EffortInsightInput): ProductInsight
     id: 'effort:training-capacity',
     title: 'Marge de travail restante',
     summary: input.trainingCapacityLabel,
-    explanation:
-      (input.performancePercent !== undefined && input.performancePercent !== null)
-        ? `La capacité utile du jour est estimée autour de ${input.performancePercent} % de ton niveau frais.`
-        : 'La capacité traduit ce que le corps peut encore absorber sans payer trop cher ensuite.',
+    explanation: isSet(input.performancePercent)
+      ? `La capacité utile du jour est estimée autour de ${input.performancePercent} % de ton niveau frais.`
+      : 'La capacité traduit ce que le corps peut encore absorber sans payer trop cher ensuite.',
     evidence: [
-      (input.estimatedDaysToFresh !== undefined && input.estimatedDaysToFresh !== null)
+      isSet(input.estimatedDaysToFresh)
         ? `${input.estimatedDaysToFresh} jour(s) pour revenir frais`
         : null,
       input.limitingFactorLabel,
@@ -46,10 +45,9 @@ function buildDominantSystemInsight(input: EffortInsightInput): ProductInsight {
     id: 'effort:dominant-system',
     title: 'Système qui paie le plus',
     summary: input.dominantDimensionLabel!,
-    explanation:
-      (input.limitingFactorLabel !== undefined && input.limitingFactorLabel !== null)
-        ? `Le facteur limitant principal est ${input.limitingFactorLabel.toLowerCase()}.`
-        : 'Identifier le système dominant aide à savoir quoi protéger sur la prochaine séance.',
+    explanation: isSet(input.limitingFactorLabel)
+      ? `Le facteur limitant principal est ${input.limitingFactorLabel.toLowerCase()}.`
+      : 'Identifier le système dominant aide à savoir quoi protéger sur la prochaine séance.',
     evidence: input.keyEvidence.slice(0, 3),
     confidence: input.confidence,
     importance: 'MEDIUM',
@@ -66,7 +64,7 @@ function buildLoadContextInsight(input: EffortInsightInput): ProductInsight {
     explanation:
       'Le contexte hebdomadaire sert surtout à juger si le coût du jour reste soutenable dans le bloc actuel.',
     evidence: [
-      (input.tsb !== undefined && input.tsb !== null) ? `TSB ${input.tsb > 0 ? '+' : ''}${input.tsb}` : null,
+      isSet(input.tsb) ? `TSB ${input.tsb > 0 ? '+' : ''}${input.tsb}` : null,
       input.overreachingLabel,
     ].filter((line): line is string => Boolean(line)),
     confidence: input.confidence,

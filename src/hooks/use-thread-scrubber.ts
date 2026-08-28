@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { isSet } from '@/lib/util/value';
 
 /**
  * Dragging the load ruler to move where the thread is read from.
@@ -53,14 +54,14 @@ export function useThreadScrubber({
         return;
       }
       pending.current = index;
-      if ((frame.current !== undefined && frame.current !== null)) {
+      if (isSet(frame.current)) {
         return;
       }
       frame.current = requestAnimationFrame(() => {
         frame.current = null;
         const next = pending.current;
         pending.current = null;
-        if ((next !== undefined && next !== null)) {
+        if (isSet(next)) {
           onChange(next);
         }
       });
@@ -70,7 +71,7 @@ export function useThreadScrubber({
 
   useEffect(() => {
     return () => {
-      if ((frame.current !== undefined && frame.current !== null)) {
+      if (isSet(frame.current)) {
         cancelAnimationFrame(frame.current);
       }
     };
@@ -79,7 +80,7 @@ export function useThreadScrubber({
   const onPointerDown = useCallback(
     (event: React.PointerEvent<HTMLDivElement>) => {
       const index = indexFromClientX(event.clientX);
-      if ((index === undefined || index === null)) {
+      if (index === undefined || index === null) {
         return;
       }
       setDragging(true);
@@ -95,7 +96,7 @@ export function useThreadScrubber({
         return;
       }
       const index = indexFromClientX(event.clientX);
-      if ((index !== undefined && index !== null)) {
+      if (isSet(index)) {
         schedule(index);
       }
     },

@@ -1,4 +1,5 @@
 import { ActivityType, type PrismaClient } from '@prisma/client';
+import { isSet } from '@/lib/util/value';
 import type { ExtractionContext } from '@/core/features/context';
 import type { SessionStreamProvider } from '@/core/features/engine';
 import type { SessionObservation } from '@/core/observation/types';
@@ -99,7 +100,7 @@ function computeLoadFactors(
   timeInZones: readonly [number, number, number, number, number] | null,
   durationSec: number,
 ): { aerobicLoadFactor: number | null; anaerobicLoadFactor: number | null } {
-  if ((timeInZones === undefined || timeInZones === null)) {
+  if (timeInZones === undefined || timeInZones === null) {
     return { aerobicLoadFactor: null, anaerobicLoadFactor: null };
   }
 
@@ -126,10 +127,9 @@ function buildStreamResult(
     anaerobicLoadFactor,
     timeInZones,
     hrDriftPercent: analysis.hr.decouplingPct,
-    paceVariabilityIndex:
-      (analysis.run?.paceVariabilityPct !== undefined && analysis.run?.paceVariabilityPct !== null)
-        ? Number((analysis.run.paceVariabilityPct / 100).toFixed(3))
-        : null,
+    paceVariabilityIndex: isSet(analysis.run?.paceVariabilityPct)
+      ? Number((analysis.run.paceVariabilityPct / 100).toFixed(3))
+      : null,
   };
 }
 
@@ -171,22 +171,17 @@ export class PrismaSessionStreamProvider implements SessionStreamProvider {
       },
     });
 
-    if (!activity?.stream?.available || !activity.stream.data || activity.duration === null) {
+    if (!activity?.stream?.available || !activity.stream.data) {
       return null;
     }
 
-    const duration = activity.duration;
+    const { duration, type, stream } = activity;
     if (duration === null) {
       return null;
     }
 
-    const raw = activity.stream.data as unknown as RawStreams;
-    const analysis = analyzeSessionStream(
-      { type: activity.type, duration, stream: activity.stream },
-      session,
-      ctx,
-      raw,
-    );
+    const raw = stream.data as unknown as RawStreams;
+    const analysis = analyzeSessionStream({ type, duration, stream }, session, ctx, raw);
     if (!analysis) {
       return null;
     }

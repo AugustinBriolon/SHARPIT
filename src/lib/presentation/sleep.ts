@@ -1,4 +1,5 @@
 import { parseISO, format, isSameDay } from 'date-fns';
+import { isSet } from '@/lib/util/value';
 import { fr } from 'date-fns/locale';
 import { getAthleteProfile, getHealthEntries } from '@/lib/queries';
 import { getOrBuildAthleteSnapshot } from '@/lib/athlete-state/snapshot-service';
@@ -92,7 +93,7 @@ export function resolveSleepNightStatus(
   totalSleepMin: number | null,
   liveDayId: string = format(new Date(), 'yyyy-MM-dd'),
 ): SleepNightStatus {
-  if ((totalSleepMin !== undefined && totalSleepMin !== null) && totalSleepMin > 0) {
+  if (isSet(totalSleepMin) && totalSleepMin > 0) {
     return 'present';
   }
   return trainingDayId === liveDayId ? 'pending' : 'missing';
@@ -119,7 +120,7 @@ function computeAwakeMinutes(input: {
   todayEntry: DailyHealthRow | null;
 }): number | null {
   const { totalSleepMin, deepMin, remMin, lightMin, todayEntry } = input;
-  if ((totalSleepMin !== undefined && totalSleepMin !== null) && (deepMin !== undefined && deepMin !== null) && (remMin !== undefined && remMin !== null) && (lightMin !== undefined && lightMin !== null)) {
+  if (isSet(totalSleepMin) && isSet(deepMin) && isSet(remMin) && isSet(lightMin)) {
     return Math.max(0, totalSleepMin - deepMin - remMin - lightMin);
   }
   return todayEntry?.sleepAwakeMin ?? null;
@@ -143,7 +144,7 @@ function computeSleepTrendStats(input: {
       return e ? effectiveSleepMinutes(e) : null;
     },
     refDate,
-  ).filter((value): value is number => (value !== undefined && value !== null));
+  ).filter((value): value is number => isSet(value));
 
   const avgSleepMinutes7d =
     last7Sleep.length > 0
@@ -151,11 +152,11 @@ function computeSleepTrendStats(input: {
       : null;
 
   const sleepDelta7d =
-    nightPresent && (totalSleepMin !== undefined && totalSleepMin !== null) && (avgSleepMinutes7d !== undefined && avgSleepMinutes7d !== null)
+    nightPresent && isSet(totalSleepMin) && isSet(avgSleepMinutes7d)
       ? totalSleepMin - avgSleepMinutes7d
       : null;
   const targetDeltaMin =
-    nightPresent && (totalSleepMin !== undefined && totalSleepMin !== null) ? totalSleepMin - sleepTargetMin : null;
+    nightPresent && isSet(totalSleepMin) ? totalSleepMin - sleepTargetMin : null;
 
   return { sleepDelta7d, targetDeltaMin, avgSleepMinutes7d };
 }
@@ -167,11 +168,11 @@ function buildSleepRecoveryNote(input: {
   sleepScore: number | null;
 }): string | null {
   const { nightPresent, recovery, autonomicScore, sleepScore } = input;
-  if (!nightPresent || (recovery.readinessScore === undefined || recovery.readinessScore === null)) {
+  if (!nightPresent || recovery.readinessScore === undefined || recovery.readinessScore === null) {
     return null;
   }
   const recoverySignal = mapRecoveryToSignal(recovery.readinessCategory as ReadinessCategory);
-  if ((autonomicScore !== undefined && autonomicScore !== null) && (sleepScore !== undefined && sleepScore !== null) && autonomicScore > sleepScore) {
+  if (isSet(autonomicScore) && isSet(sleepScore) && autonomicScore > sleepScore) {
     return `Récupération ${recovery.readinessScore}/100 (${recoverySignal.label.toLowerCase()}) — la VFC compense partiellement le sommeil.`;
   }
   if (recovery.primaryLimitingFactor === 'sleep') {
@@ -191,7 +192,7 @@ function buildSleepBarData(
     (d, e) => {
       const mins = e?.sleepMinutes ?? null;
       let fill = 'var(--muted-foreground)';
-      if ((mins !== undefined && mins !== null)) {
+      if (isSet(mins)) {
         fill = mins >= sleepTargetMin ? 'var(--color-signal-base)' : 'var(--color-signal-caution)';
       }
       return { date: format(d, 'dd/MM', { locale: fr }), minutes: mins, fill };
@@ -276,7 +277,9 @@ function resolveSleepScorePresentation(night: Awaited<ReturnType<typeof loadSlee
   return { scoreBreakdown, sleepScore, adequacyDisplay };
 }
 
-function readSleepTimingFields(todayEntry: Awaited<ReturnType<typeof loadSleepNightData>>['todayEntry']) {
+function readSleepTimingFields(
+  todayEntry: Awaited<ReturnType<typeof loadSleepNightData>>['todayEntry'],
+) {
   return {
     bedtimeMin: todayEntry?.sleepBedtimeMin ?? null,
     wakeMin: todayEntry?.sleepWakeMin ?? null,

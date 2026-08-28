@@ -28,6 +28,7 @@ import type {
   DataCompleteness,
 } from '@/core/digital-twin/types';
 import type { I18nItem } from '@/core/inference/shared/types';
+import { isSet } from '@/lib/util/value';
 import type { EnvironmentalImpact } from '@/core/environment';
 import { environmentalImpactIsSignificant } from '@/core/inference/environment/apply-impact';
 import type { PhysiologicalDirection, ModelDirections } from './types';
@@ -241,7 +242,7 @@ function isRaceReady(
   a: AdaptationState | null,
 ): boolean {
   const peak = a?.estimatedAdaptationPeak;
-  return r?.readinessCategory === 'OPTIMAL' && isFreshFatigue(f) && (peak !== undefined && peak !== null) && peak <= 5;
+  return r?.readinessCategory === 'OPTIMAL' && isFreshFatigue(f) && isSet(peak) && peak <= 5;
 }
 
 function isTrainHardReady(
@@ -383,7 +384,7 @@ export function detectConflicts(
     detectCapacityConflict(r, f),
     detectTimingConflict(f, a),
     detectSignalConflict(f, a),
-  ].filter((conflict): conflict is ReasoningConflict => (conflict !== undefined && conflict !== null));
+  ].filter((conflict): conflict is ReasoningConflict => isSet(conflict));
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -466,7 +467,7 @@ function detectRaceReadinessOpportunity(
   a: AdaptationState | null,
 ): ReasoningOpportunity | null {
   const peak = a?.estimatedAdaptationPeak;
-  if (!a || (peak === undefined || peak === null) || peak === undefined || peak > 7 || !isAdequateRecovery(r)) {
+  if (!a || !isSet(peak) || peak > 7 || !isAdequateRecovery(r)) {
     return null;
   }
 
@@ -510,7 +511,7 @@ export function detectOpportunities(
     detectRaceReadinessOpportunity(r, a),
     detectRecoveryWindowOpportunity(r),
   ]
-    .filter((opportunity): opportunity is ReasoningOpportunity => (opportunity !== undefined && opportunity !== null))
+    .filter((opportunity): opportunity is ReasoningOpportunity => isSet(opportunity))
     .sort((a, b) => b.expectedBenefit - a.expectedBenefit)
     .slice(0, 2);
 }
@@ -579,7 +580,7 @@ export function appendEnvironmentalFindings(
 
   const recoveryDemand = readAvailableMetric(impact.recovery.demandMultiplier);
   const performanceRatio = readAvailableMetric(impact.performance.expectedOutputRatio);
-  const severity = (recoveryDemand !== undefined && recoveryDemand !== null) && recoveryDemand > 1.15 ? 'WARNING' : ('INFO' as const);
+  const severity = isSet(recoveryDemand) && recoveryDemand > 1.15 ? 'WARNING' : ('INFO' as const);
 
   return [
     ...findings,
@@ -591,17 +592,15 @@ export function appendEnvironmentalFindings(
       evidenceItems: [
         {
           code: 'reasoning.finding.environmentalLoad.evidence.recoveryDemand',
-          params:
-            (recoveryDemand !== undefined && recoveryDemand !== null)
-              ? { recoveryPct: Math.round((recoveryDemand - 1) * 100) }
-              : undefined,
+          params: isSet(recoveryDemand)
+            ? { recoveryPct: Math.round((recoveryDemand - 1) * 100) }
+            : undefined,
         },
         {
           code: 'reasoning.finding.environmentalLoad.evidence.performanceExpectation',
-          params:
-            (performanceRatio !== undefined && performanceRatio !== null)
-              ? { performancePct: Math.round((1 - performanceRatio) * 100) }
-              : undefined,
+          params: isSet(performanceRatio)
+            ? { performancePct: Math.round((1 - performanceRatio) * 100) }
+            : undefined,
         },
       ],
       confidence: impact.confidence,
@@ -710,7 +709,7 @@ function firstModelLimitingFactor(
     r ? recoveryLimitingFactor(r) : null,
     a ? adaptationLimitingFactor(a) : null,
   ];
-  return candidates.find((limit) => (limit !== undefined && limit !== null)) ?? null;
+  return candidates.find((limit) => isSet(limit)) ?? null;
 }
 
 export function selectLimitingFactor(
@@ -956,7 +955,7 @@ export function computeReasoningConfidence(
 
   const dataCounts = available.map((m) => m!.dataCompleteness);
   const { dataCompleteness, confidenceCap } = resolveDataCompleteness(dataCounts, count);
-  if ((confidenceCap !== undefined && confidenceCap !== null)) {
+  if (isSet(confidenceCap)) {
     base = Math.min(base, confidenceCap);
   }
 

@@ -3,6 +3,7 @@
  */
 
 import type { ActivityEnvironmentalCorrection } from '@/core/environment';
+import { isSet } from '@/lib/util/value';
 import type {
   PlannedSessionCompletionComparison,
   PlannedSessionContext,
@@ -155,7 +156,7 @@ export function buildPlannedSessionCompletionComparison(input: {
       plannedThermalLabel,
       observedThermalLabel,
       observedCorrection: input.observedCorrection,
-      impactDiffers: (deltaLabel !== undefined && deltaLabel !== null),
+      impactDiffers: isSet(deltaLabel),
     }),
   });
 }

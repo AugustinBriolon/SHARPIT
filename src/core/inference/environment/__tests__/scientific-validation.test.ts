@@ -6,6 +6,7 @@
  */
 
 import { readFileSync } from 'node:fs';
+import { isSet } from '@/lib/util/value';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { getEnvironmentalStressor } from '@/core/environment';
@@ -61,10 +62,10 @@ function assertRange(value: number | null, min?: number, max?: number) {
     expect(min).toBeUndefined();
     return;
   }
-  if (min !== undefined && min !== null) {
+  if (isSet(min)) {
     expect(value).toBeGreaterThanOrEqual(min);
   }
-  if (max !== undefined && max !== null) {
+  if (isSet(max)) {
     expect(value).toBeLessThanOrEqual(max);
   }
 }

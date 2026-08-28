@@ -1,4 +1,5 @@
 import { ActivityType } from '@prisma/client';
+import { isSet } from '@/lib/util/value';
 import { resolveExerciseCatalogId } from '@/lib/exercises';
 import type { CreateActivityInput, UpdateActivityInput } from '@/lib/validators/activity';
 
@@ -7,7 +8,7 @@ function cleanMetrics<T extends Record<string, unknown>>(metrics?: T | null) {
     return undefined;
   }
   const entries = Object.entries(metrics).filter(
-    ([, value]) => (value !== undefined && value !== null) && value !== undefined && value !== '',
+    ([, value]) => isSet(value) && value !== undefined && value !== '',
   );
   return entries.length ? (Object.fromEntries(entries) as T) : undefined;
 }
@@ -27,10 +28,7 @@ const CREATE_METRIC_HANDLERS: Partial<
     metrics ? { create: cleanMetrics(metrics as Record<string, unknown>) } : undefined,
 };
 
-function createMetricRelation(
-  type: ActivityType,
-  metrics: unknown,
-): MetricRelation | undefined {
+function createMetricRelation(type: ActivityType, metrics: unknown): MetricRelation | undefined {
   return CREATE_METRIC_HANDLERS[type]?.(metrics);
 }
 
@@ -44,10 +42,14 @@ export function buildActivityCreateData(input: CreateActivityInput) {
 
   return {
     ...base,
-    runMetrics: input.type === ActivityType.RUN ? createMetricRelation(input.type, runMetrics) : undefined,
-    bikeMetrics: input.type === ActivityType.BIKE ? createMetricRelation(input.type, bikeMetrics) : undefined,
-    swimMetrics: input.type === ActivityType.SWIM ? createMetricRelation(input.type, swimMetrics) : undefined,
-    hikeMetrics: input.type === ActivityType.HIKE ? createMetricRelation(input.type, hikeMetrics) : undefined,
+    runMetrics:
+      input.type === ActivityType.RUN ? createMetricRelation(input.type, runMetrics) : undefined,
+    bikeMetrics:
+      input.type === ActivityType.BIKE ? createMetricRelation(input.type, bikeMetrics) : undefined,
+    swimMetrics:
+      input.type === ActivityType.SWIM ? createMetricRelation(input.type, swimMetrics) : undefined,
+    hikeMetrics:
+      input.type === ActivityType.HIKE ? createMetricRelation(input.type, hikeMetrics) : undefined,
     strengthSets:
       input.type === ActivityType.STRENGTH && strengthSets?.length
         ? {

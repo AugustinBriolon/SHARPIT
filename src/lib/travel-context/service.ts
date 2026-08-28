@@ -1,4 +1,5 @@
 import { addDays } from 'date-fns';
+import { isSet } from '@/lib/util/value';
 import {
   Prisma,
   type AthleteMemoryEntryType,
@@ -62,8 +63,8 @@ export async function resolveTravelContextCoordinates(
   },
 ): Promise<{ locationLabel: string; locationLat: number; locationLng: number }> {
   if (
-    (input.locationLat !== undefined && input.locationLat !== null) &&
-    (input.locationLng !== undefined && input.locationLng !== null) &&
+    isSet(input.locationLat) &&
+    isSet(input.locationLng) &&
     Number.isFinite(input.locationLat) &&
     Number.isFinite(input.locationLng)
   ) {

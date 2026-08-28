@@ -4,6 +4,7 @@
  */
 
 import type { SessionIntensity } from '@prisma/client';
+import { isSet } from '@/lib/util/value';
 import {
   INTENSITY_REDUCTION_TSS_FACTOR,
   type ScenarioDefinition,
@@ -123,8 +124,9 @@ export function optimisticSessionFieldsForKind(
     case 'REDUCE_INTENSITY':
       return {
         intensity: stepDownIntensity(current.intensity),
-        load:
-          (current.load !== undefined && current.load !== null) ? Math.round(current.load * INTENSITY_REDUCTION_TSS_FACTOR) : null,
+        load: isSet(current.load)
+          ? Math.round(current.load * INTENSITY_REDUCTION_TSS_FACTOR)
+          : null,
       };
     case 'INDOOR':
       return { exposureSetting: 'INDOOR' };

@@ -1,4 +1,5 @@
 import { differenceInCalendarDays, format, startOfDay, subDays } from 'date-fns';
+import { isSet } from '@/lib/util/value';
 import { fr } from 'date-fns/locale';
 import {
   getActivePhysicalNotes,
@@ -87,14 +88,14 @@ async function loadHomeWeatherHint(
     typeof payload.airTemperatureC === 'number' ? payload.airTemperatureC : null;
   const relativeHumidityPct =
     typeof payload.relativeHumidityPct === 'number' ? payload.relativeHumidityPct : null;
-  if ((airTemperatureC === undefined || airTemperatureC === null) && (relativeHumidityPct === undefined || relativeHumidityPct === null)) {
+  if (!isSet(airTemperatureC) && !isSet(relativeHumidityPct)) {
     return null;
   }
   return { airTemperatureC, relativeHumidityPct };
 }
 
 function formatPace(secPerKm?: number | null): string | null {
-  if ((secPerKm === undefined || secPerKm === null) || secPerKm <= 0) {
+  if (secPerKm === undefined || secPerKm === null || secPerKm <= 0) {
     return null;
   }
   const m = Math.floor(secPerKm / 60);
@@ -204,7 +205,7 @@ function appendStrengthDetailParts(a: CoachActivity, parts: string[]): void {
   const exos = a.strengthSets
     .slice(0, 5)
     .map((s) => {
-      const w = (s.weightKg !== undefined && s.weightKg !== null) ? ` ${s.weightKg}kg` : '';
+      const w = isSet(s.weightKg) ? ` ${s.weightKg}kg` : '';
       return `${s.exercise} ${s.sets}x${s.reps}${w}`;
     })
     .join(', ');
@@ -229,7 +230,7 @@ function mapActivityForCoachRecent(a: CoachActivity, today: Date) {
     type: TYPE_FR[a.type] ?? a.type,
     title: a.title ?? '',
     duration: formatMin(a.duration),
-    load: (a.load !== undefined && a.load !== null) ? Math.round(a.load) : null,
+    load: isSet(a.load) ? Math.round(a.load) : null,
     rpe: a.rpe,
     feeling: a.feeling ?? null,
     detail: activityDetailParts(a).join(' · '),
@@ -242,13 +243,11 @@ function mapActivityForCoachRecent(a: CoachActivity, today: Date) {
  * (synthèse, pas de données brutes) → coût minimal et meilleures réponses.
  */
 function averageNumeric(vals: (number | null | undefined)[]): number | null {
-  const ok = vals.filter((v): v is number => (v !== undefined && v !== null) && v !== undefined);
+  const ok = vals.filter((v): v is number => isSet(v) && v !== undefined);
   return ok.length ? Math.round(ok.reduce((s, v) => s + v, 0) / ok.length) : null;
 }
 
-function buildHealthAverages(
-  last7: Awaited<ReturnType<typeof getHealthEntries>>,
-) {
+function buildHealthAverages(last7: Awaited<ReturnType<typeof getHealthEntries>>) {
   return {
     avgSleepMin: averageNumeric(last7.map((h) => h.sleepMinutes)),
     avgHrv: averageNumeric(last7.map((h) => h.hrv)),
@@ -284,9 +283,7 @@ function buildTodayHealthFields(
   };
 }
 
-function buildHealthFromEntries(
-  healthEntries: Awaited<ReturnType<typeof getHealthEntries>>,
-) {
+function buildHealthFromEntries(healthEntries: Awaited<ReturnType<typeof getHealthEntries>>) {
   const last7 = healthEntries.slice(0, 7);
   return {
     ...buildTodayHealthFields(healthEntries[0]),
@@ -294,10 +291,7 @@ function buildHealthFromEntries(
   };
 }
 
-function buildGoalsContext(
-  goals: Awaited<ReturnType<typeof getGoals>>,
-  today: Date,
-) {
+function buildGoalsContext(goals: Awaited<ReturnType<typeof getGoals>>, today: Date) {
   const activeGoals = goals.filter((g) => !g.achieved);
   const races = activeGoals
     .filter((g) => g.kind === 'RACE' && g.targetDate)
@@ -353,7 +347,7 @@ function legacyPhysicalTrend(
   }
   const last = checkins[0]?.severity;
   const prev = checkins[1]?.severity;
-  if ((last === undefined || last === null) || (prev === undefined || prev === null)) {
+  if (!isSet(last) || !isSet(prev)) {
     return null;
   }
   if (last < prev) {
@@ -459,7 +453,7 @@ function buildCoachDecision(
     primaryConflict: decisionRaw.conflicts[0] ?? null,
     primaryOpportunity: decisionRaw.opportunities[0] ?? null,
     adviceActionable: athleteSnapshot.adviceActionable,
-    prescriptiveAdviceAllowed: (athleteSnapshot.todaysDecision !== undefined && athleteSnapshot.todaysDecision !== null),
+    prescriptiveAdviceAllowed: isSet(athleteSnapshot.todaysDecision),
   };
 }
 
@@ -497,8 +491,7 @@ function buildCoachAdaptationSnapshot(
     limitingFactor: adaptationSnapshot.limitingFactor ?? null,
     estimatedAdaptationPeak: adaptationSnapshot.estimatedAdaptationPeak ?? null,
     plateauRisk: adaptationSnapshot.plateauRisk,
-    overreachingWithoutAdaptationDetected:
-      adaptationSnapshot.overreachingWithoutAdaptationDetected,
+    overreachingWithoutAdaptationDetected: adaptationSnapshot.overreachingWithoutAdaptationDetected,
     confidence: adaptationSnapshot.confidence,
   };
 }
@@ -516,7 +509,9 @@ function buildCoachIntelligence(
 function resolveCoachHomeLabel(
   profile: Awaited<ReturnType<typeof getAthleteProfile>>,
 ): string | null {
-  return profile?.homeLocationLabel?.trim() || ((profile?.homeLocationLat !== undefined && profile?.homeLocationLat !== null) ? 'Domicile' : null);
+  return (
+    profile?.homeLocationLabel?.trim() || (isSet(profile?.homeLocationLat) ? 'Domicile' : null)
+  );
 }
 
 function environmentAdjustmentFields(
@@ -597,9 +592,7 @@ function mapUpcomingPlanned(
   };
 }
 
-function buildCoachProfile(
-  profile: Awaited<ReturnType<typeof getAthleteProfile>>,
-) {
+function buildCoachProfile(profile: Awaited<ReturnType<typeof getAthleteProfile>>) {
   if (!profile) {
     return null;
   }
@@ -866,12 +859,12 @@ const TRAINING_CAPACITY_FR: Record<string, string> = {
 
 function profileThresholdParts(profile: NonNullable<CoachContext['profile']>): string[] {
   return [
-    (profile.ftpW !== undefined && profile.ftpW !== null) ? `FTP ${profile.ftpW} W` : null,
-    (profile.lthr !== undefined && profile.lthr !== null) ? `LTHR ${profile.lthr} bpm` : null,
-    (profile.maxHr !== undefined && profile.maxHr !== null) ? `FC max ${profile.maxHr} bpm` : null,
+    isSet(profile.ftpW) ? `FTP ${profile.ftpW} W` : null,
+    isSet(profile.lthr) ? `LTHR ${profile.lthr} bpm` : null,
+    isSet(profile.maxHr) ? `FC max ${profile.maxHr} bpm` : null,
     profile.thresholdPace ? `Allure seuil ${profile.thresholdPace}` : null,
-    (profile.vo2maxRunning !== undefined && profile.vo2maxRunning !== null) ? `VO2max course ${profile.vo2maxRunning}` : null,
-    (profile.vo2maxCycling !== undefined && profile.vo2maxCycling !== null) ? `VO2max vélo ${profile.vo2maxCycling}` : null,
+    isSet(profile.vo2maxRunning) ? `VO2max course ${profile.vo2maxRunning}` : null,
+    isSet(profile.vo2maxCycling) ? `VO2max vélo ${profile.vo2maxCycling}` : null,
   ].filter(Boolean) as string[];
 }
 
@@ -883,7 +876,10 @@ function formatProfileThresholdLines(profile: CoachContext['profile']): string[]
   return seuils.length ? [`Seuils physiologiques : ${seuils.join(', ')}.`] : [];
 }
 
-function appendFatigueWarningLines(fatigue: NonNullable<CoachContext['fatigue']>, lines: string[]): void {
+function appendFatigueWarningLines(
+  fatigue: NonNullable<CoachContext['fatigue']>,
+  lines: string[],
+): void {
   if (fatigue.primaryLimitingFactor) {
     lines.push(`Facteur limitant principal : ${fatigue.primaryLimitingFactor}.`);
   }
@@ -892,7 +888,7 @@ function appendFatigueWarningLines(fatigue: NonNullable<CoachContext['fatigue']>
       `⚠ Risque de surentraînement fonctionnel : ${fatigue.functionalOverreachingRisk}. Priorise la récupération avant d'augmenter la charge.`,
     );
   }
-  if ((fatigue.estimatedTimeToFresh !== undefined && fatigue.estimatedTimeToFresh !== null) && fatigue.fatigueLevel !== 'FRESH') {
+  if (isSet(fatigue.estimatedTimeToFresh) && fatigue.fatigueLevel !== 'FRESH') {
     lines.push(`Retour à l'état frais estimé dans ${fatigue.estimatedTimeToFresh} jour(s).`);
   }
   if (fatigue.performanceImpairmentEstimate && fatigue.performanceImpairmentEstimate > 0.1) {
@@ -918,7 +914,7 @@ const ADAPTATION_TREND_FR: Record<string, string> = {
 
 function fatigueSummaryBits(fatigue: NonNullable<CoachContext['fatigue']>): string[] {
   return [
-    (fatigue.fatigueIndex !== undefined && fatigue.fatigueIndex !== null) ? `Index ${fatigue.fatigueIndex}/100` : null,
+    isSet(fatigue.fatigueIndex) ? `Index ${fatigue.fatigueIndex}/100` : null,
     fatigue.fatigueLevel ? (FATIGUE_LEVEL_FR[fatigue.fatigueLevel] ?? fatigue.fatigueLevel) : null,
     fatigue.trainingCapacity
       ? `Capacité d'entraînement ${TRAINING_CAPACITY_FR[fatigue.trainingCapacity] ?? fatigue.trainingCapacity}`
@@ -955,14 +951,14 @@ function appendAdaptationWarningLines(
       `⚠ Risque de plateau : ≥ 14 jours sans progression d'adaptation. Un changement de stimulus est nécessaire.`,
     );
   }
-  if ((adaptation.estimatedAdaptationPeak !== undefined && adaptation.estimatedAdaptationPeak !== null)) {
+  if (isSet(adaptation.estimatedAdaptationPeak)) {
     lines.push(`Pic de forme estimé dans ${adaptation.estimatedAdaptationPeak} jour(s).`);
   }
 }
 
 function adaptationSummaryBits(adaptation: NonNullable<CoachContext['adaptation']>): string[] {
   return [
-    (adaptation.adaptationIndex !== undefined && adaptation.adaptationIndex !== null) ? `Index ${adaptation.adaptationIndex}/100` : null,
+    isSet(adaptation.adaptationIndex) ? `Index ${adaptation.adaptationIndex}/100` : null,
     adaptation.adaptationStatus
       ? (ADAPTATION_STATUS_FR[adaptation.adaptationStatus] ?? adaptation.adaptationStatus)
       : null,
@@ -986,8 +982,8 @@ function formatAdaptationSection(adaptation: CoachContext['adaptation']): string
 function environmentSummaryBits(environment: CoachContext['environment']): string[] {
   return [
     environment.homeLabel ? `lieu ${environment.homeLabel}` : null,
-    (environment.airTemperatureC !== undefined && environment.airTemperatureC !== null) ? `${Math.round(environment.airTemperatureC)} °C` : null,
-    (environment.relativeHumidityPct !== undefined && environment.relativeHumidityPct !== null)
+    isSet(environment.airTemperatureC) ? `${Math.round(environment.airTemperatureC)} °C` : null,
+    isSet(environment.relativeHumidityPct)
       ? `humidité ${Math.round(environment.relativeHumidityPct)} %`
       : null,
     environment.thermalLabel,
@@ -998,12 +994,12 @@ function appendEnvironmentAdjustmentLines(
   environment: CoachContext['environment'],
   lines: string[],
 ): void {
-  if ((environment.recoveryDemandAdjustment !== undefined && environment.recoveryDemandAdjustment !== null) && environment.recoveryDemandAdjustment !== 0) {
+  if (isSet(environment.recoveryDemandAdjustment) && environment.recoveryDemandAdjustment !== 0) {
     lines.push(
       `Ajustement récupération lié à l'environnement : ${environment.recoveryDemandAdjustment > 0 ? '+' : ''}${Math.round(environment.recoveryDemandAdjustment * 100)} %.`,
     );
   }
-  if ((environment.performanceAdjustment !== undefined && environment.performanceAdjustment !== null) && environment.performanceAdjustment !== 0) {
+  if (isSet(environment.performanceAdjustment) && environment.performanceAdjustment !== 0) {
     lines.push(
       `Ajustement performance attendu : ${environment.performanceAdjustment > 0 ? '+' : ''}${Math.round(environment.performanceAdjustment * 100)} %.`,
     );
@@ -1031,15 +1027,15 @@ function formatEnvironmentSection(environment: CoachContext['environment']): str
 
 function healthSummaryBits(health: CoachContext['health']): string[] {
   return [
-    (health.readinessToday !== undefined && health.readinessToday !== null) ? `Readiness du jour ${health.readinessToday}/100` : null,
+    isSet(health.readinessToday) ? `Readiness du jour ${health.readinessToday}/100` : null,
     health.readinessLevel ? `(${health.readinessLevel})` : null,
     health.hrvStatus ? `HRV ${health.hrvStatus}` : null,
-    (health.bodyBattery !== undefined && health.bodyBattery !== null) ? `Body Battery ${health.bodyBattery}` : null,
-    (health.avgSleepMin !== undefined && health.avgSleepMin !== null)
+    isSet(health.bodyBattery) ? `Body Battery ${health.bodyBattery}` : null,
+    isSet(health.avgSleepMin)
       ? `sommeil moy 7j ${Math.floor(health.avgSleepMin / 60)}h${(health.avgSleepMin % 60).toString().padStart(2, '0')}`
       : null,
-    (health.avgRestingHr !== undefined && health.avgRestingHr !== null) ? `FC repos moy ${health.avgRestingHr}` : null,
-    (health.avgHrv !== undefined && health.avgHrv !== null) ? `HRV moy ${health.avgHrv}` : null,
+    isSet(health.avgRestingHr) ? `FC repos moy ${health.avgRestingHr}` : null,
+    isSet(health.avgHrv) ? `HRV moy ${health.avgHrv}` : null,
   ].filter(Boolean) as string[];
 }
 
@@ -1058,10 +1054,10 @@ function formatPrimaryRaceLine(primaryRace: NonNullable<CoachContext['primaryRac
 }
 
 function formatMetricGoalLine(goal: CoachContext['metricGoals'][number]): string {
-  if ((goal.target === undefined || goal.target === null)) {
+  if (goal.target === undefined || goal.target === null) {
     return `Objectif métrique : ${goal.title}.`;
   }
-  const current = (goal.current !== undefined && goal.current !== null) ? ` (actuel ${goal.current})` : '';
+  const current = isSet(goal.current) ? ` (actuel ${goal.current})` : '';
   return `Objectif métrique : ${goal.title} → cible ${goal.target}${goal.unit ?? ''}${current}.`;
 }
 
@@ -1087,8 +1083,8 @@ function formatGoalsSection(ctx: CoachContext): string[] {
 
 function formatRecentActivityLine(a: CoachContext['recent'][number]): string {
   const extra = [
-    (a.load !== undefined && a.load !== null) ? `charge ${a.load}` : null,
-    (a.rpe !== undefined && a.rpe !== null) ? `RPE ${a.rpe}` : null,
+    isSet(a.load) ? `charge ${a.load}` : null,
+    isSet(a.rpe) ? `RPE ${a.rpe}` : null,
     a.feeling ? `ressenti ${a.feeling}` : null,
     a.detail || null,
   ]
@@ -1119,11 +1115,11 @@ function formatPhysicalSection(physical: CoachContext['physical']): string[] {
       const bits = [
         `${p.category} : ${p.title}`,
         p.bodyPart ? `zone ${p.bodyPart}${p.side ? ` (${p.side})` : ''}` : null,
-        (p.severity !== undefined && p.severity !== null) ? `sévérité inférée ${p.severity}/10` : null,
+        isSet(p.severity) ? `sévérité inférée ${p.severity}/10` : null,
         `statut ${p.status}`,
         p.trend ? `tendance ${p.trend}` : null,
         p.functionalCapacity ? `capacité fonctionnelle ${p.functionalCapacity}` : null,
-        (p.confidence !== undefined && p.confidence !== null) ? `confiance ${Math.round(p.confidence * 100)}%` : null,
+        isSet(p.confidence) ? `confiance ${Math.round(p.confidence * 100)}%` : null,
         p.description || null,
       ]
         .filter(Boolean)
@@ -1194,9 +1190,7 @@ function formatRealizedSessionsSection(
   ];
 }
 
-function formatUpcomingPlannedSection(
-  upcomingPlanned: CoachContext['upcomingPlanned'],
-): string[] {
+function formatUpcomingPlannedSection(upcomingPlanned: CoachContext['upcomingPlanned']): string[] {
   if (!upcomingPlanned.length) {
     return [];
   }

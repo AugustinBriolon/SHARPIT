@@ -8,6 +8,7 @@ import {
   type EnvironmentalApplicability,
 } from '@/core/environment';
 import type { ActivityType } from '@prisma/client';
+import { isSet } from '@/lib/util/value';
 import { PrismaEnvironmentalObservationRepository } from '@/infrastructure/environment/prisma-environment-observation-repository';
 import { resolveAthleteGeoLocation } from '@/lib/environment/athlete-location';
 import { activityWeatherWindow } from '@/lib/activity/weather/activity-weather-window';
@@ -99,7 +100,7 @@ export async function resolveActivityEnvironmentPresentation(input: {
     ]);
 
     const location =
-      (input.activity.observedLocationLat !== undefined && input.activity.observedLocationLat !== null) && (input.activity.observedLocationLng !== undefined && input.activity.observedLocationLng !== null)
+      isSet(input.activity.observedLocationLat) && isSet(input.activity.observedLocationLng)
         ? {
             latitude: input.activity.observedLocationLat,
             longitude: input.activity.observedLocationLng,

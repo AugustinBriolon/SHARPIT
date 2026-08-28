@@ -1,4 +1,5 @@
 import type { RecordsPayload } from '@/lib/training/records';
+import { isSet } from '@/lib/util/value';
 import type { ActivityStreamPayload, MultisportStreamsPayload } from '@/lib/streams/streams';
 import type {
   ClientActivity,
@@ -41,7 +42,7 @@ function toDate(value: string | Date): Date {
 }
 
 function toDateOrNull(value: string | Date | null | undefined): Date | null {
-  if ((value === undefined || value === null)) {
+  if (value === undefined || value === null) {
     return null;
   }
   return value instanceof Date ? value : new Date(value);
@@ -127,7 +128,7 @@ export async function fetchHealthEntries(
 export async function fetchBodyCompositionEntries(
   days?: number,
 ): Promise<ClientBodyCompositionEntry[]> {
-  const url = (days !== undefined && days !== null) ? `/api/body-composition?days=${days}` : '/api/body-composition';
+  const url = isSet(days) ? `/api/body-composition?days=${days}` : '/api/body-composition';
   const data = await fetchJson<Serialized<ClientBodyCompositionEntry>[]>(url);
   return data.map((entry) => ({
     ...entry,

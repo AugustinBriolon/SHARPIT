@@ -1,3 +1,4 @@
+import { isSet } from '@/lib/util/value';
 /**
  * Pick the Body Battery level that matches Garmin Connect’s “current” reading.
  *
@@ -41,14 +42,14 @@ export function pickCurrentBodyBattery(
   }
 
   const recent = finiteLevel(payload.bodyBatteryMostRecentValue);
-  if ((recent !== undefined && recent !== null)) {
+  if (isSet(recent)) {
     return recent;
   }
 
   let last: number | null = null;
   for (const entry of payload.bodyBatteryValuesArray ?? []) {
     const level = levelFromEntry(entry);
-    if ((level !== undefined && level !== null)) {
+    if (isSet(level)) {
       last = level;
     }
   }

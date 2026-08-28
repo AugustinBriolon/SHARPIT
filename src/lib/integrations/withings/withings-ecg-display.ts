@@ -1,4 +1,5 @@
 import { WITHINGS_MEASURE } from '@/lib/integrations/withings/withings-measures';
+import { isSet } from '@/lib/util/value';
 import type { CompositionMetricId } from '@/lib/health/composition-metric-guides';
 import type { CorpsTone } from '@/components/corps/corps-ui';
 
@@ -243,7 +244,7 @@ function parseEcgExtras(extras: unknown): {
   ecg?: Record<string, number>;
   ecgAfibClassification?: number;
 } | null {
-  if ((extras === undefined || extras === null) || typeof extras !== 'object') {
+  if (extras === undefined || extras === null || typeof extras !== 'object') {
     return null;
   }
   return extras as {
@@ -258,14 +259,14 @@ export function parseWithingsEcgStats(extras: unknown): WithingsEcgStat[] {
     return [];
   }
   const { ecg, ecgAfibClassification } = parsed;
-  if (!ecg && (ecgAfibClassification === undefined || ecgAfibClassification === null)) {
+  if (!ecg && !isSet(ecgAfibClassification)) {
     return [];
   }
 
   const stats: WithingsEcgStat[] = [];
   const skipAfibKeys = new Set<string>();
 
-  if ((ecgAfibClassification !== undefined && ecgAfibClassification !== null)) {
+  if (isSet(ecgAfibClassification)) {
     pushAfibClassification(stats, skipAfibKeys, ecgAfibClassification);
   }
 

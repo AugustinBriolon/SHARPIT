@@ -1,4 +1,5 @@
 import type { QueryClient } from '@tanstack/react-query';
+import { isSet } from '@/lib/util/value';
 import { queryKeys } from '@/lib/query/keys';
 import type { ClientPlannedSession } from '@/lib/query/types';
 
@@ -20,7 +21,7 @@ export type PlannedSessionCacheSeed = {
 };
 
 function toDate(value: Date | string | null | undefined): Date | null {
-  if ((value === undefined || value === null)) {
+  if (value === undefined || value === null) {
     return null;
   }
   return value instanceof Date ? value : new Date(value);
@@ -30,10 +31,10 @@ function coalesceField<T>(
   seedValue: T | null | undefined,
   baseValue: T | null | undefined,
 ): T | null {
-  if (seedValue !== undefined && seedValue !== null) {
+  if (isSet(seedValue)) {
     return seedValue;
   }
-  if (baseValue !== undefined && baseValue !== null) {
+  if (isSet(baseValue)) {
     return baseValue;
   }
   return seedValue ?? baseValue ?? null;

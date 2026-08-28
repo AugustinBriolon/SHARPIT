@@ -17,6 +17,7 @@
  * name is still a reading.
  */
 import { endOfDay, startOfDay } from 'date-fns';
+import { isSet } from '@/lib/util/value';
 import type { EnvironmentalPrediction } from '@/core/environment';
 import {
   formatCityFromLocationLabel,
@@ -107,7 +108,7 @@ export function selectTodayWeather(
     return null;
   }
 
-  const withTemp = today.filter((hour) => (hour.airTemperatureC !== undefined && hour.airTemperatureC !== null));
+  const withTemp = today.filter((hour) => isSet(hour.airTemperatureC));
   if (withTemp.length === 0) {
     return null;
   }
@@ -123,7 +124,7 @@ export function selectTodayWeather(
 
   const precipitations = forCondition
     .map((hour) => hour.precipitationMm)
-    .filter((value): value is number => (value !== undefined && value !== null));
+    .filter((value): value is number => isSet(value));
 
   return {
     tempC: nearest.airTemperatureC as number,
@@ -133,12 +134,12 @@ export function selectTodayWeather(
       avgCloudCoverPct: mean(
         forCondition
           .map((hour) => hour.cloudCoverPct)
-          .filter((value): value is number => (value !== undefined && value !== null)),
+          .filter((value): value is number => isSet(value)),
       ),
       avgSolarRadiationWm2: mean(
         forCondition
           .map((hour) => hour.solarRadiationWm2)
-          .filter((value): value is number => (value !== undefined && value !== null)),
+          .filter((value): value is number => isSet(value)),
       ),
     }),
   };

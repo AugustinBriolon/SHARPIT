@@ -1,4 +1,5 @@
 import { decisionCompatibilityRule } from './rules/decision-compatibility';
+import { isSet } from '@/lib/util/value';
 import { physicalHealthRule } from './rules/physical-health';
 import { malformedAndDuplicateRule } from './rules/malformed-and-duplicate';
 import { completedConflictRule } from './rules/completed-conflict';
@@ -61,7 +62,7 @@ function evaluateProposal(context: GateContext, proposal: GateProposal): GateSes
   const status = worstStatus(findings);
   const requiredAssumptions = findings
     .map((f) => f.requiredAssumption)
-    .filter((a): a is string => (a !== undefined && a !== null));
+    .filter((a): a is string => isSet(a));
   const saferAlternative =
     status === 'REJECTED'
       ? (findings.find((f) => f.saferAlternative)?.saferAlternative ?? null)

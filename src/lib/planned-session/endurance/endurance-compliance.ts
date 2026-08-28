@@ -11,6 +11,7 @@
  * into a failed session.
  */
 import type { EndurancePrescription } from '@/lib/planned-session/endurance/endurance-prescription';
+import { isSet } from '@/lib/util/value';
 import type { StepSegment } from '@/lib/planned-session/endurance/endurance-segmentation';
 import { segmentEnduranceActivity } from '@/lib/planned-session/endurance/endurance-segmentation';
 import {
@@ -74,12 +75,12 @@ function executedRatioOf(
     return 1;
   }
 
-  if ((plannedSec !== undefined && plannedSec !== null) && plannedSec > 0) {
+  if (isSet(plannedSec) && plannedSec > 0) {
     return Math.min(1, actualSec / plannedSec);
   }
 
   const { duration } = segment.ref.step;
-  if (duration.type === 'distance' && (segment.startM !== undefined && segment.startM !== null) && (segment.endM !== undefined && segment.endM !== null)) {
+  if (duration.type === 'distance' && isSet(segment.startM) && isSet(segment.endM)) {
     return Math.min(1, Math.max(0, segment.endM - segment.startM) / duration.meters);
   }
 
@@ -95,7 +96,7 @@ const METRIC_BAND_CHECKERS: Record<
     if (target.metric !== 'pace') {
       return null;
     }
-    if ((sample.speed === undefined || sample.speed === null) || sample.speed <= 0) {
+    if (sample.speed === undefined || sample.speed === null || sample.speed <= 0) {
       return null;
     }
     return sample.speed >= target.speedMsMin && sample.speed <= target.speedMsMax;
@@ -104,7 +105,7 @@ const METRIC_BAND_CHECKERS: Record<
     if (target.metric !== 'hr') {
       return null;
     }
-    return (sample.hr === undefined || sample.hr === null)
+    return sample.hr === undefined || sample.hr === null
       ? null
       : sample.hr >= target.bpmMin && sample.hr <= target.bpmMax;
   },
@@ -112,7 +113,7 @@ const METRIC_BAND_CHECKERS: Record<
     if (target.metric !== 'power') {
       return null;
     }
-    return (sample.watts === undefined || sample.watts === null)
+    return sample.watts === undefined || sample.watts === null
       ? null
       : sample.watts >= target.wattsMin && sample.watts <= target.wattsMax;
   },
@@ -120,7 +121,7 @@ const METRIC_BAND_CHECKERS: Record<
     if (target.metric !== 'cadence') {
       return null;
     }
-    return (sample.cadence === undefined || sample.cadence === null)
+    return sample.cadence === undefined || sample.cadence === null
       ? null
       : sample.cadence >= target.min && sample.cadence <= target.max;
   },
@@ -155,7 +156,7 @@ function judgeStep(
   let inside = 0;
   for (const sample of window) {
     const verdict = sampleInBand(sample, resolved);
-    if ((verdict === undefined || verdict === null)) {
+    if (verdict === undefined || verdict === null) {
       continue;
     }
     usable += 1;
@@ -219,7 +220,7 @@ export function computeEnduranceCompliance(input: {
     segmentation.prescribedCount > 0 ? executedWork / segmentation.prescribedCount : 0;
 
   // Weighted by time: a twenty-second stride should not weigh like a five-minute block.
-  const judged = steps.filter((step) => (step.inBandRatio !== undefined && step.inBandRatio !== null));
+  const judged = steps.filter((step) => isSet(step.inBandRatio));
   const judgedSeconds = judged.reduce((total, step) => total + Math.max(1, step.actualSec), 0);
   const adherence =
     judged.length > 0
@@ -230,7 +231,7 @@ export function computeEnduranceCompliance(input: {
       : null;
 
   const score =
-    (adherence === undefined || adherence === null)
+    adherence === undefined || adherence === null
       ? Math.round(coverage * 100)
       : Math.round((WEIGHT_COVERAGE * coverage + WEIGHT_ADHERENCE * adherence) * 100);
 

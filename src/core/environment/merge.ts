@@ -3,6 +3,7 @@
  */
 
 import type { EnvironmentalDimension, EnvironmentalProviderId, WeatherField } from './types';
+import { isSet } from '@/lib/util/value';
 import type { ObservationRecordDraft } from './record';
 import { qualityRank } from './record';
 
@@ -83,7 +84,7 @@ function collectWeatherFields(candidates: ObservationRecordDraft[]): Set<Weather
       continue;
     }
     for (const field of Object.keys(candidate.payload.data) as WeatherField[]) {
-      if ((candidate.payload.data[field] !== undefined && candidate.payload.data[field] !== null)) {
+      if (isSet(candidate.payload.data[field])) {
         allFields.add(field);
       }
     }
@@ -146,14 +147,18 @@ function pickFieldWinner(
     }
 
     const candidateValue = candidate.payload.data[field];
-    if ((candidateValue === undefined || candidateValue === null)) {
+    if (!isSet(candidateValue)) {
       continue;
     }
 
-    winner = (winner === undefined || winner === null) ? candidate : mergeWeatherCandidate(winner, candidate, field, policy);
+    if (!isSet(winner)) {
+      winner = candidate;
+    } else {
+      winner = mergeWeatherCandidate(winner, candidate, field, policy);
+    }
   }
 
-  if ((winner === undefined || winner === null) || winner.payload.dimension !== 'WEATHER') {
+  if (!isSet(winner) || winner.payload.dimension !== 'WEATHER') {
     return null;
   }
 

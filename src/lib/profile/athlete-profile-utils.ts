@@ -1,4 +1,6 @@
 /** Parse une date ISO `YYYY-MM-DD` en Date UTC (sans décalage fuseau). */
+import { isSet } from '@/lib/util/value';
+
 export function parseBirthDateInput(value: string | null | undefined): Date | null {
   if (!value?.trim()) {
     return null;
@@ -26,9 +28,7 @@ export function birthDateToInput(date: Date | string | null | undefined): string
   return `${y}-${m}-${day}`;
 }
 
-function parseBirthInstant(
-  birthDate: Date | string | null | undefined,
-): Date | null {
+function parseBirthInstant(birthDate: Date | string | null | undefined): Date | null {
   if (!birthDate) {
     return null;
   }
@@ -66,6 +66,6 @@ export function athleteCompositionContext(
 ): { chronoAge: number | null; heightM: number | null } {
   return {
     chronoAge: athleteAgeYears(profile?.birthDate ?? null),
-    heightM: (profile?.heightCm !== undefined && profile?.heightCm !== null) ? profile.heightCm / 100 : null,
+    heightM: profile && isSet(profile.heightCm) ? profile.heightCm / 100 : null,
   };
 }

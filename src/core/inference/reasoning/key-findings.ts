@@ -9,6 +9,7 @@ import type {
   RecoveryState,
 } from '@/core/digital-twin/types';
 import type { I18nItem } from '@/core/inference/shared/types';
+import { isSet } from '@/lib/util/value';
 import type { ModelDirections } from './types';
 
 export type BuildKeyFindingsInput = {
@@ -292,7 +293,7 @@ export function collectKeyFindings(input: BuildKeyFindingsInput): ReasoningFindi
     findingCrossSystemConflict(conflicts),
     findingOptimalState(recovery, fatigue),
     findingPositiveAdaptation(adaptation),
-  ].filter((finding): finding is ReasoningFinding => (finding !== undefined && finding !== null));
+  ].filter((finding): finding is ReasoningFinding => isSet(finding));
 
   findings.sort((a, b) => {
     const severityDiff = (SEVERITY_ORDER[a.severity] ?? 2) - (SEVERITY_ORDER[b.severity] ?? 2);

@@ -1,4 +1,5 @@
 import { ActivityType } from '@prisma/client';
+import { isSet } from '@/lib/util/value';
 
 export interface ActivityForAnalytics {
   date: Date;
@@ -55,10 +56,10 @@ const LOAD_FACTOR: Record<ActivityType, number> = {
 };
 
 export function estimateActivityLoad(activity: ActivityForAnalytics): number {
-  if ((activity.load !== undefined && activity.load !== null) && activity.load > 0) {
+  if (isSet(activity.load) && activity.load > 0) {
     return activity.load;
   }
-  if ((activity.bikeMetrics?.tss !== undefined && activity.bikeMetrics?.tss !== null) && activity.bikeMetrics.tss > 0) {
+  if (isSet(activity.bikeMetrics?.tss) && activity.bikeMetrics.tss > 0) {
     return activity.bikeMetrics.tss;
   }
   if (!activity.duration) {

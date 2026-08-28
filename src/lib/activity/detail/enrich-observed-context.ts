@@ -1,4 +1,5 @@
 import { startOfDay, addDays } from 'date-fns';
+import { isSet } from '@/lib/util/value';
 import type { PrismaClient } from '@prisma/client';
 import { type ActivityType } from '@prisma/client';
 import { isActivityToday } from '@/lib/activity/list/activity-day';
@@ -100,7 +101,9 @@ async function handleIndoorActivityEnrichment(input: {
       weatherUpdated,
       locationNew: false,
     }),
-    force: Boolean(input.options?.forceNarrative) || (input.hasNarrative && input.isToday && weatherUpdated),
+    force:
+      Boolean(input.options?.forceNarrative) ||
+      (input.hasNarrative && input.isToday && weatherUpdated),
     hasNarrative: input.hasNarrative,
     isToday: input.isToday,
     weatherUpdated,
@@ -118,7 +121,11 @@ async function updateOutdoorWeatherSnapshot(input: {
   locationCorrected: boolean;
   locationNew: boolean;
 }): Promise<boolean> {
-  if (!needsWeatherEnrichment(input.activity.weather) && !input.locationCorrected && !input.locationNew) {
+  if (
+    !needsWeatherEnrichment(input.activity.weather) &&
+    !input.locationCorrected &&
+    !input.locationNew
+  ) {
     return false;
   }
   const window = activityWeatherWindow(input.activity.date, input.activity.duration);
@@ -161,10 +168,10 @@ function detectObservedLocationDelta(input: {
   hadObservedLocation: boolean;
   observed: Awaited<ReturnType<typeof backfillActivityObservedLocation>>;
 }) {
-  const locationNew = !input.hadObservedLocation && (input.observed !== undefined && input.observed !== null);
+  const locationNew = !input.hadObservedLocation && isSet(input.observed);
   const locationCorrected =
-    (input.observed !== undefined && input.observed !== null) &&
-    (input.priorCoords !== undefined && input.priorCoords !== null) &&
+    isSet(input.observed) &&
+    isSet(input.priorCoords) &&
     (Math.abs(input.priorCoords.latitude - input.observed.latitude) > 0.0005 ||
       Math.abs(input.priorCoords.longitude - input.observed.longitude) > 0.0005);
   return { locationNew, locationCorrected };
@@ -174,7 +181,12 @@ function readPriorObservedCoords(activity: {
   observedLocationLat: number | null;
   observedLocationLng: number | null;
 }) {
-  if ((activity.observedLocationLat === undefined || activity.observedLocationLat === null) || (activity.observedLocationLng === undefined || activity.observedLocationLng === null)) {
+  if (
+    activity.observedLocationLat === undefined ||
+    activity.observedLocationLat === null ||
+    activity.observedLocationLng === undefined ||
+    activity.observedLocationLng === null
+  ) {
     return null;
   }
   return {
@@ -191,7 +203,7 @@ function shouldRefreshOutdoorWeather(input: {
 }) {
   return (
     (needsWeatherEnrichment(input.weather) || input.locationCorrected || input.locationNew) &&
-    (input.observed !== undefined && input.observed !== null)
+    isSet(input.observed)
   );
 }
 
@@ -220,7 +232,15 @@ async function enrichTodayOutdoorActivity(input: {
   });
 
   let weatherUpdated = false;
-  if (shouldRefreshOutdoorWeather({ weather: input.activity.weather, locationCorrected, locationNew, observed }) && observed) {
+  if (
+    shouldRefreshOutdoorWeather({
+      weather: input.activity.weather,
+      locationCorrected,
+      locationNew,
+      observed,
+    }) &&
+    observed
+  ) {
     weatherUpdated = await updateOutdoorWeatherSnapshot({
       prisma: input.prisma,
       athleteId: input.athleteId,

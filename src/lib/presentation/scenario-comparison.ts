@@ -7,6 +7,7 @@ import type {
   ScenarioComparisonViewModel,
 } from '@/core/presentation/scenario-comparison-view-model';
 import type { ScenarioComparison } from '@/core/scenario/types';
+import { isSet } from '@/lib/util/value';
 import type { ProjectionHorizonDays } from '@/core/projection/types';
 import { limitingFactorLabel } from '@/lib/projection/project-athlete-state';
 import { runScenarioComparison } from '@/lib/scenario/scenario-engine';
@@ -40,7 +41,7 @@ function confidenceLabel(confidence: number): string | null {
 }
 
 function formatScore(value: number | null): string | null {
-  if ((value === undefined || value === null)) {
+  if (value === undefined || value === null) {
     return null;
   }
   return String(Math.round(value));
@@ -78,7 +79,9 @@ const PREFERABILITY_CLAUSE_HANDLERS: Array<{
     match: (clause) => clause.includes('jour(s) à risque en moins'),
     format: (clause) => {
       const n = clause.match(/(\d+)/)?.[1];
-      return n ? `${n} jour${n === '1' ? '' : 's'} de vigilance en moins` : 'moins de jours à risque';
+      return n
+        ? `${n} jour${n === '1' ? '' : 's'} de vigilance en moins`
+        : 'moins de jours à risque';
     },
   },
   {
@@ -160,11 +163,9 @@ function buildSummaryLine(input: {
   );
 }
 
-function scenarioLimitingFactor(
-  entry: ScenarioComparison['scenarios'][number],
-): string | null {
+function scenarioLimitingFactor(entry: ScenarioComparison['scenarios'][number]): string | null {
   const lastDay = entry.projection.days[entry.projection.days.length - 1];
-  if ((lastDay === undefined || lastDay === null)) {
+  if (lastDay === undefined || lastDay === null) {
     return null;
   }
   return (
@@ -179,7 +180,10 @@ function scenarioLimitingFactor(
 function scenarioPreferabilityExplanation(
   entry: ScenarioComparison['scenarios'][number],
 ): string | null {
-  if (entry.kind === 'KEEP_PLAN' || isGenericEquivalentExplanation(entry.preferabilityExplanation)) {
+  if (
+    entry.kind === 'KEEP_PLAN' ||
+    isGenericEquivalentExplanation(entry.preferabilityExplanation)
+  ) {
     return null;
   }
   return entry.preferabilityExplanation;
@@ -207,7 +211,7 @@ function buildScenarioRow(
     isRecommended,
     isBaseline,
     targetSessionId: entry.targetSessionId,
-    canApply: entry.kind !== 'KEEP_PLAN' && (entry.targetSessionId !== undefined && entry.targetSessionId !== null),
+    canApply: entry.kind !== 'KEEP_PLAN' && isSet(entry.targetSessionId),
     technicalDetail: {
       endVerdict: mapVerdictToDisplay(entry.decision.endVerdict).label,
       endReadiness: formatScore(entry.outcome.endReadiness),

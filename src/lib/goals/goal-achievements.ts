@@ -1,4 +1,5 @@
 import type { Goal } from '@prisma/client';
+import { isSet } from '@/lib/util/value';
 import {
   inferPerformanceEndMode,
   isGoalExpired,
@@ -23,7 +24,12 @@ function isReached(
   targetValue: number | null,
   lowerIsBetter: boolean,
 ): boolean {
-  if ((currentValue === undefined || currentValue === null) || (targetValue === undefined || targetValue === null)) {
+  if (
+    currentValue === undefined ||
+    currentValue === null ||
+    targetValue === undefined ||
+    targetValue === null
+  ) {
     return false;
   }
   return lowerIsBetter ? currentValue <= targetValue : currentValue >= targetValue;
@@ -72,7 +78,7 @@ async function hasExistingPerformanceAchievement(goalId: string): Promise<boolea
       goalId_periodKey: { goalId, periodKey: PERFORMANCE_PERIOD_KEY },
     },
   });
-  return (existing !== undefined && existing !== null);
+  return isSet(existing);
 }
 
 async function shouldSkipPerformanceSync(

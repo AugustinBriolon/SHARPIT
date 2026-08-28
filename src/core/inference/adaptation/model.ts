@@ -43,10 +43,27 @@ import {
   computeAdaptationTrend,
 } from './scoring';
 import type { I18nItem } from '@/core/inference/shared/types';
+import { isSet } from '@/lib/util/value';
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Main entry point
-// ─────────────────────────────────────────────────────────────────────────────
+function resolveAdaptationConfidence(input: {
+  baseConfidence: number;
+  historyLength: number;
+  dataCompleteness: string;
+  overreachingWithoutAdaptationDetected: boolean;
+}): number {
+  const historyBonus = Math.min(input.historyLength / 28, 1.0) * 0.15;
+  let confidence = Math.min(input.baseConfidence + historyBonus, 1.0);
+  if (input.historyLength < 7) {
+    confidence = Math.min(confidence, 0.5);
+  }
+  if (input.dataCompleteness === 'INSUFFICIENT') {
+    confidence = 0.1;
+  }
+  if (input.overreachingWithoutAdaptationDetected) {
+    confidence = Math.min(confidence, 0.75);
+  }
+  return confidence;
+}
 
 export function runAdaptationModel(
   features: DayFeatures,
@@ -77,20 +94,22 @@ export function runAdaptationModel(
   );
 
   const historyLength = context.recentAdaptationHistory.length;
+  const overreachingWithoutAdaptationDetected = detectOverreachingWithoutAdaptation(
+    context.fatigueState,
+    dims.autonomicAdaptation,
+    dims.recoveryQuality,
+  );
 
-  // History maturity bonus: +15% at 28 records; see ADAPTATION_MODEL.md §7
-  const historyBonus = Math.min(historyLength / 28, 1.0) * 0.15;
-  let confidence = Math.min(baseConfidence + historyBonus, 1.0);
-  if (historyLength < 7) {
-    confidence = Math.min(confidence, 0.5);
-  }
-  if (dataCompleteness === 'INSUFFICIENT') {
-    confidence = 0.1;
-  }
+  const confidence = resolveAdaptationConfidence({
+    baseConfidence,
+    historyLength,
+    dataCompleteness,
+    overreachingWithoutAdaptationDetected,
+  });
 
-  // ── Step 3: Classify ──────────────────────────────────────────────────────
-  const adaptationStatus =
-    (adaptationIndex === undefined || adaptationIndex === null) ? 'INSUFFICIENT_DATA' : classifyAdaptationStatus(adaptationIndex);
+  const adaptationStatus = isSet(adaptationIndex)
+    ? classifyAdaptationStatus(adaptationIndex)
+    : 'INSUFFICIENT_DATA';
 
   const adaptationTrend = computeAdaptationTrend(context.recentAdaptationHistory);
 
@@ -100,16 +119,6 @@ export function runAdaptationModel(
     adaptationStatus,
     context.recentAdaptationHistory,
   );
-
-  const overreachingWithoutAdaptationDetected = detectOverreachingWithoutAdaptation(
-    context.fatigueState,
-    dims.autonomicAdaptation,
-    dims.recoveryQuality,
-  );
-
-  if (overreachingWithoutAdaptationDetected) {
-    confidence = Math.min(confidence, 0.75);
-  }
 
   // ── Step 5: Estimate adaptation peak ─────────────────────────────────────
   const estimatedAdaptationPeak = estimateAdaptationPeak(adaptationStatus, adaptationTrend);
@@ -181,7 +190,7 @@ function dimensionStatus(d: DimensionScore): string {
   if (!d.available) {
     return 'unavailable';
   }
-  if ((d.score !== undefined && d.score !== null)) {
+  if (isSet(d.score)) {
     return `score=${d.score}`;
   }
   return 'computed';
@@ -201,7 +210,7 @@ function findLimitingFactor(dims: ScoredAdaptationDimensions): AdaptationState['
     { key: 'neuromuscularEfficiency' as const, score: dims.neuromuscularEfficiency.score },
     { key: 'autonomicAdaptation' as const, score: dims.autonomicAdaptation.score },
     { key: 'recoveryQuality' as const, score: dims.recoveryQuality.score },
-  ].filter((c) => (c.score !== undefined && c.score !== null)) as Array<{
+  ].filter((c) => isSet(c.score)) as Array<{
     key: keyof ScoredAdaptationDimensions;
     score: number;
   }>;
@@ -238,11 +247,11 @@ function detectOverreachingWithoutAdaptation(
   autonomic: DimensionScore,
   recoveryQ: DimensionScore,
 ): boolean {
-  if ((fatigueState === undefined || fatigueState === null)) {
+  if (!isSet(fatigueState)) {
     return false;
   }
   const { fatigueIndex } = fatigueState;
-  if ((fatigueIndex === undefined || fatigueIndex === null) || fatigueIndex <= 70) {
+  if (!isSet(fatigueIndex) || fatigueIndex <= 70) {
     return false;
   }
   return (autonomic.score ?? 100) < 40 && (recoveryQ.score ?? 100) < 40;
@@ -368,7 +377,7 @@ function buildRecommendation(
   signals: AdaptationSignals,
 ): AdaptationRecommendation {
   const keyEvidence: I18nItem[] = [];
-  if ((signals.adaptationIndex !== undefined && signals.adaptationIndex !== null)) {
+  if (isSet(signals.adaptationIndex)) {
     keyEvidence.push({
       code: 'adaptation.evidence.index',
       params: { index: signals.adaptationIndex },

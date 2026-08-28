@@ -1,4 +1,5 @@
 import { Prisma } from '@prisma/client';
+import { isSet } from '@/lib/util/value';
 import { prisma } from '@/lib/prisma';
 import { activityInclude, plannedSessionCoachSelect } from '@/lib/queries/activity-include';
 
@@ -48,8 +49,10 @@ export async function linkPlannedSessionActivity(
     where: { id, athleteId },
     data: {
       activityId,
-      completed: (activityId !== undefined && activityId !== null),
-      ...((activityId === undefined || activityId === null) ? { analysis: Prisma.DbNull, analyzedAt: null } : {}),
+      completed: isSet(activityId),
+      ...(activityId === undefined || activityId === null
+        ? { analysis: Prisma.DbNull, analyzedAt: null }
+        : {}),
     },
   });
   if (count === 0) {

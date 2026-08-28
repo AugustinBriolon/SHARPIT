@@ -1,4 +1,5 @@
 import type { GateContext, GateProposal, PlanGateRule, RuleFinding } from '../types';
+import { isSet } from '@/lib/util/value';
 
 const HIGH_INTENSITY = new Set(['THRESHOLD', 'VO2MAX', 'RACE']);
 
@@ -21,49 +22,55 @@ function capacityFindings(
   isHighIntensity: boolean,
 ): RuleFinding[] {
   if (capacity === 'UNABLE') {
-    return [{
-      ruleCode: 'PHYSICAL_HEALTH_UNABLE',
-      severity: 'REJECTED',
-      rationale:
-        "La capacité d'entraînement inférée est actuellement à zéro (condition physique active) — repos recommandé.",
-      evidenceRefs: ['physicalHealth.aggregateTrainingCapacity'],
-      saferAlternative: {
-        ...proposal,
-        type: 'STRENGTH',
-        intensity: 'RECOVERY',
-        durationMin: null,
-        load: null,
-        title: 'Mobilité / repos actif',
+    return [
+      {
+        ruleCode: 'PHYSICAL_HEALTH_UNABLE',
+        severity: 'REJECTED',
+        rationale:
+          "La capacité d'entraînement inférée est actuellement à zéro (condition physique active) — repos recommandé.",
+        evidenceRefs: ['physicalHealth.aggregateTrainingCapacity'],
+        saferAlternative: {
+          ...proposal,
+          type: 'STRENGTH',
+          intensity: 'RECOVERY',
+          durationMin: null,
+          load: null,
+          title: 'Mobilité / repos actif',
+        },
       },
-    }];
+    ];
   }
 
   if (capacity === 'LIMITED' && isHighIntensity) {
-    return [{
-      ruleCode: 'PHYSICAL_HEALTH_LIMITED',
-      severity: 'REJECTED',
-      rationale:
-        'Capacité limitée par une condition physique active — une séance haute intensité présente un risque disproportionné.',
-      evidenceRefs: [
-        'physicalHealth.aggregateTrainingCapacity',
-        'physicalHealth.primaryLimitingConditionId',
-      ],
-      saferAlternative: {
-        ...proposal,
-        intensity: 'ENDURANCE',
-        load: (proposal.load !== undefined && proposal.load !== null) ? Math.round(proposal.load * 0.6) : null,
+    return [
+      {
+        ruleCode: 'PHYSICAL_HEALTH_LIMITED',
+        severity: 'REJECTED',
+        rationale:
+          'Capacité limitée par une condition physique active — une séance haute intensité présente un risque disproportionné.',
+        evidenceRefs: [
+          'physicalHealth.aggregateTrainingCapacity',
+          'physicalHealth.primaryLimitingConditionId',
+        ],
+        saferAlternative: {
+          ...proposal,
+          intensity: 'ENDURANCE',
+          load: isSet(proposal.load) ? Math.round(proposal.load * 0.6) : null,
+        },
       },
-    }];
+    ];
   }
 
   if (capacity === 'REDUCED' && isHighIntensity) {
-    return [{
-      ruleCode: 'PHYSICAL_HEALTH_REDUCED',
-      severity: 'REQUIRES_CONFIRMATION',
-      rationale:
-        "Capacité réduite par une condition physique active — confirme que cette séance haute intensité reste raisonnable aujourd'hui.",
-      evidenceRefs: ['physicalHealth.aggregateTrainingCapacity'],
-    }];
+    return [
+      {
+        ruleCode: 'PHYSICAL_HEALTH_REDUCED',
+        severity: 'REQUIRES_CONFIRMATION',
+        rationale:
+          "Capacité réduite par une condition physique active — confirme que cette séance haute intensité reste raisonnable aujourd'hui.",
+        evidenceRefs: ['physicalHealth.aggregateTrainingCapacity'],
+      },
+    ];
   }
 
   return [];
@@ -82,6 +89,6 @@ export const physicalHealthRule: PlanGateRule = (
     return [blockedTrainingFinding()];
   }
 
-  const isHighIntensity = (proposal.intensity !== undefined && proposal.intensity !== null) && HIGH_INTENSITY.has(proposal.intensity);
+  const isHighIntensity = isSet(proposal.intensity) && HIGH_INTENSITY.has(proposal.intensity);
   return capacityFindings(proposal, physicalHealth.aggregateTrainingCapacity, isHighIntensity);
 };

@@ -1,4 +1,5 @@
 import { ActivityType } from '@prisma/client';
+import { isSet } from '@/lib/util/value';
 import { format } from 'date-fns';
 import { dayKeyFromDate, shortDayFromDate } from '@/lib/date/day-key';
 import { ensureGarminExerciseLabelsFr } from '@/lib/integrations/garmin/garmin-exercise-labels';
@@ -87,8 +88,8 @@ async function uploadStrengthSets(
     skipped: built.skipped,
     scheduledDate: created.scheduledDate,
     alreadyPushed: false,
-    calendarActive: (created.scheduledDate !== undefined && created.scheduledDate !== null),
-    workoutExists: (created.workoutId !== undefined && created.workoutId !== null),
+    calendarActive: isSet(created.scheduledDate),
+    workoutExists: isSet(created.workoutId),
     pushedAt: created.pushedAt,
   };
 }
@@ -217,7 +218,7 @@ async function persistPlannedStrengthReceipt(
   sessionId: string,
   result: PushStrengthWorkoutResult,
 ): Promise<void> {
-  if ((result.workoutId === undefined || result.workoutId === null)) {
+  if (result.workoutId === undefined || result.workoutId === null) {
     return;
   }
   const pushedAt = new Date();
@@ -280,7 +281,7 @@ async function pushPlannedStrengthWorkout(
   );
 
   await persistPlannedStrengthReceipt(session.id, result);
-  if ((result.workoutId !== undefined && result.workoutId !== null)) {
+  if (isSet(result.workoutId)) {
     result.pushedAt = new Date().toISOString();
   }
   return result;

@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { isSet } from '@/lib/util/value';
 import {
   classifyInstallPrompt,
   shouldShowInstallCard,
@@ -22,7 +23,7 @@ function isIOSDevice(): boolean {
 function readDismissedAt(): number | null {
   const raw = window.localStorage.getItem(DISMISSED_AT_STORAGE_KEY);
   const parsed = raw ? Number(raw) : null;
-  return (parsed !== undefined && parsed !== null) && Number.isFinite(parsed) ? parsed : null;
+  return isSet(parsed) && Number.isFinite(parsed) ? parsed : null;
 }
 
 export interface UseInstallPromptResult {
@@ -59,7 +60,7 @@ export function useInstallPrompt(): UseInstallPromptResult {
   const kind = classifyInstallPrompt({
     isStandalone,
     isIOS: isIOSDevice(),
-    hasBeforeInstallPromptEvent: (deferredEvent !== undefined && deferredEvent !== null),
+    hasBeforeInstallPromptEvent: isSet(deferredEvent),
   });
 
   const visible = shouldShowInstallCard({ kind, dismissedAt, now: Date.now() });

@@ -1,4 +1,5 @@
 import { buildProductInsightBundle } from '@/core/product-insight/build-product-insight-bundle';
+import { isSet } from '@/lib/util/value';
 import type { ProductInsight, SleepInsightInput } from '@/core/product-insight/types';
 
 function formatMinutes(min: number): string {
@@ -18,11 +19,11 @@ function buildNightImpactInsight(input: SleepInsightInput): ProductInsight {
       input.recoveryNote ??
       "Le sommeil n'a de valeur produit que par son effet sur la récupération et la capacité à encaisser la charge suivante.",
     evidence: [
-      (input.targetDeltaMin !== undefined && input.targetDeltaMin !== null) ? `Objectif : ${formatMinutes(input.targetDeltaMin)}` : null,
-      (input.sleepDelta7d !== undefined && input.sleepDelta7d !== null) ? `Vs 7 jours : ${formatMinutes(input.sleepDelta7d)}` : null,
-    ].filter((line): line is string => (line !== undefined && line !== null)),
+      isSet(input.targetDeltaMin) ? `Objectif : ${formatMinutes(input.targetDeltaMin)}` : null,
+      isSet(input.sleepDelta7d) ? `Vs 7 jours : ${formatMinutes(input.sleepDelta7d)}` : null,
+    ].filter((line): line is string => isSet(line)),
     confidence: input.confidence,
-    importance: (input.sleepScore !== undefined && input.sleepScore !== null) && input.sleepScore < 60 ? 'HIGH' : 'MEDIUM',
+    importance: isSet(input.sleepScore) && input.sleepScore < 60 ? 'HIGH' : 'MEDIUM',
     decisionImpact: 'TRAINING_TODAY',
     relatedDimensions: ['SLEEP', 'RECOVERY'],
   };
@@ -49,11 +50,9 @@ function buildTonightActionInsight(
       ? "Le meilleur usage produit du sommeil est d'aider à choisir quoi faire ce soir pour protéger la prochaine journée."
       : 'La nuit du jour n’est pas encore synchronisée — le plan du soir s’appuie sur l’historique récent.',
     evidence: [
-      (input.debt7Min !== undefined && input.debt7Min !== null) && input.debt7Min > 0
-        ? `Dette 7 jours : ${input.debt7Min} min`
-        : null,
-      (input.regularityMin !== undefined && input.regularityMin !== null) ? `Régularité : ±${input.regularityMin} min` : null,
-    ].filter((line): line is string => (line !== undefined && line !== null)),
+      isSet(input.debt7Min) && input.debt7Min > 0 ? `Dette 7 jours : ${input.debt7Min} min` : null,
+      isSet(input.regularityMin) ? `Régularité : ±${input.regularityMin} min` : null,
+    ].filter((line): line is string => isSet(line)),
     confidence: input.confidence,
     importance: 'HIGH',
     decisionImpact: 'RECOVERY_BEHAVIOR',
@@ -70,8 +69,8 @@ function buildDebtInsight(input: SleepInsightInput, nightPresent: boolean): Prod
       ? 'La dette aide à comprendre pourquoi une nuit correcte ne suffit pas toujours à restaurer complètement la récupération.'
       : 'Dette cumulée sur les nuits passées — utile pour le plan du soir, pas un verdict sur la nuit en cours.',
     evidence: [
-      (input.sleepDelta7d !== undefined && input.sleepDelta7d !== null) ? `Vs 7 jours : ${formatMinutes(input.sleepDelta7d)}` : null,
-    ].filter((line): line is string => (line !== undefined && line !== null)),
+      isSet(input.sleepDelta7d) ? `Vs 7 jours : ${formatMinutes(input.sleepDelta7d)}` : null,
+    ].filter((line): line is string => isSet(line)),
     confidence: input.confidence,
     importance: input.debt7Min! >= 180 ? 'HIGH' : 'MEDIUM',
     decisionImpact: 'RECOVERY_BEHAVIOR',
@@ -105,7 +104,7 @@ function collectSleepInsights(input: SleepInsightInput, nightPresent: boolean) {
   if (input.recommendedBedtime || input.recommendedDurationLabel) {
     primary.push(buildTonightActionInsight(input, nightPresent));
   }
-  if ((input.debt7Min !== undefined && input.debt7Min !== null) && input.debt7Min > 0) {
+  if (isSet(input.debt7Min) && input.debt7Min > 0) {
     supporting.push(buildDebtInsight(input, nightPresent));
   }
   if (nightPresent && input.coachInsightLines.length > 0) {

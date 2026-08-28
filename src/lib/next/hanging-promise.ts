@@ -1,3 +1,4 @@
+import { isSet } from '@/lib/util/value';
 /**
  * Cache Components rejects hanging cookies()/connection()/fetch() promises when
  * prerender completes. Callers that catch errors must rethrow these so React
@@ -6,7 +7,7 @@
 export function isHangingPromiseRejection(error: unknown): boolean {
   return (
     typeof error === 'object' &&
-    (error !== undefined && error !== null) &&
+    isSet(error) &&
     'digest' in error &&
     (error as { digest: unknown }).digest === 'HANGING_PROMISE_REJECTION'
   );

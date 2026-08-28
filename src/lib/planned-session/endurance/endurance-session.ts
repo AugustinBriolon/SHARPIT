@@ -7,6 +7,7 @@
  * a structured one, and both must be able to go stale.
  */
 import type { SessionIntensity } from '@prisma/client';
+import { isSet } from '@/lib/util/value';
 import {
   NO_TARGET,
   parseEndurancePrescription,
@@ -46,7 +47,7 @@ function swimFallbackTarget(
   thresholds: AthleteThresholds,
 ): { target: EnduranceTarget; warnings: string[] } {
   const paceDefault = defaultTargetForIntensity('SWIM', intensity);
-  if (paceDefault.target.metric === 'pace' && (thresholds.swimCssSecPer100m !== undefined && thresholds.swimCssSecPer100m !== null)) {
+  if (paceDefault.target.metric === 'pace' && isSet(thresholds.swimCssSecPer100m)) {
     return paceDefault;
   }
   return { target: NO_TARGET, warnings: [...paceDefault.warnings, NO_CSS_WARNING] };
@@ -57,7 +58,7 @@ function bikeFallbackTarget(
   thresholds: AthleteThresholds,
 ): { target: EnduranceTarget; warnings: string[] } {
   const powerDefault = defaultTargetForIntensity('BIKE', intensity);
-  if (powerDefault.target.metric === 'power' && (thresholds.ftpW !== undefined && thresholds.ftpW !== null)) {
+  if (powerDefault.target.metric === 'power' && isSet(thresholds.ftpW)) {
     return powerDefault;
   }
   return { target: NO_TARGET, warnings: [...powerDefault.warnings, NO_FTP_WARNING] };
@@ -68,10 +69,10 @@ function runFallbackTarget(
   thresholds: AthleteThresholds,
 ): { target: EnduranceTarget; warnings: string[] } {
   const paceDefault = defaultTargetForIntensity('RUN', intensity);
-  if (paceDefault.target.metric === 'pace' && (thresholds.runThresholdPaceSecPerKm !== undefined && thresholds.runThresholdPaceSecPerKm !== null)) {
+  if (paceDefault.target.metric === 'pace' && isSet(thresholds.runThresholdPaceSecPerKm)) {
     return paceDefault;
   }
-  if ((thresholds.lthr !== undefined && thresholds.lthr !== null) || (thresholds.maxHr !== undefined && thresholds.maxHr !== null)) {
+  if (isSet(thresholds.lthr) || isSet(thresholds.maxHr)) {
     return { target: defaultHrTargetForIntensity(intensity), warnings: paceDefault.warnings };
   }
   return paceDefault;
@@ -79,7 +80,10 @@ function runFallbackTarget(
 
 const SPORT_FALLBACK: Record<
   EnduranceSport,
-  (intensity: SessionIntensity | null, thresholds: AthleteThresholds) => { target: EnduranceTarget; warnings: string[] }
+  (
+    intensity: SessionIntensity | null,
+    thresholds: AthleteThresholds,
+  ) => { target: EnduranceTarget; warnings: string[] }
 > = {
   SWIM: swimFallbackTarget,
   BIKE: bikeFallbackTarget,
@@ -122,7 +126,7 @@ export function effectiveEndurancePrescription(input: {
   }
 
   const durationMin =
-    (input.durationMin !== undefined && input.durationMin !== null) && input.durationMin > 0 ? input.durationMin : DEFAULT_SESSION_MIN;
+    isSet(input.durationMin) && input.durationMin > 0 ? input.durationMin : DEFAULT_SESSION_MIN;
   const { target, warnings } = fallbackTarget(input.sport, input.intensity, input.thresholds);
 
   return {

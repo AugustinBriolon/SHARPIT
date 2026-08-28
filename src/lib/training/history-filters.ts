@@ -1,4 +1,5 @@
 import { ActivityType } from '@prisma/client';
+import { isSet } from '@/lib/util/value';
 import { startOfDay, subDays } from 'date-fns';
 
 // ─── Preset values ────────────────────────────────────────────────────────────
@@ -69,7 +70,7 @@ export function rangeToPresetSelections(
   if ((min === undefined || min === null) && (max === undefined || max === null)) {
     return [];
   }
-  if ((max === undefined || max === null)) {
+  if (max === undefined || max === null) {
     return presets.includes(min as number) ? [min as number] : [];
   }
   return presets.filter((p) => p === min || p === max);
@@ -92,11 +93,11 @@ const ACTIVITY_DISTANCE_READERS: Partial<
 > = {
   [ActivityType.RUN]: (activity) => {
     const d = activity.runMetrics?.distanceM;
-    return (d !== undefined && d !== null) && d > 0 ? d / 1000 : null;
+    return isSet(d) && d > 0 ? d / 1000 : null;
   },
   [ActivityType.SWIM]: (activity) => {
     const d = activity.swimMetrics?.distanceM;
-    return (d !== undefined && d !== null) && d > 0 ? d / 1000 : null;
+    return isSet(d) && d > 0 ? d / 1000 : null;
   },
 };
 
@@ -118,7 +119,7 @@ function parseNumberParam(value: string | null): number | null {
 }
 
 function cleanMinMax(min: number | null, max: number | null): [number | null, number | null] {
-  if ((min !== undefined && min !== null) && (max !== undefined && max !== null) && min > max) {
+  if (isSet(min) && isSet(max) && min > max) {
     return [max, min];
   }
   return [min, max];
@@ -161,22 +162,22 @@ export function serializeTrainingHistoryFilters(filters: TrainingHistoryFilters)
   if (filters.types.length > 0) {
     params.set('types', filters.types.join(','));
   }
-  if ((filters.periodMaxDays !== undefined && filters.periodMaxDays !== null)) {
+  if (isSet(filters.periodMaxDays)) {
     params.set('periodMaxDays', String(filters.periodMaxDays));
   }
-  if ((filters.periodMinDays !== undefined && filters.periodMinDays !== null)) {
+  if (isSet(filters.periodMinDays)) {
     params.set('periodMinDays', String(filters.periodMinDays));
   }
-  if ((filters.distanceMinKm !== undefined && filters.distanceMinKm !== null)) {
+  if (isSet(filters.distanceMinKm)) {
     params.set('distanceMinKm', String(filters.distanceMinKm));
   }
-  if ((filters.distanceMaxKm !== undefined && filters.distanceMaxKm !== null)) {
+  if (isSet(filters.distanceMaxKm)) {
     params.set('distanceMaxKm', String(filters.distanceMaxKm));
   }
-  if ((filters.durationMinMin !== undefined && filters.durationMinMin !== null)) {
+  if (isSet(filters.durationMinMin)) {
     params.set('durationMinMin', String(filters.durationMinMin));
   }
-  if ((filters.durationMaxMin !== undefined && filters.durationMaxMin !== null)) {
+  if (isSet(filters.durationMaxMin)) {
     params.set('durationMaxMin', String(filters.durationMaxMin));
   }
   return params;
@@ -204,36 +205,40 @@ function activityMatchesDistance(
   filters: TrainingHistoryFilters,
 ): boolean {
   const distanceKm = getActivityDistanceKm(activity);
-  if ((distanceKm === undefined || distanceKm === null)) {
+  if (distanceKm === undefined || distanceKm === null) {
     return true;
   }
-  if ((filters.distanceMinKm !== undefined && filters.distanceMinKm !== null) && distanceKm < filters.distanceMinKm) {
+  if (isSet(filters.distanceMinKm) && distanceKm < filters.distanceMinKm) {
     return false;
   }
-  if ((filters.distanceMaxKm !== undefined && filters.distanceMaxKm !== null) && distanceKm > filters.distanceMaxKm) {
+  if (isSet(filters.distanceMaxKm) && distanceKm > filters.distanceMaxKm) {
     return false;
   }
   return true;
+}
+
+function durationOutOfRange(durationMin: number | null, filters: TrainingHistoryFilters): boolean {
+  if (
+    isSet(filters.durationMinMin) &&
+    (!isSet(durationMin) || durationMin < filters.durationMinMin)
+  ) {
+    return true;
+  }
+  if (
+    isSet(filters.durationMaxMin) &&
+    (!isSet(durationMin) || durationMin > filters.durationMaxMin)
+  ) {
+    return true;
+  }
+  return false;
 }
 
 function activityMatchesDuration(
   activity: ActivityForHistoryFilters,
   filters: TrainingHistoryFilters,
 ): boolean {
-  const durationMin = (activity.duration !== undefined && activity.duration !== null) ? activity.duration / 60 : null;
-  if (
-    (filters.durationMinMin !== undefined && filters.durationMinMin !== null) &&
-    ((durationMin === undefined || durationMin === null) || durationMin < filters.durationMinMin)
-  ) {
-    return false;
-  }
-  if (
-    (filters.durationMaxMin !== undefined && filters.durationMaxMin !== null) &&
-    ((durationMin === undefined || durationMin === null) || durationMin > filters.durationMaxMin)
-  ) {
-    return false;
-  }
-  return true;
+  const durationMin = isSet(activity.duration) ? activity.duration / 60 : null;
+  return !durationOutOfRange(durationMin, filters);
 }
 
 function activityMatchesTrainingHistoryFilters(
@@ -259,10 +264,12 @@ export function applyTrainingHistoryFilters<T extends ActivityForHistoryFilters>
   filters: TrainingHistoryFilters,
   now: Date = new Date(),
 ): T[] {
-  const since =
-    (filters.periodMaxDays !== undefined && filters.periodMaxDays !== null) ? startOfDay(subDays(now, filters.periodMaxDays)) : null;
-  const until =
-    (filters.periodMinDays !== undefined && filters.periodMinDays !== null) ? startOfDay(subDays(now, filters.periodMinDays)) : null;
+  const since = isSet(filters.periodMaxDays)
+    ? startOfDay(subDays(now, filters.periodMaxDays))
+    : null;
+  const until = isSet(filters.periodMinDays)
+    ? startOfDay(subDays(now, filters.periodMinDays))
+    : null;
 
   return activities.filter((activity) =>
     activityMatchesTrainingHistoryFilters(activity, filters, since, until),
@@ -295,13 +302,13 @@ export function togglePresetSelection(
 export function countActiveTrainingHistoryFilters(filters: TrainingHistoryFilters): number {
   let n = 0;
   n += filters.types.length;
-  if ((filters.periodMaxDays !== undefined && filters.periodMaxDays !== null)) {
+  if (isSet(filters.periodMaxDays)) {
     n += 1;
   }
-  if ((filters.distanceMinKm !== undefined && filters.distanceMinKm !== null) || (filters.distanceMaxKm !== undefined && filters.distanceMaxKm !== null)) {
+  if (isSet(filters.distanceMinKm) || isSet(filters.distanceMaxKm)) {
     n += 1;
   }
-  if ((filters.durationMinMin !== undefined && filters.durationMinMin !== null) || (filters.durationMaxMin !== undefined && filters.durationMaxMin !== null)) {
+  if (isSet(filters.durationMinMin) || isSet(filters.durationMaxMin)) {
     n += 1;
   }
   return n;
@@ -323,11 +330,9 @@ const DIMENSION_SELECTION_COUNTERS: Record<
   (filters: TrainingHistoryFilters) => number
 > = {
   types: (filters) => filters.types.length,
-  period: (filters) => ((filters.periodMaxDays !== undefined && filters.periodMaxDays !== null) ? 1 : 0),
-  distance: (filters) =>
-    (filters.distanceMinKm !== undefined && filters.distanceMinKm !== null) || (filters.distanceMaxKm !== undefined && filters.distanceMaxKm !== null) ? 1 : 0,
-  duration: (filters) =>
-    (filters.durationMinMin !== undefined && filters.durationMinMin !== null) || (filters.durationMaxMin !== undefined && filters.durationMaxMin !== null) ? 1 : 0,
+  period: (filters) => (isSet(filters.periodMaxDays) ? 1 : 0),
+  distance: (filters) => (isSet(filters.distanceMinKm) || isSet(filters.distanceMaxKm) ? 1 : 0),
+  duration: (filters) => (isSet(filters.durationMinMin) || isSet(filters.durationMaxMin) ? 1 : 0),
 };
 
 /** Count active filters within a single dimension (for sub-menu badges). */

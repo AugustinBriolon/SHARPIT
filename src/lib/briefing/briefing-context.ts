@@ -1,4 +1,5 @@
 import { differenceInCalendarDays, format, isSameDay, startOfDay, subDays } from 'date-fns';
+import { isSet } from '@/lib/util/value';
 import { fr } from 'date-fns/locale';
 import {
   BRIEFING_PHASE_LABELS,
@@ -28,7 +29,7 @@ function formatMin(seconds?: number | null): string {
 }
 
 function formatPace(secPerKm?: number | null): string | null {
-  if ((secPerKm === undefined || secPerKm === null) || secPerKm <= 0) {
+  if (secPerKm === undefined || secPerKm === null || secPerKm <= 0) {
     return null;
   }
   const m = Math.floor(secPerKm / 60);
@@ -79,18 +80,14 @@ function formatBikeMetricParts(bikeMetrics: ActivityWithMetrics['bikeMetrics']):
   return parts;
 }
 
-function formatActivityExtra(
-  a: ActivityWithMetrics,
-  parts: string[],
-  refDate: Date,
-): string {
+function formatActivityExtra(a: ActivityWithMetrics, parts: string[], refDate: Date): string {
   const time = format(new Date(a.date), 'HH:mm');
   const rel = relativeDayLabel(new Date(a.date), refDate);
   return [
     `à ${time}`,
     `(${rel})`,
-    (a.load !== undefined && a.load !== null) ? `charge ${Math.round(a.load)}` : null,
-    (a.rpe !== undefined && a.rpe !== null) ? `RPE ${a.rpe}` : null,
+    isSet(a.load) ? `charge ${Math.round(a.load)}` : null,
+    isSet(a.rpe) ? `RPE ${a.rpe}` : null,
     a.feeling ? `ressenti ${a.feeling}` : null,
     parts.length ? parts.join(' · ') : null,
   ]

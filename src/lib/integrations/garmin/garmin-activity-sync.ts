@@ -1,4 +1,5 @@
 import { ActivityType, Prisma } from '@prisma/client';
+import { isSet } from '@/lib/util/value';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { syncSinceFromLastSync } from '@/lib/integrations/shared/sync-since';
 import { findMatchingActivity } from '@/lib/activity/list/activity-dedup';
@@ -81,7 +82,7 @@ async function backfillMultisportLegs(
     where: { id: activityId },
     select: { multisportLegs: true },
   });
-  if ((existing?.multisportLegs !== undefined && existing?.multisportLegs !== null)) {
+  if (isSet(existing?.multisportLegs)) {
     return false;
   }
 
@@ -208,10 +209,10 @@ function buildEvaluationPatch(
   existing: { rpe: number | null; feeling: string | null },
 ): Prisma.ActivityUpdateInput {
   const patch: Prisma.ActivityUpdateInput = {};
-  if ((evaluation.rpe !== undefined && evaluation.rpe !== null) && evaluation.rpe !== existing.rpe) {
+  if (isSet(evaluation.rpe) && evaluation.rpe !== existing.rpe) {
     patch.rpe = evaluation.rpe;
   }
-  if ((evaluation.feeling !== undefined && evaluation.feeling !== null) && String(evaluation.feeling) !== String(existing.feeling)) {
+  if (isSet(evaluation.feeling) && String(evaluation.feeling) !== String(existing.feeling)) {
     patch.feeling = String(evaluation.feeling);
   }
   if (evaluation.notes) {
@@ -458,10 +459,8 @@ async function processGarminSyncPage(input: {
   result.fetched += batch.length;
   const { toProcess, reachedCutoff } = activitiesWithinCutoff(batch, cutoff);
 
-  const outcomes = await mapWithConcurrency(
-    toProcess,
-    GARMIN_ACTIVITY_CONCURRENCY,
-    (activity) => processOneGarminActivity(athleteId, client, activity, exerciseLabelsFr),
+  const outcomes = await mapWithConcurrency(toProcess, GARMIN_ACTIVITY_CONCURRENCY, (activity) =>
+    processOneGarminActivity(athleteId, client, activity, exerciseLabelsFr),
   );
 
   for (const outcome of outcomes) {

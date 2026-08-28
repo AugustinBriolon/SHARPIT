@@ -6,6 +6,7 @@
  */
 
 import type { EnvironmentalEvidenceQuality, FieldQuality } from './types';
+import { isSet } from '@/lib/util/value';
 import { qualityRank } from './record';
 
 const QUALITY_CONFIDENCE: Record<Exclude<EnvironmentalEvidenceQuality, 'MISSING'>, number> = {
@@ -66,7 +67,7 @@ export function weatherFieldQuality(
 ): Partial<Record<string, FieldQuality>> {
   const result: Partial<Record<string, FieldQuality>> = {};
   for (const [field, value] of Object.entries(measurements)) {
-    result[field] = (value !== undefined && value !== null) ? fieldQualityExact(providerId) : fieldQualityMissing();
+    result[field] = isSet(value) ? fieldQualityExact(providerId) : fieldQualityMissing();
   }
   return result;
 }
@@ -91,7 +92,7 @@ export function aggregateFieldQuality(
 export function confidenceFromFieldQualities(
   fieldQuality: Partial<Record<string, FieldQuality>>,
 ): number {
-  const values = Object.values(fieldQuality).filter((f): f is FieldQuality => (f !== undefined && f !== null));
+  const values = Object.values(fieldQuality).filter((f): f is FieldQuality => isSet(f));
   if (values.length === 0) {
     return 0;
   }

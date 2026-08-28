@@ -1,4 +1,5 @@
 import { cache } from 'react';
+import { isSet } from '@/lib/util/value';
 import { buildHikeTripSummary, type HikeTripSummary } from '@/lib/activity/hike/hike-trip-summary';
 import { prisma } from '@/lib/prisma';
 import { ActivityType, Prisma } from '@prisma/client';
@@ -102,22 +103,26 @@ function assertAllHikes(activities: ActivityMembershipRow[]): void {
   }
 }
 
+function throwIfLinkedElsewhere(activity: ActivityMembershipRow, currentTripId?: string): void {
+  if (!isSet(activity.hikeTripId)) {
+    return;
+  }
+  if (isSet(currentTripId) && activity.hikeTripId === currentTripId) {
+    return;
+  }
+  throw new HikeTripConflictError(
+    'Une activité appartient déjà à un autre séjour',
+    activity.hikeTrip?.id ?? activity.hikeTripId,
+    activity.hikeTrip?.name,
+  );
+}
+
 function assertNotLinkedElsewhere(
   activities: ActivityMembershipRow[],
   currentTripId?: string,
 ): void {
   for (const activity of activities) {
-    if ((activity.hikeTripId === undefined || activity.hikeTripId === null)) {
-      continue;
-    }
-    if ((currentTripId !== undefined && currentTripId !== null) && activity.hikeTripId === currentTripId) {
-      continue;
-    }
-    throw new HikeTripConflictError(
-      'Une activité appartient déjà à un autre séjour',
-      activity.hikeTrip?.id ?? activity.hikeTripId,
-      activity.hikeTrip?.name,
-    );
+    throwIfLinkedElsewhere(activity, currentTripId);
   }
 }
 
@@ -241,7 +246,7 @@ export async function updateHikeTrip(
   await validateHikeTripAdditions(athleteId, id, addIds);
 
   await prisma.$transaction(async (tx) => {
-    if ((patch.name !== undefined && patch.name !== null)) {
+    if (isSet(patch.name)) {
       await tx.hikeTrip.updateMany({ where: { id, athleteId }, data: { name: patch.name } });
     }
     if (removeIds.length > 0) {

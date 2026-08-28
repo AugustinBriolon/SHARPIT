@@ -1,4 +1,5 @@
 import { Prisma } from '@prisma/client';
+import { isSet } from '@/lib/util/value';
 import { dayKeyFromDate, shortDayFromDate } from '@/lib/date/day-key';
 import {
   buildEnduranceWorkoutPayload,
@@ -131,7 +132,7 @@ async function persistEnduranceWorkoutReceipt(input: {
   created: Awaited<ReturnType<typeof createAndScheduleWorkout>>;
   thresholds: AthleteThresholds;
 }): Promise<void> {
-  if ((input.created.workoutId === undefined || input.created.workoutId === null)) {
+  if (input.created.workoutId === undefined || input.created.workoutId === null) {
     return;
   }
   await prisma.plannedSession.update({
@@ -163,8 +164,8 @@ function buildPushEnduranceWorkoutResult(input: {
     derived: input.derived,
     scheduledDate: input.created.scheduledDate,
     alreadyPushed: false,
-    calendarActive: (input.created.scheduledDate !== undefined && input.created.scheduledDate !== null),
-    workoutExists: (input.created.workoutId !== undefined && input.created.workoutId !== null),
+    calendarActive: isSet(input.created.scheduledDate),
+    workoutExists: isSet(input.created.workoutId),
     pushedAt: input.created.pushedAt,
   };
 }

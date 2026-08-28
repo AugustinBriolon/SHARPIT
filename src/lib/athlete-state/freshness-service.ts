@@ -1,4 +1,5 @@
 import { trainingDayIdForNow } from '@/lib/training/training-day';
+import { isSet } from '@/lib/util/value';
 import { resolveBriefingPhase } from '@/lib/briefing/briefing-phase';
 import type {
   AthleteFreshnessSnapshot,
@@ -123,8 +124,7 @@ type RecoveryFreshnessInput = {
 };
 
 function resolveRecoveryFreshness(input: RecoveryFreshnessInput): FreshnessLevel {
-  const { computingRecovery, syncingGarmin, recoveryAt, sleepEvidence, subjectiveEvidence } =
-    input;
+  const { computingRecovery, syncingGarmin, recoveryAt, sleepEvidence, subjectiveEvidence } = input;
   const busy = syncOrComputing(computingRecovery, syncingGarmin);
   if (busy) {
     return busy;
@@ -428,19 +428,16 @@ function readTwinComputedTimes(twin: FreshnessQueryData[0]) {
 
 function readDailyStrainEvidence(latestSnapshot: FreshnessQueryData[11]) {
   const snapshotPayload = latestSnapshot?.payload as
-    | { dailyStrain?: { available?: boolean; strainScore?: number | null } }
-    | undefined;
+    { dailyStrain?: { available?: boolean; strainScore?: number | null } } | undefined;
   const dailyStrainAvailable = Boolean(
-    snapshotPayload?.dailyStrain?.available && (snapshotPayload.dailyStrain.strainScore !== undefined && snapshotPayload.dailyStrain.strainScore !== null),
+    snapshotPayload?.dailyStrain?.available && isSet(snapshotPayload.dailyStrain.strainScore),
   );
   const dailyStrainUpdatedAt =
     dailyStrainAvailable && latestSnapshot?.generatedAt ? latestSnapshot.generatedAt : null;
   return { dailyStrainAvailable, dailyStrainUpdatedAt };
 }
 
-function readObservationTimestamp(
-  entry: { timestamp: Date } | null | undefined,
-): Date | null {
+function readObservationTimestamp(entry: { timestamp: Date } | null | undefined): Date | null {
   return entry?.timestamp ?? null;
 }
 
@@ -500,7 +497,7 @@ function buildCoreDomainFreshnessList(input: {
         evidence.sleepEvidence,
         evidence.recoveryAt,
       ),
-      state: `sleep_obs=${(evidence.sleepEvidence !== undefined && evidence.sleepEvidence !== null)}`,
+      state: `sleep_obs=${isSet(evidence.sleepEvidence)}`,
     }),
     makeDomainFreshness({
       computing,
@@ -513,7 +510,7 @@ function buildCoreDomainFreshnessList(input: {
         sleepEvidence: evidence.sleepEvidence,
         subjectiveEvidence: evidence.subjectiveEvidence,
       }),
-      state: `recovery_computed=${(evidence.recoveryAt !== undefined && evidence.recoveryAt !== null)}`,
+      state: `recovery_computed=${isSet(evidence.recoveryAt)}`,
     }),
     makeDomainFreshness({
       computing,
@@ -527,7 +524,7 @@ function buildCoreDomainFreshnessList(input: {
         dailyStrainUpdatedAt: evidence.dailyStrainUpdatedAt,
         dailyStrainAvailable: evidence.dailyStrainAvailable,
       }),
-      state: `session_obs=${(evidence.sessionEvidence !== undefined && evidence.sessionEvidence !== null)},strain=${evidence.dailyStrainAvailable}`,
+      state: `session_obs=${isSet(evidence.sessionEvidence)},strain=${evidence.dailyStrainAvailable}`,
     }),
     makeDomainFreshness({
       computing,
@@ -540,7 +537,7 @@ function buildCoreDomainFreshnessList(input: {
         withingsConnected: isOAuthAccountConnected(withings),
         bodyEvidence: evidence.bodyEvidence,
       }),
-      state: `body_obs=${(evidence.bodyEvidence !== undefined && evidence.bodyEvidence !== null)}`,
+      state: `body_obs=${isSet(evidence.bodyEvidence)}`,
     }),
   ];
 }
@@ -555,14 +552,14 @@ function buildPhysicalEnvironmentDomains(input: {
       domainName: 'physical',
       lastUpdatedAt: input.evidence.physicalHealthAt,
       freshness: input.evidence.physicalHealthAt ? 'fresh' : 'awaiting_data',
-      state: `physical_computed=${(input.evidence.physicalHealthAt !== undefined && input.evidence.physicalHealthAt !== null)}`,
+      state: `physical_computed=${isSet(input.evidence.physicalHealthAt)}`,
     }),
     makeDomainFreshness({
       computing: input.computing,
       domainName: 'environment',
       lastUpdatedAt: input.evidence.environmentAt,
       freshness: input.evidence.environmentAt ? 'fresh' : 'awaiting_data',
-      state: `environment_computed=${(input.evidence.environmentAt !== undefined && input.evidence.environmentAt !== null)}`,
+      state: `environment_computed=${isSet(input.evidence.environmentAt)}`,
     }),
   ];
 }
@@ -585,7 +582,7 @@ function buildRecommendationsDomain(input: {
       phaseAtGeneration: input.briefing?.phaseAtGeneration ?? null,
       currentBriefingPhase: resolveBriefingPhase(new Date()),
     }),
-    state: `briefing=${(briefingAt !== undefined && briefingAt !== null)}`,
+    state: `briefing=${isSet(briefingAt)}`,
   });
 }
 
@@ -608,7 +605,7 @@ function buildReasoningPlanningDomains(input: {
         fatigueAt: input.evidence.fatigueAt,
         adaptationAt: input.evidence.adaptationAt,
       }),
-      state: `reasoning_computed=${(input.evidence.reasoningAt !== undefined && input.evidence.reasoningAt !== null)}`,
+      state: `reasoning_computed=${isSet(input.evidence.reasoningAt)}`,
     }),
     buildRecommendationsDomain(input),
     makeDomainFreshness({
@@ -631,10 +628,7 @@ function buildExtendedDomainFreshnessList(input: {
   google: FreshnessQueryData[9];
   briefing: FreshnessQueryData[10];
 }): DomainFreshness[] {
-  return [
-    ...buildPhysicalEnvironmentDomains(input),
-    ...buildReasoningPlanningDomains(input),
-  ];
+  return [...buildPhysicalEnvironmentDomains(input), ...buildReasoningPlanningDomains(input)];
 }
 
 function buildDomainFreshnessList(input: {
@@ -694,7 +688,10 @@ export async function computeFreshnessSnapshot(params: {
     latestSnapshot,
   ] = await loadFreshnessQueryData(athleteId, trainingDayId);
 
-  const providers = buildProviderFreshnessList({ strava, garmin, renpho, withings, google }, syncing);
+  const providers = buildProviderFreshnessList(
+    { strava, garmin, renpho, withings, google },
+    syncing,
+  );
   const domains = buildDomainFreshnessList({
     computing,
     syncing,
@@ -747,7 +744,9 @@ export function providersNeedingSync(
   options?: { force?: boolean },
 ): string[] {
   if (options?.force) {
-    return snapshot.providers.filter((provider) => provider.connected).map((provider) => provider.provider);
+    return snapshot.providers
+      .filter((provider) => provider.connected)
+      .map((provider) => provider.provider);
   }
 
   const hour = new Date().getHours();

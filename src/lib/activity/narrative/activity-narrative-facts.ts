@@ -1,4 +1,5 @@
 import { ActivityType } from '@prisma/client';
+import { isSet } from '@/lib/util/value';
 import { differenceInCalendarDays, startOfDay, subDays } from 'date-fns';
 import { prisma } from '@/lib/prisma';
 import {
@@ -70,7 +71,7 @@ type ActivityRow = PeerRow & {
 };
 
 function fmtPace(secPerKm?: number | null): string | null {
-  if ((secPerKm === undefined || secPerKm === null) || secPerKm <= 0) {
+  if (secPerKm === undefined || secPerKm === null || secPerKm <= 0) {
     return null;
   }
   const m = Math.floor(secPerKm / 60);
@@ -79,7 +80,7 @@ function fmtPace(secPerKm?: number | null): string | null {
 }
 
 function fmtPace100(secPer100m?: number | null): string | null {
-  if ((secPer100m === undefined || secPer100m === null) || secPer100m <= 0) {
+  if (secPer100m === undefined || secPer100m === null || secPer100m <= 0) {
     return null;
   }
   const m = Math.floor(secPer100m / 60);
@@ -130,8 +131,8 @@ function describeActivityCoreBits(activity: ActivityRow): string[] {
     activity.title ? `Titre : ${activity.title}` : null,
     `Date : ${activity.date.toISOString().slice(0, 10)}`,
     activity.duration ? `Durée : ${formatDuration(activity.duration)}` : null,
-    (activity.load !== undefined && activity.load !== null) ? `Charge : ${Math.round(activity.load)} TSS` : null,
-    (activity.rpe !== undefined && activity.rpe !== null) ? `RPE : ${activity.rpe}/10` : null,
+    isSet(activity.load) ? `Charge : ${Math.round(activity.load)} TSS` : null,
+    isSet(activity.rpe) ? `RPE : ${activity.rpe}/10` : null,
     activity.feeling ? `Ressenti déclaré : ${activity.feeling}` : null,
     activityEnvironmentLine(activity),
     activity.notes ? `Notes athlète : ${activity.notes}` : null,
@@ -151,7 +152,7 @@ function appendDistanceAndPaceBits(bits: string[], activity: ActivityRow): void 
   if (swimPace) {
     bits.push(`Allure moyenne : ${swimPace}`);
   }
-  if ((activity.swimMetrics?.swolf !== undefined && activity.swimMetrics?.swolf !== null)) {
+  if (isSet(activity.swimMetrics?.swolf)) {
     bits.push(`SWOLF : ${Math.round(activity.swimMetrics.swolf)}`);
   }
 }
@@ -168,10 +169,10 @@ function appendHrBit(
 }
 
 function appendCadenceBits(bits: string[], activity: ActivityRow): void {
-  if ((activity.runMetrics?.cadence !== undefined && activity.runMetrics?.cadence !== null)) {
+  if (isSet(activity.runMetrics?.cadence)) {
     bits.push(`Cadence : ${Math.round(activity.runMetrics.cadence)} spm`);
   }
-  if ((activity.bikeMetrics?.avgCadence !== undefined && activity.bikeMetrics?.avgCadence !== null)) {
+  if (isSet(activity.bikeMetrics?.avgCadence)) {
     bits.push(`Cadence : ${Math.round(activity.bikeMetrics.avgCadence)} rpm`);
   }
 }
@@ -213,7 +214,7 @@ function describeActivity(activity: ActivityRow, extras?: { streamAvgHr?: number
 }
 
 function comparePeerPaceLine(activity: ActivityRow, peers: PeerRow[]): string | null {
-  const peerPaces = peers.map(paceSecPerKm).filter((v): v is number => (v !== undefined && v !== null) && v > 0);
+  const peerPaces = peers.map(paceSecPerKm).filter((v): v is number => isSet(v) && v > 0);
   const actPace = paceSecPerKm(activity);
   const avgPace = avg(peerPaces);
   if (!actPace || !avgPace) {
@@ -230,7 +231,7 @@ function comparePeerPaceLine(activity: ActivityRow, peers: PeerRow[]): string | 
 }
 
 function comparePeerHrLine(activity: ActivityRow, peers: PeerRow[]): string | null {
-  const peerHrs = peers.map(avgHr).filter((v): v is number => (v !== undefined && v !== null) && v > 0);
+  const peerHrs = peers.map(avgHr).filter((v): v is number => isSet(v) && v > 0);
   const actHr = avgHr(activity);
   const avgHr30 = avg(peerHrs);
   if (!actHr || !avgHr30) {
@@ -250,7 +251,7 @@ function comparePeerHrPeakLine(activity: ActivityRow, peers: PeerRow[]): string 
   }
   const lastHigher = peers.find((p) => {
     const hr = avgHr(p);
-    return (hr !== undefined && hr !== null) && hr > actHr;
+    return isSet(hr) && hr > actHr;
   });
   if (lastHigher) {
     const days = differenceInCalendarDays(startOfDay(activity.date), startOfDay(lastHigher.date));
@@ -263,7 +264,7 @@ function comparePeerHrPeakLine(activity: ActivityRow, peers: PeerRow[]): string 
 }
 
 function comparePeerDurationLine(activity: ActivityRow, peers: PeerRow[]): string | null {
-  const peerLoads = peers.map((p) => p.duration).filter((v): v is number => (v !== undefined && v !== null) && v > 0);
+  const peerLoads = peers.map((p) => p.duration).filter((v): v is number => isSet(v) && v > 0);
   const avgDur = avg(peerLoads);
   if (!activity.duration || !avgDur) {
     return null;
@@ -502,7 +503,7 @@ function appendEnvironmentEffectLine(
   lines: string[],
 ): void {
   const effect = environmentPresentation.correction.totalAttributedEffect;
-  if (effect.available && (effect.value !== undefined && effect.value !== null) && effect.value > 0) {
+  if (effect.available && isSet(effect.value) && effect.value > 0) {
     lines.push(
       `Effet environnemental total attribué : ~${Math.round(effect.value * 100)} % sur la performance perçue.`,
     );
@@ -510,7 +511,9 @@ function appendEnvironmentEffectLine(
 }
 
 function buildEnvironmentNarrativeLines(
-  environmentPresentation: Awaited<ReturnType<typeof resolveActivityEnvironmentPresentation>> | null,
+  environmentPresentation: Awaited<
+    ReturnType<typeof resolveActivityEnvironmentPresentation>
+  > | null,
 ): string[] {
   if (!environmentPresentation?.visible) {
     return [];

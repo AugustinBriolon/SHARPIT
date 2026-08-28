@@ -19,6 +19,7 @@ import { approximateTrainingDayUtcRange } from '@/lib/training/training-day';
 import { midpointFromLatLng } from '@/lib/geo/midpoint';
 
 import { resolveDefaultActivityLocation } from '@/lib/geocoding/default-activity-location';
+import { isSet } from '@/lib/util/value';
 
 type RecentActivityLocation = {
   observedLocationLat: number | null;
@@ -41,7 +42,7 @@ function locationFromActivityStream(
 function locationFromObservedCoords(
   activity: RecentActivityLocation | null | undefined,
 ): (GeoLocation & { source: 'activity-observed' }) | null {
-  if ((activity?.observedLocationLat === undefined || activity?.observedLocationLat === null) || (activity?.observedLocationLng === undefined || activity?.observedLocationLng === null)) {
+  if (!activity || !isSet(activity.observedLocationLat) || !isSet(activity.observedLocationLng)) {
     return null;
   }
   return {

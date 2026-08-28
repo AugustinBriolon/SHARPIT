@@ -1,4 +1,5 @@
 import { addDays, min as minDate, max as maxDate } from 'date-fns';
+import { isSet } from '@/lib/util/value';
 import { getOrBuildAthleteSnapshot } from '@/lib/athlete-state/snapshot-service';
 import {
   getAthleteProfile,
@@ -25,10 +26,10 @@ function hasThresholds(
     return false;
   }
   return (
-    (profile.ftpW !== undefined && profile.ftpW !== null) ||
-    (profile.lthr !== undefined && profile.lthr !== null) ||
-    (profile.maxHr !== undefined && profile.maxHr !== null) ||
-    (profile.runThresholdPaceSecPerKm !== undefined && profile.runThresholdPaceSecPerKm !== null)
+    isSet(profile.ftpW) ||
+    isSet(profile.lthr) ||
+    isSet(profile.maxHr) ||
+    isSet(profile.runThresholdPaceSecPerKm)
   );
 }
 

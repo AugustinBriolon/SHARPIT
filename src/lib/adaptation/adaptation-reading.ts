@@ -1,3 +1,4 @@
+import { isSet } from '@/lib/util/value';
 /**
  * Presentation helpers for adaptation drill-down — numbers + meaning,
  * not generic rationale slogans.
@@ -28,7 +29,7 @@ function increaseLoadReading(input: {
   const { limitingFactor, limitingScore, plateauRisk, loadMultiplier, historyLength } = input;
   const histPart = historyLength > 0 ? ` Sur ${historyLength} j` : '';
 
-  if (limitingFactor && (limitingScore !== undefined && limitingScore !== null)) {
+  if (limitingFactor && isSet(limitingScore)) {
     return `Le frein (${limitingFactor.toLowerCase()} à ${limitingScore}/100)${
       plateauRisk ? ' et le plateau' : ''
     } bloquent la progression. Remonter la charge pour relancer l’adaptation${
@@ -77,5 +78,7 @@ export function synthesizeAdaptationReading(input: AdaptationReadingInput): stri
   if (reading) {
     return reading;
   }
-  return input.historyLength > 0 ? ` Sur ${input.historyLength} j` : 'Lecture d’adaptation indisponible.';
+  return input.historyLength > 0
+    ? ` Sur ${input.historyLength} j`
+    : 'Lecture d’adaptation indisponible.';
 }

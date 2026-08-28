@@ -1,4 +1,5 @@
 import { startOfDay, subDays } from 'date-fns';
+import { isSet } from '@/lib/util/value';
 
 import { bodyCompositionMeasurementToObservation } from '@/core/adapters/body-composition-measurement-adapter';
 import type { RawObservation } from '@/core/observation/types';
@@ -12,9 +13,7 @@ export type BodyCompositionObservationBackfillResult = {
 };
 
 function collectMissingObservations(
-  rows: Awaited<
-    ReturnType<typeof prisma.bodyCompositionMeasurement.findMany>
-  >,
+  rows: Awaited<ReturnType<typeof prisma.bodyCompositionMeasurement.findMany>>,
   existingIds: Set<string>,
 ): { raws: RawObservation[]; skipped: number } {
   const raws: RawObservation[] = [];
@@ -73,7 +72,7 @@ export async function backfillBodyCompositionObservationsFromMeasurements(
     select: { externalId: true },
   });
   const existingIds = new Set(
-    existing.map((row) => row.externalId).filter((id): id is string => (id !== undefined && id !== null)),
+    existing.map((row) => row.externalId).filter((id): id is string => isSet(id)),
   );
 
   const { raws, skipped } = collectMissingObservations(rows, existingIds);

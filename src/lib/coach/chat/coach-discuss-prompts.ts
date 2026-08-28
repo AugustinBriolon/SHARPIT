@@ -1,4 +1,5 @@
 import type { SessionAnalysis } from '@/lib/validators/coach';
+import { isSet } from '@/lib/util/value';
 import { intensityLabels } from '@/lib/planned-session/sessions';
 
 const VERDICT_FR: Record<SessionAnalysis['verdict'], string> = {
@@ -19,7 +20,7 @@ function buildPlannedDiscussBits(input: {
     input.intensity
       ? `intensité ${intensityLabels[input.intensity as keyof typeof intensityLabels] ?? input.intensity}`
       : null,
-    (input.durationMin !== undefined && input.durationMin !== null) ? `${input.durationMin} min` : null,
+    isSet(input.durationMin) ? `${input.durationMin} min` : null,
     input.description ? `consigne : ${input.description}` : null,
   ].filter(Boolean) as string[];
 }
@@ -31,7 +32,7 @@ function buildActualDiscussBits(input: {
 }): string[] {
   return [
     input.title ? `« ${input.title} »` : null,
-    (input.durationSec !== undefined && input.durationSec !== null) ? `${Math.round(input.durationSec / 60)} min réalisées` : null,
+    isSet(input.durationSec) ? `${Math.round(input.durationSec / 60)} min réalisées` : null,
     input.notes ? `notes : ${input.notes}` : null,
   ].filter(Boolean) as string[];
 }
@@ -93,9 +94,9 @@ function formatActivityActualBits(input: {
   });
   return [
     dateLabel,
-    (input.durationSec !== undefined && input.durationSec !== null) ? `${Math.round(input.durationSec / 60)} min` : null,
-    (input.load !== undefined && input.load !== null) ? `${Math.round(input.load)} TSS` : null,
-    (input.rpe !== undefined && input.rpe !== null) ? `RPE ${input.rpe}/10` : null,
+    isSet(input.durationSec) ? `${Math.round(input.durationSec / 60)} min` : null,
+    isSet(input.load) ? `${Math.round(input.load)} TSS` : null,
+    isSet(input.rpe) ? `RPE ${input.rpe}/10` : null,
     input.notes ? `notes : ${input.notes}` : null,
   ].filter(Boolean) as string[];
 }
@@ -105,7 +106,7 @@ function formatActivityPlannedBlock(
 ): string {
   const plannedBits = [
     planned.title ? `« ${planned.title} »` : null,
-    (planned.durationMin !== undefined && planned.durationMin !== null) ? `${planned.durationMin} min prévues` : null,
+    isSet(planned.durationMin) ? `${planned.durationMin} min prévues` : null,
     planned.intensity
       ? `intensité ${intensityLabels[planned.intensity as keyof typeof intensityLabels] ?? planned.intensity}`
       : null,
@@ -122,9 +123,7 @@ function formatActivityAnalysisBlock(analysis: SessionAnalysis): string {
     analysis.remarks.length > 0
       ? `\n\nPoints notables :\n${analysis.remarks.map((r) => `- ${r}`).join('\n')}`
       : '';
-  const reco = analysis.recommendation
-    ? `\n\nRecommandation : ${analysis.recommendation}`
-    : '';
+  const reco = analysis.recommendation ? `\n\nRecommandation : ${analysis.recommendation}` : '';
   return `\n\nAnalyse automatique (score ${analysis.complianceScore}/100 — ${verdict}) :\n${analysis.summary}${remarks}${reco}`;
 }
 
@@ -166,8 +165,8 @@ function buildPlannedSessionDetailBits(input: {
   description?: string | null;
 }): string[] {
   return [
-    (input.durationMin !== undefined && input.durationMin !== null) ? `${input.durationMin} min` : null,
-    (input.load !== undefined && input.load !== null) ? `${Math.round(input.load)} TSS` : null,
+    isSet(input.durationMin) ? `${input.durationMin} min` : null,
+    isSet(input.load) ? `${Math.round(input.load)} TSS` : null,
     input.intensity
       ? `intensité ${intensityLabels[input.intensity as keyof typeof intensityLabels] ?? input.intensity}`
       : null,
@@ -219,8 +218,9 @@ export function buildPlanningDiscussPrompt(input: {
   caution?: { label: string; body: string } | null;
 }): string {
   const horizonLabel = PLANNING_HORIZON_FR[input.horizonDays] ?? `${input.horizonDays} jours`;
-  const cautionBlock =
-    (input.caution !== undefined && input.caution !== null) ? `\n\n${input.caution.label}\n${input.caution.body}` : '';
+  const cautionBlock = isSet(input.caution)
+    ? `\n\n${input.caution.label}\n${input.caution.body}`
+    : '';
 
   return `Je consulte mon planning sur ${horizonLabel}. Voici le conseil du coach :
 
@@ -255,7 +255,12 @@ function formatGoalProgressionBit(input: {
   targetValue?: number | null;
   unit?: string | null;
 }): string | null {
-  if ((input.currentValue === undefined || input.currentValue === null) || (input.targetValue === undefined || input.targetValue === null)) {
+  if (
+    input.currentValue === undefined ||
+    input.currentValue === null ||
+    input.targetValue === undefined ||
+    input.targetValue === null
+  ) {
     return null;
   }
   const unitSuffix = input.unit ? ` ${input.unit}` : '';
@@ -280,7 +285,7 @@ function formatGoalDetailBits(input: {
 
   const bits = [
     dateLabel ? `échéance : ${dateLabel}` : null,
-    (input.daysRemaining !== undefined && input.daysRemaining !== null) ? `J-${input.daysRemaining}` : null,
+    isSet(input.daysRemaining) ? `J-${input.daysRemaining}` : null,
     input.targetPerformance ? `objectif visé : ${input.targetPerformance}` : null,
     formatGoalProgressionBit(input),
   ].filter(Boolean);
@@ -351,7 +356,7 @@ export function buildPhysicalConditionDiscussPrompt(input: {
 
   const bits = [
     input.bodyPart ? `zone : ${input.bodyPart}` : null,
-    (input.severity !== undefined && input.severity !== null) ? `sévérité : ${input.severity}/10` : null,
+    isSet(input.severity) ? `sévérité : ${input.severity}/10` : null,
     dateLabel ? `depuis le ${dateLabel}` : null,
     input.affectsTraining ? 'déclarée comme affectant mon entraînement' : null,
     input.description ? `note : ${input.description}` : null,

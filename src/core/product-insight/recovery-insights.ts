@@ -1,4 +1,5 @@
 import { buildProductInsightBundle } from '@/core/product-insight/build-product-insight-bundle';
+import { isSet } from '@/lib/util/value';
 import type { ProductInsight, RecoveryInsightInput } from '@/core/product-insight/types';
 
 function buildTrainingReadinessInsight(input: RecoveryInsightInput): ProductInsight {
@@ -6,13 +7,12 @@ function buildTrainingReadinessInsight(input: RecoveryInsightInput): ProductInsi
     id: 'recovery:training-readiness',
     title: "Intensité réaliste aujourd'hui",
     summary: input.recommendedIntensityLabel,
-    explanation:
-      (input.limitingFactorLabel !== undefined && input.limitingFactorLabel !== null)
-        ? `Le facteur limitant principal est ${input.limitingFactorLabel.toLowerCase()}.`
-        : "Le niveau de récupération du jour guide l'intensité la plus réaliste.",
+    explanation: isSet(input.limitingFactorLabel)
+      ? `Le facteur limitant principal est ${input.limitingFactorLabel.toLowerCase()}.`
+      : "Le niveau de récupération du jour guide l'intensité la plus réaliste.",
     evidence: input.rationale,
     confidence: input.confidence,
-    importance: (input.readinessScore !== undefined && input.readinessScore !== null) && input.readinessScore < 50 ? 'CRITICAL' : 'HIGH',
+    importance: isSet(input.readinessScore) && input.readinessScore < 50 ? 'CRITICAL' : 'HIGH',
     decisionImpact: 'TRAINING_TODAY',
     relatedDimensions: ['RECOVERY', 'REASONING'],
   };
@@ -97,7 +97,7 @@ function collectRecoveryInsights(input: RecoveryInsightInput) {
   const supporting = [buildMainDriverInsight(input)];
   const contextual: ProductInsight[] = [];
 
-  if ((input.estimatedRecoveryDays !== undefined && input.estimatedRecoveryDays !== null) && input.estimatedRecoveryDays > 0) {
+  if (isSet(input.estimatedRecoveryDays) && input.estimatedRecoveryDays > 0) {
     supporting.push(buildRecoveryWindowInsight(input));
   }
   if (input.dissonanceDetected) {

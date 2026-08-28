@@ -1,4 +1,5 @@
 import { format, parseISO } from 'date-fns';
+import { isSet } from '@/lib/util/value';
 import { fr } from 'date-fns/locale';
 import {
   coachMemoryTypeLabel,
@@ -26,7 +27,7 @@ const ABBREVIATIONS = new Set([
 
 function endsWithAbbreviation(text: string): boolean {
   const match = /(\p{L}+)\.$/u.exec(text.trimEnd());
-  return (match !== undefined && match !== null) && ABBREVIATIONS.has(match[1].toLowerCase());
+  return isSet(match) && ABBREVIATIONS.has(match[1].toLowerCase());
 }
 
 /**
@@ -40,7 +41,7 @@ function splitIntoSentences(paragraph: string): string[] {
 
   for (const fragment of fragments) {
     const previous = sentences.at(-1);
-    if ((previous !== undefined && previous !== null) && endsWithAbbreviation(previous)) {
+    if (isSet(previous) && endsWithAbbreviation(previous)) {
       sentences[sentences.length - 1] = `${previous} ${fragment}`;
     } else {
       sentences.push(fragment);

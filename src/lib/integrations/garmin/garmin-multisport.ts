@@ -32,7 +32,7 @@ function num(v: unknown): number | null {
 
 function durationSec(v: unknown): number | null {
   const n = num(v);
-  if ((n === undefined || n === null)) {
+  if (n === undefined || n === null) {
     return null;
   }
   return n > 1_000_000 ? Math.round(n / 1000) : Math.round(n);
@@ -61,7 +61,7 @@ function parseChildSummary(
 ): MultisportLeg | null {
   const kind = mapGarminChildTypeToKind(typeKey);
   const duration = durationSec(summary?.duration);
-  if ((duration === undefined || duration === null)) {
+  if (duration === undefined || duration === null) {
     return null;
   }
 
@@ -130,29 +130,36 @@ function planMultisportChildren(raw: GarminActivityDetail) {
   });
 }
 
+async function loadMultisportLegPayload(
+  client: GCClient,
+  garminActivityId: number,
+): Promise<MultisportLeg[] | null> {
+  const raw = await loadGarminMultisportDetail(client, garminActivityId);
+  const childIds = raw?.metadataDTO?.childIds ?? [];
+
+  if (!raw || !raw.isMultiSportParent || childIds.length === 0) {
+    return null;
+  }
+
+  const withTransitionIndex = planMultisportChildren(raw);
+  const children = (
+    await mapWithConcurrency(
+      withTransitionIndex,
+      MULTISPORT_CHILD_CONCURRENCY,
+      async ({ childId }) => loadGarminMultisportDetail(client, childId),
+    )
+  ).filter((child): child is GarminActivityDetail => child !== null);
+
+  const legs = buildMultisportLegs(withTransitionIndex, children);
+  return legs.length > 0 ? legs : null;
+}
+
 export async function fetchGarminMultisportLegs(
   client: GCClient,
   garminActivityId: number,
 ): Promise<MultisportLeg[] | null> {
   try {
-    const raw = await loadGarminMultisportDetail(client, garminActivityId);
-    const childIds = raw?.metadataDTO?.childIds ?? [];
-
-    if (!raw || !raw.isMultiSportParent || childIds.length === 0) {
-      return null;
-    }
-
-    const withTransitionIndex = planMultisportChildren(raw);
-    const children = (
-      await mapWithConcurrency(
-        withTransitionIndex,
-        MULTISPORT_CHILD_CONCURRENCY,
-        async ({ childId }) => loadGarminMultisportDetail(client, childId),
-      )
-    ).filter((child): child is GarminActivityDetail => child !== null);
-
-    const legs = buildMultisportLegs(withTransitionIndex, children);
-    return legs.length > 0 ? legs : null;
+    return await loadMultisportLegPayload(client, garminActivityId);
   } catch {
     return null;
   }

@@ -5,6 +5,7 @@ import type {
   BodyViewModel,
 } from '@/core/presentation/body-view-model';
 import { athleteCompositionContext } from '@/lib/profile/athlete-profile-utils';
+import { isSet } from '@/lib/util/value';
 import {
   buildCompositionSeries,
   computeCompositionTrend,
@@ -33,7 +34,7 @@ const TREND_WINDOWS = [
 const AGE_COMPARED_METRICS: CompositionMetricId[] = ['vascularAgeYears', 'metabolicAge', 'bmi'];
 
 function heightFromWithingsExtras(extras: unknown): number | null {
-  if ((extras === undefined || extras === null) || typeof extras !== 'object') {
+  if (extras === undefined || extras === null || typeof extras !== 'object') {
     return null;
   }
   const maybe = extras as Record<string, unknown>;
@@ -42,7 +43,7 @@ function heightFromWithingsExtras(extras: unknown): number | null {
 }
 
 function sourceLabel(source: string | null | undefined): string | null {
-  if ((source === undefined || source === null)) {
+  if (source === undefined || source === null) {
     return null;
   }
   if (source === 'WITHINGS') {
@@ -52,7 +53,7 @@ function sourceLabel(source: string | null | undefined): string | null {
 }
 
 function inferActiveTrendWindowId(days: number | null | undefined): BodyTrendWindowId {
-  if ((days === undefined || days === null)) {
+  if (days === undefined || days === null) {
     return 'all';
   }
   if (days === 14) {
@@ -90,9 +91,11 @@ function buildExplainerVm(args: {
   const scaleMarkerPct = !guide.hideScale ? metricScalePosition(scaleInput, guide.zones) : null;
 
   const showProfileAgeHint =
-    AGE_COMPARED_METRICS.includes(args.metricId) && (args.context.chronologicalAgeYears === undefined || args.context.chronologicalAgeYears === null);
+    AGE_COMPARED_METRICS.includes(args.metricId) &&
+    (args.context.chronologicalAgeYears === undefined ||
+      args.context.chronologicalAgeYears === null);
   const showAgeComparisonNote =
-    AGE_COMPARED_METRICS.includes(args.metricId) && (args.context.chronologicalAgeYears !== undefined && args.context.chronologicalAgeYears !== null);
+    AGE_COMPARED_METRICS.includes(args.metricId) && isSet(args.context.chronologicalAgeYears);
 
   return {
     metricId: args.metricId,
@@ -168,7 +171,7 @@ function buildMetricDeltaFooter(
   const presentation = buildWeeklyDeltaPresentation(metricId, delta7d, (delta) =>
     formatCompositionDelta(delta, ' pts vs 7j'),
   );
-  if ((presentation.deltaDisplay === undefined || presentation.deltaDisplay === null)) {
+  if (presentation.deltaDisplay === undefined || presentation.deltaDisplay === null) {
     return null;
   }
   return {
@@ -189,19 +192,17 @@ function buildTrendHeroMiniMetric(input: {
     input.delta,
     (d) => formatCompositionDelta(d, ' pts'),
   );
-  const zoneTone =
-    (input.latest !== undefined && input.latest !== null)
-      ? getGuide(input.metricId).interpret(input.latest, input.compositionContext).tone
-      : 'neutral';
+  const zoneTone = isSet(input.latest)
+    ? getGuide(input.metricId).interpret(input.latest, input.compositionContext).tone
+    : 'neutral';
   return {
     value: input.latest,
     deltaDisplay: delta.deltaDisplay,
     deltaTone: delta.deltaTone,
     deltaHint: delta.deltaHint,
-    tone:
-      (input.latest !== undefined && input.latest !== null)
-        ? resolveMetricValueTone(zoneTone, input.metricId, input.delta)
-        : 'neutral',
+    tone: isSet(input.latest)
+      ? resolveMetricValueTone(zoneTone, input.metricId, input.delta)
+      : 'neutral',
     guideId: input.metricId,
   };
 }
@@ -210,14 +211,12 @@ function buildWaterHeroMiniMetric(
   water: ReturnType<typeof computeCompositionTrend>,
   compositionContext: CompositionContext,
 ) {
-  const zoneTone =
-    (water.latest !== undefined && water.latest !== null)
-      ? getGuide('waterPct').interpret(water.latest, compositionContext).tone
-      : 'neutral';
+  const zoneTone = isSet(water.latest)
+    ? getGuide('waterPct').interpret(water.latest, compositionContext).tone
+    : 'neutral';
   return {
     value: water.latest,
-    deltaDisplay:
-      (water.delta !== undefined && water.delta !== null) ? (formatCompositionDelta(water.delta, ' pts') ?? null) : null,
+    deltaDisplay: isSet(water.delta) ? (formatCompositionDelta(water.delta, ' pts') ?? null) : null,
     deltaTone: 'ok' as const,
     deltaHint: null,
     tone: zoneTone,
@@ -225,7 +224,9 @@ function buildWaterHeroMiniMetric(
   };
 }
 
-type BodyMeasurementEntry = NonNullable<Awaited<ReturnType<typeof getBodyCompositionMeasurements>>>[number];
+type BodyMeasurementEntry = NonNullable<
+  Awaited<ReturnType<typeof getBodyCompositionMeasurements>>
+>[number];
 
 function computeBodyCompositionTrends(entries: BodyMeasurementEntry[]) {
   return {
@@ -249,11 +250,11 @@ function buildBodyHeroSection(input: {
   );
   return {
     latestWeightKg: latest.weightKg ?? null,
-    latestWeightDisplay: (latest.weightKg !== undefined && latest.weightKg !== null) ? formatWeightKgDisplay(latest.weightKg) : '—',
+    latestWeightDisplay: isSet(latest.weightKg) ? formatWeightKgDisplay(latest.weightKg) : '—',
     measuredAtLabel: displayMeasuredAt(latest.measuredAt),
     sourceLabel: sourceLabel(latest.source),
     weightDeltaDisplay: weightDelta.deltaDisplay,
-    weightDeltaTone: (trends.weight.delta !== undefined && trends.weight.delta !== null) ? weightDelta.deltaTone : null,
+    weightDeltaTone: isSet(trends.weight.delta) ? weightDelta.deltaTone : null,
     weightDeltaHint: weightDelta.deltaHint,
     heroMini: {
       bodyFatPct: buildTrendHeroMiniMetric({
@@ -279,9 +280,7 @@ function buildBodyHeroSection(input: {
   };
 }
 
-function createBodyExplainerEnsurer(
-  compositionContext: CompositionContext,
-): {
+function createBodyExplainerEnsurer(compositionContext: CompositionContext): {
   explainerByMetricId: BodyViewModel['explainerByMetricId'];
   ensureExplainer: (
     metricId: CompositionMetricId,
@@ -295,7 +294,13 @@ function createBodyExplainerEnsurer(
     raw: number | null | undefined,
     display: string | null | undefined,
   ) => {
-    if ((raw === undefined || raw === null) || (display === undefined || display === null) || explainerByMetricId[metricId]) {
+    if (
+      raw === undefined ||
+      raw === null ||
+      display === undefined ||
+      display === null ||
+      explainerByMetricId[metricId]
+    ) {
       return;
     }
     explainerByMetricId[metricId] = buildExplainerVm({
@@ -310,11 +315,11 @@ function createBodyExplainerEnsurer(
 
 function measurementHasBodyScan(latest: BodyMeasurementEntry, ecgStatCount: number) {
   return (
-    (latest.vascularAgeYears !== undefined && latest.vascularAgeYears !== null) ||
-    (latest.nerveHealthScore !== undefined && latest.nerveHealthScore !== null) ||
-    (latest.pulseWaveVelocity !== undefined && latest.pulseWaveVelocity !== null) ||
-    (latest.skinConductance !== undefined && latest.skinConductance !== null) ||
-    (latest.vo2Max !== undefined && latest.vo2Max !== null) ||
+    isSet(latest.vascularAgeYears) ||
+    isSet(latest.nerveHealthScore) ||
+    isSet(latest.pulseWaveVelocity) ||
+    isSet(latest.skinConductance) ||
+    isSet(latest.vo2Max) ||
     ecgStatCount > 0
   );
 }
@@ -425,23 +430,27 @@ function registerTrajectoryMetricExplainers(input: {
     display: string | null | undefined,
   ) => void;
 }) {
-  if ((input.bodyFat.latest !== undefined && input.bodyFat.latest !== null)) {
+  if (isSet(input.bodyFat.latest)) {
     input.ensureExplainer('bodyFatPct', input.bodyFat.latest, `${input.bodyFat.latest} %`);
   }
-  if ((input.muscle.latest !== undefined && input.muscle.latest !== null)) {
+  if (isSet(input.muscle.latest)) {
     input.ensureExplainer('musclePct', input.muscle.latest, `${input.muscle.latest} %`);
   }
-  if ((input.visceral.latest !== undefined && input.visceral.latest !== null)) {
+  if (isSet(input.visceral.latest)) {
     input.ensureExplainer('visceralFat', input.visceral.latest, `${input.visceral.latest}`);
   }
-  if ((input.latest.waterPct !== undefined && input.latest.waterPct !== null)) {
-    input.ensureExplainer('waterPct', input.latest.waterPct, `${input.latest.waterPct.toFixed(1)} %`);
+  if (isSet(input.latest.waterPct)) {
+    input.ensureExplainer(
+      'waterPct',
+      input.latest.waterPct,
+      `${input.latest.waterPct.toFixed(1)} %`,
+    );
   }
 }
 
 function buildBodyMassTrajectoryCards(latest: BodyMeasurementEntry): BodyMetricCardVm[] {
   const cards: BodyMetricCardVm[] = [];
-  if ((latest.fatFreeWeightKg !== undefined && latest.fatFreeWeightKg !== null)) {
+  if (isSet(latest.fatFreeWeightKg)) {
     cards.push({
       cardId: 'fatFreeWeightKg',
       label: 'Masse maigre',
@@ -449,7 +458,7 @@ function buildBodyMassTrajectoryCards(latest: BodyMeasurementEntry): BodyMetricC
       tone: 'neutral',
     });
   }
-  if ((latest.boneKg !== undefined && latest.boneKg !== null)) {
+  if (isSet(latest.boneKg)) {
     cards.push({
       cardId: 'boneKg',
       label: 'Masse osseuse',
@@ -475,7 +484,7 @@ function buildBodyTrajectoryCards(input: {
   ) => void;
 }): BodyMetricCardVm[] {
   const cards: BodyMetricCardVm[] = [];
-  if ((input.latestBmiDisplay !== undefined && input.latestBmiDisplay !== null)) {
+  if (isSet(input.latestBmiDisplay)) {
     cards.push(
       buildBmiTrajectoryCard({
         latestBmiDisplay: input.latestBmiDisplay,
@@ -506,7 +515,7 @@ function buildBodyContextCards(
   ) => void,
 ): BodyMetricCardVm[] {
   const cards: BodyMetricCardVm[] = [];
-  if ((latest.bmr !== undefined && latest.bmr !== null)) {
+  if (isSet(latest.bmr)) {
     const metricId: CompositionMetricId = 'bmr';
     const valueDisplay = `${Math.round(latest.bmr)} kcal`;
     ensureExplainer(metricId, latest.bmr, valueDisplay);
@@ -518,7 +527,7 @@ function buildBodyContextCards(
       tone: getGuide(metricId).interpret(latest.bmr, compositionContext).tone,
     });
   }
-  if ((latest.metabolicAge !== undefined && latest.metabolicAge !== null)) {
+  if (isSet(latest.metabolicAge)) {
     const metricId: CompositionMetricId = 'metabolicAge';
     const valueDisplay = `${latest.metabolicAge} ans`;
     ensureExplainer(metricId, latest.metabolicAge, valueDisplay);
@@ -620,7 +629,7 @@ function buildBodyHealthScanCards(
   ];
 
   for (const metric of scanMetrics) {
-    if ((metric.raw === undefined || metric.raw === null)) {
+    if (metric.raw === undefined || metric.raw === null) {
       continue;
     }
     pushGuideHealthScanCard(cards, {

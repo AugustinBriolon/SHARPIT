@@ -21,6 +21,7 @@
  */
 
 import { randomUUID } from 'node:crypto';
+import { isSet } from '@/lib/util/value';
 
 import type { FeatureEngine } from '@/core/features/engine';
 import type { DigitalTwinRepository } from '@/core/digital-twin/repository';
@@ -271,7 +272,7 @@ export class FatigueInferenceOrchestrator {
     }
 
     const idx = previousFatigueState.fatigueIndex;
-    if ((idx === undefined || idx === null)) {
+    if (idx === undefined || idx === null) {
       return { consecutiveAccumulationDays: 0, recentFatigueHistory: [] };
     }
 
@@ -287,7 +288,7 @@ export class FatigueInferenceOrchestrator {
     const history: number[] = [];
     for (const record of records) {
       const idx = (record.stateUpdate as { fatigueIndex?: number | null }).fatigueIndex;
-      if ((idx !== undefined && idx !== null) && idx !== undefined) {
+      if (isSet(idx) && idx !== undefined) {
         history.push(idx);
       }
     }

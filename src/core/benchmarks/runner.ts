@@ -1,3 +1,4 @@
+import { isSet } from '@/lib/util/value';
 /**
  * SHARPIT — Scientific Benchmark Runner
  *
@@ -155,7 +156,7 @@ const OPTIONAL_EXPECTATION_EVALUATORS: Record<
         )
       : null,
   readinessScoreRange: (expectations, output) =>
-    expectations.readinessScoreRange !== undefined && (output.recoveryState.readinessScore !== undefined && output.recoveryState.readinessScore !== null)
+    expectations.readinessScoreRange !== undefined && isSet(output.recoveryState.readinessScore)
       ? evaluateRange(
           'readinessScore',
           expectations.readinessScoreRange,
@@ -188,7 +189,7 @@ function optionalExpectationResults(
 
   return keys
     .map((key) => optionalExpectation(expectations, output, key))
-    .filter((result): result is ExpectationResult => (result !== undefined && result !== null));
+    .filter((result): result is ExpectationResult => isSet(result));
 }
 
 function evaluateExpectations(

@@ -3,6 +3,7 @@
  */
 
 import type { EnvironmentalProviderAdapter, AdapterMeta } from '@/core/environment/provider';
+import { isSet } from '@/lib/util/value';
 import type { WeatherMeasurements } from '@/core/environment/types';
 import { weatherFieldQuality } from '@/core/environment/quality';
 import type { ObservationRecordDraft } from '@/core/environment/record';
@@ -132,7 +133,7 @@ function buildHourlyDraft(
   index: number,
 ): ObservationRecordDraft | null {
   const data = buildHourlyWeatherData(payload.hourly, index);
-  if (!Object.values(data).some((value) => (value !== undefined && value !== null))) {
+  if (!Object.values(data).some((value) => isSet(value))) {
     return null;
   }
 

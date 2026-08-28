@@ -1,3 +1,4 @@
+import { isSet } from '@/lib/util/value';
 import type {
   NutritionDaySummary,
   NutritionGoalsProgress,
@@ -83,7 +84,7 @@ function proteinMealInsight(day: NutritionDaySummary): string | null {
 }
 
 function calorieGoalHeadline(remaining: number | null): string | null {
-  if ((remaining !== undefined && remaining !== null) && remaining < 0) {
+  if (isSet(remaining) && remaining < 0) {
     return remaining < -200 ? 'Apports généreux' : 'Légèrement au-dessus';
   }
   if (remaining === 0) {
@@ -154,7 +155,7 @@ function headlineWithGoals(
   const consumedRatio = goals.calorieBudget > 0 ? goals.calories.consumed / goals.calorieBudget : 0;
   const progressHeadline = progressGoalHeadline({
     consumedRatio,
-    proteinOver: (goals.protein.remaining !== undefined && goals.protein.remaining !== null) && goals.protein.remaining < 0,
+    proteinOver: isSet(goals.protein.remaining) && goals.protein.remaining < 0,
     isToday,
     missingCount: missingMealLabels(day).length,
     loggedCount: day.meals.filter((meal) => meal.calories > 0).length,
@@ -163,7 +164,11 @@ function headlineWithGoals(
   return progressHeadline ?? 'Apports en bonne voie';
 }
 
-function journalCaptionToday(loggedCount: number, missing: string[], isToday: boolean): string | null {
+function journalCaptionToday(
+  loggedCount: number,
+  missing: string[],
+  isToday: boolean,
+): string | null {
   if (loggedCount === 1 && isToday) {
     return "Un seul repas enregistré pour l'instant";
   }

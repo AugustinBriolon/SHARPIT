@@ -1,6 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { isSet } from '@/lib/util/value';
 import { fetchActivities, fetchActivityStream, fetchMultisportStreams } from '@/lib/query/fetchers';
 import { queryKeys } from '@/lib/query/keys';
 import { listOptimistic, tempId, isTempId } from '@/lib/query/optimistic';
@@ -38,12 +39,16 @@ function activityDate(payload: ActivityMutationPayload): Date {
 
 function optimisticRunMetrics(payload: ActivityMutationPayload) {
   const distanceM = payload.runMetrics?.distanceM;
-  return (distanceM !== undefined && distanceM !== null) && distanceM !== undefined ? { distanceM } : null;
+  return isSet(distanceM) && distanceM !== undefined ? { distanceM } : null;
 }
 
 function optimisticBikeMetrics(payload: ActivityMutationPayload) {
   const bike = payload.bikeMetrics;
-  if (!bike || ((bike.tss === undefined || bike.tss === null) && (bike.avgPower === undefined || bike.avgPower === null))) {
+  if (
+    !bike ||
+    ((bike.tss === undefined || bike.tss === null) &&
+      (bike.avgPower === undefined || bike.avgPower === null))
+  ) {
     return null;
   }
   return { tss: bike.tss ?? null, avgPower: bike.avgPower ?? null };
@@ -51,7 +56,7 @@ function optimisticBikeMetrics(payload: ActivityMutationPayload) {
 
 function optimisticSwimMetrics(payload: ActivityMutationPayload) {
   const distanceM = payload.swimMetrics?.distanceM;
-  return (distanceM !== undefined && distanceM !== null) && distanceM !== undefined ? { distanceM } : null;
+  return isSet(distanceM) && distanceM !== undefined ? { distanceM } : null;
 }
 
 function optimisticActivity(payload: ActivityMutationPayload): ClientActivity {

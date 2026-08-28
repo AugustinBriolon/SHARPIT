@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { isSet } from '@/lib/util/value';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from '@/components/ui/toast';
 import { buildPushToastDescription } from '@/lib/integrations/garmin/garmin-push-summary';
@@ -113,7 +114,7 @@ function buildNextGarminPush(
   watchPush: GarminWatchPushState,
 ): GarminWatchPushState {
   return {
-    workoutId: (data.workoutId !== undefined && data.workoutId !== null) ? String(data.workoutId) : watchPush.workoutId,
+    workoutId: isSet(data.workoutId) ? String(data.workoutId) : watchPush.workoutId,
     scheduledDate: data.scheduledDate ?? watchPush.scheduledDate,
     pushedAt: data.pushedAt ?? new Date().toISOString(),
   };

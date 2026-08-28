@@ -1,4 +1,5 @@
 import { startOfWeek } from 'date-fns';
+import { isSet } from '@/lib/util/value';
 import type { GateContext, GateProposal, PlanGateRule, RuleFinding } from '../types';
 
 const WEEK_OPTS = { weekStartsOn: 1 as const };
@@ -24,7 +25,7 @@ function taperLoadIncreaseFinding(proposal: GateProposal, recentAvg: number): Ru
 
 function averageRecentLoad(context: GateContext): number | null {
   const recentLoads = context.existingSessions
-    .filter((s) => (s.load !== undefined && s.load !== null))
+    .filter((s) => isSet(s.load))
     .map((s) => s.load as number);
   if (recentLoads.length === 0) {
     return null;
@@ -45,11 +46,16 @@ function collectTaperLoadFinding(
   proposedDate: Date,
 ): RuleFinding | null {
   const planWeek = planWeekForDate(context, proposedDate);
-  if (planWeek?.phase !== 'TAPER' || (proposal.load === undefined || proposal.load === null) || proposal.load <= 0) {
+  if (
+    planWeek?.phase !== 'TAPER' ||
+    proposal.load === undefined ||
+    proposal.load === null ||
+    proposal.load <= 0
+  ) {
     return null;
   }
   const recentAvg = averageRecentLoad(context);
-  if ((recentAvg !== undefined && recentAvg !== null) && proposal.load > recentAvg) {
+  if (isSet(recentAvg) && proposal.load > recentAvg) {
     return taperLoadIncreaseFinding(proposal, recentAvg);
   }
   return null;

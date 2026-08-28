@@ -1,4 +1,5 @@
 import type { Prisma, PrismaClient } from '@prisma/client';
+import { isSet } from '@/lib/util/value';
 import { reverseGeocode } from '@/lib/geocoding/nominatim';
 import { resolveAthleteGeoLocation } from '@/lib/environment/athlete-location';
 import { midpointFromLatLng } from '@/lib/geo/midpoint';
@@ -38,11 +39,7 @@ async function resolveFromStreamMidpoint(input: {
   stored: { latitude: number; longitude: number } | null;
   storedLabel: string | null | undefined;
 }) {
-  if (
-    input.stored &&
-    sameCoords(input.stored, input.fromStream) &&
-    input.storedLabel?.trim()
-  ) {
+  if (input.stored && sameCoords(input.stored, input.fromStream) && input.storedLabel?.trim()) {
     return { label: input.storedLabel, ...input.stored };
   }
 
@@ -115,7 +112,7 @@ async function resolveBackfillFromActivity(
 
   if (fromStream) {
     const stored =
-      (activity.observedLocationLat !== undefined && activity.observedLocationLat !== null) && (activity.observedLocationLng !== undefined && activity.observedLocationLng !== null)
+      isSet(activity.observedLocationLat) && isSet(activity.observedLocationLng)
         ? { latitude: activity.observedLocationLat, longitude: activity.observedLocationLng }
         : null;
     return resolveFromStreamMidpoint({
@@ -144,7 +141,12 @@ function resolveBackfillFromStoredCoords(
   >,
   activityId: string,
 ): Promise<{ label: string; latitude: number; longitude: number } | null> | null {
-  if ((activity.observedLocationLat === undefined || activity.observedLocationLat === null) || (activity.observedLocationLng === undefined || activity.observedLocationLng === null)) {
+  if (
+    activity.observedLocationLat === undefined ||
+    activity.observedLocationLat === null ||
+    activity.observedLocationLng === undefined ||
+    activity.observedLocationLng === null
+  ) {
     return null;
   }
   return resolveFromStoredCoords(

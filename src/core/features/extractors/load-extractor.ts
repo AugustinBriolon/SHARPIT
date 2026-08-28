@@ -167,6 +167,13 @@ function computeLoadConfidence(last7dCount: number, last42dCount: number): numbe
   return confidence;
 }
 
+function computeLoadStrain(acuteLoad: number, dailyTssValues7d: number[]): number | null {
+  const avgDailyLoad = mean(dailyTssValues7d);
+  const sdDailyLoad = stdDev(dailyTssValues7d);
+  const loadMonotony = sdDailyLoad > 0 ? avgDailyLoad / sdDailyLoad : null;
+  return loadMonotony !== null ? acuteLoad * loadMonotony : null;
+}
+
 export function extractLoadFeatures(history: LoadHistory, trainingDayId: string): LoadFeatureSet {
   const { dailyLoad42d } = history;
   const last7d = dailyLoad42d.filter((e) => isWithinWindow(e.trainingDayId, trainingDayId, 7));
@@ -182,10 +189,12 @@ export function extractLoadFeatures(history: LoadHistory, trainingDayId: string)
   const chronicLoadBike = chronicSportLoad(sumSportTss(last42d, 'bike'));
 
   const dailyTssValues7d = last7d.map((e) => e.tssScore);
-  const avgDailyLoad = mean(dailyTssValues7d);
-  const sdDailyLoad = stdDev(dailyTssValues7d);
-  const loadMonotony = sdDailyLoad > 0 ? avgDailyLoad / sdDailyLoad : null;
-  const loadStrain = (loadMonotony !== undefined && loadMonotony !== null) ? acuteLoad * loadMonotony : null;
+  const loadStrain = computeLoadStrain(acuteLoad, dailyTssValues7d);
+  const loadMonotony = (() => {
+    const sdDailyLoad = stdDev(dailyTssValues7d);
+    const avgDailyLoad = mean(dailyTssValues7d);
+    return sdDailyLoad > 0 ? avgDailyLoad / sdDailyLoad : null;
+  })();
 
   const trainingFrequency = last7d.filter((e) => e.tssScore > 0).length;
   const restDayCount = Math.max(0, 7 - trainingFrequency);
