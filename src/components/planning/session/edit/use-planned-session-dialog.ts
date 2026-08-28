@@ -90,7 +90,7 @@ function usePlannedSessionDialogHandlers({
   queryClient: ReturnType<typeof useQueryClient>;
   onClose: () => void;
   mutations: ReturnType<typeof usePlannedSessionMutations>;
-  confirm: ReturnType<typeof UseConfirmDialog>['confirm'];
+  confirm: ReturnType<typeof useConfirmDialog>['confirm'];
 }) {
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     await submitPlannedSessionDialogForm({
