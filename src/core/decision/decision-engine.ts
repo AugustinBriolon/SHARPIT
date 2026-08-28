@@ -133,7 +133,7 @@ export function runDecisionEngine(input: DecisionEngineInput): DecisionEngineOut
   );
 
   const freshnessFactor =
-    freshnessConfidence !== null ? Math.min(1, Math.max(0, freshnessConfidence)) : 1;
+    (freshnessConfidence !== undefined && freshnessConfidence !== null) ? Math.min(1, Math.max(0, freshnessConfidence)) : 1;
   const confidence = Math.round(modelConfidence * freshnessFactor * 100) / 100;
   const confidenceGated = shouldGateAdvice(confidence, overallVerdict);
   const attentionDomain = resolveAttentionDomain(limitingFactor, overallVerdict);
@@ -173,11 +173,11 @@ export function runDecisionEngine(input: DecisionEngineInput): DecisionEngineOut
     decisionState,
     signals: {
       availableModelCount,
-      hasRecoveryState: recovery !== null,
-      hasFatigueState: fatigue !== null,
-      hasAdaptationState: adaptation !== null,
-      hasPhysicalHealthState: physicalHealth !== null,
-      hasEnvironmentState: environment !== null,
+      hasRecoveryState: (recovery !== undefined && recovery !== null),
+      hasFatigueState: (fatigue !== undefined && fatigue !== null),
+      hasAdaptationState: (adaptation !== undefined && adaptation !== null),
+      hasPhysicalHealthState: (physicalHealth !== undefined && physicalHealth !== null),
+      hasEnvironmentState: (environment !== undefined && environment !== null),
       conflictCount: conflicts.length,
       suppressedEvidenceCount: suppressedEvidence.length,
     },

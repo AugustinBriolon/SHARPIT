@@ -25,10 +25,10 @@ function hasThresholds(
     return false;
   }
   return (
-    profile.ftpW !== null ||
-    profile.lthr !== null ||
-    profile.maxHr !== null ||
-    profile.runThresholdPaceSecPerKm !== null
+    (profile.ftpW !== undefined && profile.ftpW !== null) ||
+    (profile.lthr !== undefined && profile.lthr !== null) ||
+    (profile.maxHr !== undefined && profile.maxHr !== null) ||
+    (profile.runThresholdPaceSecPerKm !== undefined && profile.runThresholdPaceSecPerKm !== null)
   );
 }
 

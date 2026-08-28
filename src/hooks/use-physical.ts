@@ -63,8 +63,6 @@ function optimisticNote(payload: PhysicalNotePayload): ClientPhysicalNote {
   };
   return {
     id: tempId(),
-    category: payload.category,
-    title: payload.title,
     ...defaults,
     ...payload,
     createdAt: now,

@@ -288,7 +288,7 @@ export function IntegrationSyncActions({
   children?: ReactNode;
 }) {
   const { offline, guardDisabled, offlineLabel } = useOfflineGuard();
-  const busy = syncing || importingAll;
+  const busy = Boolean(syncing || importingAll);
 
   return (
     <div className="flex flex-wrap gap-2 pt-1">

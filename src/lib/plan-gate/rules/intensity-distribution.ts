@@ -7,7 +7,7 @@ const MAX_HIGH_INTENSITY_PER_ROLLING_WEEK = 3;
 function isHighIntensityProposal(proposal: GateProposal): boolean {
   return (
     (proposal.action === 'ADD' || proposal.action === 'MODIFY') &&
-    proposal.intensity !== null &&
+    (proposal.intensity !== undefined && proposal.intensity !== null) &&
     HIGH_INTENSITY.has(proposal.intensity)
   );
 }
@@ -22,7 +22,7 @@ function collectHighIntensityFromSessions(
 ): Date[] {
   return context.existingSessions
     .filter((s) => !modifiedIds.has(s.id))
-    .filter((s) => s.intensity !== null && HIGH_INTENSITY.has(s.intensity))
+    .filter((s) => (s.intensity !== undefined && s.intensity !== null) && HIGH_INTENSITY.has(s.intensity))
     .map((s) => s.date);
 }
 

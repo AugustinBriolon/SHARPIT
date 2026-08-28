@@ -48,8 +48,8 @@ export async function linkPlannedSessionActivity(
     where: { id, athleteId },
     data: {
       activityId,
-      completed: activityId !== null,
-      ...(activityId === null ? { analysis: Prisma.DbNull, analyzedAt: null } : {}),
+      completed: (activityId !== undefined && activityId !== null),
+      ...((activityId === undefined || activityId === null) ? { analysis: Prisma.DbNull, analyzedAt: null } : {}),
     },
   });
   if (count === 0) {

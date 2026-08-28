@@ -89,7 +89,7 @@ function validateReadinessCitation(
   trimmed: string,
   readiness: number | null,
 ): { valid: true } | { valid: false; reason: string } {
-  if (readiness === null) {
+  if ((readiness === undefined || readiness === null)) {
     return { valid: true };
   }
   const cited = trimmed.match(/\b(\d{2,3})\s*\/\s*100\b/g);
@@ -180,10 +180,10 @@ export function validateBriefingContent(
 }
 
 function buildReadinessLine(readiness: number | null, tsb: number | null): string {
-  if (readiness !== null) {
-    return `Ta readiness est à ${readiness}/100${tsb !== null ? `, avec une fraîcheur (TSB) à ${tsb > 0 ? '+' : ''}${tsb}` : ''}.`;
+  if ((readiness !== undefined && readiness !== null)) {
+    return `Ta readiness est à ${readiness}/100${(tsb !== undefined && tsb !== null) ? `, avec une fraîcheur (TSB) à ${tsb > 0 ? '+' : ''}${tsb}` : ''}.`;
   }
-  if (tsb !== null) {
+  if ((tsb !== undefined && tsb !== null)) {
     return `Ta fraîcheur (TSB) est à ${tsb > 0 ? '+' : ''}${tsb} aujourd'hui.`;
   }
   return "SHARPIT n'a pas encore assez de signaux pour un bilan personnalisé complet aujourd'hui.";
@@ -211,7 +211,7 @@ export function buildDeterministicBriefingFallback(
   if (coachCtx.physical.length > 0) {
     const [note] = coachCtx.physical;
     lines.push(
-      `Point de vigilance : ${note.title}${note.severity !== null ? ` (sévérité ${note.severity}/10)` : ''} — respecte cette contrainte.`,
+      `Point de vigilance : ${note.title}${(note.severity !== undefined && note.severity !== null) ? ` (sévérité ${note.severity}/10)` : ''} — respecte cette contrainte.`,
     );
   }
 

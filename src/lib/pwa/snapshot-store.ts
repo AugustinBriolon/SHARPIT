@@ -75,7 +75,7 @@ export async function loadSnapshot(input: {
     db.close();
   }
 
-  if (raw === null) {
+  if ((raw === undefined || raw === null)) {
     return null;
   }
 

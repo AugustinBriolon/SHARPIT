@@ -55,7 +55,7 @@ function appendWeatherAdvisories(
   env: PlannedSessionEnvironmentalProjection,
 ): void {
   const signals = input.weatherSignals;
-  if (signals?.maxPrecipitationMm !== null && signals.maxPrecipitationMm >= 1.5) {
+  if ((signals?.maxPrecipitationMm !== undefined && signals?.maxPrecipitationMm !== null) && signals.maxPrecipitationMm >= 1.5) {
     advisories.push({
       kind: 'RAIN_RISK',
       priority: 2,
@@ -64,7 +64,7 @@ function appendWeatherAdvisories(
       confidence: env.confidence,
     });
   }
-  if (signals?.minTemperatureC !== null && signals.minTemperatureC <= 2) {
+  if ((signals?.minTemperatureC !== undefined && signals?.minTemperatureC !== null) && signals.minTemperatureC <= 2) {
     advisories.push({
       kind: 'COLD_RISK',
       priority: 2,
@@ -93,7 +93,7 @@ function appendThermalAdvisories(
       confidence: env.confidence,
     });
   }
-  if (input.scheduledHourLocal !== null && input.scheduledHourLocal >= 11) {
+  if ((input.scheduledHourLocal !== undefined && input.scheduledHourLocal !== null) && input.scheduledHourLocal >= 11) {
     advisories.push({
       kind: 'SHIFT_EARLIER',
       priority: 2,
@@ -125,7 +125,7 @@ function appendRecoveryDemandAdvisory(
   env: PlannedSessionEnvironmentalProjection,
 ): void {
   if (
-    env.recoveryDemandAdjustment === null ||
+    (env.recoveryDemandAdjustment === undefined || env.recoveryDemandAdjustment === null) ||
     env.recoveryDemandAdjustment < 0.1 ||
     env.trainingImpact === 'NONE'
   ) {

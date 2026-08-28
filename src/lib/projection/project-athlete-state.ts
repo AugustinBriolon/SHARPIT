@@ -76,7 +76,7 @@ function buildFutureDayIds(anchorTrainingDayId: string, horizonDays: number): st
 }
 
 function findPeakReadinessDay(days: readonly ProjectedDayState[]): string | null {
-  const withReadiness = days.filter((d) => d.physiology.expectedReadiness !== null);
+  const withReadiness = days.filter((d) => (d.physiology.expectedReadiness !== undefined && d.physiology.expectedReadiness !== null));
   if (withReadiness.length === 0) {
     return null;
   }
@@ -204,15 +204,15 @@ function synthesizeProjectedTwinStates(input: {
     tsb,
   } = input;
   const projectedRecovery =
-    ctx.recovery !== null
+    (ctx.recovery !== undefined && ctx.recovery !== null)
       ? synthesizeProjectedRecovery(ctx.recovery, expectedReadiness, trainingDayId)
       : null;
   const projectedFatigue =
-    ctx.fatigue !== null
+    (ctx.fatigue !== undefined && ctx.fatigue !== null)
       ? synthesizeProjectedFatigue(ctx.fatigue, expectedFatigueIndex, trainingDayId, tsb)
       : null;
   const projectedAdaptation =
-    ctx.adaptation !== null
+    (ctx.adaptation !== undefined && ctx.adaptation !== null)
       ? synthesizeProjectedAdaptation(ctx.adaptation, expectedAdaptationIndex, trainingDayId)
       : null;
   return { projectedRecovery, projectedFatigue, projectedAdaptation };

@@ -102,8 +102,8 @@ async function persistPhysicalNote(
 
 export function usePhysicalNoteDialogHandlers(
   state: ReturnType<typeof usePhysicalNoteDialogState>,
-  note?: ClientPhysicalNote | null,
   onClose: () => void,
+  note?: ClientPhysicalNote | null,
 ) {
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();

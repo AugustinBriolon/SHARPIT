@@ -179,7 +179,7 @@ function fmtDistance(m: number): string {
 // ---------------------------------------------------------------------------
 
 function hasSignal(arr: number[]): boolean {
-  return arr.length > 0 && arr.some((v) => v !== null && v !== 0);
+  return arr.length > 0 && arr.some((v) => (v !== undefined && v !== null) && v !== 0);
 }
 
 /** Ré-échantillonne une série (time, values) à 1 Hz par maintien de la valeur. */
@@ -287,7 +287,7 @@ function topNEntries(input: TopNEntriesInput): RecordEntry[] {
   const { activities, accessor, mode, format, sublabel } = input;
   const cands = activities
     .map((a) => ({ value: accessor(a), activity: a }))
-    .filter((c): c is Candidate => c.value !== null && !Number.isNaN(c.value) && c.value > 0);
+    .filter((c): c is Candidate => (c.value !== undefined && c.value !== null) && !Number.isNaN(c.value) && c.value > 0);
   cands.sort((a, b) => (mode === 'max' ? b.value - a.value : a.value - b.value));
   return cands.slice(0, TOP_N).map((c, i) => ({
     rank: i + 1,
@@ -355,7 +355,7 @@ function hasMismatchedDurationLeaderType(
   }>,
 ): boolean {
   for (const row of leaders) {
-    if (!row.activityId || row.activityType === null) {
+    if (!row.activityId || (row.activityType === undefined || row.activityType === null)) {
       continue;
     }
     const expected = DURATION_PR_TYPE[row.category];
@@ -537,7 +537,7 @@ function pushPowerCandidatesFromGrid(
 ): void {
   for (const dur of POWER_DURATIONS) {
     const avg = bestAverage(grid, dur);
-    if (avg === null || avg <= 0) {
+    if ((avg === undefined || avg === null) || avg <= 0) {
       continue;
     }
     const list = powerCand.get(dur) ?? [];
@@ -581,7 +581,7 @@ function computePowerCurveFrom(streamActivities: StreamActivity[]): PowerCurvePo
     collectPowerCandidates(activity, powerCand);
   }
   return POWER_DURATIONS.map((d) => powerCurvePointFromDuration(d, powerCand)).filter(
-    (p): p is PowerCurvePoint => p !== null,
+    (p): p is PowerCurvePoint => (p !== undefined && p !== null),
   );
 }
 
@@ -603,7 +603,7 @@ function pushRunCandidatesFromGrid(
       continue;
     }
     const secs = fastestTime(distGrid, meters);
-    if (secs === null || secs <= 0) {
+    if ((secs === undefined || secs === null) || secs <= 0) {
       continue;
     }
     const list = runCand.get(meters) ?? [];
@@ -652,7 +652,7 @@ function computeRunBestsFrom(streamActivities: StreamActivity[]): RunBestCategor
     collectRunCandidates(activity, runCand);
   }
   return RUN_DISTANCES.map((meters) => runBestCategoryFromDistance(meters, runCand)).filter(
-    (r): r is RunBestCategory => r !== null,
+    (r): r is RunBestCategory => (r !== undefined && r !== null),
   );
 }
 
@@ -1124,7 +1124,7 @@ export function filterRecordChangesByActivities(
   activityIds: Iterable<string>,
 ): RecordChange[] {
   const ids = new Set(activityIds);
-  return changes.filter((c) => c.activityId !== null && ids.has(c.activityId));
+  return changes.filter((c) => (c.activityId !== undefined && c.activityId !== null) && ids.has(c.activityId));
 }
 
 /** Records personnels (#1) détenus par une séance. */

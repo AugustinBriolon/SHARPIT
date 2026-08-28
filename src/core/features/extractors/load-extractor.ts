@@ -185,7 +185,7 @@ export function extractLoadFeatures(history: LoadHistory, trainingDayId: string)
   const avgDailyLoad = mean(dailyTssValues7d);
   const sdDailyLoad = stdDev(dailyTssValues7d);
   const loadMonotony = sdDailyLoad > 0 ? avgDailyLoad / sdDailyLoad : null;
-  const loadStrain = loadMonotony !== null ? acuteLoad * loadMonotony : null;
+  const loadStrain = (loadMonotony !== undefined && loadMonotony !== null) ? acuteLoad * loadMonotony : null;
 
   const trainingFrequency = last7d.filter((e) => e.tssScore > 0).length;
   const restDayCount = Math.max(0, 7 - trainingFrequency);

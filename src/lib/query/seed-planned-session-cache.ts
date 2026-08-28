@@ -20,7 +20,7 @@ export type PlannedSessionCacheSeed = {
 };
 
 function toDate(value: Date | string | null | undefined): Date | null {
-  if (value === null) {
+  if ((value === undefined || value === null)) {
     return null;
   }
   return value instanceof Date ? value : new Date(value);

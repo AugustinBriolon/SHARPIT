@@ -5,13 +5,11 @@ import { OfflineSnapshotSummary } from '@/components/pwa/offline-snapshot-summar
 import { TodayDashboardShell } from '@/components/today/today-dashboard-shell';
 import { TodayDashboardMain } from '@/components/today/today-dashboard-main';
 import type { TodayDashboardView } from '@/components/today/today-dashboard-view';
+import type { PersistedSnapshotEntry } from '@/lib/pwa/snapshot-store-validation';
+import type { TodayViewModel } from '@/core/presentation/today-view-model';
 import type { ClientActivity } from '@/lib/query/types';
 
-export function TodayDashboardOfflineView({
-  entry,
-}: {
-  entry: TodayDashboardView extends { kind: 'offline'; entry: infer E } ? E : never;
-}) {
+export function TodayDashboardOfflineView({ entry }: { entry: PersistedSnapshotEntry }) {
   return <OfflineSnapshotSummary entry={entry} />;
 }
 
@@ -72,7 +70,7 @@ export function TodayDashboardContentView({
   activitiesLoading,
   onWellnessCompleted,
 }: {
-  vm: TodayDashboardView extends { kind: 'main'; vm: infer V } ? V : never;
+  vm: TodayViewModel;
   trainingDayId: string;
   valuesLoading: boolean;
   isFetching: boolean;

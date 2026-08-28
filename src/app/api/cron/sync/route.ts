@@ -194,7 +194,13 @@ async function backfillStreamsIfNeeded(
   try {
     result.backfill = await backfillActivityStreams(athleteId, CRON_BACKFILL_BATCH);
   } catch (error) {
-    recordSyncError(result, 'backfill', athleteId, error, 'Backfill streams échoué');
+    recordSyncError({
+      result,
+      provider: 'backfill',
+      athleteId,
+      error,
+      fallback: 'Backfill streams échoué',
+    });
   }
 }
 
@@ -221,7 +227,13 @@ async function refreshAthleteBriefing(athleteId: string, result: AthleteSyncResu
     await refreshAthleteState(athleteId, { skipSync: true, source: 'cron' });
     result.briefing = true;
   } catch (error) {
-    recordSyncError(result, 'athleteState', athleteId, error, 'Mise à jour état athlète échouée');
+    recordSyncError({
+      result,
+      provider: 'athleteState',
+      athleteId,
+      error,
+      fallback: 'Mise à jour état athlète échouée',
+    });
   }
 }
 
@@ -233,13 +245,13 @@ async function generateWeeklyReviewIfSunday(athleteId: string, result: AthleteSy
     await generateAndStoreWeeklyReview(athleteId, new Date(), { current: true });
     result.weeklyReview = true;
   } catch (error) {
-    recordSyncError(
+    recordSyncError({
       result,
-      'weeklyReview',
+      provider: 'weeklyReview',
       athleteId,
       error,
-      'Génération de la rétro hebdo échouée',
-    );
+      fallback: 'Génération de la rétro hebdo échouée',
+    });
   }
 }
 

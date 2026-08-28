@@ -21,7 +21,7 @@ export function resolveIntakeTrack(day: DayTotals | null): ReactNode {
   const goals = day.goalsProgress;
   const hasMacroIntake = day.protein + day.carbohydrates + day.fat > 0;
 
-  if (goals?.calories.pct !== null) {
+  if (goals !== null && goals.calories.pct !== null) {
     return <CalorieTrack pct={goals.calories.pct} remaining={goals.calories.remaining} />;
   }
   if (!goals && hasMacroIntake) {

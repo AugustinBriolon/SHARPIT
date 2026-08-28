@@ -211,12 +211,13 @@ function durationFactorFallback(durationSec: number, sportType: SportType): TssR
 }
 
 function tryPowerTss(input: SessionExtractorInput, ctx: ExtractionContext): TssResult | null {
-  const { session, durationSec } = input;
+  const { session } = input;
+  const { durationSec } = session;
   const normalizedPower = session.powerData?.normalizedPower;
   if (
     !POWER_TSS_SPORTS.includes(session.sportType) ||
     !canUsePowerTss(ctx) ||
-    normalizedPower === null ||
+    (normalizedPower === undefined || normalizedPower === null) ||
     normalizedPower === undefined ||
     normalizedPower <= 0
   ) {
@@ -227,9 +228,10 @@ function tryPowerTss(input: SessionExtractorInput, ctx: ExtractionContext): TssR
 }
 
 function tryTrimpTss(input: SessionExtractorInput, ctx: ExtractionContext): TssResult | null {
-  const { session, durationSec } = input;
+  const { session } = input;
+  const { durationSec } = session;
   const avgBpm = session.hrData?.avgBpm;
-  if (!canUseTrimpTss(ctx) || avgBpm === null || avgBpm === undefined) {
+  if (!canUseTrimpTss(ctx) || (avgBpm === undefined || avgBpm === null) || avgBpm === undefined) {
     return null;
   }
 
@@ -247,9 +249,9 @@ function tryTrimpTss(input: SessionExtractorInput, ctx: ExtractionContext): TssR
 function hasPaceData(session: SessionExtractorInput['session']): boolean {
   const pace = session.paceData;
   return (
-    pace?.avgMinPerKm !== null &&
+    (pace?.avgMinPerKm !== undefined && pace?.avgMinPerKm !== null) &&
     pace?.avgMinPerKm !== undefined &&
-    pace?.distanceM !== null &&
+    (pace?.distanceM !== undefined && pace?.distanceM !== null) &&
     pace?.distanceM !== undefined
   );
 }
@@ -265,7 +267,8 @@ function hasPaceTssInputs(
 }
 
 function tryPaceTss(input: SessionExtractorInput, ctx: ExtractionContext): TssResult | null {
-  const { session, durationSec } = input;
+  const { session } = input;
+  const { durationSec } = session;
   if (!hasPaceTssInputs(session, ctx)) {
     return null;
   }
@@ -279,8 +282,9 @@ function tryPaceTss(input: SessionExtractorInput, ctx: ExtractionContext): TssRe
 }
 
 function tryRpeTss(input: SessionExtractorInput): TssResult | null {
-  const { linkedSubjective, durationSec } = input;
-  if (linkedSubjective?.rpe === null || linkedSubjective?.rpe === undefined) {
+  const { linkedSubjective, session } = input;
+  const { durationSec } = session;
+  if ((linkedSubjective?.rpe === undefined || linkedSubjective?.rpe === null) || linkedSubjective?.rpe === undefined) {
     return null;
   }
   return computeRpeTss(durationSec, linkedSubjective.rpe);
@@ -304,7 +308,7 @@ function selectBestTss(input: SessionExtractorInput, ctx: ExtractionContext): Ts
     }
   }
 
-  return durationFactorFallback(input.durationSec, input.session.sportType);
+  return durationFactorFallback(input.session.durationSec, input.session.sportType);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -312,7 +316,7 @@ function selectBestTss(input: SessionExtractorInput, ctx: ExtractionContext): Ts
 // ─────────────────────────────────────────────────────────────────────────────
 
 function computeMechanicalLoad(durationSec: number, avgWatts: number | undefined): number | null {
-  if (avgWatts === null || avgWatts <= 0) {
+  if ((avgWatts === undefined || avgWatts === null) || avgWatts <= 0) {
     return null;
   }
   return (avgWatts * durationSec) / 1000; // kJ
@@ -322,7 +326,7 @@ function computeElevationStressScore(
   elevationM: number | undefined,
   sportType: SportType,
 ): number | null {
-  if (elevationM === null || elevationM <= 0) {
+  if ((elevationM === undefined || elevationM === null) || elevationM <= 0) {
     return null;
   }
   const factor = ELEVATION_STRESS_FACTOR[sportType];
@@ -491,7 +495,7 @@ function buildSessionFeatureSet(
     efficiencyFactor: metrics.efficiencyFactor,
     subjectiveRpe,
     fosterSessionLoad:
-      subjectiveRpe !== null ? computeFosterSessionLoad(session.durationSec, subjectiveRpe) : null,
+      (subjectiveRpe !== undefined && subjectiveRpe !== null) ? computeFosterSessionLoad(session.durationSec, subjectiveRpe) : null,
     sourceProvidedTss: session.sourceProvidedStress?.value ?? null,
     confidence: metrics.tssResult.confidence,
     algorithmId: 'session-features-v1',

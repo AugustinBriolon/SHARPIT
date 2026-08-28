@@ -260,7 +260,7 @@ export async function POST(req: Request) {
     }
 
     const prompt = buildAdaptPrompt({
-      focus,
+      focus: focus ?? undefined,
       today,
       horizon,
       ctx,

@@ -140,7 +140,7 @@ function fromBaseLimitingFactor(
     system: base.system,
     description: base.description,
     actionable: base.actionable,
-    priority: domain !== null ? domainPriorityIndex(domain) : 99,
+    priority: (domain !== undefined && domain !== null) ? domainPriorityIndex(domain) : 99,
   };
 }
 
@@ -173,7 +173,7 @@ export function arbitrateLimitingFactor(input: {
   const base = selectLimitingFactor(input.recovery, input.fatigue, input.adaptation, input.verdict);
   if (
     input.environment?.trainingImpact === 'SIGNIFICANT' &&
-    base.system === null &&
+    (base.system === undefined || base.system === null) &&
     isReducedCapacityVerdict(input.verdict)
   ) {
     return environmentLimitingFactor();

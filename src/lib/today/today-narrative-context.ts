@@ -108,7 +108,7 @@ function plannedSportLabel(daySummary: TodayDaySummary): string {
   const types = daySummary.lines
     .filter((line) => line.kind === 'planned')
     .map((line) => line.plannedSession?.type)
-    .filter((t): t is ActivityType => t !== null);
+    .filter((t): t is ActivityType => (t !== undefined && t !== null));
   if (types.length > 0) {
     return formatSportLabel(types);
   }

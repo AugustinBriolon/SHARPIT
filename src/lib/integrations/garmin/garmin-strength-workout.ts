@@ -87,8 +87,8 @@ async function uploadStrengthSets(
     skipped: built.skipped,
     scheduledDate: created.scheduledDate,
     alreadyPushed: false,
-    calendarActive: created.scheduledDate !== null,
-    workoutExists: created.workoutId !== null,
+    calendarActive: (created.scheduledDate !== undefined && created.scheduledDate !== null),
+    workoutExists: (created.workoutId !== undefined && created.workoutId !== null),
     pushedAt: created.pushedAt,
   };
 }
@@ -217,7 +217,7 @@ async function persistPlannedStrengthReceipt(
   sessionId: string,
   result: PushStrengthWorkoutResult,
 ): Promise<void> {
-  if (result.workoutId === null) {
+  if ((result.workoutId === undefined || result.workoutId === null)) {
     return;
   }
   const pushedAt = new Date();
@@ -280,7 +280,7 @@ async function pushPlannedStrengthWorkout(
   );
 
   await persistPlannedStrengthReceipt(session.id, result);
-  if (result.workoutId !== null) {
+  if ((result.workoutId !== undefined && result.workoutId !== null)) {
     result.pushedAt = new Date().toISOString();
   }
   return result;

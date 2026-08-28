@@ -44,7 +44,7 @@ export function durationDelta(
   actualSeconds: number | null | undefined,
   plannedMinutes: number | null | undefined,
 ): ThreadDelta | null {
-  if (actualSeconds === null || plannedMinutes === null) {
+  if ((actualSeconds === undefined || actualSeconds === null) || (plannedMinutes === undefined || plannedMinutes === null)) {
     return null;
   }
   return toDelta(Math.round(actualSeconds / 60), plannedMinutes);
@@ -55,7 +55,7 @@ export function loadDelta(
   actualLoad: number | null | undefined,
   plannedLoad: number | null | undefined,
 ): ThreadDelta | null {
-  if (actualLoad === null || plannedLoad === null) {
+  if ((actualLoad === undefined || actualLoad === null) || (plannedLoad === undefined || plannedLoad === null)) {
     return null;
   }
   return toDelta(Math.round(actualLoad), Math.round(plannedLoad));

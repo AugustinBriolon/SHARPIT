@@ -148,7 +148,7 @@ function hasValidSessionFeatureShape(data: Record<string, unknown> | null | unde
   hrDriftPercent?: number | null;
 } {
   return (
-    data !== null &&
+    (data !== undefined && data !== null) &&
     typeof data.trainingDayId === 'string' &&
     typeof data.sportType === 'string' &&
     typeof data.durationSec === 'number' &&
@@ -177,7 +177,7 @@ function sessionFeaturesNeedStreamRefresh(
   if (data.durationSec < 30 * 60) {
     return false;
   }
-  return data.hrDriftPercent === null;
+  return (data.hrDriftPercent === undefined || data.hrDriftPercent === null);
 }
 
 type SaveFeatureSetInput = {
@@ -230,7 +230,7 @@ function needsFuelRecompute(
     return false;
   }
   const fuelData = fuelRecord?.data as { proteinGPerKg?: number | null } | undefined;
-  return !fuelRecord || (fuelData?.proteinGPerKg === null && latestWeightKg !== null);
+  return !fuelRecord || ((fuelData?.proteinGPerKg === undefined || fuelData?.proteinGPerKg === null) && (latestWeightKg !== undefined && latestWeightKg !== null));
 }
 
 function needsDayFeaturesRecompute(input: {
@@ -321,7 +321,7 @@ export class FeatureEngine {
 
     const full = await this.obsRepo.findById(observation.id);
     const session = (full ?? observation) as SessionObservation;
-    if (session.durationSec === null || session.sportType === null) {
+    if ((session.durationSec === undefined || session.durationSec === null) || (session.sportType === undefined || session.sportType === null)) {
       console.error(
         `[FeatureEngine] SESSION ${observation.id} has no sportType/durationSec — skipping extraction`,
       );
@@ -471,7 +471,7 @@ export class FeatureEngine {
 
     const ctx = await this.ctxProvider.getContext(athleteId, observation.trainingDayId);
     const stream = await this.sessionStreamProvider.getSessionStream(observation, ctx);
-    return stream?.hrDriftPercent !== null;
+    return (stream?.hrDriftPercent !== undefined && stream?.hrDriftPercent !== null);
   }
 
   private async ensureSessionFeaturesInRange(
@@ -600,7 +600,7 @@ export class FeatureEngine {
     });
 
     const [primarySession] = sessionFeatures;
-    if (primarySession?.subjectiveRpe !== null) {
+    if ((primarySession?.subjectiveRpe !== undefined && primarySession?.subjectiveRpe !== null)) {
       recoveryFeatureSet = {
         ...recoveryFeatureSet,
         rpeVsTargetZone: computeRpeVsTargetZone(
@@ -803,10 +803,10 @@ export class FeatureEngine {
       trainingDayId,
       retrievedAt: new Date(),
       sessions: sessions.map((r) => r.data),
-      load: loadRecord.data,
-      recovery: recoveryRecord.data,
+      load: loadRecord?.data ?? 'PENDING',
+      recovery: recoveryRecord?.data ?? 'PENDING',
       body: bodyRecord?.data ?? 'PENDING',
-      condition: conditionRecord.data,
+      condition: conditionRecord?.data ?? 'PENDING',
       fuel: fuelRecord?.data ?? 'PENDING',
     };
   }

@@ -36,10 +36,10 @@ function activitySecondary(activity: ClientActivity): string | undefined {
   if (activity.duration) {
     parts.push(formatDuration(activity.duration));
   }
-  if (activity.load !== null) {
+  if ((activity.load !== undefined && activity.load !== null)) {
     parts.push(`${Math.round(activity.load)} TSS`);
   }
-  if (activity.rpe !== null) {
+  if ((activity.rpe !== undefined && activity.rpe !== null)) {
     parts.push(`RPE ${activity.rpe}`);
   }
   return parts.length > 0 ? parts.join(' · ') : undefined;
@@ -58,7 +58,7 @@ function plannedSecondary(session: ClientPlannedSession): string | undefined {
   if (session.durationMin) {
     parts.push(formatPlannedDuration(session.durationMin));
   }
-  if (session.load !== null) {
+  if ((session.load !== undefined && session.load !== null)) {
     parts.push(`${Math.round(session.load)} TSS`);
   }
   return parts.length > 0 ? parts.join(' · ') : undefined;
@@ -82,7 +82,7 @@ function collectLinkedPlannedIds(
     [
       ...plannedSessions.map((session) => (session.activityId ? session.id : null)),
       ...activities.map((activity) => activity.plannedSession?.id ?? null),
-    ].filter((id): id is string => id !== null),
+    ].filter((id): id is string => (id !== undefined && id !== null)),
   );
 }
 

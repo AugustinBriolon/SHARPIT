@@ -271,7 +271,7 @@ export class FatigueInferenceOrchestrator {
     }
 
     const idx = previousFatigueState.fatigueIndex;
-    if (idx === null) {
+    if ((idx === undefined || idx === null)) {
       return { consecutiveAccumulationDays: 0, recentFatigueHistory: [] };
     }
 
@@ -287,7 +287,7 @@ export class FatigueInferenceOrchestrator {
     const history: number[] = [];
     for (const record of records) {
       const idx = (record.stateUpdate as { fatigueIndex?: number | null }).fatigueIndex;
-      if (idx !== null && idx !== undefined) {
+      if ((idx !== undefined && idx !== null) && idx !== undefined) {
         history.push(idx);
       }
     }

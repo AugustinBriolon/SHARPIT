@@ -99,11 +99,11 @@ function describeDuration(
     ? never
     : { type: string; seconds?: number; meters?: number },
 ): string {
-  if (duration.type === 'time' && duration.seconds !== null) {
+  if (duration.type === 'time' && (duration.seconds !== undefined && duration.seconds !== null)) {
     const minutes = Math.round(duration.seconds / 60);
     return `${minutes} min`;
   }
-  if (duration.type === 'distance' && duration.meters !== null) {
+  if (duration.type === 'distance' && (duration.meters !== undefined && duration.meters !== null)) {
     return duration.meters >= 1000
       ? `${(duration.meters / 1000).toFixed(1).replace('.', ',')} km`
       : `${duration.meters} m`;

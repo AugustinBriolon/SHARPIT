@@ -71,7 +71,7 @@ export function isRenphoAccountConnected(account: MaybeAccount): boolean {
     return false;
   }
   return (
-    account.email !== null &&
+    (account.email !== undefined && account.email !== null) &&
     typeof account.passwordEnc === 'string' &&
     account.passwordEnc.length > 0
   );

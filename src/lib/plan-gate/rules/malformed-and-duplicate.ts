@@ -14,10 +14,10 @@ function validateMalformedDate(proposal: GateProposal): string | null {
 }
 
 function validateMalformedFields(proposal: GateProposal): string | null {
-  if (proposal.durationMin !== null && proposal.durationMin <= 0) {
+  if ((proposal.durationMin !== undefined && proposal.durationMin !== null) && proposal.durationMin <= 0) {
     return 'non-positive duration';
   }
-  if (proposal.load !== null && proposal.load < 0) {
+  if ((proposal.load !== undefined && proposal.load !== null) && proposal.load < 0) {
     return 'negative load';
   }
   if (proposal.action === 'MODIFY' && !proposal.sessionId) {

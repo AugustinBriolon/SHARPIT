@@ -16,14 +16,14 @@ export type MorningProposalCompareRow = {
 };
 
 function formatDuration(min: number | null): string {
-  if (min === null) {
+  if ((min === undefined || min === null)) {
     return '—';
   }
   return formatPlannedDuration(min);
 }
 
 function formatLoad(load: number | null): string {
-  if (load === null) {
+  if ((load === undefined || load === null)) {
     return '—';
   }
   return `${Math.round(load)} TSS`;

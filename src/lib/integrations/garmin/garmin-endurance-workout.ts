@@ -55,7 +55,13 @@ const PUSH_PROFILE_THRESHOLD_FIELDS = [
 ] as const;
 
 function mapPushProfileThresholds(
-  profile: Awaited<ReturnType<typeof prisma.athleteProfile.findUnique>>,
+  profile: {
+    runThresholdPaceSecPerKm: number | null;
+    swimCssSecPer100m: number | null;
+    ftpW: number | null;
+    lthr: number | null;
+    maxHr: number | null;
+  } | null,
 ): AthleteThresholds {
   const thresholds = {} as AthleteThresholds;
   for (const field of PUSH_PROFILE_THRESHOLD_FIELDS) {
@@ -125,7 +131,7 @@ async function persistEnduranceWorkoutReceipt(input: {
   created: Awaited<ReturnType<typeof createAndScheduleWorkout>>;
   thresholds: AthleteThresholds;
 }): Promise<void> {
-  if (input.created.workoutId === null) {
+  if ((input.created.workoutId === undefined || input.created.workoutId === null)) {
     return;
   }
   await prisma.plannedSession.update({
@@ -157,8 +163,8 @@ function buildPushEnduranceWorkoutResult(input: {
     derived: input.derived,
     scheduledDate: input.created.scheduledDate,
     alreadyPushed: false,
-    calendarActive: input.created.scheduledDate !== null,
-    workoutExists: input.created.workoutId !== null,
+    calendarActive: (input.created.scheduledDate !== undefined && input.created.scheduledDate !== null),
+    workoutExists: (input.created.workoutId !== undefined && input.created.workoutId !== null),
     pushedAt: input.created.pushedAt,
   };
 }

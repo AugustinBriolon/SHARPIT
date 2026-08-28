@@ -9,5 +9,5 @@ export function needsOnboardingFromProfile(input: {
   if (input.isDevBypass || input.isDemo) {
     return false;
   }
-  return input.onboardingCompletedAt === null;
+  return (input.onboardingCompletedAt === undefined || input.onboardingCompletedAt === null);
 }

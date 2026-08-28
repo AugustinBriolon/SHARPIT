@@ -16,7 +16,7 @@ export function applyPlannedSessionLinkOptimistic(
       return session;
     }
 
-    if (activityId === null) {
+    if ((activityId === undefined || activityId === null)) {
       return {
         ...session,
         activityId: null,

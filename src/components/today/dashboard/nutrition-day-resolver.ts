@@ -14,7 +14,7 @@ function isNutritionDisconnected(
   isPending: boolean,
   isError: boolean,
 ): boolean {
-  return !isPending && !isError && data !== null && !data.connected;
+  return !isPending && !isError && data !== undefined && data !== null && !data.connected;
 }
 
 function resolveNutritionDay(

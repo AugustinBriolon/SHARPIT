@@ -118,12 +118,12 @@ function MessageArticle({
 }: MessageProps & { reduce: boolean }) {
   return (
     <motion.article
-      animate={animate ?? messageMotionState(animateIn, reduce)}
+      animate={animate ?? messageMotionState(animateIn ?? false, reduce)}
       aria-label={props['aria-label'] ?? `${from} message`}
       data-from={from}
       data-slot="message"
       exit={messageMotionExit(reduce, exit)}
-      initial={messageMotionInitial(animateIn, reduce, initial)}
+      initial={messageMotionInitial(animateIn ?? false, reduce, initial)}
       transition={transition ?? (reduce ? { duration: 0.12 } : MESSAGE_POP_UP)}
       className={cn(
         'group/message flex w-full items-start gap-2',

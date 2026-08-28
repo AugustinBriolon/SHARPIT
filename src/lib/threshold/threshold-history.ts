@@ -16,7 +16,7 @@ function valuesKey(snapshot: ThresholdSnapshotLike): string {
 }
 
 export function paceToDisplay(secPerKm: number | null | undefined): string | null {
-  if (secPerKm === null) {
+  if ((secPerKm === undefined || secPerKm === null)) {
     return null;
   }
   const minutes = Math.floor(secPerKm / 60);
@@ -44,10 +44,10 @@ export function dedupeThresholdHistory(
 
 function initialThresholdLabels(newer: ThresholdSnapshotLike): string[] {
   const initial: string[] = [];
-  if (newer.ftpW !== null) {
+  if ((newer.ftpW !== undefined && newer.ftpW !== null)) {
     initial.push(`FTP ${newer.ftpW} W`);
   }
-  if (newer.lthr !== null) {
+  if ((newer.lthr !== undefined && newer.lthr !== null)) {
     initial.push(`FC seuil ${newer.lthr} bpm`);
   }
   const pace = paceToDisplay(newer.runThresholdPaceSecPerKm);
@@ -64,10 +64,10 @@ function ftpChangeLabel(
   if (newer === older) {
     return null;
   }
-  if (newer !== null && older !== null) {
+  if ((newer !== undefined && newer !== null) && (older !== undefined && older !== null)) {
     return `FTP ${older} → ${newer} W`;
   }
-  if (newer !== null) {
+  if ((newer !== undefined && newer !== null)) {
     return `FTP ${newer} W`;
   }
   return null;
@@ -80,10 +80,10 @@ function lthrChangeLabel(
   if (newer === older) {
     return null;
   }
-  if (newer !== null && older !== null) {
+  if ((newer !== undefined && newer !== null) && (older !== undefined && older !== null)) {
     return `FC seuil ${older} → ${newer} bpm`;
   }
-  if (newer !== null) {
+  if ((newer !== undefined && newer !== null)) {
     return `FC seuil ${newer} bpm`;
   }
   return null;
@@ -119,5 +119,5 @@ export function describeThresholdChanges(
     ftpChangeLabel(newer.ftpW, older.ftpW),
     lthrChangeLabel(newer.lthr, older.lthr),
     paceChangeLabel(newer.runThresholdPaceSecPerKm, older.runThresholdPaceSecPerKm),
-  ].filter((change): change is string => change !== null);
+  ].filter((change): change is string => (change !== undefined && change !== null));
 }

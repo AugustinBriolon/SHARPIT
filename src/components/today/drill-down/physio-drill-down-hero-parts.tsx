@@ -27,7 +27,11 @@ function PhysioDrillDownDateLine({
   onNextDay?: () => void;
 }) {
   const showDateNav =
-    onDateChange !== null && onPreviousDay !== null && onNextDay !== null && maxDate !== null;
+    onDateChange !== undefined &&
+    onPreviousDay !== undefined &&
+    onNextDay !== undefined &&
+    maxDate !== undefined &&
+    minDate !== undefined;
 
   if (showDateNav) {
     return (
@@ -58,7 +62,10 @@ function PhysioDrillDownConfidence({
   confidencePct?: number | null;
 }) {
   const bars =
-    !loading && confidencePct !== null && Number.isFinite(confidencePct)
+    !loading &&
+    confidencePct !== undefined &&
+    confidencePct !== null &&
+    Number.isFinite(confidencePct)
       ? confidenceBarsFromPct(confidencePct)
       : null;
 
@@ -66,7 +73,11 @@ function PhysioDrillDownConfidence({
     <div className="mt-2 flex items-center justify-center gap-2">
       <div
         className="text-muted-foreground inline-flex items-center gap-1.5"
-        title={confidencePct !== null ? `Confiance ${Math.round(confidencePct)} %` : 'Confiance'}
+        title={
+          confidencePct !== undefined && confidencePct !== null
+            ? `Confiance ${Math.round(confidencePct)} %`
+            : 'Confiance'
+        }
       >
         <ConfidenceBars filled={bars ?? 0} />
         <span className="text-label">Confiance</span>

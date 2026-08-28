@@ -23,7 +23,7 @@ export function formatStrengthListMetric(sets: { exercise: string }[]): string |
 }
 
 function formatDistanceMetric(distanceM: number | null | undefined): string | undefined {
-  return distanceM !== null && distanceM !== undefined && distanceM > 0
+  return (distanceM !== undefined && distanceM !== null) && distanceM !== undefined && distanceM > 0
     ? formatDistance(distanceM)
     : undefined;
 }
@@ -39,9 +39,9 @@ const LIST_METRIC_HANDLERS: Record<
   [ActivityType.STRENGTH]: (activity) => formatStrengthListMetric(activity.strengthSets),
   [ActivityType.HIKE]: (activity) => formatDistanceMetric(activity.hikeMetrics?.distanceM),
   [ActivityType.TRIATHLON]: (activity) =>
-    activity.load !== null ? `${Math.round(activity.load)} TSS` : 'Multisport',
+    (activity.load !== undefined && activity.load !== null) ? `${Math.round(activity.load)} TSS` : 'Multisport',
   [ActivityType.OTHER]: (activity) =>
-    activity.load !== null ? `${Math.round(activity.load)} TSS` : undefined,
+    (activity.load !== undefined && activity.load !== null) ? `${Math.round(activity.load)} TSS` : undefined,
 };
 
 /**
@@ -54,7 +54,7 @@ export function getActivityListMetric(activity: ActivityMetricSource): string | 
 
 /** Whether list load would duplicate the primary metric (bike/triathlon TSS). */
 export function shouldShowActivityListLoad(activity: ActivityMetricSource): boolean {
-  if (activity.load === null) {
+  if ((activity.load === undefined || activity.load === null)) {
     return false;
   }
   if (activity.type === ActivityType.BIKE || activity.type === ActivityType.TRIATHLON) {

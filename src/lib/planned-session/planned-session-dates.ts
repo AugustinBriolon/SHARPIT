@@ -33,14 +33,14 @@ export function filterUpcomingPlannedSessions<T extends PlannedSessionLike>(
 ): T[] {
   const horizonDays = options?.horizonDays;
   const horizonEnd =
-    horizonDays !== null ? startOfDay(addDays(startOfDay(ref), horizonDays)) : null;
+    (horizonDays !== undefined && horizonDays !== null) ? startOfDay(addDays(startOfDay(ref), horizonDays)) : null;
 
   return sessions
     .filter((s) => {
       if (!isUpcomingPlannedSession(s, ref)) {
         return false;
       }
-      if (horizonEnd === null) {
+      if ((horizonEnd === undefined || horizonEnd === null)) {
         return true;
       }
       return startOfDay(new Date(s.date)).getTime() <= horizonEnd.getTime();

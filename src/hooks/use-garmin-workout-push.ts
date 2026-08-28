@@ -113,7 +113,7 @@ function buildNextGarminPush(
   watchPush: GarminWatchPushState,
 ): GarminWatchPushState {
   return {
-    workoutId: data.workoutId !== null ? String(data.workoutId) : watchPush.workoutId,
+    workoutId: (data.workoutId !== undefined && data.workoutId !== null) ? String(data.workoutId) : watchPush.workoutId,
     scheduledDate: data.scheduledDate ?? watchPush.scheduledDate,
     pushedAt: data.pushedAt ?? new Date().toISOString(),
   };

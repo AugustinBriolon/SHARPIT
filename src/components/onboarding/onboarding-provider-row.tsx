@@ -81,10 +81,10 @@ export function OnboardingProviderRow({
   onToggleUse: (integrationId: IntegrationId, enable: boolean) => void;
 }) {
   const soon = provider.status === 'coming_soon';
-  const { integrationId } = provider;
+  const integrationId = provider.integrationId ?? null;
   const isConnected = integrationId !== null && connected.has(integrationId);
   const isEnabled = integrationId !== null && classPrefs.enabled.includes(integrationId);
-  const isPrimary = classPrefs.primary === integrationId;
+  const isPrimary = integrationId !== null && classPrefs.primary === integrationId;
 
   return (
     <li>

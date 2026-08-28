@@ -8,7 +8,10 @@ import {
   parseStrengthPrescription,
   resolveStrengthFieldsForPersist,
 } from '@/lib/planned-session/strength/strength-prescription';
-import type { StrengthPrescriptionDraftRow } from '@/components/planning/session/edit/strength-prescription-editor';
+import {
+  strengthPrescriptionFromDraft,
+  type StrengthPrescriptionDraftRow,
+} from '@/components/planning/session/edit/strength-prescription-editor';
 import type { EquipmentItemId } from '@/lib/equipment/catalog';
 import type { ClientPlannedSession } from '@/lib/query/types';
 import { ActivityType, SessionIntensity } from '@prisma/client';

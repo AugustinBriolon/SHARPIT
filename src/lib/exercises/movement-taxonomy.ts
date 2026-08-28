@@ -97,7 +97,7 @@ function validateMobilityEntry(
   entry: TaxonomyValidationEntry,
   fail: (message: string) => void,
 ): void {
-  if (entry.intent === 'MOBILITY' && (entry.pattern !== null || entry.modality !== 'NONE')) {
+  if (entry.intent === 'MOBILITY' && ((entry.pattern !== undefined && entry.pattern !== null) || entry.modality !== 'NONE')) {
     fail(`${entry.id}: mobility carries no pattern and no load axis`);
   }
 }
@@ -106,7 +106,7 @@ function validatePatternEntry(
   entry: TaxonomyValidationEntry,
   fail: (message: string) => void,
 ): void {
-  if (entry.pattern === null && entry.intent !== 'MOBILITY' && entry.intent !== 'CONDITIONING') {
+  if ((entry.pattern === undefined || entry.pattern === null) && entry.intent !== 'MOBILITY' && entry.intent !== 'CONDITIONING') {
     fail(`${entry.id}: only mobility and conditioning may have no pattern`);
   }
 }
@@ -125,10 +125,10 @@ function validateLeverageEntry(
   fail: (message: string) => void,
 ): void {
   const needsLeverage = BODYWEIGHT_MODALITIES.has(entry.modality);
-  if (needsLeverage && entry.leverageFactor === null) {
+  if (needsLeverage && (entry.leverageFactor === undefined || entry.leverageFactor === null)) {
     fail(`${entry.id}: ${entry.modality} requires a leverageFactor`);
   }
-  if (!needsLeverage && entry.leverageFactor !== null) {
+  if (!needsLeverage && (entry.leverageFactor !== undefined && entry.leverageFactor !== null)) {
     fail(`${entry.id}: ${entry.modality} carries no bodyweight term`);
   }
 }

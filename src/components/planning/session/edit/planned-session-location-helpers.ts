@@ -21,7 +21,7 @@ function travelLocationPayload(travel: {
   };
 }
 
-function customLocationPayload(customPlace: LocationPlaceValue) {
+function customLocationPayload(customPlace: NonNullable<LocationPlaceValue>) {
   return {
     locationLabel: customPlace.label,
     locationLat: customPlace.latitude,

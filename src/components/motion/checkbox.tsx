@@ -161,7 +161,7 @@ export function Checkbox({
   const autoId = useId();
   const id = idProp ?? autoId;
   const reduce = useReducedMotion();
-  const showMark = checked || indeterminate;
+  const showMark = Boolean(checked || indeterminate);
   const path = indeterminate ? INDETERMINATE_PATH : CHECK_PATH;
 
   return (

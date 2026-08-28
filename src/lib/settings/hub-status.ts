@@ -31,10 +31,10 @@ export type SettingsHubEquipmentFacts = {
 /** Stable French status chips for the settings hub — pure, testable. */
 export function accountStatusLabel(facts: SettingsHubAccountFacts): string {
   const filled = [
-    facts.heightCm !== null,
-    facts.birthDate !== null && String(facts.birthDate).length > 0,
-    facts.sleepTargetMinutes !== null,
-    facts.sleepBedtimeTargetMin !== null,
+    (facts.heightCm !== undefined && facts.heightCm !== null),
+    (facts.birthDate !== undefined && facts.birthDate !== null) && String(facts.birthDate).length > 0,
+    (facts.sleepTargetMinutes !== undefined && facts.sleepTargetMinutes !== null),
+    (facts.sleepBedtimeTargetMin !== undefined && facts.sleepBedtimeTargetMin !== null),
   ].filter(Boolean).length;
 
   if (filled === 0) {

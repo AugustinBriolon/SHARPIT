@@ -32,7 +32,7 @@ function isIndoorContext(input: ApplicabilityInput): boolean {
   if (input.indoorFlag === true || input.athleteDeclaredExposure === 'INDOOR') {
     return true;
   }
-  return input.locationType !== null && INDOOR_LOCATIONS.has(input.locationType);
+  return (input.locationType !== undefined && input.locationType !== null) && INDOOR_LOCATIONS.has(input.locationType);
 }
 
 function isOutdoorContext(input: ApplicabilityInput): boolean {

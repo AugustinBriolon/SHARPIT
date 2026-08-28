@@ -47,7 +47,7 @@ export function ConfidenceBars({
 }
 
 export function confidenceBarsFromPct(pct: number | null | undefined): number {
-  if (pct === null || !Number.isFinite(pct)) {
+  if (pct === null || pct === undefined || !Number.isFinite(pct)) {
     return 0;
   }
   if (pct >= 67) {

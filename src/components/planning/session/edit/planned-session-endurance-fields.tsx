@@ -12,6 +12,10 @@ export function PlannedSessionEnduranceFields({
 }) {
   const { session, enduranceBlocks, setEnduranceBlocks, enduranceSport } = dialog;
 
+  if (!enduranceSport) {
+    return null;
+  }
+
   return (
     <>
       <EndurancePrescriptionEditor

@@ -66,7 +66,7 @@ function applyPatchOptimistic(
     activities: [...trip.activities],
   };
 
-  if (patch.name !== null) {
+  if ((patch.name !== undefined && patch.name !== null)) {
     next = { ...next, name: patch.name };
   }
 
@@ -83,7 +83,7 @@ function applyPatchOptimistic(
     const added = patch.addActivityIds
       .filter((activityId) => !existingIds.has(activityId))
       .map((activityId) => activitiesCache.find((activity) => activity.id === activityId))
-      .filter((activity): activity is ClientActivity => activity !== null)
+      .filter((activity): activity is ClientActivity => (activity !== undefined && activity !== null))
       .map(toHikeTripMember);
 
     next = {

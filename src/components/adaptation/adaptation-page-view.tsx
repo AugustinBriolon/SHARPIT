@@ -150,16 +150,22 @@ function deriveAdaptationPageState(props: AdaptationPageViewProps) {
     trendLabel,
   } = props;
   const limitingScore = loading ? null : limitingScoreFromDimensions(limitingFactor, dimensions);
-  const alerts = buildAdaptationAlerts(loading, plateauRisk, overreachingWithoutAdaptation);
+  const isLoading = loading ?? false;
+  const alerts = buildAdaptationAlerts(
+    isLoading,
+    plateauRisk ?? false,
+    overreachingWithoutAdaptation ?? false,
+  );
   const neuromuscular = dimensions.find((d) => d.key === 'neuromuscularEfficiency');
-  const neuromuscularMissing = !loading && neuromuscular !== null && !neuromuscular.dim.available;
-  const displayDimensions = filterDisplayDimensions(dimensions, loading);
+  const neuromuscularMissing =
+    !isLoading && neuromuscular !== undefined && !neuromuscular.dim.available;
+  const displayDimensions = filterDisplayDimensions(dimensions, isLoading);
   const { freinDimension, otherDimensions } = resolveFreinDimensions(
     displayDimensions,
-    loading,
+    isLoading,
     limitingFactor,
   );
-  const actionLine = !loading && trendLabel && trendLabel !== '—' ? trendLabel : null;
+  const actionLine = !isLoading && trendLabel && trendLabel !== '—' ? trendLabel : null;
   return {
     limitingScore,
     alerts,

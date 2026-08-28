@@ -143,7 +143,7 @@ export function buildPeriodGoalFields(
   customTitle?: string | null,
 ) {
   const sportPart =
-    config.sport !== null ? activityTypeLabels[config.sport].toLowerCase() : 'tous sports';
+    (config.sport !== undefined && config.sport !== null) ? activityTypeLabels[config.sport].toLowerCase() : 'tous sports';
   const measurePart = measureLabels[config.measure].toLowerCase();
   const defaultTitle = `${periodLabels[config.period]} — ${measurePart} (${sportPart})`;
 
@@ -181,7 +181,7 @@ export function formatDistanceLabel(meters: number): string {
 }
 
 export function formatChronoSeconds(seconds: number | null | undefined): string {
-  if (seconds === null || !Number.isFinite(seconds) || seconds < 0) {
+  if ((seconds === undefined || seconds === null) || !Number.isFinite(seconds) || seconds < 0) {
     return '—';
   }
   const total = Math.round(seconds);
@@ -232,7 +232,7 @@ export function formatGoalDisplayValue(
   unit: string | null,
   config: GoalMetricConfig | null,
 ): string {
-  if (value === null) {
+  if ((value === undefined || value === null)) {
     return '—';
   }
   if (unit === 'chrono' || config?.template === 'performance') {
@@ -269,7 +269,7 @@ export function describeMetricGoal(
         : '';
     return `${activityTypeLabels[config.sport]} · ${formatDistanceLabel(config.distanceM)}${end}`;
   }
-  const sport = config.sport !== null ? activityTypeLabels[config.sport] : 'Tous sports';
+  const sport = (config.sport !== undefined && config.sport !== null) ? activityTypeLabels[config.sport] : 'Tous sports';
   const end = targetDate ? ` · jusqu'au ${formatGoalEndDate(targetDate)}` : '';
   return `${periodLabels[config.period]} · ${measureLabels[config.measure]} · ${sport}${end}`;
 }
@@ -339,7 +339,7 @@ export function parseTargetInput(measure: PeriodMeasure, raw: string): number | 
 }
 
 export function targetInputFromStored(measure: PeriodMeasure, stored: number | null): string {
-  if (stored === null) {
+  if ((stored === undefined || stored === null)) {
     return '';
   }
   switch (measure) {

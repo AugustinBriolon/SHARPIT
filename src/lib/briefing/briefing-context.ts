@@ -28,7 +28,7 @@ function formatMin(seconds?: number | null): string {
 }
 
 function formatPace(secPerKm?: number | null): string | null {
-  if (secPerKm === null || secPerKm <= 0) {
+  if ((secPerKm === undefined || secPerKm === null) || secPerKm <= 0) {
     return null;
   }
   const m = Math.floor(secPerKm / 60);
@@ -89,8 +89,8 @@ function formatActivityExtra(
   return [
     `à ${time}`,
     `(${rel})`,
-    a.load !== null ? `charge ${Math.round(a.load)}` : null,
-    a.rpe !== null ? `RPE ${a.rpe}` : null,
+    (a.load !== undefined && a.load !== null) ? `charge ${Math.round(a.load)}` : null,
+    (a.rpe !== undefined && a.rpe !== null) ? `RPE ${a.rpe}` : null,
     a.feeling ? `ressenti ${a.feeling}` : null,
     parts.length ? parts.join(' · ') : null,
   ]

@@ -102,7 +102,7 @@ export function nightEvidenceReady(snapshot: AthleteSnapshot): boolean {
 
   for (const domain of ['sleep', 'recovery'] as const) {
     const level = domainFreshness(snapshot, domain);
-    if (level !== null && BLOCKING_EVIDENCE.has(level)) {
+    if ((level !== undefined && level !== null) && BLOCKING_EVIDENCE.has(level)) {
       return false;
     }
   }
@@ -149,7 +149,7 @@ function sessionSide(input: SessionSideInput): MorningSessionSide {
   return {
     intensityLabel: morningIntensityLabel(input.sessionType as ActivityType, input.intensity),
     durationMin: input.durationMin,
-    load: input.load !== null ? Math.round(input.load) : null,
+    load: (input.load !== undefined && input.load !== null) ? Math.round(input.load) : null,
     description: input.description?.trim() || null,
   };
 }
@@ -260,7 +260,7 @@ function resolveOrientationReady(
     phase: 'ORIENTATION_READY',
     evidenceLine: null,
     showRefreshEvidence: false,
-    showFirmActions: confirmEase !== null || confirmIncrease !== null,
+    showFirmActions: (confirmEase !== undefined && confirmEase !== null) || (confirmIncrease !== undefined && confirmIncrease !== null),
     hideHeroConfidence: false,
     heroHeadline: null,
     heroSubline: null,

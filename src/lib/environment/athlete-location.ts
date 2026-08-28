@@ -41,7 +41,7 @@ function locationFromActivityStream(
 function locationFromObservedCoords(
   activity: RecentActivityLocation | null | undefined,
 ): (GeoLocation & { source: 'activity-observed' }) | null {
-  if (activity?.observedLocationLat === null || activity?.observedLocationLng === null) {
+  if ((activity?.observedLocationLat === undefined || activity?.observedLocationLat === null) || (activity?.observedLocationLng === undefined || activity?.observedLocationLng === null)) {
     return null;
   }
   return {

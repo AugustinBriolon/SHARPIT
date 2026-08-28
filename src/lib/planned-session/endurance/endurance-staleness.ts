@@ -36,7 +36,7 @@ function metricThresholdKey(metric: EnduranceStep['target']['metric']): keyof At
 
 function keysFromStepTarget(step: EnduranceStep): Array<keyof AthleteThresholds> {
   const { target } = step;
-  if (target.absEasy !== null && target.absHard !== null) {
+  if ((target.absEasy !== undefined && target.absEasy !== null) && (target.absHard !== undefined && target.absHard !== null)) {
     return [];
   }
   if (target.metric === 'hr') {

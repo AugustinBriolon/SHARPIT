@@ -171,7 +171,7 @@ function goalLineForPhase(input: PhaseNarrativeInput): string | null {
     return `${goalContext.title}${goalSuffix(goalContext)}`;
   }
 
-  if (goalContext.daysUntil !== null && goalContext.daysUntil <= 21) {
+  if ((goalContext.daysUntil !== undefined && goalContext.daysUntil !== null) && goalContext.daysUntil <= 21) {
     return `${goalContext.title}${goalSuffix(goalContext)}`;
   }
 
@@ -232,7 +232,7 @@ function focusPriorityForPhase(
 }
 
 function inferEffortFromTss(totalTssToday: number | null): TodayEffortLevel | null {
-  if (totalTssToday === null) {
+  if ((totalTssToday === undefined || totalTssToday === null)) {
     return null;
   }
   if (totalTssToday >= 65) {

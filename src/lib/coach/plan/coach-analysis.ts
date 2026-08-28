@@ -44,7 +44,7 @@ const TYPE_FR: Record<string, string> = {
 };
 
 function fmtPace(secPerKm?: number | null): string | null {
-  if (secPerKm === null || secPerKm <= 0) {
+  if ((secPerKm === undefined || secPerKm === null) || secPerKm <= 0) {
     return null;
   }
   const m = Math.floor(secPerKm / 60);
@@ -58,10 +58,10 @@ type LinkedActivity = NonNullable<PlannedWithActivity['activity']>;
 /** Volume line for one prescribed / realized movement. */
 function formatStrengthSetLine(set: ComparableStrengthSet & { weightKg?: number | null }): string {
   const volume =
-    set.durationSec !== null && set.durationSec > 0 && set.reps <= 0
+    (set.durationSec !== undefined && set.durationSec !== null) && set.durationSec > 0 && set.reps <= 0
       ? `${set.sets}×${set.durationSec}s`
       : `${set.sets}×${set.reps}`;
-  const weight = set.weightKg !== null && set.weightKg > 0 ? ` @ ${set.weightKg} kg` : '';
+  const weight = (set.weightKg !== undefined && set.weightKg !== null) && set.weightKg > 0 ? ` @ ${set.weightKg} kg` : '';
   return `- ${set.exercise} ${volume}${weight}`;
 }
 
@@ -84,17 +84,17 @@ function appendPlannedBikeTargetLines(
   p: PlannedWithActivity,
   ftpW: number | null | undefined,
 ): void {
-  if (ftpW === null || ftpW <= 0 || p.type !== 'BIKE') {
+  if ((ftpW === undefined || ftpW === null) || ftpW <= 0 || p.type !== 'BIKE') {
     return;
   }
   const parsed = parsePrescriptionTargets(p.description);
-  if (parsed.ftpPct !== null) {
+  if ((parsed.ftpPct !== undefined && parsed.ftpPct !== null)) {
     const targetW = Math.round((parsed.ftpPct / 100) * ftpW);
     bits.push(
       `Cible puissance (dérivée de la consigne) : ${parsed.ftpPct}% FTP = ${targetW} W (FTP ${ftpW} W)`,
     );
   }
-  if (parsed.plannedWorkMin !== null) {
+  if ((parsed.plannedWorkMin !== undefined && parsed.plannedWorkMin !== null)) {
     bits.push(
       `Volume de travail suggéré par la consigne (lecture texte) : ~${parsed.plannedWorkMin} min`,
     );
@@ -104,8 +104,8 @@ function appendPlannedBikeTargetLines(
 function plannedEnduranceHeaderBits(p: PlannedWithActivity): string[] {
   return [
     p.intensity ? `Intensité prévue : ${intensityLabels[p.intensity]}` : null,
-    p.durationMin !== null ? `Durée prévue : ${p.durationMin} min` : null,
-    p.load !== null ? `Charge prévue : ${Math.round(p.load)} TSS` : null,
+    (p.durationMin !== undefined && p.durationMin !== null) ? `Durée prévue : ${p.durationMin} min` : null,
+    (p.load !== undefined && p.load !== null) ? `Charge prévue : ${Math.round(p.load)} TSS` : null,
   ].filter(Boolean) as string[];
 }
 
@@ -169,8 +169,8 @@ function appendBikeIntensityLine(
 ): void {
   const intensityFactor =
     b.intensityFactor ??
-    (b.normalizedPower !== null && ftpW !== null && ftpW > 0 ? b.normalizedPower / ftpW : null);
-  if (intensityFactor !== null) {
+    ((b.normalizedPower !== undefined && b.normalizedPower !== null) && (ftpW !== undefined && ftpW !== null) && ftpW > 0 ? b.normalizedPower / ftpW : null);
+  if ((intensityFactor !== undefined && intensityFactor !== null)) {
     bits.push(`IF (séance entière) : ${intensityFactor.toFixed(2)}`);
   }
 }
@@ -206,8 +206,8 @@ function appendSwimMetricLines(bits: string[], s: NonNullable<LinkedActivity['sw
 
 function actualEnduranceHeaderBits(a: LinkedActivity): string[] {
   return [
-    a.duration !== null ? `Durée : ${Math.round(a.duration / 60)} min` : null,
-    a.load !== null ? `Charge : ${Math.round(a.load)} TSS` : null,
+    (a.duration !== undefined && a.duration !== null) ? `Durée : ${Math.round(a.duration / 60)} min` : null,
+    (a.load !== undefined && a.load !== null) ? `Charge : ${Math.round(a.load)} TSS` : null,
   ].filter(Boolean) as string[];
 }
 
@@ -216,7 +216,7 @@ function actualHeaderBits(a: LinkedActivity): string[] {
   return [
     `Sport : ${TYPE_FR[a.type] ?? a.type}`,
     ...(isStrength ? [] : actualEnduranceHeaderBits(a)),
-    a.rpe !== null ? `RPE ressenti : ${a.rpe}/10` : null,
+    (a.rpe !== undefined && a.rpe !== null) ? `RPE ressenti : ${a.rpe}/10` : null,
     a.feeling ? `Ressenti : ${a.feeling}` : null,
     a.notes ? `Notes : ${a.notes}` : null,
   ].filter(Boolean) as string[];
@@ -287,7 +287,7 @@ function describePhysicalNotes(notes: ActivePhysicalNote[]): string {
         n.bodyPart
           ? `zone ${n.bodyPart}${n.side && n.side !== 'NA' ? ` (${sideLabels[n.side]})` : ''}`
           : null,
-        n.severity !== null ? `sévérité actuelle ${n.severity}/10` : null,
+        (n.severity !== undefined && n.severity !== null) ? `sévérité actuelle ${n.severity}/10` : null,
         `statut ${statusLabels[n.status]}`,
       ].filter(Boolean);
       return `- ${bits.join(' · ')}`;
@@ -333,7 +333,7 @@ export function hasSubstantialLocalDescription(notes: string | null | undefined)
 
 function isStravaLinkedActivity(activity: LinkedActivity): boolean {
   return (
-    (activity.source === 'strava' || activity.source === 'both') && activity.stravaId !== null
+    (activity.source === 'strava' || activity.source === 'both') && (activity.stravaId !== undefined && activity.stravaId !== null)
   );
 }
 
@@ -380,7 +380,7 @@ async function loadCachedWatts(activityId: string): Promise<number[] | null> {
     where: { activityId },
     select: { available: true, data: true },
   });
-  if (!row?.available || row.data === null) {
+  if (!row?.available || (row.data === undefined || row.data === null)) {
     return null;
   }
   const data = row.data as { watts?: unknown };
@@ -397,9 +397,9 @@ function formatAthleteThresholdsLine(
     return '';
   }
   const parts = [
-    profile.ftpW !== null ? `FTP ${profile.ftpW} W` : null,
-    profile.lthr !== null ? `LTHR ${profile.lthr} bpm` : null,
-    profile.maxHr !== null ? `FC max ${profile.maxHr} bpm` : null,
+    (profile.ftpW !== undefined && profile.ftpW !== null) ? `FTP ${profile.ftpW} W` : null,
+    (profile.lthr !== undefined && profile.lthr !== null) ? `LTHR ${profile.lthr} bpm` : null,
+    (profile.maxHr !== undefined && profile.maxHr !== null) ? `FC max ${profile.maxHr} bpm` : null,
     fmtPace(profile.runThresholdPaceSecPerKm)
       ? `allure seuil ${fmtPace(profile.runThresholdPaceSecPerKm)}`
       : null,
@@ -447,7 +447,7 @@ async function loadPlannedSessionAnalysisContext(
   ]);
   const ftpW = profile?.ftpW ?? null;
   const workSummary =
-    watts && ftpW !== null
+    watts && (ftpW !== undefined && ftpW !== null)
       ? summarizeBikeWorkBlocks({
           watts,
           ftpW,
@@ -564,7 +564,7 @@ function describeBrickTransition(
 ): string | null {
   const prev = prevLeg.activity!;
   const curr = currLeg.activity!;
-  if (prev.duration === null) {
+  if ((prev.duration === undefined || prev.duration === null)) {
     return null;
   }
   const prevEnd = new Date(new Date(prev.date).getTime() + prev.duration * 1000);
@@ -621,7 +621,7 @@ export async function analyzeBrick(
       description: descriptions[i],
       ftpW,
       workSummary:
-        wattsList[i] && ftpW !== null
+        wattsList[i] && (ftpW !== undefined && ftpW !== null)
           ? summarizeBikeWorkBlocks({
               watts: wattsList[i]!,
               ftpW,

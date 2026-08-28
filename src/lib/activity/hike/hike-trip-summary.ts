@@ -60,7 +60,7 @@ export function buildHikeTripListMeta(summary: HikeTripSummary): string[] {
   if (stepCount) {
     meta.push(stepCount);
   }
-  if (summary.distanceM !== null) {
+  if ((summary.distanceM !== undefined && summary.distanceM !== null)) {
     meta.push(formatDistance(summary.distanceM));
   }
 
@@ -68,7 +68,7 @@ export function buildHikeTripListMeta(summary: HikeTripSummary): string[] {
 }
 
 function sumNullable(values: Array<number | null | undefined>): number | null {
-  const nums = values.filter((v): v is number => v !== null && Number.isFinite(v));
+  const nums = values.filter((v): v is number => (v !== undefined && v !== null) && Number.isFinite(v));
   if (nums.length === 0) {
     return null;
   }
@@ -80,7 +80,7 @@ function computeTripEndAt(ordered: HikeTripMemberInput[], startAt: Date): Date {
   for (const m of ordered) {
     const start = asDate(m.date);
     const end =
-      m.duration !== null && m.duration > 0 ? new Date(start.getTime() + m.duration * 1000) : start;
+      (m.duration !== undefined && m.duration !== null) && m.duration > 0 ? new Date(start.getTime() + m.duration * 1000) : start;
     if (end.getTime() > endAt.getTime()) {
       endAt = end;
     }

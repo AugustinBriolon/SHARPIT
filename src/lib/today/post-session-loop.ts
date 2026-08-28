@@ -58,7 +58,7 @@ function pickLatestActivity(
 }
 
 function activityNeedsFeeling(activity: PostSessionLoopInput['activities'][number]): boolean {
-  return activity.rpe === null && (activity.feeling === null || activity.feeling.trim() === '');
+  return (activity.rpe === undefined || activity.rpe === null) && ((activity.feeling === undefined || activity.feeling === null) || activity.feeling.trim() === '');
 }
 
 function buildVisiblePostSessionLoop(

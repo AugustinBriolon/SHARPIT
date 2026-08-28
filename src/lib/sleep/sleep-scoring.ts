@@ -10,7 +10,7 @@ const DURATION_WEIGHT = 0.55;
 const ARCHITECTURE_WEIGHT = 0.45;
 
 export function formatSleepDuration(minutes: number | null): string {
-  if (minutes === null) {
+  if ((minutes === undefined || minutes === null)) {
     return '—';
   }
   const h = Math.floor(minutes / 60);
@@ -52,15 +52,15 @@ export function computeSleepEfficiencyPct({
   bedtimeMin?: number | null;
   wakeMin?: number | null;
 }): number | null {
-  if (totalSleepMin === null || totalSleepMin <= 0) {
+  if ((totalSleepMin === undefined || totalSleepMin === null) || totalSleepMin <= 0) {
     return null;
   }
 
-  if (bedtimeMin !== null && wakeMin !== null) {
+  if ((bedtimeMin !== undefined && bedtimeMin !== null) && (wakeMin !== undefined && wakeMin !== null)) {
     return efficiencyFromBedWakeWindow(totalSleepMin, bedtimeMin, wakeMin);
   }
 
-  if (awakeMin !== null && awakeMin >= 0) {
+  if ((awakeMin !== undefined && awakeMin !== null) && awakeMin >= 0) {
     return efficiencyFromAwakeMinutes(totalSleepMin, awakeMin);
   }
 
@@ -72,7 +72,7 @@ export function computeRestorativeRatio(
   remMin: number | null,
   totalMin: number | null,
 ): number | null {
-  if (deepMin === null || remMin === null || totalMin === null || totalMin <= 0) {
+  if ((deepMin === undefined || deepMin === null) || (remMin === undefined || remMin === null) || (totalMin === undefined || totalMin === null) || totalMin <= 0) {
     return null;
   }
   return Math.round(((deepMin + remMin) / totalMin) * 100);
@@ -83,7 +83,7 @@ export function mapSleepDurationToRaw(
   totalMin: number | null,
   targetMin: number = SLEEP_TARGET_MIN,
 ): number | null {
-  if (totalMin === null || totalMin <= 0 || targetMin <= 0) {
+  if ((totalMin === undefined || totalMin === null) || totalMin <= 0 || targetMin <= 0) {
     return null;
   }
   return Math.round(Math.min(100, (totalMin / targetMin) * 100));
@@ -97,7 +97,7 @@ export function computeSleepDebt7d(
 ): number | null {
   const last7 = entries.filter((e) => {
     const d = new Date(e.date);
-    return d >= subDays(refDate, 6) && e.sleepMinutes !== null;
+    return d >= subDays(refDate, 6) && (e.sleepMinutes !== undefined && e.sleepMinutes !== null);
   });
   if (last7.length === 0) {
     return null;
@@ -120,10 +120,10 @@ function combineDurationAndArchitectureScores(
   durationScore: number | null,
   architectureScore: number | null,
 ): number | null {
-  if (durationScore !== null && architectureScore !== null) {
+  if ((durationScore !== undefined && durationScore !== null) && (architectureScore !== undefined && architectureScore !== null)) {
     return DURATION_WEIGHT * durationScore + ARCHITECTURE_WEIGHT * architectureScore;
   }
-  if (durationScore !== null) {
+  if ((durationScore !== undefined && durationScore !== null)) {
     return durationScore;
   }
   return architectureScore;
@@ -145,13 +145,13 @@ export function buildSleepScoreBreakdown(input: {
   const restorativeRatio = computeRestorativeRatio(input.deepMin, input.remMin, input.totalMin);
   const durationScore = mapSleepDurationToRaw(input.totalMin, targetMin);
   const architectureScore =
-    restorativeRatio !== null ? mapRestorativeSleepRatioToRaw(restorativeRatio) : null;
+    (restorativeRatio !== undefined && restorativeRatio !== null) ? mapRestorativeSleepRatioToRaw(restorativeRatio) : null;
   const rawScore = combineDurationAndArchitectureScores(durationScore, architectureScore);
 
   // Dette : contexte coach uniquement — n'impacte plus le score de la nuit.
   const debtModifier =
-    input.debtMin !== null && input.debtMin > 30 ? sleepDebtModifier(input.debtMin) : 1;
-  const sharpitScore = rawScore !== null ? Math.round(Math.min(100, Math.max(0, rawScore))) : null;
+    (input.debtMin !== undefined && input.debtMin !== null) && input.debtMin > 30 ? sleepDebtModifier(input.debtMin) : 1;
+  const sharpitScore = (rawScore !== undefined && rawScore !== null) ? Math.round(Math.min(100, Math.max(0, rawScore))) : null;
 
   return {
     restorativeRatio,
@@ -209,7 +209,7 @@ export type SleepAdequacyLevel =
 
 /** Aligné sur classifySleepAdequacy du moteur recovery. Null = pas de score nuit. */
 export function mapSleepScoreToAdequacy(score: number | null): SleepAdequacyLevel | null {
-  if (score === null) {
+  if ((score === undefined || score === null)) {
     return null;
   }
   if (score >= 90) {

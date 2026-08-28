@@ -431,7 +431,7 @@ function readDailyStrainEvidence(latestSnapshot: FreshnessQueryData[11]) {
     | { dailyStrain?: { available?: boolean; strainScore?: number | null } }
     | undefined;
   const dailyStrainAvailable = Boolean(
-    snapshotPayload?.dailyStrain?.available && snapshotPayload.dailyStrain.strainScore !== null,
+    snapshotPayload?.dailyStrain?.available && (snapshotPayload.dailyStrain.strainScore !== undefined && snapshotPayload.dailyStrain.strainScore !== null),
   );
   const dailyStrainUpdatedAt =
     dailyStrainAvailable && latestSnapshot?.generatedAt ? latestSnapshot.generatedAt : null;
@@ -500,7 +500,7 @@ function buildCoreDomainFreshnessList(input: {
         evidence.sleepEvidence,
         evidence.recoveryAt,
       ),
-      state: `sleep_obs=${evidence.sleepEvidence !== null}`,
+      state: `sleep_obs=${(evidence.sleepEvidence !== undefined && evidence.sleepEvidence !== null)}`,
     }),
     makeDomainFreshness({
       computing,
@@ -513,7 +513,7 @@ function buildCoreDomainFreshnessList(input: {
         sleepEvidence: evidence.sleepEvidence,
         subjectiveEvidence: evidence.subjectiveEvidence,
       }),
-      state: `recovery_computed=${evidence.recoveryAt !== null}`,
+      state: `recovery_computed=${(evidence.recoveryAt !== undefined && evidence.recoveryAt !== null)}`,
     }),
     makeDomainFreshness({
       computing,
@@ -527,7 +527,7 @@ function buildCoreDomainFreshnessList(input: {
         dailyStrainUpdatedAt: evidence.dailyStrainUpdatedAt,
         dailyStrainAvailable: evidence.dailyStrainAvailable,
       }),
-      state: `session_obs=${evidence.sessionEvidence !== null},strain=${evidence.dailyStrainAvailable}`,
+      state: `session_obs=${(evidence.sessionEvidence !== undefined && evidence.sessionEvidence !== null)},strain=${evidence.dailyStrainAvailable}`,
     }),
     makeDomainFreshness({
       computing,
@@ -540,7 +540,7 @@ function buildCoreDomainFreshnessList(input: {
         withingsConnected: isOAuthAccountConnected(withings),
         bodyEvidence: evidence.bodyEvidence,
       }),
-      state: `body_obs=${evidence.bodyEvidence !== null}`,
+      state: `body_obs=${(evidence.bodyEvidence !== undefined && evidence.bodyEvidence !== null)}`,
     }),
   ];
 }
@@ -555,14 +555,14 @@ function buildPhysicalEnvironmentDomains(input: {
       domainName: 'physical',
       lastUpdatedAt: input.evidence.physicalHealthAt,
       freshness: input.evidence.physicalHealthAt ? 'fresh' : 'awaiting_data',
-      state: `physical_computed=${input.evidence.physicalHealthAt !== null}`,
+      state: `physical_computed=${(input.evidence.physicalHealthAt !== undefined && input.evidence.physicalHealthAt !== null)}`,
     }),
     makeDomainFreshness({
       computing: input.computing,
       domainName: 'environment',
       lastUpdatedAt: input.evidence.environmentAt,
       freshness: input.evidence.environmentAt ? 'fresh' : 'awaiting_data',
-      state: `environment_computed=${input.evidence.environmentAt !== null}`,
+      state: `environment_computed=${(input.evidence.environmentAt !== undefined && input.evidence.environmentAt !== null)}`,
     }),
   ];
 }
@@ -585,7 +585,7 @@ function buildRecommendationsDomain(input: {
       phaseAtGeneration: input.briefing?.phaseAtGeneration ?? null,
       currentBriefingPhase: resolveBriefingPhase(new Date()),
     }),
-    state: `briefing=${briefingAt !== null}`,
+    state: `briefing=${(briefingAt !== undefined && briefingAt !== null)}`,
   });
 }
 
@@ -608,7 +608,7 @@ function buildReasoningPlanningDomains(input: {
         fatigueAt: input.evidence.fatigueAt,
         adaptationAt: input.evidence.adaptationAt,
       }),
-      state: `reasoning_computed=${input.evidence.reasoningAt !== null}`,
+      state: `reasoning_computed=${(input.evidence.reasoningAt !== undefined && input.evidence.reasoningAt !== null)}`,
     }),
     buildRecommendationsDomain(input),
     makeDomainFreshness({

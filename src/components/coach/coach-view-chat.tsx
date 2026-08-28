@@ -77,7 +77,7 @@ function OfflineCoachChat({
   );
 }
 
-function renderActiveCoachChat(options: RenderCoachChatOptions) {
+function renderActiveCoachChat(options: RenderCoachChatOptions & { selectedId: string }) {
   const {
     selectedId,
     isEphemeral,
@@ -132,9 +132,10 @@ export function renderCoachChat(options: RenderCoachChatOptions) {
     return <OfflineCoachChat header={options.header} offlineEntry={options.offlineEntry} />;
   }
 
-  if (!options.selectedId) {
+  const selectedId = options.selectedId;
+  if (!selectedId) {
     return <CoachChatPanelShell header={options.header} />;
   }
 
-  return renderActiveCoachChat(options);
+  return renderActiveCoachChat({ ...options, selectedId });
 }

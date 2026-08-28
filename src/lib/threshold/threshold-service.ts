@@ -31,7 +31,7 @@ async function loadSwimCssSamples(athleteId: string): Promise<SwimCssSample[]> {
   });
 
   return rows.flatMap((row) =>
-    row.avgPaceSecPer100m !== null && row.distanceM !== null
+    (row.avgPaceSecPer100m !== undefined && row.avgPaceSecPer100m !== null) && (row.distanceM !== undefined && row.distanceM !== null)
       ? [
           {
             paceSecPer100m: row.avgPaceSecPer100m,
@@ -83,13 +83,13 @@ function buildThresholdUpdate(fields: {
     runThresholdPaceSecPerKm?: number;
     swimCssSecPer100m?: number;
   } = {};
-  if (fields.ftpW !== null) {
+  if ((fields.ftpW !== undefined && fields.ftpW !== null)) {
     update.ftpW = fields.ftpW;
   }
-  if (fields.runThresholdPaceSecPerKm !== null) {
+  if ((fields.runThresholdPaceSecPerKm !== undefined && fields.runThresholdPaceSecPerKm !== null)) {
     update.runThresholdPaceSecPerKm = fields.runThresholdPaceSecPerKm;
   }
-  if (fields.swimCssSecPer100m !== null) {
+  if ((fields.swimCssSecPer100m !== undefined && fields.swimCssSecPer100m !== null)) {
     update.swimCssSecPer100m = fields.swimCssSecPer100m;
   }
   return update;

@@ -67,7 +67,7 @@ function avg(values: number[]): number | null {
 }
 
 function fmtPace(secPerKm?: number | null): string | null {
-  if (secPerKm === null || secPerKm <= 0) {
+  if ((secPerKm === undefined || secPerKm === null) || secPerKm <= 0) {
     return null;
   }
   const m = Math.floor(secPerKm / 60);
@@ -76,7 +76,7 @@ function fmtPace(secPerKm?: number | null): string | null {
 }
 
 function fmtSleep(minutes: number | null): string | null {
-  if (minutes === null) {
+  if ((minutes === undefined || minutes === null)) {
     return null;
   }
   const h = Math.floor(minutes / 60);
@@ -99,13 +99,13 @@ function formatDayBeforeRecoveryLine(
     return 'Pas de données santé la veille de la séance.';
   }
   const bits = [
-    dayBefore.sleepMinutes !== null ? `sommeil ${fmtSleep(dayBefore.sleepMinutes)}` : null,
-    dayBefore.hrv !== null ? `HRV ${Math.round(dayBefore.hrv)} ms` : null,
-    dayBefore.restingHr !== null ? `FC repos ${Math.round(dayBefore.restingHr)} bpm` : null,
-    dayBefore.recoveryScore !== null
+    (dayBefore.sleepMinutes !== undefined && dayBefore.sleepMinutes !== null) ? `sommeil ${fmtSleep(dayBefore.sleepMinutes)}` : null,
+    (dayBefore.hrv !== undefined && dayBefore.hrv !== null) ? `HRV ${Math.round(dayBefore.hrv)} ms` : null,
+    (dayBefore.restingHr !== undefined && dayBefore.restingHr !== null) ? `FC repos ${Math.round(dayBefore.restingHr)} bpm` : null,
+    (dayBefore.recoveryScore !== undefined && dayBefore.recoveryScore !== null)
       ? `readiness ${Math.round(dayBefore.recoveryScore)}/100`
       : null,
-    dayBefore.bodyBattery !== null ? `body battery ${Math.round(dayBefore.bodyBattery)}` : null,
+    (dayBefore.bodyBattery !== undefined && dayBefore.bodyBattery !== null) ? `body battery ${Math.round(dayBefore.bodyBattery)}` : null,
   ].filter(Boolean);
   if (!bits.length) {
     return null;
@@ -115,23 +115,23 @@ function formatDayBeforeRecoveryLine(
 
 function formatSevenDayTrendLine(beforeActivity: NarrativeHealthRow[]): string | null {
   const last7 = beforeActivity.slice(0, 7);
-  const avgSleep = avg(last7.map((row) => row.sleepMinutes).filter((v): v is number => v !== null));
-  const avgHrv = avg(last7.map((row) => row.hrv).filter((v): v is number => v !== null));
+  const avgSleep = avg(last7.map((row) => row.sleepMinutes).filter((v): v is number => (v !== undefined && v !== null)));
+  const avgHrv = avg(last7.map((row) => row.hrv).filter((v): v is number => (v !== undefined && v !== null)));
   const avgReadiness = avg(
-    last7.map((row) => row.recoveryScore).filter((v): v is number => v !== null),
+    last7.map((row) => row.recoveryScore).filter((v): v is number => (v !== undefined && v !== null)),
   );
-  const avgRhr = avg(last7.map((row) => row.restingHr).filter((v): v is number => v !== null));
+  const avgRhr = avg(last7.map((row) => row.restingHr).filter((v): v is number => (v !== undefined && v !== null)));
   const trendBits = [
-    avgSleep !== null ? `sommeil moy. 7j ${fmtSleep(Math.round(avgSleep))}` : null,
-    avgHrv !== null ? `HRV moy. 7j ${Math.round(avgHrv)} ms` : null,
-    avgReadiness !== null ? `readiness moy. 7j ${Math.round(avgReadiness)}/100` : null,
-    avgRhr !== null ? `FC repos moy. 7j ${Math.round(avgRhr)} bpm` : null,
+    (avgSleep !== undefined && avgSleep !== null) ? `sommeil moy. 7j ${fmtSleep(Math.round(avgSleep))}` : null,
+    (avgHrv !== undefined && avgHrv !== null) ? `HRV moy. 7j ${Math.round(avgHrv)} ms` : null,
+    (avgReadiness !== undefined && avgReadiness !== null) ? `readiness moy. 7j ${Math.round(avgReadiness)}/100` : null,
+    (avgRhr !== undefined && avgRhr !== null) ? `FC repos moy. 7j ${Math.round(avgRhr)} bpm` : null,
   ].filter(Boolean);
   return trendBits.length ? `Tendance 7 jours avant séance : ${trendBits.join(', ')}.` : null;
 }
 
 function formatSleepDebtLine(avgSleep: number | null): string | null {
-  if (avgSleep === null) {
+  if ((avgSleep === undefined || avgSleep === null)) {
     return null;
   }
   const debtMin = SLEEP_TARGET_MIN - avgSleep;
@@ -145,7 +145,7 @@ function formatSleepDebtLine(avgSleep: number | null): string | null {
 }
 
 function formatReadinessDeltaLine(recent: number | null, prior: number | null): string | null {
-  if (recent === null || prior === null) {
+  if ((recent === undefined || recent === null) || (prior === undefined || prior === null)) {
     return null;
   }
   const diff = Math.round(recent - prior);
@@ -158,7 +158,7 @@ function formatReadinessDeltaLine(recent: number | null, prior: number | null): 
 }
 
 function formatHrvDeltaLine(recent: number | null, prior: number | null): string | null {
-  if (recent === null || prior === null) {
+  if ((recent === undefined || recent === null) || (prior === undefined || prior === null)) {
     return null;
   }
   const diff = Math.round(recent - prior);
@@ -192,7 +192,7 @@ export function buildRecoveryContextFacts(
   }
 
   const last7 = beforeActivity.slice(0, 7);
-  const avgSleep = avg(last7.map((row) => row.sleepMinutes).filter((v): v is number => v !== null));
+  const avgSleep = avg(last7.map((row) => row.sleepMinutes).filter((v): v is number => (v !== undefined && v !== null)));
   const sleepDebtLine = formatSleepDebtLine(avgSleep);
   if (sleepDebtLine) {
     lines.push(sleepDebtLine);
@@ -201,18 +201,18 @@ export function buildRecoveryContextFacts(
   const recent3 = beforeActivity.slice(0, 3);
   const prior7 = beforeActivity.slice(3, 10);
   const readinessRecent = avg(
-    recent3.map((row) => row.recoveryScore).filter((v): v is number => v !== null),
+    recent3.map((row) => row.recoveryScore).filter((v): v is number => (v !== undefined && v !== null)),
   );
   const readinessPrior = avg(
-    prior7.map((row) => row.recoveryScore).filter((v): v is number => v !== null),
+    prior7.map((row) => row.recoveryScore).filter((v): v is number => (v !== undefined && v !== null)),
   );
   const readinessLine = formatReadinessDeltaLine(readinessRecent, readinessPrior);
   if (readinessLine) {
     lines.push(readinessLine);
   }
 
-  const hrvRecent = avg(recent3.map((row) => row.hrv).filter((v): v is number => v !== null));
-  const hrvPrior = avg(prior7.map((row) => row.hrv).filter((v): v is number => v !== null));
+  const hrvRecent = avg(recent3.map((row) => row.hrv).filter((v): v is number => (v !== undefined && v !== null)));
+  const hrvPrior = avg(prior7.map((row) => row.hrv).filter((v): v is number => (v !== undefined && v !== null)));
   const hrvLine = formatHrvDeltaLine(hrvRecent, hrvPrior);
   if (hrvLine) {
     lines.push(hrvLine);
@@ -236,7 +236,7 @@ export function buildTrainingLoadFacts(
     `ACWR au jour de la séance : ${load.acwr} (fatigue estimée : ${load.fatigue}).`,
   ];
 
-  if (load.loadMonotony !== null) {
+  if ((load.loadMonotony !== undefined && load.loadMonotony !== null)) {
     lines.push(`Monotonie de charge 7j : ${load.loadMonotony}.`);
   }
 
@@ -294,9 +294,9 @@ function interpretTsb(tsb: number): string {
 
 function profileThresholdSummary(profile: NarrativeAthleteProfile): string | null {
   const seuils = [
-    profile.ftpW !== null ? `FTP ${profile.ftpW} W` : null,
-    profile.lthr !== null ? `LTHR ${profile.lthr} bpm` : null,
-    profile.maxHr !== null ? `FC max ${profile.maxHr} bpm` : null,
+    (profile.ftpW !== undefined && profile.ftpW !== null) ? `FTP ${profile.ftpW} W` : null,
+    (profile.lthr !== undefined && profile.lthr !== null) ? `LTHR ${profile.lthr} bpm` : null,
+    (profile.maxHr !== undefined && profile.maxHr !== null) ? `FC max ${profile.maxHr} bpm` : null,
     fmtPace(profile.runThresholdPaceSecPerKm)
       ? `allure seuil ${fmtPace(profile.runThresholdPaceSecPerKm)}`
       : null,
@@ -397,7 +397,7 @@ export function buildPhysicalConditionFacts(notes: NarrativePhysicalNote[]): str
         ? (() => {
             const last = note.checkins[0]?.severity;
             const prev = note.checkins[1]?.severity;
-            if (last === null || prev === null) {
+            if ((last === undefined || last === null) || (prev === undefined || prev === null)) {
               return null;
             }
             if (last < prev) {
@@ -415,7 +415,7 @@ export function buildPhysicalConditionFacts(notes: NarrativePhysicalNote[]): str
       note.bodyPart
         ? `zone ${note.bodyPart}${note.side !== 'NA' ? ` (${sideLabels[note.side]})` : ''}`
         : null,
-      note.severity !== null ? `sévérité ${note.severity}/10` : null,
+      (note.severity !== undefined && note.severity !== null) ? `sévérité ${note.severity}/10` : null,
       `statut ${statusLabels[note.status]}`,
       trend,
       note.description ? `note : ${note.description}` : null,

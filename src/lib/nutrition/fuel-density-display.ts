@@ -6,10 +6,10 @@ export function fuelFeatureSetToDensity(fuel: FuelFeatureSet): NutritionFuelDens
   if (!fuel.logged) {
     return null;
   }
-  if (fuel.referenceWeightKg === null || fuel.referenceWeightKg <= 0) {
+  if ((fuel.referenceWeightKg === undefined || fuel.referenceWeightKg === null) || fuel.referenceWeightKg <= 0) {
     return null;
   }
-  if (fuel.proteinGPerKg === null && fuel.carbohydratesGPerKg === null) {
+  if ((fuel.proteinGPerKg === undefined || fuel.proteinGPerKg === null) && (fuel.carbohydratesGPerKg === undefined || fuel.carbohydratesGPerKg === null)) {
     return null;
   }
 

@@ -61,10 +61,10 @@ function assertRange(value: number | null, min?: number, max?: number) {
     expect(min).toBeUndefined();
     return;
   }
-  if (min !== null) {
+  if (min !== undefined && min !== null) {
     expect(value).toBeGreaterThanOrEqual(min);
   }
-  if (max !== null) {
+  if (max !== undefined && max !== null) {
     expect(value).toBeLessThanOrEqual(max);
   }
 }

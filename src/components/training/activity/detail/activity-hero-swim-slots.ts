@@ -10,21 +10,24 @@ export function buildSwimHeroSlots(
   activity: HeroActivity,
   stream: StreamStats | null,
 ): HeroStatSlot[] {
-  const duration = activity.duration !== null ? formatDuration(activity.duration) : null;
+  const duration = activity.duration ?? null;
   const m = activity.swimMetrics;
+  const distanceM = m?.distanceM ?? null;
+  const avgPaceSecPer100m = m?.avgPaceSecPer100m ?? null;
+  const avgHr = stream?.avgHr ?? null;
   return [
     {
       label: 'Distance',
-      value: m?.distanceM !== null ? formatDistance(m.distanceM) : null,
+      value: distanceM !== null ? formatDistance(distanceM) : null,
     },
-    { label: 'Temps', value: duration },
+    { label: 'Temps', value: duration !== null ? formatDuration(duration) : null },
     {
       label: 'Allure moy.',
-      value: m?.avgPaceSecPer100m !== null ? formatSwimPace(m.avgPaceSecPer100m) : null,
+      value: avgPaceSecPer100m !== null ? formatSwimPace(avgPaceSecPer100m) : null,
     },
     {
       label: 'FC moy.',
-      value: stream?.avgHr !== null ? `${stream.avgHr} bpm` : null,
+      value: avgHr !== null ? `${avgHr} bpm` : null,
       needsStream: true,
     },
   ];

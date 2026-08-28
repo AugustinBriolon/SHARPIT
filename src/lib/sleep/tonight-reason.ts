@@ -29,16 +29,16 @@ function syncedNightReason(input: {
   restorativeRatio: number | null;
   regularityMin: number | null;
 }): string | null {
-  if (input.debt7Min !== null && input.debt7Min > 30) {
+  if ((input.debt7Min !== undefined && input.debt7Min !== null) && input.debt7Min > 30) {
     return `Dette de ${formatDuration(input.debt7Min)} sur 7 jours — à résorber sur les prochaines nuits.`;
   }
-  if (input.targetDeltaMin !== null && input.targetDeltaMin < 0) {
+  if ((input.targetDeltaMin !== undefined && input.targetDeltaMin !== null) && input.targetDeltaMin < 0) {
     return `${formatSleepDuration(Math.abs(input.targetDeltaMin))} sous l’objectif la nuit dernière.`;
   }
-  if (input.restorativeRatio !== null && input.restorativeRatio < 40) {
+  if ((input.restorativeRatio !== undefined && input.restorativeRatio !== null) && input.restorativeRatio < 40) {
     return `Part restauratrice à ${input.restorativeRatio} % la nuit dernière — profond et paradoxal en retrait.`;
   }
-  if (input.regularityMin !== null) {
+  if ((input.regularityMin !== undefined && input.regularityMin !== null)) {
     return `Régularité ±${input.regularityMin} min autour de ton réveil habituel.`;
   }
   return null;

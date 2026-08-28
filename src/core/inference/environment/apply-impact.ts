@@ -17,11 +17,11 @@ export function applyEnvironmentalImpactToReadiness(
   readinessScore: number | null,
   impact: EnvironmentalImpact | null,
 ): number | null {
-  if (readinessScore === null || impact === null) {
+  if ((readinessScore === undefined || readinessScore === null) || (impact === undefined || impact === null)) {
     return readinessScore;
   }
   const demand = readMultiplier(impact.recovery.demandMultiplier);
-  if (demand === null || demand <= 1) {
+  if ((demand === undefined || demand === null) || demand <= 1) {
     return readinessScore;
   }
   return Math.max(0, Math.round(readinessScore / demand));
@@ -31,11 +31,11 @@ export function applyEnvironmentalImpactToFatigueIndex(
   fatigueIndex: number | null,
   impact: EnvironmentalImpact | null,
 ): number | null {
-  if (fatigueIndex === null || impact === null) {
+  if ((fatigueIndex === undefined || fatigueIndex === null) || (impact === undefined || impact === null)) {
     return fatigueIndex;
   }
   const accumulation = readMultiplier(impact.fatigue.accumulationMultiplier);
-  if (accumulation === null || accumulation <= 1) {
+  if ((accumulation === undefined || accumulation === null) || accumulation <= 1) {
     return fatigueIndex;
   }
   return Math.min(100, Math.round(fatigueIndex * accumulation));
@@ -45,30 +45,30 @@ export function applyEnvironmentalImpactToAdaptationIndex(
   adaptationIndex: number | null,
   impact: EnvironmentalImpact | null,
 ): number | null {
-  if (adaptationIndex === null || impact === null) {
+  if ((adaptationIndex === undefined || adaptationIndex === null) || (impact === undefined || impact === null)) {
     return adaptationIndex;
   }
   const ratio = readMultiplier(impact.performance.expectedOutputRatio);
-  if (ratio === null || ratio >= 1) {
+  if ((ratio === undefined || ratio === null) || ratio >= 1) {
     return adaptationIndex;
   }
   return Math.max(0, Math.round(adaptationIndex * ratio));
 }
 
 function exceedsRecoveryThreshold(recovery: number | null, threshold: number): boolean {
-  return recovery !== null && recovery >= threshold;
+  return (recovery !== undefined && recovery !== null) && recovery >= threshold;
 }
 
 function exceedsFatigueThreshold(fatigue: number | null, threshold: number): boolean {
-  return fatigue !== null && fatigue >= threshold;
+  return (fatigue !== undefined && fatigue !== null) && fatigue >= threshold;
 }
 
 function belowPerformanceThreshold(performance: number | null, threshold: number): boolean {
-  return performance !== null && performance <= threshold;
+  return (performance !== undefined && performance !== null) && performance <= threshold;
 }
 
 function exceedsHydrationThreshold(hydration: number | null, threshold: number): boolean {
-  return hydration !== null && hydration >= threshold;
+  return (hydration !== undefined && hydration !== null) && hydration >= threshold;
 }
 
 export function environmentalImpactIsSignificant(impact: EnvironmentalImpact | null): boolean {

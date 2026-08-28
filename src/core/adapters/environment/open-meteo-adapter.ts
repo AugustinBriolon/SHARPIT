@@ -132,7 +132,7 @@ function buildHourlyDraft(
   index: number,
 ): ObservationRecordDraft | null {
   const data = buildHourlyWeatherData(payload.hourly, index);
-  if (!Object.values(data).some((value) => value !== null)) {
+  if (!Object.values(data).some((value) => (value !== undefined && value !== null))) {
     return null;
   }
 

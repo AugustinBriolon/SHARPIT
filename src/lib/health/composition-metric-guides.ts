@@ -72,7 +72,7 @@ function pickZone(value: number, zones: MetricZone[]): MetricZone {
 }
 
 function ageDeltaNote(metricAge: number, chrono: number | null, label: string): string | null {
-  if (chrono === null) {
+  if ((chrono === undefined || chrono === null)) {
     return null;
   }
   const delta = metricAge - chrono;
@@ -102,7 +102,7 @@ export const COMPOSITION_METRIC_GUIDES: Record<CompositionMetricId, MetricGuide>
     interpret(value, ctx) {
       const zone = pickZone(value, COMPOSITION_METRIC_GUIDES.bmi.zones);
       let note: string | null = null;
-      if (ctx.heightM !== null && ctx.weightKg !== null) {
+      if ((ctx.heightM !== undefined && ctx.heightM !== null) && (ctx.weightKg !== undefined && ctx.weightKg !== null)) {
         note = `Avec ${ctx.heightM.toFixed(2)} m et ${ctx.weightKg.toFixed(1)} kg, l'IMC théorique coïncide avec cette mesure.`;
       }
       return { zoneLabel: zone.label, tone: zone.tone, personalizedNote: note };
@@ -192,7 +192,7 @@ export const COMPOSITION_METRIC_GUIDES: Record<CompositionMetricId, MetricGuide>
     interpret(value, ctx) {
       const zone = pickZone(value, COMPOSITION_METRIC_GUIDES.bmr.zones);
       const note =
-        ctx.weightKg !== null
+        (ctx.weightKg !== undefined && ctx.weightKg !== null)
           ? `Pour ${ctx.weightKg.toFixed(0)} kg, un BMR autour de ${Math.round(value)} kcal est cohérent avec une estimation impédancemétrique.`
           : null;
       return { zoneLabel: zone.label, tone: zone.tone, personalizedNote: note };
@@ -211,7 +211,7 @@ export const COMPOSITION_METRIC_GUIDES: Record<CompositionMetricId, MetricGuide>
       { label: 'Élevé', min: 45, max: 100, tone: 'watch' },
     ],
     interpret(value, ctx) {
-      if (ctx.chronologicalAgeYears === null) {
+      if ((ctx.chronologicalAgeYears === undefined || ctx.chronologicalAgeYears === null)) {
         return {
           zoneLabel: 'Âge estimé',
           tone: 'neutral',
@@ -243,7 +243,7 @@ export const COMPOSITION_METRIC_GUIDES: Record<CompositionMetricId, MetricGuide>
     interpret(value, ctx) {
       const zone = pickZone(value, COMPOSITION_METRIC_GUIDES.vascularAgeYears.zones);
       const ageTone = corpsToneFromAgeDelta(value, ctx.chronologicalAgeYears);
-      const tone = ageTone !== null ? maxCorpsTone(zone.tone, ageTone) : zone.tone;
+      const tone = (ageTone !== undefined && ageTone !== null) ? maxCorpsTone(zone.tone, ageTone) : zone.tone;
       return {
         zoneLabel: zone.label,
         tone,

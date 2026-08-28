@@ -4,6 +4,7 @@ import {
   isGoalExpired,
   parseGoalMetricConfig,
   type GoalMetricConfig,
+  type PerformanceMetricConfig,
 } from '@/lib/goals/goal-metric-config';
 import { prisma } from '@/lib/prisma';
 import {
@@ -22,7 +23,7 @@ function isReached(
   targetValue: number | null,
   lowerIsBetter: boolean,
 ): boolean {
-  if (currentValue === null || targetValue === null) {
+  if ((currentValue === undefined || currentValue === null) || (targetValue === undefined || targetValue === null)) {
     return false;
   }
   return lowerIsBetter ? currentValue <= targetValue : currentValue >= targetValue;
@@ -71,12 +72,12 @@ async function hasExistingPerformanceAchievement(goalId: string): Promise<boolea
       goalId_periodKey: { goalId, periodKey: PERFORMANCE_PERIOD_KEY },
     },
   });
-  return existing !== null;
+  return (existing !== undefined && existing !== null);
 }
 
 async function shouldSkipPerformanceSync(
   goal: Goal,
-  config: GoalMetricConfig,
+  config: PerformanceMetricConfig,
   ref: Date,
 ): Promise<boolean> {
   const endMode = inferPerformanceEndMode(config, goal.targetDate);
@@ -86,6 +87,9 @@ async function shouldSkipPerformanceSync(
 
 async function syncPerformanceAchievement(params: SyncAchievementParams): Promise<void> {
   const { goal, config, currentValue, activities, ref = new Date() } = params;
+  if (config.template !== 'performance') {
+    return;
+  }
   if (await shouldSkipPerformanceSync(goal, config, ref)) {
     return;
   }
@@ -107,6 +111,9 @@ async function syncPerformanceAchievement(params: SyncAchievementParams): Promis
 
 async function syncPeriodAchievement(params: SyncAchievementParams): Promise<void> {
   const { goal, config, currentValue, ref = new Date() } = params;
+  if (config.template !== 'period') {
+    return;
+  }
   const periodKey = buildPeriodKey(config.period, ref);
   const existing = await prisma.goalAchievement.findUnique({
     where: { goalId_periodKey: { goalId: goal.id, periodKey } },

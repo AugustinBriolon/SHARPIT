@@ -66,10 +66,10 @@ export function rangeToPresetSelections(
   max: number | null,
   presets: readonly number[],
 ): number[] {
-  if (min === null && max === null) {
+  if ((min === undefined || min === null) && (max === undefined || max === null)) {
     return [];
   }
-  if (max === null) {
+  if ((max === undefined || max === null)) {
     return presets.includes(min as number) ? [min as number] : [];
   }
   return presets.filter((p) => p === min || p === max);
@@ -92,11 +92,11 @@ const ACTIVITY_DISTANCE_READERS: Partial<
 > = {
   [ActivityType.RUN]: (activity) => {
     const d = activity.runMetrics?.distanceM;
-    return d !== null && d > 0 ? d / 1000 : null;
+    return (d !== undefined && d !== null) && d > 0 ? d / 1000 : null;
   },
   [ActivityType.SWIM]: (activity) => {
     const d = activity.swimMetrics?.distanceM;
-    return d !== null && d > 0 ? d / 1000 : null;
+    return (d !== undefined && d !== null) && d > 0 ? d / 1000 : null;
   },
 };
 
@@ -118,7 +118,7 @@ function parseNumberParam(value: string | null): number | null {
 }
 
 function cleanMinMax(min: number | null, max: number | null): [number | null, number | null] {
-  if (min !== null && max !== null && min > max) {
+  if ((min !== undefined && min !== null) && (max !== undefined && max !== null) && min > max) {
     return [max, min];
   }
   return [min, max];
@@ -161,22 +161,22 @@ export function serializeTrainingHistoryFilters(filters: TrainingHistoryFilters)
   if (filters.types.length > 0) {
     params.set('types', filters.types.join(','));
   }
-  if (filters.periodMaxDays !== null) {
+  if ((filters.periodMaxDays !== undefined && filters.periodMaxDays !== null)) {
     params.set('periodMaxDays', String(filters.periodMaxDays));
   }
-  if (filters.periodMinDays !== null) {
+  if ((filters.periodMinDays !== undefined && filters.periodMinDays !== null)) {
     params.set('periodMinDays', String(filters.periodMinDays));
   }
-  if (filters.distanceMinKm !== null) {
+  if ((filters.distanceMinKm !== undefined && filters.distanceMinKm !== null)) {
     params.set('distanceMinKm', String(filters.distanceMinKm));
   }
-  if (filters.distanceMaxKm !== null) {
+  if ((filters.distanceMaxKm !== undefined && filters.distanceMaxKm !== null)) {
     params.set('distanceMaxKm', String(filters.distanceMaxKm));
   }
-  if (filters.durationMinMin !== null) {
+  if ((filters.durationMinMin !== undefined && filters.durationMinMin !== null)) {
     params.set('durationMinMin', String(filters.durationMinMin));
   }
-  if (filters.durationMaxMin !== null) {
+  if ((filters.durationMaxMin !== undefined && filters.durationMaxMin !== null)) {
     params.set('durationMaxMin', String(filters.durationMaxMin));
   }
   return params;
@@ -204,13 +204,13 @@ function activityMatchesDistance(
   filters: TrainingHistoryFilters,
 ): boolean {
   const distanceKm = getActivityDistanceKm(activity);
-  if (distanceKm === null) {
+  if ((distanceKm === undefined || distanceKm === null)) {
     return true;
   }
-  if (filters.distanceMinKm !== null && distanceKm < filters.distanceMinKm) {
+  if ((filters.distanceMinKm !== undefined && filters.distanceMinKm !== null) && distanceKm < filters.distanceMinKm) {
     return false;
   }
-  if (filters.distanceMaxKm !== null && distanceKm > filters.distanceMaxKm) {
+  if ((filters.distanceMaxKm !== undefined && filters.distanceMaxKm !== null) && distanceKm > filters.distanceMaxKm) {
     return false;
   }
   return true;
@@ -220,16 +220,16 @@ function activityMatchesDuration(
   activity: ActivityForHistoryFilters,
   filters: TrainingHistoryFilters,
 ): boolean {
-  const durationMin = activity.duration !== null ? activity.duration / 60 : null;
+  const durationMin = (activity.duration !== undefined && activity.duration !== null) ? activity.duration / 60 : null;
   if (
-    filters.durationMinMin !== null &&
-    (durationMin === null || durationMin < filters.durationMinMin)
+    (filters.durationMinMin !== undefined && filters.durationMinMin !== null) &&
+    ((durationMin === undefined || durationMin === null) || durationMin < filters.durationMinMin)
   ) {
     return false;
   }
   if (
-    filters.durationMaxMin !== null &&
-    (durationMin === null || durationMin > filters.durationMaxMin)
+    (filters.durationMaxMin !== undefined && filters.durationMaxMin !== null) &&
+    ((durationMin === undefined || durationMin === null) || durationMin > filters.durationMaxMin)
   ) {
     return false;
   }
@@ -260,9 +260,9 @@ export function applyTrainingHistoryFilters<T extends ActivityForHistoryFilters>
   now: Date = new Date(),
 ): T[] {
   const since =
-    filters.periodMaxDays !== null ? startOfDay(subDays(now, filters.periodMaxDays)) : null;
+    (filters.periodMaxDays !== undefined && filters.periodMaxDays !== null) ? startOfDay(subDays(now, filters.periodMaxDays)) : null;
   const until =
-    filters.periodMinDays !== null ? startOfDay(subDays(now, filters.periodMinDays)) : null;
+    (filters.periodMinDays !== undefined && filters.periodMinDays !== null) ? startOfDay(subDays(now, filters.periodMinDays)) : null;
 
   return activities.filter((activity) =>
     activityMatchesTrainingHistoryFilters(activity, filters, since, until),
@@ -295,13 +295,13 @@ export function togglePresetSelection(
 export function countActiveTrainingHistoryFilters(filters: TrainingHistoryFilters): number {
   let n = 0;
   n += filters.types.length;
-  if (filters.periodMaxDays !== null) {
+  if ((filters.periodMaxDays !== undefined && filters.periodMaxDays !== null)) {
     n += 1;
   }
-  if (filters.distanceMinKm !== null || filters.distanceMaxKm !== null) {
+  if ((filters.distanceMinKm !== undefined && filters.distanceMinKm !== null) || (filters.distanceMaxKm !== undefined && filters.distanceMaxKm !== null)) {
     n += 1;
   }
-  if (filters.durationMinMin !== null || filters.durationMaxMin !== null) {
+  if ((filters.durationMinMin !== undefined && filters.durationMinMin !== null) || (filters.durationMaxMin !== undefined && filters.durationMaxMin !== null)) {
     n += 1;
   }
   return n;
@@ -323,11 +323,11 @@ const DIMENSION_SELECTION_COUNTERS: Record<
   (filters: TrainingHistoryFilters) => number
 > = {
   types: (filters) => filters.types.length,
-  period: (filters) => (filters.periodMaxDays !== null ? 1 : 0),
+  period: (filters) => ((filters.periodMaxDays !== undefined && filters.periodMaxDays !== null) ? 1 : 0),
   distance: (filters) =>
-    filters.distanceMinKm !== null || filters.distanceMaxKm !== null ? 1 : 0,
+    (filters.distanceMinKm !== undefined && filters.distanceMinKm !== null) || (filters.distanceMaxKm !== undefined && filters.distanceMaxKm !== null) ? 1 : 0,
   duration: (filters) =>
-    filters.durationMinMin !== null || filters.durationMaxMin !== null ? 1 : 0,
+    (filters.durationMinMin !== undefined && filters.durationMinMin !== null) || (filters.durationMaxMin !== undefined && filters.durationMaxMin !== null) ? 1 : 0,
 };
 
 /** Count active filters within a single dimension (for sub-menu badges). */

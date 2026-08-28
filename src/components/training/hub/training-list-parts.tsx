@@ -124,7 +124,7 @@ export function TrainingListWeekGroups({
   onToggle,
 }: {
   weekGroups: WeekGroup[];
-  recordLabelsById: Record<string, string>;
+  recordLabelsById: Map<string, string>;
   selectionMode: boolean;
   selectedIds: Set<string>;
   onToggle: (activityId: string) => void;

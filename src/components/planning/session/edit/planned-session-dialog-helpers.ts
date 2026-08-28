@@ -22,18 +22,22 @@ export const NO_GOAL = 'none';
 export { EMPTY_GOALS } from '@/components/planning/session/session-defaults';
 
 export function initialCustomPlace(session?: ClientPlannedSession | null): LocationPlaceValue {
-  if (session?.locationLat !== null && session.locationLng !== null && session.locationLabel) {
+  const lat = session?.locationLat ?? null;
+  const lng = session?.locationLng ?? null;
+  if (lat !== null && lng !== null && session?.locationLabel) {
     return {
       label: session.locationLabel,
-      latitude: session.locationLat,
-      longitude: session.locationLng,
+      latitude: lat,
+      longitude: lng,
     };
   }
   return null;
 }
 
 export function initialLocationSource(session?: ClientPlannedSession | null): LocationSource {
-  if (session?.locationLat !== null && session.locationLng !== null) {
+  const lat = session?.locationLat ?? null;
+  const lng = session?.locationLng ?? null;
+  if (lat !== null && lng !== null) {
     return 'custom';
   }
   return 'home';

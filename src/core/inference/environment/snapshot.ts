@@ -12,7 +12,7 @@ import type {
 } from './types';
 
 function thermalLevelFromStress(stress: EnvironmentalStress): ThermalStressLevel {
-  if (stress.suppressionReason !== null) {
+  if ((stress.suppressionReason !== undefined && stress.suppressionReason !== null)) {
     return 'NOT_APPLICABLE';
   }
   const thermal = getEnvironmentalStressor(stress, 'THERMAL');
@@ -47,9 +47,9 @@ function trainingImpactFromAdjustments(
   performanceDelta: number | null,
 ): TrainingEnvironmentalImpact {
   const magnitudes = [
-    recoveryDelta !== null ? Math.abs(recoveryDelta) : 0,
-    fatigueDelta !== null ? Math.abs(fatigueDelta) : 0,
-    performanceDelta !== null ? Math.abs(performanceDelta) : 0,
+    (recoveryDelta !== undefined && recoveryDelta !== null) ? Math.abs(recoveryDelta) : 0,
+    (fatigueDelta !== undefined && fatigueDelta !== null) ? Math.abs(fatigueDelta) : 0,
+    (performanceDelta !== undefined && performanceDelta !== null) ? Math.abs(performanceDelta) : 0,
   ];
   const max = Math.max(...magnitudes);
   if (max >= 0.15) {

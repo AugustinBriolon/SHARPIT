@@ -124,7 +124,7 @@ export function optimisticSessionFieldsForKind(
       return {
         intensity: stepDownIntensity(current.intensity),
         load:
-          current.load !== null ? Math.round(current.load * INTENSITY_REDUCTION_TSS_FACTOR) : null,
+          (current.load !== undefined && current.load !== null) ? Math.round(current.load * INTENSITY_REDUCTION_TSS_FACTOR) : null,
       };
     case 'INDOOR':
       return { exposureSetting: 'INDOOR' };

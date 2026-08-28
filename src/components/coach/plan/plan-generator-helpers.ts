@@ -40,7 +40,7 @@ export function buildPlanInsertPayloads(
 
 export function preselectGeneratedSessions(
   sessions: GeneratedSession[],
-  gateSessions: Array<{ status?: string }>,
+  gateSessions: ReadonlyArray<{ status?: string }>,
 ) {
   return new Set(
     sessions.map((_, index) => index).filter((index) => gateSessions[index]?.status !== 'REJECTED'),

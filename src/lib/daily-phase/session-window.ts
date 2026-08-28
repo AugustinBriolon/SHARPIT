@@ -37,7 +37,7 @@ export function isAccomplishmentWindow(
   if (newSessionSincePriorSnapshot) {
     return true;
   }
-  if (minutesSinceLastActivity === null) {
+  if ((minutesSinceLastActivity === undefined || minutesSinceLastActivity === null)) {
     return false;
   }
   return minutesSinceLastActivity < 60;

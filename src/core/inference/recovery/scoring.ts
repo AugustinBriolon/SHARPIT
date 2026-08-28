@@ -87,7 +87,7 @@ function mapHrvAbsoluteToAutonomicRaw(rmssd: number): number {
  * Thresholds: Noakes 1991, Friel 2009 (practitioner consensus, Level 5).
  */
 function rhrModifier(rhrDelta: number | null): number {
-  if (rhrDelta === null) {
+  if ((rhrDelta === undefined || rhrDelta === null)) {
     return 1.0;
   } // no data — no change
   if (rhrDelta > 7) {
@@ -115,7 +115,7 @@ function rhrModifier(rhrDelta: number | null): number {
 export function scoreAutonomic(features: RecoveryFeatureSet): DimensionScore {
   const { hrvDeltaFromBaseline, hrvAbsolute, rhrDeltaFromBaseline } = features;
 
-  if (hrvDeltaFromBaseline !== null) {
+  if ((hrvDeltaFromBaseline !== undefined && hrvDeltaFromBaseline !== null)) {
     // Primary path: personalized delta from baseline
     const raw = mapHrvDeltaToAutonomicRaw(hrvDeltaFromBaseline);
     const modifier = rhrModifier(rhrDeltaFromBaseline);
@@ -127,7 +127,7 @@ export function scoreAutonomic(features: RecoveryFeatureSet): DimensionScore {
     };
   }
 
-  if (hrvAbsolute !== null) {
+  if ((hrvAbsolute !== undefined && hrvAbsolute !== null)) {
     // Fallback: population-level norms (less reliable — no personal baseline)
     const raw = mapHrvAbsoluteToAutonomicRaw(hrvAbsolute);
     const modifier = rhrModifier(rhrDeltaFromBaseline);
@@ -178,7 +178,7 @@ export function mapRestorativeSleepRatioToRaw(ratioPercent: number): number {
  * Van Dongen et al. 2003: 6h/night × 14 days ≈ 24h total deprivation (Level 2).
  */
 export function sleepDebtModifier(debtMinutes: number | null): number {
-  if (debtMinutes === null) {
+  if ((debtMinutes === undefined || debtMinutes === null)) {
     return 1.0;
   }
   // Legacy mapping (used by scientific-validation + unit tests):
@@ -210,7 +210,7 @@ export function sleepDebtModifier(debtMinutes: number | null): number {
  * Elevated nocturnal stress indicates incomplete parasympathetic recovery.
  */
 export function sleepStressModifier(avgStressDuringSleep: number | null): number {
-  if (avgStressDuringSleep === null) {
+  if ((avgStressDuringSleep === undefined || avgStressDuringSleep === null)) {
     return 1.0;
   }
   if (avgStressDuringSleep > 50) {
@@ -228,7 +228,7 @@ export function sleepStressModifier(avgStressDuringSleep: number | null): number
 export function scoreSleep(features: RecoveryFeatureSet): DimensionScore {
   const { sleepEfficiencyPercent } = features;
 
-  if (sleepEfficiencyPercent === null) {
+  if ((sleepEfficiencyPercent === undefined || sleepEfficiencyPercent === null)) {
     return { score: null, available: false, qualityFactor: 0.0 };
   }
 
@@ -277,7 +277,7 @@ function mapWellnessToSubjectiveRaw(index: number): number {
  * Foster et al. 2001 — RPE drift as early overreaching indicator (Level 3-5).
  */
 function rpeVsTargetModifier(rpeVsTarget: number | null): number {
-  if (rpeVsTarget === null) {
+  if ((rpeVsTarget === undefined || rpeVsTarget === null)) {
     return 1.0;
   }
   if (rpeVsTarget < -1.5) {
@@ -295,7 +295,7 @@ function rpeVsTargetModifier(rpeVsTarget: number | null): number {
 export function scoreSubjective(features: RecoveryFeatureSet): DimensionScore {
   const { subjectiveWellnessIndex, rpeVsTargetZone } = features;
 
-  if (subjectiveWellnessIndex === null) {
+  if ((subjectiveWellnessIndex === undefined || subjectiveWellnessIndex === null)) {
     return { score: null, available: false, qualityFactor: 0.0 };
   }
 
@@ -321,7 +321,7 @@ export function scoreSubjective(features: RecoveryFeatureSet): DimensionScore {
  * The "sweet spot" is 0.8–1.3 ACWR where recovery is achievable.
  */
 function mapAcwrToLoadContextRaw(acwr: number | null): number {
-  if (acwr === null) {
+  if ((acwr === undefined || acwr === null)) {
     return 75;
   } // neutral assumption when no data
   if (acwr < 0.8) {
@@ -350,7 +350,7 @@ function mapAcwrToLoadContextRaw(acwr: number | null): number {
  * Foster et al. 1998 — high monotony impairs recovery efficiency (Level 5).
  */
 function monotonyModifier(monotony: number | null): number {
-  if (monotony === null) {
+  if ((monotony === undefined || monotony === null)) {
     return 1.0;
   }
   if (monotony < 1.5) {
@@ -417,7 +417,10 @@ export function synthesizeScore(dimensions: ScoredDimensions): {
   redistributedWeights: Record<DimensionKey, number>;
 } {
   const available = Object.entries(dimensions).filter(
-    ([, dim]) => (dim as DimensionScore).available && (dim as DimensionScore).score !== null,
+    ([, dim]) =>
+      (dim as DimensionScore).available &&
+      (dim as DimensionScore).score !== undefined &&
+      (dim as DimensionScore).score !== null,
   ) as Array<[DimensionKey, DimensionScore]>;
 
   const availableCount = available.length;
@@ -471,7 +474,7 @@ export function synthesizeScore(dimensions: ScoredDimensions): {
  * Simplification for v1: if delta from baseline is available → adequate baseline.
  */
 export function baselineMaturityFactor(features: RecoveryFeatureSet): number {
-  if (features.hrvDeltaFromBaseline !== null) {
+  if ((features.hrvDeltaFromBaseline !== undefined && features.hrvDeltaFromBaseline !== null)) {
     return 0.8; // adequate baseline (14-day minimum implied by the extractor)
   }
   return 0.4; // no baseline established
@@ -486,12 +489,12 @@ export function signalConsistencyFactor(
   sleepScore: number | null,
   subjectiveScore: number | null,
 ): { factor: number; dissonanceDetected: boolean } {
-  if (autonomicScore === null || subjectiveScore === null) {
+  if ((autonomicScore === undefined || autonomicScore === null) || (subjectiveScore === undefined || subjectiveScore === null)) {
     return { factor: 1.0, dissonanceDetected: false };
   }
 
   // Objective = average of available objective markers
-  const objectiveScores = [autonomicScore, sleepScore].filter((s): s is number => s !== null);
+  const objectiveScores = [autonomicScore, sleepScore].filter((s): s is number => (s !== undefined && s !== null));
   if (objectiveScores.length === 0) {
     return { factor: 1.0, dissonanceDetected: false };
   }

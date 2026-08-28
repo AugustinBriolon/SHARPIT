@@ -22,7 +22,7 @@ function isManualPayload(payload: unknown): payload is ManualEnvironmentalPayloa
     return false;
   }
   const p = payload as ManualEnvironmentalPayload;
-  return p.observedAt !== null && typeof p.measurements === 'object';
+  return (p.observedAt !== undefined && p.observedAt !== null) && typeof p.measurements === 'object';
 }
 
 export const manualEnvironmentalAdapter: EnvironmentalProviderAdapter = {

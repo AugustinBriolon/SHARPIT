@@ -120,7 +120,7 @@ function extractDurationSec(activity: IActivity, sportType: SportType): number |
       : [activity.movingDuration, activity.duration, activity.elapsedDuration];
 
   for (const v of candidates) {
-    if (v === null || !Number.isFinite(v) || v <= 0) {
+    if ((v === undefined || v === null) || !Number.isFinite(v) || v <= 0) {
       continue;
     }
     // Garmin sometimes returns milliseconds instead of seconds
@@ -269,7 +269,7 @@ export function garminEvaluationToSubjective(
   sessionTimestamp: Date,
   receivedAt: Date,
 ): RawSubjectiveObservation | null {
-  if (evaluation.rpe === null && evaluation.feeling === null) {
+  if ((evaluation.rpe === undefined || evaluation.rpe === null) && (evaluation.feeling === undefined || evaluation.feeling === null)) {
     return null;
   }
 

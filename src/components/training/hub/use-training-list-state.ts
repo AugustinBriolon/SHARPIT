@@ -13,6 +13,7 @@ import {
   type TrainingHistoryFilters,
 } from '@/lib/training/history-filters';
 import { buildActivityRecordLabels } from '@/lib/training/activity-record-labels';
+import type { RecordsPayload } from '@/lib/training/records';
 
 const TYPE_ORDER: ActivityType[] = [
   ActivityType.RUN,
@@ -26,7 +27,7 @@ const TYPE_ORDER: ActivityType[] = [
 
 const FILTER_URL_DEBOUNCE_MS = 200;
 
-export function useTrainingListState(activities: ClientActivity[], records: unknown) {
+export function useTrainingListState(activities: ClientActivity[], records: RecordsPayload | null | undefined) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();

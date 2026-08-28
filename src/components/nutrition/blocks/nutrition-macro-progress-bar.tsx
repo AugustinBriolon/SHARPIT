@@ -34,7 +34,7 @@ function macroFooterNote({
     return (
       <p className="text-muted-foreground text-xs tabular-nums">
         {formatMacroRemainingText(remaining, unit)}
-        {densityGPerKg !== null ? (
+        {densityGPerKg !== undefined && densityGPerKg !== null ? (
           <span className="text-muted-foreground/80">
             {' '}
             · {formatMacroGPerKg(densityGPerKg)} g/kg
@@ -43,7 +43,7 @@ function macroFooterNote({
       </p>
     );
   }
-  if (densityGPerKg !== null) {
+  if (densityGPerKg !== undefined && densityGPerKg !== null) {
     return (
       <p className="text-muted-foreground/80 text-xs tabular-nums">
         {formatMacroGPerKg(densityGPerKg)} g/kg

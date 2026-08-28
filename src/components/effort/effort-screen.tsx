@@ -40,7 +40,7 @@ export function EffortScreen() {
   const viewModel = query.data ?? null;
 
   if (!valuesLoading && (!viewModel || viewModel.emptyState)) {
-    return <EffortEmptyView viewModel={viewModel} />;
+    return <EffortEmptyView viewModel={viewModel ?? undefined} />;
   }
 
   const content = viewModel ?? effortLoadingShell();

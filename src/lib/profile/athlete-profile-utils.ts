@@ -66,6 +66,6 @@ export function athleteCompositionContext(
 ): { chronoAge: number | null; heightM: number | null } {
   return {
     chronoAge: athleteAgeYears(profile?.birthDate ?? null),
-    heightM: profile?.heightCm !== null ? profile.heightCm / 100 : null,
+    heightM: (profile?.heightCm !== undefined && profile?.heightCm !== null) ? profile.heightCm / 100 : null,
   };
 }

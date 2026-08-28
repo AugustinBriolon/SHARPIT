@@ -303,11 +303,11 @@ export class RenphoClient {
 
     return parsed.map((entry, index) => ({
       ...entry,
-      __idString: ids[index] || (entry.id !== null ? String(entry.id) : undefined),
+      __idString: ids[index] || ((entry.id !== undefined && entry.id !== null) ? String(entry.id) : undefined),
       __bUserIdString:
-        boundUserIds[index] || (entry.bUserId !== null ? String(entry.bUserId) : undefined),
+        boundUserIds[index] || ((entry.bUserId !== undefined && entry.bUserId !== null) ? String(entry.bUserId) : undefined),
       __subUserIdString:
-        scaleUserIds[index] || (entry.subUserId !== null ? String(entry.subUserId) : undefined),
+        scaleUserIds[index] || ((entry.subUserId !== undefined && entry.subUserId !== null) ? String(entry.subUserId) : undefined),
     }));
   }
 

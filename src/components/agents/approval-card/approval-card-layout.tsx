@@ -11,6 +11,7 @@ import {
   getApprovalStatusIconClass,
 } from '@/components/agents/approval-card/approval-card-parts';
 import { resolveApprovalCardContentProps } from '@/components/agents/approval-card/approval-card-props';
+import type { ApprovalCardStatus } from './types';
 import type { ApprovalCardProps } from './types';
 import { cn } from '@/lib/utils';
 
@@ -100,7 +101,7 @@ export function ApprovalCardShell({
   className?: string;
   reduce: boolean;
   state: ReturnType<typeof import('./use-approval-card').useApprovalCard>;
-  status: ApprovalCardProps['status'];
+  status: ApprovalCardStatus;
   children: React.ReactNode;
 }) {
   return (

@@ -50,7 +50,7 @@ async function processBackfillCandidate(
     stravaId: activity.stravaId,
   });
 
-  const withData = available && raw !== null && rawStreamsHaveSignal(raw);
+  const withData = available && (raw !== undefined && raw !== null) && rawStreamsHaveSignal(raw);
   return { processed: true, withData };
 }
 

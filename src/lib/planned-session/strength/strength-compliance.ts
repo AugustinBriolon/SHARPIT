@@ -41,7 +41,7 @@ const WEIGHT_VOLUME = 0.3;
 
 function workUnits(set: ComparableStrengthSet): number {
   const perSet =
-    set.durationSec !== null && set.durationSec > 0
+    (set.durationSec !== undefined && set.durationSec !== null) && set.durationSec > 0
       ? set.durationSec
       : Math.max(1, set.reps) * SECONDS_PER_REP;
   return Math.max(1, set.sets) * perSet;
@@ -169,7 +169,7 @@ export function applyStrengthScoringGuards(
   }
 
   const complianceScore =
-    compliance !== null
+    (compliance !== undefined && compliance !== null)
       ? Math.max(analysis.complianceScore, compliance.score)
       : analysis.complianceScore;
 

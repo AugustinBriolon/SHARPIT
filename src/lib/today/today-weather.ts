@@ -107,7 +107,7 @@ export function selectTodayWeather(
     return null;
   }
 
-  const withTemp = today.filter((hour) => hour.airTemperatureC !== null);
+  const withTemp = today.filter((hour) => (hour.airTemperatureC !== undefined && hour.airTemperatureC !== null));
   if (withTemp.length === 0) {
     return null;
   }
@@ -123,7 +123,7 @@ export function selectTodayWeather(
 
   const precipitations = forCondition
     .map((hour) => hour.precipitationMm)
-    .filter((value): value is number => value !== null);
+    .filter((value): value is number => (value !== undefined && value !== null));
 
   return {
     tempC: nearest.airTemperatureC as number,
@@ -133,12 +133,12 @@ export function selectTodayWeather(
       avgCloudCoverPct: mean(
         forCondition
           .map((hour) => hour.cloudCoverPct)
-          .filter((value): value is number => value !== null),
+          .filter((value): value is number => (value !== undefined && value !== null)),
       ),
       avgSolarRadiationWm2: mean(
         forCondition
           .map((hour) => hour.solarRadiationWm2)
-          .filter((value): value is number => value !== null),
+          .filter((value): value is number => (value !== undefined && value !== null)),
       ),
     }),
   };

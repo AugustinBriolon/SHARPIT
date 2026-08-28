@@ -51,7 +51,7 @@ export function useWellnessCheckin(date: Date = new Date()): WellnessCheckinStat
   const trainingDayId = format(date, 'yyyy-MM-dd');
   const queryClient = useQueryClient();
 
-  const query = useQuery({
+  const query = useQuery<{ completed: boolean }>({
     queryKey: queryKeys.wellnessCheckin(trainingDayId),
     queryFn: () => fetchWellnessStatus(trainingDayId),
     staleTime: 5 * 60_000,
@@ -101,7 +101,7 @@ export function useWellnessCheckin(date: Date = new Date()): WellnessCheckinStat
     void queryClient.invalidateQueries({ queryKey: queryKeys.wellnessCheckin(trainingDayId) });
   }, [queryClient, trainingDayId]);
 
-  const isInitialLoad = query.isPending && query.data === null;
+  const isInitialLoad = query.isPending && query.data === undefined;
 
   return {
     completed: query.data?.completed ?? false,

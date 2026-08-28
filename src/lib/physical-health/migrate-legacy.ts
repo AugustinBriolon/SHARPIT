@@ -87,8 +87,8 @@ export type MigrationReportRow = {
 function peakSeverity(note: LegacyPhysicalNote): number | null {
   const values = [
     note.severity,
-    ...note.checkins.map((c) => c.severity).filter((s): s is number => s !== null),
-  ].filter((s): s is number => s !== null);
+    ...note.checkins.map((c) => c.severity).filter((s): s is number => (s !== undefined && s !== null)),
+  ].filter((s): s is number => (s !== undefined && s !== null));
 
   return values.length > 0 ? Math.max(...values) : null;
 }
@@ -228,7 +228,7 @@ function migrateLegacyCheckin(input: {
   });
 
   const capacity =
-    input.checkin.severity !== null
+    (input.checkin.severity !== undefined && input.checkin.severity !== null)
       ? {
           id: input.idFactory('fc'),
           conditionId: input.conditionId,

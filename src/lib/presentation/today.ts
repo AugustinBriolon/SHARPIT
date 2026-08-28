@@ -1,4 +1,6 @@
 import type { AthleteSnapshot } from '@/core/athlete-state/snapshot';
+import type { DailyPhase } from '@/lib/daily-phase/types';
+import type { MorningOrientationResolved } from '@/lib/today/morning-orientation';
 import { snapshotHasDisplayableContent } from '@/core/athlete-state/snapshot';
 import type { TodayViewModel } from '@/core/presentation/today-view-model';
 import { getOrBuildAthleteSnapshot } from '@/lib/athlete-state/snapshot-service';
@@ -85,7 +87,7 @@ function mapConfidenceTone(
 
 type SnapshotStatusInput = {
   snapshot: AthleteSnapshot;
-  phase: string;
+  phase: DailyPhase;
   heroHeadline: string;
   heroSubline: string;
   reconnectNames: string[];
@@ -175,7 +177,7 @@ function buildTodayScores(
   const sleepScoreSharpit = computeSharpitSleepScoreForDay(healthEntries, day, sleepTargetMin);
   const sleepScore = sleepScoreSharpit ?? effectiveSnapshot.sleepScore;
   const effortScore =
-    effectiveSnapshot.dailyStrain?.available && effectiveSnapshot.dailyStrain.strainScore !== null
+    effectiveSnapshot.dailyStrain?.available && (effectiveSnapshot.dailyStrain.strainScore !== undefined && effectiveSnapshot.dailyStrain.strainScore !== null)
       ? effectiveSnapshot.dailyStrain.strainScore
       : null;
   return {
@@ -184,12 +186,12 @@ function buildTodayScores(
     effortScore,
     adaptationScore: effectiveSnapshot.adaptationIndex,
     adaptationUnavailableCaption:
-      effectiveSnapshot.adaptationIndex === null ? 'Historique insuffisant' : null,
+      (effectiveSnapshot.adaptationIndex === undefined || effectiveSnapshot.adaptationIndex === null) ? 'Historique insuffisant' : null,
   };
 }
 
 function shouldPreferAdaptationReminders(input: {
-  phase: string;
+  phase: DailyPhase;
   adaptationHints: string[];
   focusPriority: string | null;
   limitingFactor: AthleteSnapshot['limitingFactor'];
@@ -203,7 +205,7 @@ function shouldPreferAdaptationReminders(input: {
 }
 
 function buildTodayLimitingSection(input: {
-  phase: string;
+  phase: DailyPhase;
   effectiveSnapshot: AthleteSnapshot;
   focusPriority: string | null;
   adaptationHints: string[];
@@ -229,7 +231,7 @@ function buildTodayLimitingSection(input: {
     reminders: preferReminders ? input.adaptationHints : [],
   });
   const limitingHref =
-    input.effectiveSnapshot.limitingFactor !== null
+    (input.effectiveSnapshot.limitingFactor !== undefined && input.effectiveSnapshot.limitingFactor !== null)
       ? (resolveLimitingFactorHrefFromDecision(input.effectiveSnapshot.decision) ??
         TWIN_DRILL_DOWN.recovery)
       : null;
@@ -257,7 +259,7 @@ function daySummaryLineHref(
 
 function morningChoiceForLine(
   plannedId: string | null,
-  sessionChoice: ReturnType<typeof resolveMorningOrientation>['sessionChoice'],
+  sessionChoice: MorningOrientationResolved['sessionChoice'],
 ): string | null {
   if (!sessionChoice || !plannedId || sessionChoice.sessionId !== plannedId) {
     return null;
@@ -267,7 +269,7 @@ function morningChoiceForLine(
 
 function mapDaySummaryLineForView(
   line: ReturnType<typeof buildTodayDaySummary>['lines'][number],
-  sessionChoice: ReturnType<typeof resolveMorningOrientation>['sessionChoice'],
+  sessionChoice: MorningOrientationResolved['sessionChoice'],
 ) {
   const plannedId = line.plannedSession?.id ?? (line.kind === 'planned' ? line.id : null);
   return {
@@ -286,7 +288,7 @@ function mapDaySummaryLineForView(
 function buildPlateLimiter(
   effectiveSnapshot: AthleteSnapshot,
 ): { text: string | null; href: string | null } {
-  if (effectiveSnapshot.limitingFactor === null) {
+  if ((effectiveSnapshot.limitingFactor === undefined || effectiveSnapshot.limitingFactor === null)) {
     return { text: null, href: null };
   }
   const text =
@@ -338,7 +340,7 @@ function buildHeroCopy(
 
 function buildFocusPriority(
   effectiveSnapshot: AthleteSnapshot,
-  phase: string,
+  phase: DailyPhase,
 ): string | null {
   if (effectiveSnapshot.phaseNarrative?.focusPriority) {
     return effectiveSnapshot.phaseNarrative.focusPriority;
@@ -353,7 +355,7 @@ function buildFocusPriority(
 function buildConfidenceFields(effectiveSnapshot: AthleteSnapshot) {
   const adviceActionable = Boolean(effectiveSnapshot.adviceActionable);
   const confidenceTier =
-    effectiveSnapshot.confidence !== null
+    (effectiveSnapshot.confidence !== undefined && effectiveSnapshot.confidence !== null)
       ? mapConfidenceToTier(effectiveSnapshot.confidence)
       : null;
   const confidenceLabel = resolveVisibleConfidenceLabel(
@@ -362,10 +364,10 @@ function buildConfidenceFields(effectiveSnapshot: AthleteSnapshot) {
     adviceActionable,
   );
   return {
-    confidenceTone: confidenceTier !== null ? mapConfidenceTone(confidenceTier) : 'neutral',
+    confidenceTone: (confidenceTier !== undefined && confidenceTier !== null) ? mapConfidenceTone(confidenceTier) : 'neutral',
     confidenceLabel,
     confidencePctRounded:
-      confidenceLabel !== null && effectiveSnapshot.confidence !== null
+      (confidenceLabel !== undefined && confidenceLabel !== null) && (effectiveSnapshot.confidence !== undefined && effectiveSnapshot.confidence !== null)
         ? Math.round(effectiveSnapshot.confidence * 100)
         : null,
     confidenceHref: resolveConfidenceHrefFromDecision(effectiveSnapshot.decision),
@@ -386,7 +388,7 @@ function prepareTodayHeroFields(
 
 function prepareTodayActionFields(input: {
   day: Date;
-  phase: string;
+  phase: DailyPhase;
   effectiveSnapshot: AthleteSnapshot;
   focusPriority: string | null;
   activities: TodayPresentationInputs['activities'];
@@ -463,7 +465,7 @@ function resolveMorningEyebrow(
 }
 
 function morningPresentationFromOrientation(
-  morningOrientation: ReturnType<typeof resolveMorningOrientation>,
+  morningOrientation: MorningOrientationResolved | null,
   input: {
     heroHeadline: string;
     heroSubline: string;
@@ -492,7 +494,7 @@ function morningPresentationFromOrientation(
 
 function prepareTodayMorningFields(
   input: {
-    phase: string;
+    phase: DailyPhase;
     effectiveSnapshot: AthleteSnapshot;
     morningRecalibration: MorningRecalibrationInput | null;
     heroHeadline: string;
@@ -599,7 +601,6 @@ function prepareTodayViewModelContext(inputs: TodayPresentationInputs) {
     verdict,
     displayVerdict,
     ...hero,
-    heroEyebrow: morning.heroEyebrow,
     ...action,
     status,
     emptyState: buildTodayEmptyState(effectiveSnapshot, status.message),

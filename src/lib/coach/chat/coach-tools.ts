@@ -106,7 +106,7 @@ function coachToolFailure(prefix: string, error: unknown) {
 }
 
 function roundOptionalMetric(value: number | null | undefined): number | null {
-  if (value === null || value === undefined) {
+  if ((value === undefined || value === null) || value === undefined) {
     return null;
   }
   return Math.round(value);
@@ -334,7 +334,7 @@ function applyStrengthPrescriptionUpdate(
     });
     data.description = strength.description;
     data.strengthPrescription =
-      strength.strengthPrescription === null ? Prisma.DbNull : strength.strengthPrescription;
+      (strength.strengthPrescription === undefined || strength.strengthPrescription === null) ? Prisma.DbNull : strength.strengthPrescription;
     return;
   }
   if (input.type && input.type !== 'STRENGTH') {
@@ -362,7 +362,7 @@ function applyEndurancePrescriptionUpdate(
     });
     data.description = endurance.description;
     data.endurancePrescription =
-      endurance.endurancePrescription === null ? Prisma.DbNull : endurance.endurancePrescription;
+      (endurance.endurancePrescription === undefined || endurance.endurancePrescription === null) ? Prisma.DbNull : endurance.endurancePrescription;
     return;
   }
   if (input.type === 'STRENGTH') {
@@ -473,8 +473,8 @@ async function executeCreateBrickSessionTool(
       startTime: input.startTime ?? null,
       title: leg.title,
       description: leg.description ?? null,
-      durationMin: leg.durationMin !== null ? Math.round(leg.durationMin) : null,
-      load: leg.load !== null ? Math.round(leg.load) : null,
+      durationMin: (leg.durationMin !== undefined && leg.durationMin !== null) ? Math.round(leg.durationMin) : null,
+      load: (leg.load !== undefined && leg.load !== null) ? Math.round(leg.load) : null,
       intensity: leg.intensity ?? null,
       goalId,
     })),

@@ -78,7 +78,9 @@ export function CoachView() {
     autoReplyId: selection.autoReplyId,
     activeConversationPending: selection.activeConversation.isPending,
     activeConversationLoading: selection.activeConversation.isLoading,
-    activeConversationData: selection.activeConversation.data,
+    activeConversationData: selection.activeConversation.data
+      ? { messages: selection.activeConversation.data.messages as unknown[] }
+      : undefined,
     onAutoReplyStarted: () => selection.setAutoReplyId(null),
     onDetachContext: detachLatchedContext,
     onConversationCreated: selection.handleConversationCreated,

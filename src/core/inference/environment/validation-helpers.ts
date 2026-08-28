@@ -72,7 +72,7 @@ export function isImpactSignificant(impact: EnvironmentalImpact): boolean {
 export function intensityBand(
   value: number | null,
 ): 'LOW' | 'MODERATE' | 'HIGH' | 'EXTREME' | 'SUPPRESSED' | 'UNKNOWN' {
-  if (value === null) {
+  if ((value === undefined || value === null)) {
     return 'SUPPRESSED';
   }
   if (value < 0.35) {
@@ -88,7 +88,7 @@ export function intensityBand(
 }
 
 export function assertMonotonicIncreasing(values: readonly (number | null)[]): boolean {
-  const available = values.filter((v): v is number => v !== null);
+  const available = values.filter((v): v is number => (v !== undefined && v !== null));
   for (let i = 1; i < available.length; i++) {
     if (available[i] < available[i - 1]) {
       return false;

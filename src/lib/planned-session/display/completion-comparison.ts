@@ -117,7 +117,7 @@ function buildComparisonResult(input: {
 }): PlannedSessionCompletionComparison {
   return {
     visible: input.narrativeLines.length > 0,
-    plannedImpact: input.plannedImpact,
+    plannedImpact: input.plannedImpact as PlannedSessionCompletionComparison['plannedImpact'],
     observedImpact:
       (input.observedImpact as PlannedSessionCompletionComparison['observedImpact']) ?? null,
     impactDeltaLabel: input.impactDeltaLabel,
@@ -155,7 +155,7 @@ export function buildPlannedSessionCompletionComparison(input: {
       plannedThermalLabel,
       observedThermalLabel,
       observedCorrection: input.observedCorrection,
-      impactDiffers: deltaLabel !== null,
+      impactDiffers: (deltaLabel !== undefined && deltaLabel !== null),
     }),
   });
 }

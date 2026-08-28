@@ -73,7 +73,7 @@ function appendHrZoneFacts(lines: string[], hr: ActivityAnalysis['hr'], threshol
 }
 
 function appendHrDecouplingFact(lines: string[], decouplingPct: number | null): void {
-  if (decouplingPct === null || Math.abs(decouplingPct) < DECOUPLING_NOTEWORTHY_PCT) {
+  if ((decouplingPct === undefined || decouplingPct === null) || Math.abs(decouplingPct) < DECOUPLING_NOTEWORTHY_PCT) {
     return;
   }
   const sign = decouplingPct > 0 ? '+' : '';
@@ -93,10 +93,10 @@ function appendHrTechnicalFacts(lines: string[], input: TechnicalFactInput): voi
 
 function appendRunVariabilityFacts(lines: string[], analysis: ActivityAnalysis): void {
   const { run, power } = analysis;
-  if (run?.paceVariabilityPct !== null && run.paceVariabilityPct >= PACE_VARIABILITY_NOTEWORTHY_PCT) {
+  if ((run?.paceVariabilityPct !== undefined && run?.paceVariabilityPct !== null) && run.paceVariabilityPct >= PACE_VARIABILITY_NOTEWORTHY_PCT) {
     lines.push(`Variabilité d’allure : ${run.paceVariabilityPct.toFixed(0)}% (rythme irrégulier).`);
   }
-  if (power?.variabilityIndex !== null && power.variabilityIndex >= VI_NOTEWORTHY) {
+  if ((power?.variabilityIndex !== undefined && power?.variabilityIndex !== null) && power.variabilityIndex >= VI_NOTEWORTHY) {
     lines.push(
       `Variabilité de puissance (VI) : ${power.variabilityIndex.toFixed(2)} (effort irrégulier).`,
     );

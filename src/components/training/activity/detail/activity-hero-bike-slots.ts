@@ -16,9 +16,10 @@ function formatSpeed(metersPerSec: number | null): string | null {
 }
 
 function bikeDistanceSlot(stream: StreamStats | null): HeroStatSlot {
+  const totalDistance = stream?.totalDistance ?? null;
   return {
     label: 'Distance',
-    value: stream?.totalDistance !== null ? formatDistance(stream.totalDistance) : null,
+    value: totalDistance !== null ? formatDistance(totalDistance) : null,
     needsStream: true,
   };
 }
@@ -39,11 +40,11 @@ function bikeSpeedSlot(stream: StreamStats | null): HeroStatSlot {
 }
 
 function bikeElevationSlot(activity: HeroActivity, stream: StreamStats | null): HeroStatSlot {
-  const elevation = activity.bikeMetrics?.elevationM ?? stream?.totalAscent;
+  const elevation = activity.bikeMetrics?.elevationM ?? stream?.totalAscent ?? null;
   return {
     label: 'Dénivelé',
     value: elevation !== null ? `${Math.round(elevation)} m` : null,
-    needsStream: activity.bikeMetrics?.elevationM === null,
+    needsStream: (activity.bikeMetrics?.elevationM ?? null) === null,
   };
 }
 

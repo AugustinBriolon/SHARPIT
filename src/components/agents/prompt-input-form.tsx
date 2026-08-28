@@ -75,7 +75,7 @@ function PromptInputToolbar({
 }: {
   actions: PromptInputProps['actions'];
   canSubmit: boolean;
-  currentModel: PromptInputProps['models'] extends (infer M)[] | undefined ? M : never;
+  currentModel?: PromptInputProps['models'] extends (infer M)[] | undefined ? M : never;
   currentModelValue?: string;
   disabled?: boolean;
   leadingAction?: ReactNode;

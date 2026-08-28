@@ -1,7 +1,7 @@
 import { format, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import type { AdaptChange } from '@/hooks/use-coach';
-import type { ClientPlannedSession } from '@/hooks/use-data';
+import type { ClientPlannedSession } from '@/lib/query/types';
 import { activityTypeLabels } from '@/lib/format';
 import { intensityLabels } from '@/lib/planned-session/sessions';
 import { cn } from '@/lib/utils';

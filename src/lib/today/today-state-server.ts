@@ -67,7 +67,7 @@ async function isReasoningStale(athleteId: string, reasoningComputedAt: Date): P
     readStateComputedAt(twin.adaptationState),
     readStateComputedAt(twin.physicalHealthState),
     readStateComputedAt(twin.environmentalStateMeta),
-  ].filter((d): d is Date => d !== null);
+  ].filter((d): d is Date => (d !== undefined && d !== null));
 
   return subModelTimes.some((computedAt) => computedAt > reasoningComputedAt);
 }
@@ -471,7 +471,7 @@ async function isCachedReasoningUsable(
   athleteId: string,
   cached: ReasoningInferenceResult,
 ): Promise<boolean> {
-  const cachedHasI18nTopAction = cached.output.reasoningState.topAction?.verbCode !== null;
+  const cachedHasI18nTopAction = (cached.output.reasoningState.topAction?.verbCode !== undefined && cached.output.reasoningState.topAction?.verbCode !== null);
   if (cached.output.reasoningState.overallVerdict === 'INSUFFICIENT_DATA') {
     return false;
   }

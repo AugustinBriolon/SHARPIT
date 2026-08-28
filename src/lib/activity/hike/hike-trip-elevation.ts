@@ -31,7 +31,7 @@ function asTime(value: Date | string): number {
 }
 
 function positive(value: number | null | undefined): number {
-  return value !== null && Number.isFinite(value) && value > 0 ? value : 0;
+  return (value !== undefined && value !== null) && Number.isFinite(value) && value > 0 ? value : 0;
 }
 
 /**

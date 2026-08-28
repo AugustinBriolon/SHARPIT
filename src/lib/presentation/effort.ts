@@ -1,6 +1,7 @@
 import { getOrBuildAthleteSnapshot } from '@/lib/athlete-state/snapshot-service';
 import { computeTrainingLoad, enrichFatigueLoadDimension } from '@/lib/training/training-load';
 import { slicePmcWindow } from '@/lib/training/pmc';
+import type { PmcPoint } from '@/lib/training/pmc-history';
 import { loadAthletePmcPoints, loadDailyTrainingStressEntries } from '@/lib/training/pmc-server';
 import { resolve } from '@/lib/french';
 import {
@@ -80,7 +81,7 @@ const DOMINANT_DIMENSION_LABEL_LOW: Record<string, string> = {
 };
 
 function mapStrainToDisplay(strainScore: number | null) {
-  if (strainScore === null) {
+  if ((strainScore === undefined || strainScore === null)) {
     return {
       label: 'Indéterminé',
       colorClass: 'text-muted-foreground',
@@ -153,7 +154,7 @@ function resolveFatigueTypeLabel(fatigueType: string | null | undefined) {
 
 function computeEffortWeeklyStats(
   trainingLoad: ReturnType<typeof computeTrainingLoad>,
-  pmcSeries: ReturnType<typeof slicePmcWindow>,
+  pmcSeries: PmcPoint[],
   weeklyTss: ReturnType<typeof buildWeeklyTssSeries>,
 ) {
   const avgWeeklyTss =
@@ -169,7 +170,7 @@ function computeEffortWeeklyStats(
 function resolveEffortDerivedMetrics(input: {
   fatigue: NonNullable<Awaited<ReturnType<typeof getOrBuildAthleteSnapshot>>['fatigue']>;
   trainingLoad: ReturnType<typeof computeTrainingLoad>;
-  pmcSeries: ReturnType<typeof slicePmcWindow>;
+  pmcSeries: PmcPoint[];
   weeklyTss: ReturnType<typeof buildWeeklyTssSeries>;
 }) {
   const { fatigue, trainingLoad, pmcSeries, weeklyTss } = input;
@@ -204,7 +205,7 @@ function buildPopulatedEffortViewModel(input: {
   fatigue: NonNullable<Awaited<ReturnType<typeof getOrBuildAthleteSnapshot>>['fatigue']>;
   dailyStrain: Awaited<ReturnType<typeof getOrBuildAthleteSnapshot>>['dailyStrain'];
   trainingLoad: ReturnType<typeof computeTrainingLoad>;
-  pmcSeries: ReturnType<typeof slicePmcWindow>;
+  pmcSeries: PmcPoint[];
   weeklyTss: ReturnType<typeof buildWeeklyTssSeries>;
   dailyLoad: number;
   strainScore: number | null;

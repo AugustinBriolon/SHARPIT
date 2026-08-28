@@ -41,7 +41,7 @@ function toDate(value: string | Date): Date {
 }
 
 function toDateOrNull(value: string | Date | null | undefined): Date | null {
-  if (value === null) {
+  if ((value === undefined || value === null)) {
     return null;
   }
   return value instanceof Date ? value : new Date(value);
@@ -127,7 +127,7 @@ export async function fetchHealthEntries(
 export async function fetchBodyCompositionEntries(
   days?: number,
 ): Promise<ClientBodyCompositionEntry[]> {
-  const url = days !== null ? `/api/body-composition?days=${days}` : '/api/body-composition';
+  const url = (days !== undefined && days !== null) ? `/api/body-composition?days=${days}` : '/api/body-composition';
   const data = await fetchJson<Serialized<ClientBodyCompositionEntry>[]>(url);
   return data.map((entry) => ({
     ...entry,

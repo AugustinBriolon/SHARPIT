@@ -25,7 +25,7 @@ export function filterTravelsOverlappingRange<T extends TravelDateRange & { type
 ): T[] {
   const range = { startDate: rangeStart, endDate: rangeEnd };
   return contexts.filter((context) => {
-    if (context.type !== null && context.type !== 'TRAVEL') {
+    if ((context.type !== undefined && context.type !== null) && context.type !== 'TRAVEL') {
       return false;
     }
     return travelRangesOverlap(context, range);

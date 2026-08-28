@@ -53,7 +53,7 @@ export function rampChipLabel(acwr: number): string {
 
 /** Chip label for form / freshness from TSB — French first. */
 export function formChipLabel(tsb: number | null): string {
-  if (tsb === null) {
+  if ((tsb === undefined || tsb === null)) {
     return '—';
   }
   if (tsb <= -20) {
@@ -69,7 +69,7 @@ export function formChipLabel(tsb: number | null): string {
 }
 
 export function formChipTone(tsb: number | null): 'good' | 'warn' | 'neutral' {
-  if (tsb === null) {
+  if ((tsb === undefined || tsb === null)) {
     return 'neutral';
   }
   if (tsb < 0) {
@@ -97,7 +97,7 @@ export function tssGapToSweetSpotFloor(
   weeklyLoad: number,
   chronicWeeklyAvg: number | null,
 ): number | null {
-  if (chronicWeeklyAvg === null || chronicWeeklyAvg <= 0) {
+  if ((chronicWeeklyAvg === undefined || chronicWeeklyAvg === null) || chronicWeeklyAvg <= 0) {
     return null;
   }
   const target = Math.round(chronicWeeklyAvg * 0.9);
@@ -120,7 +120,7 @@ export function explainAcwr(input: {
   const gap = tssGapToSweetSpotFloor(weeklyLoad, chronicWeeklyAvg);
 
   if (zone === 'under') {
-    if (gap !== null && gap > 0 && chronicWeeklyAvg !== null) {
+    if ((gap !== undefined && gap !== null) && gap > 0 && (chronicWeeklyAvg !== undefined && chronicWeeklyAvg !== null)) {
       return `ACWR ${acwr.toFixed(2)} — ${weeklyLoad} TSS sur 7j vs base ${chronicWeeklyAvg} TSS/sem. Encore ≈${gap} TSS pour rejoindre le plancher du sweet spot (0.9).`;
     }
     return `ACWR ${acwr.toFixed(2)} — charge aiguë nettement sous la base chronique (sweet spot 0.9–1.3).`;
@@ -135,7 +135,7 @@ export function explainAcwr(input: {
 }
 
 export function explainTsb(tsb: number | null): string | null {
-  if (tsb === null) {
+  if ((tsb === undefined || tsb === null)) {
     return null;
   }
   if (tsb <= -20) {
@@ -173,17 +173,17 @@ function zoneFallbackReading(zone: ReturnType<typeof classifyAcwrZone>): string 
 }
 
 function plainMaintainUnderReading(gap: number | null, tsb: number | null): string {
-  if (tsb !== null && tsb < 0) {
+  if ((tsb !== undefined && tsb !== null) && tsb < 0) {
     return 'Sous-charge, mais la forme n’est pas encore revenue — on maintient pour laisser remonter.';
   }
-  if (gap !== null && gap > 0) {
+  if ((gap !== undefined && gap !== null) && gap > 0) {
     return `Sous-charge mesurée : encore ≈${gap} TSS pour rejoindre la zone utile, sans accélérer d’un coup.`;
   }
   return 'Charge sous la base : maintenir le niveau actuel plutôt que tout remonter d’un coup.';
 }
 
 function plainBuildUnderReading(gap: number | null): string {
-  if (gap !== null && gap > 0) {
+  if ((gap !== undefined && gap !== null) && gap > 0) {
     return `Marge claire : ≈${gap} TSS possibles avant le plancher de la zone utile.`;
   }
   return 'Charge sous la zone utile — la progression reste possible.';
@@ -224,10 +224,10 @@ type DetailedVerdictInput = {
 
 function detailedMaintainUnderReading(input: DetailedVerdictInput): string {
   const { acwr, gap, tsb } = input;
-  if (tsb !== null && tsb < 0) {
+  if ((tsb !== undefined && tsb !== null) && tsb < 0) {
     return `Sous-charge (ACWR ${acwr.toFixed(2)}) mais TSB ${tsb} : on ne force pas la remontée — on maintient pour laisser la forme remonter.`;
   }
-  if (gap !== null && gap > 0) {
+  if ((gap !== undefined && gap !== null) && gap > 0) {
     return `Sous-charge mesurée : ≈${gap} TSS manquent pour le sweet spot, mais la directive reste de maintenir — pas d’accélération brutale.`;
   }
   return `Charge sous la base (ACWR ${acwr.toFixed(2)}) : maintenir le niveau actuel plutôt que tout remonter d’un coup.`;
@@ -251,7 +251,7 @@ function detailedVerdictReading(input: DetailedVerdictInput): string | null {
 }
 
 function detailedBuildUnderReading(acwr: number, gap: number | null): string {
-  if (gap !== null && gap > 0) {
+  if ((gap !== undefined && gap !== null) && gap > 0) {
     return `Marge claire : ACWR ${acwr.toFixed(2)}, ≈${gap} TSS possibles avant le plancher du sweet spot.`;
   }
   return `ACWR ${acwr.toFixed(2)} sous le sweet spot — la charge peut progresser.`;

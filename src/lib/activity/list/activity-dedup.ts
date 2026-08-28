@@ -1,4 +1,4 @@
-import type { ActivityType } from '@prisma/client';
+import type { ActivityType, Prisma } from '@prisma/client';
 import { addHours, subHours } from 'date-fns';
 import { prisma } from '@/lib/prisma';
 
@@ -53,7 +53,7 @@ export function activitiesMatch(a: ActivityFingerprint, b: ActivityFingerprint):
     return false;
   }
 
-  if (a.duration === null || b.duration === null) {
+  if ((a.duration === undefined || a.duration === null) || (b.duration === undefined || b.duration === null)) {
     return timeDiff <= 6 * 60 * 1000;
   }
 
@@ -71,7 +71,7 @@ async function findByExternalId(
   excludeId?: string,
 ): Promise<MatchedActivity | null> {
   const match = await prisma.activity.findUnique({
-    where: { [field]: value },
+    where: { [field]: value } as unknown as Prisma.ActivityWhereUniqueInput,
     select: matchSelect,
   });
   if (!match || match.id === excludeId) {

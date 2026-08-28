@@ -53,14 +53,14 @@ export function useThreadScrubber({
         return;
       }
       pending.current = index;
-      if (frame.current !== null) {
+      if ((frame.current !== undefined && frame.current !== null)) {
         return;
       }
       frame.current = requestAnimationFrame(() => {
         frame.current = null;
         const next = pending.current;
         pending.current = null;
-        if (next !== null) {
+        if ((next !== undefined && next !== null)) {
           onChange(next);
         }
       });
@@ -70,7 +70,7 @@ export function useThreadScrubber({
 
   useEffect(() => {
     return () => {
-      if (frame.current !== null) {
+      if ((frame.current !== undefined && frame.current !== null)) {
         cancelAnimationFrame(frame.current);
       }
     };
@@ -79,7 +79,7 @@ export function useThreadScrubber({
   const onPointerDown = useCallback(
     (event: React.PointerEvent<HTMLDivElement>) => {
       const index = indexFromClientX(event.clientX);
-      if (index === null) {
+      if ((index === undefined || index === null)) {
         return;
       }
       setDragging(true);
@@ -95,7 +95,7 @@ export function useThreadScrubber({
         return;
       }
       const index = indexFromClientX(event.clientX);
-      if (index !== null) {
+      if ((index !== undefined && index !== null)) {
         schedule(index);
       }
     },

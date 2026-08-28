@@ -38,7 +38,7 @@ function assessCompleteness(
   records: readonly EnvironmentalObservationRecord[],
 ): EnvironmentalDataCompleteness {
   const weather = extractWeatherFromRecords(records);
-  const present = CORE_WEATHER_FIELDS.filter((f) => weather[f] !== null).length;
+  const present = CORE_WEATHER_FIELDS.filter((f) => (weather[f] !== undefined && weather[f] !== null)).length;
   if (present === 0) {
     return records.length === 0 ? 'NONE' : 'MINIMAL';
   }
@@ -70,7 +70,7 @@ function providerIdsFromRecords(
     ...new Set(
       activeRecords(records)
         .map((r) => r.providerId)
-        .filter((id): id is EnvironmentalProviderId => id !== null),
+        .filter((id): id is EnvironmentalProviderId => (id !== undefined && id !== null)),
     ),
   ];
 }

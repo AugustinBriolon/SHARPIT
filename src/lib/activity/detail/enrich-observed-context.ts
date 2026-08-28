@@ -161,10 +161,10 @@ function detectObservedLocationDelta(input: {
   hadObservedLocation: boolean;
   observed: Awaited<ReturnType<typeof backfillActivityObservedLocation>>;
 }) {
-  const locationNew = !input.hadObservedLocation && input.observed !== null;
+  const locationNew = !input.hadObservedLocation && (input.observed !== undefined && input.observed !== null);
   const locationCorrected =
-    input.observed !== null &&
-    input.priorCoords !== null &&
+    (input.observed !== undefined && input.observed !== null) &&
+    (input.priorCoords !== undefined && input.priorCoords !== null) &&
     (Math.abs(input.priorCoords.latitude - input.observed.latitude) > 0.0005 ||
       Math.abs(input.priorCoords.longitude - input.observed.longitude) > 0.0005);
   return { locationNew, locationCorrected };
@@ -174,7 +174,7 @@ function readPriorObservedCoords(activity: {
   observedLocationLat: number | null;
   observedLocationLng: number | null;
 }) {
-  if (activity.observedLocationLat === null || activity.observedLocationLng === null) {
+  if ((activity.observedLocationLat === undefined || activity.observedLocationLat === null) || (activity.observedLocationLng === undefined || activity.observedLocationLng === null)) {
     return null;
   }
   return {
@@ -191,7 +191,7 @@ function shouldRefreshOutdoorWeather(input: {
 }) {
   return (
     (needsWeatherEnrichment(input.weather) || input.locationCorrected || input.locationNew) &&
-    input.observed !== null
+    (input.observed !== undefined && input.observed !== null)
   );
 }
 
@@ -220,7 +220,7 @@ async function enrichTodayOutdoorActivity(input: {
   });
 
   let weatherUpdated = false;
-  if (shouldRefreshOutdoorWeather({ weather: input.activity.weather, locationCorrected, locationNew, observed })) {
+  if (shouldRefreshOutdoorWeather({ weather: input.activity.weather, locationCorrected, locationNew, observed }) && observed) {
     weatherUpdated = await updateOutdoorWeatherSnapshot({
       prisma: input.prisma,
       athleteId: input.athleteId,

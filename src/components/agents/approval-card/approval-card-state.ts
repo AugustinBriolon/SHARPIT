@@ -1,4 +1,5 @@
 import type { ApprovalCardAnswer, ApprovalCardAnswers, ApprovalCardProps } from './types';
+import type { ApprovalCardStatus } from './types';
 import { getApprovalStatusLabel } from './approval-card-status';
 import { approvalCardCopy } from './copy';
 import { isAnswered } from './approval-card-parts';
@@ -23,8 +24,8 @@ export function deriveApprovalCardView(props: {
   currentStep: number;
   disabled: boolean;
   questions: NonNullable<ApprovalCardProps['questions']>;
-  status: ApprovalCardProps['status'];
-  title?: string;
+  status: ApprovalCardStatus;
+  title?: ApprovalCardProps['title'];
 }) {
   const { answers, currentStep, disabled, questions, status, title } = props;
   const question = questions[currentStep];

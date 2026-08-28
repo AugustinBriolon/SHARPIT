@@ -60,7 +60,7 @@ function limiterFromDescription(
   description: LimitingFactor['description'] | DecisionData['limitingFactor']['description'],
 ): string | null {
   const raw = description?.params?.limiter;
-  if (raw === null) {
+  if ((raw === undefined || raw === null)) {
     return null;
   }
   return LIMITER_LABEL[String(raw)] ?? String(raw);

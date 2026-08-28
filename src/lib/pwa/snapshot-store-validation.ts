@@ -33,7 +33,7 @@ export type SnapshotValidationResult =
   { readonly valid: true } | { readonly valid: false; readonly reason: SnapshotInvalidReason };
 
 function isPersistedEntryRecord(entry: unknown): entry is Record<string, unknown> {
-  return typeof entry === 'object' && entry !== null;
+  return typeof entry === 'object' && (entry !== undefined && entry !== null);
 }
 
 function hasPersistedEntryShape(entry: unknown): entry is PersistedSnapshotEntry {
@@ -44,7 +44,7 @@ function hasPersistedEntryShape(entry: unknown): entry is PersistedSnapshotEntry
     typeof entry.schemaVersion === 'number' &&
     typeof entry.ownerKey === 'string' &&
     typeof entry.snapshot === 'object' &&
-    entry.snapshot !== null &&
+    (entry.snapshot !== undefined && entry.snapshot !== null) &&
     typeof entry.generatedAt === 'string' &&
     typeof entry.freshnessComputedAt === 'string' &&
     typeof entry.cachedAt === 'string'

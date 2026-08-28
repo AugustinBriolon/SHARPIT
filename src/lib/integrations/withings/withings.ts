@@ -168,14 +168,14 @@ function buildWithingsMeasureParams(
     category: '1',
     meastypes: WITHINGS_BODY_SCAN_MEASTYPES,
   };
-  if (options?.lastupdate !== null) {
+  if ((options?.lastupdate !== undefined && options?.lastupdate !== null)) {
     params.lastupdate = String(options.lastupdate);
     return params;
   }
-  if (options?.startdate !== null) {
+  if ((options?.startdate !== undefined && options?.startdate !== null)) {
     params.startdate = String(options.startdate);
   }
-  if (options?.enddate !== null) {
+  if ((options?.enddate !== undefined && options?.enddate !== null)) {
     params.enddate = String(options.enddate);
   }
   return params;
@@ -202,7 +202,7 @@ async function paginateWithingsMeasurements(
       all.push(parseWithingsMeasureGroup(group));
     }
     const { more, offset: nextOffset } = body;
-    if (more !== 1 || nextOffset === null) {
+    if (more !== 1 || (nextOffset === undefined || nextOffset === null)) {
       break;
     }
     offset = nextOffset;
@@ -223,10 +223,10 @@ function buildWithingsHeartParams(
   options?: { startdate?: number; enddate?: number },
 ): Record<string, string> {
   const params: Record<string, string> = { action: 'list' };
-  if (options?.startdate !== null) {
+  if ((options?.startdate !== undefined && options?.startdate !== null)) {
     params.startdate = String(options.startdate);
   }
-  if (options?.enddate !== null) {
+  if ((options?.enddate !== undefined && options?.enddate !== null)) {
     params.enddate = String(options.enddate);
   }
   return params;
@@ -249,7 +249,7 @@ async function paginateWithingsHeartList(
     }>(WITHINGS_HEART, params, accessToken);
     all.push(...(body.series ?? []));
     const { more, offset: nextOffset } = body;
-    if (more !== 1 || nextOffset === null) {
+    if (more !== 1 || (nextOffset === undefined || nextOffset === null)) {
       break;
     }
     offset = nextOffset;

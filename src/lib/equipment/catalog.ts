@@ -242,7 +242,7 @@ export function catalogItemsForSport(
     if (!item.requiresStrengthVenue) {
       return true;
     }
-    if (strengthVenue === null) {
+    if ((strengthVenue === undefined || strengthVenue === null)) {
       return false;
     }
     return item.requiresStrengthVenue.includes(strengthVenue as 'home' | 'both');

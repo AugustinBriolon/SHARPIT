@@ -128,7 +128,7 @@ export function buildProgressionSummary(
 
   const headline = status?.label ?? adaptation.adaptationStatus;
   const index =
-    adaptation.adaptationIndex !== null ? ` · indice ${adaptation.adaptationIndex}` : '';
+    (adaptation.adaptationIndex !== undefined && adaptation.adaptationIndex !== null) ? ` · indice ${adaptation.adaptationIndex}` : '';
   const load = weeklyLoad > 0 ? `${weeklyLoad} TSS cette semaine` : null;
 
   return {

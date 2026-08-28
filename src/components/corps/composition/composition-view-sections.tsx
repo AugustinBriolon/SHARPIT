@@ -8,6 +8,7 @@ import {
   type TrendWindowId,
 } from '@/components/corps/composition/composition-view-parts';
 import { SkeletonDataValue } from '@/components/ui/skeleton-data-value';
+import type { BodyChartPoint } from '@/core/presentation/body-view-model';
 import type { CompositionMetricId } from '@/lib/health/composition-metric-guides';
 import { cn } from '@/lib/utils';
 import type { useBodyPresentationViewModel } from '@/hooks/use-presentation-view-model';
@@ -131,7 +132,7 @@ export function CompositionMobileSections({
   valuesLoading,
   vm,
 }: {
-  chartData: { date: string; weightKg: number | null }[];
+  chartData: BodyChartPoint[];
   chartEmptyInWindow: boolean;
   selectedWindow: (typeof TREND_WINDOWS)[number];
   setExplainMetricId: (id: CompositionMetricId) => void;

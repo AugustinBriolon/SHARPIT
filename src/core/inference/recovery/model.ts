@@ -53,7 +53,7 @@ import { applyWearableEnergyCorroboration } from './wearable-energy';
 // ─────────────────────────────────────────────────────────────────────────────
 
 function classifyAutonomicBalance(score: number | null): RecoverySignals['autonomicBalance'] {
-  if (score === null) {
+  if ((score === undefined || score === null)) {
     return 'SUPPRESSED';
   } // treat unknown as suppressed (conservative)
   if (score >= 85) {
@@ -72,7 +72,7 @@ function classifyAutonomicBalance(score: number | null): RecoverySignals['autono
 }
 
 function classifySleepAdequacy(score: number | null): RecoverySignals['sleepAdequacy'] {
-  if (score === null) {
+  if ((score === undefined || score === null)) {
     return 'INSUFFICIENT';
   }
   if (score >= 90) {
@@ -88,7 +88,7 @@ function classifySleepAdequacy(score: number | null): RecoverySignals['sleepAdeq
 }
 
 function classifySubjectiveWellness(score: number | null): RecoverySignals['subjectiveWellness'] {
-  if (score === null) {
+  if ((score === undefined || score === null)) {
     return 'NORMAL';
   } // unknown = neutral
   if (score >= 75) {
@@ -104,7 +104,7 @@ function classifySubjectiveWellness(score: number | null): RecoverySignals['subj
 }
 
 function classifyLoadContext(score: number | null): RecoverySignals['loadStressContext'] {
-  if (score === null) {
+  if ((score === undefined || score === null)) {
     return 'OPTIMAL';
   }
   if (score >= 85) {
@@ -128,7 +128,7 @@ function computeOverreachingRisk(
   subjective: number | null,
   loadContext: number | null,
 ): OverreachingRisk {
-  const scores = [autonomic, sleep, subjective, loadContext].filter((s): s is number => s !== null);
+  const scores = [autonomic, sleep, subjective, loadContext].filter((s): s is number => (s !== undefined && s !== null));
 
   // CRITICAL: 3+ dimensions < 30 (OTS territory — Meeusen et al. 2013)
   if (scores.filter((s) => s < 30).length >= 3) {
@@ -136,12 +136,12 @@ function computeOverreachingRisk(
   }
 
   // HIGH: autonomic < 30 AND sleep < 40 simultaneously (autonomic + sleep crisis)
-  if (autonomic !== null && autonomic < 30 && sleep !== null && sleep < 40) {
+  if ((autonomic !== undefined && autonomic !== null) && autonomic < 30 && (sleep !== undefined && sleep !== null) && sleep < 40) {
     return 'HIGH';
   }
 
   // MODERATE: any 2 primary dimensions < 45
-  const primaryScores = [autonomic, sleep, subjective].filter((s): s is number => s !== null);
+  const primaryScores = [autonomic, sleep, subjective].filter((s): s is number => (s !== undefined && s !== null));
   if (primaryScores.filter((s) => s < 45).length >= 2) {
     return 'MODERATE';
   }
@@ -156,8 +156,8 @@ function illnessRiskFromHrvDrop(
 ): IllnessRisk | null {
   if (
     hrvDeltaFromBaseline < -30 &&
-    acuteLoad !== null &&
-    chronicLoad !== null &&
+    (acuteLoad !== undefined && acuteLoad !== null) &&
+    (chronicLoad !== undefined && chronicLoad !== null) &&
     acuteLoad < chronicLoad * 0.7
   ) {
     return 'HIGH';
@@ -173,7 +173,7 @@ function computeIllnessRisk(
   load: LoadFeatureSet | 'PENDING',
 ): IllnessRisk {
   const { hrvDeltaFromBaseline } = recovery;
-  if (hrvDeltaFromBaseline === null) {
+  if ((hrvDeltaFromBaseline === undefined || hrvDeltaFromBaseline === null)) {
     return 'LOW';
   }
 
@@ -187,7 +187,7 @@ function computeIllnessRisk(
 // ─────────────────────────────────────────────────────────────────────────────
 
 function mapScoreToCategory(score: number | null, availableCount: number): ReadinessCategory {
-  if (score === null) {
+  if ((score === undefined || score === null)) {
     return availableCount === 0 ? 'INSUFFICIENT_DATA' : 'BASELINE_PENDING';
   }
   if (score >= 85) {
@@ -212,7 +212,7 @@ function capScoreForHighIllnessRisk(
   if (illnessRisk !== 'HIGH') {
     return finalScore;
   }
-  if (finalScore === null) {
+  if ((finalScore === undefined || finalScore === null)) {
     return 25;
   }
   return Math.min(finalScore, 25);
@@ -244,14 +244,14 @@ function findPrimaryLimitingFactor(scores: {
   loadContext: number | null;
 }): DimensionKey | null {
   const entries = Object.entries(scores) as Array<[DimensionKey, number | null]>;
-  const available = entries.filter(([, s]) => s !== null);
+  const available = entries.filter(([, s]) => (s !== undefined && s !== null));
   if (available.length === 0) {
     return null;
   }
 
   return available.reduce((lowest, [key, score]) => {
     const lowestScore = scores[lowest];
-    return score !== null && (lowestScore === null || score < (lowestScore ?? Infinity))
+    return (score !== undefined && score !== null) && ((lowestScore === undefined || lowestScore === null) || score < (lowestScore ?? Infinity))
       ? key
       : lowest;
   }, available[0][0]);
@@ -373,7 +373,7 @@ function makeRecommendation(
   confidence: number,
 ): RecoveryRecommendation {
   const keyEvidence: I18nItem[] = [];
-  if (score !== null) {
+  if ((score !== undefined && score !== null)) {
     keyEvidence.push({ code: 'recovery.evidence.score', params: { score } });
   }
   keyEvidence.push(...decision.rationale.slice(0, 2));
@@ -390,7 +390,7 @@ function makeRecommendation(
 // ─────────────────────────────────────────────────────────────────────────────
 
 function estimateTimeToFullRecovery(score: number | null): number | null {
-  if (score === null || score >= 70) {
+  if ((score === undefined || score === null) || score >= 70) {
     return null;
   } // already recovered
   return Math.ceil((70 - score) / 10); // rough: ~1 day per 10 points below threshold
@@ -413,11 +413,11 @@ function resolveDissonanceType(
   sleepScore: number | null,
   subjectiveScore: number | null,
 ): 'OBJECTIVE_POOR_SUBJECTIVE_GOOD' | 'OBJECTIVE_GOOD_SUBJECTIVE_POOR' | 'NONE' {
-  if (!dissonanceDetected || autonomicScore === null || subjectiveScore === null) {
+  if (!dissonanceDetected || (autonomicScore === undefined || autonomicScore === null) || (subjectiveScore === undefined || subjectiveScore === null)) {
     return 'NONE';
   }
 
-  const objectiveScores = [autonomicScore, sleepScore].filter((s): s is number => s !== null);
+  const objectiveScores = [autonomicScore, sleepScore].filter((s): s is number => (s !== undefined && s !== null));
   const objectiveAvg = objectiveScores.reduce((a, b) => a + b, 0) / objectiveScores.length;
   return objectiveAvg > subjectiveScore
     ? 'OBJECTIVE_GOOD_SUBJECTIVE_POOR'
@@ -428,7 +428,7 @@ function applyDissonanceScoreAdjustment(
   score: number | null,
   dissonanceType: 'OBJECTIVE_POOR_SUBJECTIVE_GOOD' | 'OBJECTIVE_GOOD_SUBJECTIVE_POOR' | 'NONE',
 ): number | null {
-  if (score === null || dissonanceType !== 'OBJECTIVE_POOR_SUBJECTIVE_GOOD') {
+  if ((score === undefined || score === null) || dissonanceType !== 'OBJECTIVE_POOR_SUBJECTIVE_GOOD') {
     return score;
   }
   return Math.round(score * 0.9);

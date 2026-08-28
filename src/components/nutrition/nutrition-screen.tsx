@@ -38,7 +38,7 @@ function isNutritionDisconnected(
   valuesLoading: boolean,
   viewModel: ReturnType<typeof useNutritionViewModel>['data'] | null,
 ): boolean {
-  return !valuesLoading && viewModel !== null && !viewModel.connected;
+  return !valuesLoading && viewModel !== undefined && viewModel !== null && !viewModel.connected;
 }
 
 function nutritionViewDefaults(viewModel: ReturnType<typeof useNutritionViewModel>['data'] | null) {

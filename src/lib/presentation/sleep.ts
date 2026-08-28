@@ -6,8 +6,10 @@ import {
   buildDailyWindowSeries,
   getIndexedHealthEntry,
   indexHealthEntriesByDay,
+  effectiveSleepMinutes,
 } from '@/lib/health/health';
-import { effectiveSleepMinutes } from '@/lib/health/health';
+
+type DailyHealthRow = Awaited<ReturnType<typeof getHealthEntries>>[number];
 import { analyzeSleep, toSleepEntryInputs } from '@/lib/sleep/sleep';
 import {
   buildSleepScoreBreakdown,
@@ -90,7 +92,7 @@ export function resolveSleepNightStatus(
   totalSleepMin: number | null,
   liveDayId: string = format(new Date(), 'yyyy-MM-dd'),
 ): SleepNightStatus {
-  if (totalSleepMin !== null && totalSleepMin > 0) {
+  if ((totalSleepMin !== undefined && totalSleepMin !== null) && totalSleepMin > 0) {
     return 'present';
   }
   return trainingDayId === liveDayId ? 'pending' : 'missing';
@@ -114,17 +116,17 @@ function computeAwakeMinutes(input: {
   deepMin: number | null;
   remMin: number | null;
   lightMin: number | null;
-  todayEntry: ReturnType<typeof getIndexedHealthEntry>;
+  todayEntry: DailyHealthRow | null;
 }): number | null {
   const { totalSleepMin, deepMin, remMin, lightMin, todayEntry } = input;
-  if (totalSleepMin !== null && deepMin !== null && remMin !== null && lightMin !== null) {
+  if ((totalSleepMin !== undefined && totalSleepMin !== null) && (deepMin !== undefined && deepMin !== null) && (remMin !== undefined && remMin !== null) && (lightMin !== undefined && lightMin !== null)) {
     return Math.max(0, totalSleepMin - deepMin - remMin - lightMin);
   }
   return todayEntry?.sleepAwakeMin ?? null;
 }
 
 function computeSleepTrendStats(input: {
-  healthByDay: ReturnType<typeof indexHealthEntriesByDay>;
+  healthByDay: Map<string, DailyHealthRow>;
   refDate: Date;
   nightPresent: boolean;
   totalSleepMin: number | null;
@@ -141,7 +143,7 @@ function computeSleepTrendStats(input: {
       return e ? effectiveSleepMinutes(e) : null;
     },
     refDate,
-  ).filter((value): value is number => value !== null);
+  ).filter((value): value is number => (value !== undefined && value !== null));
 
   const avgSleepMinutes7d =
     last7Sleep.length > 0
@@ -149,11 +151,11 @@ function computeSleepTrendStats(input: {
       : null;
 
   const sleepDelta7d =
-    nightPresent && totalSleepMin !== null && avgSleepMinutes7d !== null
+    nightPresent && (totalSleepMin !== undefined && totalSleepMin !== null) && (avgSleepMinutes7d !== undefined && avgSleepMinutes7d !== null)
       ? totalSleepMin - avgSleepMinutes7d
       : null;
   const targetDeltaMin =
-    nightPresent && totalSleepMin !== null ? totalSleepMin - sleepTargetMin : null;
+    nightPresent && (totalSleepMin !== undefined && totalSleepMin !== null) ? totalSleepMin - sleepTargetMin : null;
 
   return { sleepDelta7d, targetDeltaMin, avgSleepMinutes7d };
 }
@@ -165,11 +167,11 @@ function buildSleepRecoveryNote(input: {
   sleepScore: number | null;
 }): string | null {
   const { nightPresent, recovery, autonomicScore, sleepScore } = input;
-  if (!nightPresent || recovery.readinessScore === null) {
+  if (!nightPresent || (recovery.readinessScore === undefined || recovery.readinessScore === null)) {
     return null;
   }
   const recoverySignal = mapRecoveryToSignal(recovery.readinessCategory as ReadinessCategory);
-  if (autonomicScore !== null && sleepScore !== null && autonomicScore > sleepScore) {
+  if ((autonomicScore !== undefined && autonomicScore !== null) && (sleepScore !== undefined && sleepScore !== null) && autonomicScore > sleepScore) {
     return `Récupération ${recovery.readinessScore}/100 (${recoverySignal.label.toLowerCase()}) — la VFC compense partiellement le sommeil.`;
   }
   if (recovery.primaryLimitingFactor === 'sleep') {
@@ -179,7 +181,7 @@ function buildSleepRecoveryNote(input: {
 }
 
 function buildSleepBarData(
-  healthByDay: ReturnType<typeof indexHealthEntriesByDay>,
+  healthByDay: Map<string, DailyHealthRow>,
   refDate: Date,
   sleepTargetMin: number,
 ) {
@@ -189,7 +191,7 @@ function buildSleepBarData(
     (d, e) => {
       const mins = e?.sleepMinutes ?? null;
       let fill = 'var(--muted-foreground)';
-      if (mins !== null) {
+      if ((mins !== undefined && mins !== null)) {
         fill = mins >= sleepTargetMin ? 'var(--color-signal-base)' : 'var(--color-signal-caution)';
       }
       return { date: format(d, 'dd/MM', { locale: fr }), minutes: mins, fill };
@@ -198,7 +200,7 @@ function buildSleepBarData(
   );
 }
 
-function readSleepPhaseMinutes(todayEntry: ReturnType<typeof getIndexedHealthEntry>) {
+function readSleepPhaseMinutes(todayEntry: DailyHealthRow | null) {
   return {
     deepMin: todayEntry?.sleepDeepMin ?? null,
     remMin: todayEntry?.sleepRemMin ?? null,

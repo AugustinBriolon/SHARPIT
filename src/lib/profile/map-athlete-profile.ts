@@ -34,7 +34,7 @@ type ProfileRow = {
 };
 
 function toIsoOrNull(value: Date | string | null | undefined): string | null {
-  if (value === null) {
+  if ((value === undefined || value === null)) {
     return null;
   }
   if (typeof value === 'string') {
@@ -78,5 +78,5 @@ export function mapAthleteProfileToFormData(
 export function shouldHydrateProfileForm(
   initial: AthleteProfileFormData | null | undefined,
 ): initial is AthleteProfileFormData {
-  return initial !== null;
+  return (initial !== undefined && initial !== null);
 }

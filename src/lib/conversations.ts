@@ -9,7 +9,7 @@ const bootstrapConversationIds = new Map<string, { id: string; createdAtMs: numb
 function extractTextFromUserMessage(message: unknown): string | null {
   if (
     typeof message !== 'object' ||
-    message === null ||
+    (message === undefined || message === null) ||
     (message as { role?: string }).role !== 'user'
   ) {
     return null;
@@ -22,7 +22,7 @@ function extractTextFromUserMessage(message: unknown): string | null {
     .filter(
       (p): p is { type: 'text'; text: string } =>
         typeof p === 'object' &&
-        p !== null &&
+        (p !== undefined && p !== null) &&
         (p as { type?: string }).type === 'text' &&
         typeof (p as { text?: unknown }).text === 'string',
     )

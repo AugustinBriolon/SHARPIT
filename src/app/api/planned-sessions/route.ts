@@ -3,6 +3,7 @@ import { defaultExposureForActivityType } from '@/core/planned-session/defaults'
 import { pushSessionToGoogle } from '@/lib/integrations/google/google-sync';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { createPlannedSession, getPlannedSessionById, getPlannedSessions } from '@/lib/queries';
+import type { PlannedSession } from '@prisma/client';
 import { refreshAndPersistPlannedSessionContext } from '@/lib/planned-session/resolve-context';
 import { createPlannedSessionSchema } from '@/lib/validators/planned-session';
 import { findCoachingDecisionById, recordDecisionAction } from '@/lib/decision-memory/repository';
@@ -31,7 +32,7 @@ async function recordAcceptedDecision(athleteId: string, decisionId: string, ses
   }
 }
 
-async function runPlannedSessionSideEffects(athleteId: string, session: { id: string }) {
+async function runPlannedSessionSideEffects(athleteId: string, session: PlannedSession) {
   await Promise.all([
     refreshAndPersistPlannedSessionContext(athleteId, session.id).catch((ctxError) => {
       console.error('[planned-sessions/context]', ctxError);

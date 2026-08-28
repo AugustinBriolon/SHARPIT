@@ -28,10 +28,10 @@ export function buildPlanningDays(week: ReturnType<typeof resolvePlanningWeek>) 
   });
 }
 
-export function resolvePlanWeekForStart(
-  plan: { weeks: Array<{ weekStart: string | Date }> } | null | undefined,
+export function resolvePlanWeekForStart<T extends { weekStart: string | Date }>(
+  plan: { weeks: T[] } | null | undefined,
   weekStart: Date,
-) {
+): T | undefined {
   if (!plan?.weeks) {
     return undefined;
   }

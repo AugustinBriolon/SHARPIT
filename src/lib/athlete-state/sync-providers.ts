@@ -50,7 +50,7 @@ export async function syncProviders(
     }),
   );
 
-  return settled.filter((r): r is ProviderSyncResult => r !== null);
+  return settled.filter((r): r is ProviderSyncResult => (r !== undefined && r !== null));
 }
 
 async function syncGarminProvider(athleteId: string): Promise<ProviderSyncResult | null> {

@@ -7,12 +7,12 @@ function buildTrainingReadinessInsight(input: RecoveryInsightInput): ProductInsi
     title: "Intensité réaliste aujourd'hui",
     summary: input.recommendedIntensityLabel,
     explanation:
-      input.limitingFactorLabel !== null
+      (input.limitingFactorLabel !== undefined && input.limitingFactorLabel !== null)
         ? `Le facteur limitant principal est ${input.limitingFactorLabel.toLowerCase()}.`
         : "Le niveau de récupération du jour guide l'intensité la plus réaliste.",
     evidence: input.rationale,
     confidence: input.confidence,
-    importance: input.readinessScore !== null && input.readinessScore < 50 ? 'CRITICAL' : 'HIGH',
+    importance: (input.readinessScore !== undefined && input.readinessScore !== null) && input.readinessScore < 50 ? 'CRITICAL' : 'HIGH',
     decisionImpact: 'TRAINING_TODAY',
     relatedDimensions: ['RECOVERY', 'REASONING'],
   };
@@ -97,7 +97,7 @@ function collectRecoveryInsights(input: RecoveryInsightInput) {
   const supporting = [buildMainDriverInsight(input)];
   const contextual: ProductInsight[] = [];
 
-  if (input.estimatedRecoveryDays !== null && input.estimatedRecoveryDays > 0) {
+  if ((input.estimatedRecoveryDays !== undefined && input.estimatedRecoveryDays !== null) && input.estimatedRecoveryDays > 0) {
     supporting.push(buildRecoveryWindowInsight(input));
   }
   if (input.dissonanceDetected) {

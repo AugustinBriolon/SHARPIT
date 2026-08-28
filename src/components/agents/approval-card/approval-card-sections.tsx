@@ -122,7 +122,7 @@ export function ApprovalCardStaticContent({
 }: {
   archived: boolean;
   children?: ApprovalCardProps['children'];
-  description?: string;
+  description?: ApprovalCardProps['description'];
   questionMode: boolean;
 }) {
   return (
@@ -163,17 +163,17 @@ export function ApprovalCardFooter({
   archived: boolean;
   interactive: boolean;
   questionMode: boolean;
-  result?: string;
+  result?: ApprovalCardProps['result'];
   statusLabel: string;
-  approveLabel: string;
+  approveLabel: ApprovalCardProps['approveLabel'];
   approveTone: ApprovalCardProps['approveTone'];
-  consequence?: string;
+  consequence?: ApprovalCardProps['consequence'];
   controlsDisabled: boolean;
   onApprove?: () => void;
   onReject?: () => void;
   onRequestChanges?: () => void;
-  rejectLabel: string;
-  requestChangesLabel: string;
+  rejectLabel: ApprovalCardProps['rejectLabel'];
+  requestChangesLabel: ApprovalCardProps['requestChangesLabel'];
 }) {
   return (
     <>

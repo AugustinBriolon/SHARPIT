@@ -71,7 +71,7 @@ export const SLEEP_TREND: Record<string, { label: string; arrow: string; colorCl
 };
 
 export function formatSleepDuration(minutes: number | null): string {
-  if (minutes === null) {
+  if ((minutes === undefined || minutes === null)) {
     return '—';
   }
   const h = Math.floor(minutes / 60);

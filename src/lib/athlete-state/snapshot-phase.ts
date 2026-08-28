@@ -68,7 +68,7 @@ function recommendationAvailableForDecision(decision: TodayState['decision']): b
 }
 
 function dailyStrainAvailableForState(dailyStrain: TodayState['dailyStrain']): boolean {
-  return Boolean(dailyStrain?.available && dailyStrain.strainScore !== null);
+  return Boolean(dailyStrain?.available && (dailyStrain.strainScore !== undefined && dailyStrain.strainScore !== null));
 }
 
 function minutesSinceLastActivity(
@@ -121,7 +121,7 @@ function buildEveningNarrativeContext(
   return {
     effortLevel: effort?.level ?? null,
     totalDurationMin:
-      effort?.totalDurationSec !== null ? Math.round(effort.totalDurationSec / 60) : null,
+      (effort?.totalDurationSec !== undefined && effort?.totalDurationSec !== null) ? Math.round(effort.totalDurationSec / 60) : null,
     completedSessionCount: resolution.signals.completedSessionCount,
     tomorrowSession: pickTomorrowSessionHint(refDate, plannedSessions),
     sleep: {

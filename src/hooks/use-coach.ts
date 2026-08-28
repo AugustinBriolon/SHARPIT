@@ -80,7 +80,7 @@ export type CoachGenerationProgress = {
 };
 
 function countPartialItems(value: unknown, key: 'sessions' | 'changes'): number {
-  if (typeof value !== 'object' || value === null) {
+  if (typeof value !== 'object' || (value === undefined || value === null)) {
     return 0;
   }
   const list = (value as Record<string, unknown>)[key];

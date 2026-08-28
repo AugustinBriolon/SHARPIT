@@ -72,15 +72,15 @@ function evaluateCategory(
 
   const complianceScores = evaluated
     .map((e) => e.outcome.executionMatch?.complianceScore)
-    .filter((v): v is number => v !== null);
+    .filter((v): v is number => (v !== undefined && v !== null));
   const verdicts = evaluated
     .map((e) => e.outcome.executionMatch?.verdict)
-    .filter((v): v is NonNullable<typeof v> => v !== null);
+    .filter((v): v is NonNullable<typeof v> => (v !== undefined && v !== null));
   const avgCompliance = mean(complianceScores);
   const modalVerdict = mode(verdicts);
 
   if (
-    avgCompliance !== null &&
+    (avgCompliance !== undefined && avgCompliance !== null) &&
     avgCompliance < HARDER_COMPLIANCE_THRESHOLD &&
     modalVerdict === 'HARDER'
   ) {
@@ -89,19 +89,19 @@ function evaluateCategory(
 
   const recoveryResponses = evaluated
     .map((e) => e.outcome.shortTermRecoveryResponse)
-    .filter((r): r is NonNullable<typeof r> => r !== null);
+    .filter((r): r is NonNullable<typeof r> => (r !== undefined && r !== null));
   if (recoveryResponses.length >= MIN_SAMPLES) {
     const deltas = recoveryResponses
       .map((r) => {
-        const readings = r.readinessValues.filter((v): v is number => v !== null);
+        const readings = r.readinessValues.filter((v): v is number => (v !== undefined && v !== null));
         if (readings.length < 2) {
           return null;
         }
         return readings[readings.length - 1] - readings[0];
       })
-      .filter((d): d is number => d !== null);
+      .filter((d): d is number => (d !== undefined && d !== null));
     const avgDelta = mean(deltas);
-    if (avgDelta !== null && avgDelta >= -5) {
+    if ((avgDelta !== undefined && avgDelta !== null) && avgDelta >= -5) {
       return {
         kind: 'RECOVERED_WITHIN_EXPECTED_WINDOW',
         type,

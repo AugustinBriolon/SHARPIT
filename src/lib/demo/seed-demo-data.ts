@@ -112,7 +112,7 @@ function buildGpsStream({
     data.heartrate.push(Math.round(baseHr + 8 * Math.sin(progress * Math.PI * 6)));
     data.cadence.push(Math.round(baseCadence + 3 * Math.sin(progress * Math.PI * 5)));
     data.velocity.push(Math.round((distanceM / durationSec) * 10) / 10);
-    if (baseWatts !== null) {
+    if ((baseWatts !== undefined && baseWatts !== null)) {
       data.watts.push(Math.round(baseWatts + 15 * Math.sin(progress * Math.PI * 7)));
     }
   }
@@ -752,7 +752,7 @@ export async function ensureDemoSeedFresh(prisma: PrismaClient): Promise<boolean
   ]);
 
   const healthStale =
-    latestHealth === null || startOfDay(latestHealth.date).getTime() !== today.getTime();
+    (latestHealth === undefined || latestHealth === null) || startOfDay(latestHealth.date).getTime() !== today.getTime();
   const needsReseed = !garmin || !renpho || healthStale || goalCount !== 1;
 
   if (needsReseed) {

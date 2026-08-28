@@ -116,7 +116,7 @@ export type AthleteSnapshotEnvelope = {
 
 export function snapshotHasDisplayableContent(snapshot: AthleteSnapshot): boolean {
   const hasRecoverySignal =
-    snapshot.recovery?.readinessScore !== null &&
+    (snapshot.recovery?.readinessScore !== undefined && snapshot.recovery?.readinessScore !== null) &&
     snapshot.recovery.readinessCategory !== 'INSUFFICIENT_DATA';
 
   return (

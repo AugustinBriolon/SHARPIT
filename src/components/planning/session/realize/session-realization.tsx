@@ -11,7 +11,10 @@ import { LinkAnalysisStatus } from '@/components/planning/session/link-analysis-
 import { formatActivityMatchLabel } from '@/lib/planned-session/linking/session-link-match-score';
 import { HeartPulse, Link2, Unlink } from 'lucide-react';
 import Link from 'next/link';
-import { PhysicalReassessmentCard } from '@/components/planning/session/realize/physical-reassessment-card';
+import {
+  PhysicalReassessmentCard,
+  type PhysicalReassessment,
+} from '@/components/planning/session/realize/physical-reassessment-card';
 import type { useSessionAnalysisPoll } from '@/components/planning/session/realize/use-session-analysis-poll';
 import {
   useSessionRealizationCandidates,
@@ -177,7 +180,7 @@ function LinkedAnalysisSection({
   analyzedAt: ReturnType<typeof useSessionAnalysisPoll>['analyzedAt'];
   isAnalyzing: boolean;
   pollTimedOut: boolean;
-  painReassessments: Array<{ noteId: string }>;
+  painReassessments: PhysicalReassessment[];
   guardDisabled: boolean;
   analyzePending: boolean;
   onReanalyze: () => void;

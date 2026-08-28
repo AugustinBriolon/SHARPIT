@@ -56,7 +56,7 @@ function writeRaw(entries: NavStackEntry[]): void {
 }
 
 function isEntry(candidate: unknown): candidate is NavStackEntry {
-  if (candidate === null || typeof candidate !== 'object') {
+  if ((candidate === undefined || candidate === null) || typeof candidate !== 'object') {
     return false;
   }
   const e = candidate as Record<string, unknown>;

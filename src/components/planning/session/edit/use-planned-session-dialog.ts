@@ -31,7 +31,7 @@ import type { useConfirmDialog as UseConfirmDialog } from '@/components/ui/confi
 function useLivePlannedSession(
   session: ClientPlannedSession | null | undefined,
   plannedSessions: ClientPlannedSession[] | undefined,
-) {
+): ClientPlannedSession | null {
   return useDemoPlannedSessionOverlay(
     useMemo(() => {
       if (!session?.id) {
@@ -39,7 +39,7 @@ function useLivePlannedSession(
       }
       return plannedSessions?.find((item) => item.id === session.id) ?? session;
     }, [plannedSessions, session]),
-  );
+  ) as ClientPlannedSession | null;
 }
 
 function usePlannedSessionDialogEffects({

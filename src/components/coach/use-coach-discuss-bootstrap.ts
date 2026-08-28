@@ -51,9 +51,10 @@ export function useCoachDiscussBootstrap(
 
   const discussIntentKey = useMemo(() => buildDiscussIntentKey(params), [params]);
 
-  const discussSources = useMemo(
-    () => ({
-      ...params,
+  const discussSources = useMemo(() => {
+    const { hasDiscussIntent: _hasDiscussIntent, ...discussParams } = params;
+    return {
+      ...discussParams,
       goals: goalsQuery.data ?? [],
       physicalNotes: physicalNotesQuery.data ?? [],
       records: recordsQuery.data,
@@ -61,18 +62,17 @@ export function useCoachDiscussBootstrap(
       plannedSessions: plannedQuery.data ?? [],
       activities: activitiesQuery.data ?? [],
       todayLoaded: todayQuery.data !== null,
-    }),
-    [
-      params,
-      goalsQuery.data,
-      physicalNotesQuery.data,
-      recordsQuery.data,
-      projectionQuery.data,
-      plannedQuery.data,
-      activitiesQuery.data,
-      todayQuery.data,
-    ],
-  );
+    };
+  }, [
+    params,
+    goalsQuery.data,
+    physicalNotesQuery.data,
+    recordsQuery.data,
+    projectionQuery.data,
+    plannedQuery.data,
+    activitiesQuery.data,
+    todayQuery.data,
+  ]);
 
   const discussDataReady = useMemo(() => {
     if (!params.hasDiscussIntent || !discussIntentKey) {

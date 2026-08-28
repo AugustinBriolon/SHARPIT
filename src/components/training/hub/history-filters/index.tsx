@@ -11,6 +11,7 @@ import {
   type TrainingHistoryFilters,
 } from '@/lib/training/history-filters';
 import { useIsMobile } from '@/hooks/use-viewport';
+import { useResetWhenHidden } from '@/hooks/use-reset-when-hidden';
 import { HistoryFilterTrigger } from '@/components/training/hub/history-filters/history-filter-trigger';
 
 const DesktopFilterMenu = dynamic(

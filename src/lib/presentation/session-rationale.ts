@@ -61,7 +61,7 @@ function buildGate(decision: CoachingDecisionWithHistory): SessionRationaleGate 
           gateResult.saferAlternative.intensity
             ? intensityLabels[gateResult.saferAlternative.intensity]
             : null,
-          gateResult.saferAlternative.load !== null
+          (gateResult.saferAlternative.load !== undefined && gateResult.saferAlternative.load !== null)
             ? `~${gateResult.saferAlternative.load} TSS`
             : null,
         ]

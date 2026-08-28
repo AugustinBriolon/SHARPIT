@@ -6,7 +6,7 @@ import type { WithingsParsedMeasurement } from '@/lib/integrations/withings/with
 import type { RawBodyCompositionObservation } from '@/core/observation/types';
 
 function computeMusclePercent(muscleKg: number | null, weightKg: number): number | undefined {
-  if (muscleKg === null || weightKg <= 0) {
+  if ((muscleKg === undefined || muscleKg === null) || weightKg <= 0) {
     return undefined;
   }
   return (muscleKg / weightKg) * 100;
@@ -16,7 +16,7 @@ export function withingsMeasurementToBodyComposition(
   measurement: WithingsParsedMeasurement,
   receivedAt: Date,
 ): RawBodyCompositionObservation | null {
-  if (measurement.weightKg === null || measurement.weightKg <= 0) {
+  if ((measurement.weightKg === undefined || measurement.weightKg === null) || measurement.weightKg <= 0) {
     return null;
   }
 

@@ -6,7 +6,7 @@ function buildDailyCostInsight(input: EffortInsightInput): ProductInsight {
     id: 'effort:daily-cost',
     title: 'Coût du jour',
     summary:
-      input.strainScore !== null
+      (input.strainScore !== undefined && input.strainScore !== null)
         ? `${input.strainScore}/21 · ${input.fatigueTypeLabel}`
         : input.fatigueTypeLabel,
     explanation:
@@ -25,11 +25,11 @@ function buildTrainingCapacityInsight(input: EffortInsightInput): ProductInsight
     title: 'Marge de travail restante',
     summary: input.trainingCapacityLabel,
     explanation:
-      input.performancePercent !== null
+      (input.performancePercent !== undefined && input.performancePercent !== null)
         ? `La capacité utile du jour est estimée autour de ${input.performancePercent} % de ton niveau frais.`
         : 'La capacité traduit ce que le corps peut encore absorber sans payer trop cher ensuite.',
     evidence: [
-      input.estimatedDaysToFresh !== null
+      (input.estimatedDaysToFresh !== undefined && input.estimatedDaysToFresh !== null)
         ? `${input.estimatedDaysToFresh} jour(s) pour revenir frais`
         : null,
       input.limitingFactorLabel,
@@ -47,7 +47,7 @@ function buildDominantSystemInsight(input: EffortInsightInput): ProductInsight {
     title: 'Système qui paie le plus',
     summary: input.dominantDimensionLabel!,
     explanation:
-      input.limitingFactorLabel !== null
+      (input.limitingFactorLabel !== undefined && input.limitingFactorLabel !== null)
         ? `Le facteur limitant principal est ${input.limitingFactorLabel.toLowerCase()}.`
         : 'Identifier le système dominant aide à savoir quoi protéger sur la prochaine séance.',
     evidence: input.keyEvidence.slice(0, 3),
@@ -66,7 +66,7 @@ function buildLoadContextInsight(input: EffortInsightInput): ProductInsight {
     explanation:
       'Le contexte hebdomadaire sert surtout à juger si le coût du jour reste soutenable dans le bloc actuel.',
     evidence: [
-      input.tsb !== null ? `TSB ${input.tsb > 0 ? '+' : ''}${input.tsb}` : null,
+      (input.tsb !== undefined && input.tsb !== null) ? `TSB ${input.tsb > 0 ? '+' : ''}${input.tsb}` : null,
       input.overreachingLabel,
     ].filter((line): line is string => Boolean(line)),
     confidence: input.confidence,

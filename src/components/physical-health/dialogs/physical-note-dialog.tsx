@@ -16,7 +16,7 @@ interface Props {
 
 export function PhysicalNoteDialog({ note, onClose }: Props) {
   const state = usePhysicalNoteDialogState(note);
-  const { handleSubmit, handleDelete } = usePhysicalNoteDialogHandlers(state, note, onClose);
+  const { handleSubmit, handleDelete } = usePhysicalNoteDialogHandlers(state, onClose, note);
 
   return (
     <>

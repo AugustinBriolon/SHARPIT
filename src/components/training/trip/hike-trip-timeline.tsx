@@ -16,20 +16,20 @@ import { cn } from '@/lib/utils';
 export type HikeTripMember = ClientHikeTrip['activities'][number];
 
 function appendPositiveDistance(meta: string[], distanceM: number | null | undefined) {
-  if (distanceM !== null && distanceM > 0) {
-    meta.push(formatDistance(distanceM));
+  if ((distanceM ?? 0) > 0) {
+    meta.push(formatDistance(distanceM!));
   }
 }
 
 function appendPositiveElevation(meta: string[], elevationM: number | null | undefined) {
-  if (elevationM !== null && elevationM > 0) {
-    meta.push(`D+ ${Math.round(elevationM)} m`);
+  if ((elevationM ?? 0) > 0) {
+    meta.push(`D+ ${Math.round(elevationM!)} m`);
   }
 }
 
 function appendPositiveDuration(meta: string[], duration: number | null | undefined) {
-  if (duration !== null && duration > 0) {
-    meta.push(formatDuration(duration));
+  if ((duration ?? 0) > 0) {
+    meta.push(formatDuration(duration!));
   }
 }
 

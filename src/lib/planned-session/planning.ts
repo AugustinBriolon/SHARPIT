@@ -28,7 +28,7 @@ export function estimatePlannedLoad(session: {
   load: number | null;
   durationMin: number | null;
 }): number {
-  if (session.load !== null && session.load > 0) {
+  if ((session.load !== undefined && session.load !== null) && session.load > 0) {
     return session.load;
   }
   if (!session.durationMin) {

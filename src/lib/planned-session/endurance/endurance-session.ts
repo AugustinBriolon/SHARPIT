@@ -46,7 +46,7 @@ function swimFallbackTarget(
   thresholds: AthleteThresholds,
 ): { target: EnduranceTarget; warnings: string[] } {
   const paceDefault = defaultTargetForIntensity('SWIM', intensity);
-  if (paceDefault.target.metric === 'pace' && thresholds.swimCssSecPer100m !== null) {
+  if (paceDefault.target.metric === 'pace' && (thresholds.swimCssSecPer100m !== undefined && thresholds.swimCssSecPer100m !== null)) {
     return paceDefault;
   }
   return { target: NO_TARGET, warnings: [...paceDefault.warnings, NO_CSS_WARNING] };
@@ -57,7 +57,7 @@ function bikeFallbackTarget(
   thresholds: AthleteThresholds,
 ): { target: EnduranceTarget; warnings: string[] } {
   const powerDefault = defaultTargetForIntensity('BIKE', intensity);
-  if (powerDefault.target.metric === 'power' && thresholds.ftpW !== null) {
+  if (powerDefault.target.metric === 'power' && (thresholds.ftpW !== undefined && thresholds.ftpW !== null)) {
     return powerDefault;
   }
   return { target: NO_TARGET, warnings: [...powerDefault.warnings, NO_FTP_WARNING] };
@@ -68,10 +68,10 @@ function runFallbackTarget(
   thresholds: AthleteThresholds,
 ): { target: EnduranceTarget; warnings: string[] } {
   const paceDefault = defaultTargetForIntensity('RUN', intensity);
-  if (paceDefault.target.metric === 'pace' && thresholds.runThresholdPaceSecPerKm !== null) {
+  if (paceDefault.target.metric === 'pace' && (thresholds.runThresholdPaceSecPerKm !== undefined && thresholds.runThresholdPaceSecPerKm !== null)) {
     return paceDefault;
   }
-  if (thresholds.lthr !== null || thresholds.maxHr !== null) {
+  if ((thresholds.lthr !== undefined && thresholds.lthr !== null) || (thresholds.maxHr !== undefined && thresholds.maxHr !== null)) {
     return { target: defaultHrTargetForIntensity(intensity), warnings: paceDefault.warnings };
   }
   return paceDefault;
@@ -122,7 +122,7 @@ export function effectiveEndurancePrescription(input: {
   }
 
   const durationMin =
-    input.durationMin !== null && input.durationMin > 0 ? input.durationMin : DEFAULT_SESSION_MIN;
+    (input.durationMin !== undefined && input.durationMin !== null) && input.durationMin > 0 ? input.durationMin : DEFAULT_SESSION_MIN;
   const { target, warnings } = fallbackTarget(input.sport, input.intensity, input.thresholds);
 
   return {

@@ -125,7 +125,7 @@ async function sessionFeaturesHaveHrDrift(
 
   return sessionFeatures.some((record) => {
     const data = record.data as { hrDriftPercent?: number | null } | null;
-    return data?.hrDriftPercent !== null && Number.isFinite(data.hrDriftPercent);
+    return (data?.hrDriftPercent !== undefined && data?.hrDriftPercent !== null) && Number.isFinite(data.hrDriftPercent);
   });
 }
 

@@ -102,7 +102,7 @@ function getMechanicalStressFactor(sport: SportType): number {
  *   ACWR = 1.5 → 100 (critical overload)
  */
 export function scoreLoadFatigue(load: LoadFeatureSet | 'PENDING'): DimensionScore {
-  if (load === 'PENDING' || load.acwr === null) {
+  if (load === 'PENDING' || (load.acwr === undefined || load.acwr === null)) {
     return { score: null, available: false, qualityFactor: 0 };
   }
 
@@ -110,7 +110,7 @@ export function scoreLoadFatigue(load: LoadFeatureSet | 'PENDING'): DimensionSco
   let score = Math.round(Math.max(Math.min((load.acwr / 1.5) * 100, 100), 0));
 
   // Monotony amplifier (Foster et al. 1998)
-  if (load.loadMonotony !== null) {
+  if ((load.loadMonotony !== undefined && load.loadMonotony !== null)) {
     if (load.loadMonotony > 2.0) {
       score = Math.round(Math.min(score * 1.1, 100));
     } else if (load.loadMonotony < 1.3) {
@@ -140,7 +140,7 @@ function scoreCentralNeuromuscularComponent(recoveryState: RecoveryState | null)
 } {
   if (
     recoveryState?.dimensions.autonomic.available &&
-    recoveryState.dimensions.autonomic.score !== null
+    (recoveryState.dimensions.autonomic.score !== undefined && recoveryState.dimensions.autonomic.score !== null)
   ) {
     return {
       component: 100 - recoveryState.dimensions.autonomic.score,
@@ -160,10 +160,10 @@ function scorePeripheralNeuromuscularComponent(
   const mechanicalComponent = Math.min((recentMechanicalLoad / 150) * 100, 100);
   const perceivedSoreness = recovery?.subjectiveWellnessComponents?.perceivedSoreness ?? null;
   const sorenessComponent =
-    perceivedSoreness !== null ? perceivedSoreness * 10 : mechanicalComponent;
+    (perceivedSoreness !== undefined && perceivedSoreness !== null) ? perceivedSoreness * 10 : mechanicalComponent;
   return {
     component: 0.55 * mechanicalComponent + 0.45 * sorenessComponent,
-    quality: perceivedSoreness !== null ? 0.75 : 0.55,
+    quality: (perceivedSoreness !== undefined && perceivedSoreness !== null) ? 0.75 : 0.55,
   };
 }
 
@@ -177,11 +177,11 @@ export function scoreNeuromuscularFatigue(
   const peripheral = scorePeripheralNeuromuscularComponent(rf, sessions);
 
   const score =
-    central.component !== null
+    (central.component !== undefined && central.component !== null)
       ? central.component * 0.4 + peripheral.component * 0.6
       : peripheral.component;
   const qualityFactor =
-    central.component !== null
+    (central.component !== undefined && central.component !== null)
       ? central.quality * 0.4 + peripheral.quality * 0.6
       : peripheral.quality;
 
@@ -234,7 +234,7 @@ export function scoreMetabolicFatigue(sessions: readonly SessionFeatureSet[]): D
   for (const session of sessions) {
     const anaerobicFactor = session.anaerobicLoadFactor ?? 0.3;
     totalMetabolicStress += anaerobicFactor * session.tssScore;
-    if (session.hrDriftPercent !== null && session.hrDriftPercent > maxHrDrift) {
+    if ((session.hrDriftPercent !== undefined && session.hrDriftPercent !== null) && session.hrDriftPercent > maxHrDrift) {
       maxHrDrift = session.hrDriftPercent;
     }
     sumMethodConfidence += TSS_METHOD_CONFIDENCE[session.tssMethod] ?? 0.4;
@@ -269,14 +269,14 @@ export function scoreCumulativeTrajectory(
   const accumulationPressure = Math.min(consecutiveAccumulationDays * 7, 70);
 
   // Sleep debt: 480 min (8h) → full 30 pt contribution
-  const sleepDebtContribution = sleepDebtMin !== null ? Math.min((sleepDebtMin / 480) * 30, 30) : 0;
+  const sleepDebtContribution = (sleepDebtMin !== undefined && sleepDebtMin !== null) ? Math.min((sleepDebtMin / 480) * 30, 30) : 0;
 
   // Dissonance penalty: objective/subjective split during accumulation
   const dissonancePenalty = dissonanceDetected && consecutiveAccumulationDays > 3 ? 10 : 0;
 
   const score = Math.min(accumulationPressure + sleepDebtContribution + dissonancePenalty, 100);
 
-  const hasData = sleepDebtMin !== null || consecutiveAccumulationDays > 0;
+  const hasData = (sleepDebtMin !== undefined && sleepDebtMin !== null) || consecutiveAccumulationDays > 0;
   const qualityFactor = accumulationQualityFactor(consecutiveAccumulationDays);
 
   return {
@@ -298,13 +298,13 @@ export function scoreCumulativeTrajectory(
  *   mood = 5 → PsychFatigue = 50 (none)
  */
 function scoreFromMoodAndEnergy(mood: number | null, energyLevel: number | null): number | null {
-  if (mood !== null && energyLevel !== null) {
+  if ((mood !== undefined && mood !== null) && (energyLevel !== undefined && energyLevel !== null)) {
     return 100 - (mood * 10 + energyLevel * 10) / 2;
   }
-  if (mood !== null) {
+  if ((mood !== undefined && mood !== null)) {
     return 100 - mood * 20;
   }
-  if (energyLevel !== null) {
+  if ((energyLevel !== undefined && energyLevel !== null)) {
     return 100 - energyLevel * 20;
   }
   return null;
@@ -325,7 +325,7 @@ export function scorePsychologicalFatigue(
   const components = readWellnessComponents(recovery);
   const score = scoreFromMoodAndEnergy(components?.mood ?? null, components?.energyLevel ?? null);
 
-  if (score === null) {
+  if ((score === undefined || score === null)) {
     return { score: null, available: false, qualityFactor: 0 };
   }
 
@@ -356,7 +356,7 @@ export type SynthesisResult = {
  */
 export function synthesizeFatigueIndex(dims: ScoredFatigueDimensions): SynthesisResult {
   const entries = Object.entries(dims) as Array<[keyof typeof DIMENSION_WEIGHTS, DimensionScore]>;
-  const available = entries.filter(([, d]) => d.available && d.score !== null);
+  const available = entries.filter(([, d]) => d.available && (d.score !== undefined && d.score !== null));
 
   if (available.length < 2) {
     return { score: null, confidence: 0, dataCompleteness: 'INSUFFICIENT' };
@@ -383,7 +383,7 @@ export function synthesizeFatigueIndex(dims: ScoredFatigueDimensions): Synthesis
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function classifyFatigueLevel(index: number | null): FatigueLevel {
-  if (index === null) {
+  if ((index === undefined || index === null)) {
     return 'INSUFFICIENT_DATA';
   }
   if (index <= 20) {
@@ -419,7 +419,7 @@ function collectLabeledDimensions(
   ];
 
   return entries.flatMap(([name, dimension, weight]) => {
-    if (!dimension.available || dimension.score === null) {
+    if (!dimension.available || (dimension.score === undefined || dimension.score === null)) {
       return [];
     }
     return includeWeights
@@ -506,7 +506,7 @@ export function classifyTrainingCapacity(
 }
 
 function dimensionRecoveryDays(score: number | null, halfLife: number): number {
-  return score !== null ? (score / 100) * halfLife : 0;
+  return (score !== undefined && score !== null) ? (score / 100) * halfLife : 0;
 }
 
 export function estimateTimeToFresh(

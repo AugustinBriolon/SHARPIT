@@ -96,7 +96,7 @@ export function buildRenphoPayloadSection(
   return {
     account: account
       ? {
-          email: account.email ?? null,
+          email: account.email ?? '',
           displayName: account.displayName ?? null,
           lastSyncAt: isoOrNull(account.lastSyncAt),
         }

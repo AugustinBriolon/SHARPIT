@@ -4,7 +4,7 @@ import { ActivityType } from '@prisma/client';
 import { format, isSameWeek, startOfWeek } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import dynamic from 'next/dynamic';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import {
   TrainingListEmptyStates,

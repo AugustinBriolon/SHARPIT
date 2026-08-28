@@ -99,7 +99,7 @@ function computeLoadFactors(
   timeInZones: readonly [number, number, number, number, number] | null,
   durationSec: number,
 ): { aerobicLoadFactor: number | null; anaerobicLoadFactor: number | null } {
-  if (timeInZones === null) {
+  if ((timeInZones === undefined || timeInZones === null)) {
     return { aerobicLoadFactor: null, anaerobicLoadFactor: null };
   }
 
@@ -127,7 +127,7 @@ function buildStreamResult(
     timeInZones,
     hrDriftPercent: analysis.hr.decouplingPct,
     paceVariabilityIndex:
-      analysis.run?.paceVariabilityPct !== null
+      (analysis.run?.paceVariabilityPct !== undefined && analysis.run?.paceVariabilityPct !== null)
         ? Number((analysis.run.paceVariabilityPct / 100).toFixed(3))
         : null,
   };
@@ -171,12 +171,22 @@ export class PrismaSessionStreamProvider implements SessionStreamProvider {
       },
     });
 
-    if (!activity?.stream?.available || !activity.stream.data) {
+    if (!activity?.stream?.available || !activity.stream.data || activity.duration === null) {
+      return null;
+    }
+
+    const duration = activity.duration;
+    if (duration === null) {
       return null;
     }
 
     const raw = activity.stream.data as unknown as RawStreams;
-    const analysis = analyzeSessionStream(activity, session, ctx, raw);
+    const analysis = analyzeSessionStream(
+      { type: activity.type, duration, stream: activity.stream },
+      session,
+      ctx,
+      raw,
+    );
     if (!analysis) {
       return null;
     }

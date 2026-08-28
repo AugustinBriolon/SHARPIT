@@ -62,7 +62,7 @@ export async function runScenarioComparison(
 
   const scenarioRuns = definitions
     .map((definition) => runScenarioProjection(definition, base, futureDayIds))
-    .filter((run): run is NonNullable<typeof run> => run !== null);
+    .filter((run): run is NonNullable<typeof run> => (run !== undefined && run !== null));
 
   return compareScenarioProjections({
     athleteId: base.athleteId,

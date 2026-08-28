@@ -21,7 +21,7 @@ export function sanitizeOwnedForVenue(
     if (!item?.requiresStrengthVenue) {
       return true;
     }
-    if (strengthVenue === null) {
+    if ((strengthVenue === undefined || strengthVenue === null)) {
       return false;
     }
     return item.requiresStrengthVenue.includes(strengthVenue as 'home' | 'both');
@@ -29,7 +29,7 @@ export function sanitizeOwnedForVenue(
 }
 
 export function normalizeAthleteEquipment(raw: unknown): AthleteEquipment {
-  if (raw === null || typeof raw !== 'object' || Array.isArray(raw)) {
+  if ((raw === undefined || raw === null) || typeof raw !== 'object' || Array.isArray(raw)) {
     return { ...EMPTY_ATHLETE_EQUIPMENT };
   }
 
@@ -52,7 +52,7 @@ export function normalizeAthleteEquipment(raw: unknown): AthleteEquipment {
 }
 
 export function hasConfiguredEquipment(equipment: AthleteEquipment): boolean {
-  return equipment.strengthVenue !== null || equipment.owned.length > 0;
+  return (equipment.strengthVenue !== undefined && equipment.strengthVenue !== null) || equipment.owned.length > 0;
 }
 
 export function toggleOwnedItem(

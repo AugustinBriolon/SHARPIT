@@ -98,7 +98,7 @@ function resolveLocationFromRecord(
   session: PlannedSessionRecord,
   fallback: GeoLocation,
 ): GeoLocation | null {
-  if (session.locationLat !== null && session.locationLng !== null) {
+  if ((session.locationLat !== undefined && session.locationLat !== null) && (session.locationLng !== undefined && session.locationLng !== null)) {
     return {
       latitude: session.locationLat,
       longitude: session.locationLng,
@@ -113,7 +113,7 @@ async function resolveSessionGeoLocation(
   sessionDate: Date,
 ): Promise<GeoLocation> {
   const { athleteId } = session;
-  if (session.locationLat !== null && session.locationLng !== null) {
+  if ((session.locationLat !== undefined && session.locationLat !== null) && (session.locationLng !== undefined && session.locationLng !== null)) {
     return {
       latitude: session.locationLat,
       longitude: session.locationLng,

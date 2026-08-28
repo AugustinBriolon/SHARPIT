@@ -63,12 +63,12 @@ type DiscussDataSources = {
   discussPlanningHorizon: ProjectionHorizonDays | null;
   discussId: string | null;
   discussActivityId: string | null;
-  goals: { id: string }[];
-  physicalNotes: { id: string }[];
+  goals: { id: string; title?: string | null }[];
+  physicalNotes: { id: string; title?: string | null }[];
   records: Parameters<typeof findRecordCategory>[0];
   projectionVisible: boolean;
-  plannedSessions: { id: string }[];
-  activities: { id: string }[];
+  plannedSessions: { id: string; title?: string | null }[];
+  activities: { id: string; title?: string | null }[];
   todayLoaded: boolean;
 };
 
@@ -117,14 +117,7 @@ export function isDiscussDataReady(sources: DiscussDataSources): boolean {
   return false;
 }
 
-type DiscussContextSources = DiscussDataSources & {
-  goals: { id: string; title?: string }[];
-  physicalNotes: { id: string; title?: string }[];
-  plannedSessions: { id: string; title?: string }[];
-  activities: { id: string; title?: string }[];
-};
-
-function buildGoalContext(sources: DiscussContextSources): CoachDiscussContext | null {
+function buildGoalContext(sources: DiscussDataSources): CoachDiscussContext | null {
   if (!sources.discussGoalId) {
     return null;
   }
@@ -132,7 +125,7 @@ function buildGoalContext(sources: DiscussContextSources): CoachDiscussContext |
   return describeCoachDiscussContext({ kind: 'goal', goalId: sources.discussGoalId }, goal?.title);
 }
 
-function buildConditionContext(sources: DiscussContextSources): CoachDiscussContext | null {
+function buildConditionContext(sources: DiscussDataSources): CoachDiscussContext | null {
   if (!sources.discussConditionId) {
     return null;
   }
@@ -143,7 +136,7 @@ function buildConditionContext(sources: DiscussContextSources): CoachDiscussCont
   );
 }
 
-function buildRecordContext(sources: DiscussContextSources): CoachDiscussContext | null {
+function buildRecordContext(sources: DiscussDataSources): CoachDiscussContext | null {
   if (!sources.discussRecordKey) {
     return null;
   }
@@ -154,7 +147,7 @@ function buildRecordContext(sources: DiscussContextSources): CoachDiscussContext
   );
 }
 
-function buildSessionContext(sources: DiscussContextSources): CoachDiscussContext | null {
+function buildSessionContext(sources: DiscussDataSources): CoachDiscussContext | null {
   if (!sources.discussId) {
     return null;
   }
@@ -165,7 +158,7 @@ function buildSessionContext(sources: DiscussContextSources): CoachDiscussContex
   );
 }
 
-function buildActivityContext(sources: DiscussContextSources): CoachDiscussContext | null {
+function buildActivityContext(sources: DiscussDataSources): CoachDiscussContext | null {
   if (!sources.discussActivityId) {
     return null;
   }
@@ -176,7 +169,7 @@ function buildActivityContext(sources: DiscussContextSources): CoachDiscussConte
   );
 }
 
-export function buildDiscussContext(sources: DiscussContextSources): CoachDiscussContext | null {
+export function buildDiscussContext(sources: DiscussDataSources): CoachDiscussContext | null {
   if (sources.discussToday) {
     return describeCoachDiscussContext({ kind: 'today' });
   }

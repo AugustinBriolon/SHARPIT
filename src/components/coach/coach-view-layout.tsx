@@ -6,7 +6,7 @@ import { CoachChatPanelShell } from '@/components/coach/chat/coach-chat-panel-sh
 import { CoachConversationList } from '@/components/coach/chat/coach-conversation-list';
 import { CoachPageHeader } from '@/components/coach/coach-hub-skeleton';
 import { Button } from '@/components/ui/button';
-import type { ClientConversationSummary } from '@/hooks/use-coach';
+import type { ClientConversationSummary } from '@/lib/query/fetchers';
 
 type CoachViewLayoutProps = {
   conversations: ClientConversationSummary[];

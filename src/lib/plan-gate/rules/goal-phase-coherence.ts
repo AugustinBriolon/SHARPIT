@@ -24,7 +24,7 @@ function taperLoadIncreaseFinding(proposal: GateProposal, recentAvg: number): Ru
 
 function averageRecentLoad(context: GateContext): number | null {
   const recentLoads = context.existingSessions
-    .filter((s) => s.load !== null)
+    .filter((s) => (s.load !== undefined && s.load !== null))
     .map((s) => s.load as number);
   if (recentLoads.length === 0) {
     return null;
@@ -45,11 +45,11 @@ function collectTaperLoadFinding(
   proposedDate: Date,
 ): RuleFinding | null {
   const planWeek = planWeekForDate(context, proposedDate);
-  if (planWeek?.phase !== 'TAPER' || proposal.load === null || proposal.load <= 0) {
+  if (planWeek?.phase !== 'TAPER' || (proposal.load === undefined || proposal.load === null) || proposal.load <= 0) {
     return null;
   }
   const recentAvg = averageRecentLoad(context);
-  if (recentAvg !== null && proposal.load > recentAvg) {
+  if ((recentAvg !== undefined && recentAvg !== null) && proposal.load > recentAvg) {
     return taperLoadIncreaseFinding(proposal, recentAvg);
   }
   return null;

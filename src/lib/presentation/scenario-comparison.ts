@@ -40,7 +40,7 @@ function confidenceLabel(confidence: number): string | null {
 }
 
 function formatScore(value: number | null): string | null {
-  if (value === null) {
+  if ((value === undefined || value === null)) {
     return null;
   }
   return String(Math.round(value));
@@ -164,7 +164,7 @@ function scenarioLimitingFactor(
   entry: ScenarioComparison['scenarios'][number],
 ): string | null {
   const lastDay = entry.projection.days[entry.projection.days.length - 1];
-  if (lastDay === null) {
+  if ((lastDay === undefined || lastDay === null)) {
     return null;
   }
   return (
@@ -207,7 +207,7 @@ function buildScenarioRow(
     isRecommended,
     isBaseline,
     targetSessionId: entry.targetSessionId,
-    canApply: entry.kind !== 'KEEP_PLAN' && entry.targetSessionId !== null,
+    canApply: entry.kind !== 'KEEP_PLAN' && (entry.targetSessionId !== undefined && entry.targetSessionId !== null),
     technicalDetail: {
       endVerdict: mapVerdictToDisplay(entry.decision.endVerdict).label,
       endReadiness: formatScore(entry.outcome.endReadiness),

@@ -115,7 +115,7 @@ export function emptyStrengthPrescription(): StrengthPrescription {
 
 /** Soft-parse Json from DB — invalid / empty → null. */
 export function parseStrengthPrescription(raw: unknown): StrengthPrescription | null {
-  if (raw === null) {
+  if ((raw === undefined || raw === null)) {
     return null;
   }
   const parsed = strengthPrescriptionSchema.safeParse(raw);
@@ -181,7 +181,7 @@ function restModeFromCoachSet(set: CoachStrengthPrescription['sets'][number]): S
   if (set.restMode === 'lap') {
     return 'lap';
   }
-  if (set.restMode === 'time' || (set.restSec !== null && set.restSec > 0)) {
+  if (set.restMode === 'time' || ((set.restSec !== undefined && set.restSec !== null) && set.restSec > 0)) {
     return 'time';
   }
   return 'lap';
@@ -214,7 +214,7 @@ function coachSetToNormalized(
 export function normalizeCoachStrengthPrescription(
   raw: CoachStrengthPrescription | StrengthPrescription | null | undefined,
 ): StrengthPrescription | null {
-  if (raw === null) {
+  if ((raw === undefined || raw === null)) {
     return null;
   }
 
@@ -225,7 +225,7 @@ export function normalizeCoachStrengthPrescription(
 
   const sets = raw.sets
     .map((set, order) => coachSetToNormalized(set, order))
-    .filter((s): s is NonNullable<typeof s> => s !== null);
+    .filter((s): s is NonNullable<typeof s> => (s !== undefined && s !== null));
 
   const parsed = parseStrengthPrescription({ version: 1, sets });
   return parsed ? attachGarminRefsToPrescription(parsed) : null;
@@ -262,7 +262,7 @@ export function extractStrengthSessionIntent(
   }
 
   const preamble = intentBeforeNumberedList(trimmed);
-  if (preamble !== null) {
+  if ((preamble !== undefined && preamble !== null)) {
     return preamble;
   }
 
@@ -319,7 +319,7 @@ export function formatStrengthPrescriptionSummary(prescription: StrengthPrescrip
         set.durationSec && set.durationSec > 0 && set.reps <= 0
           ? `${set.sets}×${set.durationSec}s`
           : `${set.sets}×${set.reps}`;
-      const weight = set.weightKg !== null && set.weightKg > 0 ? ` @ ${set.weightKg}kg` : '';
+      const weight = (set.weightKg !== undefined && set.weightKg !== null) && set.weightKg > 0 ? ` @ ${set.weightKg}kg` : '';
       return `${set.exercise} ${volume}${weight}`;
     })
     .join(' · ');

@@ -31,14 +31,14 @@ function disclosureAnimate(reduce: boolean, open: boolean) {
 function disclosureStyle(
   open: boolean,
   openHeight: CSSProperties['height'],
-  style?: CSSProperties,
+  style?: AgentDisclosureProps['style'],
 ): CSSProperties {
   return {
     ...style,
     height: open ? openHeight : 0,
     pointerEvents: open ? undefined : 'none',
     transformOrigin: 'top',
-  };
+  } as CSSProperties;
 }
 
 /** Shared transform-only reveal for collapsible agent content. */

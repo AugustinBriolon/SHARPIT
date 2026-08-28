@@ -37,7 +37,7 @@ const optionalStrengthPrescription = strengthPrescriptionSchema
   .nullable()
   .optional()
   .transform((v) => {
-    if (v === null) {
+    if ((v === undefined || v === null)) {
       return null;
     }
     if (v.sets.length === 0) {
@@ -50,7 +50,7 @@ const optionalEndurancePrescription = endurancePrescriptionSchema
   .nullable()
   .optional()
   .transform((v) => {
-    if (v === null) {
+    if ((v === undefined || v === null)) {
       return null;
     }
     if (v.blocks.length === 0) {
@@ -65,7 +65,7 @@ const optionalAccessories = z
   .nullable()
   .optional()
   .transform((v) => {
-    if (v === null) {
+    if ((v === undefined || v === null)) {
       return null;
     }
     const ids = v.filter(isEquipmentItemId);
@@ -154,14 +154,14 @@ export const updatePlannedSessionSchema = basePlannedSessionSchema
   .superRefine((data, ctx) => {
     // Only enforce when type/description/prescription are part of the patch.
     if (
-      data.type === null &&
+      (data.type === undefined || data.type === null) &&
       data.description === undefined &&
       data.strengthPrescription === undefined
     ) {
       return;
     }
     const { type } = data;
-    if (type === null) {
+    if ((type === undefined || type === null)) {
       return;
     }
     const issues = [
@@ -180,7 +180,7 @@ export const updatePlannedSessionSchema = basePlannedSessionSchema
     }
   })
   .transform((data) => {
-    if (data.type === null) {
+    if ((data.type === undefined || data.type === null)) {
       return data;
     }
     return data.type === ActivityType.STRENGTH

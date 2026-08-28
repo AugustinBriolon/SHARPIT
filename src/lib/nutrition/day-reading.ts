@@ -83,7 +83,7 @@ function proteinMealInsight(day: NutritionDaySummary): string | null {
 }
 
 function calorieGoalHeadline(remaining: number | null): string | null {
-  if (remaining !== null && remaining < 0) {
+  if ((remaining !== undefined && remaining !== null) && remaining < 0) {
     return remaining < -200 ? 'Apports généreux' : 'Légèrement au-dessus';
   }
   if (remaining === 0) {
@@ -154,7 +154,7 @@ function headlineWithGoals(
   const consumedRatio = goals.calorieBudget > 0 ? goals.calories.consumed / goals.calorieBudget : 0;
   const progressHeadline = progressGoalHeadline({
     consumedRatio,
-    proteinOver: goals.protein.remaining !== null && goals.protein.remaining < 0,
+    proteinOver: (goals.protein.remaining !== undefined && goals.protein.remaining !== null) && goals.protein.remaining < 0,
     isToday,
     missingCount: missingMealLabels(day).length,
     loggedCount: day.meals.filter((meal) => meal.calories > 0).length,

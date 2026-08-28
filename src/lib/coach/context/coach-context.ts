@@ -87,14 +87,14 @@ async function loadHomeWeatherHint(
     typeof payload.airTemperatureC === 'number' ? payload.airTemperatureC : null;
   const relativeHumidityPct =
     typeof payload.relativeHumidityPct === 'number' ? payload.relativeHumidityPct : null;
-  if (airTemperatureC === null && relativeHumidityPct === null) {
+  if ((airTemperatureC === undefined || airTemperatureC === null) && (relativeHumidityPct === undefined || relativeHumidityPct === null)) {
     return null;
   }
   return { airTemperatureC, relativeHumidityPct };
 }
 
 function formatPace(secPerKm?: number | null): string | null {
-  if (secPerKm === null || secPerKm <= 0) {
+  if ((secPerKm === undefined || secPerKm === null) || secPerKm <= 0) {
     return null;
   }
   const m = Math.floor(secPerKm / 60);
@@ -204,7 +204,7 @@ function appendStrengthDetailParts(a: CoachActivity, parts: string[]): void {
   const exos = a.strengthSets
     .slice(0, 5)
     .map((s) => {
-      const w = s.weightKg !== null ? ` ${s.weightKg}kg` : '';
+      const w = (s.weightKg !== undefined && s.weightKg !== null) ? ` ${s.weightKg}kg` : '';
       return `${s.exercise} ${s.sets}x${s.reps}${w}`;
     })
     .join(', ');
@@ -229,7 +229,7 @@ function mapActivityForCoachRecent(a: CoachActivity, today: Date) {
     type: TYPE_FR[a.type] ?? a.type,
     title: a.title ?? '',
     duration: formatMin(a.duration),
-    load: a.load !== null ? Math.round(a.load) : null,
+    load: (a.load !== undefined && a.load !== null) ? Math.round(a.load) : null,
     rpe: a.rpe,
     feeling: a.feeling ?? null,
     detail: activityDetailParts(a).join(' · '),
@@ -242,16 +242,13 @@ function mapActivityForCoachRecent(a: CoachActivity, today: Date) {
  * (synthèse, pas de données brutes) → coût minimal et meilleures réponses.
  */
 function averageNumeric(vals: (number | null | undefined)[]): number | null {
-  const ok = vals.filter((v): v is number => v !== null && v !== undefined);
+  const ok = vals.filter((v): v is number => (v !== undefined && v !== null) && v !== undefined);
   return ok.length ? Math.round(ok.reduce((s, v) => s + v, 0) / ok.length) : null;
 }
 
 function buildHealthAverages(
   last7: Awaited<ReturnType<typeof getHealthEntries>>,
-): Pick<
-  CoachContextData['health'],
-  'avgSleepMin' | 'avgHrv' | 'avgRestingHr' | 'avgReadiness'
-> {
+) {
   return {
     avgSleepMin: averageNumeric(last7.map((h) => h.sleepMinutes)),
     avgHrv: averageNumeric(last7.map((h) => h.hrv)),
@@ -262,7 +259,7 @@ function buildHealthAverages(
 
 function buildTodayReadinessFields(
   todayHealth: Awaited<ReturnType<typeof getHealthEntries>>[number] | undefined,
-): Pick<CoachContextData['health'], 'readinessToday' | 'readinessLevel'> {
+) {
   return {
     readinessToday: todayHealth?.recoveryScore ?? null,
     readinessLevel: todayHealth?.readinessLevel ?? null,
@@ -271,7 +268,7 @@ function buildTodayReadinessFields(
 
 function buildTodayAutonomicFields(
   todayHealth: Awaited<ReturnType<typeof getHealthEntries>>[number] | undefined,
-): Pick<CoachContextData['health'], 'hrvStatus' | 'bodyBattery'> {
+) {
   return {
     hrvStatus: todayHealth?.hrvStatus ?? null,
     bodyBattery: todayHealth?.bodyBattery ?? null,
@@ -280,10 +277,7 @@ function buildTodayAutonomicFields(
 
 function buildTodayHealthFields(
   todayHealth: Awaited<ReturnType<typeof getHealthEntries>>[number] | undefined,
-): Pick<
-  CoachContextData['health'],
-  'readinessToday' | 'readinessLevel' | 'hrvStatus' | 'bodyBattery'
-> {
+) {
   return {
     ...buildTodayReadinessFields(todayHealth),
     ...buildTodayAutonomicFields(todayHealth),
@@ -292,7 +286,7 @@ function buildTodayHealthFields(
 
 function buildHealthFromEntries(
   healthEntries: Awaited<ReturnType<typeof getHealthEntries>>,
-): CoachContextData['health'] {
+) {
   const last7 = healthEntries.slice(0, 7);
   return {
     ...buildTodayHealthFields(healthEntries[0]),
@@ -303,7 +297,7 @@ function buildHealthFromEntries(
 function buildGoalsContext(
   goals: Awaited<ReturnType<typeof getGoals>>,
   today: Date,
-): Pick<CoachContextData, 'primaryRace' | 'races' | 'metricGoals'> {
+) {
   const activeGoals = goals.filter((g) => !g.achieved);
   const races = activeGoals
     .filter((g) => g.kind === 'RACE' && g.targetDate)
@@ -359,7 +353,7 @@ function legacyPhysicalTrend(
   }
   const last = checkins[0]?.severity;
   const prev = checkins[1]?.severity;
-  if (last === null || prev === null) {
+  if ((last === undefined || last === null) || (prev === undefined || prev === null)) {
     return null;
   }
   if (last < prev) {
@@ -374,7 +368,7 @@ function legacyPhysicalTrend(
 function buildPhysicalContext(
   athleteSnapshot: Awaited<ReturnType<typeof getOrBuildAthleteSnapshot>>,
   physicalNotes: Awaited<ReturnType<typeof getActivePhysicalNotes>>,
-): CoachContextData['physical'] {
+) {
   const physicalFromSnapshot =
     athleteSnapshot.physicalHealth?.conditions
       .filter((c) => c.affectsTraining && c.status !== 'RESOLVED')
@@ -414,7 +408,7 @@ function buildPhysicalContext(
 function buildTravelMemory(
   travelContexts: Awaited<ReturnType<typeof listTravelContexts>>,
   refDate: Date,
-): Pick<CoachContextData, 'travel' | 'constraints'> {
+) {
   const utcToday = toUtcDateOnly(refDate);
   const utcPlanHorizon = subDays(utcToday, -21);
   const memoryEntriesInWindow = travelContexts.filter(
@@ -438,7 +432,7 @@ function buildTravelMemory(
 
 function buildCoachDecision(
   athleteSnapshot: Awaited<ReturnType<typeof getOrBuildAthleteSnapshot>>,
-): CoachContextData['decision'] {
+) {
   const decisionRaw = athleteSnapshot.decision;
   if (!decisionRaw) {
     return null;
@@ -465,13 +459,13 @@ function buildCoachDecision(
     primaryConflict: decisionRaw.conflicts[0] ?? null,
     primaryOpportunity: decisionRaw.opportunities[0] ?? null,
     adviceActionable: athleteSnapshot.adviceActionable,
-    prescriptiveAdviceAllowed: athleteSnapshot.todaysDecision !== null,
+    prescriptiveAdviceAllowed: (athleteSnapshot.todaysDecision !== undefined && athleteSnapshot.todaysDecision !== null),
   };
 }
 
 function buildCoachFatigueSnapshot(
   athleteSnapshot: Awaited<ReturnType<typeof getOrBuildAthleteSnapshot>>,
-): CoachContextData['fatigue'] {
+) {
   const fatigueSnapshot = athleteSnapshot.fatigue;
   if (!fatigueSnapshot) {
     return null;
@@ -491,7 +485,7 @@ function buildCoachFatigueSnapshot(
 
 function buildCoachAdaptationSnapshot(
   athleteSnapshot: Awaited<ReturnType<typeof getOrBuildAthleteSnapshot>>,
-): CoachContextData['adaptation'] {
+) {
   const adaptationSnapshot = athleteSnapshot.adaptation;
   if (!adaptationSnapshot) {
     return null;
@@ -511,7 +505,7 @@ function buildCoachAdaptationSnapshot(
 
 function buildCoachIntelligence(
   athleteSnapshot: Awaited<ReturnType<typeof getOrBuildAthleteSnapshot>>,
-): Pick<CoachContextData, 'fatigue' | 'adaptation' | 'decision'> {
+) {
   return {
     fatigue: buildCoachFatigueSnapshot(athleteSnapshot),
     adaptation: buildCoachAdaptationSnapshot(athleteSnapshot),
@@ -522,12 +516,12 @@ function buildCoachIntelligence(
 function resolveCoachHomeLabel(
   profile: Awaited<ReturnType<typeof getAthleteProfile>>,
 ): string | null {
-  return profile?.homeLocationLabel?.trim() || (profile?.homeLocationLat !== null ? 'Domicile' : null);
+  return profile?.homeLocationLabel?.trim() || ((profile?.homeLocationLat !== undefined && profile?.homeLocationLat !== null) ? 'Domicile' : null);
 }
 
 function environmentAdjustmentFields(
   athleteSnapshot: Awaited<ReturnType<typeof getOrBuildAthleteSnapshot>>,
-): Pick<CoachContextData['environment'], 'recoveryDemandAdjustment' | 'performanceAdjustment'> {
+) {
   return {
     recoveryDemandAdjustment: athleteSnapshot.environment?.recoveryDemandAdjustment ?? null,
     performanceAdjustment: athleteSnapshot.environment?.performanceAdjustment ?? null,
@@ -538,7 +532,7 @@ function buildCoachEnvironment(
   profile: Awaited<ReturnType<typeof getAthleteProfile>>,
   athleteSnapshot: Awaited<ReturnType<typeof getOrBuildAthleteSnapshot>>,
   homeWeather: Awaited<ReturnType<typeof loadHomeWeatherHint>>,
-): CoachContextData['environment'] {
+) {
   const envPresentation = buildEnvironmentPresentationContext(athleteSnapshot.environment);
   return {
     homeLabel: resolveCoachHomeLabel(profile),
@@ -605,7 +599,7 @@ function mapUpcomingPlanned(
 
 function buildCoachProfile(
   profile: Awaited<ReturnType<typeof getAthleteProfile>>,
-): CoachContextData['profile'] {
+) {
   if (!profile) {
     return null;
   }
@@ -623,7 +617,7 @@ function buildFitnessContext(
   anchor: Awaited<ReturnType<typeof loadAthletePmcAnchor>>,
   dailyStress: Awaited<ReturnType<typeof loadDailyTrainingStressEntries>>,
   refDate: Date,
-): Pick<CoachContextData, 'fitness' | 'load'> {
+) {
   const fitness = anchor
     ? { ctl: Math.round(anchor.ctl), atl: Math.round(anchor.atl), tsb: Math.round(pmcTsb(anchor)) }
     : { ctl: 0, atl: 0, tsb: 0 };
@@ -872,12 +866,12 @@ const TRAINING_CAPACITY_FR: Record<string, string> = {
 
 function profileThresholdParts(profile: NonNullable<CoachContext['profile']>): string[] {
   return [
-    profile.ftpW !== null ? `FTP ${profile.ftpW} W` : null,
-    profile.lthr !== null ? `LTHR ${profile.lthr} bpm` : null,
-    profile.maxHr !== null ? `FC max ${profile.maxHr} bpm` : null,
+    (profile.ftpW !== undefined && profile.ftpW !== null) ? `FTP ${profile.ftpW} W` : null,
+    (profile.lthr !== undefined && profile.lthr !== null) ? `LTHR ${profile.lthr} bpm` : null,
+    (profile.maxHr !== undefined && profile.maxHr !== null) ? `FC max ${profile.maxHr} bpm` : null,
     profile.thresholdPace ? `Allure seuil ${profile.thresholdPace}` : null,
-    profile.vo2maxRunning !== null ? `VO2max course ${profile.vo2maxRunning}` : null,
-    profile.vo2maxCycling !== null ? `VO2max vélo ${profile.vo2maxCycling}` : null,
+    (profile.vo2maxRunning !== undefined && profile.vo2maxRunning !== null) ? `VO2max course ${profile.vo2maxRunning}` : null,
+    (profile.vo2maxCycling !== undefined && profile.vo2maxCycling !== null) ? `VO2max vélo ${profile.vo2maxCycling}` : null,
   ].filter(Boolean) as string[];
 }
 
@@ -898,7 +892,7 @@ function appendFatigueWarningLines(fatigue: NonNullable<CoachContext['fatigue']>
       `⚠ Risque de surentraînement fonctionnel : ${fatigue.functionalOverreachingRisk}. Priorise la récupération avant d'augmenter la charge.`,
     );
   }
-  if (fatigue.estimatedTimeToFresh !== null && fatigue.fatigueLevel !== 'FRESH') {
+  if ((fatigue.estimatedTimeToFresh !== undefined && fatigue.estimatedTimeToFresh !== null) && fatigue.fatigueLevel !== 'FRESH') {
     lines.push(`Retour à l'état frais estimé dans ${fatigue.estimatedTimeToFresh} jour(s).`);
   }
   if (fatigue.performanceImpairmentEstimate && fatigue.performanceImpairmentEstimate > 0.1) {
@@ -924,7 +918,7 @@ const ADAPTATION_TREND_FR: Record<string, string> = {
 
 function fatigueSummaryBits(fatigue: NonNullable<CoachContext['fatigue']>): string[] {
   return [
-    fatigue.fatigueIndex !== null ? `Index ${fatigue.fatigueIndex}/100` : null,
+    (fatigue.fatigueIndex !== undefined && fatigue.fatigueIndex !== null) ? `Index ${fatigue.fatigueIndex}/100` : null,
     fatigue.fatigueLevel ? (FATIGUE_LEVEL_FR[fatigue.fatigueLevel] ?? fatigue.fatigueLevel) : null,
     fatigue.trainingCapacity
       ? `Capacité d'entraînement ${TRAINING_CAPACITY_FR[fatigue.trainingCapacity] ?? fatigue.trainingCapacity}`
@@ -961,14 +955,14 @@ function appendAdaptationWarningLines(
       `⚠ Risque de plateau : ≥ 14 jours sans progression d'adaptation. Un changement de stimulus est nécessaire.`,
     );
   }
-  if (adaptation.estimatedAdaptationPeak !== null) {
+  if ((adaptation.estimatedAdaptationPeak !== undefined && adaptation.estimatedAdaptationPeak !== null)) {
     lines.push(`Pic de forme estimé dans ${adaptation.estimatedAdaptationPeak} jour(s).`);
   }
 }
 
 function adaptationSummaryBits(adaptation: NonNullable<CoachContext['adaptation']>): string[] {
   return [
-    adaptation.adaptationIndex !== null ? `Index ${adaptation.adaptationIndex}/100` : null,
+    (adaptation.adaptationIndex !== undefined && adaptation.adaptationIndex !== null) ? `Index ${adaptation.adaptationIndex}/100` : null,
     adaptation.adaptationStatus
       ? (ADAPTATION_STATUS_FR[adaptation.adaptationStatus] ?? adaptation.adaptationStatus)
       : null,
@@ -992,8 +986,8 @@ function formatAdaptationSection(adaptation: CoachContext['adaptation']): string
 function environmentSummaryBits(environment: CoachContext['environment']): string[] {
   return [
     environment.homeLabel ? `lieu ${environment.homeLabel}` : null,
-    environment.airTemperatureC !== null ? `${Math.round(environment.airTemperatureC)} °C` : null,
-    environment.relativeHumidityPct !== null
+    (environment.airTemperatureC !== undefined && environment.airTemperatureC !== null) ? `${Math.round(environment.airTemperatureC)} °C` : null,
+    (environment.relativeHumidityPct !== undefined && environment.relativeHumidityPct !== null)
       ? `humidité ${Math.round(environment.relativeHumidityPct)} %`
       : null,
     environment.thermalLabel,
@@ -1004,12 +998,12 @@ function appendEnvironmentAdjustmentLines(
   environment: CoachContext['environment'],
   lines: string[],
 ): void {
-  if (environment.recoveryDemandAdjustment !== null && environment.recoveryDemandAdjustment !== 0) {
+  if ((environment.recoveryDemandAdjustment !== undefined && environment.recoveryDemandAdjustment !== null) && environment.recoveryDemandAdjustment !== 0) {
     lines.push(
       `Ajustement récupération lié à l'environnement : ${environment.recoveryDemandAdjustment > 0 ? '+' : ''}${Math.round(environment.recoveryDemandAdjustment * 100)} %.`,
     );
   }
-  if (environment.performanceAdjustment !== null && environment.performanceAdjustment !== 0) {
+  if ((environment.performanceAdjustment !== undefined && environment.performanceAdjustment !== null) && environment.performanceAdjustment !== 0) {
     lines.push(
       `Ajustement performance attendu : ${environment.performanceAdjustment > 0 ? '+' : ''}${Math.round(environment.performanceAdjustment * 100)} %.`,
     );
@@ -1037,15 +1031,15 @@ function formatEnvironmentSection(environment: CoachContext['environment']): str
 
 function healthSummaryBits(health: CoachContext['health']): string[] {
   return [
-    health.readinessToday !== null ? `Readiness du jour ${health.readinessToday}/100` : null,
+    (health.readinessToday !== undefined && health.readinessToday !== null) ? `Readiness du jour ${health.readinessToday}/100` : null,
     health.readinessLevel ? `(${health.readinessLevel})` : null,
     health.hrvStatus ? `HRV ${health.hrvStatus}` : null,
-    health.bodyBattery !== null ? `Body Battery ${health.bodyBattery}` : null,
-    health.avgSleepMin !== null
+    (health.bodyBattery !== undefined && health.bodyBattery !== null) ? `Body Battery ${health.bodyBattery}` : null,
+    (health.avgSleepMin !== undefined && health.avgSleepMin !== null)
       ? `sommeil moy 7j ${Math.floor(health.avgSleepMin / 60)}h${(health.avgSleepMin % 60).toString().padStart(2, '0')}`
       : null,
-    health.avgRestingHr !== null ? `FC repos moy ${health.avgRestingHr}` : null,
-    health.avgHrv !== null ? `HRV moy ${health.avgHrv}` : null,
+    (health.avgRestingHr !== undefined && health.avgRestingHr !== null) ? `FC repos moy ${health.avgRestingHr}` : null,
+    (health.avgHrv !== undefined && health.avgHrv !== null) ? `HRV moy ${health.avgHrv}` : null,
   ].filter(Boolean) as string[];
 }
 
@@ -1064,10 +1058,10 @@ function formatPrimaryRaceLine(primaryRace: NonNullable<CoachContext['primaryRac
 }
 
 function formatMetricGoalLine(goal: CoachContext['metricGoals'][number]): string {
-  if (goal.target === null) {
+  if ((goal.target === undefined || goal.target === null)) {
     return `Objectif métrique : ${goal.title}.`;
   }
-  const current = goal.current !== null ? ` (actuel ${goal.current})` : '';
+  const current = (goal.current !== undefined && goal.current !== null) ? ` (actuel ${goal.current})` : '';
   return `Objectif métrique : ${goal.title} → cible ${goal.target}${goal.unit ?? ''}${current}.`;
 }
 
@@ -1093,8 +1087,8 @@ function formatGoalsSection(ctx: CoachContext): string[] {
 
 function formatRecentActivityLine(a: CoachContext['recent'][number]): string {
   const extra = [
-    a.load !== null ? `charge ${a.load}` : null,
-    a.rpe !== null ? `RPE ${a.rpe}` : null,
+    (a.load !== undefined && a.load !== null) ? `charge ${a.load}` : null,
+    (a.rpe !== undefined && a.rpe !== null) ? `RPE ${a.rpe}` : null,
     a.feeling ? `ressenti ${a.feeling}` : null,
     a.detail || null,
   ]
@@ -1125,11 +1119,11 @@ function formatPhysicalSection(physical: CoachContext['physical']): string[] {
       const bits = [
         `${p.category} : ${p.title}`,
         p.bodyPart ? `zone ${p.bodyPart}${p.side ? ` (${p.side})` : ''}` : null,
-        p.severity !== null ? `sévérité inférée ${p.severity}/10` : null,
+        (p.severity !== undefined && p.severity !== null) ? `sévérité inférée ${p.severity}/10` : null,
         `statut ${p.status}`,
         p.trend ? `tendance ${p.trend}` : null,
         p.functionalCapacity ? `capacité fonctionnelle ${p.functionalCapacity}` : null,
-        p.confidence !== null ? `confiance ${Math.round(p.confidence * 100)}%` : null,
+        (p.confidence !== undefined && p.confidence !== null) ? `confiance ${Math.round(p.confidence * 100)}%` : null,
         p.description || null,
       ]
         .filter(Boolean)

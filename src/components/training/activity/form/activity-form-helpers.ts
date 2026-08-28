@@ -115,15 +115,13 @@ export function sanitizeActivityPayload(values: ActivityFormValues): ActivityFor
 }
 
 export function initialLocationFromData(data?: ActivityWithRelations): LocationPlaceValue {
-  if (
-    data?.observedLocationLat !== null &&
-    data.observedLocationLng !== null &&
-    data.observedLocationLabel
-  ) {
+  const lat = data?.observedLocationLat ?? null;
+  const lng = data?.observedLocationLng ?? null;
+  if (lat !== null && lng !== null && data?.observedLocationLabel) {
     return {
       label: data.observedLocationLabel,
-      latitude: data.observedLocationLat,
-      longitude: data.observedLocationLng,
+      latitude: lat,
+      longitude: lng,
     };
   }
   return null;

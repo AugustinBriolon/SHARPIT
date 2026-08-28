@@ -20,7 +20,7 @@ function patchField<T extends z.ZodTypeAny>(coerce: (value: unknown) => unknown,
     if (value === undefined) {
       return undefined;
     }
-    if (value === '' || value === null) {
+    if (value === '' || (value === undefined || value === null)) {
       return null;
     }
     return coerce(value);

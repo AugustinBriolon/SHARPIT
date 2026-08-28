@@ -81,7 +81,7 @@ async function backfillMultisportLegs(
     where: { id: activityId },
     select: { multisportLegs: true },
   });
-  if (existing?.multisportLegs !== null) {
+  if ((existing?.multisportLegs !== undefined && existing?.multisportLegs !== null)) {
     return false;
   }
 
@@ -205,14 +205,14 @@ type GarminListActivity = Parameters<typeof garminActivityToSession>[0];
 
 function buildEvaluationPatch(
   evaluation: Awaited<ReturnType<typeof fetchGarminActivityEvaluation>>,
-  existing: { rpe: number | null; feeling: number | null },
+  existing: { rpe: number | null; feeling: string | null },
 ): Prisma.ActivityUpdateInput {
   const patch: Prisma.ActivityUpdateInput = {};
-  if (evaluation.rpe !== null && evaluation.rpe !== existing.rpe) {
+  if ((evaluation.rpe !== undefined && evaluation.rpe !== null) && evaluation.rpe !== existing.rpe) {
     patch.rpe = evaluation.rpe;
   }
-  if (evaluation.feeling !== null && evaluation.feeling !== existing.feeling) {
-    patch.feeling = evaluation.feeling;
+  if ((evaluation.feeling !== undefined && evaluation.feeling !== null) && String(evaluation.feeling) !== String(existing.feeling)) {
+    patch.feeling = String(evaluation.feeling);
   }
   if (evaluation.notes) {
     patch.notes = evaluation.notes;
@@ -221,7 +221,7 @@ function buildEvaluationPatch(
 }
 
 type HandleExistingGarminInput = {
-  existing: { id: string; rpe: number | null; feeling: number | null };
+  existing: { id: string; rpe: number | null; feeling: string | null };
   evaluation: Awaited<ReturnType<typeof fetchGarminActivityEvaluation>>;
   strengthSets: ParsedStrengthSet[];
   type: ActivityType;

@@ -65,7 +65,7 @@ export function isAdviceActionableFromDecision(decision: DecisionData | null | u
   if (decision.priority.confidenceGated) {
     return false;
   }
-  if (decision.confidence === null || decision.confidence < MIN_DECISION_ADVICE_CONFIDENCE) {
+  if ((decision.confidence === undefined || decision.confidence === null) || decision.confidence < MIN_DECISION_ADVICE_CONFIDENCE) {
     return false;
   }
   return true;

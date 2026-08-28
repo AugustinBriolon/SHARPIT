@@ -78,7 +78,7 @@ export function computeThermalStressBand(
   }
 
   const temp = measurements.airTemperatureC;
-  if (temp !== null && exposure !== 'INDOOR') {
+  if ((temp !== undefined && temp !== null) && exposure !== 'INDOOR') {
     const band = thermalBandFromAirTemp(temp);
     return {
       available: true,
@@ -104,7 +104,7 @@ export function computeWindChillC(measurements: WeatherMeasurements): MetricValu
   const temp = measurements.airTemperatureC;
   const wind = measurements.windSpeedMps;
 
-  if (temp === null || wind === null) {
+  if ((temp === undefined || temp === null) || (wind === undefined || wind === null)) {
     return {
       available: false,
       quality: 'MISSING',
@@ -112,8 +112,8 @@ export function computeWindChillC(measurements: WeatherMeasurements): MetricValu
       reason: 'MISSING_INPUT',
       explanation: 'Refroidissement éolien indisponible : température et vent requis.',
       missingFields: [
-        ...(temp === null ? (['airTemperatureC'] as const) : []),
-        ...(wind === null ? (['windSpeedMps'] as const) : []),
+        ...((temp === undefined || temp === null) ? (['airTemperatureC'] as const) : []),
+        ...((wind === undefined || wind === null) ? (['windSpeedMps'] as const) : []),
       ],
     };
   }

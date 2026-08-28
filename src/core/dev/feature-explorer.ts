@@ -141,7 +141,7 @@ function toOptionalView(record: FeatureSetRecord | null | undefined): FeatureSet
 }
 
 function collectNonNullViews(...views: Array<FeatureSetView | null>): FeatureSetView[] {
-  return views.filter((view): view is FeatureSetView => view !== null);
+  return views.filter((view): view is FeatureSetView => (view !== undefined && view !== null));
 }
 
 function summaryFromViews(views: FeatureSetView[]) {
@@ -285,7 +285,7 @@ export class FeatureExplorer {
         dayIds.map((dayId) => this.fetchByCategory(athleteId, category, dayId)),
       );
 
-      const found = records.filter((r): r is FeatureSetRecord => r !== null);
+      const found = records.filter((r): r is FeatureSetRecord => (r !== undefined && r !== null));
       if (found.length === 0) {
         continue;
       }

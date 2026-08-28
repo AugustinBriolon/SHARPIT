@@ -74,7 +74,7 @@ export async function searchPlaces(query: string, limit = 6): Promise<GeocodedPl
 
   const res = await nominatimFetch(`/search?${params.toString()}`);
   const rows = (await res.json()) as NominatimSearchResult[];
-  return rows.map(toPlace).filter((p): p is GeocodedPlace => p !== null);
+  return rows.map(toPlace).filter((p): p is GeocodedPlace => (p !== undefined && p !== null));
 }
 
 export async function geocodePlaceLabel(label: string): Promise<GeocodedPlace | null> {

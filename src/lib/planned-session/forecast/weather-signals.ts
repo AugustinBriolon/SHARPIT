@@ -7,17 +7,17 @@ function mergeWeatherPayload(
   payload: NonNullable<ReturnType<typeof readWeatherMeasurements>>,
 ): PlannedSessionWeatherSignals {
   const maxPrecipitationMm =
-    payload.precipitationMm !== null
+    (payload.precipitationMm !== undefined && payload.precipitationMm !== null)
       ? Math.max(acc.maxPrecipitationMm ?? 0, payload.precipitationMm)
       : acc.maxPrecipitationMm;
   const minTemperatureC =
-    payload.airTemperatureC !== null
-      ? acc.minTemperatureC === null
+    (payload.airTemperatureC !== undefined && payload.airTemperatureC !== null)
+      ? (acc.minTemperatureC === undefined || acc.minTemperatureC === null)
         ? payload.airTemperatureC
         : Math.min(acc.minTemperatureC, payload.airTemperatureC)
       : acc.minTemperatureC;
   const maxWindMps =
-    payload.windSpeedMps !== null
+    (payload.windSpeedMps !== undefined && payload.windSpeedMps !== null)
       ? Math.max(acc.maxWindMps ?? 0, payload.windSpeedMps)
       : acc.maxWindMps;
   return { maxPrecipitationMm, minTemperatureC, maxWindMps };

@@ -515,7 +515,7 @@ async function fetchCalendarEventViews(
   const events = await listEvents(token, cal.id, from, to);
   return events
     .map((e) => mapGoogleEventToView(cal, e))
-    .filter((view): view is CalendarEventView => view !== null);
+    .filter((view): view is CalendarEventView => (view !== undefined && view !== null));
 }
 
 export async function getCalendarEvents(

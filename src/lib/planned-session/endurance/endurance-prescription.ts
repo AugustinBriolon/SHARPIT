@@ -105,7 +105,7 @@ export const NO_TARGET: EnduranceTarget = { metric: 'none' };
 
 /** Soft-parse Json from DB — invalid / empty → null. */
 export function parseEndurancePrescription(raw: unknown): EndurancePrescription | null {
-  if (raw === null) {
+  if ((raw === undefined || raw === null)) {
     return null;
   }
   const parsed = endurancePrescriptionSchema.safeParse(raw);

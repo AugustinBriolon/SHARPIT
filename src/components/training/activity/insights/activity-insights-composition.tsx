@@ -25,7 +25,7 @@ export function ActivityInsightsComposition({
   routeColor: string;
   coachPanel?: ReactNode;
   hasPath: boolean;
-  path: Array<{ lat: number; lng: number }> | null | undefined;
+  path: [number, number][] | null | undefined;
   hrZones: ZoneBucket[];
   powerZones: ZoneBucket[];
   lthr: number | null;

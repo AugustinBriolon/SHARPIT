@@ -80,8 +80,25 @@ export async function revokeRenphoCredentials(athleteId: string) {
   });
 }
 
+type RenphoMeasurementScalars = {
+  weightKg: number | null;
+  bmi: number | null;
+  bodyFatPct: number | null;
+  waterPct: number | null;
+  musclePct: number | null;
+  boneKg: number | null;
+  bmr: number | null;
+  visceralFat: number | null;
+  proteinPct: number | null;
+  bodyAge: number | null;
+  subcutaneousFatPct: number | null;
+  skeletalMusclePct: number | null;
+  fatFreeWeightKg: number | null;
+  heartRate: number | null;
+};
+
 const RENPHO_SCALAR_FIELDS: Array<{
-  key: keyof ReturnType<typeof renphoMeasurementScalars>;
+  key: keyof RenphoMeasurementScalars;
   read: (m: RenphoMeasurement) => number | null;
 }> = [
   { key: 'weightKg', read: (m) => m.weight ?? null },
@@ -93,15 +110,15 @@ const RENPHO_SCALAR_FIELDS: Array<{
   { key: 'bmr', read: (m) => m.bmr ?? null },
   { key: 'visceralFat', read: (m) => m.visceral_fat ?? null },
   { key: 'proteinPct', read: (m) => m.protein ?? null },
-  { key: 'bodyAge', read: (m) => (m.body_age !== null ? Math.round(m.body_age) : null) },
+  { key: 'bodyAge', read: (m) => ((m.body_age !== undefined && m.body_age !== null) ? Math.round(m.body_age) : null) },
   { key: 'subcutaneousFatPct', read: (m) => m.subcutaneous_fat ?? null },
   { key: 'skeletalMusclePct', read: (m) => m.skeletal_muscle ?? null },
   { key: 'fatFreeWeightKg', read: (m) => m.fat_free_weight ?? null },
   { key: 'heartRate', read: (m) => m.heart_rate ?? null },
 ];
 
-function renphoMeasurementScalars(m: RenphoMeasurement) {
-  const scalars = {} as ReturnType<typeof renphoMeasurementScalars>;
+function renphoMeasurementScalars(m: RenphoMeasurement): RenphoMeasurementScalars {
+  const scalars = {} as RenphoMeasurementScalars;
   for (const field of RENPHO_SCALAR_FIELDS) {
     scalars[field.key] = field.read(m);
   }
@@ -169,7 +186,7 @@ async function upsertDailyWeightFromMeasurement(
   m: RenphoMeasurement,
   withingsDays: Set<string>,
 ) {
-  if (m.weight === null) {
+  if ((m.weight === undefined || m.weight === null)) {
     return;
   }
 
@@ -215,7 +232,7 @@ async function persistRenphoMeasurements(input: {
     select: { externalId: true },
   });
   const existingIds = new Set(
-    existingRows.map((r) => r.externalId).filter((id): id is string => id !== null),
+    existingRows.map((r) => r.externalId).filter((id): id is string => (id !== undefined && id !== null)),
   );
 
   const toCreate: Prisma.BodyCompositionMeasurementCreateManyInput[] = [];

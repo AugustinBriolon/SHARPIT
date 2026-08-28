@@ -66,7 +66,7 @@ export function weatherFieldQuality(
 ): Partial<Record<string, FieldQuality>> {
   const result: Partial<Record<string, FieldQuality>> = {};
   for (const [field, value] of Object.entries(measurements)) {
-    result[field] = value !== null ? fieldQualityExact(providerId) : fieldQualityMissing();
+    result[field] = (value !== undefined && value !== null) ? fieldQualityExact(providerId) : fieldQualityMissing();
   }
   return result;
 }
@@ -91,7 +91,7 @@ export function aggregateFieldQuality(
 export function confidenceFromFieldQualities(
   fieldQuality: Partial<Record<string, FieldQuality>>,
 ): number {
-  const values = Object.values(fieldQuality).filter((f): f is FieldQuality => f !== null);
+  const values = Object.values(fieldQuality).filter((f): f is FieldQuality => (f !== undefined && f !== null));
   if (values.length === 0) {
     return 0;
   }

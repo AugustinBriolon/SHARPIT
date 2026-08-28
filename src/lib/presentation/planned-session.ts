@@ -124,10 +124,10 @@ function mapPlannedSessionAdvisories(
 }
 
 function coalesceLocationField<T>(sessionValue: T | null | undefined, contextValue: T | null | undefined) {
-  if (sessionValue !== null && sessionValue !== undefined) {
+  if ((sessionValue !== undefined && sessionValue !== null) && sessionValue !== undefined) {
     return sessionValue;
   }
-  if (contextValue !== null && contextValue !== undefined) {
+  if ((contextValue !== undefined && contextValue !== null) && contextValue !== undefined) {
     return contextValue;
   }
   return null;

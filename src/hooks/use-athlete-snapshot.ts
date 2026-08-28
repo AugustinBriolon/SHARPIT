@@ -53,7 +53,7 @@ export function useAthleteSnapshot(date: Date = new Date()): UseAthleteSnapshotR
   });
 
   const snapshot = query.data?.snapshot ?? null;
-  const hasContent = snapshot !== null && snapshotHasDisplayableContent(snapshot);
+  const hasContent = (snapshot !== undefined && snapshot !== null) && snapshotHasDisplayableContent(snapshot);
 
   const refresh = useCallback(async () => {
     const result = await refreshAthleteSnapshot(trainingDayId);
@@ -63,10 +63,10 @@ export function useAthleteSnapshot(date: Date = new Date()): UseAthleteSnapshotR
 
   return {
     snapshot,
-    loading: query.isPending && snapshot === null,
+    loading: query.isPending && (snapshot === undefined || snapshot === null),
     isPending: query.isPending,
     isFetching: query.isFetching,
-    isRefreshing: query.isFetching && snapshot !== null,
+    isRefreshing: query.isFetching && (snapshot !== undefined && snapshot !== null),
     hasContent,
     error: query.error instanceof Error ? query.error.message : null,
     refresh,

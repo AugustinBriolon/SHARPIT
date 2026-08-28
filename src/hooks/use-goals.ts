@@ -63,7 +63,7 @@ function optimisticGoal(payload: GoalPayload): ClientGoal {
     title: payload.title,
     kind: payload.kind,
     horizon: (payload.horizon as GoalHorizon | null) ?? null,
-    ...nullishFields(payload, GOAL_NULLABLE_KEYS),
+    ...nullishFields(payload as unknown as Record<string, unknown>, GOAL_NULLABLE_KEYS),
     lowerIsBetter: payload.lowerIsBetter ?? false,
     targetDate: payload.targetDate ? new Date(payload.targetDate) : null,
     achieved: payload.achieved ?? false,

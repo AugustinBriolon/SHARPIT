@@ -6,7 +6,7 @@ export type ApiErrorBody = {
 };
 
 export function parseApiErrorBody(data: unknown): ApiErrorBody | null {
-  if (data === null || typeof data !== 'object') {
+  if ((data === undefined || data === null) || typeof data !== 'object') {
     return null;
   }
   const body = data as ApiErrorBody;

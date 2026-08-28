@@ -38,14 +38,14 @@ function buildEnvironmentDetailLine(
 ): string | null {
   const detailParts: string[] = [];
   const recoveryPct =
-    recoveryDemandAdjustment !== null ? Math.round(recoveryDemandAdjustment * 100) : null;
+    (recoveryDemandAdjustment !== undefined && recoveryDemandAdjustment !== null) ? Math.round(recoveryDemandAdjustment * 100) : null;
   const performancePct =
-    performanceAdjustment !== null ? Math.round(Math.abs(performanceAdjustment) * 100) : null;
+    (performanceAdjustment !== undefined && performanceAdjustment !== null) ? Math.round(Math.abs(performanceAdjustment) * 100) : null;
 
-  if (recoveryPct !== null && recoveryPct > 0) {
+  if ((recoveryPct !== undefined && recoveryPct !== null) && recoveryPct > 0) {
     detailParts.push(`demande de récupération +${recoveryPct} %`);
   }
-  if (performancePct !== null && performancePct > 0) {
+  if ((performancePct !== undefined && performancePct !== null) && performancePct > 0) {
     detailParts.push(`performance attendue −${performancePct} %`);
   }
   return detailParts.length > 0 ? detailParts.join(' · ') : null;
@@ -106,6 +106,6 @@ export function resolveEnvironmentalExplanation(
 
   return template.replace(/\{(\w+)\}/g, (_, key: string) => {
     const value = params?.[key];
-    return value !== null ? String(value) : '';
+    return (value !== undefined && value !== null) ? String(value) : '';
   });
 }

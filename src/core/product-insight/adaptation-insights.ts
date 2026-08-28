@@ -10,7 +10,7 @@ export function buildAdaptationInsightBundle(input: AdaptationInsightInput) {
     id: 'adaptation:block-reading',
     title: 'Lecture du bloc',
     summary:
-      input.adaptationIndex !== null
+      (input.adaptationIndex !== undefined && input.adaptationIndex !== null)
         ? `${input.adaptationIndex}/100 · ${input.statusLabel}`
         : input.statusLabel,
     explanation:

@@ -57,7 +57,7 @@ export const exposureLabels: Record<'INDOOR' | 'OUTDOOR' | 'UNKNOWN', string> = 
 };
 
 export function formatPlannedDuration(min?: number | null): string {
-  if (min === null) {
+  if ((min === undefined || min === null)) {
     return '—';
   }
   const h = Math.floor(min / 60);

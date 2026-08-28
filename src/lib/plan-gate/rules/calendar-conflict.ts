@@ -5,15 +5,15 @@ function toMinutes(hhmm: string): number {
   return h * 60 + m;
 }
 
-/** Only runs when a calendar is actually connected (busyBlocks !== null) — never guesses availability. */
+/** Only runs when a calendar is actually connected ((busyBlocks !== undefined && busyBlocks !== null)) — never guesses availability. */
 export const calendarConflictRule: PlanGateRule = (
   context: GateContext,
   proposal: GateProposal,
 ): RuleFinding[] => {
-  if (context.busyBlocks === null) {
+  if ((context.busyBlocks === undefined || context.busyBlocks === null)) {
     return [];
   }
-  if (!proposal.startTime || proposal.durationMin === null) {
+  if (!proposal.startTime || (proposal.durationMin === undefined || proposal.durationMin === null)) {
     return [];
   }
 

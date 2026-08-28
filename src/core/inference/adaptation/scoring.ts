@@ -74,7 +74,7 @@ function scoreDetrainingLoad(chronicLoad: number): DimensionScore | null {
 }
 
 function scoreExcessiveAcwr(acwr: number | null): DimensionScore | null {
-  if (acwr === null || acwr <= 1.5) {
+  if ((acwr === undefined || acwr === null) || acwr <= 1.5) {
     return null;
   }
   return {
@@ -89,9 +89,9 @@ function scoreProgressiveOverload(
   acwr: number | null,
 ): DimensionScore | null {
   if (
-    acuteChronicLoadTrend === null ||
+    (acuteChronicLoadTrend === undefined || acuteChronicLoadTrend === null) ||
     acuteChronicLoadTrend <= 0.02 ||
-    acwr === null ||
+    (acwr === undefined || acwr === null) ||
     acwr < 0.8 ||
     acwr > 1.3
   ) {
@@ -111,7 +111,7 @@ function scoreMaintainingLoad(
   acuteChronicLoadTrend: number | null,
   acwr: number | null,
 ): DimensionScore | null {
-  if (acwr === null || acwr < 0.7 || acwr > 1.3) {
+  if ((acwr === undefined || acwr === null) || acwr < 0.7 || acwr > 1.3) {
     return null;
   }
   const trend = acuteChronicLoadTrend ?? 0;
@@ -127,10 +127,10 @@ function scoreDecliningLoad(
   acuteChronicLoadTrend: number | null,
   acwr: number | null,
 ): DimensionScore | null {
-  if (acuteChronicLoadTrend === null || acuteChronicLoadTrend >= -0.02) {
+  if ((acuteChronicLoadTrend === undefined || acuteChronicLoadTrend === null) || acuteChronicLoadTrend >= -0.02) {
     return null;
   }
-  if (acwr !== null && acwr >= 0.8) {
+  if ((acwr !== undefined && acwr !== null) && acwr >= 0.8) {
     return null;
   }
   const declineScore = Math.max(5, 30 + (acuteChronicLoadTrend / -0.02) * 5);
@@ -168,7 +168,7 @@ export function scoreLoadProgression(load: LoadFeatureSet | 'PENDING'): Dimensio
 export function scoreNeuromuscularEfficiency(
   sessions: readonly SessionFeatureSet[],
 ): DimensionScore {
-  const eligible = sessions.filter((s) => s.hrDriftPercent !== null);
+  const eligible = sessions.filter((s) => (s.hrDriftPercent !== undefined && s.hrDriftPercent !== null));
   if (eligible.length === 0) {
     return { score: null, available: false, reason: 'no sessions with hrDriftPercent' };
   }
@@ -176,11 +176,11 @@ export function scoreNeuromuscularEfficiency(
   const meanDrift =
     eligible.reduce((sum, s) => sum + (s.hrDriftPercent as number), 0) / eligible.length;
   const meanIF =
-    sessions.filter((s) => s.intensityFactor !== null).length > 0
+    sessions.filter((s) => (s.intensityFactor !== undefined && s.intensityFactor !== null)).length > 0
       ? sessions
-          .filter((s) => s.intensityFactor !== null)
+          .filter((s) => (s.intensityFactor !== undefined && s.intensityFactor !== null))
           .reduce((sum, s) => sum + (s.intensityFactor as number), 0) /
-        sessions.filter((s) => s.intensityFactor !== null).length
+        sessions.filter((s) => (s.intensityFactor !== undefined && s.intensityFactor !== null)).length
       : null;
 
   let base: number;
@@ -194,7 +194,7 @@ export function scoreNeuromuscularEfficiency(
     base = Math.max(0, 40 - (meanDrift - 10) * 3);
   }
 
-  const ifBonus = meanIF !== null && meanIF > 0.85 ? 10 : 0;
+  const ifBonus = (meanIF !== undefined && meanIF !== null) && meanIF > 0.85 ? 10 : 0;
 
   return {
     score: Math.round(Math.min(100, base + ifBonus)),
@@ -234,13 +234,13 @@ function resolveAutonomicScore(
   hrvDeltaFromBaseline: number | null,
   rhrDeltaFromBaseline: number | null,
 ): { score: number; partial: boolean } {
-  if (hrvDeltaFromBaseline !== null && rhrDeltaFromBaseline !== null) {
+  if ((hrvDeltaFromBaseline !== undefined && hrvDeltaFromBaseline !== null) && (rhrDeltaFromBaseline !== undefined && rhrDeltaFromBaseline !== null)) {
     return {
       score: scoreAutonomicFromBothSignals(hrvDeltaFromBaseline, rhrDeltaFromBaseline),
       partial: false,
     };
   }
-  if (hrvDeltaFromBaseline !== null) {
+  if ((hrvDeltaFromBaseline !== undefined && hrvDeltaFromBaseline !== null)) {
     return { score: scoreAutonomicFromHrvOnly(hrvDeltaFromBaseline), partial: true };
   }
   return { score: scoreFromRhrDeltaOnly(rhrDeltaFromBaseline!), partial: true };
@@ -252,7 +252,7 @@ export function scoreAutonomicAdaptation(recovery: RecoveryFeatureSet | 'PENDING
   }
 
   const { hrvDeltaFromBaseline, rhrDeltaFromBaseline } = recovery;
-  if (hrvDeltaFromBaseline === null && rhrDeltaFromBaseline === null) {
+  if ((hrvDeltaFromBaseline === undefined || hrvDeltaFromBaseline === null) && (rhrDeltaFromBaseline === undefined || rhrDeltaFromBaseline === null)) {
     return { score: null, available: false, reason: 'HRV and RHR delta both unavailable' };
   }
 
@@ -284,9 +284,9 @@ function baseRecoveryQualityScore(
   capacity: FatigueState['trainingCapacity'] | null,
 ): number {
   if (capacity === 'REST_ONLY') {
-    return readiness !== null ? Math.min(30, readiness * 0.3) : 10;
+    return (readiness !== undefined && readiness !== null) ? Math.min(30, readiness * 0.3) : 10;
   }
-  if (readiness !== null) {
+  if ((readiness !== undefined && readiness !== null)) {
     return scoreRecoveryFromReadiness(readiness, capacity);
   }
   return scoreFromCapacityOnly(capacity!);
@@ -315,7 +315,7 @@ export function scoreRecoveryQuality(
   recoveryState: RecoveryState | null,
   fatigueState: FatigueState | null,
 ): DimensionScore {
-  if (recoveryState === null && fatigueState === null) {
+  if ((recoveryState === undefined || recoveryState === null) && (fatigueState === undefined || fatigueState === null)) {
     return {
       score: null,
       available: false,
@@ -357,7 +357,7 @@ export function synthesizeAdaptationIndex(dims: ScoredAdaptationDimensions): {
     { key: 'recoveryQuality' as const, weight: WEIGHTS.recoveryQuality },
   ];
 
-  const available = entries.filter((e) => dims[e.key].available && dims[e.key].score !== null);
+  const available = entries.filter((e) => dims[e.key].available && (dims[e.key].score !== undefined && dims[e.key].score !== null));
   const totalAvailableWeight = available.reduce((s, e) => s + e.weight, 0);
   const availableDimensionCount = available.length;
 

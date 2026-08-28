@@ -23,7 +23,7 @@ export function buildCoachProvenanceChips({
 }): CoachProvenanceChip[] {
   const chips: CoachProvenanceChip[] = [];
 
-  if (recoveryScore !== null) {
+  if ((recoveryScore !== undefined && recoveryScore !== null)) {
     chips.push({
       key: 'recovery',
       label: `Récup ${Math.round(recoveryScore)}`,
@@ -31,7 +31,7 @@ export function buildCoachProvenanceChips({
     });
   }
 
-  if (sleepScore !== null) {
+  if ((sleepScore !== undefined && sleepScore !== null)) {
     // Last night is conventionally "la nuit du <veille>".
     const night = subDays(now, 1);
     chips.push({

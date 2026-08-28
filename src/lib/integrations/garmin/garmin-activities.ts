@@ -62,7 +62,7 @@ interface GarminSummarizedExerciseSet {
 
 /** Garmin envoie le poids en grammes (gros nombres) ou parfois déjà en kg. */
 function garminWeightToKg(weight: number | null | undefined): number | null {
-  if (weight === null || weight <= 0) {
+  if ((weight === undefined || weight === null) || weight <= 0) {
     return null;
   }
   if (weight >= 100) {
@@ -197,7 +197,7 @@ export function parseGarminSummarizedExerciseSets(
 
   return raw
     .map((entry, index) => summarizedExerciseEntry(entry as GarminSummarizedExerciseSet, index, labels))
-    .filter((entry): entry is ParsedStrengthSet => entry !== null);
+    .filter((entry): entry is ParsedStrengthSet => (entry !== undefined && entry !== null));
 }
 
 /**
@@ -232,7 +232,7 @@ export function resolveGarminStrengthSets(
  */
 function effectiveRepsFromSet(set: GarminExerciseSet): number {
   const repCount = set.repetitionCount ?? 0;
-  const durationSec = set.duration !== null && set.duration > 0 ? Math.round(set.duration) : 0;
+  const durationSec = (set.duration !== undefined && set.duration !== null) && set.duration > 0 ? Math.round(set.duration) : 0;
   if (repCount > 0) {
     return repCount;
   }
@@ -246,7 +246,7 @@ function resolveExerciseSetKey(
   lastActiveWktStep: number | null,
 ): string | null {
   let key: string | null = entry ? exerciseKeyFromEntry(entry) : null;
-  if (!key && set.wktStepIndex !== null && lastActiveWktStep !== null) {
+  if (!key && (set.wktStepIndex !== undefined && set.wktStepIndex !== null) && (lastActiveWktStep !== undefined && lastActiveWktStep !== null)) {
     if (set.wktStepIndex !== lastActiveWktStep) {
       key = `step::${set.wktStepIndex}`;
     }
@@ -268,7 +268,7 @@ class StrengthSetAccumulator {
   constructor(private readonly labels: Map<string, string>) {}
 
   flush(): void {
-    if (this.currentKey === null || this.currentLabel === null || this.reps.length === 0) {
+    if ((this.currentKey === undefined || this.currentKey === null) || (this.currentLabel === undefined || this.currentLabel === null) || this.reps.length === 0) {
       return;
     }
     this.order = pushStrengthGroup({
@@ -293,7 +293,7 @@ class StrengthSetAccumulator {
   }
 
   addRest(set: GarminExerciseSet): void {
-    if (set.duration !== null && set.duration > 0) {
+    if ((set.duration !== undefined && set.duration !== null) && set.duration > 0) {
       this.rests.push(set.duration);
     }
   }
@@ -309,17 +309,17 @@ class StrengthSetAccumulator {
   }
 
   private pushTimedDuration(set: GarminExerciseSet): void {
-    const durationSec = set.duration !== null && set.duration > 0 ? Math.round(set.duration) : 0;
+    const durationSec = (set.duration !== undefined && set.duration !== null) && set.duration > 0 ? Math.round(set.duration) : 0;
     if (durationSec > 0 && (set.repetitionCount ?? 0) <= 0) {
       this.durations.push(durationSec);
     }
   }
 
   private pushWeightAndStep(set: GarminExerciseSet): void {
-    if (set.weight !== null && set.weight > 0) {
+    if ((set.weight !== undefined && set.weight !== null) && set.weight > 0) {
       this.weights.push(set.weight);
     }
-    if (set.wktStepIndex !== null) {
+    if ((set.wktStepIndex !== undefined && set.wktStepIndex !== null)) {
       this.lastActiveWktStep = set.wktStepIndex;
     }
   }
@@ -403,7 +403,7 @@ export function garminSessionDurationSec(activity: IActivity, type: ActivityType
 /** Durée Garmin : secondes ou millisecondes selon le champ / endpoint. */
 export function garminDurationSec(...values: Array<number | null | undefined>): number | null {
   for (const v of values) {
-    if (v === null || !Number.isFinite(v) || v <= 0) {
+    if ((v === undefined || v === null) || !Number.isFinite(v) || v <= 0) {
       continue;
     }
     const sec = v > 1_000_000 ? Math.round(v / 1000) : Math.round(v);

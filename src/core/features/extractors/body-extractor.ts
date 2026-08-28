@@ -54,7 +54,10 @@ function computeTrend(
   getValue: (m: BodyHistory['measurements7d'][number]) => number | null,
 ): number | null {
   const valid = measurements
-    .filter((m) => getValue(m) !== null)
+    .filter((m) => {
+      const value = getValue(m);
+      return value !== undefined && value !== null;
+    })
     .sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
 
   if (valid.length < 3) {
@@ -83,7 +86,7 @@ function computeBodyMasses(obs: BodyCompositionObservation): {
   fatMassKg: number | null;
   leanMassKg: number | null;
 } {
-  if (obs.fatPercent === null) {
+  if ((obs.fatPercent === undefined || obs.fatPercent === null)) {
     return { fatMassKg: null, leanMassKg: null };
   }
   return {

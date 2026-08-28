@@ -49,7 +49,7 @@ export function weekStartFor(d: Date): Date {
 }
 
 function avg(values: (number | null | undefined)[]): number | null {
-  const ok = values.filter((v): v is number => v !== null);
+  const ok = values.filter((v): v is number => (v !== undefined && v !== null));
   return ok.length ? ok.reduce((s, v) => s + v, 0) / ok.length : null;
 }
 
@@ -115,7 +115,7 @@ async function buildWeeklyStats(athleteId: string, weekStart: Date): Promise<Wee
   const compliance = planned
     .filter((p) => p.completed && p.analysis)
     .map((p) => (p.analysis as { complianceScore?: number }).complianceScore)
-    .filter((v): v is number => v !== null);
+    .filter((v): v is number => (v !== undefined && v !== null));
 
   const weekHealth = health.filter((h) => {
     const d = new Date(h.date);
@@ -157,7 +157,7 @@ function formatWeeklyVolumeLine(stats: WeeklyStats): string {
       ? Math.round(((stats.totalLoad - stats.prevTotalLoad) / stats.prevTotalLoad) * 100)
       : null;
   return `Volume : ${stats.sessionsDone} séance(s), ${formatDuration(stats.totalDurationMin)}, charge ${stats.totalLoad}${
-    loadDelta !== null
+    (loadDelta !== undefined && loadDelta !== null)
       ? ` (${loadDelta > 0 ? '+' : ''}${loadDelta}% vs semaine précédente ${stats.prevTotalLoad})`
       : ''
   }.`;
@@ -165,12 +165,12 @@ function formatWeeklyVolumeLine(stats: WeeklyStats): string {
 
 function formatWeeklySleepLine(sleep: WeeklyStats['sleep']): string {
   const sleepBits = [
-    sleep.avgDurationMin !== null ? `durée moy ${formatDuration(sleep.avgDurationMin)}` : null,
-    sleep.avgScore !== null ? `score moy ${sleep.avgScore}/100` : null,
-    sleep.avgDeepPct !== null ? `profond ${sleep.avgDeepPct}%` : null,
-    sleep.avgRemPct !== null ? `REM ${sleep.avgRemPct}%` : null,
-    sleep.regularityMin !== null ? `régularité ±${sleep.regularityMin} min` : null,
-    sleep.recommendedBedtimeMin !== null
+    (sleep.avgDurationMin !== undefined && sleep.avgDurationMin !== null) ? `durée moy ${formatDuration(sleep.avgDurationMin)}` : null,
+    (sleep.avgScore !== undefined && sleep.avgScore !== null) ? `score moy ${sleep.avgScore}/100` : null,
+    (sleep.avgDeepPct !== undefined && sleep.avgDeepPct !== null) ? `profond ${sleep.avgDeepPct}%` : null,
+    (sleep.avgRemPct !== undefined && sleep.avgRemPct !== null) ? `REM ${sleep.avgRemPct}%` : null,
+    (sleep.regularityMin !== undefined && sleep.regularityMin !== null) ? `régularité ±${sleep.regularityMin} min` : null,
+    (sleep.recommendedBedtimeMin !== undefined && sleep.recommendedBedtimeMin !== null)
       ? `coucher conseillé ${formatClock(sleep.recommendedBedtimeMin)}`
       : null,
   ].filter(Boolean);
@@ -179,9 +179,9 @@ function formatWeeklySleepLine(sleep: WeeklyStats['sleep']): string {
 
 function formatWeeklyRecoveryLine(recovery: WeeklyStats['recovery']): string | null {
   const recBits = [
-    recovery.avgReadiness !== null ? `readiness moy ${Math.round(recovery.avgReadiness)}/100` : null,
-    recovery.avgHrv !== null ? `HRV moy ${Math.round(recovery.avgHrv)} ms` : null,
-    recovery.avgRestingHr !== null ? `FC repos moy ${Math.round(recovery.avgRestingHr)} bpm` : null,
+    (recovery.avgReadiness !== undefined && recovery.avgReadiness !== null) ? `readiness moy ${Math.round(recovery.avgReadiness)}/100` : null,
+    (recovery.avgHrv !== undefined && recovery.avgHrv !== null) ? `HRV moy ${Math.round(recovery.avgHrv)} ms` : null,
+    (recovery.avgRestingHr !== undefined && recovery.avgRestingHr !== null) ? `FC repos moy ${Math.round(recovery.avgRestingHr)} bpm` : null,
   ].filter(Boolean);
   return recBits.length ? `Récupération : ${recBits.join(' · ')}.` : null;
 }
@@ -204,7 +204,7 @@ function formatWeeklyStats(stats: WeeklyStats): string {
   }
   lines.push(
     `Plan : ${stats.sessionsCompleted}/${stats.sessionsPlanned} séance(s) planifiée(s) réalisée(s)${
-      stats.avgComplianceScore !== null
+      (stats.avgComplianceScore !== undefined && stats.avgComplianceScore !== null)
         ? `, conformité moyenne ${stats.avgComplianceScore}/100`
         : ''
     }.`,

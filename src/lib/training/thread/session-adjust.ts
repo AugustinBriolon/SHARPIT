@@ -79,8 +79,8 @@ function buildEaseAdjustment(
   easedEndurance: ReturnType<typeof easeEndurancePrescription>,
   easedStrength: ReturnType<typeof easeStrengthPrescription>,
 ): SessionAdjustment {
-  const hasDuration = session.durationMin !== null && session.durationMin > 0;
-  const hasLoad = session.load !== null && session.load > 0;
+  const hasDuration = (session.durationMin !== undefined && session.durationMin !== null) && session.durationMin > 0;
+  const hasLoad = (session.load !== undefined && session.load !== null) && session.load > 0;
   const adjustment: SessionAdjustment = {
     durationMin: hasDuration
       ? roundMinutes(session.durationMin! * EASE_FACTOR)
@@ -101,8 +101,8 @@ function hasEaseableContent(
   easedEndurance: unknown,
   easedStrength: unknown,
 ): boolean {
-  const hasDuration = session.durationMin !== null && session.durationMin > 0;
-  const hasLoad = session.load !== null && session.load > 0;
+  const hasDuration = (session.durationMin !== undefined && session.durationMin !== null) && session.durationMin > 0;
+  const hasLoad = (session.load !== undefined && session.load !== null) && session.load > 0;
   return Boolean(hasDuration || hasLoad || easedEndurance || easedStrength);
 }
 

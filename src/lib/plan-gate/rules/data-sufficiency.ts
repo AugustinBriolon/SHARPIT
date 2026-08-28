@@ -7,7 +7,7 @@ export const dataSufficiencyRule: PlanGateRule = (
   context: GateContext,
   proposal: GateProposal,
 ): RuleFinding[] => {
-  if (proposal.intensity === null || !PRECISION_SENSITIVE.has(proposal.intensity)) {
+  if ((proposal.intensity === undefined || proposal.intensity === null) || !PRECISION_SENSITIVE.has(proposal.intensity)) {
     return [];
   }
   if (context.athleteProfile?.hasThresholds) {

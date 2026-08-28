@@ -15,7 +15,7 @@ async function fetchWeatherPreview({
   setWeatherLoading,
   setWeatherSummary,
 }: {
-  location: LocationPlaceValue;
+  location: NonNullable<LocationPlaceValue>;
   resolvedActivityDate: Date;
   resolvedDurationSec: number | null;
   form: UseFormReturn<ActivityFormValues>;

@@ -7,7 +7,7 @@ function cleanMetrics<T extends Record<string, unknown>>(metrics?: T | null) {
     return undefined;
   }
   const entries = Object.entries(metrics).filter(
-    ([, value]) => value !== null && value !== undefined && value !== '',
+    ([, value]) => (value !== undefined && value !== null) && value !== undefined && value !== '',
   );
   return entries.length ? (Object.fromEntries(entries) as T) : undefined;
 }
@@ -86,8 +86,8 @@ export function buildActivityUpdateData(input: UpdateActivityInput) {
   } as const;
 
   const metricKey = type ? UPDATE_METRIC_KEYS[type] : undefined;
-  if (metricKey && metricsByType[type!]) {
-    data[metricKey] = upsertMetricRelation(metricsByType[type!]);
+  if (metricKey && type && type in metricsByType) {
+    data[metricKey] = upsertMetricRelation(metricsByType[type as keyof typeof metricsByType]);
   }
 
   if (type === ActivityType.STRENGTH && strengthSets) {

@@ -19,7 +19,7 @@ function buildPlannedDiscussBits(input: {
     input.intensity
       ? `intensité ${intensityLabels[input.intensity as keyof typeof intensityLabels] ?? input.intensity}`
       : null,
-    input.durationMin !== null ? `${input.durationMin} min` : null,
+    (input.durationMin !== undefined && input.durationMin !== null) ? `${input.durationMin} min` : null,
     input.description ? `consigne : ${input.description}` : null,
   ].filter(Boolean) as string[];
 }
@@ -31,7 +31,7 @@ function buildActualDiscussBits(input: {
 }): string[] {
   return [
     input.title ? `« ${input.title} »` : null,
-    input.durationSec !== null ? `${Math.round(input.durationSec / 60)} min réalisées` : null,
+    (input.durationSec !== undefined && input.durationSec !== null) ? `${Math.round(input.durationSec / 60)} min réalisées` : null,
     input.notes ? `notes : ${input.notes}` : null,
   ].filter(Boolean) as string[];
 }
@@ -93,9 +93,9 @@ function formatActivityActualBits(input: {
   });
   return [
     dateLabel,
-    input.durationSec !== null ? `${Math.round(input.durationSec / 60)} min` : null,
-    input.load !== null ? `${Math.round(input.load)} TSS` : null,
-    input.rpe !== null ? `RPE ${input.rpe}/10` : null,
+    (input.durationSec !== undefined && input.durationSec !== null) ? `${Math.round(input.durationSec / 60)} min` : null,
+    (input.load !== undefined && input.load !== null) ? `${Math.round(input.load)} TSS` : null,
+    (input.rpe !== undefined && input.rpe !== null) ? `RPE ${input.rpe}/10` : null,
     input.notes ? `notes : ${input.notes}` : null,
   ].filter(Boolean) as string[];
 }
@@ -105,7 +105,7 @@ function formatActivityPlannedBlock(
 ): string {
   const plannedBits = [
     planned.title ? `« ${planned.title} »` : null,
-    planned.durationMin !== null ? `${planned.durationMin} min prévues` : null,
+    (planned.durationMin !== undefined && planned.durationMin !== null) ? `${planned.durationMin} min prévues` : null,
     planned.intensity
       ? `intensité ${intensityLabels[planned.intensity as keyof typeof intensityLabels] ?? planned.intensity}`
       : null,
@@ -166,8 +166,8 @@ function buildPlannedSessionDetailBits(input: {
   description?: string | null;
 }): string[] {
   return [
-    input.durationMin !== null ? `${input.durationMin} min` : null,
-    input.load !== null ? `${Math.round(input.load)} TSS` : null,
+    (input.durationMin !== undefined && input.durationMin !== null) ? `${input.durationMin} min` : null,
+    (input.load !== undefined && input.load !== null) ? `${Math.round(input.load)} TSS` : null,
     input.intensity
       ? `intensité ${intensityLabels[input.intensity as keyof typeof intensityLabels] ?? input.intensity}`
       : null,
@@ -220,7 +220,7 @@ export function buildPlanningDiscussPrompt(input: {
 }): string {
   const horizonLabel = PLANNING_HORIZON_FR[input.horizonDays] ?? `${input.horizonDays} jours`;
   const cautionBlock =
-    input.caution !== null ? `\n\n${input.caution.label}\n${input.caution.body}` : '';
+    (input.caution !== undefined && input.caution !== null) ? `\n\n${input.caution.label}\n${input.caution.body}` : '';
 
   return `Je consulte mon planning sur ${horizonLabel}. Voici le conseil du coach :
 
@@ -255,7 +255,7 @@ function formatGoalProgressionBit(input: {
   targetValue?: number | null;
   unit?: string | null;
 }): string | null {
-  if (input.currentValue === null || input.targetValue === null) {
+  if ((input.currentValue === undefined || input.currentValue === null) || (input.targetValue === undefined || input.targetValue === null)) {
     return null;
   }
   const unitSuffix = input.unit ? ` ${input.unit}` : '';
@@ -280,7 +280,7 @@ function formatGoalDetailBits(input: {
 
   const bits = [
     dateLabel ? `échéance : ${dateLabel}` : null,
-    input.daysRemaining !== null ? `J-${input.daysRemaining}` : null,
+    (input.daysRemaining !== undefined && input.daysRemaining !== null) ? `J-${input.daysRemaining}` : null,
     input.targetPerformance ? `objectif visé : ${input.targetPerformance}` : null,
     formatGoalProgressionBit(input),
   ].filter(Boolean);
@@ -351,7 +351,7 @@ export function buildPhysicalConditionDiscussPrompt(input: {
 
   const bits = [
     input.bodyPart ? `zone : ${input.bodyPart}` : null,
-    input.severity !== null ? `sévérité : ${input.severity}/10` : null,
+    (input.severity !== undefined && input.severity !== null) ? `sévérité : ${input.severity}/10` : null,
     dateLabel ? `depuis le ${dateLabel}` : null,
     input.affectsTraining ? 'déclarée comme affectant mon entraînement' : null,
     input.description ? `note : ${input.description}` : null,

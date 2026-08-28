@@ -354,7 +354,7 @@ export async function getHealthEntries(athleteId: string, days = 90, refDate: Da
 export async function getBodyCompositionMeasurements(athleteId: string, days?: number) {
   const { loadResolvedSourcePrefs } = await import('@/lib/integrations/source-prefs-store');
   const prefs = await loadResolvedSourcePrefs(athleteId);
-  const since = days !== null ? startOfDay(addDays(new Date(), -days)) : null;
+  const since = (days !== undefined && days !== null) ? startOfDay(addDays(new Date(), -days)) : null;
   const rows = await prisma.bodyCompositionMeasurement.findMany({
     where: since ? { athleteId, measuredAt: { gte: since } } : { athleteId },
     orderBy: { measuredAt: 'desc' },
@@ -420,7 +420,7 @@ export async function deletePhysicalNote(athleteId: string, id: string) {
 }
 
 function severityToFunctionalImpact(severity: number | null | undefined) {
-  if (severity === null || severity === undefined) {
+  if ((severity === undefined || severity === null) || severity === undefined) {
     return null;
   }
   if (severity === 0) {
@@ -447,7 +447,7 @@ async function recordConditionObservationForCheckin(input: {
 }) {
   const { athleteId, condition, checkin, data } = input;
   const observedAt = data.date ?? new Date();
-  const symptomPresent = data.severity !== null ? data.severity > 0 : true;
+  const symptomPresent = (data.severity !== undefined && data.severity !== null) ? data.severity > 0 : true;
 
   await prisma.conditionObservation.create({
     data: {
@@ -498,7 +498,7 @@ export async function addPhysicalCheckin(
     },
   });
 
-  if (data.severity !== null) {
+  if ((data.severity !== undefined && data.severity !== null)) {
     await prisma.physicalNote.update({
       where: { id: noteId },
       data: { severity: data.severity },
@@ -564,7 +564,7 @@ export async function upsertAthleteProfile(
   const payload = {
     ...rest,
     ...(equipment !== undefined
-      ? { equipment: equipment === null ? Prisma.JsonNull : equipment }
+      ? { equipment: (equipment === undefined || equipment === null) ? Prisma.JsonNull : equipment }
       : {}),
   };
 

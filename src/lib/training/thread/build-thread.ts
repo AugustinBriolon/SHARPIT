@@ -128,7 +128,7 @@ function buildThreadWeek(input: {
       return {
         done: acc.done + done,
         planned: acc.planned + planned,
-        doneKnown: acc.doneKnown || entry.activity?.load !== null,
+        doneKnown: acc.doneKnown || (entry.activity?.load !== undefined && entry.activity?.load !== null),
       };
     },
     { done: 0, planned: 0, doneKnown: false },

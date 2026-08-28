@@ -6,39 +6,43 @@ import {
   ExerciseVisual,
 } from '@/components/sessions/exercise-visual';
 import { resolveStrengthSetMedia } from '@/lib/exercises';
-import { strengthSetWatchCompat } from '@/lib/planned-session/strength/strength-prescription';
+import {
+  strengthSetWatchCompat,
+  type StrengthPrescriptionSet,
+} from '@/lib/planned-session/strength/strength-prescription';
 import { cn } from '@/lib/utils';
 
-type StrengthSet = {
-  order: number;
-  exercise: string;
-  sets: number;
-  reps: number;
-  durationSec: number | null;
-  weightKg: number | null;
-  restMode: string;
-  restSec: number | null;
-};
-
-function strengthSetVolumeLabel(set: StrengthSet): string {
+function strengthSetVolumeLabel(set: StrengthPrescriptionSet): string {
   if (set.durationSec && set.durationSec > 0 && set.reps <= 0) {
     return `${set.sets}×${set.durationSec}s`;
   }
   return `${set.sets}×${set.reps}`;
 }
 
-function strengthRestLabel(set: StrengthSet): string {
-  if (set.restMode === 'time' && set.restSec !== null && set.restSec > 0) {
+function strengthRestLabel(set: StrengthPrescriptionSet): string {
+  if (set.restMode === 'time' && (set.restSec ?? 0) > 0) {
     return `Repos ${set.restSec}s`;
   }
   return 'Repos Lap';
 }
 
-export function StrengthSetListItem({ set, index }: { set: StrengthSet; index: number }) {
+export function StrengthSetListItem({
+  set,
+  index,
+}: {
+  set: StrengthPrescriptionSet;
+  index: number;
+}) {
   const volume = strengthSetVolumeLabel(set);
-  const weight = set.weightKg !== null && set.weightKg > 0 ? ` @ ${set.weightKg} kg` : '';
+  const weight =
+    set.weightKg !== undefined && set.weightKg !== null && set.weightKg > 0
+      ? ` @ ${set.weightKg} kg`
+      : '';
   const watch = strengthSetWatchCompat(set);
-  const media = resolveStrengthSetMedia(set);
+  const media = resolveStrengthSetMedia({
+    exercise: set.exercise,
+    exerciseCatalogId: set.exerciseCatalogId,
+  });
 
   return (
     <li className="flex items-start gap-3 text-sm">

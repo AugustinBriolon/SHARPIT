@@ -61,8 +61,8 @@ export function WeeklyBrief({ onClose }: { onClose: () => void }) {
   const weekStart = format(startOfWeek(new Date(), WEEK_OPTS), 'yyyy-MM-dd');
   const { data: vm, isLoading } = useWeeklyCoachingBriefViewModel(weekStart);
   const showSkeleton = isLoading || !vm;
-  const showEmptyState = !showSkeleton && vm.emptyState;
-  const showContent = !showSkeleton && !vm.emptyState;
+  const showEmptyState = !showSkeleton && Boolean(vm?.emptyState);
+  const showContent = !showSkeleton && Boolean(vm) && !vm.emptyState;
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>

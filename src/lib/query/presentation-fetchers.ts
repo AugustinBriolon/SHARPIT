@@ -51,7 +51,7 @@ export async function fetchAdaptationPresentation(
 export async function fetchBodyPresentation(
   days: number | null | undefined,
 ): Promise<BodyViewModel> {
-  const param = days === null ? 'all' : String(days);
+  const param = (days === undefined || days === null) ? 'all' : String(days);
   const url = `/api/presentation/body?days=${encodeURIComponent(param)}`;
   const { viewModel } = await fetchJson<{ viewModel: BodyViewModel }>(url);
   return viewModel;

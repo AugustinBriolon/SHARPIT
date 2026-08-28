@@ -141,7 +141,7 @@ function resolveDemoActivity(
 ): NonNullable<ClientPlannedSession['activity']> {
   const activityFromCache = activities?.find((item) => item.id === activityId);
   if (activityFromCache) {
-    return activityFromCache;
+    return activityFromCache as NonNullable<ClientPlannedSession['activity']>;
   }
   if (session.activity?.id === activityId) {
     return session.activity;

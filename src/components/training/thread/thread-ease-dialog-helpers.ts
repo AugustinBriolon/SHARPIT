@@ -10,30 +10,32 @@ import { formatTrainingLoad } from '@/lib/preferences/display-mode';
 
 function buildEaseDurationCells(
   session: ClientPlannedSession,
-  proposal: ReturnType<typeof easeSession>,
+  proposal: ReturnType<typeof easeSession> | null,
 ) {
   const durationBefore = session.durationMin !== null ? `${session.durationMin} min` : '—';
-  const durationAfter = proposal?.durationMin !== null ? `${proposal.durationMin} min` : '—';
+  const proposalDurationMin = proposal?.durationMin ?? null;
+  const durationAfter = proposalDurationMin !== null ? `${proposalDurationMin} min` : '—';
   const changesDuration =
-    proposal?.durationMin !== null && proposal.durationMin !== session.durationMin;
+    proposalDurationMin !== null && proposalDurationMin !== session.durationMin;
   return { durationBefore, durationAfter, changesDuration };
 }
 
 function buildEaseLoadCells(
   session: ClientPlannedSession,
-  proposal: ReturnType<typeof easeSession>,
+  proposal: ReturnType<typeof easeSession> | null,
   mode: 'essential' | 'expert',
 ) {
   const loadBefore = session.load !== null ? formatTrainingLoad(session.load, mode) : '—';
-  const loadAfter = proposal?.load !== null ? formatTrainingLoad(proposal.load, mode) : '—';
+  const proposalLoad = proposal?.load ?? null;
+  const loadAfter = proposalLoad !== null ? formatTrainingLoad(proposalLoad, mode) : '—';
   const changesLoad =
-    proposal?.load !== null && Math.round(proposal.load) !== Math.round(session.load ?? 0);
+    proposalLoad !== null && Math.round(proposalLoad) !== Math.round(session.load ?? 0);
   return { loadBefore, loadAfter, changesLoad };
 }
 
 function buildEasePrescriptionLines(
   session: ClientPlannedSession,
-  proposal: ReturnType<typeof easeSession>,
+  proposal: ReturnType<typeof easeSession> | null,
 ) {
   const enduranceBefore = parseEndurancePrescription(session.endurancePrescription);
   const enduranceLines =

@@ -171,7 +171,7 @@ function taperFactor(weekInTaper: number, totalTaper: number): number {
  * La charge hebdo part de la CTL actuelle (×7 ≈ charge chronique hebdo).
  */
 function computeMacroWeekProgression(
-  phase: MacroPhase,
+  phase: PlanPhase,
   blockIndex: number,
 ): number {
   if (phase === 'BUILD') {
@@ -188,7 +188,7 @@ function computeMacroWeekLoad(input: {
   loadFactor: number;
   progression: number;
   isDeload: boolean;
-  phase: MacroPhase;
+  phase: PlanPhase;
 }): number {
   let targetLoad = Math.round(
     input.baseWeeklyLoad * input.loadFactor * input.progression * (input.isDeload ? 0.72 : 1),

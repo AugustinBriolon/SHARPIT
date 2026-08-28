@@ -10,6 +10,8 @@ import {
   indexHealthEntriesByDay,
 } from '@/lib/health/health';
 import { resolve } from '@/lib/french';
+
+type DailyHealthRow = Awaited<ReturnType<typeof getHealthEntries>>[number];
 import {
   mapAutonomicBalanceToDisplay,
   mapConfidenceToTier,
@@ -113,7 +115,7 @@ function resolveRecoverySignalPresentation(recovery: NonNullable<AthleteSnapshot
   };
 }
 
-function readTodayHealthEntry(todayEntry: ReturnType<typeof getIndexedHealthEntry>) {
+function readTodayHealthEntry(todayEntry: DailyHealthRow | null) {
   if (!todayEntry) {
     return {
       baselineLow: null,
@@ -135,7 +137,7 @@ function readTodayHealthEntry(todayEntry: ReturnType<typeof getIndexedHealthEntr
 function buildPopulatedRecoveryViewModel(input: {
   snapshot: AthleteSnapshot;
   recovery: NonNullable<AthleteSnapshot['recovery']>;
-  todayEntry: ReturnType<typeof getIndexedHealthEntry>;
+  todayEntry: DailyHealthRow | null;
   healthSeries: ReturnType<typeof loadRecoveryHealthSeries>;
 }): RecoveryViewModel {
   const { snapshot, recovery, todayEntry, healthSeries } = input;
@@ -201,7 +203,7 @@ function buildPopulatedRecoveryViewModel(input: {
 }
 
 function loadRecoveryHealthSeries(
-  healthByDay: ReturnType<typeof indexHealthEntriesByDay>,
+  healthByDay: Map<string, DailyHealthRow>,
   refDate: Date,
 ) {
   return {
@@ -296,7 +298,7 @@ export async function buildRecoveryViewModel(
 
   const refDate = new Date(`${trainingDayId}T12:00:00.000Z`);
   const healthEntries = await getHealthEntries(athleteId, 14, refDate);
-  const healthByDay = indexHealthEntriesByDay(healthEntries);
+  const healthByDay = indexHealthEntriesByDay<DailyHealthRow>(healthEntries);
   const todayEntry = getIndexedHealthEntry(healthByDay, refDate);
   const healthSeries = loadRecoveryHealthSeries(healthByDay, refDate);
 

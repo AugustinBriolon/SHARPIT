@@ -16,7 +16,7 @@ function isSleepEmptyState(
   valuesLoading: boolean,
   viewModel: ReturnType<typeof useSleepViewModel>['data'] | null,
 ): boolean {
-  return !valuesLoading && (!viewModel || viewModel.emptyState);
+  return !valuesLoading && (!viewModel || Boolean(viewModel.emptyState));
 }
 
 function SleepScreenEmpty({

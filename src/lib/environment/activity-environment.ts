@@ -99,7 +99,7 @@ export async function resolveActivityEnvironmentPresentation(input: {
     ]);
 
     const location =
-      input.activity.observedLocationLat !== null && input.activity.observedLocationLng !== null
+      (input.activity.observedLocationLat !== undefined && input.activity.observedLocationLat !== null) && (input.activity.observedLocationLng !== undefined && input.activity.observedLocationLng !== null)
         ? {
             latitude: input.activity.observedLocationLat,
             longitude: input.activity.observedLocationLng,

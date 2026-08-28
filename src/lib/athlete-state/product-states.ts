@@ -46,5 +46,5 @@ export function productMessageForDomain(
 }
 
 export function pickPrimaryProductMessage(messages: Array<string | null>): string | null {
-  return messages.find((m) => m !== null) ?? null;
+  return messages.find((m) => (m !== undefined && m !== null)) ?? null;
 }

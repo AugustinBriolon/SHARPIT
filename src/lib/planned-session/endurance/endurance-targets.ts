@@ -124,7 +124,7 @@ export function defaultTargetForIntensity(
 
   if (sport === 'BIKE') {
     const centre = BIKE_POWER_ANCHOR_PCT[effective];
-    if (centre === null) {
+    if ((centre === undefined || centre === null)) {
       return { target: { metric: 'none' }, warnings };
     }
     return {
@@ -135,7 +135,7 @@ export function defaultTargetForIntensity(
 
   const anchors = sport === 'SWIM' ? SWIM_SPEED_ANCHOR_PCT : RUN_SPEED_ANCHOR_PCT;
   const centre = anchors[effective];
-  if (centre === null) {
+  if ((centre === undefined || centre === null)) {
     return { target: { metric: 'none' }, warnings };
   }
 
@@ -178,13 +178,13 @@ export function intensityFromTarget(
   const anchors = anchorTableFor(sport, target.metric);
 
   // An absolute override carries no percentages, and neither does a hand-typed band.
-  if (target.pctMin === null || target.pctMax === null) {
+  if ((target.pctMin === undefined || target.pctMin === null) || (target.pctMax === undefined || target.pctMax === null)) {
     return null;
   }
 
   const centre = (target.pctMin + target.pctMax) / 2;
   for (const [intensity, anchor] of Object.entries(anchors)) {
-    if (anchor !== null && Math.abs(anchor - centre) < 0.01) {
+    if ((anchor !== undefined && anchor !== null) && Math.abs(anchor - centre) < 0.01) {
       return intensity as SessionIntensity;
     }
   }
@@ -193,9 +193,9 @@ export function intensityFromTarget(
 
 /** Heart-rate equivalent of `defaultTargetForIntensity`, used when pace is unavailable. */
 export function defaultHrTargetForIntensity(intensity: SessionIntensity | null): EnduranceTarget {
-  const effective = intensity === 'RACE' || intensity === null ? 'THRESHOLD' : intensity;
+  const effective = intensity === 'RACE' || (intensity === undefined || intensity === null) ? 'THRESHOLD' : intensity;
   const centre = RUN_HR_ANCHOR_PCT[effective];
-  if (centre === null) {
+  if ((centre === undefined || centre === null)) {
     return { metric: 'none' };
   }
   return {
@@ -236,13 +236,13 @@ function mergeSingleOverride(
 ): Bounds | null {
   const easyOverride = target.absEasy ?? null;
   const hardOverride = target.absHard ?? null;
-  if (easyOverride !== null && hardOverride !== null) {
+  if ((easyOverride !== undefined && easyOverride !== null) && (hardOverride !== undefined && hardOverride !== null)) {
     return mergeBothOverrides(easyOverride, hardOverride);
   }
 
   const derived = derive();
   if (!derived) {
-    if (easyOverride !== null || hardOverride !== null) {
+    if ((easyOverride !== undefined && easyOverride !== null) || (hardOverride !== undefined && hardOverride !== null)) {
       warnings.push(UNUSABLE_BAND_WARNING);
     }
     return null;
@@ -269,7 +269,7 @@ function relativeBand(
   compute: (pctMin: number, pctMax: number) => Bounds,
   warnings: string[],
 ): Bounds | null {
-  if (target.pctMin === null || target.pctMax === null) {
+  if ((target.pctMin === undefined || target.pctMin === null) || (target.pctMax === undefined || target.pctMax === null)) {
     warnings.push(UNUSABLE_BAND_WARNING);
     return null;
   }
@@ -287,7 +287,7 @@ function resolvePace(
     () => {
       const threshold =
         sport === 'SWIM' ? thresholds.swimCssSecPer100m : thresholds.runThresholdPaceSecPerKm;
-      if (threshold === null || threshold <= 0) {
+      if ((threshold === undefined || threshold === null) || threshold <= 0) {
         warnings.push(
           sport === 'SWIM'
             ? 'Vitesse critique (CSS) inconnue — cible allure impossible.'
@@ -352,7 +352,7 @@ function resolveHr(
     target,
     () => {
       const reference = hrReference(target, thresholds);
-      if (reference === null || reference <= 0) {
+      if ((reference === undefined || reference === null) || reference <= 0) {
         warnings.push('FC seuil et FC max inconnues — cible FC impossible.');
         return null;
       }
@@ -387,7 +387,7 @@ function resolvePower(
     target,
     () => {
       const ftp = thresholds.ftpW;
-      if (ftp === null || ftp <= 0) {
+      if ((ftp === undefined || ftp === null) || ftp <= 0) {
         warnings.push('FTP inconnue — cible puissance impossible.');
         return null;
       }
@@ -414,7 +414,7 @@ function resolvePower(
 function resolveCadence(target: EnduranceTarget, warnings: string[]): ResolvedTarget | null {
   const min = target.absEasy;
   const max = target.absHard;
-  if (min === null || max === null) {
+  if ((min === undefined || min === null) || (max === undefined || max === null)) {
     warnings.push(UNUSABLE_BAND_WARNING);
     return null;
   }

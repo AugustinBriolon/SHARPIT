@@ -663,7 +663,7 @@ export function mapFatigueCapacityLabel(capacity: TrainingCapacity): string {
  * In-range stays foreground; color only flags a deviation (caution / risk).
  */
 export function mapScoreToColorClass(score: number | null): string {
-  if (score === null) {
+  if ((score === undefined || score === null)) {
     return 'text-muted-foreground';
   }
   if (score >= 60) {
@@ -680,7 +680,7 @@ export function mapScoreToColorClass(score: number | null): string {
  * Capacity greens first; caution without shame; risk only when critically low.
  */
 export function mapStripScoreToColorClass(score: number | null): string {
-  if (score === null) {
+  if ((score === undefined || score === null)) {
     return 'text-muted-foreground';
   }
   if (score >= 70) {
@@ -700,7 +700,7 @@ export function mapStripScoreToColorClass(score: number | null): string {
 
 /** Strain / effort index — informational intensity, never a “bad score” red. */
 export function mapStripStrainToColorClass(score: number | null): string {
-  if (score === null) {
+  if ((score === undefined || score === null)) {
     return 'text-muted-foreground';
   }
   return 'text-signal-threshold dark:text-signal-tempo';
@@ -708,7 +708,7 @@ export function mapStripStrainToColorClass(score: number | null): string {
 
 /** Bar fill for score gauges — single accent when OK; signal tokens on deviation. */
 export function mapScoreToBarColorClass(score: number | null): string {
-  if (score === null) {
+  if ((score === undefined || score === null)) {
     return 'bg-muted-foreground/10';
   }
   if (score >= 60) {
@@ -725,7 +725,7 @@ export function mapScoreToBarColorClass(score: number | null): string {
  * Prefer for adaptation / recovery dimension inventories.
  */
 export function mapScoreToBarColorClassProtective(score: number | null): string {
-  if (score === null) {
+  if ((score === undefined || score === null)) {
     return 'bg-muted-foreground/10';
   }
   if (score >= 60) {
@@ -738,7 +738,7 @@ export function mapScoreToBarColorClassProtective(score: number | null): string 
 }
 
 export function mapScoreToColorClassProtective(score: number | null): string {
-  if (score === null) {
+  if ((score === undefined || score === null)) {
     return 'text-muted-foreground';
   }
   if (score >= 60) {
@@ -749,7 +749,7 @@ export function mapScoreToColorClassProtective(score: number | null): string {
 
 /** Fatigue dimension intensity — higher score = more fatigue. */
 export function mapFatigueDimensionIntensity(score: number | null): string | null {
-  if (score === null) {
+  if ((score === undefined || score === null)) {
     return null;
   }
   if (score <= 15) {

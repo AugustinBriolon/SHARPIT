@@ -105,7 +105,7 @@ function evaluateExpectations(
   results.push(evaluateValue('verdict', exp.verdict, decision.verdict));
   results.push(evaluateRange('confidenceRange', exp.confidenceRange, adaptationState.confidence));
 
-  if (adaptationState.adaptationIndex !== null) {
+  if ((adaptationState.adaptationIndex !== undefined && adaptationState.adaptationIndex !== null)) {
     results.push(
       evaluateRange(
         'adaptationIndexRange',

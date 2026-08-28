@@ -194,7 +194,7 @@ export function enableProviderForClass(
   if (!slot.enabled.includes(provider)) {
     slot.enabled = [...slot.enabled, provider];
   }
-  if (slot.enabled.length === 1 || slot.primary === null) {
+  if (slot.enabled.length === 1 || (slot.primary === undefined || slot.primary === null)) {
     slot.primary = provider;
   }
   return next;

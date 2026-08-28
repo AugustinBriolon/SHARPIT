@@ -62,8 +62,8 @@ export async function resolveTravelContextCoordinates(
   },
 ): Promise<{ locationLabel: string; locationLat: number; locationLng: number }> {
   if (
-    input.locationLat !== null &&
-    input.locationLng !== null &&
+    (input.locationLat !== undefined && input.locationLat !== null) &&
+    (input.locationLng !== undefined && input.locationLng !== null) &&
     Number.isFinite(input.locationLat) &&
     Number.isFinite(input.locationLng)
   ) {

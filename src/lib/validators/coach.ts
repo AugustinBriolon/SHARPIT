@@ -162,7 +162,7 @@ const nullableAdaptString = z.preprocess(
 );
 
 const nullableAdaptInt = z.preprocess((v) => {
-  if (v === null || v === undefined || v === '') {
+  if ((v === undefined || v === null) || v === undefined || v === '') {
     return null;
   }
   const n = Number(v);

@@ -62,7 +62,7 @@ function resolveEnabledSources(
   return new Set(
     prefs.enabled
       .map(integrationToSource)
-      .filter((s): s is BodyCompositionSource => s !== null),
+      .filter((s): s is BodyCompositionSource => (s !== undefined && s !== null)),
   );
 }
 
@@ -79,7 +79,7 @@ function pickPreferredDayRows(
   }
 
   const preferred =
-    primarySource !== null
+    (primarySource !== undefined && primarySource !== null)
       ? filtered.filter((row) => row.source === primarySource)
       : filtered.filter((row) => row.source === BodyCompositionSource.WITHINGS);
 
@@ -164,12 +164,12 @@ function mergeWithingsDayRows(rows: BodyCompositionMeasurement[]): BodyCompositi
   const merged: BodyCompositionMeasurement = { ...sorted[0]! };
 
   for (const key of WITHINGS_MERGE_SCALAR_KEYS) {
-    if (merged[key] !== null) {
+    if ((merged[key] !== undefined && merged[key] !== null)) {
       continue;
     }
     for (const row of sorted) {
       const value = row[key];
-      if (value !== null) {
+      if ((value !== undefined && value !== null)) {
         (merged as Record<string, unknown>)[key] = value;
         break;
       }
@@ -178,7 +178,7 @@ function mergeWithingsDayRows(rows: BodyCompositionMeasurement[]): BodyCompositi
 
   let extras = merged.withingsExtras;
   for (const row of sorted) {
-    if (row.withingsExtras === null) {
+    if ((row.withingsExtras === undefined || row.withingsExtras === null)) {
       continue;
     }
     extras = mergeWithingsExtrasJson(extras, row.withingsExtras);
@@ -216,7 +216,7 @@ function mergeEcgAfibClassification(
   objA: Record<string, unknown>,
   objB: Record<string, unknown>,
 ): Record<string, unknown> {
-  if (objA.ecgAfibClassification === null && objB.ecgAfibClassification === null) {
+  if ((objA.ecgAfibClassification === undefined || objA.ecgAfibClassification === null) && (objB.ecgAfibClassification === undefined || objB.ecgAfibClassification === null)) {
     return {};
   }
   return {
@@ -230,10 +230,10 @@ function mergeWithingsExtrasJson(
   a: BodyCompositionMeasurement['withingsExtras'],
   b: BodyCompositionMeasurement['withingsExtras'],
 ): BodyCompositionMeasurement['withingsExtras'] {
-  if (a === null) {
+  if ((a === undefined || a === null)) {
     return b;
   }
-  if (b === null) {
+  if ((b === undefined || b === null)) {
     return a;
   }
   const objA = a as Record<string, unknown>;
@@ -264,18 +264,18 @@ export function computeCompositionTrend(
   const sorted = [...entries].sort((a, b) => b.measuredAt.getTime() - a.measuredAt.getTime());
   const values = sorted
     .map((entry) => entry[key])
-    .filter((value): value is number => value !== null);
+    .filter((value): value is number => (value !== undefined && value !== null));
 
   const latest = values[0] ?? null;
   const last7 = values.slice(0, 7);
   const prev7 = values.slice(7, 14);
   const avg7 = average(last7);
   const avgPrev = average(prev7);
-  const delta = avg7 !== null && avgPrev !== null ? Number((avg7 - avgPrev).toFixed(2)) : null;
+  const delta = (avg7 !== undefined && avg7 !== null) && (avgPrev !== undefined && avgPrev !== null) ? Number((avg7 - avgPrev).toFixed(2)) : null;
 
   return {
-    latest: latest !== null ? Number(latest.toFixed(2)) : null,
-    avg7: avg7 !== null ? Number(avg7.toFixed(2)) : null,
+    latest: (latest !== undefined && latest !== null) ? Number(latest.toFixed(2)) : null,
+    avg7: (avg7 !== undefined && avg7 !== null) ? Number(avg7.toFixed(2)) : null,
     delta,
   };
 }
@@ -313,7 +313,7 @@ export function filterCompositionSeriesByDays<T extends { date: string }>(
   days: number | null,
   now: Date = new Date(),
 ): T[] {
-  if (days === null) {
+  if ((days === undefined || days === null)) {
     return points;
   }
   const sinceKey = format(startOfDay(addDays(now, -days)), 'yyyy-MM-dd');
@@ -327,7 +327,7 @@ export function formatWeightKgDisplay(weightKg: number): string {
 }
 
 export function formatCompositionDelta(delta: number | null, unit = ''): string | undefined {
-  if (delta === null) {
+  if ((delta === undefined || delta === null)) {
     return undefined;
   }
   const rounded = Number(delta.toFixed(2));

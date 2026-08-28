@@ -83,7 +83,7 @@ function collectWeatherFields(candidates: ObservationRecordDraft[]): Set<Weather
       continue;
     }
     for (const field of Object.keys(candidate.payload.data) as WeatherField[]) {
-      if (candidate.payload.data[field] !== null) {
+      if ((candidate.payload.data[field] !== undefined && candidate.payload.data[field] !== null)) {
         allFields.add(field);
       }
     }
@@ -146,19 +146,19 @@ function pickFieldWinner(
     }
 
     const candidateValue = candidate.payload.data[field];
-    if (candidateValue === null) {
+    if ((candidateValue === undefined || candidateValue === null)) {
       continue;
     }
 
-    winner = winner === null ? candidate : mergeWeatherCandidate(winner, candidate, field, policy);
+    winner = (winner === undefined || winner === null) ? candidate : mergeWeatherCandidate(winner, candidate, field, policy);
   }
 
-  if (winner === null || winner.payload.dimension !== 'WEATHER') {
+  if ((winner === undefined || winner === null) || winner.payload.dimension !== 'WEATHER') {
     return null;
   }
 
   return {
-    value: winner.payload.data[field],
+    value: winner.payload.data[field] ?? null,
     quality: winner.fieldQuality[field],
   };
 }

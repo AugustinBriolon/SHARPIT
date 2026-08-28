@@ -107,10 +107,10 @@ function assertNotLinkedElsewhere(
   currentTripId?: string,
 ): void {
   for (const activity of activities) {
-    if (activity.hikeTripId === null) {
+    if ((activity.hikeTripId === undefined || activity.hikeTripId === null)) {
       continue;
     }
-    if (currentTripId !== null && activity.hikeTripId === currentTripId) {
+    if ((currentTripId !== undefined && currentTripId !== null) && activity.hikeTripId === currentTripId) {
       continue;
     }
     throw new HikeTripConflictError(
@@ -241,7 +241,7 @@ export async function updateHikeTrip(
   await validateHikeTripAdditions(athleteId, id, addIds);
 
   await prisma.$transaction(async (tx) => {
-    if (patch.name !== null) {
+    if ((patch.name !== undefined && patch.name !== null)) {
       await tx.hikeTrip.updateMany({ where: { id, athleteId }, data: { name: patch.name } });
     }
     if (removeIds.length > 0) {

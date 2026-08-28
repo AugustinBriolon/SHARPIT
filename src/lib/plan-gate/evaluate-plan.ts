@@ -61,7 +61,7 @@ function evaluateProposal(context: GateContext, proposal: GateProposal): GateSes
   const status = worstStatus(findings);
   const requiredAssumptions = findings
     .map((f) => f.requiredAssumption)
-    .filter((a): a is string => a !== null);
+    .filter((a): a is string => (a !== undefined && a !== null));
   const saferAlternative =
     status === 'REJECTED'
       ? (findings.find((f) => f.saferAlternative)?.saferAlternative ?? null)

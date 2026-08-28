@@ -71,16 +71,16 @@ function impactIsMaterial(impact: EnvironmentalImpact): boolean {
   const thresholds = ENVIRONMENTAL_SIGNIFICANCE_THRESHOLDS;
 
   return (
-    (recovery !== null && recovery >= thresholds.recoveryDemand) ||
-    (fatigue !== null && fatigue >= thresholds.fatigueAccumulation) ||
-    (performance !== null && performance <= thresholds.performanceRatio) ||
-    (hydration !== null && hydration >= thresholds.hydrationDemand)
+    ((recovery !== undefined && recovery !== null) && recovery >= thresholds.recoveryDemand) ||
+    ((fatigue !== undefined && fatigue !== null) && fatigue >= thresholds.fatigueAccumulation) ||
+    ((performance !== undefined && performance !== null) && performance <= thresholds.performanceRatio) ||
+    ((hydration !== undefined && hydration !== null) && hydration >= thresholds.hydrationDemand)
   );
 }
 
 function performancePenalty(impact: EnvironmentalImpact): number {
   const ratio = readMultiplier(impact.performance.expectedOutputRatio);
-  if (ratio === null || ratio >= 1) {
+  if ((ratio === undefined || ratio === null) || ratio >= 1) {
     return 0;
   }
   return roundImpact(1 - ratio);
@@ -290,7 +290,7 @@ export function buildActivityEnvironmentalCorrection(
 ): ActivityEnvironmentalCorrection {
   const { activityId, stress, impact } = input;
 
-  if (stress.suppressionReason !== null) {
+  if ((stress.suppressionReason !== undefined && stress.suppressionReason !== null)) {
     return buildSuppressedCorrection(activityId);
   }
 

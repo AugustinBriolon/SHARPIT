@@ -37,7 +37,7 @@ function missingSignals(decision: DecisionData | null): string[] {
     graphContributionMissing(decision.evidenceGraph, 'recoveryContribution', 'récupération'),
     graphContributionMissing(decision.evidenceGraph, 'fatigueContribution', 'charge / fatigue'),
     graphContributionMissing(decision.evidenceGraph, 'adaptationContribution', 'adaptation'),
-  ].filter((value): value is string => value !== null);
+  ].filter((value): value is string => (value !== undefined && value !== null));
   if (missing.length === 3) {
     return ['synthèse du jour'];
   }
@@ -90,7 +90,7 @@ export function buildInsufficientDataMessage(
 }
 
 export function confidenceLabelFor(confidence: number | null): string | null {
-  if (confidence === null) {
+  if ((confidence === undefined || confidence === null)) {
     return null;
   }
   if (confidence >= 0.75) {
@@ -106,7 +106,7 @@ export function effortUnavailableMessage(
   dailyStrain: TodayState['dailyStrain'],
   domainMessages: Partial<Record<string, string>>,
 ): string | null {
-  if (dailyStrain?.available && dailyStrain.strainScore !== null) {
+  if (dailyStrain?.available && (dailyStrain.strainScore !== undefined && dailyStrain.strainScore !== null)) {
     return null;
   }
   return domainMessages.training ?? "La charge d'entraînement du jour n'a pas encore été mesurée.";
@@ -150,7 +150,12 @@ function buildTruthfulnessMessages(
     'adviceActionable' | 'insufficientDataMessage' | 'effortUnavailableMessage' | 'confidenceLabel'
   >,
   actionable: boolean,
-): Pick<TruthfulnessOverlay, 'insufficientDataMessage' | 'effortUnavailableMessage' | 'confidenceLabel' | 'primaryProductMessage'> {
+): Pick<
+  TruthfulnessOverlay,
+  'insufficientDataMessage' | 'effortUnavailableMessage' | 'confidenceLabel'
+> & {
+  primaryProductMessage: AthleteSnapshot['primaryProductMessage'];
+} {
   const insufficientDataMessage = actionable
     ? null
     : buildInsufficientDataMessage(buildTruthfulnessTodayState(snapshot), snapshot.domainMessages);

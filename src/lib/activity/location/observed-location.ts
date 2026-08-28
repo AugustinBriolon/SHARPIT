@@ -1,4 +1,4 @@
-import type { PrismaClient } from '@prisma/client';
+import type { Prisma, PrismaClient } from '@prisma/client';
 import { reverseGeocode } from '@/lib/geocoding/nominatim';
 import { resolveAthleteGeoLocation } from '@/lib/environment/athlete-location';
 import { midpointFromLatLng } from '@/lib/geo/midpoint';
@@ -96,9 +96,18 @@ async function resolveFromAthleteFallback(
  * 2. Existing map / card coords (`observedLocationLat/Lng`)
  * 3. Athlete fallback (travel → home)
  */
+type ActivityLocationBackfillRow = {
+  athleteId: string;
+  observedLocationLat: number | null;
+  observedLocationLng: number | null;
+  observedLocationLabel: string | null;
+  date: Date;
+  stream: { data: Prisma.JsonValue } | null;
+};
+
 async function resolveBackfillFromActivity(
   prisma: PrismaClient,
-  activity: NonNullable<Awaited<ReturnType<typeof prisma.activity.findUnique>>>,
+  activity: ActivityLocationBackfillRow,
   activityId: string,
 ): Promise<{ label: string; latitude: number; longitude: number } | null> {
   const streamData = activity.stream?.data as { latlng?: unknown } | null | undefined;
@@ -106,7 +115,7 @@ async function resolveBackfillFromActivity(
 
   if (fromStream) {
     const stored =
-      activity.observedLocationLat !== null && activity.observedLocationLng !== null
+      (activity.observedLocationLat !== undefined && activity.observedLocationLat !== null) && (activity.observedLocationLng !== undefined && activity.observedLocationLng !== null)
         ? { latitude: activity.observedLocationLat, longitude: activity.observedLocationLng }
         : null;
     return resolveFromStreamMidpoint({
@@ -129,10 +138,13 @@ async function resolveBackfillFromActivity(
 
 function resolveBackfillFromStoredCoords(
   prisma: PrismaClient,
-  activity: NonNullable<Awaited<ReturnType<typeof prisma.activity.findUnique>>>,
+  activity: Pick<
+    ActivityLocationBackfillRow,
+    'observedLocationLat' | 'observedLocationLng' | 'observedLocationLabel'
+  >,
   activityId: string,
 ): Promise<{ label: string; latitude: number; longitude: number } | null> | null {
-  if (activity.observedLocationLat === null || activity.observedLocationLng === null) {
+  if ((activity.observedLocationLat === undefined || activity.observedLocationLat === null) || (activity.observedLocationLng === undefined || activity.observedLocationLng === null)) {
     return null;
   }
   return resolveFromStoredCoords(

@@ -107,7 +107,7 @@ async function fallbackFuelDensity(
   const referenceWeightKg = await getLatestBodyWeightKg(athleteId, trainingDayId);
   const proteinGPerKg = macroGPerKg(row.protein, referenceWeightKg);
   const carbohydratesGPerKg = macroGPerKg(row.carbohydrates, referenceWeightKg);
-  if (referenceWeightKg === null || proteinGPerKg === null || carbohydratesGPerKg === null) {
+  if ((referenceWeightKg === undefined || referenceWeightKg === null) || (proteinGPerKg === undefined || proteinGPerKg === null) || (carbohydratesGPerKg === undefined || carbohydratesGPerKg === null)) {
     return null;
   }
 
@@ -196,7 +196,7 @@ function computeNutritionAverages(history: NutritionDaySummary[]) {
 }
 
 function buildNutritionEmptyState(selectedDay: NutritionDaySummary | null, selectedDayId: string, todayId: string) {
-  if (selectedDay !== null) {
+  if ((selectedDay !== undefined && selectedDay !== null)) {
     return null;
   }
   return {
@@ -233,14 +233,14 @@ async function buildConnectedNutritionViewModel(
         athleteId,
         selectedDayBase,
         selectedRow,
-        selectedRow?.goalCalories === null,
+        (selectedRow?.goalCalories === undefined || selectedRow?.goalCalories === null),
       )
     : null;
 
   const todayRow = rows.find((d) => format(d.date, 'yyyy-MM-dd') === todayId);
   const todayBase = history.find((d) => d.date === todayId) ?? null;
   const today = todayBase
-    ? await enrichSelectedDay(athleteId, todayBase, todayRow, todayRow?.goalCalories === null)
+    ? await enrichSelectedDay(athleteId, todayBase, todayRow, (todayRow?.goalCalories === undefined || todayRow?.goalCalories === null))
     : null;
 
   const averages = computeNutritionAverages(history);

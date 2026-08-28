@@ -16,6 +16,9 @@ import type { StrengthPrescriptionDraftRow } from '@/components/planning/session
 import type { EnduranceDraftBlock } from '@/lib/planned-session/endurance/endurance-draft';
 import type { EquipmentItemId } from '@/lib/equipment/catalog';
 import { ActivityType, SessionIntensity } from '@prisma/client';
+import type { usePlannedSessionMutations } from '@/hooks/use-data';
+
+type PlannedSessionMutations = ReturnType<typeof usePlannedSessionMutations>;
 import { buildLocationInput } from '@/components/planning/session/edit/planned-session-location-input';
 
 export type SubmitPlannedSessionFormInput = {
@@ -36,9 +39,9 @@ export type SubmitPlannedSessionFormInput = {
   onError: (message: string) => void;
   onClose: () => void;
   setMode: (mode: 'read' | 'edit') => void;
-  update: { mutate: (args: unknown, opts?: { onError?: (err: unknown) => void }) => void };
-  create: { mutate: (args: unknown, opts?: { onError?: (err: unknown) => void }) => void };
-  createBrick: { mutate: (args: unknown, opts?: { onError?: (err: unknown) => void }) => void };
+  update: PlannedSessionMutations['update'];
+  create: PlannedSessionMutations['create'];
+  createBrick: PlannedSessionMutations['createBrick'];
 };
 
 function submitExistingSession(

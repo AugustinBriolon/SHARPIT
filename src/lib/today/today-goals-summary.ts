@@ -22,13 +22,13 @@ function goalSortKey(goal: ClientGoal): [number, number, number] {
   const priorityRank =
     goal.kind === GoalKind.RACE && goal.priority ? PRIORITY_RANK[goal.priority] : 9;
   const days = daysUntil(goal.targetDate ? new Date(goal.targetDate) : null);
-  const dateRank = days !== null && days >= 0 ? days : 9999;
+  const dateRank = (days !== undefined && days !== null) && days >= 0 ? days : 9999;
   return [kindRank, priorityRank, dateRank];
 }
 
 function formatMetricDetail(goal: ClientGoal): string | null {
   const config = parseGoalMetricConfig(goal.metricKey);
-  if (goal.currentValue === null || goal.targetValue === null) {
+  if ((goal.currentValue === undefined || goal.currentValue === null) || (goal.targetValue === undefined || goal.targetValue === null)) {
     return null;
   }
 
@@ -39,7 +39,7 @@ function formatMetricDetail(goal: ClientGoal): string | null {
 
 function formatGoalBadge(goal: ClientGoal): string | null {
   const days = daysUntil(goal.targetDate ? new Date(goal.targetDate) : null);
-  if (days === null) {
+  if ((days === undefined || days === null)) {
     return null;
   }
   return days >= 0 ? `J-${days}` : `J+${Math.abs(days)}`;

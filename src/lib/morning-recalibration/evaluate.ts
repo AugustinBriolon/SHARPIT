@@ -88,7 +88,7 @@ function summarizeIntensityChange(type: ActivityType, from: SessionIntensity, to
 }
 
 function summarizeLoadChange(fromLoad: number | null, toLoad: number | null): string | null {
-  if (fromLoad === null || toLoad === null || fromLoad === toLoad) {
+  if ((fromLoad === undefined || fromLoad === null) || (toLoad === undefined || toLoad === null) || fromLoad === toLoad) {
     return null;
   }
   return `charge ${Math.round(fromLoad)} → ${Math.round(toLoad)}`;
@@ -98,7 +98,7 @@ function summarizeDurationChange(
   fromDuration: number | null,
   toDuration: number | null,
 ): string | null {
-  if (fromDuration === null || toDuration === null || fromDuration === toDuration) {
+  if ((fromDuration === undefined || fromDuration === null) || (toDuration === undefined || toDuration === null) || fromDuration === toDuration) {
     return null;
   }
   return `${fromDuration} → ${toDuration} min`;
@@ -199,7 +199,7 @@ function hasEligibleSession(session: MorningRecalibrationSessionInput | null): s
   if (!session || session.completed || session.activityId) {
     return false;
   }
-  return isMorningRecalibrationEligibleSport(session.type) && session.intensity !== null;
+  return isMorningRecalibrationEligibleSport(session.type) && (session.intensity !== undefined && session.intensity !== null);
 }
 
 function hasEligibleDecision(
@@ -253,11 +253,11 @@ function buildRestOnlyProposal(
   }
   const strengthLike = isStrengthLikeMorningSport(session.type);
   const toDuration =
-    session.durationMin !== null
+    (session.durationMin !== undefined && session.durationMin !== null)
       ? Math.min(session.durationMin, strengthLike ? 35 : 30)
       : session.durationMin;
   const toLoad =
-    session.load !== null
+    (session.load !== undefined && session.load !== null)
       ? Math.min(Math.round(session.load * 0.35), strengthLike ? 18 : 25)
       : null;
   return buildProposal({
@@ -284,7 +284,7 @@ function buildHighIntensityDowngrade(
   if (capacity !== 'LIGHT_ONLY' && !PROTECT_VERDICTS.has(verdict)) {
     return null;
   }
-  const toLoad = load !== null ? Math.round(load * 0.6) : null;
+  const toLoad = (load !== undefined && load !== null) ? Math.round(load * 0.6) : null;
   return buildProposal({
     session,
     direction: 'DOWN',
@@ -306,7 +306,7 @@ function buildTempoDowngrade(
   if (!toIntensity) {
     return null;
   }
-  const toLoad = session.load !== null ? Math.round(session.load * 0.75) : null;
+  const toLoad = (session.load !== undefined && session.load !== null) ? Math.round(session.load * 0.75) : null;
   const strengthLike = isStrengthLikeMorningSport(session.type);
   return buildProposal({
     session,
@@ -331,7 +331,7 @@ function buildStrengthEnduranceDowngrade(
   ) {
     return null;
   }
-  const toLoad = session.load !== null ? Math.round(session.load * 0.7) : null;
+  const toLoad = (session.load !== undefined && session.load !== null) ? Math.round(session.load * 0.7) : null;
   return buildProposal({
     session,
     direction: 'DOWN',
@@ -350,7 +350,7 @@ function buildRecoveryUpgrade(
     return null;
   }
   const strengthLike = isStrengthLikeMorningSport(session.type);
-  const toLoad = session.load !== null ? Math.round(session.load * 1.15) : null;
+  const toLoad = (session.load !== undefined && session.load !== null) ? Math.round(session.load * 1.15) : null;
   return buildProposal({
     session,
     direction: 'UP',
@@ -371,7 +371,7 @@ function buildEnduranceUpgrade(
     return null;
   }
   const strengthLike = isStrengthLikeMorningSport(session.type);
-  const toLoad = session.load !== null ? Math.round(session.load * 1.12) : null;
+  const toLoad = (session.load !== undefined && session.load !== null) ? Math.round(session.load * 1.12) : null;
   return buildProposal({
     session,
     direction: 'UP',

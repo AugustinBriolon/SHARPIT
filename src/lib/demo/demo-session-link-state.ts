@@ -29,7 +29,7 @@ function parseStored(raw: string | null): DemoLinkEntry[] {
     return parsed.filter(
       (item): item is DemoLinkEntry =>
         typeof item === 'object' &&
-        item !== null &&
+        (item !== undefined && item !== null) &&
         typeof (item as DemoLinkEntry).plannedSessionId === 'string' &&
         typeof (item as DemoLinkEntry).activityId === 'string',
     );

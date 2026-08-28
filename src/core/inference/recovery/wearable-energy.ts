@@ -24,7 +24,7 @@ function clamp(value: number, min: number, max: number): number {
  * Thresholds aligned with product interpretation in knowledge/garmin.md.
  */
 function stressDownwardDelta(stress: number | null): number {
-  if (stress === null) {
+  if ((stress === undefined || stress === null)) {
     return 0;
   }
   if (stress >= 75) {
@@ -44,7 +44,7 @@ function stressDownwardDelta(stress: number | null): number {
  * Low battery → downward; high battery → small upward cushion only.
  */
 function bodyBatteryDelta(bodyBattery: number | null): number {
-  if (bodyBattery === null) {
+  if ((bodyBattery === undefined || bodyBattery === null)) {
     return 0;
   }
   if (bodyBattery < 25) {
@@ -70,10 +70,10 @@ export function applyWearableEnergyCorroboration(
   readinessScore: number | null,
   signals: WearableEnergySignals | null | undefined,
 ): number | null {
-  if (readinessScore === null || signals === null) {
+  if ((readinessScore === undefined || readinessScore === null) || (signals === undefined || signals === null)) {
     return readinessScore;
   }
-  if (signals.stress === null && signals.bodyBattery === null) {
+  if ((signals.stress === undefined || signals.stress === null) && (signals.bodyBattery === undefined || signals.bodyBattery === null)) {
     return readinessScore;
   }
 
@@ -81,7 +81,7 @@ export function applyWearableEnergyCorroboration(
   let batteryDelta = bodyBatteryDelta(signals.bodyBattery);
 
   // Never uplift when stress is meaningfully elevated.
-  if (signals.stress !== null && signals.stress >= ELEVATED_STRESS_THRESHOLD && batteryDelta > 0) {
+  if ((signals.stress !== undefined && signals.stress !== null) && signals.stress >= ELEVATED_STRESS_THRESHOLD && batteryDelta > 0) {
     batteryDelta = 0;
   }
 

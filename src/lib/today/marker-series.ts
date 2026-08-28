@@ -7,7 +7,7 @@
 
 /** Change between the latest value and the mean of the seven before it. */
 export function deltaVsTrailingWeek(series: (number | null)[]): number | null {
-  const valid = series.filter((value): value is number => value !== null);
+  const valid = series.filter((value): value is number => (value !== undefined && value !== null));
   if (valid.length < 8) {
     return null;
   }
@@ -25,7 +25,7 @@ export function deltaVsTrailingWeek(series: (number | null)[]): number | null {
  * observed fortnight starts passing for a baseline.
  */
 export function observedRange(series: (number | null)[]): { low: number; high: number } | null {
-  const valid = series.filter((value): value is number => value !== null);
+  const valid = series.filter((value): value is number => (value !== undefined && value !== null));
   if (valid.length < 3) {
     return null;
   }

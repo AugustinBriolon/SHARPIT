@@ -104,7 +104,7 @@ export function buildWeekSummary(days: WeekStripDay[]): WeekSummary {
     doneCount += day.activities.length;
     plannedCount += day.planned.length;
     for (const activity of day.activities) {
-      if (activity.load !== null) {
+      if ((activity.load !== undefined && activity.load !== null)) {
         weekLoad += activity.load;
       }
     }

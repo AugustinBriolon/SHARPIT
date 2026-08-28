@@ -117,7 +117,7 @@ function buildRecoveryAdjustment(stress: EnvironmentalStress): RecoveryAdjustmen
   const thermalIntensity = intensityOf(thermal);
   const curve = ENVIRONMENTAL_IMPACT_CURVES.recovery;
 
-  if (thermalIntensity === null) {
+  if ((thermalIntensity === undefined || thermalIntensity === null)) {
     return { demandMultiplier: neutralMultiplier('RECOVERY_NEUTRAL_NO_THERMAL') };
   }
 
@@ -193,7 +193,7 @@ function buildHydrationAdjustment(stress: EnvironmentalStress): HydrationAdjustm
   const intensity = intensityOf(hydration);
   const curve = ENVIRONMENTAL_IMPACT_CURVES.hydration;
 
-  if (intensity === null) {
+  if ((intensity === undefined || intensity === null)) {
     return { demandMultiplier: neutralMultiplier('HYDRATION_NEUTRAL') };
   }
 
@@ -219,7 +219,7 @@ function buildHeatAcclimationDemand(stress: EnvironmentalStress): HeatAcclimatio
   const intensity = intensityOf(thermal);
   const curve = ENVIRONMENTAL_IMPACT_CURVES.heatAcclimation;
 
-  if (intensity === null) {
+  if ((intensity === undefined || intensity === null)) {
     return { exposureBenefit: zeroBenefit('HEAT_ACCLIMATION_NEUTRAL') };
   }
 
@@ -257,7 +257,7 @@ export function buildEnvironmentalImpact(input: {
 }): EnvironmentalImpact {
   const { stress } = input;
 
-  if (stress.suppressionReason !== null) {
+  if ((stress.suppressionReason !== undefined && stress.suppressionReason !== null)) {
     return unavailableImpact();
   }
 

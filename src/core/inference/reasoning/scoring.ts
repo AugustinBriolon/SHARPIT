@@ -241,7 +241,7 @@ function isRaceReady(
   a: AdaptationState | null,
 ): boolean {
   const peak = a?.estimatedAdaptationPeak;
-  return r?.readinessCategory === 'OPTIMAL' && isFreshFatigue(f) && peak !== null && peak <= 5;
+  return r?.readinessCategory === 'OPTIMAL' && isFreshFatigue(f) && (peak !== undefined && peak !== null) && peak <= 5;
 }
 
 function isTrainHardReady(
@@ -383,7 +383,7 @@ export function detectConflicts(
     detectCapacityConflict(r, f),
     detectTimingConflict(f, a),
     detectSignalConflict(f, a),
-  ].filter((conflict): conflict is ReasoningConflict => conflict !== null);
+  ].filter((conflict): conflict is ReasoningConflict => (conflict !== undefined && conflict !== null));
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -466,7 +466,7 @@ function detectRaceReadinessOpportunity(
   a: AdaptationState | null,
 ): ReasoningOpportunity | null {
   const peak = a?.estimatedAdaptationPeak;
-  if (!a || peak === null || peak === undefined || peak > 7 || !isAdequateRecovery(r)) {
+  if (!a || (peak === undefined || peak === null) || peak === undefined || peak > 7 || !isAdequateRecovery(r)) {
     return null;
   }
 
@@ -510,7 +510,7 @@ export function detectOpportunities(
     detectRaceReadinessOpportunity(r, a),
     detectRecoveryWindowOpportunity(r),
   ]
-    .filter((opportunity): opportunity is ReasoningOpportunity => opportunity !== null)
+    .filter((opportunity): opportunity is ReasoningOpportunity => (opportunity !== undefined && opportunity !== null))
     .sort((a, b) => b.expectedBenefit - a.expectedBenefit)
     .slice(0, 2);
 }
@@ -579,7 +579,7 @@ export function appendEnvironmentalFindings(
 
   const recoveryDemand = readAvailableMetric(impact.recovery.demandMultiplier);
   const performanceRatio = readAvailableMetric(impact.performance.expectedOutputRatio);
-  const severity = recoveryDemand !== null && recoveryDemand > 1.15 ? 'WARNING' : ('INFO' as const);
+  const severity = (recoveryDemand !== undefined && recoveryDemand !== null) && recoveryDemand > 1.15 ? 'WARNING' : ('INFO' as const);
 
   return [
     ...findings,
@@ -592,14 +592,14 @@ export function appendEnvironmentalFindings(
         {
           code: 'reasoning.finding.environmentalLoad.evidence.recoveryDemand',
           params:
-            recoveryDemand !== null
+            (recoveryDemand !== undefined && recoveryDemand !== null)
               ? { recoveryPct: Math.round((recoveryDemand - 1) * 100) }
               : undefined,
         },
         {
           code: 'reasoning.finding.environmentalLoad.evidence.performanceExpectation',
           params:
-            performanceRatio !== null
+            (performanceRatio !== undefined && performanceRatio !== null)
               ? { performancePct: Math.round((1 - performanceRatio) * 100) }
               : undefined,
         },
@@ -710,7 +710,7 @@ function firstModelLimitingFactor(
     r ? recoveryLimitingFactor(r) : null,
     a ? adaptationLimitingFactor(a) : null,
   ];
-  return candidates.find((limit) => limit !== null) ?? null;
+  return candidates.find((limit) => (limit !== undefined && limit !== null)) ?? null;
 }
 
 export function selectLimitingFactor(
@@ -956,7 +956,7 @@ export function computeReasoningConfidence(
 
   const dataCounts = available.map((m) => m!.dataCompleteness);
   const { dataCompleteness, confidenceCap } = resolveDataCompleteness(dataCounts, count);
-  if (confidenceCap !== null) {
+  if ((confidenceCap !== undefined && confidenceCap !== null)) {
     base = Math.min(base, confidenceCap);
   }
 

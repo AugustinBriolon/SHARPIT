@@ -46,7 +46,7 @@ export function AdaptationScreen() {
   const viewModel = query.data ?? null;
 
   if (!valuesLoading && (!viewModel || viewModel.emptyState)) {
-    return <AdaptationEmptyView viewModel={viewModel} />;
+    return <AdaptationEmptyView viewModel={viewModel ?? undefined} />;
   }
 
   const content = viewModel ?? adaptationLoadingShell();

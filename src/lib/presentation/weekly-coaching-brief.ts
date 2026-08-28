@@ -110,7 +110,7 @@ function buildKeySessions(
   goalTitleById: ReadonlyMap<string, string> | undefined,
 ): WeeklyBriefKeySession[] {
   const durationMedian = median(
-    plannedSessions.map((s) => s.durationMin).filter((d): d is number => d !== null),
+    plannedSessions.map((s) => s.durationMin).filter((d): d is number => (d !== undefined && d !== null)),
   );
 
   return plannedSessions

@@ -176,7 +176,7 @@ function buildConditionDomainModels(
 
 function buildConditionSparkline(observations: ConditionObservation[]) {
   return observations
-    .filter((o) => o.severityReported !== null)
+    .filter((o) => (o.severityReported !== undefined && o.severityReported !== null))
     .slice(-14)
     .map((o) => ({
       date: format(o.observedAt, 'dd MMM', { locale: fr }),

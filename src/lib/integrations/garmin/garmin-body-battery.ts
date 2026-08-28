@@ -41,14 +41,14 @@ export function pickCurrentBodyBattery(
   }
 
   const recent = finiteLevel(payload.bodyBatteryMostRecentValue);
-  if (recent !== null) {
+  if ((recent !== undefined && recent !== null)) {
     return recent;
   }
 
   let last: number | null = null;
   for (const entry of payload.bodyBatteryValuesArray ?? []) {
     const level = levelFromEntry(entry);
-    if (level !== null) {
+    if ((level !== undefined && level !== null)) {
       last = level;
     }
   }

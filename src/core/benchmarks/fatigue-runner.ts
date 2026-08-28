@@ -109,7 +109,7 @@ function evaluateExpectations(
   if (exp.fatigueType) {
     results.push(evaluateValue('fatigueType', exp.fatigueType, fatigueState.fatigueType));
   }
-  if (exp.fatigueIndexRange && fatigueState.fatigueIndex !== null) {
+  if (exp.fatigueIndexRange && (fatigueState.fatigueIndex !== undefined && fatigueState.fatigueIndex !== null)) {
     results.push(
       evaluateRange('fatigueIndexRange', exp.fatigueIndexRange, fatigueState.fatigueIndex),
     );

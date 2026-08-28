@@ -10,6 +10,8 @@ import { resolveStrengthSetMedia } from '@/lib/exercises';
 import type { ClientPlannedSession } from '@/lib/query/types';
 import { exposureLabels, intensityLabels } from '@/lib/planned-session/sessions';
 import { formatTrainingLoad } from '@/lib/preferences/display-mode';
+import type { DisplayMode } from '@/lib/preferences/display-mode';
+import type { SessionRationaleViewModel } from '@/core/presentation/session-rationale-view-model';
 import type { PlannedSessionViewModel } from '@/core/presentation/planned-session-view-model';
 import { ActivityType } from '@prisma/client';
 
@@ -26,7 +28,7 @@ export function buildPlannedSessionChips({
 }: {
   session: ClientPlannedSession;
   goalTitle?: string;
-  mode: 'absolute' | 'relative';
+  mode: DisplayMode;
 }): PlannedSessionKeyChip[] {
   const chips: PlannedSessionKeyChip[] = [
     { label: 'Durée', value: session.durationMin ? `${session.durationMin} min` : '—' },
@@ -123,16 +125,12 @@ export function buildPlannedSessionRationaleFlags({
   rationalePending,
 }: {
   isRealized: boolean;
-  rationaleVm: {
-    origin: string;
-    suggested: { gate: { status: string } } | null;
-    outcome: unknown;
-  } | null;
+  rationaleVm: SessionRationaleViewModel | null | undefined;
   rationalePending: boolean;
 }) {
   const hasRationale =
     rationalePending ||
-    (rationaleVm !== null &&
+    (rationaleVm != null &&
       rationaleVm.origin !== 'MANUAL' &&
       (Boolean(rationaleVm.suggested) || Boolean(rationaleVm.outcome)));
   const rationaleOpenByDefault =

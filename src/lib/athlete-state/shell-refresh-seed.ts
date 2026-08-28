@@ -50,7 +50,7 @@ function cacheShellRefreshData(
   }
 
   let todayPresentation = data.todayPresentation ?? null;
-  if (data.presentationSkipped && todayPresentation === null) {
+  if (data.presentationSkipped && (todayPresentation === undefined || todayPresentation === null)) {
     todayPresentation =
       queryClient.getQueryData<TodayViewModel>(queryKeys.presentationToday(trainingDayId)) ?? null;
   } else if (todayPresentation) {

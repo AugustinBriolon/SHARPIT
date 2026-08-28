@@ -48,7 +48,7 @@ export function buildThreadCoachLine(week: ThreadWeek | null): ThreadCoachLine |
   const held = week.plannedLoad > 0 ? week.doneLoad / week.plannedLoad : null;
 
   if (!pivot) {
-    if (held === null) {
+    if ((held === undefined || held === null)) {
       return null;
     }
     // Nothing left to do: the only honest thing left to say is how it landed.
@@ -61,7 +61,7 @@ export function buildThreadCoachLine(week: ThreadWeek | null): ThreadCoachLine |
   }
 
   const lead =
-    held !== null && held < 0.5
+    (held !== undefined && held !== null) && held < 0.5
       ? 'Le gros de la semaine est encore devant toi.'
       : 'Ta semaine tient.';
 

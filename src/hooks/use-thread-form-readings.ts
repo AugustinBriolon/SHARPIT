@@ -37,7 +37,7 @@ function thresholdSeries(
   pick: (snapshot: ThresholdSnapshot) => number | null | undefined,
 ): Array<number | null> | null {
   const points = history.map((snapshot) => pick(snapshot) ?? null);
-  const known = points.filter((value): value is number => value !== null);
+  const known = points.filter((value): value is number => (value !== undefined && value !== null));
   if (known.length < 2) {
     return null;
   }

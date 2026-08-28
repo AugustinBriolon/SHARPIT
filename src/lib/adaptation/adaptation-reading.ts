@@ -28,7 +28,7 @@ function increaseLoadReading(input: {
   const { limitingFactor, limitingScore, plateauRisk, loadMultiplier, historyLength } = input;
   const histPart = historyLength > 0 ? ` Sur ${historyLength} j` : '';
 
-  if (limitingFactor && limitingScore !== null) {
+  if (limitingFactor && (limitingScore !== undefined && limitingScore !== null)) {
     return `Le frein (${limitingFactor.toLowerCase()} à ${limitingScore}/100)${
       plateauRisk ? ' et le plateau' : ''
     } bloquent la progression. Remonter la charge pour relancer l’adaptation${
@@ -50,19 +50,7 @@ function sustainAdaptationReading(historyLength: number): string {
   return `${histPart.trim() ? `${histPart.trim()} · ` : ''}Trajectoire productive — maintenir le rythme sans accélérer.`;
 }
 
-const ADAPTATION_VERDICT_READINGS: Record<
-  string,
-  (input: Parameters<typeof increaseLoadReading>[0]) => string
-> = {
-  INCREASE_LOAD: increaseLoadReading,
-  REDUCE_LOAD: (input) => reduceLoadReading('REDUCE_LOAD', input.overreachingWithoutAdaptation),
-  RECOVERY_PRIORITY: (input) =>
-    reduceLoadReading('RECOVERY_PRIORITY', input.overreachingWithoutAdaptation),
-  CONSOLIDATE: () => 'Consolider le niveau actuel avant la prochaine montée de charge.',
-  SUSTAIN: (input) => sustainAdaptationReading(input.historyLength),
-};
-
-export function synthesizeAdaptationReading(input: {
+type AdaptationReadingInput = {
   verdictKey: string;
   adaptationIndex: number | null;
   trendLabel: string;
@@ -73,7 +61,18 @@ export function synthesizeAdaptationReading(input: {
   overreachingWithoutAdaptation: boolean;
   loadMultiplier: number;
   historyLength: number;
-}): string {
+};
+
+const ADAPTATION_VERDICT_READINGS: Record<string, (input: AdaptationReadingInput) => string> = {
+  INCREASE_LOAD: increaseLoadReading,
+  REDUCE_LOAD: (input) => reduceLoadReading('REDUCE_LOAD', input.overreachingWithoutAdaptation),
+  RECOVERY_PRIORITY: (input) =>
+    reduceLoadReading('RECOVERY_PRIORITY', input.overreachingWithoutAdaptation),
+  CONSOLIDATE: () => 'Consolider le niveau actuel avant la prochaine montée de charge.',
+  SUSTAIN: (input) => sustainAdaptationReading(input.historyLength),
+};
+
+export function synthesizeAdaptationReading(input: AdaptationReadingInput): string {
   const reading = ADAPTATION_VERDICT_READINGS[input.verdictKey]?.(input);
   if (reading) {
     return reading;

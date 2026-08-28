@@ -195,7 +195,7 @@ function buildThresholdProfileUpdate(
     ['vo2maxCycling', thresholds.vo2maxCycling],
   ];
   for (const [key, value] of fields) {
-    if (value !== null) {
+    if ((value !== undefined && value !== null)) {
       data[key] = value as never;
     }
   }
@@ -210,7 +210,7 @@ function thresholdsWereImported(thresholds: GarminAthleteThresholds): boolean {
     thresholds.runThresholdPaceSecPerKm,
     thresholds.vo2maxRunning,
     thresholds.vo2maxCycling,
-  ].some((value) => value !== null);
+  ].some((value) => (value !== undefined && value !== null));
 }
 
 async function importGarminThresholdsForAccount(
@@ -268,7 +268,7 @@ function healthHasData(health: GarminDailyHealth): boolean {
     health.bodyBattery,
     health.totalSteps,
     sleep.sleepScore,
-  ].some((value) => value !== null);
+  ].some((value) => (value !== undefined && value !== null));
 }
 
 function assignHealthScalars(
@@ -294,7 +294,7 @@ function assignHealthScalars(
     ['totalSteps', health.totalSteps],
   ];
   for (const [key, value] of scalarFields) {
-    if (value !== null && value !== undefined) {
+    if ((value !== undefined && value !== null) && value !== undefined) {
       data[key] = value as never;
     }
   }
@@ -314,7 +314,7 @@ function assignSleepScalars(data: Prisma.DailyHealthUpdateInput, sleep: GarminDa
     ['sleepScoreFeedback', sleep.sleepScoreFeedback],
   ];
   for (const [key, value] of sleepFields) {
-    if (value !== null) {
+    if ((value !== undefined && value !== null)) {
       data[key] = value as never;
     }
   }
@@ -322,7 +322,7 @@ function assignSleepScalars(data: Prisma.DailyHealthUpdateInput, sleep: GarminDa
 
 function buildGarminHealthUpdateData(health: GarminDailyHealth): Prisma.DailyHealthUpdateInput {
   const factors =
-    health.readinessFactors !== null
+    (health.readinessFactors !== undefined && health.readinessFactors !== null)
       ? (health.readinessFactors as unknown as Prisma.InputJsonValue)
       : undefined;
   const data: Prisma.DailyHealthUpdateInput = {};
@@ -382,7 +382,7 @@ async function upsertGarminHealthDay(
 
   const day = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
   const factors =
-    health.readinessFactors !== null
+    (health.readinessFactors !== undefined && health.readinessFactors !== null)
       ? (health.readinessFactors as unknown as Prisma.InputJsonValue)
       : undefined;
 
@@ -444,7 +444,7 @@ async function runGarminHealthSync(
   });
 
   const backfill = await backfillHealthObservationsFromDailyHealth(athleteId, {
-    days: options?.full ? 365 : fallbackDays,
+    days: options?.full ? 365 : days,
   });
 
   return { days, updated, emptyDays, observationsBackfilled: backfill.ingested };

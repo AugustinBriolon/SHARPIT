@@ -232,12 +232,16 @@ function selectNutrientGoalBundle(
       if (!item.valid_from) {
         return true;
       }
-      return item.valid_from <= dateStr && (item.valid_to === null || item.valid_to >= dateStr);
+      return item.valid_from <= dateStr && ((item.valid_to === undefined || item.valid_to === null) || item.valid_to >= dateStr);
     }) ?? bundles[0]!
   );
 }
 
-function nutrientGoalsFromDayGoal(dayGoal: MfpNutrientGoalBundle['daily_goals'][number] | MfpNutrientGoalBundle['default_goal']): MfpNutrientGoals | null {
+function nutrientGoalsFromDayGoal(
+  dayGoal:
+    | NonNullable<MfpNutrientGoalBundle['daily_goals']>[number]
+    | MfpNutrientGoalBundle['default_goal'],
+): MfpNutrientGoals | null {
   if (!dayGoal?.energy?.value) {
     return null;
   }
@@ -246,8 +250,8 @@ function nutrientGoalsFromDayGoal(dayGoal: MfpNutrientGoalBundle['daily_goals'][
     protein: Math.round(num(dayGoal.protein)),
     carbohydrates: Math.round(num(dayGoal.carbohydrates)),
     fat: Math.round(num(dayGoal.fat)),
-    fiber: dayGoal.fiber !== null ? Math.round(dayGoal.fiber) : null,
-    sugar: dayGoal.sugar !== null ? Math.round(dayGoal.sugar) : null,
+    fiber: (dayGoal.fiber !== undefined && dayGoal.fiber !== null) ? Math.round(dayGoal.fiber) : null,
+    sugar: (dayGoal.sugar !== undefined && dayGoal.sugar !== null) ? Math.round(dayGoal.sugar) : null,
   };
 }
 
@@ -267,6 +271,10 @@ export function parseNutrientGoalsForDate(
     bundle.default_goal ??
     null;
 
+  if (!dayGoal) {
+    return null;
+  }
+
   return nutrientGoalsFromDayGoal(dayGoal);
 }
 
@@ -279,7 +287,7 @@ export function sumExerciseCalories(entries: MfpExerciseEntry[]): number {
   }, 0);
 }
 
-function diaryEntryToMealEntry(entry: MfpDiaryEntry): MealEntry {
+function diaryEntryToMealEntry(entry: MfpDiaryEntry): MfpScrapedMeal['entries'][number] {
   const nutrients = entry.nutritional_contents ?? {};
   return {
     name: entry.food?.description ?? '',

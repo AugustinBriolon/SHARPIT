@@ -33,7 +33,7 @@ export function shouldRefreshHomeLocation(
   nowMs: number,
   intervalMs = HOME_LOCATION_REFRESH_MS,
 ): boolean {
-  if (lastRefreshAtMs === null) {
+  if ((lastRefreshAtMs === undefined || lastRefreshAtMs === null)) {
     return true;
   }
   return nowMs - lastRefreshAtMs >= intervalMs;

@@ -66,7 +66,7 @@ export function buildTodayDaySummary(
     [
       ...plannedSessions.map((s) => (s.activityId ? s.id : null)),
       ...activities.map((a) => a.plannedSession?.id ?? null),
-    ].filter((id): id is string => id !== null),
+    ].filter((id): id is string => (id !== undefined && id !== null)),
   );
 
   const todayPlanned = plannedSessions.filter(
@@ -188,10 +188,10 @@ function activityMeta(activity: ClientActivity): string | undefined {
   if (activity.duration) {
     parts.push(formatDuration(activity.duration));
   }
-  if (activity.load !== null) {
+  if ((activity.load !== undefined && activity.load !== null)) {
     parts.push(`${Math.round(activity.load)} TSS`);
   }
-  if (activity.rpe !== null) {
+  if ((activity.rpe !== undefined && activity.rpe !== null)) {
     parts.push(`RPE ${activity.rpe}`);
   }
   return parts.length > 0 ? parts.join(' · ') : undefined;
@@ -208,7 +208,7 @@ function plannedMeta(
   if (session.durationMin) {
     parts.push(formatPlannedDuration(session.durationMin));
   }
-  if (session.load !== null) {
+  if ((session.load !== undefined && session.load !== null)) {
     parts.push(`${Math.round(session.load)} TSS`);
   }
   if (session.goalId) {

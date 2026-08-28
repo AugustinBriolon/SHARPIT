@@ -29,7 +29,7 @@ function goalById(goals: ClientGoal[], id: string): ClientGoal | undefined {
 function toContext(goal: ClientGoal, linkedToTodaySession: boolean): TodayGoalContext {
   const d = daysUntil(goal.targetDate ? new Date(goal.targetDate) : null);
   let badge: string | null = null;
-  if (d !== null) {
+  if ((d !== undefined && d !== null)) {
     badge = d >= 0 ? `J-${d}` : `J+${Math.abs(d)}`;
   }
   return {

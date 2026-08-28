@@ -58,7 +58,7 @@ export async function workoutActiveOnCalendar(
     return calendar.calendarItems.some(
       (item) =>
         item.date === scheduledDate &&
-        item.workoutId !== null &&
+        (item.workoutId !== undefined && item.workoutId !== null) &&
         (String(item.workoutId) === workoutId || item.workoutId === idNumber),
     );
   } catch {
@@ -147,7 +147,7 @@ export async function createAndScheduleWorkout(
   const workoutId = created.workoutId ?? null;
   let scheduledDate: string | null = null;
 
-  if (options.schedule !== false && workoutId !== null) {
+  if (options.schedule !== false && (workoutId !== undefined && workoutId !== null)) {
     scheduledDate = options.scheduleDate?.trim() || format(new Date(), 'yyyy-MM-dd');
     await client.scheduleWorkout({ workoutId: String(workoutId) }, scheduledDate);
   }

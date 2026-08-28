@@ -16,7 +16,7 @@ export function scorePlannedActivityMatch(
   }
 
   let score = 100;
-  if (session.durationMin !== null && activity.duration !== null && activity.duration > 0) {
+  if ((session.durationMin !== undefined && session.durationMin !== null) && (activity.duration !== undefined && activity.duration !== null) && activity.duration > 0) {
     const plannedSec = session.durationMin * 60;
     const ratio =
       Math.abs(plannedSec - activity.duration) / Math.max(plannedSec, activity.duration);
@@ -43,7 +43,7 @@ function formatSameDayDurationLabel(
   session: { durationMin: number | null },
   activity: { duration: number | null },
 ): string {
-  if (session.durationMin === null || activity.duration === null || activity.duration <= 0) {
+  if ((session.durationMin === undefined || session.durationMin === null) || (activity.duration === undefined || activity.duration === null) || activity.duration <= 0) {
     return 'Même jour';
   }
   const plannedSec = session.durationMin * 60;

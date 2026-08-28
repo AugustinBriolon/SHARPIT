@@ -272,7 +272,7 @@ export function pickMaxHeartRateFromZones(
   }
   for (const sport of PREFERRED_HR_ZONE_SPORTS) {
     const fromPreferred = zoneMaxHeartRate(zones.find((z) => z.sport === sport));
-    if (fromPreferred !== null) {
+    if ((fromPreferred !== undefined && fromPreferred !== null)) {
       return fromPreferred;
     }
   }
@@ -284,7 +284,7 @@ function runThresholdPaceSecPerKm(
   num: (v: unknown) => number | null,
 ): number | null {
   let speed = num(rawSpeed);
-  if (speed === null) {
+  if ((speed === undefined || speed === null)) {
     return null;
   }
   if (speed < 1.5) {
@@ -449,7 +449,7 @@ async function parseSleepDto(
   const awake = secToMin(dto.awakeSleepSeconds);
   const sleepMinutes = await resolveSleepMinutes({ dto, deep, light, rem, client, date });
   const napMinutesRaw = secToMin(dto.napTimeSeconds);
-  const napMinutes = napMinutesRaw !== null && napMinutesRaw > 0 ? napMinutesRaw : null;
+  const napMinutes = (napMinutesRaw !== undefined && napMinutesRaw !== null) && napMinutesRaw > 0 ? napMinutesRaw : null;
 
   return {
     sleepMinutes,
@@ -480,7 +480,7 @@ type ResolveSleepMinutesInput = {
 async function resolveSleepMinutes(input: ResolveSleepMinutesInput): Promise<number | null> {
   const { dto, deep, light, rem, client, date } = input;
   const sleepMinutes = secToMin(dto.sleepTimeSeconds);
-  if (sleepMinutes !== null) {
+  if ((sleepMinutes !== undefined && sleepMinutes !== null)) {
     return sleepMinutes;
   }
   const sum = (deep ?? 0) + (light ?? 0) + (rem ?? 0);
@@ -537,7 +537,7 @@ function addWeightDayToMap(
 ): void {
   const grams = day?.latestWeight?.weight;
   const key = weightDayKey(day);
-  if (grams !== null && !Number.isNaN(grams) && key) {
+  if ((grams !== undefined && grams !== null) && !Number.isNaN(grams) && key) {
     map.set(key, Number((grams / 1000).toFixed(1)));
   }
 }
@@ -619,7 +619,7 @@ async function fetchTrainingReadiness(client: GCClient, date: Date): Promise<Rea
         percent: num(r.sleepHistoryFactorPercent),
         feedback: str(r.sleepHistoryFactorFeedback),
       },
-    ].filter((f) => f.percent !== null || f.feedback !== null);
+    ].filter((f) => (f.percent !== undefined && f.percent !== null) || (f.feedback !== undefined && f.feedback !== null));
 
     return {
       readinessScore: num(r.score),

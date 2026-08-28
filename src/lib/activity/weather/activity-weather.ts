@@ -78,11 +78,11 @@ function cloudConditionFromCover(cloud: number): ActivityWeatherCondition {
 }
 
 function cloudCondition(cloud: number | null, solar: number | null): ActivityWeatherCondition {
-  if (solar !== null && solar >= 350 && (cloud === null || cloud < 45)) {
+  if ((solar !== undefined && solar !== null) && solar >= 350 && ((cloud === undefined || cloud === null) || cloud < 45)) {
     return 'clear';
   }
-  if (cloud === null) {
-    return solar !== null && solar >= 250 ? 'clear' : 'unknown';
+  if ((cloud === undefined || cloud === null)) {
+    return (solar !== undefined && solar !== null) && solar >= 250 ? 'clear' : 'unknown';
   }
   return cloudConditionFromCover(cloud);
 }
@@ -112,17 +112,17 @@ function appendWeatherSample(
     maxPrecipitationMm: number | null;
   },
 ): void {
-  if (data.airTemperatureC !== null) {
+  if ((data.airTemperatureC !== undefined && data.airTemperatureC !== null)) {
     samples.temperatures.push(data.airTemperatureC);
   }
-  if (data.cloudCoverPct !== null) {
+  if ((data.cloudCoverPct !== undefined && data.cloudCoverPct !== null)) {
     samples.cloudSamples.push(data.cloudCoverPct);
   }
-  if (data.precipitationMm !== null) {
+  if ((data.precipitationMm !== undefined && data.precipitationMm !== null)) {
     samples.precipSamples.push(data.precipitationMm);
     samples.maxPrecipitationMm = Math.max(samples.maxPrecipitationMm ?? 0, data.precipitationMm);
   }
-  if (data.solarRadiationWm2 !== null) {
+  if ((data.solarRadiationWm2 !== undefined && data.solarRadiationWm2 !== null)) {
     samples.solarSamples.push(data.solarRadiationWm2);
   }
 }
@@ -161,7 +161,7 @@ export function extractActivityWeatherSnapshot(
 
   const samples = collectWeatherSamples(predictions);
   const avgTempC = average(samples.temperatures);
-  if (avgTempC === null) {
+  if ((avgTempC === undefined || avgTempC === null)) {
     return null;
   }
 
@@ -217,7 +217,7 @@ function parseLegacyWeather(raw: string): ActivityWeatherSnapshot | null {
 
   const tempMatch = raw.match(/(-?\d+(?:[.,]\d+)?)\s*°C/i);
   const avgTempC = tempMatch ? Number(tempMatch[1].replace(',', '.')) : null;
-  if (avgTempC === null || !Number.isFinite(avgTempC)) {
+  if ((avgTempC === undefined || avgTempC === null) || !Number.isFinite(avgTempC)) {
     return null;
   }
 

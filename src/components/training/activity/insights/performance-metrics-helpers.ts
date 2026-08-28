@@ -42,7 +42,7 @@ function pushPowerRows(rows: PerformanceRow[], analysis: ActivityAnalysis) {
       note: intensityFactorSublabel(load.method, thresholds),
     });
   }
-  if (power?.variabilityIndex !== null) {
+  if (power?.variabilityIndex !== undefined && power.variabilityIndex !== null) {
     rows.push({
       label: 'VI',
       value: power.variabilityIndex.toFixed(2),
@@ -80,7 +80,7 @@ export function buildPerformanceRows(analysis: ActivityAnalysis): PerformanceRow
   pushPowerRows(rows, analysis);
   pushLoadRows(rows, analysis);
   pushHrRows(rows, analysis);
-  if (analysis.run?.paceVariabilityPct !== null) {
+  if (analysis.run?.paceVariabilityPct !== undefined && analysis.run.paceVariabilityPct !== null) {
     rows.push({
       label: 'Variabilité allure',
       value: `${analysis.run.paceVariabilityPct}%`,

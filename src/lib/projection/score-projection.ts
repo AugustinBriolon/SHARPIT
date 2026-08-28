@@ -29,28 +29,28 @@ function fatigueTrajectoryFromTsb(
 }
 
 export function projectReadinessScore(current: number | null, tsbDelta: number): number | null {
-  if (current === null) {
+  if ((current === undefined || current === null)) {
     return null;
   }
   return Math.round(clamp(current + tsbDelta * 0.45, 0, 100));
 }
 
 export function projectFatigueIndex(current: number | null, atlDelta: number): number | null {
-  if (current === null) {
+  if ((current === undefined || current === null)) {
     return null;
   }
   return Math.round(clamp(current + atlDelta * 0.35, 0, 100));
 }
 
 export function projectAdaptationIndex(current: number | null, ctlDelta: number): number | null {
-  if (current === null) {
+  if ((current === undefined || current === null)) {
     return null;
   }
   return Math.round(clamp(current + ctlDelta * 0.2, 0, 100));
 }
 
 export function readinessCategoryFromScore(score: number | null): ReadinessCategory {
-  if (score === null) {
+  if ((score === undefined || score === null)) {
     return 'INSUFFICIENT_DATA';
   }
   if (score >= 85) {
@@ -69,7 +69,7 @@ export function readinessCategoryFromScore(score: number | null): ReadinessCateg
 }
 
 export function fatigueLevelFromIndex(index: number | null): FatigueState['fatigueLevel'] {
-  if (index === null) {
+  if ((index === undefined || index === null)) {
     return 'INSUFFICIENT_DATA';
   }
   if (index >= 80) {
@@ -94,7 +94,7 @@ export function adaptationStatusFromIndex(
   index: number | null,
   current: AdaptationState['adaptationStatus'],
 ): AdaptationState['adaptationStatus'] {
-  if (index === null) {
+  if ((index === undefined || index === null)) {
     return 'INSUFFICIENT_DATA';
   }
   if (index >= 70) {

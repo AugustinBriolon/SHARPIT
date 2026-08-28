@@ -23,7 +23,7 @@ export function AgentActivityHeader({
   contentId: string;
   duration: number;
   expanded: boolean;
-  liveLabel: string;
+  liveLabel: React.ReactNode;
   reduce: boolean;
   renderCompletedStatus?: AgentActivityProps['renderCompletedStatus'];
   renderWorkingStatus?: AgentActivityProps['renderWorkingStatus'];

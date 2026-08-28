@@ -1,5 +1,4 @@
-'use client';
-
+import type { ReactNode } from 'react';
 import {
   ArrowLeft,
   ArrowRight,
@@ -20,7 +19,7 @@ import {
   getApprovalStatusLabel,
 } from './approval-card-status';
 import { approvalCardCopy } from './copy';
-import type { ApprovalCardProps } from './types';
+import type { ApprovalCardProps, ApprovalCardStatus } from './types';
 
 export const ICON_BUTTON_CLASS = 'min-h-11 min-w-11 rounded-full';
 
@@ -139,7 +138,7 @@ export function ApprovalCardHeader({
   currentAnswer: { selected: string[]; custom?: string };
   currentStep: number;
   dismissAriaLabel: string;
-  displayTitle: string;
+  displayTitle: ReactNode;
   interactive: boolean;
   onDismiss?: () => void;
   questionMode: boolean;
@@ -147,7 +146,7 @@ export function ApprovalCardHeader({
   questionStatusLabel: string;
   questionsLength: number;
   reduce: boolean;
-  status: ApprovalCardProps['status'];
+  status: ApprovalCardStatus;
   titleKey: string;
 }) {
   const statusLabel = getApprovalStatusLabel(status);
@@ -307,15 +306,15 @@ export function ApprovalCardDecisionActions({
   rejectLabel,
   requestChangesLabel,
 }: {
-  approveLabel: string;
+  approveLabel: ApprovalCardProps['approveLabel'];
   approveTone: ApprovalCardProps['approveTone'];
-  consequence?: string;
+  consequence?: ApprovalCardProps['consequence'];
   controlsDisabled: boolean;
   onApprove?: () => void;
   onReject?: () => void;
   onRequestChanges?: () => void;
-  rejectLabel: string;
-  requestChangesLabel: string;
+  rejectLabel: ApprovalCardProps['rejectLabel'];
+  requestChangesLabel: ApprovalCardProps['requestChangesLabel'];
 }) {
   return (
     <>

@@ -24,7 +24,7 @@ function intensityConflictFinding(
     saferAlternative: {
       ...proposal,
       intensity: 'ENDURANCE',
-      load: proposal.load !== null ? Math.round(proposal.load * 0.6) : null,
+      load: (proposal.load !== undefined && proposal.load !== null) ? Math.round(proposal.load * 0.6) : null,
     },
   };
 }
@@ -34,7 +34,7 @@ function fatigueCapacityFindings(
   fatigueTrainingCapacity: GateContext['fatigueTrainingCapacity'],
   isHighIntensity: boolean,
 ): RuleFinding[] {
-  if (fatigueTrainingCapacity === 'REST_ONLY' && proposal.intensity !== null && proposal.intensity !== 'RECOVERY') {
+  if (fatigueTrainingCapacity === 'REST_ONLY' && (proposal.intensity !== undefined && proposal.intensity !== null) && proposal.intensity !== 'RECOVERY') {
     return [{
       ruleCode: 'FATIGUE_REST_ONLY',
       severity: 'REJECTED',
@@ -44,7 +44,7 @@ function fatigueCapacityFindings(
       saferAlternative: {
         ...proposal,
         intensity: 'RECOVERY',
-        durationMin: proposal.durationMin !== null ? Math.min(proposal.durationMin, 30) : null,
+        durationMin: (proposal.durationMin !== undefined && proposal.durationMin !== null) ? Math.min(proposal.durationMin, 30) : null,
         load: null,
       },
     }];
@@ -60,7 +60,7 @@ function fatigueCapacityFindings(
       saferAlternative: {
         ...proposal,
         intensity: 'ENDURANCE',
-        load: proposal.load !== null ? Math.round(proposal.load * 0.6) : null,
+        load: (proposal.load !== undefined && proposal.load !== null) ? Math.round(proposal.load * 0.6) : null,
       },
     }];
   }
@@ -73,7 +73,7 @@ export const decisionCompatibilityRule: PlanGateRule = (
   proposal: GateProposal,
 ): RuleFinding[] => {
   const { decision, fatigueTrainingCapacity } = context;
-  const isHighIntensity = proposal.intensity !== null && HIGH_INTENSITY.has(proposal.intensity);
+  const isHighIntensity = (proposal.intensity !== undefined && proposal.intensity !== null) && HIGH_INTENSITY.has(proposal.intensity);
 
   if (!decision || decision.confidenceTier === 'INSUFFICIENT') {
     return [insufficientDecisionFinding()];

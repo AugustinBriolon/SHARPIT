@@ -32,10 +32,12 @@ function discussContextForKind(
   target: CoachDiscussTarget,
   named: string | null,
 ): CoachDiscussContext {
-  const handlers: Record<
-    CoachDiscussTarget['kind'],
-    (t: CoachDiscussTarget, n: string | null) => CoachDiscussContext
-  > = {
+  const handlers: {
+    [K in CoachDiscussTarget['kind']]: (
+      t: Extract<CoachDiscussTarget, { kind: K }>,
+      n: string | null,
+    ) => CoachDiscussContext;
+  } = {
     today: () => ({ kind: 'today', label: 'Ton état du jour', sourceHref: '/' }),
     'planned-session': (_, n) => ({
       kind: 'planned-session',
@@ -68,7 +70,7 @@ function discussContextForKind(
       sourceHref: '/progress?tab=body',
     }),
   };
-  return handlers[target.kind](target, named);
+  return handlers[target.kind](target as never, named);
 }
 
 export function describeCoachDiscussContext(

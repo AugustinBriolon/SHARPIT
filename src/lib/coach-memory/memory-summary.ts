@@ -26,7 +26,7 @@ const ABBREVIATIONS = new Set([
 
 function endsWithAbbreviation(text: string): boolean {
   const match = /(\p{L}+)\.$/u.exec(text.trimEnd());
-  return match !== null && ABBREVIATIONS.has(match[1].toLowerCase());
+  return (match !== undefined && match !== null) && ABBREVIATIONS.has(match[1].toLowerCase());
 }
 
 /**
@@ -40,7 +40,7 @@ function splitIntoSentences(paragraph: string): string[] {
 
   for (const fragment of fragments) {
     const previous = sentences.at(-1);
-    if (previous !== null && endsWithAbbreviation(previous)) {
+    if ((previous !== undefined && previous !== null) && endsWithAbbreviation(previous)) {
       sentences[sentences.length - 1] = `${previous} ${fragment}`;
     } else {
       sentences.push(fragment);

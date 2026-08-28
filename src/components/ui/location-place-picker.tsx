@@ -4,9 +4,12 @@ import { LocationPlaceCoordinates } from '@/components/ui/location-place-coordin
 import { LocationPlaceResults } from '@/components/ui/location-place-results';
 import { Input } from '@/components/ui/input';
 import { useLocationPlacePickerState } from '@/components/ui/use-location-place-picker-state';
-import type { LocationPlaceValue } from '@/components/ui/location-place-picker';
 
-export type { LocationPlaceValue };
+export type LocationPlaceValue = {
+  label: string;
+  latitude: number;
+  longitude: number;
+} | null;
 
 export function LocationPlacePicker({
   value,

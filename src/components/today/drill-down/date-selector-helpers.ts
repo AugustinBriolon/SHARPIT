@@ -26,7 +26,7 @@ export function calendarDayCellProps({
   const isSelected = isSameDay(dayStart, date);
   const isCurrentMonth = isSameMonth(dayStart, visibleMonth);
   const isDisabled =
-    isAfter(dayStart, maxDate) || (minDate !== null && isBefore(dayStart, minDate));
+    isAfter(dayStart, maxDate) || (minDate !== undefined && isBefore(dayStart, minDate));
   const isCurrentDay = isSameDay(dayStart, maxDate);
 
   return {

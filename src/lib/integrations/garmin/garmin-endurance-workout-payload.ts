@@ -237,7 +237,7 @@ export function buildEnduranceWorkoutPayload(
     estimatedDistanceInMeters: endurancePlannedMeters(prescription),
   };
 
-  if (prescription.sport === 'SWIM' && prescription.poolLengthM !== null) {
+  if (prescription.sport === 'SWIM' && (prescription.poolLengthM !== undefined && prescription.poolLengthM !== null)) {
     payload.poolLength = prescription.poolLengthM;
     payload.poolLengthUnit = METER_UNIT;
   }

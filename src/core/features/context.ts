@@ -63,15 +63,15 @@ export function effectiveSleepTarget(ctx: ExtractionContext): number {
 
 /** Whether context has enough data for power-based TSS. */
 export function canUsePowerTss(ctx: ExtractionContext): boolean {
-  return ctx.ftpW !== null && ctx.ftpW > 0;
+  return (ctx.ftpW !== undefined && ctx.ftpW !== null) && ctx.ftpW > 0;
 }
 
 /** Whether context has enough data for TRIMP-based TSS. */
 export function canUseTrimpTss(ctx: ExtractionContext): boolean {
-  return ctx.maxHr !== null && ctx.maxHr > 0 && ctx.restingHr !== null && ctx.restingHr >= 0;
+  return (ctx.maxHr !== undefined && ctx.maxHr !== null) && ctx.maxHr > 0 && (ctx.restingHr !== undefined && ctx.restingHr !== null) && ctx.restingHr >= 0;
 }
 
 /** Whether context has enough data for pace-based TSS. */
 export function canUsePaceTss(ctx: ExtractionContext): boolean {
-  return ctx.runThresholdPaceSecPerKm !== null && ctx.runThresholdPaceSecPerKm > 0;
+  return (ctx.runThresholdPaceSecPerKm !== undefined && ctx.runThresholdPaceSecPerKm !== null) && ctx.runThresholdPaceSecPerKm > 0;
 }

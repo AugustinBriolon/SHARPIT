@@ -36,7 +36,7 @@ export function shouldShowInstallCard(input: {
   if (input.kind === 'ALREADY_INSTALLED' || input.kind === 'UNSUPPORTED') {
     return false;
   }
-  if (input.dismissedAt === null) {
+  if ((input.dismissedAt === undefined || input.dismissedAt === null)) {
     return true;
   }
   return input.now - input.dismissedAt >= INSTALL_DISMISSAL_COOLDOWN_MS;

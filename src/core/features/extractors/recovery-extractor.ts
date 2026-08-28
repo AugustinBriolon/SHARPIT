@@ -102,7 +102,7 @@ function computeSleepDebt(
 
 function computeSleepOnsetConsistency(sleep14d: RecoveryHistory['sleep14d']): number | null {
   const bedtimes = sleep14d
-    .filter((s) => s.bedtimeMinFromMidnight !== null)
+    .filter((s) => (s.bedtimeMinFromMidnight !== undefined && s.bedtimeMinFromMidnight !== null))
     .map((s) => s.bedtimeMinFromMidnight!);
 
   if (bedtimes.length < 4) {
@@ -142,8 +142,8 @@ function computeHrvDelta(
   // Fallback: Garmin personal baseline band (midpoint of balanced zone)
   const { garminBaselineLow, garminBaselineHigh } = hrv;
   if (
-    garminBaselineLow !== null &&
-    garminBaselineHigh !== null &&
+    (garminBaselineLow !== undefined && garminBaselineLow !== null) &&
+    (garminBaselineHigh !== undefined && garminBaselineHigh !== null) &&
     garminBaselineLow > 0 &&
     garminBaselineHigh > 0
   ) {
@@ -238,7 +238,7 @@ function computeWellnessIndex(subjective: SubjectiveObservation | null): {
 
   const dims = WELLNESS_DIMENSIONS.flatMap(({ key, weight, score }) => {
     const raw = components[key];
-    return raw === null ? [] : [{ value: score(raw), weight }];
+    return (raw === undefined || raw === null) ? [] : [{ value: score(raw), weight }];
   });
 
   if (dims.length === 0) {
@@ -395,7 +395,7 @@ export function computeRpeVsTargetZone(
   sessionRpe: number | null,
   sessionSportType: import('@/core/observation/types').SportType | null,
 ): number | null {
-  if (sessionRpe === null || sessionSportType === null) {
+  if ((sessionRpe === undefined || sessionRpe === null) || (sessionSportType === undefined || sessionSportType === null)) {
     return null;
   }
 

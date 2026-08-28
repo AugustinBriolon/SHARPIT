@@ -12,6 +12,7 @@ function baseConstraint(
 ): CoachContext['constraints'][number] {
   return {
     label: 'Tendinite genou',
+    locationLabel: null,
     startDate: '2026-08-01',
     endDate: '2026-08-10',
     isActiveNow: true,

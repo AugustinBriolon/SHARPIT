@@ -108,13 +108,22 @@ function sumLoadInWindow(
     .reduce((sum, [, load]) => sum + load, 0);
 }
 
+export type TrainingLoadResult = {
+  dailyLoad: number;
+  weeklyLoad: number;
+  acwr: number;
+  fatigue: 'Low' | 'Medium' | 'High';
+  loadMonotony: number | null;
+  loadStrain: number | null;
+};
+
 function buildTrainingLoadResult(input: {
   loadByTrainingDay: Map<string, number>;
   refTrainingDayId: string;
   acuteLoad: number;
   dailyLoad: number;
   chronicWeeklyAvg: number;
-}): ReturnType<typeof computeTrainingLoad> {
+}): TrainingLoadResult {
   const { loadByTrainingDay, refTrainingDayId, acuteLoad, dailyLoad, chronicWeeklyAvg } = input;
   const dailyLoads7d = Array.from({ length: ACUTE_DAYS }, (_, index) => {
     const dayId = addTrainingDays(refTrainingDayId, -(ACUTE_DAYS - 1 - index));
@@ -124,7 +133,7 @@ function buildTrainingLoadResult(input: {
   const avgDailyLoad = mean(dailyLoads7d);
   const sdDailyLoad = stdDev(dailyLoads7d);
   const loadMonotony = sdDailyLoad > 0 ? avgDailyLoad / sdDailyLoad : null;
-  const loadStrain = loadMonotony !== null ? acuteLoad * loadMonotony : null;
+  const loadStrain = (loadMonotony !== undefined && loadMonotony !== null) ? acuteLoad * loadMonotony : null;
   const acwr = chronicWeeklyAvg > 0 ? acuteLoad / chronicWeeklyAvg : 0;
 
   return {
@@ -132,8 +141,8 @@ function buildTrainingLoadResult(input: {
     weeklyLoad: Math.round(acuteLoad),
     acwr: Number(acwr.toFixed(2)),
     fatigue: fatigueFromAcwr(acwr),
-    loadMonotony: loadMonotony !== null ? Number(loadMonotony.toFixed(2)) : null,
-    loadStrain: loadStrain !== null ? Math.round(loadStrain) : null,
+    loadMonotony: (loadMonotony !== undefined && loadMonotony !== null) ? Number(loadMonotony.toFixed(2)) : null,
+    loadStrain: (loadStrain !== undefined && loadStrain !== null) ? Math.round(loadStrain) : null,
   };
 }
 

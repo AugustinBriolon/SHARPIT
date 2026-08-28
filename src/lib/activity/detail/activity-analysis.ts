@@ -232,7 +232,7 @@ function zoneIndex(value: number, ref: number, defs: ZoneDef[]): number {
   const pct = (value / ref) * 100;
   for (let i = 0; i < defs.length; i++) {
     const z = defs[i];
-    if (pct >= z.minPct && (z.maxPct === null || pct < z.maxPct)) {
+    if (pct >= z.minPct && ((z.maxPct === undefined || z.maxPct === null) || pct < z.maxPct)) {
       return i;
     }
   }
@@ -354,7 +354,7 @@ function computeDecoupling(points: RawPoint[], mode: 'pace' | 'power'): number |
 
   const ef1 = segmentEfficiency(segments.first, mode);
   const ef2 = segmentEfficiency(segments.second, mode);
-  if (ef1 === null || ef2 === null || ef1 === 0) {
+  if ((ef1 === undefined || ef1 === null) || (ef2 === undefined || ef2 === null) || ef1 === 0) {
     return null;
   }
   return Number((((ef1 - ef2) / ef1) * 100).toFixed(1));
@@ -400,7 +400,7 @@ function buildSplitRow(input: {
     label: splitLabel(target, splitM, isPartialTailSplit, points[endIdx].d),
     distanceM: Math.round(dist),
     durationSec: Math.round(dur),
-    paceSecPerKm: pace !== null ? Math.round(pace) : null,
+    paceSecPerKm: (pace !== undefined && pace !== null) ? Math.round(pace) : null,
     avgHr: segmentMean(
       points.map((p) => p.hr),
       startIdx,
@@ -579,7 +579,7 @@ function computeSessionLoad(input: {
   powerIf: number | null;
 }): { loadTss: number | null; loadIf: number | null; loadMethod: 'power' | 'hr' | null } {
   const { duration, avgHr, lthr, powerTss, powerIf } = input;
-  if (powerTss !== null && powerIf !== null) {
+  if ((powerTss !== undefined && powerTss !== null) && (powerIf !== undefined && powerIf !== null)) {
     return { loadTss: powerTss, loadIf: powerIf, loadMethod: 'power' };
   }
   if (avgHr && lthr && lthr > 0) {
@@ -642,7 +642,7 @@ function computePowerTss(
   ftp: number | null,
   duration: number,
 ): number | null {
-  if (!np || powerIf === null || !ftp) {
+  if (!np || (powerIf === undefined || powerIf === null) || !ftp) {
     return null;
   }
   return Math.round(((duration * np * powerIf) / (ftp * 3600)) * 100);
@@ -730,7 +730,7 @@ function buildHrAnalysis(input: {
       decouplingPct: decoupling,
       efficiencyFactor: efficiency.efficiencyFactor,
       efficiencyLabel: efficiency.efficiencyLabel,
-      avgHr: avgHr !== null ? Math.round(avgHr) : null,
+      avgHr: (avgHr !== undefined && avgHr !== null) ? Math.round(avgHr) : null,
       maxHr: hrs.length ? Math.max(...hrs) : null,
     },
   };

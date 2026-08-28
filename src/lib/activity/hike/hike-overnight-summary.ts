@@ -47,7 +47,7 @@ function resolveHikeVariant(
   startAt: Date,
   endAt: Date,
 ): 'overnight' | 'day' {
-  if (durationSec === null) {
+  if ((durationSec === undefined || durationSec === null)) {
     return 'day';
   }
   if (durationSec >= OVERNIGHT_DURATION_SEC) {
@@ -100,9 +100,9 @@ export function buildHikeOvernightSummary(
 ): HikeOvernightSummary {
   const startAt = asDate(activity.date);
   const durationSec =
-    activity.duration !== null && activity.duration > 0 ? activity.duration : null;
+    (activity.duration !== undefined && activity.duration !== null) && activity.duration > 0 ? activity.duration : null;
   const endAt =
-    durationSec !== null ? new Date(startAt.getTime() + durationSec * 1000) : new Date(startAt);
+    (durationSec !== undefined && durationSec !== null) ? new Date(startAt.getTime() + durationSec * 1000) : new Date(startAt);
 
   return {
     variant: resolveHikeVariant(durationSec, startAt, endAt),

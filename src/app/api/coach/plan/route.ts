@@ -5,7 +5,7 @@ import { isCoachConfigured } from '@/lib/ai';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { recordAiUsage } from '@/lib/ai-usage';
 import { checkRateLimit, rateLimitResponseBody, rateLimiters } from '@/lib/rate-limit';
-import { buildCoachContext, formatCoachContext } from '@/lib/coach/context/coach-context';
+import { buildCoachContext, formatCoachContext, type CoachContext } from '@/lib/coach/context/coach-context';
 import {
   COACH_PROGRESS_HEADERS,
   encodeCoachProgressEvent,
@@ -162,7 +162,7 @@ async function preparePlanGeneration(athleteId: string, parsed: z.infer<typeof c
     goalId ? getGoalById(athleteId, goalId) : Promise.resolve(null),
   ]);
 
-  const travelWindows = (ctx.travel ?? []).map((t) => ({
+  const travelWindows = (ctx.travel ?? []).map((t: CoachContext['travel'][number]) => ({
     startDate: new Date(`${t.startDate}T00:00:00`),
     endDate: new Date(`${t.endDate}T00:00:00`),
     label: t.label,
@@ -180,7 +180,7 @@ async function preparePlanGeneration(athleteId: string, parsed: z.infer<typeof c
   const goalBlock = goal ? buildGoalBlock(goal, start) : '';
   const macroBlock = buildMacroBlock({
     effectiveTargetLoad: travelResolved.targetLoad,
-    planPhase,
+    planPhase: planPhase ?? undefined,
     effectivePlanFocus: travelResolved.planFocus,
     travelResolved,
   });
@@ -188,7 +188,7 @@ async function preparePlanGeneration(athleteId: string, parsed: z.infer<typeof c
   const prompt = buildPlanPrompt({
     days,
     start,
-    focus,
+    focus: focus ?? undefined,
     contextText: formatCoachContext(ctx),
     goalBlock,
     macroBlock,

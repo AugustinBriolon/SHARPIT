@@ -90,7 +90,7 @@ export function runAdaptationModel(
 
   // ── Step 3: Classify ──────────────────────────────────────────────────────
   const adaptationStatus =
-    adaptationIndex === null ? 'INSUFFICIENT_DATA' : classifyAdaptationStatus(adaptationIndex);
+    (adaptationIndex === undefined || adaptationIndex === null) ? 'INSUFFICIENT_DATA' : classifyAdaptationStatus(adaptationIndex);
 
   const adaptationTrend = computeAdaptationTrend(context.recentAdaptationHistory);
 
@@ -181,7 +181,7 @@ function dimensionStatus(d: DimensionScore): string {
   if (!d.available) {
     return 'unavailable';
   }
-  if (d.score !== null) {
+  if ((d.score !== undefined && d.score !== null)) {
     return `score=${d.score}`;
   }
   return 'computed';
@@ -201,7 +201,7 @@ function findLimitingFactor(dims: ScoredAdaptationDimensions): AdaptationState['
     { key: 'neuromuscularEfficiency' as const, score: dims.neuromuscularEfficiency.score },
     { key: 'autonomicAdaptation' as const, score: dims.autonomicAdaptation.score },
     { key: 'recoveryQuality' as const, score: dims.recoveryQuality.score },
-  ].filter((c) => c.score !== null) as Array<{
+  ].filter((c) => (c.score !== undefined && c.score !== null)) as Array<{
     key: keyof ScoredAdaptationDimensions;
     score: number;
   }>;
@@ -238,11 +238,11 @@ function detectOverreachingWithoutAdaptation(
   autonomic: DimensionScore,
   recoveryQ: DimensionScore,
 ): boolean {
-  if (fatigueState === null) {
+  if ((fatigueState === undefined || fatigueState === null)) {
     return false;
   }
   const { fatigueIndex } = fatigueState;
-  if (fatigueIndex === null || fatigueIndex <= 70) {
+  if ((fatigueIndex === undefined || fatigueIndex === null) || fatigueIndex <= 70) {
     return false;
   }
   return (autonomic.score ?? 100) < 40 && (recoveryQ.score ?? 100) < 40;
@@ -368,7 +368,7 @@ function buildRecommendation(
   signals: AdaptationSignals,
 ): AdaptationRecommendation {
   const keyEvidence: I18nItem[] = [];
-  if (signals.adaptationIndex !== null) {
+  if ((signals.adaptationIndex !== undefined && signals.adaptationIndex !== null)) {
     keyEvidence.push({
       code: 'adaptation.evidence.index',
       params: { index: signals.adaptationIndex },

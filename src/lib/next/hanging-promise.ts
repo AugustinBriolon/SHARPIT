@@ -6,7 +6,7 @@
 export function isHangingPromiseRejection(error: unknown): boolean {
   return (
     typeof error === 'object' &&
-    error !== null &&
+    (error !== undefined && error !== null) &&
     'digest' in error &&
     (error as { digest: unknown }).digest === 'HANGING_PROMISE_REJECTION'
   );

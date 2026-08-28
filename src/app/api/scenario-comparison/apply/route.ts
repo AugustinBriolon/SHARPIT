@@ -24,7 +24,7 @@ export async function POST(request: Request) {
     }
 
     const { scenarioId, horizonDays, anchorTrainingDayId } = parsed.data;
-    if (horizonDays !== null && !VALID_HORIZONS.has(horizonDays)) {
+    if (horizonDays !== undefined && !VALID_HORIZONS.has(horizonDays)) {
       return NextResponse.json({ error: 'horizonDays doit être 1, 3, 7 ou 14' }, { status: 400 });
     }
 

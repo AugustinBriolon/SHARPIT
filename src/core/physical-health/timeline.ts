@@ -13,7 +13,7 @@ function byDateAsc(a: { at: Date }, b: { at: Date }): number {
 }
 
 function observationSeverityLabel(obs: ConditionObservation): string {
-  if (obs.symptomPresent && obs.severityReported !== null) {
+  if (obs.symptomPresent && (obs.severityReported !== undefined && obs.severityReported !== null)) {
     return `${obs.severityReported}/10`;
   }
   if (obs.symptomPresent) {

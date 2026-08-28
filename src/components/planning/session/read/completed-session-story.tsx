@@ -11,11 +11,12 @@ import { CompletedSessionStoryActions } from '@/components/planning/session/read
 
 function parseSessionStory(session: ClientPlannedSession) {
   const analysis = parseSessionAnalysis(session.analysis);
+  const activity = session.activity;
   const narrative =
-    session.activity?.narrativeAnalyzedAt !== null
-      ? parseActivityNarrative(session.activity.narrativeAnalysis)
+    activity?.narrativeAnalyzedAt != null
+      ? parseActivityNarrative(activity.narrativeAnalysis)
       : null;
-  const notes = session.activity?.notes?.trim() || null;
+  const notes = activity?.notes?.trim() || null;
   const hasStory = Boolean(narrative || analysis || notes);
   return { analysis, narrative, notes, hasStory };
 }

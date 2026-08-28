@@ -51,7 +51,7 @@ function endOfDayFromTrainingDone(input: DailyPhaseInput): ResolveResult | null 
   const { dayContext, athlete } = input;
   const trainingDone =
     dayContext.completedSessionCount > 0 && dayContext.remainingPlannedCount === 0;
-  if (!trainingDone || athlete.minutesSinceLastActivity === null) {
+  if (!trainingDone || (athlete.minutesSinceLastActivity === undefined || athlete.minutesSinceLastActivity === null)) {
     return null;
   }
   if (athlete.minutesSinceLastActivity < RECOVERY_TO_END_OF_DAY_MINUTES) {
@@ -70,7 +70,7 @@ function endOfDayFromRestDay(input: DailyPhaseInput): ResolveResult | null {
   }
   const preparationComplete =
     athlete.newInferenceSincePriorSnapshot ||
-    (athlete.minutesSinceSnapshotGenerated !== null &&
+    ((athlete.minutesSinceSnapshotGenerated !== undefined && athlete.minutesSinceSnapshotGenerated !== null) &&
       athlete.minutesSinceSnapshotGenerated >= REST_DAY_PREP_SNAPSHOT_AGE_MINUTES * 2);
   if (preparationComplete) {
     return { phase: 'END_OF_DAY', because: 'rest_day_preparation_complete' };
@@ -89,7 +89,7 @@ function endOfDayFromTimeFallback(input: DailyPhaseInput): ResolveResult | null 
   if (
     localHour >= LATE_DAY_HOUR_FALLBACK &&
     trainingDone &&
-    athlete.minutesSinceLastActivity !== null &&
+    (athlete.minutesSinceLastActivity !== undefined && athlete.minutesSinceLastActivity !== null) &&
     athlete.minutesSinceLastActivity >= ACCOMPLISHMENT_WINDOW_MINUTES
   ) {
     return { phase: 'END_OF_DAY', because: 'time_fallback_late_day_post_training' };
@@ -162,7 +162,7 @@ function restDayEvolvedPastMorning(athlete: DailyPhaseInput['athlete']): boolean
   return (
     athlete.priorPhase === 'MORNING' ||
     athlete.priorPhase === 'RECOVERY_WINDOW' ||
-    (athlete.minutesSinceSnapshotGenerated !== null &&
+    ((athlete.minutesSinceSnapshotGenerated !== undefined && athlete.minutesSinceSnapshotGenerated !== null) &&
       athlete.minutesSinceSnapshotGenerated >= REST_DAY_PREP_SNAPSHOT_AGE_MINUTES)
   );
 }

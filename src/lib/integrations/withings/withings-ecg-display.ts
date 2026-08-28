@@ -243,7 +243,7 @@ function parseEcgExtras(extras: unknown): {
   ecg?: Record<string, number>;
   ecgAfibClassification?: number;
 } | null {
-  if (extras === null || typeof extras !== 'object') {
+  if ((extras === undefined || extras === null) || typeof extras !== 'object') {
     return null;
   }
   return extras as {
@@ -258,14 +258,14 @@ export function parseWithingsEcgStats(extras: unknown): WithingsEcgStat[] {
     return [];
   }
   const { ecg, ecgAfibClassification } = parsed;
-  if (!ecg && ecgAfibClassification === null) {
+  if (!ecg && (ecgAfibClassification === undefined || ecgAfibClassification === null)) {
     return [];
   }
 
   const stats: WithingsEcgStat[] = [];
   const skipAfibKeys = new Set<string>();
 
-  if (ecgAfibClassification !== null) {
+  if ((ecgAfibClassification !== undefined && ecgAfibClassification !== null)) {
     pushAfibClassification(stats, skipAfibKeys, ecgAfibClassification);
   }
 

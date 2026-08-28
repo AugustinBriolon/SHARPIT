@@ -11,7 +11,7 @@ export function buildGoalsProgress(input: {
   goalFat: number | null;
   exerciseCalories?: number | null;
 }): NutritionGoalsProgress | null {
-  if (input.goalCalories === null) {
+  if ((input.goalCalories === undefined || input.goalCalories === null)) {
     return null;
   }
 
@@ -34,9 +34,9 @@ function progressLine(
   unit: 'kcal' | 'g',
 ): NutritionGoalsProgress['calories'] {
   const normalizedConsumed = Math.max(0, Math.round(consumed));
-  const normalizedGoal = goal !== null && goal > 0 ? Math.round(goal) : null;
+  const normalizedGoal = (goal !== undefined && goal !== null) && goal > 0 ? Math.round(goal) : null;
 
-  if (normalizedGoal === null) {
+  if ((normalizedGoal === undefined || normalizedGoal === null)) {
     return {
       consumed: normalizedConsumed,
       goal: null,
@@ -59,7 +59,7 @@ function progressLine(
 }
 
 export function formatRemainingCalories(remaining: number | null): string {
-  if (remaining === null) {
+  if ((remaining === undefined || remaining === null)) {
     return '—';
   }
   if (remaining > 0) {
@@ -72,7 +72,7 @@ export function formatRemainingCalories(remaining: number | null): string {
 }
 
 export function formatRemainingMacro(remaining: number | null, unit: 'g'): string {
-  if (remaining === null) {
+  if ((remaining === undefined || remaining === null)) {
     return '—';
   }
   if (remaining > 0) {

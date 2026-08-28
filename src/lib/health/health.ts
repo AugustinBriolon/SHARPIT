@@ -22,7 +22,7 @@ export interface HealthEntry {
 }
 
 export function formatSleep(minutes?: number | null): string {
-  if (minutes === null) {
+  if ((minutes === undefined || minutes === null)) {
     return '—';
   }
   const h = Math.floor(minutes / 60);
@@ -59,16 +59,16 @@ export function computeTrend(
   key: keyof Pick<HealthEntry, 'hrv' | 'restingHr' | 'weightKg' | 'sleepMinutes' | 'recoveryScore'>,
 ): TrendStat {
   const sorted = [...entries].sort((a, b) => b.date.getTime() - a.date.getTime());
-  const values = sorted.map((e) => e[key]).filter((v): v is number => v !== null);
+  const values = sorted.map((e) => e[key]).filter((v): v is number => (v !== undefined && v !== null));
 
   const latest = values[0] ?? null;
   const last7 = values.slice(0, 7);
   const prev7 = values.slice(7, 14);
   const avg7 = average(last7);
   const avgPrev = average(prev7);
-  const delta = avg7 !== null && avgPrev !== null ? Number((avg7 - avgPrev).toFixed(1)) : null;
+  const delta = (avg7 !== undefined && avg7 !== null) && (avgPrev !== undefined && avgPrev !== null) ? Number((avg7 - avgPrev).toFixed(1)) : null;
 
-  return { latest, avg7: avg7 !== null ? Number(avg7.toFixed(1)) : null, delta };
+  return { latest, avg7: (avg7 !== undefined && avg7 !== null) ? Number(avg7.toFixed(1)) : null, delta };
 }
 
 export interface HealthChartPoint {
@@ -114,7 +114,7 @@ export function buildDailyWindowSeries<T extends { date: Date | string }, R>(
 }
 
 function formatSleepHours(totalMinutes: number | null): number | null {
-  return totalMinutes !== null ? Number((totalMinutes / 60).toFixed(1)) : null;
+  return (totalMinutes !== undefined && totalMinutes !== null) ? Number((totalMinutes / 60).toFixed(1)) : null;
 }
 
 function buildHealthChartPoint(day: Date, entry: HealthEntry | null): HealthChartPoint {

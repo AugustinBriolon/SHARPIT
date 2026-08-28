@@ -292,7 +292,7 @@ export function collectKeyFindings(input: BuildKeyFindingsInput): ReasoningFindi
     findingCrossSystemConflict(conflicts),
     findingOptimalState(recovery, fatigue),
     findingPositiveAdaptation(adaptation),
-  ].filter((finding): finding is ReasoningFinding => finding !== null);
+  ].filter((finding): finding is ReasoningFinding => (finding !== undefined && finding !== null));
 
   findings.sort((a, b) => {
     const severityDiff = (SEVERITY_ORDER[a.severity] ?? 2) - (SEVERITY_ORDER[b.severity] ?? 2);

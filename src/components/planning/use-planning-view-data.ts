@@ -58,7 +58,14 @@ export function usePlanningViewData(showCoachMenu: boolean) {
     [activities, planned, nextRace?.target],
   );
   const week = useMemo(
-    () => resolvePlanningWeek(weekStart, activities, planned, nextRace?.target ?? null, builtWeeks),
+    () =>
+      resolvePlanningWeek({
+        weekStart,
+        activities,
+        planned,
+        raceDate: nextRace?.target ?? null,
+        builtWeeks,
+      }),
     [weekStart, activities, planned, nextRace?.target, builtWeeks],
   );
 

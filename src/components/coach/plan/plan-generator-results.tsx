@@ -31,7 +31,7 @@ export function PlanGeneratorResults({
   onClose: () => void;
   onInsert: () => void;
   onToggle: (index: number) => void;
-  plan: NonNullable<ReturnType<typeof import('@/hooks/use-coach').useCoachPlan>['data']>;
+  plan: NonNullable<ReturnType<typeof import('@/hooks/use-coach').useCoachPlan>['data']> | undefined;
   planWeek: { phase: keyof typeof phaseLabels; targetLoad: number; isDeload: boolean } | null;
   progress: CoachGenerationProgress | null;
   selected: Set<number>;
