@@ -7,6 +7,7 @@ import {
   parseSessionAnalysis,
 } from '@/components/planning/session/read/completed-session-story-content';
 import { ComplianceBadge } from '@/components/planning/session/read/completed-session-story-parts';
+import { PlannedVsDoneStrip } from '@/components/planning/session/read/planned-vs-done-strip';
 import { CompletedSessionStoryActions } from '@/components/planning/session/read/completed-session-story-actions';
 
 function readActivityNarrative(activity: ClientPlannedSession['activity']) {
@@ -46,7 +47,7 @@ export function CompletedSessionStory({
   onReanalyze?: () => void;
 }) {
   const { analysis, narrative, notes, hasStory } = parseSessionStory(session);
-  if (!hasStory && !isAnalyzing && !onReanalyze) {
+  if (!hasStory && !isAnalyzing && !onReanalyze && !session.activity) {
     return null;
   }
 
@@ -69,6 +70,12 @@ export function CompletedSessionStory({
         narrative={narrative}
         notes={notes}
       />
+
+      {session.activity ? (
+        <div className="border-analysis-border/50 border-t pt-3">
+          <PlannedVsDoneStrip session={session} />
+        </div>
+      ) : null}
 
       <CompletedSessionStoryActions
         analysis={analysis}

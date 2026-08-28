@@ -36,16 +36,18 @@ function ActivityMetaChipShell({
   chipClass,
   href,
   onClick,
+  onPointerEnter,
   children,
 }: {
   chipClass: string;
   href?: string;
   onClick?: () => void;
+  onPointerEnter?: () => void;
   children: ReactNode;
 }) {
   if (onClick) {
     return (
-      <button className={chipClass} type="button" onClick={onClick}>
+      <button className={chipClass} type="button" onClick={onClick} onPointerEnter={onPointerEnter}>
         {children}
       </button>
     );
@@ -63,6 +65,7 @@ function ActivityMetaChipShell({
 export function ActivityMetaChip({
   href,
   onClick,
+  onPointerEnter,
   icon: Icon,
   label,
   value,
@@ -71,6 +74,7 @@ export function ActivityMetaChip({
 }: {
   href?: string;
   onClick?: () => void;
+  onPointerEnter?: () => void;
   icon: LucideIcon;
   label: string;
   value: string;
@@ -99,7 +103,12 @@ export function ActivityMetaChip({
   );
 
   return (
-    <ActivityMetaChipShell chipClass={chipClass} href={href} onClick={onClick}>
+    <ActivityMetaChipShell
+      chipClass={chipClass}
+      href={href}
+      onClick={onClick}
+      onPointerEnter={onPointerEnter}
+    >
       {content}
     </ActivityMetaChipShell>
   );

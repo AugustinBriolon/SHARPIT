@@ -30,6 +30,8 @@ export function usePlannedSessionLocationQueries() {
           locationLabel: string;
           locationLat: number;
           locationLng: number;
+          startDate: string;
+          endDate: string;
         } | null;
       }>;
     },

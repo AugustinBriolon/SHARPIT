@@ -26,7 +26,7 @@ import {
   deletePlannedSessionDialog,
   submitPlannedSessionDialogForm,
 } from '@/components/planning/session/edit/planned-session-dialog-actions';
-import type { useConfirmDialog as UseConfirmDialog } from '@/components/ui/confirm-dialog';
+import { usePlannedSessionOutdoorLocationSync } from '@/components/planning/session/edit/use-planned-session-outdoor-location-sync';
 
 function useLivePlannedSession(
   session: ClientPlannedSession | null | undefined,
@@ -90,7 +90,7 @@ function usePlannedSessionDialogHandlers({
   queryClient: ReturnType<typeof useQueryClient>;
   onClose: () => void;
   mutations: ReturnType<typeof usePlannedSessionMutations>;
-  confirm: ReturnType<typeof UseConfirmDialog>['confirm'];
+  confirm: ReturnType<typeof useConfirmDialog>['confirm'];
 }) {
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     await submitPlannedSessionDialogForm({
@@ -205,6 +205,11 @@ function usePlannedSessionDialogCore({
   useSessionRationalePresentation(form.isEdit ? session?.id : null);
   const linkableGoals = usePlannedSessionLinkableGoals(goals, session);
   const locationQueries = usePlannedSessionLocationQueries();
+
+  usePlannedSessionOutdoorLocationSync({
+    session: liveSession,
+    activeTravel: locationQueries.travelQuery.data?.active ?? null,
+  });
 
   usePlannedSessionDialogEffects({
     form,
