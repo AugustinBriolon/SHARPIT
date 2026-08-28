@@ -170,7 +170,6 @@ export function GoalCreateForm({
         {skipLabel && onSkip ? (
           <Button
             className="sm:mr-auto"
-            disabled={pending}
             type="button"
             variant="ghost"
             onClick={onSkip}
