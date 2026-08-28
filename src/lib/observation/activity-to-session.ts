@@ -99,6 +99,74 @@ function resolveIdentity(activity: StoredActivityForSession): {
   return { source: 'MANUAL', externalId: `manual:activity:${activity.id}` };
 }
 
+function buildPowerData(
+  activity: StoredActivityForSession,
+  sportType: SportType,
+): RawSessionObservation['powerData'] | undefined {
+  const avgWatts = positive(activity.bikeMetrics?.avgPower);
+  if (!avgWatts) {
+    return undefined;
+  }
+  return {
+    avgWatts,
+    normalizedPower: positive(activity.bikeMetrics?.normalizedPower),
+    quality: sportType === 'BIKE' ? 'MEASURED_DIRECT' : 'MEASURED_OPTICAL',
+  };
+}
+
+function firstPositiveHr(...values: Array<number | null | undefined>): number | undefined {
+  for (const value of values) {
+    const resolved = positive(value);
+    if (resolved) {
+      return resolved;
+    }
+  }
+  return undefined;
+}
+
+function buildHrData(
+  activity: StoredActivityForSession,
+  options?: ActivityToSessionOptions,
+): RawSessionObservation['hrData'] | undefined {
+  const avgBpm = firstPositiveHr(
+    activity.runMetrics?.avgHr,
+    activity.hikeMetrics?.avgHr,
+    options?.avgHrFromStream,
+  );
+  if (!avgBpm) {
+    return undefined;
+  }
+  const maxBpm = positive(options?.maxHrFromStream);
+  return {
+    avgBpm: Math.round(avgBpm),
+    maxBpm: maxBpm ? Math.round(maxBpm) : undefined,
+    quality: 'MEASURED_OPTICAL',
+  };
+}
+
+function buildPaceData(
+  activity: StoredActivityForSession,
+): RawSessionObservation['paceData'] | undefined {
+  const paceSecPerKm = positive(activity.runMetrics?.paceSecPerKm);
+  const runDistanceM = positive(activity.runMetrics?.distanceM);
+  if (!paceSecPerKm || !runDistanceM) {
+    return undefined;
+  }
+  return { avgMinPerKm: paceSecPerKm / 60, distanceM: runDistanceM };
+}
+
+function resolveElevationM(activity: StoredActivityForSession): number | undefined {
+  return (
+    positive(activity.runMetrics?.elevationM) ??
+    positive(activity.bikeMetrics?.elevationM) ??
+    positive(activity.hikeMetrics?.elevationM)
+  );
+}
+
+function resolveCalories(activity: StoredActivityForSession): number | undefined {
+  return positive(activity.bikeMetrics?.calories) ?? positive(activity.hikeMetrics?.calories);
+}
+
 export function storedActivityToSession(
   activity: StoredActivityForSession,
   options?: ActivityToSessionOptions,
@@ -109,44 +177,6 @@ export function storedActivityToSession(
   }
 
   const sportType = SPORT_TYPE_BY_ACTIVITY_TYPE[activity.type];
-
-  const avgWatts = positive(activity.bikeMetrics?.avgPower);
-  const powerData: RawSessionObservation['powerData'] = avgWatts
-    ? {
-        avgWatts,
-        normalizedPower: positive(activity.bikeMetrics?.normalizedPower),
-        // Intensity factor is deliberately not carried over: Garmin derives it
-        // from its own FTP, and the Core must compute it from ours.
-        quality: sportType === 'BIKE' ? 'MEASURED_DIRECT' : 'MEASURED_OPTICAL',
-      }
-    : undefined;
-
-  const avgBpm =
-    positive(activity.runMetrics?.avgHr) ??
-    positive(activity.hikeMetrics?.avgHr) ??
-    positive(options?.avgHrFromStream);
-  const hrData: RawSessionObservation['hrData'] = avgBpm
-    ? {
-        avgBpm: Math.round(avgBpm),
-        maxBpm: positive(options?.maxHrFromStream)
-          ? Math.round(options!.maxHrFromStream!)
-          : undefined,
-        // Provenance is not recorded per activity, and Garmin wrist HR is the
-        // common case, so assume optical: it lowers confidence rather than
-        // overstating it.
-        quality: 'MEASURED_OPTICAL',
-      }
-    : undefined;
-
-  const paceSecPerKm = positive(activity.runMetrics?.paceSecPerKm);
-  const runDistanceM = positive(activity.runMetrics?.distanceM);
-  // Only running pace is consumed by the Core's pace tier; swim pace uses a
-  // different unit and would be a lie in this field.
-  const paceData: RawSessionObservation['paceData'] =
-    paceSecPerKm && runDistanceM
-      ? { avgMinPerKm: paceSecPerKm / 60, distanceM: runDistanceM }
-      : undefined;
-
   const { source, externalId } = resolveIdentity(activity);
 
   return {
@@ -158,19 +188,10 @@ export function storedActivityToSession(
     durationSec,
     externalId,
     title: activity.title ?? undefined,
-    powerData,
-    hrData,
-    paceData,
-    elevationM:
-      positive(activity.runMetrics?.elevationM) ??
-      positive(activity.bikeMetrics?.elevationM) ??
-      positive(activity.hikeMetrics?.elevationM),
-    calories: positive(activity.bikeMetrics?.calories) ?? positive(activity.hikeMetrics?.calories),
-    // sourceProvidedStress is deliberately omitted. Activity.load coalesces
-    // Garmin's trainingStressScore with its EPOC-derived activityTrainingLoad,
-    // which are different scales (~49 vs ~151 per hour on this athlete's data),
-    // and bikeMetrics.tss is written from the same coalesced value. Carrying it
-    // over would push that contamination into the Core, which computes its own
-    // TSS anyway and only keeps this field for cross-validation.
+    powerData: buildPowerData(activity, sportType),
+    hrData: buildHrData(activity, options),
+    paceData: buildPaceData(activity),
+    elevationM: resolveElevationM(activity),
+    calories: resolveCalories(activity),
   };
 }

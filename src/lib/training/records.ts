@@ -274,14 +274,17 @@ interface Candidate {
   activity: MetricActivity;
 }
 
+type TopNEntriesInput = {
+  activities: MetricActivity[];
+  accessor: (a: MetricActivity) => number | null;
+  mode: 'max' | 'min';
+  format: (v: number) => string;
+  sublabel?: (v: number, a: MetricActivity) => string | null;
+};
+
 /** Top N entrées pour un accesseur donné, triées (meilleur en premier). */
-function topNEntries(
-  activities: MetricActivity[],
-  accessor: (a: MetricActivity) => number | null,
-  mode: 'max' | 'min',
-  format: (v: number) => string,
-  sublabel?: (v: number, a: MetricActivity) => string | null,
-): RecordEntry[] {
+function topNEntries(input: TopNEntriesInput): RecordEntry[] {
+  const { activities, accessor, mode, format, sublabel } = input;
   const cands = activities
     .map((a) => ({ value: accessor(a), activity: a }))
     .filter((c): c is Candidate => c.value !== null && !Number.isNaN(c.value) && c.value > 0);
@@ -331,28 +334,26 @@ const DURATION_PR_CATEGORIES = Object.keys(DURATION_PR_TYPE);
  * sports, or a leader whose activity type does not match its category.
  * Pure helper — used by getStoredRecords to trigger a one-shot repair in prod.
  */
-export function durationPrLeadersNeedRepair(
+function hasLegacyDurationLabel(
+  leaders: ReadonlyArray<{ label: string }>,
+): boolean {
+  return leaders.some((row) => row.label === 'Plus longue durée');
+}
+
+function hasDuplicateDurationLeaders(
+  leaders: ReadonlyArray<{ activityId: string | null }>,
+): boolean {
+  const ids = leaders.map((row) => row.activityId).filter((id): id is string => Boolean(id));
+  return ids.length > 1 && new Set(ids).size < ids.length;
+}
+
+function hasMismatchedDurationLeaderType(
   leaders: ReadonlyArray<{
     category: string;
     activityId: string | null;
-    label: string;
     activityType?: ActivityType | null;
   }>,
 ): boolean {
-  if (leaders.length === 0) {
-    return false;
-  }
-
-  // Pre-fix generic label (shared across run/bike/swim).
-  if (leaders.some((r) => r.label === 'Plus longue durée')) {
-    return true;
-  }
-
-  const ids = leaders.map((r) => r.activityId).filter((id): id is string => Boolean(id));
-  if (ids.length > 1 && new Set(ids).size < ids.length) {
-    return true;
-  }
-
   for (const row of leaders) {
     if (!row.activityId || row.activityType === null) {
       continue;
@@ -365,6 +366,24 @@ export function durationPrLeadersNeedRepair(
   return false;
 }
 
+export function durationPrLeadersNeedRepair(
+  leaders: ReadonlyArray<{
+    category: string;
+    activityId: string | null;
+    label: string;
+    activityType?: ActivityType | null;
+  }>,
+): boolean {
+  if (leaders.length === 0) {
+    return false;
+  }
+  return (
+    hasLegacyDurationLabel(leaders) ||
+    hasDuplicateDurationLeaders(leaders) ||
+    hasMismatchedDurationLeaderType(leaders)
+  );
+}
+
 function activitiesForDurationPr(defKey: string, activities: MetricActivity[]): MetricActivity[] {
   const type = DURATION_PR_TYPE[defKey];
   if (!type) {
@@ -373,82 +392,91 @@ function activitiesForDurationPr(defKey: string, activities: MetricActivity[]): 
   return activities.filter((a) => a.type === type);
 }
 
+const PR_ENTRY_BUILDERS: Record<string, (activities: MetricActivity[]) => RecordEntry[]> = {
+  'run-distance': (activities) =>
+    topNEntries({
+      activities,
+      accessor: (a) => a.runMetrics?.distanceM ?? null,
+      mode: 'max',
+      format: fmtDistance,
+    }),
+  'run-elevation': (activities) =>
+    topNEntries({
+      activities,
+      accessor: (a) => a.runMetrics?.elevationM ?? null,
+      mode: 'max',
+      format: (v) => `${Math.round(v)} m D+`,
+    }),
+  'run-pace': (activities) =>
+    topNEntries({
+      activities: activities.filter((a) => (a.runMetrics?.distanceM ?? 0) >= 3000),
+      accessor: (a) => a.runMetrics?.paceSecPerKm ?? null,
+      mode: 'min',
+      format: fmtPace,
+      sublabel: (_v, a) =>
+        a.runMetrics?.distanceM ? `sur ${fmtDistance(a.runMetrics.distanceM)}` : null,
+    }),
+  'run-duration': (activities) =>
+    topNEntries({
+      activities: activitiesForDurationPr('run-duration', activities),
+      accessor: (a) => a.duration ?? null,
+      mode: 'max',
+      format: fmtDuration,
+    }),
+  'bike-duration': (activities) =>
+    topNEntries({
+      activities: activitiesForDurationPr('bike-duration', activities),
+      accessor: (a) => a.duration ?? null,
+      mode: 'max',
+      format: fmtDuration,
+    }),
+  'swim-duration': (activities) =>
+    topNEntries({
+      activities: activitiesForDurationPr('swim-duration', activities),
+      accessor: (a) => a.duration ?? null,
+      mode: 'max',
+      format: fmtDuration,
+    }),
+  'bike-np': (activities) =>
+    topNEntries({
+      activities,
+      accessor: (a) => a.bikeMetrics?.normalizedPower ?? null,
+      mode: 'max',
+      format: (v) => `${Math.round(v)} W`,
+    }),
+  'bike-avg-power': (activities) =>
+    topNEntries({
+      activities,
+      accessor: (a) => a.bikeMetrics?.avgPower ?? null,
+      mode: 'max',
+      format: (v) => `${Math.round(v)} W`,
+    }),
+  'bike-elevation': (activities) =>
+    topNEntries({
+      activities,
+      accessor: (a) => a.bikeMetrics?.elevationM ?? null,
+      mode: 'max',
+      format: (v) => `${Math.round(v)} m D+`,
+    }),
+  'swim-distance': (activities) =>
+    topNEntries({
+      activities,
+      accessor: (a) => a.swimMetrics?.distanceM ?? null,
+      mode: 'max',
+      format: fmtDistance,
+    }),
+  'swim-pace': (activities) =>
+    topNEntries({
+      activities,
+      accessor: (a) => a.swimMetrics?.avgPaceSecPer100m ?? null,
+      mode: 'min',
+      format: fmtPace100,
+    }),
+};
+
 function buildPrCategory(def: PrDef, activities: MetricActivity[]): RecordCategory {
-  let entries: RecordEntry[] = [];
-  switch (def.key) {
-    case 'run-distance':
-      entries = topNEntries(activities, (a) => a.runMetrics?.distanceM ?? null, 'max', fmtDistance);
-      break;
-    case 'run-elevation':
-      entries = topNEntries(
-        activities,
-        (a) => a.runMetrics?.elevationM ?? null,
-        'max',
-        (v) => `${Math.round(v)} m D+`,
-      );
-      break;
-    case 'run-pace':
-      entries = topNEntries(
-        activities.filter((a) => (a.runMetrics?.distanceM ?? 0) >= 3000),
-        (a) => a.runMetrics?.paceSecPerKm ?? null,
-        'min',
-        fmtPace,
-        (_v, a) => (a.runMetrics?.distanceM ? `sur ${fmtDistance(a.runMetrics.distanceM)}` : null),
-      );
-      break;
-    case 'run-duration':
-    case 'bike-duration':
-    case 'swim-duration':
-      // Duration must be sport-scoped: otherwise the same longest session becomes
-      // #1 for run, bike and swim (identical chips on the activity page).
-      entries = topNEntries(
-        activitiesForDurationPr(def.key, activities),
-        (a) => a.duration ?? null,
-        'max',
-        fmtDuration,
-      );
-      break;
-    case 'bike-np':
-      entries = topNEntries(
-        activities,
-        (a) => a.bikeMetrics?.normalizedPower ?? null,
-        'max',
-        (v) => `${Math.round(v)} W`,
-      );
-      break;
-    case 'bike-avg-power':
-      entries = topNEntries(
-        activities,
-        (a) => a.bikeMetrics?.avgPower ?? null,
-        'max',
-        (v) => `${Math.round(v)} W`,
-      );
-      break;
-    case 'bike-elevation':
-      entries = topNEntries(
-        activities,
-        (a) => a.bikeMetrics?.elevationM ?? null,
-        'max',
-        (v) => `${Math.round(v)} m D+`,
-      );
-      break;
-    case 'swim-distance':
-      entries = topNEntries(
-        activities,
-        (a) => a.swimMetrics?.distanceM ?? null,
-        'max',
-        fmtDistance,
-      );
-      break;
-    case 'swim-pace':
-      entries = topNEntries(
-        activities,
-        (a) => a.swimMetrics?.avgPaceSecPer100m ?? null,
-        'min',
-        fmtPace100,
-      );
-      break;
-  }
+  const builder = PR_ENTRY_BUILDERS[def.key];
+  const entries = builder ? builder(activities) : [];
   return { key: def.key, label: def.label, entries };
 }
 

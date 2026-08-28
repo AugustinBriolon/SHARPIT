@@ -46,25 +46,35 @@ export type WeatherHour = {
   solarRadiationWm2: number | null;
 };
 
+function predictionTargetAt(prediction: EnvironmentalPrediction): Date | null {
+  if (!prediction.targetAt) {
+    return null;
+  }
+  const at = new Date(prediction.targetAt);
+  return Number.isNaN(at.getTime()) ? null : at;
+}
+
+function mapPredictionToWeatherHour(prediction: EnvironmentalPrediction): WeatherHour[] {
+  const data = readWeatherMeasurements(prediction);
+  const at = predictionTargetAt(prediction);
+  if (!data || !at) {
+    return [];
+  }
+  return [
+    {
+      at,
+      airTemperatureC: data.airTemperatureC ?? null,
+      precipitationMm: data.precipitationMm ?? null,
+      cloudCoverPct: data.cloudCoverPct ?? null,
+      solarRadiationWm2: data.solarRadiationWm2 ?? null,
+    },
+  ];
+}
+
 export function toWeatherHours(predictions: EnvironmentalPrediction[]): WeatherHour[] {
   return predictions
     .filter((prediction) => prediction.dimension === 'WEATHER')
-    .flatMap((prediction) => {
-      const data = readWeatherMeasurements(prediction);
-      const at = prediction.targetAt ? new Date(prediction.targetAt) : null;
-      if (!data || !at || Number.isNaN(at.getTime())) {
-        return [];
-      }
-      return [
-        {
-          at,
-          airTemperatureC: data.airTemperatureC ?? null,
-          precipitationMm: data.precipitationMm ?? null,
-          cloudCoverPct: data.cloudCoverPct ?? null,
-          solarRadiationWm2: data.solarRadiationWm2 ?? null,
-        },
-      ];
-    })
+    .flatMap(mapPredictionToWeatherHour)
     .sort((a, b) => a.at.getTime() - b.at.getTime());
 }
 

@@ -33,6 +33,82 @@ export type EndOfDayNarrativeCopy = {
   focusPriority: string;
 };
 
+function restDayBilanHeadline(tomorrowSession: TomorrowSessionHint | null): string {
+  if (!tomorrowSession) {
+    return 'Journée de repos — recharge pour demain';
+  }
+  if (tomorrowSession.startHour !== null && tomorrowSession.startHour < 9) {
+    return `Repos aujourd'hui — ${tomorrowSession.sportLabel} tôt demain`;
+  }
+  return `Repos aujourd'hui — ${tomorrowSession.sportLabel} au programme demain`;
+}
+
+function multiSessionBilanHeadline(
+  effortLevel: TodayEffortLevel | null,
+  recoveryStress: boolean,
+): string {
+  if (recoveryStress || effortLevel === 'high') {
+    return 'Double entraînement — sécurise la récup ce soir';
+  }
+  return 'Double entraînement — le sommeil consolidera tout';
+}
+
+function moderateEffortHeadline(
+  load: string,
+  tomorrowSession: TomorrowSessionHint | null,
+): string {
+  if (tomorrowSession) {
+    return `${load} — prépare le ${tomorrowSession.sportLabel.toLowerCase()} de demain`;
+  }
+  return `${load} — le corps digère encore`;
+}
+
+function recoveryStressBilanHeadline(
+  load: string,
+  effortLevel: TodayEffortLevel | null,
+  recoveryStress: boolean,
+): string | null {
+  if (recoveryStress && effortLevel === 'high') {
+    return `${load} — le sommeil comptera ce soir`;
+  }
+  if (recoveryStress) {
+    return `${load} — récupère bien, le corps en demande`;
+  }
+  return null;
+}
+
+function earlyTomorrowHeadline(load: string, tomorrowSession: TomorrowSessionHint | null): string | null {
+  if (tomorrowSession?.startHour !== null && tomorrowSession.startHour < 9) {
+    return `${load} — couche-toi tôt pour demain`;
+  }
+  return null;
+}
+
+function singleSessionBilanHeadline(input: {
+  effortLevel: TodayEffortLevel | null;
+  tomorrowSession: TomorrowSessionHint | null;
+  recoveryStress: boolean;
+  sleepDebt: boolean;
+}): string {
+  const load = dayLoadLabel(input.effortLevel, false);
+  const { effortLevel, tomorrowSession, sleepDebt } = input;
+
+  const recoveryHeadline = recoveryStressBilanHeadline(load, effortLevel, input.recoveryStress);
+  if (recoveryHeadline) {
+    return recoveryHeadline;
+  }
+  if (sleepDebt && effortLevel !== 'light') {
+    return `${load} — repose la dette de sommeil ce soir`;
+  }
+  if (effortLevel === 'high') {
+    return `${load} — protège la récup ce soir`;
+  }
+  if (effortLevel === 'moderate') {
+    return moderateEffortHeadline(load, tomorrowSession);
+  }
+  return earlyTomorrowHeadline(load, tomorrowSession) ?? `${load} — consolidation en cours`;
+}
+
 function todayBilanHeadline(input: {
   sportLabel: string | null;
   effortLevel: TodayEffortLevel | null;
@@ -44,54 +120,12 @@ function todayBilanHeadline(input: {
   const { effortLevel, completedSessionCount, tomorrowSession, recoveryStress, sleepDebt } = input;
 
   if (completedSessionCount === 0) {
-    if (tomorrowSession) {
-      const tomorrowSport = tomorrowSession.sportLabel;
-      if (tomorrowSession.startHour !== null && tomorrowSession.startHour < 9) {
-        return `Repos aujourd'hui — ${tomorrowSport} tôt demain`;
-      }
-      return `Repos aujourd'hui — ${tomorrowSport} au programme demain`;
-    }
-    return 'Journée de repos — recharge pour demain';
+    return restDayBilanHeadline(tomorrowSession);
   }
-
   if (completedSessionCount >= 2) {
-    if (recoveryStress || effortLevel === 'high') {
-      return 'Double entraînement — sécurise la récup ce soir';
-    }
-    return 'Double entraînement — le sommeil consolidera tout';
+    return multiSessionBilanHeadline(effortLevel, recoveryStress);
   }
-
-  // The session is listed on the same screen; this sentence weighs the day instead.
-  const load = dayLoadLabel(effortLevel, false);
-
-  if (recoveryStress && effortLevel === 'high') {
-    return `${load} — le sommeil comptera ce soir`;
-  }
-
-  if (recoveryStress) {
-    return `${load} — récupère bien, le corps en demande`;
-  }
-
-  if (sleepDebt && effortLevel !== 'light') {
-    return `${load} — repose la dette de sommeil ce soir`;
-  }
-
-  if (effortLevel === 'high') {
-    return `${load} — protège la récup ce soir`;
-  }
-
-  if (effortLevel === 'moderate') {
-    if (tomorrowSession) {
-      return `${load} — prépare le ${tomorrowSession.sportLabel.toLowerCase()} de demain`;
-    }
-    return `${load} — le corps digère encore`;
-  }
-
-  if (tomorrowSession?.startHour !== null && tomorrowSession.startHour < 9) {
-    return `${load} — couche-toi tôt pour demain`;
-  }
-
-  return `${load} — consolidation en cours`;
+  return singleSessionBilanHeadline({ effortLevel, tomorrowSession, recoveryStress, sleepDebt });
 }
 
 export function pickTomorrowSessionHint(
@@ -124,33 +158,124 @@ export function pickTomorrowSessionHint(
   };
 }
 
+function initialTonightBedtime(
+  sleep: EveningSleepHints,
+  tomorrow: TomorrowSessionHint | null,
+): number | null {
+  const recommended = sleep.recommendedBedtimeMin ?? sleep.bedtimeTargetMin;
+  if (recommended !== null) {
+    return recommended;
+  }
+  if (tomorrow?.startHour === null || tomorrow?.startHour === undefined) {
+    return null;
+  }
+  const sessionMin = tomorrow.startHour * 60;
+  const raw = sessionMin - sleep.recommendedDurationMin - 20;
+  return ((raw % 1440) + 1440) % 1440;
+}
+
+function adjustBedtimeForTomorrow(
+  bed: number,
+  tomorrow: TomorrowSessionHint | null,
+): number {
+  if (tomorrow?.startHour === null || tomorrow?.startHour === undefined) {
+    return bed;
+  }
+  if (tomorrow.startHour < 8) {
+    return (bed - 45 + 1440) % 1440;
+  }
+  if (tomorrow.startHour < 10) {
+    return (bed - 20 + 1440) % 1440;
+  }
+  return bed;
+}
+
 function resolveTonightBedtime(
   sleep: EveningSleepHints,
   tomorrow: TomorrowSessionHint | null,
   recoveryStress: boolean,
 ): number | null {
-  let bed = sleep.recommendedBedtimeMin ?? sleep.bedtimeTargetMin;
-
-  if (bed === null && tomorrow?.startHour !== null) {
-    const sessionMin = tomorrow.startHour * 60;
-    const raw = sessionMin - sleep.recommendedDurationMin - 20;
-    bed = ((raw % 1440) + 1440) % 1440;
-  }
-
+  let bed = initialTonightBedtime(sleep, tomorrow);
   if (bed === null) {
     return null;
   }
-
   if (recoveryStress) {
     bed = (bed - 30 + 1440) % 1440;
   }
-  if (tomorrow?.startHour !== null && tomorrow.startHour < 8) {
-    bed = (bed - 45 + 1440) % 1440;
-  } else if (tomorrow?.startHour !== null && tomorrow.startHour < 10) {
-    bed = (bed - 20 + 1440) % 1440;
+  return adjustBedtimeForTomorrow(bed, tomorrow);
+}
+
+function tomorrowSessionWhen(tomorrow: TomorrowSessionHint): string {
+  if (tomorrow.startTime !== null) {
+    return `séance demain à ${tomorrow.startTime}`;
+  }
+  return `séance demain (${tomorrow.sportLabel})`;
+}
+
+function focusWithTomorrowSession(
+  tomorrow: TomorrowSessionHint,
+  clock: string,
+  todayHadTraining: boolean,
+): string {
+  const when = tomorrowSessionWhen(tomorrow);
+  if (todayHadTraining) {
+    return `Coucher vers ${clock} — récupérer ce soir, ${when}`;
+  }
+  return `Coucher vers ${clock} — ${when}`;
+}
+
+function focusFromSleepDebt(sleep: EveningSleepHints, clock: string | null): string | null {
+  const debt = sleep.debt7Min !== null && sleep.debt7Min > 30;
+  if (!debt || sleep.recommendedDurationMin <= 0) {
+    return null;
+  }
+  const duration = formatDuration(sleep.recommendedDurationMin);
+  if (clock) {
+    return `Coucher vers ${clock} — vise ${duration} de sommeil`;
+  }
+  return `Vise ${duration} de sommeil ce soir`;
+}
+
+function focusWhenClockAvailable(input: {
+  clockLabel: string;
+  tomorrow: TomorrowSessionHint | null;
+  recoveryStress: boolean;
+  todayHadTraining: boolean;
+}): string | null {
+  if (input.tomorrow) {
+    return focusWithTomorrowSession(input.tomorrow, input.clockLabel, input.todayHadTraining);
+  }
+  if (input.recoveryStress) {
+    return `Coucher vers ${input.clockLabel} pour récupérer de la journée`;
+  }
+  if (input.todayHadTraining) {
+    return `Coucher vers ${input.clockLabel} pour consolider l'entraînement`;
+  }
+  return null;
+}
+
+function resolveTonightFocus(
+  sleep: EveningSleepHints,
+  tomorrow: TomorrowSessionHint | null,
+  recoveryStress: boolean,
+  todayHadTraining: boolean,
+): string {
+  const bedtime = resolveTonightBedtime(sleep, tomorrow, recoveryStress);
+  const clockLabel = bedtime !== null ? formatClock(bedtime) : null;
+
+  if (clockLabel) {
+    const clockFocus = focusWhenClockAvailable({
+      clockLabel,
+      tomorrow,
+      recoveryStress,
+      todayHadTraining,
+    });
+    if (clockFocus) {
+      return clockFocus;
+    }
   }
 
-  return bed;
+  return focusFromSleepDebt(sleep, clockLabel) ?? defaultTonightFocus(clockLabel);
 }
 
 function buildTonightFocus(
@@ -159,46 +284,13 @@ function buildTonightFocus(
   recoveryStress: boolean,
   todayHadTraining: boolean,
 ): string {
-  const bedtime = resolveTonightBedtime(sleep, tomorrow, recoveryStress);
-  const clock = bedtime !== null ? formatClock(bedtime) : null;
-  const debt = sleep.debt7Min !== null && sleep.debt7Min > 30;
+  return resolveTonightFocus(sleep, tomorrow, recoveryStress, todayHadTraining);
+}
 
-  if (tomorrow && todayHadTraining && clock) {
-    const when =
-      tomorrow.startTime !== null
-        ? `séance demain à ${tomorrow.startTime}`
-        : `séance demain (${tomorrow.sportLabel})`;
-    return `Coucher vers ${clock} — récupérer ce soir, ${when}`;
-  }
-
-  if (tomorrow && clock) {
-    const when =
-      tomorrow.startTime !== null
-        ? `séance demain à ${tomorrow.startTime}`
-        : `séance demain (${tomorrow.sportLabel})`;
-    return `Coucher vers ${clock} — ${when}`;
-  }
-
-  if (recoveryStress && clock) {
-    return `Coucher vers ${clock} pour récupérer de la journée`;
-  }
-
-  if (todayHadTraining && clock) {
-    return `Coucher vers ${clock} pour consolider l'entraînement`;
-  }
-
-  if (debt && sleep.recommendedDurationMin > 0) {
-    const duration = formatDuration(sleep.recommendedDurationMin);
-    if (clock) {
-      return `Coucher vers ${clock} — vise ${duration} de sommeil`;
-    }
-    return `Vise ${duration} de sommeil ce soir`;
-  }
-
+function defaultTonightFocus(clock: string | null): string {
   if (clock) {
     return `Coucher vers ${clock} pour préparer demain`;
   }
-
   return 'Vise ta fenêtre de sommeil ce soir — c’est elle qui prépare demain.';
 }
 

@@ -29,6 +29,74 @@ export function peekShellAthleteRefreshInFlight(): Promise<ShellRefreshSeed | nu
   return inFlight;
 }
 
+function cacheShellRefreshData(
+  queryClient: QueryClient,
+  trainingDayId: string,
+  data: {
+    athleteSnapshot?: unknown;
+    todayState?: unknown;
+    todayPresentation?: TodayViewModel | null;
+    presentationSkipped?: boolean;
+  },
+): TodayViewModel | null {
+  if (data.athleteSnapshot) {
+    queryClient.setQueryData(queryKeys.athleteSnapshot(trainingDayId), {
+      snapshot: data.athleteSnapshot,
+      isRefreshing: false,
+    });
+  }
+  if (data.todayState) {
+    queryClient.setQueryData(queryKeys.today(trainingDayId), data.todayState);
+  }
+
+  let todayPresentation = data.todayPresentation ?? null;
+  if (data.presentationSkipped && todayPresentation === null) {
+    todayPresentation =
+      queryClient.getQueryData<TodayViewModel>(queryKeys.presentationToday(trainingDayId)) ?? null;
+  } else if (todayPresentation) {
+    queryClient.setQueryData(queryKeys.presentationToday(trainingDayId), todayPresentation);
+  }
+
+  return todayPresentation;
+}
+
+async function fetchShellRefreshSeed(
+  queryClient: QueryClient,
+  trainingDayId: string,
+): Promise<ShellRefreshSeed | null> {
+  const res = await fetch(`/api/athlete-state/refresh?trainingDayId=${trainingDayId}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ source: 'app_shell' }),
+  });
+  if (!res.ok) {
+    return null;
+  }
+
+  const data = (await res.json()) as {
+    athleteSnapshot?: unknown;
+    todayState?: unknown;
+    todayPresentation?: TodayViewModel | null;
+    presentationSkipped?: boolean;
+  };
+
+  const todayPresentation = cacheShellRefreshData(queryClient, trainingDayId, data);
+
+  if (!data.athleteSnapshot) {
+    await queryClient.invalidateQueries({
+      queryKey: queryKeys.athleteSnapshot(trainingDayId),
+    });
+  }
+
+  return {
+    trainingDayId,
+    athleteSnapshot: data.athleteSnapshot,
+    todayState: data.todayState,
+    todayPresentation,
+    presentationSkipped: data.presentationSkipped === true,
+  };
+}
+
 export function ensureShellAthleteRefresh(
   queryClient: QueryClient,
   trainingDayId: string,
@@ -46,60 +114,10 @@ export function ensureShellAthleteRefresh(
   lastStartedAtMs = Date.now();
   inFlight = (async (): Promise<ShellRefreshSeed | null> => {
     try {
-      const res = await fetch(`/api/athlete-state/refresh?trainingDayId=${trainingDayId}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ source: 'app_shell' }),
-      });
-      if (!res.ok) {
-        return null;
-      }
-
-      const data = (await res.json()) as {
-        athleteSnapshot?: unknown;
-        todayState?: unknown;
-        todayPresentation?: TodayViewModel | null;
-        presentationSkipped?: boolean;
-      };
-
-      if (data.athleteSnapshot) {
-        queryClient.setQueryData(queryKeys.athleteSnapshot(trainingDayId), {
-          snapshot: data.athleteSnapshot,
-          isRefreshing: false,
-        });
-      }
-      if (data.todayState) {
-        queryClient.setQueryData(queryKeys.today(trainingDayId), data.todayState);
-      }
-
-      let todayPresentation = data.todayPresentation ?? null;
-      if (data.presentationSkipped && todayPresentation === null) {
-        // Soft open: keep warm presentation cache; cold start falls through to GET.
-        todayPresentation =
-          queryClient.getQueryData<TodayViewModel>(queryKeys.presentationToday(trainingDayId)) ??
-          null;
-      } else if (todayPresentation) {
-        queryClient.setQueryData(queryKeys.presentationToday(trainingDayId), todayPresentation);
-      }
-
-      if (!data.athleteSnapshot) {
-        await queryClient.invalidateQueries({
-          queryKey: queryKeys.athleteSnapshot(trainingDayId),
-        });
-      }
-
-      return {
-        trainingDayId,
-        athleteSnapshot: data.athleteSnapshot,
-        todayState: data.todayState,
-        todayPresentation,
-        presentationSkipped: data.presentationSkipped === true,
-      };
+      return await fetchShellRefreshSeed(queryClient, trainingDayId);
     } catch {
       return null;
     } finally {
-      // Keep the settled promise so late joiners still skip a raced GET;
-      // clear on next tick so manual invalidations can refetch normally.
       queueMicrotask(() => {
         inFlight = null;
       });

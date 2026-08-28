@@ -39,6 +39,32 @@ function buildDomainMessages(freshness: AthleteFreshnessSnapshot): Partial<Recor
 /** Bump when phase narrative copy rules change — forces snapshot regen. */
 const PHASE_NARRATIVE_VERSION = 'v6';
 
+function orDash(value: string | null | undefined): string {
+  return value ?? '—';
+}
+
+function computedAtFrom<T extends { computedAt?: string | null }>(
+  slice: T | null | undefined,
+): string {
+  return orDash(slice?.computedAt);
+}
+
+function todayStateFingerprintParts(todayState: TodayState): string[] {
+  const slices = [
+    todayState.recovery,
+    todayState.fatigue,
+    todayState.adaptation,
+    todayState.physicalHealth,
+    todayState.environment,
+    todayState.reasoning,
+    todayState.decision,
+  ];
+  return [
+    ...slices.map(computedAtFrom),
+    orDash(todayState.dailyStrain?.dailyTss?.toString()),
+  ];
+}
+
 function fingerprintParts(
   input: SnapshotBuildInput,
   dailyPhasePhase: string,
@@ -48,15 +74,8 @@ function fingerprintParts(
   const { trainingDayId, todayState, freshness, briefing } = input;
   return [
     trainingDayId,
-    todayState.recovery?.computedAt ?? '—',
-    todayState.fatigue?.computedAt ?? '—',
-    todayState.adaptation?.computedAt ?? '—',
-    todayState.physicalHealth?.computedAt ?? '—',
-    todayState.environment?.computedAt ?? '—',
-    todayState.reasoning?.computedAt ?? '—',
-    todayState.decision?.computedAt ?? '—',
-    todayState.dailyStrain?.dailyTss?.toString() ?? '—',
-    briefing?.generatedAt ?? '—',
+    ...todayStateFingerprintParts(todayState),
+    orDash(briefing?.generatedAt),
     freshness.computedAt,
     PHASE_NARRATIVE_VERSION,
     dailyPhasePhase,
@@ -78,29 +97,155 @@ export function computeSnapshotId(
   return createHash('sha256').update(parts.join('|')).digest('hex').slice(0, 24);
 }
 
-/**
- * Build an Athlete Snapshot from inference output and freshness.
- * Pure function — deterministic for identical inputs.
- */
-export function buildAthleteSnapshot(input: SnapshotBuildInput): AthleteSnapshot {
+function resolvePrimaryProductMessage(
+  freshness: AthleteFreshnessSnapshot,
+  decision: TodayState['decision'],
+  domainMessages: Partial<Record<string, string>>,
+): string | null {
+  if (freshness.primaryProductMessage) {
+    return freshness.primaryProductMessage;
+  }
+  if (decisionVerdict(decision) !== 'INSUFFICIENT_DATA') {
+    return null;
+  }
+  return domainMessages.recovery ?? domainMessages.sleep ?? domainMessages.reasoning ?? null;
+}
+
+function resolveSleepScore(recovery: TodayState['recovery']): number | null {
+  if (!recovery?.dimensions.sleep.available) {
+    return null;
+  }
+  return recovery.dimensions.sleep.score ?? null;
+}
+
+type BuildSnapshotDraftInput = {
+  input: SnapshotBuildInput;
+  snapshotId: string;
+  dailyPhase: AthleteSnapshot['dailyPhase'];
+  phaseNarrative: AthleteSnapshot['phaseNarrative'];
+  domainMessages: Partial<Record<string, string>>;
+};
+
+function resolveSnapshotConfidence(todayState: TodayState): number | null {
+  const { decision, reasoning, recovery } = todayState;
+  return decision?.confidence ?? reasoning?.confidence ?? recovery?.confidence ?? null;
+}
+
+function sessionsForTrainingDay<T extends { date: Date | string }>(
+  items: T[],
+  trainingDayId: string,
+): T[] {
+  return items.filter((item) => activityMatchesTrainingDay(item.date, trainingDayId));
+}
+
+function buildSnapshotCoreFields(
+  input: SnapshotBuildInput,
+  snapshotId: string,
+  dailyPhase: AthleteSnapshot['dailyPhase'],
+  phaseNarrative: AthleteSnapshot['phaseNarrative'],
+) {
   const { athleteId, trainingDayId, todayState, freshness, briefing, phaseContext } = input;
-  const {
-    reasoning,
+  const { reasoning, recovery, fatigue, adaptation, physicalHealth, environment, dailyStrain, decision } =
+    todayState;
+
+  return {
+    snapshotId,
+    athleteId,
+    trainingDayId,
+    generatedAt: new Date().toISOString(),
+    freshness,
     recovery,
     fatigue,
     adaptation,
     physicalHealth,
     environment,
     dailyStrain,
-    decision,
-  } = todayState;
+    reasoning,
+    decision: decision ?? null,
+    briefing: briefing ?? null,
+    dailyPhase,
+    phaseNarrative,
+    sessionsDoneToday: sessionsForTrainingDay(phaseContext.activities, trainingDayId),
+    plannedToday: sessionsForTrainingDay(phaseContext.plannedSessions, trainingDayId),
+  };
+}
 
-  const generatedAt = new Date().toISOString();
-  const confidence = decision?.confidence ?? reasoning?.confidence ?? recovery?.confidence ?? null;
-  const adviceActionablePre = isAdviceActionableFromDecision(decision);
+function adaptationMetrics(adaptation: TodayState['adaptation']) {
+  if (!adaptation) {
+    return {
+      adaptationIndex: null,
+      adaptationStatus: null,
+      adaptationTrend: null,
+    };
+  }
+  return {
+    adaptationIndex: adaptation.adaptationIndex ?? null,
+    adaptationStatus: adaptation.adaptationStatus ?? null,
+    adaptationTrend: adaptation.adaptationTrend ?? null,
+  };
+}
+
+function buildSnapshotAdaptationFields(todayState: TodayState) {
+  return {
+    readiness: todayState.recovery?.readinessScore ?? null,
+    sleepScore: resolveSleepScore(todayState.recovery),
+    ...adaptationMetrics(todayState.adaptation),
+  };
+}
+
+function buildSnapshotDecisionFields(
+  todayState: TodayState,
+  freshness: AthleteFreshnessSnapshot,
+  domainMessages: Partial<Record<string, string>>,
+) {
+  const { decision } = todayState;
+  return {
+    todaysDecision: decisionVerdict(decision),
+    limitingFactor: limitingFactorFromDecision(decision),
+    confidence: resolveSnapshotConfidence(todayState),
+    recommendation: resolveRecommendationFromDecision(decision, todayState),
+    primaryProductMessage: resolvePrimaryProductMessage(freshness, decision, domainMessages),
+    domainMessages,
+  };
+}
+
+function buildSnapshotDerivedFields(
+  todayState: TodayState,
+  freshness: AthleteFreshnessSnapshot,
+  domainMessages: Partial<Record<string, string>>,
+) {
+  return {
+    ...buildSnapshotAdaptationFields(todayState),
+    ...buildSnapshotDecisionFields(todayState, freshness, domainMessages),
+  };
+}
+
+function buildSnapshotDraft({
+  input,
+  snapshotId,
+  dailyPhase,
+  phaseNarrative,
+  domainMessages,
+}: BuildSnapshotDraftInput): Omit<
+  AthleteSnapshot,
+  'adviceActionable' | 'insufficientDataMessage' | 'effortUnavailableMessage' | 'confidenceLabel'
+> {
+  return {
+    ...buildSnapshotCoreFields(input, snapshotId, dailyPhase, phaseNarrative),
+    ...buildSnapshotDerivedFields(input.todayState, input.freshness, domainMessages),
+  };
+}
+
+/**
+ * Build an Athlete Snapshot from inference output and freshness.
+ * Pure function — deterministic for identical inputs.
+ */
+export function buildAthleteSnapshot(input: SnapshotBuildInput): AthleteSnapshot {
+  const { trainingDayId, todayState } = input;
+  const adviceActionablePre = isAdviceActionableFromDecision(todayState.decision);
 
   const { dailyPhase, phaseNarrative } = buildSnapshotDailyPhase({
-    ...phaseContext,
+    ...input.phaseContext,
     trainingDayId,
     todayState,
     adviceActionable: adviceActionablePre,
@@ -113,55 +258,14 @@ export function buildAthleteSnapshot(input: SnapshotBuildInput): AthleteSnapshot
     dailyPhase.signals.remainingPlannedCount,
   );
 
-  const domainMessages = buildDomainMessages(freshness);
-
-  const basePrimaryProductMessage =
-    freshness.primaryProductMessage ??
-    (decisionVerdict(decision) === 'INSUFFICIENT_DATA'
-      ? (domainMessages.recovery ?? domainMessages.sleep ?? domainMessages.reasoning ?? null)
-      : null);
-
-  const draft: Omit<
-    AthleteSnapshot,
-    'adviceActionable' | 'insufficientDataMessage' | 'effortUnavailableMessage' | 'confidenceLabel'
-  > = {
+  const domainMessages = buildDomainMessages(input.freshness);
+  const draft = buildSnapshotDraft({
+    input,
     snapshotId,
-    athleteId,
-    trainingDayId,
-    generatedAt,
-    freshness,
-    recovery,
-    fatigue,
-    adaptation,
-    physicalHealth,
-    environment,
-    dailyStrain,
-    reasoning,
-    decision: decision ?? null,
-    readiness: recovery?.readinessScore ?? null,
-    sleepScore: recovery?.dimensions.sleep.available
-      ? (recovery.dimensions.sleep.score ?? null)
-      : null,
-    adaptationIndex: adaptation?.adaptationIndex ?? null,
-    adaptationStatus: adaptation?.adaptationStatus ?? null,
-    adaptationTrend: adaptation?.adaptationTrend ?? null,
-    todaysDecision: decisionVerdict(decision),
-    limitingFactor: limitingFactorFromDecision(decision),
-    confidence,
-    briefing: briefing ?? null,
-    recommendation: resolveRecommendationFromDecision(decision, todayState),
-    primaryProductMessage: basePrimaryProductMessage,
-    domainMessages,
     dailyPhase,
     phaseNarrative,
-    sessionsDoneToday: phaseContext.activities.filter((a) =>
-      activityMatchesTrainingDay(a.date, trainingDayId),
-    ),
-    plannedToday: phaseContext.plannedSessions.filter((p) =>
-      activityMatchesTrainingDay(p.date, trainingDayId),
-    ),
-  };
-
+    domainMessages,
+  });
   const overlay = applyTruthfulnessOverlay(draft);
 
   return {

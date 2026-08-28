@@ -18,25 +18,47 @@ export type TruthfulnessOverlay = {
   confidenceLabel: string | null;
 };
 
+function graphContributionMissing(
+  graph: DecisionData['evidenceGraph'] | undefined,
+  key: 'recoveryContribution' | 'fatigueContribution' | 'adaptationContribution',
+  label: string,
+): string | null {
+  if (!graph || graph[key] <= 0) {
+    return label;
+  }
+  return null;
+}
+
 function missingSignals(decision: DecisionData | null): string[] {
   if (!decision) {
     return ['synthèse du jour'];
   }
-  const missing: string[] = [];
-  const graph = decision.evidenceGraph;
-  if (!graph || graph.recoveryContribution <= 0) {
-    missing.push('récupération');
-  }
-  if (!graph || graph.fatigueContribution <= 0) {
-    missing.push('charge / fatigue');
-  }
-  if (!graph || graph.adaptationContribution <= 0) {
-    missing.push('adaptation');
-  }
+  const missing = [
+    graphContributionMissing(decision.evidenceGraph, 'recoveryContribution', 'récupération'),
+    graphContributionMissing(decision.evidenceGraph, 'fatigueContribution', 'charge / fatigue'),
+    graphContributionMissing(decision.evidenceGraph, 'adaptationContribution', 'adaptation'),
+  ].filter((value): value is string => value !== null);
   if (missing.length === 3) {
     return ['synthèse du jour'];
   }
   return missing;
+}
+
+function baselinePendingMessage(recovery: TodayState['recovery']): string | null {
+  if (recovery?.readinessCategory !== 'BASELINE_PENDING') {
+    return null;
+  }
+  return 'SHARPIT établit encore ta baseline physiologique. Quelques jours de données suffisent pour un premier bilan fiable.';
+}
+
+function domainHintMessage(domainMessages: Partial<Record<string, string>>): string | null {
+  return (
+    domainMessages.sleep ??
+    domainMessages.recovery ??
+    domainMessages.reasoning ??
+    domainMessages.training ??
+    null
+  );
 }
 
 export function buildInsufficientDataMessage(
@@ -45,16 +67,12 @@ export function buildInsufficientDataMessage(
 ): string {
   const { decision, recovery } = todayState;
 
-  if (recovery?.readinessCategory === 'BASELINE_PENDING') {
-    return 'SHARPIT établit encore ta baseline physiologique. Quelques jours de données suffisent pour un premier bilan fiable.';
+  const baselineMessage = baselinePendingMessage(recovery);
+  if (baselineMessage) {
+    return baselineMessage;
   }
 
-  const domainHint =
-    domainMessages.sleep ??
-    domainMessages.recovery ??
-    domainMessages.reasoning ??
-    domainMessages.training;
-
+  const domainHint = domainHintMessage(domainMessages);
   if (domainHint) {
     return `${domainHint} Dès que les données arrivent, ton bilan se met à jour automatiquement.`;
   }
@@ -108,37 +126,58 @@ function resolveSnapshotRecommendation(
   return null;
 }
 
+function buildTruthfulnessTodayState(
+  snapshot: Omit<
+    AthleteSnapshot,
+    'adviceActionable' | 'insufficientDataMessage' | 'effortUnavailableMessage' | 'confidenceLabel'
+  >,
+): TodayState {
+  return {
+    decision: snapshot.decision,
+    reasoning: snapshot.reasoning,
+    recovery: snapshot.recovery,
+    fatigue: snapshot.fatigue,
+    adaptation: snapshot.adaptation,
+    physicalHealth: snapshot.physicalHealth,
+    environment: snapshot.environment ?? null,
+    dailyStrain: snapshot.dailyStrain,
+  };
+}
+
+function buildTruthfulnessMessages(
+  snapshot: Omit<
+    AthleteSnapshot,
+    'adviceActionable' | 'insufficientDataMessage' | 'effortUnavailableMessage' | 'confidenceLabel'
+  >,
+  actionable: boolean,
+): Pick<TruthfulnessOverlay, 'insufficientDataMessage' | 'effortUnavailableMessage' | 'confidenceLabel' | 'primaryProductMessage'> {
+  const insufficientDataMessage = actionable
+    ? null
+    : buildInsufficientDataMessage(buildTruthfulnessTodayState(snapshot), snapshot.domainMessages);
+  const primaryProductMessage =
+    snapshot.primaryProductMessage ?? (actionable ? null : insufficientDataMessage);
+
+  return {
+    insufficientDataMessage,
+    effortUnavailableMessage: effortUnavailableMessage(
+      snapshot.dailyStrain,
+      snapshot.domainMessages,
+    ),
+    confidenceLabel: confidenceLabelFor(snapshot.confidence),
+    primaryProductMessage,
+  };
+}
+
 export function applyTruthfulnessOverlay(
   snapshot: Omit<
     AthleteSnapshot,
     'adviceActionable' | 'insufficientDataMessage' | 'effortUnavailableMessage' | 'confidenceLabel'
   >,
 ): TruthfulnessOverlay & Pick<AthleteSnapshot, 'primaryProductMessage'> {
-  const { confidence } = snapshot;
   const actionable = isAdviceActionableFromDecision(snapshot.decision);
-  const insufficientDataMessage = actionable
-    ? null
-    : buildInsufficientDataMessage(
-        {
-          decision: snapshot.decision,
-          reasoning: snapshot.reasoning,
-          recovery: snapshot.recovery,
-          fatigue: snapshot.fatigue,
-          adaptation: snapshot.adaptation,
-          physicalHealth: snapshot.physicalHealth,
-          environment: snapshot.environment ?? null,
-          dailyStrain: snapshot.dailyStrain,
-        },
-        snapshot.domainMessages,
-      );
-
+  const gateForwardAdvice = isForwardAdvicePhase(snapshot.dailyPhase?.phase ?? 'MORNING');
   const limitingFactor = snapshot.limitingFactor?.description ? snapshot.limitingFactor : null;
-
-  const forwardPhase = isForwardAdvicePhase(snapshot.dailyPhase?.phase ?? 'MORNING');
-  const gateForwardAdvice = forwardPhase;
-
-  const primaryProductMessage =
-    snapshot.primaryProductMessage ?? (actionable ? null : insufficientDataMessage);
+  const messages = buildTruthfulnessMessages(snapshot, actionable);
 
   return {
     adviceActionable: actionable,
@@ -149,14 +188,8 @@ export function applyTruthfulnessOverlay(
       snapshot.recommendation,
     ),
     limitingFactor,
-    confidence,
-    insufficientDataMessage,
-    effortUnavailableMessage: effortUnavailableMessage(
-      snapshot.dailyStrain,
-      snapshot.domainMessages,
-    ),
-    confidenceLabel: confidenceLabelFor(confidence),
-    primaryProductMessage,
+    confidence: snapshot.confidence,
+    ...messages,
   };
 }
 

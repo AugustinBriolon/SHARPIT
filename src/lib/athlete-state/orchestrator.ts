@@ -104,6 +104,23 @@ async function autoLinkAndCollectSessionIds(
  * Freshness is computed twice only: once to decide sync, once for the response
  * (mid-sync / mid-compute snapshots were never returned to the client).
  */
+async function syncProvidersOnOpen(
+  athleteId: string,
+  freshness: Awaited<ReturnType<typeof computeFreshnessSnapshot>>,
+  options?: { forceSync?: boolean; skipSync?: boolean },
+): Promise<{ syncedProviders: DataProvider[]; activityIds: string[] }> {
+  if (options?.skipSync || !(options?.forceSync || shouldSyncOnOpen(freshness))) {
+    return { syncedProviders: [], activityIds: [] };
+  }
+
+  const toSync = providersNeedingSync(freshness, { force: options?.forceSync }) as DataProvider[];
+  const results = await syncProviders(athleteId, toSync);
+  return {
+    syncedProviders: results.map((r) => r.provider),
+    activityIds: results.flatMap((r) => r.activityIds),
+  };
+}
+
 export async function refreshAthleteState(
   athleteId: string,
   options?: {
@@ -117,18 +134,7 @@ export async function refreshAthleteState(
   const trainingDayId = options?.trainingDayId ?? trainingDayIdNow();
 
   let freshness = await computeFreshnessSnapshot({ trainingDayId, athleteId });
-
-  const syncedProviders: DataProvider[] = [];
-  let activityIds: string[] = [];
-
-  if (!options?.skipSync && (options?.forceSync || shouldSyncOnOpen(freshness))) {
-    const toSync = providersNeedingSync(freshness, { force: options?.forceSync }) as DataProvider[];
-    const results = await syncProviders(athleteId, toSync);
-    for (const r of results) {
-      syncedProviders.push(r.provider);
-      activityIds.push(...r.activityIds);
-    }
-  }
+  const { syncedProviders, activityIds } = await syncProvidersOnOpen(athleteId, freshness, options);
 
   const forceRefresh = shouldForceInferenceOnRefresh({
     source: options?.source,

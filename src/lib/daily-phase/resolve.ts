@@ -47,39 +47,45 @@ function toResolution(input: DailyPhaseInput, result: ResolveResult): DailyPhase
   };
 }
 
-function shouldEndOfDay(input: DailyPhaseInput): ResolveResult | null {
-  const { dayContext, athlete, localHour } = input;
-
-  if (athlete.sleepLoggedTonight) {
-    return { phase: 'END_OF_DAY', because: 'sleep_logged_tonight' };
-  }
-
+function endOfDayFromTrainingDone(input: DailyPhaseInput): ResolveResult | null {
+  const { dayContext, athlete } = input;
   const trainingDone =
     dayContext.completedSessionCount > 0 && dayContext.remainingPlannedCount === 0;
-  const restDay = dayContext.sessionStatus === 'NONE_TODAY';
-
-  if (trainingDone && athlete.minutesSinceLastActivity !== null) {
-    if (athlete.minutesSinceLastActivity >= RECOVERY_TO_END_OF_DAY_MINUTES) {
-      if (athlete.priorPhase === 'RECOVERY_WINDOW' || athlete.dailyStrainAvailable) {
-        return { phase: 'END_OF_DAY', because: 'recovery_window_exhausted' };
-      }
-    }
+  if (!trainingDone || athlete.minutesSinceLastActivity === null) {
+    return null;
   }
-
-  if (restDay && athlete.priorPhase === 'RECOVERY_WINDOW') {
-    if (
-      athlete.newInferenceSincePriorSnapshot ||
-      (athlete.minutesSinceSnapshotGenerated !== null &&
-        athlete.minutesSinceSnapshotGenerated >= REST_DAY_PREP_SNAPSHOT_AGE_MINUTES * 2)
-    ) {
-      return { phase: 'END_OF_DAY', because: 'rest_day_preparation_complete' };
-    }
+  if (athlete.minutesSinceLastActivity < RECOVERY_TO_END_OF_DAY_MINUTES) {
+    return null;
   }
+  if (athlete.priorPhase === 'RECOVERY_WINDOW' || athlete.dailyStrainAvailable) {
+    return { phase: 'END_OF_DAY', because: 'recovery_window_exhausted' };
+  }
+  return null;
+}
 
+function endOfDayFromRestDay(input: DailyPhaseInput): ResolveResult | null {
+  const { dayContext, athlete } = input;
+  if (dayContext.sessionStatus !== 'NONE_TODAY' || athlete.priorPhase !== 'RECOVERY_WINDOW') {
+    return null;
+  }
+  const preparationComplete =
+    athlete.newInferenceSincePriorSnapshot ||
+    (athlete.minutesSinceSnapshotGenerated !== null &&
+      athlete.minutesSinceSnapshotGenerated >= REST_DAY_PREP_SNAPSHOT_AGE_MINUTES * 2);
+  if (preparationComplete) {
+    return { phase: 'END_OF_DAY', because: 'rest_day_preparation_complete' };
+  }
+  return null;
+}
+
+function endOfDayFromTimeFallback(input: DailyPhaseInput): ResolveResult | null {
+  const { dayContext, athlete, localHour } = input;
   if (localHour >= END_OF_DAY_HOUR_FALLBACK) {
     return { phase: 'END_OF_DAY', because: 'time_fallback_late_night' };
   }
 
+  const trainingDone =
+    dayContext.completedSessionCount > 0 && dayContext.remainingPlannedCount === 0;
   if (
     localHour >= LATE_DAY_HOUR_FALLBACK &&
     trainingDone &&
@@ -88,8 +94,19 @@ function shouldEndOfDay(input: DailyPhaseInput): ResolveResult | null {
   ) {
     return { phase: 'END_OF_DAY', because: 'time_fallback_late_day_post_training' };
   }
-
   return null;
+}
+
+function shouldEndOfDay(input: DailyPhaseInput): ResolveResult | null {
+  if (input.athlete.sleepLoggedTonight) {
+    return { phase: 'END_OF_DAY', because: 'sleep_logged_tonight' };
+  }
+
+  return (
+    endOfDayFromTrainingDone(input) ??
+    endOfDayFromRestDay(input) ??
+    endOfDayFromTimeFallback(input)
+  );
 }
 
 function resolveWithCompletedSession(input: DailyPhaseInput, refDate: Date): ResolveResult | null {
@@ -133,6 +150,23 @@ function resolvePlannedOnly(input: DailyPhaseInput, refDate: Date): ResolveResul
   return { phase: 'MORNING', because: 'planned_session_later_today' };
 }
 
+function restDayInferenceReady(athlete: DailyPhaseInput['athlete']): boolean {
+  return (
+    athlete.newInferenceSincePriorSnapshot ||
+    athlete.newObservationsSincePriorSnapshot ||
+    (athlete.recommendationAvailable && athlete.adviceActionable)
+  );
+}
+
+function restDayEvolvedPastMorning(athlete: DailyPhaseInput['athlete']): boolean {
+  return (
+    athlete.priorPhase === 'MORNING' ||
+    athlete.priorPhase === 'RECOVERY_WINDOW' ||
+    (athlete.minutesSinceSnapshotGenerated !== null &&
+      athlete.minutesSinceSnapshotGenerated >= REST_DAY_PREP_SNAPSHOT_AGE_MINUTES)
+  );
+}
+
 function resolveRestDay(input: DailyPhaseInput): ResolveResult | null {
   const { dayContext, athlete } = input;
 
@@ -140,18 +174,7 @@ function resolveRestDay(input: DailyPhaseInput): ResolveResult | null {
     return null;
   }
 
-  const inferenceReady =
-    athlete.newInferenceSincePriorSnapshot ||
-    athlete.newObservationsSincePriorSnapshot ||
-    (athlete.recommendationAvailable && athlete.adviceActionable);
-
-  const evolvedPastMorning =
-    athlete.priorPhase === 'MORNING' ||
-    athlete.priorPhase === 'RECOVERY_WINDOW' ||
-    (athlete.minutesSinceSnapshotGenerated !== null &&
-      athlete.minutesSinceSnapshotGenerated >= REST_DAY_PREP_SNAPSHOT_AGE_MINUTES);
-
-  if (inferenceReady && evolvedPastMorning) {
+  if (restDayInferenceReady(athlete) && restDayEvolvedPastMorning(athlete)) {
     return { phase: 'RECOVERY_WINDOW', because: 'rest_day_recovery_preparation' };
   }
 

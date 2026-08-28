@@ -23,6 +23,38 @@ function minutesSinceLastActivityForPhase(phase: DailyPhase): number | null {
   return null;
 }
 
+function testActivitiesForPhase(phase: DailyPhase) {
+  if (phase === 'MORNING' || phase === 'BEFORE_SESSION') {
+    return [];
+  }
+  return [
+    {
+      id: 'a1',
+      type: 'RUN',
+      date: new Date('2026-07-07T08:00:00'),
+      load: 65,
+      duration: 3600,
+      title: 'Sortie',
+    } as never,
+  ];
+}
+
+function testPlannedForPhase(phase: DailyPhase, ref: Date) {
+  if (phase !== 'BEFORE_SESSION') {
+    return [];
+  }
+  return [
+    {
+      id: 'p1',
+      type: 'BIKE',
+      date: ref,
+      startTime: '18:00',
+      completed: false,
+      activityId: null,
+    } as never,
+  ];
+}
+
 function narrativeForPhase(
   phase: ReturnType<typeof resolveDailyPhase>['phase'],
   overrides: Partial<DailyPhaseAthleteSignals> & {
@@ -31,33 +63,8 @@ function narrativeForPhase(
   } = {},
 ) {
   const ref = new Date('2026-07-07T10:00:00');
-  const activities =
-    phase !== 'MORNING' && phase !== 'BEFORE_SESSION'
-      ? [
-          {
-            id: 'a1',
-            type: 'RUN',
-            date: new Date('2026-07-07T08:00:00'),
-            load: 65,
-            duration: 3600,
-            title: 'Sortie',
-          } as never,
-        ]
-      : [];
-
-  const planned =
-    phase === 'BEFORE_SESSION'
-      ? [
-          {
-            id: 'p1',
-            type: 'BIKE',
-            date: ref,
-            startTime: '18:00',
-            completed: false,
-            activityId: null,
-          } as never,
-        ]
-      : [];
+  const activities = testActivitiesForPhase(phase);
+  const planned = testPlannedForPhase(phase, ref);
 
   const dayContext = buildDailyPhaseDayContext(ref, activities, planned);
   const athlete: DailyPhaseAthleteSignals = {
