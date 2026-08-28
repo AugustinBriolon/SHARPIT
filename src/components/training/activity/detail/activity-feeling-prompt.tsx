@@ -42,25 +42,24 @@ export function ActivityFeelingPrompt({ activityId }: { activityId: string }) {
   const [feeling, setFeeling] = useState('');
   const [feelingError, setFeelingError] = useState<string | null>(null);
 
-  async function handleSave() {
+  function handleSave() {
     if (!feeling) {
       setFeelingError('Choisis un ressenti.');
       return;
     }
     setFeelingError(null);
-    try {
-      await update.mutateAsync({
-        id: activityId,
-        data: { rpe, feeling },
-      });
-      toast.success('Ressenti enregistré');
-      setOpen(false);
-      setFeeling('');
-      setRpe(5);
-      router.refresh();
-    } catch {
-      // toast from mutation
-    }
+    setOpen(false);
+    setFeeling('');
+    setRpe(5);
+    update.mutate(
+      { id: activityId, data: { rpe, feeling } },
+      {
+        onSuccess: () => {
+          toast.success('Ressenti enregistré');
+          router.refresh();
+        },
+      },
+    );
   }
 
   function handleOpenChange(next: boolean) {
@@ -149,13 +148,8 @@ export function ActivityFeelingPrompt({ activityId }: { activityId: string }) {
             <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
               Annuler
             </Button>
-            <Button
-              disabled={update.isPending || !feeling}
-              type="button"
-              variant="highlight"
-              onClick={() => void handleSave()}
-            >
-              {update.isPending ? 'Enregistrement…' : 'Enregistrer'}
+            <Button disabled={!feeling} type="button" variant="highlight" onClick={handleSave}>
+              Enregistrer
             </Button>
           </DialogFooter>
         </DialogContent>

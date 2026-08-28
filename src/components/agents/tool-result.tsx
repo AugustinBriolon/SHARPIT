@@ -28,6 +28,7 @@ import { AgentCode, type AgentCodeLanguage } from '@/components/agents/agent-cod
 import { ActionSwapRollText } from '@/components/motion/action-swap-roll';
 import { AgentDisclosure } from '@/components/agents/agent-disclosure';
 import { SPRING_PRESS, SPRING_SWAP } from '@/lib/ease';
+import { motionTokens } from '@/lib/motion/tokens';
 import { cn } from '@/lib/utils';
 
 export type ToolResultStatus = 'running' | 'success' | 'error' | 'cancelled';
@@ -116,7 +117,7 @@ function ToolResultAction({
       title={label}
       transition={SPRING_PRESS}
       type="button"
-      whileTap={reduce ? undefined : { scale: 0.9 }}
+      whileTap={reduce ? undefined : { scale: motionTokens.scale.pressMicro }}
       onClick={onClick}
     >
       {children}

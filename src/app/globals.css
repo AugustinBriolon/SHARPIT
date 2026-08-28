@@ -186,6 +186,12 @@
   */
   --bottom-nav-height: 4.5rem;
   --bottom-nav-offset: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px));
+
+  /* Press feedback scales — ADR-028 / motionTokens.scale.press* */
+  --press-scale-micro: 0.95;
+  --press-scale-small: 0.96;
+  --press-scale-large: 0.98;
+  --press-scale-surface: 0.988;
 }
 
 .dark {
@@ -446,8 +452,8 @@
 }
 
 /**
- * Press + property-scoped transition — make-interfaces-feel-better / DESIGN_LANGUAGE §9.
- * Prefer on a/button/chip surfaces; avoid on static panels.
+ * Press + property-scoped transition — ADR-028 / DESIGN_LANGUAGE §9.8.
+ * Preset: pressSmall (0.96). Prefer on compact a/button/chip surfaces.
  */
 @utility pressable {
   transition-duration: 150ms;
@@ -455,19 +461,19 @@
   transition-timing-function: ease-out;
   @media (prefers-reduced-motion: no-preference) {
     &:active:not(:disabled):not([aria-disabled='true']) {
-      transform: scale(0.96);
+      transform: scale(var(--press-scale-small));
     }
   }
 }
 
-/* Large surfaces need a subtler press response than compact controls. */
+/* Preset: pressSurface (0.988) — large surfaces need subtler compression. */
 @utility pressable-lg {
   transition-duration: 150ms;
   transition-property: color, background-color, border-color, opacity, transform;
   transition-timing-function: ease-out;
   @media (prefers-reduced-motion: no-preference) {
     &:active:not(:disabled):not([aria-disabled='true']) {
-      transform: scale(0.988);
+      transform: scale(var(--press-scale-surface));
     }
   }
 }
@@ -536,7 +542,7 @@
   color: var(--color-ink-surface-foreground);
 }
 
-/* Bande ink chip — white card on hairline border (light), forest card (dark) */
+/* Preset: pressSmall — chip-surface compact controls */
 @utility chip-surface {
   border: 1px solid color-mix(in oklch, var(--color-analysis-border) 81%, transparent);
   background-color: var(--color-chip-surface);
@@ -546,12 +552,12 @@
   transition-timing-function: ease-out;
   @media (prefers-reduced-motion: no-preference) {
     &:is(a, button, [role='button']):active:not(:disabled):not([aria-disabled='true']) {
-      transform: scale(0.96);
+      transform: scale(var(--press-scale-small));
     }
   }
 }
 
-/* Same visual shell as chip-surface, but with a subtler press for wide rows/cards. */
+/* Preset: pressSurface — wide chip rows/cards */
 @utility chip-surface-lg {
   border: 1px solid color-mix(in oklch, var(--color-analysis-border) 81%, transparent);
   background-color: var(--color-chip-surface);
@@ -561,7 +567,7 @@
   transition-timing-function: ease-out;
   @media (prefers-reduced-motion: no-preference) {
     &:is(a, button, [role='button']):active:not(:disabled):not([aria-disabled='true']) {
-      transform: scale(0.988);
+      transform: scale(var(--press-scale-surface));
     }
   }
 }

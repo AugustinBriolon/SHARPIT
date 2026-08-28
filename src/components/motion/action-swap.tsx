@@ -10,6 +10,7 @@ import {
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { EASE_OUT, SPRING_PRESS, SPRING_SWAP } from '@/lib/ease';
+import { motionTokens } from '@/lib/motion/tokens';
 import { cn } from '@/lib/utils';
 
 export type ActionSwapItem = {
@@ -315,7 +316,7 @@ export function ActionSwapButton({
       disabled={disabled}
       transition={SPRING_PRESS}
       type="button"
-      whileTap={reduce || disabled ? undefined : { scale: 0.97 }}
+      whileTap={reduce || disabled ? undefined : { scale: motionTokens.scale.pressSmall }}
       className={cn(
         'inline-flex items-center justify-center overflow-hidden font-medium transition-colors',
         'disabled:pointer-events-none disabled:opacity-50',

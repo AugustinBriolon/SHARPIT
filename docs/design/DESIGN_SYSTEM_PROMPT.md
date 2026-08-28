@@ -146,6 +146,55 @@ Brand primitives live in `src/lib/brand-tokens.ts` (hex) and `src/app/globals.cs
 - Format: value ± uncertainty, or value (confidence level)
 - Visual: partial transparency, no colored badge
 
+## Motion, enter/exit & optimistic coupling
+
+See `DESIGN_LANGUAGE.md` §9 and [ADR-028](../adr/ADR-028-animation-technology-and-press-feedback.md). Instant mutation rules: [`INSTANT_UX_ARCHITECTURE.md`](../INSTANT_UX_ARCHITECTURE.md).
+
+**Technology ladder (simplest capable tool):**
+
+1. **CSS** — default for hover, focus, active/press, opacity, transform, color, border, simple transitions
+2. **Motion** — mount/unmount, exit, layout, gestures, springs, React state-driven transitions only
+3. **GSAP** — not in tree; add only for timelines, multi-element choreography, scroll-driven or immersive animation
+
+Never import Motion or GSAP when CSS delivers equivalent quality.
+
+**Enter / exit primitives** (use these; do not invent durations):
+
+| Pattern | Component |
+| ------- | --------- |
+| Mount + exit | `FadePresence` |
+| One-shot fade | `FadeIn` |
+| Expand / collapse | `MotionExpand` |
+| List stagger | `StaggerList` |
+| Dialog morph | `MorphPopover` |
+| Label swap | `ActionSwap` / `ActionSwapRollText` |
+
+Variants: `fadeVariants`, `collapseVariants`, `staggerContainer` from `@/lib/motion/variants`. Exit ≤ 80% enter duration.
+
+**Press feedback presets** (`motionTokens.scale.press*`, `--press-scale-*` in globals.css):
+
+| Preset | Scale | Utility / use |
+| ------ | ----- | ------------- |
+| Micro | 0.95 | Compact icon controls |
+| Small | 0.96 | `pressable`, `chip-surface` |
+| Large button | 0.98 | Wide CTAs |
+| Surface | 0.988 | `pressable-lg`, `chip-surface-lg` |
+| Minimal | none | High-frequency controls — no scale |
+| Gesture | spring | Motion `whileTap` + `springs.*` |
+
+Never blanket `scale(0.97)` on all interactives. Justify any deviation from a preset.
+
+**Modal / sheet actions (SAFE mutations):**
+
+```
+confirm → optimistic cache patch → close + exit anim → mutate in background → reconcile / rollback
+```
+
+- `mutate()` not `await mutateAsync()` before close
+- `listOptimistic()` or `setQueryData` in `onMutate`
+- No full-dialog save spinner on reversible writes
+- Blocking spinner only for BLOCKING class (auth, OAuth, payment, missing preview)
+
 ## Anti-patterns (FORBIDDEN)
 
 - ❌ Cards with floating shadows (any theme)

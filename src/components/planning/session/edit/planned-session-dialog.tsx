@@ -172,7 +172,6 @@ export function PlannedSessionDialog({
     setGoalId((current) => (current === NO_GOAL ? fromPlan : current));
   }, [isEdit, session, planQuery.data?.goalId, selectableGoalIds]);
 
-  const pending = create.isPending || createBrick.isPending || update.isPending || remove.isPending;
   const { offline, guardDisabled, offlineLabel } = useOfflineGuard();
   const showOutdoorContext = createMode === 'single' && sportSupportsOutdoorContext(type);
 
@@ -989,7 +988,7 @@ export function PlannedSessionDialog({
                     <div>
                       {isEdit && (
                         <Button
-                          disabled={guardDisabled || pending}
+                          disabled={guardDisabled}
                           size="sm"
                           type="button"
                           variant="destructive"
@@ -1001,15 +1000,14 @@ export function PlannedSessionDialog({
                     </div>
                     <div className="flex gap-2">
                       <Button
-                        disabled={pending}
                         type="button"
                         variant="outline"
                         onClick={isEdit ? handleCancelEdit : onClose}
                       >
                         Annuler
                       </Button>
-                      <Button disabled={guardDisabled || pending} type="submit">
-                        {offline ? offlineLabel : submitButtonLabel(pending, isEdit, createMode)}
+                      <Button disabled={guardDisabled} type="submit">
+                        {offline ? offlineLabel : submitButtonLabel(isEdit, createMode)}
                       </Button>
                     </div>
                   </div>

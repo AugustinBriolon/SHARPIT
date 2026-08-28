@@ -7,6 +7,7 @@ import { type ReactNode, useCallback, useEffect, useId, useRef, useState } from 
 import { type CitationItem, CitationList, CitationStack } from '@/components/agents/citations';
 import { AgentDisclosure } from '@/components/agents/agent-disclosure';
 import { EASE_OUT, SPRING_PRESS, SPRING_SWAP } from '@/lib/ease';
+import { motionTokens } from '@/lib/motion/tokens';
 import { cn } from '@/lib/utils';
 
 export type StreamingResponseStatus = 'streaming' | 'complete' | 'error';
@@ -59,7 +60,7 @@ function ResponseAction({
       title={label}
       transition={SPRING_PRESS}
       type="button"
-      whileTap={reduce ? undefined : { scale: 0.9 }}
+      whileTap={reduce ? undefined : { scale: motionTokens.scale.pressMicro }}
       className={cn(
         'text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:ring-ring grid size-7 place-items-center rounded-md transition-colors outline-none focus-visible:ring-2',
         active && 'bg-muted text-foreground',

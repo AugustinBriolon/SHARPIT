@@ -406,7 +406,7 @@ export function CoachView() {
       variant: 'destructive',
     });
     if (!confirmed) return;
-    await deleteConversation.mutateAsync(id);
+    deleteConversation.mutate(id);
     clearCoachInputDraft(id);
     if (selectedId === id) {
       const nextId = createEphemeralId();

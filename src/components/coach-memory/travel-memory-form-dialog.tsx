@@ -26,7 +26,7 @@ import {
 } from '@/lib/coach-memory/types';
 import { deriveTravelTrainingConstraint } from '@/lib/travel-context/disciplines';
 import type { TravelMemoryPayload } from '@/hooks/use-coach-memory';
-import { guardedActionLabel, useOfflineGuard } from '@/hooks/use-offline-guard';
+import { useOfflineGuard } from '@/hooks/use-offline-guard';
 import { cn } from '@/lib/utils';
 
 const ENTRY_TYPE_OPTIONS: { type: CoachMemoryType; label: string }[] = [
@@ -41,8 +41,7 @@ type TravelMemoryFormDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   entry?: CoachMemoryEntry | null;
-  saving?: boolean;
-  onSubmit: (payload: TravelMemoryPayload) => void | Promise<void>;
+  onSubmit: (payload: TravelMemoryPayload) => void;
 };
 
 function entryToPlace(entry: CoachMemoryEntry | null | undefined): LocationPlaceValue {
@@ -60,7 +59,6 @@ export function TravelMemoryFormDialog({
   open,
   onOpenChange,
   entry,
-  saving = false,
   onSubmit,
 }: TravelMemoryFormDialogProps) {
   const isEdit = Boolean(entry);
@@ -151,14 +149,13 @@ export function TravelMemoryFormDialog({
   }
 
   function submitLabel(): string {
-    if (saving) return 'Enregistrement…';
     if (isEdit) return 'Enregistrer';
     return 'Ajouter';
   }
 
   const isTravel = entryType === 'TRAVEL';
 
-  async function handleSubmit(event: React.FormEvent) {
+  function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     if (guardDisabled) return;
     setError(null);
@@ -176,7 +173,7 @@ export function TravelMemoryFormDialog({
       return;
     }
 
-    await onSubmit({
+    onSubmit({
       type: entryType,
       label: label.trim() || null,
       locationLabel: isTravel ? (place?.label ?? null) : null,
@@ -358,19 +355,11 @@ export function TravelMemoryFormDialog({
           </div>
 
           <DialogFooter>
-            <Button
-              disabled={saving}
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-            >
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Annuler
             </Button>
-            <Button disabled={guardDisabled || saving} type="submit">
-              {guardedActionLabel(offline, offlineLabel, submitLabel(), {
-                active: saving,
-                label: 'Enregistrement…',
-              })}
+            <Button disabled={guardDisabled} type="submit">
+              {offline ? offlineLabel : submitLabel()}
             </Button>
           </DialogFooter>
         </form>

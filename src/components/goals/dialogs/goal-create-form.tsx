@@ -46,7 +46,6 @@ function getPriorityLabel(priority: string): string {
 }
 
 export type GoalCreateFormProps = {
-  pending?: boolean;
   submitLabel?: string;
   /** Optional tertiary action (e.g. onboarding « je décide plus tard »). */
   skipLabel?: string;
@@ -61,7 +60,6 @@ export type GoalCreateFormProps = {
  * and first-login onboarding.
  */
 export function GoalCreateForm({
-  pending = false,
   submitLabel = 'Créer',
   skipLabel,
   onSkip,
@@ -172,7 +170,6 @@ export function GoalCreateForm({
         {skipLabel && onSkip ? (
           <Button
             className="sm:mr-auto"
-            disabled={pending}
             type="button"
             variant="ghost"
             onClick={onSkip}
@@ -181,16 +178,15 @@ export function GoalCreateForm({
           </Button>
         ) : null}
         {onCancel ? (
-          <Button disabled={pending} type="button" variant="outline" onClick={onCancel}>
+          <Button type="button" variant="outline" onClick={onCancel}>
             Annuler
           </Button>
         ) : null}
         <Button
-          disabled={pending}
           form={typeof submitType === 'object' ? submitType.form : undefined}
           type="submit"
         >
-          {pending ? 'Enregistrement…' : submitLabel}
+          {submitLabel}
         </Button>
       </div>
     );

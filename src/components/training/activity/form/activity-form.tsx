@@ -27,7 +27,7 @@ import {
 } from './activity-form-helpers';
 import { sportSupportsOutdoorContext } from '@/core/planned-session/defaults';
 import { useActivityMutations } from '@/hooks/use-data';
-import { guardedActionLabel, useOfflineGuard } from '@/hooks/use-offline-guard';
+import { useOfflineGuard } from '@/hooks/use-offline-guard';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -239,12 +239,17 @@ export function ActivityForm({ mode, initialData }: ActivityFormProps) {
 
       try {
         if (mode === 'create') {
-          const activity = await create.mutateAsync(payload);
-          // Cache Components keeps this route mounted after we navigate away,
-          // so a saved entry would still be sitting in the fields next time
-          // the athlete opens "Saisir une séance".
-          form.reset();
-          router.push(`/training/${activity.id}`);
+          create.mutate(payload, {
+            onSuccess: (activity) => {
+              form.reset();
+              router.push(`/training/${activity.id}`);
+            },
+            onError: (err) => {
+              form.setError('root', {
+                message: err instanceof Error ? err.message : 'Une erreur est survenue',
+              });
+            },
+          });
           return;
         }
 
@@ -577,16 +582,12 @@ export function ActivityForm({ mode, initialData }: ActivityFormProps) {
       )}
 
       <div className="flex gap-3">
-        <Button disabled={guardDisabled || form.formState.isSubmitting} type="submit">
-          {guardedActionLabel(
-            offline,
-            offlineLabel,
-            mode === 'create' ? 'Enregistrer la séance' : 'Mettre à jour',
-            {
-              active: form.formState.isSubmitting,
-              label: 'Enregistrement…',
-            },
-          )}
+        <Button disabled={guardDisabled} type="submit">
+          {offline
+            ? offlineLabel
+            : mode === 'create'
+              ? 'Enregistrer la séance'
+              : 'Mettre à jour'}
         </Button>
         <Button type="button" variant="outline" onClick={() => router.back()}>
           Annuler

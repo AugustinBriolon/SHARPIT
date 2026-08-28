@@ -27,6 +27,7 @@ import {
 import { createPortal } from 'react-dom';
 import { SharedLayoutBg } from '@/components/motion/shared-layout-bg';
 import { EASE_DRAWER, EASE_OUT, SPRING_LAYOUT, SPRING_PRESS } from '@/lib/ease';
+import { motionTokens } from '@/lib/motion/tokens';
 import { cn } from '@/lib/utils';
 
 type SidebarState = 'expanded' | 'collapsed';
@@ -926,7 +927,7 @@ export function AnimatedSidebarMenuSubButton({
       tabIndex={disabled ? -1 : undefined}
       target={target}
       transition={SPRING_PRESS}
-      whileTap={context.reduce || disabled ? undefined : { scale: 0.98 }}
+      whileTap={context.reduce || disabled ? undefined : { scale: motionTokens.scale.pressLarge }}
       onClick={select}
     >
       {content}
@@ -938,7 +939,7 @@ export function AnimatedSidebarMenuSubButton({
       disabled={disabled}
       transition={SPRING_PRESS}
       type="button"
-      whileTap={context.reduce || disabled ? undefined : { scale: 0.98 }}
+      whileTap={context.reduce || disabled ? undefined : { scale: motionTokens.scale.pressLarge }}
       onClick={select}
     >
       {content}
@@ -1070,7 +1071,7 @@ export function AnimatedSidebarMenuButton({
       target={target}
       title={panel.collapsed ? textLabel : undefined}
       transition={SPRING_PRESS}
-      whileTap={context.reduce || disabled ? undefined : { scale: 0.98 }}
+      whileTap={context.reduce || disabled ? undefined : { scale: motionTokens.scale.pressLarge }}
       onClick={select}
     >
       {content}
@@ -1085,7 +1086,7 @@ export function AnimatedSidebarMenuButton({
       title={panel.collapsed ? textLabel : undefined}
       transition={SPRING_PRESS}
       type="button"
-      whileTap={context.reduce || disabled ? undefined : { scale: 0.98 }}
+      whileTap={context.reduce || disabled ? undefined : { scale: motionTokens.scale.pressLarge }}
       onClick={select}
     >
       {content}

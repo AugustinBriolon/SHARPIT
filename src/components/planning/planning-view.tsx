@@ -505,7 +505,7 @@ function DayRow({
         )}
         {!loading && empty ? (
           <button
-            className="border-analysis-border/70 text-muted-foreground hover:border-primary/30 hover:text-foreground pressable rounded-analysis min-h-11 w-full border border-dashed px-3 py-2.5 text-left text-sm lg:min-h-9"
+            className="border-analysis-border/70 text-muted-foreground hover:border-primary/30 hover:text-foreground pressable-lg rounded-analysis min-h-11 w-full border border-dashed px-3 py-2.5 text-left text-sm lg:min-h-9"
             type="button"
             onClick={onAdd}
           >

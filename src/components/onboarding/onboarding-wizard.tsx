@@ -9,7 +9,7 @@ import { OnboardingCredentialDialog } from '@/components/onboarding/onboarding-c
 import { IntegrationLogo } from '@/components/settings/integrations/logos';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/toast';
-import type { GoalPayload } from '@/hooks/use-data';
+import { useGoalMutations } from '@/hooks/use-data';
 import {
   DATA_CLASSES,
   oauthConnectHref,
@@ -62,6 +62,7 @@ export function OnboardingWizard({
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { create: createGoal } = useGoalMutations();
   const [step, setStep] = useState<Step>(() =>
     searchParams.get('step') === 'providers' ? 'providers' : 'intention',
   );
@@ -94,25 +95,6 @@ export function OnboardingWizard({
     }
     // Toast once when landing from OAuth return.
   }, [searchParams]);
-
-  async function createGoal(payload: GoalPayload): Promise<void> {
-    setError(null);
-    setBusy(true);
-    try {
-      const response = await fetch('/api/goals', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      if (!response.ok) {
-        const data = (await response.json().catch(() => null)) as { error?: string } | null;
-        throw new Error(data?.error ?? "Impossible de créer l'objectif");
-      }
-      setStep('providers');
-    } finally {
-      setBusy(false);
-    }
-  }
 
   async function finish() {
     setBusy(true);
@@ -193,20 +175,21 @@ export function OnboardingWizard({
 
           <GoalCreateForm
             error={error}
-            pending={busy}
             skipLabel="Je décide plus tard"
             submitLabel="Continuer"
             onSkip={() => {
               setError(null);
               setStep('providers');
             }}
-            onSubmit={async (payload) => {
-              try {
-                await createGoal(payload);
-              } catch (err) {
-                setError(err instanceof Error ? err.message : "Impossible de créer l'objectif");
-                throw err;
-              }
+            onSubmit={(payload) => {
+              setError(null);
+              setStep('providers');
+              createGoal.mutate(payload, {
+                onError: (err) => {
+                  setError(err instanceof Error ? err.message : "Impossible de créer l'objectif");
+                  setStep('intention');
+                },
+              });
             }}
           />
         </section>

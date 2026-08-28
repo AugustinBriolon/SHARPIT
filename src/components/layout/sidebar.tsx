@@ -98,7 +98,7 @@ function AthleteIdentityLink({ onPrefetch }: { onPrefetch: (href: string) => voi
       aria-label={identity.fullLabel}
       href={profileNavItem.href}
       className={cn(
-        'group pressable focus-visible:ring-sidebar-ring rounded-analysis-lg relative flex items-center gap-3 p-2.5 text-left focus-visible:ring-2 focus-visible:outline-hidden',
+        'group pressable-lg focus-visible:ring-sidebar-ring rounded-analysis-lg relative flex items-center gap-3 p-2.5 text-left focus-visible:ring-2 focus-visible:outline-hidden',
         isActive ? 'text-highlight-foreground' : 'text-foreground hover:bg-highlight/40',
         'analysis-panel hover:border-primary/20',
       )}

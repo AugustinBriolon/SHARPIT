@@ -1,6 +1,12 @@
 import type { Transition, Variants } from 'motion/react';
 import { motionTokens, springs } from '@/lib/motion/tokens';
 
+/**
+ * Shared motion variants — ADR-028 §7.
+ * Import from here; do not duplicate durations or easings in components.
+ * Pair with: FadePresence, MotionExpand, StaggerList, MorphPopover (src/components/motion/).
+ */
+
 /** Opacity-only fade — safest for reduced-motion fallbacks. */
 export const fadeVariants: Variants = {
   hidden: { opacity: 0 },

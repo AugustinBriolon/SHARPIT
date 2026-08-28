@@ -11,6 +11,7 @@ import {
   type ReactNode,
 } from 'react';
 import { SPRING_LAYOUT, SPRING_PRESS } from '@/lib/ease';
+import { motionTokens } from '@/lib/motion/tokens';
 import { cn } from '@/lib/utils';
 
 type RadioGroupContextValue = {
@@ -119,7 +120,7 @@ export function RadioGroupItem({
         role="radio"
         transition={SPRING_PRESS}
         type="button"
-        whileTap={reduce || disabled ? undefined : { scale: 0.92 }}
+        whileTap={reduce || disabled ? undefined : { scale: motionTokens.scale.pressMicro }}
         className={cn(
           'relative inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 transition-colors duration-200 outline-none',
           'focus-visible:ring-ring focus-visible:ring-offset-background focus-visible:ring-2 focus-visible:ring-offset-2',
