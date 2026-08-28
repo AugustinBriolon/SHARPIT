@@ -58,6 +58,37 @@ function sum(values: (number | null | undefined)[]): number {
   return values.reduce<number>((s, v) => s + (v ?? 0), 0);
 }
 
+/**
+ * Série de 7 points (lundi→dimanche) pour un sparkline dans le bilan hebdo —
+ * `null` un jour sans donnée, pas 0 (0 mentirait sur "aucune charge ce jour-là"
+ * vs "pas mesuré"). Défaut : somme des valeurs du jour (charge) ; passer une
+ * `reduce` pour une moyenne (score de sommeil, un seul relevé/jour la plupart
+ * du temps mais on ne suppose pas).
+ */
+function buildDailySeries<T>(
+  weekStart: Date,
+  rows: T[],
+  options: {
+    getDate: (row: T) => Date | string;
+    getValue: (row: T) => number | null | undefined;
+    reduce?: (values: number[]) => number;
+  },
+): (number | null)[] {
+  const { getDate, getValue, reduce = sum } = options;
+  const buckets: number[][] = Array.from({ length: 7 }, () => []);
+  for (const row of rows) {
+    const offset = differenceInCalendarDays(new Date(getDate(row)), weekStart);
+    if (offset < 0 || offset > 6) {
+      continue;
+    }
+    const value = getValue(row);
+    if (isSet(value)) {
+      buckets[offset].push(value);
+    }
+  }
+  return buckets.map((values) => (values.length ? reduce(values) : null));
+}
+
 export interface WeeklyStats {
   weekStart: string;
   weekEnd: string;
@@ -67,6 +98,10 @@ export interface WeeklyStats {
   totalLoad: number;
   totalDurationMin: number;
   prevTotalLoad: number;
+  /** 7 points lundi→dimanche, pour illustrer la section "Bilan de la semaine". */
+  dailyLoad: (number | null)[];
+  /** 7 points lundi→dimanche, pour illustrer la section "Sommeil & récupération". */
+  dailySleepScore: (number | null)[];
   byType: { type: string; count: number; durationMin: number }[];
   avgComplianceScore: number | null;
   sleep: {
@@ -134,6 +169,15 @@ async function buildWeeklyStats(athleteId: string, weekStart: Date): Promise<Wee
     totalLoad: Math.round(sum(inWeek.map((a) => a.load))),
     totalDurationMin: Math.round(sum(inWeek.map((a) => a.duration)) / 60),
     prevTotalLoad: Math.round(sum(inPrev.map((a) => a.load))),
+    dailyLoad: buildDailySeries(weekStart, inWeek, {
+      getDate: (a) => a.date,
+      getValue: (a) => a.load,
+    }),
+    dailySleepScore: buildDailySeries(weekStart, weekHealth, {
+      getDate: (h) => h.date,
+      getValue: (h) => h.sleepScore,
+      reduce: (values) => avg(values)!,
+    }),
     byType: [...byTypeMap.entries()].map(([type, v]) => ({ type, ...v })),
     avgComplianceScore: compliance.length ? Math.round(avg(compliance)!) : null,
     sleep: {
