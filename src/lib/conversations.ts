@@ -64,11 +64,16 @@ async function findCachedBootstrapConversation(athleteId: string, bootstrapKey: 
   const existing = await prisma.conversation.findFirst({
     where: { id: cached.id, athleteId },
   });
-  if (existing) {
-    return existing;
+  if (!existing) {
+    bootstrapConversationIds.delete(bootstrapKey);
+    return null;
   }
-  bootstrapConversationIds.delete(bootstrapKey);
-  return null;
+  const { messages } = existing;
+  if (!Array.isArray(messages) || messages.length === 0) {
+    bootstrapConversationIds.delete(bootstrapKey);
+    return null;
+  }
+  return existing;
 }
 
 /** Liste des conversations (sans les messages, pour la sidebar). */

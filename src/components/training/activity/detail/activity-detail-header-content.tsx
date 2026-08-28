@@ -106,7 +106,7 @@ function ActivityDetailHeaderCoachSection({
   plannedAnalysisReady: boolean;
 }) {
   return (
-    <>
+    <div className="space-y-3">
       <DiscussWithCoachButton
         className="w-full"
         label="Discuter de cette séance"
@@ -120,7 +120,7 @@ function ActivityDetailHeaderCoachSection({
         plannedSession={plannedSession}
         rpe={rpe}
       />
-    </>
+    </div>
   );
 }
 
