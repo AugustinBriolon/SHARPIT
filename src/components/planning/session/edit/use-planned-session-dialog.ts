@@ -26,7 +26,7 @@ import {
   deletePlannedSessionDialog,
   submitPlannedSessionDialogForm,
 } from '@/components/planning/session/edit/planned-session-dialog-actions';
-import type { useConfirmDialog as UseConfirmDialog } from '@/components/ui/confirm-dialog';
+import { usePlannedSessionOutdoorLocationSync } from '@/components/planning/session/edit/use-planned-session-outdoor-location-sync';
 
 function useLivePlannedSession(
   session: ClientPlannedSession | null | undefined,
@@ -205,6 +205,11 @@ function usePlannedSessionDialogCore({
   useSessionRationalePresentation(form.isEdit ? session?.id : null);
   const linkableGoals = usePlannedSessionLinkableGoals(goals, session);
   const locationQueries = usePlannedSessionLocationQueries();
+
+  usePlannedSessionOutdoorLocationSync({
+    session: liveSession,
+    activeTravel: locationQueries.travelQuery.data?.active ?? null,
+  });
 
   usePlannedSessionDialogEffects({
     form,
