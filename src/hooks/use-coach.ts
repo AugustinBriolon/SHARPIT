@@ -7,6 +7,7 @@ import {
   fetchConversation,
   fetchConversations,
   fetchDailyBriefing,
+  fetchLatestWeeklyReview,
   fetchWeeklyReview,
   type ClientConversation,
   type ClientConversationSummary,
@@ -292,6 +293,14 @@ export function useWeeklyReview(date: string) {
   });
 }
 
+/** Rétro la plus récente, quelle que soit la semaine — voir fetchLatestWeeklyReview. */
+export function useLatestWeeklyReview() {
+  return useQuery({
+    queryKey: queryKeys.weeklyReview('latest'),
+    queryFn: fetchLatestWeeklyReview,
+  });
+}
+
 export function useGenerateWeeklyReview() {
   const queryClient = useQueryClient();
   return useMutation<ClientWeeklyReview, Error, string>({
@@ -315,6 +324,8 @@ export function useGenerateWeeklyReview() {
     },
     onSuccess: (review, date) => {
       queryClient.setQueryData(queryKeys.weeklyReview(date), review);
+      // The generated review is always the newest one (POST always uses `current: true`).
+      queryClient.setQueryData(queryKeys.weeklyReview('latest'), review);
     },
   });
 }

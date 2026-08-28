@@ -1,6 +1,6 @@
 'use client';
 
-import { Plus } from 'lucide-react';
+import { NotebookText, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { ThreadGoalBanner } from '@/components/training/thread/thread-goal-banner';
 import { ThreadPlanChart } from '@/components/training/thread/thread-plan-chart';
@@ -119,6 +119,17 @@ export function TrainingThreadHeader({
 
       <div className="hidden items-center gap-2 lg:flex">
         {loading ? null : filters}
+        <Link
+          href="/training/weekly-review"
+          className={cn(
+            'border-foreground/25 text-foreground inline-flex min-h-9 shrink-0 items-center gap-1.5',
+            'hover:bg-muted rounded-full border px-3.5 text-xs font-medium',
+            'focus-visible:ring-primary/35 focus-visible:ring-2 focus-visible:outline-hidden',
+          )}
+        >
+          <NotebookText className="size-3.5" aria-hidden />
+          Bilan
+        </Link>
         <Link
           href="/training/manual"
           className={cn(

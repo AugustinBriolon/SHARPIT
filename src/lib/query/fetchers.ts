@@ -343,6 +343,23 @@ export async function fetchWeeklyReview(date: string): Promise<ClientWeeklyRevie
   };
 }
 
+/** Rétro la plus récente, quelle que soit la semaine (voir getLatestWeeklyReview). */
+export async function fetchLatestWeeklyReview(): Promise<ClientWeeklyReview | null> {
+  const data = await fetchJson<{
+    review: Serialized<ClientWeeklyReview> | null;
+  }>('/api/coach/weekly-review?latest=1');
+  if (!data.review) {
+    return null;
+  }
+  const r = data.review;
+  return {
+    id: r.id,
+    weekStart: toDate(r.weekStart),
+    content: r.content,
+    generatedAt: toDate(r.generatedAt),
+  };
+}
+
 import type { ThresholdApplyPreview } from '@/lib/threshold/threshold-estimates';
 import type { DisplayMode } from '@/lib/preferences/display-mode';
 
