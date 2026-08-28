@@ -8,6 +8,60 @@ import { NutritionMacroBreakdownSection } from '@/components/nutrition/blocks/nu
 import { MetricDrillDownPage } from '@/components/today/drill-down/metric-drill-down-page';
 import type { NutritionViewModel } from '@/core/presentation/nutrition-view-model';
 
+function pickSelectedDayFields(selectedDay: NutritionViewModel['selectedDay']) {
+  if (!selectedDay) {
+    return {
+      selectedDate: '',
+      fuelDensity: null,
+      goalsProgress: null,
+      meals: [],
+    };
+  }
+  return {
+    selectedDate: selectedDay.date,
+    fuelDensity: selectedDay.fuelDensity ?? null,
+    goalsProgress: selectedDay.goalsProgress ?? null,
+    meals: selectedDay.meals ?? [],
+  };
+}
+
+function NutritionPageSections({
+  date,
+  loading,
+  selectedDay,
+  history,
+  averages,
+  onDateChange,
+}: {
+  date: Date;
+  loading: boolean;
+  selectedDay: NutritionViewModel['selectedDay'];
+  history: NutritionViewModel['history'];
+  averages: NutritionViewModel['averages'];
+  onDateChange: (date: Date) => void;
+}) {
+  const dayDefaults = pickSelectedDayFields(selectedDay);
+
+  return (
+    <>
+      <NutritionGoalsPanel
+        fuelDensity={dayDefaults.fuelDensity}
+        loading={loading}
+        progress={dayDefaults.goalsProgress}
+      />
+      <NutritionMealsSection loading={loading} meals={dayDefaults.meals} />
+      <NutritionTrendSection
+        averages={averages}
+        history={history}
+        loading={loading}
+        selectedDate={dayDefaults.selectedDate}
+        onDateSelect={onDateChange}
+      />
+      <NutritionMacroBreakdownSection date={date} history={history} loading={loading} />
+    </>
+  );
+}
+
 export function NutritionPageView({
   date,
   isToday,
@@ -35,8 +89,6 @@ export function NutritionPageView({
   averages: NutritionViewModel['averages'];
   emptyState?: NutritionViewModel['emptyState'];
 }) {
-  const selectedDate = selectedDay?.date ?? '';
-
   return (
     <MetricDrillDownPage>
       <NutritionHero
@@ -51,20 +103,14 @@ export function NutritionPageView({
         onNextDay={onNextDay}
         onPreviousDay={onPreviousDay}
       />
-      <NutritionGoalsPanel
-        fuelDensity={selectedDay?.fuelDensity ?? null}
-        loading={loading}
-        progress={selectedDay?.goalsProgress ?? null}
-      />
-      <NutritionMealsSection loading={loading} meals={selectedDay?.meals ?? []} />
-      <NutritionTrendSection
+      <NutritionPageSections
         averages={averages}
+        date={date}
         history={history}
         loading={loading}
-        selectedDate={selectedDate}
-        onDateSelect={onDateChange}
+        selectedDay={selectedDay}
+        onDateChange={onDateChange}
       />
-      <NutritionMacroBreakdownSection date={date} history={history} loading={loading} />
     </MetricDrillDownPage>
   );
 }

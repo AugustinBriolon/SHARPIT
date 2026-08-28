@@ -17,6 +17,24 @@ function confidencePctForDay(day: NutritionDaySummary | null): number | null {
   return 70;
 }
 
+function nutritionHeroCaption(
+  loading: boolean,
+  reading: ReturnType<typeof buildNutritionDayReading>,
+  day: NutritionDaySummary | null,
+  emptyHint?: string | null,
+) {
+  if (loading) {
+    return undefined;
+  }
+  if (reading.caption) {
+    return reading.caption;
+  }
+  if ((!day || day.meals.length === 0) && emptyHint) {
+    return emptyHint;
+  }
+  return undefined;
+}
+
 export function NutritionHero({
   date,
   day,
@@ -41,9 +59,7 @@ export function NutritionHero({
   emptyHint?: string | null;
 }) {
   const reading = buildNutritionDayReading(day, isToday);
-  const caption = loading
-    ? undefined
-    : (reading.caption ?? ((!day || day.meals.length === 0) && emptyHint ? emptyHint : undefined));
+  const caption = nutritionHeroCaption(loading, reading, day, emptyHint);
 
   return (
     <PhysioDrillDownHero

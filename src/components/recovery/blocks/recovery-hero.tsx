@@ -25,6 +25,27 @@ function buildActionLine({
   return null;
 }
 
+function buildRecoveryEta(loading: boolean, estimatedRecoveryDays: number | null): string | null {
+  if (loading || estimatedRecoveryDays === null || estimatedRecoveryDays <= 0) {
+    return null;
+  }
+  const daysLabel = estimatedRecoveryDays === 1 ? '1 jour' : `${estimatedRecoveryDays} jours`;
+  return `Récupération estimée dans ${daysLabel}`;
+}
+
+function buildCalibrationBadge(
+  loading: boolean,
+  isCalibrating: boolean,
+  availableDimCount: number,
+) {
+  if (loading || !isCalibrating) {
+    return undefined;
+  }
+  return (
+    <span className="text-label text-muted-foreground">Calibration · {availableDimCount}/4</span>
+  );
+}
+
 export function RecoveryHero({
   date,
   readinessScore,
@@ -64,15 +85,12 @@ export function RecoveryHero({
   // athlete never read. It is the only actionable sentence on the screen, so it
   // rides the plate next to the limiter instead of forming a section of its own.
   const actionLine = buildActionLine({ loading, intensityLabel, limiterLabel });
-  const recoveryEta =
-    !loading && estimatedRecoveryDays !== null && estimatedRecoveryDays > 0
-      ? `Récupération estimée dans ${
-          estimatedRecoveryDays === 1 ? '1 jour' : `${estimatedRecoveryDays} jours`
-        }`
-      : null;
+  const recoveryEta = buildRecoveryEta(loading, estimatedRecoveryDays);
+  const calibrationBadge = buildCalibrationBadge(loading, isCalibrating, availableDimCount);
 
   return (
     <PhysioDrillDownHero
+      badge={calibrationBadge}
       confidencePct={confidencePct}
       date={date}
       eyebrow="Récupération"
@@ -88,13 +106,6 @@ export function RecoveryHero({
       quickReadSuffix="%"
       quickReadValue={readinessScore !== null ? String(Math.round(readinessScore)) : '—'}
       railValue={readinessScore}
-      badge={
-        !loading && isCalibrating ? (
-          <span className="text-label text-muted-foreground">
-            Calibration · {availableDimCount}/4
-          </span>
-        ) : undefined
-      }
       onDateChange={onDateChange}
       onNextDay={onNextDay}
       onPreviousDay={onPreviousDay}

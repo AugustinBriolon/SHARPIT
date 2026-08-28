@@ -2,16 +2,13 @@
 
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
-import { GoalCreateForm } from '@/components/goals/dialogs/goal-create-form';
-import { ClassSourceControls } from '@/components/integrations/class-source-controls';
+import { OnboardingCredentialHost } from '@/components/onboarding/onboarding-credential-host';
 import { OnboardingBootstrapScreen } from '@/components/onboarding/onboarding-bootstrap-screen';
-import { OnboardingCredentialDialog } from '@/components/onboarding/onboarding-credential-dialog';
-import { IntegrationLogo } from '@/components/settings/integrations/logos';
-import { Button } from '@/components/ui/button';
+import { OnboardingIntentionStep } from '@/components/onboarding/onboarding-intention-step';
+import { OnboardingProvidersStep } from '@/components/onboarding/onboarding-providers-step';
 import { toast } from '@/components/ui/toast';
 import type { GoalPayload } from '@/hooks/use-data';
 import {
-  DATA_CLASSES,
   oauthConnectHref,
   providersForClass,
   type CatalogProvider,
@@ -55,6 +52,49 @@ async function patchPrefs(
   return data.prefs;
 }
 
+function providerLabel(id: string): string {
+  const fromClass = providersForClass('activities')
+    .concat(providersForClass('body'))
+    .concat(providersForClass('calendar'))
+    .find((p) => p.integrationId === id);
+  return fromClass?.name ?? id;
+}
+
+function processOAuthReturn(
+  searchParams: URLSearchParams,
+  setConnected: React.Dispatch<React.SetStateAction<Set<string>>>,
+  setStep: React.Dispatch<React.SetStateAction<Step>>,
+) {
+  if (searchParams.get('step') === 'providers') {
+    setStep('providers');
+  }
+
+  for (const provider of ['strava', 'withings', 'google'] as const) {
+    const status = searchParams.get(provider);
+    if (!status) {
+      continue;
+    }
+    if (status === 'connected') {
+      setConnected((prev) => new Set(prev).add(provider));
+      toast.success(`${providerLabel(provider)} connecté`);
+    } else {
+      toast.error(`${providerLabel(provider)} : ${OAUTH_STATUS_LABELS[status] ?? status}`);
+    }
+  }
+}
+
+function OnboardingStepHeader({ step }: { step: Step }) {
+  return (
+    <div className="text-muted-foreground flex items-center justify-center gap-2 text-xs tracking-wide">
+      <span className={cn(step === 'intention' && 'text-foreground font-medium')}>
+        1 · Intention
+      </span>
+      <span aria-hidden>·</span>
+      <span className={cn(step === 'providers' && 'text-foreground font-medium')}>2 · Sources</span>
+    </div>
+  );
+}
+
 export function OnboardingWizard({
   initiallyConnected,
   initialPrefs,
@@ -82,22 +122,7 @@ export function OnboardingWizard({
   }, [router]);
 
   useEffect(() => {
-    if (searchParams.get('step') === 'providers') {
-      setStep('providers');
-    }
-
-    for (const provider of ['strava', 'withings', 'google'] as const) {
-      const status = searchParams.get(provider);
-      if (!status) {
-        continue;
-      }
-      if (status === 'connected') {
-        setConnected((prev) => new Set(prev).add(provider));
-        toast.success(`${providerLabel(provider)} connecté`);
-      } else {
-        toast.error(`${providerLabel(provider)} : ${OAUTH_STATUS_LABELS[status] ?? status}`);
-      }
-    }
+    processOAuthReturn(searchParams, setConnected, setStep);
     // Toast once when landing from OAuth return.
   }, [searchParams]);
 
@@ -177,212 +202,57 @@ export function OnboardingWizard({
     }
   }
 
+  async function submitIntentionGoal(payload: GoalPayload) {
+    try {
+      await createGoal(payload);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Impossible de créer l'objectif");
+      throw err;
+    }
+  }
+
   if (step === 'bootstrap') {
     return <OnboardingBootstrapScreen onDone={goToToday} />;
   }
 
   return (
     <div className="space-y-6">
-      <div className="text-muted-foreground flex items-center justify-center gap-2 text-xs tracking-wide">
-        <span className={cn(step === 'intention' && 'text-foreground font-medium')}>
-          1 · Intention
-        </span>
-        <span aria-hidden>·</span>
-        <span className={cn(step === 'providers' && 'text-foreground font-medium')}>
-          2 · Sources
-        </span>
-      </div>
+      <OnboardingStepHeader step={step} />
 
       {step === 'intention' ? (
-        <section aria-labelledby="onboarding-intention-title" className="space-y-5">
-          <div className="space-y-1 text-center">
-            <h1 className="text-section-title" id="onboarding-intention-title">
-              Pourquoi SharpIt ?
-            </h1>
-            <p className="text-muted-foreground text-sm text-pretty">
-              Pose un premier objectif — les mêmes champs que dans Progression. Tu pourras en
-              ajouter d’autres plus tard.
-            </p>
-          </div>
-
-          <GoalCreateForm
-            error={error}
-            pending={busy}
-            skipLabel="Je décide plus tard"
-            submitLabel="Continuer"
-            onSkip={() => {
-              setError(null);
-              setStep('providers');
-            }}
-            onSubmit={async (payload) => {
-              try {
-                await createGoal(payload);
-              } catch (err) {
-                setError(err instanceof Error ? err.message : "Impossible de créer l'objectif");
-                throw err;
-              }
-            }}
-          />
-        </section>
+        <OnboardingIntentionStep
+          busy={busy}
+          error={error}
+          onSubmit={submitIntentionGoal}
+          onSkip={() => {
+            setError(null);
+            setStep('providers');
+          }}
+        />
       ) : (
-        <section aria-labelledby="onboarding-providers-title" className="space-y-6">
-          <button
-            className="text-muted-foreground hover:text-foreground -mb-2 text-xs underline underline-offset-2"
-            type="button"
-            onClick={() => setStep('intention')}
-          >
-            ‹ Retour
-          </button>
-          <div className="space-y-1 text-center">
-            <h1 className="text-section-title" id="onboarding-providers-title">
-              Connecte tes sources
-            </h1>
-            <p className="text-muted-foreground text-sm text-pretty">
-              Un compte, plusieurs usages — tu choisis ce que SharpIt lit par catégorie. Garmin
-              connecté pour les activités ne force pas la santé wearable.
-            </p>
-          </div>
-
-          {DATA_CLASSES.map((dataClass) => {
-            const providers = providersForClass(dataClass.id);
-            const classPrefs = prefs.classes[dataClass.id];
-            return (
-              <div key={dataClass.id} className="space-y-2">
-                <div>
-                  <h2 className="text-sm font-medium">{dataClass.label}</h2>
-                  <p className="text-muted-foreground text-xs">{dataClass.description}</p>
-                </div>
-                <ul className="space-y-2">
-                  {providers.map((provider) => {
-                    const soon = provider.status === 'coming_soon';
-                    const { integrationId } = provider;
-                    const isConnected = integrationId !== null && connected.has(integrationId);
-                    const isEnabled =
-                      integrationId !== null && classPrefs.enabled.includes(integrationId);
-                    const isPrimary = classPrefs.primary === integrationId;
-
-                    return (
-                      <li key={`${dataClass.id}-${provider.id}`}>
-                        <div
-                          className={cn(
-                            'rounded-analysis w-full border px-3 py-3 text-left',
-                            soon && 'border-analysis-border/60 opacity-55',
-                            !soon && 'border-analysis-border',
-                            isPrimary && 'bg-muted/20',
-                          )}
-                        >
-                          <div className="flex items-start justify-between gap-3">
-                            <div className="flex min-w-0 items-start gap-3">
-                              {integrationId ? (
-                                <IntegrationLogo
-                                  className="size-9 shrink-0 rounded-lg"
-                                  id={integrationId}
-                                />
-                              ) : (
-                                <span
-                                  className="bg-muted text-muted-foreground flex size-9 shrink-0 items-center justify-center rounded-lg text-xs font-medium"
-                                  aria-hidden
-                                >
-                                  {provider.name.slice(0, 1)}
-                                </span>
-                              )}
-                              <div className="min-w-0">
-                                <p className="text-sm font-medium">{provider.name}</p>
-                                <p className="text-muted-foreground text-xs text-pretty">
-                                  {provider.dataTypesByClass[dataClass.id]?.join(' · ') ??
-                                    provider.tagline}
-                                </p>
-                              </div>
-                            </div>
-                            {(() => {
-                              if (soon) {
-                                return (
-                                  <span className="text-muted-foreground shrink-0 text-xs">
-                                    Bientôt
-                                  </span>
-                                );
-                              }
-                              if (!isConnected && integrationId) {
-                                return (
-                                  <Button
-                                    className="shrink-0"
-                                    size="sm"
-                                    type="button"
-                                    variant="secondary"
-                                    onClick={() => handleConnect(provider, dataClass.id)}
-                                  >
-                                    Connecter
-                                  </Button>
-                                );
-                              }
-                              return null;
-                            })()}
-                          </div>
-
-                          {isConnected && integrationId ? (
-                            <ClassSourceControls
-                              isEnabled={isEnabled}
-                              isPrimary={isPrimary}
-                              onSetPrimary={() =>
-                                void handleSetPrimary(integrationId, dataClass.id)
-                              }
-                              onToggleEnabled={(next) =>
-                                void handleToggleUse(integrationId, dataClass.id, next)
-                              }
-                            />
-                          ) : null}
-                        </div>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </div>
-            );
-          })}
-
-          {error ? (
-            <p aria-live="assertive" className="text-destructive text-sm">
-              {error}
-            </p>
-          ) : null}
-
-          <Button className="w-full" disabled={busy} type="button" onClick={() => void finish()}>
-            {finishButtonLabel(busy, connected.size > 0)}
-          </Button>
-        </section>
+        <OnboardingProvidersStep
+          busy={busy}
+          connected={connected}
+          error={error}
+          prefs={prefs}
+          onBack={() => setStep('intention')}
+          onConnect={handleConnect}
+          onFinish={() => void finish()}
+          onSetPrimary={handleSetPrimary}
+          onToggleUse={handleToggleUse}
+        />
       )}
 
-      <OnboardingCredentialDialog
-        dataClass={credentialTarget?.dataClass ?? null}
-        open={credentialTarget !== null}
-        provider={credentialTarget?.provider ?? null}
+      <OnboardingCredentialHost
+        credentialTarget={credentialTarget}
+        onTargetChange={setCredentialTarget}
         onConnected={(id, nextPrefs) => {
           setConnected((prev) => new Set(prev).add(id));
           if (nextPrefs) {
             setPrefs(nextPrefs);
           }
         }}
-        onOpenChange={(open) => {
-          if (!open) {
-            setCredentialTarget(null);
-          }
-        }}
       />
     </div>
   );
-}
-
-function finishButtonLabel(busy: boolean, hasConnectedAny: boolean): string {
-  if (busy) {
-    return 'Ouverture…';
-  }
-  return hasConnectedAny ? 'Terminer et ouvrir Today' : 'Continuer sans connexion';
-}
-
-function providerLabel(id: string): string {
-  const fromClass = providersForClass('activities')
-    .concat(providersForClass('body'))
-    .concat(providersForClass('calendar'))
-    .find((p) => p.integrationId === id);
-  return fromClass?.name ?? id;
 }

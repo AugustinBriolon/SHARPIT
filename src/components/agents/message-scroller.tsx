@@ -2,69 +2,10 @@
 // beui.dev/components/agents/chat-app
 
 import { useReducedMotion } from 'motion/react';
-import {
-  type ComponentPropsWithRef,
-  type Ref,
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-} from 'react';
+import { type ComponentPropsWithRef, type Ref } from 'react';
 import { PreviewRail, type PreviewRailItem } from '@/components/motion/preview-rail';
+import { useMessageScrollerRail } from '@/components/agents/use-message-scroller';
 import { cn } from '@/lib/utils';
-
-const PREVIEW_TITLE_LENGTH = 56;
-const PREVIEW_DESCRIPTION_LENGTH = 88;
-
-function truncateMessageText(text: string, limit: number) {
-  if (text.length <= limit) {
-    return text;
-  }
-  const excerpt = text.slice(0, limit);
-  const boundary = excerpt.lastIndexOf(' ');
-  return `${excerpt.slice(0, boundary > limit * 0.65 ? boundary : limit).trim()}…`;
-}
-
-function getMessageText(message: HTMLElement) {
-  const surface =
-    message.querySelector<HTMLElement>('[data-slot="message-bubble-content"]') ??
-    message.querySelector<HTMLElement>('[data-slot="message-content"]') ??
-    message;
-  return (surface.textContent ?? '').replace(/\s+/g, ' ').trim();
-}
-
-function getMessagePreview(message: HTMLElement, assistantResponse?: HTMLElement) {
-  const text = getMessageText(message);
-  if (!text) {
-    return { label: 'Message', description: undefined };
-  }
-
-  if (text.length <= PREVIEW_TITLE_LENGTH) {
-    const responseText = assistantResponse ? getMessageText(assistantResponse) : '';
-    return {
-      label: text,
-      description: responseText
-        ? truncateMessageText(responseText, PREVIEW_DESCRIPTION_LENGTH)
-        : undefined,
-    };
-  }
-
-  const titleExcerpt = text.slice(0, PREVIEW_TITLE_LENGTH);
-  const titleBoundary = titleExcerpt.lastIndexOf(' ');
-  const titleEnd =
-    titleBoundary > PREVIEW_TITLE_LENGTH * 0.65 ? titleBoundary : PREVIEW_TITLE_LENGTH;
-  const label = `${text.slice(0, titleEnd).trim()}…`;
-  const responseText = assistantResponse
-    ? getMessageText(assistantResponse)
-    : text.slice(titleEnd).trim();
-  return {
-    label,
-    description: responseText
-      ? truncateMessageText(responseText, PREVIEW_DESCRIPTION_LENGTH)
-      : undefined,
-  };
-}
 
 export interface MessageScrollerProps extends ComponentPropsWithRef<'div'> {
   /** Keep streamed output pinned while the reader remains near the end. */
@@ -91,359 +32,44 @@ export interface MessageScrollerProps extends ComponentPropsWithRef<'div'> {
   contentProps?: Omit<ComponentPropsWithRef<'div'>, 'children' | 'className' | 'ref'>;
 }
 
-export function MessageScroller({
-  followOutput = true,
-  followThreshold = 56,
-  smooth = true,
-  onFollowChange,
-  label = 'Conversation',
+function MessageScrollerViewport({
+  label,
   busy,
   navigation,
-  navigationLabel = 'Message navigation',
+  railOverflowing,
   viewportClassName,
   contentClassName,
-  railClassName,
-  viewportRef: externalViewportRef,
-  viewportProps,
+  setViewportRef,
+  contentRef,
+  restViewportProps,
   contentProps,
-  className,
   children,
-  ...props
-}: MessageScrollerProps) {
-  const reduce = useReducedMotion() ?? false;
-  const viewportRef = useRef<HTMLElement>(null);
-  const externalViewportRefLatest = useRef(externalViewportRef);
-  externalViewportRefLatest.current = externalViewportRef;
-  const contentRef = useRef<HTMLDivElement>(null);
-  const followingRef = useRef(followOutput);
-  const programmaticScrollRef = useRef(false);
-  const scrollTimerRef = useRef<number | undefined>(undefined);
-  const frameRef = useRef<number | undefined>(undefined);
-  const scrollFrameRef = useRef<number | undefined>(undefined);
-  const railFrameRef = useRef<number | undefined>(undefined);
-  const railIdRef = useRef(new WeakMap<HTMLElement, string>());
-  const railIdCounterRef = useRef(0);
-  const railTargetsRef = useRef(new Map<string, HTMLElement>());
-  const [railItems, setRailItems] = useState<PreviewRailItem[]>([]);
-  const [activeRailId, setActiveRailId] = useState('');
-  const [railOverflowing, setRailOverflowing] = useState(false);
-  const {
-    onScroll: onViewportScroll,
-    onWheel: onViewportWheel,
-    onTouchStart: onViewportTouchStart,
-    onKeyDown: onViewportKeyDown,
-    ...restViewportProps
-  } = viewportProps ?? {};
-
-  const setViewportRef = useCallback((node: HTMLElement | null) => {
-    viewportRef.current = node;
-    const externalRef = externalViewportRefLatest.current;
-    if (typeof externalRef === 'function') {
-      externalRef(node);
-    } else if (externalRef) {
-      externalRef.current = node;
-    }
-  }, []);
-
-  const setFollowing = useCallback(
-    (next: boolean) => {
-      if (followingRef.current === next) {
-        return;
-      }
-      followingRef.current = next;
-      onFollowChange?.(next);
-    },
-    [onFollowChange],
-  );
-
-  const updateActiveRailItem = useCallback(() => {
-    if (navigation !== 'rail') {
-      return;
-    }
-    const viewport = viewportRef.current;
-    const targets = [...railTargetsRef.current.entries()];
-    if (!viewport || targets.length === 0) {
-      return;
-    }
-
-    const viewportRect = viewport.getBoundingClientRect();
-    if (viewport.scrollTop <= followThreshold) {
-      const firstId = targets[0]?.[0] ?? '';
-      setActiveRailId((current) => (current === firstId ? current : firstId));
-      return;
-    }
-
-    const distanceFromEnd = viewport.scrollHeight - viewport.scrollTop - viewport.clientHeight;
-    if (distanceFromEnd <= followThreshold) {
-      const lastId = targets.at(-1)?.[0] ?? '';
-      setActiveRailId((current) => (current === lastId ? current : lastId));
-      return;
-    }
-
-    const viewportCenter = viewportRect.top + viewportRect.height / 2;
-    let nearestId = targets[0]?.[0] ?? '';
-    let nearestDistance = Number.POSITIVE_INFINITY;
-
-    for (const [id, element] of targets) {
-      const rect = element.getBoundingClientRect();
-      const messageCenter = rect.top + rect.height / 2;
-      const distance = Math.abs(messageCenter - viewportCenter);
-      if (distance < nearestDistance) {
-        nearestDistance = distance;
-        nearestId = id;
-      }
-    }
-
-    setActiveRailId((current) => (current === nearestId ? current : nearestId));
-  }, [followThreshold, navigation]);
-
-  const syncRailItems = useCallback(() => {
-    if (navigation !== 'rail') {
-      return;
-    }
-    const content = contentRef.current;
-    const viewport = viewportRef.current;
-    if (!content || !viewport) {
-      return;
-    }
-
-    const messages = Array.from(content.querySelectorAll<HTMLElement>('[data-slot="message"]'));
-    const targets = new Map<string, HTMLElement>();
-    const nextItems = messages.map((message, index) => {
-      let id = railIdRef.current.get(message);
-      if (!id) {
-        railIdCounterRef.current += 1;
-        id = `message-rail-${railIdCounterRef.current}`;
-        railIdRef.current.set(message, id);
-      }
-      targets.set(id, message);
-      const sender = message.dataset.from ?? 'conversation';
-      const assistantResponse =
-        sender === 'user'
-          ? messages.slice(index + 1).find((candidate) => candidate.dataset.from === 'assistant')
-          : undefined;
-      const preview = getMessagePreview(message, assistantResponse);
-
-      return {
-        id,
-        label: preview.label,
-        description: preview.description,
-        ariaLabel: `Go to ${sender} message ${index + 1} of ${messages.length}`,
-      };
-    });
-
-    railTargetsRef.current = targets;
-    setRailItems((current) => {
-      const unchanged =
-        current.length === nextItems.length &&
-        current.every(
-          (item, index) =>
-            item.id === nextItems[index]?.id &&
-            item.label === nextItems[index]?.label &&
-            item.description === nextItems[index]?.description &&
-            item.ariaLabel === nextItems[index]?.ariaLabel,
-        );
-      return unchanged ? current : nextItems;
-    });
-    setRailOverflowing(viewport.scrollHeight > viewport.clientHeight + 1 && messages.length > 1);
-  }, [navigation]);
-
-  const scheduleRailSync = useCallback(() => {
-    if (navigation !== 'rail') {
-      return;
-    }
-    if (railFrameRef.current) {
-      cancelAnimationFrame(railFrameRef.current);
-    }
-    railFrameRef.current = requestAnimationFrame(() => {
-      syncRailItems();
-      updateActiveRailItem();
-    });
-  }, [navigation, syncRailItems, updateActiveRailItem]);
-
-  const scrollToEnd = useCallback((behavior: ScrollBehavior) => {
-    const viewport = viewportRef.current;
-    if (!viewport) {
-      return;
-    }
-
-    programmaticScrollRef.current = true;
-    if (typeof viewport.scrollTo === 'function') {
-      viewport.scrollTo({ top: viewport.scrollHeight, behavior });
-    } else {
-      viewport.scrollTop = viewport.scrollHeight;
-    }
-    if (scrollTimerRef.current) {
-      window.clearTimeout(scrollTimerRef.current);
-    }
-    scrollTimerRef.current = window.setTimeout(
-      () => {
-        programmaticScrollRef.current = false;
-      },
-      behavior === 'smooth' ? 320 : 0,
-    );
-  }, []);
-
-  const scheduleScrollToEnd = useCallback(
-    (behavior: ScrollBehavior) => {
-      if (scrollFrameRef.current) {
-        cancelAnimationFrame(scrollFrameRef.current);
-      }
-      scrollFrameRef.current = requestAnimationFrame(() => {
-        scrollToEnd(behavior);
-        scrollFrameRef.current = undefined;
-      });
-    },
-    [scrollToEnd],
-  );
-
-  const handleScroll = useCallback(() => {
-    const viewport = viewportRef.current;
-    if (!viewport || programmaticScrollRef.current) {
-      return;
-    }
-
-    const distance = viewport.scrollHeight - viewport.scrollTop - viewport.clientHeight;
-    setFollowing(distance <= followThreshold);
-    updateActiveRailItem();
-  }, [followThreshold, setFollowing, updateActiveRailItem]);
-
-  const leaveLiveEdge = useCallback(() => {
-    programmaticScrollRef.current = false;
-  }, []);
-
-  useLayoutEffect(() => {
-    followingRef.current = followOutput;
-    if (!followOutput) {
-      return;
-    }
-
-    frameRef.current = requestAnimationFrame(() => scrollToEnd('auto'));
-    return () => {
-      if (frameRef.current) {
-        cancelAnimationFrame(frameRef.current);
-      }
-    };
-  }, [followOutput, scrollToEnd]);
-
-  useEffect(() => {
-    const content = contentRef.current;
-    if (!content || typeof ResizeObserver === 'undefined') {
-      return;
-    }
-
-    const observer = new ResizeObserver(() => {
-      scheduleRailSync();
-      if (!followOutput || !followingRef.current) {
-        return;
-      }
-      // Instant follow — smooth scroll during token growth overshoots when height
-      // shrinks (caret, collapsed tool activity) then grows again (provenance).
-      scheduleScrollToEnd('auto');
-    });
-    observer.observe(content);
-
-    return () => observer.disconnect();
-  }, [followOutput, scheduleRailSync, scheduleScrollToEnd]);
-
-  useEffect(() => {
-    if (navigation !== 'rail') {
-      railTargetsRef.current.clear();
-      setRailItems([]);
-      setRailOverflowing(false);
-      return;
-    }
-
-    const content = contentRef.current;
-    const viewport = viewportRef.current;
-    if (!content || !viewport) {
-      return;
-    }
-
-    scheduleRailSync();
-    const mutationObserver =
-      typeof MutationObserver === 'undefined' ? null : new MutationObserver(scheduleRailSync);
-    mutationObserver?.observe(content, {
-      childList: true,
-      characterData: true,
-      subtree: true,
-    });
-
-    const resizeObserver =
-      typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(scheduleRailSync);
-    resizeObserver?.observe(content);
-    resizeObserver?.observe(viewport);
-
-    return () => {
-      mutationObserver?.disconnect();
-      resizeObserver?.disconnect();
-    };
-  }, [navigation, scheduleRailSync]);
-
-  useEffect(
-    () => () => {
-      if (scrollTimerRef.current) {
-        window.clearTimeout(scrollTimerRef.current);
-      }
-      if (frameRef.current) {
-        cancelAnimationFrame(frameRef.current);
-      }
-      if (scrollFrameRef.current) {
-        cancelAnimationFrame(scrollFrameRef.current);
-      }
-      if (railFrameRef.current) {
-        cancelAnimationFrame(railFrameRef.current);
-      }
-    },
-    [],
-  );
-
-  const scrollToRailItem = useCallback(
-    (item: PreviewRailItem) => {
-      const viewport = viewportRef.current;
-      const target = railTargetsRef.current.get(item.id);
-      if (!viewport || !target) {
-        return;
-      }
-
-      const lastItem = railItems.at(-1)?.id === item.id;
-      setActiveRailId(item.id);
-      if (lastItem) {
-        setFollowing(true);
-        scrollToEnd(reduce || !smooth ? 'auto' : 'smooth');
-        return;
-      }
-
-      setFollowing(false);
-      programmaticScrollRef.current = true;
-      const viewportRect = viewport.getBoundingClientRect();
-      const targetRect = target.getBoundingClientRect();
-      const top =
-        viewport.scrollTop +
-        targetRect.top -
-        viewportRect.top -
-        (viewport.clientHeight - targetRect.height) / 2;
-      const behavior = reduce || !smooth ? 'auto' : 'smooth';
-
-      if (typeof viewport.scrollTo === 'function') {
-        viewport.scrollTo({ top, behavior });
-      } else {
-        viewport.scrollTop = top;
-      }
-      if (scrollTimerRef.current) {
-        window.clearTimeout(scrollTimerRef.current);
-      }
-      scrollTimerRef.current = window.setTimeout(
-        () => {
-          programmaticScrollRef.current = false;
-        },
-        behavior === 'smooth' ? 320 : 0,
-      );
-    },
-    [railItems, reduce, scrollToEnd, setFollowing, smooth],
-  );
-
-  const viewport = (
+  onViewportKeyDown,
+  onViewportScroll,
+  onViewportTouchStart,
+  onViewportWheel,
+  handleScroll,
+  leaveLiveEdge,
+}: {
+  label: string;
+  busy?: boolean;
+  navigation?: 'rail';
+  railOverflowing: boolean;
+  viewportClassName?: string;
+  contentClassName?: string;
+  setViewportRef: (node: HTMLElement | null) => void;
+  contentRef: React.RefObject<HTMLDivElement | null>;
+  restViewportProps: Omit<ComponentPropsWithRef<'section'>, 'children' | 'className' | 'ref'>;
+  contentProps?: Omit<ComponentPropsWithRef<'div'>, 'children' | 'className' | 'ref'>;
+  children: React.ReactNode;
+  onViewportKeyDown?: ComponentPropsWithRef<'section'>['onKeyDown'];
+  onViewportScroll?: ComponentPropsWithRef<'section'>['onScroll'];
+  onViewportTouchStart?: ComponentPropsWithRef<'section'>['onTouchStart'];
+  onViewportWheel?: ComponentPropsWithRef<'section'>['onWheel'];
+  handleScroll: () => void;
+  leaveLiveEdge: () => void;
+}) {
+  return (
     <section
       ref={setViewportRef}
       aria-label={label}
@@ -488,32 +114,188 @@ export function MessageScroller({
       </div>
     </section>
   );
+}
+
+function MessageScrollerRail({
+  activeRailId,
+  railItems,
+  railOverflowing,
+  navigationLabel,
+  railClassName,
+  scrollToRailItem,
+  children,
+}: {
+  activeRailId: string;
+  railItems: PreviewRailItem[];
+  railOverflowing: boolean;
+  navigationLabel: string;
+  railClassName?: string;
+  scrollToRailItem: (item: PreviewRailItem) => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <PreviewRail
+      activeId={activeRailId}
+      className="h-full min-h-0 overflow-hidden"
+      items={railOverflowing ? railItems : []}
+      itemSize={14}
+      label={navigationLabel}
+      previewClassName="mr-1 w-64 max-w-full [&_[data-slot=preview-rail-card]]:h-20 [&_[data-slot=preview-rail-card]]:overflow-hidden [&_[data-slot=preview-rail-card]]:p-3 [&_[data-slot=preview-rail-title]]:line-clamp-1 [&_[data-slot=preview-rail-title]]:text-xs [&_[data-slot=preview-rail-title]]:leading-4 [&_[data-slot=preview-rail-description]]:line-clamp-2 [&_[data-slot=preview-rail-description]]:text-xs [&_[data-slot=preview-rail-description]]:leading-4"
+      previewContainerClassName="right-8 left-3"
+      previewSide="before"
+      railClassName={cn(
+        'absolute inset-y-3 right-1 w-7 content-center py-1 [&_[data-slot=preview-rail-item]]:w-7 [&_[data-slot=preview-rail-item]]:justify-end [&_[data-slot=preview-rail-tick]]:h-px [&_[data-slot=preview-rail-tick]]:w-4 [&_[data-slot=preview-rail-tick]]:origin-right',
+        railOverflowing ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0',
+        railClassName,
+      )}
+      highlightActive
+      onItemSelect={scrollToRailItem}
+    >
+      {children}
+    </PreviewRail>
+  );
+}
+
+function MessageScrollerInner({
+  followOutput,
+  followThreshold,
+  smooth,
+  onFollowChange,
+  label,
+  busy,
+  navigation,
+  navigationLabel,
+  viewportClassName,
+  contentClassName,
+  railClassName,
+  externalViewportRef,
+  viewportProps,
+  contentProps,
+  className,
+  children,
+  ...props
+}: MessageScrollerProps & {
+  followOutput: boolean;
+  followThreshold: number;
+  smooth: boolean;
+  label: string;
+  navigationLabel: string;
+  externalViewportRef?: Ref<HTMLElement>;
+}) {
+  const reduce = useReducedMotion() ?? false;
+
+  const {
+    contentRef,
+    railItems,
+    activeRailId,
+    railOverflowing,
+    handleScroll,
+    leaveLiveEdge,
+    scrollToRailItem,
+    setViewportRef,
+  } = useMessageScrollerRail({
+    navigation,
+    followThreshold,
+    followOutput,
+    reduce,
+    smooth,
+    onFollowChange,
+    externalViewportRef,
+  });
+
+  const {
+    onScroll: onViewportScroll,
+    onWheel: onViewportWheel,
+    onTouchStart: onViewportTouchStart,
+    onKeyDown: onViewportKeyDown,
+    ...restViewportProps
+  } = viewportProps ?? {};
+
+  const viewport = (
+    <MessageScrollerViewport
+      busy={busy}
+      contentClassName={contentClassName}
+      contentProps={contentProps}
+      contentRef={contentRef}
+      handleScroll={handleScroll}
+      label={label}
+      leaveLiveEdge={leaveLiveEdge}
+      navigation={navigation}
+      railOverflowing={railOverflowing}
+      restViewportProps={restViewportProps}
+      setViewportRef={setViewportRef}
+      viewportClassName={viewportClassName}
+      onViewportKeyDown={onViewportKeyDown}
+      onViewportScroll={onViewportScroll}
+      onViewportTouchStart={onViewportTouchStart}
+      onViewportWheel={onViewportWheel}
+    >
+      {children}
+    </MessageScrollerViewport>
+  );
+
+  const body =
+    navigation === 'rail' ? (
+      <MessageScrollerRail
+        activeRailId={activeRailId}
+        navigationLabel={navigationLabel}
+        railClassName={railClassName}
+        railItems={railItems}
+        railOverflowing={railOverflowing}
+        scrollToRailItem={scrollToRailItem}
+      >
+        {viewport}
+      </MessageScrollerRail>
+    ) : (
+      viewport
+    );
 
   return (
     <div className={cn('min-h-0', className)} data-slot="message-scroller" {...props}>
-      {navigation === 'rail' ? (
-        <PreviewRail
-          activeId={activeRailId}
-          className="h-full min-h-0 overflow-hidden"
-          items={railOverflowing ? railItems : []}
-          itemSize={14}
-          label={navigationLabel}
-          previewClassName="mr-1 w-64 max-w-full [&_[data-slot=preview-rail-card]]:h-20 [&_[data-slot=preview-rail-card]]:overflow-hidden [&_[data-slot=preview-rail-card]]:p-3 [&_[data-slot=preview-rail-title]]:line-clamp-1 [&_[data-slot=preview-rail-title]]:text-xs [&_[data-slot=preview-rail-title]]:leading-4 [&_[data-slot=preview-rail-description]]:line-clamp-2 [&_[data-slot=preview-rail-description]]:text-xs [&_[data-slot=preview-rail-description]]:leading-4"
-          previewContainerClassName="right-8 left-3"
-          previewSide="before"
-          railClassName={cn(
-            'absolute inset-y-3 right-1 w-7 content-center py-1 [&_[data-slot=preview-rail-item]]:w-7 [&_[data-slot=preview-rail-item]]:justify-end [&_[data-slot=preview-rail-tick]]:h-px [&_[data-slot=preview-rail-tick]]:w-4 [&_[data-slot=preview-rail-tick]]:origin-right',
-            railOverflowing ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0',
-            railClassName,
-          )}
-          highlightActive
-          onItemSelect={scrollToRailItem}
-        >
-          {viewport}
-        </PreviewRail>
-      ) : (
-        viewport
-      )}
+      {body}
     </div>
+  );
+}
+
+export function MessageScroller({
+  followOutput = true,
+  followThreshold = 56,
+  smooth = true,
+  onFollowChange,
+  label = 'Conversation',
+  busy,
+  navigation,
+  navigationLabel = 'Message navigation',
+  viewportClassName,
+  contentClassName,
+  railClassName,
+  viewportRef: externalViewportRef,
+  viewportProps,
+  contentProps,
+  className,
+  children,
+  ...props
+}: MessageScrollerProps) {
+  return (
+    <MessageScrollerInner
+      busy={busy}
+      className={className}
+      contentClassName={contentClassName}
+      contentProps={contentProps}
+      externalViewportRef={externalViewportRef}
+      followOutput={followOutput}
+      followThreshold={followThreshold}
+      label={label}
+      navigation={navigation}
+      navigationLabel={navigationLabel}
+      railClassName={railClassName}
+      smooth={smooth}
+      viewportClassName={viewportClassName}
+      viewportProps={viewportProps}
+      onFollowChange={onFollowChange}
+      {...props}
+    >
+      {children}
+    </MessageScrollerInner>
   );
 }

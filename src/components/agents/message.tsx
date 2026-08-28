@@ -63,6 +63,84 @@ const MESSAGE_POP_UP = {
   mass: 0.62,
 } as const;
 
+function messageMotionState(animateIn: boolean, reduce: boolean) {
+  if (animateIn && !reduce) {
+    return {
+      opacity: 1,
+      transform: 'translateY(0px) scale(1)',
+    };
+  }
+  return { opacity: 1 };
+}
+
+function messageMotionExit(reduce: boolean, exit: MessageProps['exit']) {
+  if (exit !== undefined) {
+    return exit;
+  }
+  if (reduce) {
+    return { opacity: 0 };
+  }
+  return {
+    opacity: 0,
+    transform: 'translateY(-3px) scale(0.99)',
+  };
+}
+
+function messageMotionInitial(
+  animateIn: boolean,
+  reduce: boolean,
+  initial: MessageProps['initial'],
+) {
+  if (initial !== undefined) {
+    return initial;
+  }
+  if (animateIn && !reduce) {
+    return {
+      opacity: 0,
+      transform: 'translateY(8px) scale(0.95)',
+    };
+  }
+  return false;
+}
+
+function MessageArticle({
+  from,
+  animateIn,
+  reduce,
+  children,
+  className,
+  initial,
+  animate,
+  transition,
+  exit,
+  style,
+  ...props
+}: MessageProps & { reduce: boolean }) {
+  return (
+    <motion.article
+      animate={animate ?? messageMotionState(animateIn, reduce)}
+      aria-label={props['aria-label'] ?? `${from} message`}
+      data-from={from}
+      data-slot="message"
+      exit={messageMotionExit(reduce, exit)}
+      initial={messageMotionInitial(animateIn, reduce, initial)}
+      transition={transition ?? (reduce ? { duration: 0.12 } : MESSAGE_POP_UP)}
+      className={cn(
+        'group/message flex w-full items-start gap-2',
+        from === 'user' ? 'flex-row-reverse' : 'flex-row',
+        className,
+      )}
+      style={{
+        transformOrigin: from === 'user' ? '100% 100%' : '0% 100%',
+        ...style,
+      }}
+      {...props}
+    >
+      {children}
+    </motion.article>
+  );
+}
+
 export function Message({
   from,
   animateIn = false,
@@ -80,51 +158,20 @@ export function Message({
   return (
     <MessageSideContext.Provider value={from === 'user' ? 'end' : 'start'}>
       <MessageContext.Provider value={{ from }}>
-        <motion.article
-          aria-label={props['aria-label'] ?? `${from} message`}
-          data-from={from}
-          data-slot="message"
-          transition={transition ?? (reduce ? { duration: 0.12 } : MESSAGE_POP_UP)}
-          animate={
-            animate ??
-            (animateIn && !reduce
-              ? {
-                  opacity: 1,
-                  transform: 'translateY(0px) scale(1)',
-                }
-              : { opacity: 1 })
-          }
-          className={cn(
-            'group/message flex w-full items-start gap-2',
-            from === 'user' ? 'flex-row-reverse' : 'flex-row',
-            className,
-          )}
-          exit={
-            exit ??
-            (reduce
-              ? { opacity: 0 }
-              : {
-                  opacity: 0,
-                  transform: 'translateY(-3px) scale(0.99)',
-                })
-          }
-          initial={
-            initial ??
-            (animateIn && !reduce
-              ? {
-                  opacity: 0,
-                  transform: 'translateY(8px) scale(0.95)',
-                }
-              : false)
-          }
-          style={{
-            transformOrigin: from === 'user' ? '100% 100%' : '0% 100%',
-            ...style,
-          }}
+        <MessageArticle
+          animate={animate}
+          animateIn={animateIn}
+          className={className}
+          exit={exit}
+          from={from}
+          initial={initial}
+          reduce={reduce}
+          style={style}
+          transition={transition}
           {...props}
         >
           {children}
-        </motion.article>
+        </MessageArticle>
       </MessageContext.Provider>
     </MessageSideContext.Provider>
   );

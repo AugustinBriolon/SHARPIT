@@ -1,10 +1,9 @@
 'use client';
 
 import { format } from 'date-fns';
-import { HeartPulse } from 'lucide-react';
-import { MobileDrillDownHeader } from '@/components/layout/mobile-drill-down-header';
-import { RecoveryPageView } from '@/components/recovery/recovery-page-view';
-import { InkEmptyState } from '@/components/ui/ink-empty-state';
+import { RecoveryScreenBody } from '@/components/recovery/recovery-screen-body';
+import { resolveRecoveryEmpty } from '@/components/recovery/recovery-empty';
+import { RecoveryScreenEmpty } from '@/components/recovery/recovery-screen-empty';
 import { useTodaySelectedDate } from '@/hooks/use-today-selected-date';
 import {
   isPresentationValuesLoading,
@@ -16,42 +15,35 @@ export function RecoveryScreen({ backHref, backLabel }: { backHref?: string; bac
   const { date, isToday, maxDate, minDate, setDate, goToNextDay, goToPreviousDay } =
     useTodaySelectedDate();
   const trainingDayId = format(date, 'yyyy-MM-dd');
-
   const query = useRecoveryViewModel(trainingDayId);
   const valuesLoading = isPresentationValuesLoading(query);
   const viewModel = query.data ?? null;
+  const empty = !valuesLoading ? resolveRecoveryEmpty(viewModel) : null;
 
-  if (!valuesLoading && (!viewModel || viewModel.emptyState)) {
+  if (empty) {
     return (
-      <div className="space-y-4">
-        <MobileDrillDownHeader backHref={backHref} backLabel={backLabel} title="Récupération" />
-        <InkEmptyState
-          icon={HeartPulse}
-          title={viewModel?.emptyState?.title ?? 'Récupération indisponible'}
-          description={
-            viewModel?.emptyState?.description ?? 'Données de récupération indisponibles.'
-          }
-        />
-      </div>
+      <RecoveryScreenEmpty
+        backHref={backHref}
+        backLabel={backLabel}
+        description={empty.description}
+        title={empty.title}
+      />
     );
   }
 
-  const content = viewModel ?? recoveryLoadingShell();
-
   return (
-    <div className="space-y-4">
-      <MobileDrillDownHeader backHref={backHref} backLabel={backLabel} title="Récupération" />
-      <RecoveryPageView
-        date={date}
-        isToday={isToday}
-        loading={valuesLoading}
-        maxDate={maxDate}
-        minDate={minDate}
-        onDateChange={setDate}
-        onNextDay={goToNextDay}
-        onPreviousDay={goToPreviousDay}
-        {...content}
-      />
-    </div>
+    <RecoveryScreenBody
+      backHref={backHref}
+      backLabel={backLabel}
+      content={viewModel ?? recoveryLoadingShell()}
+      date={date}
+      isToday={isToday}
+      loading={valuesLoading}
+      maxDate={maxDate}
+      minDate={minDate}
+      onDateChange={setDate}
+      onNextDay={goToNextDay}
+      onPreviousDay={goToPreviousDay}
+    />
   );
 }

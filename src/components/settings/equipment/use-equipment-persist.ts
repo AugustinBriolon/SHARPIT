@@ -30,6 +30,122 @@ function equipmentEqual(a: AthleteEquipment, b: AthleteEquipment): boolean {
   return left.every((id, index) => id === right[index]);
 }
 
+type PersistRollbackContext = {
+  seq: number;
+  saveSeq: { current: number };
+  payload: AthleteEquipment;
+  rollbackEquipment: AthleteEquipment;
+  previousProfile: unknown;
+  queryClient: ReturnType<typeof useQueryClient>;
+  err: unknown;
+  setDirty: (dirty: boolean) => void;
+  setEquipment: (equipment: AthleteEquipment) => void;
+  setError: (error: string | null) => void;
+  equipmentRef: { current: AthleteEquipment };
+  dirtyRef: { current: boolean };
+};
+
+function rollbackPersistFailure(ctx: PersistRollbackContext) {
+  if (ctx.seq !== ctx.saveSeq.current) {
+    return;
+  }
+  const newerLocal = !equipmentEqual(ctx.equipmentRef.current, ctx.payload);
+  if (newerLocal) {
+    ctx.dirtyRef.current = true;
+    ctx.setDirty(true);
+    return;
+  }
+
+  ctx.dirtyRef.current = false;
+  ctx.setDirty(false);
+  ctx.setEquipment(ctx.rollbackEquipment);
+  ctx.equipmentRef.current = ctx.rollbackEquipment;
+  if (ctx.previousProfile !== undefined) {
+    ctx.queryClient.setQueryData(queryKeys.athleteProfile, ctx.previousProfile);
+  }
+  ctx.setError(ctx.err instanceof Error ? ctx.err.message : 'Erreur');
+}
+
+function applyOptimisticEquipment(
+  payload: AthleteEquipment,
+  queryClient: ReturnType<typeof useQueryClient>,
+) {
+  queryClient.setQueryData(queryKeys.athleteProfile, (current: unknown) => {
+    if (!current || typeof current !== 'object') {
+      return current;
+    }
+    return { ...current, equipment: payload };
+  });
+}
+
+async function applySavedProfile(
+  res: Response,
+  queryClient: ReturnType<typeof useQueryClient>,
+): Promise<void> {
+  const saved = (await res.json().catch(() => null)) as Record<string, unknown> | null;
+  if (!saved || typeof saved !== 'object') {
+    return;
+  }
+  queryClient.setQueryData(queryKeys.athleteProfile, (current: unknown) => {
+    if (!current || typeof current !== 'object') {
+      return saved;
+    }
+    return { ...current, ...saved };
+  });
+}
+
+async function persistEquipmentPayload(
+  payload: AthleteEquipment,
+  queryClient: ReturnType<typeof useQueryClient>,
+  router: ReturnType<typeof useRouter>,
+): Promise<void> {
+  const res = await fetch('/api/athlete-profile', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ equipment: payload }),
+  });
+  if (!res.ok) {
+    throw new Error(await parseError(res));
+  }
+  await applySavedProfile(res, queryClient);
+  router.refresh();
+  await invalidateAfterAthleteProfileSave(queryClient);
+}
+
+function schedulePersistRetry(
+  timerRef: { current: ReturnType<typeof setTimeout> | null },
+  flushPersist: () => Promise<void>,
+) {
+  if (timerRef.current) {
+    clearTimeout(timerRef.current);
+  }
+  timerRef.current = setTimeout(() => {
+    timerRef.current = null;
+    void flushPersist();
+  }, SAVE_DEBOUNCE_MS);
+}
+
+type SkipPersistContext = {
+  inFlight: boolean;
+  dirty: boolean;
+  current: AthleteEquipment;
+  saved: AthleteEquipment;
+  dirtyRef: { current: boolean };
+  setDirty: (dirty: boolean) => void;
+};
+
+function shouldSkipPersist(ctx: SkipPersistContext): boolean {
+  if (ctx.inFlight || !ctx.dirty) {
+    return true;
+  }
+  if (equipmentEqual(ctx.current, ctx.saved)) {
+    ctx.dirtyRef.current = false;
+    ctx.setDirty(false);
+    return true;
+  }
+  return false;
+}
+
 export function useEquipmentPersist(initial: AthleteEquipment) {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -80,15 +196,16 @@ export function useEquipmentPersist(initial: AthleteEquipment) {
   }, []);
 
   async function flushPersist() {
-    if (inFlightRef.current) {
-      return;
-    }
-    if (!dirtyRef.current) {
-      return;
-    }
-    if (equipmentEqual(equipmentRef.current, savedRef.current)) {
-      dirtyRef.current = false;
-      setDirty(false);
+    if (
+      shouldSkipPersist({
+        inFlight: inFlightRef.current,
+        dirty: dirtyRef.current,
+        current: equipmentRef.current,
+        saved: savedRef.current,
+        dirtyRef,
+        setDirty,
+      })
+    ) {
       return;
     }
 
@@ -103,58 +220,31 @@ export function useEquipmentPersist(initial: AthleteEquipment) {
     setSaving(true);
     setError(null);
     setMessage(null);
-
-    queryClient.setQueryData(queryKeys.athleteProfile, (current: unknown) => {
-      if (!current || typeof current !== 'object') {
-        return current;
-      }
-      return { ...current, equipment: payload };
-    });
+    applyOptimisticEquipment(payload, queryClient);
 
     let succeeded = false;
     try {
-      const res = await fetch('/api/athlete-profile', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ equipment: payload }),
-      });
-      if (!res.ok) {
-        throw new Error(await parseError(res));
-      }
-
+      await persistEquipmentPayload(payload, queryClient, router);
       if (seq === saveSeq.current) {
         savedRef.current = payload;
         succeeded = true;
         setMessage('Équipement enregistré.');
-        const saved = (await res.json().catch(() => null)) as Record<string, unknown> | null;
-        if (saved && typeof saved === 'object') {
-          queryClient.setQueryData(queryKeys.athleteProfile, (current: unknown) => {
-            if (!current || typeof current !== 'object') {
-              return saved;
-            }
-            return { ...current, ...saved };
-          });
-        }
-        router.refresh();
-        await invalidateAfterAthleteProfileSave(queryClient);
       }
     } catch (err) {
-      if (seq === saveSeq.current) {
-        const newerLocal = !equipmentEqual(equipmentRef.current, payload);
-        if (newerLocal) {
-          dirtyRef.current = true;
-          setDirty(true);
-        } else {
-          dirtyRef.current = false;
-          setDirty(false);
-          setEquipment(rollbackEquipment);
-          equipmentRef.current = rollbackEquipment;
-          if (previousProfile !== undefined) {
-            queryClient.setQueryData(queryKeys.athleteProfile, previousProfile);
-          }
-        }
-        setError(err instanceof Error ? err.message : 'Erreur');
-      }
+      rollbackPersistFailure({
+        seq,
+        saveSeq,
+        payload,
+        rollbackEquipment,
+        previousProfile,
+        queryClient,
+        err,
+        setDirty,
+        setEquipment,
+        setError,
+        equipmentRef,
+        dirtyRef,
+      });
     } finally {
       if (seq === saveSeq.current) {
         inFlightRef.current = false;
@@ -171,13 +261,7 @@ export function useEquipmentPersist(initial: AthleteEquipment) {
       return;
     }
 
-    if (timerRef.current) {
-      clearTimeout(timerRef.current);
-    }
-    timerRef.current = setTimeout(() => {
-      timerRef.current = null;
-      void flushPersist();
-    }, SAVE_DEBOUNCE_MS);
+    schedulePersistRetry(timerRef, flushPersist);
   }
 
   function schedulePersist(next: AthleteEquipment) {
@@ -187,20 +271,8 @@ export function useEquipmentPersist(initial: AthleteEquipment) {
     setError(null);
     setMessage(null);
 
-    queryClient.setQueryData(queryKeys.athleteProfile, (current: unknown) => {
-      if (!current || typeof current !== 'object') {
-        return current;
-      }
-      return { ...current, equipment: next };
-    });
-
-    if (timerRef.current) {
-      clearTimeout(timerRef.current);
-    }
-    timerRef.current = setTimeout(() => {
-      timerRef.current = null;
-      void flushPersist();
-    }, SAVE_DEBOUNCE_MS);
+    applyOptimisticEquipment(next, queryClient);
+    schedulePersistRetry(timerRef, flushPersist);
   }
 
   function update(updater: (prev: AthleteEquipment) => AthleteEquipment) {

@@ -64,36 +64,15 @@ function toGoalItem(goal: {
  * `embedded` drops the page chrome so Progress can mount this as a section —
  * the hub already carries the title and the back link.
  */
-export function GoalsView({ embedded = false }: { embedded?: boolean } = {}) {
-  const goalsQuery = useGoals();
-
-  if (goalsQuery.isPending) {
-    return <GoalsViewSkeleton embedded={embedded} />;
-  }
-
-  if (goalsQuery.isError) {
-    return (
-      <p
-        className="border-destructive/30 bg-destructive/5 text-destructive rounded-xl border p-6 text-sm"
-        role="alert"
-      >
-        Impossible de charger les objectifs. Réessaie dans un instant.
-      </p>
-    );
-  }
-
-  const goals = (goalsQuery.data ?? []).map(toGoalItem);
-
-  const races = goals
-    .filter((g) => g.kind === GoalKind.RACE)
-    .sort((a, b) => {
-      const da = a.targetDate ? new Date(a.targetDate).getTime() : Infinity;
-      const db = b.targetDate ? new Date(b.targetDate).getTime() : Infinity;
-      return da - db;
-    });
-
-  const metrics = goals.filter((g) => g.kind === GoalKind.METRIC);
-
+function GoalsViewContent({
+  embedded,
+  races,
+  metrics,
+}: {
+  embedded: boolean;
+  races: GoalItem[];
+  metrics: GoalItem[];
+}) {
   return (
     <div className="space-y-8">
       {embedded ? null : (
@@ -182,4 +161,37 @@ export function GoalsView({ embedded = false }: { embedded?: boolean } = {}) {
       <GoalAchievementsHistory />
     </div>
   );
+}
+
+export function GoalsView({ embedded = false }: { embedded?: boolean } = {}) {
+  const goalsQuery = useGoals();
+
+  if (goalsQuery.isPending) {
+    return <GoalsViewSkeleton embedded={embedded} />;
+  }
+
+  if (goalsQuery.isError) {
+    return (
+      <p
+        className="border-destructive/30 bg-destructive/5 text-destructive rounded-xl border p-6 text-sm"
+        role="alert"
+      >
+        Impossible de charger les objectifs. Réessaie dans un instant.
+      </p>
+    );
+  }
+
+  const goals = (goalsQuery.data ?? []).map(toGoalItem);
+
+  const races = goals
+    .filter((g) => g.kind === GoalKind.RACE)
+    .sort((a, b) => {
+      const da = a.targetDate ? new Date(a.targetDate).getTime() : Infinity;
+      const db = b.targetDate ? new Date(b.targetDate).getTime() : Infinity;
+      return da - db;
+    });
+
+  const metrics = goals.filter((g) => g.kind === GoalKind.METRIC);
+
+  return <GoalsViewContent embedded={embedded} metrics={metrics} races={races} />;
 }

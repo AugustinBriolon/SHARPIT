@@ -71,44 +71,16 @@ export function strengthPrescriptionFromDraft(
   rows: StrengthPrescriptionDraftRow[],
 ): StrengthPrescription | null {
   const sets = rows
-    .map((row, order) => {
-      const exercise = row.exercise.trim();
-      if (!exercise) {
-        return null;
-      }
-      const setsCount = Number(row.sets);
-      const reps = Number(row.reps);
-      if (!Number.isFinite(setsCount) || setsCount < 1) {
-        return null;
-      }
-      const durationSec = row.durationSec.trim() ? Number(row.durationSec) : null;
-      const weightKg = row.weightKg.trim() ? Number(row.weightKg) : null;
-      const restMode: StrengthRestMode = row.restMode === 'time' ? 'time' : 'lap';
-      const restSecRaw = row.restSec.trim() ? Number(row.restSec) : null;
-      const restSec =
-        restMode === 'time' && restSecRaw !== null && Number.isFinite(restSecRaw)
-          ? Math.max(0, restSecRaw)
-          : null;
-      return {
-        exercise,
-        exerciseCatalogId: null,
-        sets: setsCount,
-        reps: Number.isFinite(reps) ? Math.max(0, reps) : 0,
-        durationSec: durationSec !== null && Number.isFinite(durationSec) ? durationSec : null,
-        weightKg: weightKg !== null && Number.isFinite(weightKg) ? weightKg : null,
-        restMode,
-        restSec,
-        notes: null,
-        order,
-      };
-    })
-    .filter((s): s is NonNullable<typeof s> => s !== null);
+    .map((row, order) => parseStrengthDraftRow(row, order))
+    .filter((s): s is NonNullable<ReturnType<typeof parseStrengthDraftRow>> => s !== null);
 
   if (sets.length === 0) {
     return null;
   }
   return attachGarminRefsToPrescription({ version: 1, sets });
 }
+
+import { parseStrengthDraftRow } from '@/components/planning/session/edit/strength-draft-row-parser';
 
 function draftWatchHint(exercise: string): string | null {
   const trimmed = exercise.trim();

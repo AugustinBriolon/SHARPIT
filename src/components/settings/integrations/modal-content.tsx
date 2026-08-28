@@ -4,6 +4,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { useGoogleContentState } from '@/components/settings/integrations/google-content-hooks';
 import {
   GOOGLE_OAUTH_LAN_HINT,
   googleOAuthLocalConnectHref,
@@ -13,6 +14,9 @@ import {
   IntegrationAccountCard,
   IntegrationAccountSummary,
   IntegrationManageStage,
+  IntegrationNotConnectedView,
+  IntegrationNotConfiguredView,
+  IntegrationStatusMessage,
   IntegrationSyncActions,
 } from '@/components/settings/integrations/modal-parts';
 import { IntegrationLogo } from '@/components/settings/integrations/logos';
@@ -219,49 +223,31 @@ function StravaContent({
 
   if (!integration.configured) {
     return (
-      <div className="space-y-4">
-        <IntegrationModalHeader integration={integration} />
-        <EnvSetupBlock>
-          <p>
-            Strava n&apos;est pas configuré côté serveur. Crée une app sur{' '}
-            <a
-              className="text-primary underline"
-              href="https://www.strava.com/settings/api"
-              rel="noreferrer"
-              target="_blank"
-            >
-              strava.com/settings/api
-            </a>{' '}
-            puis ajoute les variables <code className="text-xs">STRAVA_*</code> dans{' '}
-            <code className="text-xs">.env</code>.
-          </p>
-        </EnvSetupBlock>
-      </div>
+      <IntegrationNotConfiguredView integration={integration}>
+        <p>
+          Strava n&apos;est pas configuré côté serveur. Crée une app sur{' '}
+          <a
+            className="text-primary underline"
+            href="https://www.strava.com/settings/api"
+            rel="noreferrer"
+            target="_blank"
+          >
+            strava.com/settings/api
+          </a>{' '}
+          puis ajoute les variables <code className="text-xs">STRAVA_*</code> dans{' '}
+          <code className="text-xs">.env</code>.
+        </p>
+      </IntegrationNotConfiguredView>
     );
   }
 
   if (!integration.connected) {
     return (
-      <div className="space-y-4">
-        <IntegrationModalHeader integration={integration} />
-        <p className="text-muted-foreground text-sm leading-relaxed">
-          {integrationConnectBody(
-            integration,
-            'Connecte Strava pour importer automatiquement tes activités course, vélo et natation.',
-          )}
-        </p>
-        <a
-          className={cn(buttonVariants(), 'w-full sm:w-auto')}
-          href="/api/strava/connect?returnTo=/settings/integrations"
-        >
-          {integrationConnectCta(integration)}
-        </a>
-        {integration.statusMessage && (
-          <p aria-live="assertive" className="text-destructive text-sm">
-            {integration.statusMessage}
-          </p>
-        )}
-      </div>
+      <IntegrationNotConnectedView
+        body="Connecte Strava pour importer automatiquement tes activités course, vélo et natation."
+        connectHref="/api/strava/connect?returnTo=/settings/integrations"
+        integration={integration}
+      />
     );
   }
 
@@ -290,11 +276,7 @@ function StravaContent({
         onSync={handleSync}
       />
       <RecordChangesBanner changes={syncRecordChanges} />
-      {integration.statusMessage && (
-        <p aria-live="polite" className="text-muted-foreground text-sm">
-          {integration.statusMessage}
-        </p>
-      )}
+      <IntegrationStatusMessage message={integration.statusMessage} />
     </IntegrationManageStage>
   );
 }
@@ -725,14 +707,112 @@ function RenphoContent({
   );
 }
 
-function googleSyncErrorDescription(err: unknown): string | undefined {
-  if (!(err instanceof Error)) {
-    return undefined;
-  }
-  if (err.message.includes('Reconnecte')) {
-    return `${err.message} Utilise le bouton « Connecter Google Calendar » ci-dessous.`;
-  }
-  return err.message;
+function GoogleCalendarTargetPicker({
+  calendarId,
+  calendars,
+  targetCalendarName,
+  calendarsQuery,
+  savingTarget,
+  onSelectCalendar,
+}: {
+  calendarId: string;
+  calendars: GoogleCalendarInfo[];
+  targetCalendarName: string | null | undefined;
+  calendarsQuery: { isPending: boolean };
+  savingTarget: boolean;
+  onSelectCalendar: (nextCalendarId: string | null) => void;
+}) {
+  return (
+    <div className="space-y-2">
+      <Label htmlFor="google-calendar-target">Calendrier des séances</Label>
+      <Select value={calendarId} onValueChange={onSelectCalendar}>
+        <SelectTrigger
+          className="w-full"
+          disabled={calendarsQuery.isPending || savingTarget}
+          id="google-calendar-target"
+        >
+          <SelectValue>
+            {calendarSelectLabel(
+              calendarId,
+              calendars,
+              targetCalendarName,
+              calendarsQuery.isPending,
+            )}
+          </SelectValue>
+        </SelectTrigger>
+        <SelectContent className="w-max max-w-[var(--available-width)] min-w-[var(--anchor-width)]">
+          {calendars.map((c) => (
+            <SelectItem key={c.id} value={c.id}>
+              {c.summary}
+              {c.primary ? ' (principal)' : ''}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  );
+}
+
+function GoogleConnectedManage({
+  integration,
+  calendars,
+  calendarsQuery,
+  calendarId,
+  targetCalendarName,
+  savingTarget,
+  syncing,
+  stage,
+  disconnecting,
+  onSelectCalendar,
+  onSync,
+  onRequestDisconnect,
+  onCancelConfirm,
+  onConfirmDisconnect,
+}: {
+  integration: IntegrationDefinition;
+  calendars: GoogleCalendarInfo[];
+  calendarsQuery: { isPending: boolean };
+  calendarId: string;
+  targetCalendarName: string | null | undefined;
+  savingTarget: boolean;
+  syncing: boolean;
+  stage: 'manage' | 'confirm';
+  disconnecting: boolean;
+  onSelectCalendar: (nextCalendarId: string | null) => void;
+  onSync: () => void;
+  onRequestDisconnect: () => void;
+  onCancelConfirm: () => void;
+  onConfirmDisconnect: () => void | Promise<void>;
+}) {
+  return (
+    <IntegrationManageStage
+      confirmTitle="Déconnecter Google Calendar ?"
+      disconnecting={disconnecting}
+      stage={stage}
+      onCancelConfirm={onCancelConfirm}
+      onConfirmDisconnect={onConfirmDisconnect}
+    >
+      <IntegrationModalHeader integration={integration} />
+      <IntegrationAccountSummary
+        label={integration.account?.label}
+        lastSyncAt={integration.account?.lastSyncAt}
+      />
+      <GoogleCalendarTargetPicker
+        calendarId={calendarId}
+        calendars={calendars}
+        calendarsQuery={calendarsQuery}
+        savingTarget={savingTarget}
+        targetCalendarName={targetCalendarName}
+        onSelectCalendar={onSelectCalendar}
+      />
+      <IntegrationSyncActions
+        syncDisabled={!calendarId}
+        syncing={syncing}
+        onDisconnect={onRequestDisconnect}
+        onSync={onSync}
+      />
+    </IntegrationManageStage>
+  );
 }
 
 function GoogleContent({
@@ -742,89 +822,18 @@ function GoogleContent({
   integration: IntegrationDefinition;
   onUpdated?: () => void;
 }) {
-  const router = useRouter();
-  const queryClient = useQueryClient();
-  const calendarsQuery = useGoogleCalendars(integration.connected);
-  const calendars = calendarsQuery.data ?? [];
-  const [pendingCalendarId, setPendingCalendarId] = useState<string | null>(null);
-  const targetCalendarId = integration.account?.extra?.targetCalendarId as string | null;
-  const targetCalendarName = integration.account?.extra?.targetCalendarName as string | null;
-  const calendarId = pendingCalendarId ?? targetCalendarId ?? '';
-  const [savingTarget, setSavingTarget] = useState(false);
-  const [syncing, setSyncing] = useState(false);
-  const [stage, setStage] = useState<'manage' | 'confirm'>('manage');
-  const [disconnecting, setDisconnecting] = useState(false);
-
-  async function handleSelectCalendar(nextCalendarId: string | null) {
-    if (!nextCalendarId) {
-      return;
-    }
-    const calendar = calendars.find((c) => c.id === nextCalendarId);
-    setPendingCalendarId(nextCalendarId);
-    setSavingTarget(true);
-    try {
-      await fetch('/api/google/select-calendar', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          calendarId: nextCalendarId,
-          calendarName: calendar?.summary ?? null,
-        }),
-      });
-      router.refresh();
-      onUpdated?.();
-    } finally {
-      setSavingTarget(false);
-    }
-  }
-
-  async function handleSync() {
-    setSyncing(true);
-    try {
-      await toast.promise(runGoogleSync(), {
-        loading: 'Synchronisation Google Calendar…',
-        success: (d) => ({
-          title: 'Google synchronisé',
-          description: `${d.pushed} ajoutée(s), ${d.updated} mise(s) à jour.`,
-        }),
-        error: (err) => ({
-          title: 'Échec Google',
-          description: googleSyncErrorDescription(err),
-        }),
-      });
-      await invalidateAfterProviderSync(queryClient, { includeBodyComposition: false });
-    } finally {
-      router.refresh();
-      onUpdated?.();
-      setSyncing(false);
-    }
-  }
-
-  async function handleDisconnect() {
-    setDisconnecting(true);
-    try {
-      await fetch('/api/google/disconnect', { method: 'POST' });
-      router.refresh();
-      onUpdated?.();
-    } finally {
-      setDisconnecting(false);
-      setStage('manage');
-    }
-  }
+  const state = useGoogleContentState(integration, onUpdated);
 
   if (!integration.configured) {
     return (
-      <div className="space-y-4">
-        <IntegrationModalHeader integration={integration} />
-        <EnvSetupBlock>
-          <p>
-            Google Calendar n&apos;est pas configuré. Ajoute{' '}
-            <code className="text-xs">GOOGLE_CLIENT_ID</code> et{' '}
-            <code className="text-xs">GOOGLE_CLIENT_SECRET</code> dans{' '}
-            <code className="text-xs">.env</code>.
-          </p>
-        </EnvSetupBlock>
-      </div>
+      <IntegrationNotConfiguredView integration={integration}>
+        <p>
+          Google Calendar n&apos;est pas configuré. Ajoute{' '}
+          <code className="text-xs">GOOGLE_CLIENT_ID</code> et{' '}
+          <code className="text-xs">GOOGLE_CLIENT_SECRET</code> dans{' '}
+          <code className="text-xs">.env</code>.
+        </p>
+      </IntegrationNotConfiguredView>
     );
   }
 
@@ -835,78 +844,32 @@ function GoogleContent({
       : '/api/google/connect?returnTo=/settings/integrations';
 
     return (
-      <div className="space-y-4">
-        <IntegrationModalHeader integration={integration} />
-        <p className="text-muted-foreground text-sm leading-relaxed">
-          {integrationConnectBody(
-            integration,
-            'Le coach planifie tes séances dans ton agenda en évitant tes créneaux occupés.',
-          )}
-        </p>
-        {blockedOnLan && (
-          <p className="border-signal-caution/30 bg-signal-caution/10 text-signal-caution rounded-lg border px-3 py-2 text-sm leading-relaxed">
-            {GOOGLE_OAUTH_LAN_HINT}
-          </p>
-        )}
-        <a className={cn(buttonVariants(), 'w-full sm:w-auto')} href={connectHref}>
-          {integrationConnectCta(integration)}
-        </a>
-        {integration.statusMessage && (
-          <p aria-live="assertive" className="text-destructive text-sm">
-            {integration.statusMessage}
-          </p>
-        )}
-      </div>
+      <IntegrationNotConnectedView
+        body="Le coach planifie tes séances dans ton agenda en évitant tes créneaux occupés."
+        connectHref={connectHref}
+        integration={integration}
+        lanHint={blockedOnLan ? GOOGLE_OAUTH_LAN_HINT : undefined}
+      />
     );
   }
 
   return (
-    <IntegrationManageStage
-      confirmTitle="Déconnecter Google Calendar ?"
-      disconnecting={disconnecting}
-      stage={stage}
-      onCancelConfirm={() => setStage('manage')}
-      onConfirmDisconnect={handleDisconnect}
-    >
-      <IntegrationModalHeader integration={integration} />
-      <IntegrationAccountSummary
-        label={integration.account?.label}
-        lastSyncAt={integration.account?.lastSyncAt}
-      />
-      <div className="space-y-2">
-        <Label htmlFor="google-calendar-target">Calendrier des séances</Label>
-        <Select value={calendarId} onValueChange={handleSelectCalendar}>
-          <SelectTrigger
-            className="w-full"
-            disabled={calendarsQuery.isPending || savingTarget}
-            id="google-calendar-target"
-          >
-            <SelectValue>
-              {calendarSelectLabel(
-                calendarId,
-                calendars,
-                targetCalendarName,
-                calendarsQuery.isPending,
-              )}
-            </SelectValue>
-          </SelectTrigger>
-          <SelectContent className="w-max max-w-[var(--available-width)] min-w-[var(--anchor-width)]">
-            {calendars.map((c) => (
-              <SelectItem key={c.id} value={c.id}>
-                {c.summary}
-                {c.primary ? ' (principal)' : ''}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-      <IntegrationSyncActions
-        syncDisabled={!calendarId}
-        syncing={syncing}
-        onDisconnect={() => setStage('confirm')}
-        onSync={handleSync}
-      />
-    </IntegrationManageStage>
+    <GoogleConnectedManage
+      calendarId={state.calendarId}
+      calendars={state.calendars}
+      calendarsQuery={state.calendarsQuery}
+      disconnecting={state.disconnecting}
+      integration={integration}
+      savingTarget={state.savingTarget}
+      stage={state.stage}
+      syncing={state.syncing}
+      targetCalendarName={state.targetCalendarName}
+      onCancelConfirm={() => state.setStage('manage')}
+      onConfirmDisconnect={state.handleDisconnect}
+      onRequestDisconnect={() => state.setStage('confirm')}
+      onSelectCalendar={state.handleSelectCalendar}
+      onSync={state.handleSync}
+    />
   );
 }
 

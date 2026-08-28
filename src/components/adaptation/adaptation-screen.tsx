@@ -19,6 +19,23 @@ function adaptationEmptyDescription(viewModel: ReturnType<typeof useAdaptationVi
   );
 }
 
+function AdaptationEmptyView({
+  viewModel,
+}: {
+  viewModel: ReturnType<typeof useAdaptationViewModel>['data'];
+}) {
+  return (
+    <div className="space-y-4">
+      <MobileDrillDownHeader title="Adaptation" />
+      <InkEmptyState
+        description={adaptationEmptyDescription(viewModel)}
+        icon={TrendingUp}
+        title={viewModel?.emptyState?.title ?? 'Adaptation en cours de consolidation'}
+      />
+    </div>
+  );
+}
+
 export function AdaptationScreen() {
   const { date, isToday, maxDate, minDate, setDate, goToNextDay, goToPreviousDay } =
     useTodaySelectedDate();
@@ -29,16 +46,7 @@ export function AdaptationScreen() {
   const viewModel = query.data ?? null;
 
   if (!valuesLoading && (!viewModel || viewModel.emptyState)) {
-    return (
-      <div className="space-y-4">
-        <MobileDrillDownHeader title="Adaptation" />
-        <InkEmptyState
-          icon={TrendingUp}
-          title={viewModel?.emptyState?.title ?? 'Adaptation en cours de consolidation'}
-          description={adaptationEmptyDescription(viewModel)}
-        />
-      </div>
-    );
+    return <AdaptationEmptyView viewModel={viewModel} />;
   }
 
   const content = viewModel ?? adaptationLoadingShell();

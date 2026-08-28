@@ -261,6 +261,30 @@ function ClassProviderRow({
   );
 }
 
+async function syncAllConnectedIntegrations(
+  connected: IntegrationDefinition[],
+  setRowSync: React.Dispatch<React.SetStateAction<Partial<Record<IntegrationId, RowSyncState>>>>,
+): Promise<{ results: string[]; errors: string[] }> {
+  const results: string[] = [];
+  const errors: string[] = [];
+
+  for (const integration of connected) {
+    setRowSync((prev) => ({ ...prev, [integration.id]: 'running' }));
+    try {
+      const summary = await syncIntegration(integration.id);
+      results.push(`${integration.name} : ${summary}`);
+      setRowSync((prev) => ({ ...prev, [integration.id]: 'done' }));
+    } catch (err) {
+      errors.push(
+        `${integration.name} : ${err instanceof Error ? err.message : 'erreur inconnue'}`,
+      );
+      setRowSync((prev) => ({ ...prev, [integration.id]: 'error' }));
+    }
+  }
+
+  return { results, errors };
+}
+
 export function IntegrationsHub({
   payload,
   initialPrefs,
@@ -307,23 +331,9 @@ export function IntegrationsHub({
     const loadingToast = toast.loading('Synchronisation en cours', {
       description: `${connected.length} source${connected.length > 1 ? 's' : ''} à synchroniser.`,
     });
-    const results: string[] = [];
-    const errors: string[] = [];
 
     try {
-      for (const integration of connected) {
-        setRowSync((prev) => ({ ...prev, [integration.id]: 'running' }));
-        try {
-          const summary = await syncIntegration(integration.id);
-          results.push(`${integration.name} : ${summary}`);
-          setRowSync((prev) => ({ ...prev, [integration.id]: 'done' }));
-        } catch (err) {
-          errors.push(
-            `${integration.name} : ${err instanceof Error ? err.message : 'erreur inconnue'}`,
-          );
-          setRowSync((prev) => ({ ...prev, [integration.id]: 'error' }));
-        }
-      }
+      const { results, errors } = await syncAllConnectedIntegrations(connected, setRowSync);
 
       await invalidateAfterProviderSync(queryClient);
       router.refresh();

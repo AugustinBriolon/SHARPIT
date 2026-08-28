@@ -1,12 +1,11 @@
 'use client';
 
-import { Check, Loader2, X } from 'lucide-react';
-import { AnimatePresence, motion, useReducedMotion, type Variants } from 'motion/react';
-import { forwardRef, type ReactNode, useLayoutEffect, useRef, useState } from 'react';
-import { EASE_OUT, SPRING_SWAP } from '@/lib/ease';
+import { forwardRef, type ReactNode } from 'react';
+import { AnimatePresence } from 'motion/react';
 import { Button, type ButtonProps } from './base';
+import { IdleStateIcon, LeadingStateIcon, TextSlot, type ButtonState } from './stateful-parts';
 
-export type ButtonState = 'idle' | 'loading' | 'success' | 'error';
+export type { ButtonState } from './stateful-parts';
 
 export interface StatefulButtonProps extends Omit<ButtonProps, 'children'> {
   state?: ButtonState;
@@ -17,16 +16,21 @@ export interface StatefulButtonProps extends Omit<ButtonProps, 'children'> {
   icon?: ReactNode;
 }
 
-const CASCADE_STAGGER = 0.025;
-const ROLL_BLUR = 'blur(6px)';
+type StatefulButtonTextOptions = {
+  state: ButtonState;
+  loadingText: ReactNode;
+  successText: ReactNode;
+  errorText: ReactNode;
+  children: ReactNode;
+};
 
-function resolveStatefulButtonText(
-  state: ButtonState,
-  loadingText: ReactNode,
-  successText: ReactNode,
-  errorText: ReactNode,
-  children: ReactNode,
-): ReactNode {
+function resolveStatefulButtonText({
+  state,
+  loadingText,
+  successText,
+  errorText,
+  children,
+}: StatefulButtonTextOptions): ReactNode {
   if (state === 'loading') {
     return loadingText;
   }
@@ -37,142 +41,6 @@ function resolveStatefulButtonText(
     return errorText;
   }
   return children;
-}
-
-const CASCADE_LETTER_VARIANTS: Variants = {
-  initial: { opacity: 0, y: '105%', filter: ROLL_BLUR },
-  animate: (delay = 0) => ({
-    opacity: 1,
-    y: '0%',
-    filter: 'blur(0px)',
-    transition: { ...SPRING_SWAP, delay },
-  }),
-  exit: (delay = 0) => ({
-    opacity: 0,
-    y: '-105%',
-    filter: ROLL_BLUR,
-    transition: { duration: 0.16, ease: EASE_OUT, delay: delay * 0.5 },
-  }),
-};
-
-const ICON_VARIANTS: Variants = {
-  // Width collapses too, so the icon adds/removes its own space smoothly
-  // instead of popping the row width in a single frame.
-  initial: { opacity: 0, width: 0, scale: 0.7, filter: ROLL_BLUR },
-  animate: {
-    opacity: 1,
-    width: '1.5rem',
-    scale: 1,
-    filter: 'blur(0px)',
-    transition: SPRING_SWAP,
-  },
-  exit: {
-    opacity: 0,
-    width: 0,
-    scale: 0.7,
-    filter: ROLL_BLUR,
-    transition: { duration: 0.16, ease: EASE_OUT },
-  },
-};
-
-function IconSlot({ keyId, children }: { keyId: string; children: ReactNode }) {
-  const reduce = useReducedMotion();
-  return (
-    <motion.span
-      key={keyId}
-      animate={reduce ? { opacity: 1 } : 'animate'}
-      className="inline-grid shrink-0 place-items-center overflow-hidden"
-      exit={reduce ? { opacity: 0 } : 'exit'}
-      initial={reduce ? { opacity: 0 } : 'initial'}
-      transition={reduce ? { duration: 0.15 } : undefined}
-      variants={ICON_VARIANTS}
-    >
-      {children}
-    </motion.span>
-  );
-}
-
-function TextSlot({ value, children }: { value: string; children: ReactNode }) {
-  const reduce = useReducedMotion();
-  const measureRef = useRef<HTMLSpanElement>(null);
-  const [width, setWidth] = useState<number>();
-  const label = typeof children === 'string' ? children : null;
-  const cascade = label !== null && !reduce;
-
-  // Measure strings with the same per-letter layout as the cascade. Measuring
-  // the whole string preserves kerning, which can make it narrower than the
-  // inline-block letters and clip the final glyph during the width animation.
-  useLayoutEffect(() => {
-    const nextWidth = measureRef.current?.offsetWidth;
-    if (!nextWidth) {
-      return;
-    }
-    setWidth((current) => (current === nextWidth ? current : nextWidth));
-  });
-
-  return (
-    <motion.span
-      animate={{ width }}
-      className="relative inline-block overflow-hidden align-bottom whitespace-nowrap"
-      initial={false}
-      transition={reduce ? { duration: 0 } : SPRING_SWAP}
-    >
-      <span ref={measureRef} className="invisible inline-block whitespace-nowrap" aria-hidden>
-        {cascade
-          ? label.split('').map((char, index) => (
-              <span
-                // biome-ignore lint/suspicious/noArrayIndexKey: position is the slot identity.
-                key={index}
-                className="inline-block whitespace-pre"
-              >
-                {char}
-              </span>
-            ))
-          : children}
-      </span>
-
-      {cascade ? (
-        <>
-          <span className="sr-only">{label}</span>
-          <AnimatePresence initial={false}>
-            <motion.span
-              key={`cascade-${value}`}
-              animate="animate"
-              className="absolute top-0 left-0 inline-block whitespace-pre"
-              exit="exit"
-              initial="initial"
-              aria-hidden
-            >
-              {label.split('').map((char, index) => (
-                <motion.span
-                  // biome-ignore lint/suspicious/noArrayIndexKey: position is the slot identity.
-                  key={index}
-                  className="inline-block whitespace-pre will-change-[opacity,filter,transform]"
-                  custom={index * CASCADE_STAGGER}
-                  variants={CASCADE_LETTER_VARIANTS}
-                >
-                  {char}
-                </motion.span>
-              ))}
-            </motion.span>
-          </AnimatePresence>
-        </>
-      ) : (
-        <AnimatePresence initial={false}>
-          <motion.span
-            key={`text-${value}`}
-            animate={reduce ? { opacity: 1 } : { opacity: 1, y: 0, filter: 'blur(0px)' }}
-            className="absolute top-0 left-0 inline-block will-change-[opacity,filter,transform]"
-            exit={reduce ? { opacity: 0 } : { opacity: 0, y: -14, filter: ROLL_BLUR }}
-            initial={reduce ? { opacity: 0 } : { opacity: 0, y: 14, filter: ROLL_BLUR }}
-            transition={reduce ? { duration: 0.15 } : SPRING_SWAP}
-          >
-            {children}
-          </motion.span>
-        </AnimatePresence>
-      )}
-    </motion.span>
-  );
 }
 
 export const StatefulButton = forwardRef<HTMLButtonElement, StatefulButtonProps>(
@@ -190,13 +58,13 @@ export const StatefulButton = forwardRef<HTMLButtonElement, StatefulButtonProps>
     ref,
   ) {
     const isBusy = state === 'loading';
-    const stateText = resolveStatefulButtonText(
+    const stateText = resolveStatefulButtonText({
       state,
       loadingText,
       successText,
       errorText,
       children,
-    );
+    });
     const textKey = typeof stateText === 'string' ? `${state}-${stateText}` : state;
 
     return (
@@ -211,29 +79,9 @@ export const StatefulButton = forwardRef<HTMLButtonElement, StatefulButtonProps>
           aria-live="polite"
           className="relative inline-flex items-center justify-center overflow-hidden"
         >
-          <AnimatePresence initial={false}>
-            {state === 'loading' ? (
-              <IconSlot keyId="loading-icon">
-                <Loader2 className="h-4 w-4 animate-spin" />
-              </IconSlot>
-            ) : null}
-            {state === 'success' ? (
-              <IconSlot keyId="success-icon">
-                <Check className="h-4 w-4" />
-              </IconSlot>
-            ) : null}
-            {state === 'error' ? (
-              <IconSlot keyId="error-icon">
-                <X className="h-4 w-4" />
-              </IconSlot>
-            ) : null}
-          </AnimatePresence>
-
+          <LeadingStateIcon state={state} />
           <TextSlot value={textKey}>{stateText}</TextSlot>
-
-          <AnimatePresence initial={false}>
-            {state === 'idle' && icon ? <IconSlot keyId="idle-icon">{icon}</IconSlot> : null}
-          </AnimatePresence>
+          <IdleStateIcon icon={icon} state={state} />
         </span>
       </Button>
     );

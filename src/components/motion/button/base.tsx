@@ -3,8 +3,11 @@
 import { AnimatePresence, type HTMLMotionProps, motion, useReducedMotion } from 'motion/react';
 import {
   forwardRef,
+  type Dispatch,
+  type MutableRefObject,
   type PointerEvent,
   type ReactNode,
+  type SetStateAction,
   useCallback,
   useRef,
   useState,
@@ -48,6 +51,66 @@ const SIZE_CLASS: Record<ButtonSize, string> = {
   icon: 'h-8 w-8 rounded-lg',
 };
 
+function spawnRipple(
+  event: PointerEvent<HTMLButtonElement>,
+  setRipples: Dispatch<SetStateAction<Ripple[]>>,
+  nextId: MutableRefObject<number>,
+) {
+  const rect = event.currentTarget.getBoundingClientRect();
+  const size = Math.max(rect.width, rect.height) * 2;
+  const id = nextId.current++;
+  setRipples((prev) => [
+    ...prev,
+    {
+      id,
+      x: event.clientX - rect.left,
+      y: event.clientY - rect.top,
+      size,
+    },
+  ]);
+}
+
+function buttonMotionProps(reduce: boolean | null, canHover: boolean, pressScale: number) {
+  return {
+    whileHover: reduce || !canHover ? undefined : { scale: 1.02 },
+    whileTap: reduce ? undefined : { scale: pressScale },
+  };
+}
+
+function ButtonRipples({
+  ripples,
+  onComplete,
+}: {
+  ripples: Ripple[];
+  onComplete: (id: number) => void;
+}) {
+  return (
+    <span className="pointer-events-none absolute inset-0 overflow-hidden rounded-[inherit]">
+      <AnimatePresence>
+        {ripples.map((r) => (
+          <motion.span
+            key={r.id}
+            animate={{ scale: 1, opacity: 0 }}
+            className="absolute rounded-full bg-current"
+            exit={{ opacity: 0 }}
+            initial={{ scale: 0.05, opacity: 0.3 }}
+            transition={{ duration: 1.6, ease: EASE_OUT }}
+            style={{
+              left: r.x,
+              top: r.y,
+              width: r.size,
+              height: r.size,
+              x: '-50%',
+              y: '-50%',
+            }}
+            onAnimationComplete={() => onComplete(r.id)}
+          />
+        ))}
+      </AnimatePresence>
+    </span>
+  );
+}
+
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
   {
     variant = 'primary',
@@ -69,18 +132,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
   const handlePointerDown = useCallback(
     (event: PointerEvent<HTMLButtonElement>) => {
       if (ripple && !reduce) {
-        const rect = event.currentTarget.getBoundingClientRect();
-        const size = Math.max(rect.width, rect.height) * 2;
-        const id = nextId.current++;
-        setRipples((prev) => [
-          ...prev,
-          {
-            id,
-            x: event.clientX - rect.left,
-            y: event.clientY - rect.top,
-            size,
-          },
-        ]);
+        spawnRipple(event, setRipples, nextId);
       }
       onPointerDown?.(event);
     },
@@ -92,8 +144,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
       ref={ref}
       transition={SPRING_PRESS}
       type="button"
-      whileHover={reduce || !canHover ? undefined : { scale: 1.02 }}
-      whileTap={reduce ? undefined : { scale: pressScale }}
+      {...buttonMotionProps(reduce, canHover, pressScale)}
       className={cn(
         'inline-flex items-center justify-center font-medium select-none',
         'transition-colors',
@@ -107,29 +158,10 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
       {...rest}
     >
       {ripple && !reduce ? (
-        <span className="pointer-events-none absolute inset-0 overflow-hidden rounded-[inherit]">
-          <AnimatePresence>
-            {ripples.map((r) => (
-              <motion.span
-                key={r.id}
-                animate={{ scale: 1, opacity: 0 }}
-                className="absolute rounded-full bg-current"
-                exit={{ opacity: 0 }}
-                initial={{ scale: 0.05, opacity: 0.3 }}
-                transition={{ duration: 1.6, ease: EASE_OUT }}
-                style={{
-                  left: r.x,
-                  top: r.y,
-                  width: r.size,
-                  height: r.size,
-                  x: '-50%',
-                  y: '-50%',
-                }}
-                onAnimationComplete={() => setRipples((prev) => prev.filter((x) => x.id !== r.id))}
-              />
-            ))}
-          </AnimatePresence>
-        </span>
+        <ButtonRipples
+          ripples={ripples}
+          onComplete={(id) => setRipples((prev) => prev.filter((x) => x.id !== id))}
+        />
       ) : null}
       {children}
     </motion.button>
@@ -147,8 +179,7 @@ export const ButtonLink = forwardRef<HTMLAnchorElement, ButtonLinkProps>(functio
     <motion.a
       ref={ref}
       transition={SPRING_PRESS}
-      whileHover={reduce || !canHover ? undefined : { scale: 1.02 }}
-      whileTap={reduce ? undefined : { scale: pressScale }}
+      {...buttonMotionProps(reduce, canHover, pressScale)}
       className={cn(
         'inline-flex items-center justify-center font-medium select-none',
         'transition-colors',

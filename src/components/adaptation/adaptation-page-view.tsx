@@ -61,71 +61,142 @@ function limitingScoreFromDimensions(
   return match.dim.score;
 }
 
-export function AdaptationPageView({
-  date,
-  isToday,
-  maxDate,
-  minDate,
-  onDateChange,
-  onPreviousDay,
-  onNextDay,
-  loading = false,
-  adaptationIndex,
-  statusLabel,
-  statusClassName,
-  trendLabel,
-  loadMultiplier,
-  limitingFactor,
-  plateauRisk,
-  overreachingWithoutAdaptation,
-  dimensions,
-  availableDimCount,
-  historyLength,
-  confidencePct,
-}: AdaptationPageViewProps) {
-  const limitingScore = loading ? null : limitingScoreFromDimensions(limitingFactor, dimensions);
+function buildAdaptationAlerts(
+  loading: boolean,
+  plateauRisk: boolean,
+  overreachingWithoutAdaptation: boolean,
+): DrillDownAlert[] {
+  if (loading) {
+    return [];
+  }
+  return (
+    [
+      plateauRisk && {
+        colorClass: 'text-signal-caution',
+        label: 'ton adaptation stagne sur la fenêtre récente.',
+        prefix: 'Plateau',
+      },
+      overreachingWithoutAdaptation && {
+        colorClass: 'text-signal-risk',
+        label: 'charge haute sans réponse adaptative en face.',
+        prefix: 'Surcharge sans gain',
+        tone: 'risk',
+      },
+    ] as (DrillDownAlert | false)[]
+  ).filter((alert): alert is DrillDownAlert => alert !== false);
+}
 
-  /* Plateau and unrewarded overload were the last two lines of a fold nobody
-     opened. They are exceptions, not context — they belong where exceptions go. */
-  const alerts: DrillDownAlert[] = loading
-    ? []
-    : (
-        [
-          plateauRisk && {
-            colorClass: 'text-signal-caution',
-            label: 'ton adaptation stagne sur la fenêtre récente.',
-            prefix: 'Plateau',
-          },
-          overreachingWithoutAdaptation && {
-            colorClass: 'text-signal-risk',
-            label: 'charge haute sans réponse adaptative en face.',
-            prefix: 'Surcharge sans gain',
-            tone: 'risk',
-          },
-        ] as (DrillDownAlert | false)[]
-      ).filter((alert): alert is DrillDownAlert => alert !== false);
+function filterDisplayDimensions(
+  dimensions: AdaptationPageViewProps['dimensions'],
+  loading: boolean,
+) {
+  if (loading) {
+    return dimensions.filter((d) => d.key !== 'neuromuscularEfficiency');
+  }
+  return dimensions.filter((d) => {
+    if (d.key === 'neuromuscularEfficiency' && !d.dim.available) {
+      return false;
+    }
+    return true;
+  });
+}
 
-  const neuromuscular = dimensions.find((d) => d.key === 'neuromuscularEfficiency');
-  const neuromuscularMissing = !loading && neuromuscular !== null && !neuromuscular.dim.available;
-  const displayDimensions = loading
-    ? dimensions.filter((d) => d.key !== 'neuromuscularEfficiency')
-    : dimensions.filter((d) => {
-        if (d.key === 'neuromuscularEfficiency' && !d.dim.available) {
-          return false;
-        }
-        return true;
-      });
-
+function resolveFreinDimensions(
+  displayDimensions: AdaptationPageViewProps['dimensions'],
+  loading: boolean,
+  limitingFactor: string | null,
+) {
   const freinDimension =
     !loading && limitingFactor !== null
       ? (displayDimensions.find((d) => d.label === limitingFactor) ?? null)
       : null;
   const otherDimensions = displayDimensions.filter((d) => d !== freinDimension);
+  return { freinDimension, otherDimensions };
+}
 
-  /* The limiter and its score are the first card below; repeating them here left
-     the plate saying nothing the next 3 cm did not already say. The trend is the
-     one reading no card carries. */
+function AdaptationDimensionList({
+  freinDimension,
+  otherDimensions,
+  loading,
+}: {
+  freinDimension: AdaptationPageViewProps['dimensions'][number] | null;
+  otherDimensions: AdaptationPageViewProps['dimensions'];
+  loading: boolean;
+}) {
+  return (
+    <div className="mt-3 space-y-4">
+      {[...(freinDimension ? [freinDimension] : []), ...otherDimensions].map((d) => (
+        <DrillDownDimensionRow
+          key={d.key}
+          description={d.description}
+          dim={d.dim}
+          emphasized={!loading && freinDimension !== null && d.key === freinDimension.key}
+          label={d.label}
+          loading={loading}
+          protectiveTone
+        />
+      ))}
+    </div>
+  );
+}
+
+function deriveAdaptationPageState(props: AdaptationPageViewProps) {
+  const {
+    loading,
+    limitingFactor,
+    plateauRisk,
+    overreachingWithoutAdaptation,
+    dimensions,
+    trendLabel,
+  } = props;
+  const limitingScore = loading ? null : limitingScoreFromDimensions(limitingFactor, dimensions);
+  const alerts = buildAdaptationAlerts(loading, plateauRisk, overreachingWithoutAdaptation);
+  const neuromuscular = dimensions.find((d) => d.key === 'neuromuscularEfficiency');
+  const neuromuscularMissing = !loading && neuromuscular !== null && !neuromuscular.dim.available;
+  const displayDimensions = filterDisplayDimensions(dimensions, loading);
+  const { freinDimension, otherDimensions } = resolveFreinDimensions(
+    displayDimensions,
+    loading,
+    limitingFactor,
+  );
   const actionLine = !loading && trendLabel && trendLabel !== '—' ? trendLabel : null;
+  return {
+    limitingScore,
+    alerts,
+    neuromuscularMissing,
+    freinDimension,
+    otherDimensions,
+    actionLine,
+  };
+}
+
+export function AdaptationPageView(props: AdaptationPageViewProps) {
+  const {
+    date,
+    isToday,
+    maxDate,
+    minDate,
+    onDateChange,
+    onPreviousDay,
+    onNextDay,
+    loading = false,
+    adaptationIndex,
+    statusLabel,
+    statusClassName,
+    loadMultiplier,
+    limitingFactor,
+    availableDimCount,
+    historyLength,
+    confidencePct,
+  } = props;
+  const {
+    limitingScore,
+    alerts,
+    neuromuscularMissing,
+    freinDimension,
+    otherDimensions,
+    actionLine,
+  } = deriveAdaptationPageState(props);
 
   return (
     <MetricDrillDownPage
@@ -171,19 +242,11 @@ export function AdaptationPageView({
 
       <section className="px-0.5">
         <DrillDownSectionLabel>Dimensions</DrillDownSectionLabel>
-        <div className="mt-3 space-y-4">
-          {[...(freinDimension ? [freinDimension] : []), ...otherDimensions].map((d) => (
-            <DrillDownDimensionRow
-              key={d.key}
-              description={d.description}
-              dim={d.dim}
-              emphasized={!loading && freinDimension !== null && d.key === freinDimension.key}
-              label={d.label}
-              loading={loading}
-              protectiveTone
-            />
-          ))}
-        </div>
+        <AdaptationDimensionList
+          freinDimension={freinDimension}
+          loading={loading}
+          otherDimensions={otherDimensions}
+        />
         {neuromuscularMissing ? (
           <p className="annotation-clinical mt-4">
             Efficacité neuromusculaire indisponible — moyenne de dérive FC sur 14 jours. Il faut au

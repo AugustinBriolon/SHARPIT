@@ -20,14 +20,19 @@ function asHintLine(line: string | CursorHintLine): CursorHintLine {
   return typeof line === 'string' ? { text: line } : line;
 }
 
+type PlaceCursorHintOptions = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  viewport: { w: number; h: number };
+};
+
 /** Keep the probe readout next to the cursor, never off-screen. */
-export function placeCursorHint(
-  x: number,
-  y: number,
-  width: number,
-  height: number,
-  viewport: { w: number; h: number },
-): { left: number; top: number } {
+export function placeCursorHint({ x, y, width, height, viewport }: PlaceCursorHintOptions): {
+  left: number;
+  top: number;
+} {
   const gap = 12;
   const pad = 8;
   let left = x + gap;
@@ -59,9 +64,12 @@ export function CursorFollowHint({ hint }: { hint: CursorHintState }) {
     const node = ref.current;
     const width = node?.offsetWidth ?? 160;
     const height = node?.offsetHeight ?? 48;
-    const placed = placeCursorHint(hint.x, hint.y, width, height, {
-      w: window.innerWidth,
-      h: window.innerHeight,
+    const placed = placeCursorHint({
+      x: hint.x,
+      y: hint.y,
+      width,
+      height,
+      viewport: { w: window.innerWidth, h: window.innerHeight },
     });
     setBox({ ...placed, ready: true });
   }, [hint]);

@@ -27,6 +27,29 @@ type TravelContextResponse = {
   contexts?: TravelContextItem[];
 };
 
+function travelContextPool(data: TravelContextResponse | undefined): TravelContextItem[] {
+  if (data?.contexts) {
+    return data.contexts;
+  }
+  if (data?.activeList) {
+    return data.activeList;
+  }
+  if (data?.active) {
+    return [data.active];
+  }
+  return [];
+}
+
+function travelsForPlanningRange(
+  data: TravelContextResponse | undefined,
+  rangeStart: Date | undefined,
+  rangeEnd: Date | undefined,
+): TravelContextItem[] {
+  const from = rangeStart ?? new Date();
+  const to = rangeEnd ?? from;
+  return filterTravelsOverlappingRange(travelContextPool(data), from, to);
+}
+
 function formatTravelWindow(startDate: string, endDate: string): string {
   const start = asLocalCalendarDate(startDate);
   const end = asLocalCalendarDate(endDate);
@@ -59,15 +82,10 @@ export function TravelContextBanner({
     staleTime: 60_000,
   });
 
-  const travels = useMemo(() => {
-    const from = rangeStart ?? new Date();
-    const to = rangeEnd ?? from;
-    const pool =
-      query.data?.contexts ??
-      query.data?.activeList ??
-      (query.data?.active ? [query.data.active] : []);
-    return filterTravelsOverlappingRange(pool, from, to);
-  }, [query.data, rangeEnd, rangeStart]);
+  const travels = useMemo(
+    () => travelsForPlanningRange(query.data, rangeStart, rangeEnd),
+    [query.data, rangeEnd, rangeStart],
+  );
 
   if (travels.length === 0) {
     return null;

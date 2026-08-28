@@ -21,6 +21,20 @@ interface MetricLineChartProps<T extends { label: string }> {
   loading?: boolean;
 }
 
+function tipDisplayLabel(
+  payload: Array<{ payload?: { date?: string; label?: string } }> | undefined,
+): string | undefined {
+  const rawDate = payload?.[0]?.payload?.date;
+  if (rawDate) {
+    return new Date(rawDate).toLocaleDateString('fr-FR', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+    });
+  }
+  return payload?.[0]?.payload?.label;
+}
+
 function Tip({
   active,
   payload,
@@ -33,14 +47,7 @@ function Tip({
   if (!active || !payload?.length || payload[0].value === null) {
     return null;
   }
-  const rawDate = payload[0]?.payload?.date;
-  const displayLabel = rawDate
-    ? new Date(rawDate).toLocaleDateString('fr-FR', {
-        day: 'numeric',
-        month: 'short',
-        year: 'numeric',
-      })
-    : payload[0]?.payload?.label;
+  const displayLabel = tipDisplayLabel(payload);
   return (
     <div className="analysis-panel rounded-analysis px-3 py-2 text-xs shadow-none">
       <p className="text-muted-foreground">{displayLabel}</p>

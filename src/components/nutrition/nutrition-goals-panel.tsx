@@ -59,35 +59,29 @@ function CalorieRing({
   );
 }
 
-export function NutritionGoalsPanel({
-  progress,
-  fuelDensity = null,
-  loading = false,
-}: {
-  progress: NutritionGoalsProgress | null;
-  fuelDensity?: NutritionFuelDensity | null;
-  loading?: boolean;
-}) {
-  if (loading) {
-    return (
-      <section className="analysis-panel rounded-analysis-lg space-y-4 p-4 sm:p-5">
-        <div className="bg-muted h-4 w-40 animate-pulse rounded-full" />
-        <div className="grid gap-5 sm:grid-cols-[auto_minmax(0,1fr)] sm:items-center">
-          <div className="bg-muted size-32 shrink-0 animate-pulse rounded-full" />
-          <div className="min-w-0 space-y-3">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="bg-muted h-8 animate-pulse rounded-md" />
-            ))}
-          </div>
+function NutritionGoalsSkeleton() {
+  return (
+    <section className="analysis-panel rounded-analysis-lg space-y-4 p-4 sm:p-5">
+      <div className="bg-muted h-4 w-40 animate-pulse rounded-full" />
+      <div className="grid gap-5 sm:grid-cols-[auto_minmax(0,1fr)] sm:items-center">
+        <div className="bg-muted size-32 shrink-0 animate-pulse rounded-full" />
+        <div className="min-w-0 space-y-3">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="bg-muted h-8 animate-pulse rounded-md" />
+          ))}
         </div>
-      </section>
-    );
-  }
+      </div>
+    </section>
+  );
+}
 
-  if (!progress) {
-    return null;
-  }
-
+function NutritionGoalsContent({
+  progress,
+  fuelDensity,
+}: {
+  progress: NutritionGoalsProgress;
+  fuelDensity: NutritionFuelDensity | null;
+}) {
   const { calories, protein, carbohydrates, fat, exerciseCalories, calorieBudget } = progress;
 
   return (
@@ -148,4 +142,24 @@ export function NutritionGoalsPanel({
       ) : null}
     </section>
   );
+}
+
+export function NutritionGoalsPanel({
+  progress,
+  fuelDensity = null,
+  loading = false,
+}: {
+  progress: NutritionGoalsProgress | null;
+  fuelDensity?: NutritionFuelDensity | null;
+  loading?: boolean;
+}) {
+  if (loading) {
+    return <NutritionGoalsSkeleton />;
+  }
+
+  if (!progress) {
+    return null;
+  }
+
+  return <NutritionGoalsContent fuelDensity={fuelDensity ?? null} progress={progress} />;
 }

@@ -45,20 +45,31 @@ const TOOL_LABELS: Record<string, { running: string; done: string }> = {
   },
 };
 
-function stepStatus(part: ToolPartLite, streamIdle: boolean): 'pending' | 'active' | 'complete' {
+function isStepComplete(part: ToolPartLite, streamIdle: boolean): boolean {
   if (isToolSuccess(part) || part.state === 'output-denied') {
-    return 'complete';
+    return true;
   }
   if (isToolFailure(part)) {
-    return 'complete';
+    return true;
   }
   if (part.state === 'approval-responded' && streamIdle) {
+    return true;
+  }
+  return false;
+}
+
+function isStepActive(part: ToolPartLite, streamIdle: boolean): boolean {
+  if (part.state === 'approval-responded' && !streamIdle) {
+    return true;
+  }
+  return !streamIdle && !isToolSuccess(part) && !isToolFailure(part);
+}
+
+function stepStatus(part: ToolPartLite, streamIdle: boolean): 'pending' | 'active' | 'complete' {
+  if (isStepComplete(part, streamIdle)) {
     return 'complete';
   }
-  if (part.state === 'approval-responded') {
-    return 'active';
-  }
-  if (!streamIdle && !isToolSuccess(part) && !isToolFailure(part)) {
+  if (isStepActive(part, streamIdle)) {
     return 'active';
   }
   return 'complete';

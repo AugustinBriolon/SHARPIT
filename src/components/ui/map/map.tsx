@@ -26,6 +26,15 @@ import {
   shouldStartRouteReveal,
 } from '@/lib/motion/route-reveal-visibility';
 import { cn } from '@/lib/utils';
+import {
+  requestMapLocation,
+  setRouteLineData,
+  startRouteRevealAnimation,
+  syncControlledViewport,
+  syncMapGeoJsonLayerVisibility,
+  syncMarkerFromOptions,
+  toggleMapFullscreen,
+} from '@/components/ui/map/map-sync-helpers';
 
 const defaultStyles = {
   dark: 'https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json',
@@ -353,31 +362,7 @@ const Map = forwardRef<MapRef, MapProps>(function Map(
     if (!mapInstance || !isControlled || !viewport) {
       return;
     }
-    if (mapInstance.isMoving()) {
-      return;
-    }
-
-    const current = getViewport(mapInstance);
-    const next = {
-      center: viewport.center ?? current.center,
-      zoom: viewport.zoom ?? current.zoom,
-      bearing: viewport.bearing ?? current.bearing,
-      pitch: viewport.pitch ?? current.pitch,
-    };
-
-    if (
-      next.center[0] === current.center[0] &&
-      next.center[1] === current.center[1] &&
-      next.zoom === current.zoom &&
-      next.bearing === current.bearing &&
-      next.pitch === current.pitch
-    ) {
-      return;
-    }
-
-    internalUpdateRef.current = true;
-    mapInstance.jumpTo(next);
-    internalUpdateRef.current = false;
+    syncControlledViewport(mapInstance, viewport, getViewport, internalUpdateRef);
   }, [mapInstance, isControlled, viewport]);
 
   // Handle style change
@@ -546,33 +531,13 @@ function MapMarker({
   const { offset, rotation, rotationAlignment, pitchAlignment } = markerOptions;
 
   useEffect(() => {
-    const current = marker.getLngLat();
-    if (current.lng !== longitude || current.lat !== latitude) {
-      marker.setLngLat([longitude, latitude]);
-    }
-
-    if (marker.isDraggable() !== draggable) {
-      marker.setDraggable(draggable);
-    }
-
-    const currentOffset = marker.getOffset();
-    const newOffset = offset ?? [0, 0];
-    const [newOffsetX, newOffsetY] = Array.isArray(newOffset)
-      ? newOffset
-      : [newOffset.x, newOffset.y];
-    if (currentOffset.x !== newOffsetX || currentOffset.y !== newOffsetY) {
-      marker.setOffset(newOffset);
-    }
-
-    if (marker.getRotation() !== (rotation ?? 0)) {
-      marker.setRotation(rotation ?? 0);
-    }
-    if (marker.getRotationAlignment() !== (rotationAlignment ?? 'auto')) {
-      marker.setRotationAlignment(rotationAlignment ?? 'auto');
-    }
-    if (marker.getPitchAlignment() !== (pitchAlignment ?? 'auto')) {
-      marker.setPitchAlignment(pitchAlignment ?? 'auto');
-    }
+    syncMarkerFromOptions({
+      marker,
+      longitude,
+      latitude,
+      draggable,
+      markerOptions: { offset, rotation, rotationAlignment, pitchAlignment },
+    });
   }, [marker, longitude, latitude, draggable, offset, rotation, rotationAlignment, pitchAlignment]);
 
   return <MarkerContext.Provider value={{ marker, map }}>{children}</MarkerContext.Provider>;
@@ -843,6 +808,68 @@ function ControlButton({
   );
 }
 
+function MapControlGroups({
+  showZoom,
+  showCompass,
+  showLocate,
+  showFullscreen,
+  waitingForLocation,
+  onZoomIn,
+  onZoomOut,
+  onResetBearing,
+  onLocate,
+  onFullscreen,
+}: {
+  showZoom: boolean;
+  showCompass: boolean;
+  showLocate: boolean;
+  showFullscreen: boolean;
+  waitingForLocation: boolean;
+  onZoomIn: () => void;
+  onZoomOut: () => void;
+  onResetBearing: () => void;
+  onLocate: () => void;
+  onFullscreen: () => void;
+}) {
+  return (
+    <>
+      {showZoom ? (
+        <ControlGroup>
+          <ControlButton label="Zoom in" onClick={onZoomIn}>
+            <Plus className="size-4" />
+          </ControlButton>
+          <ControlButton label="Zoom out" onClick={onZoomOut}>
+            <Minus className="size-4" />
+          </ControlButton>
+        </ControlGroup>
+      ) : null}
+      {showCompass ? (
+        <ControlGroup>
+          <CompassButton onClick={onResetBearing} />
+        </ControlGroup>
+      ) : null}
+      {showLocate ? (
+        <ControlGroup>
+          <ControlButton disabled={waitingForLocation} label="Find my location" onClick={onLocate}>
+            {waitingForLocation ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <Locate className="size-4" />
+            )}
+          </ControlButton>
+        </ControlGroup>
+      ) : null}
+      {showFullscreen ? (
+        <ControlGroup>
+          <ControlButton label="Toggle fullscreen" onClick={onFullscreen}>
+            <Maximize className="size-4" />
+          </ControlButton>
+        </ControlGroup>
+      ) : null}
+    </>
+  );
+}
+
 function MapControls({
   position = 'bottom-right',
   showZoom = true,
@@ -868,83 +895,29 @@ function MapControls({
   }, [map]);
 
   const handleLocate = useCallback(() => {
-    setWaitingForLocation(true);
-    if ('geolocation' in navigator) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          const coords = {
-            longitude: pos.coords.longitude,
-            latitude: pos.coords.latitude,
-          };
-          map?.flyTo({
-            center: [coords.longitude, coords.latitude],
-            zoom: 14,
-            duration: 1500,
-          });
-          onLocate?.(coords);
-          setWaitingForLocation(false);
-        },
-        (error) => {
-          console.error('Error getting location:', error);
-          setWaitingForLocation(false);
-        },
-      );
-    }
+    requestMapLocation(map, onLocate, setWaitingForLocation);
   }, [map, onLocate]);
 
   const handleFullscreen = useCallback(() => {
-    const container = map?.getContainer();
-    if (!container) {
-      return;
-    }
-    if (document.fullscreenElement) {
-      document.exitFullscreen();
-    } else {
-      container.requestFullscreen();
-    }
+    toggleMapFullscreen(map);
   }, [map]);
 
   return (
     <div
       className={cn('absolute z-10 flex flex-col gap-1.5', positionClasses[position], className)}
     >
-      {showZoom && (
-        <ControlGroup>
-          <ControlButton label="Zoom in" onClick={handleZoomIn}>
-            <Plus className="size-4" />
-          </ControlButton>
-          <ControlButton label="Zoom out" onClick={handleZoomOut}>
-            <Minus className="size-4" />
-          </ControlButton>
-        </ControlGroup>
-      )}
-      {showCompass && (
-        <ControlGroup>
-          <CompassButton onClick={handleResetBearing} />
-        </ControlGroup>
-      )}
-      {showLocate && (
-        <ControlGroup>
-          <ControlButton
-            disabled={waitingForLocation}
-            label="Find my location"
-            onClick={handleLocate}
-          >
-            {waitingForLocation ? (
-              <Loader2 className="size-4 animate-spin" />
-            ) : (
-              <Locate className="size-4" />
-            )}
-          </ControlButton>
-        </ControlGroup>
-      )}
-      {showFullscreen && (
-        <ControlGroup>
-          <ControlButton label="Toggle fullscreen" onClick={handleFullscreen}>
-            <Maximize className="size-4" />
-          </ControlButton>
-        </ControlGroup>
-      )}
+      <MapControlGroups
+        showCompass={showCompass}
+        showFullscreen={showFullscreen}
+        showLocate={showLocate}
+        showZoom={showZoom}
+        waitingForLocation={waitingForLocation}
+        onFullscreen={handleFullscreen}
+        onLocate={handleLocate}
+        onResetBearing={handleResetBearing}
+        onZoomIn={handleZoomIn}
+        onZoomOut={handleZoomOut}
+      />
     </div>
   );
 }
@@ -1205,34 +1178,15 @@ function MapRoute({
       return;
     }
 
-    const setLine = (points: [number, number][]) => {
-      source.setData({
-        type: 'Feature',
-        properties: {},
-        geometry: { type: 'LineString', coordinates: points },
-      });
-    };
-
-    if (!animate || !motionConfig.shouldAnimate({ essential: false })) {
-      setLine(coordinates);
-      return;
-    }
-
-    let frameId: number;
-    const startedAt = performance.now();
-    const durationMs = revealDurationMs(coordinates.length);
-
-    const step = (now: number) => {
-      const elapsed = now - startedAt;
-      setLine(coordinates.slice(0, revealedPointCount(elapsed, durationMs, coordinates.length)));
-
-      if (!isRevealComplete(elapsed, durationMs)) {
-        frameId = requestAnimationFrame(step);
-      }
-    };
-
-    frameId = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(frameId);
+    return startRouteRevealAnimation({
+      source,
+      coordinates,
+      animate,
+      shouldAnimateMotion: motionConfig.shouldAnimate({ essential: false }),
+      durationMs: revealDurationMs,
+      revealedCount: revealedPointCount,
+      isComplete: isRevealComplete,
+    });
   }, [isLoaded, isVisible, map, coordinates, sourceId, animate]);
 
   useEffect(() => {
@@ -1448,44 +1402,17 @@ function MapGeoJSON<P extends GeoJSON.GeoJsonProperties = GeoJSON.GeoJsonPropert
       return;
     }
 
-    if (showFill && !map.getLayer(fillLayerId)) {
-      map.addLayer(
-        {
-          id: fillLayerId,
-          type: 'fill',
-          source: sourceId,
-          paint: mergedFillPaint,
-        },
-        beforeId,
-      );
-    } else if (!showFill && map.getLayer(fillLayerId)) {
-      map.removeLayer(fillLayerId);
-    }
-
-    if (showLine && !map.getLayer(lineLayerId)) {
-      map.addLayer(
-        {
-          id: lineLayerId,
-          type: 'line',
-          source: sourceId,
-          paint: mergedLinePaint,
-        },
-        beforeId,
-      );
-    } else if (!showLine && map.getLayer(lineLayerId)) {
-      map.removeLayer(lineLayerId);
-    }
-
-    if (showFill && map.getLayer(fillLayerId)) {
-      for (const [key, value] of Object.entries(mergedFillPaint)) {
-        map.setPaintProperty(fillLayerId, key as keyof MapFillPaint, value as never);
-      }
-    }
-    if (showLine && map.getLayer(lineLayerId)) {
-      for (const [key, value] of Object.entries(mergedLinePaint)) {
-        map.setPaintProperty(lineLayerId, key as keyof MapLinePaint, value as never);
-      }
-    }
+    syncMapGeoJsonLayerVisibility({
+      map,
+      sourceId,
+      fillLayerId,
+      lineLayerId,
+      showFill,
+      showLine,
+      mergedFillPaint,
+      mergedLinePaint,
+      beforeId,
+    });
   }, [
     isLoaded,
     map,

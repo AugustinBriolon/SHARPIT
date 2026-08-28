@@ -1,15 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { LocationPlaceCoordinates } from '@/components/ui/location-place-coordinates';
+import { LocationPlaceResults } from '@/components/ui/location-place-results';
 import { Input } from '@/components/ui/input';
-import { cn } from '@/lib/utils';
-import type { GeocodedPlace } from '@/lib/geocoding/types';
+import { useLocationPlacePickerState } from '@/components/ui/use-location-place-picker-state';
+import type { LocationPlaceValue } from '@/components/ui/location-place-picker';
 
-export type LocationPlaceValue = {
-  label: string;
-  latitude: number;
-  longitude: number;
-} | null;
+export type { LocationPlaceValue };
 
 export function LocationPlacePicker({
   value,
@@ -24,42 +21,11 @@ export function LocationPlacePicker({
   disabled?: boolean;
   id?: string;
 }) {
-  const [draft, setDraft] = useState<string | null>(null);
-  const query = draft ?? value?.label ?? '';
-  const [results, setResults] = useState<GeocodedPlace[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [open, setOpen] = useState(false);
-
-  useEffect(() => {
-    setDraft(null);
-  }, [value?.label]);
-
-  useEffect(() => {
-    if (disabled) {
-      return;
-    }
-    const trimmed = query.trim();
-    if (trimmed.length < 2 || (value && trimmed === value.label)) {
-      setResults([]);
-      return;
-    }
-
-    const timer = setTimeout(async () => {
-      setLoading(true);
-      try {
-        const res = await fetch(`/api/geocoding/search?q=${encodeURIComponent(trimmed)}`);
-        const data = (await res.json()) as { places?: GeocodedPlace[] };
-        setResults(data.places ?? []);
-        setOpen(true);
-      } catch {
-        setResults([]);
-      } finally {
-        setLoading(false);
-      }
-    }, 350);
-
-    return () => clearTimeout(timer);
-  }, [disabled, query, value]);
+  const { onDraftChange, query, search, selectPlace } = useLocationPlacePickerState({
+    disabled,
+    onChange,
+    value,
+  });
 
   return (
     <div className="relative min-w-0 space-y-1">
@@ -68,50 +34,18 @@ export function LocationPlacePicker({
         id={id}
         placeholder={placeholder}
         value={query}
-        onBlur={() => setTimeout(() => setOpen(false), 150)}
-        onFocus={() => setOpen(true)}
-        onChange={(e) => {
-          setDraft(e.target.value);
-          if (value && e.target.value !== value.label) {
-            onChange(null);
-          }
-        }}
+        onBlur={() => setTimeout(() => search.setOpen(false), 150)}
+        onChange={(e) => onDraftChange(e.target.value)}
+        onFocus={() => search.setOpen(true)}
       />
-      {value ? (
-        <p className="text-muted-foreground text-xs">
-          Coordonnées : {value.latitude.toFixed(4)}, {value.longitude.toFixed(4)}
-        </p>
-      ) : null}
-      {open && (loading || results.length > 0) ? (
-        <ul className="border-border bg-background ring-foreground/10 absolute z-20 mt-1 max-h-48 w-full overflow-auto rounded-lg border shadow-none ring-1">
-          {loading ? (
-            <li className="text-muted-foreground px-3 py-2 text-xs">Recherche…</li>
-          ) : (
-            results.map((place) => (
-              <li key={place.placeId}>
-                <button
-                  type="button"
-                  className={cn(
-                    'hover:bg-muted/60 focus-visible:ring-primary/35 min-h-11 w-full px-3 py-2.5 text-left text-xs focus-visible:ring-2 focus-visible:outline-hidden lg:min-h-9 lg:py-2',
-                    value?.label === place.label && 'bg-muted/40',
-                  )}
-                  onMouseDown={(e) => e.preventDefault()}
-                  onClick={() => {
-                    onChange({
-                      label: place.label,
-                      latitude: place.latitude,
-                      longitude: place.longitude,
-                    });
-                    setDraft(null);
-                    setOpen(false);
-                  }}
-                >
-                  {place.label}
-                </button>
-              </li>
-            ))
-          )}
-        </ul>
+      {value ? <LocationPlaceCoordinates value={value} /> : null}
+      {search.open ? (
+        <LocationPlaceResults
+          loading={search.loading}
+          results={search.results}
+          value={value}
+          onSelect={selectPlace}
+        />
       ) : null}
     </div>
   );

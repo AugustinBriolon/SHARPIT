@@ -15,13 +15,19 @@ import {
   useState,
 } from 'react';
 import { EASE_OUT } from '@/lib/ease';
+import { SelectContentPanel } from '@/components/motion/select-content-panel';
+import {
+  SELECT_CHEVRON_TRANSITION,
+  selectTriggerAnimate,
+  selectTriggerRadiusTransition,
+} from '@/components/motion/select-motion-helpers';
 import { cn } from '@/lib/utils';
 
-const INSTANT_TRANSITION: Transition = { duration: 0 };
+const INSTANT_TRANSITION = { duration: 0 } as const;
 
 // Spring with bounce powers the unfold/separation; per-property timings in the
 // content choreograph it (see SelectContent). Mirrors bouncy-accordion's feel.
-const CHEVRON_TRANSITION: Transition = { type: 'spring', duration: 0.4, bounce: 0.3 };
+const CHEVRON_TRANSITION = SELECT_CHEVRON_TRANSITION;
 
 const LIST_VARIANTS: Variants = {
   hidden: {},
@@ -206,50 +212,27 @@ export interface SelectTriggerProps {
   children: ReactNode;
 }
 
-function selectKeyframeTransition(open: boolean, reduce: boolean): Transition {
-  if (reduce) {
-    return { duration: 0 };
-  }
-  if (open) {
-    return { duration: 0.6, times: [0, 0.4, 1], ease: EASE_OUT };
-  }
-  return { duration: 0.42, times: [0, 0.5, 1], ease: EASE_OUT };
-}
-
 export function SelectTrigger({ className, children }: SelectTriggerProps) {
   const ctx = useSelectContext('SelectTrigger');
   const isTop = ctx.placement === 'top';
-  // edge facing the panel flattens then rounds; the far edge stays rounded.
-  // All four corners are specified so none gets stranded when placement flips.
-  const kf = ctx.open ? [0, 0, 12] : [12, 0, 12];
-  const kfT = selectKeyframeTransition(ctx.open, ctx.reduce);
+
   return (
     <motion.button
+      animate={selectTriggerAnimate(isTop, ctx.open)}
       aria-controls={ctx.listId}
       aria-expanded={ctx.open}
       aria-haspopup="listbox"
       disabled={ctx.disabled}
       id={ctx.triggerId}
       initial={false}
+      transition={selectTriggerRadiusTransition(isTop, ctx.open, ctx.reduce)}
       type="button"
-      animate={{
-        borderTopLeftRadius: isTop ? kf : 12,
-        borderTopRightRadius: isTop ? kf : 12,
-        borderBottomLeftRadius: isTop ? 12 : kf,
-        borderBottomRightRadius: isTop ? 12 : kf,
-      }}
       className={cn(
         'border-border bg-background text-foreground relative z-10 flex w-full items-center justify-between gap-2 rounded-xl border px-3 py-2 text-sm transition-colors outline-none',
         'focus-visible:ring-foreground/20 hover:border-(--color-border-strong) focus-visible:ring-2',
         'disabled:pointer-events-none disabled:opacity-50',
         className,
       )}
-      transition={{
-        borderTopLeftRadius: isTop ? kfT : INSTANT_TRANSITION,
-        borderTopRightRadius: isTop ? kfT : INSTANT_TRANSITION,
-        borderBottomLeftRadius: isTop ? INSTANT_TRANSITION : kfT,
-        borderBottomRightRadius: isTop ? INSTANT_TRANSITION : kfT,
-      }}
       onClick={() => ctx.setOpen(!ctx.open)}
     >
       {children}
@@ -287,121 +270,10 @@ export interface SelectContentProps {
 
 export function SelectContent({ className, children }: SelectContentProps) {
   const ctx = useSelectContext('SelectContent');
-  const innerRef = useRef<HTMLDivElement>(null);
-  const [height, setHeight] = useState(0);
-  const { open } = ctx;
-  const { setPlacement } = ctx;
-
-  useLayoutEffect(() => {
-    const node = innerRef.current;
-    if (!node) {
-      return;
-    }
-    const measure = () => setHeight(node.offsetHeight);
-    measure();
-    const observer = new ResizeObserver(measure);
-    observer.observe(node);
-    return () => observer.disconnect();
-  });
-
-  // On open, flip upward when there isn't room below and there's more above.
-  useLayoutEffect(() => {
-    if (!open) {
-      return;
-    }
-    const trigger = document.getElementById(ctx.triggerId);
-    const node = innerRef.current;
-    if (!trigger || !node) {
-      return;
-    }
-    const rect = trigger.getBoundingClientRect();
-    const h = node.offsetHeight;
-    const below = window.innerHeight - rect.bottom;
-    const above = rect.top;
-    setPlacement(below < h + 16 && above > below ? 'top' : 'bottom');
-  }, [open, ctx.triggerId, setPlacement]);
-
-  // Specify EVERY corner + both margins each render. The near edge (facing the
-  // trigger) animates flat->round and the gap opens on that side; the far edge
-  // stays rounded and its margin pinned to 0. Setting all of them avoids a
-  // stranded square corner when the placement flips between opens.
-  const isTop = ctx.placement === 'top';
-  const nearGap = open ? 8 : 0;
-  const nearRadius = open ? 12 : 0;
-
-  const gapT: Transition = open
-    ? { type: 'spring', duration: 0.6, bounce: 0.5, delay: 0.12 }
-    : { type: 'spring', duration: 0.3, bounce: 0.1 };
-  const radiusT: Transition = open
-    ? { duration: 0.3, ease: EASE_OUT, delay: 0.14 }
-    : { duration: 0.16, ease: EASE_OUT };
-
-  // Items stay mounted (open just animates the panel) so each item's label
-  // registration persists — otherwise the trigger would fall back to the
-  // placeholder the moment the panel closes.
   return (
-    <motion.div
-      aria-hidden={!open}
-      aria-labelledby={ctx.triggerId}
-      id={ctx.listId}
-      inert={!open}
-      initial={false}
-      role="listbox"
-      animate={
-        ctx.reduce
-          ? { opacity: open ? 1 : 0, height: open ? height : 0 }
-          : {
-              opacity: open ? 1 : 0,
-              height: open ? height : 0,
-              // gap opens on the side facing the trigger
-              marginTop: isTop ? 0 : nearGap,
-              marginBottom: isTop ? nearGap : 0,
-              // near corners go flat->round; far corners stay rounded
-              borderTopLeftRadius: isTop ? 12 : nearRadius,
-              borderTopRightRadius: isTop ? 12 : nearRadius,
-              borderBottomLeftRadius: isTop ? nearRadius : 12,
-              borderBottomRightRadius: isTop ? nearRadius : 12,
-            }
-      }
-      className={cn(
-        'border-border bg-background absolute right-0 left-0 z-20 rounded-xl border shadow-lg',
-        isTop ? 'bottom-full' : 'top-full',
-        className,
-      )}
-      style={{
-        transformOrigin: isTop ? 'bottom' : 'top',
-        overflow: 'hidden',
-        pointerEvents: open ? 'auto' : 'none',
-      }}
-      // flush against the trigger, then separates into its own rounded pill;
-      // sits above or below depending on available space
-      transition={
-        ctx.reduce
-          ? { duration: 0.12 }
-          : {
-              opacity: open ? { duration: 0.18 } : { duration: 0.16, delay: 0.12 },
-              height: open
-                ? { type: 'spring', duration: 0.42, bounce: 0.14 }
-                : { duration: 0.26, ease: EASE_OUT, delay: 0.14 },
-              marginTop: isTop ? INSTANT_TRANSITION : gapT,
-              marginBottom: isTop ? gapT : INSTANT_TRANSITION,
-              borderTopLeftRadius: isTop ? INSTANT_TRANSITION : radiusT,
-              borderTopRightRadius: isTop ? INSTANT_TRANSITION : radiusT,
-              borderBottomLeftRadius: isTop ? radiusT : INSTANT_TRANSITION,
-              borderBottomRightRadius: isTop ? radiusT : INSTANT_TRANSITION,
-            }
-      }
-    >
-      <motion.div
-        ref={innerRef}
-        animate={open ? 'show' : 'hidden'}
-        className="p-1"
-        initial={false}
-        variants={ctx.reduce ? undefined : LIST_VARIANTS}
-      >
-        {children}
-      </motion.div>
-    </motion.div>
+    <SelectContentPanel className={className} ctx={ctx}>
+      {children}
+    </SelectContentPanel>
   );
 }
 

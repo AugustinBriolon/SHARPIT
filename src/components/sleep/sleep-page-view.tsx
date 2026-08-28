@@ -67,6 +67,59 @@ function pickHeroInsight(props: SleepPageViewProps): string | null {
   return sleepActionLine(props) ?? pickCoachingLine(props);
 }
 
+function buildSleepFooter(
+  loading: boolean,
+  recoveryNote: string | null | undefined,
+): React.ReactNode {
+  if (loading) {
+    return <Skeleton className="mx-auto h-3 w-48 rounded-full" />;
+  }
+  if (recoveryNote) {
+    return (
+      <p className="text-muted-foreground text-center text-xs leading-relaxed">{recoveryNote}</p>
+    );
+  }
+  return undefined;
+}
+
+function SleepPhasesOrTonight({
+  loading,
+  totalSleepMin,
+  tonightPanel,
+  awakeMin,
+  deepMin,
+  lightMin,
+  remMin,
+}: {
+  loading: boolean;
+  totalSleepMin: number | null;
+  tonightPanel: React.ReactNode;
+  awakeMin: number | null;
+  deepMin: number | null;
+  lightMin: number | null;
+  remMin: number | null;
+}) {
+  if (loading) {
+    return null;
+  }
+
+  const hasPhases = totalSleepMin !== null && totalSleepMin > 0;
+  if (hasPhases) {
+    return (
+      <SleepPhasesSection
+        awakeMin={awakeMin}
+        deepMin={deepMin}
+        lightMin={lightMin}
+        remMin={remMin}
+        sidePanel={tonightPanel}
+        totalMin={totalSleepMin!}
+      />
+    );
+  }
+
+  return tonightPanel;
+}
+
 export function SleepPageView(props: SleepPageViewProps) {
   const {
     date,
@@ -94,16 +147,7 @@ export function SleepPageView(props: SleepPageViewProps) {
     confidencePresentation,
   } = props;
 
-  let footer: React.ReactNode;
-  if (loading) {
-    footer = <Skeleton className="mx-auto h-3 w-48 rounded-full" />;
-  } else if (recoveryNote) {
-    footer = (
-      <p className="text-muted-foreground text-center text-xs leading-relaxed">{recoveryNote}</p>
-    );
-  } else {
-    footer = undefined;
-  }
+  const footer = buildSleepFooter(loading, recoveryNote);
 
   /* The plan now occupies the slot the "Pourquoi" narrative used to hold, beside
      the night structure — what to do tonight, next to how last night went. */
@@ -146,24 +190,17 @@ export function SleepPageView(props: SleepPageViewProps) {
         wakeMin={wakeMin}
       />
 
-      {!loading ? (
-        <>
-          {totalSleepMin !== null && totalSleepMin > 0 ? (
-            <SleepPhasesSection
-              awakeMin={awakeMin}
-              deepMin={deepMin}
-              lightMin={lightMin}
-              remMin={remMin}
-              sidePanel={tonightPanel}
-              totalMin={totalSleepMin}
-            />
-          ) : (
-            tonightPanel
-          )}
+      <SleepPhasesOrTonight
+        awakeMin={awakeMin}
+        deepMin={deepMin}
+        lightMin={lightMin}
+        loading={loading}
+        remMin={remMin}
+        tonightPanel={tonightPanel}
+        totalSleepMin={totalSleepMin}
+      />
 
-          <SleepTrendSection data={barData} targetMin={props.sleepTargetMin} />
-        </>
-      ) : null}
+      {!loading ? <SleepTrendSection data={barData} targetMin={props.sleepTargetMin} /> : null}
     </MetricDrillDownPage>
   );
 }

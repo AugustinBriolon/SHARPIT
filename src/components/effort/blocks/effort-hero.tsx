@@ -4,6 +4,53 @@ import { PhysioDrillDownHero } from '@/components/today/drill-down/physio-drill-
 import { isExpertMode } from '@/lib/preferences/display-mode';
 import { useDisplayMode } from '@/providers/display-mode-provider';
 
+function effortFreshnessLine(estimatedDaysToFresh: number | null): string | null {
+  if (estimatedDaysToFresh === null || estimatedDaysToFresh <= 0) {
+    return null;
+  }
+  return `Frais dans ${estimatedDaysToFresh === 1 ? '1 jour' : `${estimatedDaysToFresh} jours`}`;
+}
+
+function effortAccumulationLine(consecutiveDays: number): string | null {
+  if (consecutiveDays <= 1) {
+    return null;
+  }
+  return `${consecutiveDays} j d'accumulation`;
+}
+
+function effortCapacityLine(performancePercent: number | null): string | null {
+  if (performancePercent === null || performancePercent >= 100) {
+    return null;
+  }
+  return `Capacité ~${performancePercent} %`;
+}
+
+function effortFatigueLine(fatigueTypeLabel: string | null, fatigueType: string): string | null {
+  if (!fatigueTypeLabel || fatigueType === 'UNDETERMINED') {
+    return null;
+  }
+  return fatigueTypeLabel;
+}
+
+function effortActionLine(options: {
+  loading: boolean;
+  estimatedDaysToFresh: number | null;
+  consecutiveDays: number;
+  performancePercent: number | null;
+  fatigueTypeLabel: string | null;
+  fatigueType: string;
+}): string | null {
+  if (options.loading) {
+    return null;
+  }
+  return (
+    effortFreshnessLine(options.estimatedDaysToFresh) ??
+    effortAccumulationLine(options.consecutiveDays) ??
+    effortCapacityLine(options.performancePercent) ??
+    effortFatigueLine(options.fatigueTypeLabel, options.fatigueType)
+  );
+}
+
 export function EffortHero({
   date,
   dailyLoad,
@@ -44,18 +91,14 @@ export function EffortHero({
   loading?: boolean;
 }) {
   const { mode } = useDisplayMode();
-  let actionLine: string | null = null;
-  if (!loading) {
-    if (estimatedDaysToFresh !== null && estimatedDaysToFresh > 0) {
-      actionLine = `Frais dans ${estimatedDaysToFresh === 1 ? '1 jour' : `${estimatedDaysToFresh} jours`}`;
-    } else if (consecutiveDays > 1) {
-      actionLine = `${consecutiveDays} j d'accumulation`;
-    } else if (performancePercent !== null && performancePercent < 100) {
-      actionLine = `Capacité ~${performancePercent} %`;
-    } else if (fatigueTypeLabel && fatigueType !== 'UNDETERMINED') {
-      actionLine = fatigueTypeLabel;
-    }
-  }
+  const actionLine = effortActionLine({
+    loading,
+    estimatedDaysToFresh,
+    consecutiveDays,
+    performancePercent,
+    fatigueTypeLabel,
+    fatigueType,
+  });
 
   return (
     <PhysioDrillDownHero
@@ -68,7 +111,7 @@ export function EffortHero({
       loading={loading}
       maxDate={maxDate}
       minDate={minDate}
-      quickReadCaption={loading ? undefined : (actionLine ?? undefined)}
+      quickReadCaption={actionLine ?? undefined}
       quickReadLabel="aujourd'hui"
       quickReadSuffix={isExpertMode(mode) ? ' TSS' : ''}
       quickReadValue={dailyLoad > 0 ? `${dailyLoad}` : '0'}

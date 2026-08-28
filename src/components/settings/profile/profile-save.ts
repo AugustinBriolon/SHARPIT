@@ -17,15 +17,26 @@ export function saveProfilePatch(
   return previousProfile;
 }
 
+function profileFieldErrorMessage(
+  data: {
+    error?: string;
+    detail?: string;
+    details?: { fieldErrors?: Record<string, string[]> };
+  } | null,
+): string | null {
+  if (!data?.details?.fieldErrors) {
+    return null;
+  }
+  return Object.values(data.details.fieldErrors).flat().join(' · ') || null;
+}
+
 async function parseProfileError(res: Response): Promise<string> {
   const data = (await res.json().catch(() => null)) as {
     error?: string;
     detail?: string;
     details?: { fieldErrors?: Record<string, string[]> };
   } | null;
-  const fieldMsg = data?.details?.fieldErrors
-    ? Object.values(data.details.fieldErrors).flat().join(' · ')
-    : null;
+  const fieldMsg = profileFieldErrorMessage(data);
   return fieldMsg || data?.detail || data?.error || 'Erreur';
 }
 

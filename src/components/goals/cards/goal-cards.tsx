@@ -46,17 +46,16 @@ const GoalDialog = dynamic(
   { ssr: false },
 );
 
-function metricGoalSubtitle(goal: GoalItem, subtitle: string | null): ReactNode {
-  if (subtitle) {
-    return <CardDescription className="mt-0.5 text-xs">{subtitle}</CardDescription>;
-  }
-  if (goal.horizon) {
-    return (
-      <CardDescription className="mt-0.5 text-xs">{horizonLabels[goal.horizon]}</CardDescription>
-    );
-  }
-  return null;
-}
+import {
+  countdownLabel,
+  deadlineCopy,
+  formatLongDate,
+  metricGoalSubtitle,
+  RaceCardDetails,
+  taperWindowCopy,
+} from '@/components/goals/cards/goal-card-format';
+import { AchievedStatus, GoalProgressTrack } from '@/components/goals/cards/goal-cards-parts';
+import { MetricGoalCardBody } from '@/components/goals/cards/metric-goal-card-body';
 
 export interface GoalItem {
   id: string;
@@ -101,143 +100,6 @@ function toEdit(goal: GoalItem): GoalForEdit {
     validatingActivityId: goal.validatingActivityId,
     lastAchievedAt: goal.lastAchievedAt,
   };
-}
-
-function formatValue(value: number | null, unit: string | null, metricKey?: string | null) {
-  const config = parseGoalMetricConfig(metricKey);
-  return formatGoalDisplayValue(value, unit, config);
-}
-
-function formatShortDate(value: string | Date): string {
-  return new Intl.DateTimeFormat('fr-FR', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  }).format(new Date(value));
-}
-
-function formatLongDate(value: string | Date): string {
-  return new Intl.DateTimeFormat('fr-FR', {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  }).format(new Date(value));
-}
-
-function countdownLabel(days: number): string {
-  if (days > 0) {
-    return `J-${days}`;
-  }
-  if (days < 0) {
-    return `J+${Math.abs(days)}`;
-  }
-  return 'Jour J';
-}
-
-function deadlineCopy(days: number): string {
-  if (days < 0) {
-    return `Échéance dépassée de ${Math.abs(days)} jour${Math.abs(days) > 1 ? 's' : ''}`;
-  }
-  if (days === 0) {
-    return 'Échéance aujourd’hui';
-  }
-  if (days === 1) {
-    return 'Échéance demain';
-  }
-  return `Échéance dans ${days} jours`;
-}
-
-function taperWindowCopy(days: number | null): string | null {
-  if (days === null || days < 0 || days > 14) {
-    return null;
-  }
-  if (days === 0) {
-    return 'Jour de course';
-  }
-  return 'Fenêtre d’affûtage';
-}
-
-/** Lab annotation — rank in primary ink for A, quieter for B/C. */
-function PriorityAnnotation({ priority }: { priority: GoalPriority }) {
-  return (
-    <p className="text-muted-foreground text-xs leading-snug">
-      <span
-        className={cn(
-          'font-medium',
-          priority === GoalPriority.A ? 'text-primary' : 'text-foreground',
-        )}
-      >
-        {priorityLabels[priority]}
-      </span>
-      <span aria-hidden> — </span>
-      {priorityDescriptions[priority]}
-    </p>
-  );
-}
-
-function GoalProgressTrack({
-  progress,
-  remaining,
-}: {
-  progress: number;
-  remaining: string | null;
-}) {
-  const clamped = Math.max(0, Math.min(100, progress));
-  return (
-    <div className="space-y-1.5">
-      <div
-        aria-label="Progression vers la cible"
-        aria-valuemax={100}
-        aria-valuemin={0}
-        aria-valuenow={clamped}
-        aria-valuetext={`${clamped} %${remaining ? ` · ${remaining}` : ''}`}
-        className="bg-primary/15 h-1 w-full overflow-hidden rounded-full"
-        role="progressbar"
-      >
-        <div
-          className="bg-primary h-full rounded-full transition-[width] duration-300 ease-out"
-          style={{ width: `${clamped}%` }}
-        />
-      </div>
-      <div className="text-muted-foreground flex justify-between text-xs tabular-nums">
-        <span className="text-primary font-medium">{clamped} %</span>
-        {remaining ? <span>{remaining}</span> : null}
-      </div>
-    </div>
-  );
-}
-
-function AchievedStatus({
-  lastAchievedAt,
-  validatingActivityId,
-  showValidatingLink,
-}: {
-  lastAchievedAt?: string | Date | null;
-  validatingActivityId?: string | null;
-  showValidatingLink?: boolean;
-}) {
-  return (
-    <div className="border-primary space-y-1 border-l pl-3 text-xs">
-      <p className="text-primary font-medium">
-        Objectif atteint
-        {lastAchievedAt ? (
-          <span className="text-muted-foreground font-normal">
-            {' '}
-            · {formatShortDate(lastAchievedAt)}
-          </span>
-        ) : null}
-      </p>
-      {showValidatingLink && validatingActivityId && (
-        <Link
-          className="text-primary font-medium hover:underline"
-          href={`/training/${validatingActivityId}`}
-        >
-          Voir la séance validante →
-        </Link>
-      )}
-    </div>
-  );
 }
 
 function GoalActionsMenu({
@@ -378,45 +240,13 @@ export function RaceCard({ goal }: { goal: GoalItem }) {
     updatePending,
     deletePending,
   } = useGoalCardControls(goal);
-  const date = goal.targetDate ? new Date(goal.targetDate) : null;
-  const days = daysUntil(date);
-  const dateLabel = date ? formatLongDate(date) : null;
-  const taperCopy = taperWindowCopy(days);
   const metricConfig = parseGoalMetricConfig(goal.metricKey);
 
   return (
     <>
       <Card>
         <CardContent className="space-y-4">
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div className="min-w-0 space-y-1.5">
-              {goal.priority ? <PriorityAnnotation priority={goal.priority} /> : null}
-              {goal.raceFormat ? (
-                <p className="text-primary/80 text-label">{goal.raceFormat}</p>
-              ) : null}
-              <CardTitle>{goal.title}</CardTitle>
-              <div className="text-muted-foreground flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
-                {dateLabel ? (
-                  <span className="flex items-center gap-1 capitalize">
-                    <Calendar className="text-primary size-3.5" aria-hidden />
-                    {dateLabel}
-                  </span>
-                ) : null}
-                {goal.location ? (
-                  <span className="flex items-center gap-1">
-                    <MapPin className="text-primary size-3.5" aria-hidden />
-                    {goal.location}
-                  </span>
-                ) : null}
-              </div>
-              {taperCopy ? <p className="text-primary text-xs font-medium">{taperCopy}</p> : null}
-            </div>
-            {days !== null ? (
-              <p className="text-data text-primary font-mono text-3xl font-semibold tabular-nums">
-                {countdownLabel(days)}
-              </p>
-            ) : null}
-          </div>
+          <RaceCardDetails goal={goal} />
 
           {goal.targetPerformance ? (
             <div className="bg-primary/5 rounded-analysis px-3 py-2">
@@ -465,71 +295,11 @@ export function MetricGoalCard({ goal }: { goal: GoalItem }) {
     updatePending,
     deletePending,
   } = useGoalCardControls(goal);
-  const metricConfig = parseGoalMetricConfig(goal.metricKey);
-  const subtitle = describeMetricGoal(metricConfig, goal.targetDate);
-  const progress = computeGoalProgress(goal);
-  const remaining = formatRemaining(goal);
-  const days = daysUntil(goal.targetDate ? new Date(goal.targetDate) : null);
-  const isAutoTracked = Boolean(metricConfig);
 
   return (
     <>
       <Card>
-        <CardContent className="space-y-3">
-          <div className="min-w-0">
-            <CardTitle>{goal.title}</CardTitle>
-            {metricGoalSubtitle(goal, subtitle)}
-          </div>
-
-          {goal.achieved ? (
-            <AchievedStatus
-              lastAchievedAt={goal.lastAchievedAt}
-              showValidatingLink={isAutoTracked && metricConfig?.template === 'performance'}
-              validatingActivityId={goal.validatingActivityId}
-            />
-          ) : null}
-
-          {progress !== null && !goal.achieved ? (
-            <GoalProgressTrack progress={progress} remaining={remaining} />
-          ) : null}
-
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">
-              {metricConfig?.template === 'performance' ? 'Meilleur' : 'Actuel'}{' '}
-              <span className="text-foreground font-mono tabular-nums">
-                {formatValue(goal.currentValue, goal.unit, goal.metricKey)}
-              </span>
-            </span>
-            <span className="text-muted-foreground">
-              Cible{' '}
-              <span className="text-primary font-mono tabular-nums">
-                {formatValue(goal.targetValue, goal.unit, goal.metricKey)}
-              </span>
-            </span>
-          </div>
-
-          {isAutoTracked ? (
-            <p className="text-muted-foreground text-xs">
-              Progression calculée depuis tes activités synchronisées.
-            </p>
-          ) : null}
-
-          {days !== null && !isAutoTracked && goal.targetDate ? (
-            <p className="text-muted-foreground text-xs">{deadlineCopy(days)}</p>
-          ) : null}
-
-          {isAutoTracked && goal.targetDate ? (
-            <p className="text-muted-foreground text-xs">
-              Jusqu&apos;au {formatLongDate(goal.targetDate)}
-            </p>
-          ) : null}
-
-          {goal.notes ? (
-            <p className="text-muted-foreground line-clamp-3 text-xs whitespace-pre-wrap">
-              {goal.notes}
-            </p>
-          ) : null}
-        </CardContent>
+        <MetricGoalCardBody goal={goal} />
         <GoalCardFooter
           achieved={goal.achieved}
           deletePending={deletePending}

@@ -15,6 +15,55 @@ import { OfflineBanner } from '@/components/pwa/offline-banner';
 import { SyncingIndicator } from '@/components/ui/syncing-indicator';
 import { haptic } from '@/lib/haptic';
 
+function bottomNavGlyph(options: {
+  item: AppNavItem;
+  isAthleteTab: boolean;
+  identity: ReturnType<typeof useAthleteNavIdentity>;
+  isActive: boolean;
+}) {
+  const { item, isAthleteTab, identity, isActive } = options;
+  const Icon = item.icon;
+  if (!isAthleteTab) {
+    return <Icon className="relative size-5 shrink-0" aria-hidden />;
+  }
+  if (identity.isReady) {
+    return (
+      <AthleteNavAvatar
+        initials={identity.initials}
+        size="sm"
+        className={cn(
+          'relative',
+          isActive && 'bg-highlight-foreground/15 text-highlight-foreground',
+        )}
+      />
+    );
+  }
+  return <AthleteNavAvatarSkeleton className="relative" size="sm" />;
+}
+
+function BottomNavActiveHighlight({
+  isActive,
+  reduce,
+}: {
+  isActive: boolean;
+  reduce: boolean | null;
+}) {
+  if (!isActive) {
+    return null;
+  }
+  if (reduce) {
+    return <span className="bg-highlight absolute inset-0 rounded-2xl" aria-hidden />;
+  }
+  return (
+    <motion.span
+      className="bg-highlight absolute inset-0 rounded-2xl"
+      layoutId="bottom-nav-active"
+      transition={springs.snappy}
+      aria-hidden
+    />
+  );
+}
+
 function BottomNavLink({
   item,
   pathname,
@@ -34,24 +83,7 @@ function BottomNavLink({
   const isAthleteTab = item.href === profileNavItem.href;
   const identity = useAthleteNavIdentity();
   const label = isAthleteTab ? identity.shortLabel : item.label;
-
-  let glyph: React.ReactNode;
-  if (!isAthleteTab) {
-    glyph = <Icon className="relative size-5 shrink-0" aria-hidden />;
-  } else if (identity.isReady) {
-    glyph = (
-      <AthleteNavAvatar
-        initials={identity.initials}
-        size="sm"
-        className={cn(
-          'relative',
-          isActive && 'bg-highlight-foreground/15 text-highlight-foreground',
-        )}
-      />
-    );
-  } else {
-    glyph = <AthleteNavAvatarSkeleton className="relative" size="sm" />;
-  }
+  const glyph = bottomNavGlyph({ item, isAthleteTab, identity, isActive });
 
   return (
     <Link
@@ -71,17 +103,7 @@ function BottomNavLink({
         onNavigate?.();
       }}
     >
-      {isActive && !reduce ? (
-        <motion.span
-          className="bg-highlight absolute inset-0 rounded-2xl"
-          layoutId="bottom-nav-active"
-          transition={springs.snappy}
-          aria-hidden
-        />
-      ) : null}
-      {isActive && reduce ? (
-        <span className="bg-highlight absolute inset-0 rounded-2xl" aria-hidden />
-      ) : null}
+      <BottomNavActiveHighlight isActive={isActive} reduce={reduce} />
       {glyph}
       <span className="relative max-w-full truncate">{label}</span>
     </Link>

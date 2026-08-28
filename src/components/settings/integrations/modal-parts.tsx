@@ -1,14 +1,187 @@
 import Image from 'next/image';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import type { ReactNode } from 'react';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { guardedActionLabel, useOfflineGuard } from '@/hooks/use-offline-guard';
 import { motionTokens } from '@/lib/motion/tokens';
+import { cn } from '@/lib/utils';
+import {
+  integrationConnectBody,
+  integrationConnectCta,
+  type IntegrationDefinition,
+} from '@/components/settings/integrations/types';
+import { IntegrationLogo } from '@/components/settings/integrations/logos';
 
 export function formatIntegrationLastSync(lastSyncAt: string | null | undefined): string {
   return lastSyncAt
     ? `Dernière sync : ${new Date(lastSyncAt).toLocaleString('fr-FR')}`
     : 'Jamais synchronisé';
+}
+
+export function IntegrationStatusMessage({
+  message,
+  assertive = false,
+}: {
+  message?: string;
+  assertive?: boolean;
+}) {
+  if (!message) {
+    return null;
+  }
+  return (
+    <p
+      aria-live={assertive ? 'assertive' : 'polite'}
+      className={assertive ? 'text-destructive text-sm' : 'text-muted-foreground text-sm'}
+    >
+      {message}
+    </p>
+  );
+}
+
+export function IntegrationNotConfiguredView({
+  integration,
+  children,
+}: {
+  integration: IntegrationDefinition;
+  children: ReactNode;
+}) {
+  return (
+    <div className="space-y-4">
+      <IntegrationModalHeader integration={integration} />
+      <div className="text-muted-foreground space-y-3 text-sm leading-relaxed">{children}</div>
+    </div>
+  );
+}
+
+export function IntegrationNotConnectedView({
+  integration,
+  body,
+  connectHref,
+  lanHint,
+}: {
+  integration: IntegrationDefinition;
+  body: string;
+  connectHref: string;
+  lanHint?: string;
+}) {
+  return (
+    <div className="space-y-4">
+      <IntegrationModalHeader integration={integration} />
+      <p className="text-muted-foreground text-sm leading-relaxed">
+        {integrationConnectBody(integration, body)}
+      </p>
+      {lanHint ? (
+        <p className="border-signal-caution/30 bg-signal-caution/10 text-signal-caution rounded-lg border px-3 py-2 text-sm leading-relaxed">
+          {lanHint}
+        </p>
+      ) : null}
+      <a className={cn(buttonVariants(), 'w-full sm:w-auto')} href={connectHref}>
+        {integrationConnectCta(integration)}
+      </a>
+      <IntegrationStatusMessage message={integration.statusMessage} assertive />
+    </div>
+  );
+}
+
+function IntegrationModalHeader({ integration }: { integration: IntegrationDefinition }) {
+  return (
+    <div className="flex items-start gap-3">
+      <IntegrationLogo className="size-11 shrink-0" id={integration.id} />
+      <div className="flex flex-wrap gap-1.5 pt-1">
+        {integration.dataTypes.map((tag) => (
+          <span
+            key={tag}
+            className="bg-muted/80 text-muted-foreground text-label rounded-full px-2 py-0.5"
+          >
+            {tag}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function IntegrationFullImportButton({
+  busy,
+  guardDisabled,
+  offline,
+  offlineLabel,
+  importingAll,
+  onFullImport,
+  fullImportLabel,
+  fullImportingLabel,
+}: {
+  busy: boolean;
+  guardDisabled: boolean;
+  offline: boolean;
+  offlineLabel: string;
+  importingAll?: boolean;
+  onFullImport: () => void;
+  fullImportLabel: string;
+  fullImportingLabel: string;
+}) {
+  return (
+    <Button disabled={busy || guardDisabled} variant="outline" onClick={onFullImport}>
+      {guardedActionLabel(offline, offlineLabel, fullImportLabel, {
+        active: importingAll ?? false,
+        label: fullImportingLabel,
+      })}
+    </Button>
+  );
+}
+
+function IntegrationConfirmStage({
+  confirmTitle,
+  confirmDescription,
+  confirmingLabel,
+  confirmLabel,
+  cancelLabel,
+  disconnecting,
+  onCancelConfirm,
+  onConfirmDisconnect,
+  offset,
+  duration,
+}: {
+  confirmTitle: string;
+  confirmDescription?: string;
+  confirmingLabel: string;
+  confirmLabel: string;
+  cancelLabel: string;
+  disconnecting: boolean;
+  onCancelConfirm: () => void;
+  onConfirmDisconnect: () => void | Promise<void>;
+  offset: number;
+  duration: number;
+}) {
+  return (
+    <motion.div
+      key="confirm"
+      animate={{ opacity: 1, x: 0 }}
+      className="space-y-4"
+      exit={{ opacity: 0, x: offset }}
+      initial={{ opacity: 0, x: offset }}
+      transition={{ duration, ease: motionTokens.easing.smooth }}
+    >
+      <div className="space-y-2">
+        <p className="text-foreground text-sm font-medium">{confirmTitle}</p>
+        {confirmDescription ? (
+          <p className="text-muted-foreground text-sm leading-relaxed">{confirmDescription}</p>
+        ) : null}
+      </div>
+      <div className="flex flex-wrap gap-2 pt-1">
+        <Button disabled={disconnecting} variant="outline" onClick={onCancelConfirm}>
+          {cancelLabel}
+        </Button>
+        <Button
+          disabled={disconnecting}
+          variant="destructive"
+          onClick={() => void onConfirmDisconnect()}
+        >
+          {disconnecting ? confirmingLabel : confirmLabel}
+        </Button>
+      </div>
+    </motion.div>
+  );
 }
 
 export function IntegrationAccountCard({
@@ -56,6 +229,37 @@ export function IntegrationAccountSummary({
   );
 }
 
+function IntegrationSyncButton({
+  busy,
+  syncDisabled,
+  guardDisabled,
+  offline,
+  offlineLabel,
+  syncing,
+  syncLabel,
+  syncingLabel,
+  onSync,
+}: {
+  busy: boolean;
+  syncDisabled?: boolean;
+  guardDisabled: boolean;
+  offline: boolean;
+  offlineLabel: string;
+  syncing: boolean;
+  syncLabel: string;
+  syncingLabel: string;
+  onSync: () => void;
+}) {
+  return (
+    <Button disabled={busy || syncDisabled || guardDisabled} onClick={onSync}>
+      {guardedActionLabel(offline, offlineLabel, syncLabel, {
+        active: syncing,
+        label: syncingLabel,
+      })}
+    </Button>
+  );
+}
+
 export function IntegrationSyncActions({
   syncing,
   onSync,
@@ -88,20 +292,29 @@ export function IntegrationSyncActions({
 
   return (
     <div className="flex flex-wrap gap-2 pt-1">
-      <Button disabled={busy || syncDisabled || guardDisabled} onClick={onSync}>
-        {guardedActionLabel(offline, offlineLabel, syncLabel, {
-          active: syncing,
-          label: syncingLabel,
-        })}
-      </Button>
-      {onFullImport && (
-        <Button disabled={busy || guardDisabled} variant="outline" onClick={onFullImport}>
-          {guardedActionLabel(offline, offlineLabel, fullImportLabel, {
-            active: importingAll ?? false,
-            label: fullImportingLabel,
-          })}
-        </Button>
-      )}
+      <IntegrationSyncButton
+        busy={busy}
+        guardDisabled={guardDisabled}
+        offline={offline}
+        offlineLabel={offlineLabel}
+        syncDisabled={syncDisabled}
+        syncing={syncing}
+        syncingLabel={syncingLabel}
+        syncLabel={syncLabel}
+        onSync={onSync}
+      />
+      {onFullImport ? (
+        <IntegrationFullImportButton
+          busy={busy}
+          fullImportingLabel={fullImportingLabel}
+          fullImportLabel={fullImportLabel}
+          guardDisabled={guardDisabled}
+          importingAll={importingAll}
+          offline={offline}
+          offlineLabel={offlineLabel}
+          onFullImport={onFullImport}
+        />
+      ) : null}
       {children}
       <Button disabled={disconnectDisabled} variant="outline" onClick={onDisconnect}>
         Déconnecter
@@ -155,35 +368,18 @@ export function IntegrationManageStage({
             {children}
           </motion.div>
         ) : (
-          <motion.div
-            key="confirm"
-            animate={{ opacity: 1, x: 0 }}
-            className="space-y-4"
-            exit={{ opacity: 0, x: offset }}
-            initial={{ opacity: 0, x: offset }}
-            transition={{ duration, ease: motionTokens.easing.smooth }}
-          >
-            <div className="space-y-2">
-              <p className="text-foreground text-sm font-medium">{confirmTitle}</p>
-              {confirmDescription ? (
-                <p className="text-muted-foreground text-sm leading-relaxed">
-                  {confirmDescription}
-                </p>
-              ) : null}
-            </div>
-            <div className="flex flex-wrap gap-2 pt-1">
-              <Button disabled={disconnecting} variant="outline" onClick={onCancelConfirm}>
-                {cancelLabel}
-              </Button>
-              <Button
-                disabled={disconnecting}
-                variant="destructive"
-                onClick={() => void onConfirmDisconnect()}
-              >
-                {disconnecting ? confirmingLabel : confirmLabel}
-              </Button>
-            </div>
-          </motion.div>
+          <IntegrationConfirmStage
+            cancelLabel={cancelLabel}
+            confirmDescription={confirmDescription}
+            confirmingLabel={confirmingLabel}
+            confirmLabel={confirmLabel}
+            confirmTitle={confirmTitle}
+            disconnecting={disconnecting}
+            duration={duration}
+            offset={offset}
+            onCancelConfirm={onCancelConfirm}
+            onConfirmDisconnect={onConfirmDisconnect}
+          />
         )}
       </AnimatePresence>
     </div>
