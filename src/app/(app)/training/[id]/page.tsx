@@ -222,16 +222,16 @@ async function ActivityDetailBody({ id }: { id: string }) {
   return (
     <ActivityDetailContent
       activity={activity}
+      coachPanel={coachPanel}
+      goalValidations={goalValidations}
+      hikeSummary={hikeSummary}
+      isHike={isHike}
       isStrength={isStrength}
       isTriathlon={isTriathlon}
-      isHike={isHike}
-      hikeSummary={hikeSummary}
       multisportLegs={multisportLegs}
-      goalValidations={goalValidations}
       performanceRecords={performanceRecords}
-      strengthStats={strengthStats}
-      coachPanel={coachPanel}
       specs={specs}
+      strengthStats={strengthStats}
     />
   );
 }
@@ -245,7 +245,7 @@ export default async function ActivityDetailPage({ params }: PageProps) {
   return (
     <div className="relative z-0 space-y-6 sm:space-y-8">
       <MobileBackLink showOnDesktop />
-      <Suspense fallback={<ActivityDetailRouteSkeleton />}>
+      <Suspense fallback={<ActivityDetailRouteSkeleton activityId={id} />}>
         <ActivityDetailBody id={id} />
       </Suspense>
     </div>

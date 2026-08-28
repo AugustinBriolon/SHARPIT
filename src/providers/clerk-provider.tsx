@@ -14,6 +14,14 @@ export function AppClerkProvider({ children }: { children: React.ReactNode }) {
     undefined,
   );
 
+  // If DEV_BYPASS_CLERK is enabled, skip Clerk entirely
+  if (
+    process.env.NEXT_PUBLIC_DEV_BYPASS_CLERK === 'true' &&
+    process.env.NODE_ENV === 'development'
+  ) {
+    return <>{children}</>;
+  }
+
   useEffect(() => {
     if (process.env.NODE_ENV !== 'development') {
       return;

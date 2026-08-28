@@ -42,13 +42,7 @@ export const defaultStrengthSet = {
   notes: '',
 };
 
-export const ACTIVITY_FEELING_OPTIONS: Array<{ value: string; label: string }> = [
-  { value: 'Très bien', label: 'Très bien' },
-  { value: 'Bien', label: 'Bien' },
-  { value: 'Correct', label: 'Correct' },
-  { value: 'Mal', label: 'Mal' },
-  { value: 'Très mal', label: 'Très mal' },
-];
+export { ACTIVITY_FEELING_OPTIONS } from '@/lib/activity/feeling/activity-feeling-scale';
 
 export function strengthSetsForForm(initialData: ActivityWithRelations) {
   if (initialData.type !== ActivityType.STRENGTH) {

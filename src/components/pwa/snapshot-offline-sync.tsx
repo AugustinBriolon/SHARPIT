@@ -14,7 +14,7 @@ import { saveSnapshot, clearSnapshot } from '@/lib/pwa/snapshot-store';
  * same device (a different Clerk user.id signing in) is caught by the ownership
  * check in snapshot-store's loadSnapshot() at read time.
  */
-export function SnapshotOfflineSync() {
+function SnapshotOfflineSyncInner() {
   const { user, isSignedIn, isLoaded } = useUser();
   const { snapshot } = useAthleteSnapshot();
 
@@ -35,4 +35,16 @@ export function SnapshotOfflineSync() {
   }, [isLoaded, isSignedIn, user, snapshot]);
 
   return null;
+}
+
+export function SnapshotOfflineSync() {
+  // Skip when Clerk is bypassed in dev mode
+  if (
+    process.env.NEXT_PUBLIC_DEV_BYPASS_CLERK === 'true' &&
+    process.env.NODE_ENV === 'development'
+  ) {
+    return null;
+  }
+
+  return <SnapshotOfflineSyncInner />;
 }
