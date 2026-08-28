@@ -2,6 +2,7 @@
 
 import type { ClientPlannedSession } from '@/lib/query/types';
 import {
+  CompletedSessionDetails,
   CompletedSessionStoryContent,
   parseActivityNarrative,
   parseSessionAnalysis,
@@ -71,11 +72,9 @@ export function CompletedSessionStory({
         notes={notes}
       />
 
-      {session.activity ? (
-        <div className="border-analysis-border/50 border-t pt-3">
-          <PlannedVsDoneStrip session={session} />
-        </div>
-      ) : null}
+      <CompletedSessionDetails analysis={analysis} notes={notes} />
+
+      {session.activity ? <PlannedVsDoneStrip session={session} /> : null}
 
       <CompletedSessionStoryActions
         analysis={analysis}

@@ -37,7 +37,7 @@ export function AppShell({
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         {demoBanner}
         <OfflineBanner />
-        <SyncingIndicator className="border-border/40 border-b lg:fixed lg:top-0 lg:right-0 lg:w-[calc(100%-239px)]" />
+        <SyncingIndicator className="border-border/40 fixed top-0 left-0 z-50 w-full border-b lg:right-0 lg:left-auto lg:w-[calc(100%-239px)]" />
 
         <main
           id="main-content"

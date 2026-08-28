@@ -29,9 +29,9 @@ function StoryBody({ body }: { body: string }) {
 
 function StoryNotes({ notes }: { notes: string }) {
   return (
-    <div className="border-analysis-border/50 min-w-0 space-y-1 border-t pt-3">
-      <p className="text-label">Note</p>
-      <p className="text-foreground/85 text-sm leading-relaxed wrap-break-word whitespace-pre-wrap">
+    <div className="min-w-0 space-y-1 px-3 py-2.5">
+      <p className="text-label">Ta note</p>
+      <p className="text-foreground text-sm leading-relaxed wrap-break-word whitespace-pre-wrap">
         {notes}
       </p>
     </div>
@@ -76,31 +76,6 @@ function StoryNarrativeBlock({
   );
 }
 
-function StoryContentSections({
-  showLoading,
-  narrative,
-  analysis,
-  isAnalyzing,
-  notes,
-  showPlanGaps,
-}: {
-  showLoading: boolean;
-  narrative: ReturnType<typeof parseActivityNarrative>;
-  analysis: ReturnType<typeof parseSessionAnalysis>;
-  isAnalyzing: boolean;
-  notes: string | null;
-  showPlanGaps: boolean;
-}) {
-  return (
-    <>
-      {showLoading ? <StoryLoadingRow /> : null}
-      <StoryNarrativeBlock analysis={analysis} isAnalyzing={isAnalyzing} narrative={narrative} />
-      {notes ? <StoryNotes notes={notes} /> : null}
-      {showPlanGaps && analysis ? <CompletedSessionPlanGaps analysis={analysis} /> : null}
-    </>
-  );
-}
-
 export function CompletedSessionStoryContent({
   narrative,
   analysis,
@@ -113,18 +88,44 @@ export function CompletedSessionStoryContent({
   notes: string | null;
 }) {
   const showLoading = isAnalyzing && !narrative && !analysis && !notes;
-  const showPlanGaps =
-    analysis !== null && (analysis.remarks.length > 0 || Boolean(analysis.recommendation?.trim()));
 
   return (
-    <StoryContentSections
-      analysis={analysis}
-      isAnalyzing={isAnalyzing}
-      narrative={narrative}
-      notes={notes}
-      showLoading={showLoading}
-      showPlanGaps={showPlanGaps}
-    />
+    <>
+      {showLoading ? <StoryLoadingRow /> : null}
+      <StoryNarrativeBlock analysis={analysis} isAnalyzing={isAnalyzing} narrative={narrative} />
+    </>
+  );
+}
+
+function hasPlanGaps(analysis: ReturnType<typeof parseSessionAnalysis>): boolean {
+  if (!analysis) {
+    return false;
+  }
+  return analysis.remarks.length > 0 || Boolean(analysis.recommendation?.trim());
+}
+
+/**
+ * "Ta note" + "Écarts au plan" grouped under one boundary instead of each
+ * managing its own top hairline — reads as one supporting-detail block under
+ * the narrative, not a loose stack of same-weight fragments.
+ */
+export function CompletedSessionDetails({
+  notes,
+  analysis,
+}: {
+  notes: string | null;
+  analysis: ReturnType<typeof parseSessionAnalysis>;
+}) {
+  const showPlanGaps = hasPlanGaps(analysis);
+  if (!notes && !showPlanGaps) {
+    return null;
+  }
+
+  return (
+    <div className="border-analysis-border/60 divide-analysis-border/50 min-w-0 divide-y overflow-hidden rounded-md border">
+      {notes ? <StoryNotes notes={notes} /> : null}
+      {showPlanGaps && analysis ? <CompletedSessionPlanGaps analysis={analysis} /> : null}
+    </div>
   );
 }
 
