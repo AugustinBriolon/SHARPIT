@@ -364,6 +364,32 @@ Never apply a single `scale()` to every interactive component. Calibrate press f
 
 Floor: never below **0.95** on `:active` scale. Deviations from a preset require a comment naming the override and why. Canonical values: `motionTokens.scale.press*` in `src/lib/motion/tokens.ts`, mirrored as `--press-scale-*` in `src/app/globals.css`.
 
+### 9.9 Enter / Exit Motion — Shared Primitives Only
+
+Mount, unmount, and exit animations are state-bound — use Motion via shared components in `src/components/motion/`, with variants from `src/lib/motion/variants.ts` and durations from `motionTokens`. Do not add raw `AnimatePresence` with bespoke timings.
+
+| Pattern | Component | Use |
+| ------- | --------- | --- |
+| Mount + exit | `FadePresence` | Conditional panels, hub state swaps |
+| One-shot fade-in | `FadeIn` | Post-mount opacity only |
+| Expand / collapse | `MotionExpand` | Sections (grid 0fr→1fr + opacity, §9.3) |
+| List enter | `StaggerList` | Multi-item reveal on first paint — not every optimistic row |
+| Dialog / morph | `MorphPopover`, motion dialog wrappers | `dialogTransition` / `springs.gentle` |
+| Action label swap | `ActionSwap`, `ActionSwapRollText` | In-flight feedback without blocking |
+
+Exit duration ≤ 80% of enter. `initial={false}` when replay would jar. Reduced motion: instant state change, no animation (§9.5). Reveal animations remain a separate category — [ADR-024](../adr/ADR-024-route-reveal-motion-exception.md).
+
+### 9.10 Instant Feedback — Optimistic Apply Before Exit
+
+Motion communicates dismissal; it must not gate perceived latency. For every **SAFE** / **SAFE_WITH_ROLLBACK** mutation opened from a modal, sheet, drawer, or inline action:
+
+1. Patch cache optimistically (`listOptimistic` / `setQueryData` in `onMutate`).
+2. Close the surface on confirm — `mutate()`, not `await mutateAsync()`, on SAFE writes.
+3. Play exit animation while the request completes in background.
+4. Roll back cache + toast on error.
+
+No save spinner on reversible dialog submits. Blocking wait is reserved for BLOCKING class interactions — see [`INSTANT_UX_ARCHITECTURE.md`](../INSTANT_UX_ARCHITECTURE.md) §5. Full rules: [ADR-028](../adr/ADR-028-animation-technology-and-press-feedback.md) §8.
+
 ---
 
 ## 10. Color Philosophy

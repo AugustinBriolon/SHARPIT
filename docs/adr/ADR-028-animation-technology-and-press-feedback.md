@@ -1,4 +1,4 @@
-# ADR-028: Animation technology choice and press feedback calibration
+# ADR-028: Animation technology, enter/exit motion, and interaction feedback
 
 **Status:** Accepted
 **Date:** 2026-08-27
@@ -10,15 +10,19 @@
 
 ## Context
 
-SHARPIT already ships `motion` (Framer Motion API) for a narrow set of state-driven surfaces — expand/collapse, mount/unmount, stagger lists, coach/agent UI — and CSS utilities (`pressable`, `pressable-lg`, `chip-surface`, `chip-surface-lg`) for press feedback on interactive surfaces.
+SHARPIT already ships `motion` (Framer Motion API) for state-driven surfaces — expand/collapse, mount/unmount, stagger lists, coach/agent UI — CSS utilities for press feedback, and TanStack Query optimistic helpers (`listOptimistic`, `setQueryData`) for Instant mutations per [`INSTANT_UX_ARCHITECTURE.md`](../INSTANT_UX_ARCHITECTURE.md).
 
-Two problems were left implicit:
+Four problems were left implicit:
 
-1. **Technology choice.** Agents and contributors had no written rule for when to reach for CSS, Motion, or a heavier library such as GSAP. The default drift is to import Motion for every hover or press — adding bundle weight and coupling animation to React lifecycle when CSS would suffice.
+1. **Technology choice.** No written rule for when to reach for CSS, Motion, or GSAP. Default drift: import Motion for every hover or press.
 
-2. **Press feedback.** A single `scale(0.96)` was applied broadly via `pressable`, without guidance on when a large card, a high-frequency control, or a gesture-driven surface needs a different response. Universal compression makes large surfaces feel mushy and high-frequency controls feel sluggish.
+2. **Enter / exit motion.** Shared primitives exist (`FadePresence`, `MotionExpand`, `stagger-list`, `fadeVariants`) but no decision doc tied them to the technology ladder or forbade ad-hoc `AnimatePresence` + magic durations.
 
-`docs/design/DESIGN_LANGUAGE.md` §9 governs duration, easing, and reduced motion. It did not yet govern **which technology** to use or **how to calibrate press feedback** by component class.
+3. **Press feedback.** A single `scale(0.96)` via `pressable` with no guidance for large surfaces, high-frequency controls, or gesture-driven feedback.
+
+4. **Optimistic UX + motion coupling.** Instant mutations must update cache and close modals/sheets **before** server ack, while exit animations play. Many dialogs still `await mutateAsync` or show save spinners on SAFE writes — animation and latency stack instead of feeling native.
+
+`docs/design/DESIGN_LANGUAGE.md` §9 governed duration and easing but not technology choice, enter/exit patterns, press calibration, or the optimistic-motion contract.
 
 ---
 
@@ -99,6 +103,55 @@ Floor: **never below 0.95** on `:active` scale — compression below that reads 
 
 Any deviation from these presets requires an inline comment naming the preset being overridden and why.
 
+### 7. Enter / exit motion — use shared primitives, token durations
+
+Enter and exit animations are **state-bound** — they require Motion (or CSS `max-height` + `opacity` for expand only). Never invent one-off durations; use `motionTokens` and `src/lib/motion/variants.ts`.
+
+| Interaction | Primitive | Variants / transition | When |
+| ----------- | --------- | --------------------- | ---- |
+| Conditional mount + exit | `FadePresence` | `fadeVariants` + `fadeTransition` | Panel swap, inline confirm, integration hub states |
+| One-shot appear after mount | `FadeIn` | `fadeVariants` | Content already in DOM; fade once client-side |
+| Expand / collapse | `MotionExpand` | `collapseVariants` | Sections, meal blocks, coach guide — §9.3 grid pattern |
+| List stagger on enter | `StaggerList` / `StaggerItem` | `staggerContainer` + `staggerItem` | Threshold cards, agent lists — not on every table row |
+| Dialog / morph surface | `MorphPopover`, motion `Dialog` wrappers | `dialogTransition` (`springs.gentle`) | Sheets, morphing popovers |
+| Label swap on action | `ActionSwap` / `ActionSwapRollText` | token durations | Button text change during background work |
+| Raw `AnimatePresence` | Last resort only | Must import variants from `@/lib/motion` | When no shared primitive fits — comment why |
+
+Rules:
+
+- **Exit ≤ 80% of enter duration** (DESIGN_LANGUAGE §9.3). `fadeTransition` uses `motionTokens.duration.fast` (150ms).
+- **`initial={false}`** on `AnimatePresence` when children may already be mounted (avoid replay on navigation).
+- **`useShouldAnimate` / `useReducedMotion`** — skip motion; keep DOM state change instant (§9.5).
+- **No enter animation on data the athlete is waiting for** — skeleton → content crossfade only; do not stagger a blocking load.
+- **Reveal category** (route trace, etc.) stays separate per [ADR-024](./ADR-024-route-reveal-motion-exception.md); not a license for slower chrome.
+
+### 8. Optimistic updates must lead; motion follows — never the reverse
+
+Per [`INSTANT_UX_ARCHITECTURE.md`](../INSTANT_UX_ARCHITECTURE.md), every **SAFE** / **SAFE_WITH_ROLLBACK** mutation in a modal, sheet, drawer, or inline action must feel Instant:
+
+```
+user confirms  →  optimistic cache patch (onMutate)  →  close surface + play exit  →  mutate in flight  →  reconcile or rollback
+```
+
+**Required for dialog / modal / sheet actions (SAFE class):**
+
+1. Patch TanStack Query cache in `onMutate` via `listOptimistic()` or targeted `setQueryData` — UI outside the dialog reflects the new state immediately.
+2. Call `mutate(vars)` — **not** `await mutateAsync(vars)` — before or while closing. Close on confirm, not on HTTP 200.
+3. Let exit animation run on the closing surface; do not block close on animation end.
+4. Rollback cache + toast on `onError` (`listOptimistic` already does this).
+5. No full-dialog `"Enregistrement…"` spinner for reversible writes. Use `ActionSwap` on the trigger if subtle in-flight feedback is needed.
+
+**Blocking UX is allowed only** for BLOCKING class interactions (auth, OAuth, payment, missing preview payload, irreversible external side-effects). See INSTANT_UX §5.4.
+
+**Anti-patterns (eliminate on touch):**
+
+- `await mutation.mutateAsync()` then `onOpenChange(false)` on a SAFE form save
+- Closing the dialog only after exit animation completes with no optimistic patch
+- `invalidateQueries()` without a prior optimistic shape when `setQueryData` is deterministic
+- Enter animation on a list item that was already optimistically inserted — it is already visible; animate siblings only if needed
+
+Existing good references: `use-goals`, `use-planned-sessions`, `use-physical`, `use-activities` (list optimistic); `use-planned-session-actions` (one-press + undo toast, no confirm dialog).
+
 ---
 
 ## Rationale
@@ -106,7 +159,9 @@ Any deviation from these presets requires an inline comment naming the preset be
 - **CSS-first** keeps the instrument-fast feel §9.2 protects and avoids shipping React animation overhead on every chip hover.
 - **Motion where state-bound** matches existing usage (`MotionExpand`, `AnimatePresence`, coach UI) without pretending every transition needs a component wrapper.
 - **GSAP as opt-in** prevents timeline libraries from becoming the default tool for a 150ms opacity fade.
-- **Semantic press presets** encode the product rule that large surfaces compress less than small controls — already partially implemented via `pressable-lg` at 0.988 vs `pressable` at 0.96; this ADR names and centralizes that split.
+- **Semantic press presets** encode proportional physical feedback by component class.
+- **Enter/exit primitives** stop ad-hoc `AnimatePresence` drift and keep durations under the §9.2 cap.
+- **Optimistic-first modal contract** unifies motion with Instant UX — the athlete sees the outcome immediately; exit motion confirms dismissal, not server latency.
 
 ---
 
@@ -148,7 +203,7 @@ Any deviation from these presets requires an inline comment naming the preset be
 ### Neutral
 
 - Existing `motion` usage is unchanged; this ADR does not mandate refactors of working Motion surfaces.
-- `docs/design/DESIGN_LANGUAGE.md` §9.7–§9.8 and `DESIGN_SYSTEM_PROMPT.md` carry the agent-facing summary; detail lives here.
+- `docs/design/DESIGN_LANGUAGE.md` §9.7–§9.10 and `DESIGN_SYSTEM_PROMPT.md` carry the agent-facing summary; detail lives here.
 
 ---
 
@@ -159,13 +214,18 @@ Revisit this ADR if:
 - GSAP is added to `package.json` — document the triggering feature and scope limit in a follow-up ADR or amend this one.
 - Press preset values change — update `motionTokens`, CSS custom properties, and tests in the same commit.
 - Motion bundle cost becomes measurable on athlete-facing critical paths — re-audit CSS-eligible surfaces.
+- A new shared enter/exit primitive is added — document it in this ADR's §7 table.
 
 ---
 
 ## References
 
-- `docs/design/DESIGN_LANGUAGE.md` §9.7–§9.8
-- `docs/design/DESIGN_SYSTEM_PROMPT.md` — Motion & press feedback
-- `src/lib/motion/tokens.ts` — `motionTokens.scale.press*`
+- `docs/design/DESIGN_LANGUAGE.md` §9.7–§9.10
+- `docs/design/DESIGN_SYSTEM_PROMPT.md` — Motion, enter/exit, optimistic coupling
+- [`docs/INSTANT_UX_ARCHITECTURE.md`](../INSTANT_UX_ARCHITECTURE.md) — Instant / Background / Blocking taxonomy
+- `src/lib/motion/tokens.ts` — durations, scales, springs
+- `src/lib/motion/variants.ts` — `fadeVariants`, `collapseVariants`, `staggerContainer`, `dialogTransition`
+- `src/components/motion/` — `FadePresence`, `MotionExpand`, `StaggerList`, `ActionSwap*`
+- `src/lib/query/optimistic.ts` — `listOptimistic()`
 - `src/app/globals.css` — `--press-scale-*`, `pressable`, `pressable-lg`, `chip-surface`, `chip-surface-lg`
 - [ADR-024](./ADR-024-route-reveal-motion-exception.md) — separate reveal category; unchanged by this ADR
