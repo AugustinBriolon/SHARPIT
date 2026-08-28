@@ -146,11 +146,16 @@ export function CoachProfileContextSection({
     if (guardDisabled) {
       return;
     }
-    save.mutate(editValue, {
+    const savedValue = editValue;
+    setMode('read');
+    save.mutate(savedValue, {
       onSuccess: () => {
         setJustSaved(true);
-        setMode('read');
         setTimeout(() => setJustSaved(false), 2000);
+      },
+      onError: () => {
+        setEditValue(savedValue);
+        setMode('edit');
       },
     });
   }

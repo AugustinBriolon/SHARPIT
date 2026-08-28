@@ -133,7 +133,7 @@ export function TravelMemoryFormDialog({
     }
   }
 
-  async function handleSubmit(event: React.FormEvent) {
+  function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     if (guardDisabled) {
       return;
@@ -146,7 +146,7 @@ export function TravelMemoryFormDialog({
       return;
     }
 
-    await onSubmit(
+    void onSubmit(
       buildTravelMemoryPayload({
         entryType,
         isTravel,
@@ -202,12 +202,7 @@ export function TravelMemoryFormDialog({
           />
 
           <DialogFooter>
-            <Button
-              disabled={saving}
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-            >
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Annuler
             </Button>
             <Button disabled={guardDisabled || saving} type="submit">

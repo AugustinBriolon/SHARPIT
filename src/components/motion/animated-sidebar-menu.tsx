@@ -4,6 +4,7 @@ import { ChevronRight } from 'lucide-react';
 import { motion } from 'motion/react';
 import type { ReactNode } from 'react';
 import { SPRING_LAYOUT, SPRING_PRESS } from '@/lib/ease';
+import { motionTokens } from '@/lib/motion/tokens';
 import { cn } from '@/lib/utils';
 import {
   createSidebarMenuSelect,
@@ -43,7 +44,7 @@ function SidebarInteractiveControl({
   children,
   reduce,
 }: SidebarInteractiveProps) {
-  const tap = reduce || disabled ? undefined : { scale: 0.98 };
+  const tap = reduce || disabled ? undefined : { scale: motionTokens.scale.pressLarge };
 
   if (href) {
     return (

@@ -8,19 +8,7 @@
     },
     {
       "path": "/api/cron/sync",
-      "schedule": "0 9 * * *"
-    },
-    {
-      "path": "/api/cron/sync",
       "schedule": "0 12 * * *"
-    },
-    {
-      "path": "/api/cron/sync",
-      "schedule": "0 15 * * *"
-    },
-    {
-      "path": "/api/cron/sync",
-      "schedule": "0 18 * * *"
     },
     {
       "path": "/api/cron/sync",
@@ -28,7 +16,7 @@
     },
     {
       "path": "/api/cron/planned-forecast",
-      "schedule": "0 19 * * *"
+      "schedule": "0 7 * * *"
     },
     {
       "path": "/api/cron/demo-reseed",

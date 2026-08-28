@@ -7,7 +7,7 @@ import { OnboardingBootstrapScreen } from '@/components/onboarding/onboarding-bo
 import { OnboardingIntentionStep } from '@/components/onboarding/onboarding-intention-step';
 import { OnboardingProvidersStep } from '@/components/onboarding/onboarding-providers-step';
 import { toast } from '@/components/ui/toast';
-import type { GoalPayload } from '@/hooks/use-data';
+import { useGoalMutations } from '@/hooks/use-data';
 import {
   oauthConnectHref,
   providersForClass,
@@ -104,6 +104,7 @@ export function OnboardingWizard({
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { create: createGoal } = useGoalMutations();
   const [step, setStep] = useState<Step>(() =>
     searchParams.get('step') === 'providers' ? 'providers' : 'intention',
   );
@@ -125,25 +126,6 @@ export function OnboardingWizard({
     processOAuthReturn(searchParams, setConnected, setStep);
     // Toast once when landing from OAuth return.
   }, [searchParams]);
-
-  async function createGoal(payload: GoalPayload): Promise<void> {
-    setError(null);
-    setBusy(true);
-    try {
-      const response = await fetch('/api/goals', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      if (!response.ok) {
-        const data = (await response.json().catch(() => null)) as { error?: string } | null;
-        throw new Error(data?.error ?? "Impossible de créer l'objectif");
-      }
-      setStep('providers');
-    } finally {
-      setBusy(false);
-    }
-  }
 
   async function finish() {
     setBusy(true);
@@ -202,13 +184,15 @@ export function OnboardingWizard({
     }
   }
 
-  async function submitIntentionGoal(payload: GoalPayload) {
-    try {
-      await createGoal(payload);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Impossible de créer l'objectif");
-      throw err;
-    }
+  async function submitIntentionGoal(payload: import('@/hooks/use-data').GoalPayload) {
+    setError(null);
+    setStep('providers');
+    createGoal.mutate(payload, {
+      onError: (err) => {
+        setError(err instanceof Error ? err.message : "Impossible de créer l'objectif");
+        setStep('intention');
+      },
+    });
   }
 
   if (step === 'bootstrap') {

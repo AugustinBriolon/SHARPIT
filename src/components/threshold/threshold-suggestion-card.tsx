@@ -31,7 +31,7 @@ function thresholdApplyWhileTap(
   if (!animate || reduce || disabled || pending) {
     return undefined;
   }
-  return { scale: motionTokens.scale.press };
+  return { scale: motionTokens.scale.pressSmall };
 }
 
 function ThresholdSuggestionApplyRow({

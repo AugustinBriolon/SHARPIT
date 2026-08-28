@@ -17,7 +17,7 @@ type WellnessCheckinStatus = {
     perceivedSoreness: number;
     stressLevel: number;
     notes?: string | null;
-  }) => Promise<void>;
+  }) => void;
   refresh: () => void;
 };
 
@@ -81,7 +81,6 @@ export function useWellnessCheckin(date: Date = new Date()): WellnessCheckinStat
       }
     },
     onSettled: () => {
-      // Background reconcile — keep Today ViewModel painted; soft refresh Twin expression.
       void queryClient.invalidateQueries({ queryKey: queryKeys.athleteSnapshot(trainingDayId) });
       void queryClient.invalidateQueries({
         queryKey: queryKeys.presentationToday(trainingDayId),
@@ -91,8 +90,8 @@ export function useWellnessCheckin(date: Date = new Date()): WellnessCheckinStat
   });
 
   const submit = useCallback(
-    async (payload: WellnessPayload) => {
-      await mutation.mutateAsync(payload);
+    (payload: WellnessPayload) => {
+      mutation.mutate(payload);
     },
     [mutation],
   );

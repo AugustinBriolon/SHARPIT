@@ -31,6 +31,7 @@
 | [ADR-025](./ADR-025-multi-tenant-conversion.md)                  | Multi-tenant conversion — Phase 0 (foundation)                                    | Accepted |
 | [ADR-026](./ADR-026-public-demo-mode.md)                         | Public read-only demo mode                                                        | Accepted |
 | [ADR-027](./ADR-027-class-level-integration-sources.md)          | Class-level integration sources of truth                                          | Accepted |
+| [ADR-028](./ADR-028-animation-technology-and-press-feedback.md)  | Animation technology, enter/exit motion, and interaction feedback                 | Accepted |
 
 **Template:** [ADR-template.md](./ADR-template.md)
 

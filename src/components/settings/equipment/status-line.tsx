@@ -4,7 +4,7 @@ import type { StrengthVenue } from '@/lib/equipment/catalog';
 export function EquipmentStatusLine({
   error,
   message,
-  saving,
+  saving: _saving,
   dirty,
 }: {
   error: string | null;
@@ -17,8 +17,6 @@ export function EquipmentStatusLine({
     content = <span className="text-destructive">{error}</span>;
   } else if (message) {
     content = <span>{message}</span>;
-  } else if (saving) {
-    content = <span>Enregistrement…</span>;
   } else if (dirty) {
     content = <span>Modifications en cours…</span>;
   }

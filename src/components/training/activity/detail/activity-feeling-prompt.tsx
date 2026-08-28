@@ -17,25 +17,24 @@ export function ActivityFeelingPrompt({ activityId }: { activityId: string }) {
   const [feeling, setFeeling] = useState('');
   const [feelingError, setFeelingError] = useState<string | null>(null);
 
-  async function handleSave() {
+  function handleSave() {
     if (!feeling) {
       setFeelingError('Choisis un ressenti.');
       return;
     }
     setFeelingError(null);
-    try {
-      await update.mutateAsync({
-        id: activityId,
-        data: { rpe, feeling },
-      });
-      toast.success('Ressenti enregistré');
-      setOpen(false);
-      setFeeling('');
-      setRpe(5);
-      router.refresh();
-    } catch {
-      // toast from mutation
-    }
+    setOpen(false);
+    setFeeling('');
+    setRpe(5);
+    update.mutate(
+      { id: activityId, data: { rpe, feeling } },
+      {
+        onSuccess: () => {
+          toast.success('Ressenti enregistré');
+          router.refresh();
+        },
+      },
+    );
   }
 
   function handleOpenChange(next: boolean) {

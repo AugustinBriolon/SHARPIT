@@ -5,14 +5,9 @@ import { type ButtonHTMLAttributes, forwardRef, type HTMLAttributes, type ReactN
 import { SharedLayoutBg } from '@/components/motion/shared-layout-bg';
 import { SPRING_LAYOUT } from '@/lib/ease';
 import { cn } from '@/lib/utils';
-import {
-  AnimatedSidebarProvider,
-  useAnimatedSidebar,
-  useAnimatedSidebarPanel,
-} from './animated-sidebar-context';
+import { useAnimatedSidebar, useAnimatedSidebarPanel } from './animated-sidebar-context';
 import { DesktopAnimatedSidebar, type AnimatedSidebarProps } from './animated-sidebar-desktop';
 import { MobileSidebar } from './animated-sidebar-mobile';
-import { AnimatedSidebarMenuButton, AnimatedSidebarMenuSubButton } from './animated-sidebar-menu';
 import { mergeRefs, SUBMENU_ITEM_VARIANTS, SUBMENU_VARIANTS } from './animated-sidebar-shared';
 
 export { AnimatedSidebarProvider, useAnimatedSidebar } from './animated-sidebar-context';

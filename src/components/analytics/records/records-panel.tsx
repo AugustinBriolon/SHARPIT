@@ -108,7 +108,7 @@ function RecordHero({ entry }: { entry: RecordEntry }) {
   }
   return (
     <Link
-      className="rounded-analysis hover:bg-analysis-surface-alt/40 pressable block"
+      className="rounded-analysis hover:bg-analysis-surface-alt/40 pressable-lg block"
       href={`/training/${entry.activityId}`}
     >
       {content}
@@ -136,7 +136,7 @@ function LeaderboardRow({ entry }: { entry: RecordEntry }) {
     return content;
   }
   return (
-    <Link className="pressable rounded-analysis block" href={`/training/${entry.activityId}`}>
+    <Link className="pressable-lg rounded-analysis block" href={`/training/${entry.activityId}`}>
       {content}
     </Link>
   );

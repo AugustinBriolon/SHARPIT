@@ -337,6 +337,59 @@ All animations respect `prefers-reduced-motion`. When reduced motion is set:
 
 §9.2's 300ms cap governs interface chrome: tooltips, expand/collapse, page transitions, skeletons. It does not extend to a **reveal** — a one-time animation of an already-complete, non-interactive dataset on its first appearance, communicating a fact the data already carries (a GPS track is a record of movement through time, not a static shape). [ADR-024](../adr/ADR-024-route-reveal-motion-exception.md) defines the category and its sole current instance, the route trace on `RouteMap`. It is not a general license — a slower badge, expand, or transition is still prohibited. A new candidate for this category needs its own argument, not a citation of this section.
 
+### 9.7 Animation Technology — Simplest Capable Tool
+
+Do not introduce an animation library by default. Use the simplest technology that produces the desired interaction with equivalent quality.
+
+**CSS (default)** — hover, focus, active/press, opacity, transform, color, border, simple state transitions. Prefer `pressable` / `pressable-lg` utilities and token-backed custom properties before bespoke rules.
+
+**Motion (`motion` package, already in tree)** — when animation is tightly coupled to application state or component lifecycle: mount/unmount, exit animations, layout transitions, gestures, springs, React state-driven transitions. Never use Motion when CSS alone achieves the same result.
+
+**GSAP (not a dependency today)** — only for advanced choreography: timelines, multi-element sequences, precise synchronization, complex interaction-driven animation, scroll-driven animation, SVG/WebGL/immersive experiences. Requires explicit justification; never add by default.
+
+See [ADR-028](../adr/ADR-028-animation-technology-and-press-feedback.md).
+
+### 9.8 Press Feedback — Semantic Presets, Not Universal Scale
+
+Never apply a single `scale()` to every interactive component. Calibrate press feedback by dimensions, surface area, interaction frequency, hierarchy, physicality, and action importance. Large surfaces compress less than small controls; high-frequency controls use minimal or no scale.
+
+| Preset | Scale | Use |
+| ------ | ----- | --- |
+| Micro control | 0.95 | Icon buttons, compact toggles |
+| Small button | 0.96 | Default compact controls (`pressable`, `chip-surface`) |
+| Large button | 0.98 | Wide CTAs |
+| Large surface | 0.988 | Clickable cards and rows (`pressable-lg`, `chip-surface-lg`) |
+| High-frequency | none | Tabs, scrubbers — color/opacity only |
+| Gesture-driven | spring | Motion `whileTap` + `springs.*`, not CSS `:active` scale |
+
+Floor: never below **0.95** on `:active` scale. Deviations from a preset require a comment naming the override and why. Canonical values: `motionTokens.scale.press*` in `src/lib/motion/tokens.ts`, mirrored as `--press-scale-*` in `src/app/globals.css`.
+
+### 9.9 Enter / Exit Motion — Shared Primitives Only
+
+Mount, unmount, and exit animations are state-bound — use Motion via shared components in `src/components/motion/`, with variants from `src/lib/motion/variants.ts` and durations from `motionTokens`. Do not add raw `AnimatePresence` with bespoke timings.
+
+| Pattern | Component | Use |
+| ------- | --------- | --- |
+| Mount + exit | `FadePresence` | Conditional panels, hub state swaps |
+| One-shot fade-in | `FadeIn` | Post-mount opacity only |
+| Expand / collapse | `MotionExpand` | Sections (grid 0fr→1fr + opacity, §9.3) |
+| List enter | `StaggerList` | Multi-item reveal on first paint — not every optimistic row |
+| Dialog / morph | `MorphPopover`, motion dialog wrappers | `dialogTransition` / `springs.gentle` |
+| Action label swap | `ActionSwap`, `ActionSwapRollText` | In-flight feedback without blocking |
+
+Exit duration ≤ 80% of enter. `initial={false}` when replay would jar. Reduced motion: instant state change, no animation (§9.5). Reveal animations remain a separate category — [ADR-024](../adr/ADR-024-route-reveal-motion-exception.md).
+
+### 9.10 Instant Feedback — Optimistic Apply Before Exit
+
+Motion communicates dismissal; it must not gate perceived latency. For every **SAFE** / **SAFE_WITH_ROLLBACK** mutation opened from a modal, sheet, drawer, or inline action:
+
+1. Patch cache optimistically (`listOptimistic` / `setQueryData` in `onMutate`).
+2. Close the surface on confirm — `mutate()`, not `await mutateAsync()`, on SAFE writes.
+3. Play exit animation while the request completes in background.
+4. Roll back cache + toast on error.
+
+No save spinner on reversible dialog submits. Blocking wait is reserved for BLOCKING class interactions — see [`INSTANT_UX_ARCHITECTURE.md`](../INSTANT_UX_ARCHITECTURE.md) §5. Full rules: [ADR-028](../adr/ADR-028-animation-technology-and-press-feedback.md) §8.
+
 ---
 
 ## 10. Color Philosophy

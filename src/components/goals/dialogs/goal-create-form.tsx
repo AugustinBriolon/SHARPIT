@@ -16,7 +16,6 @@ import { GoalKind } from '@prisma/client';
 import type { GoalPayload } from '@/hooks/use-data';
 
 export type GoalCreateFormProps = {
-  pending?: boolean;
   submitLabel?: string;
   skipLabel?: string;
   onSkip?: () => void;
@@ -26,7 +25,6 @@ export type GoalCreateFormProps = {
 };
 
 export function GoalCreateForm({
-  pending = false,
   submitLabel = 'Créer',
   skipLabel,
   onSkip,
@@ -75,27 +73,17 @@ export function GoalCreateForm({
     return (
       <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
         {skipLabel && onSkip ? (
-          <Button
-            className="sm:mr-auto"
-            disabled={pending}
-            type="button"
-            variant="ghost"
-            onClick={onSkip}
-          >
+          <Button className="sm:mr-auto" type="button" variant="ghost" onClick={onSkip}>
             {skipLabel}
           </Button>
         ) : null}
         {onCancel ? (
-          <Button disabled={pending} type="button" variant="outline" onClick={onCancel}>
+          <Button type="button" variant="outline" onClick={onCancel}>
             Annuler
           </Button>
         ) : null}
-        <Button
-          disabled={pending}
-          form={typeof submitType === 'object' ? submitType.form : undefined}
-          type="submit"
-        >
-          {pending ? 'Enregistrement…' : submitLabel}
+        <Button form={typeof submitType === 'object' ? submitType.form : undefined} type="submit">
+          {submitLabel}
         </Button>
       </div>
     );

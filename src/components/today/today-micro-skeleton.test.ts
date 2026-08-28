@@ -25,7 +25,6 @@ vi.mock('@/hooks/use-wellness-checkin', () => ({
     completed: false,
     loading: false,
     isPending: false,
-    submitting: false,
     error: null,
     submit: vi.fn(),
     refresh: vi.fn(),

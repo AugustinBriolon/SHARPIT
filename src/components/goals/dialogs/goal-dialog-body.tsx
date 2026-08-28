@@ -53,7 +53,6 @@ export function GoalDialogBody({
     return (
       <GoalCreateForm
         error={error}
-        pending={pending}
         submitLabel="Créer"
         onCancel={onClose}
         onSubmit={onCreateSubmit}

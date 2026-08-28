@@ -3,6 +3,7 @@
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { useId } from 'react';
 import { EASE_OUT, SPRING_PRESS } from '@/lib/ease';
+import { motionTokens } from '@/lib/motion/tokens';
 import { cn } from '@/lib/utils';
 
 const CHECK_PATH = 'M5 13l4 4L19 7';
@@ -131,7 +132,7 @@ function CheckboxControl({
       role="checkbox"
       transition={SPRING_PRESS}
       type="button"
-      whileTap={reduce || disabled ? undefined : { scale: 0.92 }}
+      whileTap={reduce || disabled ? undefined : { scale: motionTokens.scale.pressMicro }}
       className={cn(
         'inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-md border-2 transition-colors duration-200 outline-none',
         'focus-visible:ring-ring focus-visible:ring-offset-background focus-visible:ring-2 focus-visible:ring-offset-2',

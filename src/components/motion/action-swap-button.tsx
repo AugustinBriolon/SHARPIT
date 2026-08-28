@@ -10,6 +10,7 @@ import {
 import { ActionSwapButtonContent } from '@/components/motion/action-swap-button-parts';
 import { SIZE_CLASS, VARIANT_CLASS } from '@/components/motion/action-swap-styles';
 import { SPRING_PRESS } from '@/lib/ease';
+import { motionTokens } from '@/lib/motion/tokens';
 import { cn } from '@/lib/utils';
 import type { ActionSwapButtonProps } from './action-swap';
 
@@ -26,7 +27,6 @@ function useActionSwapButtonState(props: ActionSwapButtonProps) {
 export function ActionSwapButton(props: ActionSwapButtonProps) {
   const reduce = useReducedMotion();
   const {
-    items,
     value,
     onValueChange,
     variant = 'secondary',
@@ -50,7 +50,7 @@ export function ActionSwapButton(props: ActionSwapButtonProps) {
       disabled={disabled}
       transition={SPRING_PRESS}
       type="button"
-      whileTap={reduce || disabled ? undefined : { scale: 0.97 }}
+      whileTap={reduce || disabled ? undefined : { scale: motionTokens.scale.pressSmall }}
       className={cn(
         'inline-flex items-center justify-center overflow-hidden font-medium transition-colors',
         'disabled:pointer-events-none disabled:opacity-50',

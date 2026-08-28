@@ -28,7 +28,6 @@ export function OnboardingIntentionStep({
 
       <GoalCreateForm
         error={error}
-        pending={busy}
         skipLabel="Je décide plus tard"
         submitLabel="Continuer"
         onSkip={onSkip}

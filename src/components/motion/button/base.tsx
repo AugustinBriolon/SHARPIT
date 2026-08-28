@@ -14,6 +14,7 @@ import {
 } from 'react';
 import { EASE_OUT, SPRING_PRESS } from '@/lib/ease';
 import { useHoverCapable } from '@/lib/hooks/use-hover-capable';
+import { motionTokens } from '@/lib/motion/tokens';
 import { cn } from '@/lib/utils';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'outline';
@@ -115,7 +116,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
   {
     variant = 'primary',
     size = 'md',
-    pressScale = 0.93,
+    pressScale = motionTokens.scale.pressSmall,
     ripple = false,
     className,
     children,
@@ -169,7 +170,14 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
 });
 
 export const ButtonLink = forwardRef<HTMLAnchorElement, ButtonLinkProps>(function ButtonLink(
-  { variant = 'primary', size = 'md', pressScale = 0.93, className, children, ...rest },
+  {
+    variant = 'primary',
+    size = 'md',
+    pressScale = motionTokens.scale.pressSmall,
+    className,
+    children,
+    ...rest
+  },
   ref,
 ) {
   const reduce = useReducedMotion();

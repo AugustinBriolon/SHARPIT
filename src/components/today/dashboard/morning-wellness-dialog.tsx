@@ -12,10 +12,10 @@ import {
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { useWellnessCheckin } from '@/hooks/use-wellness-checkin';
-import { guardedActionLabel, useOfflineGuard } from '@/hooks/use-offline-guard';
-import { cn } from '@/lib/utils';
 import { toast } from '@/components/ui/toast';
+import { useWellnessCheckin } from '@/hooks/use-wellness-checkin';
+import { useOfflineGuard } from '@/hooks/use-offline-guard';
+import { cn } from '@/lib/utils';
 
 type ScaleOption = { value: number; label: string; icon: string };
 
@@ -116,7 +116,7 @@ function ScalePicker({
               tabIndex={selected ? 0 : -1}
               type="button"
               className={cn(
-                'pressable flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl border px-1 py-2',
+                'pressable-lg flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl border px-1 py-2',
                 selected
                   ? 'border-highlight bg-highlight text-highlight-foreground'
                   : 'border-border/70 bg-background hover:border-primary/30 hover:bg-muted/40',
@@ -144,7 +144,7 @@ function ScalePicker({
 }
 
 export function MorningWellnessDialog({ onCompleted }: { onCompleted?: () => void }) {
-  const { completed, loading, submitting, error, submit } = useWellnessCheckin();
+  const { completed, loading, error, submit } = useWellnessCheckin();
   const { offline, guardDisabled, offlineLabel } = useOfflineGuard();
   const [open, setOpen] = useState(false);
   const [mood, setMood] = useState(3);
@@ -256,16 +256,8 @@ export function MorningWellnessDialog({ onCompleted }: { onCompleted?: () => voi
         </div>
 
         <div className="border-border/60 bg-muted/40 shrink-0 border-t px-5 py-4">
-          <Button
-            className="w-full"
-            disabled={guardDisabled || submitting}
-            type="button"
-            onClick={handleSubmit}
-          >
-            {guardedActionLabel(offline, offlineLabel, 'Valider mon ressenti', {
-              active: submitting,
-              label: 'Enregistrement…',
-            })}
+          <Button className="w-full" disabled={guardDisabled} type="button" onClick={handleSubmit}>
+            {offline ? offlineLabel : 'Valider mon ressenti'}
           </Button>
         </div>
       </DialogContent>

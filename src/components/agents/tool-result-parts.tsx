@@ -17,6 +17,7 @@ import { motion, useReducedMotion } from 'motion/react';
 import { type ReactNode } from 'react';
 import { ActionSwapRollText } from '@/components/motion/action-swap-roll';
 import { SPRING_PRESS, SPRING_SWAP } from '@/lib/ease';
+import { motionTokens } from '@/lib/motion/tokens';
 import { cn } from '@/lib/utils';
 import {
   getStatusClass,
@@ -66,7 +67,7 @@ export function ToolResultAction({
       title={label}
       transition={SPRING_PRESS}
       type="button"
-      whileTap={reduce ? undefined : { scale: 0.9 }}
+      whileTap={reduce ? undefined : { scale: motionTokens.scale.pressMicro }}
       onClick={onClick}
     >
       {children}

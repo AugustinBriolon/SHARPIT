@@ -13,6 +13,7 @@ import {
   useFileDiffTokens,
 } from '@/components/agents/use-file-diff';
 import { SPRING_PRESS, SPRING_SWAP } from '@/lib/ease';
+import { motionTokens } from '@/lib/motion/tokens';
 import { cn } from '@/lib/utils';
 import type { FileDiffLineType, FileDiffProps } from './file-diff-types';
 
@@ -113,13 +114,11 @@ function FileDiffTrigger({
 function FileDiffViewport({
   lines,
   maxHeight,
-  streaming,
   tokens,
   viewportRef,
 }: {
   lines: FileDiffProps['lines'];
   maxHeight: number;
-  streaming: boolean;
   tokens: ReturnType<typeof useFileDiffTokens>;
   viewportRef: React.RefObject<HTMLDivElement | null>;
 }) {
@@ -210,7 +209,6 @@ function FileDiffBody({
   lines,
   maxHeight,
   reduce,
-  streaming,
   tokens,
   triggerId,
   viewportRef,
@@ -223,7 +221,6 @@ function FileDiffBody({
   lines: FileDiffProps['lines'];
   maxHeight: number;
   reduce: boolean;
-  streaming: boolean;
   tokens: ReturnType<typeof useFileDiffTokens>;
   triggerId: string;
   viewportRef: React.RefObject<HTMLDivElement | null>;
@@ -235,7 +232,6 @@ function FileDiffBody({
           <FileDiffViewport
             lines={lines}
             maxHeight={maxHeight}
-            streaming={streaming}
             tokens={tokens}
             viewportRef={viewportRef}
           />
@@ -247,7 +243,7 @@ function FileDiffBody({
                 title={copied ? 'Copied' : 'Copy diff'}
                 transition={SPRING_PRESS}
                 type="button"
-                whileTap={reduce ? undefined : { scale: 0.9 }}
+                whileTap={reduce ? undefined : { scale: motionTokens.scale.pressMicro }}
                 onClick={handleCopy}
               >
                 {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
@@ -317,7 +313,6 @@ export function FileDiff({
         lines={lines}
         maxHeight={maxHeight}
         reduce={reduce}
-        streaming={streaming}
         tokens={tokens}
         triggerId={triggerId}
         viewportRef={viewportRef}

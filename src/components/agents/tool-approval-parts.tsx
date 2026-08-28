@@ -5,6 +5,7 @@ import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { type ReactNode } from 'react';
 import { AgentDisclosure } from '@/components/agents/agent-disclosure';
 import { EASE_OUT, SPRING_PRESS, SPRING_SWAP } from '@/lib/ease';
+import { motionTokens } from '@/lib/motion/tokens';
 import { cn } from '@/lib/utils';
 import {
   approvalStatusIcon,
@@ -147,7 +148,7 @@ export function ToolApprovalPendingActions({
             className="bg-foreground text-background focus-visible:ring-ring rounded-xl px-3 py-1.5 text-xs font-medium outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
             transition={SPRING_PRESS}
             type="button"
-            whileTap={reduce ? undefined : { scale: 0.97 }}
+            whileTap={reduce ? undefined : { scale: motionTokens.scale.pressSmall }}
             onClick={onApprove}
           >
             Allow once
@@ -157,7 +158,7 @@ export function ToolApprovalPendingActions({
               className="border-border/60 bg-background text-foreground hover:bg-muted focus-visible:ring-ring rounded-xl border px-3 py-1.5 text-xs font-medium transition-colors outline-none focus-visible:ring-2"
               transition={SPRING_PRESS}
               type="button"
-              whileTap={reduce ? undefined : { scale: 0.97 }}
+              whileTap={reduce ? undefined : { scale: motionTokens.scale.pressSmall }}
               onClick={onAlwaysAllow}
             >
               Always allow

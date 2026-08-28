@@ -2,6 +2,7 @@ import type { CSSProperties, ReactNode } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { RotateCcw } from 'lucide-react';
 import { EASE_OUT, SPRING_PRESS } from '@/lib/ease';
+import { motionTokens } from '@/lib/motion/tokens';
 import { cn } from '@/lib/utils';
 import { DitherField, DitherMark } from './image-generation-dither';
 import type { ImageGenerationStatus } from './image-generation-types';
@@ -174,7 +175,7 @@ export function ImageGenerationRetryButton({
       className="text-foreground hover:bg-muted focus-visible:ring-ring mt-3 inline-flex min-h-10 items-center gap-2 rounded-full px-3 text-sm font-medium transition-colors outline-none focus-visible:ring-2"
       transition={SPRING_PRESS}
       type="button"
-      whileTap={reduce ? undefined : { scale: 0.96 }}
+      whileTap={reduce ? undefined : { scale: motionTokens.scale.pressSmall }}
       onClick={onRetry}
     >
       <RotateCcw aria-hidden="true" className="size-4" />

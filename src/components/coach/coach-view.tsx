@@ -58,7 +58,7 @@ export function CoachView() {
     if (!confirmed) {
       return;
     }
-    await deleteConversation.mutateAsync(id);
+    deleteConversation.mutate(id);
     clearCoachInputDraft(id);
     if (selection.selectedId === id) {
       const nextId = createEphemeralId();

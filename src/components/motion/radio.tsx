@@ -1,6 +1,6 @@
 'use client';
 
-import { motion, MotionConfig, useReducedMotion } from 'motion/react';
+import { MotionConfig, useReducedMotion } from 'motion/react';
 import {
   createContext,
   useCallback,
