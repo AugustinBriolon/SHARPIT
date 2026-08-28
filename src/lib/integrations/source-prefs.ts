@@ -43,38 +43,52 @@ export function legacyDefaultsFromConnected(
   return prefs;
 }
 
+const CLASS_PRIMARY_PREFERENCE: Partial<Record<DataClassId, IntegrationId[]>> = {
+  activities: ['garmin', 'strava'],
+  wearable_health: ['garmin'],
+  body: ['withings', 'renpho'],
+  nutrition: ['myfitnesspal'],
+  calendar: ['google'],
+};
+
 function pickDefaultPrimary(classId: DataClassId, enabled: IntegrationId[]): IntegrationId | null {
   if (enabled.length === 0) {
     return null;
   }
-  if (classId === 'activities') {
-    if (enabled.includes('garmin')) {
-      return 'garmin';
+  const preferences = CLASS_PRIMARY_PREFERENCE[classId];
+  if (preferences) {
+    const match = preferences.find((id) => enabled.includes(id));
+    if (match) {
+      return match;
     }
-    if (enabled.includes('strava')) {
-      return 'strava';
-    }
-  }
-  if (classId === 'wearable_health') {
-    if (enabled.includes('garmin')) {
-      return 'garmin';
-    }
-  }
-  if (classId === 'body') {
-    if (enabled.includes('withings')) {
-      return 'withings';
-    }
-    if (enabled.includes('renpho')) {
-      return 'renpho';
-    }
-  }
-  if (classId === 'nutrition' && enabled.includes('myfitnesspal')) {
-    return 'myfitnesspal';
-  }
-  if (classId === 'calendar' && enabled.includes('google')) {
-    return 'google';
   }
   return enabled[0] ?? null;
+}
+
+function parseEnabledProviders(entry: Record<string, unknown>): IntegrationId[] {
+  if (!Array.isArray(entry.enabled)) {
+    return [];
+  }
+  return entry.enabled.filter((id): id is IntegrationId => typeof id === 'string');
+}
+
+function parseClassPrimary(
+  entry: Record<string, unknown>,
+  enabled: IntegrationId[],
+): IntegrationId | null {
+  if (typeof entry.primary === 'string' && enabled.includes(entry.primary as IntegrationId)) {
+    return entry.primary as IntegrationId;
+  }
+  return enabled[0] ?? null;
+}
+
+function parseClassEntry(entry: unknown): ClassSourcePrefs | null {
+  if (!entry || typeof entry !== 'object') {
+    return null;
+  }
+  const record = entry as Record<string, unknown>;
+  const enabled = parseEnabledProviders(record);
+  return { primary: parseClassPrimary(record, enabled), enabled: [...new Set(enabled)] };
 }
 
 export function parseSourcePrefs(raw: unknown): IntegrationSourcePrefs | null {
@@ -90,19 +104,10 @@ export function parseSourcePrefs(raw: unknown): IntegrationSourcePrefs | null {
   const result = emptySourcePrefs();
 
   for (const classDef of DATA_CLASSES) {
-    const entry = classes[classDef.id];
-    if (!entry || typeof entry !== 'object') {
-      continue;
+    const parsed = parseClassEntry(classes[classDef.id]);
+    if (parsed) {
+      result.classes[classDef.id] = parsed;
     }
-    const e = entry as Record<string, unknown>;
-    const enabled = Array.isArray(e.enabled)
-      ? (e.enabled.filter((id): id is IntegrationId => typeof id === 'string') as IntegrationId[])
-      : [];
-    const primary =
-      typeof e.primary === 'string' && enabled.includes(e.primary as IntegrationId)
-        ? (e.primary as IntegrationId)
-        : (enabled[0] ?? null);
-    result.classes[classDef.id] = { primary, enabled: [...new Set(enabled)] };
   }
   return result;
 }
@@ -122,6 +127,20 @@ export function resolveSourcePrefs(
   return sanitizePrefs(parsed, connected);
 }
 
+function resolveSanitizedPrimary(
+  current: ClassSourcePrefs,
+  enabled: IntegrationId[],
+): IntegrationId | null {
+  let { primary } = current;
+  if (primary && !enabled.includes(primary)) {
+    primary = enabled[0] ?? null;
+  }
+  if (!primary && enabled.length > 0) {
+    primary = enabled[0] ?? null;
+  }
+  return primary;
+}
+
 /** Drop disconnected providers; keep primary ∈ enabled. */
 export function sanitizePrefs(
   prefs: IntegrationSourcePrefs,
@@ -135,14 +154,10 @@ export function sanitizePrefs(
     const enabled = current.enabled.filter(
       (id) => connectedSet.has(id) && providerCoversClass(id, classDef.id),
     );
-    let { primary } = current;
-    if (primary && !enabled.includes(primary)) {
-      primary = enabled[0] ?? null;
-    }
-    if (!primary && enabled.length > 0) {
-      primary = enabled[0] ?? null;
-    }
-    next.classes[classDef.id] = { primary, enabled };
+    next.classes[classDef.id] = {
+      primary: resolveSanitizedPrimary(current, enabled),
+      enabled,
+    };
   }
   return next;
 }

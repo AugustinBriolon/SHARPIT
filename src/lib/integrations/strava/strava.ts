@@ -243,24 +243,19 @@ export async function fetchActivityStreams(
   return response.json();
 }
 
+const STRAVA_TYPE_RULES: Array<{ pattern: RegExp; type: ActivityType }> = [
+  { pattern: /run/, type: ActivityType.RUN },
+  { pattern: /ride|bike|cycling|velomobile/, type: ActivityType.BIKE },
+  { pattern: /swim/, type: ActivityType.SWIM },
+  { pattern: /weighttraining|workout|crossfit/, type: ActivityType.STRENGTH },
+];
+
 export function mapStravaType(stravaType: string): ActivityType | null {
   const type = stravaType.toLowerCase();
-  if (type.includes('run')) {
-    return ActivityType.RUN;
-  }
-  if (
-    type.includes('ride') ||
-    type.includes('bike') ||
-    type.includes('cycling') ||
-    type.includes('velomobile')
-  ) {
-    return ActivityType.BIKE;
-  }
-  if (type.includes('swim')) {
-    return ActivityType.SWIM;
-  }
-  if (type.includes('weighttraining') || type.includes('workout') || type.includes('crossfit')) {
-    return ActivityType.STRENGTH;
+  for (const rule of STRAVA_TYPE_RULES) {
+    if (rule.pattern.test(type)) {
+      return rule.type;
+    }
   }
   return null;
 }

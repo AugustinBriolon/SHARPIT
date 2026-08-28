@@ -111,236 +111,189 @@ function buildExplainerVm(args: {
   };
 }
 
-export async function buildBodyPresentationViewModel(
-  athleteId: string,
-  days?: number | null,
-): Promise<BodyViewModel> {
-  const activeTrendWindowId = inferActiveTrendWindowId(days);
-  const trendWindows = TREND_WINDOWS.map((w) => ({ ...w }));
-
-  const measurements = await getBodyCompositionMeasurements(athleteId, days ?? undefined);
-  const entries = measurements ?? [];
-
-  if (!entries.length) {
-    return {
-      hasData: false,
-      emptyState: {
-        title: 'Aucune mesure importée',
-        description: 'Connecte Withings ou Renpho dans les réglages pour synchroniser ta balance.',
-      },
-      trendWindows,
-      activeTrendWindowId,
-      insights: { primary: [], supporting: [], contextual: [] },
-      hero: {
-        latestWeightKg: null,
-        latestWeightDisplay: '—',
-        measuredAtLabel: null,
-        sourceLabel: null,
-        weightDeltaDisplay: null,
-        weightDeltaTone: null,
-        weightDeltaHint: null,
-        heroMini: {
-          bodyFatPct: {
-            value: null,
-            deltaDisplay: null,
-            deltaTone: 'ok',
-            deltaHint: null,
-            tone: 'neutral',
-          },
-          musclePct: {
-            value: null,
-            deltaDisplay: null,
-            deltaTone: 'ok',
-            deltaHint: null,
-            tone: 'neutral',
-          },
-          visceralFat: {
-            value: null,
-            deltaDisplay: null,
-            deltaTone: 'ok',
-            deltaHint: null,
-            tone: 'neutral',
-          },
-          waterPct: {
-            value: null,
-            deltaDisplay: null,
-            deltaTone: 'ok',
-            deltaHint: null,
-            tone: 'neutral',
-          },
-        },
-      },
-      context: { chronologicalAgeYears: null },
-      hasBodyScan: false,
-      trajectoryCards: [],
-      contextCards: [],
-      healthScanCards: [],
-      chartData: [],
-      explainerByMetricId: {},
-      hierarchy: { rootId: 'body', order: ['hero', 'insights', 'sections', 'trends'] },
-    };
-  }
-
-  const latest = entries[0]!;
-
-  // Build interpretive context for the metric guides (server-side).
-  const profile = await getAthleteProfile(athleteId);
-  const baseCtx = athleteCompositionContext(profile);
-  const heightM = baseCtx.heightM ?? heightFromWithingsExtras(latest.withingsExtras);
-
-  const compositionContext: CompositionContext = {
-    heightM,
-    weightKg: latest.weightKg ?? null,
-    chronologicalAgeYears: baseCtx.chronoAge,
+function emptyHeroMini(): BodyViewModel['hero']['heroMini'] {
+  const emptyMetric = {
+    value: null,
+    deltaDisplay: null,
+    deltaTone: 'ok' as const,
+    deltaHint: null,
+    tone: 'neutral' as const,
   };
+  return {
+    bodyFatPct: emptyMetric,
+    musclePct: emptyMetric,
+    visceralFat: emptyMetric,
+    waterPct: emptyMetric,
+  };
+}
 
-  const entriesDedup = entries;
+function emptyBodyPresentationViewModel(
+  activeTrendWindowId: BodyTrendWindowId,
+  trendWindows: BodyViewModel['trendWindows'],
+): BodyViewModel {
+  return {
+    hasData: false,
+    emptyState: {
+      title: 'Aucune mesure importée',
+      description: 'Connecte Withings ou Renpho dans les réglages pour synchroniser ta balance.',
+    },
+    trendWindows,
+    activeTrendWindowId,
+    insights: { primary: [], supporting: [], contextual: [] },
+    hero: {
+      latestWeightKg: null,
+      latestWeightDisplay: '—',
+      measuredAtLabel: null,
+      sourceLabel: null,
+      weightDeltaDisplay: null,
+      weightDeltaTone: null,
+      weightDeltaHint: null,
+      heroMini: emptyHeroMini(),
+    },
+    context: { chronologicalAgeYears: null },
+    hasBodyScan: false,
+    trajectoryCards: [],
+    contextCards: [],
+    healthScanCards: [],
+    chartData: [],
+    explainerByMetricId: {},
+    hierarchy: { rootId: 'body', order: ['hero', 'insights', 'sections', 'trends'] },
+  };
+}
 
-  const weight = computeCompositionTrend(entriesDedup, 'weightKg');
-  const bodyFat = computeCompositionTrend(entriesDedup, 'bodyFatPct');
-  const muscle = computeCompositionTrend(entriesDedup, 'musclePct');
-  const visceral = computeCompositionTrend(entriesDedup, 'visceralFat');
-  const water = computeCompositionTrend(entriesDedup, 'waterPct');
-  const bmi = computeCompositionTrend(entriesDedup, 'bmi');
+function buildMetricDeltaFooter(
+  metricId: 'bmi' | 'bodyFatPct' | 'musclePct' | 'visceralFat',
+  delta7d: number | null | undefined,
+) {
+  const presentation = buildWeeklyDeltaPresentation(metricId, delta7d, (delta) =>
+    formatCompositionDelta(delta, ' pts vs 7j'),
+  );
+  if (presentation.deltaDisplay === null) {
+    return null;
+  }
+  return {
+    footer: presentation.deltaDisplay,
+    footerTone: presentation.deltaTone,
+    footerHint: presentation.deltaHint,
+  };
+}
 
-  const latestBmiDisplay = latest.bmi ?? bmi.latest ?? null;
+function buildTrendHeroMiniMetric(input: {
+  metricId: CompositionMetricId;
+  latest: number | null;
+  delta: number | null;
+  compositionContext: CompositionContext;
+}) {
+  const delta = buildWeeklyDeltaPresentation(input.metricId, input.delta, (d) =>
+    formatCompositionDelta(d, ' pts'),
+  );
+  const zoneTone =
+    input.latest !== null
+      ? getGuide(input.metricId).interpret(input.latest, input.compositionContext).tone
+      : 'neutral';
+  return {
+    value: input.latest,
+    deltaDisplay: delta.deltaDisplay,
+    deltaTone: delta.deltaTone,
+    deltaHint: delta.deltaHint,
+    tone:
+      input.latest !== null
+        ? resolveMetricValueTone(zoneTone, input.metricId, input.delta)
+        : 'neutral',
+    guideId: input.metricId,
+  };
+}
 
-  const chartData = buildCompositionSeries(entriesDedup);
+function buildWaterHeroMiniMetric(
+  water: ReturnType<typeof computeCompositionTrend>,
+  compositionContext: CompositionContext,
+) {
+  const zoneTone =
+    water.latest !== null
+      ? getGuide('waterPct').interpret(water.latest, compositionContext).tone
+      : 'neutral';
+  return {
+    value: water.latest,
+    deltaDisplay:
+      water.delta !== null ? (formatCompositionDelta(water.delta, ' pts') ?? null) : null,
+    deltaTone: 'ok' as const,
+    deltaHint: null,
+    tone: zoneTone,
+    guideId: 'waterPct' as CompositionMetricId,
+  };
+}
 
-  const weightDelta = buildWeeklyDeltaPresentation('weightKg', weight.delta, (delta) =>
+type BodyMeasurementEntry = NonNullable<Awaited<ReturnType<typeof getBodyCompositionMeasurements>>>[number];
+
+function computeBodyCompositionTrends(entries: BodyMeasurementEntry[]) {
+  return {
+    weight: computeCompositionTrend(entries, 'weightKg'),
+    bodyFat: computeCompositionTrend(entries, 'bodyFatPct'),
+    muscle: computeCompositionTrend(entries, 'musclePct'),
+    visceral: computeCompositionTrend(entries, 'visceralFat'),
+    water: computeCompositionTrend(entries, 'waterPct'),
+    bmi: computeCompositionTrend(entries, 'bmi'),
+  };
+}
+
+function buildBodyHeroSection(input: {
+  latest: BodyMeasurementEntry;
+  compositionContext: CompositionContext;
+  trends: ReturnType<typeof computeBodyCompositionTrends>;
+}): BodyViewModel['hero'] {
+  const { latest, compositionContext, trends } = input;
+  const weightDelta = buildWeeklyDeltaPresentation('weightKg', trends.weight.delta, (delta) =>
     formatCompositionDelta(delta, ' kg'),
   );
-
-  function buildMetricDeltaFooter(
-    metricId: 'bmi' | 'bodyFatPct' | 'musclePct' | 'visceralFat',
-    delta7d: number | null | undefined,
-  ) {
-    const presentation = buildWeeklyDeltaPresentation(metricId, delta7d, (delta) =>
-      formatCompositionDelta(delta, ' pts vs 7j'),
-    );
-    if (presentation.deltaDisplay === null) {
-      return null;
-    }
-    return {
-      footer: presentation.deltaDisplay,
-      footerTone: presentation.deltaTone,
-      footerHint: presentation.deltaHint,
-    };
-  }
-
-  const hero: BodyViewModel['hero'] = {
+  return {
     latestWeightKg: latest.weightKg ?? null,
     latestWeightDisplay: latest.weightKg !== null ? formatWeightKgDisplay(latest.weightKg) : '—',
     measuredAtLabel: displayMeasuredAt(latest.measuredAt),
     sourceLabel: sourceLabel(latest.source),
     weightDeltaDisplay: weightDelta.deltaDisplay,
-    weightDeltaTone: weight.delta !== null ? weightDelta.deltaTone : null,
+    weightDeltaTone: trends.weight.delta !== null ? weightDelta.deltaTone : null,
     weightDeltaHint: weightDelta.deltaHint,
     heroMini: {
-      bodyFatPct: (() => {
-        const delta = buildWeeklyDeltaPresentation('bodyFatPct', bodyFat.delta, (d) =>
-          formatCompositionDelta(d, ' pts'),
-        );
-        const zoneTone =
-          bodyFat.latest !== null
-            ? getGuide('bodyFatPct').interpret(bodyFat.latest, compositionContext).tone
-            : 'neutral';
-        return {
-          value: bodyFat.latest,
-          deltaDisplay: delta.deltaDisplay,
-          deltaTone: delta.deltaTone,
-          deltaHint: delta.deltaHint,
-          tone:
-            bodyFat.latest !== null
-              ? resolveMetricValueTone(zoneTone, 'bodyFatPct', bodyFat.delta)
-              : 'neutral',
-          guideId: 'bodyFatPct' as CompositionMetricId,
-        };
-      })(),
-      musclePct: (() => {
-        const delta = buildWeeklyDeltaPresentation('musclePct', muscle.delta, (d) =>
-          formatCompositionDelta(d, ' pts'),
-        );
-        const zoneTone =
-          muscle.latest !== null
-            ? getGuide('musclePct').interpret(muscle.latest, compositionContext).tone
-            : 'neutral';
-        return {
-          value: muscle.latest,
-          deltaDisplay: delta.deltaDisplay,
-          deltaTone: delta.deltaTone,
-          deltaHint: delta.deltaHint,
-          tone:
-            muscle.latest !== null
-              ? resolveMetricValueTone(zoneTone, 'musclePct', muscle.delta)
-              : 'neutral',
-          guideId: 'musclePct' as CompositionMetricId,
-        };
-      })(),
-      visceralFat: (() => {
-        const delta = buildWeeklyDeltaPresentation('visceralFat', visceral.delta, (d) =>
-          formatCompositionDelta(d, ' pts'),
-        );
-        const zoneTone =
-          visceral.latest !== null
-            ? getGuide('visceralFat').interpret(visceral.latest, compositionContext).tone
-            : 'neutral';
-        return {
-          value: visceral.latest,
-          deltaDisplay: delta.deltaDisplay,
-          deltaTone: delta.deltaTone,
-          deltaHint: delta.deltaHint,
-          tone:
-            visceral.latest !== null
-              ? resolveMetricValueTone(zoneTone, 'visceralFat', visceral.delta)
-              : 'neutral',
-          guideId: 'visceralFat' as CompositionMetricId,
-        };
-      })(),
-      waterPct: (() => {
-        // No weekly-delta severity threshold exists for water % (unlike the other
-        // three metrics) — show the raw 7-day delta as display text only, tone
-        // stays the guide's static zone interpretation (same as the old context card).
-        const zoneTone =
-          water.latest !== null
-            ? getGuide('waterPct').interpret(water.latest, compositionContext).tone
-            : 'neutral';
-        return {
-          value: water.latest,
-          deltaDisplay:
-            water.delta !== null ? (formatCompositionDelta(water.delta, ' pts') ?? null) : null,
-          deltaTone: 'ok' as const,
-          deltaHint: null,
-          tone: zoneTone,
-          guideId: 'waterPct' as CompositionMetricId,
-        };
-      })(),
+      bodyFatPct: buildTrendHeroMiniMetric({
+        metricId: 'bodyFatPct',
+        latest: trends.bodyFat.latest,
+        delta: trends.bodyFat.delta,
+        compositionContext,
+      }),
+      musclePct: buildTrendHeroMiniMetric({
+        metricId: 'musclePct',
+        latest: trends.muscle.latest,
+        delta: trends.muscle.delta,
+        compositionContext,
+      }),
+      visceralFat: buildTrendHeroMiniMetric({
+        metricId: 'visceralFat',
+        latest: trends.visceral.latest,
+        delta: trends.visceral.delta,
+        compositionContext,
+      }),
+      waterPct: buildWaterHeroMiniMetric(trends.water, compositionContext),
     },
   };
+}
 
-  // Build insights (Product Insight Layer already exists).
-  const insights = buildBodyPageInsights({
-    bodyFatDelta7d: bodyFat.delta,
-    latestWeightKg: weight.latest,
-    measuredAtLabel: hero.measuredAtLabel,
-    sourceLabel: hero.sourceLabel,
-    visceralFat: visceral.latest,
-    waterPercent: latest.waterPct ?? null,
-    weightDelta7d: weight.delta,
-  });
-
-  // Metric explainer map for any metric card that includes “expliquer”.
-  const explainerByMetricId: BodyViewModel['explainerByMetricId'] = {};
-
-  function ensureExplainer(
+function createBodyExplainerEnsurer(
+  compositionContext: CompositionContext,
+): {
+  explainerByMetricId: BodyViewModel['explainerByMetricId'];
+  ensureExplainer: (
     metricId: CompositionMetricId,
     raw: number | null | undefined,
     display: string | null | undefined,
-  ) {
-    if (raw === null || display === null) {
-      return;
-    }
-    if (explainerByMetricId[metricId]) {
+  ) => void;
+} {
+  const explainerByMetricId: BodyViewModel['explainerByMetricId'] = {};
+  const ensureExplainer = (
+    metricId: CompositionMetricId,
+    raw: number | null | undefined,
+    display: string | null | undefined,
+  ) => {
+    if (raw === null || display === null || explainerByMetricId[metricId]) {
       return;
     }
     explainerByMetricId[metricId] = buildExplainerVm({
@@ -349,237 +302,79 @@ export async function buildBodyPresentationViewModel(
       displayValue: display,
       context: compositionContext,
     });
-  }
+  };
+  return { explainerByMetricId, ensureExplainer };
+}
 
-  const trajectoryCards: BodyMetricCardVm[] = [];
-  if (latestBmiDisplay !== null) {
-    const metricId: CompositionMetricId = 'bmi';
-    const valueDisplay = `${latestBmiDisplay}`;
-    const guide = getGuide(metricId);
-    const interpretation = guide.interpret(latestBmiDisplay, compositionContext);
-    ensureExplainer(metricId, latestBmiDisplay, valueDisplay);
-    const bmiDeltaFooter = buildMetricDeltaFooter('bmi', bmi.delta);
-    trajectoryCards.push({
-      cardId: metricId,
-      guideId: metricId,
-      label: 'IMC',
-      valueDisplay,
-      footer: bmiDeltaFooter?.footer ?? 'Repère poids / taille²',
-      footerTone: bmiDeltaFooter?.footerTone,
-      footerHint: bmiDeltaFooter?.footerHint ?? undefined,
-      tone: resolveMetricValueTone(interpretation.tone, metricId, bmi.delta),
-    });
-  }
-
-  // bodyFatPct/musclePct/visceralFat are already shown in hero.heroMini above —
-  // ensureExplainer keeps the explainer modal available for them without a
-  // second, duplicate trajectoryCards tile.
-  if (bodyFat.latest !== null) {
-    const metricId: CompositionMetricId = 'bodyFatPct';
-    ensureExplainer(metricId, bodyFat.latest, `${bodyFat.latest} %`);
-  }
-
-  if (muscle.latest !== null) {
-    const metricId: CompositionMetricId = 'musclePct';
-    ensureExplainer(metricId, muscle.latest, `${muscle.latest} %`);
-  }
-
-  if (visceral.latest !== null) {
-    const metricId: CompositionMetricId = 'visceralFat';
-    ensureExplainer(metricId, visceral.latest, `${visceral.latest}`);
-  }
-
-  if (latest.fatFreeWeightKg !== null) {
-    trajectoryCards.push({
-      cardId: 'fatFreeWeightKg',
-      label: 'Masse maigre',
-      valueDisplay: `${latest.fatFreeWeightKg.toFixed(1)} kg`,
-      tone: 'neutral',
-    });
-  }
-
-  if (latest.boneKg !== null) {
-    trajectoryCards.push({
-      cardId: 'boneKg',
-      label: 'Masse osseuse',
-      valueDisplay: `${latest.boneKg.toFixed(2)} kg`,
-      tone: 'neutral',
-    });
-  }
-
-  // waterPct is now shown in hero.heroMini above — ensureExplainer keeps the
-  // explainer modal available without a second, duplicate contextCards tile.
-  if (latest.waterPct !== null) {
-    const metricId: CompositionMetricId = 'waterPct';
-    ensureExplainer(metricId, latest.waterPct, `${latest.waterPct.toFixed(1)} %`);
-  }
-
-  const contextCards: BodyMetricCardVm[] = [];
-  if (latest.bmr !== null) {
-    const metricId: CompositionMetricId = 'bmr';
-    const valueDisplay = `${Math.round(latest.bmr)} kcal`;
-    const interpretation = getGuide(metricId).interpret(latest.bmr, compositionContext);
-    ensureExplainer(metricId, latest.bmr, valueDisplay);
-    contextCards.push({
-      cardId: metricId,
-      guideId: metricId,
-      label: 'Métabolisme basal',
-      valueDisplay,
-      tone: interpretation.tone,
-    });
-  }
-  if (latest.metabolicAge !== null) {
-    const metricId: CompositionMetricId = 'metabolicAge';
-    const valueDisplay = `${latest.metabolicAge} ans`;
-    const interpretation = getGuide(metricId).interpret(latest.metabolicAge, compositionContext);
-    ensureExplainer(metricId, latest.metabolicAge, valueDisplay);
-    contextCards.push({
-      cardId: metricId,
-      guideId: metricId,
-      label: 'Âge métabolique',
-      valueDisplay,
-      tone: interpretation.tone,
-    });
-  }
-
-  const healthScanCards: BodyMetricCardVm[] = [];
-  const ecgStats = parseWithingsEcgStats(latest.withingsExtras);
-
-  if (latest.vascularAgeYears !== null) {
-    const metricId: CompositionMetricId = 'vascularAgeYears';
-    const valueDisplay = `${latest.vascularAgeYears} ans`;
-    const interpretation = getGuide(metricId).interpret(
-      latest.vascularAgeYears,
-      compositionContext,
-    );
-    ensureExplainer(metricId, latest.vascularAgeYears, valueDisplay);
-    healthScanCards.push({
-      cardId: metricId,
-      guideId: metricId,
-      label: 'Âge vasculaire',
-      valueDisplay,
-      tone: interpretation.tone,
-    });
-  }
-  if (latest.pulseWaveVelocity !== null) {
-    const metricId: CompositionMetricId = 'pulseWaveVelocity';
-    const valueDisplay = `${latest.pulseWaveVelocity.toFixed(1)} m/s`;
-    const interpretation = getGuide(metricId).interpret(
-      latest.pulseWaveVelocity,
-      compositionContext,
-    );
-    ensureExplainer(metricId, latest.pulseWaveVelocity, valueDisplay);
-    healthScanCards.push({
-      cardId: metricId,
-      guideId: metricId,
-      label: 'Onde de pouls (PWV)',
-      valueDisplay,
-      tone: interpretation.tone,
-    });
-  }
-  if (latest.nerveHealthScore !== null) {
-    const metricId: CompositionMetricId = 'nerveHealthScore';
-    const valueDisplay = `${Math.round(latest.nerveHealthScore)}`;
-    const interpretation = getGuide(metricId).interpret(
-      latest.nerveHealthScore,
-      compositionContext,
-    );
-    ensureExplainer(metricId, latest.nerveHealthScore, valueDisplay);
-    healthScanCards.push({
-      cardId: metricId,
-      guideId: metricId,
-      label: 'Santé nerveuse',
-      valueDisplay,
-      tone: interpretation.tone,
-    });
-  }
-  if (latest.nerveResponseScore !== null) {
-    const metricId: CompositionMetricId = 'nerveResponseScore';
-    const valueDisplay = `${Math.round(latest.nerveResponseScore)}`;
-    const interpretation = getGuide(metricId).interpret(
-      latest.nerveResponseScore,
-      compositionContext,
-    );
-    ensureExplainer(metricId, latest.nerveResponseScore, valueDisplay);
-    healthScanCards.push({
-      cardId: metricId,
-      guideId: metricId,
-      label: 'Réponse nerveuse',
-      valueDisplay,
-      tone: interpretation.tone,
-    });
-  }
-  if (latest.skinConductance !== null) {
-    const metricId: CompositionMetricId = 'skinConductance';
-    const valueDisplay = `${latest.skinConductance.toFixed(0)}`;
-    const interpretation = getGuide(metricId).interpret(latest.skinConductance, compositionContext);
-    ensureExplainer(metricId, latest.skinConductance, valueDisplay);
-    healthScanCards.push({
-      cardId: metricId,
-      guideId: metricId,
-      label: 'Conductance (ESC)',
-      valueDisplay,
-      tone: interpretation.tone,
-    });
-  }
-  if (latest.vo2Max !== null) {
-    const metricId: CompositionMetricId = 'vo2Max';
-    const valueDisplay = `${latest.vo2Max.toFixed(1)} ml/kg/min`;
-    const interpretation = getGuide(metricId).interpret(latest.vo2Max, compositionContext);
-    ensureExplainer(metricId, latest.vo2Max, valueDisplay);
-    healthScanCards.push({
-      cardId: metricId,
-      guideId: metricId,
-      label: 'VO₂ max est.',
-      valueDisplay,
-      tone: interpretation.tone,
-    });
-  }
-  if (latest.heartRate !== null) {
-    const metricId: CompositionMetricId = 'heartRate';
-    const valueDisplay = `${latest.heartRate} bpm`;
-    const interpretation = getGuide(metricId).interpret(latest.heartRate, compositionContext);
-    ensureExplainer(metricId, latest.heartRate, valueDisplay);
-    healthScanCards.push({
-      cardId: metricId,
-      guideId: metricId,
-      label: 'FC debout',
-      valueDisplay,
-      tone: interpretation.tone,
-    });
-  }
-
-  for (const stat of ecgStats) {
-    const metricId = stat.guideId as CompositionMetricId;
-    ensureExplainer(metricId, stat.value, stat.displayValue);
-    const { tone } = getGuide(metricId).interpret(stat.value, compositionContext);
-    healthScanCards.push({
-      cardId: metricId,
-      guideId: metricId,
-      label: stat.label,
-      valueDisplay: stat.displayValue,
-      tone,
-    });
-  }
-
-  const hasBodyScan = Boolean(
+function measurementHasBodyScan(latest: BodyMeasurementEntry, ecgStatCount: number) {
+  return (
     latest.vascularAgeYears !== null ||
     latest.nerveHealthScore !== null ||
     latest.pulseWaveVelocity !== null ||
     latest.skinConductance !== null ||
     latest.vo2Max !== null ||
-    ecgStats.length > 0,
+    ecgStatCount > 0
+  );
+}
+
+async function buildPopulatedBodyPresentationViewModel(input: {
+  athleteId: string;
+  entries: BodyMeasurementEntry[];
+  activeTrendWindowId: BodyTrendWindowId;
+  trendWindows: BodyViewModel['trendWindows'];
+}): Promise<BodyViewModel> {
+  const latest = input.entries[0]!;
+  const profile = await getAthleteProfile(input.athleteId);
+  const baseCtx = athleteCompositionContext(profile);
+  const heightM = baseCtx.heightM ?? heightFromWithingsExtras(latest.withingsExtras);
+  const compositionContext: CompositionContext = {
+    heightM,
+    weightKg: latest.weightKg ?? null,
+    chronologicalAgeYears: baseCtx.chronoAge,
+  };
+
+  const trends = computeBodyCompositionTrends(input.entries);
+  const latestBmiDisplay = latest.bmi ?? trends.bmi.latest ?? null;
+  const chartData = buildCompositionSeries(input.entries);
+  const hero = buildBodyHeroSection({ latest, compositionContext, trends });
+
+  const insights = buildBodyPageInsights({
+    bodyFatDelta7d: trends.bodyFat.delta,
+    latestWeightKg: trends.weight.latest,
+    measuredAtLabel: hero.measuredAtLabel,
+    sourceLabel: hero.sourceLabel,
+    visceralFat: trends.visceral.latest,
+    waterPercent: latest.waterPct ?? null,
+    weightDelta7d: trends.weight.delta,
+  });
+
+  const { explainerByMetricId, ensureExplainer } = createBodyExplainerEnsurer(compositionContext);
+  const trajectoryCards = buildBodyTrajectoryCards({
+    latest,
+    latestBmiDisplay,
+    bmi: trends.bmi,
+    bodyFat: trends.bodyFat,
+    muscle: trends.muscle,
+    visceral: trends.visceral,
+    compositionContext,
+    ensureExplainer,
+  });
+  const contextCards = buildBodyContextCards(latest, compositionContext, ensureExplainer);
+  const { healthScanCards, ecgStats } = buildBodyHealthScanCards(
+    latest,
+    compositionContext,
+    ensureExplainer,
   );
 
   return {
     hasData: true,
     emptyState: null,
-    trendWindows,
-    activeTrendWindowId,
+    trendWindows: input.trendWindows,
+    activeTrendWindowId: input.activeTrendWindowId,
     insights,
     hero,
     context: { chronologicalAgeYears: compositionContext.chronologicalAgeYears },
-    hasBodyScan,
+    hasBodyScan: measurementHasBodyScan(latest, ecgStats.length),
     trajectoryCards,
     contextCards,
     healthScanCards,
@@ -587,4 +382,287 @@ export async function buildBodyPresentationViewModel(
     explainerByMetricId,
     hierarchy: { rootId: 'body', order: ['hero', 'insights', 'sections', 'trends'] },
   };
+}
+
+function buildBmiTrajectoryCard(input: {
+  latestBmiDisplay: number;
+  bmi: ReturnType<typeof computeCompositionTrend>;
+  compositionContext: CompositionContext;
+  ensureExplainer: (
+    metricId: CompositionMetricId,
+    raw: number | null | undefined,
+    display: string | null | undefined,
+  ) => void;
+}): BodyMetricCardVm {
+  const metricId: CompositionMetricId = 'bmi';
+  const valueDisplay = `${input.latestBmiDisplay}`;
+  const guide = getGuide(metricId);
+  const interpretation = guide.interpret(input.latestBmiDisplay, input.compositionContext);
+  input.ensureExplainer(metricId, input.latestBmiDisplay, valueDisplay);
+  const bmiDeltaFooter = buildMetricDeltaFooter('bmi', input.bmi.delta);
+  return {
+    cardId: metricId,
+    guideId: metricId,
+    label: 'IMC',
+    valueDisplay,
+    footer: bmiDeltaFooter?.footer ?? 'Repère poids / taille²',
+    footerTone: bmiDeltaFooter?.footerTone,
+    footerHint: bmiDeltaFooter?.footerHint ?? undefined,
+    tone: resolveMetricValueTone(interpretation.tone, metricId, input.bmi.delta),
+  };
+}
+
+function registerTrajectoryMetricExplainers(input: {
+  bodyFat: ReturnType<typeof computeCompositionTrend>;
+  muscle: ReturnType<typeof computeCompositionTrend>;
+  visceral: ReturnType<typeof computeCompositionTrend>;
+  latest: BodyMeasurementEntry;
+  ensureExplainer: (
+    metricId: CompositionMetricId,
+    raw: number | null | undefined,
+    display: string | null | undefined,
+  ) => void;
+}) {
+  if (input.bodyFat.latest !== null) {
+    input.ensureExplainer('bodyFatPct', input.bodyFat.latest, `${input.bodyFat.latest} %`);
+  }
+  if (input.muscle.latest !== null) {
+    input.ensureExplainer('musclePct', input.muscle.latest, `${input.muscle.latest} %`);
+  }
+  if (input.visceral.latest !== null) {
+    input.ensureExplainer('visceralFat', input.visceral.latest, `${input.visceral.latest}`);
+  }
+  if (input.latest.waterPct !== null) {
+    input.ensureExplainer('waterPct', input.latest.waterPct, `${input.latest.waterPct.toFixed(1)} %`);
+  }
+}
+
+function buildBodyMassTrajectoryCards(latest: BodyMeasurementEntry): BodyMetricCardVm[] {
+  const cards: BodyMetricCardVm[] = [];
+  if (latest.fatFreeWeightKg !== null) {
+    cards.push({
+      cardId: 'fatFreeWeightKg',
+      label: 'Masse maigre',
+      valueDisplay: `${latest.fatFreeWeightKg.toFixed(1)} kg`,
+      tone: 'neutral',
+    });
+  }
+  if (latest.boneKg !== null) {
+    cards.push({
+      cardId: 'boneKg',
+      label: 'Masse osseuse',
+      valueDisplay: `${latest.boneKg.toFixed(2)} kg`,
+      tone: 'neutral',
+    });
+  }
+  return cards;
+}
+
+function buildBodyTrajectoryCards(input: {
+  latest: BodyMeasurementEntry;
+  latestBmiDisplay: number | null;
+  bmi: ReturnType<typeof computeCompositionTrend>;
+  bodyFat: ReturnType<typeof computeCompositionTrend>;
+  muscle: ReturnType<typeof computeCompositionTrend>;
+  visceral: ReturnType<typeof computeCompositionTrend>;
+  compositionContext: CompositionContext;
+  ensureExplainer: (
+    metricId: CompositionMetricId,
+    raw: number | null | undefined,
+    display: string | null | undefined,
+  ) => void;
+}): BodyMetricCardVm[] {
+  const cards: BodyMetricCardVm[] = [];
+  if (input.latestBmiDisplay !== null) {
+    cards.push(
+      buildBmiTrajectoryCard({
+        latestBmiDisplay: input.latestBmiDisplay,
+        bmi: input.bmi,
+        compositionContext: input.compositionContext,
+        ensureExplainer: input.ensureExplainer,
+      }),
+    );
+  }
+  registerTrajectoryMetricExplainers({
+    bodyFat: input.bodyFat,
+    muscle: input.muscle,
+    visceral: input.visceral,
+    latest: input.latest,
+    ensureExplainer: input.ensureExplainer,
+  });
+  cards.push(...buildBodyMassTrajectoryCards(input.latest));
+  return cards;
+}
+
+function buildBodyContextCards(
+  latest: BodyMeasurementEntry,
+  compositionContext: CompositionContext,
+  ensureExplainer: (
+    metricId: CompositionMetricId,
+    raw: number | null | undefined,
+    display: string | null | undefined,
+  ) => void,
+): BodyMetricCardVm[] {
+  const cards: BodyMetricCardVm[] = [];
+  if (latest.bmr !== null) {
+    const metricId: CompositionMetricId = 'bmr';
+    const valueDisplay = `${Math.round(latest.bmr)} kcal`;
+    ensureExplainer(metricId, latest.bmr, valueDisplay);
+    cards.push({
+      cardId: metricId,
+      guideId: metricId,
+      label: 'Métabolisme basal',
+      valueDisplay,
+      tone: getGuide(metricId).interpret(latest.bmr, compositionContext).tone,
+    });
+  }
+  if (latest.metabolicAge !== null) {
+    const metricId: CompositionMetricId = 'metabolicAge';
+    const valueDisplay = `${latest.metabolicAge} ans`;
+    ensureExplainer(metricId, latest.metabolicAge, valueDisplay);
+    cards.push({
+      cardId: metricId,
+      guideId: metricId,
+      label: 'Âge métabolique',
+      valueDisplay,
+      tone: getGuide(metricId).interpret(latest.metabolicAge, compositionContext).tone,
+    });
+  }
+  return cards;
+}
+
+function pushGuideHealthScanCard(
+  cards: BodyMetricCardVm[],
+  input: {
+    metricId: CompositionMetricId;
+    label: string;
+    valueDisplay: string;
+    rawValue: number;
+    compositionContext: CompositionContext;
+    ensureExplainer: (
+      metricId: CompositionMetricId,
+      raw: number | null | undefined,
+      display: string | null | undefined,
+    ) => void;
+  },
+): void {
+  input.ensureExplainer(input.metricId, input.rawValue, input.valueDisplay);
+  cards.push({
+    cardId: input.metricId,
+    guideId: input.metricId,
+    label: input.label,
+    valueDisplay: input.valueDisplay,
+    tone: getGuide(input.metricId).interpret(input.rawValue, input.compositionContext).tone,
+  });
+}
+
+function buildBodyHealthScanCards(
+  latest: BodyMeasurementEntry,
+  compositionContext: CompositionContext,
+  ensureExplainer: (
+    metricId: CompositionMetricId,
+    raw: number | null | undefined,
+    display: string | null | undefined,
+  ) => void,
+): { healthScanCards: BodyMetricCardVm[]; ecgStats: ReturnType<typeof parseWithingsEcgStats> } {
+  const cards: BodyMetricCardVm[] = [];
+  const ecgStats = parseWithingsEcgStats(latest.withingsExtras);
+  const scanMetrics: Array<{
+    metricId: CompositionMetricId;
+    label: string;
+    raw: number | null;
+    display: (value: number) => string;
+  }> = [
+    {
+      metricId: 'vascularAgeYears',
+      label: 'Âge vasculaire',
+      raw: latest.vascularAgeYears,
+      display: (v) => `${v} ans`,
+    },
+    {
+      metricId: 'pulseWaveVelocity',
+      label: 'Onde de pouls (PWV)',
+      raw: latest.pulseWaveVelocity,
+      display: (v) => `${v.toFixed(1)} m/s`,
+    },
+    {
+      metricId: 'nerveHealthScore',
+      label: 'Santé nerveuse',
+      raw: latest.nerveHealthScore,
+      display: (v) => `${Math.round(v)}`,
+    },
+    {
+      metricId: 'nerveResponseScore',
+      label: 'Réponse nerveuse',
+      raw: latest.nerveResponseScore,
+      display: (v) => `${Math.round(v)}`,
+    },
+    {
+      metricId: 'skinConductance',
+      label: 'Conductance (ESC)',
+      raw: latest.skinConductance,
+      display: (v) => `${v.toFixed(0)}`,
+    },
+    {
+      metricId: 'vo2Max',
+      label: 'VO₂ max est.',
+      raw: latest.vo2Max,
+      display: (v) => `${v.toFixed(1)} ml/kg/min`,
+    },
+    {
+      metricId: 'heartRate',
+      label: 'FC debout',
+      raw: latest.heartRate,
+      display: (v) => `${v} bpm`,
+    },
+  ];
+
+  for (const metric of scanMetrics) {
+    if (metric.raw === null) {
+      continue;
+    }
+    pushGuideHealthScanCard(cards, {
+      metricId: metric.metricId,
+      label: metric.label,
+      valueDisplay: metric.display(metric.raw),
+      rawValue: metric.raw,
+      compositionContext,
+      ensureExplainer,
+    });
+  }
+
+  for (const stat of ecgStats) {
+    const metricId = stat.guideId as CompositionMetricId;
+    ensureExplainer(metricId, stat.value, stat.displayValue);
+    cards.push({
+      cardId: metricId,
+      guideId: metricId,
+      label: stat.label,
+      valueDisplay: stat.displayValue,
+      tone: getGuide(metricId).interpret(stat.value, compositionContext).tone,
+    });
+  }
+
+  return { healthScanCards: cards, ecgStats };
+}
+
+export async function buildBodyPresentationViewModel(
+  athleteId: string,
+  days?: number | null,
+): Promise<BodyViewModel> {
+  const activeTrendWindowId = inferActiveTrendWindowId(days);
+  const trendWindows = TREND_WINDOWS.map((w) => ({ ...w }));
+  const measurements = await getBodyCompositionMeasurements(athleteId, days ?? undefined);
+  const entries = measurements ?? [];
+
+  if (!entries.length) {
+    return emptyBodyPresentationViewModel(activeTrendWindowId, trendWindows);
+  }
+
+  return buildPopulatedBodyPresentationViewModel({
+    athleteId,
+    entries,
+    activeTrendWindowId,
+    trendWindows,
+  });
 }

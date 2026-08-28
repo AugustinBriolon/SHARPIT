@@ -524,93 +524,136 @@ function streamSelect() {
 }
 
 /** Courbe de puissance (meilleur effort par durée) à partir des streams vélo. */
+function canCollectPowerStream(activity: StreamActivity, raw: RawStreams | null): raw is RawStreams {
+  return Boolean(
+    raw?.time?.length && activity.type === ActivityType.BIKE && hasSignal(raw.watts ?? []),
+  );
+}
+
+function pushPowerCandidatesFromGrid(
+  activity: StreamActivity,
+  grid: number[],
+  powerCand: Map<number, StreamCandidate[]>,
+): void {
+  for (const dur of POWER_DURATIONS) {
+    const avg = bestAverage(grid, dur);
+    if (avg === null || avg <= 0) {
+      continue;
+    }
+    const list = powerCand.get(dur) ?? [];
+    list.push({ value: Math.round(avg), id: activity.id, date: activity.date, title: activity.title });
+    powerCand.set(dur, list);
+  }
+}
+
+function collectPowerCandidates(
+  activity: StreamActivity,
+  powerCand: Map<number, StreamCandidate[]>,
+): void {
+  const raw = activity.stream?.data as unknown as RawStreams | null;
+  if (!canCollectPowerStream(activity, raw)) {
+    return;
+  }
+  pushPowerCandidatesFromGrid(activity, resample1Hz(raw.time, raw.watts), powerCand);
+}
+
+function powerCurvePointFromDuration(
+  seconds: number,
+  powerCand: Map<number, StreamCandidate[]>,
+): PowerCurvePoint | null {
+  const [best] = (powerCand.get(seconds) ?? []).sort((a, b) => b.value - a.value);
+  if (!best) {
+    return null;
+  }
+  return {
+    seconds,
+    label: durationLabel(seconds),
+    watts: best.value,
+    activityId: best.id,
+    date: best.date.toISOString(),
+    title: best.title,
+  };
+}
+
 function computePowerCurveFrom(streamActivities: StreamActivity[]): PowerCurvePoint[] {
   const powerCand = new Map<number, StreamCandidate[]>();
-
-  for (const a of streamActivities) {
-    const raw = a.stream?.data as unknown as RawStreams | null;
-    if (!raw || !raw.time?.length) {
-      continue;
-    }
-    if (a.type !== ActivityType.BIKE || !hasSignal(raw.watts ?? [])) {
-      continue;
-    }
-
-    const grid = resample1Hz(raw.time, raw.watts);
-    for (const dur of POWER_DURATIONS) {
-      const avg = bestAverage(grid, dur);
-      if (avg === null || avg <= 0) {
-        continue;
-      }
-      const list = powerCand.get(dur) ?? [];
-      list.push({ value: Math.round(avg), id: a.id, date: a.date, title: a.title });
-      powerCand.set(dur, list);
-    }
+  for (const activity of streamActivities) {
+    collectPowerCandidates(activity, powerCand);
   }
-
-  return POWER_DURATIONS.map((d): PowerCurvePoint | null => {
-    const [best] = (powerCand.get(d) ?? []).sort((a, b) => b.value - a.value);
-    return best
-      ? {
-          seconds: d,
-          label: durationLabel(d),
-          watts: best.value,
-          activityId: best.id,
-          date: best.date.toISOString(),
-          title: best.title,
-        }
-      : null;
-  }).filter((p): p is PowerCurvePoint => p !== null);
+  return POWER_DURATIONS.map((d) => powerCurvePointFromDuration(d, powerCand)).filter(
+    (p): p is PowerCurvePoint => p !== null,
+  );
 }
 
 /** Meilleurs temps de course (top 5 par distance) à partir des streams course. */
+function canCollectRunStream(activity: StreamActivity, raw: RawStreams | null): raw is RawStreams {
+  return Boolean(
+    raw?.time?.length && activity.type === ActivityType.RUN && hasSignal(raw.distance ?? []),
+  );
+}
+
+function pushRunCandidatesFromGrid(
+  activity: StreamActivity,
+  distGrid: number[],
+  runCand: Map<number, StreamCandidate[]>,
+): void {
+  const total = distGrid.length ? distGrid[distGrid.length - 1] : 0;
+  for (const meters of RUN_DISTANCES) {
+    if (total < meters) {
+      continue;
+    }
+    const secs = fastestTime(distGrid, meters);
+    if (secs === null || secs <= 0) {
+      continue;
+    }
+    const list = runCand.get(meters) ?? [];
+    list.push({ value: secs, id: activity.id, date: activity.date, title: activity.title });
+    runCand.set(meters, list);
+  }
+}
+
+function collectRunCandidates(
+  activity: StreamActivity,
+  runCand: Map<number, StreamCandidate[]>,
+): void {
+  const raw = activity.stream?.data as unknown as RawStreams | null;
+  if (!canCollectRunStream(activity, raw)) {
+    return;
+  }
+  pushRunCandidatesFromGrid(activity, resample1Hz(raw.time, raw.distance), runCand);
+}
+
+function runBestCategoryFromDistance(
+  meters: number,
+  runCand: Map<number, StreamCandidate[]>,
+): RunBestCategory | null {
+  const arr = (runCand.get(meters) ?? []).sort((a, b) => a.value - b.value).slice(0, TOP_N);
+  if (!arr.length) {
+    return null;
+  }
+  return {
+    meters,
+    label: distanceLabel(meters),
+    entries: arr.map((c, i) => ({
+      rank: i + 1,
+      value: c.value,
+      displayValue: fmtTime(c.value),
+      sublabel: fmtPace(Math.round((c.value / meters) * 1000)),
+      activityId: c.id,
+      date: c.date.toISOString(),
+      title: c.title,
+    })),
+  };
+}
+
 function computeRunBestsFrom(streamActivities: StreamActivity[]): RunBestCategory[] {
   const runCand = new Map<number, StreamCandidate[]>();
-
-  for (const a of streamActivities) {
-    const raw = a.stream?.data as unknown as RawStreams | null;
-    if (!raw || !raw.time?.length) {
-      continue;
-    }
-    if (a.type !== ActivityType.RUN || !hasSignal(raw.distance ?? [])) {
-      continue;
-    }
-
-    const distGrid = resample1Hz(raw.time, raw.distance);
-    const total = distGrid.length ? distGrid[distGrid.length - 1] : 0;
-    for (const meters of RUN_DISTANCES) {
-      if (total < meters) {
-        continue;
-      }
-      const secs = fastestTime(distGrid, meters);
-      if (secs === null || secs <= 0) {
-        continue;
-      }
-      const list = runCand.get(meters) ?? [];
-      list.push({ value: secs, id: a.id, date: a.date, title: a.title });
-      runCand.set(meters, list);
-    }
+  for (const activity of streamActivities) {
+    collectRunCandidates(activity, runCand);
   }
-
-  return RUN_DISTANCES.map((meters): RunBestCategory | null => {
-    const arr = (runCand.get(meters) ?? []).sort((a, b) => a.value - b.value).slice(0, TOP_N);
-    if (!arr.length) {
-      return null;
-    }
-    return {
-      meters,
-      label: distanceLabel(meters),
-      entries: arr.map((c, i) => ({
-        rank: i + 1,
-        value: c.value,
-        displayValue: fmtTime(c.value),
-        sublabel: fmtPace(Math.round((c.value / meters) * 1000)),
-        activityId: c.id,
-        date: c.date.toISOString(),
-        title: c.title,
-      })),
-    };
-  }).filter((r): r is RunBestCategory => r !== null);
+  return RUN_DISTANCES.map((meters) => runBestCategoryFromDistance(meters, runCand)).filter(
+    (r): r is RunBestCategory => r !== null,
+  );
 }
 
 /**
@@ -618,6 +661,46 @@ function computeRunBestsFrom(streamActivities: StreamActivity[]): RunBestCategor
  * Indépendant des streams : couvre tout l'historique. On privilégie la durée
  * réelle (temps de séance) et on retombe sur l'allure Garmin si besoin.
  */
+function resolveRunEffortSeconds(a: MetricActivity, meters: number): number | null {
+  if (a.duration && a.duration > 0) {
+    return a.duration;
+  }
+  if (a.runMetrics?.paceSecPerKm) {
+    return (a.runMetrics.paceSecPerKm * meters) / 1000;
+  }
+  return null;
+}
+
+function pushRunEffortFromMetric(a: MetricActivity, runEfforts: RunEffort[]): void {
+  const meters = a.runMetrics?.distanceM ?? null;
+  if (!meters || meters < 1500) {
+    return;
+  }
+  const seconds = resolveRunEffortSeconds(a, meters);
+  if (!seconds || seconds <= 0) {
+    return;
+  }
+  runEfforts.push({ meters, seconds, date: a.date.toISOString(), activityId: a.id });
+}
+
+function resolveBikePowerWatts(a: MetricActivity): number | null {
+  const watts = a.bikeMetrics?.normalizedPower ?? a.bikeMetrics?.avgPower ?? null;
+  return watts && watts > 0 ? watts : null;
+}
+
+function pushBikeEffortFromMetric(a: MetricActivity, bikeEfforts: BikeEffort[]): void {
+  const watts = resolveBikePowerWatts(a);
+  if (!watts || !a.duration || a.duration < 1200) {
+    return;
+  }
+  bikeEfforts.push({
+    seconds: a.duration,
+    watts,
+    date: a.date.toISOString(),
+    activityId: a.id,
+  });
+}
+
 function computeMetricEfforts(metrics: MetricActivity[]): {
   runEfforts: RunEffort[];
   bikeEfforts: BikeEffort[];
@@ -625,37 +708,11 @@ function computeMetricEfforts(metrics: MetricActivity[]): {
   const runEfforts: RunEffort[] = [];
   const bikeEfforts: BikeEffort[] = [];
 
-  for (const a of metrics) {
-    if (a.type === ActivityType.RUN) {
-      const meters = a.runMetrics?.distanceM ?? null;
-      if (!meters || meters < 1500) {
-        continue;
-      } // bruit en dessous de 1,5 km
-      let seconds: number | null = null;
-      if (a.duration && a.duration > 0) {
-        seconds = a.duration;
-      } else if (a.runMetrics?.paceSecPerKm) {
-        seconds = (a.runMetrics.paceSecPerKm * meters) / 1000;
-      }
-      if (seconds && seconds > 0) {
-        runEfforts.push({
-          meters,
-          seconds,
-          date: a.date.toISOString(),
-          activityId: a.id,
-        });
-      }
-    } else if (a.type === ActivityType.BIKE) {
-      const watts = a.bikeMetrics?.normalizedPower ?? a.bikeMetrics?.avgPower ?? null;
-      if (!watts || watts <= 0 || !a.duration || a.duration < 1200) {
-        continue;
-      } // >=20 min
-      bikeEfforts.push({
-        seconds: a.duration,
-        watts,
-        date: a.date.toISOString(),
-        activityId: a.id,
-      });
+  for (const activity of metrics) {
+    if (activity.type === ActivityType.RUN) {
+      pushRunEffortFromMetric(activity, runEfforts);
+    } else if (activity.type === ActivityType.BIKE) {
+      pushBikeEffortFromMetric(activity, bikeEfforts);
     }
   }
 
@@ -850,6 +907,54 @@ function effortsToRows(
   ];
 }
 
+function effortRowDate(row: { activityDate?: Date | null }): string | undefined {
+  return row.activityDate && row.activityDate.getTime() > 0
+    ? row.activityDate.toISOString()
+    : undefined;
+}
+
+function pushRunEffortFromRow(
+  row: {
+    value: number;
+    displayValue: string;
+    activityDate?: Date | null;
+    activityId?: string | null;
+  },
+  runEfforts: RunEffort[],
+): void {
+  const seconds = Number(row.displayValue);
+  if (!Number.isFinite(seconds) || seconds <= 0) {
+    return;
+  }
+  runEfforts.push({
+    meters: row.value,
+    seconds,
+    date: effortRowDate(row),
+    activityId: row.activityId ?? null,
+  });
+}
+
+function pushBikeEffortFromRow(
+  row: {
+    value: number;
+    displayValue: string;
+    activityDate?: Date | null;
+    activityId?: string | null;
+  },
+  bikeEfforts: BikeEffort[],
+): void {
+  const seconds = Number(row.displayValue);
+  if (!Number.isFinite(seconds) || seconds <= 0 || row.value <= 0) {
+    return;
+  }
+  bikeEfforts.push({
+    seconds,
+    watts: row.value,
+    date: effortRowDate(row),
+    activityId: row.activityId ?? null,
+  });
+}
+
 function effortsFromRows(
   rows: Array<{
     group: string;
@@ -865,30 +970,10 @@ function effortsFromRows(
   const runEfforts: RunEffort[] = [];
   const bikeEfforts: BikeEffort[] = [];
   for (const row of rows) {
-    const date =
-      row.activityDate && row.activityDate.getTime() > 0
-        ? row.activityDate.toISOString()
-        : undefined;
     if (row.group === 'run-effort') {
-      const seconds = Number(row.displayValue);
-      if (Number.isFinite(seconds) && seconds > 0) {
-        runEfforts.push({
-          meters: row.value,
-          seconds,
-          date,
-          activityId: row.activityId ?? null,
-        });
-      }
+      pushRunEffortFromRow(row, runEfforts);
     } else if (row.group === 'bike-effort') {
-      const seconds = Number(row.displayValue);
-      if (Number.isFinite(seconds) && seconds > 0 && row.value > 0) {
-        bikeEfforts.push({
-          seconds,
-          watts: row.value,
-          date,
-          activityId: row.activityId ?? null,
-        });
-      }
+      pushBikeEffortFromRow(row, bikeEfforts);
     }
   }
   return { runEfforts, bikeEfforts };
@@ -929,39 +1014,26 @@ function metricRowsForGroup(
 }
 
 /** Construit les lignes pour les groupes demandés (chargement ciblé). */
-async function buildRowsForGroups(
+async function appendEffortGroupRows(
   athleteId: string,
   groups: Set<RecordGroup>,
-): Promise<RecordRow[]> {
-  const rows: RecordRow[] = [];
-
-  const metricGroups = [...groups].filter((g): g is 'run' | 'bike' | 'swim' =>
-    METRIC_GROUPS.includes(g),
-  );
-  const needsEfforts = EFFORT_GROUPS.some((g) => groups.has(g));
-  const metrics =
-    metricGroups.length > 0 || needsEfforts ? await loadMetricActivities(athleteId) : null;
-
-  if (metrics && metricGroups.length) {
-    for (const g of metricGroups) {
-      rows.push(...metricRowsForGroup(athleteId, g, metrics));
-    }
+  metrics: MetricActivity[],
+  rows: RecordRow[],
+): Promise<void> {
+  const { runEfforts, bikeEfforts } = computeMetricEfforts(metrics);
+  if (groups.has('run-effort')) {
+    rows.push(...effortsToRows(athleteId, runEfforts, []).filter((r) => r.group === 'run-effort'));
   }
-
-  if (metrics && needsEfforts) {
-    const { runEfforts, bikeEfforts } = computeMetricEfforts(metrics);
-    if (groups.has('run-effort')) {
-      rows.push(
-        ...effortsToRows(athleteId, runEfforts, []).filter((r) => r.group === 'run-effort'),
-      );
-    }
-    if (groups.has('bike-effort')) {
-      rows.push(
-        ...effortsToRows(athleteId, [], bikeEfforts).filter((r) => r.group === 'bike-effort'),
-      );
-    }
+  if (groups.has('bike-effort')) {
+    rows.push(...effortsToRows(athleteId, [], bikeEfforts).filter((r) => r.group === 'bike-effort'));
   }
+}
 
+async function appendStreamGroupRows(
+  athleteId: string,
+  groups: Set<RecordGroup>,
+  rows: RecordRow[],
+): Promise<void> {
   if (groups.has('power')) {
     const bikeStreams = (await prisma.activity.findMany({
       where: { athleteId, type: ActivityType.BIKE, stream: { available: true } },
@@ -977,37 +1049,71 @@ async function buildRowsForGroups(
     })) as StreamActivity[];
     rows.push(...runBestsToRows(athleteId, computeRunBestsFrom(runStreams)));
   }
+}
 
+async function buildRowsForGroups(
+  athleteId: string,
+  groups: Set<RecordGroup>,
+): Promise<RecordRow[]> {
+  const rows: RecordRow[] = [];
+  const metricGroups = [...groups].filter((g): g is 'run' | 'bike' | 'swim' =>
+    METRIC_GROUPS.includes(g),
+  );
+  const needsEfforts = EFFORT_GROUPS.some((g) => groups.has(g));
+  const metrics =
+    metricGroups.length > 0 || needsEfforts ? await loadMetricActivities(athleteId) : null;
+
+  if (metrics && metricGroups.length) {
+    for (const g of metricGroups) {
+      rows.push(...metricRowsForGroup(athleteId, g, metrics));
+    }
+  }
+
+  if (metrics && needsEfforts) {
+    await appendEffortGroupRows(athleteId, groups, metrics, rows);
+  }
+
+  await appendStreamGroupRows(athleteId, groups, rows);
   return rows;
 }
 
 /** Compare les anciens et nouveaux leaders (#1) par catégorie. */
-function diffRecordChanges(
-  beforeLeaders: Map<string, { activityId: string | null; value: number; displayValue: string }>,
-  afterRows: RecordRow[],
-): RecordChange[] {
+function buildAfterLeadersMap(afterRows: RecordRow[]): Map<string, RecordRow> {
   const afterLeaders = new Map<string, RecordRow>();
   for (const row of excludeEffortRows(afterRows)) {
     if (row.rank === 1) {
       afterLeaders.set(row.category, row);
     }
   }
+  return afterLeaders;
+}
 
+function leaderChanged(
+  prev: { activityId: string | null; value: number; displayValue: string } | undefined,
+  row: RecordRow,
+): boolean {
+  return !prev || prev.activityId !== row.activityId || prev.value !== row.value;
+}
+
+function diffRecordChanges(
+  beforeLeaders: Map<string, { activityId: string | null; value: number; displayValue: string }>,
+  afterRows: RecordRow[],
+): RecordChange[] {
+  const afterLeaders = buildAfterLeadersMap(afterRows);
   const changes: RecordChange[] = [];
   for (const [category, row] of afterLeaders) {
     const prev = beforeLeaders.get(category);
-    const leaderChanged = !prev || prev.activityId !== row.activityId || prev.value !== row.value;
-
-    if (leaderChanged) {
-      changes.push({
-        category,
-        label: row.label,
-        displayValue: row.displayValue,
-        activityId: row.activityId ?? null,
-        activityTitle: row.activityTitle ?? null,
-        previousDisplayValue: prev?.displayValue ?? null,
-      });
+    if (!leaderChanged(prev, row)) {
+      continue;
     }
+    changes.push({
+      category,
+      label: row.label,
+      displayValue: row.displayValue,
+      activityId: row.activityId ?? null,
+      activityTitle: row.activityTitle ?? null,
+      previousDisplayValue: prev?.displayValue ?? null,
+    });
   }
   return changes;
 }
@@ -1154,6 +1260,25 @@ export async function recomputeRecordsSafe(athleteId: string): Promise<void> {
  * Recalcule uniquement les groupes impactés après une sync cron/manuelle.
  * Évite de relire tous les streams JSON à chaque exécution (principal poste réseau).
  */
+async function mergeGroupsForBackfill(
+  athleteId: string,
+  groups: Set<RecordGroup>,
+  backfillIds: string[],
+): Promise<void> {
+  if (backfillIds.length === 0) {
+    return;
+  }
+  const activities = await prisma.activity.findMany({
+    where: { id: { in: backfillIds }, athleteId },
+    select: { type: true },
+  });
+  for (const activity of activities) {
+    for (const group of groupsForType(activity.type)) {
+      groups.add(group);
+    }
+  }
+}
+
 export async function updateRecordsAfterProviderSync(
   athleteId: string,
   input: {
@@ -1175,18 +1300,7 @@ export async function updateRecordsAfterProviderSync(
       }
     }
 
-    const backfillIds = [...(input.backfilledActivityIds ?? [])];
-    if (backfillIds.length > 0) {
-      const activities = await prisma.activity.findMany({
-        where: { id: { in: backfillIds }, athleteId },
-        select: { type: true },
-      });
-      for (const a of activities) {
-        for (const g of groupsForType(a.type)) {
-          groups.add(g);
-        }
-      }
-    }
+    await mergeGroupsForBackfill(athleteId, groups, [...(input.backfilledActivityIds ?? [])]);
 
     if (groups.size > 0) {
       await recomputeRecordGroups(athleteId, groups);
@@ -1226,75 +1340,75 @@ function emptyPayload(totalActivities = 0, streamsAnalyzed = 0): RecordsPayload 
 }
 
 /** Lit les records stockés et les remet en forme pour le client. */
-export async function getStoredRecords(athleteId: string): Promise<RecordsPayload> {
-  let rows = await prisma.performanceRecord.findMany({
-    where: { athleteId },
-    orderBy: [{ category: 'asc' }, { rank: 'asc' }],
-  });
-  const [totalActivities, streamsAnalyzed] = await Promise.all([
-    prisma.activity.count({ where: { athleteId } }),
-    prisma.activityStream.count({ where: { available: true, activity: { athleteId } } }),
-  ]);
-
-  // Premier accès (rien de stocké) : on calcule à la volée puis on stocke.
-  if (rows.length === 0) {
-    if (totalActivities > 0) {
-      return recomputeAndStoreRecords(athleteId);
-    }
-    return emptyPayload(totalActivities, streamsAnalyzed);
-  }
-
-  // One-shot repair: duration PRs computed before sport-scoping (same longest
-  // session as #1 for run/bike/swim). Recompute metric groups then re-read.
+async function repairDurationLeadersIfNeeded(
+  athleteId: string,
+  rows: Awaited<ReturnType<typeof prisma.performanceRecord.findMany>>,
+) {
   const durationLeaders = rows.filter(
     (r) => DURATION_PR_CATEGORIES.includes(r.category) && r.rank === 1,
   );
-  if (durationLeaders.length > 0) {
-    const activityIds = [
-      ...new Set(
-        durationLeaders.map((r) => r.activityId).filter((id): id is string => Boolean(id)),
-      ),
-    ];
-    const activities =
-      activityIds.length > 0
-        ? await prisma.activity.findMany({
-            where: { id: { in: activityIds }, athleteId },
-            select: { id: true, type: true },
-          })
-        : [];
-    const typeById = new Map(activities.map((a) => [a.id, a.type]));
-    if (
-      durationPrLeadersNeedRepair(
-        durationLeaders.map((r) => ({
-          category: r.category,
-          activityId: r.activityId,
-          label: r.label,
-          activityType: r.activityId ? (typeById.get(r.activityId) ?? null) : null,
-        })),
-      )
-    ) {
-      await recomputeRecordGroups(athleteId, new Set(METRIC_GROUPS));
-      rows = await prisma.performanceRecord.findMany({
-        where: { athleteId },
-        orderBy: [{ category: 'asc' }, { rank: 'asc' }],
-      });
-    }
+  if (durationLeaders.length === 0) {
+    return rows;
   }
 
-  // Legacy rows without persisted efforts: one-time backfill, then read-only path.
+  const activityIds = [
+    ...new Set(durationLeaders.map((r) => r.activityId).filter((id): id is string => Boolean(id))),
+  ];
+  const activities =
+    activityIds.length > 0
+      ? await prisma.activity.findMany({
+          where: { id: { in: activityIds }, athleteId },
+          select: { id: true, type: true },
+        })
+      : [];
+  const typeById = new Map(activities.map((a) => [a.id, a.type]));
+  const needsRepair = durationPrLeadersNeedRepair(
+    durationLeaders.map((r) => ({
+      category: r.category,
+      activityId: r.activityId,
+      label: r.label,
+      activityType: r.activityId ? (typeById.get(r.activityId) ?? null) : null,
+    })),
+  );
+  if (!needsRepair) {
+    return rows;
+  }
+
+  await recomputeRecordGroups(athleteId, new Set(METRIC_GROUPS));
+  return prisma.performanceRecord.findMany({
+    where: { athleteId },
+    orderBy: [{ category: 'asc' }, { rank: 'asc' }],
+  });
+}
+
+async function loadStoredEfforts(
+  athleteId: string,
+  rows: Awaited<ReturnType<typeof prisma.performanceRecord.findMany>>,
+  totalActivities: number,
+): Promise<{ runEfforts: RunEffort[]; bikeEfforts: BikeEffort[] }> {
   const hasEffortRows = rows.some((r) => r.group === 'run-effort' || r.group === 'bike-effort');
-  let runEfforts: RunEffort[] = [];
-  let bikeEfforts: BikeEffort[] = [];
   if (hasEffortRows) {
-    ({ runEfforts, bikeEfforts } = effortsFromRows(rows));
-  } else if (totalActivities > 0) {
-    await recomputeRecordGroups(athleteId, new Set(['run-effort', 'bike-effort']));
-    const effortRows = await prisma.performanceRecord.findMany({
-      where: { athleteId, group: { in: ['run-effort', 'bike-effort'] } },
-    });
-    ({ runEfforts, bikeEfforts } = effortsFromRows(effortRows));
+    return effortsFromRows(rows);
+  }
+  if (totalActivities <= 0) {
+    return { runEfforts: [], bikeEfforts: [] };
   }
 
+  await recomputeRecordGroups(athleteId, new Set(['run-effort', 'bike-effort']));
+  const effortRows = await prisma.performanceRecord.findMany({
+    where: { athleteId, group: { in: ['run-effort', 'bike-effort'] } },
+  });
+  return effortsFromRows(effortRows);
+}
+
+function assembleStoredRecordsPayload(input: {
+  rows: Awaited<ReturnType<typeof prisma.performanceRecord.findMany>>;
+  totalActivities: number;
+  streamsAnalyzed: number;
+  runEfforts: RunEffort[];
+  bikeEfforts: BikeEffort[];
+}): RecordsPayload {
+  const { rows, totalActivities, streamsAnalyzed, runEfforts, bikeEfforts } = input;
   const byCategory = new Map<string, typeof rows>();
   for (const row of rows) {
     if (row.group === 'run-effort' || row.group === 'bike-effort') {
@@ -1332,17 +1446,14 @@ export async function getStoredRecords(athleteId: string): Promise<RecordsPayloa
 
   const powerCurve: PowerCurvePoint[] = rows
     .filter((r) => r.group === 'power')
-    .map((r) => {
-      const seconds = Number(r.category.replace('power-', ''));
-      return {
-        seconds,
-        label: r.label,
-        watts: r.value,
-        activityId: r.activityId,
-        date: r.activityDate.toISOString(),
-        title: r.activityTitle,
-      };
-    })
+    .map((r) => ({
+      seconds: Number(r.category.replace('power-', '')),
+      label: r.label,
+      watts: r.value,
+      activityId: r.activityId,
+      date: r.activityDate.toISOString(),
+      title: r.activityTitle,
+    }))
     .sort((a, b) => a.seconds - b.seconds);
 
   const runBestMap = new Map<number, typeof rows>();
@@ -1353,16 +1464,17 @@ export async function getStoredRecords(athleteId: string): Promise<RecordsPayloa
     runBestMap.set(meters, list);
   }
   const runBests: RunBestCategory[] = [...runBestMap.entries()]
-    .sort((a, b) => a[0] - b[0])
+    .sort(([a], [b]) => a - b)
     .map(([meters, list]) => ({
       meters,
-      label: list[0].label,
+      label: distanceLabel(meters),
       entries: toEntries(list),
     }));
 
-  const generatedAt = rows.reduce<Date | null>((acc, r) => {
-    return !acc || r.createdAt > acc ? r.createdAt : acc;
-  }, null);
+  const generatedAt = rows.reduce<Date | null>(
+    (acc, row) => (!acc || row.createdAt > acc ? row.createdAt : acc),
+    null,
+  );
 
   return {
     prs,
@@ -1374,4 +1486,32 @@ export async function getStoredRecords(athleteId: string): Promise<RecordsPayloa
     totalActivities,
     generatedAt: generatedAt ? generatedAt.toISOString() : null,
   };
+}
+
+export async function getStoredRecords(athleteId: string): Promise<RecordsPayload> {
+  let rows = await prisma.performanceRecord.findMany({
+    where: { athleteId },
+    orderBy: [{ category: 'asc' }, { rank: 'asc' }],
+  });
+  const [totalActivities, streamsAnalyzed] = await Promise.all([
+    prisma.activity.count({ where: { athleteId } }),
+    prisma.activityStream.count({ where: { available: true, activity: { athleteId } } }),
+  ]);
+
+  if (rows.length === 0) {
+    if (totalActivities > 0) {
+      return recomputeAndStoreRecords(athleteId);
+    }
+    return emptyPayload(totalActivities, streamsAnalyzed);
+  }
+
+  rows = await repairDurationLeadersIfNeeded(athleteId, rows);
+  const { runEfforts, bikeEfforts } = await loadStoredEfforts(athleteId, rows, totalActivities);
+  return assembleStoredRecordsPayload({
+    rows,
+    totalActivities,
+    streamsAnalyzed,
+    runEfforts,
+    bikeEfforts,
+  });
 }

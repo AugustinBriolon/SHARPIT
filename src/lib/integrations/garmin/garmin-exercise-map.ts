@@ -322,15 +322,60 @@ function matchFromRef(
  * Order: catalog id → manual aliases → live FR invert → bundled taxonomy (exact/fuzzy)
  * → movement-family fallback. Only an empty label resolves to null.
  */
+function matchFromCatalogId(catalogId: string | null | undefined): GarminExerciseMatch | null {
+  const trimmed = catalogId?.trim();
+  if (trimmed && BY_CATALOG_ID[trimmed]) {
+    return matchFromRef(BY_CATALOG_ID[trimmed], 'alias', 1);
+  }
+  return null;
+}
+
+function matchFromLabelAlias(key: string): GarminExerciseMatch | null {
+  if (BY_LABEL[key]) {
+    return matchFromRef(BY_LABEL[key], 'alias', 1);
+  }
+  return null;
+}
+
+function matchFromFrLeaf(
+  key: string,
+  frLeafByLabel: Map<string, string> | undefined,
+): GarminExerciseMatch | null {
+  const leaf = frLeafByLabel?.get(key);
+  if (!leaf) {
+    return null;
+  }
+  const fromTaxonomy = getGarminTaxonomyEntry(leaf);
+  if (fromTaxonomy) {
+    return {
+      ref: { category: fromTaxonomy.category, exerciseName: fromTaxonomy.leaf },
+      labelFr: fromTaxonomy.labelFr,
+      confidence: 'exact',
+      score: 1,
+    };
+  }
+  const category = inferCategoryFromLeaf(leaf);
+  return category ? matchFromRef({ category, exerciseName: leaf }, 'exact', 1) : null;
+}
+
+function matchFromTaxonomySearch(exercise: string): GarminExerciseMatch | null {
+  const taxonomy = matchGarminTaxonomy(exercise);
+  if (!taxonomy) {
+    return null;
+  }
+  const canon = canonicalizeGarminExerciseRef(taxonomy.ref);
+  return canon ? { ...taxonomy, ref: canon } : null;
+}
+
 export function resolveGarminExerciseMatch(input: {
   exercise: string;
   exerciseCatalogId?: string | null;
   /** Optional inverted FR map: normalized label → leaf enum (BARBELL_BENCH_PRESS). */
   frLeafByLabel?: Map<string, string>;
 }): GarminExerciseMatch | null {
-  const catalogId = input.exerciseCatalogId?.trim();
-  if (catalogId && BY_CATALOG_ID[catalogId]) {
-    return matchFromRef(BY_CATALOG_ID[catalogId], 'alias', 1);
+  const fromCatalog = matchFromCatalogId(input.exerciseCatalogId);
+  if (fromCatalog) {
+    return fromCatalog;
   }
 
   const key = normalizeExerciseKey(input.exercise);
@@ -338,37 +383,21 @@ export function resolveGarminExerciseMatch(input: {
     return null;
   }
 
-  if (BY_LABEL[key]) {
-    return matchFromRef(BY_LABEL[key], 'alias', 1);
+  const fromAlias = matchFromLabelAlias(key);
+  if (fromAlias) {
+    return fromAlias;
   }
 
-  const leaf = input.frLeafByLabel?.get(key);
-  if (leaf) {
-    const fromTaxonomy = getGarminTaxonomyEntry(leaf);
-    if (fromTaxonomy) {
-      return {
-        ref: { category: fromTaxonomy.category, exerciseName: fromTaxonomy.leaf },
-        labelFr: fromTaxonomy.labelFr,
-        confidence: 'exact',
-        score: 1,
-      };
-    }
-    const category = inferCategoryFromLeaf(leaf);
-    if (category) {
-      return matchFromRef({ category, exerciseName: leaf }, 'exact', 1);
-    }
+  const fromLeaf = matchFromFrLeaf(key, input.frLeafByLabel);
+  if (fromLeaf) {
+    return fromLeaf;
   }
 
-  const taxonomy = matchGarminTaxonomy(input.exercise);
-  if (taxonomy) {
-    const canon = canonicalizeGarminExerciseRef(taxonomy.ref);
-    if (canon) {
-      return { ...taxonomy, ref: canon };
-    }
+  const fromTaxonomy = matchFromTaxonomySearch(input.exercise);
+  if (fromTaxonomy) {
+    return fromTaxonomy;
   }
 
-  // Never leave a prescribed exercise unmapped — an approximate watch step keeps
-  // the session intact, and the athlete's own label rides along in the step description.
   return resolveGarminExerciseFallback(input.exercise);
 }
 

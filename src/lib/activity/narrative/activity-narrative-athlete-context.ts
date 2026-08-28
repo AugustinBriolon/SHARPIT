@@ -88,6 +88,88 @@ function pctDelta(actual: number, reference: number): number {
   return Math.round(((actual - reference) / reference) * 100);
 }
 
+function formatDayBeforeRecoveryLine(
+  activityDay: Date,
+  beforeActivity: NarrativeHealthRow[],
+): string | null {
+  const dayBefore = beforeActivity.find(
+    (row) => differenceInCalendarDays(activityDay, startOfDay(row.date)) === 1,
+  );
+  if (!dayBefore) {
+    return 'Pas de données santé la veille de la séance.';
+  }
+  const bits = [
+    dayBefore.sleepMinutes !== null ? `sommeil ${fmtSleep(dayBefore.sleepMinutes)}` : null,
+    dayBefore.hrv !== null ? `HRV ${Math.round(dayBefore.hrv)} ms` : null,
+    dayBefore.restingHr !== null ? `FC repos ${Math.round(dayBefore.restingHr)} bpm` : null,
+    dayBefore.recoveryScore !== null
+      ? `readiness ${Math.round(dayBefore.recoveryScore)}/100`
+      : null,
+    dayBefore.bodyBattery !== null ? `body battery ${Math.round(dayBefore.bodyBattery)}` : null,
+  ].filter(Boolean);
+  if (!bits.length) {
+    return null;
+  }
+  return `Veille de séance (${format(dayBefore.date, 'EEE d MMM', { locale: fr })}) : ${bits.join(', ')}.`;
+}
+
+function formatSevenDayTrendLine(beforeActivity: NarrativeHealthRow[]): string | null {
+  const last7 = beforeActivity.slice(0, 7);
+  const avgSleep = avg(last7.map((row) => row.sleepMinutes).filter((v): v is number => v !== null));
+  const avgHrv = avg(last7.map((row) => row.hrv).filter((v): v is number => v !== null));
+  const avgReadiness = avg(
+    last7.map((row) => row.recoveryScore).filter((v): v is number => v !== null),
+  );
+  const avgRhr = avg(last7.map((row) => row.restingHr).filter((v): v is number => v !== null));
+  const trendBits = [
+    avgSleep !== null ? `sommeil moy. 7j ${fmtSleep(Math.round(avgSleep))}` : null,
+    avgHrv !== null ? `HRV moy. 7j ${Math.round(avgHrv)} ms` : null,
+    avgReadiness !== null ? `readiness moy. 7j ${Math.round(avgReadiness)}/100` : null,
+    avgRhr !== null ? `FC repos moy. 7j ${Math.round(avgRhr)} bpm` : null,
+  ].filter(Boolean);
+  return trendBits.length ? `Tendance 7 jours avant séance : ${trendBits.join(', ')}.` : null;
+}
+
+function formatSleepDebtLine(avgSleep: number | null): string | null {
+  if (avgSleep === null) {
+    return null;
+  }
+  const debtMin = SLEEP_TARGET_MIN - avgSleep;
+  if (debtMin > 15) {
+    return `Dette de sommeil probable : moyenne ${fmtSleep(Math.round(avgSleep))}/nuit sur 7j, soit ~${Math.round(debtMin)} min/nuit sous la cible récupération (${fmtSleep(SLEEP_TARGET_MIN)}).`;
+  }
+  if (debtMin < -15) {
+    return `Sommeil récent au-dessus de la cible récupération (${fmtSleep(SLEEP_TARGET_MIN)}/nuit en moyenne sur 7j).`;
+  }
+  return null;
+}
+
+function formatReadinessDeltaLine(recent: number | null, prior: number | null): string | null {
+  if (recent === null || prior === null) {
+    return null;
+  }
+  const diff = Math.round(recent - prior);
+  if (Math.abs(diff) < 5) {
+    return null;
+  }
+  return diff < 0
+    ? `Readiness en baisse récente : ${Math.round(recent)}/100 (3 derniers jours) vs ${Math.round(prior)}/100 (fenêtre précédente).`
+    : `Readiness en hausse récente : ${Math.round(recent)}/100 (3 derniers jours) vs ${Math.round(prior)}/100 (fenêtre précédente).`;
+}
+
+function formatHrvDeltaLine(recent: number | null, prior: number | null): string | null {
+  if (recent === null || prior === null) {
+    return null;
+  }
+  const diff = Math.round(recent - prior);
+  if (Math.abs(diff) < 3) {
+    return null;
+  }
+  return diff < 0
+    ? `HRV en baisse sur les 3 derniers jours (${Math.round(recent)} ms vs ${Math.round(prior)} ms avant).`
+    : `HRV en hausse sur les 3 derniers jours (${Math.round(recent)} ms vs ${Math.round(prior)} ms avant).`;
+}
+
 export function buildRecoveryContextFacts(
   activityDate: Date,
   healthRows: NarrativeHealthRow[],
@@ -99,58 +181,21 @@ export function buildRecoveryContextFacts(
   }
 
   const lines: string[] = [];
-  const dayBefore = beforeActivity.find(
-    (row) => differenceInCalendarDays(activityDay, startOfDay(row.date)) === 1,
-  );
+  const dayBeforeLine = formatDayBeforeRecoveryLine(activityDay, beforeActivity);
+  if (dayBeforeLine) {
+    lines.push(dayBeforeLine);
+  }
 
-  if (dayBefore) {
-    const bits = [
-      dayBefore.sleepMinutes !== null ? `sommeil ${fmtSleep(dayBefore.sleepMinutes)}` : null,
-      dayBefore.hrv !== null ? `HRV ${Math.round(dayBefore.hrv)} ms` : null,
-      dayBefore.restingHr !== null ? `FC repos ${Math.round(dayBefore.restingHr)} bpm` : null,
-      dayBefore.recoveryScore !== null
-        ? `readiness ${Math.round(dayBefore.recoveryScore)}/100`
-        : null,
-      dayBefore.bodyBattery !== null ? `body battery ${Math.round(dayBefore.bodyBattery)}` : null,
-    ].filter(Boolean);
-    if (bits.length) {
-      lines.push(
-        `Veille de séance (${format(dayBefore.date, 'EEE d MMM', { locale: fr })}) : ${bits.join(', ')}.`,
-      );
-    }
-  } else {
-    lines.push('Pas de données santé la veille de la séance.');
+  const trendLine = formatSevenDayTrendLine(beforeActivity);
+  if (trendLine) {
+    lines.push(trendLine);
   }
 
   const last7 = beforeActivity.slice(0, 7);
   const avgSleep = avg(last7.map((row) => row.sleepMinutes).filter((v): v is number => v !== null));
-  const avgHrv = avg(last7.map((row) => row.hrv).filter((v): v is number => v !== null));
-  const avgReadiness = avg(
-    last7.map((row) => row.recoveryScore).filter((v): v is number => v !== null),
-  );
-  const avgRhr = avg(last7.map((row) => row.restingHr).filter((v): v is number => v !== null));
-
-  const trendBits = [
-    avgSleep !== null ? `sommeil moy. 7j ${fmtSleep(Math.round(avgSleep))}` : null,
-    avgHrv !== null ? `HRV moy. 7j ${Math.round(avgHrv)} ms` : null,
-    avgReadiness !== null ? `readiness moy. 7j ${Math.round(avgReadiness)}/100` : null,
-    avgRhr !== null ? `FC repos moy. 7j ${Math.round(avgRhr)} bpm` : null,
-  ].filter(Boolean);
-  if (trendBits.length) {
-    lines.push(`Tendance 7 jours avant séance : ${trendBits.join(', ')}.`);
-  }
-
-  if (avgSleep !== null) {
-    const debtMin = SLEEP_TARGET_MIN - avgSleep;
-    if (debtMin > 15) {
-      lines.push(
-        `Dette de sommeil probable : moyenne ${fmtSleep(Math.round(avgSleep))}/nuit sur 7j, soit ~${Math.round(debtMin)} min/nuit sous la cible récupération (${fmtSleep(SLEEP_TARGET_MIN)}).`,
-      );
-    } else if (debtMin < -15) {
-      lines.push(
-        `Sommeil récent au-dessus de la cible récupération (${fmtSleep(SLEEP_TARGET_MIN)}/nuit en moyenne sur 7j).`,
-      );
-    }
+  const sleepDebtLine = formatSleepDebtLine(avgSleep);
+  if (sleepDebtLine) {
+    lines.push(sleepDebtLine);
   }
 
   const recent3 = beforeActivity.slice(0, 3);
@@ -161,28 +206,16 @@ export function buildRecoveryContextFacts(
   const readinessPrior = avg(
     prior7.map((row) => row.recoveryScore).filter((v): v is number => v !== null),
   );
-  if (readinessRecent !== null && readinessPrior !== null) {
-    const diff = Math.round(readinessRecent - readinessPrior);
-    if (Math.abs(diff) >= 5) {
-      lines.push(
-        diff < 0
-          ? `Readiness en baisse récente : ${Math.round(readinessRecent)}/100 (3 derniers jours) vs ${Math.round(readinessPrior)}/100 (fenêtre précédente).`
-          : `Readiness en hausse récente : ${Math.round(readinessRecent)}/100 (3 derniers jours) vs ${Math.round(readinessPrior)}/100 (fenêtre précédente).`,
-      );
-    }
+  const readinessLine = formatReadinessDeltaLine(readinessRecent, readinessPrior);
+  if (readinessLine) {
+    lines.push(readinessLine);
   }
 
   const hrvRecent = avg(recent3.map((row) => row.hrv).filter((v): v is number => v !== null));
   const hrvPrior = avg(prior7.map((row) => row.hrv).filter((v): v is number => v !== null));
-  if (hrvRecent !== null && hrvPrior !== null) {
-    const diff = Math.round(hrvRecent - hrvPrior);
-    if (Math.abs(diff) >= 3) {
-      lines.push(
-        diff < 0
-          ? `HRV en baisse sur les 3 derniers jours (${Math.round(hrvRecent)} ms vs ${Math.round(hrvPrior)} ms avant).`
-          : `HRV en hausse sur les 3 derniers jours (${Math.round(hrvRecent)} ms vs ${Math.round(hrvPrior)} ms avant).`,
-      );
-    }
+  const hrvLine = formatHrvDeltaLine(hrvRecent, hrvPrior);
+  if (hrvLine) {
+    lines.push(hrvLine);
   }
 
   return lines;
@@ -259,15 +292,7 @@ function interpretTsb(tsb: number): string {
   return 'TSB très négatif : fatigue accumulée importante à croiser avec sommeil/récupération/conditions physiques.';
 }
 
-export function buildThresholdPerformanceFacts(
-  activity: NarrativeActivityMetrics,
-  profile: NarrativeAthleteProfile | null,
-): string[] {
-  if (!profile) {
-    return ['Seuils personnels non renseignés dans le profil.'];
-  }
-
-  const lines: string[] = [];
+function profileThresholdSummary(profile: NarrativeAthleteProfile): string | null {
   const seuils = [
     profile.ftpW !== null ? `FTP ${profile.ftpW} W` : null,
     profile.lthr !== null ? `LTHR ${profile.lthr} bpm` : null,
@@ -276,47 +301,82 @@ export function buildThresholdPerformanceFacts(
       ? `allure seuil ${fmtPace(profile.runThresholdPaceSecPerKm)}`
       : null,
   ].filter(Boolean);
-  if (seuils.length) {
-    lines.push(`Seuils personnels : ${seuils.join(', ')}.`);
+  return seuils.length ? `Seuils personnels : ${seuils.join(', ')}.` : null;
+}
+
+function runPaceThresholdFact(
+  paceSecPerKm: number,
+  thresholdPace: number,
+): string {
+  const delta = pctDelta(paceSecPerKm, thresholdPace);
+  if (delta > 0) {
+    return `Allure séance ${fmtPace(paceSecPerKm)} : ~${delta}% plus lente que l’allure seuil personnelle.`;
+  }
+  if (delta < -2) {
+    return `Allure séance ${fmtPace(paceSecPerKm)} : ~${Math.abs(delta)}% plus rapide que l’allure seuil personnelle.`;
+  }
+  return `Allure séance ${fmtPace(paceSecPerKm)} : proche de l’allure seuil personnelle.`;
+}
+
+function runThresholdFacts(
+  activity: NarrativeActivityMetrics,
+  profile: NarrativeAthleteProfile,
+): string[] {
+  if (activity.type !== 'RUN' || !activity.runMetrics) {
+    return [];
+  }
+  const lines: string[] = [];
+  const { paceSecPerKm, avgHr } = activity.runMetrics;
+  if (profile.runThresholdPaceSecPerKm && paceSecPerKm) {
+    lines.push(runPaceThresholdFact(paceSecPerKm, profile.runThresholdPaceSecPerKm));
+  }
+  if (profile.lthr && avgHr) {
+    lines.push(`FC moyenne ${Math.round(avgHr)} bpm = ${Math.round((avgHr / profile.lthr) * 100)}% LTHR.`);
+  }
+  return lines;
+}
+
+function bikeThresholdFacts(
+  activity: NarrativeActivityMetrics,
+  profile: NarrativeAthleteProfile,
+): string[] {
+  if (activity.type !== 'BIKE' || !activity.bikeMetrics || !profile.ftpW) {
+    return [];
+  }
+  const { avgPower, normalizedPower, intensityFactor } = activity.bikeMetrics;
+  if (normalizedPower) {
+    const ifVal = intensityFactor ?? normalizedPower / profile.ftpW;
+    return [
+      `Puissance normalisée ${Math.round(normalizedPower)} W (IF ~${ifVal.toFixed(2)} vs FTP ${profile.ftpW} W).`,
+    ];
+  }
+  if (avgPower) {
+    return [
+      `Puissance moyenne ${Math.round(avgPower)} W (~${Math.round((avgPower / profile.ftpW) * 100)}% FTP).`,
+    ];
+  }
+  return [];
+}
+
+export function buildThresholdPerformanceFacts(
+  activity: NarrativeActivityMetrics,
+  profile: NarrativeAthleteProfile | null,
+): string[] {
+  if (!profile) {
+    return ['Seuils personnels non renseignés dans le profil.'];
   }
 
-  if (activity.type === 'RUN' && activity.runMetrics) {
-    const { paceSecPerKm, avgHr } = activity.runMetrics;
-    if (profile.runThresholdPaceSecPerKm && paceSecPerKm) {
-      const delta = pctDelta(paceSecPerKm, profile.runThresholdPaceSecPerKm);
-      if (delta > 0) {
-        lines.push(
-          `Allure séance ${fmtPace(paceSecPerKm)} : ~${delta}% plus lente que l’allure seuil personnelle.`,
-        );
-      } else if (delta < -2) {
-        lines.push(
-          `Allure séance ${fmtPace(paceSecPerKm)} : ~${Math.abs(delta)}% plus rapide que l’allure seuil personnelle.`,
-        );
-      } else {
-        lines.push(
-          `Allure séance ${fmtPace(paceSecPerKm)} : proche de l’allure seuil personnelle.`,
-        );
-      }
-    }
-    if (profile.lthr && avgHr) {
-      const pct = Math.round((avgHr / profile.lthr) * 100);
-      lines.push(`FC moyenne ${Math.round(avgHr)} bpm = ${pct}% LTHR.`);
-    }
-  }
+  const summary = profileThresholdSummary(profile);
+  const lines = summary ? [summary] : [];
+  lines.push(...runThresholdFacts(activity, profile));
+  lines.push(...bikeThresholdFacts(activity, profile));
 
-  if (activity.type === 'BIKE' && activity.bikeMetrics) {
-    const { avgPower, normalizedPower, intensityFactor } = activity.bikeMetrics;
-    if (profile.ftpW && normalizedPower) {
-      const ifVal = intensityFactor ?? normalizedPower / profile.ftpW;
-      lines.push(
-        `Puissance normalisée ${Math.round(normalizedPower)} W (IF ~${ifVal.toFixed(2)} vs FTP ${profile.ftpW} W).`,
-      );
-    } else if (profile.ftpW && avgPower) {
-      lines.push(
-        `Puissance moyenne ${Math.round(avgPower)} W (~${Math.round((avgPower / profile.ftpW) * 100)}% FTP).`,
-      );
-    }
-  } else if (activity.runMetrics?.avgHr && profile.maxHr && !profile.lthr) {
+  if (
+    activity.runMetrics?.avgHr &&
+    profile.maxHr &&
+    !profile.lthr &&
+    activity.type !== 'BIKE'
+  ) {
     lines.push(
       `FC moyenne ${Math.round(activity.runMetrics.avgHr)} bpm (~${Math.round((activity.runMetrics.avgHr / profile.maxHr) * 100)}% FC max).`,
     );

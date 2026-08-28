@@ -63,6 +63,10 @@ interface WithingsApiResponse<T> {
   error?: string;
 }
 
+function isWithingsAuthFailure(status: number, httpStatus: number): boolean {
+  return httpStatus === 401 || httpStatus === 403 || status === 401 || status === 247;
+}
+
 async function withingsFormPost<T>(
   url: string,
   params: Record<string, string>,
@@ -85,12 +89,7 @@ async function withingsFormPost<T>(
   if (!response.ok || json.status !== 0 || !json.body) {
     const message =
       json.error ?? `Withings API error (HTTP ${response.status}, status ${json.status})`;
-    if (
-      response.status === 401 ||
-      response.status === 403 ||
-      json.status === 401 ||
-      json.status === 247
-    ) {
+    if (isWithingsAuthFailure(json.status, response.status)) {
       throw new ProviderAuthError(message);
     }
     throw new Error(message);
@@ -161,61 +160,68 @@ export {
 } from '@/lib/integrations/withings/withings-measures';
 export type { WithingsHeartRecord } from '@/lib/integrations/withings/withings-measures';
 
-export async function fetchWithingsMeasurements(
-  accessToken: string,
+function buildWithingsMeasureParams(
   options?: { startdate?: number; enddate?: number; lastupdate?: number },
-): Promise<WithingsParsedMeasurement[]> {
+): Record<string, string> {
   const params: Record<string, string> = {
     action: 'getmeas',
     category: '1',
     meastypes: WITHINGS_BODY_SCAN_MEASTYPES,
   };
-
   if (options?.lastupdate !== null) {
     params.lastupdate = String(options.lastupdate);
-  } else {
-    if (options?.startdate !== null) {
-      params.startdate = String(options.startdate);
-    }
-    if (options?.enddate !== null) {
-      params.enddate = String(options.enddate);
-    }
+    return params;
   }
+  if (options?.startdate !== null) {
+    params.startdate = String(options.startdate);
+  }
+  if (options?.enddate !== null) {
+    params.enddate = String(options.enddate);
+  }
+  return params;
+}
 
+async function paginateWithingsMeasurements(
+  accessToken: string,
+  params: Record<string, string>,
+): Promise<WithingsParsedMeasurement[]> {
   const all: WithingsParsedMeasurement[] = [];
   let offset = 0;
-
   for (;;) {
     if (offset > 0) {
       params.offset = String(offset);
     }
-
     const body = await withingsFormPost<{
       updatetime: number;
       measuregrps: WithingsMeasureGroup[];
       more?: number;
       offset?: number;
     }>(WITHINGS_MEASURE, params, accessToken);
-
     const mergedGroups = mergeWithingsMeasureGroups(body.measuregrps ?? []);
     for (const group of mergedGroups) {
       all.push(parseWithingsMeasureGroup(group));
     }
-
     const { more, offset: nextOffset } = body;
     if (more !== 1 || nextOffset === null) {
       break;
     }
     offset = nextOffset;
   }
+  return all;
+}
 
+export async function fetchWithingsMeasurements(
+  accessToken: string,
+  options?: { startdate?: number; enddate?: number; lastupdate?: number },
+): Promise<WithingsParsedMeasurement[]> {
+  const params = buildWithingsMeasureParams(options);
+  const all = await paginateWithingsMeasurements(accessToken, params);
   return all.sort((a, b) => b.measuredAt.getTime() - a.measuredAt.getTime());
 }
 
-export async function fetchWithingsHeartList(
-  accessToken: string,
+function buildWithingsHeartParams(
   options?: { startdate?: number; enddate?: number },
-): Promise<WithingsHeartRecord[]> {
+): Record<string, string> {
   const params: Record<string, string> = { action: 'list' };
   if (options?.startdate !== null) {
     params.startdate = String(options.startdate);
@@ -223,29 +229,38 @@ export async function fetchWithingsHeartList(
   if (options?.enddate !== null) {
     params.enddate = String(options.enddate);
   }
+  return params;
+}
 
+async function paginateWithingsHeartList(
+  accessToken: string,
+  params: Record<string, string>,
+): Promise<WithingsHeartRecord[]> {
   const all: WithingsHeartRecord[] = [];
   let offset = 0;
-
   for (;;) {
     if (offset > 0) {
       params.offset = String(offset);
     }
-
     const body = await withingsFormPost<{
       series: WithingsHeartRecord[];
       more?: number;
       offset?: number;
     }>(WITHINGS_HEART, params, accessToken);
-
     all.push(...(body.series ?? []));
-
     const { more, offset: nextOffset } = body;
     if (more !== 1 || nextOffset === null) {
       break;
     }
     offset = nextOffset;
   }
-
   return all;
+}
+
+export async function fetchWithingsHeartList(
+  accessToken: string,
+  options?: { startdate?: number; enddate?: number },
+): Promise<WithingsHeartRecord[]> {
+  const params = buildWithingsHeartParams(options);
+  return paginateWithingsHeartList(accessToken, params);
 }

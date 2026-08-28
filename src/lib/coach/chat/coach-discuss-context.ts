@@ -28,50 +28,52 @@ const HORIZON_LABEL: Record<number, string> = {
  * a record family. Callers pass what they already loaded; when it is missing
  * the label degrades to the kind alone rather than inventing one.
  */
+function discussContextForKind(
+  target: CoachDiscussTarget,
+  named: string | null,
+): CoachDiscussContext {
+  const handlers: Record<
+    CoachDiscussTarget['kind'],
+    (t: CoachDiscussTarget, n: string | null) => CoachDiscussContext
+  > = {
+    today: () => ({ kind: 'today', label: 'Ton état du jour', sourceHref: '/' }),
+    'planned-session': (_, n) => ({
+      kind: 'planned-session',
+      label: n ? `Séance prévue · ${n}` : 'Une séance prévue',
+      sourceHref: '/training',
+    }),
+    activity: (t, n) => ({
+      kind: 'activity',
+      label: n ? `Séance réalisée · ${n}` : 'Une séance réalisée',
+      sourceHref: `/training/${t.activityId}`,
+    }),
+    planning: (t) => ({
+      kind: 'planning',
+      label: `Ta semaine · ${HORIZON_LABEL[t.horizonDays] ?? `${t.horizonDays} jours`}`,
+      sourceHref: '/training/planning',
+    }),
+    goal: (_, n) => ({
+      kind: 'goal',
+      label: n ? `Objectif · ${n}` : 'Un objectif',
+      sourceHref: '/progress?tab=goals',
+    }),
+    record: (_, n) => ({
+      kind: 'record',
+      label: n ? `Records · ${n}` : 'Tes records',
+      sourceHref: '/progress?tab=performance',
+    }),
+    'physical-condition': (_, n) => ({
+      kind: 'physical-condition',
+      label: n ? `Contrainte physique · ${n}` : 'Une contrainte physique',
+      sourceHref: '/progress?tab=body',
+    }),
+  };
+  return handlers[target.kind](target, named);
+}
+
 export function describeCoachDiscussContext(
   target: CoachDiscussTarget,
   name?: string | null,
 ): CoachDiscussContext {
-  const named = name?.trim() || null;
-
-  switch (target.kind) {
-    case 'today':
-      return { kind: target.kind, label: 'Ton état du jour', sourceHref: '/' };
-    case 'planned-session':
-      return {
-        kind: target.kind,
-        label: named ? `Séance prévue · ${named}` : 'Une séance prévue',
-        sourceHref: '/training',
-      };
-    case 'activity':
-      return {
-        kind: target.kind,
-        label: named ? `Séance réalisée · ${named}` : 'Une séance réalisée',
-        sourceHref: `/training/${target.activityId}`,
-      };
-    case 'planning':
-      return {
-        kind: target.kind,
-        label: `Ta semaine · ${HORIZON_LABEL[target.horizonDays] ?? `${target.horizonDays} jours`}`,
-        sourceHref: '/training/planning',
-      };
-    case 'goal':
-      return {
-        kind: target.kind,
-        label: named ? `Objectif · ${named}` : 'Un objectif',
-        sourceHref: '/progress?tab=goals',
-      };
-    case 'record':
-      return {
-        kind: target.kind,
-        label: named ? `Records · ${named}` : 'Tes records',
-        sourceHref: '/progress?tab=performance',
-      };
-    case 'physical-condition':
-      return {
-        kind: target.kind,
-        label: named ? `Contrainte physique · ${named}` : 'Une contrainte physique',
-        sourceHref: '/progress?tab=body',
-      };
-  }
+  return discussContextForKind(target, name?.trim() || null);
 }

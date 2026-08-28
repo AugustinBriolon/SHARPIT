@@ -11,6 +11,33 @@ export type BodyCompositionObservationBackfillResult = {
   skipped: number;
 };
 
+function collectMissingObservations(
+  rows: Awaited<
+    ReturnType<typeof prisma.bodyCompositionMeasurement.findMany>
+  >,
+  existingIds: Set<string>,
+): { raws: RawObservation[]; skipped: number } {
+  const raws: RawObservation[] = [];
+  let skipped = 0;
+
+  for (const row of rows) {
+    if (existingIds.has(row.externalId)) {
+      skipped += 1;
+      continue;
+    }
+
+    const raw = bodyCompositionMeasurementToObservation(row);
+    if (!raw) {
+      skipped += 1;
+      continue;
+    }
+
+    raws.push(raw);
+  }
+
+  return { raws, skipped };
+}
+
 /**
  * Backfills Observation records from BodyCompositionMeasurement rows that
  * predate the Observation Engine pipeline (or missed ingest on prior syncs).
@@ -49,23 +76,7 @@ export async function backfillBodyCompositionObservationsFromMeasurements(
     existing.map((row) => row.externalId).filter((id): id is string => id !== null),
   );
 
-  const raws: RawObservation[] = [];
-  let skipped = 0;
-
-  for (const row of rows) {
-    if (existingIds.has(row.externalId)) {
-      skipped += 1;
-      continue;
-    }
-
-    const raw = bodyCompositionMeasurementToObservation(row);
-    if (!raw) {
-      skipped += 1;
-      continue;
-    }
-
-    raws.push(raw);
-  }
+  const { raws, skipped } = collectMissingObservations(rows, existingIds);
 
   if (raws.length === 0) {
     return { scanned: rows.length, ingested: 0, skipped };

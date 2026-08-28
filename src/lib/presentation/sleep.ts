@@ -109,65 +109,28 @@ export function sleepAdequacySignalForNight(
   return mapSleepScoreToAdequacy(sleepScore) ?? 'MISSING';
 }
 
-export async function buildSleepViewModel(
-  athleteId: string,
-  trainingDayId: string,
-): Promise<SleepViewModel> {
-  const snapshot = await getOrBuildAthleteSnapshot(athleteId, trainingDayId);
-  const { recovery } = snapshot;
-
-  if (!recovery) {
-    return emptySleepViewModel();
+function computeAwakeMinutes(input: {
+  totalSleepMin: number | null;
+  deepMin: number | null;
+  remMin: number | null;
+  lightMin: number | null;
+  todayEntry: ReturnType<typeof getIndexedHealthEntry>;
+}): number | null {
+  const { totalSleepMin, deepMin, remMin, lightMin, todayEntry } = input;
+  if (totalSleepMin !== null && deepMin !== null && remMin !== null && lightMin !== null) {
+    return Math.max(0, totalSleepMin - deepMin - remMin - lightMin);
   }
+  return todayEntry?.sleepAwakeMin ?? null;
+}
 
-  const refDate = parseISO(trainingDayId);
-
-  const [healthEntries, athleteProfile] = await Promise.all([
-    getHealthEntries(athleteId, 30, refDate),
-    getAthleteProfile(athleteId),
-  ]);
-
-  const sleepGoals = {
-    targetDurationMin: athleteProfile?.sleepTargetMinutes ?? null,
-    bedtimeTargetMin: athleteProfile?.sleepBedtimeTargetMin ?? null,
-  };
-
-  const healthByDay = indexHealthEntriesByDay(healthEntries);
-  const todayEntry = getIndexedHealthEntry(healthByDay, refDate);
-
-  const deepMin = todayEntry?.sleepDeepMin ?? null;
-  const remMin = todayEntry?.sleepRemMin ?? null;
-  const lightMin = todayEntry?.sleepLightMin ?? null;
-  const totalSleepMin = todayEntry ? effectiveSleepMinutes(todayEntry) : null;
-
-  const awakeMin =
-    totalSleepMin !== null && deepMin !== null && remMin !== null && lightMin !== null
-      ? Math.max(0, totalSleepMin - deepMin - remMin - lightMin)
-      : (todayEntry?.sleepAwakeMin ?? null);
-
-  const sleepTargetMin = athleteProfile?.sleepTargetMinutes ?? SLEEP_TARGET_MIN;
-  const nightStatus = resolveSleepNightStatus(trainingDayId, totalSleepMin);
-  const nightPresent = nightStatus === 'present';
-
-  const coachView = analyzeSleep(toSleepEntryInputs(healthEntries), {
-    ...sleepGoals,
-  });
-
-  const scoreBreakdown = buildSleepScoreBreakdown({
-    deepMin,
-    remMin,
-    totalMin: totalSleepMin,
-    debtMin: null,
-    targetMin: sleepTargetMin,
-  });
-
-  // Never fall back to twin sleep dimension when tonight's health row is absent —
-  // that reused yesterday's score as "Sommeil insuffisant" for an unslept night.
-  const sleepScore = nightPresent ? (scoreBreakdown.sharpitScore ?? null) : null;
-  const adequacyDisplay = mapSleepAdequacySignalToDisplay(
-    sleepAdequacySignalForNight(nightStatus, sleepScore),
-  );
-
+function computeSleepTrendStats(input: {
+  healthByDay: ReturnType<typeof indexHealthEntriesByDay>;
+  refDate: Date;
+  nightPresent: boolean;
+  totalSleepMin: number | null;
+  sleepTargetMin: number;
+}) {
+  const { healthByDay, refDate, nightPresent, totalSleepMin, sleepTargetMin } = input;
   const last7Sleep = buildDailyWindowSeries(
     healthByDay,
     7,
@@ -192,21 +155,35 @@ export async function buildSleepViewModel(
   const targetDeltaMin =
     nightPresent && totalSleepMin !== null ? totalSleepMin - sleepTargetMin : null;
 
-  const autonomicScore = recovery.dimensions.autonomic.available
-    ? recovery.dimensions.autonomic.score
-    : null;
-  const recoverySignal = mapRecoveryToSignal(recovery.readinessCategory as ReadinessCategory);
+  return { sleepDelta7d, targetDeltaMin, avgSleepMinutes7d };
+}
 
-  let recoveryNote: string | null = null;
-  if (nightPresent && recovery.readinessScore !== null) {
-    if (autonomicScore !== null && sleepScore !== null && autonomicScore > sleepScore) {
-      recoveryNote = `Récupération ${recovery.readinessScore}/100 (${recoverySignal.label.toLowerCase()}) — la VFC compense partiellement le sommeil.`;
-    } else if (recovery.primaryLimitingFactor === 'sleep') {
-      recoveryNote = `Récupération ${recovery.readinessScore}/100 — le sommeil est le facteur limitant aujourd'hui.`;
-    }
+function buildSleepRecoveryNote(input: {
+  nightPresent: boolean;
+  recovery: NonNullable<Awaited<ReturnType<typeof getOrBuildAthleteSnapshot>>['recovery']>;
+  autonomicScore: number | null;
+  sleepScore: number | null;
+}): string | null {
+  const { nightPresent, recovery, autonomicScore, sleepScore } = input;
+  if (!nightPresent || recovery.readinessScore === null) {
+    return null;
   }
+  const recoverySignal = mapRecoveryToSignal(recovery.readinessCategory as ReadinessCategory);
+  if (autonomicScore !== null && sleepScore !== null && autonomicScore > sleepScore) {
+    return `Récupération ${recovery.readinessScore}/100 (${recoverySignal.label.toLowerCase()}) — la VFC compense partiellement le sommeil.`;
+  }
+  if (recovery.primaryLimitingFactor === 'sleep') {
+    return `Récupération ${recovery.readinessScore}/100 — le sommeil est le facteur limitant aujourd'hui.`;
+  }
+  return null;
+}
 
-  const barData = buildDailyWindowSeries(
+function buildSleepBarData(
+  healthByDay: ReturnType<typeof indexHealthEntriesByDay>,
+  refDate: Date,
+  sleepTargetMin: number,
+) {
+  return buildDailyWindowSeries(
     healthByDay,
     14,
     (d, e) => {
@@ -219,43 +196,149 @@ export async function buildSleepViewModel(
     },
     refDate,
   );
+}
 
-  const confidenceTier = mapConfidenceToTier(recovery.confidence);
+function readSleepPhaseMinutes(todayEntry: ReturnType<typeof getIndexedHealthEntry>) {
+  return {
+    deepMin: todayEntry?.sleepDeepMin ?? null,
+    remMin: todayEntry?.sleepRemMin ?? null,
+    lightMin: todayEntry?.sleepLightMin ?? null,
+    totalSleepMin: todayEntry ? effectiveSleepMinutes(todayEntry) : null,
+  };
+}
 
-  const insights = buildSleepPageInsights({
-    adequacyLabel: adequacyDisplay.label,
-    coachView,
-    confidence: recovery.confidence,
+async function assembleSleepNightSnapshot(input: {
+  trainingDayId: string;
+  refDate: Date;
+  healthEntries: Awaited<ReturnType<typeof getHealthEntries>>;
+  athleteProfile: Awaited<ReturnType<typeof getAthleteProfile>>;
+  recovery: NonNullable<Awaited<ReturnType<typeof getOrBuildAthleteSnapshot>>['recovery']>;
+}) {
+  const sleepGoals = {
+    targetDurationMin: input.athleteProfile?.sleepTargetMinutes ?? null,
+    bedtimeTargetMin: input.athleteProfile?.sleepBedtimeTargetMin ?? null,
+  };
+  const healthByDay = indexHealthEntriesByDay(input.healthEntries);
+  const todayEntry = getIndexedHealthEntry(healthByDay, input.refDate);
+  const phases = readSleepPhaseMinutes(todayEntry);
+  const awakeMin = computeAwakeMinutes({ ...phases, todayEntry });
+  const sleepTargetMin = input.athleteProfile?.sleepTargetMinutes ?? SLEEP_TARGET_MIN;
+  const nightStatus = resolveSleepNightStatus(input.trainingDayId, phases.totalSleepMin);
+
+  return {
+    refDate: input.refDate,
+    healthEntries: input.healthEntries,
+    healthByDay,
+    todayEntry,
+    ...phases,
+    awakeMin,
+    sleepTargetMin,
     nightStatus,
+    nightPresent: nightStatus === 'present',
+    coachView: analyzeSleep(toSleepEntryInputs(input.healthEntries), { ...sleepGoals }),
+    recovery: input.recovery,
+  };
+}
+
+async function loadSleepNightData(input: {
+  athleteId: string;
+  trainingDayId: string;
+  recovery: NonNullable<Awaited<ReturnType<typeof getOrBuildAthleteSnapshot>>['recovery']>;
+}) {
+  const refDate = parseISO(input.trainingDayId);
+  const [healthEntries, athleteProfile] = await Promise.all([
+    getHealthEntries(input.athleteId, 30, refDate),
+    getAthleteProfile(input.athleteId),
+  ]);
+  return assembleSleepNightSnapshot({
+    trainingDayId: input.trainingDayId,
+    refDate,
+    healthEntries,
+    athleteProfile,
+    recovery: input.recovery,
+  });
+}
+
+function resolveSleepScorePresentation(night: Awaited<ReturnType<typeof loadSleepNightData>>) {
+  const scoreBreakdown = buildSleepScoreBreakdown({
+    deepMin: night.deepMin,
+    remMin: night.remMin,
+    totalMin: night.totalSleepMin,
+    debtMin: null,
+    targetMin: night.sleepTargetMin,
+  });
+  const sleepScore = night.nightPresent ? (scoreBreakdown.sharpitScore ?? null) : null;
+  const adequacyDisplay = mapSleepAdequacySignalToDisplay(
+    sleepAdequacySignalForNight(night.nightStatus, sleepScore),
+  );
+  return { scoreBreakdown, sleepScore, adequacyDisplay };
+}
+
+function readSleepTimingFields(todayEntry: Awaited<ReturnType<typeof loadSleepNightData>>['todayEntry']) {
+  return {
+    bedtimeMin: todayEntry?.sleepBedtimeMin ?? null,
+    wakeMin: todayEntry?.sleepWakeMin ?? null,
+    garminScore: todayEntry?.sleepScore ?? null,
+  };
+}
+
+function buildPopulatedSleepViewModel(input: {
+  snapshot: Awaited<ReturnType<typeof getOrBuildAthleteSnapshot>>;
+  night: Awaited<ReturnType<typeof loadSleepNightData>>;
+}): SleepViewModel {
+  const { snapshot, night } = input;
+  const scorePresentation = resolveSleepScorePresentation(night);
+  const timing = readSleepTimingFields(night.todayEntry);
+  const { sleepDelta7d, targetDeltaMin } = computeSleepTrendStats({
+    healthByDay: night.healthByDay,
+    refDate: night.refDate,
+    nightPresent: night.nightPresent,
+    totalSleepMin: night.totalSleepMin,
+    sleepTargetMin: night.sleepTargetMin,
+  });
+  const autonomicScore = night.recovery.dimensions.autonomic.available
+    ? night.recovery.dimensions.autonomic.score
+    : null;
+  const recoveryNote = buildSleepRecoveryNote({
+    nightPresent: night.nightPresent,
+    recovery: night.recovery,
+    autonomicScore,
+    sleepScore: scorePresentation.sleepScore,
+  });
+  const barData = buildSleepBarData(night.healthByDay, night.refDate, night.sleepTargetMin);
+  const confidenceTier = mapConfidenceToTier(night.recovery.confidence);
+  const insights = buildSleepPageInsights({
+    adequacyLabel: scorePresentation.adequacyDisplay.label,
+    coachView: night.coachView,
+    confidence: night.recovery.confidence,
+    nightStatus: night.nightStatus,
     recoveryNote,
     sleepDelta7d,
-    sleepScore,
+    sleepScore: scorePresentation.sleepScore,
     targetDeltaMin,
   });
 
   return {
-    nightStatus,
-    sleepScore,
-    adequacyDisplay,
-    scoreBreakdown,
-    totalSleepMin,
-    deepMin,
-    remMin,
-    lightMin,
-    awakeMin,
-    bedtimeMin: todayEntry?.sleepBedtimeMin ?? null,
-    wakeMin: todayEntry?.sleepWakeMin ?? null,
-    garminScore: todayEntry?.sleepScore ?? null,
+    nightStatus: night.nightStatus,
+    sleepScore: scorePresentation.sleepScore,
+    adequacyDisplay: scorePresentation.adequacyDisplay,
+    scoreBreakdown: scorePresentation.scoreBreakdown,
+    totalSleepMin: night.totalSleepMin,
+    deepMin: night.deepMin,
+    remMin: night.remMin,
+    lightMin: night.lightMin,
+    awakeMin: night.awakeMin,
+    ...timing,
     sleepDelta7d,
     targetDeltaMin,
-    sleepTargetMin,
-    coachView,
+    sleepTargetMin: night.sleepTargetMin,
+    coachView: night.coachView,
     barData,
     recoveryNote,
     insights,
     globalDecision: buildGlobalDecisionContext(snapshot, 'SLEEP'),
     confidencePresentation: {
-      pct: Math.round(recovery.confidence * 100),
+      pct: Math.round(night.recovery.confidence * 100),
       label: null,
       tone: CONFIDENCE_TONE[confidenceTier] ?? 'neutral',
     },
@@ -266,4 +349,19 @@ export async function buildSleepViewModel(
     },
     sections: [],
   };
+}
+
+export async function buildSleepViewModel(
+  athleteId: string,
+  trainingDayId: string,
+): Promise<SleepViewModel> {
+  const snapshot = await getOrBuildAthleteSnapshot(athleteId, trainingDayId);
+  const { recovery } = snapshot;
+
+  if (!recovery) {
+    return emptySleepViewModel();
+  }
+
+  const night = await loadSleepNightData({ athleteId, trainingDayId, recovery });
+  return buildPopulatedSleepViewModel({ snapshot, night });
 }

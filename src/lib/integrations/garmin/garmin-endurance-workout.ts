@@ -46,6 +46,24 @@ type PushProfile = {
   defaultPoolLengthM: number | null;
 };
 
+const PUSH_PROFILE_THRESHOLD_FIELDS = [
+  'runThresholdPaceSecPerKm',
+  'swimCssSecPer100m',
+  'ftpW',
+  'lthr',
+  'maxHr',
+] as const;
+
+function mapPushProfileThresholds(
+  profile: Awaited<ReturnType<typeof prisma.athleteProfile.findUnique>>,
+): AthleteThresholds {
+  const thresholds = {} as AthleteThresholds;
+  for (const field of PUSH_PROFILE_THRESHOLD_FIELDS) {
+    thresholds[field] = profile?.[field] ?? null;
+  }
+  return thresholds;
+}
+
 /** One read for everything the payload needs from the athlete profile. */
 export async function loadPushProfile(athleteId: string): Promise<PushProfile> {
   const profile = await prisma.athleteProfile.findUnique({
@@ -61,13 +79,7 @@ export async function loadPushProfile(athleteId: string): Promise<PushProfile> {
   });
 
   return {
-    thresholds: {
-      runThresholdPaceSecPerKm: profile?.runThresholdPaceSecPerKm ?? null,
-      swimCssSecPer100m: profile?.swimCssSecPer100m ?? null,
-      ftpW: profile?.ftpW ?? null,
-      lthr: profile?.lthr ?? null,
-      maxHr: profile?.maxHr ?? null,
-    },
+    thresholds: mapPushProfileThresholds(profile),
     defaultPoolLengthM: profile?.defaultPoolLengthM ?? null,
   };
 }
@@ -78,18 +90,9 @@ export async function loadPushProfile(athleteId: string): Promise<PushProfile> {
  * thresholds, and those thresholds are stored with the receipt so a later
  * threshold change can be surfaced as "already sent, now out of date".
  */
-export async function pushEnduranceWorkoutFromPlannedSession(
-  athleteId: string,
-  options: {
-    plannedSessionId: string;
-    scheduleDate?: string | null;
-    schedule?: boolean;
-    /** Replace previous Garmin workout if already pushed. */
-    force?: boolean;
-  },
-): Promise<PushEnduranceWorkoutResult> {
+async function loadEndurancePlannedSession(athleteId: string, plannedSessionId: string) {
   const session = await prisma.plannedSession.findFirst({
-    where: { id: options.plannedSessionId, athleteId },
+    where: { id: plannedSessionId, athleteId },
     select: {
       id: true,
       type: true,
@@ -114,12 +117,67 @@ export async function pushEnduranceWorkoutFromPlannedSession(
     throw new Error('Seules les séances course, vélo et natation peuvent être envoyées ainsi');
   }
 
+  return { session, sport };
+}
+
+async function persistEnduranceWorkoutReceipt(input: {
+  sessionId: string;
+  created: Awaited<ReturnType<typeof createAndScheduleWorkout>>;
+  thresholds: AthleteThresholds;
+}): Promise<void> {
+  if (input.created.workoutId === null) {
+    return;
+  }
+  await prisma.plannedSession.update({
+    where: { id: input.sessionId },
+    data: {
+      garminWorkoutId: String(input.created.workoutId),
+      garminWorkoutScheduledDate: input.created.scheduledDate,
+      garminWorkoutPushedAt: new Date(input.created.pushedAt),
+      garminWorkoutThresholds: input.thresholds as unknown as Prisma.InputJsonValue,
+    },
+  });
+}
+
+function buildPushEnduranceWorkoutResult(input: {
+  created: Awaited<ReturnType<typeof createAndScheduleWorkout>>;
+  workoutName: string;
+  sport: EnduranceSport;
+  built: ReturnType<typeof buildEnduranceWorkoutPayload>;
+  warnings: string[];
+  derived: ReturnType<typeof effectiveEndurancePrescription>['derived'];
+}): PushEnduranceWorkoutResult {
+  return {
+    workoutId: input.created.workoutId,
+    workoutName: input.workoutName,
+    sport: input.sport,
+    stepCount: input.built.stepCount,
+    mapped: input.built.mapped,
+    warnings: [...new Set([...input.warnings, ...input.built.warnings])],
+    derived: input.derived,
+    scheduledDate: input.created.scheduledDate,
+    alreadyPushed: false,
+    calendarActive: input.created.scheduledDate !== null,
+    workoutExists: input.created.workoutId !== null,
+    pushedAt: input.created.pushedAt,
+  };
+}
+
+async function prepareEnduranceWorkoutPush(
+  athleteId: string,
+  options: {
+    plannedSessionId: string;
+    force?: boolean;
+  },
+) {
+  const { session, sport } = await loadEndurancePlannedSession(athleteId, options.plannedSessionId);
+
   if (!options.force) {
     await assertNotAlreadyPushed(athleteId, session);
   }
 
   const { thresholds, defaultPoolLengthM } = await loadPushProfile(athleteId);
-  const { prescription, derived, warnings } = effectiveEndurancePrescription({
+  const prescriptionBundle = effectiveEndurancePrescription({
     sport,
     durationMin: session.durationMin,
     intensity: session.intensity,
@@ -134,13 +192,29 @@ export async function pushEnduranceWorkoutFromPlannedSession(
   const built = buildEnduranceWorkoutPayload({
     workoutName,
     description: session.description?.trim() || 'Envoyé depuis SHARPIT (séance planifiée)',
-    prescription,
+    prescription: prescriptionBundle.prescription,
     thresholds,
   });
 
   if (built.stepCount === 0) {
     throw new Error('Aucune étape à envoyer');
   }
+
+  return { session, sport, thresholds, prescriptionBundle, workoutName, built };
+}
+
+export async function pushEnduranceWorkoutFromPlannedSession(
+  athleteId: string,
+  options: {
+    plannedSessionId: string;
+    scheduleDate?: string | null;
+    schedule?: boolean;
+    /** Replace previous Garmin workout if already pushed. */
+    force?: boolean;
+  },
+): Promise<PushEnduranceWorkoutResult> {
+  const { session, sport, thresholds, prescriptionBundle, workoutName, built } =
+    await prepareEnduranceWorkoutPush(athleteId, options);
 
   const created = await createAndScheduleWorkout(athleteId, {
     payload: built.payload,
@@ -149,30 +223,14 @@ export async function pushEnduranceWorkoutFromPlannedSession(
     replaceWorkoutId: options.force ? session.garminWorkoutId : null,
   });
 
-  if (created.workoutId !== null) {
-    await prisma.plannedSession.update({
-      where: { id: session.id },
-      data: {
-        garminWorkoutId: String(created.workoutId),
-        garminWorkoutScheduledDate: created.scheduledDate,
-        garminWorkoutPushedAt: new Date(created.pushedAt),
-        garminWorkoutThresholds: thresholds as unknown as Prisma.InputJsonValue,
-      },
-    });
-  }
+  await persistEnduranceWorkoutReceipt({ sessionId: session.id, created, thresholds });
 
-  return {
-    workoutId: created.workoutId,
+  return buildPushEnduranceWorkoutResult({
+    created,
     workoutName,
     sport,
-    stepCount: built.stepCount,
-    mapped: built.mapped,
-    warnings: [...new Set([...warnings, ...built.warnings])],
-    derived,
-    scheduledDate: created.scheduledDate,
-    alreadyPushed: false,
-    calendarActive: created.scheduledDate !== null,
-    workoutExists: created.workoutId !== null,
-    pushedAt: created.pushedAt,
-  };
+    built,
+    warnings: prescriptionBundle.warnings,
+    derived: prescriptionBundle.derived,
+  });
 }

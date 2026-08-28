@@ -75,6 +75,35 @@ function indexEntry(entry: GarminTaxonomyEntry): IndexedEntry {
   return { ...entry, concepts, conceptSet: new Set(concepts) };
 }
 
+function registerTaxonomyEntry(
+  raw: GarminTaxonomyEntry,
+  entries: IndexedEntry[],
+  byNormLabel: Map<string, IndexedEntry>,
+  byLeaf: Map<string, IndexedEntry>,
+): void {
+  const entry = indexEntry(raw);
+  entries.push(entry);
+  byLeaf.set(entry.leaf, entry);
+  const norm = normalizeExerciseKey(entry.labelFr);
+  if (!norm) {
+    return;
+  }
+  const prev = byNormLabel.get(norm);
+  if (!prev || entry.leaf.length > prev.leaf.length) {
+    byNormLabel.set(norm, entry);
+  }
+}
+
+function buildDocumentFrequency(entries: IndexedEntry[]): Map<string, number> {
+  const documentFrequency = new Map<string, number>();
+  for (const entry of entries) {
+    for (const concept of entry.conceptSet) {
+      documentFrequency.set(concept, (documentFrequency.get(concept) ?? 0) + 1);
+    }
+  }
+  return documentFrequency;
+}
+
 function getIndex(): TaxonomyIndex {
   if (cachedIndex) {
     return cachedIndex;
@@ -83,25 +112,9 @@ function getIndex(): TaxonomyIndex {
   const byNormLabel = new Map<string, IndexedEntry>();
   const byLeaf = new Map<string, IndexedEntry>();
   for (const raw of DATA.entries) {
-    const entry = indexEntry(raw);
-    entries.push(entry);
-    byLeaf.set(entry.leaf, entry);
-    const norm = normalizeExerciseKey(entry.labelFr);
-    if (!norm) {
-      continue;
-    }
-    const prev = byNormLabel.get(norm);
-    // Prefer longer / more specific leaves on label collisions
-    if (!prev || entry.leaf.length > prev.leaf.length) {
-      byNormLabel.set(norm, entry);
-    }
+    registerTaxonomyEntry(raw, entries, byNormLabel, byLeaf);
   }
-  const documentFrequency = new Map<string, number>();
-  for (const entry of entries) {
-    for (const concept of entry.conceptSet) {
-      documentFrequency.set(concept, (documentFrequency.get(concept) ?? 0) + 1);
-    }
-  }
+  const documentFrequency = buildDocumentFrequency(entries);
   const idf = new Map<string, number>();
   for (const [concept, frequency] of documentFrequency) {
     idf.set(concept, conceptIdf(entries.length, frequency));
@@ -127,6 +140,46 @@ type EntryScore = {
   headMatch: boolean;
 };
 
+function countConceptHits(
+  query: ExercisePhrase,
+  entry: IndexedEntry,
+  weightOf: (concept: string) => number,
+): { hits: number; hitWeight: number; queryWeight: number } {
+  let hits = 0;
+  let hitWeight = 0;
+  let queryWeight = 0;
+  for (const concept of query.concepts) {
+    const weight = weightOf(concept);
+    queryWeight += weight;
+    if (entry.conceptSet.has(concept)) {
+      hits += 1;
+      hitWeight += weight;
+    }
+  }
+  return { hits, hitWeight, queryWeight };
+}
+
+function countQualifierHits(query: ExercisePhrase, entry: IndexedEntry): number {
+  let qualifierHits = 0;
+  for (const qualifier of query.qualifiers) {
+    if (entry.conceptSet.has(qualifier)) {
+      qualifierHits += 1;
+    }
+  }
+  return qualifierHits;
+}
+
+function countUnwantedEquipment(query: ExercisePhrase, entry: IndexedEntry): number {
+  const queryConceptSet = new Set(query.concepts);
+  let unwantedEquipment = 0;
+  for (const concept of entry.concepts) {
+    if (EQUIPMENT_CONCEPTS.has(concept) && !queryConceptSet.has(concept)) {
+      unwantedEquipment += 1;
+    }
+  }
+  return unwantedEquipment;
+}
+
 function scoreEntry(
   query: ExercisePhrase,
   entry: IndexedEntry,
@@ -139,38 +192,15 @@ function scoreEntry(
   const weightOf = (concept: string) =>
     (idf.get(concept) ?? MAX_IDF) * (ANATOMY_CONCEPTS.has(concept) ? ANATOMY_WEIGHT_FACTOR : 1);
 
-  let hits = 0;
-  let hitWeight = 0;
-  let queryWeight = 0;
-  for (const concept of query.concepts) {
-    const weight = weightOf(concept);
-    queryWeight += weight;
-    if (entry.conceptSet.has(concept)) {
-      hits += 1;
-      hitWeight += weight;
-    }
-  }
+  const { hits, hitWeight, queryWeight } = countConceptHits(query, entry, weightOf);
   if (hits === 0) {
     return { score: 0, hits: 0, headMatch: false };
   }
 
   const headMatch = entry.conceptSet.has(query.concepts[0]);
-
-  let qualifierHits = 0;
-  for (const qualifier of query.qualifiers) {
-    if (entry.conceptSet.has(qualifier)) {
-      qualifierHits += 1;
-    }
-  }
+  const qualifierHits = countQualifierHits(query, entry);
   const qualifierRatio = query.qualifiers.length > 0 ? qualifierHits / query.qualifiers.length : 0;
-
-  const queryConceptSet = new Set(query.concepts);
-  let unwantedEquipment = 0;
-  for (const concept of entry.concepts) {
-    if (EQUIPMENT_CONCEPTS.has(concept) && !queryConceptSet.has(concept)) {
-      unwantedEquipment += 1;
-    }
-  }
+  const unwantedEquipment = countUnwantedEquipment(query, entry);
 
   const score =
     WEIGHT_QUERY_COVERAGE * (hitWeight / queryWeight) +

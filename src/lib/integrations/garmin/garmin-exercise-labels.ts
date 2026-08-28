@@ -42,40 +42,43 @@ export function setGarminExerciseLabelsForTests(labels: Map<string, string> | nu
   cachedLabels = labels;
 }
 
+function labelFromKey(
+  labels: Map<string, string>,
+  key: string | null | undefined,
+): string | null {
+  const trimmed = key?.trim();
+  if (!trimmed) {
+    return null;
+  }
+  const label = labels.get(`exercise_type_${trimmed}`);
+  if (label) {
+    return label;
+  }
+  if (trimmed.toUpperCase() === 'UNKNOWN') {
+    return 'Inconnu';
+  }
+  return null;
+}
+
+function fallbackGarminExerciseLabel(
+  name: string | null | undefined,
+  category: string | null | undefined,
+): string {
+  const raw = name?.trim() || category?.trim();
+  if (!raw || raw.toUpperCase() === 'UNKNOWN') {
+    return raw ? 'Inconnu' : 'Exercice';
+  }
+  return humanizeExercise(raw);
+}
+
 export function resolveGarminExerciseLabel(
   category: string | null | undefined,
   name: string | null | undefined,
   labels: Map<string, string>,
 ): string {
-  const cat = category?.trim();
-  const sub = name?.trim();
-
-  if (sub) {
-    const subLabel = labels.get(`exercise_type_${sub}`);
-    if (subLabel) {
-      return subLabel;
-    }
-    if (sub.toUpperCase() === 'UNKNOWN') {
-      return 'Inconnu';
-    }
-  }
-
-  if (cat) {
-    const catLabel = labels.get(`exercise_type_${cat}`);
-    if (catLabel) {
-      return catLabel;
-    }
-    if (cat.toUpperCase() === 'UNKNOWN') {
-      return 'Inconnu';
-    }
-  }
-
-  const raw = sub || cat;
-  if (!raw) {
-    return 'Exercice';
-  }
-  if (raw.toUpperCase() === 'UNKNOWN') {
-    return 'Inconnu';
-  }
-  return humanizeExercise(raw);
+  return (
+    labelFromKey(labels, name) ??
+    labelFromKey(labels, category) ??
+    fallbackGarminExerciseLabel(name, category)
+  );
 }

@@ -42,6 +42,55 @@ function crossesLocalMidnight(start: Date, end: Date): boolean {
   );
 }
 
+function resolveHikeVariant(
+  durationSec: number | null,
+  startAt: Date,
+  endAt: Date,
+): 'overnight' | 'day' {
+  if (durationSec === null) {
+    return 'day';
+  }
+  if (durationSec >= OVERNIGHT_DURATION_SEC) {
+    return 'overnight';
+  }
+  return crossesLocalMidnight(startAt, endAt) ? 'overnight' : 'day';
+}
+
+function endPointFromPath(path: [number, number][] | null | undefined): { lat: number; lng: number } | null {
+  const last = path && path.length > 0 ? path[path.length - 1] : null;
+  return last ? { lat: last[0], lng: last[1] } : null;
+}
+
+function resolveElevationLossM(
+  metrics: HikeOvernightInput['hikeMetrics'],
+  streamElevationLossM: number | null | undefined,
+): number | null {
+  return metrics?.elevationLossM ?? streamElevationLossM ?? null;
+}
+
+function buildOvernightFields(input: {
+  activity: HikeOvernightInput;
+  opts?: { path?: [number, number][] | null; streamElevationLossM?: number | null };
+  startAt: Date;
+  endAt: Date;
+  durationSec: number | null;
+}): Omit<HikeOvernightSummary, 'variant'> {
+  const metrics = input.activity.hikeMetrics;
+  return {
+    startAt: input.startAt,
+    endAt: input.endAt,
+    durationSec: input.durationSec,
+    locationLabel: input.activity.observedLocationLabel,
+    weather: input.activity.weather,
+    load: input.activity.load,
+    distanceM: metrics?.distanceM ?? null,
+    elevationM: metrics?.elevationM ?? null,
+    elevationLossM: resolveElevationLossM(metrics, input.opts?.streamElevationLossM),
+    endPoint: endPointFromPath(input.opts?.path),
+    endLocationFallback: input.activity.observedLocationLabel,
+  };
+}
+
 export function buildHikeOvernightSummary(
   activity: HikeOvernightInput,
   opts?: {
@@ -55,30 +104,8 @@ export function buildHikeOvernightSummary(
   const endAt =
     durationSec !== null ? new Date(startAt.getTime() + durationSec * 1000) : new Date(startAt);
 
-  const variant: 'overnight' | 'day' =
-    (durationSec !== null && durationSec >= OVERNIGHT_DURATION_SEC) ||
-    (durationSec !== null && crossesLocalMidnight(startAt, endAt))
-      ? 'overnight'
-      : 'day';
-
-  const path = opts?.path;
-  const last = path && path.length > 0 ? path[path.length - 1] : null;
-  // path is [lat, lng] — matches ActivityStreamPayload.path (Leaflet order)
-  const endPoint = last ? { lat: last[0], lng: last[1] } : null;
-
-  const metrics = activity.hikeMetrics;
   return {
-    variant,
-    startAt,
-    endAt,
-    durationSec,
-    locationLabel: activity.observedLocationLabel,
-    weather: activity.weather,
-    load: activity.load,
-    distanceM: metrics?.distanceM ?? null,
-    elevationM: metrics?.elevationM ?? null,
-    elevationLossM: metrics?.elevationLossM ?? opts?.streamElevationLossM ?? null,
-    endPoint,
-    endLocationFallback: activity.observedLocationLabel,
+    variant: resolveHikeVariant(durationSec, startAt, endAt),
+    ...buildOvernightFields({ activity, opts, startAt, endAt, durationSec }),
   };
 }

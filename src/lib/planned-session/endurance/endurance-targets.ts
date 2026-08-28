@@ -215,6 +215,41 @@ const UNUSABLE_BAND_WARNING =
 
 type Bounds = { easy: number; hard: number };
 
+function mergeBothOverrides(easyOverride: number, hardOverride: number): Bounds {
+  return { easy: easyOverride, hard: hardOverride };
+}
+
+function mergeDerivedBounds(
+  target: EnduranceTarget,
+  derived: Bounds,
+): Bounds {
+  return {
+    easy: target.absEasy ?? derived.easy,
+    hard: target.absHard ?? derived.hard,
+  };
+}
+
+function mergeSingleOverride(
+  target: EnduranceTarget,
+  derive: () => Bounds | null,
+  warnings: string[],
+): Bounds | null {
+  const easyOverride = target.absEasy ?? null;
+  const hardOverride = target.absHard ?? null;
+  if (easyOverride !== null && hardOverride !== null) {
+    return mergeBothOverrides(easyOverride, hardOverride);
+  }
+
+  const derived = derive();
+  if (!derived) {
+    if (easyOverride !== null || hardOverride !== null) {
+      warnings.push(UNUSABLE_BAND_WARNING);
+    }
+    return null;
+  }
+  return mergeDerivedBounds(target, derived);
+}
+
 /**
  * Merge the athlete's absolute overrides with the relative band, side by side.
  * A single-sided override wins on its own side and keeps the derived value on
@@ -225,20 +260,7 @@ function mergeBounds(
   derive: () => Bounds | null,
   warnings: string[],
 ): Bounds | null {
-  const easyOverride = target.absEasy ?? null;
-  const hardOverride = target.absHard ?? null;
-  if (easyOverride !== null && hardOverride !== null) {
-    return { easy: easyOverride, hard: hardOverride };
-  }
-
-  const derived = derive();
-  if (!derived) {
-    if (easyOverride !== null || hardOverride !== null) {
-      warnings.push(UNUSABLE_BAND_WARNING);
-    }
-    return null;
-  }
-  return { easy: easyOverride ?? derived.easy, hard: hardOverride ?? derived.hard };
+  return mergeSingleOverride(target, derive, warnings);
 }
 
 /** Relative bounds are unusable without both percentages — say so rather than dropping silently. */

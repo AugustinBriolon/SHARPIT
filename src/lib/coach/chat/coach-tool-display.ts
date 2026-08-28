@@ -36,6 +36,20 @@ export function sessionTitleFromPart(part: ToolPartLite): string | null {
   return title?.trim() ? title.trim() : null;
 }
 
+function classifyToolError(trimmed: string): { hint: string; debug: string | null } | null {
+  const lower = trimmed.toLowerCase();
+  if (lower === 'an error occurred.' || lower === 'an error occurred') {
+    return { hint: "L'ajout n'a pas abouti", debug: trimmed };
+  }
+  if (lower.includes('fetch failed') || lower.includes('network')) {
+    return { hint: 'Problème de connexion — réessaie dans un instant', debug: trimmed };
+  }
+  if (lower.includes('timeout') || lower.includes('timed out')) {
+    return { hint: 'La requête a pris trop de temps', debug: trimmed };
+  }
+  return null;
+}
+
 /** Message utilisateur en français ; détail technique réservé au tooltip. */
 export function humanizeToolErrorMessage(raw?: string | null): {
   hint: string | null;
@@ -46,15 +60,9 @@ export function humanizeToolErrorMessage(raw?: string | null): {
     return { hint: null, debug: null };
   }
 
-  const lower = trimmed.toLowerCase();
-  if (lower === 'an error occurred.' || lower === 'an error occurred') {
-    return { hint: "L'ajout n'a pas abouti", debug: trimmed };
-  }
-  if (lower.includes('fetch failed') || lower.includes('network')) {
-    return { hint: 'Problème de connexion — réessaie dans un instant', debug: trimmed };
-  }
-  if (lower.includes('timeout') || lower.includes('timed out')) {
-    return { hint: 'La requête a pris trop de temps', debug: trimmed };
+  const classified = classifyToolError(trimmed);
+  if (classified) {
+    return classified;
   }
 
   const looksFrench = /[àâäéèêëïîôùûüç]/i.test(trimmed);
@@ -94,15 +102,20 @@ export function isToolFailure(part: ToolPartLite): boolean {
   return false;
 }
 
+function outputErrorFromPart(part: ToolPartLite): string | null {
+  const output = part.output as SessionOutput | undefined;
+  if (output?.ok === false) {
+    return output.error?.trim() ?? null;
+  }
+  return null;
+}
+
 export function rawErrorFromPart(part: ToolPartLite): string | null {
   if (part.state === 'output-error') {
     return part.errorText?.trim() ?? null;
   }
   if (part.state === 'output-available') {
-    const output = part.output as SessionOutput | undefined;
-    if (output?.ok === false) {
-      return output.error?.trim() ?? null;
-    }
+    return outputErrorFromPart(part);
   }
   return null;
 }

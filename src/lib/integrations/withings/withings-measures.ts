@@ -166,41 +166,53 @@ export interface WithingsHeartRecord {
   ecg?: { signalid: number; afib: number };
 }
 
+function findBestHeartEcgMatch(
+  measuredAtMs: number,
+  heartRecords: WithingsHeartRecord[],
+): WithingsHeartRecord | null {
+  let best: WithingsHeartRecord | null = null;
+  let bestDelta = Infinity;
+
+  for (const record of heartRecords) {
+    if (record.ecg?.afib === null) {
+      continue;
+    }
+    const delta = Math.abs(record.timestamp * 1000 - measuredAtMs);
+    if (delta <= WITHINGS_SESSION_MERGE_SEC * 1000 && delta < bestDelta) {
+      best = record;
+      bestDelta = delta;
+    }
+  }
+  return best;
+}
+
+function applyHeartEcgToMeasurement(
+  m: WithingsParsedMeasurement,
+  heartRecord: WithingsHeartRecord,
+): WithingsParsedMeasurement {
+  const extras: WithingsExtras = { ...(m.withingsExtras ?? {}) };
+  extras.ecgAfibClassification = heartRecord.ecg!.afib;
+  extras.ecg = {
+    ...(extras.ecg ?? {}),
+    [String(WITHINGS_MEASURE.AFIB_ECG)]: heartRecord.ecg!.afib,
+  };
+  if (heartRecord.heart_rate !== null && m.heartRate === null) {
+    return { ...m, heartRate: heartRecord.heart_rate, withingsExtras: extras };
+  }
+  return { ...m, withingsExtras: extras };
+}
+
 /** Aligne la classification ECG sur Heart v2 (même source que l'app Withings). */
 export function enrichMeasurementsWithHeartEcg(
   measurements: WithingsParsedMeasurement[],
   heartRecords: WithingsHeartRecord[],
 ): WithingsParsedMeasurement[] {
   return measurements.map((m) => {
-    const tMs = m.measuredAt.getTime();
-    let best: WithingsHeartRecord | null = null;
-    let bestDelta = Infinity;
-
-    for (const record of heartRecords) {
-      if (record.ecg?.afib === null) {
-        continue;
-      }
-      const delta = Math.abs(record.timestamp * 1000 - tMs);
-      if (delta <= WITHINGS_SESSION_MERGE_SEC * 1000 && delta < bestDelta) {
-        best = record;
-        bestDelta = delta;
-      }
-    }
-
+    const best = findBestHeartEcgMatch(m.measuredAt.getTime(), heartRecords);
     if (!best?.ecg) {
       return m;
     }
-
-    const extras: WithingsExtras = { ...(m.withingsExtras ?? {}) };
-    extras.ecgAfibClassification = best.ecg.afib;
-    extras.ecg = {
-      ...(extras.ecg ?? {}),
-      [String(WITHINGS_MEASURE.AFIB_ECG)]: best.ecg.afib,
-    };
-    if (best.heart_rate !== null && m.heartRate === null) {
-      return { ...m, heartRate: best.heart_rate, withingsExtras: extras };
-    }
-    return { ...m, withingsExtras: extras };
+    return applyHeartEcgToMeasurement(m, best);
   });
 }
 
@@ -277,6 +289,23 @@ function computeBmi(weightKg: number | null, heightM: number | null): number | n
   return Number((weightKg / (heightM * heightM)).toFixed(1));
 }
 
+function classifyMeasureReading(
+  m: { value: number; type: number; unit: number; fm?: number },
+  byType: Map<number, number>,
+  segmental: WithingsExtras['segmental'],
+  ecg: Record<string, number>,
+): void {
+  if (SEGMENTAL_TYPES.has(m.type)) {
+    segmental!.push({ type: m.type, value: m.value, unit: m.unit, fm: m.fm });
+    return;
+  }
+  if (ECG_TYPES.has(m.type)) {
+    ecg[String(m.type)] = decodeEcgStoredValue(m);
+    return;
+  }
+  byType.set(m.type, decodeWithingsValue(m.value, m.unit));
+}
+
 export function parseWithingsMeasureGroup(group: {
   grpid: number;
   date: number;
@@ -287,19 +316,7 @@ export function parseWithingsMeasureGroup(group: {
   const ecg: Record<string, number> = {};
 
   for (const m of group.measures) {
-    const decoded = decodeWithingsValue(m.value, m.unit);
-
-    if (SEGMENTAL_TYPES.has(m.type)) {
-      segmental!.push({ type: m.type, value: m.value, unit: m.unit, fm: m.fm });
-      continue;
-    }
-
-    if (ECG_TYPES.has(m.type)) {
-      ecg[String(m.type)] = decodeEcgStoredValue(m);
-      continue;
-    }
-
-    byType.set(m.type, decoded);
+    classifyMeasureReading(m, byType, segmental, ecg);
   }
 
   const weightKg = getScalar(byType, WITHINGS_MEASURE.WEIGHT);

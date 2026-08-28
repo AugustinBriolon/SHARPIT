@@ -99,6 +99,90 @@ function freshnessLabel(freshness: string | null | undefined): string | null {
   return null;
 }
 
+function plannedConditionsHeadline(
+  needsLocation: boolean,
+  env: PlannedSessionContext['environment'] | null,
+): string | null {
+  if (needsLocation) {
+    return 'Contexte à confirmer';
+  }
+  if (!env) {
+    return null;
+  }
+  return THERMAL_CONDITIONS[env.thermalStressLevel] ?? null;
+}
+
+function mapPlannedSessionAdvisories(
+  advisories: PlannedSessionContext['advisories'],
+): PlannedSessionViewModel['context']['advisories'] {
+  return advisories.map((a) => ({
+    kind: a.kind,
+    headline: ADVISORY_HEADLINES[a.headlineCode] ?? a.headlineCode,
+    rationale: ADVISORY_RATIONALES[a.rationaleCode] ?? a.rationaleCode,
+    confidenceLabel: confidenceLabel(a.confidence),
+  }));
+}
+
+function coalesceLocationField<T>(sessionValue: T | null | undefined, contextValue: T | null | undefined) {
+  if (sessionValue !== null && sessionValue !== undefined) {
+    return sessionValue;
+  }
+  if (contextValue !== null && contextValue !== undefined) {
+    return contextValue;
+  }
+  return null;
+}
+
+function resolvePlannedSessionLocation(input: {
+  session: PlannedSessionRecord;
+  context: PlannedSessionContext;
+}) {
+  const { location } = input.context.intention;
+  return {
+    locationLabel: coalesceLocationField(input.session.locationLabel, location?.label),
+    locationLatitude: coalesceLocationField(input.session.locationLat, location?.latitude),
+    locationLongitude: coalesceLocationField(input.session.locationLng, location?.longitude),
+  };
+}
+
+function buildPlannedSessionContextVm(input: {
+  session: PlannedSessionRecord;
+  context: PlannedSessionContext;
+  needsLocation: boolean;
+  env: PlannedSessionContext['environment'] | null;
+  conditionsHeadline: string | null;
+  impactSummary: string | null;
+  visible: boolean;
+  primaryAdvisory: PlannedSessionContext['advisories'][number] | undefined;
+}): PlannedSessionViewModel['context'] {
+  const location = resolvePlannedSessionLocation(input);
+  return {
+    visible: input.visible,
+    needsLocationConfirmation: input.needsLocation,
+    conditionsHeadline: input.conditionsHeadline,
+    conditionsDetail: input.primaryAdvisory
+      ? (ADVISORY_RATIONALES[input.primaryAdvisory.rationaleCode] ?? null)
+      : null,
+    impactSummary: input.impactSummary,
+    confidenceLabel: input.env ? confidenceLabel(input.env.confidence) : null,
+    freshnessLabel: input.env ? freshnessLabel(input.env.freshness) : null,
+    advisories: mapPlannedSessionAdvisories(input.context.advisories),
+    preparation: input.context.preparation.map((p) => ({
+      label: PREP_LABELS[p.code]?.(p.params) ?? p.code,
+    })),
+    exposure: input.context.intention.exposure,
+    locationLabel: location.locationLabel,
+    locationLatitude: location.locationLatitude,
+    locationLongitude: location.locationLongitude,
+    emptyState: input.visible
+      ? null
+      : {
+          title: 'Contexte environnemental',
+          description: 'Aucun ajustement particulier avant cette séance.',
+        },
+  };
+}
+
 export function buildPlannedSessionViewModel(input: {
   session: PlannedSessionRecord;
   context: PlannedSessionContext;
@@ -108,63 +192,27 @@ export function buildPlannedSessionViewModel(input: {
   const env = context.environment;
   const needsLocation = needsExposureConfirmation(session.type, context.intention.exposure);
 
-  function plannedConditionsHeadline(
-    needsLocation: boolean,
-    env: PlannedSessionContext['environment'] | null,
-  ): string | null {
-    if (needsLocation) {
-      return 'Contexte à confirmer';
-    }
-    if (!env) {
-      return null;
-    }
-    return THERMAL_CONDITIONS[env.thermalStressLevel] ?? null;
-  }
-
   const conditionsHeadline = plannedConditionsHeadline(needsLocation, env);
-
   const impactSummary = env ? (IMPACT_SUMMARY[env.trainingImpact] ?? null) : null;
-
   const visible =
     needsLocation ||
     Boolean(impactSummary) ||
     context.advisories.some((a) => a.kind !== 'PROCEED') ||
     context.preparation.length > 0;
-
   const [primaryAdvisory] = context.advisories;
 
   return {
     sessionId: session.id,
-    context: {
-      visible,
-      needsLocationConfirmation: needsLocation,
+    context: buildPlannedSessionContextVm({
+      session,
+      context,
+      needsLocation,
+      env,
       conditionsHeadline,
-      conditionsDetail: primaryAdvisory
-        ? (ADVISORY_RATIONALES[primaryAdvisory.rationaleCode] ?? null)
-        : null,
       impactSummary,
-      confidenceLabel: env ? confidenceLabel(env.confidence) : null,
-      freshnessLabel: env ? freshnessLabel(env.freshness) : null,
-      advisories: context.advisories.map((a) => ({
-        kind: a.kind,
-        headline: ADVISORY_HEADLINES[a.headlineCode] ?? a.headlineCode,
-        rationale: ADVISORY_RATIONALES[a.rationaleCode] ?? a.rationaleCode,
-        confidenceLabel: confidenceLabel(a.confidence),
-      })),
-      preparation: context.preparation.map((p) => ({
-        label: PREP_LABELS[p.code]?.(p.params) ?? p.code,
-      })),
-      exposure: context.intention.exposure,
-      locationLabel: session.locationLabel ?? context.intention.location?.label ?? null,
-      locationLatitude: session.locationLat ?? context.intention.location?.latitude ?? null,
-      locationLongitude: session.locationLng ?? context.intention.location?.longitude ?? null,
-      emptyState: visible
-        ? null
-        : {
-            title: 'Contexte environnemental',
-            description: 'Aucun ajustement particulier avant cette séance.',
-          },
-    },
+      visible,
+      primaryAdvisory,
+    }),
     completion: completion?.visible
       ? {
           visible: true,

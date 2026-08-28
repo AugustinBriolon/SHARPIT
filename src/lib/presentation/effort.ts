@@ -53,6 +53,32 @@ const CONFIDENCE_TONE = {
   low: 'neutral',
 } as const;
 
+const DOMINANT_DIMENSION_LABEL: Record<string, string> = {
+  LOAD: 'Charge excessive',
+  NEUROMUSCULAR: 'Fatigue neuromusculaire',
+  METABOLIC: 'Fatigue métabolique',
+  CUMULATIVE: 'Accumulation chronique',
+  PSYCHOLOGICAL: 'Fatigue psychologique',
+  load: 'Charge excessive',
+  neuromuscular: 'Fatigue neuromusculaire',
+  metabolic: 'Fatigue métabolique',
+  cumulative: 'Accumulation chronique',
+  psychological: 'Fatigue psychologique',
+};
+
+const DOMINANT_DIMENSION_LABEL_LOW: Record<string, string> = {
+  LOAD: 'Charge actuelle',
+  NEUROMUSCULAR: 'Neuromusculaire',
+  METABOLIC: 'Métabolique',
+  CUMULATIVE: 'Historique de charge',
+  PSYCHOLOGICAL: 'Psychologique',
+  load: 'Charge actuelle',
+  neuromuscular: 'Neuromusculaire',
+  metabolic: 'Métabolique',
+  cumulative: 'Historique de charge',
+  psychological: 'Psychologique',
+};
+
 function mapStrainToDisplay(strainScore: number | null) {
   if (strainScore === null) {
     return {
@@ -90,6 +116,174 @@ function mapStrainToDisplay(strainScore: number | null) {
     };
   }
   return { label: 'Repos', colorClass: 'text-muted-foreground', strokeColor: CHART_TICK_COLOR };
+}
+
+function buildWeeklyTssSeries(
+  refDate: Date,
+  dailyStress: Awaited<ReturnType<typeof loadDailyTrainingStressEntries>>,
+) {
+  const weeklyTss: { week: string; tss: number }[] = [];
+  for (let w = 7; w >= 0; w -= 1) {
+    const weekStart = new Date(refDate);
+    weekStart.setDate(refDate.getDate() - w * 7 - 6);
+    const weekEnd = new Date(refDate);
+    weekEnd.setDate(refDate.getDate() - w * 7);
+    const total = dailyStress
+      .filter((entry) => entry.date >= weekStart && entry.date <= weekEnd)
+      .reduce((sum, entry) => sum + entry.load, 0);
+    weeklyTss.push({ week: w === 0 ? 'Cette sem.' : `S-${w}`, tss: Math.round(total) });
+  }
+  return weeklyTss;
+}
+
+function resolveDominantDimensionLabel(dominantDimension: string | null, isLowFatigue: boolean) {
+  if (!dominantDimension) {
+    return null;
+  }
+  const map = isLowFatigue ? DOMINANT_DIMENSION_LABEL_LOW : DOMINANT_DIMENSION_LABEL;
+  return map[dominantDimension] ?? dominantDimension;
+}
+
+function resolveFatigueTypeLabel(fatigueType: string | null | undefined) {
+  if (!fatigueType || fatigueType === 'UNDETERMINED') {
+    return null;
+  }
+  return mapFatigueTypeToLabel(fatigueType as FatigueType);
+}
+
+function computeEffortWeeklyStats(
+  trainingLoad: ReturnType<typeof computeTrainingLoad>,
+  pmcSeries: ReturnType<typeof slicePmcWindow>,
+  weeklyTss: ReturnType<typeof buildWeeklyTssSeries>,
+) {
+  const avgWeeklyTss =
+    weeklyTss.length > 0
+      ? Math.round(weeklyTss.reduce((s, w) => s + w.tss, 0) / weeklyTss.length)
+      : 0;
+  const chronicWeeklyAvg =
+    trainingLoad.acwr > 0 ? Math.round(trainingLoad.weeklyLoad / trainingLoad.acwr) : null;
+  const lastTsb = pmcSeries.length > 0 ? (pmcSeries[pmcSeries.length - 1]?.tsb ?? null) : null;
+  return { avgWeeklyTss, chronicWeeklyAvg, lastTsb };
+}
+
+function resolveEffortDerivedMetrics(input: {
+  fatigue: NonNullable<Awaited<ReturnType<typeof getOrBuildAthleteSnapshot>>['fatigue']>;
+  trainingLoad: ReturnType<typeof computeTrainingLoad>;
+  pmcSeries: ReturnType<typeof slicePmcWindow>;
+  weeklyTss: ReturnType<typeof buildWeeklyTssSeries>;
+}) {
+  const { fatigue, trainingLoad, pmcSeries, weeklyTss } = input;
+  const weeklyStats = computeEffortWeeklyStats(trainingLoad, pmcSeries, weeklyTss);
+  const performancePercent =
+    fatigue.performanceImpairmentEstimate > 0
+      ? Math.round((1 - fatigue.performanceImpairmentEstimate) * 100)
+      : null;
+  const verdictDisplay =
+    FATIGUE_VERDICT_DISPLAY[fatigue.decision.verdict] ?? FATIGUE_VERDICT_DISPLAY.INSUFFICIENT_DATA;
+  const confidenceTier = mapConfidenceToTier(fatigue.confidence);
+  const isLowFatigue =
+    fatigue.fatigueLevel === 'FRESH' || fatigue.fatigueLevel === 'FUNCTIONAL_LOW';
+  const dimensions = enrichFatigueLoadDimension(fatigue.dimensions, trainingLoad.acwr);
+
+  return {
+    fatigueTypeLabel: resolveFatigueTypeLabel(fatigue.fatigueType),
+    performancePercent,
+    verdictDisplay,
+    confidencePct: Math.round(fatigue.confidence * 100),
+    confidenceTone: (CONFIDENCE_TONE[confidenceTier] ?? 'neutral') as EffortViewModel['confidenceTone'],
+    completenessLabel: COMPLETENESS_LABEL[fatigue.dataCompleteness] ?? fatigue.dataCompleteness,
+    isLowFatigue,
+    dimensions,
+    availableDimCount: Object.values(dimensions).filter((d) => d.available).length,
+    ...weeklyStats,
+  };
+}
+
+function buildPopulatedEffortViewModel(input: {
+  snapshot: Awaited<ReturnType<typeof getOrBuildAthleteSnapshot>>;
+  fatigue: NonNullable<Awaited<ReturnType<typeof getOrBuildAthleteSnapshot>>['fatigue']>;
+  dailyStrain: Awaited<ReturnType<typeof getOrBuildAthleteSnapshot>>['dailyStrain'];
+  trainingLoad: ReturnType<typeof computeTrainingLoad>;
+  pmcSeries: ReturnType<typeof slicePmcWindow>;
+  weeklyTss: ReturnType<typeof buildWeeklyTssSeries>;
+  dailyLoad: number;
+  strainScore: number | null;
+  strainDisplay: ReturnType<typeof mapStrainToDisplay>;
+}): EffortViewModel {
+  const { snapshot, fatigue, dailyStrain, trainingLoad, pmcSeries, weeklyTss, dailyLoad, strainScore, strainDisplay } =
+    input;
+  const metrics = resolveEffortDerivedMetrics({ fatigue, trainingLoad, pmcSeries, weeklyTss });
+  const rationale = fatigue.decision.rationale.map((r) => resolve(r));
+  const keyEvidence = fatigue.recommendation.keyEvidence.map((e) => resolve(e));
+  const dominantDimensionLabel = resolveDominantDimensionLabel(
+    fatigue.dominantDimension,
+    metrics.isLowFatigue,
+  );
+  const limitingFactorLabel = fatigue.primaryLimitingFactor
+    ? resolve({ code: fatigue.primaryLimitingFactor })
+    : null;
+  const insights = buildEffortPageInsights({
+    acwr: trainingLoad.acwr,
+    confidence: fatigue.confidence,
+    dominantDimension: dominantDimensionLabel,
+    estimatedDaysToFresh: fatigue.estimatedTimeToFresh,
+    fatigueType: fatigue.fatigueType as FatigueType,
+    keyEvidence,
+    overreachingLabel:
+      OVERREACHING_RISK_DISPLAY[fatigue.signals.functionalOverreachingRisk]?.label ?? null,
+    performancePercent: metrics.performancePercent,
+    primaryLimitingFactor: limitingFactorLabel,
+    rationale,
+    strainScore,
+    trainingCapacity: fatigue.trainingCapacity,
+    tsb: metrics.lastTsb,
+    verdictLabel: metrics.verdictDisplay.label,
+    weeklyLoad: trainingLoad.weeklyLoad,
+  });
+  const overreaching = OVERREACHING_RISK_DISPLAY[fatigue.signals.functionalOverreachingRisk];
+
+  return {
+    strainScore,
+    dailyLoad,
+    weeklyLoad: trainingLoad.weeklyLoad,
+    strainComposition: buildEffortStrainComposition(dailyStrain),
+    fatigueType: fatigue.fatigueType,
+    fatigueTypeLabel: metrics.fatigueTypeLabel,
+    performancePercent: metrics.performancePercent,
+    consecutiveDays: fatigue.consecutiveAccumulationDays,
+    estimatedDaysToFresh: fatigue.estimatedTimeToFresh,
+    acwr: trainingLoad.acwr,
+    chronicWeeklyAvg: metrics.chronicWeeklyAvg,
+    tsb: metrics.lastTsb,
+    confidencePct: metrics.confidencePct,
+    confidenceTone: metrics.confidenceTone,
+    verdict: metrics.verdictDisplay.label,
+    verdictClass: metrics.verdictDisplay.colorClass,
+    verdictKey: fatigue.decision.verdict,
+    rationale,
+    trainingCapacity: fatigue.trainingCapacity,
+    strainSubtitle: '',
+    strainStatusLabel: strainDisplay.label,
+    strainStatusClassName: strainDisplay.colorClass,
+    strainStrokeColor: strainDisplay.strokeColor,
+    dimensions: metrics.dimensions,
+    missingDimCount: 5 - metrics.availableDimCount,
+    dominantDimension: fatigue.dominantDimension,
+    primaryLimitingFactor: fatigue.primaryLimitingFactor,
+    isLowFatigue: metrics.isLowFatigue,
+    pmcSeries,
+    weeklyTss,
+    avgWeeklyTss: metrics.avgWeeklyTss,
+    overreaching,
+    keyEvidence,
+    completenessLabel: metrics.completenessLabel,
+    availableDimCount: metrics.availableDimCount,
+    insights,
+    globalDecision: buildGlobalDecisionContext(snapshot, 'FATIGUE'),
+    emptyState: null,
+    hierarchy: { rootId: 'effort', order: ['hero', 'verdict', 'insights', 'charts', 'evidence'] },
+    sections: [],
+  };
 }
 
 function emptyEffortViewModel(): EffortViewModel {
@@ -165,162 +359,18 @@ export async function buildEffortViewModel(
   const dailyLoad = dailyStrain?.dailyTss ?? trainingLoad.dailyLoad;
   const strainScore = dailyStrain?.strainScore ?? null;
   const strainDisplay = mapStrainToDisplay(strainScore);
-  const fatigueTypeLabel =
-    fatigue.fatigueType && fatigue.fatigueType !== 'UNDETERMINED'
-      ? mapFatigueTypeToLabel(fatigue.fatigueType as FatigueType)
-      : null;
-
-  // 28 days is the chart width. The recurrence still runs over the whole history:
-  // seeding it 28 days back reached only ~49% of steady-state CTL, roughly halving
-  // the fitness this dashboard reported. See ADR-011.
   const pmcSeries = slicePmcWindow(pmcPoints, 28, refDate);
+  const weeklyTss = buildWeeklyTssSeries(refDate, dailyStress);
 
-  const weeklyTss: { week: string; tss: number }[] = [];
-  for (let w = 7; w >= 0; w--) {
-    const weekStart = new Date(refDate);
-    weekStart.setDate(refDate.getDate() - w * 7 - 6);
-    const weekEnd = new Date(refDate);
-    weekEnd.setDate(refDate.getDate() - w * 7);
-    // From the Core's Training Stress too, so these bars are on the same scale as
-    // the ACWR gauge and the PMC curve rather than on raw Activity.load.
-    const total = dailyStress
-      .filter((entry) => entry.date >= weekStart && entry.date <= weekEnd)
-      .reduce((sum, entry) => sum + entry.load, 0);
-    weeklyTss.push({ week: w === 0 ? 'Cette sem.' : `S-${w}`, tss: Math.round(total) });
-  }
-
-  const avgWeeklyTss =
-    weeklyTss.length > 0
-      ? Math.round(weeklyTss.reduce((s, w) => s + w.tss, 0) / weeklyTss.length)
-      : 0;
-
-  const chronicWeeklyAvg =
-    trainingLoad.acwr > 0 ? Math.round(trainingLoad.weeklyLoad / trainingLoad.acwr) : null;
-
-  const lastTsb = pmcSeries.length > 0 ? (pmcSeries[pmcSeries.length - 1]?.tsb ?? null) : null;
-
-  const performancePercent =
-    fatigue.performanceImpairmentEstimate > 0
-      ? Math.round((1 - fatigue.performanceImpairmentEstimate) * 100)
-      : null;
-
-  const verdictDisplay =
-    FATIGUE_VERDICT_DISPLAY[fatigue.decision.verdict] ?? FATIGUE_VERDICT_DISPLAY.INSUFFICIENT_DATA;
-
-  const confidencePct = Math.round(fatigue.confidence * 100);
-  const confidenceTier = mapConfidenceToTier(fatigue.confidence);
-  const confidenceTone = (CONFIDENCE_TONE[confidenceTier] ??
-    'neutral') as EffortViewModel['confidenceTone'];
-
-  const completenessLabel =
-    COMPLETENESS_LABEL[fatigue.dataCompleteness] ?? fatigue.dataCompleteness;
-
-  const isLowFatigue =
-    fatigue.fatigueLevel === 'FRESH' || fatigue.fatigueLevel === 'FUNCTIONAL_LOW';
-
-  const dimensions = enrichFatigueLoadDimension(fatigue.dimensions, trainingLoad.acwr);
-  const availableDimCount = Object.values(dimensions).filter((d) => d.available).length;
-
-  const rationale = fatigue.decision.rationale.map((r) => resolve(r));
-  const keyEvidence = fatigue.recommendation.keyEvidence.map((e) => resolve(e));
-
-  const dominantDimensionLabel = (() => {
-    if (!fatigue.dominantDimension) {
-      return null;
-    }
-    const DOMINANT_LABEL: Record<string, string> = {
-      LOAD: 'Charge excessive',
-      NEUROMUSCULAR: 'Fatigue neuromusculaire',
-      METABOLIC: 'Fatigue métabolique',
-      CUMULATIVE: 'Accumulation chronique',
-      PSYCHOLOGICAL: 'Fatigue psychologique',
-      load: 'Charge excessive',
-      neuromuscular: 'Fatigue neuromusculaire',
-      metabolic: 'Fatigue métabolique',
-      cumulative: 'Accumulation chronique',
-      psychological: 'Fatigue psychologique',
-    };
-    const DOMINANT_LABEL_LOW: Record<string, string> = {
-      LOAD: 'Charge actuelle',
-      NEUROMUSCULAR: 'Neuromusculaire',
-      METABOLIC: 'Métabolique',
-      CUMULATIVE: 'Historique de charge',
-      PSYCHOLOGICAL: 'Psychologique',
-      load: 'Charge actuelle',
-      neuromuscular: 'Neuromusculaire',
-      metabolic: 'Métabolique',
-      cumulative: 'Historique de charge',
-      psychological: 'Psychologique',
-    };
-    const map = isLowFatigue ? DOMINANT_LABEL_LOW : DOMINANT_LABEL;
-    return map[fatigue.dominantDimension] ?? fatigue.dominantDimension;
-  })();
-
-  const limitingFactorLabel = fatigue.primaryLimitingFactor
-    ? resolve({ code: fatigue.primaryLimitingFactor })
-    : null;
-
-  const insights = buildEffortPageInsights({
-    acwr: trainingLoad.acwr,
-    confidence: fatigue.confidence,
-    dominantDimension: dominantDimensionLabel,
-    estimatedDaysToFresh: fatigue.estimatedTimeToFresh,
-    fatigueType: fatigue.fatigueType as FatigueType,
-    keyEvidence,
-    overreachingLabel:
-      OVERREACHING_RISK_DISPLAY[fatigue.signals.functionalOverreachingRisk]?.label ?? null,
-    performancePercent,
-    primaryLimitingFactor: limitingFactorLabel,
-    rationale,
-    strainScore,
-    trainingCapacity: fatigue.trainingCapacity,
-    tsb: lastTsb,
-    verdictLabel: verdictDisplay.label,
-    weeklyLoad: trainingLoad.weeklyLoad,
-  });
-
-  const overreaching = OVERREACHING_RISK_DISPLAY[fatigue.signals.functionalOverreachingRisk];
-
-  return {
-    strainScore,
-    dailyLoad,
-    weeklyLoad: trainingLoad.weeklyLoad,
-    strainComposition: buildEffortStrainComposition(dailyStrain),
-    fatigueType: fatigue.fatigueType,
-    fatigueTypeLabel,
-    performancePercent,
-    consecutiveDays: fatigue.consecutiveAccumulationDays,
-    estimatedDaysToFresh: fatigue.estimatedTimeToFresh,
-    acwr: trainingLoad.acwr,
-    chronicWeeklyAvg,
-    tsb: lastTsb,
-    confidencePct,
-    confidenceTone,
-    verdict: verdictDisplay.label,
-    verdictClass: verdictDisplay.colorClass,
-    verdictKey: fatigue.decision.verdict,
-    rationale,
-    trainingCapacity: fatigue.trainingCapacity,
-    strainSubtitle: '',
-    strainStatusLabel: strainDisplay.label,
-    strainStatusClassName: strainDisplay.colorClass,
-    strainStrokeColor: strainDisplay.strokeColor,
-    dimensions,
-    missingDimCount: 5 - availableDimCount,
-    dominantDimension: fatigue.dominantDimension,
-    primaryLimitingFactor: fatigue.primaryLimitingFactor,
-    isLowFatigue,
+  return buildPopulatedEffortViewModel({
+    snapshot,
+    fatigue,
+    dailyStrain,
+    trainingLoad,
     pmcSeries,
     weeklyTss,
-    avgWeeklyTss,
-    overreaching,
-    keyEvidence,
-    completenessLabel,
-    availableDimCount,
-    insights,
-    globalDecision: buildGlobalDecisionContext(snapshot, 'FATIGUE'),
-    emptyState: null,
-    hierarchy: { rootId: 'effort', order: ['hero', 'verdict', 'insights', 'charts', 'evidence'] },
-    sections: [],
-  };
+    dailyLoad,
+    strainScore,
+    strainDisplay,
+  });
 }

@@ -35,24 +35,21 @@ export type SnapshotContextLabels = {
   readonly fatigueTrainingCapacityLabel: string | null;
 };
 
+function lookupLabel<T extends string>(
+  map: Record<string, string>,
+  value: T | null | undefined,
+): string | null {
+  return value ? (map[value] ?? value) : null;
+}
+
 export function describeSnapshotContext(context: DecisionSnapshotContext): SnapshotContextLabels {
   return {
     overallVerdictLabel: context.overallVerdict
       ? mapVerdictToDisplay(context.overallVerdict as OverallVerdict).label
       : null,
-    confidenceTierLabel: context.confidenceTier
-      ? (CONFIDENCE_TIER_LABEL[context.confidenceTier] ?? context.confidenceTier)
-      : null,
-    limitingFactorLabel: context.limitingFactorSystem
-      ? (LIMITING_FACTOR_SYSTEM_LABEL[context.limitingFactorSystem] ?? context.limitingFactorSystem)
-      : null,
-    // physicalHealthCapacity is a TrainingCapacityLevel (FULL/REDUCED/LIMITED/UNABLE),
-    // not fatigue's TrainingCapacity (FULL/REDUCED/LIGHT_ONLY/REST_ONLY) — a different
-    // enum with different values. Do not resolve it via mapFatigueCapacityLabel: LIMITED
-    // and UNABLE aren't keys in that map, so it silently drops them.
-    physicalHealthCapacityLabel: context.physicalHealthCapacity
-      ? (CAPACITY_LABELS[context.physicalHealthCapacity] ?? context.physicalHealthCapacity)
-      : null,
+    confidenceTierLabel: lookupLabel(CONFIDENCE_TIER_LABEL, context.confidenceTier),
+    limitingFactorLabel: lookupLabel(LIMITING_FACTOR_SYSTEM_LABEL, context.limitingFactorSystem),
+    physicalHealthCapacityLabel: lookupLabel(CAPACITY_LABELS, context.physicalHealthCapacity),
     fatigueTrainingCapacityLabel: context.fatigueTrainingCapacity
       ? mapFatigueCapacityLabel(context.fatigueTrainingCapacity as TrainingCapacity)
       : null,

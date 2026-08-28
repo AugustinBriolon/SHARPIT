@@ -71,29 +71,16 @@ export function shiftByOneDay(session: Pick<ClientPlannedSession, 'date'>): Sess
  * Cutting one without the other would leave the plan claiming an hour of work at
  * the original cost, and every load figure downstream would inherit the lie.
  */
-export function easeSession(
+function buildEaseAdjustment(
   session: Pick<
     ClientPlannedSession,
     'durationMin' | 'load' | 'endurancePrescription' | 'strengthPrescription'
   >,
-): SessionAdjustment | null {
+  easedEndurance: ReturnType<typeof easeEndurancePrescription>,
+  easedStrength: ReturnType<typeof easeStrengthPrescription>,
+): SessionAdjustment {
   const hasDuration = session.durationMin !== null && session.durationMin > 0;
   const hasLoad = session.load !== null && session.load > 0;
-
-  /* The déroulé is the part the athlete follows. Shrinking the summary while it
-     still spells out the original workout would leave the card and the plan
-     disagreeing about the same session. */
-  const endurance = parseEndurancePrescription(session.endurancePrescription);
-  const easedEndurance = endurance ? easeEndurancePrescription(endurance) : null;
-  const strength = parseStrengthPrescription(session.strengthPrescription);
-  const easedStrength = strength ? easeStrengthPrescription(strength) : null;
-
-  // Nothing to reduce anywhere — refuse rather than write a no-op the athlete
-  // would have to undo without anything having changed.
-  if (!hasDuration && !hasLoad && !easedEndurance && !easedStrength) {
-    return null;
-  }
-
   const adjustment: SessionAdjustment = {
     durationMin: hasDuration
       ? roundMinutes(session.durationMin! * EASE_FACTOR)
@@ -107,6 +94,34 @@ export function easeSession(
     Object.assign(adjustment, { strengthPrescription: easedStrength });
   }
   return adjustment;
+}
+
+function hasEaseableContent(
+  session: Pick<ClientPlannedSession, 'durationMin' | 'load'>,
+  easedEndurance: unknown,
+  easedStrength: unknown,
+): boolean {
+  const hasDuration = session.durationMin !== null && session.durationMin > 0;
+  const hasLoad = session.load !== null && session.load > 0;
+  return Boolean(hasDuration || hasLoad || easedEndurance || easedStrength);
+}
+
+export function easeSession(
+  session: Pick<
+    ClientPlannedSession,
+    'durationMin' | 'load' | 'endurancePrescription' | 'strengthPrescription'
+  >,
+): SessionAdjustment | null {
+  const endurance = parseEndurancePrescription(session.endurancePrescription);
+  const easedEndurance = endurance ? easeEndurancePrescription(endurance) : null;
+  const strength = parseStrengthPrescription(session.strengthPrescription);
+  const easedStrength = strength ? easeStrengthPrescription(strength) : null;
+
+  if (!hasEaseableContent(session, easedEndurance, easedStrength)) {
+    return null;
+  }
+
+  return buildEaseAdjustment(session, easedEndurance, easedStrength);
 }
 
 /**

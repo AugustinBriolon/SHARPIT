@@ -87,28 +87,28 @@ function executedRatioOf(
   return 1;
 }
 
+const METRIC_BAND_CHECKERS: Record<
+  ResolvedTarget['metric'],
+  (sample: StreamSample, target: ResolvedTarget) => boolean | null
+> = {
+  pace: (sample, target) => {
+    if (sample.speed === null || sample.speed <= 0) {
+      return null;
+    }
+    return sample.speed >= target.speedMsMin && sample.speed <= target.speedMsMax;
+  },
+  hr: (sample, target) =>
+    sample.hr === null ? null : sample.hr >= target.bpmMin && sample.hr <= target.bpmMax,
+  power: (sample, target) =>
+    sample.watts === null ? null : sample.watts >= target.wattsMin && sample.watts <= target.wattsMax,
+  cadence: (sample, target) =>
+    sample.cadence === null ? null : sample.cadence >= target.min && sample.cadence <= target.max,
+  none: () => null,
+};
+
 /** Is this sample inside the band? Null when the sample carries no usable signal. */
 function sampleInBand(sample: StreamSample, target: ResolvedTarget): boolean | null {
-  switch (target.metric) {
-    case 'pace': {
-      if (sample.speed === null || sample.speed <= 0) {
-        return null;
-      }
-      return sample.speed >= target.speedMsMin && sample.speed <= target.speedMsMax;
-    }
-    case 'hr':
-      return sample.hr === null ? null : sample.hr >= target.bpmMin && sample.hr <= target.bpmMax;
-    case 'power':
-      return sample.watts === null
-        ? null
-        : sample.watts >= target.wattsMin && sample.watts <= target.wattsMax;
-    case 'cadence':
-      return sample.cadence === null
-        ? null
-        : sample.cadence >= target.min && sample.cadence <= target.max;
-    default:
-      return null;
-  }
+  return METRIC_BAND_CHECKERS[target.metric](sample, target);
 }
 
 function samplesWithin(

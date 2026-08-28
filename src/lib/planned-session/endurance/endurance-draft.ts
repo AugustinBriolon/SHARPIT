@@ -145,15 +145,24 @@ export function draftFromEndurancePrescription(
   });
 }
 
+function coachStepDurationFields(step: EnduranceDraftStep, numeric: number) {
+  if (step.mode === 'time' && numeric > 0) {
+    return { minutes: numeric };
+  }
+  if (step.mode === 'distance' && numeric > 0) {
+    return { meters: Math.round(numeric) };
+  }
+  return {};
+}
+
 function coachStepFrom(step: EnduranceDraftStep) {
   const numeric = Number(step.value);
   const usable = Number.isFinite(numeric) && numeric > 0;
+  const isLap = step.mode === 'lap' || !usable;
 
   return {
     kind: step.kind,
-    ...(step.mode === 'lap' || !usable ? { lap: true } : {}),
-    ...(step.mode === 'time' && usable ? { minutes: numeric } : {}),
-    ...(step.mode === 'distance' && usable ? { meters: Math.round(numeric) } : {}),
+    ...(isLap ? { lap: true } : coachStepDurationFields(step, numeric)),
     ...(step.effort === 'auto' ? {} : { effort: step.effort }),
     ...(step.stroke === 'auto' ? {} : { stroke: step.stroke }),
     ...(step.notes.trim() ? { notes: step.notes.trim() } : {}),

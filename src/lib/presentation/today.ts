@@ -83,36 +83,48 @@ function mapConfidenceTone(
   }
 }
 
-function resolveSnapshotStatusMessage(
+type SnapshotStatusInput = {
+  snapshot: AthleteSnapshot;
+  phase: string;
+  heroHeadline: string;
+  heroSubline: string;
+  reconnectNames: string[];
+};
+
+function snapshotStatusCandidate(
   snapshot: AthleteSnapshot,
-  phase: string,
-  heroHeadline: string,
-  heroSubline: string,
-  reconnectNames: string[],
-): { message: string | null; href: string | null; snoozeKey: string | null } {
-  const reconnectMessage = reconnectProductMessage(reconnectNames);
+  hasContent: boolean,
+): string | null {
+  if (hasContent) {
+    return snapshot.freshness.primaryProductMessage;
+  }
+  return snapshot.primaryProductMessage ?? snapshot.insufficientDataMessage ?? null;
+}
+
+function resolveSnapshotStatusMessage(input: SnapshotStatusInput): {
+  message: string | null;
+  href: string | null;
+  snoozeKey: string | null;
+} {
+  const reconnectMessage = reconnectProductMessage(input.reconnectNames);
   if (reconnectMessage) {
     return {
       message: reconnectMessage,
       href: INTEGRATIONS_RECONNECT_HREF,
-      snoozeKey: reconnectSnoozeKey(reconnectNames),
+      snoozeKey: reconnectSnoozeKey(input.reconnectNames),
     };
   }
 
-  const hasContent = snapshotHasDisplayableContent(snapshot);
-
-  if (phase === 'END_OF_DAY' && hasContent) {
+  const hasContent = snapshotHasDisplayableContent(input.snapshot);
+  if (input.phase === 'END_OF_DAY' && hasContent) {
     return { message: null, href: null, snoozeKey: null };
   }
 
-  const candidate = hasContent
-    ? snapshot.freshness.primaryProductMessage
-    : (snapshot.primaryProductMessage ?? snapshot.insufficientDataMessage ?? null);
-
+  const candidate = snapshotStatusCandidate(input.snapshot, hasContent);
   if (!candidate) {
     return { message: null, href: null, snoozeKey: null };
   }
-  if (hasContent && (candidate === heroHeadline || candidate === heroSubline)) {
+  if (hasContent && (candidate === input.heroHeadline || candidate === input.heroSubline)) {
     return { message: null, href: null, snoozeKey: null };
   }
 
@@ -154,11 +166,382 @@ function mapSessionLinkSuggestion(s: SessionLinkSuggestion) {
   };
 }
 
-/**
- * Pure Today view-model projection from already-loaded inputs.
- * No I/O — callers (routes) ensure morning recalibration before loading.
- */
-export function buildTodayViewModelFromInputs(inputs: TodayPresentationInputs): TodayViewModel {
+function buildTodayScores(
+  effectiveSnapshot: AthleteSnapshot,
+  healthEntries: TodayPresentationInputs['healthEntries'],
+  day: Date,
+  sleepTargetMin: number,
+) {
+  const sleepScoreSharpit = computeSharpitSleepScoreForDay(healthEntries, day, sleepTargetMin);
+  const sleepScore = sleepScoreSharpit ?? effectiveSnapshot.sleepScore;
+  const effortScore =
+    effectiveSnapshot.dailyStrain?.available && effectiveSnapshot.dailyStrain.strainScore !== null
+      ? effectiveSnapshot.dailyStrain.strainScore
+      : null;
+  return {
+    sleepScore,
+    recoveryScore: effectiveSnapshot.readiness,
+    effortScore,
+    adaptationScore: effectiveSnapshot.adaptationIndex,
+    adaptationUnavailableCaption:
+      effectiveSnapshot.adaptationIndex === null ? 'Historique insuffisant' : null,
+  };
+}
+
+function shouldPreferAdaptationReminders(input: {
+  phase: string;
+  adaptationHints: string[];
+  focusPriority: string | null;
+  limitingFactor: AthleteSnapshot['limitingFactor'];
+}): boolean {
+  return (
+    input.phase === 'RECOVERY_WINDOW' &&
+    input.adaptationHints.length > 0 &&
+    !input.focusPriority &&
+    !input.limitingFactor
+  );
+}
+
+function buildTodayLimitingSection(input: {
+  phase: string;
+  effectiveSnapshot: AthleteSnapshot;
+  focusPriority: string | null;
+  adaptationHints: string[];
+}) {
+  if (input.phase === 'END_OF_DAY') {
+    return {
+      limitingMode: 'none' as const,
+      limitingLines: [] as string[],
+      limitingText: null as string | null,
+      limitingHref: null as string | null,
+      limitingFacts: [] as TodayViewModel['actionRow']['limitingFacts'],
+    };
+  }
+
+  const preferReminders = shouldPreferAdaptationReminders({
+    phase: input.phase,
+    adaptationHints: input.adaptationHints,
+    focusPriority: input.focusPriority,
+    limitingFactor: input.effectiveSnapshot.limitingFactor,
+  });
+  const limitingBuilt = buildTodayLimitingFacts({
+    limitingFactor: preferReminders ? null : input.effectiveSnapshot.limitingFactor,
+    reminders: preferReminders ? input.adaptationHints : [],
+  });
+  const limitingHref =
+    input.effectiveSnapshot.limitingFactor !== null
+      ? (resolveLimitingFactorHrefFromDecision(input.effectiveSnapshot.decision) ??
+        TWIN_DRILL_DOWN.recovery)
+      : null;
+
+  return {
+    limitingMode:
+      limitingBuilt.facts.length > 0 || limitingBuilt.emptyText
+        ? ('facts' as const)
+        : ('none' as const),
+    limitingLines: [] as string[],
+    limitingText: limitingBuilt.emptyText,
+    limitingHref,
+    limitingFacts: limitingBuilt.facts,
+  };
+}
+
+function daySummaryLineHref(
+  line: ReturnType<typeof buildTodayDaySummary>['lines'][number],
+): string {
+  if (line.kind === 'done') {
+    return TWIN_DRILL_DOWN.activity(line.id);
+  }
+  return TWIN_DRILL_DOWN.plannedSession(line.plannedSession?.id ?? line.id);
+}
+
+function morningChoiceForLine(
+  plannedId: string | null,
+  sessionChoice: ReturnType<typeof resolveMorningOrientation>['sessionChoice'],
+): string | null {
+  if (!sessionChoice || !plannedId || sessionChoice.sessionId !== plannedId) {
+    return null;
+  }
+  return sessionChoice.label;
+}
+
+function mapDaySummaryLineForView(
+  line: ReturnType<typeof buildTodayDaySummary>['lines'][number],
+  sessionChoice: ReturnType<typeof resolveMorningOrientation>['sessionChoice'],
+) {
+  const plannedId = line.plannedSession?.id ?? (line.kind === 'planned' ? line.id : null);
+  return {
+    id: plannedId ?? line.id,
+    activityType: line.activityType,
+    primary: line.primary,
+    secondary: line.secondary ?? null,
+    kind: line.kind,
+    href: daySummaryLineHref(line),
+    isDone: line.kind === 'done',
+    morningChoiceLabel: morningChoiceForLine(plannedId, sessionChoice),
+    brickLegs: line.brickLegs ?? null,
+  };
+}
+
+function buildPlateLimiter(
+  effectiveSnapshot: AthleteSnapshot,
+): { text: string | null; href: string | null } {
+  if (effectiveSnapshot.limitingFactor === null) {
+    return { text: null, href: null };
+  }
+  const text =
+    buildTodayLimitingFacts({ limitingFactor: effectiveSnapshot.limitingFactor }).facts.find(
+      (f) => f.label === 'Cause',
+    )?.value ?? null;
+  const href =
+    resolveLimitingFactorHrefFromDecision(effectiveSnapshot.decision) ?? TWIN_DRILL_DOWN.recovery;
+  return { text, href };
+}
+
+function phaseNarrativeText(
+  narrative: AthleteSnapshot['phaseNarrative'],
+  field: 'heroHeadline' | 'heroSubline' | 'heroEyebrow' | 'postureLabel',
+  fallback: string,
+): string {
+  const value = narrative?.[field];
+  return typeof value === 'string' && value.length > 0 ? value : fallback;
+}
+
+function heroHeadlineFrom(
+  narrative: AthleteSnapshot['phaseNarrative'],
+  displayVerdict: ReturnType<typeof mapVerdictToDisplay>,
+): string {
+  return narrative?.heroHeadline ?? displayVerdict.label;
+}
+
+function heroSublineFrom(
+  narrative: AthleteSnapshot['phaseNarrative'],
+  insufficientDataMessage: string | null,
+): string {
+  return narrative?.heroSubline ?? insufficientDataMessage ?? '';
+}
+
+function buildHeroCopy(
+  effectiveSnapshot: AthleteSnapshot,
+  displayVerdict: ReturnType<typeof mapVerdictToDisplay>,
+) {
+  const narrative = effectiveSnapshot.phaseNarrative;
+  return {
+    heroHeadline: heroHeadlineFrom(narrative, displayVerdict),
+    heroSubline: heroSublineFrom(narrative, effectiveSnapshot.insufficientDataMessage),
+    heroEyebrow: phaseNarrativeText(narrative, 'heroEyebrow', "Qu'est-ce qui compte aujourd'hui ?"),
+    posture: narrative?.posture ?? 'uncertain',
+    postureLabel: phaseNarrativeText(narrative, 'postureLabel', ''),
+    goalLine: narrative?.goalLine ?? null,
+  };
+}
+
+function buildFocusPriority(
+  effectiveSnapshot: AthleteSnapshot,
+  phase: string,
+): string | null {
+  if (effectiveSnapshot.phaseNarrative?.focusPriority) {
+    return effectiveSnapshot.phaseNarrative.focusPriority;
+  }
+  const adviceActionable = Boolean(effectiveSnapshot.adviceActionable);
+  if (!adviceActionable || !shouldShowForwardTrainingCopy(phase)) {
+    return null;
+  }
+  return buildTopActionLine(decisionTopAction(effectiveSnapshot.decision));
+}
+
+function buildConfidenceFields(effectiveSnapshot: AthleteSnapshot) {
+  const adviceActionable = Boolean(effectiveSnapshot.adviceActionable);
+  const confidenceTier =
+    effectiveSnapshot.confidence !== null
+      ? mapConfidenceToTier(effectiveSnapshot.confidence)
+      : null;
+  const confidenceLabel = resolveVisibleConfidenceLabel(
+    effectiveSnapshot.confidenceLabel ?? null,
+    confidenceTier,
+    adviceActionable,
+  );
+  return {
+    confidenceTone: confidenceTier !== null ? mapConfidenceTone(confidenceTier) : 'neutral',
+    confidenceLabel,
+    confidencePctRounded:
+      confidenceLabel !== null && effectiveSnapshot.confidence !== null
+        ? Math.round(effectiveSnapshot.confidence * 100)
+        : null,
+    confidenceHref: resolveConfidenceHrefFromDecision(effectiveSnapshot.decision),
+  };
+}
+
+function prepareTodayHeroFields(
+  effectiveSnapshot: AthleteSnapshot,
+  displayVerdict: ReturnType<typeof mapVerdictToDisplay>,
+) {
+  const phase = effectiveSnapshot.dailyPhase?.phase ?? 'MORNING';
+  return {
+    ...buildHeroCopy(effectiveSnapshot, displayVerdict),
+    focusPriority: buildFocusPriority(effectiveSnapshot, phase),
+    ...buildConfidenceFields(effectiveSnapshot),
+  };
+}
+
+function prepareTodayActionFields(input: {
+  day: Date;
+  phase: string;
+  effectiveSnapshot: AthleteSnapshot;
+  focusPriority: string | null;
+  activities: TodayPresentationInputs['activities'];
+  plannedSessions: TodayPresentationInputs['plannedSessions'];
+  goals: TodayPresentationInputs['goals'];
+}) {
+  const isRestDay = input.effectiveSnapshot.dailyPhase?.signals.sessionStatus === 'NONE_TODAY';
+  const goalTitleById = new Map(input.goals.map((g) => [g.id, g.title] as const));
+  const daySummary = buildTodayDaySummary(
+    input.day,
+    input.activities as unknown as ClientActivity[],
+    input.plannedSessions as unknown as ClientPlannedSession[],
+    goalTitleById,
+  );
+  const adaptationHints = pickAdaptationReminders(input.phase, 3, isRestDay);
+
+  return {
+    whyFacts: buildTodayWhyFacts({
+      verdict: decisionVerdict(input.effectiveSnapshot.decision),
+      consistency: input.effectiveSnapshot.decision?.physiologicalConsistency ?? null,
+      decision: input.effectiveSnapshot.decision,
+      whyFocus: input.effectiveSnapshot.dailyPhase?.whyFocus ?? 'readiness',
+    }),
+    sessionLinkSuggestions: findSessionLinkSuggestions(
+      input.day,
+      input.activities as unknown as ClientActivity[],
+      input.plannedSessions as unknown as ClientPlannedSession[],
+    ),
+    daySummary,
+    missedSessions: findMissedPlannedSessions(
+      input.plannedSessions as unknown as ClientPlannedSession[],
+      input.day,
+    ).filter((s) => !isDemoSessionLinkPlannedTitle(s.title)),
+    labels: actionRowLabels(input.phase),
+    limitingSection: buildTodayLimitingSection({
+      phase: input.phase,
+      effectiveSnapshot: input.effectiveSnapshot,
+      focusPriority: input.focusPriority,
+      adaptationHints,
+    }),
+  };
+}
+
+function mapPostSessionActivities(
+  activities: TodayPresentationInputs['activities'],
+) {
+  return (
+    activities as unknown as Array<{
+      id: string;
+      title: string | null;
+      type: keyof typeof activityTypeLabels;
+      date: Date | string;
+      rpe: number | null;
+      feeling: string | null;
+    }>
+  ).map((a) => ({
+    id: a.id,
+    title: a.title,
+    typeLabel: activityTypeLabels[a.type] ?? a.type,
+    date: a.date,
+    rpe: a.rpe,
+    feeling: a.feeling,
+  }));
+}
+
+function resolveMorningEyebrow(
+  evidencePending: boolean,
+  heroEyebrow: string,
+): string {
+  if (evidencePending && !heroEyebrow) {
+    return 'Ce matin';
+  }
+  return heroEyebrow;
+}
+
+function morningPresentationFromOrientation(
+  morningOrientation: ReturnType<typeof resolveMorningOrientation>,
+  input: {
+    heroHeadline: string;
+    heroSubline: string;
+    heroEyebrow: string;
+  },
+) {
+  if (!morningOrientation) {
+    return {
+      effectiveHeadline: input.heroHeadline,
+      effectiveSubline: input.heroSubline,
+      hideHeroConfidence: false,
+      heroEyebrow: input.heroEyebrow,
+      sessionChoice: null,
+    };
+  }
+
+  const evidencePending = morningOrientation.phase === 'EVIDENCE_PENDING';
+  return {
+    effectiveHeadline: morningOrientation.heroHeadline ?? input.heroHeadline,
+    effectiveSubline: morningOrientation.heroSubline ?? input.heroSubline,
+    hideHeroConfidence: Boolean(morningOrientation.hideHeroConfidence),
+    heroEyebrow: resolveMorningEyebrow(evidencePending, input.heroEyebrow),
+    sessionChoice: morningOrientation.sessionChoice ?? null,
+  };
+}
+
+function prepareTodayMorningFields(
+  input: {
+    phase: string;
+    effectiveSnapshot: AthleteSnapshot;
+    morningRecalibration: MorningRecalibrationInput | null;
+    heroHeadline: string;
+    heroSubline: string;
+    heroEyebrow: string;
+    day: Date;
+    activities: TodayPresentationInputs['activities'];
+  },
+) {
+  const morningOrientation = resolveMorningOrientation({
+    phase: input.phase,
+    snapshot: input.effectiveSnapshot,
+    recalibration: input.morningRecalibration,
+  });
+
+  return {
+    morningOrientation,
+    presentedRecalibration:
+      input.morningRecalibration?.status === 'PRESENTED' ? input.morningRecalibration : null,
+    ...morningPresentationFromOrientation(morningOrientation, input),
+    postSessionLoop: buildPostSessionLoop({
+      phase: input.phase,
+      overallFresh: input.effectiveSnapshot.freshness.overallFresh,
+      day: input.day,
+      activities: mapPostSessionActivities(input.activities),
+    }),
+  };
+}
+
+function buildTodayEmptyState(
+  effectiveSnapshot: AthleteSnapshot,
+  statusMessage: string | null,
+) {
+  if (snapshotHasDisplayableContent(effectiveSnapshot)) {
+    return null;
+  }
+  if (!statusMessage && !effectiveSnapshot.primaryProductMessage) {
+    return null;
+  }
+  return {
+    title: 'Données insuffisantes',
+    description:
+      effectiveSnapshot.insufficientDataMessage ??
+      effectiveSnapshot.primaryProductMessage ??
+      'SHARPIT attend tes premières données physiologiques pour établir ton bilan.',
+  };
+}
+
+function prepareTodayViewModelContext(inputs: TodayPresentationInputs) {
   const {
     day,
     snapshot,
@@ -171,214 +554,76 @@ export function buildTodayViewModelFromInputs(inputs: TodayPresentationInputs): 
     weather,
   } = inputs;
 
-  const isDemo = isDemoAthleteProfile(athleteProfile);
-  const effectiveSnapshot = isDemo ? withDemoSnapshotFreshness(snapshot) : snapshot;
-
+  const effectiveSnapshot = isDemoAthleteProfile(athleteProfile)
+    ? withDemoSnapshotFreshness(snapshot)
+    : snapshot;
   const sleepTargetMin = athleteProfile?.sleepTargetMinutes ?? SLEEP_TARGET_MIN;
-
-  const recoveryScore = effectiveSnapshot.readiness;
-  const sleepScoreSharpit = computeSharpitSleepScoreForDay(healthEntries, day, sleepTargetMin);
-  const sleepScore = sleepScoreSharpit ?? effectiveSnapshot.sleepScore;
-
-  const effortScore =
-    effectiveSnapshot.dailyStrain?.available && effectiveSnapshot.dailyStrain.strainScore !== null
-      ? effectiveSnapshot.dailyStrain.strainScore
-      : null;
-
-  const adaptationScore = effectiveSnapshot.adaptationIndex;
-  const adaptationUnavailableCaption =
-    effectiveSnapshot.adaptationIndex === null ? 'Historique insuffisant' : null;
-
+  const scores = buildTodayScores(effectiveSnapshot, healthEntries, day, sleepTargetMin);
   const phase = effectiveSnapshot.dailyPhase?.phase ?? 'MORNING';
-  const isRestDay = effectiveSnapshot.dailyPhase?.signals.sessionStatus === 'NONE_TODAY';
-  const adviceActionable = Boolean(effectiveSnapshot.adviceActionable);
-  const forward = shouldShowForwardTrainingCopy(phase);
-
   const verdict = decisionVerdict(effectiveSnapshot.decision);
   const displayVerdict = mapVerdictToDisplay(verdict);
-
-  const heroHeadline = effectiveSnapshot.phaseNarrative?.heroHeadline ?? displayVerdict.label;
-  const heroSubline =
-    effectiveSnapshot.phaseNarrative?.heroSubline ??
-    effectiveSnapshot.insufficientDataMessage ??
-    '';
-  const heroEyebrow =
-    effectiveSnapshot.phaseNarrative?.heroEyebrow ?? "Qu'est-ce qui compte aujourd'hui ?";
-  const posture = effectiveSnapshot.phaseNarrative?.posture ?? 'uncertain';
-  const postureLabel = effectiveSnapshot.phaseNarrative?.postureLabel ?? '';
-  const focusPriority =
-    effectiveSnapshot.phaseNarrative?.focusPriority ??
-    (adviceActionable && forward
-      ? buildTopActionLine(decisionTopAction(effectiveSnapshot.decision))
-      : null);
-  const goalLine = effectiveSnapshot.phaseNarrative?.goalLine ?? null;
-  const actionLine = focusPriority;
-  const adaptationReminders: string[] = [];
-
-  const confidenceTier =
-    effectiveSnapshot.confidence !== null
-      ? mapConfidenceToTier(effectiveSnapshot.confidence)
-      : null;
-  const confidenceTone = confidenceTier !== null ? mapConfidenceTone(confidenceTier) : 'neutral';
-
-  const confidenceLabel = resolveVisibleConfidenceLabel(
-    effectiveSnapshot.confidenceLabel ?? null,
-    confidenceTier,
-    adviceActionable,
-  );
-  const confidencePctRounded =
-    confidenceLabel !== null && effectiveSnapshot.confidence !== null
-      ? Math.round(effectiveSnapshot.confidence * 100)
-      : null;
-  const confidenceHref = resolveConfidenceHrefFromDecision(effectiveSnapshot.decision);
-
-  const whyFocus = effectiveSnapshot.dailyPhase?.whyFocus ?? 'readiness';
-  const whyFacts = buildTodayWhyFacts({
-    verdict,
-    consistency: effectiveSnapshot.decision?.physiologicalConsistency ?? null,
-    decision: effectiveSnapshot.decision,
-    whyFocus,
-  });
-
-  const goalTitleById = new Map(goals.map((g) => [g.id, g.title] as const));
-  const sessionLinkSuggestions = findSessionLinkSuggestions(
+  const hero = prepareTodayHeroFields(effectiveSnapshot, displayVerdict);
+  const action = prepareTodayActionFields({
     day,
-    activities as unknown as ClientActivity[],
-    plannedSessions as unknown as ClientPlannedSession[],
-  );
-  const daySummary = buildTodayDaySummary(
-    day,
-    activities as unknown as ClientActivity[],
-    plannedSessions as unknown as ClientPlannedSession[],
-    goalTitleById,
-  );
-  const missedSessions = findMissedPlannedSessions(
-    plannedSessions as unknown as ClientPlannedSession[],
-    day,
-  ).filter((s) => !isDemoSessionLinkPlannedTitle(s.title));
-  const labels = actionRowLabels(phase);
-  const adaptationHints = pickAdaptationReminders(phase, 3, isRestDay);
-
-  let limitingMode: TodayViewModel['actionRow']['limitingMode'] = 'none';
-  let limitingLines: string[] = [];
-  let limitingText: string | null = null;
-  let limitingHref: string | null = null;
-  let limitingFacts: TodayViewModel['actionRow']['limitingFacts'] = [];
-
-  if (phase === 'END_OF_DAY') {
-    limitingMode = 'none';
-  } else {
-    const preferReminders =
-      phase === 'RECOVERY_WINDOW' &&
-      adaptationHints.length > 0 &&
-      !focusPriority &&
-      !effectiveSnapshot.limitingFactor;
-    const limitingBuilt = buildTodayLimitingFacts({
-      limitingFactor: preferReminders ? null : effectiveSnapshot.limitingFactor,
-      reminders: preferReminders ? adaptationHints : [],
-    });
-    limitingFacts = limitingBuilt.facts;
-    limitingText = limitingBuilt.emptyText;
-    limitingHref =
-      effectiveSnapshot.limitingFactor !== null
-        ? (resolveLimitingFactorHrefFromDecision(effectiveSnapshot.decision) ??
-          TWIN_DRILL_DOWN.recovery)
-        : null;
-    limitingMode = limitingFacts.length > 0 || limitingText ? 'facts' : 'none';
-  }
-
-  const status = resolveSnapshotStatusMessage(
+    phase,
     effectiveSnapshot,
-    phase,
-    heroHeadline,
-    heroSubline,
-    inputs.reconnectNames ?? [],
-  );
-  const statusMessage = status.message;
-  const emptyState =
-    !snapshotHasDisplayableContent(effectiveSnapshot) &&
-    (statusMessage || effectiveSnapshot.primaryProductMessage)
-      ? {
-          title: 'Données insuffisantes',
-          description:
-            effectiveSnapshot.insufficientDataMessage ??
-            effectiveSnapshot.primaryProductMessage ??
-            'SHARPIT attend tes premières données physiologiques pour établir ton bilan.',
-        }
-      : null;
-
-  const morningOrientation = resolveMorningOrientation({
-    phase,
-    snapshot: effectiveSnapshot,
-    recalibration: morningRecalibration,
+    focusPriority: hero.focusPriority,
+    activities,
+    plannedSessions,
+    goals,
   });
-
-  const presentedRecalibration =
-    morningRecalibration?.status === 'PRESENTED' ? morningRecalibration : null;
-
-  const effectiveHeadline = morningOrientation?.heroHeadline ?? heroHeadline;
-  const effectiveSubline = morningOrientation?.heroSubline ?? heroSubline;
-  const hideHeroConfidence = Boolean(morningOrientation?.hideHeroConfidence);
-  const evidencePending = morningOrientation?.phase === 'EVIDENCE_PENDING';
-
-  let morningEyebrow = heroEyebrow;
-  if (evidencePending && !morningEyebrow) {
-    morningEyebrow = 'Ce matin';
-  }
-
-  let plateLimiterText: string | null = null;
-  let plateLimiterHref: string | null = null;
-  if (effectiveSnapshot.limitingFactor !== null) {
-    /* The cause, not the system. The signal strip already names the dimension on
-       the chip it tints, so repeating "Récupération" underneath it said nothing;
-       "Qualité du sommeil" is the part that decides what to do about it. */
-    plateLimiterText =
-      buildTodayLimitingFacts({ limitingFactor: effectiveSnapshot.limitingFactor }).facts.find(
-        (f) => f.label === 'Cause',
-      )?.value ?? null;
-    plateLimiterHref =
-      resolveLimitingFactorHrefFromDecision(effectiveSnapshot.decision) ?? TWIN_DRILL_DOWN.recovery;
-  }
-
-  const effectiveStatusMessage = statusMessage;
-  const sessionChoice = morningOrientation?.sessionChoice ?? null;
-
-  const postSessionLoop = buildPostSessionLoop({
+  const status = resolveSnapshotStatusMessage({
+    snapshot: effectiveSnapshot,
     phase,
-    overallFresh: effectiveSnapshot.freshness.overallFresh,
+    heroHeadline: hero.heroHeadline,
+    heroSubline: hero.heroSubline,
+    reconnectNames: inputs.reconnectNames ?? [],
+  });
+  const morning = prepareTodayMorningFields({
+    phase,
+    effectiveSnapshot,
+    morningRecalibration,
+    heroHeadline: hero.heroHeadline,
+    heroSubline: hero.heroSubline,
+    heroEyebrow: hero.heroEyebrow,
     day,
-    activities: (
-      activities as unknown as Array<{
-        id: string;
-        title: string | null;
-        type: keyof typeof activityTypeLabels;
-        date: Date | string;
-        rpe: number | null;
-        feeling: string | null;
-      }>
-    ).map((a) => ({
-      id: a.id,
-      title: a.title,
-      typeLabel: activityTypeLabels[a.type] ?? a.type,
-      date: a.date,
-      rpe: a.rpe,
-      feeling: a.feeling,
-    })),
+    activities,
   });
 
   return {
-    hasContent: snapshotHasDisplayableContent(effectiveSnapshot),
-    emptyState,
-    statusMessage: effectiveStatusMessage,
-    statusHref: status.href,
-    statusSnoozeKey: status.snoozeKey,
+    day,
+    weather,
+    effectiveSnapshot,
+    scores,
+    phase,
+    verdict,
+    displayVerdict,
+    ...hero,
+    heroEyebrow: morning.heroEyebrow,
+    ...action,
+    status,
+    emptyState: buildTodayEmptyState(effectiveSnapshot, status.message),
+    ...morning,
+    plateLimiter: buildPlateLimiter(effectiveSnapshot),
+  };
+}
+
+function assembleTodayViewModel(
+  ctx: ReturnType<typeof prepareTodayViewModelContext>,
+): TodayViewModel {
+  return {
+    hasContent: snapshotHasDisplayableContent(ctx.effectiveSnapshot),
+    emptyState: ctx.emptyState,
+    statusMessage: ctx.status.message,
+    statusHref: ctx.status.href,
+    statusSnoozeKey: ctx.status.snoozeKey,
     confidencePresentation: {
-      pct: effectiveSnapshot.confidence,
-      label: effectiveSnapshot.confidenceLabel,
-      tone: confidenceTone,
+      pct: ctx.effectiveSnapshot.confidence,
+      label: ctx.effectiveSnapshot.confidenceLabel,
+      tone: ctx.confidenceTone,
     },
-    effortUnavailableMessage: effectiveSnapshot.effortUnavailableMessage,
-    morningOrientation,
+    effortUnavailableMessage: ctx.effectiveSnapshot.effortUnavailableMessage,
+    morningOrientation: ctx.morningOrientation,
     navigationTargets: {
       sleep: { label: 'Sommeil', href: TWIN_DRILL_DOWN.sleep },
       recovery: { label: 'Récupération', href: TWIN_DRILL_DOWN.recovery },
@@ -388,87 +633,63 @@ export function buildTodayViewModelFromInputs(inputs: TodayPresentationInputs): 
       planning: { label: 'Planning', href: TWIN_DRILL_DOWN.planning },
     },
     hero: {
-      eyebrow: morningEyebrow,
-      headline: effectiveHeadline,
-      subline: effectiveSubline,
-      posture,
-      postureLabel,
-      focusPriority,
-      goalLine,
-      actionLine,
-      adaptationReminders,
+      eyebrow: ctx.heroEyebrow,
+      headline: ctx.effectiveHeadline,
+      subline: ctx.effectiveSubline,
+      posture: ctx.posture,
+      postureLabel: ctx.postureLabel,
+      focusPriority: ctx.focusPriority,
+      goalLine: ctx.goalLine,
+      actionLine: ctx.focusPriority,
+      adaptationReminders: [],
       verdictStyle: {
-        showVerdictColors: verdict !== 'INSUFFICIENT_DATA',
-        bgClass: displayVerdict.bgClass,
-        colorClass: displayVerdict.colorClass,
-        dotClass: displayVerdict.dotClass,
-        accentBarClass: displayVerdict.accentBarClass,
+        showVerdictColors: ctx.verdict !== 'INSUFFICIENT_DATA',
+        bgClass: ctx.displayVerdict.bgClass,
+        colorClass: ctx.displayVerdict.colorClass,
+        dotClass: ctx.displayVerdict.dotClass,
+        accentBarClass: ctx.displayVerdict.accentBarClass,
       },
       metricsRow: {
-        sleepScore: sleepScore,
-        recoveryScore,
-        effortScore,
-        adaptationScore,
+        sleepScore: ctx.scores.sleepScore,
+        recoveryScore: ctx.scores.recoveryScore,
+        effortScore: ctx.scores.effortScore,
+        adaptationScore: ctx.scores.adaptationScore,
         effortUnavailableCaption: null,
-        adaptationUnavailableCaption,
+        adaptationUnavailableCaption: ctx.scores.adaptationUnavailableCaption,
       },
       twinTrustStrip: {
-        confidenceLabel: hideHeroConfidence ? null : confidenceLabel,
-        confidencePctRounded: hideHeroConfidence ? null : confidencePctRounded,
-        confidenceHref: hideHeroConfidence ? null : confidenceHref,
-        limitingCauseText: plateLimiterText,
-        limitingFactorHref: plateLimiterHref,
+        confidenceLabel: ctx.hideHeroConfidence ? null : ctx.confidenceLabel,
+        confidencePctRounded: ctx.hideHeroConfidence ? null : ctx.confidencePctRounded,
+        confidenceHref: ctx.hideHeroConfidence ? null : ctx.confidenceHref,
+        limitingCauseText: ctx.plateLimiter.text,
+        limitingFactorHref: ctx.plateLimiter.href,
       },
     },
     whyBlock: {
-      // Retired from Today hub — duplicated verdict + strip; limiter lives on the plate.
-      title: whyBlockTitle(phase),
-      lines: whyFacts.map((f) =>
+      title: whyBlockTitle(ctx.phase),
+      lines: ctx.whyFacts.map((f) =>
         f.hint ? `${f.label} · ${f.value} (${f.hint})` : `${f.label} · ${f.value}`,
       ),
-      facts: whyFacts,
+      facts: ctx.whyFacts,
       visible: false,
     },
     actionRow: {
-      // Frein lives on the plate limiter — no duplicate column.
       showLimitingColumn: false,
-      limitingLabel: labels.limiting,
-      limitingMode,
-      limitingLines,
-      limitingText,
-      limitingHref,
-      limitingFacts,
-      actionLabel: labels.action,
+      limitingLabel: ctx.labels.limiting,
+      limitingMode: ctx.limitingSection.limitingMode,
+      limitingLines: ctx.limitingSection.limitingLines,
+      limitingText: ctx.limitingSection.limitingText,
+      limitingHref: ctx.limitingSection.limitingHref,
+      limitingFacts: ctx.limitingSection.limitingFacts,
+      actionLabel: ctx.labels.action,
       daySummaryEmptyText: 'Aucune séance prévue ni réalisée.',
       daySummaryEmptyHref: TWIN_DRILL_DOWN.planning,
-      sessionLinkSuggestions: sessionLinkSuggestions.map(mapSessionLinkSuggestion),
+      sessionLinkSuggestions: ctx.sessionLinkSuggestions.map(mapSessionLinkSuggestion),
       daySummaryLines: [
-        ...daySummary.lines.map((line) => {
-          const plannedId = line.plannedSession?.id ?? (line.kind === 'planned' ? line.id : null);
-          const choiceLabel =
-            sessionChoice && plannedId && sessionChoice.sessionId === plannedId
-              ? sessionChoice.label
-              : null;
-          return {
-            // For a brick line, `line.id` is the brick group id (grouping key, not a
-            // planned session). Downstream click handlers open a planned session by
-            // id, so this must resolve to the first leg's real session id — the same
-            // id the href below already deep-links to.
-            id: plannedId ?? line.id,
-            activityType: line.activityType,
-            primary: line.primary,
-            secondary: line.secondary ?? null,
-            kind: line.kind,
-            href:
-              line.kind === 'done'
-                ? TWIN_DRILL_DOWN.activity(line.id)
-                : TWIN_DRILL_DOWN.plannedSession(line.plannedSession?.id ?? line.id),
-            isDone: line.kind === 'done',
-            morningChoiceLabel: choiceLabel,
-            brickLegs: line.brickLegs ?? null,
-          };
-        }),
-        ...missedSessions.map((s) => ({
+        ...ctx.daySummary.lines.map((line) =>
+          mapDaySummaryLineForView(line, ctx.sessionChoice),
+        ),
+        ...ctx.missedSessions.map((s) => ({
           id: s.id,
           activityType: s.type,
           primary: s.title?.trim() || activityTypeLabels[s.type],
@@ -479,43 +700,51 @@ export function buildTodayViewModelFromInputs(inputs: TodayPresentationInputs): 
           morningChoiceLabel: null,
         })),
       ],
-      morningRecalibration: presentedRecalibration
+      morningRecalibration: ctx.presentedRecalibration
         ? {
-            decisionId: presentedRecalibration.decisionId,
-            sessionId: presentedRecalibration.sessionId,
-            sessionType: presentedRecalibration.sessionType,
-            direction: presentedRecalibration.direction,
-            changeSummary: presentedRecalibration.changeSummary,
-            why: presentedRecalibration.why,
-            status: presentedRecalibration.status,
-            fromIntensity: presentedRecalibration.fromIntensity,
-            toIntensity: presentedRecalibration.toIntensity,
-            fromDurationMin: presentedRecalibration.fromDurationMin,
-            toDurationMin: presentedRecalibration.toDurationMin,
-            fromLoad: presentedRecalibration.fromLoad,
-            toLoad: presentedRecalibration.toLoad,
-            fromDescription: presentedRecalibration.fromDescription,
-            toDescription: presentedRecalibration.toDescription,
+            decisionId: ctx.presentedRecalibration.decisionId,
+            sessionId: ctx.presentedRecalibration.sessionId,
+            sessionType: ctx.presentedRecalibration.sessionType,
+            direction: ctx.presentedRecalibration.direction,
+            changeSummary: ctx.presentedRecalibration.changeSummary,
+            why: ctx.presentedRecalibration.why,
+            status: ctx.presentedRecalibration.status,
+            fromIntensity: ctx.presentedRecalibration.fromIntensity,
+            toIntensity: ctx.presentedRecalibration.toIntensity,
+            fromDurationMin: ctx.presentedRecalibration.fromDurationMin,
+            toDurationMin: ctx.presentedRecalibration.toDurationMin,
+            fromLoad: ctx.presentedRecalibration.fromLoad,
+            toLoad: ctx.presentedRecalibration.toLoad,
+            fromDescription: ctx.presentedRecalibration.fromDescription,
+            toDescription: ctx.presentedRecalibration.toDescription,
           }
         : null,
     },
     insights: [],
     header: {
-      weather: weather
+      weather: ctx.weather
         ? {
-            city: weather.city,
-            tempC: weather.tempC,
-            condition: weather.condition,
-            locationKnown: weather.locationKnown,
+            city: ctx.weather.city,
+            tempC: ctx.weather.tempC,
+            condition: ctx.weather.condition,
+            locationKnown: ctx.weather.locationKnown,
           }
         : null,
     },
     environmentContext: null,
     nutrition: null,
-    postSessionLoop,
+    postSessionLoop: ctx.postSessionLoop,
     hierarchy: { rootId: 'today', order: ['hero', 'why', 'actionRow'] },
     sections: [],
   };
+}
+
+/**
+ * Pure Today view-model projection from already-loaded inputs.
+ * No I/O — callers (routes) ensure morning recalibration before loading.
+ */
+export function buildTodayViewModelFromInputs(inputs: TodayPresentationInputs): TodayViewModel {
+  return assembleTodayViewModel(prepareTodayViewModelContext(inputs));
 }
 
 export type BuildTodayPresentationOptions = {

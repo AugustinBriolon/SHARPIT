@@ -57,6 +57,36 @@ export function formatCityFromLocationLabel(label: string): string {
   return last;
 }
 
+function precipCondition(maxPrecip: number, avgPrecip: number): ActivityWeatherCondition | null {
+  if (maxPrecip >= 1.5 || avgPrecip >= 0.4) {
+    return 'rain';
+  }
+  if (maxPrecip >= 0.8 && avgPrecip >= 0.15) {
+    return 'drizzle';
+  }
+  return null;
+}
+
+const CLOUD_COVER_CONDITIONS: Array<{ min: number; condition: ActivityWeatherCondition }> = [
+  { min: 85, condition: 'overcast' },
+  { min: 55, condition: 'cloudy' },
+  { min: 25, condition: 'partly-cloudy' },
+];
+
+function cloudConditionFromCover(cloud: number): ActivityWeatherCondition {
+  return CLOUD_COVER_CONDITIONS.find(({ min }) => cloud >= min)?.condition ?? 'clear';
+}
+
+function cloudCondition(cloud: number | null, solar: number | null): ActivityWeatherCondition {
+  if (solar !== null && solar >= 350 && (cloud === null || cloud < 45)) {
+    return 'clear';
+  }
+  if (cloud === null) {
+    return solar !== null && solar >= 250 ? 'clear' : 'unknown';
+  }
+  return cloudConditionFromCover(cloud);
+}
+
 export function inferActivityWeatherCondition(input: {
   maxPrecipitationMm: number | null;
   avgPrecipitationMm: number | null;
@@ -65,34 +95,59 @@ export function inferActivityWeatherCondition(input: {
 }): ActivityWeatherCondition {
   const maxPrecip = input.maxPrecipitationMm ?? 0;
   const avgPrecip = input.avgPrecipitationMm ?? 0;
+  const fromPrecip = precipCondition(maxPrecip, avgPrecip);
+  if (fromPrecip) {
+    return fromPrecip;
+  }
+  return cloudCondition(input.avgCloudCoverPct, input.avgSolarRadiationWm2);
+}
 
-  // Open-Meteo remonte parfois 0.1–0.7 mm sur des créneaux secs : seuils conservateurs.
-  if (maxPrecip >= 1.5 || avgPrecip >= 0.4) {
-    return 'rain';
+function appendWeatherSample(
+  data: WeatherMeasurements,
+  samples: {
+    temperatures: number[];
+    cloudSamples: number[];
+    precipSamples: number[];
+    solarSamples: number[];
+    maxPrecipitationMm: number | null;
+  },
+): void {
+  if (data.airTemperatureC !== null) {
+    samples.temperatures.push(data.airTemperatureC);
   }
-  if (maxPrecip >= 0.8 && avgPrecip >= 0.15) {
-    return 'drizzle';
+  if (data.cloudCoverPct !== null) {
+    samples.cloudSamples.push(data.cloudCoverPct);
+  }
+  if (data.precipitationMm !== null) {
+    samples.precipSamples.push(data.precipitationMm);
+    samples.maxPrecipitationMm = Math.max(samples.maxPrecipitationMm ?? 0, data.precipitationMm);
+  }
+  if (data.solarRadiationWm2 !== null) {
+    samples.solarSamples.push(data.solarRadiationWm2);
+  }
+}
+
+function collectWeatherSamples(predictions: EnvironmentalPrediction[]) {
+  const samples = {
+    temperatures: [] as number[],
+    cloudSamples: [] as number[],
+    precipSamples: [] as number[],
+    solarSamples: [] as number[],
+    maxPrecipitationMm: null as number | null,
+  };
+
+  for (const prediction of predictions) {
+    if (prediction.dimension !== 'WEATHER') {
+      continue;
+    }
+    const data = readWeatherMeasurements(prediction);
+    if (!data) {
+      continue;
+    }
+    appendWeatherSample(data, samples);
   }
 
-  const cloud = input.avgCloudCoverPct;
-  const solar = input.avgSolarRadiationWm2;
-
-  if (solar !== null && solar >= 350 && (cloud === null || cloud < 45)) {
-    return 'clear';
-  }
-  if (cloud === null) {
-    return solar !== null && solar >= 250 ? 'clear' : 'unknown';
-  }
-  if (cloud >= 85) {
-    return 'overcast';
-  }
-  if (cloud >= 55) {
-    return 'cloudy';
-  }
-  if (cloud >= 25) {
-    return 'partly-cloudy';
-  }
-  return 'clear';
+  return samples;
 }
 
 export function extractActivityWeatherSnapshot(
@@ -103,51 +158,21 @@ export function extractActivityWeatherSnapshot(
   if (!city) {
     return null;
   }
-  const displayCity = formatCityFromLocationLabel(city);
 
-  const temperatures: number[] = [];
-  const cloudSamples: number[] = [];
-  const precipSamples: number[] = [];
-  const solarSamples: number[] = [];
-  let maxPrecipitationMm: number | null = null;
-
-  for (const prediction of predictions) {
-    if (prediction.dimension !== 'WEATHER') {
-      continue;
-    }
-    const data = readWeatherMeasurements(prediction);
-    if (!data) {
-      continue;
-    }
-
-    if (data.airTemperatureC !== null) {
-      temperatures.push(data.airTemperatureC);
-    }
-    if (data.cloudCoverPct !== null) {
-      cloudSamples.push(data.cloudCoverPct);
-    }
-    if (data.precipitationMm !== null) {
-      precipSamples.push(data.precipitationMm);
-      maxPrecipitationMm = Math.max(maxPrecipitationMm ?? 0, data.precipitationMm);
-    }
-    if (data.solarRadiationWm2 !== null) {
-      solarSamples.push(data.solarRadiationWm2);
-    }
-  }
-
-  const avgTempC = average(temperatures);
+  const samples = collectWeatherSamples(predictions);
+  const avgTempC = average(samples.temperatures);
   if (avgTempC === null) {
     return null;
   }
 
   return {
-    city: displayCity,
+    city: formatCityFromLocationLabel(city),
     avgTempC,
     condition: inferActivityWeatherCondition({
-      maxPrecipitationMm,
-      avgPrecipitationMm: average(precipSamples),
-      avgCloudCoverPct: average(cloudSamples),
-      avgSolarRadiationWm2: average(solarSamples),
+      maxPrecipitationMm: samples.maxPrecipitationMm,
+      avgPrecipitationMm: average(samples.precipSamples),
+      avgCloudCoverPct: average(samples.cloudSamples),
+      avgSolarRadiationWm2: average(samples.solarSamples),
     }),
   };
 }
@@ -160,6 +185,25 @@ export function serializeActivityWeather(snapshot: ActivityWeatherSnapshot): str
     condition: snapshot.condition,
   };
   return JSON.stringify(stored);
+}
+
+const LEGACY_CONDITION_RULES: Array<{ pattern: RegExp; condition: ActivityWeatherCondition }> = [
+  { pattern: /pluie|averses|orage/, condition: 'rain' },
+  { pattern: /bruine/, condition: 'drizzle' },
+  { pattern: /couvert|brouillard/, condition: 'overcast' },
+  { pattern: /nuage|cloud/, condition: 'cloudy' },
+  { pattern: /éclaircies|partiellement|variable/, condition: 'partly-cloudy' },
+  { pattern: /soleil|dégagé|clear|ensoleill/, condition: 'clear' },
+];
+
+function legacyConditionFromText(raw: string): ActivityWeatherCondition {
+  const lower = raw.toLowerCase();
+  for (const rule of LEGACY_CONDITION_RULES) {
+    if (rule.pattern.test(lower)) {
+      return rule.condition;
+    }
+  }
+  return 'unknown';
 }
 
 function parseLegacyWeather(raw: string): ActivityWeatherSnapshot | null {
@@ -178,24 +222,7 @@ function parseLegacyWeather(raw: string): ActivityWeatherSnapshot | null {
   }
 
   const [city] = segments;
-
-  const lower = raw.toLowerCase();
-  let condition: ActivityWeatherCondition = 'unknown';
-  if (/pluie|averses|orage/.test(lower)) {
-    condition = 'rain';
-  } else if (/bruine/.test(lower)) {
-    condition = 'drizzle';
-  } else if (/couvert|brouillard/.test(lower)) {
-    condition = 'overcast';
-  } else if (/nuage|cloud/.test(lower)) {
-    condition = 'cloudy';
-  } else if (/éclaircies|partiellement|variable/.test(lower)) {
-    condition = 'partly-cloudy';
-  } else if (/soleil|dégagé|clear|ensoleill/.test(lower)) {
-    condition = 'clear';
-  }
-
-  return { city, avgTempC, condition };
+  return { city, avgTempC, condition: legacyConditionFromText(raw) };
 }
 
 function parseStoredWeather(raw: string): ActivityWeatherSnapshot | null {

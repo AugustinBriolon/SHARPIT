@@ -12,27 +12,42 @@ function cleanMetrics<T extends Record<string, unknown>>(metrics?: T | null) {
   return entries.length ? (Object.fromEntries(entries) as T) : undefined;
 }
 
+type MetricRelation = { create?: unknown; upsert?: unknown };
+
+const CREATE_METRIC_HANDLERS: Partial<
+  Record<ActivityType, (metrics: unknown) => MetricRelation | undefined>
+> = {
+  [ActivityType.RUN]: (metrics) =>
+    metrics ? { create: cleanMetrics(metrics as Record<string, unknown>) } : undefined,
+  [ActivityType.BIKE]: (metrics) =>
+    metrics ? { create: cleanMetrics(metrics as Record<string, unknown>) } : undefined,
+  [ActivityType.SWIM]: (metrics) =>
+    metrics ? { create: cleanMetrics(metrics as Record<string, unknown>) } : undefined,
+  [ActivityType.HIKE]: (metrics) =>
+    metrics ? { create: cleanMetrics(metrics as Record<string, unknown>) } : undefined,
+};
+
+function createMetricRelation(
+  type: ActivityType,
+  metrics: unknown,
+): MetricRelation | undefined {
+  return CREATE_METRIC_HANDLERS[type]?.(metrics);
+}
+
+function upsertMetricRelation(metrics: unknown): MetricRelation {
+  const cleaned = cleanMetrics(metrics as Record<string, unknown>) ?? {};
+  return { upsert: { create: cleaned, update: cleaned } };
+}
+
 export function buildActivityCreateData(input: CreateActivityInput) {
   const { runMetrics, bikeMetrics, swimMetrics, hikeMetrics, strengthSets, ...base } = input;
 
   return {
     ...base,
-    runMetrics:
-      input.type === ActivityType.RUN && runMetrics
-        ? { create: cleanMetrics(runMetrics) }
-        : undefined,
-    bikeMetrics:
-      input.type === ActivityType.BIKE && bikeMetrics
-        ? { create: cleanMetrics(bikeMetrics) }
-        : undefined,
-    swimMetrics:
-      input.type === ActivityType.SWIM && swimMetrics
-        ? { create: cleanMetrics(swimMetrics) }
-        : undefined,
-    hikeMetrics:
-      input.type === ActivityType.HIKE && hikeMetrics
-        ? { create: cleanMetrics(hikeMetrics) }
-        : undefined,
+    runMetrics: input.type === ActivityType.RUN ? createMetricRelation(input.type, runMetrics) : undefined,
+    bikeMetrics: input.type === ActivityType.BIKE ? createMetricRelation(input.type, bikeMetrics) : undefined,
+    swimMetrics: input.type === ActivityType.SWIM ? createMetricRelation(input.type, swimMetrics) : undefined,
+    hikeMetrics: input.type === ActivityType.HIKE ? createMetricRelation(input.type, hikeMetrics) : undefined,
     strengthSets:
       input.type === ActivityType.STRENGTH && strengthSets?.length
         ? {
@@ -46,6 +61,15 @@ export function buildActivityCreateData(input: CreateActivityInput) {
   };
 }
 
+const UPDATE_METRIC_KEYS: Partial<
+  Record<ActivityType, 'runMetrics' | 'bikeMetrics' | 'swimMetrics' | 'hikeMetrics'>
+> = {
+  [ActivityType.RUN]: 'runMetrics',
+  [ActivityType.BIKE]: 'bikeMetrics',
+  [ActivityType.SWIM]: 'swimMetrics',
+  [ActivityType.HIKE]: 'hikeMetrics',
+};
+
 export function buildActivityUpdateData(input: UpdateActivityInput) {
   const { runMetrics, bikeMetrics, swimMetrics, hikeMetrics, strengthSets, type, ...base } = input;
 
@@ -54,45 +78,19 @@ export function buildActivityUpdateData(input: UpdateActivityInput) {
     data.type = type;
   }
 
-  const activityType = type;
+  const metricsByType = {
+    [ActivityType.RUN]: runMetrics,
+    [ActivityType.BIKE]: bikeMetrics,
+    [ActivityType.SWIM]: swimMetrics,
+    [ActivityType.HIKE]: hikeMetrics,
+  } as const;
 
-  if (activityType === ActivityType.RUN && runMetrics) {
-    data.runMetrics = {
-      upsert: {
-        create: cleanMetrics(runMetrics) ?? {},
-        update: cleanMetrics(runMetrics) ?? {},
-      },
-    };
+  const metricKey = type ? UPDATE_METRIC_KEYS[type] : undefined;
+  if (metricKey && metricsByType[type!]) {
+    data[metricKey] = upsertMetricRelation(metricsByType[type!]);
   }
 
-  if (activityType === ActivityType.BIKE && bikeMetrics) {
-    data.bikeMetrics = {
-      upsert: {
-        create: cleanMetrics(bikeMetrics) ?? {},
-        update: cleanMetrics(bikeMetrics) ?? {},
-      },
-    };
-  }
-
-  if (activityType === ActivityType.SWIM && swimMetrics) {
-    data.swimMetrics = {
-      upsert: {
-        create: cleanMetrics(swimMetrics) ?? {},
-        update: cleanMetrics(swimMetrics) ?? {},
-      },
-    };
-  }
-
-  if (activityType === ActivityType.HIKE && hikeMetrics) {
-    data.hikeMetrics = {
-      upsert: {
-        create: cleanMetrics(hikeMetrics) ?? {},
-        update: cleanMetrics(hikeMetrics) ?? {},
-      },
-    };
-  }
-
-  if (activityType === ActivityType.STRENGTH && strengthSets) {
+  if (type === ActivityType.STRENGTH && strengthSets) {
     data.strengthSets = {
       deleteMany: {},
       create: strengthSets.map((set, index) => ({

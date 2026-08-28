@@ -20,6 +20,10 @@ function outstanding(week: ThreadWeek): ThreadEntry[] {
   return week.days.flatMap((day) => day.entries).filter((entry) => entry.kind === 'planned');
 }
 
+function entryPlannedWeight(entry: ThreadEntry): number {
+  return entry.planned?.load ?? entry.planned?.durationMin ?? 0;
+}
+
 /** The heaviest session still owed — by load, falling back to duration. */
 export function findPivotEntry(week: ThreadWeek | null): ThreadEntry | null {
   if (!week) {
@@ -30,11 +34,9 @@ export function findPivotEntry(week: ThreadWeek | null): ThreadEntry | null {
     return null;
   }
 
-  return candidates.reduce((heaviest, entry) => {
-    const weight = entry.planned?.load ?? entry.planned?.durationMin ?? 0;
-    const best = heaviest.planned?.load ?? heaviest.planned?.durationMin ?? 0;
-    return weight > best ? entry : heaviest;
-  });
+  return candidates.reduce((heaviest, entry) =>
+    entryPlannedWeight(entry) > entryPlannedWeight(heaviest) ? entry : heaviest,
+  );
 }
 
 export function buildThreadCoachLine(week: ThreadWeek | null): ThreadCoachLine | null {

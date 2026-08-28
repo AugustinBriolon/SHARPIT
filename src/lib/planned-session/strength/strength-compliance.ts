@@ -65,6 +65,27 @@ function similarity(a: string, b: string): number {
   return shared / Math.min(left.size, right.size);
 }
 
+function findBestRealizedMatch(
+  plannedSet: ComparableStrengthSet,
+  availableRealized: Array<{ set: ComparableStrengthSet; index: number }>,
+  usedRealized: Set<number>,
+): { index: number; score: number } | null {
+  let best: { index: number; score: number } | null = null;
+  for (const candidate of availableRealized) {
+    if (usedRealized.has(candidate.index)) {
+      continue;
+    }
+    const score = similarity(plannedSet.exercise, candidate.set.exercise);
+    if (score < MATCH_THRESHOLD) {
+      continue;
+    }
+    if (!best || score > best.score) {
+      best = { index: candidate.index, score };
+    }
+  }
+  return best;
+}
+
 /**
  * Compare a prescription with what the athlete actually logged.
  * Returns null when either side is empty — nothing to measure, and a missing
@@ -84,19 +105,7 @@ export function computeStrengthCompliance(
   const volumeRatios: number[] = [];
 
   for (const plannedSet of prescribed) {
-    let best: { index: number; score: number } | null = null;
-    for (const candidate of availableRealized) {
-      if (usedRealized.has(candidate.index)) {
-        continue;
-      }
-      const score = similarity(plannedSet.exercise, candidate.set.exercise);
-      if (score < MATCH_THRESHOLD) {
-        continue;
-      }
-      if (!best || score > best.score) {
-        best = { index: candidate.index, score };
-      }
-    }
+    const best = findBestRealizedMatch(plannedSet, availableRealized, usedRealized);
 
     if (!best) {
       missing.push(plannedSet.exercise);

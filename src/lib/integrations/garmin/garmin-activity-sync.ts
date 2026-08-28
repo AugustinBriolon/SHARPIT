@@ -203,97 +203,99 @@ const EMPTY_OUTCOME: GarminActivityOutcome = {
 type GarminClient = Awaited<ReturnType<typeof buildFreshGarminClient>>;
 type GarminListActivity = Parameters<typeof garminActivityToSession>[0];
 
-async function processOneGarminActivity(
-  athleteId: string,
-  client: GarminClient,
-  activity: GarminListActivity,
-  exerciseLabelsFr: Map<string, string>,
+function buildEvaluationPatch(
+  evaluation: Awaited<ReturnType<typeof fetchGarminActivityEvaluation>>,
+  existing: { rpe: number | null; feeling: number | null },
+): Prisma.ActivityUpdateInput {
+  const patch: Prisma.ActivityUpdateInput = {};
+  if (evaluation.rpe !== null && evaluation.rpe !== existing.rpe) {
+    patch.rpe = evaluation.rpe;
+  }
+  if (evaluation.feeling !== null && evaluation.feeling !== existing.feeling) {
+    patch.feeling = evaluation.feeling;
+  }
+  if (evaluation.notes) {
+    patch.notes = evaluation.notes;
+  }
+  return patch;
+}
+
+type HandleExistingGarminInput = {
+  existing: { id: string; rpe: number | null; feeling: number | null };
+  evaluation: Awaited<ReturnType<typeof fetchGarminActivityEvaluation>>;
+  strengthSets: ParsedStrengthSet[];
+  type: ActivityType;
+  activityId: number;
+  client: GarminClient;
+};
+
+async function handleExistingGarminActivity(
+  input: HandleExistingGarminInput,
 ): Promise<GarminActivityOutcome> {
-  const garminId = String(activity.activityId);
-  const type = mapGarminType(activity.activityType?.typeKey ?? '');
-  if (!type) {
+  const { existing, evaluation, strengthSets, type, activityId, client } = input;
+  const patch = buildEvaluationPatch(evaluation, existing);
+  const addedSets = await backfillStrengthSets(existing.id, strengthSets);
+  const addedLegs =
+    type === ActivityType.TRIATHLON
+      ? await backfillMultisportLegs(existing.id, activityId, client)
+      : false;
+
+  if (Object.keys(patch).length > 0) {
+    await prisma.activity.update({ where: { id: existing.id }, data: patch });
+    return { ...EMPTY_OUTCOME, updated: 1, changed: [{ id: existing.id, type }] };
+  }
+  if (addedSets || addedLegs) {
+    return { ...EMPTY_OUTCOME, updated: 1, changed: [{ id: existing.id, type }] };
+  }
+  return { ...EMPTY_OUTCOME, skipped: 1 };
+}
+
+type MergeGarminActivityInput = {
+  athleteId: string;
+  match: NonNullable<Awaited<ReturnType<typeof findMatchingActivity>>>;
+  activity: GarminListActivity;
+  evaluation: Awaited<ReturnType<typeof fetchGarminActivityEvaluation>>;
+  type: ActivityType;
+  strengthSets: ParsedStrengthSet[];
+  garminId: string;
+};
+
+async function mergeGarminActivityMatch(
+  input: MergeGarminActivityInput,
+): Promise<GarminActivityOutcome> {
+  const { athleteId, match, activity, evaluation, type, strengthSets, garminId } = input;
+  if (match.garminId && match.garminId !== garminId) {
     return { ...EMPTY_OUTCOME, skipped: 1 };
   }
 
-  const duration = garminSessionDurationSec(activity, type);
-
-  const evaluation = await fetchGarminActivityEvaluation(client, activity.activityId);
-  const strengthSets =
-    type === ActivityType.STRENGTH
-      ? resolveGarminStrengthSets(
-          activity,
-          await fetchGarminExerciseSets(client, activity.activityId, exerciseLabelsFr),
-          exerciseLabelsFr,
-        )
-      : [];
-
-  const existingByGarmin = await prisma.activity.findFirst({
-    where: { garminId, athleteId },
-    select: { id: true, rpe: true, feeling: true, stravaId: true },
+  await prisma.activity.update({
+    where: { id: match.id },
+    data: garminEnrichmentUpdate(activity, evaluation, type, match.stravaId),
   });
+  await backfillStrengthSets(match.id, strengthSets);
+  await prisma.activityStream.deleteMany({ where: { activityId: match.id } });
+  await ingestGarminActivity(athleteId, activity, evaluation, new Date());
+  return {
+    ...EMPTY_OUTCOME,
+    merged: 1,
+    importedActivityIds: [match.id],
+    changed: [{ id: match.id, type }],
+  };
+}
 
-  if (existingByGarmin) {
-    const patch: Prisma.ActivityUpdateInput = {};
-    if (evaluation.rpe !== null && evaluation.rpe !== existingByGarmin.rpe) {
-      patch.rpe = evaluation.rpe;
-    }
-    if (evaluation.feeling !== null && evaluation.feeling !== existingByGarmin.feeling) {
-      patch.feeling = evaluation.feeling;
-    }
-    if (evaluation.notes) {
-      patch.notes = evaluation.notes;
-    }
+type ImportGarminActivityInput = {
+  athleteId: string;
+  client: GarminClient;
+  activity: GarminListActivity;
+  evaluation: Awaited<ReturnType<typeof fetchGarminActivityEvaluation>>;
+  type: ActivityType;
+  strengthSets: ParsedStrengthSet[];
+};
 
-    const addedSets = await backfillStrengthSets(existingByGarmin.id, strengthSets);
-    const addedLegs =
-      type === ActivityType.TRIATHLON
-        ? await backfillMultisportLegs(existingByGarmin.id, activity.activityId, client)
-        : false;
-
-    if (Object.keys(patch).length > 0) {
-      await prisma.activity.update({
-        where: { id: existingByGarmin.id },
-        data: patch,
-      });
-      return {
-        ...EMPTY_OUTCOME,
-        updated: 1,
-        changed: [{ id: existingByGarmin.id, type }],
-      };
-    }
-    if (addedSets || addedLegs) {
-      return {
-        ...EMPTY_OUTCOME,
-        updated: 1,
-        changed: [{ id: existingByGarmin.id, type }],
-      };
-    }
-    return { ...EMPTY_OUTCOME, skipped: 1 };
-  }
-
-  const fingerprint = { type, date: new Date(activity.startTimeLocal), duration, garminId };
-  const match = await findMatchingActivity(athleteId, fingerprint);
-
-  if (match) {
-    if (match.garminId && match.garminId !== garminId) {
-      return { ...EMPTY_OUTCOME, skipped: 1 };
-    }
-
-    await prisma.activity.update({
-      where: { id: match.id },
-      data: garminEnrichmentUpdate(activity, evaluation, type, match.stravaId),
-    });
-    await backfillStrengthSets(match.id, strengthSets);
-    await prisma.activityStream.deleteMany({ where: { activityId: match.id } });
-    await ingestGarminActivity(athleteId, activity, evaluation, new Date());
-    return {
-      ...EMPTY_OUTCOME,
-      merged: 1,
-      importedActivityIds: [match.id],
-      changed: [{ id: match.id, type }],
-    };
-  }
-
+async function importGarminActivityRecord(
+  input: ImportGarminActivityInput,
+): Promise<GarminActivityOutcome> {
+  const { athleteId, client, activity, evaluation, type, strengthSets } = input;
   try {
     const multisportLegs =
       type === ActivityType.TRIATHLON
@@ -325,6 +327,309 @@ async function processOneGarminActivity(
   }
 }
 
+async function processOneGarminActivity(
+  athleteId: string,
+  client: GarminClient,
+  activity: GarminListActivity,
+  exerciseLabelsFr: Map<string, string>,
+): Promise<GarminActivityOutcome> {
+  const garminId = String(activity.activityId);
+  const type = mapGarminType(activity.activityType?.typeKey ?? '');
+  if (!type) {
+    return { ...EMPTY_OUTCOME, skipped: 1 };
+  }
+
+  const duration = garminSessionDurationSec(activity, type);
+  const evaluation = await fetchGarminActivityEvaluation(client, activity.activityId);
+  const strengthSets =
+    type === ActivityType.STRENGTH
+      ? resolveGarminStrengthSets(
+          activity,
+          await fetchGarminExerciseSets(client, activity.activityId, exerciseLabelsFr),
+          exerciseLabelsFr,
+        )
+      : [];
+
+  const existingByGarmin = await prisma.activity.findFirst({
+    where: { garminId, athleteId },
+    select: { id: true, rpe: true, feeling: true, stravaId: true },
+  });
+
+  if (existingByGarmin) {
+    return handleExistingGarminActivity({
+      existing: existingByGarmin,
+      evaluation,
+      strengthSets,
+      type,
+      activityId: activity.activityId,
+      client,
+    });
+  }
+
+  const match = await findMatchingActivity(athleteId, {
+    type,
+    date: new Date(activity.startTimeLocal),
+    duration,
+    garminId,
+  });
+
+  if (match) {
+    return mergeGarminActivityMatch({
+      athleteId,
+      match,
+      activity,
+      evaluation,
+      type,
+      strengthSets,
+      garminId,
+    });
+  }
+
+  return importGarminActivityRecord({
+    athleteId,
+    client,
+    activity,
+    evaluation,
+    type,
+    strengthSets,
+  });
+}
+
+function mergeGarminActivityOutcome(input: {
+  result: GarminActivitySyncResult;
+  outcome: GarminActivityOutcome;
+  importedTypes: Set<ActivityType>;
+  changedTypes: Set<ActivityType>;
+  changedActivityIds: Set<string>;
+}): void {
+  const { result, outcome, importedTypes, changedTypes, changedActivityIds } = input;
+  result.skipped += outcome.skipped;
+  result.imported += outcome.imported;
+  result.updated += outcome.updated;
+  result.merged += outcome.merged;
+  result.importedActivityIds.push(...outcome.importedActivityIds);
+  for (const type of outcome.importedTypes) {
+    importedTypes.add(type);
+  }
+  for (const change of outcome.changed) {
+    changedTypes.add(change.type);
+    changedActivityIds.add(change.id);
+  }
+}
+
+function activitiesWithinCutoff(
+  batch: GarminListActivity[],
+  cutoff: Date | null,
+): { toProcess: GarminListActivity[]; reachedCutoff: boolean } {
+  const toProcess: GarminListActivity[] = [];
+  for (const activity of batch) {
+    const date = new Date(activity.startTimeLocal);
+    if (cutoff && date < cutoff) {
+      return { toProcess, reachedCutoff: true };
+    }
+    toProcess.push(activity);
+  }
+  return { toProcess, reachedCutoff: false };
+}
+
+async function processGarminSyncPage(input: {
+  athleteId: string;
+  client: GarminClient;
+  exerciseLabelsFr: Map<string, string>;
+  batch: GarminListActivity[];
+  cutoff: Date | null;
+  result: GarminActivitySyncResult;
+  importedTypes: Set<ActivityType>;
+  changedTypes: Set<ActivityType>;
+  changedActivityIds: Set<string>;
+}): Promise<{ reachedCutoff: boolean; batchSize: number }> {
+  const {
+    athleteId,
+    client,
+    exerciseLabelsFr,
+    batch,
+    cutoff,
+    result,
+    importedTypes,
+    changedTypes,
+    changedActivityIds,
+  } = input;
+
+  result.fetched += batch.length;
+  const { toProcess, reachedCutoff } = activitiesWithinCutoff(batch, cutoff);
+
+  const outcomes = await mapWithConcurrency(
+    toProcess,
+    GARMIN_ACTIVITY_CONCURRENCY,
+    (activity) => processOneGarminActivity(athleteId, client, activity, exerciseLabelsFr),
+  );
+
+  for (const outcome of outcomes) {
+    mergeGarminActivityOutcome({
+      result,
+      outcome,
+      importedTypes,
+      changedTypes,
+      changedActivityIds,
+    });
+  }
+
+  return { reachedCutoff, batchSize: batch.length };
+}
+
+interface FinalizeGarminActivitySyncInput {
+  athleteId: string;
+  client: GarminClient;
+  result: GarminActivitySyncResult;
+  importedTypes: Set<ActivityType>;
+  changedTypes: Set<ActivityType>;
+  changedActivityIds: Set<string>;
+}
+
+async function finalizeGarminActivitySync(
+  input: FinalizeGarminActivitySyncInput,
+): Promise<GarminActivitySyncResult> {
+  const { athleteId, client, result, importedTypes, changedTypes, changedActivityIds } = input;
+  const refreshed = currentTokens(client);
+  await prisma.garminAccount.update({
+    where: { athleteId },
+    data: {
+      oauth1TokenEnc: encryptGarminToken(refreshed.oauth1),
+      oauth2TokenEnc: encryptGarminToken(refreshed.oauth2),
+      lastActivitySyncAt: new Date(),
+    },
+  });
+
+  result.importedTypes = [...importedTypes];
+  result.changedTypes = [...changedTypes];
+  result.changedActivityIds = [...changedActivityIds];
+  return result;
+}
+
+async function paginateGarminActivities(input: {
+  client: GarminClient;
+  athleteId: string;
+  exerciseLabelsFr: Map<string, string>;
+  cutoff: Date | null;
+  maxPages: number;
+  result: GarminActivitySyncResult;
+  importedTypes: Set<ActivityType>;
+  changedTypes: Set<ActivityType>;
+  changedActivityIds: Set<string>;
+}): Promise<void> {
+  let start = 0;
+  for (let page = 0; page < input.maxPages; page++) {
+    const batch = await input.client.getActivities(start, PAGE_SIZE);
+    if (!batch.length) {
+      break;
+    }
+
+    const { reachedCutoff, batchSize } = await processGarminSyncPage({
+      athleteId: input.athleteId,
+      client: input.client,
+      exerciseLabelsFr: input.exerciseLabelsFr,
+      batch,
+      cutoff: input.cutoff,
+      result: input.result,
+      importedTypes: input.importedTypes,
+      changedTypes: input.changedTypes,
+      changedActivityIds: input.changedActivityIds,
+    });
+
+    if (reachedCutoff || batchSize < PAGE_SIZE) {
+      break;
+    }
+    start += PAGE_SIZE;
+  }
+}
+
+function resolveGarminSyncCutoff(input: {
+  full: boolean;
+  since?: Date;
+  lastActivitySync: Date | null;
+  sinceDays?: number;
+}): Date | null {
+  if (input.full) {
+    return null;
+  }
+  return input.since ?? syncSinceFromLastSync(input.lastActivitySync, input.sinceDays ?? 60);
+}
+
+function createGarminActivitySyncState(options?: {
+  sinceDays?: number;
+  since?: Date;
+  full?: boolean;
+  lastActivitySync: Date | null;
+}) {
+  const full = options?.full ?? false;
+  return {
+    full,
+    cutoff: resolveGarminSyncCutoff({
+      full,
+      since: options?.since,
+      lastActivitySync: options?.lastActivitySync ?? null,
+      sinceDays: options?.sinceDays,
+    }),
+    maxPages: full ? MAX_PAGES_FULL : MAX_PAGES,
+    result: {
+      fetched: 0,
+      imported: 0,
+      updated: 0,
+      merged: 0,
+      skipped: 0,
+      importedTypes: [] as ActivityType[],
+      importedActivityIds: [] as string[],
+      changedTypes: [] as ActivityType[],
+      changedActivityIds: [] as string[],
+    } satisfies GarminActivitySyncResult,
+    importedTypes: new Set<ActivityType>(),
+    changedTypes: new Set<ActivityType>(),
+    changedActivityIds: new Set<string>(),
+  };
+}
+
+async function runGarminActivitySync(
+  athleteId: string,
+  options?: {
+    sinceDays?: number;
+    since?: Date;
+    full?: boolean;
+  },
+): Promise<GarminActivitySyncResult> {
+  const account = await getGarminAccount(athleteId);
+  if (!account || !isGarminAccountConnected(account)) {
+    throw new ProviderAuthError('Session Garmin expirée. Reconnecte Garmin dans les paramètres.');
+  }
+
+  const client = await buildFreshGarminClient(athleteId, account);
+  const exerciseLabelsFr = await ensureGarminExerciseLabelsFr();
+  const syncState = createGarminActivitySyncState({
+    ...options,
+    lastActivitySync: account.lastActivitySyncAt ?? account.lastSyncAt,
+  });
+
+  await paginateGarminActivities({
+    client,
+    athleteId,
+    exerciseLabelsFr,
+    cutoff: syncState.cutoff,
+    maxPages: syncState.maxPages,
+    result: syncState.result,
+    importedTypes: syncState.importedTypes,
+    changedTypes: syncState.changedTypes,
+    changedActivityIds: syncState.changedActivityIds,
+  });
+
+  return finalizeGarminActivitySync({
+    athleteId,
+    client,
+    result: syncState.result,
+    importedTypes: syncState.importedTypes,
+    changedTypes: syncState.changedTypes,
+    changedActivityIds: syncState.changedActivityIds,
+  });
+}
+
 export async function syncGarminActivities(
   athleteId: string,
   options?: {
@@ -353,99 +658,5 @@ export async function syncGarminActivities(
     };
   }
 
-  return runGarminCall(athleteId, async () => {
-    const account = await getGarminAccount(athleteId);
-    if (!account || !isGarminAccountConnected(account)) {
-      throw new ProviderAuthError('Session Garmin expirée. Reconnecte Garmin dans les paramètres.');
-    }
-
-    const client = await buildFreshGarminClient(athleteId, account);
-    const exerciseLabelsFr = await ensureGarminExerciseLabelsFr();
-
-    const full = options?.full ?? false;
-    const lastActivitySync = account.lastActivitySyncAt ?? account.lastSyncAt;
-    const cutoff = full
-      ? null
-      : (options?.since ?? syncSinceFromLastSync(lastActivitySync, options?.sinceDays ?? 60));
-    const maxPages = full ? MAX_PAGES_FULL : MAX_PAGES;
-
-    const result: GarminActivitySyncResult = {
-      fetched: 0,
-      imported: 0,
-      updated: 0,
-      merged: 0,
-      skipped: 0,
-      importedTypes: [],
-      importedActivityIds: [],
-      changedTypes: [],
-      changedActivityIds: [],
-    };
-
-    const importedTypes = new Set<ActivityType>();
-    const changedTypes = new Set<ActivityType>();
-    const changedActivityIds = new Set<string>();
-
-    let start = 0;
-
-    for (let page = 0; page < maxPages; page++) {
-      const batch = await client.getActivities(start, PAGE_SIZE);
-      if (!batch.length) {
-        break;
-      }
-
-      result.fetched += batch.length;
-      let reachedCutoff = false;
-
-      const toProcess: GarminListActivity[] = [];
-      for (const activity of batch) {
-        const date = new Date(activity.startTimeLocal);
-        if (cutoff && date < cutoff) {
-          reachedCutoff = true;
-          break;
-        }
-        toProcess.push(activity);
-      }
-
-      const outcomes = await mapWithConcurrency(
-        toProcess,
-        GARMIN_ACTIVITY_CONCURRENCY,
-        (activity) => processOneGarminActivity(athleteId, client, activity, exerciseLabelsFr),
-      );
-
-      for (const outcome of outcomes) {
-        result.skipped += outcome.skipped;
-        result.imported += outcome.imported;
-        result.updated += outcome.updated;
-        result.merged += outcome.merged;
-        result.importedActivityIds.push(...outcome.importedActivityIds);
-        for (const type of outcome.importedTypes) {
-          importedTypes.add(type);
-        }
-        for (const change of outcome.changed) {
-          changedTypes.add(change.type);
-          changedActivityIds.add(change.id);
-        }
-      }
-
-      if (reachedCutoff || batch.length < PAGE_SIZE) {
-        break;
-      }
-      start += PAGE_SIZE;
-    }
-
-    const refreshed = currentTokens(client);
-    await prisma.garminAccount.update({
-      where: { athleteId },
-      data: {
-        oauth1TokenEnc: encryptGarminToken(refreshed.oauth1),
-        oauth2TokenEnc: encryptGarminToken(refreshed.oauth2),
-        lastActivitySyncAt: new Date(),
-      },
-    });
-
-    result.importedTypes = [...importedTypes];
-    result.changedTypes = [...changedTypes];
-    result.changedActivityIds = [...changedActivityIds];
-    return result;
-  });
+  return runGarminCall(athleteId, () => runGarminActivitySync(athleteId, options));
 }

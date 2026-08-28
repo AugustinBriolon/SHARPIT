@@ -56,6 +56,44 @@ export async function setActivityNarrativeAnalysis(
  * Goal achievements are read from DB inside facts — no enrichGoalsWithProgress
  * on this path (achievements are already written at activity/goal sync time).
  */
+function narrativeAlreadyAnalyzed(
+  existing: { narrativeAnalyzedAt: Date | null },
+  force?: boolean,
+): boolean {
+  return Boolean(existing.narrativeAnalyzedAt && !force);
+}
+
+function narrativeBlockedByDatePolicy(
+  existing: { date: Date },
+  options?: { force?: boolean; allowHistorical?: boolean },
+): boolean {
+  if (options?.force || options?.allowHistorical) {
+    return false;
+  }
+  return !isActivityToday(existing.date);
+}
+
+async function shouldSkipNarrativeAnalysis(
+  athleteId: string,
+  activityId: string,
+  options?: { force?: boolean; allowHistorical?: boolean },
+): Promise<{ skip: true } | { skip: false }> {
+  const existing = await prisma.activity.findFirst({
+    where: { id: activityId, athleteId },
+    select: { narrativeAnalyzedAt: true, date: true, narrativeAnalysis: true },
+  });
+  if (!existing || !isEligibleForActivityNarrative(existing.date)) {
+    return { skip: true };
+  }
+  if (narrativeAlreadyAnalyzed(existing, options?.force)) {
+    return { skip: true };
+  }
+  if (narrativeBlockedByDatePolicy(existing, options)) {
+    return { skip: true };
+  }
+  return { skip: false };
+}
+
 export async function runActivityNarrativeAnalysis(
   athleteId: string,
   activityId: string,
@@ -65,17 +103,8 @@ export async function runActivityNarrativeAnalysis(
     return false;
   }
 
-  const existing = await prisma.activity.findFirst({
-    where: { id: activityId, athleteId },
-    select: { narrativeAnalyzedAt: true, date: true, narrativeAnalysis: true },
-  });
-  if (!existing || !isEligibleForActivityNarrative(existing.date)) {
-    return false;
-  }
-  if (existing.narrativeAnalyzedAt && !options?.force) {
-    return false;
-  }
-  if (!options?.force && !options?.allowHistorical && !isActivityToday(existing.date)) {
+  const gate = await shouldSkipNarrativeAnalysis(athleteId, activityId, options);
+  if (gate.skip) {
     return false;
   }
 

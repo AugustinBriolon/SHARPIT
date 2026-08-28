@@ -74,47 +74,46 @@ function matchLabelForScore(score: number): string {
   return 'Rapprochement possible';
 }
 
-/**
- * Pair unlinked same-day activities with orphan planned sessions of the same type.
- * Greedy one-to-one by score — highest confidence first.
- */
-export function findSessionLinkSuggestions(
-  date: Date,
+function collectLinkedPlannedIds(
   activities: ClientActivity[],
   plannedSessions: ClientPlannedSession[],
-): SessionLinkSuggestion[] {
-  const refDay = startOfDay(date);
-
-  const linkedPlannedIds = new Set(
+): Set<string> {
+  return new Set(
     [
-      ...plannedSessions.map((s) => (s.activityId ? s.id : null)),
-      ...activities.map((a) => a.plannedSession?.id ?? null),
+      ...plannedSessions.map((session) => (session.activityId ? session.id : null)),
+      ...activities.map((activity) => activity.plannedSession?.id ?? null),
     ].filter((id): id is string => id !== null),
   );
+}
 
-  const todayActivities = activities.filter(
-    (a) => isSameDay(new Date(a.date), refDay) && !a.plannedSession,
+function filterTodayActivities(
+  activities: ClientActivity[],
+  refDay: Date,
+): ClientActivity[] {
+  return activities.filter((activity) => isSameDay(new Date(activity.date), refDay) && !activity.plannedSession);
+}
+
+function filterTodayPlanned(
+  plannedSessions: ClientPlannedSession[],
+  refDay: Date,
+  linkedPlannedIds: Set<string>,
+): ClientPlannedSession[] {
+  return plannedSessions.filter(
+    (session) =>
+      isSameDay(new Date(session.date), refDay) &&
+      !session.completed &&
+      !session.activityId &&
+      !linkedPlannedIds.has(session.id),
   );
+}
 
-  const todayPlanned = plannedSessions.filter(
-    (s) =>
-      isSameDay(new Date(s.date), refDay) &&
-      !s.completed &&
-      !s.activityId &&
-      !linkedPlannedIds.has(s.id),
-  );
-
-  const candidates: Array<{
-    activity: ClientActivity;
-    planned: ClientPlannedSession;
-    score: number;
-  }> = [];
-
-  const usedActivities = new Set<string>();
-  const usedPlanned = new Set<string>();
+function buildDemoLinkSuggestions(
+  todayActivities: ClientActivity[],
+  todayPlanned: ClientPlannedSession[],
+  usedActivities: Set<string>,
+  usedPlanned: Set<string>,
+): SessionLinkSuggestion[] {
   const suggestions: SessionLinkSuggestion[] = [];
-
-  /** Demo story pair is deterministic — greedy matching would steal the wrong planned run. */
   for (const activity of todayActivities) {
     if (!isDemoSessionLinkActivityTitle(activity.title)) {
       continue;
@@ -127,16 +126,22 @@ export function findSessionLinkSuggestions(
     usedPlanned.add(planned.id);
     suggestions.push(buildSuggestion(activity, planned, 200));
   }
+  return suggestions;
+}
 
+function buildLinkCandidates(
+  todayActivities: ClientActivity[],
+  todayPlanned: ClientPlannedSession[],
+  usedActivities: Set<string>,
+  usedPlanned: Set<string>,
+): Array<{ activity: ClientActivity; planned: ClientPlannedSession; score: number }> {
+  const candidates: Array<{ activity: ClientActivity; planned: ClientPlannedSession; score: number }> = [];
   for (const activity of todayActivities) {
     if (usedActivities.has(activity.id)) {
       continue;
     }
     for (const planned of todayPlanned) {
-      if (usedPlanned.has(planned.id)) {
-        continue;
-      }
-      if (isDemoSessionLinkPlannedTitle(planned.title)) {
+      if (usedPlanned.has(planned.id) || isDemoSessionLinkPlannedTitle(planned.title)) {
         continue;
       }
       if (activity.type !== planned.type) {
@@ -146,15 +151,21 @@ export function findSessionLinkSuggestions(
         { date: planned.date, durationMin: planned.durationMin },
         { date: activity.date, duration: activity.duration },
       );
-      if (score <= 0) {
-        continue;
+      if (score > 0) {
+        candidates.push({ activity, planned, score });
       }
-      candidates.push({ activity, planned, score });
     }
   }
+  return candidates;
+}
 
+function greedyMatchCandidates(
+  candidates: Array<{ activity: ClientActivity; planned: ClientPlannedSession; score: number }>,
+  usedActivities: Set<string>,
+  usedPlanned: Set<string>,
+): SessionLinkSuggestion[] {
+  const suggestions: SessionLinkSuggestion[] = [];
   candidates.sort((a, b) => b.score - a.score);
-
   for (const { activity, planned, score } of candidates) {
     if (usedActivities.has(activity.id) || usedPlanned.has(planned.id)) {
       continue;
@@ -163,8 +174,33 @@ export function findSessionLinkSuggestions(
     usedPlanned.add(planned.id);
     suggestions.push(buildSuggestion(activity, planned, score));
   }
-
   return suggestions;
+}
+
+/**
+ * Pair unlinked same-day activities with orphan planned sessions of the same type.
+ * Greedy one-to-one by score — highest confidence first.
+ */
+export function findSessionLinkSuggestions(
+  date: Date,
+  activities: ClientActivity[],
+  plannedSessions: ClientPlannedSession[],
+): SessionLinkSuggestion[] {
+  const refDay = startOfDay(date);
+  const linkedPlannedIds = collectLinkedPlannedIds(activities, plannedSessions);
+  const todayActivities = filterTodayActivities(activities, refDay);
+  const todayPlanned = filterTodayPlanned(plannedSessions, refDay, linkedPlannedIds);
+
+  const usedActivities = new Set<string>();
+  const usedPlanned = new Set<string>();
+  const demoSuggestions = buildDemoLinkSuggestions(
+    todayActivities,
+    todayPlanned,
+    usedActivities,
+    usedPlanned,
+  );
+  const candidates = buildLinkCandidates(todayActivities, todayPlanned, usedActivities, usedPlanned);
+  return [...demoSuggestions, ...greedyMatchCandidates(candidates, usedActivities, usedPlanned)];
 }
 
 function buildSuggestion(

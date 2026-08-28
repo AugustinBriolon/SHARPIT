@@ -29,51 +29,66 @@ function recalibration(
   };
 }
 
-function makeSnapshot(overrides?: {
+type SnapshotFreshness = 'fresh' | 'awaiting_data' | 'syncing' | 'stale' | 'computing';
+
+type MakeSnapshotOverrides = {
   adviceActionable?: boolean;
-  sleepFreshness?: 'fresh' | 'awaiting_data' | 'syncing' | 'stale' | 'computing';
-  recoveryFreshness?: 'fresh' | 'awaiting_data' | 'syncing' | 'stale' | 'computing';
+  sleepFreshness?: SnapshotFreshness;
+  recoveryFreshness?: SnapshotFreshness;
   garminSyncing?: boolean;
-}): AthleteSnapshot {
+};
+
+function freshnessDomain(
+  domain: 'sleep' | 'recovery',
+  freshness: SnapshotFreshness,
+): AthleteSnapshot['freshness']['domains'][number] {
+  const productMessage =
+    domain === 'sleep' && freshness === 'awaiting_data' ? 'Sommeil pas encore là' : null;
+  return {
+    domain,
+    lastUpdatedAt: null,
+    freshness,
+    state: freshness,
+    productMessage,
+  };
+}
+
+function garminProvider(syncing: boolean) {
+  return {
+    provider: 'garmin' as const,
+    connected: true,
+    lastSyncAt: new Date().toISOString(),
+    stale: false,
+    syncing,
+  };
+}
+
+function snapshotPrimaryMessage(sleep: SnapshotFreshness): string | null {
+  return sleep === 'awaiting_data' ? 'Sommeil pas encore là' : null;
+}
+
+function makeSnapshotFreshness(overrides?: MakeSnapshotOverrides): AthleteSnapshot['freshness'] {
   const sleep = overrides?.sleepFreshness ?? 'fresh';
   const recovery = overrides?.recoveryFreshness ?? 'fresh';
+  return {
+    athleteId: 'default',
+    trainingDayId: '2026-07-21',
+    computedAt: new Date().toISOString(),
+    domains: [freshnessDomain('sleep', sleep), freshnessDomain('recovery', recovery)],
+    providers: [garminProvider(overrides?.garminSyncing ?? false)],
+    overallFresh: sleep === 'fresh' && recovery === 'fresh',
+    primaryProductMessage: snapshotPrimaryMessage(sleep),
+  };
+}
+
+function makeSnapshot(overrides?: MakeSnapshotOverrides): AthleteSnapshot {
+  const sleep = overrides?.sleepFreshness ?? 'fresh';
   return {
     snapshotId: 's1',
     athleteId: 'default',
     trainingDayId: '2026-07-21',
     generatedAt: new Date().toISOString(),
-    freshness: {
-      athleteId: 'default',
-      trainingDayId: '2026-07-21',
-      computedAt: new Date().toISOString(),
-      domains: [
-        {
-          domain: 'sleep',
-          lastUpdatedAt: null,
-          freshness: sleep,
-          state: sleep,
-          productMessage: sleep === 'awaiting_data' ? 'Sommeil pas encore là' : null,
-        },
-        {
-          domain: 'recovery',
-          lastUpdatedAt: null,
-          freshness: recovery,
-          state: recovery,
-          productMessage: null,
-        },
-      ],
-      providers: [
-        {
-          provider: 'garmin',
-          connected: true,
-          lastSyncAt: new Date().toISOString(),
-          stale: false,
-          syncing: overrides?.garminSyncing ?? false,
-        },
-      ],
-      overallFresh: sleep === 'fresh' && recovery === 'fresh',
-      primaryProductMessage: sleep === 'awaiting_data' ? 'Sommeil pas encore là' : null,
-    },
+    freshness: makeSnapshotFreshness(overrides),
     recovery: null,
     fatigue: null,
     adaptation: null,
@@ -115,6 +130,42 @@ function makeSnapshot(overrides?: {
     sessionsDoneToday: [],
     plannedToday: [],
   } as unknown as AthleteSnapshot;
+}
+
+function expectDownProposalFirmActions(
+  r: ReturnType<typeof resolveMorningOrientation>,
+): void {
+  if (!r) {
+    throw new Error('expected orientation result');
+  }
+  expect(r.showFirmActions).toBe(true);
+  expect(r.confirmEase?.decisionId).toBe('d1');
+  expect(r.confirmEase?.current).toEqual({
+    intensityLabel: 'Tempo',
+    durationMin: 45,
+    load: 55,
+    description: null,
+  });
+  expect(r.confirmEase?.proposed).toEqual({
+    intensityLabel: 'Endurance',
+    durationMin: 45,
+    load: 41,
+    description: null,
+  });
+  expect(r.holdDecisionId).toBe('d1');
+}
+
+function expectAcceptedIncreaseSessionChoice(
+  r: ReturnType<typeof resolveMorningOrientation>,
+): void {
+  if (!r) {
+    throw new Error('expected orientation result');
+  }
+  expect(r.phase).toBe('POST_CHOICE');
+  expect(r.heroHeadline).toBeNull();
+  expect(r.sessionChoice?.kind).toBe('INCREASE_CONFIRMED');
+  expect(r.sessionChoice?.label).toBe('Hausse confirmée');
+  expect(r.sessionChoice?.label).not.toMatch(/allègement/i);
 }
 
 describe('nightEvidenceReady', () => {
@@ -187,21 +238,7 @@ describe('resolveMorningOrientation', () => {
         status: 'PRESENTED',
       }),
     });
-    expect(r?.showFirmActions).toBe(true);
-    expect(r?.confirmEase?.decisionId).toBe('d1');
-    expect(r?.confirmEase?.current).toEqual({
-      intensityLabel: 'Tempo',
-      durationMin: 45,
-      load: 55,
-      description: null,
-    });
-    expect(r?.confirmEase?.proposed).toEqual({
-      intensityLabel: 'Endurance',
-      durationMin: 45,
-      load: 41,
-      description: null,
-    });
-    expect(r?.holdDecisionId).toBe('d1');
+    expectDownProposalFirmActions(r);
   });
 
   it('keeps day verdict on ACCEPTED — annotates session only', () => {
@@ -219,11 +256,7 @@ describe('resolveMorningOrientation', () => {
         toLoad: 28,
       }),
     });
-    expect(r?.phase).toBe('POST_CHOICE');
-    expect(r?.heroHeadline).toBeNull();
-    expect(r?.sessionChoice?.kind).toBe('INCREASE_CONFIRMED');
-    expect(r?.sessionChoice?.label).toBe('Hausse confirmée');
-    expect(r?.sessionChoice?.label).not.toMatch(/allègement/i);
+    expectAcceptedIncreaseSessionChoice(r);
   });
 
   it('labels DOWN accept as allègement on the session', () => {

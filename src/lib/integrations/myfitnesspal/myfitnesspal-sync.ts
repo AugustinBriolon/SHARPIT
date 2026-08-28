@@ -112,6 +112,134 @@ export async function getLiveNutrientGoals(athleteId: string, dateStr: string) {
   }
 }
 
+function buildMfpMealSummaries(result: MfpDayResult) {
+  return result.meals
+    .filter((m: MfpScrapedMeal) => m.entries.length > 0)
+    .map((m: MfpScrapedMeal) => ({
+      name: m.name,
+      calories: Math.round(m.entries.reduce((s: number, e: MealEntry) => s + e.calories, 0)),
+      protein: Math.round(m.entries.reduce((s: number, e: MealEntry) => s + e.protein, 0)),
+      carbs: Math.round(m.entries.reduce((s: number, e: MealEntry) => s + e.carbohydrates, 0)),
+      fat: Math.round(m.entries.reduce((s: number, e: MealEntry) => s + e.fat, 0)),
+      entries: m.entries.map((e: MealEntry) => ({
+        name: e.name,
+        calories: Math.round(e.calories),
+        protein: Math.round(e.protein * 10) / 10,
+        carbs: Math.round(e.carbohydrates * 10) / 10,
+        fat: Math.round(e.fat * 10) / 10,
+        sugar: Math.round(e.sugar * 10) / 10,
+        fiber: Math.round(e.fiber * 10) / 10,
+      })),
+    }));
+}
+
+function mfpNutritionTotals(result: MfpDayResult) {
+  return {
+    calories: Math.round(result.totals.calories),
+    protein: Math.round(result.totals.protein * 10) / 10,
+    carbohydrates: Math.round(result.totals.carbohydrates * 10) / 10,
+    fat: Math.round(result.totals.fat * 10) / 10,
+    sugar: Math.round(result.totals.sugar * 10) / 10,
+    fiber: Math.round(result.totals.fiber * 10) / 10,
+  };
+}
+
+function mfpMacroGoalFields(goals: MfpDayResult['goals']) {
+  if (!goals) {
+    return {
+      goalCalories: null,
+      goalProtein: null,
+      goalCarbohydrates: null,
+      goalFat: null,
+    };
+  }
+  return {
+    goalCalories: goals.calories,
+    goalProtein: goals.protein,
+    goalCarbohydrates: goals.carbohydrates,
+    goalFat: goals.fat,
+  };
+}
+
+function mfpNutritionGoals(result: MfpDayResult) {
+  return {
+    ...mfpMacroGoalFields(result.goals),
+    exerciseCalories: result.exerciseCalories,
+  };
+}
+
+function mfpNutritionSharedFields(result: MfpDayResult) {
+  return {
+    ...mfpNutritionTotals(result),
+    meals: buildMfpMealSummaries(result),
+    complete: result.complete,
+    ...mfpNutritionGoals(result),
+  };
+}
+
+function mfpDailyNutritionPayload(athleteId: string, dateStr: string, result: MfpDayResult) {
+  const shared = mfpNutritionSharedFields(result);
+  const date = new Date(`${dateStr}T00:00:00Z`);
+  return {
+    where: {
+      athleteId_date_provider: {
+        athleteId,
+        date,
+        provider: 'myfitnesspal' as const,
+      },
+    },
+    create: {
+      athleteId,
+      date,
+      provider: 'myfitnesspal' as const,
+      ...shared,
+    },
+    update: shared,
+  };
+}
+
+async function syncMfpDay(athleteId: string, session: MfpSession, dateStr: string): Promise<boolean> {
+  const result = await fetchDiaryDay(session, dateStr);
+  const hasMeals = result.meals.some((m: MfpScrapedMeal) => m.entries.length > 0);
+  if (!hasMeals && !result.goals) {
+    return false;
+  }
+
+  await ingestNutritionObservation(athleteId, result);
+  await prisma.dailyNutrition.upsert(mfpDailyNutritionPayload(athleteId, dateStr, result));
+  return true;
+}
+
+async function syncMfpLookbackDays(
+  athleteId: string,
+  session: MfpSession,
+  lookbackDays: number,
+): Promise<{ synced: number; errors: number }> {
+  const today = new Date();
+  let synced = 0;
+  let errors = 0;
+
+  for (let i = 0; i < lookbackDays; i++) {
+    const dateStr = format(subDays(today, i), 'yyyy-MM-dd');
+    try {
+      if (await syncMfpDay(athleteId, session, dateStr)) {
+        synced++;
+      }
+    } catch (err) {
+      if (err instanceof MfpSessionExpiredError) {
+        await revokeMfpCredentials(athleteId);
+        throw new ProviderAuthError(
+          'Session MyFitnessPal expirée. Reconnecte MyFitnessPal dans les paramètres.',
+        );
+      }
+      console.error(`[MFP] sync error for ${dateStr}:`, err);
+      errors++;
+    }
+  }
+
+  return { synced, errors };
+}
+
 export async function syncMfpNutrition(
   athleteId: string,
   lookbackDays = 7,
@@ -134,96 +262,7 @@ export async function syncMfpNutrition(
     console.error('[MFP] session refresh failed, syncing with the stored cookie:', err);
   }
 
-  const today = new Date();
-  let synced = 0;
-  let errors = 0;
-
-  for (let i = 0; i < lookbackDays; i++) {
-    const day = subDays(today, i);
-    const dateStr = format(day, 'yyyy-MM-dd');
-
-    try {
-      const result = await fetchDiaryDay(session, dateStr);
-      const hasMeals = result.meals.some((m: MfpScrapedMeal) => m.entries.length > 0);
-      if (!hasMeals && !result.goals) {
-        continue;
-      }
-
-      await ingestNutritionObservation(athleteId, result);
-
-      const mealSummaries = result.meals
-        .filter((m: MfpScrapedMeal) => m.entries.length > 0)
-        .map((m: MfpScrapedMeal) => ({
-          name: m.name,
-          calories: Math.round(m.entries.reduce((s: number, e: MealEntry) => s + e.calories, 0)),
-          protein: Math.round(m.entries.reduce((s: number, e: MealEntry) => s + e.protein, 0)),
-          carbs: Math.round(m.entries.reduce((s: number, e: MealEntry) => s + e.carbohydrates, 0)),
-          fat: Math.round(m.entries.reduce((s: number, e: MealEntry) => s + e.fat, 0)),
-          entries: m.entries.map((e: MealEntry) => ({
-            name: e.name,
-            calories: Math.round(e.calories),
-            protein: Math.round(e.protein * 10) / 10,
-            carbs: Math.round(e.carbohydrates * 10) / 10,
-            fat: Math.round(e.fat * 10) / 10,
-            sugar: Math.round(e.sugar * 10) / 10,
-            fiber: Math.round(e.fiber * 10) / 10,
-          })),
-        }));
-
-      await prisma.dailyNutrition.upsert({
-        where: {
-          athleteId_date_provider: {
-            athleteId,
-            date: new Date(`${dateStr}T00:00:00Z`),
-            provider: 'myfitnesspal',
-          },
-        },
-        create: {
-          athleteId,
-          date: new Date(`${dateStr}T00:00:00Z`),
-          provider: 'myfitnesspal',
-          calories: Math.round(result.totals.calories),
-          protein: Math.round(result.totals.protein * 10) / 10,
-          carbohydrates: Math.round(result.totals.carbohydrates * 10) / 10,
-          fat: Math.round(result.totals.fat * 10) / 10,
-          sugar: Math.round(result.totals.sugar * 10) / 10,
-          fiber: Math.round(result.totals.fiber * 10) / 10,
-          meals: mealSummaries,
-          complete: result.complete,
-          goalCalories: result.goals?.calories ?? null,
-          goalProtein: result.goals?.protein ?? null,
-          goalCarbohydrates: result.goals?.carbohydrates ?? null,
-          goalFat: result.goals?.fat ?? null,
-          exerciseCalories: result.exerciseCalories,
-        },
-        update: {
-          calories: Math.round(result.totals.calories),
-          protein: Math.round(result.totals.protein * 10) / 10,
-          carbohydrates: Math.round(result.totals.carbohydrates * 10) / 10,
-          fat: Math.round(result.totals.fat * 10) / 10,
-          sugar: Math.round(result.totals.sugar * 10) / 10,
-          fiber: Math.round(result.totals.fiber * 10) / 10,
-          meals: mealSummaries,
-          complete: result.complete,
-          goalCalories: result.goals?.calories ?? null,
-          goalProtein: result.goals?.protein ?? null,
-          goalCarbohydrates: result.goals?.carbohydrates ?? null,
-          goalFat: result.goals?.fat ?? null,
-          exerciseCalories: result.exerciseCalories,
-        },
-      });
-      synced++;
-    } catch (err) {
-      if (err instanceof MfpSessionExpiredError) {
-        await revokeMfpCredentials(athleteId);
-        throw new ProviderAuthError(
-          'Session MyFitnessPal expirée. Reconnecte MyFitnessPal dans les paramètres.',
-        );
-      }
-      console.error(`[MFP] sync error for ${dateStr}:`, err);
-      errors++;
-    }
-  }
+  const { synced, errors } = await syncMfpLookbackDays(athleteId, session, lookbackDays);
 
   await prisma.myFitnessPalAccount.update({
     where: { athleteId },

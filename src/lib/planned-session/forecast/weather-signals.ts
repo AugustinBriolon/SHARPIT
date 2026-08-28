@@ -2,12 +2,35 @@ import type { EnvironmentalPrediction } from '@/core/environment';
 import type { PlannedSessionWeatherSignals } from '@/core/planned-session/types';
 import { readWeatherMeasurements } from '@/lib/activity/weather/activity-weather';
 
+function mergeWeatherPayload(
+  acc: PlannedSessionWeatherSignals,
+  payload: NonNullable<ReturnType<typeof readWeatherMeasurements>>,
+): PlannedSessionWeatherSignals {
+  const maxPrecipitationMm =
+    payload.precipitationMm !== null
+      ? Math.max(acc.maxPrecipitationMm ?? 0, payload.precipitationMm)
+      : acc.maxPrecipitationMm;
+  const minTemperatureC =
+    payload.airTemperatureC !== null
+      ? acc.minTemperatureC === null
+        ? payload.airTemperatureC
+        : Math.min(acc.minTemperatureC, payload.airTemperatureC)
+      : acc.minTemperatureC;
+  const maxWindMps =
+    payload.windSpeedMps !== null
+      ? Math.max(acc.maxWindMps ?? 0, payload.windSpeedMps)
+      : acc.maxWindMps;
+  return { maxPrecipitationMm, minTemperatureC, maxWindMps };
+}
+
 export function extractSessionWeatherSignals(
   predictions: EnvironmentalPrediction[],
 ): PlannedSessionWeatherSignals {
-  let maxPrecipitationMm: number | null = null;
-  let minTemperatureC: number | null = null;
-  let maxWindMps: number | null = null;
+  let signals: PlannedSessionWeatherSignals = {
+    maxPrecipitationMm: null,
+    minTemperatureC: null,
+    maxWindMps: null,
+  };
 
   for (const prediction of predictions) {
     if (prediction.dimension !== 'WEATHER') {
@@ -17,19 +40,8 @@ export function extractSessionWeatherSignals(
     if (!payload) {
       continue;
     }
-    if (payload.precipitationMm !== null) {
-      maxPrecipitationMm = Math.max(maxPrecipitationMm ?? 0, payload.precipitationMm);
-    }
-    if (payload.airTemperatureC !== null) {
-      minTemperatureC =
-        minTemperatureC === null
-          ? payload.airTemperatureC
-          : Math.min(minTemperatureC, payload.airTemperatureC);
-    }
-    if (payload.windSpeedMps !== null) {
-      maxWindMps = Math.max(maxWindMps ?? 0, payload.windSpeedMps);
-    }
+    signals = mergeWeatherPayload(signals, payload);
   }
 
-  return { maxPrecipitationMm, minTemperatureC, maxWindMps };
+  return signals;
 }

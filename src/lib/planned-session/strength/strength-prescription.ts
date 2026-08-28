@@ -177,6 +177,40 @@ export function strengthSetWatchCompat(set: Pick<StrengthPrescriptionSet, 'garmi
 }
 
 /** Normalize coach/LLM payload → persisted StrengthPrescription (+ Garmin refs). */
+function restModeFromCoachSet(set: CoachStrengthPrescription['sets'][number]): StrengthRestMode {
+  if (set.restMode === 'lap') {
+    return 'lap';
+  }
+  if (set.restMode === 'time' || (set.restSec !== null && set.restSec > 0)) {
+    return 'time';
+  }
+  return 'lap';
+}
+
+function coachSetToNormalized(
+  set: CoachStrengthPrescription['sets'][number],
+  order: number,
+) {
+  const exercise = set.exercise?.trim();
+  if (!exercise) {
+    return null;
+  }
+  const restMode = restModeFromCoachSet(set);
+  return {
+    exercise,
+    exerciseCatalogId: null,
+    sets: set.sets,
+    reps: set.reps,
+    durationSec: set.durationSec ?? null,
+    weightKg: set.weightKg ?? null,
+    restMode,
+    restSec: restMode === 'time' ? (set.restSec ?? 90) : null,
+    notes: set.notes ?? null,
+    order,
+    garmin: null,
+  };
+}
+
 export function normalizeCoachStrengthPrescription(
   raw: CoachStrengthPrescription | StrengthPrescription | null | undefined,
 ): StrengthPrescription | null {
@@ -190,36 +224,28 @@ export function normalizeCoachStrengthPrescription(
   }
 
   const sets = raw.sets
-    .map((set, order) => {
-      const exercise = set.exercise?.trim();
-      if (!exercise) {
-        return null;
-      }
-      // Legacy coach payloads only sent restSec — treat that as timed rest.
-      let restMode: StrengthRestMode = 'lap';
-      if (set.restMode === 'lap') {
-        restMode = 'lap';
-      } else if (set.restMode === 'time' || (set.restSec !== null && set.restSec > 0)) {
-        restMode = 'time';
-      }
-      return {
-        exercise,
-        exerciseCatalogId: null,
-        sets: set.sets,
-        reps: set.reps,
-        durationSec: set.durationSec ?? null,
-        weightKg: set.weightKg ?? null,
-        restMode,
-        restSec: restMode === 'time' ? (set.restSec ?? 90) : null,
-        notes: set.notes ?? null,
-        order,
-        garmin: null,
-      };
-    })
+    .map((set, order) => coachSetToNormalized(set, order))
     .filter((s): s is NonNullable<typeof s> => s !== null);
 
   const parsed = parseStrengthPrescription({ version: 1, sets });
   return parsed ? attachGarminRefsToPrescription(parsed) : null;
+}
+
+function isNumberedExerciseDump(trimmed: string): boolean {
+  return /^1[.)\-–—:]\s+\S/.test(trimmed);
+}
+
+function isDerivedSummary(trimmed: string): boolean {
+  return trimmed.includes('·') && /×/.test(trimmed);
+}
+
+function intentBeforeNumberedList(trimmed: string): string | null {
+  const numbered = trimmed.match(/^([\s\S]*?)(?=(?:\n|\s)1[.)\-–—:]\s+\S)/);
+  if (!numbered) {
+    return null;
+  }
+  const intent = numbered[1]?.trim() ?? '';
+  return intent.length > 0 ? intent : null;
 }
 
 /**
@@ -235,19 +261,12 @@ export function extractStrengthSessionIntent(
     return null;
   }
 
-  const numbered = trimmed.match(/^([\s\S]*?)(?=(?:\n|\s)1[.)\-–—:]\s+\S)/);
-  if (numbered) {
-    const intent = numbered[1]?.trim() ?? '';
-    return intent.length > 0 ? intent : null;
+  const preamble = intentBeforeNumberedList(trimmed);
+  if (preamble !== null) {
+    return preamble;
   }
 
-  // Also catch "1. Exo" at the very start (no preamble).
-  if (/^1[.)\-–—:]\s+\S/.test(trimmed)) {
-    return null;
-  }
-
-  // Derived summaries look like "Squat 3×12 · Pont 3×15" — not athlete-facing intent.
-  if (trimmed.includes('·') && /×/.test(trimmed)) {
+  if (isNumberedExerciseDump(trimmed) || isDerivedSummary(trimmed)) {
     return null;
   }
 

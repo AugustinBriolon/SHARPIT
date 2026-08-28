@@ -282,13 +282,14 @@ export class RenphoClient {
     return session.user;
   }
 
-  private async fetchMeasurementPage(
-    session: CachedSession,
-    tableName: string,
-    userIds: string[],
-    pageNum: number,
-    pageSize: number,
-  ): Promise<Array<Record<string, unknown>>> {
+  private async fetchMeasurementPage(input: {
+    session: CachedSession;
+    tableName: string;
+    userIds: string[];
+    pageNum: number;
+    pageSize: number;
+  }): Promise<Array<Record<string, unknown>>> {
+    const { session, tableName, userIds, pageNum, pageSize } = input;
     const rawResponse = await this.postEncryptedRaw(
       'RenphoHealth/scale/queryAllMeasureDataList',
       session,
@@ -310,62 +311,88 @@ export class RenphoClient {
     }));
   }
 
-  private async fetchMeasurementsForTable(
-    session: CachedSession,
-    table: RenphoScaleTable,
-    userIds: string[],
+  private shouldStopRecentCollection(
+    collected: Array<Record<string, unknown>>,
+    page: Array<Record<string, unknown>>,
+    lastAt: number,
     limit: number,
-    lastAt?: number,
-  ): Promise<Array<Record<string, unknown>>> {
+  ): boolean {
+    const newestTimestampInPage = Math.max(...page.map((entry) => Number(entry.timeStamp || 0)));
+    const recentCount = collected.filter((entry) => Number(entry.timeStamp || 0) >= lastAt).length;
+    return (
+      recentCount >= limit ||
+      newestTimestampInPage < lastAt ||
+      collected.length >= MAX_MEASUREMENT_SCAN
+    );
+  }
+
+  private async collectRecentMeasurements(input: {
+    session: CachedSession;
+    table: RenphoScaleTable;
+    userIds: string[];
+    pageSize: number;
+    totalPages: number;
+    lastAt: number;
+    limit: number;
+  }): Promise<Array<Record<string, unknown>>> {
+    const { session, table, userIds, pageSize, totalPages, lastAt, limit } = input;
+    const collected: Array<Record<string, unknown>> = [];
+    for (let pageNum = totalPages; pageNum >= 1; pageNum--) {
+      const page = await this.fetchMeasurementPage({
+        session,
+        tableName: table.table_name,
+        userIds,
+        pageNum,
+        pageSize,
+      });
+      if (page.length === 0) {
+        break;
+      }
+
+      collected.push(...page);
+      if (this.shouldStopRecentCollection(collected, page, lastAt, limit)) {
+        break;
+      }
+    }
+    return collected;
+  }
+
+  private async fetchMeasurementsForTable(input: {
+    session: CachedSession;
+    table: RenphoScaleTable;
+    userIds: string[];
+    limit: number;
+    lastAt?: number;
+  }): Promise<Array<Record<string, unknown>>> {
+    const { session, table, userIds, limit, lastAt } = input;
     const pageSize = Math.min(DEFAULT_PAGE_SIZE, Math.max(50, limit));
     const tableCount = Math.max(table.count || 0, 0);
     const totalPages = Math.max(1, Math.ceil(Math.max(tableCount, pageSize) / pageSize));
     const collected: Array<Record<string, unknown>> = [];
 
     if (lastAt) {
-      for (let pageNum = totalPages; pageNum >= 1; pageNum--) {
-        const page = await this.fetchMeasurementPage(
-          session,
-          table.table_name,
-          userIds,
-          pageNum,
-          pageSize,
-        );
-        if (page.length === 0) {
-          break;
-        }
-
-        collected.push(...page);
-
-        const newestTimestampInPage = Math.max(
-          ...page.map((entry) => Number(entry.timeStamp || 0)),
-        );
-        const recentCount = collected.filter(
-          (entry) => Number(entry.timeStamp || 0) >= lastAt,
-        ).length;
-        if (
-          recentCount >= limit ||
-          newestTimestampInPage < lastAt ||
-          collected.length >= MAX_MEASUREMENT_SCAN
-        ) {
-          break;
-        }
-      }
-
-      return collected;
+      return this.collectRecentMeasurements({
+        session,
+        table,
+        userIds,
+        pageSize,
+        totalPages,
+        lastAt,
+        limit,
+      });
     }
 
     const pagesNeeded = Math.max(1, Math.ceil(limit / pageSize));
     const startPage = Math.max(1, totalPages - pagesNeeded + 1);
 
     for (let pageNum = startPage; pageNum <= totalPages; pageNum++) {
-      const page = await this.fetchMeasurementPage(
+      const page = await this.fetchMeasurementPage({
         session,
-        table.table_name,
+        tableName: table.table_name,
         userIds,
         pageNum,
         pageSize,
-      );
+      });
       if (page.length === 0) {
         break;
       }
@@ -441,13 +468,13 @@ export class RenphoClient {
     const perTableLimit = Math.max(limit, 50);
     const rawResults = await Promise.all(
       session.scaleTables.map((scaleTable) =>
-        this.fetchMeasurementsForTable(
+        this.fetchMeasurementsForTable({
           session,
-          scaleTable,
-          scaleTable.user_ids,
-          perTableLimit,
+          table: scaleTable,
+          userIds: scaleTable.user_ids,
+          limit: perTableLimit,
           lastAt,
-        ),
+        }),
       ),
     );
 

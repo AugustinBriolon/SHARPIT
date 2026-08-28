@@ -103,6 +103,38 @@ export function parseSessionAccessories(raw: unknown): EquipmentItemId[] {
   return ids;
 }
 
+function exerciseNamesFromPrescription(
+  strengthPrescription: unknown,
+): string[] {
+  const prescription = parseStrengthPrescription(strengthPrescription);
+  if (prescription) {
+    return prescription.sets.map((set) => set.exercise);
+  }
+  const rawSets = (strengthPrescription as { sets?: unknown } | null)?.sets;
+  if (!Array.isArray(rawSets)) {
+    return [];
+  }
+  return (rawSets as Array<{ exercise?: string }>).map((set) => set.exercise ?? '');
+}
+
+function inferAccessoriesFromHaystack(
+  haystack: string,
+  type: ActivityType,
+): SessionAccessoryView[] {
+  const found = new Set<EquipmentItemId>();
+  for (const rule of KEYWORD_TO_IDS) {
+    if (!rule.pattern.test(haystack)) {
+      continue;
+    }
+    for (const id of rule.ids) {
+      if (sportAllows(id, type) && SESSION_PROP_IDS.includes(id)) {
+        found.add(id);
+      }
+    }
+  }
+  return [...found].map((id) => ({ id, label: catalogLabel(id) }));
+}
+
 /**
  * Accessories for a planned session: explicit list first, else keyword inference
  * from title / description / strength exercises.
@@ -121,16 +153,7 @@ export function resolveSessionAccessories(input: {
     return explicit.map((id) => ({ id, label: catalogLabel(id) }));
   }
 
-  const prescription = parseStrengthPrescription(input.strengthPrescription);
-  const exerciseNames =
-    prescription?.sets.map((set) => set.exercise) ??
-    (Array.isArray((input.strengthPrescription as { sets?: unknown } | null)?.sets)
-      ? ((input.strengthPrescription as { sets: Array<{ exercise?: string }> }).sets ?? []).map(
-          (set) => set.exercise ?? '',
-        )
-      : []);
-
-  const haystack = [input.title ?? '', input.description ?? '', ...exerciseNames]
+  const haystack = [input.title ?? '', input.description ?? '', ...exerciseNamesFromPrescription(input.strengthPrescription)]
     .join(' · ')
     .toLowerCase();
 
@@ -138,19 +161,7 @@ export function resolveSessionAccessories(input: {
     return [];
   }
 
-  const found = new Set<EquipmentItemId>();
-  for (const rule of KEYWORD_TO_IDS) {
-    if (!rule.pattern.test(haystack)) {
-      continue;
-    }
-    for (const id of rule.ids) {
-      if (sportAllows(id, input.type) && SESSION_PROP_IDS.includes(id)) {
-        found.add(id);
-      }
-    }
-  }
-
-  return [...found].map((id) => ({ id, label: catalogLabel(id) }));
+  return inferAccessoriesFromHaystack(haystack, input.type);
 }
 
 /** Catalog choices for the session editor, filtered by sport. */

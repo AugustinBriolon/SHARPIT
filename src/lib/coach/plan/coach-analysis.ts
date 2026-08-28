@@ -65,50 +65,177 @@ function formatStrengthSetLine(set: ComparableStrengthSet & { weightKg?: number 
   return `- ${set.exercise} ${volume}${weight}`;
 }
 
-function describePlanned(p: PlannedWithActivity, opts?: { ftpW?: number | null }): string {
+function appendPlannedStrengthLines(bits: string[], p: PlannedWithActivity): void {
+  const prescription = parseStrengthPrescription(p.strengthPrescription);
+  if (!prescription) {
+    return;
+  }
+  bits.push('Exercices prescrits :');
+  bits.push(
+    ...prescription.sets
+      .slice()
+      .sort((a, b) => a.order - b.order)
+      .map(formatStrengthSetLine),
+  );
+}
+
+function appendPlannedBikeTargetLines(
+  bits: string[],
+  p: PlannedWithActivity,
+  ftpW: number | null | undefined,
+): void {
+  if (ftpW === null || ftpW <= 0 || p.type !== 'BIKE') {
+    return;
+  }
+  const parsed = parsePrescriptionTargets(p.description);
+  if (parsed.ftpPct !== null) {
+    const targetW = Math.round((parsed.ftpPct / 100) * ftpW);
+    bits.push(
+      `Cible puissance (dérivée de la consigne) : ${parsed.ftpPct}% FTP = ${targetW} W (FTP ${ftpW} W)`,
+    );
+  }
+  if (parsed.plannedWorkMin !== null) {
+    bits.push(
+      `Volume de travail suggéré par la consigne (lecture texte) : ~${parsed.plannedWorkMin} min`,
+    );
+  }
+}
+
+function plannedEnduranceHeaderBits(p: PlannedWithActivity): string[] {
+  return [
+    p.intensity ? `Intensité prévue : ${intensityLabels[p.intensity]}` : null,
+    p.durationMin !== null ? `Durée prévue : ${p.durationMin} min` : null,
+    p.load !== null ? `Charge prévue : ${Math.round(p.load)} TSS` : null,
+  ].filter(Boolean) as string[];
+}
+
+function plannedHeaderBits(p: PlannedWithActivity): string[] {
   const isStrength = p.type === 'STRENGTH';
-  const bits = [
+  return [
     `Sport : ${TYPE_FR[p.type] ?? p.type}`,
     p.brickGroupId
       ? `Jambe d'un BRICK (enchaînement multisport) — tiens compte de la fatigue/transition (ex. course en sortie de vélo).`
       : null,
-    p.intensity ? `Intensité prévue : ${intensityLabels[p.intensity]}` : null,
-    // Duration and TSS are deliberately withheld for strength: execution speed is
-    // not prescribable, so they must not become compliance evidence.
-    !isStrength && p.durationMin !== null ? `Durée prévue : ${p.durationMin} min` : null,
-    !isStrength && p.load !== null ? `Charge prévue : ${Math.round(p.load)} TSS` : null,
+    ...(isStrength ? [] : plannedEnduranceHeaderBits(p)),
     p.title ? `Titre : ${p.title}` : null,
     p.description ? `Consigne : ${p.description}` : null,
   ].filter(Boolean) as string[];
+}
 
-  const prescription = isStrength ? parseStrengthPrescription(p.strengthPrescription) : null;
-  if (prescription) {
-    bits.push('Exercices prescrits :');
-    bits.push(
-      ...prescription.sets
-        .slice()
-        .sort((a, b) => a.order - b.order)
-        .map(formatStrengthSetLine),
-    );
+function describePlanned(p: PlannedWithActivity, opts?: { ftpW?: number | null }): string {
+  const bits = plannedHeaderBits(p);
+  if (p.type === 'STRENGTH') {
+    appendPlannedStrengthLines(bits, p);
   }
-
-  const ftpW = opts?.ftpW;
-  if (ftpW !== null && ftpW > 0 && p.type === 'BIKE') {
-    const parsed = parsePrescriptionTargets(p.description);
-    if (parsed.ftpPct !== null) {
-      const targetW = Math.round((parsed.ftpPct / 100) * ftpW);
-      bits.push(
-        `Cible puissance (dérivée de la consigne) : ${parsed.ftpPct}% FTP = ${targetW} W (FTP ${ftpW} W)`,
-      );
-    }
-    if (parsed.plannedWorkMin !== null) {
-      bits.push(
-        `Volume de travail suggéré par la consigne (lecture texte) : ~${parsed.plannedWorkMin} min`,
-      );
-    }
-  }
-
+  appendPlannedBikeTargetLines(bits, p, opts?.ftpW);
   return bits.join('\n');
+}
+
+function appendRunMetricLines(bits: string[], r: NonNullable<LinkedActivity['runMetrics']>): void {
+  if (r.distanceM) {
+    bits.push(`Distance : ${(r.distanceM / 1000).toFixed(2)} km`);
+  }
+  const pace = fmtPace(r.paceSecPerKm);
+  if (pace) {
+    bits.push(`Allure moyenne : ${pace}`);
+  }
+  if (r.avgHr) {
+    bits.push(`FC moyenne : ${r.avgHr} bpm`);
+  }
+  if (r.avgPower) {
+    bits.push(`Puissance moyenne : ${Math.round(r.avgPower)} W`);
+  }
+  if (r.elevationM) {
+    bits.push(`D+ : ${Math.round(r.elevationM)} m`);
+  }
+}
+
+function appendBikePowerLines(
+  bits: string[],
+  b: NonNullable<LinkedActivity['bikeMetrics']>,
+): void {
+  if (b.avgPower) {
+    bits.push(`Puissance moyenne (séance entière) : ${Math.round(b.avgPower)} W`);
+  }
+  if (b.normalizedPower) {
+    bits.push(`NP (séance entière) : ${Math.round(b.normalizedPower)} W`);
+  }
+}
+
+function appendBikeIntensityLine(
+  bits: string[],
+  b: NonNullable<LinkedActivity['bikeMetrics']>,
+  ftpW: number | null | undefined,
+): void {
+  const intensityFactor =
+    b.intensityFactor ??
+    (b.normalizedPower !== null && ftpW !== null && ftpW > 0 ? b.normalizedPower / ftpW : null);
+  if (intensityFactor !== null) {
+    bits.push(`IF (séance entière) : ${intensityFactor.toFixed(2)}`);
+  }
+}
+
+function appendBikeMetricLines(
+  bits: string[],
+  b: NonNullable<LinkedActivity['bikeMetrics']>,
+  ftpW: number | null | undefined,
+): void {
+  appendBikePowerLines(bits, b);
+  appendBikeIntensityLine(bits, b, ftpW);
+  if (b.tss) {
+    bits.push(`TSS : ${Math.round(b.tss)}`);
+  }
+  if (b.elevationM) {
+    bits.push(`D+ : ${Math.round(b.elevationM)} m`);
+  }
+  bits.push(
+    'Note : avg/NP/IF ci-dessus couvrent toute la séance (échauffement + travail + récup) — ne pas les confondre avec l’intensité des blocs de travail.',
+  );
+}
+
+function appendSwimMetricLines(bits: string[], s: NonNullable<LinkedActivity['swimMetrics']>): void {
+  if (s.distanceM) {
+    bits.push(`Distance : ${s.distanceM} m`);
+  }
+  if (s.avgPaceSecPer100m) {
+    const m = Math.floor(s.avgPaceSecPer100m / 60);
+    const sec = Math.round(s.avgPaceSecPer100m % 60);
+    bits.push(`Allure : ${m}:${sec.toString().padStart(2, '0')}/100m`);
+  }
+}
+
+function actualEnduranceHeaderBits(a: LinkedActivity): string[] {
+  return [
+    a.duration !== null ? `Durée : ${Math.round(a.duration / 60)} min` : null,
+    a.load !== null ? `Charge : ${Math.round(a.load)} TSS` : null,
+  ].filter(Boolean) as string[];
+}
+
+function actualHeaderBits(a: LinkedActivity): string[] {
+  const isStrength = a.type === 'STRENGTH';
+  return [
+    `Sport : ${TYPE_FR[a.type] ?? a.type}`,
+    ...(isStrength ? [] : actualEnduranceHeaderBits(a)),
+    a.rpe !== null ? `RPE ressenti : ${a.rpe}/10` : null,
+    a.feeling ? `Ressenti : ${a.feeling}` : null,
+    a.notes ? `Notes : ${a.notes}` : null,
+  ].filter(Boolean) as string[];
+}
+
+function appendActualSportMetrics(
+  bits: string[],
+  a: LinkedActivity,
+  ftpW: number | null | undefined,
+): void {
+  if (a.runMetrics) {
+    appendRunMetricLines(bits, a.runMetrics);
+  }
+  if (a.bikeMetrics) {
+    appendBikeMetricLines(bits, a.bikeMetrics, ftpW);
+  }
+  if (a.swimMetrics) {
+    appendSwimMetricLines(bits, a.swimMetrics);
+  }
 }
 
 function describeActual(
@@ -116,83 +243,19 @@ function describeActual(
   description?: string | null,
   opts?: { ftpW?: number | null; workSummary?: BikeWorkSummary | null },
 ): string {
-  const isStrength = a.type === 'STRENGTH';
-  const bits: string[] = [
-    `Sport : ${TYPE_FR[a.type] ?? a.type}`,
-    !isStrength && a.duration !== null ? `Durée : ${Math.round(a.duration / 60)} min` : null,
-    !isStrength && a.load !== null ? `Charge : ${Math.round(a.load)} TSS` : null,
-    a.rpe !== null ? `RPE ressenti : ${a.rpe}/10` : null,
-    a.feeling ? `Ressenti : ${a.feeling}` : null,
-    a.notes ? `Notes : ${a.notes}` : null,
-  ].filter(Boolean) as string[];
+  const bits = actualHeaderBits(a);
 
-  if (isStrength && a.strengthSets.length > 0) {
+  if (a.type === 'STRENGTH' && a.strengthSets.length > 0) {
     bits.push('Exercices réalisés :');
     bits.push(...a.strengthSets.map(formatStrengthSetLine));
   }
 
-  // Description libre saisie sur Strava (souvent le détail réel des exercices).
   const desc = description?.trim();
   if (desc) {
     bits.push(`Description (athlète) : ${desc}`);
   }
 
-  if (a.runMetrics) {
-    const r = a.runMetrics;
-    if (r.distanceM) {
-      bits.push(`Distance : ${(r.distanceM / 1000).toFixed(2)} km`);
-    }
-    const pace = fmtPace(r.paceSecPerKm);
-    if (pace) {
-      bits.push(`Allure moyenne : ${pace}`);
-    }
-    if (r.avgHr) {
-      bits.push(`FC moyenne : ${r.avgHr} bpm`);
-    }
-    if (r.avgPower) {
-      bits.push(`Puissance moyenne : ${Math.round(r.avgPower)} W`);
-    }
-    if (r.elevationM) {
-      bits.push(`D+ : ${Math.round(r.elevationM)} m`);
-    }
-  }
-  if (a.bikeMetrics) {
-    const b = a.bikeMetrics;
-    if (b.avgPower) {
-      bits.push(`Puissance moyenne (séance entière) : ${Math.round(b.avgPower)} W`);
-    }
-    if (b.normalizedPower) {
-      bits.push(`NP (séance entière) : ${Math.round(b.normalizedPower)} W`);
-    }
-    const intensityFactor =
-      b.intensityFactor ??
-      (b.normalizedPower !== null && opts?.ftpW !== null && opts.ftpW > 0
-        ? b.normalizedPower / opts.ftpW
-        : null);
-    if (intensityFactor !== null) {
-      bits.push(`IF (séance entière) : ${intensityFactor.toFixed(2)}`);
-    }
-    if (b.tss) {
-      bits.push(`TSS : ${Math.round(b.tss)}`);
-    }
-    if (b.elevationM) {
-      bits.push(`D+ : ${Math.round(b.elevationM)} m`);
-    }
-    bits.push(
-      'Note : avg/NP/IF ci-dessus couvrent toute la séance (échauffement + travail + récup) — ne pas les confondre avec l’intensité des blocs de travail.',
-    );
-  }
-  if (a.swimMetrics) {
-    const s = a.swimMetrics;
-    if (s.distanceM) {
-      bits.push(`Distance : ${s.distanceM} m`);
-    }
-    if (s.avgPaceSecPer100m) {
-      const m = Math.floor(s.avgPaceSecPer100m / 60);
-      const sec = Math.round(s.avgPaceSecPer100m % 60);
-      bits.push(`Allure : ${m}:${sec.toString().padStart(2, '0')}/100m`);
-    }
-  }
+  appendActualSportMetrics(bits, a, opts?.ftpW);
 
   if (opts?.workSummary) {
     bits.push('');
@@ -268,20 +331,23 @@ export function hasSubstantialLocalDescription(notes: string | null | undefined)
   return trimmed.length >= LOCAL_DESCRIPTION_MIN_CHARS;
 }
 
+function isStravaLinkedActivity(activity: LinkedActivity): boolean {
+  return (
+    (activity.source === 'strava' || activity.source === 'both') && activity.stravaId !== null
+  );
+}
+
 /** Description libre Strava (détail réel). Best-effort : ne lève jamais. */
 async function fetchStravaDescription(
   athleteId: string,
   activity: LinkedActivity,
 ): Promise<string | null> {
-  if (activity.source !== 'strava' && activity.source !== 'both') {
-    return null;
-  }
-  if (!activity.stravaId) {
+  if (!isStravaLinkedActivity(activity)) {
     return null;
   }
   try {
     const token = await getValidAccessToken(athleteId);
-    const detail = await fetchActivityDetail(token, activity.stravaId);
+    const detail = await fetchActivityDetail(token, activity.stravaId!);
     return detail?.description ?? detail?.private_note ?? null;
   } catch (error) {
     console.error('[analyze] description Strava non récupérée', error);
@@ -324,22 +390,61 @@ async function loadCachedWatts(activityId: string): Promise<number[] | null> {
   return data.watts.map((w) => (typeof w === 'number' && Number.isFinite(w) ? w : 0));
 }
 
-export async function analyzePlannedSession(
-  athleteId: string,
-  id: string,
-): Promise<SessionAnalysis | null> {
-  const planned = await getPlannedSessionById(athleteId, id);
-  if (!planned || !planned.activity) {
-    return null;
+function formatAthleteThresholdsLine(
+  profile: Awaited<ReturnType<typeof getAthleteProfile>>,
+): string {
+  if (!profile) {
+    return '';
   }
+  const parts = [
+    profile.ftpW !== null ? `FTP ${profile.ftpW} W` : null,
+    profile.lthr !== null ? `LTHR ${profile.lthr} bpm` : null,
+    profile.maxHr !== null ? `FC max ${profile.maxHr} bpm` : null,
+    fmtPace(profile.runThresholdPaceSecPerKm)
+      ? `allure seuil ${fmtPace(profile.runThresholdPaceSecPerKm)}`
+      : null,
+  ].filter(Boolean);
+  return parts.length > 0 ? `Seuils de l'athlète : ${parts.join(', ')}.\n\n` : '';
+}
 
+function buildSessionAnalysisPrompt(input: {
+  planned: PlannedWithActivity;
+  stravaDescription: string | null;
+  ftpW: number | null;
+  workSummary: BikeWorkSummary | null;
+  strengthCompliance: StrengthCompliance | null;
+  physicalNotes: ActivePhysicalNote[];
+}): string {
+  const strengthBlock = input.strengthCompliance
+    ? `\n# Conformité muscu (calcul déterministe)\n${formatStrengthCompliance(input.strengthCompliance)}\n`
+    : '';
+  return `# Séance PRÉVUE
+${describePlanned(input.planned, { ftpW: input.ftpW })}
+
+# Séance RÉALISÉE
+${describeActual(input.planned.activity!, input.stravaDescription, {
+  ftpW: input.ftpW,
+  workSummary: input.workSummary,
+})}${strengthBlock}
+# Suivi physique actif de l'athlète
+${describePhysicalNotes(input.physicalNotes)}`;
+}
+
+async function loadPlannedSessionAnalysisContext(
+  athleteId: string,
+  planned: PlannedWithActivity,
+): Promise<{
+  stravaDescription: string | null;
+  profile: Awaited<ReturnType<typeof getAthleteProfile>>;
+  physicalNotes: ActivePhysicalNote[];
+  workSummary: BikeWorkSummary | null;
+}> {
   const [stravaDescription, profile, physicalNotes, watts] = await Promise.all([
-    resolveAthleteDescription(athleteId, planned.activity),
+    resolveAthleteDescription(athleteId, planned.activity!),
     getAthleteProfile(athleteId),
     getActivePhysicalNotes(athleteId),
-    planned.activity.type === 'BIKE' ? loadCachedWatts(planned.activity.id) : Promise.resolve(null),
+    planned.activity!.type === 'BIKE' ? loadCachedWatts(planned.activity!.id) : Promise.resolve(null),
   ]);
-
   const ftpW = profile?.ftpW ?? null;
   const workSummary =
     watts && ftpW !== null
@@ -350,34 +455,30 @@ export async function analyzePlannedSession(
           description: planned.description,
         })
       : null;
-
-  const seuils = profile
-    ? [
-        profile.ftpW !== null ? `FTP ${profile.ftpW} W` : null,
-        profile.lthr !== null ? `LTHR ${profile.lthr} bpm` : null,
-        profile.maxHr !== null ? `FC max ${profile.maxHr} bpm` : null,
-        fmtPace(profile.runThresholdPaceSecPerKm)
-          ? `allure seuil ${fmtPace(profile.runThresholdPaceSecPerKm)}`
-          : null,
-      ]
-        .filter(Boolean)
-        .join(', ')
-    : '';
-
-  const strengthCompliance = resolveStrengthCompliance(planned);
-
-  const prompt = `${seuils ? `Seuils de l'athlète : ${seuils}.\n\n` : ''}# Séance PRÉVUE
-${describePlanned(planned, { ftpW })}
-
-# Séance RÉALISÉE
-${describeActual(planned.activity, stravaDescription, { ftpW, workSummary })}
-${
-  strengthCompliance
-    ? `\n# Conformité muscu (calcul déterministe)\n${formatStrengthCompliance(strengthCompliance)}\n`
-    : ''
+  return { stravaDescription, profile, physicalNotes, workSummary };
 }
-# Suivi physique actif de l'athlète
-${describePhysicalNotes(physicalNotes)}`;
+
+export async function analyzePlannedSession(
+  athleteId: string,
+  id: string,
+): Promise<SessionAnalysis | null> {
+  const planned = await getPlannedSessionById(athleteId, id);
+  if (!planned || !planned.activity) {
+    return null;
+  }
+
+  const { stravaDescription, profile, physicalNotes, workSummary } =
+    await loadPlannedSessionAnalysisContext(athleteId, planned);
+  const ftpW = profile?.ftpW ?? null;
+  const strengthCompliance = resolveStrengthCompliance(planned);
+  const prompt = `${formatAthleteThresholdsLine(profile)}${buildSessionAnalysisPrompt({
+    planned,
+    stravaDescription,
+    ftpW,
+    workSummary,
+    strengthCompliance,
+    physicalNotes,
+  })}`;
 
   const { output, usage } = await generateText({
     model: COACH_MODEL,
@@ -439,6 +540,56 @@ function fmtClock(d: Date): string {
  * les transitions (dérive FC, sortie de vélo). Renvoie null si le brick n'a pas
  * au moins 2 jambes toutes liées à une activité réalisée.
  */
+function buildBrickLegBlock(input: {
+  leg: (Awaited<ReturnType<typeof getBrickSessions>>)[number];
+  index: number;
+  description: string | null;
+  ftpW: number | null;
+  workSummary: BikeWorkSummary | null;
+}): string {
+  const header = `## Sport ${input.index + 1} : ${TYPE_FR[input.leg.type] ?? input.leg.type}`;
+  return `${header}
+### Prévu
+${describePlanned(input.leg, { ftpW: input.ftpW })}
+### Réalisé
+${describeActual(input.leg.activity!, input.description, {
+  ftpW: input.ftpW,
+  workSummary: input.workSummary,
+})}`;
+}
+
+function describeBrickTransition(
+  prevLeg: (Awaited<ReturnType<typeof getBrickSessions>>)[number],
+  currLeg: (Awaited<ReturnType<typeof getBrickSessions>>)[number],
+): string | null {
+  const prev = prevLeg.activity!;
+  const curr = currLeg.activity!;
+  if (prev.duration === null) {
+    return null;
+  }
+  const prevEnd = new Date(new Date(prev.date).getTime() + prev.duration * 1000);
+  const currStart = new Date(curr.date);
+  const gapMin = Math.round((currStart.getTime() - prevEnd.getTime()) / 60000);
+  const label = `${TYPE_FR[prevLeg.type]} → ${TYPE_FR[currLeg.type]}`;
+  if (gapMin >= 0 && gapMin <= 120) {
+    return `${label} : ~${gapMin} min entre la fin (${fmtClock(prevEnd)}) et le départ suivant (${fmtClock(currStart)}).`;
+  }
+  return `${label} : transition non déterminable de façon fiable (sports peut-être non enregistrés à la suite).`;
+}
+
+function describeBrickTransitions(
+  legs: Awaited<ReturnType<typeof getBrickSessions>>,
+): string[] {
+  const transitions: string[] = [];
+  for (let i = 1; i < legs.length; i++) {
+    const line = describeBrickTransition(legs[i - 1], legs[i]);
+    if (line) {
+      transitions.push(line);
+    }
+  }
+  return transitions;
+}
+
 export async function analyzeBrick(
   athleteId: string,
   brickGroupId: string,
@@ -463,64 +614,26 @@ export async function analyzeBrick(
 
   const ftpW = profile?.ftpW ?? null;
 
-  const seuils = profile
-    ? [
-        profile.ftpW !== null ? `FTP ${profile.ftpW} W` : null,
-        profile.lthr !== null ? `LTHR ${profile.lthr} bpm` : null,
-        profile.maxHr !== null ? `FC max ${profile.maxHr} bpm` : null,
-        fmtPace(profile.runThresholdPaceSecPerKm)
-          ? `allure seuil ${fmtPace(profile.runThresholdPaceSecPerKm)}`
+  const legBlocks = legs.map((leg, i) =>
+    buildBrickLegBlock({
+      leg,
+      index: i,
+      description: descriptions[i],
+      ftpW,
+      workSummary:
+        wattsList[i] && ftpW !== null
+          ? summarizeBikeWorkBlocks({
+              watts: wattsList[i]!,
+              ftpW,
+              intensity: leg.intensity,
+              description: leg.description,
+            })
           : null,
-      ]
-        .filter(Boolean)
-        .join(', ')
-    : '';
+    }),
+  );
 
-  const legBlocks = legs.map((leg, i) => {
-    const a = leg.activity!;
-    const watts = wattsList[i];
-    const workSummary =
-      watts && ftpW !== null
-        ? summarizeBikeWorkBlocks({
-            watts,
-            ftpW,
-            intensity: leg.intensity,
-            description: leg.description,
-          })
-        : null;
-    const header = `## Sport ${i + 1} : ${TYPE_FR[leg.type] ?? leg.type}`;
-    return `${header}
-### Prévu
-${describePlanned(leg, { ftpW })}
-### Réalisé
-${describeActual(a, descriptions[i], { ftpW, workSummary })}`;
-  });
-
-  // Temps de transition entre la fin d'un sport et le début du suivant
-  // (estimé à partir de l'heure de départ et de la durée de chaque activité).
-  const transitions: string[] = [];
-  for (let i = 1; i < legs.length; i++) {
-    const prev = legs[i - 1].activity!;
-    const curr = legs[i].activity!;
-    if (prev.duration === null) {
-      continue;
-    }
-    const prevEnd = new Date(new Date(prev.date).getTime() + prev.duration * 1000);
-    const currStart = new Date(curr.date);
-    const gapMin = Math.round((currStart.getTime() - prevEnd.getTime()) / 60000);
-    const label = `${TYPE_FR[legs[i - 1].type]} → ${TYPE_FR[legs[i].type]}`;
-    if (gapMin >= 0 && gapMin <= 120) {
-      transitions.push(
-        `${label} : ~${gapMin} min entre la fin (${fmtClock(prevEnd)}) et le départ suivant (${fmtClock(currStart)}).`,
-      );
-    } else {
-      transitions.push(
-        `${label} : transition non déterminable de façon fiable (sports peut-être non enregistrés à la suite).`,
-      );
-    }
-  }
-
-  const prompt = `${seuils ? `Seuils de l'athlète : ${seuils}.\n\n` : ''}# Brick : ${legs.length} sports enchaînés (${legs.map((l) => TYPE_FR[l.type] ?? l.type).join(' → ')})
+  const transitions = describeBrickTransitions(legs);
+  const prompt = `${formatAthleteThresholdsLine(profile)}# Brick : ${legs.length} sports enchaînés (${legs.map((l) => TYPE_FR[l.type] ?? l.type).join(' → ')})
 
 ${legBlocks.join('\n\n')}
 

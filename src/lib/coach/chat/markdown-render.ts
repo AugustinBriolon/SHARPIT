@@ -71,6 +71,76 @@ function nextContentLine(lines: string[], from: number): string | null {
  * l'identique. Les listes espacées, les citations et les blocs de code restent
  * entiers : couper une liste en deux relancerait la numérotation.
  */
+function findUnclosedFence(source: string): string | null {
+  let openFence: string | null = null;
+  for (const line of source.split('\n')) {
+    const marker = fenceMarker(line);
+    if (marker === null) {
+      continue;
+    }
+    if (openFence === null) {
+      openFence = marker;
+    } else if (marker[0] === openFence[0] && marker.length >= openFence.length) {
+      openFence = null;
+    }
+  }
+  return openFence;
+}
+
+function closeInlineMarkdownTokens(text: string): string {
+  let cleaned = text.replace(/!?\[[^\]\n]*\]\([^)\n]*$/, '').replace(/!?\[[^\]\n]*$/, '');
+  const lastLine = cleaned.slice(cleaned.lastIndexOf('\n') + 1);
+  if ((lastLine.match(/`/g)?.length ?? 0) % 2 === 1) {
+    cleaned += '`';
+  }
+  if ((cleaned.match(/\*\*/g)?.length ?? 0) % 2 === 1) {
+    cleaned += '**';
+  }
+  return cleaned;
+}
+
+function processMarkdownBlankLine(input: {
+  lines: string[];
+  index: number;
+  kind: BlockKind;
+  flush: () => void;
+  buffer: string[];
+}): boolean {
+  const next = nextContentLine(input.lines, input.index + 1);
+  if (next === null) {
+    return true;
+  }
+  if (continuesBlock(input.kind, next)) {
+    input.buffer.push('');
+    return false;
+  }
+  input.flush();
+  return false;
+}
+
+function appendMarkdownLine(input: {
+  line: string;
+  openFence: string | null;
+  buffer: string[];
+  kind: BlockKind;
+}): { openFence: string | null; kind: BlockKind } {
+  if (input.openFence !== null) {
+    input.buffer.push(input.line);
+    const marker = fenceMarker(input.line);
+    if (marker && closesFence(input.line, input.openFence)) {
+      return { openFence: null, kind: input.kind };
+    }
+    return { openFence: input.openFence, kind: input.kind };
+  }
+
+  let { kind } = input;
+  if (input.buffer.length === 0) {
+    kind = lineKind(input.line);
+  }
+  input.buffer.push(input.line);
+  return { openFence: fenceMarker(input.line), kind };
+}
+
 export function splitMarkdownBlocks(source: string): string[] {
   const trimmed = source.trim();
   if (!trimmed) {
@@ -99,31 +169,18 @@ export function splitMarkdownBlocks(source: string): string[] {
     const line = lines[index]!;
 
     if (openFence !== null) {
-      buffer.push(line);
-      if (closesFence(line, openFence)) {
-        openFence = null;
-      }
+      ({ openFence, kind } = appendMarkdownLine({ line, openFence, buffer, kind }));
       continue;
     }
 
     if (line.trim() === '') {
-      const next = nextContentLine(lines, index + 1);
-      if (next === null) {
+      if (processMarkdownBlankLine({ lines, index, kind, flush, buffer })) {
         break;
       }
-      if (continuesBlock(kind, next)) {
-        buffer.push('');
-        continue;
-      }
-      flush();
       continue;
     }
 
-    if (buffer.length === 0) {
-      kind = lineKind(line);
-    }
-    buffer.push(line);
-    openFence = fenceMarker(line);
+    ({ openFence, kind } = appendMarkdownLine({ line, openFence, buffer, kind }));
   }
 
   flush();
@@ -139,33 +196,12 @@ export function closeOpenMarkdown(source: string): string {
     return source;
   }
 
-  let openFence: string | null = null;
-  for (const line of source.split('\n')) {
-    const marker = fenceMarker(line);
-    if (marker === null) {
-      continue;
-    }
-    if (openFence === null) {
-      openFence = marker;
-    } else if (marker[0] === openFence[0] && marker.length >= openFence.length) {
-      openFence = null;
-    }
-  }
+  const openFence = findUnclosedFence(source);
   if (openFence !== null) {
     return `${source}${source.endsWith('\n') ? '' : '\n'}${openFence}`;
   }
 
-  let text = source.replace(/!?\[[^\]\n]*\]\([^)\n]*$/, '').replace(/!?\[[^\]\n]*$/, '');
-
-  const lastLine = text.slice(text.lastIndexOf('\n') + 1);
-  if ((lastLine.match(/`/g)?.length ?? 0) % 2 === 1) {
-    text += '`';
-  }
-  if ((text.match(/\*\*/g)?.length ?? 0) % 2 === 1) {
-    text += '**';
-  }
-
-  return text;
+  return closeInlineMarkdownTokens(source);
 }
 
 /**

@@ -86,6 +86,34 @@ export function shouldAnalyzeBikeWorkBlocks(input: {
  * Gaps ≤ MERGE_GAP_SEC inside work are merged; short spikes (< MIN_BLOCK_SEC) are dropped from block list
  * but still counted in totalWorkSec via sample-level floor.
  */
+function computeWorkSampleStats(watts: number[], workFloorWatts: number) {
+  let workSum = 0;
+  let workCount = 0;
+  for (let i = 0; i < watts.length; i++) {
+    const w = watts[i] ?? 0;
+    if (w >= workFloorWatts) {
+      workSum += w;
+      workCount += 1;
+    }
+  }
+  const workAvgWatts = workCount > 0 ? Math.round(workSum / workCount) : null;
+  return { workCount, workAvgWatts };
+}
+
+function resolveBikeWorkThresholds(input: {
+  intensity: SessionIntensity | null;
+  description: string | null;
+  ftpW: number;
+}) {
+  const prescription = parsePrescriptionTargets(input.description);
+  const targetPctFtp =
+    prescription.ftpPct ?? (input.intensity ? (DEFAULT_TARGET_PCT[input.intensity] ?? null) : null);
+  const floorPctFtp = resolveFloorPct(input.intensity, targetPctFtp);
+  const workFloorWatts = Math.round((floorPctFtp / 100) * input.ftpW);
+  const targetWatts = targetPctFtp !== null ? Math.round((targetPctFtp / 100) * input.ftpW) : null;
+  return { prescription, targetPctFtp, floorPctFtp, workFloorWatts, targetWatts };
+}
+
 export function summarizeBikeWorkBlocks(input: {
   watts: number[];
   ftpW: number;
@@ -100,27 +128,12 @@ export function summarizeBikeWorkBlocks(input: {
     return null;
   }
 
-  const prescription = parsePrescriptionTargets(description);
-  const targetPctFtp =
-    prescription.ftpPct ?? (intensity ? (DEFAULT_TARGET_PCT[intensity] ?? null) : null);
-  const floorPctFtp = resolveFloorPct(intensity, targetPctFtp);
-  const workFloorWatts = Math.round((floorPctFtp / 100) * ftpW);
-  const targetWatts = targetPctFtp !== null ? Math.round((targetPctFtp / 100) * ftpW) : null;
+  const { prescription, targetPctFtp, floorPctFtp, workFloorWatts, targetWatts } =
+    resolveBikeWorkThresholds({ intensity, description, ftpW });
 
   const high = markHighSamples(watts, workFloorWatts);
   const blocks = extractBlocks(watts, high, ftpW);
-
-  let workSum = 0;
-  let workCount = 0;
-  for (let i = 0; i < watts.length; i++) {
-    const w = watts[i] ?? 0;
-    if (w >= workFloorWatts) {
-      workSum += w;
-      workCount += 1;
-    }
-  }
-
-  const workAvgWatts = workCount > 0 ? Math.round(workSum / workCount) : null;
+  const { workCount, workAvgWatts } = computeWorkSampleStats(watts, workFloorWatts);
 
   return {
     ftpW,
@@ -200,7 +213,7 @@ function markHighSamples(watts: number[], floorWatts: number): boolean[] {
   return high;
 }
 
-function extractBlocks(watts: number[], high: boolean[], ftpW: number): WorkBlock[] {
+function collectHighSegments(high: boolean[]): Array<{ start: number; end: number }> {
   const raw: { start: number; end: number }[] = [];
   let i = 0;
   while (i < high.length) {
@@ -216,8 +229,10 @@ function extractBlocks(watts: number[], high: boolean[], ftpW: number): WorkBloc
     }
     raw.push({ start, end: i - 1 });
   }
+  return raw;
+}
 
-  // Merge gaps ≤ MERGE_GAP_SEC (brief drops inside an interval).
+function mergeHighSegments(raw: Array<{ start: number; end: number }>) {
   const merged: { start: number; end: number }[] = [];
   for (const seg of raw) {
     const prev = merged[merged.length - 1];
@@ -227,33 +242,48 @@ function extractBlocks(watts: number[], high: boolean[], ftpW: number): WorkBloc
       merged.push({ ...seg });
     }
   }
+  return merged;
+}
 
+function workBlockFromSegment(
+  watts: number[],
+  seg: { start: number; end: number },
+  ftpW: number,
+): WorkBlock | null {
+  const durationSec = seg.end - seg.start + 1;
+  if (durationSec < MIN_BLOCK_SEC) {
+    return null;
+  }
+  let sum = 0;
+  let count = 0;
+  for (let t = seg.start; t <= seg.end; t++) {
+    const w = watts[t] ?? 0;
+    if (w > 0) {
+      sum += w;
+      count += 1;
+    }
+  }
+  if (count === 0) {
+    return null;
+  }
+  const avgWatts = Math.round(sum / count);
+  return {
+    startSec: seg.start,
+    endSec: seg.end,
+    durationSec,
+    avgWatts,
+    pctFtp: Math.round((avgWatts / ftpW) * 100),
+  };
+}
+
+function extractBlocks(watts: number[], high: boolean[], ftpW: number): WorkBlock[] {
+  const merged = mergeHighSegments(collectHighSegments(high));
   const blocks: WorkBlock[] = [];
   for (const seg of merged) {
-    const durationSec = seg.end - seg.start + 1;
-    if (durationSec < MIN_BLOCK_SEC) {
-      continue;
+    const block = workBlockFromSegment(watts, seg, ftpW);
+    if (block) {
+      blocks.push(block);
     }
-    let sum = 0;
-    let count = 0;
-    for (let t = seg.start; t <= seg.end; t++) {
-      const w = watts[t] ?? 0;
-      if (w > 0) {
-        sum += w;
-        count += 1;
-      }
-    }
-    if (count === 0) {
-      continue;
-    }
-    const avgWatts = Math.round(sum / count);
-    blocks.push({
-      startSec: seg.start,
-      endSec: seg.end,
-      durationSec,
-      avgWatts,
-      pctFtp: Math.round((avgWatts / ftpW) * 100),
-    });
   }
   return blocks;
 }

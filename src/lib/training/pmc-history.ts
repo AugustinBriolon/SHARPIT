@@ -71,16 +71,20 @@ export interface CoreSessionTss {
  *
  * Either way the day falls back wholesale, which is at least one consistent scale.
  */
-export function aggregateDailyTssPreferringCore(
+function countActivitiesByDay(
   activities: readonly ActivityForAnalytics[],
-  coreSessions: readonly CoreSessionTss[],
 ): Map<string, number> {
   const activityCountByDay = new Map<string, number>();
   for (const activity of activities) {
     const key = toTrainingDayId(activity.date);
     activityCountByDay.set(key, (activityCountByDay.get(key) ?? 0) + 1);
   }
+  return activityCountByDay;
+}
 
+function sumCoreSessionsByDay(
+  coreSessions: readonly CoreSessionTss[],
+): { coreTssByDay: Map<string, number>; coreCountByDay: Map<string, number> } {
   const coreTssByDay = new Map<string, number>();
   const coreCountByDay = new Map<string, number>();
   for (const session of coreSessions) {
@@ -91,9 +95,16 @@ export function aggregateDailyTssPreferringCore(
     coreTssByDay.set(key, (coreTssByDay.get(key) ?? 0) + session.tssScore);
     coreCountByDay.set(key, (coreCountByDay.get(key) ?? 0) + 1);
   }
+  return { coreTssByDay, coreCountByDay };
+}
 
-  const fallback = aggregateDailyTss(activities);
-  const dailyTss = new Map(fallback);
+export function aggregateDailyTssPreferringCore(
+  activities: readonly ActivityForAnalytics[],
+  coreSessions: readonly CoreSessionTss[],
+): Map<string, number> {
+  const activityCountByDay = countActivitiesByDay(activities);
+  const { coreTssByDay, coreCountByDay } = sumCoreSessionsByDay(coreSessions);
+  const dailyTss = new Map(aggregateDailyTss(activities));
 
   for (const [day, coreTss] of coreTssByDay) {
     if (coreCountByDay.get(day) === activityCountByDay.get(day)) {
@@ -129,15 +140,21 @@ export interface ComputeAthletePmcOptions {
  * Returns full-precision values. Rest days between activities are included, so
  * the series is continuous and CTL decays across gaps.
  */
+function resolveDailyTss(
+  activities: readonly ActivityForAnalytics[],
+  coreSessions: readonly CoreSessionTss[] | undefined,
+): Map<string, number> {
+  return coreSessions
+    ? aggregateDailyTssPreferringCore(activities, coreSessions)
+    : aggregateDailyTss(activities);
+}
+
 export function computeAthletePmc(
   activities: readonly ActivityForAnalytics[],
   options?: ComputeAthletePmcOptions,
 ): PmcDayPoint[] {
   const to = startOfDay(options?.refDate ?? new Date());
-  const dailyTss = options?.coreSessions
-    ? aggregateDailyTssPreferringCore(activities, options.coreSessions)
-    : aggregateDailyTss(activities);
-
+  const dailyTss = resolveDailyTss(activities, options?.coreSessions);
   const from = options?.from ? startOfDay(options.from) : earliestDay(activities);
   if (!from) {
     return [];

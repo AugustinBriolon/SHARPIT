@@ -29,6 +29,31 @@ export function scorePlannedActivityMatch(
   return score;
 }
 
+function formatDayDeltaLabel(dayDiff: number): string {
+  if (dayDiff === 1) {
+    return 'J+1';
+  }
+  if (dayDiff === -1) {
+    return 'J−1';
+  }
+  return `J${dayDiff > 0 ? '+' : ''}${dayDiff}`;
+}
+
+function formatSameDayDurationLabel(
+  session: { durationMin: number | null },
+  activity: { duration: number | null },
+): string {
+  if (session.durationMin === null || activity.duration === null || activity.duration <= 0) {
+    return 'Même jour';
+  }
+  const plannedSec = session.durationMin * 60;
+  const deltaMin = Math.round(Math.abs(plannedSec - activity.duration) / 60);
+  if (deltaMin === 0) {
+    return 'Même jour · durée identique';
+  }
+  return `Même jour · Δ ${deltaMin} min`;
+}
+
 /** Instrument label for the activity picker — date delta and duration gap, not opaque tiers. */
 export function formatActivityMatchLabel(
   session: { date: Date; durationMin: number | null },
@@ -37,23 +62,8 @@ export function formatActivityMatchLabel(
   const dayDiff = differenceInCalendarDays(startOfDay(activity.date), startOfDay(session.date));
 
   if (dayDiff !== 0) {
-    if (dayDiff === 1) {
-      return 'J+1';
-    }
-    if (dayDiff === -1) {
-      return 'J−1';
-    }
-    return `J${dayDiff > 0 ? '+' : ''}${dayDiff}`;
+    return formatDayDeltaLabel(dayDiff);
   }
 
-  if (session.durationMin !== null && activity.duration !== null && activity.duration > 0) {
-    const plannedSec = session.durationMin * 60;
-    const deltaMin = Math.round(Math.abs(plannedSec - activity.duration) / 60);
-    if (deltaMin === 0) {
-      return 'Même jour · durée identique';
-    }
-    return `Même jour · Δ ${deltaMin} min`;
-  }
-
-  return 'Même jour';
+  return formatSameDayDurationLabel(session, activity);
 }

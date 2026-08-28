@@ -440,6 +440,25 @@ const RISK_RANK: Record<string, number> = {
   CRITICAL: 3,
 };
 
+function resolveDeviationRiskLevel(
+  worst: number,
+  accumulating: boolean,
+): DeviationRiskLevel {
+  if (worst >= 3 || (worst >= 2 && accumulating)) {
+    return 'warning';
+  }
+  if (worst >= 2 || (worst >= 1 && accumulating)) {
+    return 'caution';
+  }
+  return 'safe';
+}
+
+const DEVIATION_RISK_MESSAGE: Record<DeviationRiskLevel, string> = {
+  warning: "Forcer davantage risque le surmenage — la fatigue s'accumule déjà.",
+  caution: 'Dépasser la prescription pourrait retarder ta récupération.',
+  safe: '',
+};
+
 export function mapDeviationRisk(
   overreachingRisk: string,
   functionalOverreachingRisk: string,
@@ -450,20 +469,8 @@ export function mapDeviationRisk(
     RISK_RANK[functionalOverreachingRisk] ?? 0,
   );
   const accumulating = fatigueTrajectory === 'ACCUMULATING' || fatigueTrajectory === 'ACCELERATING';
-
-  if (worst >= 3 || (worst >= 2 && accumulating)) {
-    return {
-      level: 'warning',
-      message: "Forcer davantage risque le surmenage — la fatigue s'accumule déjà.",
-    };
-  }
-  if (worst >= 2 || (worst >= 1 && accumulating)) {
-    return {
-      level: 'caution',
-      message: 'Dépasser la prescription pourrait retarder ta récupération.',
-    };
-  }
-  return { level: 'safe', message: '' };
+  const level = resolveDeviationRiskLevel(worst, accumulating);
+  return { level, message: DEVIATION_RISK_MESSAGE[level] };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -555,6 +562,26 @@ export function mapRecoveryProjection(
   return '';
 }
 
+function fatigueProjectionForReduce(trajectory: FatigueTrajectory): string {
+  if (trajectory === 'ACCELERATING') {
+    return 'Réduire la charge maintenant prévient le surmenage non fonctionnel.';
+  }
+  return "Lever le pied aujourd'hui évite que la fatigue ne s'aggrave.";
+}
+
+function fatigueProjectionForBuild(
+  trajectory: FatigueTrajectory,
+  capacity: TrainingCapacity,
+): string {
+  if (trajectory === 'RESOLVING') {
+    return "La fatigue se dissipe — une séance bien dosée maintenant maximise l'adaptation.";
+  }
+  if (capacity === 'FULL') {
+    return "La fatigue est gérable — pleine capacité d'entraînement disponible.";
+  }
+  return "Fatigue gérable — capacité d'entraînement dans la plage normale.";
+}
+
 export function mapFatigueProjection(
   verdict: FatigueDecisionVerdict,
   trajectory: FatigueTrajectory,
@@ -564,22 +591,13 @@ export function mapFatigueProjection(
     return 'Le repos permet à la fatigue accumulée de se dissiper complètement.';
   }
   if (verdict === 'REDUCE') {
-    if (trajectory === 'ACCELERATING') {
-      return 'Réduire la charge maintenant prévient le surmenage non fonctionnel.';
-    }
-    return "Lever le pied aujourd'hui évite que la fatigue ne s'aggrave.";
+    return fatigueProjectionForReduce(trajectory);
   }
   if (verdict === 'MAINTAIN') {
     return 'La fatigue restera dans la plage fonctionnelle.';
   }
   if (verdict === 'BUILD') {
-    if (trajectory === 'RESOLVING') {
-      return "La fatigue se dissipe — une séance bien dosée maintenant maximise l'adaptation.";
-    }
-    if (capacity === 'FULL') {
-      return "La fatigue est gérable — pleine capacité d'entraînement disponible.";
-    }
-    return "Fatigue gérable — capacité d'entraînement dans la plage normale.";
+    return fatigueProjectionForBuild(trajectory, capacity);
   }
   return '';
 }

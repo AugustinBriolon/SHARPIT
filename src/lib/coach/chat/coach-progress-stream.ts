@@ -67,6 +67,28 @@ export const COACH_PROGRESS_HEADERS = {
  * Rejects on an `error` event, and on a stream that ends without either — a
  * truncated generation must surface as a failure, not as a silent empty result.
  */
+function dispatchCoachProgressEvent<TResult, TPartial>(
+  event: ReturnType<typeof parseCoachProgressChunk<TResult, TPartial>>['events'][number],
+  handlers: {
+    onReasoning?: (delta: string) => void;
+    onPartial?: (value: TPartial) => void;
+  },
+  result: { value: TResult } | null,
+): { value: TResult } | null {
+  switch (event.type) {
+    case 'reasoning':
+      handlers.onReasoning?.(event.delta);
+      return result;
+    case 'partial':
+      handlers.onPartial?.(event.value);
+      return result;
+    case 'result':
+      return { value: event.value };
+    case 'error':
+      throw new Error(event.message);
+  }
+}
+
 export async function consumeCoachProgressStream<TResult, TPartial>(
   response: Response,
   handlers: {
@@ -94,19 +116,7 @@ export async function consumeCoachProgressStream<TResult, TPartial>(
     buffer = parsed.rest;
 
     for (const event of parsed.events) {
-      switch (event.type) {
-        case 'reasoning':
-          handlers.onReasoning?.(event.delta);
-          break;
-        case 'partial':
-          handlers.onPartial?.(event.value);
-          break;
-        case 'result':
-          result = { value: event.value };
-          break;
-        case 'error':
-          throw new Error(event.message);
-      }
+      result = dispatchCoachProgressEvent(event, handlers, result);
     }
   }
 

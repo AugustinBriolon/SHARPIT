@@ -87,16 +87,21 @@ export function presetsInScope(selected: number[], presets: readonly number[]): 
 
 // ─── Distance helpers ─────────────────────────────────────────────────────────
 
-export function getActivityDistanceKm(activity: ActivityForHistoryFilters): number | null {
-  if (activity.type === ActivityType.RUN) {
+const ACTIVITY_DISTANCE_READERS: Partial<
+  Record<ActivityType, (activity: ActivityForHistoryFilters) => number | null>
+> = {
+  [ActivityType.RUN]: (activity) => {
     const d = activity.runMetrics?.distanceM;
     return d !== null && d > 0 ? d / 1000 : null;
-  }
-  if (activity.type === ActivityType.SWIM) {
+  },
+  [ActivityType.SWIM]: (activity) => {
     const d = activity.swimMetrics?.distanceM;
     return d !== null && d > 0 ? d / 1000 : null;
-  }
-  return null;
+  },
+};
+
+export function getActivityDistanceKm(activity: ActivityForHistoryFilters): number | null {
+  return ACTIVITY_DISTANCE_READERS[activity.type]?.(activity) ?? null;
 }
 
 // ─── Parse / serialize ────────────────────────────────────────────────────────
@@ -179,6 +184,76 @@ export function serializeTrainingHistoryFilters(filters: TrainingHistoryFilters)
 
 // ─── Apply ────────────────────────────────────────────────────────────────────
 
+function activityMatchesPeriod(
+  activity: ActivityForHistoryFilters,
+  since: Date | null,
+  until: Date | null,
+): boolean {
+  const date = new Date(activity.date);
+  if (since && date < since) {
+    return false;
+  }
+  if (until && date > until) {
+    return false;
+  }
+  return true;
+}
+
+function activityMatchesDistance(
+  activity: ActivityForHistoryFilters,
+  filters: TrainingHistoryFilters,
+): boolean {
+  const distanceKm = getActivityDistanceKm(activity);
+  if (distanceKm === null) {
+    return true;
+  }
+  if (filters.distanceMinKm !== null && distanceKm < filters.distanceMinKm) {
+    return false;
+  }
+  if (filters.distanceMaxKm !== null && distanceKm > filters.distanceMaxKm) {
+    return false;
+  }
+  return true;
+}
+
+function activityMatchesDuration(
+  activity: ActivityForHistoryFilters,
+  filters: TrainingHistoryFilters,
+): boolean {
+  const durationMin = activity.duration !== null ? activity.duration / 60 : null;
+  if (
+    filters.durationMinMin !== null &&
+    (durationMin === null || durationMin < filters.durationMinMin)
+  ) {
+    return false;
+  }
+  if (
+    filters.durationMaxMin !== null &&
+    (durationMin === null || durationMin > filters.durationMaxMin)
+  ) {
+    return false;
+  }
+  return true;
+}
+
+function activityMatchesTrainingHistoryFilters(
+  activity: ActivityForHistoryFilters,
+  filters: TrainingHistoryFilters,
+  since: Date | null,
+  until: Date | null,
+): boolean {
+  if (filters.types.length > 0 && !filters.types.includes(activity.type)) {
+    return false;
+  }
+  if (!activityMatchesPeriod(activity, since, until)) {
+    return false;
+  }
+  if (!activityMatchesDistance(activity, filters)) {
+    return false;
+  }
+  return activityMatchesDuration(activity, filters);
+}
+
 export function applyTrainingHistoryFilters<T extends ActivityForHistoryFilters>(
   activities: T[],
   filters: TrainingHistoryFilters,
@@ -189,51 +264,9 @@ export function applyTrainingHistoryFilters<T extends ActivityForHistoryFilters>
   const until =
     filters.periodMinDays !== null ? startOfDay(subDays(now, filters.periodMinDays)) : null;
 
-  return activities.filter((activity) => {
-    // Type — OR logic: activity must match at least one selected type
-    if (filters.types.length > 0 && !filters.types.includes(activity.type)) {
-      return false;
-    }
-
-    // Period
-    const date = new Date(activity.date);
-    if (since && date < since) {
-      return false;
-    }
-    if (until && date > until) {
-      return false;
-    }
-
-    // activity.duration is stored in SECONDS — convert to minutes for filter comparison
-    const durationMin = activity.duration !== null ? activity.duration / 60 : null;
-
-    // Distance — only filters activities that track distance; others pass through
-    const distanceKm = getActivityDistanceKm(activity);
-    if (distanceKm !== null) {
-      if (filters.distanceMinKm !== null && distanceKm < filters.distanceMinKm) {
-        return false;
-      }
-      if (filters.distanceMaxKm !== null && distanceKm > filters.distanceMaxKm) {
-        return false;
-      }
-    }
-
-    // Duration (durationMin already in minutes, converted above)
-    if (
-      filters.durationMinMin !== null &&
-      (durationMin === null || durationMin < filters.durationMinMin)
-    ) {
-      return false;
-    }
-    if (
-      filters.durationMaxMin !== null &&
-      (durationMin === null || durationMin > filters.durationMaxMin)
-    ) {
-      return false;
-    }
-
-    return true;
-  });
+  return activities.filter((activity) =>
+    activityMatchesTrainingHistoryFilters(activity, filters, since, until),
+  );
 }
 
 // ─── Preset toggle helper ─────────────────────────────────────────────────────
@@ -285,19 +318,22 @@ export function formatTrainingHistoryFilterStatus(count: number): string {
   return `${count} activités`;
 }
 
+const DIMENSION_SELECTION_COUNTERS: Record<
+  'types' | 'period' | 'distance' | 'duration',
+  (filters: TrainingHistoryFilters) => number
+> = {
+  types: (filters) => filters.types.length,
+  period: (filters) => (filters.periodMaxDays !== null ? 1 : 0),
+  distance: (filters) =>
+    filters.distanceMinKm !== null || filters.distanceMaxKm !== null ? 1 : 0,
+  duration: (filters) =>
+    filters.durationMinMin !== null || filters.durationMaxMin !== null ? 1 : 0,
+};
+
 /** Count active filters within a single dimension (for sub-menu badges). */
 export function countDimensionSelections(
   filters: TrainingHistoryFilters,
   dimension: 'types' | 'period' | 'distance' | 'duration',
 ): number {
-  switch (dimension) {
-    case 'types':
-      return filters.types.length;
-    case 'period':
-      return filters.periodMaxDays !== null ? 1 : 0;
-    case 'distance':
-      return filters.distanceMinKm !== null || filters.distanceMaxKm !== null ? 1 : 0;
-    case 'duration':
-      return filters.durationMinMin !== null || filters.durationMaxMin !== null ? 1 : 0;
-  }
+  return DIMENSION_SELECTION_COUNTERS[dimension](filters);
 }

@@ -257,20 +257,51 @@ export interface GarminHeartRateZoneRow {
  * Picks profile max HR from Garmin heart-rate zones.
  * Prefers DEFAULT, then RUNNING, then the first row with a usable value.
  */
+const PREFERRED_HR_ZONE_SPORTS = ['DEFAULT', 'RUNNING'] as const;
+
+function zoneMaxHeartRate(row: GarminHeartRateZoneRow | undefined): number | null {
+  const value = row?.maxHeartRateUsed;
+  return typeof value === 'number' && Number.isFinite(value) && value > 0 ? Math.round(value) : null;
+}
+
 export function pickMaxHeartRateFromZones(
   zones: GarminHeartRateZoneRow[] | null | undefined,
 ): number | null {
   if (!Array.isArray(zones) || zones.length === 0) {
     return null;
   }
-  const preferred =
-    zones.find((z) => z.sport === 'DEFAULT') ??
-    zones.find((z) => z.sport === 'RUNNING') ??
-    zones[0];
-  const value = preferred?.maxHeartRateUsed;
-  return typeof value === 'number' && Number.isFinite(value) && value > 0
-    ? Math.round(value)
-    : null;
+  for (const sport of PREFERRED_HR_ZONE_SPORTS) {
+    const fromPreferred = zoneMaxHeartRate(zones.find((z) => z.sport === sport));
+    if (fromPreferred !== null) {
+      return fromPreferred;
+    }
+  }
+  return zoneMaxHeartRate(zones[0]);
+}
+
+function runThresholdPaceSecPerKm(
+  rawSpeed: unknown,
+  num: (v: unknown) => number | null,
+): number | null {
+  let speed = num(rawSpeed);
+  if (speed === null) {
+    return null;
+  }
+  if (speed < 1.5) {
+    speed *= 10;
+  }
+  return speed > 0 ? Math.round(1000 / speed) : null;
+}
+
+function applyUserSettingsThresholds(
+  userData: Record<string, unknown>,
+  num: (v: unknown) => number | null,
+  result: GarminAthleteThresholds,
+): void {
+  result.lthr = num(userData.lactateThresholdHeartRate);
+  result.vo2maxRunning = num(userData.vo2MaxRunning);
+  result.vo2maxCycling = num(userData.vo2MaxCycling);
+  result.runThresholdPaceSecPerKm = runThresholdPaceSecPerKm(userData.lactateThresholdSpeed, num);
 }
 
 /**
@@ -301,20 +332,7 @@ export async function fetchAthleteThresholds(client: GCClient): Promise<GarminAt
     )) as { userData?: Record<string, unknown> } | null;
     const u = settings?.userData;
     if (u) {
-      result.lthr = num(u.lactateThresholdHeartRate);
-      result.vo2maxRunning = num(u.vo2MaxRunning);
-      result.vo2maxCycling = num(u.vo2MaxCycling);
-
-      // lactateThresholdSpeed : m/s, mais Garmin la renvoie parfois divisée par
-      // 10. On normalise : aucune allure seuil de course n'est < 1,5 m/s
-      // (~11 min/km), donc on remet à l'échelle dans ce cas.
-      let speed = num(u.lactateThresholdSpeed);
-      if (speed !== null) {
-        if (speed < 1.5) {
-          speed *= 10;
-        }
-        result.runThresholdPaceSecPerKm = speed > 0 ? Math.round(1000 / speed) : null;
-      }
+      applyUserSettingsThresholds(u, num, result);
     }
   } catch (error) {
     fail('user-settings', error);
@@ -403,63 +421,83 @@ async function fetchSleepDuration(client: GCClient, date: Date): Promise<number 
   }
 }
 
+type GarminSleepDto = {
+  sleepTimeSeconds?: number;
+  napTimeSeconds?: number;
+  deepSleepSeconds?: number;
+  lightSleepSeconds?: number;
+  remSleepSeconds?: number;
+  awakeSleepSeconds?: number;
+  sleepStartTimestampLocal?: number;
+  sleepEndTimestampLocal?: number;
+  averageRespirationValue?: number;
+  avgSleepStress?: number;
+  sleepScoreFeedback?: string;
+  sleepScores?: { overall?: { value?: number } };
+};
+
+async function parseSleepDto(
+  dto: GarminSleepDto,
+  client: GCClient,
+  date: Date,
+): Promise<GarminSleepDetail> {
+  const num = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) && v > 0 ? v : null);
+
+  const deep = secToMin(dto.deepSleepSeconds);
+  const light = secToMin(dto.lightSleepSeconds);
+  const rem = secToMin(dto.remSleepSeconds);
+  const awake = secToMin(dto.awakeSleepSeconds);
+  const sleepMinutes = await resolveSleepMinutes({ dto, deep, light, rem, client, date });
+  const napMinutesRaw = secToMin(dto.napTimeSeconds);
+  const napMinutes = napMinutesRaw !== null && napMinutesRaw > 0 ? napMinutesRaw : null;
+
+  return {
+    sleepMinutes,
+    napMinutes,
+    sleepScore: num(dto.sleepScores?.overall?.value),
+    sleepDeepMin: deep,
+    sleepLightMin: light,
+    sleepRemMin: rem,
+    sleepAwakeMin: awake,
+    sleepBedtimeMin: localMinutesOfDay(dto.sleepStartTimestampLocal),
+    sleepWakeMin: localMinutesOfDay(dto.sleepEndTimestampLocal),
+    sleepRespiration: num(dto.averageRespirationValue),
+    sleepAvgStress: num(dto.avgSleepStress),
+    sleepScoreFeedback:
+      typeof dto.sleepScoreFeedback === 'string' ? dto.sleepScoreFeedback : null,
+  };
+}
+
+type ResolveSleepMinutesInput = {
+  dto: { sleepTimeSeconds?: number };
+  deep: number | null;
+  light: number | null;
+  rem: number | null;
+  client: GCClient;
+  date: Date;
+};
+
+async function resolveSleepMinutes(input: ResolveSleepMinutesInput): Promise<number | null> {
+  const { dto, deep, light, rem, client, date } = input;
+  const sleepMinutes = secToMin(dto.sleepTimeSeconds);
+  if (sleepMinutes !== null) {
+    return sleepMinutes;
+  }
+  const sum = (deep ?? 0) + (light ?? 0) + (rem ?? 0);
+  return sum > 0 ? sum : fetchSleepDuration(client, date);
+}
+
 async function fetchSleepDetail(client: GCClient, date: Date): Promise<GarminSleepDetail> {
   try {
-    const data = (await client.getSleepData(date)) as {
-      dailySleepDTO?: {
-        sleepTimeSeconds?: number;
-        napTimeSeconds?: number;
-        deepSleepSeconds?: number;
-        lightSleepSeconds?: number;
-        remSleepSeconds?: number;
-        awakeSleepSeconds?: number;
-        sleepStartTimestampLocal?: number;
-        sleepEndTimestampLocal?: number;
-        averageRespirationValue?: number;
-        avgSleepStress?: number;
-        sleepScoreFeedback?: string;
-        sleepScores?: { overall?: { value?: number } };
-      };
-    } | null;
+    const data = (await client.getSleepData(date)) as { dailySleepDTO?: GarminSleepDto } | null;
 
     const dto = data?.dailySleepDTO;
     if (!dto) {
-      // Fallback : au moins la durée totale.
       const minutes = await fetchSleepDuration(client, date);
       return { ...EMPTY_SLEEP, sleepMinutes: minutes };
     }
 
-    const num = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) && v > 0 ? v : null);
-
-    const deep = secToMin(dto.deepSleepSeconds);
-    const light = secToMin(dto.lightSleepSeconds);
-    const rem = secToMin(dto.remSleepSeconds);
-    const awake = secToMin(dto.awakeSleepSeconds);
-
-    let sleepMinutes = secToMin(dto.sleepTimeSeconds);
-    if (sleepMinutes === null) {
-      const sum = (deep ?? 0) + (light ?? 0) + (rem ?? 0);
-      sleepMinutes = sum > 0 ? sum : await fetchSleepDuration(client, date);
-    }
-
-    const napMinutesRaw = secToMin(dto.napTimeSeconds);
-    const napMinutes = napMinutesRaw !== null && napMinutesRaw > 0 ? napMinutesRaw : null;
-
-    return {
-      sleepMinutes,
-      napMinutes,
-      sleepScore: num(dto.sleepScores?.overall?.value),
-      sleepDeepMin: deep,
-      sleepLightMin: light,
-      sleepRemMin: rem,
-      sleepAwakeMin: awake,
-      sleepBedtimeMin: localMinutesOfDay(dto.sleepStartTimestampLocal),
-      sleepWakeMin: localMinutesOfDay(dto.sleepEndTimestampLocal),
-      sleepRespiration: num(dto.averageRespirationValue),
-      sleepAvgStress: num(dto.avgSleepStress),
-      sleepScoreFeedback:
-        typeof dto.sleepScoreFeedback === 'string' ? dto.sleepScoreFeedback : null,
-    };
+    return parseSleepDto(dto, client, date);
   } catch {
     const minutes = await fetchSleepDuration(client, date);
     return { ...EMPTY_SLEEP, sleepMinutes: minutes };
@@ -483,6 +521,27 @@ async function fetchRestingHr(client: GCClient, date: Date): Promise<number | nu
  * connectée ou d'une saisie manuelle, donc il n'existe que sur certains jours.
  * Retourne une map clé "yyyy-MM-dd" -> poids en kg (pesées réelles uniquement).
  */
+function weightDayKey(day: {
+  summaryDate?: string;
+  latestWeight?: { weight?: number | null; calendarDate?: string };
+}): string | undefined {
+  return day?.summaryDate ?? day?.latestWeight?.calendarDate;
+}
+
+function addWeightDayToMap(
+  map: Map<string, number>,
+  day: {
+    summaryDate?: string;
+    latestWeight?: { weight?: number | null; calendarDate?: string };
+  },
+): void {
+  const grams = day?.latestWeight?.weight;
+  const key = weightDayKey(day);
+  if (grams !== null && !Number.isNaN(grams) && key) {
+    map.set(key, Number((grams / 1000).toFixed(1)));
+  }
+}
+
 export async function fetchWeightRange(
   client: GCClient,
   start: Date,
@@ -502,11 +561,7 @@ export async function fetchWeightRange(
     } | null;
 
     for (const day of data?.dailyWeightSummaries ?? []) {
-      const grams = day?.latestWeight?.weight;
-      const key = day?.summaryDate ?? day?.latestWeight?.calendarDate;
-      if (grams !== null && !Number.isNaN(grams) && key) {
-        map.set(key, Number((grams / 1000).toFixed(1)));
-      }
+      addWeightDayToMap(map, day);
     }
   } catch {
     // pas de données de poids : map vide
@@ -583,6 +638,28 @@ interface HrvStatusResult {
   hrvBaselineHigh: number | null;
 }
 
+function hrvStatusFromSummary(
+  summary: { status?: string; baseline?: { balancedLow?: number; balancedUpper?: number } } | undefined,
+): HrvStatusResult {
+  const baseline = summary?.baseline;
+  return {
+    hrvStatus: summary?.status ?? null,
+    hrvBaselineLow: baseline?.balancedLow ?? null,
+    hrvBaselineHigh: baseline?.balancedUpper ?? null,
+  };
+}
+
+function parseHrvStatusResponse(
+  r: {
+    hrvSummary?: {
+      status?: string;
+      baseline?: { balancedLow?: number; balancedUpper?: number };
+    };
+  } | null,
+): HrvStatusResult {
+  return hrvStatusFromSummary(r?.hrvSummary);
+}
+
 async function fetchHrvStatus(client: GCClient, date: Date): Promise<HrvStatusResult> {
   try {
     const ds = format(date, 'yyyy-MM-dd');
@@ -592,11 +669,7 @@ async function fetchHrvStatus(client: GCClient, date: Date): Promise<HrvStatusRe
         baseline?: { balancedLow?: number; balancedUpper?: number };
       };
     } | null;
-    return {
-      hrvStatus: r?.hrvSummary?.status ?? null,
-      hrvBaselineLow: r?.hrvSummary?.baseline?.balancedLow ?? null,
-      hrvBaselineHigh: r?.hrvSummary?.baseline?.balancedUpper ?? null,
-    };
+    return parseHrvStatusResponse(r);
   } catch {
     return { hrvStatus: null, hrvBaselineLow: null, hrvBaselineHigh: null };
   }
@@ -637,6 +710,21 @@ type GarminDailyStepsRow = {
   totalSteps?: number | null;
 };
 
+function normalizeStepsRows(
+  payload: GarminDailyStepsRow[] | GarminDailyStepsRow | null,
+): GarminDailyStepsRow[] {
+  if (Array.isArray(payload)) {
+    return payload;
+  }
+  return payload ? [payload] : [];
+}
+
+function stepsFromRows(rows: GarminDailyStepsRow[], dateKey: string): number | null {
+  const match = rows.find((row) => row.calendarDate === dateKey) ?? rows[0];
+  const steps = match?.totalSteps;
+  return typeof steps === 'number' && Number.isFinite(steps) && steps >= 0 ? Math.round(steps) : null;
+}
+
 async function fetchTotalSteps(client: GCClient, date: Date): Promise<number | null> {
   try {
     const ds = format(date, 'yyyy-MM-dd');
@@ -644,17 +732,7 @@ async function fetchTotalSteps(client: GCClient, date: Date): Promise<number | n
       `https://connectapi.garmin.com/usersummary-service/stats/steps/daily/${ds}/${ds}`,
     )) as GarminDailyStepsRow[] | GarminDailyStepsRow | null;
 
-    let rows: GarminDailyStepsRow[] = [];
-    if (Array.isArray(payload)) {
-      rows = payload;
-    } else if (payload) {
-      rows = [payload];
-    }
-    const match = rows.find((row) => row.calendarDate === ds) ?? rows[0];
-    const steps = match?.totalSteps;
-    return typeof steps === 'number' && Number.isFinite(steps) && steps >= 0
-      ? Math.round(steps)
-      : null;
+    return stepsFromRows(normalizeStepsRows(payload), ds);
   } catch {
     return null;
   }

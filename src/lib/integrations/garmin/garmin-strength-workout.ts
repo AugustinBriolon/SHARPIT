@@ -156,18 +156,32 @@ export async function pushStrengthWorkoutFromActivity(
  * scheduled on the planned session date by default.
  * Blocks duplicate pushes unless `force` is true (replaces previous workout).
  */
-export async function pushStrengthWorkoutFromPlannedSession(
-  athleteId: string,
-  options: {
-    plannedSessionId: string;
-    scheduleDate?: string | null;
-    schedule?: boolean;
-    /** Replace previous Garmin workout if already pushed. */
-    force?: boolean;
-  },
-): Promise<PushStrengthWorkoutResult> {
+function mapStrengthPrescriptionSets(
+  prescription: NonNullable<ReturnType<typeof attachGarminRefsToPrescription>>,
+): StrengthWorkoutSetInput[] {
+  return prescription.sets.map((set) => ({
+    exercise: set.exercise,
+    exerciseCatalogId: set.exerciseCatalogId,
+    sets: set.sets,
+    reps: set.reps,
+    durationSec: set.durationSec,
+    weightKg: set.weightKg,
+    restSec: set.restSec,
+    restMode: set.restMode,
+    notes: set.notes,
+    garmin: set.garmin
+      ? {
+          category: set.garmin.category,
+          exerciseName: set.garmin.exerciseName,
+          confidence: set.garmin.confidence,
+        }
+      : null,
+  }));
+}
+
+async function loadStrengthPlannedSession(athleteId: string, plannedSessionId: string) {
   const session = await prisma.plannedSession.findFirst({
-    where: { id: options.plannedSessionId, athleteId },
+    where: { id: plannedSessionId, athleteId },
     select: {
       id: true,
       type: true,
@@ -188,10 +202,6 @@ export async function pushStrengthWorkoutFromPlannedSession(
     throw new Error('Seules les séances de musculation peuvent être envoyées à la montre');
   }
 
-  if (!options.force) {
-    await assertNotAlreadyPushed(athleteId, session);
-  }
-
   const prescriptionParsed = parseStrengthPrescription(session.strengthPrescription);
   const prescription = prescriptionParsed
     ? attachGarminRefsToPrescription(prescriptionParsed)
@@ -200,51 +210,91 @@ export async function pushStrengthWorkoutFromPlannedSession(
     throw new Error('Aucun exercice prescrit — ajoute des exercices à la séance planifiée');
   }
 
-  const workoutName = session.title?.trim() || `SHARPIT muscu ${shortDayFromDate(session.date)}`;
+  return { session, prescription };
+}
 
+async function persistPlannedStrengthReceipt(
+  sessionId: string,
+  result: PushStrengthWorkoutResult,
+): Promise<void> {
+  if (result.workoutId === null) {
+    return;
+  }
+  const pushedAt = new Date();
+  await prisma.plannedSession.update({
+    where: { id: sessionId },
+    data: {
+      garminWorkoutId: String(result.workoutId),
+      garminWorkoutScheduledDate: result.scheduledDate,
+      garminWorkoutPushedAt: pushedAt,
+    },
+  });
+}
+
+function buildPlannedStrengthUploadRequest(input: {
+  session: Awaited<ReturnType<typeof loadStrengthPlannedSession>>['session'];
+  prescription: Awaited<ReturnType<typeof loadStrengthPlannedSession>>['prescription'];
+  options: {
+    schedule?: boolean;
+    scheduleDate?: string | null;
+    force?: boolean;
+  };
+}) {
+  const workoutName =
+    input.session.title?.trim() || `SHARPIT muscu ${shortDayFromDate(input.session.date)}`;
   const description =
-    session.description?.trim() ||
-    formatStrengthPrescriptionSummary(prescription) ||
+    input.session.description?.trim() ||
+    formatStrengthPrescriptionSummary(input.prescription) ||
     'Envoyé depuis SHARPIT (séance planifiée)';
-
-  const result = await uploadStrengthSets(athleteId, {
+  return {
     workoutName,
     description,
-    sets: prescription.sets.map((set) => ({
-      exercise: set.exercise,
-      exerciseCatalogId: set.exerciseCatalogId,
-      sets: set.sets,
-      reps: set.reps,
-      durationSec: set.durationSec,
-      weightKg: set.weightKg,
-      restSec: set.restSec,
-      restMode: set.restMode,
-      notes: set.notes,
-      garmin: set.garmin
-        ? {
-            category: set.garmin.category,
-            exerciseName: set.garmin.exerciseName,
-            confidence: set.garmin.confidence,
-          }
-        : null,
-    })),
-    schedule: options.schedule,
-    scheduleDate: options.scheduleDate ?? dayKeyFromDate(session.date),
-    replaceWorkoutId: options.force ? session.garminWorkoutId : null,
-  });
+    sets: mapStrengthPrescriptionSets(input.prescription),
+    schedule: input.options.schedule,
+    scheduleDate: input.options.scheduleDate ?? dayKeyFromDate(input.session.date),
+    replaceWorkoutId: input.options.force ? input.session.garminWorkoutId : null,
+  };
+}
 
-  if (result.workoutId !== null) {
-    const pushedAt = new Date();
-    await prisma.plannedSession.update({
-      where: { id: session.id },
-      data: {
-        garminWorkoutId: String(result.workoutId),
-        garminWorkoutScheduledDate: result.scheduledDate,
-        garminWorkoutPushedAt: pushedAt,
-      },
-    });
-    result.pushedAt = pushedAt.toISOString();
+async function pushPlannedStrengthWorkout(
+  athleteId: string,
+  options: {
+    plannedSessionId: string;
+    scheduleDate?: string | null;
+    schedule?: boolean;
+    force?: boolean;
+  },
+): Promise<PushStrengthWorkoutResult> {
+  const { session, prescription } = await loadStrengthPlannedSession(
+    athleteId,
+    options.plannedSessionId,
+  );
+
+  if (!options.force) {
+    await assertNotAlreadyPushed(athleteId, session);
   }
 
+  const result = await uploadStrengthSets(
+    athleteId,
+    buildPlannedStrengthUploadRequest({ session, prescription, options }),
+  );
+
+  await persistPlannedStrengthReceipt(session.id, result);
+  if (result.workoutId !== null) {
+    result.pushedAt = new Date().toISOString();
+  }
   return result;
+}
+
+export async function pushStrengthWorkoutFromPlannedSession(
+  athleteId: string,
+  options: {
+    plannedSessionId: string;
+    scheduleDate?: string | null;
+    schedule?: boolean;
+    /** Replace previous Garmin workout if already pushed. */
+    force?: boolean;
+  },
+): Promise<PushStrengthWorkoutResult> {
+  return pushPlannedStrengthWorkout(athleteId, options);
 }

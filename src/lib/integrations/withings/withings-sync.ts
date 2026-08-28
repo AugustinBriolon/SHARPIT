@@ -97,14 +97,16 @@ export async function getValidWithingsAccessToken(athleteId: string): Promise<st
   }
 }
 
+function computeMusclePct(m: WithingsParsedMeasurement): number | null {
+  if (m.muscleKg === null || m.weightKg === null || m.weightKg <= 0) {
+    return null;
+  }
+  return (m.muscleKg / m.weightKg) * 100;
+}
+
 function measurementToPrisma(
   m: WithingsParsedMeasurement,
 ): Omit<Prisma.BodyCompositionMeasurementUncheckedCreateInput, 'athleteId'> {
-  const musclePct =
-    m.muscleKg !== null && m.weightKg !== null && m.weightKg > 0
-      ? (m.muscleKg / m.weightKg) * 100
-      : null;
-
   return {
     source: BodyCompositionSource.WITHINGS,
     externalId: m.grpid,
@@ -112,7 +114,7 @@ function measurementToPrisma(
     weightKg: m.weightKg,
     bmi: m.bmi,
     bodyFatPct: m.bodyFatPct,
-    musclePct,
+    musclePct: computeMusclePct(m),
     boneKg: m.boneKg,
     bmr: m.bmr,
     visceralFat: m.visceralFat,
@@ -159,6 +161,122 @@ export interface WithingsSyncResult {
   observationsBackfilled?: number;
 }
 
+async function persistWithingsMeasurements(
+  athleteId: string,
+  measurements: WithingsParsedMeasurement[],
+): Promise<{
+  imported: number;
+  updated: number;
+  weightByDay: Map<string, WithingsParsedMeasurement>;
+}> {
+  const weightByDay = new Map<string, WithingsParsedMeasurement>();
+  if (measurements.length === 0) {
+    return { imported: 0, updated: 0, weightByDay };
+  }
+
+  const externalIds = measurements.map((m) => m.grpid);
+  const existingRows = await prisma.bodyCompositionMeasurement.findMany({
+    where: {
+      athleteId,
+      source: BodyCompositionSource.WITHINGS,
+      externalId: { in: externalIds },
+    },
+    select: { externalId: true },
+  });
+  const existingIds = new Set(
+    existingRows.map((r) => r.externalId).filter((id): id is string => id !== null),
+  );
+
+  const toCreate: Prisma.BodyCompositionMeasurementCreateManyInput[] = [];
+  const updateOps: Promise<unknown>[] = [];
+
+  for (const measurement of measurements) {
+    const data = measurementToPrisma(measurement);
+    const dayKey = format(measurement.measuredAt, 'yyyy-MM-dd');
+    const prev = weightByDay.get(dayKey);
+    if (!prev || measurement.measuredAt.getTime() > prev.measuredAt.getTime()) {
+      weightByDay.set(dayKey, measurement);
+    }
+
+    if (existingIds.has(measurement.grpid)) {
+      updateOps.push(
+        prisma.bodyCompositionMeasurement.update({
+          where: {
+            athleteId_source_externalId: {
+              athleteId,
+              source: BodyCompositionSource.WITHINGS,
+              externalId: measurement.grpid,
+            },
+          },
+          data,
+        }),
+      );
+    } else {
+      toCreate.push({ ...data, athleteId } as Prisma.BodyCompositionMeasurementCreateManyInput);
+    }
+  }
+
+  let imported = 0;
+  if (toCreate.length > 0) {
+    const result = await prisma.bodyCompositionMeasurement.createMany({
+      data: toCreate,
+      skipDuplicates: true,
+    });
+    imported = result.count;
+  }
+
+  let updated = 0;
+  if (updateOps.length > 0) {
+    await Promise.all(updateOps);
+    updated = updateOps.length;
+  }
+
+  await Promise.all(measurements.map((m) => ingestWithingsMeasurement(athleteId, m)));
+  return { imported, updated, weightByDay };
+}
+
+async function loadWithingsMeasurementsForSync(
+  accessToken: string,
+  range: { startdate: number; enddate: number },
+) {
+  const measurementsRaw = await fetchWithingsMeasurements(accessToken, range);
+  try {
+    const heartRecords = await fetchWithingsHeartList(accessToken, range);
+    return enrichMeasurementsWithHeartEcg(measurementsRaw, heartRecords);
+  } catch (err) {
+    console.warn(
+      '[withings-sync] Heart v2 list unavailable, ECG classification from getmeas only:',
+      err,
+    );
+    return measurementsRaw;
+  }
+}
+
+async function finalizeWithingsSync(input: {
+  athleteId: string;
+  since: Date;
+  full?: boolean;
+  imported: number;
+  updated: number;
+  days: number;
+}): Promise<WithingsSyncResult> {
+  await prisma.withingsAccount.update({
+    where: { athleteId: input.athleteId },
+    data: { lastSyncAt: new Date() },
+  });
+
+  const backfill = await backfillBodyCompositionObservationsFromMeasurements(input.athleteId, {
+    since: input.full ? subDays(startOfDay(new Date()), 365 * 3) : input.since,
+  });
+
+  return {
+    imported: input.imported,
+    updated: input.updated,
+    days: input.days,
+    observationsBackfilled: backfill.ingested,
+  };
+}
+
 export async function syncWithingsHealth(
   athleteId: string,
   options?: {
@@ -181,98 +299,25 @@ export async function syncWithingsHealth(
     enddate: Math.floor(Date.now() / 1000),
   };
 
-  const measurementsRaw = await fetchWithingsMeasurements(accessToken, range);
-  let measurements = measurementsRaw;
-  try {
-    const heartRecords = await fetchWithingsHeartList(accessToken, range);
-    measurements = enrichMeasurementsWithHeartEcg(measurementsRaw, heartRecords);
-  } catch (err) {
-    console.warn(
-      '[withings-sync] Heart v2 list unavailable, ECG classification from getmeas only:',
-      err,
-    );
-  }
+  const measurements = await loadWithingsMeasurementsForSync(accessToken, range);
 
-  let imported = 0;
-  let updated = 0;
-  const weightByDay = new Map<string, WithingsParsedMeasurement>();
-
-  if (measurements.length > 0) {
-    const externalIds = measurements.map((m) => m.grpid);
-    const existingRows = await prisma.bodyCompositionMeasurement.findMany({
-      where: {
-        athleteId,
-        source: BodyCompositionSource.WITHINGS,
-        externalId: { in: externalIds },
-      },
-      select: { externalId: true },
-    });
-    const existingIds = new Set(
-      existingRows.map((r) => r.externalId).filter((id): id is string => id !== null),
-    );
-
-    const toCreate: Prisma.BodyCompositionMeasurementCreateManyInput[] = [];
-    const updateOps: Promise<unknown>[] = [];
-
-    for (const measurement of measurements) {
-      const data = measurementToPrisma(measurement);
-      const dayKey = format(measurement.measuredAt, 'yyyy-MM-dd');
-      const prev = weightByDay.get(dayKey);
-      if (!prev || measurement.measuredAt.getTime() > prev.measuredAt.getTime()) {
-        weightByDay.set(dayKey, measurement);
-      }
-
-      if (existingIds.has(measurement.grpid)) {
-        updateOps.push(
-          prisma.bodyCompositionMeasurement.update({
-            where: {
-              athleteId_source_externalId: {
-                athleteId,
-                source: BodyCompositionSource.WITHINGS,
-                externalId: measurement.grpid,
-              },
-            },
-            data,
-          }),
-        );
-      } else {
-        toCreate.push({ ...data, athleteId } as Prisma.BodyCompositionMeasurementCreateManyInput);
-      }
-    }
-
-    if (toCreate.length > 0) {
-      const result = await prisma.bodyCompositionMeasurement.createMany({
-        data: toCreate,
-        skipDuplicates: true,
-      });
-      imported = result.count;
-    }
-
-    if (updateOps.length > 0) {
-      await Promise.all(updateOps);
-      updated = updateOps.length;
-    }
-
-    // Ingest every measurement in the sync window — not only new rows. Existing
-    // provider rows that predate the observation pipeline are updates here;
-    // dedup by externalId makes this safe to re-run.
-    await Promise.all(measurements.map((m) => ingestWithingsMeasurement(athleteId, m)));
-  }
+  const { imported, updated, weightByDay } = await persistWithingsMeasurements(
+    athleteId,
+    measurements,
+  );
 
   await Promise.all(
     [...weightByDay.values()].map((m) => upsertDailyWeightFromWithings(athleteId, m)),
   );
 
-  await prisma.withingsAccount.update({
-    where: { athleteId },
-    data: { lastSyncAt: new Date() },
+  return finalizeWithingsSync({
+    athleteId,
+    since,
+    full: options?.full,
+    imported,
+    updated,
+    days,
   });
-
-  const backfill = await backfillBodyCompositionObservationsFromMeasurements(athleteId, {
-    since: options?.full ? subDays(startOfDay(new Date()), 365 * 3) : since,
-  });
-
-  return { imported, updated, days, observationsBackfilled: backfill.ingested };
 }
 
 /** Jours où Withings a une pesée (priorité sur Renpho pour DailyHealth). */

@@ -10,6 +10,22 @@ import type { ThreadAdherence, ThreadWeek } from './thread-model';
  * Only weeks that have already started are counted — grading a plan on sessions
  * not yet due would make every Monday look like a failure.
  */
+function countWeekSessions(week: ThreadWeek): { completed: number; prescribed: number } {
+  let completed = 0;
+  let prescribed = 0;
+  for (const day of week.days) {
+    for (const entry of day.entries) {
+      if (entry.kind === 'paired') {
+        completed += 1;
+        prescribed += 1;
+      } else if (entry.kind === 'planned') {
+        prescribed += 1;
+      }
+    }
+  }
+  return { completed, prescribed };
+}
+
 export function buildThreadAdherence(weeks: readonly ThreadWeek[]): ThreadAdherence {
   let completed = 0;
   let prescribed = 0;
@@ -21,24 +37,12 @@ export function buildThreadAdherence(weeks: readonly ThreadWeek[]): ThreadAdhere
       continue;
     }
 
-    let weekCompleted = 0;
-    let weekPrescribed = 0;
-    for (const day of week.days) {
-      for (const entry of day.entries) {
-        if (entry.kind === 'paired') {
-          weekCompleted += 1;
-          weekPrescribed += 1;
-        } else if (entry.kind === 'planned') {
-          weekPrescribed += 1;
-        }
-      }
-    }
+    const weekCounts = countWeekSessions(week);
+    completed += weekCounts.completed;
+    prescribed += weekCounts.prescribed;
 
-    completed += weekCompleted;
-    prescribed += weekPrescribed;
-
-    if (weekPrescribed > 0) {
-      const ratio = weekCompleted / weekPrescribed;
+    if (weekCounts.prescribed > 0) {
+      const ratio = weekCounts.completed / weekCounts.prescribed;
       if (ratio < worstRatio) {
         worstRatio = ratio;
         worstWeekLabel = week.label;

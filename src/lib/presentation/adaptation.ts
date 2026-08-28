@@ -91,6 +91,105 @@ function emptyAdaptationViewModel(): AdaptationViewModel {
   };
 }
 
+function buildAdaptationDimensions(
+  dimensions: NonNullable<Awaited<ReturnType<typeof getOrBuildAthleteSnapshot>>['adaptation']>['dimensions'],
+): AdaptationDimensionVm[] {
+  return Object.entries(dimensions).map(([key, dim]) => {
+    const copy = DIMENSION_COPY[key] ?? { label: key, description: 'Signal de dimension' };
+    return {
+      key,
+      label: copy.label,
+      description: copy.description,
+      dim: dim as DimensionResult,
+    };
+  });
+}
+
+function resolveAdaptationLimitingFactor(limitingFactor: string | null | undefined) {
+  if (!limitingFactor) {
+    return null;
+  }
+  return ADAPTATION_LIMITING_FACTOR_LABEL[limitingFactor] ?? limitingFactor;
+}
+
+function resolveAdaptationPresentation(
+  adaptation: NonNullable<Awaited<ReturnType<typeof getOrBuildAthleteSnapshot>>['adaptation']>,
+) {
+  const status = ADAPTATION_STATUS_SIGNAL[adaptation.adaptationStatus];
+  const verdict =
+    ADAPTATION_VERDICT_DISPLAY[adaptation.decision.verdict] ??
+    ADAPTATION_VERDICT_DISPLAY.INSUFFICIENT_DATA;
+  const confidencePct = Math.round(adaptation.confidence * 100);
+  const confidenceTier = mapConfidenceToTier(adaptation.confidence);
+  const confidenceTone = (CONFIDENCE_TONE[confidenceTier] ??
+    'neutral') as AdaptationViewModel['confidenceTone'];
+  const trendLabel = TREND_LABEL[adaptation.adaptationTrend] ?? adaptation.adaptationTrend;
+
+  return {
+    status,
+    verdict,
+    confidencePct,
+    confidenceTone,
+    trendLabel,
+    limitingFactor: resolveAdaptationLimitingFactor(adaptation.limitingFactor),
+    statusLabel: status?.label ?? adaptation.adaptationStatus,
+    statusClassName: status?.colorClass ?? 'text-muted-foreground',
+  };
+}
+
+function buildPopulatedAdaptationViewModel(
+  snapshot: Awaited<ReturnType<typeof getOrBuildAthleteSnapshot>>,
+): AdaptationViewModel {
+  const { adaptation } = snapshot;
+  if (!adaptation) {
+    return emptyAdaptationViewModel();
+  }
+
+  const presentation = resolveAdaptationPresentation(adaptation);
+  const rationale = adaptation.decision.rationale.map((r) => resolve(r));
+  const keyEvidence = adaptation.recommendation.keyEvidence.map((e) => resolve(e));
+  const dimensions = buildAdaptationDimensions(adaptation.dimensions);
+  const insights = buildAdaptationPageInsights({
+    adaptationIndex: adaptation.adaptationIndex,
+    confidence: adaptation.confidence,
+    keyEvidence,
+    limitingFactorLabel: presentation.limitingFactor,
+    loadMultiplier: adaptation.decision.loadMultiplier,
+    overreachingWithoutAdaptation: adaptation.overreachingWithoutAdaptationDetected,
+    plateauRisk: adaptation.plateauRisk,
+    rationale,
+    statusLabel: presentation.statusLabel,
+    trendLabel: presentation.trendLabel,
+    verdictLabel: presentation.verdict.label,
+  });
+
+  return {
+    adaptationIndex: adaptation.adaptationIndex,
+    statusLabel: presentation.statusLabel,
+    statusClassName: presentation.statusClassName,
+    trendLabel: presentation.trendLabel,
+    verdictLabel: presentation.verdict.label,
+    verdictClassName: presentation.verdict.colorClass,
+    verdictKey: adaptation.decision.verdict,
+    loadMultiplier: adaptation.decision.loadMultiplier,
+    rationale,
+    keyEvidence,
+    limitingFactor: presentation.limitingFactor,
+    plateauRisk: adaptation.plateauRisk,
+    overreachingWithoutAdaptation: adaptation.overreachingWithoutAdaptationDetected,
+    dimensions,
+    availableDimCount: adaptation.signals.availableDimensionCount,
+    historyLength: adaptation.signals.historyLength,
+    confidencePct: presentation.confidencePct,
+    confidenceTone: presentation.confidenceTone,
+    insights,
+    globalDecision: buildGlobalDecisionContext(snapshot, 'ADAPTATION'),
+    emptyState: null,
+    hierarchy: { rootId: 'adaptation', order: ['hero', 'decision', 'signals', 'insights'] },
+    sections: [],
+  };
+}
+
 export async function buildAdaptationViewModel(
   athleteId: string,
   trainingDayId: string,
@@ -101,73 +200,5 @@ export async function buildAdaptationViewModel(
     return emptyAdaptationViewModel();
   }
 
-  const status = ADAPTATION_STATUS_SIGNAL[adaptation.adaptationStatus];
-  const verdict =
-    ADAPTATION_VERDICT_DISPLAY[adaptation.decision.verdict] ??
-    ADAPTATION_VERDICT_DISPLAY.INSUFFICIENT_DATA;
-  const confidencePct = Math.round(adaptation.confidence * 100);
-  const confidenceTier = mapConfidenceToTier(adaptation.confidence);
-  const confidenceTone = (CONFIDENCE_TONE[confidenceTier] ??
-    'neutral') as AdaptationViewModel['confidenceTone'];
-
-  const limitingFactor = adaptation.limitingFactor
-    ? (ADAPTATION_LIMITING_FACTOR_LABEL[adaptation.limitingFactor] ?? adaptation.limitingFactor)
-    : null;
-
-  const rationale = adaptation.decision.rationale.map((r) => resolve(r));
-  const keyEvidence = adaptation.recommendation.keyEvidence.map((e) => resolve(e));
-
-  const dimensions: AdaptationDimensionVm[] = Object.entries(adaptation.dimensions).map(
-    ([key, dim]) => {
-      const copy = DIMENSION_COPY[key] ?? { label: key, description: 'Signal de dimension' };
-      return {
-        key,
-        label: copy.label,
-        description: copy.description,
-        dim: dim as DimensionResult,
-      };
-    },
-  );
-
-  const availableDimCount = adaptation.signals.availableDimensionCount;
-
-  const insights = buildAdaptationPageInsights({
-    adaptationIndex: adaptation.adaptationIndex,
-    confidence: adaptation.confidence,
-    keyEvidence,
-    limitingFactorLabel: limitingFactor,
-    loadMultiplier: adaptation.decision.loadMultiplier,
-    overreachingWithoutAdaptation: adaptation.overreachingWithoutAdaptationDetected,
-    plateauRisk: adaptation.plateauRisk,
-    rationale,
-    statusLabel: status?.label ?? adaptation.adaptationStatus,
-    trendLabel: TREND_LABEL[adaptation.adaptationTrend] ?? adaptation.adaptationTrend,
-    verdictLabel: verdict.label,
-  });
-
-  return {
-    adaptationIndex: adaptation.adaptationIndex,
-    statusLabel: status?.label ?? adaptation.adaptationStatus,
-    statusClassName: status?.colorClass ?? 'text-muted-foreground',
-    trendLabel: TREND_LABEL[adaptation.adaptationTrend] ?? adaptation.adaptationTrend,
-    verdictLabel: verdict.label,
-    verdictClassName: verdict.colorClass,
-    verdictKey: adaptation.decision.verdict,
-    loadMultiplier: adaptation.decision.loadMultiplier,
-    rationale,
-    keyEvidence,
-    limitingFactor,
-    plateauRisk: adaptation.plateauRisk,
-    overreachingWithoutAdaptation: adaptation.overreachingWithoutAdaptationDetected,
-    dimensions,
-    availableDimCount,
-    historyLength: adaptation.signals.historyLength,
-    confidencePct,
-    confidenceTone,
-    insights,
-    globalDecision: buildGlobalDecisionContext(snapshot, 'ADAPTATION'),
-    emptyState: null,
-    hierarchy: { rootId: 'adaptation', order: ['hero', 'decision', 'signals', 'insights'] },
-    sections: [],
-  };
+  return buildPopulatedAdaptationViewModel(snapshot);
 }

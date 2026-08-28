@@ -127,19 +127,9 @@ function toDomainCondition(row: {
   };
 }
 
-function buildConditionCard(
+function buildConditionDomainModels(
   row: Awaited<ReturnType<typeof loadConditions>>[number],
-  inferred:
-    | {
-        severity: number;
-        status: string;
-        trend: string;
-        confidence: number;
-        functionalCapacity: string | null;
-        estimatedRecoveryDays: number | null;
-      }
-    | undefined,
-): PhysicalHealthViewModel['activeConditions'][number] {
+) {
   const condition = toDomainCondition(row);
   const episodes: ConditionEpisode[] = row.episodes.map((ep) => ({
     id: ep.id,
@@ -152,7 +142,6 @@ function buildConditionCard(
     estimatedRecoveryDays: ep.estimatedRecoveryDays,
     triggerHypothesis: ep.triggerHypothesis,
   }));
-
   const observations: ConditionObservation[] = row.observations.map((o) => ({
     id: o.id,
     conditionId: o.conditionId,
@@ -173,7 +162,6 @@ function buildConditionCard(
     externalId: o.externalId,
     legacyPhysicalCheckinId: o.legacyPhysicalCheckinId,
   }));
-
   const functionalCapacities: FunctionalCapacity[] = row.functionalCapacities.map((fc) => ({
     id: fc.id,
     conditionId: fc.conditionId,
@@ -183,7 +171,81 @@ function buildConditionCard(
     trainingCapacity: fc.trainingCapacity as FunctionalCapacity['trainingCapacity'],
     comment: fc.comment,
   }));
+  return { condition, episodes, observations, functionalCapacities };
+}
 
+function buildConditionSparkline(observations: ConditionObservation[]) {
+  return observations
+    .filter((o) => o.severityReported !== null)
+    .slice(-14)
+    .map((o) => ({
+      date: format(o.observedAt, 'dd MMM', { locale: fr }),
+      severity: o.severityReported,
+    }));
+}
+
+function resolveConditionSideLabel(side: string) {
+  if (side === 'NA') {
+    return null;
+  }
+  return SIDE_LABELS[side] ?? null;
+}
+
+function resolveFunctionalCapacityLabel(functionalCapacity: string | null) {
+  if (!functionalCapacity) {
+    return null;
+  }
+  return CAPACITY_LABELS[functionalCapacity] ?? functionalCapacity;
+}
+
+function resolveConditionCardState(
+  row: Awaited<ReturnType<typeof loadConditions>>[number],
+  inferred:
+    | {
+        severity: number;
+        status: string;
+        trend: string;
+        confidence: number;
+        functionalCapacity: string | null;
+        estimatedRecoveryDays: number | null;
+      }
+    | undefined,
+) {
+  if (!inferred) {
+    return {
+      severity: row.severity,
+      status: row.status,
+      trend: 'UNKNOWN',
+      functionalCapacity: null,
+      confidence: row.confidence,
+      estimatedRecoveryDays: row.estimatedRecoveryDays,
+    };
+  }
+  return {
+    severity: inferred.severity,
+    status: inferred.status,
+    trend: inferred.trend,
+    functionalCapacity: inferred.functionalCapacity,
+    confidence: inferred.confidence,
+    estimatedRecoveryDays: inferred.estimatedRecoveryDays,
+  };
+}
+
+function buildConditionCard(
+  row: Awaited<ReturnType<typeof loadConditions>>[number],
+  inferred:
+    | {
+        severity: number;
+        status: string;
+        trend: string;
+        confidence: number;
+        functionalCapacity: string | null;
+        estimatedRecoveryDays: number | null;
+      }
+    | undefined,
+): PhysicalHealthViewModel['activeConditions'][number] {
+  const { condition, episodes, observations, functionalCapacities } =
+    buildConditionDomainModels(row);
   const timeline = buildConditionTimeline({
     condition,
     episodes,
@@ -191,43 +253,29 @@ function buildConditionCard(
     functionalCapacities,
     knowledge: [],
   });
-
-  const severity = inferred?.severity ?? row.severity;
-  const status = inferred?.status ?? row.status;
-  const trend = inferred?.trend ?? 'UNKNOWN';
-  const functionalCapacity = inferred?.functionalCapacity ?? null;
-  const confidence = inferred?.confidence ?? row.confidence;
-
-  const sparkline = observations
-    .filter((o) => o.severityReported !== null)
-    .slice(-14)
-    .map((o) => ({
-      date: format(o.observedAt, 'dd MMM', { locale: fr }),
-      severity: o.severityReported,
-    }));
+  const state = resolveConditionCardState(row, inferred);
+  const sparkline = buildConditionSparkline(observations);
 
   return {
     conditionId: row.id,
     label: row.label,
     bodyRegion: row.bodyRegion,
-    sideLabel: row.side !== 'NA' ? (SIDE_LABELS[row.side] ?? null) : null,
+    sideLabel: resolveConditionSideLabel(row.side),
     type: row.type,
     typeLabel: TYPE_LABELS[row.type] ?? row.type,
     scope: row.scope,
-    severity,
-    status,
-    statusLabel: STATUS_LABELS[status] ?? status,
-    trend,
-    trendLabel: TREND_LABELS[trend] ?? null,
-    functionalCapacity,
-    functionalCapacityLabel: functionalCapacity
-      ? (CAPACITY_LABELS[functionalCapacity] ?? functionalCapacity)
-      : null,
-    confidencePct: Math.round(confidence * 100),
-    confidenceTone: confidenceTone(confidence),
-    estimatedRecoveryDays: inferred?.estimatedRecoveryDays ?? row.estimatedRecoveryDays,
+    severity: state.severity,
+    status: state.status,
+    statusLabel: STATUS_LABELS[state.status] ?? state.status,
+    trend: state.trend,
+    trendLabel: TREND_LABELS[state.trend] ?? null,
+    functionalCapacity: state.functionalCapacity,
+    functionalCapacityLabel: resolveFunctionalCapacityLabel(state.functionalCapacity),
+    confidencePct: Math.round(state.confidence * 100),
+    confidenceTone: confidenceTone(state.confidence),
+    estimatedRecoveryDays: state.estimatedRecoveryDays,
     affectsTraining: row.affectsTraining,
-    isActive: isActiveCondition(status as import('@/core/physical-health/types').ConditionStatus),
+    isActive: isActiveCondition(state.status as import('@/core/physical-health/types').ConditionStatus),
     observationCount: row.observationCount,
     sparkline,
     timelinePreview: timeline.events.slice(-5).map((e) => ({
@@ -282,6 +330,113 @@ function emptyViewModel(): PhysicalHealthViewModel {
   };
 }
 
+function maxConditionSeverity(activeConditions: PhysicalHealthViewModel['activeConditions']) {
+  if (activeConditions.length === 0) {
+    return 0;
+  }
+  return Math.max(...activeConditions.map((c) => c.severity));
+}
+
+function resolvePhysicalHealthAggregateSource(
+  ph: Awaited<ReturnType<typeof getOrBuildAthleteSnapshot>>['physicalHealth'],
+) {
+  if (!ph) {
+    return {
+      aggregateTrainingCapacity: 'FULL' as const,
+      confidence: 0.5,
+      decisionVerdict: 'INSUFFICIENT_DATA' as const,
+      activeConditionCount: null as number | null,
+      trainingBlocked: false,
+    };
+  }
+  return {
+    aggregateTrainingCapacity: ph.aggregateTrainingCapacity,
+    confidence: ph.confidence,
+    decisionVerdict: ph.decision?.verdict ?? 'INSUFFICIENT_DATA',
+    activeConditionCount: ph.activeConditionCount,
+    trainingBlocked: ph.trainingBlockedByCondition,
+  };
+}
+
+function buildPhysicalHealthAggregate(input: {
+  ph: Awaited<ReturnType<typeof getOrBuildAthleteSnapshot>>['physicalHealth'];
+  activeConditions: PhysicalHealthViewModel['activeConditions'];
+  resolvedConditions: PhysicalHealthViewModel['resolvedConditions'];
+  primaryCondition: PhysicalHealthViewModel['activeConditions'][number] | undefined;
+}): PhysicalHealthViewModel['aggregate'] {
+  const source = resolvePhysicalHealthAggregateSource(input.ph);
+  const { aggregateTrainingCapacity } = source;
+
+  return {
+    activeCount: source.activeConditionCount ?? input.activeConditions.length,
+    resolvedCount: input.resolvedConditions.length,
+    maxSeverity: maxConditionSeverity(input.activeConditions),
+    aggregateTrainingCapacity,
+    aggregateTrainingCapacityLabel:
+      CAPACITY_LABELS[aggregateTrainingCapacity] ?? aggregateTrainingCapacity,
+    trainingBlocked: source.trainingBlocked,
+    confidencePct: Math.round(source.confidence * 100),
+    confidenceTone: confidenceTone(source.confidence),
+    decisionVerdict: source.decisionVerdict,
+    decisionLabel: DECISION_LABELS[source.decisionVerdict] ?? source.decisionVerdict,
+    primaryConditionLabel: input.primaryCondition?.label ?? null,
+  };
+}
+
+function resolvePrimaryCondition(
+  cards: Array<PhysicalHealthViewModel['activeConditions'][number]>,
+  primaryId: string | null,
+  activeConditions: PhysicalHealthViewModel['activeConditions'],
+) {
+  if (primaryId) {
+    return cards.find((c) => c.conditionId === primaryId);
+  }
+  return activeConditions[0];
+}
+
+function buildPhysicalHealthSections(maxSeverity: number, activeCount: number) {
+  return [
+    {
+      id: 'hero',
+      type: 'hero' as const,
+      data: { maxSeverity, corpsTone: corpsToneFromPhysicalSeverity(maxSeverity) },
+    },
+    { id: 'active', type: 'dimensions' as const, data: { count: activeCount } },
+  ];
+}
+
+function buildPopulatedPhysicalHealthViewModel(input: {
+  snapshot: Awaited<ReturnType<typeof getOrBuildAthleteSnapshot>>;
+  cards: Array<PhysicalHealthViewModel['activeConditions'][number]>;
+  activeConditions: PhysicalHealthViewModel['activeConditions'];
+  resolvedConditions: PhysicalHealthViewModel['resolvedConditions'];
+  primaryCondition: PhysicalHealthViewModel['activeConditions'][number] | undefined;
+}): PhysicalHealthViewModel {
+  const maxSeverity = maxConditionSeverity(input.activeConditions);
+  const aggregate = buildPhysicalHealthAggregate({
+    ph: input.snapshot.physicalHealth,
+    activeConditions: input.activeConditions,
+    resolvedConditions: input.resolvedConditions,
+    primaryCondition: input.primaryCondition,
+  });
+  const hasNoConditions = input.activeConditions.length === 0 && input.resolvedConditions.length === 0;
+
+  return {
+    aggregate,
+    activeConditions: input.activeConditions,
+    resolvedConditions: input.resolvedConditions,
+    globalDecision: buildGlobalDecisionContext(input.snapshot, 'PHYSICAL_HEALTH'),
+    medicalDisclaimer:
+      "SHARPIT estime ton état physique à partir de tes observations. Ce n'est pas un diagnostic médical ni un avis de traitement.",
+    emptyState: hasNoConditions ? emptyViewModel().emptyState : null,
+    hierarchy: {
+      rootId: 'hero',
+      order: ['hero', 'active', 'resolved', 'disclaimer'],
+    },
+    sections: buildPhysicalHealthSections(maxSeverity, input.activeConditions.length),
+  };
+}
+
 export async function buildPhysicalHealthPresentationViewModel(
   athleteId: string,
   trainingDayId: string,
@@ -298,60 +453,17 @@ export async function buildPhysicalHealthPresentationViewModel(
   const inferredById = new Map(
     (snapshot.physicalHealth?.conditions ?? []).map((c) => [c.conditionId, c]),
   );
-
   const cards = rows.map((row) => buildConditionCard(row, inferredById.get(row.id)));
-
   const activeConditions = cards.filter((c) => c.isActive);
   const resolvedConditions = cards.filter((c) => !c.isActive);
+  const primaryId = snapshot.physicalHealth?.primaryLimitingConditionId ?? null;
+  const primaryCondition = resolvePrimaryCondition(cards, primaryId, activeConditions);
 
-  const ph = snapshot.physicalHealth;
-  const aggregateTrainingCapacity = ph?.aggregateTrainingCapacity ?? 'FULL';
-  const primaryId = ph?.primaryLimitingConditionId ?? null;
-  const primaryCondition = primaryId
-    ? cards.find((c) => c.conditionId === primaryId)
-    : activeConditions[0];
-
-  const maxSeverity =
-    activeConditions.length > 0 ? Math.max(...activeConditions.map((c) => c.severity)) : 0;
-
-  const confidence = ph?.confidence ?? 0.5;
-  const decisionVerdict = ph?.decision?.verdict ?? 'INSUFFICIENT_DATA';
-
-  return {
-    aggregate: {
-      activeCount: ph?.activeConditionCount ?? activeConditions.length,
-      resolvedCount: resolvedConditions.length,
-      maxSeverity,
-      aggregateTrainingCapacity,
-      aggregateTrainingCapacityLabel:
-        CAPACITY_LABELS[aggregateTrainingCapacity] ?? aggregateTrainingCapacity,
-      trainingBlocked: ph?.trainingBlockedByCondition ?? false,
-      confidencePct: Math.round(confidence * 100),
-      confidenceTone: confidenceTone(confidence),
-      decisionVerdict,
-      decisionLabel: DECISION_LABELS[decisionVerdict] ?? decisionVerdict,
-      primaryConditionLabel: primaryCondition?.label ?? null,
-    },
+  return buildPopulatedPhysicalHealthViewModel({
+    snapshot,
+    cards,
     activeConditions,
     resolvedConditions,
-    globalDecision: buildGlobalDecisionContext(snapshot, 'PHYSICAL_HEALTH'),
-    medicalDisclaimer:
-      "SHARPIT estime ton état physique à partir de tes observations. Ce n'est pas un diagnostic médical ni un avis de traitement.",
-    emptyState:
-      activeConditions.length === 0 && resolvedConditions.length === 0
-        ? emptyViewModel().emptyState
-        : null,
-    hierarchy: {
-      rootId: 'hero',
-      order: ['hero', 'active', 'resolved', 'disclaimer'],
-    },
-    sections: [
-      {
-        id: 'hero',
-        type: 'hero',
-        data: { maxSeverity, corpsTone: corpsToneFromPhysicalSeverity(maxSeverity) },
-      },
-      { id: 'active', type: 'dimensions', data: { count: activeConditions.length } },
-    ],
-  };
+    primaryCondition,
+  });
 }

@@ -94,6 +94,60 @@ function loadOf(entry: ThreadEntry): { done: number; planned: number } {
   return { done, planned };
 }
 
+function buildThreadWeek(input: {
+  weekKey: string;
+  entries: ThreadEntry[];
+  pivotWeekStart: Date;
+  pivotDayKey: string;
+  currentWeekKey: string;
+}): ThreadWeek {
+  const byDay = new Map<string, ThreadEntry[]>();
+  for (const entry of input.entries) {
+    const bucket = byDay.get(entry.dayKey);
+    if (bucket) {
+      bucket.push(entry);
+    } else {
+      byDay.set(entry.dayKey, [entry]);
+    }
+  }
+
+  const days: ThreadDay[] = [...byDay.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([dayKey, dayEntries]) => {
+      const [year, month, day] = dayKey.split('-').map(Number);
+      return {
+        dayKey,
+        date: new Date(year!, (month ?? 1) - 1, day ?? 1),
+        entries: dayEntries,
+      };
+    });
+
+  const totals = input.entries.reduce(
+    (acc, entry) => {
+      const { done, planned } = loadOf(entry);
+      return {
+        done: acc.done + done,
+        planned: acc.planned + planned,
+        doneKnown: acc.doneKnown || entry.activity?.load !== null,
+      };
+    },
+    { done: 0, planned: 0, doneKnown: false },
+  );
+
+  const start = days[0]?.date ?? input.pivotWeekStart;
+  return {
+    weekKey: input.weekKey,
+    label: weekLabel(input.weekKey),
+    start: weekStart(start),
+    days,
+    doneLoad: Math.round(totals.done),
+    doneLoadKnown: totals.doneKnown,
+    plannedLoad: Math.round(totals.planned),
+    isCurrent: input.weekKey === input.currentWeekKey,
+    isFuture: days.every((d) => d.dayKey > input.pivotDayKey),
+  };
+}
+
 export function buildThread({
   activities,
   plannedSessions,
@@ -132,51 +186,15 @@ export function buildThread({
 
   const weeks: ThreadWeek[] = [];
   for (const [weekKey, entries] of byWeek) {
-    const byDay = new Map<string, ThreadEntry[]>();
-    for (const entry of entries) {
-      const bucket = byDay.get(entry.dayKey);
-      if (bucket) {
-        bucket.push(entry);
-      } else {
-        byDay.set(entry.dayKey, [entry]);
-      }
-    }
-
-    const days: ThreadDay[] = [...byDay.entries()]
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([dayKey, dayEntries]) => {
-        const [year, month, day] = dayKey.split('-').map(Number);
-        return {
-          dayKey,
-          date: new Date(year!, (month ?? 1) - 1, day ?? 1),
-          entries: dayEntries,
-        };
-      });
-
-    const totals = entries.reduce(
-      (acc, entry) => {
-        const { done, planned } = loadOf(entry);
-        return {
-          done: acc.done + done,
-          planned: acc.planned + planned,
-          doneKnown: acc.doneKnown || entry.activity?.load !== null,
-        };
-      },
-      { done: 0, planned: 0, doneKnown: false },
+    weeks.push(
+      buildThreadWeek({
+        weekKey,
+        entries,
+        pivotWeekStart,
+        pivotDayKey,
+        currentWeekKey,
+      }),
     );
-
-    const start = days[0]?.date ?? pivotWeekStart;
-    weeks.push({
-      weekKey,
-      label: weekLabel(weekKey),
-      start: weekStart(start),
-      days,
-      doneLoad: Math.round(totals.done),
-      doneLoadKnown: totals.doneKnown,
-      plannedLoad: Math.round(totals.planned),
-      isCurrent: weekKey === currentWeekKey,
-      isFuture: days.every((d) => d.dayKey > pivotDayKey),
-    });
   }
 
   return weeks.sort((a, b) => a.weekKey.localeCompare(b.weekKey));

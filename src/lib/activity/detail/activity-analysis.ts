@@ -301,15 +301,8 @@ function computeNormalizedPower(watts: number[], time: number[]): number | null 
   return Math.round(Math.pow(fourth.reduce((s, v) => s + v, 0) / fourth.length, 0.25));
 }
 
-function computeDecoupling(points: RawPoint[], mode: 'pace' | 'power'): number | null {
-  if (points.length < 120) {
-    return null;
-  }
+function splitDecouplingSegments(points: RawPoint[]): { first: RawPoint[]; second: RawPoint[] } | null {
   const duration = points[points.length - 1].t - points[0].t;
-  if (duration < 30 * 60) {
-    return null;
-  }
-
   const warmupEnd = points[0].t + 10 * 60;
   const mid = points[0].t + duration / 2;
   const first: RawPoint[] = [];
@@ -328,33 +321,114 @@ function computeDecoupling(points: RawPoint[], mode: 'pace' | 'power'): number |
   if (first.length < 30 || second.length < 30) {
     return null;
   }
+  return { first, second };
+}
 
-  const ef = (seg: RawPoint[]) => {
-    const hrs = seg.map((p) => p.hr).filter((h) => h > 0);
-    if (!hrs.length) {
-      return null;
-    }
-    const avgHr = mean(hrs);
-    if (mode === 'power') {
-      const ws = seg.map((p) => p.watts).filter((w) => w > 0);
-      if (!ws.length) {
-        return null;
-      }
-      return mean(ws) / avgHr;
-    }
-    const speeds = seg.map((p) => p.speed).filter((s) => s > 0.5);
-    if (!speeds.length) {
-      return null;
-    }
-    return mean(speeds) / avgHr;
-  };
+function segmentEfficiency(seg: RawPoint[], mode: 'pace' | 'power'): number | null {
+  const hrs = seg.map((p) => p.hr).filter((h) => h > 0);
+  if (!hrs.length) {
+    return null;
+  }
+  const avgHr = mean(hrs);
+  if (mode === 'power') {
+    const ws = seg.map((p) => p.watts).filter((w) => w > 0);
+    return ws.length ? mean(ws) / avgHr : null;
+  }
+  const speeds = seg.map((p) => p.speed).filter((s) => s > 0.5);
+  return speeds.length ? mean(speeds) / avgHr : null;
+}
 
-  const ef1 = ef(first);
-  const ef2 = ef(second);
+function computeDecoupling(points: RawPoint[], mode: 'pace' | 'power'): number | null {
+  if (points.length < 120) {
+    return null;
+  }
+  const duration = points[points.length - 1].t - points[0].t;
+  if (duration < 30 * 60) {
+    return null;
+  }
+
+  const segments = splitDecouplingSegments(points);
+  if (!segments) {
+    return null;
+  }
+
+  const ef1 = segmentEfficiency(segments.first, mode);
+  const ef2 = segmentEfficiency(segments.second, mode);
   if (ef1 === null || ef2 === null || ef1 === 0) {
     return null;
   }
   return Number((((ef1 - ef2) / ef1) * 100).toFixed(1));
+}
+
+function splitElevationGain(points: RawPoint[], startIdx: number, endIdx: number): number {
+  let elevGain = 0;
+  for (let j = startIdx + 1; j <= endIdx; j++) {
+    const diff = points[j].alt - points[j - 1].alt;
+    if (diff > 0) {
+      elevGain += diff;
+    }
+  }
+  return elevGain;
+}
+
+function splitLabel(target: number, splitM: number, isPartialTailSplit: boolean, totalDistance: number): string {
+  if (isPartialTailSplit) {
+    return formatSplitDistanceLabel(totalDistance);
+  }
+  if (splitM >= 1000) {
+    return `${(target / 1000).toFixed(0)} km`;
+  }
+  return `${target} m`;
+}
+
+function buildSplitRow(input: {
+  points: RawPoint[];
+  startIdx: number;
+  endIdx: number;
+  target: number;
+  splitM: number;
+  isPartialTailSplit: boolean;
+  splitIndex: number;
+}): SplitRow {
+  const { points, startIdx, endIdx, target, splitM, isPartialTailSplit, splitIndex } = input;
+  const dist = points[endIdx].d - points[startIdx].d;
+  const dur = points[endIdx].t - points[startIdx].t;
+  const pace = dist > 0 ? (dur / dist) * 1000 : null;
+  const elevGain = splitElevationGain(points, startIdx, endIdx);
+  return {
+    index: splitIndex,
+    label: splitLabel(target, splitM, isPartialTailSplit, points[endIdx].d),
+    distanceM: Math.round(dist),
+    durationSec: Math.round(dur),
+    paceSecPerKm: pace !== null ? Math.round(pace) : null,
+    avgHr: segmentMean(
+      points.map((p) => p.hr),
+      startIdx,
+      endIdx,
+    ),
+    avgWatts: segmentMean(
+      points.map((p) => p.watts),
+      startIdx,
+      endIdx,
+    ),
+    elevationGainM: elevGain > 0 ? Math.round(elevGain) : null,
+  };
+}
+
+function shouldSkipSplitPoint(input: {
+  points: RawPoint[];
+  index: number;
+  startIdx: number;
+  target: number;
+  splitM: number;
+}): boolean {
+  const { points, index, startIdx, target, splitM } = input;
+  const isLast = index === points.length - 1;
+  if (points[index].d < target && !isLast) {
+    return true;
+  }
+  const dist = points[index].d - points[startIdx].d;
+  return dist < splitM * 0.5 && !isLast;
 }
 
 function computeSplits(points: RawPoint[], splitM: number): SplitRow[] {
@@ -366,57 +440,26 @@ function computeSplits(points: RawPoint[], splitM: number): SplitRow[] {
   let startIdx = 0;
 
   for (let i = 1; i < points.length; i++) {
-    const isLast = i === points.length - 1;
-    if (points[i].d >= target || isLast) {
-      const dist = points[i].d - points[startIdx].d;
-      const dur = points[i].t - points[startIdx].t;
-      if (dist < splitM * 0.5 && !isLast) {
-        continue;
-      }
+    if (shouldSkipSplitPoint({ points, index: i, startIdx, target, splitM })) {
+      continue;
+    }
 
-      let elevGain = 0;
-      for (let j = startIdx + 1; j <= i; j++) {
-        const diff = points[j].alt - points[j - 1].alt;
-        if (diff > 0) {
-          elevGain += diff;
-        }
-      }
+    splits.push(
+      buildSplitRow({
+        points,
+        startIdx,
+        endIdx: i,
+        target,
+        splitM,
+        isPartialTailSplit: i === points.length - 1 && points[i].d - points[startIdx].d < splitM,
+        splitIndex: splits.length + 1,
+      }),
+    );
 
-      const pace = dist > 0 ? (dur / dist) * 1000 : null;
-      const isPartialTailSplit = isLast && dist < splitM;
-      let label: string;
-      if (isPartialTailSplit) {
-        label = formatSplitDistanceLabel(points[i].d);
-      } else if (splitM >= 1000) {
-        label = `${(target / 1000).toFixed(0)} km`;
-      } else {
-        label = `${target} m`;
-      }
-
-      splits.push({
-        index: splits.length + 1,
-        label,
-        distanceM: Math.round(dist),
-        durationSec: Math.round(dur),
-        paceSecPerKm: pace !== null ? Math.round(pace) : null,
-        avgHr: segmentMean(
-          points.map((p) => p.hr),
-          startIdx,
-          i,
-        ),
-        avgWatts: segmentMean(
-          points.map((p) => p.watts),
-          startIdx,
-          i,
-        ),
-        elevationGainM: elevGain > 0 ? Math.round(elevGain) : null,
-      });
-
-      startIdx = i;
-      target += splitM;
-      if (isLast) {
-        break;
-      }
+    startIdx = i;
+    target += splitM;
+    if (i === points.length - 1) {
+      break;
     }
   }
   return splits;
@@ -467,6 +510,49 @@ export interface ProfileInput {
   runThresholdPaceSecPerKm: number | null;
 }
 
+function estimateFtpFromStreamPeaks(watts: number[]): number | null {
+  const sorted = [...watts].filter((w) => w > 0).sort((a, b) => b - a);
+  if (sorted.length <= 60) {
+    return null;
+  }
+  const top = sorted.slice(0, Math.floor(sorted.length * 0.05));
+  return Math.round(mean(top) * 0.95);
+}
+
+function estimateFtpFromStreams(
+  profileFtp: number | null | undefined,
+  ctx: AnalysisContext,
+  watts: number[],
+): number | null {
+  if (profileFtp) {
+    return profileFtp;
+  }
+  if (ctx.bikeNormalizedPower && ctx.bikeIntensityFactor && ctx.bikeIntensityFactor > 0) {
+    return Math.round(ctx.bikeNormalizedPower / ctx.bikeIntensityFactor);
+  }
+  if (!watts.length) {
+    return null;
+  }
+  return estimateFtpFromStreamPeaks(watts);
+}
+
+function resolveMaxHr(profile: ProfileInput | null, rawHr: number[]): number | null {
+  const streamMaxHr = rawHr.length ? Math.max(...rawHr.filter((h) => h > 0)) : null;
+  return profile?.maxHr ?? streamMaxHr;
+}
+
+function resolveLthr(profile: ProfileInput | null, maxHr: number | null): number | null {
+  if (profile?.lthr) {
+    return profile.lthr;
+  }
+  return maxHr ? Math.round(maxHr * 0.85) : null;
+}
+
+function thresholdSource(profile: ProfileInput | null): AthleteThresholds['source'] {
+  const hasProfile = Boolean(profile?.ftpW || profile?.lthr || profile?.maxHr);
+  return hasProfile ? 'profile' : 'estimate';
+}
+
 export function resolveThresholds(
   profile: ProfileInput | null,
   raw: {
@@ -475,34 +561,242 @@ export function resolveThresholds(
   },
   ctx: AnalysisContext,
 ): AthleteThresholds {
-  const streamMaxHr = raw.heartrate.length ? Math.max(...raw.heartrate.filter((h) => h > 0)) : null;
+  const maxHr = resolveMaxHr(profile, raw.heartrate);
+  return {
+    ftp: estimateFtpFromStreams(profile?.ftpW, ctx, raw.watts),
+    maxHr: maxHr ?? null,
+    lthr: resolveLthr(profile, maxHr),
+    runThresholdPaceSecPerKm: profile?.runThresholdPaceSecPerKm ?? null,
+    source: thresholdSource(profile),
+  };
+}
 
-  const hasProfile = profile?.ftpW || profile?.lthr || profile?.maxHr;
-
-  let ftp = profile?.ftpW ?? null;
-  if (!ftp && ctx.bikeNormalizedPower && ctx.bikeIntensityFactor && ctx.bikeIntensityFactor > 0) {
-    ftp = Math.round(ctx.bikeNormalizedPower / ctx.bikeIntensityFactor);
+function computeSessionLoad(input: {
+  duration: number;
+  avgHr: number | null;
+  lthr: number | null;
+  powerTss: number | null;
+  powerIf: number | null;
+}): { loadTss: number | null; loadIf: number | null; loadMethod: 'power' | 'hr' | null } {
+  const { duration, avgHr, lthr, powerTss, powerIf } = input;
+  if (powerTss !== null && powerIf !== null) {
+    return { loadTss: powerTss, loadIf: powerIf, loadMethod: 'power' };
   }
-  if (!ftp && raw.watts.length) {
-    const sorted = [...raw.watts].filter((w) => w > 0).sort((a, b) => b - a);
-    if (sorted.length > 60) {
-      const top = sorted.slice(0, Math.floor(sorted.length * 0.05));
-      ftp = Math.round(mean(top) * 0.95);
+  if (avgHr && lthr && lthr > 0) {
+    const loadIf = Number((avgHr / lthr).toFixed(2));
+    return {
+      loadTss: Math.round((duration / 3600) * loadIf ** 2 * 100),
+      loadIf,
+      loadMethod: 'hr',
+    };
+  }
+  return { loadTss: null, loadIf: null, loadMethod: null };
+}
+
+function computeEfficiencyMetrics(
+  ctx: AnalysisContext,
+  avgHr: number | null,
+  avgWatts: number | null,
+  rawVelocity: number[],
+): { efficiencyFactor: number | null; efficiencyLabel: string } {
+  if (!avgHr) {
+    return { efficiencyFactor: null, efficiencyLabel: "Facteur d'efficacité" };
+  }
+  if (ctx.type === ActivityType.BIKE && avgWatts) {
+    return {
+      efficiencyFactor: Number((avgWatts / avgHr).toFixed(2)),
+      efficiencyLabel: 'Efficacité (W/bpm)',
+    };
+  }
+  if (ctx.type === ActivityType.RUN) {
+    const speeds = rawVelocity.filter((s) => s > 0.5);
+    if (speeds.length) {
+      return {
+        efficiencyFactor: Number(((mean(speeds) / avgHr) * 1000).toFixed(2)),
+        efficiencyLabel: 'Efficacité (m/bpm)',
+      };
     }
   }
+  return { efficiencyFactor: null, efficiencyLabel: "Facteur d'efficacité" };
+}
 
-  const maxHr = profile?.maxHr ?? streamMaxHr;
-  const lthr = profile?.lthr ?? (maxHr ? Math.round(maxHr * 0.85) : null);
+function computeRunAvgPace(rawDistance: number[], rawTime: number[]): number | null {
+  if (!rawDistance.length) {
+    return null;
+  }
+  const totalD = rawDistance[rawDistance.length - 1];
+  const totalT = rawTime[rawTime.length - 1];
+  return totalD > 0 ? Math.round((totalT / totalD) * 1000) : null;
+}
 
-  const runThresholdPaceSecPerKm = profile?.runThresholdPaceSecPerKm ?? null;
+function computePowerIf(np: number | null, ftp: number | null): number | null {
+  if (!np || !ftp || ftp <= 0) {
+    return null;
+  }
+  return Number((np / ftp).toFixed(2));
+}
+
+function computePowerTss(
+  np: number | null,
+  powerIf: number | null,
+  ftp: number | null,
+  duration: number,
+): number | null {
+  if (!np || powerIf === null || !ftp) {
+    return null;
+  }
+  return Math.round(((duration * np * powerIf) / (ftp * 3600)) * 100);
+}
+
+function computePowerLoadScalars(
+  np: number | null,
+  avgWatts: number | null,
+  ftp: number | null,
+  duration: number,
+) {
+  const vi = np && avgWatts && avgWatts > 0 ? Number((np / avgWatts).toFixed(2)) : null;
+  const powerIf = computePowerIf(np, ftp);
+  const powerTss = computePowerTss(np, powerIf, ftp, duration);
+  return { vi, powerIf, powerTss };
+}
+
+function computePowerMetrics(
+  raw: { watts: number[]; time: number[] },
+  isBike: boolean,
+  duration: number,
+  ftp: number | null,
+) {
+  const watts = raw.watts.filter((w) => w > 0);
+  const np = isBike && watts.length > 30 ? computeNormalizedPower(raw.watts, raw.time) : null;
+  const avgWatts = watts.length ? Math.round(mean(watts)) : null;
+  const load = computePowerLoadScalars(np, avgWatts, ftp, duration);
+  return { watts, np, avgWatts, ...load };
+}
+
+function buildPowerAnalysis(
+  raw: { watts: number[]; time: number[] },
+  isBike: boolean,
+  duration: number,
+  ftp: number | null,
+) {
+  const metrics = computePowerMetrics(raw, isBike, duration, ftp);
+  const powerZones =
+    ftp && metrics.watts.length
+      ? computeZoneTimes(raw.watts, raw.time, ftp, POWER_ZONE_DEFS)
+      : [];
 
   return {
-    ftp,
-    maxHr: maxHr ?? null,
-    lthr,
-    runThresholdPaceSecPerKm,
-    source: hasProfile ? 'profile' : 'estimate',
+    np: metrics.np,
+    avgWatts: metrics.avgWatts,
+    vi: metrics.vi,
+    powerIf: metrics.powerIf,
+    powerTss: metrics.powerTss,
+    powerZones,
+    powerBlock:
+      isBike && metrics.watts.length > 30
+        ? {
+            normalized: metrics.np,
+            avg: metrics.avgWatts,
+            variabilityIndex: metrics.vi,
+            intensityFactor: metrics.powerIf,
+            tss: metrics.powerTss,
+            zones: powerZones,
+          }
+        : null,
   };
+}
+
+function buildHrAnalysis(input: {
+  raw: { heartrate: number[]; time: number[] };
+  lthr: number | null;
+  points: RawPoint[];
+  decouplingMode: 'pace' | 'power';
+  ctx: AnalysisContext;
+  avgWatts: number | null;
+  rawVelocity: number[];
+}) {
+  const { raw, lthr, points, decouplingMode, ctx, avgWatts, rawVelocity } = input;
+  const hrs = raw.heartrate.filter((h) => h > 0);
+  const avgHr = hrs.length ? mean(hrs) : null;
+  const efficiency = computeEfficiencyMetrics(ctx, avgHr, avgWatts, rawVelocity);
+  const hrZones =
+    lthr && hrs.length ? computeZoneTimes(raw.heartrate, raw.time, lthr, HR_ZONE_DEFS) : [];
+  const decoupling = lthr && hrs.length ? computeDecoupling(points, decouplingMode) : null;
+
+  return {
+    avgHr,
+    hrBlock: {
+      zones: hrZones,
+      decouplingPct: decoupling,
+      efficiencyFactor: efficiency.efficiencyFactor,
+      efficiencyLabel: efficiency.efficiencyLabel,
+      avgHr: avgHr !== null ? Math.round(avgHr) : null,
+      maxHr: hrs.length ? Math.max(...hrs) : null,
+    },
+  };
+}
+
+function buildSportAnalysisSections(
+  ctx: AnalysisContext,
+  points: RawPoint[],
+  raw: { distance: number[]; time: number[] },
+) {
+  const runSplits =
+    ctx.type === ActivityType.RUN && raw.distance.length ? computeSplits(points, 1000) : [];
+  const bikeSplits =
+    ctx.type === ActivityType.BIKE && raw.distance.length ? computeSplits(points, 5000) : [];
+
+  return {
+    run:
+      ctx.type === ActivityType.RUN
+        ? {
+            splits: runSplits,
+            paceVariabilityPct: paceVariability(points),
+            avgPaceSecPerKm: computeRunAvgPace(raw.distance, raw.time),
+          }
+        : null,
+    bike: ctx.type === ActivityType.BIKE ? { splits: bikeSplits } : null,
+  };
+}
+
+function prepareActivityStreamAnalysis(
+  raw: {
+    time: number[];
+    distance: number[];
+    heartrate: number[];
+    watts: number[];
+    velocity: number[];
+    altitude: number[];
+  },
+  thresholds: AthleteThresholds,
+  ctx: AnalysisContext,
+  points: RawPoint[],
+) {
+  const isBike = ctx.type === ActivityType.BIKE;
+  const { lthr } = thresholds;
+  const ftp = isBike ? thresholds.ftp : null;
+  const duration = ctx.durationSec ?? points[points.length - 1].t;
+  const power = buildPowerAnalysis(raw, isBike, duration, ftp);
+  const decouplingMode = isBike && raw.watts.filter((w) => w > 0).length > 30 ? 'power' : 'pace';
+  const hr = buildHrAnalysis({
+    raw,
+    lthr,
+    points,
+    decouplingMode,
+    ctx,
+    avgWatts: power.avgWatts,
+    rawVelocity: raw.velocity,
+  });
+  const sessionLoad = computeSessionLoad({
+    duration,
+    avgHr: hr.avgHr,
+    lthr,
+    powerTss: power.powerTss,
+    powerIf: power.powerIf,
+  });
+  const sports = buildSportAnalysisSections(ctx, points, raw);
+
+  return { sessionLoad, hr, power, sports };
 }
 
 export function analyzeActivityStreams(
@@ -522,106 +816,23 @@ export function analyzeActivityStreams(
     return null;
   }
 
-  const isBike = ctx.type === ActivityType.BIKE;
-  const hrs = raw.heartrate.filter((h) => h > 0);
-  const watts = raw.watts.filter((w) => w > 0);
-  const { lthr } = thresholds;
-  // Le FTP (vélo) ne s'applique qu'au vélo : la puissance de course est sur une
-  // échelle différente et n'est pas comparable au FTP cycliste.
-  const ftp = isBike ? thresholds.ftp : null;
-  const duration = ctx.durationSec ?? points[points.length - 1].t;
-  const avgHr = hrs.length ? mean(hrs) : null;
-
-  const hrZones =
-    lthr && hrs.length ? computeZoneTimes(raw.heartrate, raw.time, lthr, HR_ZONE_DEFS) : [];
-
-  // Métriques de puissance : vélo uniquement (NP, VI, IF, TSS, zones).
-  const np = isBike && watts.length > 30 ? computeNormalizedPower(raw.watts, raw.time) : null;
-  const avgWatts = watts.length ? Math.round(mean(watts)) : null;
-  const vi = np && avgWatts && avgWatts > 0 ? Number((np / avgWatts).toFixed(2)) : null;
-  const powerIf = np && ftp && ftp > 0 ? Number((np / ftp).toFixed(2)) : null;
-  const powerTss =
-    np && powerIf && ftp ? Math.round(((duration * np * powerIf) / (ftp * 3600)) * 100) : null;
-
-  const powerZones =
-    ftp && watts.length ? computeZoneTimes(raw.watts, raw.time, ftp, POWER_ZONE_DEFS) : [];
-
-  // Charge globale : puissance pour le vélo, sinon TSS basé sur la FC (LTHR).
-  let loadTss: number | null = null;
-  let loadIf: number | null = null;
-  let loadMethod: 'power' | 'hr' | null = null;
-  if (powerTss !== null && powerIf !== null) {
-    loadTss = powerTss;
-    loadIf = powerIf;
-    loadMethod = 'power';
-  } else if (avgHr && lthr && lthr > 0) {
-    loadIf = Number((avgHr / lthr).toFixed(2));
-    loadTss = Math.round((duration / 3600) * loadIf ** 2 * 100);
-    loadMethod = 'hr';
-  }
-
-  const decouplingMode = ctx.type === ActivityType.BIKE && watts.length > 30 ? 'power' : 'pace';
-  const decoupling = lthr && hrs.length ? computeDecoupling(points, decouplingMode) : null;
-
-  let efficiencyFactor: number | null = null;
-  let efficiencyLabel = "Facteur d'efficacité";
-  if (avgHr) {
-    if (isBike && avgWatts) {
-      efficiencyFactor = Number((avgWatts / avgHr).toFixed(2));
-      efficiencyLabel = 'Efficacité (W/bpm)';
-    } else if (ctx.type === ActivityType.RUN) {
-      const speeds = raw.velocity.filter((s) => s > 0.5);
-      if (speeds.length) {
-        efficiencyFactor = Number(((mean(speeds) / avgHr) * 1000).toFixed(2));
-        efficiencyLabel = 'Efficacité (m/bpm)';
-      }
-    }
-  }
-
-  const runSplits =
-    ctx.type === ActivityType.RUN && raw.distance.length ? computeSplits(points, 1000) : [];
-  const bikeSplits =
-    ctx.type === ActivityType.BIKE && raw.distance.length ? computeSplits(points, 5000) : [];
-
-  const avgPace =
-    ctx.type === ActivityType.RUN && raw.distance.length
-      ? (() => {
-          const totalD = raw.distance[raw.distance.length - 1];
-          const totalT = raw.time[raw.time.length - 1];
-          return totalD > 0 ? Math.round((totalT / totalD) * 1000) : null;
-        })()
-      : null;
+  const { sessionLoad, hr, power, sports } = prepareActivityStreamAnalysis(
+    raw,
+    thresholds,
+    ctx,
+    points,
+  );
 
   return {
     thresholds,
-    load: { tss: loadTss, intensityFactor: loadIf, method: loadMethod },
-    hr: {
-      zones: hrZones,
-      decouplingPct: decoupling,
-      efficiencyFactor,
-      efficiencyLabel,
-      avgHr: hrs.length ? Math.round(mean(hrs)) : null,
-      maxHr: hrs.length ? Math.max(...hrs) : null,
+    load: {
+      tss: sessionLoad.loadTss,
+      intensityFactor: sessionLoad.loadIf,
+      method: sessionLoad.loadMethod,
     },
-    power:
-      isBike && watts.length > 30
-        ? {
-            normalized: np,
-            avg: avgWatts,
-            variabilityIndex: vi,
-            intensityFactor: powerIf,
-            tss: powerTss,
-            zones: powerZones,
-          }
-        : null,
-    run:
-      ctx.type === ActivityType.RUN
-        ? {
-            splits: runSplits,
-            paceVariabilityPct: paceVariability(points),
-            avgPaceSecPerKm: avgPace,
-          }
-        : null,
-    bike: ctx.type === ActivityType.BIKE ? { splits: bikeSplits } : null,
+    hr: hr.hrBlock,
+    power: power.powerBlock,
+    run: sports.run,
+    bike: sports.bike,
   };
 }

@@ -181,27 +181,37 @@ async function enrichSelectedDay(
   return { ...day, goalsProgress, fuelDensity };
 }
 
-export async function buildNutritionViewModel(
+function computeNutritionAverages(history: NutritionDaySummary[]) {
+  if (history.length === 0) {
+    return null;
+  }
+  const count = history.length;
+  return {
+    calories: Math.round(history.reduce((s, d) => s + d.calories, 0) / count),
+    protein: Math.round((history.reduce((s, d) => s + d.protein, 0) / count) * 10) / 10,
+    carbohydrates:
+      Math.round((history.reduce((s, d) => s + d.carbohydrates, 0) / count) * 10) / 10,
+    fat: Math.round((history.reduce((s, d) => s + d.fat, 0) / count) * 10) / 10,
+  };
+}
+
+function buildNutritionEmptyState(selectedDay: NutritionDaySummary | null, selectedDayId: string, todayId: string) {
+  if (selectedDay !== null) {
+    return null;
+  }
+  return {
+    title: 'Aucune donnée ce jour-là',
+    description:
+      selectedDayId === todayId
+        ? 'Synchronise MyFitnessPal ou enregistre tes repas pour voir tes apports.'
+        : 'Aucun journal alimentaire synchronisé pour cette date.',
+  };
+}
+
+async function buildConnectedNutritionViewModel(
   athleteId: string,
   trainingDayId?: string,
 ): Promise<NutritionViewModel> {
-  const account = await getMfpAccount(athleteId).catch(() => null);
-  const connected = Boolean(account);
-
-  if (!connected) {
-    return {
-      connected: false,
-      selectedDay: null,
-      today: null,
-      history: [],
-      averages: null,
-      emptyState: {
-        title: 'Nutrition indisponible',
-        description: 'Connecte MyFitnessPal dans les réglages pour suivre tes apports.',
-      },
-    };
-  }
-
   const referenceDate = trainingDayId ? parseISO(trainingDayId) : new Date();
   const selectedDayId = format(referenceDate, 'yyyy-MM-dd');
   const todayId = format(new Date(), 'yyyy-MM-dd');
@@ -233,29 +243,32 @@ export async function buildNutritionViewModel(
     ? await enrichSelectedDay(athleteId, todayBase, todayRow, todayRow?.goalCalories === null)
     : null;
 
-  const averages =
-    history.length > 0
-      ? {
-          calories: Math.round(history.reduce((s, d) => s + d.calories, 0) / history.length),
-          protein:
-            Math.round((history.reduce((s, d) => s + d.protein, 0) / history.length) * 10) / 10,
-          carbohydrates:
-            Math.round((history.reduce((s, d) => s + d.carbohydrates, 0) / history.length) * 10) /
-            10,
-          fat: Math.round((history.reduce((s, d) => s + d.fat, 0) / history.length) * 10) / 10,
-        }
-      : null;
+  const averages = computeNutritionAverages(history);
+  const emptyState = buildNutritionEmptyState(selectedDay, selectedDayId, todayId);
 
-  const emptyState =
-    selectedDay === null
-      ? {
-          title: 'Aucune donnée ce jour-là',
-          description:
-            selectedDayId === todayId
-              ? 'Synchronise MyFitnessPal ou enregistre tes repas pour voir tes apports.'
-              : 'Aucun journal alimentaire synchronisé pour cette date.',
-        }
-      : null;
+  return { connected: true, selectedDay, today, history, averages, emptyState };
+}
 
-  return { connected, selectedDay, today, history, averages, emptyState };
+export async function buildNutritionViewModel(
+  athleteId: string,
+  trainingDayId?: string,
+): Promise<NutritionViewModel> {
+  const account = await getMfpAccount(athleteId).catch(() => null);
+  const connected = Boolean(account);
+
+  if (!connected) {
+    return {
+      connected: false,
+      selectedDay: null,
+      today: null,
+      history: [],
+      averages: null,
+      emptyState: {
+        title: 'Nutrition indisponible',
+        description: 'Connecte MyFitnessPal dans les réglages pour suivre tes apports.',
+      },
+    };
+  }
+
+  return buildConnectedNutritionViewModel(athleteId, trainingDayId);
 }

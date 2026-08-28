@@ -63,6 +63,179 @@ function chipClass(colorClass: string): string {
   return colorClass.split(' ')[0] ?? colorClass;
 }
 
+function isSleepLimiterPending(snapshot: AthleteSnapshot) {
+  const sleepFreshness =
+    snapshot.freshness.domains.find((d) => d.domain === 'sleep')?.freshness ?? null;
+  return (
+    sleepFreshness === 'awaiting_data' ||
+    sleepFreshness === 'syncing' ||
+    sleepFreshness === 'computing'
+  );
+}
+
+function resolveRecoveryLimiterLabel(
+  snapshot: AthleteSnapshot,
+  recovery: NonNullable<AthleteSnapshot['recovery']>,
+): string | null {
+  if (!recovery.primaryLimitingFactor) {
+    return null;
+  }
+  if (isSleepLimiterPending(snapshot) && recovery.primaryLimitingFactor === 'sleep') {
+    return null;
+  }
+  return PRIMARY_LIMITER_LABEL[recovery.primaryLimitingFactor] ?? recovery.primaryLimitingFactor;
+}
+
+function resolveRecoverySignalPresentation(recovery: NonNullable<AthleteSnapshot['recovery']>) {
+  const autonomicDisplay = mapAutonomicBalanceToDisplay(
+    recovery.signals.autonomicBalance as AutonomicBalance,
+  );
+  const wellnessDisplay = mapSubjectiveWellnessToDisplay(
+    recovery.signals.subjectiveWellness as SubjectiveWellness,
+  );
+  const loadDisplay = mapLoadStressContextToDisplay(
+    recovery.signals.loadStressContext as LoadStressContext,
+  );
+  const confidencePct = Math.round(recovery.confidence * 100);
+  const confidenceTier = mapConfidenceToTier(recovery.confidence);
+  const intensityLabel = mapRecoveryIntensityLabel(
+    recovery.decision.recommendedIntensity as RecommendedIntensity,
+  );
+
+  return {
+    autonomicDisplay,
+    wellnessDisplay,
+    loadDisplay,
+    confidencePct,
+    confidenceTone: CONFIDENCE_TONE[confidenceTier] ?? 'neutral',
+    completenessLabel: COMPLETENESS_LABEL[recovery.dataCompleteness] ?? recovery.dataCompleteness,
+    intensityLabel,
+  };
+}
+
+function readTodayHealthEntry(todayEntry: ReturnType<typeof getIndexedHealthEntry>) {
+  if (!todayEntry) {
+    return {
+      baselineLow: null,
+      baselineHigh: null,
+      hrv: null,
+      restingHr: null,
+      bodyBattery: null,
+    };
+  }
+  return {
+    baselineLow: todayEntry.hrvBaselineLow,
+    baselineHigh: todayEntry.hrvBaselineHigh,
+    hrv: todayEntry.hrv,
+    restingHr: todayEntry.restingHr,
+    bodyBattery: todayEntry.bodyBattery,
+  };
+}
+
+function buildPopulatedRecoveryViewModel(input: {
+  snapshot: AthleteSnapshot;
+  recovery: NonNullable<AthleteSnapshot['recovery']>;
+  todayEntry: ReturnType<typeof getIndexedHealthEntry>;
+  healthSeries: ReturnType<typeof loadRecoveryHealthSeries>;
+}): RecoveryViewModel {
+  const { snapshot, recovery, todayEntry, healthSeries } = input;
+  const signal = mapRecoveryToSignal(recovery.readinessCategory as ReadinessCategory);
+  const presentation = resolveRecoverySignalPresentation(recovery);
+  const limiterLabel = resolveRecoveryLimiterLabel(snapshot, recovery);
+  const rationale = recovery.decision.rationale.map((r) => resolve(r));
+  const keyEvidence = recovery.recommendation.keyEvidence.map((e) => resolve(e));
+  const todayHealth = readTodayHealthEntry(todayEntry);
+  const insights = buildRecoveryPageInsights({
+    autonomicLabel: presentation.autonomicDisplay.label,
+    confidence: recovery.confidence,
+    dissonanceDetected: recovery.signals.dissonanceDetected,
+    estimatedRecoveryDays: recovery.estimatedTimeToFullRecovery,
+    illnessLabel: ILLNESS_RISK_DISPLAY[recovery.signals.illnessRisk]?.label ?? null,
+    keyEvidence,
+    limitingFactorLabel: limiterLabel,
+    loadLabel: presentation.loadDisplay.label,
+    overreachingLabel: RISK_DISPLAY[recovery.signals.overreachingRisk]?.label ?? null,
+    rationale,
+    readinessScore: recovery.readinessScore,
+    recommendedIntensityLabel: presentation.intensityLabel,
+    wellnessLabel: presentation.wellnessDisplay.label,
+  });
+
+  return {
+    readinessScore: recovery.readinessScore,
+    signal,
+    limiterLabel,
+    estimatedRecoveryDays: recovery.estimatedTimeToFullRecovery,
+    isCalibrating: recovery.readinessCategory === 'BASELINE_PENDING',
+    availableDimCount: Object.values(recovery.dimensions).filter((d) => d.available).length,
+    dimensions: recovery.dimensions,
+    intensityLabel: presentation.intensityLabel,
+    intensityClassName: mapScoreToColorClass(recovery.readinessScore),
+    rationale,
+    autonomicLabel: presentation.autonomicDisplay.label,
+    autonomicClass: chipClass(presentation.autonomicDisplay.colorClass),
+    wellnessLabel: presentation.wellnessDisplay.label,
+    wellnessClass: chipClass(presentation.wellnessDisplay.colorClass),
+    loadLabel: presentation.loadDisplay.label,
+    loadClass: chipClass(presentation.loadDisplay.colorClass),
+    dissonanceDetected: recovery.signals.dissonanceDetected,
+    sparkHrv: healthSeries.sparkHrv,
+    sparkRhr: healthSeries.sparkRhr,
+    dualData: healthSeries.dualData,
+    ...todayHealth,
+    confidencePct: presentation.confidencePct,
+    confidenceTone: presentation.confidenceTone,
+    completenessLabel: presentation.completenessLabel,
+    overreaching: RISK_DISPLAY[recovery.signals.overreachingRisk],
+    illness: ILLNESS_RISK_DISPLAY[recovery.signals.illnessRisk],
+    keyEvidence,
+    insights,
+    globalDecision: buildGlobalDecisionContext(snapshot, 'RECOVERY'),
+    emptyState: null,
+    hierarchy: {
+      rootId: 'recovery',
+      order: ['hero', 'decision', 'signals', 'insights', 'evidence'],
+    },
+    sections: [],
+  };
+}
+
+function loadRecoveryHealthSeries(
+  healthByDay: ReturnType<typeof indexHealthEntriesByDay>,
+  refDate: Date,
+) {
+  return {
+    sparkHrv: buildDailyWindowSeries(
+      healthByDay,
+      14,
+      (d, e) => ({
+        date: format(d, 'dd MMM', { locale: fr }),
+        value: e?.hrv ?? null,
+      }),
+      refDate,
+    ),
+    sparkRhr: buildDailyWindowSeries(
+      healthByDay,
+      14,
+      (d, e) => ({
+        date: format(d, 'dd MMM', { locale: fr }),
+        value: e?.restingHr ?? null,
+      }),
+      refDate,
+    ),
+    dualData: buildDailyWindowSeries(
+      healthByDay,
+      14,
+      (d, e) => ({
+        date: format(d, 'dd MMM', { locale: fr }),
+        a: e?.bodyBattery ?? null,
+        b: e?.stress ?? null,
+      }),
+      refDate,
+    ),
+  };
+}
+
 function emptyRecoveryViewModel(): RecoveryViewModel {
   return {
     readinessScore: null,
@@ -125,133 +298,12 @@ export async function buildRecoveryViewModel(
   const healthEntries = await getHealthEntries(athleteId, 14, refDate);
   const healthByDay = indexHealthEntriesByDay(healthEntries);
   const todayEntry = getIndexedHealthEntry(healthByDay, refDate);
+  const healthSeries = loadRecoveryHealthSeries(healthByDay, refDate);
 
-  const sparkHrv = buildDailyWindowSeries(
-    healthByDay,
-    14,
-    (d, e) => ({
-      date: format(d, 'dd MMM', { locale: fr }),
-      value: e?.hrv ?? null,
-    }),
-    refDate,
-  );
-
-  const sparkRhr = buildDailyWindowSeries(
-    healthByDay,
-    14,
-    (d, e) => ({
-      date: format(d, 'dd MMM', { locale: fr }),
-      value: e?.restingHr ?? null,
-    }),
-    refDate,
-  );
-
-  const dualData = buildDailyWindowSeries(
-    healthByDay,
-    14,
-    (d, e) => ({
-      date: format(d, 'dd MMM', { locale: fr }),
-      a: e?.bodyBattery ?? null,
-      b: e?.stress ?? null,
-    }),
-    refDate,
-  );
-
-  const signal = mapRecoveryToSignal(recovery.readinessCategory as ReadinessCategory);
-  const autonomicDisplay = mapAutonomicBalanceToDisplay(
-    recovery.signals.autonomicBalance as AutonomicBalance,
-  );
-  const wellnessDisplay = mapSubjectiveWellnessToDisplay(
-    recovery.signals.subjectiveWellness as SubjectiveWellness,
-  );
-  const loadDisplay = mapLoadStressContextToDisplay(
-    recovery.signals.loadStressContext as LoadStressContext,
-  );
-
-  const sleepFreshness =
-    snapshot.freshness.domains.find((d) => d.domain === 'sleep')?.freshness ?? null;
-  const sleepNightPending =
-    sleepFreshness === 'awaiting_data' ||
-    sleepFreshness === 'syncing' ||
-    sleepFreshness === 'computing';
-
-  let limiterLabel = recovery.primaryLimitingFactor
-    ? (PRIMARY_LIMITER_LABEL[recovery.primaryLimitingFactor] ?? recovery.primaryLimitingFactor)
-    : null;
-  // Twin may still flag sleep from yesterday's dimension before tonight syncs.
-  if (sleepNightPending && recovery.primaryLimitingFactor === 'sleep') {
-    limiterLabel = null;
-  }
-
-  const confidencePct = Math.round(recovery.confidence * 100);
-  const confidenceTier = mapConfidenceToTier(recovery.confidence);
-  const completenessLabel =
-    COMPLETENESS_LABEL[recovery.dataCompleteness] ?? recovery.dataCompleteness;
-
-  const intensityLabel = mapRecoveryIntensityLabel(
-    recovery.decision.recommendedIntensity as RecommendedIntensity,
-  );
-
-  const rationale = recovery.decision.rationale.map((r) => resolve(r));
-  const keyEvidence = recovery.recommendation.keyEvidence.map((e) => resolve(e));
-
-  const insights = buildRecoveryPageInsights({
-    autonomicLabel: autonomicDisplay.label,
-    confidence: recovery.confidence,
-    dissonanceDetected: recovery.signals.dissonanceDetected,
-    estimatedRecoveryDays: recovery.estimatedTimeToFullRecovery,
-    illnessLabel: ILLNESS_RISK_DISPLAY[recovery.signals.illnessRisk]?.label ?? null,
-    keyEvidence,
-    limitingFactorLabel: limiterLabel,
-    loadLabel: loadDisplay.label,
-    overreachingLabel: RISK_DISPLAY[recovery.signals.overreachingRisk]?.label ?? null,
-    rationale,
-    readinessScore: recovery.readinessScore,
-    recommendedIntensityLabel: intensityLabel,
-    wellnessLabel: wellnessDisplay.label,
+  return buildPopulatedRecoveryViewModel({
+    snapshot,
+    recovery,
+    todayEntry,
+    healthSeries,
   });
-
-  const confidenceTone = CONFIDENCE_TONE[confidenceTier] ?? 'neutral';
-
-  return {
-    readinessScore: recovery.readinessScore,
-    signal,
-    limiterLabel,
-    estimatedRecoveryDays: recovery.estimatedTimeToFullRecovery,
-    isCalibrating: recovery.readinessCategory === 'BASELINE_PENDING',
-    availableDimCount: Object.values(recovery.dimensions).filter((d) => d.available).length,
-    dimensions: recovery.dimensions,
-    intensityLabel,
-    intensityClassName: mapScoreToColorClass(recovery.readinessScore),
-    rationale,
-    autonomicLabel: autonomicDisplay.label,
-    autonomicClass: chipClass(autonomicDisplay.colorClass),
-    wellnessLabel: wellnessDisplay.label,
-    wellnessClass: chipClass(wellnessDisplay.colorClass),
-    loadLabel: loadDisplay.label,
-    loadClass: chipClass(loadDisplay.colorClass),
-    dissonanceDetected: recovery.signals.dissonanceDetected,
-    sparkHrv,
-    sparkRhr,
-    dualData,
-    baselineLow: todayEntry?.hrvBaselineLow ?? null,
-    baselineHigh: todayEntry?.hrvBaselineHigh ?? null,
-    hrv: todayEntry?.hrv ?? null,
-    restingHr: todayEntry?.restingHr ?? null,
-    bodyBattery: todayEntry?.bodyBattery ?? null,
-    confidencePct,
-    confidenceTone,
-    completenessLabel,
-    overreaching: RISK_DISPLAY[recovery.signals.overreachingRisk],
-    illness: ILLNESS_RISK_DISPLAY[recovery.signals.illnessRisk],
-    keyEvidence,
-    insights,
-    globalDecision: buildGlobalDecisionContext(snapshot, 'RECOVERY'),
-    emptyState: null,
-    hierarchy: {
-      rootId: 'recovery',
-      order: ['hero', 'decision', 'signals', 'insights', 'evidence'],
-    },
-    sections: [],
-  };
 }

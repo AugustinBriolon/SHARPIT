@@ -8,20 +8,18 @@ import {
 } from '@/lib/presentation/projected-athlete';
 import { buildPlanningDiscussPrompt } from '@/lib/coach/chat/coach-session-thread';
 
-function makeState(overrides?: {
+function buildProjectionDay(overrides?: {
   tsbEnd?: number;
-  peakReadinessDay?: string | null;
   highestRiskDay?: string | null;
-  mainLimitingFactor?: string | null;
   planningConfidence?: number;
-}): ProjectedAthleteState {
-  const highestRiskDay = overrides?.highestRiskDay ?? null;
-  const day = {
-    trainingDayId: highestRiskDay ?? '2026-07-21',
+}) {
+  const trainingDayId = overrides?.highestRiskDay ?? '2026-07-21';
+  return {
+    trainingDayId,
     dayOffset: 1,
     dateLabel: 'mar. 21 juil.',
     load: {
-      trainingDayId: highestRiskDay ?? '2026-07-21',
+      trainingDayId,
       plannedTss: 40,
       ctl: 55,
       atl: 40,
@@ -68,7 +66,45 @@ function makeState(overrides?: {
     projectionConfidence: overrides?.planningConfidence ?? 0.34,
     assumptions: [],
   };
+}
 
+const DEFAULT_PROJECTION_SUMMARY = {
+  peakReadinessDay: '2026-07-21',
+  highestRiskDay: null,
+  mainLimitingFactor: null,
+  planningConfidence: 0.34,
+  headline: 'test',
+  riskLines: [] as string[],
+};
+
+function buildProjectionSummary(overrides?: {
+  peakReadinessDay?: string | null;
+  highestRiskDay?: string | null;
+  mainLimitingFactor?: string | null;
+  planningConfidence?: number;
+}) {
+  if (!overrides) {
+    return { ...DEFAULT_PROJECTION_SUMMARY, riskLines: [...DEFAULT_PROJECTION_SUMMARY.riskLines] };
+  }
+  return {
+    ...DEFAULT_PROJECTION_SUMMARY,
+    peakReadinessDay: overrides.peakReadinessDay ?? DEFAULT_PROJECTION_SUMMARY.peakReadinessDay,
+    highestRiskDay: overrides.highestRiskDay ?? DEFAULT_PROJECTION_SUMMARY.highestRiskDay,
+    mainLimitingFactor:
+      overrides.mainLimitingFactor ?? DEFAULT_PROJECTION_SUMMARY.mainLimitingFactor,
+    planningConfidence:
+      overrides.planningConfidence ?? DEFAULT_PROJECTION_SUMMARY.planningConfidence,
+    riskLines: [...DEFAULT_PROJECTION_SUMMARY.riskLines],
+  };
+}
+
+function makeState(overrides?: {
+  tsbEnd?: number;
+  peakReadinessDay?: string | null;
+  highestRiskDay?: string | null;
+  mainLimitingFactor?: string | null;
+  planningConfidence?: number;
+}): ProjectedAthleteState {
   return {
     modelId: PROJECTION_MODEL_ID,
     athleteId: 'default',
@@ -83,15 +119,8 @@ function makeState(overrides?: {
       atl: 45,
       tsb: 5,
     },
-    days: [day],
-    summary: {
-      peakReadinessDay: overrides?.peakReadinessDay ?? '2026-07-21',
-      highestRiskDay,
-      mainLimitingFactor: overrides?.mainLimitingFactor ?? null,
-      planningConfidence: overrides?.planningConfidence ?? 0.34,
-      headline: 'test',
-      riskLines: [],
-    },
+    days: [buildProjectionDay(overrides)],
+    summary: buildProjectionSummary(overrides),
     assumptions: [],
   };
 }

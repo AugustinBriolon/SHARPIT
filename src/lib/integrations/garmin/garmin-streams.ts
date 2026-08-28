@@ -45,14 +45,7 @@ interface GarminDetailsBody {
   detailsAvailable?: boolean;
 }
 
-function unwrapGarminDetails(raw: unknown): GarminDetailsBody | null {
-  if (!raw || typeof raw !== 'object') {
-    return null;
-  }
-  const obj = raw as Record<string, unknown>;
-  if (Array.isArray(obj.activityDetailMetrics) || Array.isArray(obj.metricDescriptors)) {
-    return obj as GarminDetailsBody;
-  }
+function findNestedGarminDetails(obj: Record<string, unknown>): GarminDetailsBody | null {
   for (const value of Object.values(obj)) {
     if (!value || typeof value !== 'object') {
       continue;
@@ -63,6 +56,17 @@ function unwrapGarminDetails(raw: unknown): GarminDetailsBody | null {
     }
   }
   return null;
+}
+
+function unwrapGarminDetails(raw: unknown): GarminDetailsBody | null {
+  if (!raw || typeof raw !== 'object') {
+    return null;
+  }
+  const obj = raw as Record<string, unknown>;
+  if (Array.isArray(obj.activityDetailMetrics) || Array.isArray(obj.metricDescriptors)) {
+    return obj as GarminDetailsBody;
+  }
+  return findNestedGarminDetails(obj);
 }
 
 function metricIndexMap(descriptors: MetricDescriptor[]): Map<string, number> {
@@ -83,49 +87,82 @@ function numAt(metrics: Array<number | null>, idx: number | undefined): number |
   return v !== null && Number.isFinite(v) ? v : null;
 }
 
+function pushPolylineTime(p: PolylinePoint, t0: number | null, series: { time: number[] }): number | null {
+  if (p.time !== null) {
+    if (t0 === null) {
+      t0 = p.time;
+    }
+    const sec = p.time > 1_000_000_000_000 ? (p.time - t0) / 1000 : p.time - t0;
+    series.time.push(Math.max(0, sec));
+  } else {
+    series.time.push(series.time.length > 0 ? series.time[series.time.length - 1] + 1 : 0);
+  }
+  return t0;
+}
+
+function pushPolylineScalars(
+  p: PolylinePoint,
+  series: {
+    distance: number[];
+    altitude: number[];
+    heartrate: number[];
+    velocity: number[];
+  },
+): void {
+  series.distance.push(p.distance ?? (series.distance.length ? series.distance.at(-1)! : 0));
+  series.altitude.push(p.elevation ?? 0);
+  series.heartrate.push(p.heartRate ?? 0);
+  series.velocity.push(p.speed ?? 0);
+}
+
+function appendPolylinePoint(
+  p: PolylinePoint,
+  t0: number | null,
+  series: {
+    time: number[];
+    distance: number[];
+    altitude: number[];
+    heartrate: number[];
+    velocity: number[];
+    latlng: [number, number][];
+  },
+): number | null {
+  const { lat } = p;
+  const lon = p.lng ?? p.lon;
+  if (lat === null || lon === null) {
+    return t0;
+  }
+
+  series.latlng.push([lat, lon]);
+  t0 = pushPolylineTime(p, t0, series);
+  pushPolylineScalars(p, series);
+  return t0;
+}
+
 function buildFromPolyline(polyline: PolylinePoint[]): RawStreams {
-  const time: number[] = [];
-  const distance: number[] = [];
-  const altitude: number[] = [];
-  const heartrate: number[] = [];
-  const velocity: number[] = [];
-  const latlng: [number, number][] = [];
+  const series = {
+    time: [] as number[],
+    distance: [] as number[],
+    altitude: [] as number[],
+    heartrate: [] as number[],
+    velocity: [] as number[],
+    latlng: [] as [number, number][],
+  };
 
   let t0: number | null = null;
   for (const p of polyline) {
-    const { lat } = p;
-    const lon = p.lng ?? p.lon;
-    if (lat === null || lon === null) {
-      continue;
-    }
-
-    latlng.push([lat, lon]);
-
-    if (p.time !== null) {
-      if (t0 === null) {
-        t0 = p.time;
-      }
-      const sec = p.time > 1_000_000_000_000 ? (p.time - t0) / 1000 : p.time - t0;
-      time.push(Math.max(0, sec));
-    } else {
-      time.push(time.length > 0 ? time[time.length - 1] + 1 : 0);
-    }
-
-    distance.push(p.distance ?? (distance.length ? distance[distance.length - 1] : 0));
-    altitude.push(p.elevation ?? 0);
-    heartrate.push(p.heartRate ?? 0);
-    velocity.push(p.speed ?? 0);
+    t0 = appendPolylinePoint(p, t0, series);
   }
 
   return {
-    time,
-    distance,
-    altitude,
-    heartrate,
+    time: series.time,
+    distance: series.distance,
+    altitude: series.altitude,
+    heartrate: series.heartrate,
     watts: [],
     cadence: [],
-    velocity,
-    latlng,
+    velocity: series.velocity,
+    latlng: series.latlng,
   };
 }
 
@@ -133,85 +170,196 @@ function buildFromPolyline(polyline: PolylinePoint[]): RawStreams {
  * Convertit la réponse `/activity/{id}/details` Garmin en séries brutes
  * compatibles avec activity-analysis (même format que Strava).
  */
-export function parseGarminDetailsToRawStreams(details: GarminDetailsBody): RawStreams | null {
-  const rows = details.activityDetailMetrics ?? [];
-  const descriptors = details.metricDescriptors ?? [];
-  const idx = metricIndexMap(descriptors);
+type MetricIndices = {
+  tsIdx: number | undefined;
+  distIdx: number | undefined;
+  hrIdx: number | undefined;
+  wattsIdx: number | undefined;
+  speedIdx: number | undefined;
+  altIdx: number | undefined;
+  bikeCadIdx: number | undefined;
+  runCadIdx: number | undefined;
+  latIdx: number | undefined;
+  lonIdx: number | undefined;
+};
 
-  const tsIdx = idx.get('directTimestamp');
-  const distIdx = idx.get('sumDistance');
-  const hrIdx = idx.get('directHeartRate');
-  const wattsIdx = idx.get('directPower');
-  const speedIdx = idx.get('directSpeed');
-  const altIdx = idx.get('directElevation');
-  const bikeCadIdx = idx.get('directBikeCadence');
-  const runCadIdx =
-    idx.get('directRunCadence') ?? idx.get('directDoubleCadence') ?? idx.get('directCadence');
-  const latIdx = idx.get('directLatitude');
-  const lonIdx = idx.get('directLongitude');
+function metricIndices(idx: Map<string, number>): MetricIndices {
+  return {
+    tsIdx: idx.get('directTimestamp'),
+    distIdx: idx.get('sumDistance'),
+    hrIdx: idx.get('directHeartRate'),
+    wattsIdx: idx.get('directPower'),
+    speedIdx: idx.get('directSpeed'),
+    altIdx: idx.get('directElevation'),
+    bikeCadIdx: idx.get('directBikeCadence'),
+    runCadIdx:
+      idx.get('directRunCadence') ?? idx.get('directDoubleCadence') ?? idx.get('directCadence'),
+    latIdx: idx.get('directLatitude'),
+    lonIdx: idx.get('directLongitude'),
+  };
+}
 
-  if (rows.length === 0) {
-    const poly = details.geoPolylineDTO?.polyline ?? [];
-    if (poly.length > 1) {
-      return buildFromPolyline(poly);
+function pushMetricTime(
+  ts: number | null,
+  series: { time: number[]; t0: number | null },
+): void {
+  if (ts !== null) {
+    if (series.t0 === null) {
+      series.t0 = ts;
     }
-    return null;
+    const sec = ts > 1_000_000_000_000 ? (ts - series.t0) / 1000 : ts - (series.t0 ?? 0);
+    series.time.push(Math.max(0, Math.round(sec)));
+    return;
   }
+  series.time.push(series.time.length > 0 ? series.time[series.time.length - 1] + 1 : 0);
+}
 
-  const time: number[] = [];
-  const distance: number[] = [];
-  const altitude: number[] = [];
-  const heartrate: number[] = [];
-  const watts: number[] = [];
-  const cadence: number[] = [];
-  const velocity: number[] = [];
-  const latlng: [number, number][] = [];
+const METRIC_SERIES_PUSHERS: Array<{
+  push: (
+    m: Array<number | null>,
+    indices: MetricIndices,
+    series: {
+      distance: number[];
+      altitude: number[];
+      heartrate: number[];
+      watts: number[];
+      cadence: number[];
+      velocity: number[];
+    },
+  ) => void;
+}> = [
+  {
+    push: (m, indices, series) => {
+      series.distance.push(
+        numAt(m, indices.distIdx) ?? (series.distance.length ? series.distance.at(-1)! : 0),
+      );
+    },
+  },
+  { push: (m, indices, series) => series.altitude.push(numAt(m, indices.altIdx) ?? 0) },
+  { push: (m, indices, series) => series.heartrate.push(numAt(m, indices.hrIdx) ?? 0) },
+  { push: (m, indices, series) => series.watts.push(numAt(m, indices.wattsIdx) ?? 0) },
+  {
+    push: (m, indices, series) =>
+      series.cadence.push(numAt(m, indices.bikeCadIdx) ?? numAt(m, indices.runCadIdx) ?? 0),
+  },
+  { push: (m, indices, series) => series.velocity.push(numAt(m, indices.speedIdx) ?? 0) },
+];
 
-  let t0: number | null = null;
+function pushMetricSeriesValues(
+  m: Array<number | null>,
+  indices: MetricIndices,
+  series: {
+    distance: number[];
+    altitude: number[];
+    heartrate: number[];
+    watts: number[];
+    cadence: number[];
+    velocity: number[];
+  },
+): void {
+  for (const { push } of METRIC_SERIES_PUSHERS) {
+    push(m, indices, series);
+  }
+}
 
-  for (const row of rows) {
-    const m = row.metrics ?? [];
+function pushMetricLatLng(
+  m: Array<number | null>,
+  indices: MetricIndices,
+  latlng: [number, number][],
+): void {
+  const lat = numAt(m, indices.latIdx);
+  const lon = numAt(m, indices.lonIdx);
+  if (lat !== null && lon !== null) {
+    latlng.push([lat, lon]);
+  }
+}
 
-    const ts = numAt(m, tsIdx);
-    if (ts !== null) {
-      if (t0 === null) {
-        t0 = ts;
-      }
-      const sec = ts > 1_000_000_000_000 ? (ts - t0) / 1000 : ts - (t0 ?? 0);
-      time.push(Math.max(0, Math.round(sec)));
-    } else {
-      time.push(time.length > 0 ? time[time.length - 1] + 1 : 0);
-    }
+function pushMetricScalars(
+  m: Array<number | null>,
+  indices: MetricIndices,
+  series: {
+    distance: number[];
+    altitude: number[];
+    heartrate: number[];
+    watts: number[];
+    cadence: number[];
+    velocity: number[];
+    latlng: [number, number][];
+  },
+): void {
+  pushMetricSeriesValues(m, indices, series);
+  pushMetricLatLng(m, indices, series.latlng);
+}
 
-    distance.push(numAt(m, distIdx) ?? (distance.length ? distance[distance.length - 1] : 0));
-    altitude.push(numAt(m, altIdx) ?? 0);
-    heartrate.push(numAt(m, hrIdx) ?? 0);
-    watts.push(numAt(m, wattsIdx) ?? 0);
+function appendMetricRow(
+  row: ActivityDetailRow,
+  indices: MetricIndices,
+  series: {
+    time: number[];
+    distance: number[];
+    altitude: number[];
+    heartrate: number[];
+    watts: number[];
+    cadence: number[];
+    velocity: number[];
+    latlng: [number, number][];
+    t0: number | null;
+  },
+): void {
+  const m = row.metrics ?? [];
+  pushMetricTime(numAt(m, indices.tsIdx), series);
+  pushMetricScalars(m, indices, series);
+}
 
-    const cad = numAt(m, bikeCadIdx) ?? numAt(m, runCadIdx);
-    cadence.push(cad ?? 0);
-
-    velocity.push(numAt(m, speedIdx) ?? 0);
-
-    const lat = numAt(m, latIdx);
-    const lon = numAt(m, lonIdx);
+function appendPolylineLatLng(details: GarminDetailsBody, latlng: [number, number][]): void {
+  if (latlng.length > 0) {
+    return;
+  }
+  for (const p of details.geoPolylineDTO?.polyline ?? []) {
+    const { lat } = p;
+    const lon = p.lng ?? p.lon;
     if (lat !== null && lon !== null) {
       latlng.push([lat, lon]);
     }
   }
+}
 
-  if (latlng.length === 0) {
+export function parseGarminDetailsToRawStreams(details: GarminDetailsBody): RawStreams | null {
+  const rows = details.activityDetailMetrics ?? [];
+  const indices = metricIndices(metricIndexMap(details.metricDescriptors ?? []));
+
+  if (rows.length === 0) {
     const poly = details.geoPolylineDTO?.polyline ?? [];
-    for (const p of poly) {
-      const { lat } = p;
-      const lon = p.lng ?? p.lon;
-      if (lat !== null && lon !== null) {
-        latlng.push([lat, lon]);
-      }
-    }
+    return poly.length > 1 ? buildFromPolyline(poly) : null;
   }
 
-  return { time, distance, altitude, heartrate, watts, cadence, velocity, latlng };
+  const series = {
+    time: [] as number[],
+    distance: [] as number[],
+    altitude: [] as number[],
+    heartrate: [] as number[],
+    watts: [] as number[],
+    cadence: [] as number[],
+    velocity: [] as number[],
+    latlng: [] as [number, number][],
+    t0: null as number | null,
+  };
+
+  for (const row of rows) {
+    appendMetricRow(row, indices, series);
+  }
+
+  appendPolylineLatLng(details, series.latlng);
+  return {
+    time: series.time,
+    distance: series.distance,
+    altitude: series.altitude,
+    heartrate: series.heartrate,
+    watts: series.watts,
+    cadence: series.cadence,
+    velocity: series.velocity,
+    latlng: series.latlng,
+  };
 }
 
 export function rawStreamsHaveSignal(raw: RawStreams): boolean {

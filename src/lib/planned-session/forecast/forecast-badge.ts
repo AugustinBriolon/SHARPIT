@@ -14,6 +14,31 @@ const THERMAL_SHORT: Record<string, string> = {
   NOT_APPLICABLE: 'Intérieur',
 };
 
+function advisoryTone(
+  advisories: PlannedSessionContext['advisories'],
+  env: NonNullable<PlannedSessionContext['environment']>,
+): PlannedSessionForecastBadge {
+  if (advisories.some((a) => a.kind === 'RAIN_RISK')) {
+    return { tone: 'caution', label: 'Pluie probable' };
+  }
+  if (advisories.some((a) => a.kind === 'COLD_RISK')) {
+    return { tone: 'caution', label: 'Froid marqué' };
+  }
+  if (advisories.some((a) => a.kind === 'REDUCE_INTENSITY' || a.kind === 'HYDRATION')) {
+    return {
+      tone: 'caution',
+      label: THERMAL_SHORT[env.thermalStressLevel] ?? 'Vigilance',
+    };
+  }
+  if (env.thermalStressLevel === 'NOT_APPLICABLE') {
+    return { tone: 'neutral', label: 'Intérieur' };
+  }
+  return {
+    tone: 'ok',
+    label: THERMAL_SHORT[env.thermalStressLevel] ?? 'OK',
+  };
+}
+
 export function forecastBadgeFromContext(
   context: unknown,
   exposureSetting?: string | null,
@@ -30,7 +55,6 @@ export function forecastBadgeFromContext(
   const advisories = parsed.advisories ?? [];
 
   if (advisories.some((a) => a.kind === 'CONFIRM_LOCATION')) {
-    // Soft advisory — not a thermal risk; keep neutral so cards stay calm.
     return { tone: 'neutral', label: 'Lieu à préciser' };
   }
 
@@ -42,25 +66,5 @@ export function forecastBadgeFromContext(
     return { tone: 'caution', label: 'Prévision à rafraîchir' };
   }
 
-  if (advisories.some((a) => a.kind === 'RAIN_RISK')) {
-    return { tone: 'caution', label: 'Pluie probable' };
-  }
-  if (advisories.some((a) => a.kind === 'COLD_RISK')) {
-    return { tone: 'caution', label: 'Froid marqué' };
-  }
-  if (advisories.some((a) => a.kind === 'REDUCE_INTENSITY' || a.kind === 'HYDRATION')) {
-    return {
-      tone: 'caution',
-      label: THERMAL_SHORT[env.thermalStressLevel] ?? 'Vigilance',
-    };
-  }
-
-  if (env.thermalStressLevel === 'NOT_APPLICABLE') {
-    return { tone: 'neutral', label: 'Intérieur' };
-  }
-
-  return {
-    tone: 'ok',
-    label: THERMAL_SHORT[env.thermalStressLevel] ?? 'OK',
-  };
+  return advisoryTone(advisories, env);
 }

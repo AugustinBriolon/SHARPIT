@@ -10,6 +10,39 @@ const VERDICT_FR: Record<SessionAnalysis['verdict'], string> = {
   DIFFERENT: 'différent',
 };
 
+function buildPlannedDiscussBits(input: {
+  intensity?: string | null;
+  durationMin?: number | null;
+  description?: string | null;
+}): string[] {
+  return [
+    input.intensity
+      ? `intensité ${intensityLabels[input.intensity as keyof typeof intensityLabels] ?? input.intensity}`
+      : null,
+    input.durationMin !== null ? `${input.durationMin} min` : null,
+    input.description ? `consigne : ${input.description}` : null,
+  ].filter(Boolean) as string[];
+}
+
+function buildActualDiscussBits(input: {
+  title?: string | null;
+  durationSec?: number | null;
+  notes?: string | null;
+}): string[] {
+  return [
+    input.title ? `« ${input.title} »` : null,
+    input.durationSec !== null ? `${Math.round(input.durationSec / 60)} min réalisées` : null,
+    input.notes ? `notes : ${input.notes}` : null,
+  ].filter(Boolean) as string[];
+}
+
+function formatDiscussContext(plannedBits: string[], actualBits: string[]): string {
+  if (plannedBits.length === 0 && actualBits.length === 0) {
+    return '';
+  }
+  return `\n\nContexte séance :\n- Prévu : ${plannedBits.join(' · ') || '—'}\n- Réalisé : ${actualBits.join(' · ') || '—'}`;
+}
+
 /** Message pour poursuivre une analyse de séance dans le chat coach. */
 export function buildSessionDiscussPrompt(input: {
   title: string | null;
@@ -28,28 +61,9 @@ export function buildSessionDiscussPrompt(input: {
 }): string {
   const name = input.title ?? input.sportLabel;
   const verdict = VERDICT_FR[input.analysis.verdict] ?? input.analysis.verdict;
-
-  const plannedBits = [
-    input.planned?.intensity
-      ? `intensité ${intensityLabels[input.planned.intensity as keyof typeof intensityLabels] ?? input.planned.intensity}`
-      : null,
-    input.planned?.durationMin !== null ? `${input.planned.durationMin} min` : null,
-    input.planned?.description ? `consigne : ${input.planned.description}` : null,
-  ].filter(Boolean);
-
-  const actualBits = [
-    input.actual?.title ? `« ${input.actual.title} »` : null,
-    input.actual?.durationSec !== null
-      ? `${Math.round(input.actual.durationSec / 60)} min réalisées`
-      : null,
-    input.actual?.notes ? `notes : ${input.actual.notes}` : null,
-  ].filter(Boolean);
-
-  const context =
-    plannedBits.length > 0 || actualBits.length > 0
-      ? `\n\nContexte séance :\n- Prévu : ${plannedBits.join(' · ') || '—'}\n- Réalisé : ${actualBits.join(' · ') || '—'}`
-      : '';
-
+  const plannedBits = buildPlannedDiscussBits(input.planned ?? {});
+  const actualBits = buildActualDiscussBits(input.actual ?? {});
+  const context = formatDiscussContext(plannedBits, actualBits);
   const remarks =
     input.analysis.remarks.length > 0
       ? `\n\nPoints notables :\n${input.analysis.remarks.map((r) => `- ${r}`).join('\n')}`
@@ -63,6 +77,55 @@ export function buildSessionDiscussPrompt(input: {
 ${input.analysis.summary}${context}${remarks}${reco}
 
 J'aimerais en discuter avec toi. De quoi souhaites-tu qu'on parle pour mieux comprendre cette séance ?`;
+}
+
+function formatActivityActualBits(input: {
+  date: Date;
+  durationSec: number | null;
+  load: number | null;
+  rpe: number | null;
+  notes: string | null;
+}): string[] {
+  const dateLabel = input.date.toLocaleDateString('fr-FR', {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+  });
+  return [
+    dateLabel,
+    input.durationSec !== null ? `${Math.round(input.durationSec / 60)} min` : null,
+    input.load !== null ? `${Math.round(input.load)} TSS` : null,
+    input.rpe !== null ? `RPE ${input.rpe}/10` : null,
+    input.notes ? `notes : ${input.notes}` : null,
+  ].filter(Boolean) as string[];
+}
+
+function formatActivityPlannedBlock(
+  planned: NonNullable<Parameters<typeof buildActivityDiscussPrompt>[0]['planned']>,
+): string {
+  const plannedBits = [
+    planned.title ? `« ${planned.title} »` : null,
+    planned.durationMin !== null ? `${planned.durationMin} min prévues` : null,
+    planned.intensity
+      ? `intensité ${intensityLabels[planned.intensity as keyof typeof intensityLabels] ?? planned.intensity}`
+      : null,
+    planned.description ? `consigne : ${planned.description}` : null,
+  ].filter(Boolean);
+  return plannedBits.length > 0
+    ? `\n\nSéance programmée liée :\n- ${plannedBits.join('\n- ')}`
+    : '';
+}
+
+function formatActivityAnalysisBlock(analysis: SessionAnalysis): string {
+  const verdict = VERDICT_FR[analysis.verdict] ?? analysis.verdict;
+  const remarks =
+    analysis.remarks.length > 0
+      ? `\n\nPoints notables :\n${analysis.remarks.map((r) => `- ${r}`).join('\n')}`
+      : '';
+  const reco = analysis.recommendation
+    ? `\n\nRecommandation : ${analysis.recommendation}`
+    : '';
+  return `\n\nAnalyse automatique (score ${analysis.complianceScore}/100 — ${verdict}) :\n${analysis.summary}${remarks}${reco}`;
 }
 
 /** Contexte coach pour une activité réalisée (avec ou sans séance planifiée liée). */
@@ -83,51 +146,35 @@ export function buildActivityDiscussPrompt(input: {
   };
 }): string {
   const name = input.title ?? input.sportLabel;
-  const dateLabel = input.date.toLocaleDateString('fr-FR', {
-    weekday: 'short',
-    day: 'numeric',
-    month: 'short',
-  });
-
-  const actualBits = [
-    dateLabel,
-    input.durationSec !== null ? `${Math.round(input.durationSec / 60)} min` : null,
-    input.load !== null ? `${Math.round(input.load)} TSS` : null,
-    input.rpe !== null ? `RPE ${input.rpe}/10` : null,
-    input.notes ? `notes : ${input.notes}` : null,
-  ].filter(Boolean);
-
-  const plannedBits = input.planned
-    ? [
-        input.planned.title ? `« ${input.planned.title} »` : null,
-        input.planned.durationMin !== null ? `${input.planned.durationMin} min prévues` : null,
-        input.planned.intensity
-          ? `intensité ${intensityLabels[input.planned.intensity as keyof typeof intensityLabels] ?? input.planned.intensity}`
-          : null,
-        input.planned.description ? `consigne : ${input.planned.description}` : null,
-      ].filter(Boolean)
-    : [];
-
-  const plannedBlock =
-    plannedBits.length > 0 ? `\n\nSéance programmée liée :\n- ${plannedBits.join('\n- ')}` : '';
+  const actualBits = formatActivityActualBits(input);
+  const plannedBlock = input.planned ? formatActivityPlannedBlock(input.planned) : '';
+  const actualLine = actualBits.join(' · ') || '—';
 
   if (input.analysis) {
-    const verdict = VERDICT_FR[input.analysis.verdict] ?? input.analysis.verdict;
-    const remarks =
-      input.analysis.remarks.length > 0
-        ? `\n\nPoints notables :\n${input.analysis.remarks.map((r) => `- ${r}`).join('\n')}`
-        : '';
-    const reco = input.analysis.recommendation
-      ? `\n\nRecommandation : ${input.analysis.recommendation}`
-      : '';
-
-    return `Je consulte ma séance réalisée « ${name} » (${input.sportLabel}). Réalisé : ${actualBits.join(' · ') || '—'}.${plannedBlock}
-
-Analyse automatique (score ${input.analysis.complianceScore}/100 — ${verdict}) :
-${input.analysis.summary}${remarks}${reco}`;
+    return `Je consulte ma séance réalisée « ${name} » (${input.sportLabel}). Réalisé : ${actualLine}.${plannedBlock}${formatActivityAnalysisBlock(input.analysis)}`;
   }
 
-  return `Je consulte ma séance réalisée « ${name} » (${input.sportLabel}). Réalisé : ${actualBits.join(' · ') || '—'}.${plannedBlock}`;
+  return `Je consulte ma séance réalisée « ${name} » (${input.sportLabel}). Réalisé : ${actualLine}.${plannedBlock}`;
+}
+
+function buildPlannedSessionDetailBits(input: {
+  durationMin?: number | null;
+  load?: number | null;
+  intensity?: string | null;
+  exposureLabel?: string | null;
+  locationLabel?: string | null;
+  description?: string | null;
+}): string[] {
+  return [
+    input.durationMin !== null ? `${input.durationMin} min` : null,
+    input.load !== null ? `${Math.round(input.load)} TSS` : null,
+    input.intensity
+      ? `intensité ${intensityLabels[input.intensity as keyof typeof intensityLabels] ?? input.intensity}`
+      : null,
+    input.exposureLabel ? `lieu ${input.exposureLabel}` : null,
+    input.locationLabel ? `endroit : ${input.locationLabel}` : null,
+    input.description ? `consigne : ${input.description}` : null,
+  ].filter(Boolean) as string[];
 }
 
 /** Message pour discuter d'une séance planifiée (pas encore réalisée). */
@@ -150,18 +197,7 @@ export function buildPlannedSessionDiscussPrompt(input: {
     month: 'long',
   });
   const when = input.startTime ? `${dateLabel} à ${input.startTime}` : dateLabel;
-
-  const bits = [
-    input.durationMin !== null ? `${input.durationMin} min` : null,
-    input.load !== null ? `${Math.round(input.load)} TSS` : null,
-    input.intensity
-      ? `intensité ${intensityLabels[input.intensity as keyof typeof intensityLabels] ?? input.intensity}`
-      : null,
-    input.exposureLabel ? `lieu ${input.exposureLabel}` : null,
-    input.locationLabel ? `endroit : ${input.locationLabel}` : null,
-    input.description ? `consigne : ${input.description}` : null,
-  ].filter(Boolean);
-
+  const bits = buildPlannedSessionDetailBits(input);
   const detail = bits.length > 0 ? `\n\nDétail :\n- ${bits.join('\n- ')}` : '';
 
   return `Je consulte ma séance prévue « ${name} » (${input.sportLabel}), prévue ${when}.${detail}
@@ -214,9 +250,19 @@ export function buildTodayDiscussPrompt(input: {
 J'aimerais en discuter avec toi : ${input.phaseQuestion}`;
 }
 
-/** Message pour discuter d'un objectif depuis Progression. */
-export function buildGoalDiscussPrompt(input: {
-  title: string;
+function formatGoalProgressionBit(input: {
+  currentValue?: number | null;
+  targetValue?: number | null;
+  unit?: string | null;
+}): string | null {
+  if (input.currentValue === null || input.targetValue === null) {
+    return null;
+  }
+  const unitSuffix = input.unit ? ` ${input.unit}` : '';
+  return `progression : ${input.currentValue} → ${input.targetValue}${unitSuffix}`;
+}
+
+function formatGoalDetailBits(input: {
   targetDate?: Date | null;
   daysRemaining?: number | null;
   targetPerformance?: string | null;
@@ -236,12 +282,23 @@ export function buildGoalDiscussPrompt(input: {
     dateLabel ? `échéance : ${dateLabel}` : null,
     input.daysRemaining !== null ? `J-${input.daysRemaining}` : null,
     input.targetPerformance ? `objectif visé : ${input.targetPerformance}` : null,
-    input.currentValue !== null && input.targetValue !== null
-      ? `progression : ${input.currentValue} → ${input.targetValue}${input.unit ? ` ${input.unit}` : ''}`
-      : null,
+    formatGoalProgressionBit(input),
   ].filter(Boolean);
 
-  const detail = bits.length > 0 ? `\n\nDétail :\n- ${bits.join('\n- ')}` : '';
+  return bits.length > 0 ? `\n\nDétail :\n- ${bits.join('\n- ')}` : '';
+}
+
+/** Message pour discuter d'un objectif depuis Progression. */
+export function buildGoalDiscussPrompt(input: {
+  title: string;
+  targetDate?: Date | null;
+  daysRemaining?: number | null;
+  targetPerformance?: string | null;
+  currentValue?: number | null;
+  targetValue?: number | null;
+  unit?: string | null;
+}): string {
+  const detail = formatGoalDetailBits(input);
 
   return `Je consulte mon objectif « ${input.title} ».${detail}
 

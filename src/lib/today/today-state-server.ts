@@ -282,32 +282,75 @@ async function loadAdaptationState(
   }
 }
 
+async function fetchDailyStrainDependencies(athleteId: string, trainingDayId: string) {
+  return Promise.all([
+    featureEngine.getDayFeatures(athleteId, trainingDayId),
+    prisma.activity.findMany({
+      where: {
+        date: approximateTrainingDayUtcRange(trainingDayId),
+      },
+      include: {
+        runMetrics: true,
+        bikeMetrics: true,
+        swimMetrics: true,
+      },
+      orderBy: { date: 'asc' },
+    }),
+    prisma.athleteProfile.findUnique({ where: { id: athleteId } }),
+    prisma.googleAccount.findFirst({ select: { timeZone: true } }),
+    prisma.dailyHealth.findUnique({
+      where: {
+        athleteId_date: { athleteId, date: new Date(`${trainingDayId}T00:00:00.000Z`) },
+      },
+    }),
+  ] as const);
+}
+
+function healthSignalsFromEntry(
+  healthEntry: Awaited<ReturnType<typeof prisma.dailyHealth.findUnique>>,
+) {
+  if (!healthEntry) {
+    return null;
+  }
+  return {
+    calories: healthEntry.calories,
+    recoveryScore: healthEntry.recoveryScore,
+    stress: healthEntry.stress,
+    bodyBattery: healthEntry.bodyBattery,
+    totalSteps: healthEntry.totalSteps,
+    restingHr: healthEntry.restingHr,
+    hrv: healthEntry.hrv,
+  };
+}
+
+function restingHrFromFeatures(
+  features: Awaited<ReturnType<typeof featureEngine.getDayFeatures>>,
+): number | null {
+  if (features.recovery === 'PENDING') {
+    return null;
+  }
+  return features.recovery.rhrAbsolute ?? null;
+}
+
+function strainThresholdsFromProfile(
+  athleteProfile: Awaited<ReturnType<typeof prisma.athleteProfile.findUnique>>,
+  features: Awaited<ReturnType<typeof featureEngine.getDayFeatures>>,
+) {
+  return {
+    ftpW: athleteProfile?.ftpW ?? null,
+    maxHr: athleteProfile?.maxHr ?? null,
+    lthr: athleteProfile?.lthr ?? null,
+    restingHr: restingHrFromFeatures(features),
+  };
+}
+
 async function loadDailyStrainState(
   athleteId: string,
   trainingDayId: string,
 ): Promise<DailyStrainData | null> {
   try {
-    const [features, activities, athleteProfile, googleAccount, healthEntry] = await Promise.all([
-      featureEngine.getDayFeatures(athleteId, trainingDayId),
-      prisma.activity.findMany({
-        where: {
-          date: approximateTrainingDayUtcRange(trainingDayId),
-        },
-        include: {
-          runMetrics: true,
-          bikeMetrics: true,
-          swimMetrics: true,
-        },
-        orderBy: { date: 'asc' },
-      }),
-      prisma.athleteProfile.findUnique({ where: { id: athleteId } }),
-      prisma.googleAccount.findFirst({ select: { timeZone: true } }),
-      prisma.dailyHealth.findUnique({
-        where: {
-          athleteId_date: { athleteId, date: new Date(`${trainingDayId}T00:00:00.000Z`) },
-        },
-      }),
-    ]);
+    const [features, activities, athleteProfile, googleAccount, healthEntry] =
+      await fetchDailyStrainDependencies(athleteId, trainingDayId);
     const trainingDayOptions = {
       timezone: googleAccount?.timeZone ?? DEFAULT_TRAINING_DAY_TIMEZONE,
       trainingDayStartHour: DEFAULT_TRAINING_DAY_START_HOUR,
@@ -319,23 +362,8 @@ async function loadDailyStrainState(
     return computeDailyStrain({
       sessionFeatures: features.sessions,
       legacyActivities: filteredActivities,
-      healthSignals: healthEntry
-        ? {
-            calories: healthEntry.calories,
-            recoveryScore: healthEntry.recoveryScore,
-            stress: healthEntry.stress,
-            bodyBattery: healthEntry.bodyBattery,
-            totalSteps: healthEntry.totalSteps,
-            restingHr: healthEntry.restingHr,
-            hrv: healthEntry.hrv,
-          }
-        : null,
-      thresholds: {
-        ftpW: athleteProfile?.ftpW ?? null,
-        maxHr: athleteProfile?.maxHr ?? null,
-        lthr: athleteProfile?.lthr ?? null,
-        restingHr: features.recovery !== 'PENDING' ? (features.recovery.rhrAbsolute ?? null) : null,
-      },
+      healthSignals: healthSignalsFromEntry(healthEntry),
+      thresholds: strainThresholdsFromProfile(athleteProfile, features),
     });
   } catch (error) {
     console.error('[today-state-server/daily-strain]', error);
@@ -439,6 +467,20 @@ function formatPhysicalHealthResult(result: PhysicalHealthInferenceResult): Phys
   };
 }
 
+async function isCachedReasoningUsable(
+  athleteId: string,
+  cached: ReasoningInferenceResult,
+): Promise<boolean> {
+  const cachedHasI18nTopAction = cached.output.reasoningState.topAction?.verbCode !== null;
+  if (cached.output.reasoningState.overallVerdict === 'INSUFFICIENT_DATA') {
+    return false;
+  }
+  if (!cachedHasI18nTopAction) {
+    return false;
+  }
+  return !(await isReasoningStale(athleteId, cached.computedAt));
+}
+
 async function loadReasoningState(
   athleteId: string,
   trainingDayId: string,
@@ -447,14 +489,7 @@ async function loadReasoningState(
   try {
     if (!forceRefresh) {
       const cached = await reasoningEngine.getLatest(athleteId, trainingDayId);
-      const cachedHasI18nTopAction = cached?.output.reasoningState.topAction?.verbCode !== null;
-      const stale = cached !== null && (await isReasoningStale(athleteId, cached.computedAt));
-      if (
-        cached &&
-        cached.output.reasoningState.overallVerdict !== 'INSUFFICIENT_DATA' &&
-        cachedHasI18nTopAction &&
-        !stale
-      ) {
+      if (cached && (await isCachedReasoningUsable(athleteId, cached))) {
         return {
           reasoning: formatReasoningResult(cached),
           decision: formatDecisionResult(cached),

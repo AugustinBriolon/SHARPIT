@@ -99,31 +99,28 @@ interface ProviderAccounts {
   myfitnesspal?: MaybeAccount;
 }
 
+const RECONNECT_CHECKS: Array<{
+  accountKey: keyof ProviderAccounts;
+  label: string;
+  isConnected: (account: MaybeAccount) => boolean;
+}> = [
+  { accountKey: 'strava', label: 'Strava', isConnected: isOAuthAccountConnected },
+  { accountKey: 'garmin', label: 'Garmin', isConnected: isGarminAccountConnected },
+  { accountKey: 'withings', label: 'Withings', isConnected: isOAuthAccountConnected },
+  { accountKey: 'renpho', label: 'Renpho', isConnected: isRenphoAccountConnected },
+  { accountKey: 'google', label: 'Google', isConnected: isOAuthAccountConnected },
+  { accountKey: 'myfitnesspal', label: 'MyFitnessPal', isConnected: isMfpAccountConnected },
+];
+
 /**
  * Returns names of providers that have an account row but whose credentials are
  * no longer valid (need reconnection).
  */
 export function reconnectProviderNames(accounts: ProviderAccounts): string[] {
-  const names: string[] = [];
-  if (accounts.strava && !isOAuthAccountConnected(accounts.strava)) {
-    names.push('Strava');
-  }
-  if (accounts.garmin && !isGarminAccountConnected(accounts.garmin)) {
-    names.push('Garmin');
-  }
-  if (accounts.withings && !isOAuthAccountConnected(accounts.withings)) {
-    names.push('Withings');
-  }
-  if (accounts.renpho && !isRenphoAccountConnected(accounts.renpho)) {
-    names.push('Renpho');
-  }
-  if (accounts.google && !isOAuthAccountConnected(accounts.google)) {
-    names.push('Google');
-  }
-  if (accounts.myfitnesspal && !isMfpAccountConnected(accounts.myfitnesspal)) {
-    names.push('MyFitnessPal');
-  }
-  return names;
+  return RECONNECT_CHECKS.filter(({ accountKey, isConnected }) => {
+    const account = accounts[accountKey];
+    return account && !isConnected(account);
+  }).map(({ label }) => label);
 }
 
 export function reconnectProductMessage(names: string[]): string | null {

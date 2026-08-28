@@ -115,34 +115,67 @@ function plannedSportLabel(daySummary: TodayDaySummary): string {
   return 'Séance';
 }
 
+function isRestVerdict(verdict: OverallVerdict): boolean {
+  return verdict === 'CAUTION' || verdict === 'RECOVER';
+}
+
+function buildEveningPostSessionMessage(
+  verdict: OverallVerdict,
+  effort: TodayEffortSnapshot,
+  sport: string,
+): string {
+  if (effort.level === 'high') {
+    return `${sport} fait — journée chargée. Repos ce soir.`;
+  }
+  if (isRestVerdict(verdict)) {
+    return `${sport} fait — repos ce soir, rien d'autre.`;
+  }
+  if (effort.level === 'moderate') {
+    return `${sport} fait — soirée calme.`;
+  }
+  return `${sport} fait — tranquille ce soir.`;
+}
+
+function buildDaytimePostSessionMessage(
+  verdict: OverallVerdict,
+  effort: TodayEffortSnapshot,
+  sport: string,
+): string {
+  if (effort.level === 'high') {
+    return `${sport} fait — évite un second bloc aujourd'hui.`;
+  }
+  if (isRestVerdict(verdict)) {
+    return `${sport} fait — pas de volume en plus aujourd'hui.`;
+  }
+  return `${sport} fait — le reste de la journée reste léger.`;
+}
+
 function buildPostSessionMessage(
   verdict: OverallVerdict,
   effort: TodayEffortSnapshot,
   phase: DayPhase,
 ): string {
   const sport = effort.sportLabel;
-
   if (phase === 'evening' || phase === 'night') {
-    if (effort.level === 'high') {
-      return `${sport} fait — journée chargée. Repos ce soir.`;
-    }
-    if (verdict === 'CAUTION' || verdict === 'RECOVER') {
-      return `${sport} fait — repos ce soir, rien d'autre.`;
-    }
-    if (effort.level === 'moderate') {
-      return `${sport} fait — soirée calme.`;
-    }
-    return `${sport} fait — tranquille ce soir.`;
+    return buildEveningPostSessionMessage(verdict, effort, sport);
   }
-
-  if (effort.level === 'high') {
-    return `${sport} fait — évite un second bloc aujourd'hui.`;
-  }
-  if (verdict === 'CAUTION' || verdict === 'RECOVER') {
-    return `${sport} fait — pas de volume en plus aujourd'hui.`;
-  }
-  return `${sport} fait — le reste de la journée reste léger.`;
+  return buildDaytimePostSessionMessage(verdict, effort, sport);
 }
+
+const EVENING_PRE_SESSION: Partial<Record<OverallVerdict, (sport: string) => string>> = {
+  RECOVER: (sport) => `${sport} ce soir — très facile ou report.`,
+  CAUTION: (sport) => `${sport} ce soir — adapte ou reporte si besoin.`,
+  TRAIN_EASY: (sport) => `${sport} ce soir — reste en mode facile.`,
+};
+
+const DAY_PRE_SESSION: Partial<Record<OverallVerdict, (sport: string) => string>> = {
+  RECOVER: (sport) => `${sport} prévu — facile ou report.`,
+  TRAIN_EASY: (sport) => `${sport} prévu — reste en mode facile.`,
+  CAUTION: (sport) => `${sport} prévu — adapte l'intensité.`,
+  TRAIN_SMART: (sport) => `${sport} prévu — vise la qualité.`,
+  TRAIN_HARD: (sport) => `${sport} prévu — tu peux y aller.`,
+  RACE_READY: (sport) => `${sport} prévu — tu peux y aller.`,
+};
 
 function buildPreSessionMessage(
   verdict: OverallVerdict,
@@ -156,33 +189,12 @@ function buildPreSessionMessage(
   }
 
   if (phase === 'evening') {
-    switch (verdict) {
-      case 'RECOVER':
-        return `${sport} ce soir — très facile ou report.`;
-      case 'CAUTION':
-        return `${sport} ce soir — adapte ou reporte si besoin.`;
-      case 'TRAIN_EASY':
-        return `${sport} ce soir — reste en mode facile.`;
-      default:
-        return `${sport} au programme ce soir.`;
-    }
+    const builder = EVENING_PRE_SESSION[verdict];
+    return builder ? builder(sport) : `${sport} au programme ce soir.`;
   }
 
-  switch (verdict) {
-    case 'RECOVER':
-      return `${sport} prévu — facile ou report.`;
-    case 'TRAIN_EASY':
-      return `${sport} prévu — reste en mode facile.`;
-    case 'CAUTION':
-      return `${sport} prévu — adapte l'intensité.`;
-    case 'TRAIN_SMART':
-      return `${sport} prévu — vise la qualité.`;
-    case 'TRAIN_HARD':
-    case 'RACE_READY':
-      return `${sport} prévu — tu peux y aller.`;
-    default:
-      return `${sport} au programme.`;
-  }
+  const builder = DAY_PRE_SESSION[verdict];
+  return builder ? builder(sport) : `${sport} au programme.`;
 }
 
 function buildRestOfDayMessage(
@@ -222,6 +234,38 @@ export function buildContextualTodayMessage(input: TodayNarrativeInput): string 
   return defaultRationale;
 }
 
+const INTENSE_DAY_DISPLAY: VerdictDisplay = {
+  label: 'Journée intense',
+  colorClass: 'text-signal-vo2',
+  bgClass: 'bg-signal-vo2/12 border-signal-vo2/30',
+  dotClass: 'bg-signal-vo2',
+  accentBarClass: 'bg-signal-vo2/80',
+};
+
+const SESSION_DONE_DISPLAY: VerdictDisplay = {
+  label: 'Séance faite',
+  colorClass: 'text-primary',
+  bgClass: 'bg-primary/12 border-primary/30',
+  dotClass: 'bg-primary',
+  accentBarClass: 'bg-primary/80',
+};
+
+const END_OF_DAY_DISPLAY: VerdictDisplay = {
+  label: 'Fin de journée',
+  colorClass: 'text-muted-foreground',
+  bgClass: 'bg-muted/60 border-border',
+  dotClass: 'bg-muted-foreground',
+  accentBarClass: 'bg-muted-foreground/60',
+};
+
+function displayForCompletedEveningSession(effort: TodayEffortSnapshot): VerdictDisplay {
+  return effort.level === 'high' ? INTENSE_DAY_DISPLAY : SESSION_DONE_DISPLAY;
+}
+
+function isLateDayPhase(phase: DayPhase): boolean {
+  return phase === 'evening' || phase === 'night';
+}
+
 /** Libellé et couleurs adaptés quand la séance du jour est déjà faite. */
 export function mapContextualNarrativeDisplay(
   verdict: OverallVerdict,
@@ -231,39 +275,12 @@ export function mapContextualNarrativeDisplay(
   const phase = getDayPhase(now.getHours());
   const done = hasCompletedSessionsToday(input.daySummary);
 
-  if (done && input.effort) {
-    if (phase === 'evening' || phase === 'night') {
-      if (input.effort.level === 'high') {
-        return {
-          label: 'Journée intense',
-          colorClass: 'text-signal-vo2',
-          bgClass: 'bg-signal-vo2/12 border-signal-vo2/30',
-          dotClass: 'bg-signal-vo2',
-          accentBarClass: 'bg-signal-vo2/80',
-        };
-      }
-      return {
-        label: 'Séance faite',
-        colorClass: 'text-primary',
-        bgClass: 'bg-primary/12 border-primary/30',
-        dotClass: 'bg-primary',
-        accentBarClass: 'bg-primary/80',
-      };
-    }
+  if (done && input.effort && isLateDayPhase(phase)) {
+    return displayForCompletedEveningSession(input.effort);
   }
 
-  if (
-    (phase === 'evening' || phase === 'night') &&
-    !done &&
-    !hasPlannedSessionsToday(input.daySummary)
-  ) {
-    return {
-      label: 'Fin de journée',
-      colorClass: 'text-muted-foreground',
-      bgClass: 'bg-muted/60 border-border',
-      dotClass: 'bg-muted-foreground',
-      accentBarClass: 'bg-muted-foreground/60',
-    };
+  if (isLateDayPhase(phase) && !done && !hasPlannedSessionsToday(input.daySummary)) {
+    return END_OF_DAY_DISPLAY;
   }
 
   return mapVerdictToDisplay(verdict);

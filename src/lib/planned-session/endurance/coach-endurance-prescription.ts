@@ -206,6 +206,50 @@ function normalizeStep(
   };
 }
 
+function appendCoachBlock(
+  blocks: EnduranceBlock[],
+  block: CoachEndurancePrescription['blocks'][number],
+  steps: EnduranceStep[],
+): void {
+  if (steps.length === 0) {
+    return;
+  }
+  if (block.times !== null && block.times > 1) {
+    blocks.push({ kind: 'repeat', iterations: block.times, steps });
+    return;
+  }
+  for (const step of steps) {
+    blocks.push({ kind: 'step', step });
+  }
+}
+
+function buildStoredPrescription(
+  sport: EnduranceSport,
+  blocks: EnduranceBlock[],
+  poolLengthM: number | null | undefined,
+): EndurancePrescription {
+  return {
+    version: 1,
+    sport,
+    ...(sport === 'SWIM' && poolLengthM !== null ? { poolLengthM } : {}),
+    blocks: blocks.slice(0, 30),
+  };
+}
+
+function processCoachBlock(
+  blocks: EnduranceBlock[],
+  block: CoachEndurancePrescription['blocks'][number],
+  sport: EnduranceSport,
+  intensity: SessionIntensity | null,
+): void {
+  const authored =
+    block.times !== null && block.times > 1
+      ? reclassifyRecoverySteps(block.steps, intensity)
+      : block.steps;
+  const steps = authored.map((step) => normalizeStep(step, sport, intensity));
+  appendCoachBlock(blocks, block, steps);
+}
+
 /**
  * Turn the coach's intent into the stored prescription, resolving each step's
  * effort into a relative band. Returns null when nothing usable was authored.
@@ -220,38 +264,17 @@ export function normalizeCoachEndurancePrescription(input: {
     return null;
   }
 
+  const intensity = input.intensity ?? null;
   const blocks: EnduranceBlock[] = [];
   for (const block of input.prescription.blocks) {
-    const authored =
-      block.times !== null && block.times > 1
-        ? reclassifyRecoverySteps(block.steps, input.intensity ?? null)
-        : block.steps;
-    const steps = authored.map((step) => normalizeStep(step, sport, input.intensity ?? null));
-    if (steps.length === 0) {
-      continue;
-    }
-
-    if (block.times !== null && block.times > 1) {
-      blocks.push({ kind: 'repeat', iterations: block.times, steps });
-      continue;
-    }
-    for (const step of steps) {
-      blocks.push({ kind: 'step', step });
-    }
+    processCoachBlock(blocks, block, sport, intensity);
   }
 
   if (blocks.length === 0) {
     return null;
   }
 
-  return {
-    version: 1,
-    sport,
-    ...(sport === 'SWIM' && input.prescription.poolLengthM !== null
-      ? { poolLengthM: input.prescription.poolLengthM }
-      : {}),
-    blocks: blocks.slice(0, 30),
-  };
+  return buildStoredPrescription(sport, blocks, input.prescription.poolLengthM);
 }
 
 const KIND_LABEL_FR: Record<EnduranceStepKind, string> = {
@@ -336,6 +359,15 @@ export function formatEndurancePrescriptionSummary(prescription: EndurancePrescr
     .join(' · ');
 }
 
+function storedEndurancePrescription(
+  raw: CoachEndurancePrescription | EndurancePrescription | null | undefined,
+): EndurancePrescription | null {
+  if (raw !== null && typeof raw === 'object' && 'version' in raw) {
+    return raw as EndurancePrescription;
+  }
+  return null;
+}
+
 /**
  * Reconcile the structure and the prose before persisting.
  *
@@ -352,16 +384,10 @@ export function resolveEnduranceFieldsForPersist(input: {
 }): { endurancePrescription: EndurancePrescription | null; description: string | null } {
   const description = input.description?.trim() || null;
 
-  const raw = input.endurancePrescription;
-  const alreadyStored =
-    raw !== null && typeof raw === 'object' && 'version' in raw
-      ? (raw as EndurancePrescription)
-      : null;
-
   const prescription =
-    alreadyStored ??
+    storedEndurancePrescription(input.endurancePrescription) ??
     normalizeCoachEndurancePrescription({
-      prescription: raw as CoachEndurancePrescription | null | undefined,
+      prescription: input.endurancePrescription as CoachEndurancePrescription | null | undefined,
       type: input.type,
       intensity: input.intensity ?? null,
     });
