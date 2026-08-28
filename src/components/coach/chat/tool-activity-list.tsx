@@ -52,7 +52,9 @@ export function ToolActivityList({
   const animate = useShouldAnimate({ essential: true });
   const safe = useSafeMotion();
 
-  if (entries.length === 0) return null;
+  if (entries.length === 0) {
+    return null;
+  }
 
   if (!animate) {
     return (

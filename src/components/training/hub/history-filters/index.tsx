@@ -38,7 +38,9 @@ export function HistoryFilters({
   const activeCount = countActiveTrainingHistoryFilters(filters);
   const isActive = activeCount > 0;
   let ariaControls: string | undefined;
-  if (open) ariaControls = isMobile ? 'history-filter-drawer' : 'history-filter-menu';
+  if (open) {
+    ariaControls = isMobile ? 'history-filter-drawer' : 'history-filter-menu';
+  }
 
   return (
     <div className="flex items-center gap-2">

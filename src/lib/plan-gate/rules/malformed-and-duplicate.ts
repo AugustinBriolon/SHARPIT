@@ -3,13 +3,31 @@ import type { GateContext, GateProposal, PlanGateRule, RuleFinding } from '../ty
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
-function isMalformed(proposal: GateProposal): string | null {
-  if (!DATE_PATTERN.test(proposal.date)) return 'invalid date format';
-  if (Number.isNaN(new Date(`${proposal.date}T00:00:00`).getTime())) return 'unparseable date';
-  if (proposal.durationMin != null && proposal.durationMin <= 0) return 'non-positive duration';
-  if (proposal.load != null && proposal.load < 0) return 'negative load';
-  if (proposal.action === 'MODIFY' && !proposal.sessionId) return 'MODIFY without sessionId';
+function validateMalformedDate(proposal: GateProposal): string | null {
+  if (!DATE_PATTERN.test(proposal.date)) {
+    return 'invalid date format';
+  }
+  if (Number.isNaN(new Date(`${proposal.date}T00:00:00`).getTime())) {
+    return 'unparseable date';
+  }
   return null;
+}
+
+function validateMalformedFields(proposal: GateProposal): string | null {
+  if (proposal.durationMin !== null && proposal.durationMin <= 0) {
+    return 'non-positive duration';
+  }
+  if (proposal.load !== null && proposal.load < 0) {
+    return 'negative load';
+  }
+  if (proposal.action === 'MODIFY' && !proposal.sessionId) {
+    return 'MODIFY without sessionId';
+  }
+  return null;
+}
+
+function isMalformed(proposal: GateProposal): string | null {
+  return validateMalformedDate(proposal) ?? validateMalformedFields(proposal);
 }
 
 export const malformedAndDuplicateRule: PlanGateRule = (
@@ -36,7 +54,9 @@ export const malformedAndDuplicateRule: PlanGateRule = (
   // A MODIFY proposal that leaves the date untouched inherits the existing session's
   // date (see build-context.ts / adapt route's toGateProposal) — that date may already
   // be in the past (e.g. adjusting today's load), which is not a "malformed" proposal.
-  if (proposal.action !== 'ADD') return findings;
+  if (proposal.action !== 'ADD') {
+    return findings;
+  }
 
   if (proposedDate < today) {
     findings.push({

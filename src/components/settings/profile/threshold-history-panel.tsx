@@ -26,7 +26,9 @@ export function ThresholdHistoryPanel({ history }: { history: ClientThresholdSna
   const [expanded, setExpanded] = useState(false);
   const deduped = useMemo(() => dedupeThresholdHistory(history), [history]);
 
-  if (deduped.length === 0) return null;
+  if (deduped.length === 0) {
+    return null;
+  }
 
   const entries = deduped.map((snapshot, index) => ({
     snapshot,

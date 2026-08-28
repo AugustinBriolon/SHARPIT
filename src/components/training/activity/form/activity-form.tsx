@@ -134,7 +134,9 @@ export function ActivityForm({ mode, initialData }: ActivityFormProps) {
   useEffect(() => () => form.clearErrors('root'), [form]);
 
   useEffect(() => {
-    if (mode !== 'create' || locationTouchedRef.current) return;
+    if (mode !== 'create' || locationTouchedRef.current) {
+      return;
+    }
     const dateIso = resolvedActivityDate.toISOString();
     void fetch(`/api/geocoding/home?date=${encodeURIComponent(dateIso)}`)
       .then((res) => (res.ok ? res.json() : null))
@@ -172,7 +174,9 @@ export function ActivityForm({ mode, initialData }: ActivityFormProps) {
   }, [form, location]);
 
   useEffect(() => {
-    if (!isOutdoor || !location) return;
+    if (!isOutdoor || !location) {
+      return;
+    }
 
     const controller = new AbortController();
     const timer = setTimeout(() => {
@@ -191,7 +195,9 @@ export function ActivityForm({ mode, initialData }: ActivityFormProps) {
             }),
             signal: controller.signal,
           });
-          if (!response.ok) return;
+          if (!response.ok) {
+            return;
+          }
           const data = (await response.json()) as {
             weather?: string | null;
             summary?: string | null;
@@ -203,7 +209,9 @@ export function ActivityForm({ mode, initialData }: ActivityFormProps) {
         } catch {
           // best-effort
         } finally {
-          if (!controller.signal.aborted) setWeatherLoading(false);
+          if (!controller.signal.aborted) {
+            setWeatherLoading(false);
+          }
         }
       })();
     }, 400);
@@ -234,7 +242,9 @@ export function ActivityForm({ mode, initialData }: ActivityFormProps) {
 
   const onSubmit = form.handleSubmit(
     async (values) => {
-      if (guardDisabled) return;
+      if (guardDisabled) {
+        return;
+      }
       const payload = sanitizeActivityPayload(values);
 
       try {
@@ -327,7 +337,7 @@ export function ActivityForm({ mode, initialData }: ActivityFormProps) {
               inputMode="decimal"
               type="number"
               value={
-                resolvedDurationSec != null && resolvedDurationSec > 0
+                resolvedDurationSec !== null && resolvedDurationSec > 0
                   ? Math.round(resolvedDurationSec / 60)
                   : ''
               }

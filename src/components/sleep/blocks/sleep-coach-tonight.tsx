@@ -29,14 +29,16 @@ export function SleepCoachTonight({
   /** Wrap in an analysis panel for the 2-col composition beside night structure. */
   asPanel?: boolean;
 }) {
-  if (!view.hasData) return null;
+  if (!view.hasData) {
+    return null;
+  }
 
   const bedtime = view.recommendedBedtimeMin;
   const durationMin = Math.max(view.recommendedDurationMin, view.targetDurationMin);
-  const hasPlan = bedtime != null && durationMin > 0;
+  const hasPlan = bedtime !== null && durationMin > 0;
 
-  const relaxation = bedtime != null ? bedtime - RELAXATION_LEAD_MIN : null;
-  const wake = bedtime != null && durationMin > 0 ? bedtime + durationMin : null;
+  const relaxation = bedtime !== null ? bedtime - RELAXATION_LEAD_MIN : null;
+  const wake = bedtime !== null && durationMin > 0 ? bedtime + durationMin : null;
 
   const secondaryNote = tonightReason({
     debt7Min: view.debt7Min,
@@ -57,8 +59,8 @@ export function SleepCoachTonight({
             </p>
             <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
               Vise {formatDuration(durationMin)}
-              {wake != null ? ` · réveil ~${formatClock(wake % 1440)}` : ''}
-              {relaxation != null ? ` · détente dès ${formatClock(relaxation)}` : ''}.
+              {wake !== null ? ` · réveil ~${formatClock(wake % 1440)}` : ''}
+              {relaxation !== null ? ` · détente dès ${formatClock(relaxation)}` : ''}.
             </p>
           </div>
         </div>

@@ -62,8 +62,8 @@ export async function resolveTravelContextCoordinates(
   },
 ): Promise<{ locationLabel: string; locationLat: number; locationLng: number }> {
   if (
-    input.locationLat != null &&
-    input.locationLng != null &&
+    input.locationLat !== null &&
+    input.locationLng !== null &&
     Number.isFinite(input.locationLat) &&
     Number.isFinite(input.locationLng)
   ) {
@@ -120,7 +120,9 @@ export async function getActiveTravelContext(
     },
     orderBy: { startDate: 'desc' },
   });
-  if (!travel) return null;
+  if (!travel) {
+    return null;
+  }
   // type: 'TRAVEL' is filtered above — location is always resolved for these rows.
   return {
     ...travel,
@@ -231,7 +233,9 @@ export async function updateTravelContext(
       allowedDisciplines: training.allowedDisciplines,
     },
   });
-  if (count === 0) return null;
+  if (count === 0) {
+    return null;
+  }
   return prisma.athleteTravelContext.findUnique({ where: { id } });
 }
 
@@ -240,7 +244,9 @@ export async function deleteTravelContext(prisma: PrismaClient, athleteId: strin
     where: { id, athleteId },
     select: { id: true },
   });
-  if (!owned) return null;
+  if (!owned) {
+    return null;
+  }
   return prisma.athleteTravelContext.delete({ where: { id } });
 }
 
@@ -252,7 +258,9 @@ export async function applyTravelContextToUpcomingSessions(
   const travel = await prisma.athleteTravelContext.findFirst({
     where: { id: travelId, athleteId },
   });
-  if (!travel || travel.type !== 'TRAVEL') return 0;
+  if (!travel || travel.type !== 'TRAVEL') {
+    return 0;
+  }
 
   const today = toUtcDateOnly(new Date());
   const horizon = addDays(today, 60);
@@ -273,7 +281,9 @@ export async function applyTravelContextToUpcomingSessions(
 
   const inWindow = sessions.filter((s) => s.date >= travel.startDate && s.date <= travel.endDate);
 
-  if (inWindow.length === 0) return 0;
+  if (inWindow.length === 0) {
+    return 0;
+  }
 
   await prisma.plannedSession.updateMany({
     where: { id: { in: inWindow.map((s) => s.id) }, athleteId },

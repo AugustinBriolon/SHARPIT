@@ -27,7 +27,9 @@ export function RecoveryDimensionsSection({
   limiterKey?: string | null;
   loading?: boolean;
 }) {
-  if (loading) return null;
+  if (loading) {
+    return null;
+  }
 
   const items = Object.keys(DIMENSION_LABEL).map((key) => ({
     key,

@@ -102,7 +102,9 @@ describe('buildScenarioApplyOp', () => {
       }),
     );
     expect(op.op).toBe('update');
-    if (op.op !== 'update') return;
+    if (op.op !== 'update') {
+      return;
+    }
     expect(op.data.date?.getFullYear()).toBe(2026);
     expect(op.data.date?.getMonth()).toBe(6);
     expect(op.data.date?.getDate()).toBe(23);
@@ -131,7 +133,9 @@ describe('optimisticSessionFieldsForKind', () => {
     const fields = optimisticSessionFieldsForKind('DELAY_SESSION', current);
     expect(fields).not.toBeNull();
     expect(fields).not.toBe('remove');
-    if (fields == null || fields === 'remove') return;
+    if (fields === null || fields === 'remove') {
+      return;
+    }
     expect(fields.date?.getDate()).toBe(23);
   });
 });

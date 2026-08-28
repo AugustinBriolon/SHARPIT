@@ -23,10 +23,16 @@ export function fosterTssDissonanceRatio(
   canonicalTss: number | null | undefined,
   fosterSessionLoad: number | null | undefined,
 ): number | null {
-  if (canonicalTss == null || canonicalTss <= 0) return null;
-  if (fosterSessionLoad == null || fosterSessionLoad <= 0) return null;
+  if (canonicalTss === null || canonicalTss <= 0) {
+    return null;
+  }
+  if (fosterSessionLoad === null || fosterSessionLoad <= 0) {
+    return null;
+  }
   const fosterTss = fosterSessionLoadToTss(fosterSessionLoad);
-  if (fosterTss <= 0) return null;
+  if (fosterTss <= 0) {
+    return null;
+  }
   return Math.abs(fosterTss - canonicalTss) / Math.max(fosterTss, canonicalTss);
 }
 
@@ -38,7 +44,9 @@ export function fosterDissonanceLabel(
   fosterSessionLoad: number,
 ): 'higher' | 'lower' | null {
   const ratio = fosterTssDissonanceRatio(canonicalTss, fosterSessionLoad);
-  if (ratio == null || ratio < FOSTER_TSS_DISSONANCE_RATIO) return null;
+  if (ratio === null || ratio < FOSTER_TSS_DISSONANCE_RATIO) {
+    return null;
+  }
   const fosterTss = fosterSessionLoadToTss(fosterSessionLoad);
   return fosterTss > canonicalTss ? 'higher' : 'lower';
 }
@@ -52,12 +60,20 @@ export function formatFosterLoadHint(
   rpe: number | null | undefined,
   canonicalTss: number | null | undefined,
 ): string | null {
-  if (rpe == null || durationSec == null || durationSec <= 0) return null;
+  if (rpe === null || durationSec === null || durationSec <= 0) {
+    return null;
+  }
   const fosterLoad = computeFosterSessionLoad(durationSec, rpe);
   const rounded = Math.round(fosterLoad);
-  if (canonicalTss == null) return `${rounded} perçue`;
+  if (canonicalTss === null) {
+    return `${rounded} perçue`;
+  }
   const dissonance = fosterDissonanceLabel(canonicalTss, fosterLoad);
-  if (dissonance === 'higher') return `${rounded} perçue (ressenti plus élevé)`;
-  if (dissonance === 'lower') return `${rounded} perçue (ressenti plus bas)`;
+  if (dissonance === 'higher') {
+    return `${rounded} perçue (ressenti plus élevé)`;
+  }
+  if (dissonance === 'lower') {
+    return `${rounded} perçue (ressenti plus bas)`;
+  }
   return `${rounded} perçue`;
 }

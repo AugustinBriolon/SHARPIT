@@ -126,9 +126,15 @@ function clampSeconds(minutes: number): number {
 }
 
 function durationOf(step: CoachEnduranceStep): EnduranceDuration {
-  if (step.lap) return { type: 'lap' };
-  if (step.meters != null) return { type: 'distance', meters: step.meters };
-  if (step.minutes != null) return { type: 'time', seconds: clampSeconds(step.minutes) };
+  if (step.lap) {
+    return { type: 'lap' };
+  }
+  if (step.meters !== null) {
+    return { type: 'distance', meters: step.meters };
+  }
+  if (step.minutes !== null) {
+    return { type: 'time', seconds: clampSeconds(step.minutes) };
+  }
   // A step with no stated end is an athlete-driven one — Lap is the honest reading.
   return { type: 'lap' };
 }
@@ -158,16 +164,22 @@ function reclassifyRecoverySteps(
   const effortOf = (step: CoachEnduranceStep) => step.effort ?? sessionIntensity ?? null;
   const ranks = steps
     .map(effortOf)
-    .filter((effort): effort is CoachEffort => effort != null)
+    .filter((effort): effort is CoachEffort => effort !== null)
     .map((effort) => EFFORT_RANK[effort]);
-  if (ranks.length === 0) return steps;
+  if (ranks.length === 0) {
+    return steps;
+  }
 
   const hardest = Math.max(...ranks);
-  if (hardest <= EFFORT_RANK.RECOVERY) return steps;
+  if (hardest <= EFFORT_RANK.RECOVERY) {
+    return steps;
+  }
 
   return steps.map((step) => {
     const effort = effortOf(step);
-    if (step.kind !== 'interval' || effort == null) return step;
+    if (step.kind !== 'interval' || effort === null) {
+      return step;
+    }
     return EFFORT_RANK[effort] === EFFORT_RANK.RECOVERY ? { ...step, kind: 'recovery' } : step;
   });
 }
@@ -180,7 +192,7 @@ function normalizeStep(
   const { kind } = step;
   const effort = step.effort ?? sessionIntensity;
   const target =
-    UNGUIDED_KINDS.has(kind) || effort == null
+    UNGUIDED_KINDS.has(kind) || effort === null
       ? NO_TARGET
       : defaultTargetForIntensity(sport, effort).target;
 
@@ -204,30 +216,38 @@ export function normalizeCoachEndurancePrescription(input: {
   intensity?: SessionIntensity | null;
 }): EndurancePrescription | null {
   const sport = enduranceSportFromActivityType(input.type);
-  if (!sport || !input.prescription?.blocks?.length) return null;
+  if (!sport || !input.prescription?.blocks?.length) {
+    return null;
+  }
 
   const blocks: EnduranceBlock[] = [];
   for (const block of input.prescription.blocks) {
     const authored =
-      block.times != null && block.times > 1
+      block.times !== null && block.times > 1
         ? reclassifyRecoverySteps(block.steps, input.intensity ?? null)
         : block.steps;
     const steps = authored.map((step) => normalizeStep(step, sport, input.intensity ?? null));
-    if (steps.length === 0) continue;
+    if (steps.length === 0) {
+      continue;
+    }
 
-    if (block.times != null && block.times > 1) {
+    if (block.times !== null && block.times > 1) {
       blocks.push({ kind: 'repeat', iterations: block.times, steps });
       continue;
     }
-    for (const step of steps) blocks.push({ kind: 'step', step });
+    for (const step of steps) {
+      blocks.push({ kind: 'step', step });
+    }
   }
 
-  if (blocks.length === 0) return null;
+  if (blocks.length === 0) {
+    return null;
+  }
 
   return {
     version: 1,
     sport,
-    ...(sport === 'SWIM' && input.prescription.poolLengthM != null
+    ...(sport === 'SWIM' && input.prescription.poolLengthM !== null
       ? { poolLengthM: input.prescription.poolLengthM }
       : {}),
     blocks: blocks.slice(0, 30),
@@ -243,7 +263,9 @@ const KIND_LABEL_FR: Record<EnduranceStepKind, string> = {
 };
 
 function formatDuration(duration: EnduranceDuration): string {
-  if (duration.type === 'lap') return 'au Lap';
+  if (duration.type === 'lap') {
+    return 'au Lap';
+  }
   if (duration.type === 'distance') {
     return duration.meters < 1000
       ? `${duration.meters} m`
@@ -282,7 +304,9 @@ const ROLE_NAMED_KINDS = new Set<EnduranceStepKind>(['warmup', 'cooldown', 'rest
 
 function formatStep(step: EnduranceStep, sport: EnduranceSport): string {
   // The stroke is what a pool set is about, so it replaces the generic step label.
-  if (step.stroke) return [formatDuration(step.duration), STROKE_LABEL_FR[step.stroke]].join(' ');
+  if (step.stroke) {
+    return [formatDuration(step.duration), STROKE_LABEL_FR[step.stroke]].join(' ');
+  }
 
   const intensity = ROLE_NAMED_KINDS.has(step.kind)
     ? null
@@ -303,7 +327,9 @@ export function formatEndurancePrescriptionSummary(prescription: EndurancePrescr
   const { sport } = prescription;
   return prescription.blocks
     .map((block) => {
-      if (block.kind === 'step') return formatStep(block.step, sport);
+      if (block.kind === 'step') {
+        return formatStep(block.step, sport);
+      }
       const inner = block.steps.map((step) => formatStep(step, sport)).join(' + ');
       return `${block.iterations}× (${inner})`;
     })
@@ -328,7 +354,7 @@ export function resolveEnduranceFieldsForPersist(input: {
 
   const raw = input.endurancePrescription;
   const alreadyStored =
-    raw != null && typeof raw === 'object' && 'version' in raw
+    raw !== null && typeof raw === 'object' && 'version' in raw
       ? (raw as EndurancePrescription)
       : null;
 
@@ -340,7 +366,9 @@ export function resolveEnduranceFieldsForPersist(input: {
       intensity: input.intensity ?? null,
     });
 
-  if (!prescription) return { endurancePrescription: null, description };
+  if (!prescription) {
+    return { endurancePrescription: null, description };
+  }
 
   return {
     endurancePrescription: prescription,

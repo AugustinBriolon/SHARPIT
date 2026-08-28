@@ -10,7 +10,9 @@ import type { LearningFeedbackItem } from '@/lib/decision-memory/learning-feedba
 import type { WeeklyBriefLearningFeedbackItem } from '@/core/presentation/weekly-coaching-brief-view-model';
 
 function categoryLabel(item: LearningFeedbackItem): string {
-  if (!item.type) return '';
+  if (!item.type) {
+    return '';
+  }
   const typeLabel = activityTypeLabels[item.type];
   const intensityLabel = item.intensity ? intensityLabels[item.intensity] : null;
   return intensityLabel ? `${typeLabel} ${intensityLabel}` : typeLabel;

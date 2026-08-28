@@ -86,7 +86,9 @@ export function newEnduranceDraftBlock(
  * absolute override, and reads back as `auto` rather than as a wrong label.
  */
 function effortFromTarget(sport: EnduranceSport, target: EnduranceTarget): EnduranceDraftEffort {
-  if (target.metric === 'none') return 'auto';
+  if (target.metric === 'none') {
+    return 'auto';
+  }
   for (const effort of MATCHABLE_EFFORTS) {
     const candidate = defaultTargetForIntensity(sport, effort).target;
     if (
@@ -104,8 +106,12 @@ function draftStepFrom(step: EnduranceStep, sport: EnduranceSport): EnduranceDra
   const { duration } = step;
   const mode: EnduranceDraftMode = duration.type === 'lap' ? 'lap' : duration.type;
   let value = '';
-  if (duration.type === 'time') value = String(Math.round((duration.seconds / 60) * 10) / 10);
-  if (duration.type === 'distance') value = String(duration.meters);
+  if (duration.type === 'time') {
+    value = String(Math.round((duration.seconds / 60) * 10) / 10);
+  }
+  if (duration.type === 'distance') {
+    value = String(duration.meters);
+  }
 
   return newEnduranceDraftStep({
     kind: step.kind,
@@ -121,7 +127,9 @@ function draftStepFrom(step: EnduranceStep, sport: EnduranceSport): EnduranceDra
 export function draftFromEndurancePrescription(
   prescription: EndurancePrescription | null | undefined,
 ): EnduranceDraftBlock[] {
-  if (!prescription?.blocks.length) return [];
+  if (!prescription?.blocks.length) {
+    return [];
+  }
 
   return prescription.blocks.map((block) => {
     if (block.kind === 'step') {
@@ -172,7 +180,9 @@ export function endurancePrescriptionFromDraft(
       }),
   };
 
-  if (authored.blocks.length === 0) return null;
+  if (authored.blocks.length === 0) {
+    return null;
+  }
 
   return normalizeCoachEndurancePrescription({
     prescription: authored,

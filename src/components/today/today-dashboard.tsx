@@ -25,8 +25,12 @@ import type { TodayViewModel } from '@/core/presentation/today-view-model';
 import { sessionChoiceLabel } from '@/lib/today/morning-orientation';
 
 function withClientMorningHold(vm: TodayViewModel, holdActive: boolean): TodayViewModel {
-  if (!holdActive) return vm;
-  if (!vm.morningOrientation || vm.morningOrientation.phase === 'POST_CHOICE') return vm;
+  if (!holdActive) {
+    return vm;
+  }
+  if (!vm.morningOrientation || vm.morningOrientation.phase === 'POST_CHOICE') {
+    return vm;
+  }
 
   const primarySessionId =
     vm.actionRow.daySummaryLines.find((l) => l.kind === 'planned')?.id ??
@@ -57,7 +61,9 @@ function withClientMorningHold(vm: TodayViewModel, holdActive: boolean): TodayVi
     actionRow: {
       ...vm.actionRow,
       daySummaryLines: vm.actionRow.daySummaryLines.map((line) => {
-        if (!sessionId || line.id !== sessionId) return line;
+        if (!sessionId || line.id !== sessionId) {
+          return line;
+        }
         return { ...line, morningChoiceLabel: label };
       }),
     },
@@ -96,7 +102,9 @@ export function TodayDashboard() {
         statusSnoozeKey={vm?.statusSnoozeKey}
         onWellnessCompleted={() => void query.refetch()}
         onRefresh={() => {
-          if (guardDisabled) return;
+          if (guardDisabled) {
+            return;
+          }
           void query.refetch();
         }}
       />
@@ -155,7 +163,7 @@ export function TodayDashboard() {
       <div className="grid items-stretch gap-4 lg:grid-cols-2">
         <ActivityConsistencyPanel
           activities={activitiesQuery.data ?? []}
-          loading={activitiesQuery.data == null}
+          loading={activitiesQuery.data === null}
         />
         <TodayNutritionCard />
       </div>

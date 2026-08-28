@@ -70,14 +70,18 @@ type ActivityRow = PeerRow & {
 };
 
 function fmtPace(secPerKm?: number | null): string | null {
-  if (secPerKm == null || secPerKm <= 0) return null;
+  if (secPerKm === null || secPerKm <= 0) {
+    return null;
+  }
   const m = Math.floor(secPerKm / 60);
   const s = Math.round(secPerKm % 60);
   return `${m}:${s.toString().padStart(2, '0')}/km`;
 }
 
 function fmtPace100(secPer100m?: number | null): string | null {
-  if (secPer100m == null || secPer100m <= 0) return null;
+  if (secPer100m === null || secPer100m <= 0) {
+    return null;
+  }
   const m = Math.floor(secPer100m / 60);
   const s = Math.round(secPer100m % 60);
   return `${m}:${s.toString().padStart(2, '0')}/100m`;
@@ -96,14 +100,20 @@ function distanceM(activity: PeerRow): number | null {
 }
 
 function avg(values: number[]): number | null {
-  if (!values.length) return null;
+  if (!values.length) {
+    return null;
+  }
   return values.reduce((a, b) => a + b, 0) / values.length;
 }
 
 function weatherFact(raw: string | null): string | null {
-  if (!raw?.trim()) return null;
+  if (!raw?.trim()) {
+    return null;
+  }
   const parsed = parseActivityWeather(raw);
-  if (parsed) return `Météo : ${formatActivityWeatherNarrative(parsed)}`;
+  if (parsed) {
+    return `Météo : ${formatActivityWeatherNarrative(parsed)}`;
+  }
   return `Météo : ${raw.trim()}`;
 }
 
@@ -114,8 +124,8 @@ function describeActivity(activity: ActivityRow, extras?: { streamAvgHr?: number
     activity.title ? `Titre : ${activity.title}` : null,
     `Date : ${activity.date.toISOString().slice(0, 10)}`,
     activity.duration ? `Durée : ${formatDuration(activity.duration)}` : null,
-    activity.load != null ? `Charge : ${Math.round(activity.load)} TSS` : null,
-    activity.rpe != null ? `RPE : ${activity.rpe}/10` : null,
+    activity.load !== null ? `Charge : ${Math.round(activity.load)} TSS` : null,
+    activity.rpe !== null ? `RPE : ${activity.rpe}/10` : null,
     activity.feeling ? `Ressenti déclaré : ${activity.feeling}` : null,
     isIndoorActivitySession(activity)
       ? 'Environnement : intérieur / virtual (pas de météo outdoor)'
@@ -124,20 +134,28 @@ function describeActivity(activity: ActivityRow, extras?: { streamAvgHr?: number
   ].filter(Boolean) as string[];
 
   const dist = distanceM(activity);
-  if (dist) bits.push(`Distance : ${formatDistance(dist)}`);
+  if (dist) {
+    bits.push(`Distance : ${formatDistance(dist)}`);
+  }
   const pace = paceSecPerKm(activity);
-  if (pace) bits.push(`Allure moyenne : ${fmtPace(pace)}`);
+  if (pace) {
+    bits.push(`Allure moyenne : ${fmtPace(pace)}`);
+  }
   const swimPace = fmtPace100(activity.swimMetrics?.avgPaceSecPer100m);
-  if (swimPace) bits.push(`Allure moyenne : ${swimPace}`);
-  if (activity.swimMetrics?.swolf != null) {
+  if (swimPace) {
+    bits.push(`Allure moyenne : ${swimPace}`);
+  }
+  if (activity.swimMetrics?.swolf !== null) {
     bits.push(`SWOLF : ${Math.round(activity.swimMetrics.swolf)}`);
   }
   const hr = avgHr(activity) ?? extras?.streamAvgHr ?? null;
-  if (hr) bits.push(`FC moyenne : ${Math.round(hr)} bpm`);
-  if (activity.runMetrics?.cadence != null) {
+  if (hr) {
+    bits.push(`FC moyenne : ${Math.round(hr)} bpm`);
+  }
+  if (activity.runMetrics?.cadence !== null) {
     bits.push(`Cadence : ${Math.round(activity.runMetrics.cadence)} spm`);
   }
-  if (activity.bikeMetrics?.avgCadence != null) {
+  if (activity.bikeMetrics?.avgCadence !== null) {
     bits.push(`Cadence : ${Math.round(activity.bikeMetrics.avgCadence)} rpm`);
   }
   if (activity.bikeMetrics?.avgPower) {
@@ -160,7 +178,7 @@ function buildComparativeFacts(activity: ActivityRow, peers: PeerRow[]): string 
     `Comparatif sur ${peers.length} séance(s) du même sport dans les 30 jours précédant celle-ci :`,
   ];
 
-  const peerPaces = peers.map(paceSecPerKm).filter((v): v is number => v != null && v > 0);
+  const peerPaces = peers.map(paceSecPerKm).filter((v): v is number => v !== null && v > 0);
   const actPace = paceSecPerKm(activity);
   const avgPace = avg(peerPaces);
   if (actPace && avgPace) {
@@ -178,7 +196,7 @@ function buildComparativeFacts(activity: ActivityRow, peers: PeerRow[]): string 
     }
   }
 
-  const peerHrs = peers.map(avgHr).filter((v): v is number => v != null && v > 0);
+  const peerHrs = peers.map(avgHr).filter((v): v is number => v !== null && v > 0);
   const actHr = avgHr(activity);
   const avgHr30 = avg(peerHrs);
   if (actHr && avgHr30) {
@@ -193,7 +211,7 @@ function buildComparativeFacts(activity: ActivityRow, peers: PeerRow[]): string 
   if (actHr) {
     const lastHigher = peers.find((p) => {
       const hr = avgHr(p);
-      return hr != null && hr > actHr;
+      return hr !== null && hr > actHr;
     });
     if (lastHigher) {
       const days = differenceInCalendarDays(startOfDay(activity.date), startOfDay(lastHigher.date));
@@ -205,12 +223,15 @@ function buildComparativeFacts(activity: ActivityRow, peers: PeerRow[]): string 
     }
   }
 
-  const peerLoads = peers.map((p) => p.duration).filter((v): v is number => v != null && v > 0);
+  const peerLoads = peers.map((p) => p.duration).filter((v): v is number => v !== null && v > 0);
   const avgDur = avg(peerLoads);
   if (activity.duration && avgDur) {
     const ratio = activity.duration / avgDur;
-    if (ratio >= 1.15) lines.push('- Durée nettement plus longue que la moyenne habituelle.');
-    else if (ratio <= 0.85) lines.push('- Durée plus courte que la moyenne habituelle.');
+    if (ratio >= 1.15) {
+      lines.push('- Durée nettement plus longue que la moyenne habituelle.');
+    } else if (ratio <= 0.85) {
+      lines.push('- Durée plus courte que la moyenne habituelle.');
+    }
   }
 
   return lines.join('\n');
@@ -278,7 +299,9 @@ export async function buildActivityNarrativeFacts(
     },
   });
 
-  if (!activity) return null;
+  if (!activity) {
+    return null;
+  }
   if (
     activity.type !== ActivityType.RUN &&
     activity.type !== ActivityType.BIKE &&
@@ -407,10 +430,12 @@ export async function buildActivityNarrativeFacts(
       );
     }
     for (const factor of environmentPresentation.correction.factors) {
-      if (factor.explanation?.trim()) environmentLines.push(factor.explanation.trim());
+      if (factor.explanation?.trim()) {
+        environmentLines.push(factor.explanation.trim());
+      }
     }
     const effect = environmentPresentation.correction.totalAttributedEffect;
-    if (effect.available && effect.value != null && effect.value > 0) {
+    if (effect.available && effect.value !== null && effect.value > 0) {
       environmentLines.push(
         `Effet environnemental total attribué : ~${Math.round(effect.value * 100)} % sur la performance perçue.`,
       );

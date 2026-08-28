@@ -17,8 +17,8 @@ function hikeTripErrorResponse(error: unknown, fallbackMessage: string): NextRes
     return NextResponse.json(
       {
         error: error.message,
-        ...(error.tripId != null ? { tripId: error.tripId } : {}),
-        ...(error.tripName != null ? { tripName: error.tripName } : {}),
+        ...(error.tripId !== null ? { tripId: error.tripId } : {}),
+        ...(error.tripName !== null ? { tripName: error.tripName } : {}),
       },
       { status: 409 },
     );

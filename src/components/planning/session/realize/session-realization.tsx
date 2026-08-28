@@ -36,7 +36,9 @@ function analysisTimeoutStorageKey(sessionId: string): string {
 }
 
 function readAnalysisPollTimedOut(sessionId: string): boolean {
-  if (typeof window === 'undefined') return false;
+  if (typeof window === 'undefined') {
+    return false;
+  }
   try {
     return sessionStorage.getItem(analysisTimeoutStorageKey(sessionId)) === '1';
   } catch {
@@ -61,9 +63,15 @@ function clearAnalysisPollTimedOut(sessionId: string): void {
 }
 
 function activityMetric(a: ClientActivity): string {
-  if (a.runMetrics?.distanceM) return formatDistance(a.runMetrics.distanceM);
-  if (a.bikeMetrics?.avgPower) return `${Math.round(a.bikeMetrics.avgPower)} W`;
-  if (a.swimMetrics?.distanceM) return formatDistance(a.swimMetrics.distanceM);
+  if (a.runMetrics?.distanceM) {
+    return formatDistance(a.runMetrics.distanceM);
+  }
+  if (a.bikeMetrics?.avgPower) {
+    return `${Math.round(a.bikeMetrics.avgPower)} W`;
+  }
+  if (a.swimMetrics?.distanceM) {
+    return formatDistance(a.swimMetrics.distanceM);
+  }
   return formatDuration(a.duration);
 }
 
@@ -75,7 +83,9 @@ function isReassessmentAnswered(
   analyzedAt: Date | null,
   sessionDate: Date,
 ): boolean {
-  if (note.checkins.length === 0) return false;
+  if (note.checkins.length === 0) {
+    return false;
+  }
   const since = analyzedAt ?? startOfDay(sessionDate);
   return note.checkins.some((c) => new Date(c.createdAt) >= since);
 }
@@ -93,12 +103,16 @@ function PhysicalReassessmentCard({ item }: { item: PhysicalReassessment }) {
   const contextHint = item.comment?.trim() || null;
 
   // Afficher uniquement les douleurs / blessures, pas posture ou mobilité.
-  if (!note || dismissed || (note.category !== 'PAIN' && note.category !== 'INJURY')) return null;
+  if (!note || dismissed || (note.category !== 'PAIN' && note.category !== 'INJURY')) {
+    return null;
+  }
 
   const isSaving = addCheckin.isPending;
 
   function handleSave() {
-    if (guardDisabled) return;
+    if (guardDisabled) {
+      return;
+    }
     addCheckin.mutate(
       {
         id: item.noteId,
@@ -199,7 +213,7 @@ export function SessionRealization({
 
   const isLinked = Boolean(session.activityId);
   const linked =
-    (session.activity?.type != null ? session.activity : null) ??
+    (session.activity?.type !== null ? session.activity : null) ??
     (session.activityId
       ? (activitiesQuery.data?.find((item) => item.id === session.activityId) ?? null)
       : null);
@@ -210,7 +224,9 @@ export function SessionRealization({
   }, [session.id]);
 
   useEffect(() => {
-    if (!session.analyzedAt) return;
+    if (!session.analyzedAt) {
+      return;
+    }
     setPolled(null);
     clearAnalysisPollTimedOut(session.id);
     setPollTimedOut(false);
@@ -223,10 +239,14 @@ export function SessionRealization({
 
   // Kick a client analyze once if still missing after remount (server `after` may have been killed).
   useEffect(() => {
-    if (isDemo || !isLinked || hasAnalysis || pollTimedOut || analyze.isPending) return;
+    if (isDemo || !isLinked || hasAnalysis || pollTimedOut || analyze.isPending) {
+      return;
+    }
     const kickKey = `sharpit.analysis-kick.${session.id}`;
     try {
-      if (sessionStorage.getItem(kickKey) === '1') return;
+      if (sessionStorage.getItem(kickKey) === '1') {
+        return;
+      }
       sessionStorage.setItem(kickKey, '1');
     } catch {
       // still attempt once per mount via analyze below
@@ -235,7 +255,9 @@ export function SessionRealization({
   }, [analyze, hasAnalysis, isDemo, isLinked, pollTimedOut, session.id]);
 
   useEffect(() => {
-    if (!isPendingScheduled) return;
+    if (!isPendingScheduled) {
+      return;
+    }
 
     const startedAt = Date.now();
     let cancelled = false;
@@ -243,7 +265,9 @@ export function SessionRealization({
     async function poll() {
       while (!cancelled && Date.now() - startedAt < ANALYSIS_POLL_MAX_MS) {
         await new Promise((resolve) => setTimeout(resolve, ANALYSIS_POLL_MS));
-        if (cancelled) return;
+        if (cancelled) {
+          return;
+        }
 
         try {
           // Poll the single session — avoid refetching the full plannedSessions list.
@@ -258,7 +282,9 @@ export function SessionRealization({
             queryClient.setQueryData(
               queryKeys.plannedSessions,
               (prev: ClientPlannedSession[] | undefined) => {
-                if (!prev) return prev;
+                if (!prev) {
+                  return prev;
+                }
                 return prev.map((item) =>
                   item.id === updated.id
                     ? {
@@ -300,8 +326,12 @@ export function SessionRealization({
     const sessionDate = new Date(session.date);
     return (analysis?.physicalReassessments ?? []).filter((item) => {
       const note = notes.find((n) => n.id === item.noteId);
-      if (!note || (note.category !== 'PAIN' && note.category !== 'INJURY')) return false;
-      if (isReassessmentAnswered(note, analyzedAt, sessionDate)) return false;
+      if (!note || (note.category !== 'PAIN' && note.category !== 'INJURY')) {
+        return false;
+      }
+      if (isReassessmentAnswered(note, analyzedAt, sessionDate)) {
+        return false;
+      }
       return true;
     });
   }, [analysis?.physicalReassessments, notesQuery.data, session.analyzedAt, session.date]);
@@ -323,11 +353,17 @@ export function SessionRealization({
         ),
       }))
       .sort((x, y) => {
-        if (x.sameType !== y.sameType) return x.sameType ? -1 : 1;
-        if (x.score !== y.score) return y.score - x.score;
+        if (x.sameType !== y.sameType) {
+          return x.sameType ? -1 : 1;
+        }
+        if (x.score !== y.score) {
+          return y.score - x.score;
+        }
         return x.diff - y.diff;
       });
-    if (showAll) return scored.slice(0, 30);
+    if (showAll) {
+      return scored.slice(0, 30);
+    }
     return scored.filter((s) => s.sameType && s.diff <= 3).slice(0, 8);
   }, [activitiesQuery.data, session.date, session.durationMin, session.type, showAll]);
 
@@ -340,7 +376,9 @@ export function SessionRealization({
   }
 
   async function handleManualAnalysis() {
-    if (guardDisabled) return;
+    if (guardDisabled) {
+      return;
+    }
     clearAnalysisPollTimedOut(session.id);
     setPollTimedOut(false);
     try {
@@ -357,7 +395,9 @@ export function SessionRealization({
   }
 
   function renderAnalysisTimeoutBanner() {
-    if (!pollTimedOut || hasAnalysis) return null;
+    if (!pollTimedOut || hasAnalysis) {
+      return null;
+    }
 
     return (
       <div
@@ -383,7 +423,9 @@ export function SessionRealization({
   }
 
   function renderLinkedActivityCard(delink: ReactNode) {
-    if (!linked) return null;
+    if (!linked) {
+      return null;
+    }
 
     return (
       <div className="border-analysis-border/60 bg-analysis-surface-alt/50 overflow-hidden rounded-lg border">
@@ -443,8 +485,12 @@ export function SessionRealization({
   }
 
   function renderActivityPickerBody() {
-    if (isLinking) return <LinkAnalysisStatus phase="linking" />;
-    if (isAnalyzing) return <LinkAnalysisStatus phase="analyzing" />;
+    if (isLinking) {
+      return <LinkAnalysisStatus phase="linking" />;
+    }
+    if (isAnalyzing) {
+      return <LinkAnalysisStatus phase="analyzing" />;
+    }
 
     return (
       <>

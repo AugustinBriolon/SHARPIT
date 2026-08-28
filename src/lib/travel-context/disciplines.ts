@@ -33,10 +33,14 @@ export function isTravelDiscipline(value: unknown): value is TravelDiscipline {
 }
 
 export function normalizeTravelDisciplines(values: unknown): TravelDiscipline[] {
-  if (!Array.isArray(values)) return [];
+  if (!Array.isArray(values)) {
+    return [];
+  }
   const unique = new Set<TravelDiscipline>();
   for (const value of values) {
-    if (isTravelDiscipline(value)) unique.add(value);
+    if (isTravelDiscipline(value)) {
+      unique.add(value);
+    }
   }
   return TRAVEL_DISCIPLINES.filter((d) => unique.has(d));
 }
@@ -52,11 +56,19 @@ export function deriveTravelTrainingConstraint(
   disciplines: readonly TravelDiscipline[],
   opts?: { noStructuredTraining?: boolean },
 ): TravelTrainingConstraint {
-  if (opts?.noStructuredTraining) return 'NONE';
-  if (disciplines.length === 0) return 'FULL';
-  if (disciplines.every((d) => d === 'MOBILITY')) return 'MOBILITY_ONLY';
+  if (opts?.noStructuredTraining) {
+    return 'NONE';
+  }
+  if (disciplines.length === 0) {
+    return 'FULL';
+  }
+  if (disciplines.every((d) => d === 'MOBILITY')) {
+    return 'MOBILITY_ONLY';
+  }
   const hasEndurance = disciplines.some((d) => ENDURANCE.has(d));
-  if (!hasEndurance) return 'REDUCED';
+  if (!hasEndurance) {
+    return 'REDUCED';
+  }
   return 'FULL';
 }
 
@@ -83,7 +95,9 @@ export function activityTypeToTravelDiscipline(type: ActivityType): TravelDiscip
 export function formatAllowedDisciplinesPromptRule(
   disciplines: readonly TravelDiscipline[],
 ): string {
-  if (disciplines.length === 0) return '';
+  if (disciplines.length === 0) {
+    return '';
+  }
   const labels = travelDisciplineLabels(disciplines).join(', ');
   const onlyMobility = disciplines.every((d) => d === 'MOBILITY');
   if (onlyMobility) {

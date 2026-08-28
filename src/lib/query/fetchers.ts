@@ -41,7 +41,9 @@ function toDate(value: string | Date): Date {
 }
 
 function toDateOrNull(value: string | Date | null | undefined): Date | null {
-  if (value == null) return null;
+  if (value === null) {
+    return null;
+  }
   return value instanceof Date ? value : new Date(value);
 }
 
@@ -125,7 +127,7 @@ export async function fetchHealthEntries(
 export async function fetchBodyCompositionEntries(
   days?: number,
 ): Promise<ClientBodyCompositionEntry[]> {
-  const url = days != null ? `/api/body-composition?days=${days}` : '/api/body-composition';
+  const url = days !== null ? `/api/body-composition?days=${days}` : '/api/body-composition';
   const data = await fetchJson<Serialized<ClientBodyCompositionEntry>[]>(url);
   return data.map((entry) => ({
     ...entry,
@@ -304,7 +306,9 @@ export async function fetchDailyBriefing(date: string): Promise<ClientDailyBrief
   const data = await fetchJson<{
     briefing: Serialized<ClientDailyBriefing> | null;
   }>(`/api/coach/briefing?date=${encodeURIComponent(date)}`);
-  if (!data.briefing) return null;
+  if (!data.briefing) {
+    return null;
+  }
   const b = data.briefing;
   return {
     id: b.id,
@@ -326,7 +330,9 @@ export async function fetchWeeklyReview(date: string): Promise<ClientWeeklyRevie
   const data = await fetchJson<{
     review: Serialized<ClientWeeklyReview> | null;
   }>(`/api/coach/weekly-review?date=${encodeURIComponent(date)}`);
-  if (!data.review) return null;
+  if (!data.review) {
+    return null;
+  }
   const r = data.review;
   return {
     id: r.id,
@@ -405,7 +411,9 @@ export async function fetchHikeTrip(id: string): Promise<ClientHikeTrip> {
 
 export async function fetchTrainingPlan(): Promise<ClientTrainingPlan | null> {
   const plan = await fetchJson<Serialized<ClientTrainingPlan> | null>('/api/training-plans');
-  if (!plan) return null;
+  if (!plan) {
+    return null;
+  }
   return {
     ...plan,
     raceDate: toDate(plan.raceDate),

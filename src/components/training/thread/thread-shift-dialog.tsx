@@ -34,10 +34,16 @@ import { plannedDayKey } from '@/lib/training/thread/session-adjust';
 
 /** `null` when the value is not the shape a `<input type="date">` produces. */
 export function parseDayInput(value: string): { year: number; month: number; day: number } | null {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return null;
+  }
   const [year, month, day] = value.split('-').map(Number);
-  if (!year || !month || !day) return null;
-  if (month > 12 || day > 31) return null;
+  if (!year || !month || !day) {
+    return null;
+  }
+  if (month > 12 || day > 31) {
+    return null;
+  }
   return { year, month, day };
 }
 
@@ -63,7 +69,9 @@ export function ThreadShiftDialog({
   /* Reopening after a move must show where the session is now, not where it was
      when this component first mounted. */
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      return;
+    }
     setDateValue(plannedDayKey(session.date));
     setTimeValue(session.startTime ?? '');
   }, [open, session.date, session.startTime]);
@@ -71,7 +79,7 @@ export function ThreadShiftDialog({
   const day = parseDayInput(dateValue);
   const startTime = timeValue.trim() || null;
   const unchanged =
-    day != null &&
+    day !== null &&
     dateValue === plannedDayKey(session.date) &&
     startTime === (session.startTime ?? null);
 
@@ -112,10 +120,12 @@ export function ThreadShiftDialog({
           {/* Confirming the session's own date would announce a move that did
               not happen. */}
           <Button
-            disabled={day == null || unchanged}
+            disabled={day === null || unchanged}
             type="button"
             onClick={() => {
-              if (!day) return;
+              if (!day) {
+                return;
+              }
               onConfirm(day, startTime);
               onOpenChange(false);
             }}

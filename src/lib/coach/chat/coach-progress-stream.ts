@@ -40,7 +40,9 @@ export function parseCoachProgressChunk<TResult, TPartial>(
 
   for (const frame of frames) {
     const line = frame.split('\n').find((l) => l.startsWith('data: '));
-    if (!line) continue;
+    if (!line) {
+      continue;
+    }
     try {
       events.push(JSON.parse(line.slice(6)) as CoachProgressEvent<TResult, TPartial>);
     } catch {
@@ -72,7 +74,9 @@ export async function consumeCoachProgressStream<TResult, TPartial>(
     onPartial?: (value: TPartial) => void;
   } = {},
 ): Promise<TResult> {
-  if (!response.body) throw new Error('Réponse du coach vide.');
+  if (!response.body) {
+    throw new Error('Réponse du coach vide.');
+  }
 
   const reader = response.body.getReader();
   const decoder = new TextDecoder();
@@ -81,7 +85,9 @@ export async function consumeCoachProgressStream<TResult, TPartial>(
 
   while (true) {
     const { done, value } = await reader.read();
-    if (done) break;
+    if (done) {
+      break;
+    }
     buffer += decoder.decode(value, { stream: true });
 
     const parsed = parseCoachProgressChunk<TResult, TPartial>(buffer);
@@ -104,6 +110,8 @@ export async function consumeCoachProgressStream<TResult, TPartial>(
     }
   }
 
-  if (!result) throw new Error('La génération a été interrompue. Réessaie dans un instant.');
+  if (!result) {
+    throw new Error('La génération a été interrompue. Réessaie dans un instant.');
+  }
   return result.value;
 }

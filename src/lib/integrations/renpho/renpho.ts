@@ -302,11 +302,11 @@ export class RenphoClient {
 
     return parsed.map((entry, index) => ({
       ...entry,
-      __idString: ids[index] || (entry.id != null ? String(entry.id) : undefined),
+      __idString: ids[index] || (entry.id !== null ? String(entry.id) : undefined),
       __bUserIdString:
-        boundUserIds[index] || (entry.bUserId != null ? String(entry.bUserId) : undefined),
+        boundUserIds[index] || (entry.bUserId !== null ? String(entry.bUserId) : undefined),
       __subUserIdString:
-        scaleUserIds[index] || (entry.subUserId != null ? String(entry.subUserId) : undefined),
+        scaleUserIds[index] || (entry.subUserId !== null ? String(entry.subUserId) : undefined),
     }));
   }
 
@@ -331,7 +331,9 @@ export class RenphoClient {
           pageNum,
           pageSize,
         );
-        if (page.length === 0) break;
+        if (page.length === 0) {
+          break;
+        }
 
         collected.push(...page);
 
@@ -364,9 +366,13 @@ export class RenphoClient {
         pageNum,
         pageSize,
       );
-      if (page.length === 0) break;
+      if (page.length === 0) {
+        break;
+      }
       collected.push(...page);
-      if (collected.length >= MAX_MEASUREMENT_SCAN) break;
+      if (collected.length >= MAX_MEASUREMENT_SCAN) {
+        break;
+      }
     }
 
     return collected;
@@ -412,7 +418,9 @@ export class RenphoClient {
     const directlyBound = measurements.filter(
       (measurement) => measurement.user_id === session.userId,
     );
-    if (directlyBound.length > 0) return directlyBound;
+    if (directlyBound.length > 0) {
+      return directlyBound;
+    }
 
     if (session.scaleUserIds.length === 1) {
       return measurements.filter(

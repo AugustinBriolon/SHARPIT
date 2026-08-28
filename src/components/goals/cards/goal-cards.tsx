@@ -126,22 +126,35 @@ function formatLongDate(value: string | Date): string {
 }
 
 function countdownLabel(days: number): string {
-  if (days > 0) return `J-${days}`;
-  if (days < 0) return `J+${Math.abs(days)}`;
+  if (days > 0) {
+    return `J-${days}`;
+  }
+  if (days < 0) {
+    return `J+${Math.abs(days)}`;
+  }
   return 'Jour J';
 }
 
 function deadlineCopy(days: number): string {
-  if (days < 0)
+  if (days < 0) {
     return `Échéance dépassée de ${Math.abs(days)} jour${Math.abs(days) > 1 ? 's' : ''}`;
-  if (days === 0) return 'Échéance aujourd’hui';
-  if (days === 1) return 'Échéance demain';
+  }
+  if (days === 0) {
+    return 'Échéance aujourd’hui';
+  }
+  if (days === 1) {
+    return 'Échéance demain';
+  }
   return `Échéance dans ${days} jours`;
 }
 
 function taperWindowCopy(days: number | null): string | null {
-  if (days == null || days < 0 || days > 14) return null;
-  if (days === 0) return 'Jour de course';
+  if (days === null || days < 0 || days > 14) {
+    return null;
+  }
+  if (days === 0) {
+    return 'Jour de course';
+  }
   return 'Fenêtre d’affûtage';
 }
 
@@ -334,7 +347,9 @@ function useGoalCardControls(goal: GoalItem) {
       confirmLabel: 'Supprimer',
       variant: 'destructive',
     });
-    if (!confirmed) return;
+    if (!confirmed) {
+      return;
+    }
     remove.mutate(goal.id);
   }
 
@@ -396,7 +411,7 @@ export function RaceCard({ goal }: { goal: GoalItem }) {
               </div>
               {taperCopy ? <p className="text-primary text-xs font-medium">{taperCopy}</p> : null}
             </div>
-            {days != null ? (
+            {days !== null ? (
               <p className="text-data text-primary font-mono text-3xl font-semibold tabular-nums">
                 {countdownLabel(days)}
               </p>
@@ -474,7 +489,7 @@ export function MetricGoalCard({ goal }: { goal: GoalItem }) {
             />
           ) : null}
 
-          {progress != null && !goal.achieved ? (
+          {progress !== null && !goal.achieved ? (
             <GoalProgressTrack progress={progress} remaining={remaining} />
           ) : null}
 
@@ -499,7 +514,7 @@ export function MetricGoalCard({ goal }: { goal: GoalItem }) {
             </p>
           ) : null}
 
-          {days != null && !isAutoTracked && goal.targetDate ? (
+          {days !== null && !isAutoTracked && goal.targetDate ? (
             <p className="text-muted-foreground text-xs">{deadlineCopy(days)}</p>
           ) : null}
 

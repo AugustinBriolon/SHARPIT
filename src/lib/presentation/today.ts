@@ -101,13 +101,17 @@ function resolveSnapshotStatusMessage(
 
   const hasContent = snapshotHasDisplayableContent(snapshot);
 
-  if (phase === 'END_OF_DAY' && hasContent) return { message: null, href: null, snoozeKey: null };
+  if (phase === 'END_OF_DAY' && hasContent) {
+    return { message: null, href: null, snoozeKey: null };
+  }
 
   const candidate = hasContent
     ? snapshot.freshness.primaryProductMessage
     : (snapshot.primaryProductMessage ?? snapshot.insufficientDataMessage ?? null);
 
-  if (!candidate) return { message: null, href: null, snoozeKey: null };
+  if (!candidate) {
+    return { message: null, href: null, snoozeKey: null };
+  }
   if (hasContent && (candidate === heroHeadline || candidate === heroSubline)) {
     return { message: null, href: null, snoozeKey: null };
   }
@@ -177,13 +181,13 @@ export function buildTodayViewModelFromInputs(inputs: TodayPresentationInputs): 
   const sleepScore = sleepScoreSharpit ?? effectiveSnapshot.sleepScore;
 
   const effortScore =
-    effectiveSnapshot.dailyStrain?.available && effectiveSnapshot.dailyStrain.strainScore != null
+    effectiveSnapshot.dailyStrain?.available && effectiveSnapshot.dailyStrain.strainScore !== null
       ? effectiveSnapshot.dailyStrain.strainScore
       : null;
 
   const adaptationScore = effectiveSnapshot.adaptationIndex;
   const adaptationUnavailableCaption =
-    effectiveSnapshot.adaptationIndex == null ? 'Historique insuffisant' : null;
+    effectiveSnapshot.adaptationIndex === null ? 'Historique insuffisant' : null;
 
   const phase = effectiveSnapshot.dailyPhase?.phase ?? 'MORNING';
   const isRestDay = effectiveSnapshot.dailyPhase?.signals.sessionStatus === 'NONE_TODAY';
@@ -212,8 +216,10 @@ export function buildTodayViewModelFromInputs(inputs: TodayPresentationInputs): 
   const adaptationReminders: string[] = [];
 
   const confidenceTier =
-    effectiveSnapshot.confidence != null ? mapConfidenceToTier(effectiveSnapshot.confidence) : null;
-  const confidenceTone = confidenceTier != null ? mapConfidenceTone(confidenceTier) : 'neutral';
+    effectiveSnapshot.confidence !== null
+      ? mapConfidenceToTier(effectiveSnapshot.confidence)
+      : null;
+  const confidenceTone = confidenceTier !== null ? mapConfidenceTone(confidenceTier) : 'neutral';
 
   const confidenceLabel = resolveVisibleConfidenceLabel(
     effectiveSnapshot.confidenceLabel ?? null,
@@ -221,7 +227,7 @@ export function buildTodayViewModelFromInputs(inputs: TodayPresentationInputs): 
     adviceActionable,
   );
   const confidencePctRounded =
-    confidenceLabel != null && effectiveSnapshot.confidence != null
+    confidenceLabel !== null && effectiveSnapshot.confidence !== null
       ? Math.round(effectiveSnapshot.confidence * 100)
       : null;
   const confidenceHref = resolveConfidenceHrefFromDecision(effectiveSnapshot.decision);
@@ -274,7 +280,7 @@ export function buildTodayViewModelFromInputs(inputs: TodayPresentationInputs): 
     limitingFacts = limitingBuilt.facts;
     limitingText = limitingBuilt.emptyText;
     limitingHref =
-      effectiveSnapshot.limitingFactor != null
+      effectiveSnapshot.limitingFactor !== null
         ? (resolveLimitingFactorHrefFromDecision(effectiveSnapshot.decision) ??
           TWIN_DRILL_DOWN.recovery)
         : null;
@@ -316,11 +322,13 @@ export function buildTodayViewModelFromInputs(inputs: TodayPresentationInputs): 
   const evidencePending = morningOrientation?.phase === 'EVIDENCE_PENDING';
 
   let morningEyebrow = heroEyebrow;
-  if (evidencePending && !morningEyebrow) morningEyebrow = 'Ce matin';
+  if (evidencePending && !morningEyebrow) {
+    morningEyebrow = 'Ce matin';
+  }
 
   let plateLimiterText: string | null = null;
   let plateLimiterHref: string | null = null;
-  if (effectiveSnapshot.limitingFactor != null) {
+  if (effectiveSnapshot.limitingFactor !== null) {
     /* The cause, not the system. The signal strip already names the dimension on
        the chip it tints, so repeating "Récupération" underneath it said nothing;
        "Qualité du sommeil" is the part that decides what to do about it. */

@@ -37,7 +37,9 @@ const RULES: readonly PlanGateRule[] = [
 const PLAN_LEVEL_RULES: readonly PlanLevelGateRule[] = [weeklyLoadRule, intensityDistributionRule];
 
 function worstStatus(findings: readonly RuleFinding[]): GateStatus {
-  if (findings.length === 0) return 'ACCEPTED';
+  if (findings.length === 0) {
+    return 'ACCEPTED';
+  }
   let worst: GateStatus = 'ACCEPTED';
   for (const finding of findings) {
     if (
@@ -59,7 +61,7 @@ function evaluateProposal(context: GateContext, proposal: GateProposal): GateSes
   const status = worstStatus(findings);
   const requiredAssumptions = findings
     .map((f) => f.requiredAssumption)
-    .filter((a): a is string => a != null);
+    .filter((a): a is string => a !== null);
   const saferAlternative =
     status === 'REJECTED'
       ? (findings.find((f) => f.saferAlternative)?.saferAlternative ?? null)

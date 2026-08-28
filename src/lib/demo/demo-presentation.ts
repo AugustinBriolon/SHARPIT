@@ -21,8 +21,12 @@ const DEMO_NIGHT_BLOCKING: ReadonlySet<FreshnessLevel> = new Set([
  */
 export function withDemoSnapshotFreshness(snapshot: AthleteSnapshot): AthleteSnapshot {
   const domains = snapshot.freshness.domains.map((entry) => {
-    if (entry.domain !== 'sleep' && entry.domain !== 'recovery') return entry;
-    if (!DEMO_NIGHT_BLOCKING.has(entry.freshness)) return entry;
+    if (entry.domain !== 'sleep' && entry.domain !== 'recovery') {
+      return entry;
+    }
+    if (!DEMO_NIGHT_BLOCKING.has(entry.freshness)) {
+      return entry;
+    }
     return {
       ...entry,
       freshness: 'fresh' as const,
@@ -32,8 +36,12 @@ export function withDemoSnapshotFreshness(snapshot: AthleteSnapshot): AthleteSna
   });
 
   const domainMessages = { ...snapshot.domainMessages };
-  if (domainMessages.sleep?.includes('sommeil')) delete domainMessages.sleep;
-  if (domainMessages.recovery?.includes('récupération')) delete domainMessages.recovery;
+  if (domainMessages.sleep?.includes('sommeil')) {
+    delete domainMessages.sleep;
+  }
+  if (domainMessages.recovery?.includes('récupération')) {
+    delete domainMessages.recovery;
+  }
 
   const overallFresh =
     domains.every((d) => d.freshness === 'fresh' || d.freshness === 'stale') &&

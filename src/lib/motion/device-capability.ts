@@ -17,7 +17,9 @@ export type DeviceCapabilityHints = {
  * still get ADR-024's route reveal.
  */
 export function isLowEndDevice(hints: DeviceCapabilityHints): boolean {
-  if (hints.deviceMemory !== undefined && hints.deviceMemory <= 2) return true;
+  if (hints.deviceMemory !== undefined && hints.deviceMemory <= 2) {
+    return true;
+  }
   if (
     hints.deviceMemory === undefined &&
     hints.hardwareConcurrency !== undefined &&

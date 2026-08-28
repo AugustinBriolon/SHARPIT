@@ -62,8 +62,12 @@ function InlineRenameInput({
       onBlur={commit}
       onChange={(e) => setValue(e.target.value)}
       onKeyDown={(e) => {
-        if (e.key === 'Enter') commit();
-        if (e.key === 'Escape') onCancel();
+        if (e.key === 'Enter') {
+          commit();
+        }
+        if (e.key === 'Escape') {
+          onCancel();
+        }
       }}
     />
   );
@@ -203,7 +207,9 @@ function DesktopConversationList({
                 )}
                 onClick={() => onSelect(c.id)}
                 onDoubleClick={() => {
-                  if (onRename) setEditingId(c.id);
+                  if (onRename) {
+                    setEditingId(c.id);
+                  }
                 }}
               >
                 {isEditing ? (
@@ -287,12 +293,16 @@ export function CoachConversationList({
     }
 
     if (isDraft) {
-      if (conversations.length === 0) return <MobileDraftConversationRow />;
+      if (conversations.length === 0) {
+        return <MobileDraftConversationRow />;
+      }
       return (
         <Select
           value="__draft__"
           onValueChange={(value) => {
-            if (value && value !== '__draft__') onSelect(value);
+            if (value && value !== '__draft__') {
+              onSelect(value);
+            }
           }}
         >
           <SelectTrigger
@@ -322,7 +332,9 @@ export function CoachConversationList({
       <Select
         value={selectedId}
         onValueChange={(value) => {
-          if (value) onSelect(value);
+          if (value) {
+            onSelect(value);
+          }
         }}
       >
         <SelectTrigger aria-label="Conversation active" className="min-h-11 w-full min-w-0 lg:h-9">

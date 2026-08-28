@@ -19,11 +19,15 @@ export type IndoorActivitySignals = {
  * STRENGTH is always indoor; BIKE/RUN can be indoor via title (Zwift, home trainer…).
  */
 export function isIndoorActivitySession(activity: IndoorActivitySignals): boolean {
-  if (activity.type === 'STRENGTH') return true;
+  if (activity.type === 'STRENGTH') {
+    return true;
+  }
   const haystack = [activity.title, activity.notes]
     .map((part) => part?.trim())
     .filter((part): part is string => Boolean(part))
     .join(' ');
-  if (!haystack) return false;
+  if (!haystack) {
+    return false;
+  }
   return INDOOR_ACTIVITY_HINTS.test(haystack);
 }

@@ -50,7 +50,9 @@ export function presetSelectionsToRange(selected: number[]): {
   min: number | null;
   max: number | null;
 } {
-  if (selected.length === 0) return { min: null, max: null };
+  if (selected.length === 0) {
+    return { min: null, max: null };
+  }
   const sorted = [...selected].sort((a, b) => a - b);
   return { min: sorted[0], max: sorted.length > 1 ? sorted[sorted.length - 1] : null };
 }
@@ -64,14 +66,20 @@ export function rangeToPresetSelections(
   max: number | null,
   presets: readonly number[],
 ): number[] {
-  if (min == null && max == null) return [];
-  if (max == null) return presets.includes(min as number) ? [min as number] : [];
+  if (min === null && max === null) {
+    return [];
+  }
+  if (max === null) {
+    return presets.includes(min as number) ? [min as number] : [];
+  }
   return presets.filter((p) => p === min || p === max);
 }
 
 /** Returns preset values that fall between the selected endpoints (in-scope but not selected). */
 export function presetsInScope(selected: number[], presets: readonly number[]): number[] {
-  if (selected.length < 2) return [];
+  if (selected.length < 2) {
+    return [];
+  }
   const lo = Math.min(...selected);
   const hi = Math.max(...selected);
   return presets.filter((p) => p > lo && p < hi);
@@ -82,11 +90,11 @@ export function presetsInScope(selected: number[], presets: readonly number[]): 
 export function getActivityDistanceKm(activity: ActivityForHistoryFilters): number | null {
   if (activity.type === ActivityType.RUN) {
     const d = activity.runMetrics?.distanceM;
-    return d != null && d > 0 ? d / 1000 : null;
+    return d !== null && d > 0 ? d / 1000 : null;
   }
   if (activity.type === ActivityType.SWIM) {
     const d = activity.swimMetrics?.distanceM;
-    return d != null && d > 0 ? d / 1000 : null;
+    return d !== null && d > 0 ? d / 1000 : null;
   }
   return null;
 }
@@ -94,14 +102,20 @@ export function getActivityDistanceKm(activity: ActivityForHistoryFilters): numb
 // ─── Parse / serialize ────────────────────────────────────────────────────────
 
 function parseNumberParam(value: string | null): number | null {
-  if (!value?.trim()) return null;
+  if (!value?.trim()) {
+    return null;
+  }
   const parsed = Number(value);
-  if (!Number.isFinite(parsed) || parsed < 0) return null;
+  if (!Number.isFinite(parsed) || parsed < 0) {
+    return null;
+  }
   return parsed;
 }
 
 function cleanMinMax(min: number | null, max: number | null): [number | null, number | null] {
-  if (min != null && max != null && min > max) return [max, min];
+  if (min !== null && max !== null && min > max) {
+    return [max, min];
+  }
   return [min, max];
 }
 
@@ -139,13 +153,27 @@ export function parseTrainingHistoryFilters(searchParams: URLSearchParams): Trai
 
 export function serializeTrainingHistoryFilters(filters: TrainingHistoryFilters): URLSearchParams {
   const params = new URLSearchParams();
-  if (filters.types.length > 0) params.set('types', filters.types.join(','));
-  if (filters.periodMaxDays != null) params.set('periodMaxDays', String(filters.periodMaxDays));
-  if (filters.periodMinDays != null) params.set('periodMinDays', String(filters.periodMinDays));
-  if (filters.distanceMinKm != null) params.set('distanceMinKm', String(filters.distanceMinKm));
-  if (filters.distanceMaxKm != null) params.set('distanceMaxKm', String(filters.distanceMaxKm));
-  if (filters.durationMinMin != null) params.set('durationMinMin', String(filters.durationMinMin));
-  if (filters.durationMaxMin != null) params.set('durationMaxMin', String(filters.durationMaxMin));
+  if (filters.types.length > 0) {
+    params.set('types', filters.types.join(','));
+  }
+  if (filters.periodMaxDays !== null) {
+    params.set('periodMaxDays', String(filters.periodMaxDays));
+  }
+  if (filters.periodMinDays !== null) {
+    params.set('periodMinDays', String(filters.periodMinDays));
+  }
+  if (filters.distanceMinKm !== null) {
+    params.set('distanceMinKm', String(filters.distanceMinKm));
+  }
+  if (filters.distanceMaxKm !== null) {
+    params.set('distanceMaxKm', String(filters.distanceMaxKm));
+  }
+  if (filters.durationMinMin !== null) {
+    params.set('durationMinMin', String(filters.durationMinMin));
+  }
+  if (filters.durationMaxMin !== null) {
+    params.set('durationMaxMin', String(filters.durationMaxMin));
+  }
   return params;
 }
 
@@ -157,40 +185,52 @@ export function applyTrainingHistoryFilters<T extends ActivityForHistoryFilters>
   now: Date = new Date(),
 ): T[] {
   const since =
-    filters.periodMaxDays != null ? startOfDay(subDays(now, filters.periodMaxDays)) : null;
+    filters.periodMaxDays !== null ? startOfDay(subDays(now, filters.periodMaxDays)) : null;
   const until =
-    filters.periodMinDays != null ? startOfDay(subDays(now, filters.periodMinDays)) : null;
+    filters.periodMinDays !== null ? startOfDay(subDays(now, filters.periodMinDays)) : null;
 
   return activities.filter((activity) => {
     // Type — OR logic: activity must match at least one selected type
-    if (filters.types.length > 0 && !filters.types.includes(activity.type)) return false;
+    if (filters.types.length > 0 && !filters.types.includes(activity.type)) {
+      return false;
+    }
 
     // Period
     const date = new Date(activity.date);
-    if (since && date < since) return false;
-    if (until && date > until) return false;
+    if (since && date < since) {
+      return false;
+    }
+    if (until && date > until) {
+      return false;
+    }
 
     // activity.duration is stored in SECONDS — convert to minutes for filter comparison
-    const durationMin = activity.duration != null ? activity.duration / 60 : null;
+    const durationMin = activity.duration !== null ? activity.duration / 60 : null;
 
     // Distance — only filters activities that track distance; others pass through
     const distanceKm = getActivityDistanceKm(activity);
-    if (distanceKm != null) {
-      if (filters.distanceMinKm != null && distanceKm < filters.distanceMinKm) return false;
-      if (filters.distanceMaxKm != null && distanceKm > filters.distanceMaxKm) return false;
+    if (distanceKm !== null) {
+      if (filters.distanceMinKm !== null && distanceKm < filters.distanceMinKm) {
+        return false;
+      }
+      if (filters.distanceMaxKm !== null && distanceKm > filters.distanceMaxKm) {
+        return false;
+      }
     }
 
     // Duration (durationMin already in minutes, converted above)
     if (
-      filters.durationMinMin != null &&
-      (durationMin == null || durationMin < filters.durationMinMin)
-    )
+      filters.durationMinMin !== null &&
+      (durationMin === null || durationMin < filters.durationMinMin)
+    ) {
       return false;
+    }
     if (
-      filters.durationMaxMin != null &&
-      (durationMin == null || durationMin > filters.durationMaxMin)
-    )
+      filters.durationMaxMin !== null &&
+      (durationMin === null || durationMin > filters.durationMaxMin)
+    ) {
       return false;
+    }
 
     return true;
   });
@@ -222,16 +262,26 @@ export function togglePresetSelection(
 export function countActiveTrainingHistoryFilters(filters: TrainingHistoryFilters): number {
   let n = 0;
   n += filters.types.length;
-  if (filters.periodMaxDays != null) n += 1;
-  if (filters.distanceMinKm != null || filters.distanceMaxKm != null) n += 1;
-  if (filters.durationMinMin != null || filters.durationMaxMin != null) n += 1;
+  if (filters.periodMaxDays !== null) {
+    n += 1;
+  }
+  if (filters.distanceMinKm !== null || filters.distanceMaxKm !== null) {
+    n += 1;
+  }
+  if (filters.durationMinMin !== null || filters.durationMaxMin !== null) {
+    n += 1;
+  }
   return n;
 }
 
 /** Screen-reader status line after filters change the visible activity set. */
 export function formatTrainingHistoryFilterStatus(count: number): string {
-  if (count === 0) return 'Aucune activité ne correspond aux filtres.';
-  if (count === 1) return '1 activité';
+  if (count === 0) {
+    return 'Aucune activité ne correspond aux filtres.';
+  }
+  if (count === 1) {
+    return '1 activité';
+  }
   return `${count} activités`;
 }
 
@@ -244,10 +294,10 @@ export function countDimensionSelections(
     case 'types':
       return filters.types.length;
     case 'period':
-      return filters.periodMaxDays != null ? 1 : 0;
+      return filters.periodMaxDays !== null ? 1 : 0;
     case 'distance':
-      return filters.distanceMinKm != null || filters.distanceMaxKm != null ? 1 : 0;
+      return filters.distanceMinKm !== null || filters.distanceMaxKm !== null ? 1 : 0;
     case 'duration':
-      return filters.durationMinMin != null || filters.durationMaxMin != null ? 1 : 0;
+      return filters.durationMinMin !== null || filters.durationMaxMin !== null ? 1 : 0;
   }
 }

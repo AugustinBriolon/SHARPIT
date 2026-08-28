@@ -19,10 +19,16 @@ export type { SleepPageViewProps } from '@/components/sleep/types';
 
 function pickCoachingLine(props: SleepPageViewProps): string | null {
   // Debt / architecture lines assume tonight's night is known.
-  if ((props.nightStatus ?? 'present') !== 'present') return null;
+  if ((props.nightStatus ?? 'present') !== 'present') {
+    return null;
+  }
   const [insight] = props.coachView.insights;
-  if (insight?.detail) return insight.detail;
-  if (insight?.title) return insight.title;
+  if (insight?.detail) {
+    return insight.detail;
+  }
+  if (insight?.title) {
+    return insight.title;
+  }
   return null;
 }
 
@@ -31,17 +37,19 @@ function sleepActionLine(props: SleepPageViewProps): string | null {
   const bedtime = props.coachView.recommendedBedtimeMin;
 
   // Forward plan is OK even before tonight syncs; debt-as-tonight verdict is not.
-  if (bedtime != null) {
+  if (bedtime !== null) {
     return `Ce soir · coucher conseillé ${formatClock(bedtime)}`;
   }
 
-  if (nightStatus !== 'present') return null;
+  if (nightStatus !== 'present') {
+    return null;
+  }
 
   const debt = props.coachView.debt7Min;
-  if (debt != null && debt > 30) {
+  if (debt !== null && debt > 30) {
     return `Dette 7 jours ${formatDuration(debt)} — rattraper progressivement`;
   }
-  if (props.targetDeltaMin != null && props.targetDeltaMin < 0) {
+  if (props.targetDeltaMin !== null && props.targetDeltaMin < 0) {
     return `Objectif · récupérer ${formatDuration(Math.abs(props.targetDeltaMin))}`;
   }
   return null;
@@ -140,7 +148,7 @@ export function SleepPageView(props: SleepPageViewProps) {
 
       {!loading ? (
         <>
-          {totalSleepMin != null && totalSleepMin > 0 ? (
+          {totalSleepMin !== null && totalSleepMin > 0 ? (
             <SleepPhasesSection
               awakeMin={awakeMin}
               deepMin={deepMin}

@@ -22,7 +22,7 @@ export const NO_GOAL = 'none';
 export { EMPTY_GOALS } from '@/components/planning/session/session-defaults';
 
 export function initialCustomPlace(session?: ClientPlannedSession | null): LocationPlaceValue {
-  if (session?.locationLat != null && session.locationLng != null && session.locationLabel) {
+  if (session?.locationLat !== null && session.locationLng !== null && session.locationLabel) {
     return {
       label: session.locationLabel,
       latitude: session.locationLat,
@@ -33,7 +33,9 @@ export function initialCustomPlace(session?: ClientPlannedSession | null): Locat
 }
 
 export function initialLocationSource(session?: ClientPlannedSession | null): LocationSource {
-  if (session?.locationLat != null && session.locationLng != null) return 'custom';
+  if (session?.locationLat !== null && session.locationLng !== null) {
+    return 'custom';
+  }
   return 'home';
 }
 
@@ -59,8 +61,12 @@ export function defaultBrickLegs(): BrickLegForm[] {
 }
 
 export function brickLegTitlePlaceholder(type: ActivityType): string {
-  if (type === 'BIKE') return 'Vélo';
-  if (type === 'RUN') return 'Course';
+  if (type === 'BIKE') {
+    return 'Vélo';
+  }
+  if (type === 'RUN') {
+    return 'Course';
+  }
   return activityTypeLabels[type];
 }
 
@@ -69,14 +75,24 @@ export function submitButtonLabel(
   isEdit: boolean,
   createMode: CreateMode,
 ): string {
-  if (pending) return 'Enregistrement…';
-  if (isEdit) return 'Mettre à jour';
-  if (createMode === 'brick') return 'Créer le brick';
+  if (pending) {
+    return 'Enregistrement…';
+  }
+  if (isEdit) {
+    return 'Mettre à jour';
+  }
+  if (createMode === 'brick') {
+    return 'Créer le brick';
+  }
   return 'Planifier';
 }
 
 export function dialogTitle(isEdit: boolean, mode: DialogMode, isLinked: boolean): string {
-  if (!isEdit) return 'Planifier une séance';
-  if (mode === 'edit') return 'Modifier la séance';
+  if (!isEdit) {
+    return 'Planifier une séance';
+  }
+  if (mode === 'edit') {
+    return 'Modifier la séance';
+  }
   return isLinked ? 'Séance réalisée' : 'Séance planifiée';
 }

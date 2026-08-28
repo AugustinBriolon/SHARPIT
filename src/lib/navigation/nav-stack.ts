@@ -25,12 +25,18 @@ function canUseStorage(): boolean {
 }
 
 function readRaw(): NavStackEntry[] {
-  if (!canUseStorage()) return [];
+  if (!canUseStorage()) {
+    return [];
+  }
   try {
     const raw = window.sessionStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
+    if (!raw) {
+      return [];
+    }
     const parsed = JSON.parse(raw) as unknown;
-    if (!Array.isArray(parsed)) return [];
+    if (!Array.isArray(parsed)) {
+      return [];
+    }
     return parsed.filter(isEntry).slice(-MAX_ENTRIES);
   } catch {
     return [];
@@ -38,7 +44,9 @@ function readRaw(): NavStackEntry[] {
 }
 
 function writeRaw(entries: NavStackEntry[]): void {
-  if (!canUseStorage()) return;
+  if (!canUseStorage()) {
+    return;
+  }
   try {
     const capped = entries.slice(-MAX_ENTRIES);
     window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify(capped));
@@ -48,7 +56,9 @@ function writeRaw(entries: NavStackEntry[]): void {
 }
 
 function isEntry(candidate: unknown): candidate is NavStackEntry {
-  if (candidate == null || typeof candidate !== 'object') return false;
+  if (candidate === null || typeof candidate !== 'object') {
+    return false;
+  }
   const e = candidate as Record<string, unknown>;
   return typeof e.href === 'string' && typeof e.label === 'string' && typeof e.ts === 'number';
 }
@@ -88,8 +98,11 @@ function push(entry: NavStackEntry): void {
 /** Replace the top of the stack, regardless of href. */
 function replaceTop(entry: NavStackEntry): void {
   const stack = readRaw();
-  if (stack.length === 0) stack.push(entry);
-  else stack[stack.length - 1] = entry;
+  if (stack.length === 0) {
+    stack.push(entry);
+  } else {
+    stack[stack.length - 1] = entry;
+  }
   writeRaw(stack);
 }
 
@@ -109,7 +122,9 @@ function peekBackFrom(currentHref: string): NavStackEntry | null {
   const stack = readRaw();
   for (let i = stack.length - 1; i >= 0; i--) {
     const entry = stack[i]!;
-    if (entry.href !== currentHref) return entry;
+    if (entry.href !== currentHref) {
+      return entry;
+    }
   }
   return null;
 }
@@ -119,7 +134,9 @@ function all(): NavStackEntry[] {
 }
 
 function clear(): void {
-  if (!canUseStorage()) return;
+  if (!canUseStorage()) {
+    return;
+  }
   try {
     window.sessionStorage.removeItem(STORAGE_KEY);
   } catch {

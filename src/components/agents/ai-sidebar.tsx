@@ -117,16 +117,22 @@ function flattenResources(
 ): FlatResource[] {
   return items.flatMap((item) => {
     const row = { item, depth, parentId };
-    if (!item.children?.length || !expanded.has(item.id)) return [row];
+    if (!item.children?.length || !expanded.has(item.id)) {
+      return [row];
+    }
     return [row, ...flattenResources(item.children, expanded, depth + 1, item.id)];
   });
 }
 
 function findResource(items: SidebarResource[], id: string): SidebarResource | undefined {
   for (const item of items) {
-    if (item.id === id) return item;
+    if (item.id === id) {
+      return item;
+    }
     const child = item.children ? findResource(item.children, id) : undefined;
-    if (child) return child;
+    if (child) {
+      return child;
+    }
   }
 }
 
@@ -168,14 +174,20 @@ function insertResource(
   targetId: string | null,
   position: SidebarResourceDropPosition,
 ): SidebarResource[] {
-  if (targetId === null) return [...items, resource];
+  if (targetId === null) {
+    return [...items, resource];
+  }
 
   const next: SidebarResource[] = [];
   for (const item of items) {
     if (item.id === targetId) {
-      if (position === 'before') next.push(resource, item);
-      else if (position === 'after') next.push(item, resource);
-      else next.push({ ...item, children: [...(item.children ?? []), resource] });
+      if (position === 'before') {
+        next.push(resource, item);
+      } else if (position === 'after') {
+        next.push(item, resource);
+      } else {
+        next.push({ ...item, children: [...(item.children ?? []), resource] });
+      }
       continue;
     }
 
@@ -196,15 +208,22 @@ function moveResource(
   move: SidebarResourceMove,
 ): SidebarResource[] | null {
   const source = findResource(items, move.itemId);
-  if (!source || source.disabled) return null;
-  if (move.targetId && containsResource(source, move.targetId)) return null;
+  if (!source || source.disabled) {
+    return null;
+  }
+  if (move.targetId && containsResource(source, move.targetId)) {
+    return null;
+  }
 
   const target = move.targetId ? findResource(items, move.targetId) : undefined;
-  if (move.position === 'inside' && (!target || target.disabled || !canContain(target)))
+  if (move.position === 'inside' && (!target || target.disabled || !canContain(target))) {
     return null;
+  }
 
   const removed = removeResource(items, move.itemId);
-  if (!removed.removed) return null;
+  if (!removed.removed) {
+    return null;
+  }
   return insertResource(removed.items, removed.removed, move.targetId, move.position);
 }
 
@@ -247,13 +266,19 @@ function MarqueeLabel({ active, children }: { active: boolean; children: string 
     const measure = () => {
       const viewport = viewportRef.current;
       const label = labelRef.current;
-      if (!viewport || !label) return;
+      if (!viewport || !label) {
+        return;
+      }
       setDistance(label.scrollWidth > viewport.clientWidth ? label.scrollWidth + 24 : 0);
     };
     measure();
     const observer = new ResizeObserver(measure);
-    if (viewportRef.current) observer.observe(viewportRef.current);
-    if (labelRef.current) observer.observe(labelRef.current);
+    if (viewportRef.current) {
+      observer.observe(viewportRef.current);
+    }
+    if (labelRef.current) {
+      observer.observe(labelRef.current);
+    }
     return () => observer.disconnect();
   }, []);
 
@@ -368,7 +393,9 @@ function ResourceRow({
   const dropPosition = dropTarget?.id === row.item.id ? dropTarget.position : null;
 
   useEffect(() => {
-    if (!renaming) return;
+    if (!renaming) {
+      return;
+    }
     skipRenameBlurRef.current = false;
     setDraft(row.item.label);
     requestAnimationFrame(() => {
@@ -455,12 +482,19 @@ function ResourceRow({
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       onClick={(event) => {
-        if (event.defaultPrevented || draggedRef.current || renaming || row.item.disabled) return;
-        if (acceptsChildren) onToggle();
-        else onSelect();
+        if (event.defaultPrevented || draggedRef.current || renaming || row.item.disabled) {
+          return;
+        }
+        if (acceptsChildren) {
+          onToggle();
+        } else {
+          onSelect();
+        }
       }}
       onDoubleClick={(event) => {
-        if (acceptsChildren || row.item.disabled) return;
+        if (acceptsChildren || row.item.disabled) {
+          return;
+        }
         event.preventDefault();
         onRenameStart();
       }}
@@ -490,7 +524,9 @@ function ResourceRow({
           onClick={(event) => event.stopPropagation()}
           onDoubleClick={(event) => event.stopPropagation()}
           onBlur={() => {
-            if (!skipRenameBlurRef.current) onRenameCommit(draft);
+            if (!skipRenameBlurRef.current) {
+              onRenameCommit(draft);
+            }
           }}
           onKeyDown={(event) => {
             event.stopPropagation();
@@ -573,7 +609,9 @@ export function AISidebar({
   const selectedId = activeId ?? internalActiveId;
 
   useEffect(() => {
-    if (items) setInternalItems(items);
+    if (items) {
+      setInternalItems(items);
+    }
   }, [items]);
 
   const flat = useMemo(
@@ -590,10 +628,14 @@ export function AISidebar({
     focusedId !== null && flat.some((row) => row.item.id === focusedId)
       ? focusedId
       : (flat[0]?.item.id ?? null);
-  if (focusedId !== focusedRow) setFocusedId(focusedRow);
+  if (focusedId !== focusedRow) {
+    setFocusedId(focusedRow);
+  }
 
   useEffect(() => {
-    if (!menuOpenId) return;
+    if (!menuOpenId) {
+      return;
+    }
     const frame = requestAnimationFrame(() => {
       const menus = Array.from(
         document.querySelectorAll<HTMLElement>('[data-sidebar-resource-menu]'),
@@ -622,7 +664,9 @@ export function AISidebar({
       }
       const before = renderedItems;
       const next = moveResource(before, move);
-      if (!next || next === before) return;
+      if (!next || next === before) {
+        return;
+      }
 
       movePendingRef.current = true;
       updateItems(next);
@@ -656,7 +700,9 @@ export function AISidebar({
 
   const select = useCallback(
     (id: string) => {
-      if (activeId === undefined) setInternalActiveId(id);
+      if (activeId === undefined) {
+        setInternalActiveId(id);
+      }
       onActiveChange?.(id);
     },
     [activeId, onActiveChange],
@@ -665,8 +711,11 @@ export function AISidebar({
   const toggle = useCallback((id: string) => {
     setExpandedIds((current) => {
       const next = new Set(current);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
       return next;
     });
   }, []);
@@ -675,7 +724,9 @@ export function AISidebar({
   // they survive on a device with no drag and no modifier keys.
   const moveCommands = useCallback(
     (row: FlatResource): SidebarResourceMoveCommands => {
-      if (row.item.disabled) return {};
+      if (row.item.disabled) {
+        return {};
+      }
       const index = flat.findIndex(({ item }) => item.id === row.item.id);
       const previous = flat[index - 1];
       const next = flat[index + 1];
@@ -793,16 +844,25 @@ export function AISidebar({
 
       if (event.key === 'ArrowRight' && canContain(row.item)) {
         event.preventDefault();
-        if (!expandedIds.has(row.item.id)) toggle(row.item.id);
-        else if (next?.parentId === row.item.id) focusRow(next.item.id);
+        if (!expandedIds.has(row.item.id)) {
+          toggle(row.item.id);
+        } else if (next?.parentId === row.item.id) {
+          focusRow(next.item.id);
+        }
       } else if (event.key === 'ArrowLeft') {
         event.preventDefault();
-        if (expandedIds.has(row.item.id)) toggle(row.item.id);
-        else if (row.parentId) focusRow(row.parentId);
+        if (expandedIds.has(row.item.id)) {
+          toggle(row.item.id);
+        } else if (row.parentId) {
+          focusRow(row.parentId);
+        }
       } else if (event.key === 'Enter' || event.key === ' ') {
         event.preventDefault();
-        if (canContain(row.item)) toggle(row.item.id);
-        else select(row.item.id);
+        if (canContain(row.item)) {
+          toggle(row.item.id);
+        } else {
+          select(row.item.id);
+        }
       } else if (event.key === 'F2') {
         event.preventDefault();
         setRenamingId(row.item.id);
@@ -826,7 +886,9 @@ export function AISidebar({
           className,
         )}
         onDragOver={(event) => {
-          if (!draggingId || event.target !== event.currentTarget) return;
+          if (!draggingId || event.target !== event.currentTarget) {
+            return;
+          }
           event.preventDefault();
           setDropTarget({ id: null, position: 'after' });
         }}
@@ -857,8 +919,11 @@ export function AISidebar({
               renderMenu={renderMenu}
               row={row}
               setRef={(node) => {
-                if (node) rowRefs.current.set(row.item.id, node);
-                else rowRefs.current.delete(row.item.id);
+                if (node) {
+                  rowRefs.current.set(row.item.id, node);
+                } else {
+                  rowRefs.current.delete(row.item.id);
+                }
               }}
               onFocus={() => setFocusedId(row.item.id)}
               onKeyDown={(event) => handleKeyDown(event, row)}
@@ -871,9 +936,13 @@ export function AISidebar({
                 setDropTarget(null);
               }}
               onDragOver={(event, targetRow) => {
-                if (!draggingId || draggingId === targetRow.item.id) return;
+                if (!draggingId || draggingId === targetRow.item.id) {
+                  return;
+                }
                 const source = findResource(renderedItems, draggingId);
-                if (source && containsResource(source, targetRow.item.id)) return;
+                if (source && containsResource(source, targetRow.item.id)) {
+                  return;
+                }
                 event.preventDefault();
                 event.stopPropagation();
                 const rect = event.currentTarget.getBoundingClientRect();
@@ -899,12 +968,16 @@ export function AISidebar({
               }}
               onMenuOpenChange={(open) => {
                 setMenuOpenId(open ? row.item.id : null);
-                if (!open) focusRow(row.item.id);
+                if (!open) {
+                  focusRow(row.item.id);
+                }
               }}
               onRenameCommit={(label) => {
                 const trimmed = label.trim();
                 setRenamingId(null);
-                if (!trimmed || trimmed === row.item.label) return;
+                if (!trimmed || trimmed === row.item.label) {
+                  return;
+                }
                 const before = renderedItems;
                 updateItems(renameResource(before, row.item.id, trimmed));
                 void Promise.resolve(onRename?.(row.item, trimmed)).catch(() => {

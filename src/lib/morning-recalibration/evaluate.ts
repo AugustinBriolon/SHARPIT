@@ -63,7 +63,9 @@ export function isMorningRecalibrationEligibleSport(type: ActivityType): boolean
 
 function stepIntensity(current: SessionIntensity, delta: -1 | 1): SessionIntensity | null {
   const idx = intensityOrder.indexOf(current);
-  if (idx < 0) return null;
+  if (idx < 0) {
+    return null;
+  }
   const next = intensityOrder[idx + delta];
   return next ?? null;
 }
@@ -84,13 +86,15 @@ function summarizeChange(
     const toLabel = morningIntensityLabel(type, to) ?? to;
     parts.push(`${fromLabel} → ${toLabel}`);
   }
-  if (fromLoad != null && toLoad != null && fromLoad !== toLoad) {
+  if (fromLoad !== null && toLoad !== null && fromLoad !== toLoad) {
     parts.push(`charge ${Math.round(fromLoad)} → ${Math.round(toLoad)}`);
   }
-  if (fromDuration != null && toDuration != null && fromDuration !== toDuration) {
+  if (fromDuration !== null && toDuration !== null && fromDuration !== toDuration) {
     parts.push(`${fromDuration} → ${toDuration} min`);
   }
-  if (structureChanged) parts.push('déroulé adapté');
+  if (structureChanged) {
+    parts.push('déroulé adapté');
+  }
   return parts.join(' · ') || 'Ajustement de séance';
 }
 
@@ -148,11 +152,21 @@ export function evaluateMorningSessionRecalibration(input: {
 }): MorningRecalibrationProposal | null {
   const { wellnessCompleted, session, decision } = input;
 
-  if (!wellnessCompleted) return null;
-  if (!session || session.completed || session.activityId) return null;
-  if (!isMorningRecalibrationEligibleSport(session.type)) return null;
-  if (!decision?.overallVerdict || decision.confidenceTier === 'INSUFFICIENT') return null;
-  if (session.intensity == null) return null;
+  if (!wellnessCompleted) {
+    return null;
+  }
+  if (!session || session.completed || session.activityId) {
+    return null;
+  }
+  if (!isMorningRecalibrationEligibleSport(session.type)) {
+    return null;
+  }
+  if (!decision?.overallVerdict || decision.confidenceTier === 'INSUFFICIENT') {
+    return null;
+  }
+  if (session.intensity === null) {
+    return null;
+  }
 
   const verdict = decision.overallVerdict;
   const capacity = decision.fatigueTrainingCapacity ?? null;
@@ -164,8 +178,8 @@ export function evaluateMorningSessionRecalibration(input: {
   if (capacity === 'REST_ONLY' && intensity !== 'RECOVERY') {
     const toIntensity: SessionIntensity = 'RECOVERY';
     const toDuration =
-      durationMin != null ? Math.min(durationMin, strengthLike ? 35 : 30) : durationMin;
-    const toLoad = load != null ? Math.min(Math.round(load * 0.35), strengthLike ? 18 : 25) : null;
+      durationMin !== null ? Math.min(durationMin, strengthLike ? 35 : 30) : durationMin;
+    const toLoad = load !== null ? Math.min(Math.round(load * 0.35), strengthLike ? 18 : 25) : null;
     return withDescriptions(
       type,
       'DOWN',
@@ -199,7 +213,7 @@ export function evaluateMorningSessionRecalibration(input: {
     HIGH_INTENSITY.has(intensity)
   ) {
     const toIntensity: SessionIntensity = 'ENDURANCE';
-    const toLoad = load != null ? Math.round(load * 0.6) : null;
+    const toLoad = load !== null ? Math.round(load * 0.6) : null;
     const protectVerdict = verdict === 'RECOVER' || verdict === 'CAUTION';
     let why: string;
     if (strengthLike && protectVerdict) {
@@ -239,8 +253,10 @@ export function evaluateMorningSessionRecalibration(input: {
 
   if (PROTECT_VERDICTS.has(verdict) && intensity === 'TEMPO') {
     const toIntensity = stepIntensity(intensity, -1);
-    if (!toIntensity) return null;
-    const toLoad = load != null ? Math.round(load * 0.75) : null;
+    if (!toIntensity) {
+      return null;
+    }
+    const toLoad = load !== null ? Math.round(load * 0.75) : null;
     return withDescriptions(
       type,
       'DOWN',
@@ -272,7 +288,7 @@ export function evaluateMorningSessionRecalibration(input: {
   // Strength often sits on ENDURANCE (“Léger”) while still carrying loaded work in the text.
   if (strengthLike && PROTECT_VERDICTS.has(verdict) && intensity === 'ENDURANCE') {
     const toIntensity: SessionIntensity = 'RECOVERY';
-    const toLoad = load != null ? Math.round(load * 0.7) : null;
+    const toLoad = load !== null ? Math.round(load * 0.7) : null;
     return withDescriptions(
       type,
       'DOWN',
@@ -302,7 +318,7 @@ export function evaluateMorningSessionRecalibration(input: {
   // ── Upgrade (push, conservative) ────────────────────────────────────
   if (PUSH_VERDICTS.has(verdict) && intensity === 'RECOVERY') {
     const toIntensity: SessionIntensity = 'ENDURANCE';
-    const toLoad = load != null ? Math.round(load * 1.15) : null;
+    const toLoad = load !== null ? Math.round(load * 1.15) : null;
     return withDescriptions(
       type,
       'UP',
@@ -333,7 +349,7 @@ export function evaluateMorningSessionRecalibration(input: {
 
   if (PUSH_VERDICTS.has(verdict) && intensity === 'ENDURANCE') {
     const toIntensity: SessionIntensity = 'TEMPO';
-    const toLoad = load != null ? Math.round(load * 1.12) : null;
+    const toLoad = load !== null ? Math.round(load * 1.12) : null;
     return withDescriptions(
       type,
       'UP',

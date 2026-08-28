@@ -25,7 +25,9 @@ export function ThreadConstraintsCard({
 }: {
   constraints: readonly ThreadConstraint[];
 }) {
-  if (constraints.length === 0) return null;
+  if (constraints.length === 0) {
+    return null;
+  }
 
   return (
     <section className="chip-surface-lg rounded-analysis-lg px-4 py-4">

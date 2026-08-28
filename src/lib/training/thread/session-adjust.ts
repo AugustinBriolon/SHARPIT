@@ -77,8 +77,8 @@ export function easeSession(
     'durationMin' | 'load' | 'endurancePrescription' | 'strengthPrescription'
   >,
 ): SessionAdjustment | null {
-  const hasDuration = session.durationMin != null && session.durationMin > 0;
-  const hasLoad = session.load != null && session.load > 0;
+  const hasDuration = session.durationMin !== null && session.durationMin > 0;
+  const hasLoad = session.load !== null && session.load > 0;
 
   /* The déroulé is the part the athlete follows. Shrinking the summary while it
      still spells out the original workout would leave the card and the plan
@@ -90,7 +90,9 @@ export function easeSession(
 
   // Nothing to reduce anywhere — refuse rather than write a no-op the athlete
   // would have to undo without anything having changed.
-  if (!hasDuration && !hasLoad && !easedEndurance && !easedStrength) return null;
+  if (!hasDuration && !hasLoad && !easedEndurance && !easedStrength) {
+    return null;
+  }
 
   const adjustment: SessionAdjustment = {
     durationMin: hasDuration
@@ -98,8 +100,12 @@ export function easeSession(
       : session.durationMin,
     load: hasLoad ? Math.round(session.load! * EASE_FACTOR) : session.load,
   };
-  if (easedEndurance) Object.assign(adjustment, { endurancePrescription: easedEndurance });
-  if (easedStrength) Object.assign(adjustment, { strengthPrescription: easedStrength });
+  if (easedEndurance) {
+    Object.assign(adjustment, { endurancePrescription: easedEndurance });
+  }
+  if (easedStrength) {
+    Object.assign(adjustment, { strengthPrescription: easedStrength });
+  }
   return adjustment;
 }
 
@@ -123,11 +129,17 @@ export function rescheduleSession(
   const sameTime = (startTime ?? null) === (session.startTime ?? null);
 
   // Confirming what is already true is not a move.
-  if (sameDay && sameTime) return null;
+  if (sameDay && sameTime) {
+    return null;
+  }
 
   const adjustment: SessionAdjustment = {};
-  if (!sameDay) Object.assign(adjustment, { date: next });
-  if (!sameTime) Object.assign(adjustment, { startTime });
+  if (!sameDay) {
+    Object.assign(adjustment, { date: next });
+  }
+  if (!sameTime) {
+    Object.assign(adjustment, { startTime });
+  }
   return adjustment;
 }
 
@@ -140,14 +152,18 @@ export function undoOf(
   applied: SessionAdjustment,
 ): SessionAdjustment {
   const previous: SessionAdjustment = {};
-  if (applied.date !== undefined) Object.assign(previous, { date: utcDayOf(session.date) });
+  if (applied.date !== undefined) {
+    Object.assign(previous, { date: utcDayOf(session.date) });
+  }
   if (applied.startTime !== undefined) {
     Object.assign(previous, { startTime: session.startTime ?? null });
   }
   if (applied.durationMin !== undefined) {
     Object.assign(previous, { durationMin: session.durationMin });
   }
-  if (applied.load !== undefined) Object.assign(previous, { load: session.load });
+  if (applied.load !== undefined) {
+    Object.assign(previous, { load: session.load });
+  }
   if (applied.endurancePrescription !== undefined) {
     Object.assign(previous, {
       endurancePrescription: parseEndurancePrescription(session.endurancePrescription),

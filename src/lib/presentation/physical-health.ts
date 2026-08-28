@@ -76,8 +76,12 @@ const SIDE_LABELS: Record<string, string> = {
 
 function confidenceTone(pct: number): 'good' | 'warn' | 'neutral' | 'bad' {
   const tier = mapConfidenceToTier(pct);
-  if (tier === 'high') return 'good';
-  if (tier === 'medium') return 'warn';
+  if (tier === 'high') {
+    return 'good';
+  }
+  if (tier === 'medium') {
+    return 'warn';
+  }
   return 'neutral';
 }
 
@@ -195,7 +199,7 @@ function buildConditionCard(
   const confidence = inferred?.confidence ?? row.confidence;
 
   const sparkline = observations
-    .filter((o) => o.severityReported != null)
+    .filter((o) => o.severityReported !== null)
     .slice(-14)
     .map((o) => ({
       date: format(o.observedAt, 'dd MMM', { locale: fr }),

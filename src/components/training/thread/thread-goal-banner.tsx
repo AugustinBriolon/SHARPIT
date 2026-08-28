@@ -37,8 +37,12 @@ function Figure({
 
 /** A step of zero is a held week, not a rise — say so rather than printing "+0". */
 function signOf(step: number): string {
-  if (step > 0) return '+';
-  if (step < 0) return '−';
+  if (step > 0) {
+    return '+';
+  }
+  if (step < 0) {
+    return '−';
+  }
   return '±';
 }
 
@@ -68,9 +72,12 @@ export function ThreadGoalBanner({
     : null;
 
   let countdown: string | null = null;
-  if (days != null) {
-    if (days === 0) countdown = 'Aujourd’hui';
-    else countdown = days > 0 ? `J-${days}` : `J+${Math.abs(days)}`;
+  if (days !== null) {
+    if (days === 0) {
+      countdown = 'Aujourd’hui';
+    } else {
+      countdown = days > 0 ? `J-${days}` : `J+${Math.abs(days)}`;
+    }
   }
 
   /* A week whose sessions never carried a TSS has no load to report — printing 0
@@ -82,11 +89,13 @@ export function ThreadGoalBanner({
      rest week reads as a collapse, and there is no decision behind that number. */
   const previousDone = previousWeek?.doneLoad ?? 0;
   const step =
-    done != null && previousDone > 0
+    done !== null && previousDone > 0
       ? Math.round(((done - previousDone) / previousDone) * 100)
       : null;
 
-  if (!goal && !coachLine && done == null) return null;
+  if (!goal && !coachLine && done === null) {
+    return null;
+  }
 
   return (
     <section className="surface-ink rounded-analysis-lg overflow-hidden px-5 py-5 sm:px-6 lg:flex lg:items-center lg:justify-between lg:gap-8">
@@ -137,18 +146,18 @@ export function ThreadGoalBanner({
       </div>
 
       <div className="mt-4 flex flex-wrap items-stretch gap-x-5 gap-y-3">
-        {done != null ? (
+        {done !== null ? (
           <Figure label="Charge 7 j" suffix={planned ? `/${planned}` : null} value={String(done)} />
         ) : null}
 
-        {step != null ? (
+        {step !== null ? (
           <>
             <Rule />
             <Figure label="vs semaine passée" value={`${signOf(step)}${Math.abs(step)} %`} />
           </>
         ) : null}
 
-        {adherence.ratio != null ? (
+        {adherence.ratio !== null ? (
           <>
             <Rule />
             <Figure

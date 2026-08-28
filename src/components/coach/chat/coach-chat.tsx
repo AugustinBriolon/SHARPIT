@@ -137,9 +137,13 @@ export function CoachChat({
   );
 
   const persistMessages = (all: UIMessage[]) => {
-    if (isEphemeral || !hasPersistableAssistant(all)) return;
+    if (isEphemeral || !hasPersistableAssistant(all)) {
+      return;
+    }
     const fingerprint = coachMessagesFingerprint(all);
-    if (fingerprint === lastPersistedFingerprint.current) return;
+    if (fingerprint === lastPersistedFingerprint.current) {
+      return;
+    }
     lastPersistedFingerprint.current = fingerprint;
     void saveMessages({ id: conversationId, messages: all }).catch((err) =>
       console.error('[coach-chat] save', err),
@@ -161,13 +165,19 @@ export function CoachChat({
     messages: initialMessages,
     transport: coachTransport,
     sendAutomaticallyWhen: ({ messages: current }) => {
-      if (blockAutoSend.current) return false;
+      if (blockAutoSend.current) {
+        return false;
+      }
       if (!lastAssistantMessageIsCompleteWithApprovalResponses({ messages: current })) {
         return false;
       }
       const fingerprint = lastStepApprovalResponseFingerprint(current);
-      if (!fingerprint) return false;
-      if (sentApprovalFingerprints.current.has(fingerprint)) return false;
+      if (!fingerprint) {
+        return false;
+      }
+      if (sentApprovalFingerprints.current.has(fingerprint)) {
+        return false;
+      }
       sentApprovalFingerprints.current.add(fingerprint);
       return true;
     },
@@ -175,8 +185,12 @@ export function CoachChat({
       blockAutoSend.current = true;
     },
     onFinish: ({ messages: all, isError, isAbort }) => {
-      if (isError) return;
-      if (isAbort) blockAutoSend.current = true;
+      if (isError) {
+        return;
+      }
+      if (isAbort) {
+        blockAutoSend.current = true;
+      }
       persistMessages(all);
       if (!isAbort) {
         invalidatePlannedSessionsAfterCoachTurn(queryClient);
@@ -190,7 +204,9 @@ export function CoachChat({
   const loadedConversationIdRef = useRef(conversationId);
 
   useEffect(() => {
-    if (loadedConversationIdRef.current === conversationId) return;
+    if (loadedConversationIdRef.current === conversationId) {
+      return;
+    }
     loadedConversationIdRef.current = conversationId;
     setInput(readCoachInputDraft(conversationId));
   }, [conversationId]);
@@ -207,7 +223,9 @@ export function CoachChat({
   }, [conversationId]);
 
   useEffect(() => {
-    if (status !== 'ready') return;
+    if (status !== 'ready') {
+      return;
+    }
     persistMessages(messages);
   }, [status, messages, conversationId, isEphemeral]);
 
@@ -219,17 +237,25 @@ export function CoachChat({
   }, [conversationId, isEphemeral]);
 
   useEffect(() => {
-    if (!autoReply || autoReplyStarted.current || isBusy) return;
+    if (!autoReply || autoReplyStarted.current || isBusy) {
+      return;
+    }
     const last = messages[messages.length - 1];
-    if (!last || last.role !== 'user') return;
-    if (!tryBeginAutoReply(conversationId)) return;
+    if (!last || last.role !== 'user') {
+      return;
+    }
+    if (!tryBeginAutoReply(conversationId)) {
+      return;
+    }
     autoReplyStarted.current = true;
     let cancelled = false;
     void regenerate()
       .catch(() => undefined)
       .finally(() => {
         endAutoReply(conversationId);
-        if (!cancelled) onAutoReplyStarted?.();
+        if (!cancelled) {
+          onAutoReplyStarted?.();
+        }
       });
     return () => {
       cancelled = true;
@@ -244,7 +270,9 @@ export function CoachChat({
 
   const lastAssistantIndex = useMemo(() => {
     for (let i = messages.length - 1; i >= 0; i--) {
-      if (messages[i].role === 'assistant') return i;
+      if (messages[i].role === 'assistant') {
+        return i;
+      }
     }
     return -1;
   }, [messages]);
@@ -265,7 +293,9 @@ export function CoachChat({
 
   const lastAssistantRowKey = useMemo(() => {
     for (let i = mappedRows.length - 1; i >= 0; i -= 1) {
-      if (mappedRows[i]?.kind === 'assistant') return mappedRows[i]!.key;
+      if (mappedRows[i]?.kind === 'assistant') {
+        return mappedRows[i]!.key;
+      }
     }
     return null;
   }, [mappedRows]);
@@ -274,8 +304,12 @@ export function CoachChat({
   useEffect(() => {
     const previous = prevStatusRef.current;
     prevStatusRef.current = status;
-    if (previous !== 'streaming' && previous !== 'submitted') return;
-    if (status !== 'ready') return;
+    if (previous !== 'streaming' && previous !== 'submitted') {
+      return;
+    }
+    if (status !== 'ready') {
+      return;
+    }
     requestAnimationFrame(() => {
       viewportRef.current?.scrollTo({ top: viewportRef.current.scrollHeight, behavior: 'auto' });
     });
@@ -284,28 +318,40 @@ export function CoachChat({
   useEffect(() => {
     const newlyCompletedKeys: string[] = [];
     for (const m of messages) {
-      if (m.role !== 'assistant') continue;
+      if (m.role !== 'assistant') {
+        continue;
+      }
       for (const p of m.parts) {
-        if (!p.type.startsWith('tool-')) continue;
+        if (!p.type.startsWith('tool-')) {
+          continue;
+        }
         const part = p as { type: string; state?: string; output?: { ok?: boolean } };
         const completed =
           CALENDAR_MUTATION_TOOL_TYPES.has(part.type) &&
           part.state === 'output-available' &&
           part.output?.ok !== false;
-        if (!completed) continue;
+        if (!completed) {
+          continue;
+        }
         const key = `${m.id}:${part.type}`;
-        if (!invalidatedToolPartKeys.current.has(key)) newlyCompletedKeys.push(key);
+        if (!invalidatedToolPartKeys.current.has(key)) {
+          newlyCompletedKeys.push(key);
+        }
       }
     }
     if (newlyCompletedKeys.length > 0) {
-      for (const key of newlyCompletedKeys) invalidatedToolPartKeys.current.add(key);
+      for (const key of newlyCompletedKeys) {
+        invalidatedToolPartKeys.current.add(key);
+      }
       invalidateAfterCoachTools(queryClient);
     }
   }, [messages, queryClient]);
 
   async function submit(text: string) {
     const value = text.trim();
-    if (!value || inputLocked || guardDisabled) return;
+    if (!value || inputLocked || guardDisabled) {
+      return;
+    }
 
     setShowJumpToLatest(false);
     const viewport = viewportRef.current;
@@ -333,7 +379,9 @@ export function CoachChat({
         const conversation = await createConversation.mutateAsync({ messages: [userMessage] });
         clearCoachInputDraft(conversationId);
         setInput('');
-        if (attachedContext) onDetachContext?.();
+        if (attachedContext) {
+          onDetachContext?.();
+        }
         onConversationCreated?.(conversation.id);
       } catch (err) {
         console.error('[coach-chat] create', err);
@@ -344,12 +392,16 @@ export function CoachChat({
     sendMessage({ text: value });
     clearCoachInputDraft(conversationId);
     setInput('');
-    if (attachedContext) onDetachContext?.();
+    if (attachedContext) {
+      onDetachContext?.();
+    }
   }
 
   const scrollToLatest = useCallback((behavior: ScrollBehavior) => {
     const viewport = viewportRef.current;
-    if (!viewport) return;
+    if (!viewport) {
+      return;
+    }
     setShowJumpToLatest(false);
     viewport.scrollTo({ top: viewport.scrollHeight, behavior });
   }, []);
@@ -360,8 +412,12 @@ export function CoachChat({
       : coachBeuiCopy.genericError;
 
   const inputPlaceholder = (() => {
-    if (guardDisabled) return coachBeuiCopy.composerPlaceholderOffline;
-    if (hasPendingApprovals) return coachBeuiCopy.composerPlaceholderPendingApproval;
+    if (guardDisabled) {
+      return coachBeuiCopy.composerPlaceholderOffline;
+    }
+    if (hasPendingApprovals) {
+      return coachBeuiCopy.composerPlaceholderPendingApproval;
+    }
     return coachBeuiCopy.composerPlaceholder;
   })();
 
@@ -376,7 +432,9 @@ export function CoachChat({
       });
       if (approved) {
         const part = pendingApprovals.find((p) => p.approval?.id === id);
-        if (part) invalidateAfterCoachToolApproval(queryClient, part.type);
+        if (part) {
+          invalidateAfterCoachToolApproval(queryClient, part.type);
+        }
       }
     },
     [addToolApprovalResponse, clearError, pendingApprovals, queryClient],

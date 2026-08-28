@@ -54,37 +54,41 @@ const CONFIDENCE_TONE = {
 } as const;
 
 function mapStrainToDisplay(strainScore: number | null) {
-  if (strainScore == null) {
+  if (strainScore === null) {
     return {
       label: 'Indéterminé',
       colorClass: 'text-muted-foreground',
       strokeColor: CHART_TICK_COLOR,
     };
   }
-  if (strainScore >= 16)
+  if (strainScore >= 16) {
     return {
       label: 'Charge très élevée',
       colorClass: 'text-signal-risk',
       strokeColor: CHART_RISK_STROKE,
     };
-  if (strainScore >= 11)
+  }
+  if (strainScore >= 11) {
     return {
       label: 'Charge élevée',
       colorClass: 'text-signal-vo2',
       strokeColor: CHART_VO2_STROKE,
     };
-  if (strainScore >= 6)
+  }
+  if (strainScore >= 6) {
     return {
       label: 'Charge modérée',
       colorClass: 'text-signal-caution',
       strokeColor: CHART_CAUTION_STROKE,
     };
-  if (strainScore > 0)
+  }
+  if (strainScore > 0) {
     return {
       label: 'Charge légère',
       colorClass: 'text-[var(--color-signal-recovery)]',
       strokeColor: CHART_TEMPO_STROKE,
     };
+  }
   return { label: 'Repos', colorClass: 'text-muted-foreground', strokeColor: CHART_TICK_COLOR };
 }
 
@@ -145,7 +149,9 @@ export async function buildEffortViewModel(
   const { fatigue } = snapshot;
   const { dailyStrain } = snapshot;
 
-  if (!fatigue) return emptyEffortViewModel();
+  if (!fatigue) {
+    return emptyEffortViewModel();
+  }
 
   const refDate = new Date(`${trainingDayId}T12:00:00.000Z`);
   const [pmcPoints, dailyStress] = await Promise.all([
@@ -219,7 +225,9 @@ export async function buildEffortViewModel(
   const keyEvidence = fatigue.recommendation.keyEvidence.map((e) => resolve(e));
 
   const dominantDimensionLabel = (() => {
-    if (!fatigue.dominantDimension) return null;
+    if (!fatigue.dominantDimension) {
+      return null;
+    }
     const DOMINANT_LABEL: Record<string, string> = {
       LOAD: 'Charge excessive',
       NEUROMUSCULAR: 'Fatigue neuromusculaire',

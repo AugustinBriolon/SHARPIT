@@ -19,13 +19,21 @@ export function buildKnownSessions(
   const known: Record<string, KnownSession> = {};
 
   for (const message of messages) {
-    if (message.role !== 'assistant') continue;
+    if (message.role !== 'assistant') {
+      continue;
+    }
     for (const part of message.parts) {
-      if (part.type !== 'tool-listPlannedSessions') continue;
+      if (part.type !== 'tool-listPlannedSessions') {
+        continue;
+      }
       const { output } = part as ToolPartLite;
-      if (!Array.isArray(output)) continue;
+      if (!Array.isArray(output)) {
+        continue;
+      }
       for (const s of output as KnownSession[]) {
-        if (s?.id) known[s.id] = s;
+        if (s?.id) {
+          known[s.id] = s;
+        }
       }
     }
   }

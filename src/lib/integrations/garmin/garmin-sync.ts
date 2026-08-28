@@ -55,7 +55,9 @@ async function ingestGarminHealth(
 ): Promise<void> {
   try {
     const raws = garminHealthToObservations(health, calendarDate, new Date());
-    if (raws.length === 0) return;
+    if (raws.length === 0) {
+      return;
+    }
     await observationEngine.ingestBatch(athleteId, raws);
   } catch (err) {
     console.error('[ObservationEngine] garmin-health ingest failed:', err);
@@ -126,7 +128,9 @@ export async function disconnectGarmin(athleteId: string) {
 /** Keeps the Garmin profile row so the hub can ask for a reconnect. */
 export async function revokeGarminCredentials(athleteId: string) {
   const account = await getGarminAccount(athleteId);
-  if (!account) return;
+  if (!account) {
+    return;
+  }
   await prisma.garminAccount.update({
     where: { athleteId },
     data: { oauth1TokenEnc: '', oauth2TokenEnc: '' },
@@ -193,13 +197,24 @@ export async function importGarminThresholds(athleteId: string): Promise<GarminT
     // ftpW, maxHr and lthr all null.
     const data: Prisma.AthleteProfileUncheckedUpdateInput =
       thresholds.failedSources.length === 0 ? { thresholdsSyncedAt: new Date() } : {};
-    if (thresholds.ftpW != null) data.ftpW = thresholds.ftpW;
-    if (thresholds.maxHr != null) data.maxHr = thresholds.maxHr;
-    if (thresholds.lthr != null) data.lthr = thresholds.lthr;
-    if (thresholds.runThresholdPaceSecPerKm != null)
+    if (thresholds.ftpW !== null) {
+      data.ftpW = thresholds.ftpW;
+    }
+    if (thresholds.maxHr !== null) {
+      data.maxHr = thresholds.maxHr;
+    }
+    if (thresholds.lthr !== null) {
+      data.lthr = thresholds.lthr;
+    }
+    if (thresholds.runThresholdPaceSecPerKm !== null) {
       data.runThresholdPaceSecPerKm = thresholds.runThresholdPaceSecPerKm;
-    if (thresholds.vo2maxRunning != null) data.vo2maxRunning = thresholds.vo2maxRunning;
-    if (thresholds.vo2maxCycling != null) data.vo2maxCycling = thresholds.vo2maxCycling;
+    }
+    if (thresholds.vo2maxRunning !== null) {
+      data.vo2maxRunning = thresholds.vo2maxRunning;
+    }
+    if (thresholds.vo2maxCycling !== null) {
+      data.vo2maxCycling = thresholds.vo2maxCycling;
+    }
 
     // The migrated profile row always exists — see the same note in
     // `upsertAthleteProfile` (src/lib/queries/index.ts).
@@ -218,12 +233,12 @@ export async function importGarminThresholds(athleteId: string): Promise<GarminT
     });
 
     const imported =
-      thresholds.ftpW != null ||
-      thresholds.maxHr != null ||
-      thresholds.lthr != null ||
-      thresholds.runThresholdPaceSecPerKm != null ||
-      thresholds.vo2maxRunning != null ||
-      thresholds.vo2maxCycling != null;
+      thresholds.ftpW !== null ||
+      thresholds.maxHr !== null ||
+      thresholds.lthr !== null ||
+      thresholds.runThresholdPaceSecPerKm !== null ||
+      thresholds.vo2maxRunning !== null ||
+      thresholds.vo2maxCycling !== null;
 
     return { ...thresholds, imported };
   });
@@ -238,17 +253,17 @@ export interface GarminSyncResult {
 
 function healthHasData(health: GarminDailyHealth): boolean {
   return (
-    health.sleepMinutes != null ||
-    health.napMinutes != null ||
-    health.restingHr != null ||
-    health.hrv != null ||
-    health.weightKg != null ||
-    health.readinessScore != null ||
-    health.hrvStatus != null ||
-    health.stress != null ||
-    health.bodyBattery != null ||
-    health.totalSteps != null ||
-    health.sleep.sleepScore != null
+    health.sleepMinutes !== null ||
+    health.napMinutes !== null ||
+    health.restingHr !== null ||
+    health.hrv !== null ||
+    health.weightKg !== null ||
+    health.readinessScore !== null ||
+    health.hrvStatus !== null ||
+    health.stress !== null ||
+    health.bodyBattery !== null ||
+    health.totalSteps !== null ||
+    health.sleep.sleepScore !== null
   );
 }
 
@@ -259,7 +274,9 @@ async function upsertGarminHealthDay(
   weightKg: number | null,
 ): Promise<'updated' | 'empty'> {
   const health = await fetchDailyHealth(client, date, weightKg);
-  if (!healthHasData(health)) return 'empty';
+  if (!healthHasData(health)) {
+    return 'empty';
+  }
 
   // Le champ DailyHealth.date est un `@db.Date` : Postgres ne garde que la
   // partie calendaire et la tronque en UTC. Si on passe un minuit LOCAL
@@ -269,37 +286,87 @@ async function upsertGarminHealthDay(
   // du serveur (local en dev, UTC sur Vercel).
   const day = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
   const factors =
-    health.readinessFactors != null
+    health.readinessFactors !== null
       ? (health.readinessFactors as unknown as Prisma.InputJsonValue)
       : undefined;
 
   const data: Prisma.DailyHealthUpdateInput = {};
-  if (health.sleepMinutes != null) data.sleepMinutes = health.sleepMinutes;
-  if (health.napMinutes != null) data.napMinutes = health.napMinutes;
-  if (health.restingHr != null) data.restingHr = health.restingHr;
-  if (health.hrv != null) data.hrv = health.hrv;
-  if (health.weightKg != null) data.weightKg = health.weightKg;
-  if (health.readinessScore != null) data.recoveryScore = health.readinessScore;
-  if (health.readinessLevel != null) data.readinessLevel = health.readinessLevel;
-  if (health.readinessFeedback != null) data.readinessFeedback = health.readinessFeedback;
-  if (factors != null) data.readinessFactors = factors;
-  if (health.hrvStatus != null) data.hrvStatus = health.hrvStatus;
-  if (health.hrvBaselineLow != null) data.hrvBaselineLow = health.hrvBaselineLow;
-  if (health.hrvBaselineHigh != null) data.hrvBaselineHigh = health.hrvBaselineHigh;
-  if (health.stress != null) data.stress = health.stress;
-  if (health.bodyBattery != null) data.bodyBattery = health.bodyBattery;
-  if (health.totalSteps != null) data.totalSteps = health.totalSteps;
+  if (health.sleepMinutes !== null) {
+    data.sleepMinutes = health.sleepMinutes;
+  }
+  if (health.napMinutes !== null) {
+    data.napMinutes = health.napMinutes;
+  }
+  if (health.restingHr !== null) {
+    data.restingHr = health.restingHr;
+  }
+  if (health.hrv !== null) {
+    data.hrv = health.hrv;
+  }
+  if (health.weightKg !== null) {
+    data.weightKg = health.weightKg;
+  }
+  if (health.readinessScore !== null) {
+    data.recoveryScore = health.readinessScore;
+  }
+  if (health.readinessLevel !== null) {
+    data.readinessLevel = health.readinessLevel;
+  }
+  if (health.readinessFeedback !== null) {
+    data.readinessFeedback = health.readinessFeedback;
+  }
+  if (factors !== null) {
+    data.readinessFactors = factors;
+  }
+  if (health.hrvStatus !== null) {
+    data.hrvStatus = health.hrvStatus;
+  }
+  if (health.hrvBaselineLow !== null) {
+    data.hrvBaselineLow = health.hrvBaselineLow;
+  }
+  if (health.hrvBaselineHigh !== null) {
+    data.hrvBaselineHigh = health.hrvBaselineHigh;
+  }
+  if (health.stress !== null) {
+    data.stress = health.stress;
+  }
+  if (health.bodyBattery !== null) {
+    data.bodyBattery = health.bodyBattery;
+  }
+  if (health.totalSteps !== null) {
+    data.totalSteps = health.totalSteps;
+  }
   const { sleep } = health;
-  if (sleep.sleepScore != null) data.sleepScore = sleep.sleepScore;
-  if (sleep.sleepDeepMin != null) data.sleepDeepMin = sleep.sleepDeepMin;
-  if (sleep.sleepLightMin != null) data.sleepLightMin = sleep.sleepLightMin;
-  if (sleep.sleepRemMin != null) data.sleepRemMin = sleep.sleepRemMin;
-  if (sleep.sleepAwakeMin != null) data.sleepAwakeMin = sleep.sleepAwakeMin;
-  if (sleep.sleepBedtimeMin != null) data.sleepBedtimeMin = sleep.sleepBedtimeMin;
-  if (sleep.sleepWakeMin != null) data.sleepWakeMin = sleep.sleepWakeMin;
-  if (sleep.sleepRespiration != null) data.sleepRespiration = sleep.sleepRespiration;
-  if (sleep.sleepAvgStress != null) data.sleepAvgStress = sleep.sleepAvgStress;
-  if (sleep.sleepScoreFeedback != null) data.sleepScoreFeedback = sleep.sleepScoreFeedback;
+  if (sleep.sleepScore !== null) {
+    data.sleepScore = sleep.sleepScore;
+  }
+  if (sleep.sleepDeepMin !== null) {
+    data.sleepDeepMin = sleep.sleepDeepMin;
+  }
+  if (sleep.sleepLightMin !== null) {
+    data.sleepLightMin = sleep.sleepLightMin;
+  }
+  if (sleep.sleepRemMin !== null) {
+    data.sleepRemMin = sleep.sleepRemMin;
+  }
+  if (sleep.sleepAwakeMin !== null) {
+    data.sleepAwakeMin = sleep.sleepAwakeMin;
+  }
+  if (sleep.sleepBedtimeMin !== null) {
+    data.sleepBedtimeMin = sleep.sleepBedtimeMin;
+  }
+  if (sleep.sleepWakeMin !== null) {
+    data.sleepWakeMin = sleep.sleepWakeMin;
+  }
+  if (sleep.sleepRespiration !== null) {
+    data.sleepRespiration = sleep.sleepRespiration;
+  }
+  if (sleep.sleepAvgStress !== null) {
+    data.sleepAvgStress = sleep.sleepAvgStress;
+  }
+  if (sleep.sleepScoreFeedback !== null) {
+    data.sleepScoreFeedback = sleep.sleepScoreFeedback;
+  }
 
   await prisma.dailyHealth.upsert({
     where: { athleteId_date: { athleteId, date: day } },

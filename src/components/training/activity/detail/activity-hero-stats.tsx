@@ -43,12 +43,14 @@ type Slot = InstrumentMetricItem & {
 };
 
 function formatSpeed(metersPerSec: number | null): string | null {
-  if (metersPerSec == null) return null;
+  if (metersPerSec === null) {
+    return null;
+  }
   return `${(metersPerSec * 3.6).toFixed(1)} km/h`;
 }
 
 function buildSlots(activity: HeroActivity, stream: StreamStats | null): Slot[] {
-  const duration = activity.duration != null ? formatDuration(activity.duration) : null;
+  const duration = activity.duration !== null ? formatDuration(activity.duration) : null;
 
   switch (activity.type) {
     case ActivityType.RUN: {
@@ -57,20 +59,20 @@ function buildSlots(activity: HeroActivity, stream: StreamStats | null): Slot[] 
       return [
         {
           label: 'Distance',
-          value: m?.distanceM != null ? formatDistance(m.distanceM) : null,
+          value: m?.distanceM !== null ? formatDistance(m.distanceM) : null,
         },
         {
           label: 'Allure',
-          value: m?.paceSecPerKm != null ? formatPace(m.paceSecPerKm) : null,
+          value: m?.paceSecPerKm !== null ? formatPace(m.paceSecPerKm) : null,
         },
         {
           label: 'FC moy.',
-          value: avgHr != null ? `${avgHr} bpm` : null,
-          needsStream: m?.avgHr == null,
+          value: avgHr !== null ? `${avgHr} bpm` : null,
+          needsStream: m?.avgHr === null,
         },
         {
           label: 'Cadence',
-          value: m?.cadence != null ? `${m.cadence} spm` : null,
+          value: m?.cadence !== null ? `${m.cadence} spm` : null,
         },
       ];
     }
@@ -80,7 +82,7 @@ function buildSlots(activity: HeroActivity, stream: StreamStats | null): Slot[] 
       return [
         {
           label: 'Distance',
-          value: stream?.totalDistance != null ? formatDistance(stream.totalDistance) : null,
+          value: stream?.totalDistance !== null ? formatDistance(stream.totalDistance) : null,
           needsStream: true,
         },
         { label: 'Temps', value: duration },
@@ -91,8 +93,8 @@ function buildSlots(activity: HeroActivity, stream: StreamStats | null): Slot[] 
         },
         {
           label: 'Dénivelé',
-          value: elevation != null ? `${Math.round(elevation)} m` : null,
-          needsStream: activity.bikeMetrics?.elevationM == null,
+          value: elevation !== null ? `${Math.round(elevation)} m` : null,
+          needsStream: activity.bikeMetrics?.elevationM === null,
         },
       ];
     }
@@ -102,16 +104,16 @@ function buildSlots(activity: HeroActivity, stream: StreamStats | null): Slot[] 
       return [
         {
           label: 'Distance',
-          value: m?.distanceM != null ? formatDistance(m.distanceM) : null,
+          value: m?.distanceM !== null ? formatDistance(m.distanceM) : null,
         },
         { label: 'Temps', value: duration },
         {
           label: 'Allure moy.',
-          value: m?.avgPaceSecPer100m != null ? formatSwimPace(m.avgPaceSecPer100m) : null,
+          value: m?.avgPaceSecPer100m !== null ? formatSwimPace(m.avgPaceSecPer100m) : null,
         },
         {
           label: 'FC moy.',
-          value: stream?.avgHr != null ? `${stream.avgHr} bpm` : null,
+          value: stream?.avgHr !== null ? `${stream.avgHr} bpm` : null,
           needsStream: true,
         },
       ];
@@ -125,19 +127,19 @@ function buildSlots(activity: HeroActivity, stream: StreamStats | null): Slot[] 
       return [
         {
           label: 'Distance',
-          value: distance != null ? formatDistance(distance) : null,
-          needsStream: m?.distanceM == null,
+          value: distance !== null ? formatDistance(distance) : null,
+          needsStream: m?.distanceM === null,
         },
         {
           label: 'Dénivelé',
-          value: elevation != null ? `${Math.round(elevation)} m` : null,
-          needsStream: m?.elevationM == null,
+          value: elevation !== null ? `${Math.round(elevation)} m` : null,
+          needsStream: m?.elevationM === null,
         },
         { label: 'Temps', value: duration },
         {
           label: 'FC moy.',
-          value: avgHr != null ? `${avgHr} bpm` : null,
-          needsStream: m?.avgHr == null,
+          value: avgHr !== null ? `${avgHr} bpm` : null,
+          needsStream: m?.avgHr === null,
         },
       ];
     }
@@ -157,14 +159,16 @@ export function ActivityHeroStats({
   const { data, isPending } = useActivityStream(activityId);
   const slots = buildSlots(activity, data?.stats ?? null);
 
-  const items = slots.filter((slot) => slot.value != null || (slot.needsStream && isPending));
+  const items = slots.filter((slot) => slot.value !== null || (slot.needsStream && isPending));
 
-  if (items.length === 0) return null;
+  if (items.length === 0) {
+    return null;
+  }
 
   return (
     <InstrumentMetricGrid
       items={items.map(({ label, value }) => ({ label, value }))}
-      loading={isPending && items.some((slot) => slot.value == null)}
+      loading={isPending && items.some((slot) => slot.value === null)}
     />
   );
 }

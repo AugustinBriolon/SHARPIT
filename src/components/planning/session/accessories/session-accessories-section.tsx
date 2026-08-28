@@ -25,7 +25,9 @@ export function SessionAccessoriesSection({
     strengthPrescription,
   });
 
-  if (items.length === 0) return null;
+  if (items.length === 0) {
+    return null;
+  }
 
   return (
     <div className="border-analysis-border/60 space-y-2 rounded-lg border p-3">

@@ -50,17 +50,21 @@ export function buildPostSessionLoop(input: PostSessionLoopInput): PostSessionLo
       !isDemoSessionLinkActivityTitle(a.title) && !(input.excludeActivityIds?.has(a.id) ?? false),
   );
   const [latest] = substantive.length > 0 ? substantive : todayActivities;
-  if (!latest) return null;
+  if (!latest) {
+    return null;
+  }
 
   const needsFeeling =
-    latest.rpe == null && (latest.feeling == null || latest.feeling.trim() === '');
+    latest.rpe === null && (latest.feeling === null || latest.feeling.trim() === '');
   /** Positive affirmation only — syncing/stale already surface via SnapshotStatusBanner. */
   const freshnessLine = input.overallFresh ? 'Twin à jour — ta séance est intégrée.' : null;
 
   // Nothing left to prompt for: RPE/feeling are already in, and freshness isn't
   // worth a banner on its own. Without one of those the card was just repeating
   // the "Voir le récit" link the day summary already shows for this activity.
-  if (!needsFeeling && !freshnessLine) return null;
+  if (!needsFeeling && !freshnessLine) {
+    return null;
+  }
 
   return {
     visible: true,

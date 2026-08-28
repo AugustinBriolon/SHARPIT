@@ -281,7 +281,9 @@ export function ApprovalCard({
   const controlsDisabled = busy || disabled;
 
   const clearAutoAdvance = useCallback(() => {
-    if (autoAdvanceTimer.current === undefined) return;
+    if (autoAdvanceTimer.current === undefined) {
+      return;
+    }
     window.clearTimeout(autoAdvanceTimer.current);
     autoAdvanceTimer.current = undefined;
   }, []);
@@ -299,12 +301,16 @@ export function ApprovalCard({
   }, [archived, currentStep, interactive, questionMode, questions.length, statusLabel]);
 
   useEffect(() => {
-    if (!interactive || questionMode) return;
+    if (!interactive || questionMode) {
+      return;
+    }
     cardRef.current?.focus();
   }, [interactive, questionMode]);
 
   useEffect(() => {
-    if (!interactive || questionMode) return;
+    if (!interactive || questionMode) {
+      return;
+    }
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Enter' && onApprove) {
@@ -325,7 +331,9 @@ export function ApprovalCard({
 
   const setAnswers = useCallback(
     (next: ApprovalCardAnswers) => {
-      if (answers === undefined) setInternalAnswers(next);
+      if (answers === undefined) {
+        setInternalAnswers(next);
+      }
       onAnswersChange?.(next);
     },
     [answers, onAnswersChange],
@@ -333,12 +341,16 @@ export function ApprovalCard({
 
   const setStep = (next: number) => {
     clearAutoAdvance();
-    if (step === undefined) setInternalStep(next);
+    if (step === undefined) {
+      setInternalStep(next);
+    }
     onStepChange?.(next);
   };
 
   const updateCurrentAnswer = (next: ApprovalCardAnswer) => {
-    if (!question) return;
+    if (!question) {
+      return;
+    }
     setAnswers({ ...currentAnswers, [question.id]: next });
   };
 

@@ -74,7 +74,7 @@ export function TodayVerdictHero({
   );
 
   const confidenceTitle =
-    trust.confidencePctRounded != null
+    trust.confidencePctRounded !== null
       ? `${trust.confidenceLabel} (${trust.confidencePctRounded} %)`
       : (trust.confidenceLabel ?? undefined);
 
@@ -85,7 +85,7 @@ export function TodayVerdictHero({
         {confidenceInner}
       </div>
     );
-  } else if (trust.confidenceLabel != null) {
+  } else if (trust.confidenceLabel !== null) {
     if (trust.confidenceHref) {
       confidenceNode = (
         <Link

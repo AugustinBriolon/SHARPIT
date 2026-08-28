@@ -39,7 +39,9 @@ export function buildAlreadyPushedError(input: {
 }
 
 export function isGarminPushBlockReason(value: unknown): value is GarminPushBlockReason {
-  if (!value || typeof value !== 'object') return false;
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
   const record = value as Record<string, unknown>;
   return record.code === 'ALREADY_PUSHED' && typeof record.message === 'string';
 }
@@ -58,7 +60,9 @@ export function garminPushClearOnSessionChange(patch: {
 } | null {
   const touched =
     'strengthPrescription' in patch || 'endurancePrescription' in patch || 'date' in patch;
-  if (!touched) return null;
+  if (!touched) {
+    return null;
+  }
   return {
     garminWorkoutId: null,
     garminWorkoutScheduledDate: null,

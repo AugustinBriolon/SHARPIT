@@ -49,7 +49,7 @@ export function weekStartFor(d: Date): Date {
 }
 
 function avg(values: (number | null | undefined)[]): number | null {
-  const ok = values.filter((v): v is number => v != null);
+  const ok = values.filter((v): v is number => v !== null);
   return ok.length ? ok.reduce((s, v) => s + v, 0) / ok.length : null;
 }
 
@@ -115,7 +115,7 @@ async function buildWeeklyStats(athleteId: string, weekStart: Date): Promise<Wee
   const compliance = planned
     .filter((p) => p.completed && p.analysis)
     .map((p) => (p.analysis as { complianceScore?: number }).complianceScore)
-    .filter((v): v is number => v != null);
+    .filter((v): v is number => v !== null);
 
   const weekHealth = health.filter((h) => {
     const d = new Date(h.date);
@@ -151,6 +151,41 @@ async function buildWeeklyStats(athleteId: string, weekStart: Date): Promise<Wee
   };
 }
 
+function formatWeeklyVolumeLine(stats: WeeklyStats): string {
+  const loadDelta =
+    stats.prevTotalLoad > 0
+      ? Math.round(((stats.totalLoad - stats.prevTotalLoad) / stats.prevTotalLoad) * 100)
+      : null;
+  return `Volume : ${stats.sessionsDone} séance(s), ${formatDuration(stats.totalDurationMin)}, charge ${stats.totalLoad}${
+    loadDelta !== null
+      ? ` (${loadDelta > 0 ? '+' : ''}${loadDelta}% vs semaine précédente ${stats.prevTotalLoad})`
+      : ''
+  }.`;
+}
+
+function formatWeeklySleepLine(sleep: WeeklyStats['sleep']): string {
+  const sleepBits = [
+    sleep.avgDurationMin !== null ? `durée moy ${formatDuration(sleep.avgDurationMin)}` : null,
+    sleep.avgScore !== null ? `score moy ${sleep.avgScore}/100` : null,
+    sleep.avgDeepPct !== null ? `profond ${sleep.avgDeepPct}%` : null,
+    sleep.avgRemPct !== null ? `REM ${sleep.avgRemPct}%` : null,
+    sleep.regularityMin !== null ? `régularité ±${sleep.regularityMin} min` : null,
+    sleep.recommendedBedtimeMin !== null
+      ? `coucher conseillé ${formatClock(sleep.recommendedBedtimeMin)}`
+      : null,
+  ].filter(Boolean);
+  return `Sommeil : ${sleepBits.length ? sleepBits.join(' · ') : 'données limitées'}.`;
+}
+
+function formatWeeklyRecoveryLine(recovery: WeeklyStats['recovery']): string | null {
+  const recBits = [
+    recovery.avgReadiness !== null ? `readiness moy ${Math.round(recovery.avgReadiness)}/100` : null,
+    recovery.avgHrv !== null ? `HRV moy ${Math.round(recovery.avgHrv)} ms` : null,
+    recovery.avgRestingHr !== null ? `FC repos moy ${Math.round(recovery.avgRestingHr)} bpm` : null,
+  ].filter(Boolean);
+  return recBits.length ? `Récupération : ${recBits.join(' · ')}.` : null;
+}
+
 function formatWeeklyStats(stats: WeeklyStats): string {
   const lines: string[] = [];
   const start = new Date(`${stats.weekStart}T00:00:00`);
@@ -158,18 +193,8 @@ function formatWeeklyStats(stats: WeeklyStats): string {
   lines.push(
     `## Semaine du ${format(start, 'd MMM', { locale: fr })} au ${format(end, 'd MMM yyyy', { locale: fr })}`,
   );
+  lines.push(formatWeeklyVolumeLine(stats));
 
-  const loadDelta =
-    stats.prevTotalLoad > 0
-      ? Math.round(((stats.totalLoad - stats.prevTotalLoad) / stats.prevTotalLoad) * 100)
-      : null;
-  lines.push(
-    `Volume : ${stats.sessionsDone} séance(s), ${formatDuration(stats.totalDurationMin)}, charge ${stats.totalLoad}${
-      loadDelta != null
-        ? ` (${loadDelta > 0 ? '+' : ''}${loadDelta}% vs semaine précédente ${stats.prevTotalLoad})`
-        : ''
-    }.`,
-  );
   if (stats.byType.length) {
     lines.push(
       `Répartition : ${stats.byType
@@ -179,30 +204,17 @@ function formatWeeklyStats(stats: WeeklyStats): string {
   }
   lines.push(
     `Plan : ${stats.sessionsCompleted}/${stats.sessionsPlanned} séance(s) planifiée(s) réalisée(s)${
-      stats.avgComplianceScore != null ? `, conformité moyenne ${stats.avgComplianceScore}/100` : ''
+      stats.avgComplianceScore !== null
+        ? `, conformité moyenne ${stats.avgComplianceScore}/100`
+        : ''
     }.`,
   );
+  lines.push(formatWeeklySleepLine(stats.sleep));
 
-  const s = stats.sleep;
-  const sleepBits = [
-    s.avgDurationMin != null ? `durée moy ${formatDuration(s.avgDurationMin)}` : null,
-    s.avgScore != null ? `score moy ${s.avgScore}/100` : null,
-    s.avgDeepPct != null ? `profond ${s.avgDeepPct}%` : null,
-    s.avgRemPct != null ? `REM ${s.avgRemPct}%` : null,
-    s.regularityMin != null ? `régularité ±${s.regularityMin} min` : null,
-    s.recommendedBedtimeMin != null
-      ? `coucher conseillé ${formatClock(s.recommendedBedtimeMin)}`
-      : null,
-  ].filter(Boolean);
-  lines.push(`Sommeil : ${sleepBits.length ? sleepBits.join(' · ') : 'données limitées'}.`);
-
-  const r = stats.recovery;
-  const recBits = [
-    r.avgReadiness != null ? `readiness moy ${Math.round(r.avgReadiness)}/100` : null,
-    r.avgHrv != null ? `HRV moy ${Math.round(r.avgHrv)} ms` : null,
-    r.avgRestingHr != null ? `FC repos moy ${Math.round(r.avgRestingHr)} bpm` : null,
-  ].filter(Boolean);
-  if (recBits.length) lines.push(`Récupération : ${recBits.join(' · ')}.`);
+  const recoveryLine = formatWeeklyRecoveryLine(stats.recovery);
+  if (recoveryLine) {
+    lines.push(recoveryLine);
+  }
 
   return lines.join('\n');
 }

@@ -17,8 +17,12 @@ import { DISPLAY_MODES } from '@/lib/preferences/display-mode';
  */
 function patchField<T extends z.ZodTypeAny>(coerce: (value: unknown) => unknown, schema: T) {
   return z.preprocess((value) => {
-    if (value === undefined) return undefined;
-    if (value === '' || value === null) return null;
+    if (value === undefined) {
+      return undefined;
+    }
+    if (value === '' || value === null) {
+      return null;
+    }
     return coerce(value);
   }, schema);
 }
@@ -52,8 +56,12 @@ const nullableHeightCm = patchField(
 
 const nullableBirthDate = patchField(
   (v) => {
-    if (typeof v === 'string') return parseBirthDateInput(v);
-    if (v instanceof Date) return v;
+    if (typeof v === 'string') {
+      return parseBirthDateInput(v);
+    }
+    if (v instanceof Date) {
+      return v;
+    }
     return v;
   },
   z.union([

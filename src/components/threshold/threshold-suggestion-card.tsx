@@ -80,7 +80,9 @@ export function ThresholdSuggestionCard({
       prev.includes(field) ? prev.filter((f) => f !== field) : [...prev, field],
     );
 
-  if (!preview.hasChanges) return null;
+  if (!preview.hasChanges) {
+    return null;
+  }
 
   const body = (
     <div
@@ -177,7 +179,9 @@ export function ThresholdSuggestionCard({
     </div>
   );
 
-  if (!animate) return body;
+  if (!animate) {
+    return body;
+  }
 
   return (
     <AnimatePresence initial={false}>

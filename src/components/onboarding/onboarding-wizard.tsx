@@ -48,7 +48,9 @@ async function patchPrefs(
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ action, dataClass, provider }),
   });
-  if (!response.ok) return null;
+  if (!response.ok) {
+    return null;
+  }
   const data = (await response.json()) as { prefs: IntegrationSourcePrefs };
   return data.prefs;
 }
@@ -80,11 +82,15 @@ export function OnboardingWizard({
   }, [router]);
 
   useEffect(() => {
-    if (searchParams.get('step') === 'providers') setStep('providers');
+    if (searchParams.get('step') === 'providers') {
+      setStep('providers');
+    }
 
     for (const provider of ['strava', 'withings', 'google'] as const) {
       const status = searchParams.get(provider);
-      if (!status) continue;
+      if (!status) {
+        continue;
+      }
       if (status === 'connected') {
         setConnected((prev) => new Set(prev).add(provider));
         toast.success(`${providerLabel(provider)} connecté`);
@@ -131,7 +137,9 @@ export function OnboardingWizard({
   }
 
   function handleConnect(provider: CatalogProvider, dataClass: DataClassId) {
-    if (provider.status === 'coming_soon' || !provider.integrationId) return;
+    if (provider.status === 'coming_soon' || !provider.integrationId) {
+      return;
+    }
 
     if (provider.authKind === 'oauth' && provider.oauthPath) {
       window.location.assign(oauthConnectHref(provider.oauthPath, '/onboarding', dataClass));
@@ -151,16 +159,22 @@ export function OnboardingWizard({
       : disableProviderForClass(prefs, dataClass, provider);
     setPrefs(optimistic);
     const next = await patchPrefs(enable ? 'enable' : 'disable', dataClass, provider);
-    if (next) setPrefs(next);
-    else setPrefs(prefs);
+    if (next) {
+      setPrefs(next);
+    } else {
+      setPrefs(prefs);
+    }
   }
 
   async function handleSetPrimary(provider: IntegrationId, dataClass: DataClassId) {
     const optimistic = setPrimaryForClass(prefs, dataClass, provider);
     setPrefs(optimistic);
     const next = await patchPrefs('setPrimary', dataClass, provider);
-    if (next) setPrefs(next);
-    else setPrefs(prefs);
+    if (next) {
+      setPrefs(next);
+    } else {
+      setPrefs(prefs);
+    }
   }
 
   if (step === 'bootstrap') {
@@ -242,9 +256,9 @@ export function OnboardingWizard({
                   {providers.map((provider) => {
                     const soon = provider.status === 'coming_soon';
                     const { integrationId } = provider;
-                    const isConnected = integrationId != null && connected.has(integrationId);
+                    const isConnected = integrationId !== null && connected.has(integrationId);
                     const isEnabled =
-                      integrationId != null && classPrefs.enabled.includes(integrationId);
+                      integrationId !== null && classPrefs.enabled.includes(integrationId);
                     const isPrimary = classPrefs.primary === integrationId;
 
                     return (
@@ -340,14 +354,18 @@ export function OnboardingWizard({
 
       <OnboardingCredentialDialog
         dataClass={credentialTarget?.dataClass ?? null}
-        open={credentialTarget != null}
+        open={credentialTarget !== null}
         provider={credentialTarget?.provider ?? null}
         onConnected={(id, nextPrefs) => {
           setConnected((prev) => new Set(prev).add(id));
-          if (nextPrefs) setPrefs(nextPrefs);
+          if (nextPrefs) {
+            setPrefs(nextPrefs);
+          }
         }}
         onOpenChange={(open) => {
-          if (!open) setCredentialTarget(null);
+          if (!open) {
+            setCredentialTarget(null);
+          }
         }}
       />
     </div>
@@ -355,7 +373,9 @@ export function OnboardingWizard({
 }
 
 function finishButtonLabel(busy: boolean, hasConnectedAny: boolean): string {
-  if (busy) return 'Ouverture…';
+  if (busy) {
+    return 'Ouverture…';
+  }
   return hasConnectedAny ? 'Terminer et ouvrir Today' : 'Continuer sans connexion';
 }
 

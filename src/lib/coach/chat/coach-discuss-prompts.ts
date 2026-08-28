@@ -33,13 +33,13 @@ export function buildSessionDiscussPrompt(input: {
     input.planned?.intensity
       ? `intensité ${intensityLabels[input.planned.intensity as keyof typeof intensityLabels] ?? input.planned.intensity}`
       : null,
-    input.planned?.durationMin != null ? `${input.planned.durationMin} min` : null,
+    input.planned?.durationMin !== null ? `${input.planned.durationMin} min` : null,
     input.planned?.description ? `consigne : ${input.planned.description}` : null,
   ].filter(Boolean);
 
   const actualBits = [
     input.actual?.title ? `« ${input.actual.title} »` : null,
-    input.actual?.durationSec != null
+    input.actual?.durationSec !== null
       ? `${Math.round(input.actual.durationSec / 60)} min réalisées`
       : null,
     input.actual?.notes ? `notes : ${input.actual.notes}` : null,
@@ -91,16 +91,16 @@ export function buildActivityDiscussPrompt(input: {
 
   const actualBits = [
     dateLabel,
-    input.durationSec != null ? `${Math.round(input.durationSec / 60)} min` : null,
-    input.load != null ? `${Math.round(input.load)} TSS` : null,
-    input.rpe != null ? `RPE ${input.rpe}/10` : null,
+    input.durationSec !== null ? `${Math.round(input.durationSec / 60)} min` : null,
+    input.load !== null ? `${Math.round(input.load)} TSS` : null,
+    input.rpe !== null ? `RPE ${input.rpe}/10` : null,
     input.notes ? `notes : ${input.notes}` : null,
   ].filter(Boolean);
 
   const plannedBits = input.planned
     ? [
         input.planned.title ? `« ${input.planned.title} »` : null,
-        input.planned.durationMin != null ? `${input.planned.durationMin} min prévues` : null,
+        input.planned.durationMin !== null ? `${input.planned.durationMin} min prévues` : null,
         input.planned.intensity
           ? `intensité ${intensityLabels[input.planned.intensity as keyof typeof intensityLabels] ?? input.planned.intensity}`
           : null,
@@ -152,8 +152,8 @@ export function buildPlannedSessionDiscussPrompt(input: {
   const when = input.startTime ? `${dateLabel} à ${input.startTime}` : dateLabel;
 
   const bits = [
-    input.durationMin != null ? `${input.durationMin} min` : null,
-    input.load != null ? `${Math.round(input.load)} TSS` : null,
+    input.durationMin !== null ? `${input.durationMin} min` : null,
+    input.load !== null ? `${Math.round(input.load)} TSS` : null,
     input.intensity
       ? `intensité ${intensityLabels[input.intensity as keyof typeof intensityLabels] ?? input.intensity}`
       : null,
@@ -184,7 +184,7 @@ export function buildPlanningDiscussPrompt(input: {
 }): string {
   const horizonLabel = PLANNING_HORIZON_FR[input.horizonDays] ?? `${input.horizonDays} jours`;
   const cautionBlock =
-    input.caution != null ? `\n\n${input.caution.label}\n${input.caution.body}` : '';
+    input.caution !== null ? `\n\n${input.caution.label}\n${input.caution.body}` : '';
 
   return `Je consulte mon planning sur ${horizonLabel}. Voici le conseil du coach :
 
@@ -234,9 +234,9 @@ export function buildGoalDiscussPrompt(input: {
 
   const bits = [
     dateLabel ? `échéance : ${dateLabel}` : null,
-    input.daysRemaining != null ? `J-${input.daysRemaining}` : null,
+    input.daysRemaining !== null ? `J-${input.daysRemaining}` : null,
     input.targetPerformance ? `objectif visé : ${input.targetPerformance}` : null,
-    input.currentValue != null && input.targetValue != null
+    input.currentValue !== null && input.targetValue !== null
       ? `progression : ${input.currentValue} → ${input.targetValue}${input.unit ? ` ${input.unit}` : ''}`
       : null,
   ].filter(Boolean);
@@ -294,7 +294,7 @@ export function buildPhysicalConditionDiscussPrompt(input: {
 
   const bits = [
     input.bodyPart ? `zone : ${input.bodyPart}` : null,
-    input.severity != null ? `sévérité : ${input.severity}/10` : null,
+    input.severity !== null ? `sévérité : ${input.severity}/10` : null,
     dateLabel ? `depuis le ${dateLabel}` : null,
     input.affectsTraining ? 'déclarée comme affectant mon entraînement' : null,
     input.description ? `note : ${input.description}` : null,

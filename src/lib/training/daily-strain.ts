@@ -126,7 +126,9 @@ function clamp(value: number, min: number, max: number) {
 }
 
 export function dailyTssToStrainScore(dailyTss: number | null): number | null {
-  if (dailyTss == null || dailyTss <= 0) return 0;
+  if (dailyTss === null || dailyTss <= 0) {
+    return 0;
+  }
   const normalized =
     Math.log1p(dailyTss / DAILY_TSS_LOG_SCALE) /
     Math.log1p(DAILY_TSS_UPPER_REFERENCE / DAILY_TSS_LOG_SCALE);
@@ -138,7 +140,9 @@ function computePowerTss(
   normalizedPower: number,
   ftpW: number,
 ): number | null {
-  if (durationSec <= 0 || normalizedPower <= 0 || ftpW <= 0) return null;
+  if (durationSec <= 0 || normalizedPower <= 0 || ftpW <= 0) {
+    return null;
+  }
   const durationHr = durationSec / 3600;
   const intensityFactor = normalizedPower / ftpW;
   return intensityFactor * intensityFactor * durationHr * 100;
@@ -151,7 +155,9 @@ function computeTrimpTss(
   restingHr: number,
   lthr?: number | null,
 ): number | null {
-  if (durationSec <= 0 || avgBpm <= 0 || maxHr <= restingHr) return null;
+  if (durationSec <= 0 || avgBpm <= 0 || maxHr <= restingHr) {
+    return null;
+  }
 
   const durationMin = durationSec / 60;
   const hrRange = maxHr - restingHr;
@@ -162,7 +168,9 @@ function computeTrimpTss(
   const hrrLt = clamp((effectiveLthr - restingHr) / hrRange, 0, 1);
   const thresholdTrimp = 60 * hrrLt * 0.64 * Math.exp(1.92 * hrrLt);
 
-  if (thresholdTrimp <= 0) return null;
+  if (thresholdTrimp <= 0) {
+    return null;
+  }
   return (trimp / thresholdTrimp) * 100;
 }
 
@@ -225,9 +233,9 @@ function computeFromLegacyActivities(
       const bikeNormalizedPower = activity.bikeMetrics?.normalizedPower ?? null;
       const bikeTss = activity.bikeMetrics?.tss ?? null;
 
-      if (bikeNormalizedPower != null && thresholds.ftpW && thresholds.ftpW > 0) {
+      if (bikeNormalizedPower !== null && thresholds.ftpW && thresholds.ftpW > 0) {
         const tss = computePowerTss(durationSec, bikeNormalizedPower, thresholds.ftpW);
-        if (tss != null && tss > 0) {
+        if (tss !== null && tss > 0) {
           return {
             tss,
             tier: 'STRUCTURED_SESSION',
@@ -238,7 +246,7 @@ function computeFromLegacyActivities(
         }
       }
 
-      if (bikeTss != null && bikeTss > 0) {
+      if (bikeTss !== null && bikeTss > 0) {
         return {
           tss: bikeTss,
           tier: 'STRUCTURED_SESSION',
@@ -248,7 +256,7 @@ function computeFromLegacyActivities(
         };
       }
 
-      if (activity.load != null && activity.load > 0) {
+      if (activity.load !== null && activity.load > 0) {
         return {
           tss: activity.load,
           tier: 'STRUCTURED_SESSION',
@@ -260,9 +268,9 @@ function computeFromLegacyActivities(
 
       const avgHr = activity.runMetrics?.avgHr ?? null;
       if (
-        avgHr != null &&
-        thresholds.maxHr != null &&
-        thresholds.restingHr != null &&
+        avgHr !== null &&
+        thresholds.maxHr !== null &&
+        thresholds.restingHr !== null &&
         thresholds.maxHr > thresholds.restingHr
       ) {
         const tss = computeTrimpTss(
@@ -272,7 +280,7 @@ function computeFromLegacyActivities(
           thresholds.restingHr,
           thresholds.lthr,
         );
-        if (tss != null && tss > 0) {
+        if (tss !== null && tss > 0) {
           return {
             tss,
             tier: 'HEART_RATE',
@@ -298,7 +306,7 @@ function computeFromLegacyActivities(
 
       return null;
     })
-    .filter((load): load is ComputedLoad => load != null);
+    .filter((load): load is ComputedLoad => load !== null);
 }
 
 function emptyContribution(
@@ -319,7 +327,9 @@ function summarizeContribution(
   contributor: Exclude<DailyStrainContributor, 'UNKNOWN'>,
   loads: readonly ComputedLoad[],
 ): DailyStrainContribution {
-  if (loads.length === 0) return emptyContribution(contributor);
+  if (loads.length === 0) {
+    return emptyContribution(contributor);
+  }
   const load = loads.reduce((sum, item) => sum + item.tss, 0);
   const confidence = loads.reduce((sum, item) => sum + item.confidence, 0) / loads.length;
   const source =
@@ -345,36 +355,40 @@ function clampRounded(value: number): number {
 function computeCardiovascularLoad(
   health: DailyStrainHealthSignals | null | undefined,
 ): DailyStrainContribution {
-  if (!health) return emptyContribution('CARDIOVASCULAR');
+  if (!health) {
+    return emptyContribution('CARDIOVASCULAR');
+  }
 
-  const stressLoad = health.stress != null ? (clamp(health.stress, 0, 100) / 100) * 28 : 0;
+  const stressLoad = health.stress !== null ? (clamp(health.stress, 0, 100) / 100) * 28 : 0;
   const recoveryLoad =
-    health.recoveryScore != null ? (clamp(100 - health.recoveryScore, 0, 100) / 100) * 18 : 0;
+    health.recoveryScore !== null ? (clamp(100 - health.recoveryScore, 0, 100) / 100) * 18 : 0;
   const bodyBatteryLoad =
-    health.bodyBattery != null ? (clamp(100 - health.bodyBattery, 0, 100) / 100) * 16 : 0;
+    health.bodyBattery !== null ? (clamp(100 - health.bodyBattery, 0, 100) / 100) * 16 : 0;
 
   const weights = [
-    health.stress != null ? 0.45 : 0,
-    health.recoveryScore != null ? 0.35 : 0,
-    health.bodyBattery != null ? 0.2 : 0,
+    health.stress !== null ? 0.45 : 0,
+    health.recoveryScore !== null ? 0.35 : 0,
+    health.bodyBattery !== null ? 0.2 : 0,
   ];
   const weightTotal = weights.reduce((sum, value) => sum + value, 0);
 
-  if (weightTotal === 0) return emptyContribution('CARDIOVASCULAR');
+  if (weightTotal === 0) {
+    return emptyContribution('CARDIOVASCULAR');
+  }
 
   const normalizedLoad =
     (stressLoad * weights[0] + recoveryLoad * weights[1] + bodyBatteryLoad * weights[2]) /
     weightTotal;
   const confidence =
     0.35 +
-    (health.stress != null ? 0.25 : 0) +
-    (health.recoveryScore != null ? 0.2 : 0) +
-    (health.bodyBattery != null ? 0.1 : 0);
+    (health.stress !== null ? 0.25 : 0) +
+    (health.recoveryScore !== null ? 0.2 : 0) +
+    (health.bodyBattery !== null ? 0.1 : 0);
 
   let source: DailyStrainSource = 'DAILY_HEALTH_BODY_BATTERY';
-  if (health.stress != null) {
+  if (health.stress !== null) {
     source = 'DAILY_HEALTH_STRESS';
-  } else if (health.recoveryScore != null) {
+  } else if (health.recoveryScore !== null) {
     source = 'DAILY_HEALTH_RECOVERY';
   }
 
@@ -397,10 +411,14 @@ function computeStepsMovementLoad(
   health: DailyStrainHealthSignals | null | undefined,
 ): DailyStrainContribution {
   const steps = health?.totalSteps;
-  if (steps == null || steps <= 0) return emptyContribution('MOVEMENT');
+  if (steps === null || steps <= 0) {
+    return emptyContribution('MOVEMENT');
+  }
 
   const load = clampRounded(Math.min(45, (clamp(steps, 0, 30_000) / 10_000) * 20));
-  if (load <= 0) return emptyContribution('MOVEMENT');
+  if (load <= 0) {
+    return emptyContribution('MOVEMENT');
+  }
 
   return {
     available: true,
@@ -422,7 +440,9 @@ function mergeMovementContribution(
     ...legacyLoads.filter((load) => load.contributor === 'MOVEMENT'),
   ];
   const fromSessions = summarizeContribution('MOVEMENT', movementLoads);
-  if (fromSessions.available) return fromSessions;
+  if (fromSessions.available) {
+    return fromSessions;
+  }
   return computeStepsMovementLoad(health);
 }
 
@@ -514,14 +534,17 @@ function blendDailyLoad(contributions: DailyStrainResult['contributions']): {
   const confidence = confidenceComponents.reduce((sum, value) => sum + value, 0);
 
   let tier: DailyStrainTier = 'UNKNOWN';
-  if (trainingLoad > 0)
+  if (trainingLoad > 0) {
     tier =
       contributions.training.source === 'SESSION_FEATURE_TRIMP' ||
       contributions.training.source === 'LEGACY_TRIMP'
         ? 'HEART_RATE'
         : 'STRUCTURED_SESSION';
-  else if (effectiveCardioComplement > 0) tier = 'HEART_RATE';
-  else if (effectiveMovementComplement > 0) tier = 'MOVEMENT';
+  } else if (effectiveCardioComplement > 0) {
+    tier = 'HEART_RATE';
+  } else if (effectiveMovementComplement > 0) {
+    tier = 'MOVEMENT';
+  }
 
   return {
     totalLoad: totalLoad > 0 ? Math.round(totalLoad) : null,

@@ -13,10 +13,15 @@ export function EquipmentStatusLine({
   dirty: boolean;
 }) {
   let content: ReactNode = null;
-  if (error) content = <span className="text-destructive">{error}</span>;
-  else if (message) content = <span>{message}</span>;
-  else if (saving) content = <span>Enregistrement…</span>;
-  else if (dirty) content = <span>Modifications en cours…</span>;
+  if (error) {
+    content = <span className="text-destructive">{error}</span>;
+  } else if (message) {
+    content = <span>{message}</span>;
+  } else if (saving) {
+    content = <span>Enregistrement…</span>;
+  } else if (dirty) {
+    content = <span>Modifications en cours…</span>;
+  }
 
   return (
     <div
@@ -31,7 +36,7 @@ export function EquipmentStatusLine({
 
 /** Empty-state copy when STRENGTH has no checklist to show. */
 export function strengthInventoryMessage(venue: StrengthVenue | null): string | null {
-  if (venue == null) {
+  if (venue === null) {
     return "Choisis d'abord un lieu: salle, maison, les deux, ou poids du corps.";
   }
   if (venue === 'gym') {

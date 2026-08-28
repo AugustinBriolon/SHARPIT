@@ -20,10 +20,10 @@ function quickReadBadge({
   quickReadLabel?: string | null;
   quickReadSuffix?: string | null;
 }): ReactNode {
-  if (loading && quickReadValue != null) {
+  if (loading && quickReadValue !== null) {
     return <SkeletonDataValue heightClassName="h-7" widthClassName="w-12" />;
   }
-  if (quickReadValue != null) {
+  if (quickReadValue !== null) {
     return (
       <span
         className="bg-highlight text-highlight-foreground text-data inline-flex items-baseline gap-1 rounded-full px-3 py-1 text-sm font-semibold"
@@ -94,9 +94,9 @@ export function PhysioDrillDownHero({
   loading?: boolean;
 }) {
   const showDateNav =
-    onDateChange != null && onPreviousDay != null && onNextDay != null && maxDate != null;
+    onDateChange !== null && onPreviousDay !== null && onNextDay !== null && maxDate !== null;
   const bars =
-    !loading && confidencePct != null && Number.isFinite(confidencePct)
+    !loading && confidencePct !== null && Number.isFinite(confidencePct)
       ? confidenceBarsFromPct(confidencePct)
       : null;
 
@@ -126,7 +126,9 @@ export function PhysioDrillDownHero({
         <div className="mt-2 flex items-center justify-center gap-2">
           <div
             className="text-muted-foreground inline-flex items-center gap-1.5"
-            title={confidencePct != null ? `Confiance ${Math.round(confidencePct)} %` : 'Confiance'}
+            title={
+              confidencePct !== null ? `Confiance ${Math.round(confidencePct)} %` : 'Confiance'
+            }
           >
             <ConfidenceBars filled={bars ?? 0} />
             <span className="text-label">Confiance</span>

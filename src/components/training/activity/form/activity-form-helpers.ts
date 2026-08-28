@@ -51,13 +51,19 @@ export const ACTIVITY_FEELING_OPTIONS: Array<{ value: string; label: string }> =
 ];
 
 export function strengthSetsForForm(initialData: ActivityWithRelations) {
-  if (initialData.type !== ActivityType.STRENGTH) return [];
+  if (initialData.type !== ActivityType.STRENGTH) {
+    return [];
+  }
   return initialData.strengthSets.length ? initialData.strengthSets : [defaultStrengthSet];
 }
 
 export function resolveWatchedDate(value: unknown): Date {
-  if (value instanceof Date) return value;
-  if (typeof value === 'string' || typeof value === 'number') return new Date(value);
+  if (value instanceof Date) {
+    return value;
+  }
+  if (typeof value === 'string' || typeof value === 'number') {
+    return new Date(value);
+  }
   return new Date();
 }
 
@@ -70,8 +76,12 @@ export function resolveWatchedRpe(value: unknown): number | null {
 }
 
 export function emptyToUndefined(value: unknown) {
-  if (value === '' || value === null || value === undefined) return undefined;
-  if (typeof value === 'number' && Number.isNaN(value)) return undefined;
+  if (value === '' || value === null || value === undefined) {
+    return undefined;
+  }
+  if (typeof value === 'number' && Number.isNaN(value)) {
+    return undefined;
+  }
   return value;
 }
 
@@ -106,8 +116,8 @@ export function sanitizeActivityPayload(values: ActivityFormValues): ActivityFor
 
 export function initialLocationFromData(data?: ActivityWithRelations): LocationPlaceValue {
   if (
-    data?.observedLocationLat != null &&
-    data.observedLocationLng != null &&
+    data?.observedLocationLat !== null &&
+    data.observedLocationLng !== null &&
     data.observedLocationLabel
   ) {
     return {
@@ -123,13 +133,17 @@ export function formatValidationErrors(errors: Record<string, unknown>): string 
   const messages: string[] = [];
 
   function walk(node: unknown, path: string) {
-    if (!node || typeof node !== 'object') return;
+    if (!node || typeof node !== 'object') {
+      return;
+    }
     const record = node as Record<string, unknown>;
     if (typeof record.message === 'string') {
       messages.push(path ? `${path} : ${record.message}` : record.message);
     }
     for (const [key, value] of Object.entries(record)) {
-      if (key === 'message' || key === 'type' || key === 'ref') continue;
+      if (key === 'message' || key === 'type' || key === 'ref') {
+        continue;
+      }
       walk(value, path ? `${path}.${key}` : key);
     }
   }

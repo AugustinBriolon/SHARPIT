@@ -38,7 +38,7 @@ export function AdaptationMarkers({
       key: 'limiter',
       label: limitingFactor ?? 'Frein',
       unit: '/100',
-      value: limitingScore != null ? Math.round(limitingScore) : null,
+      value: limitingScore !== null ? Math.round(limitingScore) : null,
       points: [],
       range: { ...LIMITER_BAND, kind: 'baseline' },
       explanation: EXPLANATION.limiter,

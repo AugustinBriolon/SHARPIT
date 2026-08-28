@@ -37,6 +37,8 @@ export function formatPlannedSessionLocationDisplay(
   exposureLabel: string,
 ): string {
   const label = typeof locationLabel === 'string' ? locationLabel.trim() : '';
-  if (!label || label === 'null') return exposureLabel;
+  if (!label || label === 'null') {
+    return exposureLabel;
+  }
   return `${label} · ${exposureLabel}`;
 }

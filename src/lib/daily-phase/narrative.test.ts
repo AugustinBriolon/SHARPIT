@@ -14,8 +14,12 @@ import type {
 import { DAILY_PHASE_PRIMARY_QUESTION } from '@/lib/daily-phase/types';
 
 function minutesSinceLastActivityForPhase(phase: DailyPhase): number | null {
-  if (phase === 'SESSION_COMPLETED') return 30;
-  if (phase === 'RECOVERY_WINDOW') return 120;
+  if (phase === 'SESSION_COMPLETED') {
+    return 30;
+  }
+  if (phase === 'RECOVERY_WINDOW') {
+    return 120;
+  }
   return null;
 }
 

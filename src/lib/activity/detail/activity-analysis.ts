@@ -191,13 +191,17 @@ const POWER_ZONE_DEFS: ZoneDef[] = [
 ];
 
 function mean(arr: number[]): number {
-  if (!arr.length) return 0;
+  if (!arr.length) {
+    return 0;
+  }
   return arr.reduce((s, v) => s + v, 0) / arr.length;
 }
 
 function segmentMean(arr: number[], start: number, end: number): number | null {
   const slice = arr.slice(start, end + 1).filter((v) => v > 0);
-  if (!slice.length) return null;
+  if (!slice.length) {
+    return null;
+  }
   return mean(slice);
 }
 
@@ -228,7 +232,9 @@ function zoneIndex(value: number, ref: number, defs: ZoneDef[]): number {
   const pct = (value / ref) * 100;
   for (let i = 0; i < defs.length; i++) {
     const z = defs[i];
-    if (pct >= z.minPct && (z.maxPct == null || pct < z.maxPct)) return i;
+    if (pct >= z.minPct && (z.maxPct === null || pct < z.maxPct)) {
+      return i;
+    }
   }
   return defs.length - 1;
 }
@@ -242,9 +248,13 @@ function computeZoneTimes(
   const seconds = new Array(defs.length).fill(0);
   for (let i = 1; i < values.length; i++) {
     const v = values[i];
-    if (v <= 0) continue;
+    if (v <= 0) {
+      continue;
+    }
     const dt = Math.max(0, times[i] - times[i - 1]);
-    if (dt <= 0 || dt > 120) continue;
+    if (dt <= 0 || dt > 120) {
+      continue;
+    }
     seconds[zoneIndex(v, ref, defs)] += dt;
   }
   const total = seconds.reduce((s, v) => s + v, 0) || 1;
@@ -260,7 +270,9 @@ function computeZoneTimes(
 
 function computeNormalizedPower(watts: number[], time: number[]): number | null {
   const valid = watts.filter((w) => w > 0);
-  if (valid.length < 30) return null;
+  if (valid.length < 30) {
+    return null;
+  }
 
   const buckets: number[] = [];
   let [windowStart] = time;
@@ -268,23 +280,35 @@ function computeNormalizedPower(watts: number[], time: number[]): number | null 
 
   for (let i = 0; i < watts.length; i++) {
     while (time[i] - windowStart >= 30) {
-      if (windowWatts.length) buckets.push(mean(windowWatts));
+      if (windowWatts.length) {
+        buckets.push(mean(windowWatts));
+      }
       windowStart += 30;
       windowWatts = [];
     }
-    if (watts[i] > 0) windowWatts.push(watts[i]);
+    if (watts[i] > 0) {
+      windowWatts.push(watts[i]);
+    }
   }
-  if (windowWatts.length) buckets.push(mean(windowWatts));
-  if (!buckets.length) return null;
+  if (windowWatts.length) {
+    buckets.push(mean(windowWatts));
+  }
+  if (!buckets.length) {
+    return null;
+  }
 
   const fourth = buckets.map((b) => b ** 4);
   return Math.round(Math.pow(fourth.reduce((s, v) => s + v, 0) / fourth.length, 0.25));
 }
 
 function computeDecoupling(points: RawPoint[], mode: 'pace' | 'power'): number | null {
-  if (points.length < 120) return null;
+  if (points.length < 120) {
+    return null;
+  }
   const duration = points[points.length - 1].t - points[0].t;
-  if (duration < 30 * 60) return null;
+  if (duration < 30 * 60) {
+    return null;
+  }
 
   const warmupEnd = points[0].t + 10 * 60;
   const mid = points[0].t + duration / 2;
@@ -292,34 +316,51 @@ function computeDecoupling(points: RawPoint[], mode: 'pace' | 'power'): number |
   const second: RawPoint[] = [];
 
   for (const p of points) {
-    if (p.t < warmupEnd) continue;
-    if (p.t < mid) first.push(p);
-    else second.push(p);
+    if (p.t < warmupEnd) {
+      continue;
+    }
+    if (p.t < mid) {
+      first.push(p);
+    } else {
+      second.push(p);
+    }
   }
-  if (first.length < 30 || second.length < 30) return null;
+  if (first.length < 30 || second.length < 30) {
+    return null;
+  }
 
   const ef = (seg: RawPoint[]) => {
     const hrs = seg.map((p) => p.hr).filter((h) => h > 0);
-    if (!hrs.length) return null;
+    if (!hrs.length) {
+      return null;
+    }
     const avgHr = mean(hrs);
     if (mode === 'power') {
       const ws = seg.map((p) => p.watts).filter((w) => w > 0);
-      if (!ws.length) return null;
+      if (!ws.length) {
+        return null;
+      }
       return mean(ws) / avgHr;
     }
     const speeds = seg.map((p) => p.speed).filter((s) => s > 0.5);
-    if (!speeds.length) return null;
+    if (!speeds.length) {
+      return null;
+    }
     return mean(speeds) / avgHr;
   };
 
   const ef1 = ef(first);
   const ef2 = ef(second);
-  if (ef1 == null || ef2 == null || ef1 === 0) return null;
+  if (ef1 === null || ef2 === null || ef1 === 0) {
+    return null;
+  }
   return Number((((ef1 - ef2) / ef1) * 100).toFixed(1));
 }
 
 function computeSplits(points: RawPoint[], splitM: number): SplitRow[] {
-  if (points.length < 2) return [];
+  if (points.length < 2) {
+    return [];
+  }
   const splits: SplitRow[] = [];
   let target = splitM;
   let startIdx = 0;
@@ -329,12 +370,16 @@ function computeSplits(points: RawPoint[], splitM: number): SplitRow[] {
     if (points[i].d >= target || isLast) {
       const dist = points[i].d - points[startIdx].d;
       const dur = points[i].t - points[startIdx].t;
-      if (dist < splitM * 0.5 && !isLast) continue;
+      if (dist < splitM * 0.5 && !isLast) {
+        continue;
+      }
 
       let elevGain = 0;
       for (let j = startIdx + 1; j <= i; j++) {
         const diff = points[j].alt - points[j - 1].alt;
-        if (diff > 0) elevGain += diff;
+        if (diff > 0) {
+          elevGain += diff;
+        }
       }
 
       const pace = dist > 0 ? (dur / dist) * 1000 : null;
@@ -353,7 +398,7 @@ function computeSplits(points: RawPoint[], splitM: number): SplitRow[] {
         label,
         distanceM: Math.round(dist),
         durationSec: Math.round(dur),
-        paceSecPerKm: pace != null ? Math.round(pace) : null,
+        paceSecPerKm: pace !== null ? Math.round(pace) : null,
         avgHr: segmentMean(
           points.map((p) => p.hr),
           startIdx,
@@ -369,7 +414,9 @@ function computeSplits(points: RawPoint[], splitM: number): SplitRow[] {
 
       startIdx = i;
       target += splitM;
-      if (isLast) break;
+      if (isLast) {
+        break;
+      }
     }
   }
   return splits;
@@ -377,7 +424,9 @@ function computeSplits(points: RawPoint[], splitM: number): SplitRow[] {
 
 function formatSplitDistanceLabel(distanceM: number): string {
   const roundedMeters = Math.round(distanceM);
-  if (roundedMeters < 1000) return `${roundedMeters} m`;
+  if (roundedMeters < 1000) {
+    return `${roundedMeters} m`;
+  }
   const km = roundedMeters / 1000;
   const decimals = km >= 10 ? 1 : 2;
   const formatted = Number.isInteger(km) ? km.toFixed(0) : km.toFixed(decimals).replace('.', ',');
@@ -389,11 +438,17 @@ function paceVariability(points: RawPoint[]): number | null {
   for (let i = 1; i < points.length; i++) {
     const dd = points[i].d - points[i - 1].d;
     const dt = points[i].t - points[i - 1].t;
-    if (dd > 5 && dt > 0) paces.push((dt / dd) * 1000);
+    if (dd > 5 && dt > 0) {
+      paces.push((dt / dd) * 1000);
+    }
   }
-  if (paces.length < 20) return null;
+  if (paces.length < 20) {
+    return null;
+  }
   const avg = mean(paces);
-  if (avg === 0) return null;
+  if (avg === 0) {
+    return null;
+  }
   const variance = paces.reduce((s, p) => s + (p - avg) ** 2, 0) / paces.length;
   return Number(((Math.sqrt(variance) / avg) * 100).toFixed(1));
 }
@@ -463,7 +518,9 @@ export function analyzeActivityStreams(
   ctx: AnalysisContext,
 ): ActivityAnalysis | null {
   const points = buildPoints(raw);
-  if (points.length < 10) return null;
+  if (points.length < 10) {
+    return null;
+  }
 
   const isBike = ctx.type === ActivityType.BIKE;
   const hrs = raw.heartrate.filter((h) => h > 0);
@@ -493,7 +550,7 @@ export function analyzeActivityStreams(
   let loadTss: number | null = null;
   let loadIf: number | null = null;
   let loadMethod: 'power' | 'hr' | null = null;
-  if (powerTss != null && powerIf != null) {
+  if (powerTss !== null && powerIf !== null) {
     loadTss = powerTss;
     loadIf = powerIf;
     loadMethod = 'power';

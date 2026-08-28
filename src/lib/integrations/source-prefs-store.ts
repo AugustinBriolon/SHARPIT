@@ -18,12 +18,24 @@ export async function loadConnectedIntegrationIds(athleteId: string): Promise<In
   ]);
 
   const ids: IntegrationId[] = [];
-  if (garmin) ids.push('garmin');
-  if (strava) ids.push('strava');
-  if (withings) ids.push('withings');
-  if (renpho) ids.push('renpho');
-  if (google) ids.push('google');
-  if (mfp) ids.push('myfitnesspal');
+  if (garmin) {
+    ids.push('garmin');
+  }
+  if (strava) {
+    ids.push('strava');
+  }
+  if (withings) {
+    ids.push('withings');
+  }
+  if (renpho) {
+    ids.push('renpho');
+  }
+  if (google) {
+    ids.push('google');
+  }
+  if (mfp) {
+    ids.push('myfitnesspal');
+  }
   return ids;
 }
 

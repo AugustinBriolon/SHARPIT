@@ -57,14 +57,18 @@ function calendarSelectLabel(
   loadingCalendars: boolean,
 ): string {
   if (!calendarId) {
-    if (loadingCalendars) return 'Chargement…';
+    if (loadingCalendars) {
+      return 'Chargement…';
+    }
     return 'Choisir un calendrier (ex: SPORT)';
   }
   return calendars.find((c) => c.id === calendarId)?.summary ?? targetCalendarName ?? calendarId;
 }
 
 function RecordChangesBanner({ changes }: { changes: RecordChange[] }) {
-  if (changes.length === 0) return null;
+  if (changes.length === 0) {
+    return null;
+  }
 
   return (
     <div className="border-primary/30 bg-primary/5 rounded-xl border p-3 text-sm">
@@ -333,8 +337,11 @@ function GarminContent({
   }
 
   async function handleSync(full = false) {
-    if (full) setImportingAll(true);
-    else setSyncing(true);
+    if (full) {
+      setImportingAll(true);
+    } else {
+      setSyncing(true);
+    }
     setSyncRecordChanges([]);
     try {
       const data = await toast.promise(runGarminSync({ full }), {
@@ -455,8 +462,11 @@ function WithingsContent({
   const [disconnecting, setDisconnecting] = useState(false);
 
   async function handleSync(full = false) {
-    if (full) setImportingAll(true);
-    else setSyncing(true);
+    if (full) {
+      setImportingAll(true);
+    } else {
+      setSyncing(true);
+    }
     try {
       await toast.promise(runWithingsSync({ full }), {
         loading: full ? 'Import historique Withings…' : 'Synchronisation Withings…',
@@ -615,8 +625,11 @@ function RenphoContent({
   }
 
   async function handleSync(full = false) {
-    if (full) setImportingAll(true);
-    else setSyncing(true);
+    if (full) {
+      setImportingAll(true);
+    } else {
+      setSyncing(true);
+    }
     try {
       await toast.promise(runRenphoSync({ full }), {
         loading: full ? 'Import Renpho…' : 'Synchronisation Renpho…',
@@ -713,7 +726,9 @@ function RenphoContent({
 }
 
 function googleSyncErrorDescription(err: unknown): string | undefined {
-  if (!(err instanceof Error)) return undefined;
+  if (!(err instanceof Error)) {
+    return undefined;
+  }
   if (err.message.includes('Reconnecte')) {
     return `${err.message} Utilise le bouton « Connecter Google Calendar » ci-dessous.`;
   }
@@ -741,7 +756,9 @@ function GoogleContent({
   const [disconnecting, setDisconnecting] = useState(false);
 
   async function handleSelectCalendar(nextCalendarId: string | null) {
-    if (!nextCalendarId) return;
+    if (!nextCalendarId) {
+      return;
+    }
     const calendar = calendars.find((c) => c.id === nextCalendarId);
     setPendingCalendarId(nextCalendarId);
     setSavingTarget(true);

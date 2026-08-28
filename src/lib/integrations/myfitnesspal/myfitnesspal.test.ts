@@ -211,7 +211,9 @@ describe('refreshMfpSession', () => {
 
   function mockSessionResponse(body: unknown, setCookie: string[] = []) {
     const headers = new Headers();
-    for (const cookie of setCookie) headers.append('set-cookie', cookie);
+    for (const cookie of setCookie) {
+      headers.append('set-cookie', cookie);
+    }
 
     globalThis.fetch = (async () =>
       new Response(JSON.stringify(body), { status: 200, headers })) as typeof fetch;

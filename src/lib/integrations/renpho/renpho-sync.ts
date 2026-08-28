@@ -23,7 +23,9 @@ async function ingestRenphoMeasurement(
 ): Promise<void> {
   try {
     const raw = renphoMeasurementToBodyComposition(measurement, new Date());
-    if (!raw) return;
+    if (!raw) {
+      return;
+    }
     await observationEngine.ingest(athleteId, raw);
   } catch (err) {
     console.error('[ObservationEngine] renpho ingest failed:', err);
@@ -69,7 +71,9 @@ export async function disconnectRenpho(athleteId: string) {
 /** Keeps the Renpho profile row so the hub can ask for a reconnect. */
 export async function revokeRenphoCredentials(athleteId: string) {
   const account = await getRenphoAccount(athleteId);
-  if (!account) return;
+  if (!account) {
+    return;
+  }
   await prisma.renphoAccount.update({
     where: { athleteId },
     data: { passwordEnc: '' },
@@ -92,7 +96,7 @@ function measurementToPrisma(
     bmr: m.bmr ?? null,
     visceralFat: m.visceral_fat ?? null,
     proteinPct: m.protein ?? null,
-    bodyAge: m.body_age != null ? Math.round(m.body_age) : null,
+    bodyAge: m.body_age !== null ? Math.round(m.body_age) : null,
     subcutaneousFatPct: m.subcutaneous_fat ?? null,
     skeletalMusclePct: m.skeletal_muscle ?? null,
     fatFreeWeightKg: m.fat_free_weight ?? null,
@@ -106,11 +110,15 @@ async function upsertDailyWeightFromMeasurement(
   m: RenphoMeasurement,
   withingsDays: Set<string>,
 ) {
-  if (m.weight == null) return;
+  if (m.weight === null) {
+    return;
+  }
 
   const local = new Date(m.time_stamp * 1000);
   const dayKey = format(local, 'yyyy-MM-dd');
-  if (withingsDays.has(dayKey)) return;
+  if (withingsDays.has(dayKey)) {
+    return;
+  }
 
   const day = new Date(Date.UTC(local.getFullYear(), local.getMonth(), local.getDate()));
 
@@ -169,7 +177,7 @@ export async function syncRenphoHealth(
         select: { externalId: true },
       });
       const existingIds = new Set(
-        existingRows.map((r) => r.externalId).filter((id): id is string => id != null),
+        existingRows.map((r) => r.externalId).filter((id): id is string => id !== null),
       );
 
       const toCreate: Prisma.BodyCompositionMeasurementCreateManyInput[] = [];

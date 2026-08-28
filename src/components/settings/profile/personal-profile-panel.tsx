@@ -48,7 +48,7 @@ export function PersonalProfilePanel({
     birthDateToInput(resolvedInitial?.birthDate ?? null),
   );
   const [sleepHours, setSleepHours] = useState(() =>
-    resolvedInitial?.sleepTargetMinutes != null
+    resolvedInitial?.sleepTargetMinutes !== null
       ? String(resolvedInitial.sleepTargetMinutes / 60)
       : '',
   );
@@ -70,11 +70,13 @@ export function PersonalProfilePanel({
 
   // Re-hydrate when a real snapshot arrives — never wipe on null (failed RSC load).
   useEffect(() => {
-    if (!shouldHydrateProfileForm(resolvedInitial)) return;
+    if (!shouldHydrateProfileForm(resolvedInitial)) {
+      return;
+    }
     setHeightCm(resolvedInitial.heightCm?.toString() ?? '');
     setBirthDate(birthDateToInput(resolvedInitial.birthDate ?? null));
     setSleepHours(
-      resolvedInitial.sleepTargetMinutes != null
+      resolvedInitial.sleepTargetMinutes !== null
         ? String(resolvedInitial.sleepTargetMinutes / 60)
         : '',
     );
@@ -93,7 +95,7 @@ export function PersonalProfilePanel({
       heightCm: resolvedInitial?.heightCm?.toString() ?? '',
       birthDate: birthDateToInput(resolvedInitial?.birthDate ?? null),
       sleepHours:
-        resolvedInitial?.sleepTargetMinutes != null
+        resolvedInitial?.sleepTargetMinutes !== null
           ? String(resolvedInitial.sleepTargetMinutes / 60)
           : '',
       sleepBedtime: clockToInput(resolvedInitial?.sleepBedtimeTargetMin ?? null),
@@ -121,7 +123,7 @@ export function PersonalProfilePanel({
         next.sleepHours = 'Objectif sommeil invalide (entre 4 h et 12 h).';
       }
     }
-    if (sleepBedtime.trim() && parseClockInput(sleepBedtime) == null) {
+    if (sleepBedtime.trim() && parseClockInput(sleepBedtime) === null) {
       next.sleepBedtime = 'Heure de coucher invalide (format HH:mm).';
     }
     return next;
@@ -129,7 +131,9 @@ export function PersonalProfilePanel({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (guardDisabled) return;
+    if (guardDisabled) {
+      return;
+    }
     setSaving(true);
     setError(null);
     setMessage(null);
@@ -140,7 +144,9 @@ export function PersonalProfilePanel({
       const first = (['heightCm', 'sleepHours', 'sleepBedtime'] as const).find(
         (k) => nextErrors[k],
       );
-      if (first) document.getElementById(first)?.focus();
+      if (first) {
+        document.getElementById(first)?.focus();
+      }
       setSaving(false);
       return;
     }
@@ -191,7 +197,7 @@ export function PersonalProfilePanel({
   }
 
   const age = athleteAgeYears(birthDate || null);
-  const showLoadWarning = Boolean(loadError) || (initial == null && remoteProfile.isError);
+  const showLoadWarning = Boolean(loadError) || (initial === null && remoteProfile.isError);
 
   return (
     <form className="space-y-3" noValidate onSubmit={handleSubmit}>
@@ -235,7 +241,7 @@ export function PersonalProfilePanel({
               value={birthDate}
               onChange={(e) => setBirthDate(e.target.value)}
             />
-            {age != null ? (
+            {age !== null ? (
               <p className="text-muted-foreground text-xs tabular-nums">{age} ans</p>
             ) : null}
           </div>

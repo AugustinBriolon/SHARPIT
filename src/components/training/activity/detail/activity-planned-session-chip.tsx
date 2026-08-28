@@ -12,8 +12,12 @@ function plannedChipValue(
   isAnalyzing: boolean,
   planned: PlannedSessionSummary,
 ): string {
-  if (analysis) return `${analysis.complianceScore}/100`;
-  if (isAnalyzing) return 'Analyse…';
+  if (analysis) {
+    return `${analysis.complianceScore}/100`;
+  }
+  if (isAnalyzing) {
+    return 'Analyse…';
+  }
   return planned.title ?? activityTypeLabels[planned.type];
 }
 
@@ -21,7 +25,9 @@ function plannedChipLabel(
   analysis: ReturnType<typeof parseSessionAnalysis>,
   isAnalyzing: boolean,
 ): string {
-  if (analysis || isAnalyzing) return 'Conformité';
+  if (analysis || isAnalyzing) {
+    return 'Conformité';
+  }
   return 'Liée au plan';
 }
 

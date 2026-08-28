@@ -29,9 +29,15 @@ export function shouldRefreshActivityNarrative(input: {
   weatherUpdated: boolean;
   locationNew: boolean;
 }): boolean {
-  if (input.force) return true;
-  if (!input.isToday) return false;
-  if (!input.hasNarrative) return true;
+  if (input.force) {
+    return true;
+  }
+  if (!input.isToday) {
+    return false;
+  }
+  if (!input.hasNarrative) {
+    return true;
+  }
   return input.weatherUpdated || input.locationNew;
 }
 
@@ -110,7 +116,7 @@ export async function enrichActivityObservedContext(
   }
 
   const priorCoords =
-    activity.observedLocationLat != null && activity.observedLocationLng != null
+    activity.observedLocationLat !== null && activity.observedLocationLng !== null
       ? {
           latitude: activity.observedLocationLat,
           longitude: activity.observedLocationLng,
@@ -119,10 +125,10 @@ export async function enrichActivityObservedContext(
 
   const hadObservedLocation = Boolean(activity.observedLocationLabel?.trim());
   const observed = await backfillActivityObservedLocation(prisma, activityId);
-  const locationNew = !hadObservedLocation && observed != null;
+  const locationNew = !hadObservedLocation && observed !== null;
   const locationCorrected =
-    observed != null &&
-    priorCoords != null &&
+    observed !== null &&
+    priorCoords !== null &&
     (Math.abs(priorCoords.latitude - observed.latitude) > 0.0005 ||
       Math.abs(priorCoords.longitude - observed.longitude) > 0.0005);
 

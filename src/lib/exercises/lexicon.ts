@@ -209,7 +209,9 @@ const CANONICAL_BY_TOKEN: ReadonlyMap<string, string> = (() => {
   const map = new Map<string, string>();
   for (const group of SYNONYM_GROUPS) {
     const [canonical] = group;
-    for (const token of group) map.set(token, canonical);
+    for (const token of group) {
+      map.set(token, canonical);
+    }
   }
   return map;
 })();
@@ -236,7 +238,9 @@ export function canonicalConcept(token: string): string {
 
 function mergeBigrams(key: string): string {
   let out = key;
-  for (const [from, to] of BIGRAM_MERGES) out = out.split(from).join(to);
+  for (const [from, to] of BIGRAM_MERGES) {
+    out = out.split(from).join(to);
+  }
   return out;
 }
 
@@ -272,13 +276,20 @@ export function parseExercisePhrase(raw: string): ExercisePhrase {
   const qualifiers: string[] = [];
 
   for (const token of mainTokens) {
-    if (STOPWORDS.has(token)) continue;
+    if (STOPWORDS.has(token)) {
+      continue;
+    }
     const id = canonicalConcept(token);
-    if (QUALIFIERS.has(token) || QUALIFIERS.has(id)) qualifiers.push(id);
-    else concepts.push(id);
+    if (QUALIFIERS.has(token) || QUALIFIERS.has(id)) {
+      qualifiers.push(id);
+    } else {
+      concepts.push(id);
+    }
   }
   for (const token of parenTokens) {
-    if (STOPWORDS.has(token)) continue;
+    if (STOPWORDS.has(token)) {
+      continue;
+    }
     qualifiers.push(canonicalConcept(token));
   }
 

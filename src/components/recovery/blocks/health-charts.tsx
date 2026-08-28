@@ -30,7 +30,9 @@ function Tip({
   payload?: Array<{ value: number; color: string; payload?: { date?: string; label?: string } }>;
   unit?: string;
 }) {
-  if (!active || !payload?.length || payload[0].value == null) return null;
+  if (!active || !payload?.length || payload[0].value === null) {
+    return null;
+  }
   const rawDate = payload[0]?.payload?.date;
   const displayLabel = rawDate
     ? new Date(rawDate).toLocaleDateString('fr-FR', {
@@ -51,9 +53,15 @@ function Tip({
 }
 
 function chartTickStep(dataLength: number): number {
-  if (dataLength > 240) return 24;
-  if (dataLength > 120) return 16;
-  if (dataLength > 60) return 10;
+  if (dataLength > 240) {
+    return 24;
+  }
+  if (dataLength > 120) {
+    return 16;
+  }
+  if (dataLength > 60) {
+    return 10;
+  }
   return 6;
 }
 
@@ -68,7 +76,7 @@ export function MetricLineChart<T extends { label: string }>({
 }: MetricLineChartProps<T>) {
   const tickStep = chartTickStep(data.length);
   const ticks = data.filter((_, i) => i % tickStep === 0 || i === data.length - 1);
-  const hasData = data.some((d) => d[dataKey] != null);
+  const hasData = data.some((d) => d[dataKey] !== null);
 
   return (
     <CorpsPanel className="overflow-hidden p-0">

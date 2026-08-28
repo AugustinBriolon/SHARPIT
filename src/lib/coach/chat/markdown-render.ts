@@ -37,21 +37,31 @@ function closesFence(line: string, open: string): boolean {
 }
 
 function lineKind(line: string): BlockKind {
-  if (LIST_ITEM.test(line)) return 'list';
-  if (/^\s{0,3}>/.test(line)) return 'quote';
+  if (LIST_ITEM.test(line)) {
+    return 'list';
+  }
+  if (/^\s{0,3}>/.test(line)) {
+    return 'quote';
+  }
   return 'other';
 }
 
 /** Une ligne qui prolonge le bloc courant par-dessus une ligne vide (item de liste espacé, citation multi-paragraphes). */
 function continuesBlock(kind: BlockKind, line: string): boolean {
-  if (kind === 'list') return LIST_ITEM.test(line) || /^\s{2,}\S/.test(line);
-  if (kind === 'quote') return /^\s{0,3}>/.test(line);
+  if (kind === 'list') {
+    return LIST_ITEM.test(line) || /^\s{2,}\S/.test(line);
+  }
+  if (kind === 'quote') {
+    return /^\s{0,3}>/.test(line);
+  }
   return false;
 }
 
 function nextContentLine(lines: string[], from: number): string | null {
   for (let index = from; index < lines.length; index += 1) {
-    if (lines[index]!.trim() !== '') return lines[index]!;
+    if (lines[index]!.trim() !== '') {
+      return lines[index]!;
+    }
   }
   return null;
 }
@@ -63,8 +73,12 @@ function nextContentLine(lines: string[], from: number): string | null {
  */
 export function splitMarkdownBlocks(source: string): string[] {
   const trimmed = source.trim();
-  if (!trimmed) return [];
-  if (CROSS_BLOCK_REFERENCE.test(trimmed)) return [trimmed];
+  if (!trimmed) {
+    return [];
+  }
+  if (CROSS_BLOCK_REFERENCE.test(trimmed)) {
+    return [trimmed];
+  }
 
   const lines = trimmed.split('\n');
   const blocks: string[] = [];
@@ -74,7 +88,9 @@ export function splitMarkdownBlocks(source: string): string[] {
 
   const flush = () => {
     const text = buffer.join('\n').trim();
-    if (text) blocks.push(text);
+    if (text) {
+      blocks.push(text);
+    }
     buffer = [];
     kind = 'other';
   };
@@ -84,13 +100,17 @@ export function splitMarkdownBlocks(source: string): string[] {
 
     if (openFence !== null) {
       buffer.push(line);
-      if (closesFence(line, openFence)) openFence = null;
+      if (closesFence(line, openFence)) {
+        openFence = null;
+      }
       continue;
     }
 
     if (line.trim() === '') {
       const next = nextContentLine(lines, index + 1);
-      if (next === null) break;
+      if (next === null) {
+        break;
+      }
       if (continuesBlock(kind, next)) {
         buffer.push('');
         continue;
@@ -99,7 +119,9 @@ export function splitMarkdownBlocks(source: string): string[] {
       continue;
     }
 
-    if (buffer.length === 0) kind = lineKind(line);
+    if (buffer.length === 0) {
+      kind = lineKind(line);
+    }
     buffer.push(line);
     openFence = fenceMarker(line);
   }
@@ -113,14 +135,21 @@ export function splitMarkdownBlocks(source: string): string[] {
  * masque un lien encore incomplet plutôt que d'afficher sa syntaxe brute.
  */
 export function closeOpenMarkdown(source: string): string {
-  if (!source) return source;
+  if (!source) {
+    return source;
+  }
 
   let openFence: string | null = null;
   for (const line of source.split('\n')) {
     const marker = fenceMarker(line);
-    if (marker === null) continue;
-    if (openFence === null) openFence = marker;
-    else if (marker[0] === openFence[0] && marker.length >= openFence.length) openFence = null;
+    if (marker === null) {
+      continue;
+    }
+    if (openFence === null) {
+      openFence = marker;
+    } else if (marker[0] === openFence[0] && marker.length >= openFence.length) {
+      openFence = null;
+    }
   }
   if (openFence !== null) {
     return `${source}${source.endsWith('\n') ? '' : '\n'}${openFence}`;
@@ -129,8 +158,12 @@ export function closeOpenMarkdown(source: string): string {
   let text = source.replace(/!?\[[^\]\n]*\]\([^)\n]*$/, '').replace(/!?\[[^\]\n]*$/, '');
 
   const lastLine = text.slice(text.lastIndexOf('\n') + 1);
-  if ((lastLine.match(/`/g)?.length ?? 0) % 2 === 1) text += '`';
-  if ((text.match(/\*\*/g)?.length ?? 0) % 2 === 1) text += '**';
+  if ((lastLine.match(/`/g)?.length ?? 0) % 2 === 1) {
+    text += '`';
+  }
+  if ((text.match(/\*\*/g)?.length ?? 0) % 2 === 1) {
+    text += '**';
+  }
 
   return text;
 }
@@ -143,14 +176,20 @@ export function closeOpenMarkdown(source: string): string {
 export function remarkSoftBreaks() {
   return (tree: MarkdownNode) => {
     const walk = (node: MarkdownNode) => {
-      if (!node.children) return;
+      if (!node.children) {
+        return;
+      }
       const rewritten: MarkdownNode[] = [];
       for (const child of node.children) {
         if (child.type === 'text' && child.value?.includes('\n')) {
           const segments = child.value.split('\n');
           segments.forEach((segment, index) => {
-            if (index > 0) rewritten.push({ type: 'break' });
-            if (segment) rewritten.push({ type: 'text', value: segment });
+            if (index > 0) {
+              rewritten.push({ type: 'break' });
+            }
+            if (segment) {
+              rewritten.push({ type: 'text', value: segment });
+            }
           });
           continue;
         }

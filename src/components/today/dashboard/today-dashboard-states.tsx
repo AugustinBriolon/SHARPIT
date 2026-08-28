@@ -16,7 +16,9 @@ export function SnapshotStatusBanner({
 }) {
   const { ready, visible, snooze } = useReconnectBannerSnooze(snoozeKey);
 
-  if (snoozeKey && (!ready || !visible)) return null;
+  if (snoozeKey && (!ready || !visible)) {
+    return null;
+  }
 
   return (
     <div className="analysis-panel rounded-analysis-lg px-4 py-3" role="status">

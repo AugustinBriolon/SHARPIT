@@ -35,7 +35,9 @@ export function LocationPlacePicker({
   }, [value?.label]);
 
   useEffect(() => {
-    if (disabled) return;
+    if (disabled) {
+      return;
+    }
     const trimmed = query.trim();
     if (trimmed.length < 2 || (value && trimmed === value.label)) {
       setResults([]);

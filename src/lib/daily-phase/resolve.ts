@@ -58,7 +58,7 @@ function shouldEndOfDay(input: DailyPhaseInput): ResolveResult | null {
     dayContext.completedSessionCount > 0 && dayContext.remainingPlannedCount === 0;
   const restDay = dayContext.sessionStatus === 'NONE_TODAY';
 
-  if (trainingDone && athlete.minutesSinceLastActivity != null) {
+  if (trainingDone && athlete.minutesSinceLastActivity !== null) {
     if (athlete.minutesSinceLastActivity >= RECOVERY_TO_END_OF_DAY_MINUTES) {
       if (athlete.priorPhase === 'RECOVERY_WINDOW' || athlete.dailyStrainAvailable) {
         return { phase: 'END_OF_DAY', because: 'recovery_window_exhausted' };
@@ -69,7 +69,7 @@ function shouldEndOfDay(input: DailyPhaseInput): ResolveResult | null {
   if (restDay && athlete.priorPhase === 'RECOVERY_WINDOW') {
     if (
       athlete.newInferenceSincePriorSnapshot ||
-      (athlete.minutesSinceSnapshotGenerated != null &&
+      (athlete.minutesSinceSnapshotGenerated !== null &&
         athlete.minutesSinceSnapshotGenerated >= REST_DAY_PREP_SNAPSHOT_AGE_MINUTES * 2)
     ) {
       return { phase: 'END_OF_DAY', because: 'rest_day_preparation_complete' };
@@ -83,7 +83,7 @@ function shouldEndOfDay(input: DailyPhaseInput): ResolveResult | null {
   if (
     localHour >= LATE_DAY_HOUR_FALLBACK &&
     trainingDone &&
-    athlete.minutesSinceLastActivity != null &&
+    athlete.minutesSinceLastActivity !== null &&
     athlete.minutesSinceLastActivity >= ACCOMPLISHMENT_WINDOW_MINUTES
   ) {
     return { phase: 'END_OF_DAY', because: 'time_fallback_late_day_post_training' };
@@ -95,7 +95,9 @@ function shouldEndOfDay(input: DailyPhaseInput): ResolveResult | null {
 function resolveWithCompletedSession(input: DailyPhaseInput, refDate: Date): ResolveResult | null {
   const { dayContext, athlete } = input;
 
-  if (dayContext.completedSessionCount === 0) return null;
+  if (dayContext.completedSessionCount === 0) {
+    return null;
+  }
 
   const accomplishment = isAccomplishmentWindow(
     athlete.minutesSinceLastActivity,
@@ -120,7 +122,9 @@ function resolveWithCompletedSession(input: DailyPhaseInput, refDate: Date): Res
 function resolvePlannedOnly(input: DailyPhaseInput, refDate: Date): ResolveResult | null {
   const { dayContext } = input;
 
-  if (dayContext.sessionStatus !== 'PLANNED_ONLY') return null;
+  if (dayContext.sessionStatus !== 'PLANNED_ONLY') {
+    return null;
+  }
 
   if (isPreSessionWindow(dayContext, refDate, refDate)) {
     return { phase: 'BEFORE_SESSION', because: 'planned_session_pre_window' };
@@ -132,7 +136,9 @@ function resolvePlannedOnly(input: DailyPhaseInput, refDate: Date): ResolveResul
 function resolveRestDay(input: DailyPhaseInput): ResolveResult | null {
   const { dayContext, athlete } = input;
 
-  if (dayContext.sessionStatus !== 'NONE_TODAY') return null;
+  if (dayContext.sessionStatus !== 'NONE_TODAY') {
+    return null;
+  }
 
   const inferenceReady =
     athlete.newInferenceSincePriorSnapshot ||
@@ -142,7 +148,7 @@ function resolveRestDay(input: DailyPhaseInput): ResolveResult | null {
   const evolvedPastMorning =
     athlete.priorPhase === 'MORNING' ||
     athlete.priorPhase === 'RECOVERY_WINDOW' ||
-    (athlete.minutesSinceSnapshotGenerated != null &&
+    (athlete.minutesSinceSnapshotGenerated !== null &&
       athlete.minutesSinceSnapshotGenerated >= REST_DAY_PREP_SNAPSHOT_AGE_MINUTES);
 
   if (inferenceReady && evolvedPastMorning) {
@@ -162,16 +168,24 @@ export function resolveDailyPhase(
   refDate: Date = new Date(),
 ): DailyPhaseResolution {
   const endOfDay = shouldEndOfDay(input);
-  if (endOfDay) return toResolution(input, endOfDay);
+  if (endOfDay) {
+    return toResolution(input, endOfDay);
+  }
 
   const postSession = resolveWithCompletedSession(input, refDate);
-  if (postSession) return toResolution(input, postSession);
+  if (postSession) {
+    return toResolution(input, postSession);
+  }
 
   const planned = resolvePlannedOnly(input, refDate);
-  if (planned) return toResolution(input, planned);
+  if (planned) {
+    return toResolution(input, planned);
+  }
 
   const restDay = resolveRestDay(input);
-  if (restDay) return toResolution(input, restDay);
+  if (restDay) {
+    return toResolution(input, restDay);
+  }
 
   return toResolution(input, { phase: 'MORNING', because: 'default_morning' });
 }

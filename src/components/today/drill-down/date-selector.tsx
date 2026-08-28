@@ -79,7 +79,9 @@ export function TodayDateSelector({
 
   function handleOpenChange(nextOpen: boolean) {
     setOpen(nextOpen);
-    if (nextOpen) setVisibleMonth(startOfMonth(date));
+    if (nextOpen) {
+      setVisibleMonth(startOfMonth(date));
+    }
   }
 
   return (
@@ -179,7 +181,7 @@ export function TodayDateSelector({
                 const isSelected = isSameDay(dayStart, date);
                 const isCurrentMonth = isSameMonth(dayStart, visibleMonth);
                 const isDisabled =
-                  isAfter(dayStart, maxDate) || (minDate != null && isBefore(dayStart, minDate));
+                  isAfter(dayStart, maxDate) || (minDate !== null && isBefore(dayStart, minDate));
                 const isCurrentDay = isSameDay(dayStart, maxDate);
                 const dayLabel = formatDate(dayStart, 'EEEE d MMMM yyyy', { locale: fr });
 

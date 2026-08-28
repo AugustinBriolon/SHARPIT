@@ -47,10 +47,14 @@ function findRecordCategory(
     { prs: { run: RecordCategory[]; bike: RecordCategory[]; swim: RecordCategory[] } } | undefined,
   key: string,
 ): { category: RecordCategory; sportLabel: string } | null {
-  if (!payload) return null;
+  if (!payload) {
+    return null;
+  }
   for (const sport of ['run', 'bike', 'swim'] as const) {
     const category = payload.prs[sport].find((c) => c.key === key);
-    if (category) return { category, sportLabel: RECORD_SPORT_LABEL[sport] };
+    if (category) {
+      return { category, sportLabel: RECORD_SPORT_LABEL[sport] };
+    }
   }
   return null;
 }
@@ -63,7 +67,9 @@ function getInitialDraftId(
   hasDiscuss: boolean,
   cache: { current: string | null | undefined },
 ): string | null {
-  if (cache.current !== undefined) return cache.current;
+  if (cache.current !== undefined) {
+    return cache.current;
+  }
   cache.current = hasDiscuss ? null : createEphemeralId();
   return cache.current;
 }
@@ -127,7 +133,9 @@ export function CoachView() {
 
   // Warm coach context cache so the first message hits TTL memory.
   useEffect(() => {
-    if (!online) return;
+    if (!online) {
+      return;
+    }
     warmCoachContext();
   }, [online]);
 
@@ -139,23 +147,37 @@ export function CoachView() {
   const conversations = conversationsQuery.data ?? [];
 
   const selectedId = activeId;
-  const isEphemeral = selectedId != null && ephemeralIds.has(selectedId);
+  const isEphemeral = selectedId !== null && ephemeralIds.has(selectedId);
   const activeConversation = useConversation(isEphemeral ? null : selectedId);
   const activeHasMessages =
     !isEphemeral &&
     Array.isArray(activeConversation.data?.messages) &&
     activeConversation.data.messages.length > 0;
-  const hasNoLiveContent = conversationsQuery.data == null && !activeHasMessages;
+  const hasNoLiveContent = conversationsQuery.data === null && !activeHasMessages;
   const { entry: offlineEntry } = useOfflineSnapshot(!online && hasNoLiveContent);
 
   const discussIntentKey = useMemo(() => {
-    if (discussToday) return 'today';
-    if (discussGoalId) return `goal:${discussGoalId}`;
-    if (discussConditionId) return `condition:${discussConditionId}`;
-    if (discussRecordKey) return `record:${discussRecordKey}`;
-    if (discussPlanningHorizon) return `planning:${discussPlanningHorizon}`;
-    if (discussId) return `session:${discussId}`;
-    if (discussActivityId) return `activity:${discussActivityId}`;
+    if (discussToday) {
+      return 'today';
+    }
+    if (discussGoalId) {
+      return `goal:${discussGoalId}`;
+    }
+    if (discussConditionId) {
+      return `condition:${discussConditionId}`;
+    }
+    if (discussRecordKey) {
+      return `record:${discussRecordKey}`;
+    }
+    if (discussPlanningHorizon) {
+      return `planning:${discussPlanningHorizon}`;
+    }
+    if (discussId) {
+      return `session:${discussId}`;
+    }
+    if (discussActivityId) {
+      return `activity:${discussActivityId}`;
+    }
     return null;
   }, [
     discussToday,
@@ -174,7 +196,9 @@ export function CoachView() {
    * directly (X on the chip, new conversation, delete) to drop it earlier.
    */
   function detachLatchedContext() {
-    if (latchedContextRef.current === null && latchedDiscussIntentKey.current === null) return;
+    if (latchedContextRef.current === null && latchedDiscussIntentKey.current === null) {
+      return;
+    }
     latchedContextRef.current = null;
     latchedDiscussIntentKey.current = null;
     bootstrappedDiscussIntentKey.current = null;
@@ -190,9 +214,15 @@ export function CoachView() {
   }
 
   function bootstrapDiscussConversation(bootstrapKey: string) {
-    if (!discussIntentKey) return;
-    if (inFlightDiscussBootstraps.has(bootstrapKey)) return;
-    if (bootstrappedDiscussIntentKey.current === discussIntentKey) return;
+    if (!discussIntentKey) {
+      return;
+    }
+    if (inFlightDiscussBootstraps.has(bootstrapKey)) {
+      return;
+    }
+    if (bootstrappedDiscussIntentKey.current === discussIntentKey) {
+      return;
+    }
     inFlightDiscussBootstraps.add(bootstrapKey);
     initialized.current = true;
 
@@ -213,16 +243,30 @@ export function CoachView() {
   }
 
   const discussDataReady = useMemo(() => {
-    if (!hasDiscussIntent || !discussIntentKey) return false;
-    if (latchedDiscussIntentKey.current === discussIntentKey) return false;
-    if (discussToday) return todayQuery.data != null;
-    if (discussGoalId) return (goalsQuery.data ?? []).some((g) => g.id === discussGoalId);
+    if (!hasDiscussIntent || !discussIntentKey) {
+      return false;
+    }
+    if (latchedDiscussIntentKey.current === discussIntentKey) {
+      return false;
+    }
+    if (discussToday) {
+      return todayQuery.data !== null;
+    }
+    if (discussGoalId) {
+      return (goalsQuery.data ?? []).some((g) => g.id === discussGoalId);
+    }
     if (discussConditionId) {
       return (physicalNotesQuery.data ?? []).some((n) => n.id === discussConditionId);
     }
-    if (discussRecordKey) return findRecordCategory(recordsQuery.data, discussRecordKey) != null;
-    if (discussPlanningHorizon) return projectionQuery.data?.visible === true;
-    if (discussId) return (plannedQuery.data ?? []).some((s) => s.id === discussId);
+    if (discussRecordKey) {
+      return findRecordCategory(recordsQuery.data, discussRecordKey) !== null;
+    }
+    if (discussPlanningHorizon) {
+      return projectionQuery.data?.visible === true;
+    }
+    if (discussId) {
+      return (plannedQuery.data ?? []).some((s) => s.id === discussId);
+    }
     if (discussActivityId) {
       return (activitiesQuery.data ?? []).some((a) => a.id === discussActivityId);
     }
@@ -248,7 +292,9 @@ export function CoachView() {
   ]);
 
   const discussContext = useMemo((): CoachDiscussContext | null => {
-    if (discussToday) return describeCoachDiscussContext({ kind: 'today' });
+    if (discussToday) {
+      return describeCoachDiscussContext({ kind: 'today' });
+    }
     if (discussGoalId) {
       const goal = (goalsQuery.data ?? []).find((g) => g.id === discussGoalId);
       return describeCoachDiscussContext({ kind: 'goal', goalId: discussGoalId }, goal?.title);
@@ -311,49 +357,81 @@ export function CoachView() {
   const latchedContext = latchedContextRef.current;
 
   useEffect(() => {
-    if (!discussIntentKey) return;
-    if (bootstrappedDiscussIntentKey.current === discussIntentKey) return;
+    if (!discussIntentKey) {
+      return;
+    }
+    if (bootstrappedDiscussIntentKey.current === discussIntentKey) {
+      return;
+    }
     if (discussToday) {
-      if (todayQuery.isPending) return;
-      if (!todayQuery.data) return;
+      if (todayQuery.isPending) {
+        return;
+      }
+      if (!todayQuery.data) {
+        return;
+      }
       bootstrapDiscussConversation('today');
       return;
     }
     if (discussGoalId) {
-      if (goalsQuery.isPending) return;
-      if (!(goalsQuery.data ?? []).some((g) => g.id === discussGoalId)) return;
+      if (goalsQuery.isPending) {
+        return;
+      }
+      if (!(goalsQuery.data ?? []).some((g) => g.id === discussGoalId)) {
+        return;
+      }
       bootstrapDiscussConversation(`goal:${discussGoalId}`);
       return;
     }
     if (discussConditionId) {
-      if (physicalNotesQuery.isPending) return;
-      if (!(physicalNotesQuery.data ?? []).some((n) => n.id === discussConditionId)) return;
+      if (physicalNotesQuery.isPending) {
+        return;
+      }
+      if (!(physicalNotesQuery.data ?? []).some((n) => n.id === discussConditionId)) {
+        return;
+      }
       bootstrapDiscussConversation(`condition:${discussConditionId}`);
       return;
     }
     if (discussRecordKey) {
-      if (recordsQuery.isPending) return;
-      if (!findRecordCategory(recordsQuery.data, discussRecordKey)) return;
+      if (recordsQuery.isPending) {
+        return;
+      }
+      if (!findRecordCategory(recordsQuery.data, discussRecordKey)) {
+        return;
+      }
       bootstrapDiscussConversation(`record:${discussRecordKey}`);
       return;
     }
     if (discussPlanningHorizon) {
-      if (projectionQuery.isPending) return;
-      if (!projectionQuery.data?.visible) return;
+      if (projectionQuery.isPending) {
+        return;
+      }
+      if (!projectionQuery.data?.visible) {
+        return;
+      }
       bootstrapDiscussConversation(`planning:${discussPlanningHorizon}`);
       return;
     }
     if (discussId) {
-      if (plannedQuery.isPending) return;
+      if (plannedQuery.isPending) {
+        return;
+      }
       const session = (plannedQuery.data ?? []).find((s) => s.id === discussId);
-      if (!session) return;
+      if (!session) {
+        return;
+      }
       bootstrapDiscussConversation(`session:${discussId}`);
       return;
     }
     if (discussActivityId) {
-      if (activitiesQuery.isPending) return;
+      if (activitiesQuery.isPending) {
+        return;
+      }
       const activity = (activitiesQuery.data ?? []).find((a) => a.id === discussActivityId);
-      if (!activity) return;
+      if (!activity) {
+        return;
+      }
       bootstrapDiscussConversation(`activity:${discussActivityId}`);
     }
   }, [
@@ -384,9 +462,15 @@ export function CoachView() {
 
   /** Deleted / missing thread → open a fresh draft instead of an empty pane. */
   useEffect(() => {
-    if (!selectedId || isEphemeral) return;
-    if (activeConversation.isPending || activeConversation.isLoading) return;
-    if (activeConversation.data) return;
+    if (!selectedId || isEphemeral) {
+      return;
+    }
+    if (activeConversation.isPending || activeConversation.isLoading) {
+      return;
+    }
+    if (activeConversation.data) {
+      return;
+    }
     const id = createEphemeralId();
     setEphemeralIds((prev) => new Set(prev).add(id));
     setActiveId(id);
@@ -405,7 +489,9 @@ export function CoachView() {
       confirmLabel: 'Supprimer',
       variant: 'destructive',
     });
-    if (!confirmed) return;
+    if (!confirmed) {
+      return;
+    }
     await deleteConversation.mutateAsync(id);
     clearCoachInputDraft(id);
     if (selectedId === id) {

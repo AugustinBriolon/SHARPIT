@@ -137,7 +137,9 @@ export function GoalsView({ embedded = false }: { embedded?: boolean } = {}) {
           <>
             {horizonOrder.map((horizon) => {
               const group = metrics.filter((g) => g.horizon === horizon);
-              if (!group.length) return null;
+              if (!group.length) {
+                return null;
+              }
               return (
                 <div key={horizon} className="space-y-3">
                   <h3 className="text-primary/80 text-xs font-medium tracking-wider uppercase">

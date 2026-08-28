@@ -36,7 +36,9 @@ type SetCookieCapableHeaders = Headers & { getSetCookie?: () => string[] };
 
 function readSetCookieHeaders(res: Response): string[] {
   const headers = res.headers as SetCookieCapableHeaders;
-  if (typeof headers.getSetCookie === 'function') return headers.getSetCookie();
+  if (typeof headers.getSetCookie === 'function') {
+    return headers.getSetCookie();
+  }
 
   const single = headers.get('set-cookie');
   return single ? [single] : [];
@@ -66,10 +68,14 @@ export function parseRotatedSessionToken(setCookieHeaders: string[]): string | n
   for (const header of setCookieHeaders) {
     const [pair] = header.split(';');
     const separator = pair.indexOf('=');
-    if (separator === -1) continue;
+    if (separator === -1) {
+      continue;
+    }
 
     const name = pair.slice(0, separator).trim();
-    if (name !== SESSION_COOKIE_NAME) continue;
+    if (name !== SESSION_COOKIE_NAME) {
+      continue;
+    }
 
     const value = pair.slice(separator + 1).trim();
     return value.length > 0 ? value : null;
@@ -222,12 +228,16 @@ export function parseNutrientGoalsForDate(
   bundles: MfpNutrientGoalBundle[],
   dateStr: string,
 ): MfpNutrientGoals | null {
-  if (!Array.isArray(bundles) || bundles.length === 0) return null;
+  if (!Array.isArray(bundles) || bundles.length === 0) {
+    return null;
+  }
 
   const bundle =
     bundles.find((item) => {
-      if (!item.valid_from) return true;
-      return item.valid_from <= dateStr && (item.valid_to == null || item.valid_to >= dateStr);
+      if (!item.valid_from) {
+        return true;
+      }
+      return item.valid_from <= dateStr && (item.valid_to === null || item.valid_to >= dateStr);
     }) ?? bundles[0];
 
   const dayKey = nutrientGoalDayKey(dateStr);
@@ -236,21 +246,25 @@ export function parseNutrientGoalsForDate(
     bundle.default_goal ??
     null;
 
-  if (!dayGoal?.energy?.value) return null;
+  if (!dayGoal?.energy?.value) {
+    return null;
+  }
 
   return {
     calories: Math.round(dayGoal.energy.value),
     protein: Math.round(num(dayGoal.protein)),
     carbohydrates: Math.round(num(dayGoal.carbohydrates)),
     fat: Math.round(num(dayGoal.fat)),
-    fiber: dayGoal.fiber != null ? Math.round(dayGoal.fiber) : null,
-    sugar: dayGoal.sugar != null ? Math.round(dayGoal.sugar) : null,
+    fiber: dayGoal.fiber !== null ? Math.round(dayGoal.fiber) : null,
+    sugar: dayGoal.sugar !== null ? Math.round(dayGoal.sugar) : null,
   };
 }
 
 export function sumExerciseCalories(entries: MfpExerciseEntry[]): number {
   return entries.reduce((sum, entry) => {
-    if (entry.exercise?.deleted) return sum;
+    if (entry.exercise?.deleted) {
+      return sum;
+    }
     return sum + num(entry.energy?.value);
   }, 0);
 }
@@ -315,7 +329,9 @@ export async function fetchNutrientGoals(
     session,
   ).catch(() => null);
 
-  if (!bundles) return null;
+  if (!bundles) {
+    return null;
+  }
   return parseNutrientGoalsForDate(bundles, dateStr);
 }
 

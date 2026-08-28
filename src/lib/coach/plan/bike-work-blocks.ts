@@ -65,7 +65,7 @@ export function parsePrescriptionTargets(
   const repsMatch = text.match(/(\d{1,2})\s*[x×]\s*(\d{1,3})\s*(?:min|m\b)/i);
   const reps = repsMatch ? clampInt(Number(repsMatch[1]), 1, 30) : null;
   const repDurationMin = repsMatch ? clampInt(Number(repsMatch[2]), 1, 180) : null;
-  const plannedWorkMin = reps != null && repDurationMin != null ? reps * repDurationMin : null;
+  const plannedWorkMin = reps !== null && repDurationMin !== null ? reps * repDurationMin : null;
 
   return { ftpPct, reps, repDurationMin, plannedWorkMin };
 }
@@ -74,9 +74,11 @@ export function shouldAnalyzeBikeWorkBlocks(input: {
   intensity: SessionIntensity | null | undefined;
   description?: string | null;
 }): boolean {
-  if (input.intensity && QUALITY_INTENSITIES.has(input.intensity)) return true;
+  if (input.intensity && QUALITY_INTENSITIES.has(input.intensity)) {
+    return true;
+  }
   const p = parsePrescriptionTargets(input.description);
-  return p.ftpPct != null || p.plannedWorkMin != null;
+  return p.ftpPct !== null || p.plannedWorkMin !== null;
 }
 
 /**
@@ -91,15 +93,19 @@ export function summarizeBikeWorkBlocks(input: {
   description?: string | null;
 }): BikeWorkSummary | null {
   const { watts, ftpW, intensity = null, description = null } = input;
-  if (!(ftpW > 0) || watts.length < 60) return null;
-  if (!shouldAnalyzeBikeWorkBlocks({ intensity, description })) return null;
+  if (!(ftpW > 0) || watts.length < 60) {
+    return null;
+  }
+  if (!shouldAnalyzeBikeWorkBlocks({ intensity, description })) {
+    return null;
+  }
 
   const prescription = parsePrescriptionTargets(description);
   const targetPctFtp =
     prescription.ftpPct ?? (intensity ? (DEFAULT_TARGET_PCT[intensity] ?? null) : null);
   const floorPctFtp = resolveFloorPct(intensity, targetPctFtp);
   const workFloorWatts = Math.round((floorPctFtp / 100) * ftpW);
-  const targetWatts = targetPctFtp != null ? Math.round((targetPctFtp / 100) * ftpW) : null;
+  const targetWatts = targetPctFtp !== null ? Math.round((targetPctFtp / 100) * ftpW) : null;
 
   const high = markHighSamples(watts, workFloorWatts);
   const blocks = extractBlocks(watts, high, ftpW);
@@ -124,7 +130,7 @@ export function summarizeBikeWorkBlocks(input: {
     workFloorPctFtp: floorPctFtp,
     totalWorkSec: workCount,
     workAvgWatts,
-    workAvgPctFtp: workAvgWatts != null ? Math.round((workAvgWatts / ftpW) * 100) : null,
+    workAvgPctFtp: workAvgWatts !== null ? Math.round((workAvgWatts / ftpW) * 100) : null,
     blocks,
     plannedWorkMin: prescription.plannedWorkMin,
     prescription,
@@ -135,15 +141,15 @@ export function summarizeBikeWorkBlocks(input: {
 export function describeBikeWorkBlocks(summary: BikeWorkSummary): string {
   const lines: string[] = [
     `FTP athlète : ${summary.ftpW} W`,
-    summary.targetWatts != null && summary.targetPctFtp != null
+    summary.targetWatts !== null && summary.targetPctFtp !== null
       ? `Cible intensité (estimée) : ${summary.targetPctFtp}% FTP ≈ ${summary.targetWatts} W`
       : null,
     `Seuil de détection des blocs de travail : ≥ ${summary.workFloorPctFtp}% FTP (${summary.workFloorWatts} W)`,
     `Temps passé au-dessus de ce seuil : ${fmtMin(summary.totalWorkSec)}`,
-    summary.workAvgWatts != null && summary.workAvgPctFtp != null
+    summary.workAvgWatts !== null && summary.workAvgPctFtp !== null
       ? `Puissance moyenne sur ce temps de travail : ${summary.workAvgWatts} W (${summary.workAvgPctFtp}% FTP)`
       : null,
-    summary.plannedWorkMin != null
+    summary.plannedWorkMin !== null
       ? `Volume de travail suggéré par la consigne (lecture texte) : ~${summary.plannedWorkMin} min — heuristique, pas une preuve structurée`
       : null,
   ].filter(Boolean) as string[];
@@ -168,11 +174,11 @@ export function describeBikeWorkBlocks(summary: BikeWorkSummary): string {
 }
 
 function resolveFloorPct(intensity: SessionIntensity | null, targetPctFtp: number | null): number {
-  if (targetPctFtp != null) {
+  if (targetPctFtp !== null) {
     // Allow mild undershoot vs prescription while staying in quality territory.
     return Math.max(70, targetPctFtp - 8);
   }
-  if (intensity && DEFAULT_FLOOR_PCT[intensity] != null) {
+  if (intensity && DEFAULT_FLOOR_PCT[intensity] !== null) {
     return DEFAULT_FLOOR_PCT[intensity]!;
   }
   return 75;
@@ -198,10 +204,16 @@ function extractBlocks(watts: number[], high: boolean[], ftpW: number): WorkBloc
   const raw: { start: number; end: number }[] = [];
   let i = 0;
   while (i < high.length) {
-    while (i < high.length && !high[i]) i++;
-    if (i >= high.length) break;
+    while (i < high.length && !high[i]) {
+      i++;
+    }
+    if (i >= high.length) {
+      break;
+    }
     const start = i;
-    while (i < high.length && high[i]) i++;
+    while (i < high.length && high[i]) {
+      i++;
+    }
     raw.push({ start, end: i - 1 });
   }
 
@@ -219,7 +231,9 @@ function extractBlocks(watts: number[], high: boolean[], ftpW: number): WorkBloc
   const blocks: WorkBlock[] = [];
   for (const seg of merged) {
     const durationSec = seg.end - seg.start + 1;
-    if (durationSec < MIN_BLOCK_SEC) continue;
+    if (durationSec < MIN_BLOCK_SEC) {
+      continue;
+    }
     let sum = 0;
     let count = 0;
     for (let t = seg.start; t <= seg.end; t++) {
@@ -229,7 +243,9 @@ function extractBlocks(watts: number[], high: boolean[], ftpW: number): WorkBloc
         count += 1;
       }
     }
-    if (count === 0) continue;
+    if (count === 0) {
+      continue;
+    }
     const avgWatts = Math.round(sum / count);
     blocks.push({
       startSec: seg.start,
@@ -243,7 +259,9 @@ function extractBlocks(watts: number[], high: boolean[], ftpW: number): WorkBloc
 }
 
 function clampInt(n: number, min: number, max: number): number | null {
-  if (!Number.isFinite(n)) return null;
+  if (!Number.isFinite(n)) {
+    return null;
+  }
   return Math.min(max, Math.max(min, Math.round(n)));
 }
 

@@ -33,29 +33,47 @@ const TREND_WINDOWS = [
 const AGE_COMPARED_METRICS: CompositionMetricId[] = ['vascularAgeYears', 'metabolicAge', 'bmi'];
 
 function heightFromWithingsExtras(extras: unknown): number | null {
-  if (extras == null || typeof extras !== 'object') return null;
+  if (extras === null || typeof extras !== 'object') {
+    return null;
+  }
   const maybe = extras as Record<string, unknown>;
   const h = maybe.heightM;
   return typeof h === 'number' && h > 0 ? h : null;
 }
 
 function sourceLabel(source: string | null | undefined): string | null {
-  if (source == null) return null;
-  if (source === 'WITHINGS') return 'Withings';
+  if (source === null) {
+    return null;
+  }
+  if (source === 'WITHINGS') {
+    return 'Withings';
+  }
   return 'Renpho';
 }
 
 function inferActiveTrendWindowId(days: number | null | undefined): BodyTrendWindowId {
-  if (days == null) return 'all';
-  if (days === 14) return '14d';
-  if (days === 30) return '30d';
-  if (days === 90) return '90d';
-  if (days === 365) return '1y';
+  if (days === null) {
+    return 'all';
+  }
+  if (days === 14) {
+    return '14d';
+  }
+  if (days === 30) {
+    return '30d';
+  }
+  if (days === 90) {
+    return '90d';
+  }
+  if (days === 365) {
+    return '1y';
+  }
   return 'all';
 }
 
 function displayMeasuredAt(date: Date | null | undefined): string | null {
-  if (!date) return null;
+  if (!date) {
+    return null;
+  }
   return date.toLocaleString('fr-FR', { dateStyle: 'medium', timeStyle: 'short' });
 }
 
@@ -72,9 +90,9 @@ function buildExplainerVm(args: {
   const scaleMarkerPct = !guide.hideScale ? metricScalePosition(scaleInput, guide.zones) : null;
 
   const showProfileAgeHint =
-    AGE_COMPARED_METRICS.includes(args.metricId) && args.context.chronologicalAgeYears == null;
+    AGE_COMPARED_METRICS.includes(args.metricId) && args.context.chronologicalAgeYears === null;
   const showAgeComparisonNote =
-    AGE_COMPARED_METRICS.includes(args.metricId) && args.context.chronologicalAgeYears != null;
+    AGE_COMPARED_METRICS.includes(args.metricId) && args.context.chronologicalAgeYears !== null;
 
   return {
     metricId: args.metricId,
@@ -200,7 +218,9 @@ export async function buildBodyPresentationViewModel(
     const presentation = buildWeeklyDeltaPresentation(metricId, delta7d, (delta) =>
       formatCompositionDelta(delta, ' pts vs 7j'),
     );
-    if (presentation.deltaDisplay == null) return null;
+    if (presentation.deltaDisplay === null) {
+      return null;
+    }
     return {
       footer: presentation.deltaDisplay,
       footerTone: presentation.deltaTone,
@@ -210,11 +230,11 @@ export async function buildBodyPresentationViewModel(
 
   const hero: BodyViewModel['hero'] = {
     latestWeightKg: latest.weightKg ?? null,
-    latestWeightDisplay: latest.weightKg != null ? formatWeightKgDisplay(latest.weightKg) : '—',
+    latestWeightDisplay: latest.weightKg !== null ? formatWeightKgDisplay(latest.weightKg) : '—',
     measuredAtLabel: displayMeasuredAt(latest.measuredAt),
     sourceLabel: sourceLabel(latest.source),
     weightDeltaDisplay: weightDelta.deltaDisplay,
-    weightDeltaTone: weight.delta != null ? weightDelta.deltaTone : null,
+    weightDeltaTone: weight.delta !== null ? weightDelta.deltaTone : null,
     weightDeltaHint: weightDelta.deltaHint,
     heroMini: {
       bodyFatPct: (() => {
@@ -222,7 +242,7 @@ export async function buildBodyPresentationViewModel(
           formatCompositionDelta(d, ' pts'),
         );
         const zoneTone =
-          bodyFat.latest != null
+          bodyFat.latest !== null
             ? getGuide('bodyFatPct').interpret(bodyFat.latest, compositionContext).tone
             : 'neutral';
         return {
@@ -231,7 +251,7 @@ export async function buildBodyPresentationViewModel(
           deltaTone: delta.deltaTone,
           deltaHint: delta.deltaHint,
           tone:
-            bodyFat.latest != null
+            bodyFat.latest !== null
               ? resolveMetricValueTone(zoneTone, 'bodyFatPct', bodyFat.delta)
               : 'neutral',
           guideId: 'bodyFatPct' as CompositionMetricId,
@@ -242,7 +262,7 @@ export async function buildBodyPresentationViewModel(
           formatCompositionDelta(d, ' pts'),
         );
         const zoneTone =
-          muscle.latest != null
+          muscle.latest !== null
             ? getGuide('musclePct').interpret(muscle.latest, compositionContext).tone
             : 'neutral';
         return {
@@ -251,7 +271,7 @@ export async function buildBodyPresentationViewModel(
           deltaTone: delta.deltaTone,
           deltaHint: delta.deltaHint,
           tone:
-            muscle.latest != null
+            muscle.latest !== null
               ? resolveMetricValueTone(zoneTone, 'musclePct', muscle.delta)
               : 'neutral',
           guideId: 'musclePct' as CompositionMetricId,
@@ -262,7 +282,7 @@ export async function buildBodyPresentationViewModel(
           formatCompositionDelta(d, ' pts'),
         );
         const zoneTone =
-          visceral.latest != null
+          visceral.latest !== null
             ? getGuide('visceralFat').interpret(visceral.latest, compositionContext).tone
             : 'neutral';
         return {
@@ -271,7 +291,7 @@ export async function buildBodyPresentationViewModel(
           deltaTone: delta.deltaTone,
           deltaHint: delta.deltaHint,
           tone:
-            visceral.latest != null
+            visceral.latest !== null
               ? resolveMetricValueTone(zoneTone, 'visceralFat', visceral.delta)
               : 'neutral',
           guideId: 'visceralFat' as CompositionMetricId,
@@ -282,13 +302,13 @@ export async function buildBodyPresentationViewModel(
         // three metrics) — show the raw 7-day delta as display text only, tone
         // stays the guide's static zone interpretation (same as the old context card).
         const zoneTone =
-          water.latest != null
+          water.latest !== null
             ? getGuide('waterPct').interpret(water.latest, compositionContext).tone
             : 'neutral';
         return {
           value: water.latest,
           deltaDisplay:
-            water.delta != null ? (formatCompositionDelta(water.delta, ' pts') ?? null) : null,
+            water.delta !== null ? (formatCompositionDelta(water.delta, ' pts') ?? null) : null,
           deltaTone: 'ok' as const,
           deltaHint: null,
           tone: zoneTone,
@@ -317,8 +337,12 @@ export async function buildBodyPresentationViewModel(
     raw: number | null | undefined,
     display: string | null | undefined,
   ) {
-    if (raw == null || display == null) return;
-    if (explainerByMetricId[metricId]) return;
+    if (raw === null || display === null) {
+      return;
+    }
+    if (explainerByMetricId[metricId]) {
+      return;
+    }
     explainerByMetricId[metricId] = buildExplainerVm({
       metricId,
       rawValue: raw,
@@ -328,7 +352,7 @@ export async function buildBodyPresentationViewModel(
   }
 
   const trajectoryCards: BodyMetricCardVm[] = [];
-  if (latestBmiDisplay != null) {
+  if (latestBmiDisplay !== null) {
     const metricId: CompositionMetricId = 'bmi';
     const valueDisplay = `${latestBmiDisplay}`;
     const guide = getGuide(metricId);
@@ -350,22 +374,22 @@ export async function buildBodyPresentationViewModel(
   // bodyFatPct/musclePct/visceralFat are already shown in hero.heroMini above —
   // ensureExplainer keeps the explainer modal available for them without a
   // second, duplicate trajectoryCards tile.
-  if (bodyFat.latest != null) {
+  if (bodyFat.latest !== null) {
     const metricId: CompositionMetricId = 'bodyFatPct';
     ensureExplainer(metricId, bodyFat.latest, `${bodyFat.latest} %`);
   }
 
-  if (muscle.latest != null) {
+  if (muscle.latest !== null) {
     const metricId: CompositionMetricId = 'musclePct';
     ensureExplainer(metricId, muscle.latest, `${muscle.latest} %`);
   }
 
-  if (visceral.latest != null) {
+  if (visceral.latest !== null) {
     const metricId: CompositionMetricId = 'visceralFat';
     ensureExplainer(metricId, visceral.latest, `${visceral.latest}`);
   }
 
-  if (latest.fatFreeWeightKg != null) {
+  if (latest.fatFreeWeightKg !== null) {
     trajectoryCards.push({
       cardId: 'fatFreeWeightKg',
       label: 'Masse maigre',
@@ -374,7 +398,7 @@ export async function buildBodyPresentationViewModel(
     });
   }
 
-  if (latest.boneKg != null) {
+  if (latest.boneKg !== null) {
     trajectoryCards.push({
       cardId: 'boneKg',
       label: 'Masse osseuse',
@@ -385,13 +409,13 @@ export async function buildBodyPresentationViewModel(
 
   // waterPct is now shown in hero.heroMini above — ensureExplainer keeps the
   // explainer modal available without a second, duplicate contextCards tile.
-  if (latest.waterPct != null) {
+  if (latest.waterPct !== null) {
     const metricId: CompositionMetricId = 'waterPct';
     ensureExplainer(metricId, latest.waterPct, `${latest.waterPct.toFixed(1)} %`);
   }
 
   const contextCards: BodyMetricCardVm[] = [];
-  if (latest.bmr != null) {
+  if (latest.bmr !== null) {
     const metricId: CompositionMetricId = 'bmr';
     const valueDisplay = `${Math.round(latest.bmr)} kcal`;
     const interpretation = getGuide(metricId).interpret(latest.bmr, compositionContext);
@@ -404,7 +428,7 @@ export async function buildBodyPresentationViewModel(
       tone: interpretation.tone,
     });
   }
-  if (latest.metabolicAge != null) {
+  if (latest.metabolicAge !== null) {
     const metricId: CompositionMetricId = 'metabolicAge';
     const valueDisplay = `${latest.metabolicAge} ans`;
     const interpretation = getGuide(metricId).interpret(latest.metabolicAge, compositionContext);
@@ -421,7 +445,7 @@ export async function buildBodyPresentationViewModel(
   const healthScanCards: BodyMetricCardVm[] = [];
   const ecgStats = parseWithingsEcgStats(latest.withingsExtras);
 
-  if (latest.vascularAgeYears != null) {
+  if (latest.vascularAgeYears !== null) {
     const metricId: CompositionMetricId = 'vascularAgeYears';
     const valueDisplay = `${latest.vascularAgeYears} ans`;
     const interpretation = getGuide(metricId).interpret(
@@ -437,7 +461,7 @@ export async function buildBodyPresentationViewModel(
       tone: interpretation.tone,
     });
   }
-  if (latest.pulseWaveVelocity != null) {
+  if (latest.pulseWaveVelocity !== null) {
     const metricId: CompositionMetricId = 'pulseWaveVelocity';
     const valueDisplay = `${latest.pulseWaveVelocity.toFixed(1)} m/s`;
     const interpretation = getGuide(metricId).interpret(
@@ -453,7 +477,7 @@ export async function buildBodyPresentationViewModel(
       tone: interpretation.tone,
     });
   }
-  if (latest.nerveHealthScore != null) {
+  if (latest.nerveHealthScore !== null) {
     const metricId: CompositionMetricId = 'nerveHealthScore';
     const valueDisplay = `${Math.round(latest.nerveHealthScore)}`;
     const interpretation = getGuide(metricId).interpret(
@@ -469,7 +493,7 @@ export async function buildBodyPresentationViewModel(
       tone: interpretation.tone,
     });
   }
-  if (latest.nerveResponseScore != null) {
+  if (latest.nerveResponseScore !== null) {
     const metricId: CompositionMetricId = 'nerveResponseScore';
     const valueDisplay = `${Math.round(latest.nerveResponseScore)}`;
     const interpretation = getGuide(metricId).interpret(
@@ -485,7 +509,7 @@ export async function buildBodyPresentationViewModel(
       tone: interpretation.tone,
     });
   }
-  if (latest.skinConductance != null) {
+  if (latest.skinConductance !== null) {
     const metricId: CompositionMetricId = 'skinConductance';
     const valueDisplay = `${latest.skinConductance.toFixed(0)}`;
     const interpretation = getGuide(metricId).interpret(latest.skinConductance, compositionContext);
@@ -498,7 +522,7 @@ export async function buildBodyPresentationViewModel(
       tone: interpretation.tone,
     });
   }
-  if (latest.vo2Max != null) {
+  if (latest.vo2Max !== null) {
     const metricId: CompositionMetricId = 'vo2Max';
     const valueDisplay = `${latest.vo2Max.toFixed(1)} ml/kg/min`;
     const interpretation = getGuide(metricId).interpret(latest.vo2Max, compositionContext);
@@ -511,7 +535,7 @@ export async function buildBodyPresentationViewModel(
       tone: interpretation.tone,
     });
   }
-  if (latest.heartRate != null) {
+  if (latest.heartRate !== null) {
     const metricId: CompositionMetricId = 'heartRate';
     const valueDisplay = `${latest.heartRate} bpm`;
     const interpretation = getGuide(metricId).interpret(latest.heartRate, compositionContext);
@@ -539,11 +563,11 @@ export async function buildBodyPresentationViewModel(
   }
 
   const hasBodyScan = Boolean(
-    latest.vascularAgeYears != null ||
-    latest.nerveHealthScore != null ||
-    latest.pulseWaveVelocity != null ||
-    latest.skinConductance != null ||
-    latest.vo2Max != null ||
+    latest.vascularAgeYears !== null ||
+    latest.nerveHealthScore !== null ||
+    latest.pulseWaveVelocity !== null ||
+    latest.skinConductance !== null ||
+    latest.vo2Max !== null ||
     ecgStats.length > 0,
   );
 

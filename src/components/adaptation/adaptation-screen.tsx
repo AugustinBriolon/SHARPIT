@@ -12,6 +12,13 @@ import {
 } from '@/hooks/use-presentation-view-model';
 import { adaptationLoadingShell } from '@/lib/presentation/drill-down-loading-shells';
 
+function adaptationEmptyDescription(viewModel: ReturnType<typeof useAdaptationViewModel>['data']) {
+  return (
+    viewModel?.emptyState?.description ??
+    'Les dimensions d’adaptation ne sont pas encore assez complètes pour un indice fiable.'
+  );
+}
+
 export function AdaptationScreen() {
   const { date, isToday, maxDate, minDate, setDate, goToNextDay, goToPreviousDay } =
     useTodaySelectedDate();
@@ -28,10 +35,7 @@ export function AdaptationScreen() {
         <InkEmptyState
           icon={TrendingUp}
           title={viewModel?.emptyState?.title ?? 'Adaptation en cours de consolidation'}
-          description={
-            viewModel?.emptyState?.description ??
-            'Les dimensions d’adaptation ne sont pas encore assez complètes pour un indice fiable.'
-          }
+          description={adaptationEmptyDescription(viewModel)}
         />
       </div>
     );

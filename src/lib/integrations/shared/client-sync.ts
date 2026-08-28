@@ -106,7 +106,9 @@ export async function runMfpSync(): Promise<MfpSyncResult> {
 
 export function stravaBackfillSummary(data: StravaBackfillResult): string {
   const base = `${data.processed} séance(s) traitée(s), ${data.withData} avec données détaillées.`;
-  if (data.remaining <= 0) return `${base} Historique complet ✓`;
+  if (data.remaining <= 0) {
+    return `${base} Historique complet ✓`;
+  }
   if (data.stopped === 'rate_limited') {
     return `${base} Limite Strava atteinte, ${data.remaining} restante(s) — réessaie dans ~15 min.`;
   }

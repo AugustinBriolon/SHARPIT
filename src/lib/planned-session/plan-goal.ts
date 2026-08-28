@@ -9,7 +9,9 @@ export function resolveDefaultPlanGoalId(
   planGoalId: string | null | undefined,
   selectableGoalIds: readonly string[],
 ): string | null {
-  if (!planGoalId) return null;
+  if (!planGoalId) {
+    return null;
+  }
   return selectableGoalIds.includes(planGoalId) ? planGoalId : null;
 }
 

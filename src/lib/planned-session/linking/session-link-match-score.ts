@@ -11,15 +11,20 @@ export function scorePlannedActivityMatch(
   const dayDiff = Math.abs(
     differenceInCalendarDays(startOfDay(session.date), startOfDay(activity.date)),
   );
-  if (dayDiff !== 0) return 0;
+  if (dayDiff !== 0) {
+    return 0;
+  }
 
   let score = 100;
-  if (session.durationMin != null && activity.duration != null && activity.duration > 0) {
+  if (session.durationMin !== null && activity.duration !== null && activity.duration > 0) {
     const plannedSec = session.durationMin * 60;
     const ratio =
       Math.abs(plannedSec - activity.duration) / Math.max(plannedSec, activity.duration);
-    if (ratio <= 0.15) score += 25;
-    else if (ratio <= 0.3) score += 10;
+    if (ratio <= 0.15) {
+      score += 25;
+    } else if (ratio <= 0.3) {
+      score += 10;
+    }
   }
   return score;
 }
@@ -32,15 +37,21 @@ export function formatActivityMatchLabel(
   const dayDiff = differenceInCalendarDays(startOfDay(activity.date), startOfDay(session.date));
 
   if (dayDiff !== 0) {
-    if (dayDiff === 1) return 'J+1';
-    if (dayDiff === -1) return 'J−1';
+    if (dayDiff === 1) {
+      return 'J+1';
+    }
+    if (dayDiff === -1) {
+      return 'J−1';
+    }
     return `J${dayDiff > 0 ? '+' : ''}${dayDiff}`;
   }
 
-  if (session.durationMin != null && activity.duration != null && activity.duration > 0) {
+  if (session.durationMin !== null && activity.duration !== null && activity.duration > 0) {
     const plannedSec = session.durationMin * 60;
     const deltaMin = Math.round(Math.abs(plannedSec - activity.duration) / 60);
-    if (deltaMin === 0) return 'Même jour · durée identique';
+    if (deltaMin === 0) {
+      return 'Même jour · durée identique';
+    }
     return `Même jour · Δ ${deltaMin} min`;
   }
 

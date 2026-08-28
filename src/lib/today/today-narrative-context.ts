@@ -42,9 +42,15 @@ export function hasPlannedSessionsToday(daySummary: TodayDaySummary): boolean {
 }
 
 function getDayPhase(hour: number): DayPhase {
-  if (hour >= LATE_HOUR) return 'night';
-  if (hour >= EVENING_HOUR) return 'evening';
-  if (hour >= 12) return 'afternoon';
+  if (hour >= LATE_HOUR) {
+    return 'night';
+  }
+  if (hour >= EVENING_HOUR) {
+    return 'evening';
+  }
+  if (hour >= 12) {
+    return 'afternoon';
+  }
   return 'morning';
 }
 
@@ -53,15 +59,23 @@ export function classifyTodayEffort(
   totalTss: number,
   totalDurationSec: number,
 ): TodayEffortLevel {
-  if (sessionCount >= 2 || totalTss >= 65 || totalDurationSec >= 5400) return 'high';
-  if (totalTss >= 30 || totalDurationSec >= 2700) return 'moderate';
+  if (sessionCount >= 2 || totalTss >= 65 || totalDurationSec >= 5400) {
+    return 'high';
+  }
+  if (totalTss >= 30 || totalDurationSec >= 2700) {
+    return 'moderate';
+  }
   return 'light';
 }
 
 function formatSportLabel(types: ActivityType[]): string {
   const labels = [...new Set(types.map((t) => activityTypeLabels[t]))];
-  if (labels.length === 1) return labels[0]!;
-  if (labels.length === 2) return labels.join(' + ');
+  if (labels.length === 1) {
+    return labels[0]!;
+  }
+  if (labels.length === 2) {
+    return labels.join(' + ');
+  }
   return `${types.length} sports`;
 }
 
@@ -73,7 +87,9 @@ export function buildTodayEffortSnapshot(
     .filter((a) => isSameDay(new Date(a.date), startOfDay(ref)))
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-  if (todayActs.length === 0) return null;
+  if (todayActs.length === 0) {
+    return null;
+  }
 
   const totalTss = todayActs.reduce((sum, a) => sum + (a.load ?? 0), 0);
   const totalDurationSec = todayActs.reduce((sum, a) => sum + (a.duration ?? 0), 0);
@@ -92,8 +108,10 @@ function plannedSportLabel(daySummary: TodayDaySummary): string {
   const types = daySummary.lines
     .filter((line) => line.kind === 'planned')
     .map((line) => line.plannedSession?.type)
-    .filter((t): t is ActivityType => t != null);
-  if (types.length > 0) return formatSportLabel(types);
+    .filter((t): t is ActivityType => t !== null);
+  if (types.length > 0) {
+    return formatSportLabel(types);
+  }
   return 'Séance';
 }
 
@@ -262,8 +280,14 @@ export function buildNarrativeFreshnessNote(
   }
 
   const hoursAgo = Math.round((now.getTime() - new Date(computedAt).getTime()) / (1000 * 60 * 60));
-  if (hoursAgo < 1) return "Mis à jour à l'instant";
-  if (hoursAgo === 1) return 'Mis à jour il y a 1 h';
-  if (hoursAgo <= 24) return `Mis à jour il y a ${hoursAgo} h`;
+  if (hoursAgo < 1) {
+    return "Mis à jour à l'instant";
+  }
+  if (hoursAgo === 1) {
+    return 'Mis à jour il y a 1 h';
+  }
+  if (hoursAgo <= 24) {
+    return `Mis à jour il y a ${hoursAgo} h`;
+  }
   return 'Basé sur hier';
 }

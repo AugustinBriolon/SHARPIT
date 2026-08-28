@@ -30,18 +30,22 @@ export function ContributionBars({
   limiterKey?: string | null;
 }) {
   const ranked = [...items].sort((a, b) => {
-    if (a.score == null) return 1;
-    if (b.score == null) return -1;
+    if (a.score === null) {
+      return 1;
+    }
+    if (b.score === null) {
+      return -1;
+    }
     return a.score - b.score;
   });
 
-  const weakest = ranked.find((item) => item.score != null)?.key ?? null;
+  const weakest = ranked.find((item) => item.score !== null)?.key ?? null;
 
   return (
     <ul className="space-y-2.5">
       {ranked.map((item) => {
         const isLimiter = item.key === (limiterKey ?? weakest);
-        const width = item.score != null ? Math.max(2, Math.min(100, item.score)) : 0;
+        const width = item.score !== null ? Math.max(2, Math.min(100, item.score)) : 0;
 
         return (
           <li key={item.key} className="space-y-1">
@@ -63,7 +67,7 @@ export function ContributionBars({
                   isLimiter ? 'text-signal-caution' : 'text-foreground/85',
                 )}
               >
-                {item.score != null ? Math.round(item.score) : '—'}
+                {item.score !== null ? Math.round(item.score) : '—'}
               </span>
             </div>
 

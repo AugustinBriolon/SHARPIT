@@ -11,7 +11,7 @@ export const INTEGRATION_CATALOG: Array<{
   badge?: 'recommended' | 'legacy';
 }> = PROVIDER_CATALOG.filter(
   (p): p is typeof p & { integrationId: IntegrationId } =>
-    p.status === 'available' && p.integrationId != null,
+    p.status === 'available' && p.integrationId !== null,
 ).map((p) => ({
   id: p.integrationId,
   name: p.name,
@@ -218,6 +218,8 @@ export function integrationConnectCta(integration: IntegrationDefinition): strin
 }
 
 export function integrationConnectBody(integration: IntegrationDefinition, idle: string): string {
-  if (!integration.needsReconnect) return idle;
+  if (!integration.needsReconnect) {
+    return idle;
+  }
   return `La connexion ${integration.name} a expiré. Reconnecte-la pour reprendre la synchro.`;
 }

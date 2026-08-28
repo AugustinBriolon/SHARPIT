@@ -34,30 +34,40 @@ type ProfileRow = {
 };
 
 function toIsoOrNull(value: Date | string | null | undefined): string | null {
-  if (value == null) return null;
-  if (typeof value === 'string') return value;
+  if (value === null) {
+    return null;
+  }
+  if (typeof value === 'string') {
+    return value;
+  }
   return value.toISOString();
+}
+
+function asNull<T>(value: T | null | undefined): T | null {
+  return value ?? null;
 }
 
 /** Map a Prisma / API athlete profile row into form-ready data. */
 export function mapAthleteProfileToFormData(
   profile: ProfileRow | null | undefined,
 ): AthleteProfileFormData | null {
-  if (!profile) return null;
+  if (!profile) {
+    return null;
+  }
   return {
-    heightCm: profile.heightCm ?? null,
+    heightCm: asNull(profile.heightCm),
     birthDate: birthDateToInput(profile.birthDate),
-    ftpW: profile.ftpW ?? null,
-    maxHr: profile.maxHr ?? null,
-    lthr: profile.lthr ?? null,
-    runThresholdPaceSecPerKm: profile.runThresholdPaceSecPerKm ?? null,
-    swimCssSecPer100m: profile.swimCssSecPer100m ?? null,
-    defaultPoolLengthM: profile.defaultPoolLengthM ?? null,
-    vo2maxRunning: profile.vo2maxRunning ?? null,
-    vo2maxCycling: profile.vo2maxCycling ?? null,
+    ftpW: asNull(profile.ftpW),
+    maxHr: asNull(profile.maxHr),
+    lthr: asNull(profile.lthr),
+    runThresholdPaceSecPerKm: asNull(profile.runThresholdPaceSecPerKm),
+    swimCssSecPer100m: asNull(profile.swimCssSecPer100m),
+    defaultPoolLengthM: asNull(profile.defaultPoolLengthM),
+    vo2maxRunning: asNull(profile.vo2maxRunning),
+    vo2maxCycling: asNull(profile.vo2maxCycling),
     thresholdsSyncedAt: toIsoOrNull(profile.thresholdsSyncedAt),
-    sleepTargetMinutes: profile.sleepTargetMinutes ?? null,
-    sleepBedtimeTargetMin: profile.sleepBedtimeTargetMin ?? null,
+    sleepTargetMinutes: asNull(profile.sleepTargetMinutes),
+    sleepBedtimeTargetMin: asNull(profile.sleepBedtimeTargetMin),
   };
 }
 
@@ -68,5 +78,5 @@ export function mapAthleteProfileToFormData(
 export function shouldHydrateProfileForm(
   initial: AthleteProfileFormData | null | undefined,
 ): initial is AthleteProfileFormData {
-  return initial != null;
+  return initial !== null;
 }

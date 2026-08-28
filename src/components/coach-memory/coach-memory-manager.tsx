@@ -41,9 +41,13 @@ export function CoachMemoryManager({ focusId = null }: { focusId?: string | null
   });
 
   useEffect(() => {
-    if (!focusId || !query.data?.entries.length) return;
+    if (!focusId || !query.data?.entries.length) {
+      return;
+    }
     const element = document.getElementById(`memory-${focusId}`);
-    if (!element) return;
+    if (!element) {
+      return;
+    }
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     element.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'center' });
   }, [focusId, query.data?.entries]);
@@ -59,7 +63,9 @@ export function CoachMemoryManager({ focusId = null }: { focusId?: string | null
   }
 
   async function handleSubmit(payload: Parameters<typeof create.mutateAsync>[0]) {
-    if (guardDisabled) return;
+    if (guardDisabled) {
+      return;
+    }
     try {
       if (editingEntry) {
         await update.mutateAsync({ id: editingEntry.id, payload });
@@ -76,7 +82,9 @@ export function CoachMemoryManager({ focusId = null }: { focusId?: string | null
   }
 
   async function confirmDelete() {
-    if (!deleteTarget || guardDisabled) return;
+    if (!deleteTarget || guardDisabled) {
+      return;
+    }
     try {
       await remove.mutateAsync(deleteTarget.id);
       toast.success('Entrée supprimée');

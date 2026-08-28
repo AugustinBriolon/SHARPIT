@@ -12,7 +12,9 @@ export function EffortStrainCompositionSection({
   composition: EffortStrainCompositionView;
   loading?: boolean;
 }) {
-  if (!loading && !composition.available) return null;
+  if (!loading && !composition.available) {
+    return null;
+  }
 
   return (
     <DrillDownSectionCard>
@@ -47,10 +49,10 @@ export function EffortStrainCompositionSection({
               </div>
               <div className="shrink-0 text-right">
                 {loading ? <SkeletonDataValue heightClassName="h-4" widthClassName="w-10" /> : null}
-                {!loading && row.available && row.load != null ? (
+                {!loading && row.available && row.load !== null ? (
                   <p className="text-data text-sm tabular-nums">{row.load}</p>
                 ) : null}
-                {!loading && !(row.available && row.load != null) ? (
+                {!loading && !(row.available && row.load !== null) ? (
                   <p className="text-muted-foreground/40 text-sm">—</p>
                 ) : null}
                 <p className="text-muted-foreground text-xs tracking-wide">Charge</p>

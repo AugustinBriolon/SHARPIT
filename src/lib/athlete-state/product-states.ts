@@ -39,10 +39,12 @@ export function productMessageForDomain(
   domain: AthleteStateDomain,
   freshness: FreshnessLevel,
 ): string | null {
-  if (freshness === 'fresh') return null;
+  if (freshness === 'fresh') {
+    return null;
+  }
   return MESSAGES[freshness][domain] ?? null;
 }
 
 export function pickPrimaryProductMessage(messages: Array<string | null>): string | null {
-  return messages.find((m) => m != null) ?? null;
+  return messages.find((m) => m !== null) ?? null;
 }

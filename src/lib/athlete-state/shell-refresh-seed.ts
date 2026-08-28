@@ -34,7 +34,9 @@ export function ensureShellAthleteRefresh(
   trainingDayId: string,
   options?: { minIntervalMs?: number },
 ): Promise<ShellRefreshSeed | null> {
-  if (inFlight) return inFlight;
+  if (inFlight) {
+    return inFlight;
+  }
 
   const minInterval = options?.minIntervalMs ?? 0;
   if (minInterval > 0 && lastStartedAtMs > 0 && Date.now() - lastStartedAtMs < minInterval) {
@@ -49,7 +51,9 @@ export function ensureShellAthleteRefresh(
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ source: 'app_shell' }),
       });
-      if (!res.ok) return null;
+      if (!res.ok) {
+        return null;
+      }
 
       const data = (await res.json()) as {
         athleteSnapshot?: unknown;
@@ -69,7 +73,7 @@ export function ensureShellAthleteRefresh(
       }
 
       let todayPresentation = data.todayPresentation ?? null;
-      if (data.presentationSkipped && todayPresentation == null) {
+      if (data.presentationSkipped && todayPresentation === null) {
         // Soft open: keep warm presentation cache; cold start falls through to GET.
         todayPresentation =
           queryClient.getQueryData<TodayViewModel>(queryKeys.presentationToday(trainingDayId)) ??

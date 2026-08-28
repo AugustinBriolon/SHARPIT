@@ -50,13 +50,14 @@ export function buildHikeOvernightSummary(
   },
 ): HikeOvernightSummary {
   const startAt = asDate(activity.date);
-  const durationSec = activity.duration != null && activity.duration > 0 ? activity.duration : null;
+  const durationSec =
+    activity.duration !== null && activity.duration > 0 ? activity.duration : null;
   const endAt =
-    durationSec != null ? new Date(startAt.getTime() + durationSec * 1000) : new Date(startAt);
+    durationSec !== null ? new Date(startAt.getTime() + durationSec * 1000) : new Date(startAt);
 
   const variant: 'overnight' | 'day' =
-    (durationSec != null && durationSec >= OVERNIGHT_DURATION_SEC) ||
-    (durationSec != null && crossesLocalMidnight(startAt, endAt))
+    (durationSec !== null && durationSec >= OVERNIGHT_DURATION_SEC) ||
+    (durationSec !== null && crossesLocalMidnight(startAt, endAt))
       ? 'overnight'
       : 'day';
 

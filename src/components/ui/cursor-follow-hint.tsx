@@ -32,10 +32,18 @@ export function placeCursorHint(
   const pad = 8;
   let left = x + gap;
   let top = y - height - gap;
-  if (left + width > viewport.w - pad) left = x - width - gap;
-  if (left < pad) left = pad;
-  if (top < pad) top = y + gap;
-  if (top + height > viewport.h - pad) top = Math.max(pad, viewport.h - height - pad);
+  if (left + width > viewport.w - pad) {
+    left = x - width - gap;
+  }
+  if (left < pad) {
+    left = pad;
+  }
+  if (top < pad) {
+    top = y + gap;
+  }
+  if (top + height > viewport.h - pad) {
+    top = Math.max(pad, viewport.h - height - pad);
+  }
   return { left, top };
 }
 
@@ -58,7 +66,9 @@ export function CursorFollowHint({ hint }: { hint: CursorHintState }) {
     setBox({ ...placed, ready: true });
   }, [hint]);
 
-  if (!hint || typeof document === 'undefined') return null;
+  if (!hint || typeof document === 'undefined') {
+    return null;
+  }
 
   return createPortal(
     <div

@@ -77,7 +77,9 @@ const DEFAULT_LEAF = 'CAT_CAMEL';
 
 function toMatch(leaf: string): GarminExerciseMatch | null {
   const entry = getGarminTaxonomyEntry(leaf);
-  if (!entry) return null;
+  if (!entry) {
+    return null;
+  }
   return {
     ref: { category: entry.category, exerciseName: entry.leaf },
     labelFr: entry.labelFr,
@@ -93,13 +95,21 @@ function toMatch(leaf: string): GarminExerciseMatch | null {
 export function resolveGarminExerciseFallback(rawLabel: string): GarminExerciseMatch | null {
   const { concepts, qualifiers } = parseExercisePhrase(rawLabel);
   const present = new Set([...concepts, ...qualifiers]);
-  if (present.size === 0) return null;
+  if (present.size === 0) {
+    return null;
+  }
 
   for (const rule of RULES) {
-    if (!rule.any.some((concept) => present.has(concept))) continue;
-    if (rule.requires && !rule.requires.every((concept) => present.has(concept))) continue;
+    if (!rule.any.some((concept) => present.has(concept))) {
+      continue;
+    }
+    if (rule.requires && !rule.requires.every((concept) => present.has(concept))) {
+      continue;
+    }
     const match = toMatch(rule.leaf);
-    if (match) return match;
+    if (match) {
+      return match;
+    }
   }
 
   return toMatch(DEFAULT_LEAF);

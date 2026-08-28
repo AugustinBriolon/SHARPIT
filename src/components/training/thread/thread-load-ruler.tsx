@@ -14,7 +14,9 @@ const STATE_READING: Record<RulerBar['state'], string> = {
 };
 
 function barReading(bar: RulerBar, mode: 'essential' | 'expert'): string {
-  if (bar.unmeasured) return 'séances faites, charge non mesurée';
+  if (bar.unmeasured) {
+    return 'séances faites, charge non mesurée';
+  }
   return `${formatTrainingLoad(bar.load, mode)} · ${STATE_READING[bar.state]}`;
 }
 
@@ -51,11 +53,15 @@ export function ThreadLoadRuler({
     activeIndex,
     onChange: (index) => {
       const bar = bars[index];
-      if (bar) onAnchorChange?.(bar.weekKey);
+      if (bar) {
+        onAnchorChange?.(bar.weekKey);
+      }
     },
   });
 
-  if (bars.length === 0) return null;
+  if (bars.length === 0) {
+    return null;
+  }
 
   const range = rulerRangeLabel(bars);
   const activeBar = bars[activeIndex];

@@ -19,13 +19,17 @@ async function autoLinkOneActivity(
     where: { id: activityId, athleteId },
     select: { id: true, type: true, date: true, duration: true },
   });
-  if (!activity) return null;
+  if (!activity) {
+    return null;
+  }
 
   const alreadyLinked = await prisma.plannedSession.findFirst({
     where: { activityId: activity.id },
     select: { id: true },
   });
-  if (alreadyLinked) return null;
+  if (alreadyLinked) {
+    return null;
+  }
 
   const day = startOfDay(activity.date);
   const candidates = await prisma.plannedSession.findMany({
@@ -45,7 +49,9 @@ async function autoLinkOneActivity(
     .sort((a, b) => b.score - a.score);
   const [best] = ranked;
 
-  if (!best) return null;
+  if (!best) {
+    return null;
+  }
 
   await linkPlannedSessionActivity(athleteId, best.s.id, activity.id);
   reservedSessionIds.add(best.s.id);
@@ -67,7 +73,9 @@ export async function autoLinkActivities(
 
   for (const activityId of activityIds) {
     const result = await autoLinkOneActivity(athleteId, activityId, reserved);
-    if (!result) continue;
+    if (!result) {
+      continue;
+    }
     sessionIds.push(result.sessionId);
   }
 
@@ -79,7 +87,9 @@ export async function analyzeLinkedPlannedSessions(
   athleteId: string,
   sessionIds: string[],
 ): Promise<number> {
-  if (!isCoachConfigured() || sessionIds.length === 0) return 0;
+  if (!isCoachConfigured() || sessionIds.length === 0) {
+    return 0;
+  }
 
   let analyzed = 0;
   for (const sessionId of sessionIds) {

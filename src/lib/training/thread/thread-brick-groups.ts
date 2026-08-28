@@ -1,8 +1,7 @@
 import type { ThreadEntry } from './thread-model';
 
 export type ThreadDayItem =
-  | { kind: 'single'; entry: ThreadEntry }
-  | { kind: 'brick'; id: string; entries: ThreadEntry[] };
+  { kind: 'single'; entry: ThreadEntry } | { kind: 'brick'; id: string; entries: ThreadEntry[] };
 
 /**
  * Groups a day's thread entries by brick, so an enchaînement's legs render as one

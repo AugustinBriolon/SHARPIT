@@ -95,7 +95,9 @@ function renderAdaptButtonContent(
       </>
     );
   }
-  if (offline) return offlineLabel;
+  if (offline) {
+    return offlineLabel;
+  }
   return (
     <>
       <ListRestart className="size-4" />
@@ -110,7 +112,9 @@ function renderApplyButtonContent(
   offline: boolean,
   offlineLabel: string,
 ) {
-  if (offline) return offlineLabel;
+  if (offline) {
+    return offlineLabel;
+  }
   if (applied) {
     return (
       <>
@@ -154,14 +158,18 @@ export function PlanAdapter({
 
   const sessionsById = useMemo(() => {
     const map = new Map<string, ClientPlannedSession>();
-    for (const s of plannedQuery.data ?? []) map.set(s.id, s);
+    for (const s of plannedQuery.data ?? []) {
+      map.set(s.id, s);
+    }
     return map;
   }, [plannedQuery.data]);
 
   const gateResults = useMemo(() => (result ? buildGateResultLookup(result) : new Map()), [result]);
 
   async function handleAdapt() {
-    if (guardDisabled) return;
+    if (guardDisabled) {
+      return;
+    }
     setApplyError(null);
     setApplied(false);
     setProgress(null);
@@ -180,14 +188,19 @@ export function PlanAdapter({
   function toggle(i: number) {
     setSelected((prev) => {
       const next = new Set(prev);
-      if (next.has(i)) next.delete(i);
-      else next.add(i);
+      if (next.has(i)) {
+        next.delete(i);
+      } else {
+        next.add(i);
+      }
       return next;
     });
   }
 
   function handleApply() {
-    if (guardDisabled || !result) return;
+    if (guardDisabled || !result) {
+      return;
+    }
     setApplyError(null);
     const changes = result.changes.filter((_, i) => selected.has(i));
     const ops: PlannedSessionBatchOp[] = [];
@@ -199,14 +212,28 @@ export function PlanAdapter({
       }
       if (c.action === 'MODIFY' && c.sessionId) {
         const data: Partial<PlannedSessionPayload> = {};
-        if (c.type) data.type = c.type;
-        if (c.intensity) data.intensity = c.intensity;
-        if (c.title != null) data.title = c.title;
-        if (c.description != null) data.description = c.description;
-        if (c.durationMin != null) data.durationMin = c.durationMin;
-        if (c.load != null) data.load = c.load;
-        if (c.date) data.date = new Date(`${c.date}T12:00:00`);
-        if (c.strengthPrescription != null || (c.type != null && c.type !== 'STRENGTH')) {
+        if (c.type) {
+          data.type = c.type;
+        }
+        if (c.intensity) {
+          data.intensity = c.intensity;
+        }
+        if (c.title !== null) {
+          data.title = c.title;
+        }
+        if (c.description !== null) {
+          data.description = c.description;
+        }
+        if (c.durationMin !== null) {
+          data.durationMin = c.durationMin;
+        }
+        if (c.load !== null) {
+          data.load = c.load;
+        }
+        if (c.date) {
+          data.date = new Date(`${c.date}T12:00:00`);
+        }
+        if (c.strengthPrescription !== null || (c.type !== null && c.type !== 'STRENGTH')) {
           const existing = sessionsById.get(c.sessionId);
           const strength = resolveStrengthFieldsForPersist({
             type: c.type ?? existing?.type ?? 'STRENGTH',
@@ -216,7 +243,7 @@ export function PlanAdapter({
           data.description = strength.description;
           data.strengthPrescription = strength.strengthPrescription;
         }
-        if (c.endurancePrescription != null) {
+        if (c.endurancePrescription !== null) {
           const existing = sessionsById.get(c.sessionId);
           const endurance = resolveEnduranceFieldsForPersist({
             type: c.type ?? existing?.type ?? 'RUN',
@@ -262,7 +289,9 @@ export function PlanAdapter({
       }
     }
 
-    if (ops.length === 0) return;
+    if (ops.length === 0) {
+      return;
+    }
 
     // Instant: one cache patch + one toast in applyBatch; close without awaiting network.
     setApplied(true);
@@ -333,8 +362,8 @@ export function PlanAdapter({
                 const fields = [
                   c.type ? activityTypeLabels[c.type] : null,
                   c.intensity ? intensityLabels[c.intensity] : null,
-                  c.durationMin != null ? `${c.durationMin} min` : null,
-                  c.load != null ? `${c.load} TSS` : null,
+                  c.durationMin !== null ? `${c.durationMin} min` : null,
+                  c.load !== null ? `${c.load} TSS` : null,
                 ]
                   .filter(Boolean)
                   .join(' · ');

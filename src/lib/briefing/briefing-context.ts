@@ -21,12 +21,16 @@ const TYPE_FR: Record<string, string> = {
 type ActivityWithMetrics = Awaited<ReturnType<typeof getActivities>>[number];
 
 function formatMin(seconds?: number | null): string {
-  if (!seconds) return '—';
+  if (!seconds) {
+    return '—';
+  }
   return `${Math.round(seconds / 60)} min`;
 }
 
 function formatPace(secPerKm?: number | null): string | null {
-  if (secPerKm == null || secPerKm <= 0) return null;
+  if (secPerKm === null || secPerKm <= 0) {
+    return null;
+  }
   const m = Math.floor(secPerKm / 60);
   const s = Math.round(secPerKm % 60);
   return `${m}:${s.toString().padStart(2, '0')}/km`;
@@ -34,37 +38,75 @@ function formatPace(secPerKm?: number | null): string | null {
 
 function relativeDayLabel(activityDate: Date, refDate: Date): string {
   const diff = differenceInCalendarDays(startOfDay(refDate), startOfDay(activityDate));
-  if (diff === 0) return "aujourd'hui";
-  if (diff === 1) return 'hier';
+  if (diff === 0) {
+    return "aujourd'hui";
+  }
+  if (diff === 1) {
+    return 'hier';
+  }
   return format(activityDate, 'EEE d MMM', { locale: fr });
 }
 
-function formatActivityLine(a: ActivityWithMetrics, refDate: Date): string {
+function formatRunMetricParts(runMetrics: ActivityWithMetrics['runMetrics']): string[] {
+  if (!runMetrics) {
+    return [];
+  }
   const parts: string[] = [];
-  if (a.runMetrics) {
-    if (a.runMetrics.distanceM) parts.push(`${(a.runMetrics.distanceM / 1000).toFixed(1)} km`);
-    const pace = formatPace(a.runMetrics.paceSecPerKm);
-    if (pace) parts.push(pace);
-    if (a.runMetrics.avgHr) parts.push(`${a.runMetrics.avgHr} bpm`);
+  if (runMetrics.distanceM) {
+    parts.push(`${(runMetrics.distanceM / 1000).toFixed(1)} km`);
   }
-  if (a.bikeMetrics) {
-    if (a.bikeMetrics.avgPower) parts.push(`${Math.round(a.bikeMetrics.avgPower)} W`);
-    if (a.bikeMetrics.tss) parts.push(`TSS ${Math.round(a.bikeMetrics.tss)}`);
+  const pace = formatPace(runMetrics.paceSecPerKm);
+  if (pace) {
+    parts.push(pace);
   }
-  if (a.swimMetrics?.distanceM) parts.push(`${a.swimMetrics.distanceM} m`);
+  if (runMetrics.avgHr) {
+    parts.push(`${runMetrics.avgHr} bpm`);
+  }
+  return parts;
+}
+
+function formatBikeMetricParts(bikeMetrics: ActivityWithMetrics['bikeMetrics']): string[] {
+  if (!bikeMetrics) {
+    return [];
+  }
+  const parts: string[] = [];
+  if (bikeMetrics.avgPower) {
+    parts.push(`${Math.round(bikeMetrics.avgPower)} W`);
+  }
+  if (bikeMetrics.tss) {
+    parts.push(`TSS ${Math.round(bikeMetrics.tss)}`);
+  }
+  return parts;
+}
+
+function formatActivityExtra(
+  a: ActivityWithMetrics,
+  parts: string[],
+  refDate: Date,
+): string {
   const time = format(new Date(a.date), 'HH:mm');
   const rel = relativeDayLabel(new Date(a.date), refDate);
-  const extra = [
+  return [
     `à ${time}`,
     `(${rel})`,
-    a.load != null ? `charge ${Math.round(a.load)}` : null,
-    a.rpe != null ? `RPE ${a.rpe}` : null,
+    a.load !== null ? `charge ${Math.round(a.load)}` : null,
+    a.rpe !== null ? `RPE ${a.rpe}` : null,
     a.feeling ? `ressenti ${a.feeling}` : null,
     parts.length ? parts.join(' · ') : null,
   ]
     .filter(Boolean)
     .join(' · ');
-  return `- ${TYPE_FR[a.type] ?? a.type}${a.title ? ` · ${a.title}` : ''} (${formatMin(a.duration)}) — ${extra}`;
+}
+
+function formatActivityLine(a: ActivityWithMetrics, refDate: Date): string {
+  const parts = [
+    ...formatRunMetricParts(a.runMetrics),
+    ...formatBikeMetricParts(a.bikeMetrics),
+    ...(a.swimMetrics?.distanceM ? [`${a.swimMetrics.distanceM} m`] : []),
+  ];
+  const extra = formatActivityExtra(a, parts, refDate);
+  const titleSuffix = a.title ? ` · ${a.title}` : '';
+  return `- ${TYPE_FR[a.type] ?? a.type}${titleSuffix} (${formatMin(a.duration)}) — ${extra}`;
 }
 
 export type BriefingDayContext = {
@@ -163,8 +205,14 @@ export async function briefingNeedsRegeneration(params: {
   latestSessionAt: Date | null;
 }): Promise<boolean> {
   const { briefingGeneratedAt, reasoningComputedAt, latestSessionAt } = params;
-  if (!briefingGeneratedAt) return true;
-  if (reasoningComputedAt && briefingGeneratedAt < reasoningComputedAt) return true;
-  if (latestSessionAt && latestSessionAt > briefingGeneratedAt) return true;
+  if (!briefingGeneratedAt) {
+    return true;
+  }
+  if (reasoningComputedAt && briefingGeneratedAt < reasoningComputedAt) {
+    return true;
+  }
+  if (latestSessionAt && latestSessionAt > briefingGeneratedAt) {
+    return true;
+  }
   return false;
 }

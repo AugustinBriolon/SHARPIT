@@ -96,11 +96,15 @@ function domainFreshness(
 /** Night proofs ready enough for a firm morning orientation. */
 export function nightEvidenceReady(snapshot: AthleteSnapshot): boolean {
   const garmin = snapshot.freshness.providers.find((p) => p.provider === 'garmin');
-  if (garmin?.connected && garmin.syncing) return false;
+  if (garmin?.connected && garmin.syncing) {
+    return false;
+  }
 
   for (const domain of ['sleep', 'recovery'] as const) {
     const level = domainFreshness(snapshot, domain);
-    if (level != null && BLOCKING_EVIDENCE.has(level)) return false;
+    if (level !== null && BLOCKING_EVIDENCE.has(level)) {
+      return false;
+    }
   }
 
   return true;
@@ -143,7 +147,7 @@ function sessionSide(
   return {
     intensityLabel: morningIntensityLabel(sessionType as ActivityType, intensity),
     durationMin,
-    load: load != null ? Math.round(load) : null,
+    load: load !== null ? Math.round(load) : null,
     description: description?.trim() || null,
   };
 }
@@ -183,7 +187,9 @@ export function resolveMorningOrientation(input: {
   /** Session id for client-only hold annotation. */
   clientHoldSessionId?: string | null;
 }): MorningOrientationResolved | null {
-  if (!isForwardAdvicePhase(input.phase)) return null;
+  if (!isForwardAdvicePhase(input.phase)) {
+    return null;
+  }
 
   const { snapshot, recalibration, clientHold, clientHoldSessionId } = input;
   const evidenceReady = nightEvidenceReady(snapshot);
@@ -264,7 +270,7 @@ export function resolveMorningOrientation(input: {
 
   const holdDecisionId = recalibration?.status === 'PRESENTED' ? recalibration.decisionId : null;
   // Firm actions only when there is something to decide — lonely "Tenir" is noise.
-  const showFirmActions = confirmEase != null || confirmIncrease != null;
+  const showFirmActions = confirmEase !== null || confirmIncrease !== null;
 
   return {
     phase: 'ORIENTATION_READY',

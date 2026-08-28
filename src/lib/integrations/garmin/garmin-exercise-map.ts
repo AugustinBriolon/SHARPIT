@@ -64,9 +64,13 @@ const GARMIN_CATEGORIES = [
 export function canonicalizeGarminExerciseRef(
   ref: GarminExerciseRef | null | undefined,
 ): GarminExerciseRef | null {
-  if (!ref?.exerciseName?.trim()) return null;
+  if (!ref?.exerciseName?.trim()) {
+    return null;
+  }
   const entry = getGarminTaxonomyEntry(ref.exerciseName.trim());
-  if (!entry) return null;
+  if (!entry) {
+    return null;
+  }
   return { category: entry.category, exerciseName: entry.leaf };
 }
 
@@ -281,11 +285,15 @@ const BY_CATALOG_ID: Readonly<Record<string, GarminExerciseRef>> = {
 
 function inferCategoryFromLeaf(exerciseName: string): string | null {
   // Workout catalog: STRETCH_* leaves belong to WARM_UP (not a STRETCH parent).
-  if (exerciseName.startsWith('STRETCH_')) return 'WARM_UP';
+  if (exerciseName.startsWith('STRETCH_')) {
+    return 'WARM_UP';
+  }
   let best: string | null = null;
   for (const cat of GARMIN_CATEGORIES) {
     if (exerciseName === cat || exerciseName.includes(cat)) {
-      if (!best || cat.length > best.length) best = cat;
+      if (!best || cat.length > best.length) {
+        best = cat;
+      }
     }
   }
   return best;
@@ -297,7 +305,9 @@ function matchFromRef(
   score: number,
 ): GarminExerciseMatch | null {
   const canon = canonicalizeGarminExerciseRef(ref);
-  if (!canon) return null;
+  if (!canon) {
+    return null;
+  }
   const entry = getGarminTaxonomyEntry(canon.exerciseName);
   return {
     ref: canon,
@@ -324,7 +334,9 @@ export function resolveGarminExerciseMatch(input: {
   }
 
   const key = normalizeExerciseKey(input.exercise);
-  if (!key) return null;
+  if (!key) {
+    return null;
+  }
 
   if (BY_LABEL[key]) {
     return matchFromRef(BY_LABEL[key], 'alias', 1);
@@ -342,13 +354,17 @@ export function resolveGarminExerciseMatch(input: {
       };
     }
     const category = inferCategoryFromLeaf(leaf);
-    if (category) return matchFromRef({ category, exerciseName: leaf }, 'exact', 1);
+    if (category) {
+      return matchFromRef({ category, exerciseName: leaf }, 'exact', 1);
+    }
   }
 
   const taxonomy = matchGarminTaxonomy(input.exercise);
   if (taxonomy) {
     const canon = canonicalizeGarminExerciseRef(taxonomy.ref);
-    if (canon) return { ...taxonomy, ref: canon };
+    if (canon) {
+      return { ...taxonomy, ref: canon };
+    }
   }
 
   // Never leave a prescribed exercise unmapped — an approximate watch step keeps
@@ -375,14 +391,22 @@ export function resolveGarminExerciseRef(input: {
 export function invertGarminExerciseLabelsFr(labels: Map<string, string>): Map<string, string> {
   const out = new Map<string, string>();
   for (const [propKey, frLabel] of labels) {
-    if (!propKey.startsWith('exercise_type_')) continue;
+    if (!propKey.startsWith('exercise_type_')) {
+      continue;
+    }
     const leaf = propKey.slice('exercise_type_'.length);
-    if (!leaf || leaf === 'UNKNOWN') continue;
+    if (!leaf || leaf === 'UNKNOWN') {
+      continue;
+    }
     const norm = normalizeExerciseKey(frLabel);
-    if (!norm) continue;
+    if (!norm) {
+      continue;
+    }
     // Prefer longer / more specific leaves when labels collide
     const prev = out.get(norm);
-    if (!prev || leaf.length > prev.length) out.set(norm, leaf);
+    if (!prev || leaf.length > prev.length) {
+      out.set(norm, leaf);
+    }
   }
   return out;
 }

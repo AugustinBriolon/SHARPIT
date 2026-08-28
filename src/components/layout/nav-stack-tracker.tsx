@@ -18,7 +18,9 @@ export function NavStackTracker(): null {
   const searchParams = useSearchParams();
 
   useEffect(() => {
-    if (!pathname) return;
+    if (!pathname) {
+      return;
+    }
     const search = searchParams?.toString() ?? '';
     const href = search ? `${pathname}?${search}` : pathname;
     const label = resolveRouteLabel(href);

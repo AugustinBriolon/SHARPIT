@@ -90,8 +90,12 @@ function resolveIdentity(activity: StoredActivityForSession): {
   source: RawSessionObservation['source'];
   externalId: string;
 } {
-  if (activity.garminId) return { source: 'GARMIN', externalId: activity.garminId };
-  if (activity.stravaId) return { source: 'STRAVA', externalId: activity.stravaId };
+  if (activity.garminId) {
+    return { source: 'GARMIN', externalId: activity.garminId };
+  }
+  if (activity.stravaId) {
+    return { source: 'STRAVA', externalId: activity.stravaId };
+  }
   return { source: 'MANUAL', externalId: `manual:activity:${activity.id}` };
 }
 
@@ -100,7 +104,9 @@ export function storedActivityToSession(
   options?: ActivityToSessionOptions,
 ): RawSessionObservation | null {
   const durationSec = positive(activity.duration);
-  if (!durationSec) return null;
+  if (!durationSec) {
+    return null;
+  }
 
   const sportType = SPORT_TYPE_BY_ACTIVITY_TYPE[activity.type];
 

@@ -4,6 +4,8 @@
  * unique combination.
  */
 export function reconnectSnoozeKey(providerNames: string[]): string {
-  if (providerNames.length === 0) return '';
+  if (providerNames.length === 0) {
+    return '';
+  }
   return `reconnect:${[...providerNames].sort().join(',')}`;
 }

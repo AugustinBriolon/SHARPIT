@@ -37,16 +37,20 @@ export function PhysioRail({
   className?: string;
 }) {
   const progress =
-    value == null || max <= 0 ? null : Math.max(0, Math.min(100, (value / max) * 100));
+    value === null || max <= 0 ? null : Math.max(0, Math.min(100, (value / max) * 100));
   let visibleProgress: number | null = progress;
-  if (progress != null && progress > 0) {
+  if (progress !== null && progress > 0) {
     visibleProgress = Math.max(progress, 7);
   }
   let markerColor = 'var(--color-signal-neutral)';
-  if (emphasis !== 'neutral' && progress != null) {
-    if (progress < 34) markerColor = 'var(--color-signal-risk)';
-    else if (progress < 67) markerColor = 'var(--color-signal-caution)';
-    else markerColor = 'var(--color-primary)';
+  if (emphasis !== 'neutral' && progress !== null) {
+    if (progress < 34) {
+      markerColor = 'var(--color-signal-risk)';
+    } else if (progress < 67) {
+      markerColor = 'var(--color-signal-caution)';
+    } else {
+      markerColor = 'var(--color-primary)';
+    }
   }
 
   const stops = variant === 'availability' ? AVAILABILITY_STOPS : INTENSITY_STOPS;
@@ -59,7 +63,7 @@ export function PhysioRail({
           size === 'slim' ? 'h-1' : 'h-1.5',
         )}
       >
-        {progress != null ? (
+        {progress !== null ? (
           <div
             className="absolute inset-y-0 left-0 rounded-full opacity-95"
             style={{
@@ -70,7 +74,7 @@ export function PhysioRail({
           />
         ) : null}
         <div className="absolute inset-0 rounded-full border border-black/6 dark:border-white/6" />
-        {progress != null ? (
+        {progress !== null ? (
           <div
             className="border-background absolute top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border"
             style={{

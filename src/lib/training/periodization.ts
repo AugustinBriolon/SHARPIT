@@ -45,7 +45,9 @@ interface PhaseBlock {
 
 /** Répartition des phases selon le nombre de semaines avant la course. */
 function distributePhases(totalWeeks: number): PhaseBlock[] {
-  if (totalWeeks <= 0) return [{ phase: 'RACE', weeks: 1 }];
+  if (totalWeeks <= 0) {
+    return [{ phase: 'RACE', weeks: 1 }];
+  }
 
   let taperWeeks: number;
   if (totalWeeks <= 6) {
@@ -89,9 +91,15 @@ function distributePhases(totalWeeks: number): PhaseBlock[] {
   }
 
   const blocks: PhaseBlock[] = [];
-  if (baseWeeks > 0) blocks.push({ phase: 'BASE', weeks: baseWeeks });
-  if (buildWeeks > 0) blocks.push({ phase: 'BUILD', weeks: buildWeeks });
-  if (peakWeeks > 0) blocks.push({ phase: 'PEAK', weeks: peakWeeks });
+  if (baseWeeks > 0) {
+    blocks.push({ phase: 'BASE', weeks: baseWeeks });
+  }
+  if (buildWeeks > 0) {
+    blocks.push({ phase: 'BUILD', weeks: buildWeeks });
+  }
+  if (peakWeeks > 0) {
+    blocks.push({ phase: 'PEAK', weeks: peakWeeks });
+  }
   blocks.push({ phase: 'TAPER', weeks: taperWeeks });
   blocks.push({ phase: 'RACE', weeks: raceWeeks });
   return blocks;
@@ -141,7 +149,9 @@ const PHASE_FOCUS: Record<PlanPhase, string> = {
 };
 
 function taperFactor(weekInTaper: number, totalTaper: number): number {
-  if (totalTaper <= 1) return 0.55;
+  if (totalTaper <= 1) {
+    return 0.55;
+  }
   const progress = weekInTaper / totalTaper;
   return 0.7 - progress * 0.35; // 70% → 35%
 }

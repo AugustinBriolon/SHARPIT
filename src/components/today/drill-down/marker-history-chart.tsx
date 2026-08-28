@@ -12,7 +12,9 @@ const PAD = 2;
 
 /** Same geometry `buildSparkPaths` uses, so the marker lands on the drawn line. */
 function positionOfIndex(index: number, count: number): number {
-  if (count <= 1) return 50;
+  if (count <= 1) {
+    return 50;
+  }
   return ((PAD + (index / (count - 1)) * (VIEW_W - PAD * 2)) / VIEW_W) * 100;
 }
 
@@ -26,8 +28,12 @@ function nearestReadable(points: MarkerHistoryPoint[], from: number): number | n
   for (let offset = 0; offset < points.length; offset += 1) {
     const before = from - offset;
     const after = from + offset;
-    if (before >= 0 && points[before]?.value != null) return before;
-    if (after < points.length && points[after]?.value != null) return after;
+    if (before >= 0 && points[before]?.value !== null) {
+      return before;
+    }
+    if (after < points.length && points[after]?.value !== null) {
+      return after;
+    }
   }
   return null;
 }
@@ -53,7 +59,7 @@ export function MarkerHistoryChart({
 }) {
   const values = useMemo(() => points.map((point) => point.value), [points]);
   const readable = useMemo(
-    () => values.filter((value): value is number => value != null),
+    () => values.filter((value): value is number => value !== null),
     [values],
   );
 
@@ -61,13 +67,15 @@ export function MarkerHistoryChart({
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
 
   const { line, area } = useMemo(() => buildSparkPaths(values, VIEW_W, VIEW_H), [values]);
-  if (!line || readable.length < 2) return null;
+  if (!line || readable.length < 2) {
+    return null;
+  }
 
   const low = Math.min(...readable);
   const high = Math.max(...readable);
 
   const activeIndex = hoverIndex ?? lastReadable;
-  const active = activeIndex != null ? points[activeIndex] : undefined;
+  const active = activeIndex !== null ? points[activeIndex] : undefined;
   const activeValue = active?.value ?? null;
 
   const moveTo = (index: number) => {
@@ -80,7 +88,7 @@ export function MarkerHistoryChart({
       <div className="text-muted-foreground flex items-baseline justify-between gap-3 text-xs">
         <span>{active?.label ?? '—'}</span>
         <span className="text-data text-foreground tabular-nums">
-          {activeValue != null ? `${activeValue} ${unit}` : 'Pas de mesure'}
+          {activeValue !== null ? `${activeValue} ${unit}` : 'Pas de mesure'}
         </span>
       </div>
 
@@ -108,7 +116,9 @@ export function MarkerHistoryChart({
         }}
         onPointerMove={(event) => {
           const bounds = event.currentTarget.getBoundingClientRect();
-          if (bounds.width <= 0) return;
+          if (bounds.width <= 0) {
+            return;
+          }
           const ratio = (event.clientX - bounds.left) / bounds.width;
           moveTo(Math.round(ratio * (points.length - 1)));
         }}
@@ -134,7 +144,7 @@ export function MarkerHistoryChart({
           />
         </svg>
 
-        {activeIndex != null && activeValue != null ? (
+        {activeIndex !== null && activeValue !== null ? (
           <>
             <div
               className="bg-primary/40 absolute inset-y-0 w-px"

@@ -42,7 +42,9 @@ export function humanizeToolErrorMessage(raw?: string | null): {
   debug: string | null;
 } {
   const trimmed = raw?.trim();
-  if (!trimmed) return { hint: null, debug: null };
+  if (!trimmed) {
+    return { hint: null, debug: null };
+  }
 
   const lower = trimmed.toLowerCase();
   if (lower === 'an error occurred.' || lower === 'an error occurred') {
@@ -56,7 +58,9 @@ export function humanizeToolErrorMessage(raw?: string | null): {
   }
 
   const looksFrench = /[àâäéèêëïîôùûüç]/i.test(trimmed);
-  if (looksFrench) return { hint: trimmed, debug: null };
+  if (looksFrench) {
+    return { hint: trimmed, debug: null };
+  }
 
   if (/^[a-z0-9\s.!?'",:-]+$/i.test(trimmed)) {
     return { hint: "L'opération n'a pas abouti", debug: trimmed };
@@ -80,7 +84,9 @@ export function isToolSuccess(part: ToolPartLite): boolean {
 }
 
 export function isToolFailure(part: ToolPartLite): boolean {
-  if (part.state === 'output-error') return true;
+  if (part.state === 'output-error') {
+    return true;
+  }
   if (part.state === 'output-available') {
     const output = part.output as SessionOutput | undefined;
     return output?.ok === false;
@@ -89,10 +95,14 @@ export function isToolFailure(part: ToolPartLite): boolean {
 }
 
 export function rawErrorFromPart(part: ToolPartLite): string | null {
-  if (part.state === 'output-error') return part.errorText?.trim() ?? null;
+  if (part.state === 'output-error') {
+    return part.errorText?.trim() ?? null;
+  }
   if (part.state === 'output-available') {
     const output = part.output as SessionOutput | undefined;
-    if (output?.ok === false) return output.error?.trim() ?? null;
+    if (output?.ok === false) {
+      return output.error?.trim() ?? null;
+    }
   }
   return null;
 }
@@ -103,7 +113,9 @@ export function failureHintForPart(part: ToolPartLite): {
 } {
   const raw = rawErrorFromPart(part);
   const humanized = humanizeToolErrorMessage(raw);
-  if (humanized.hint) return humanized;
+  if (humanized.hint) {
+    return humanized;
+  }
   return {
     hint: SUCCESS_DETAIL_GENERIC[part.type] ?? "L'opération n'a pas abouti",
     debug: raw,
@@ -136,7 +148,9 @@ function condenseFailures(failures: ToolPartLite[]): ToolDisplayEntry[] {
   }
 
   return [...groups.values()].map((group) => {
-    if (group.length === 1) return { kind: 'single' as const, part: group[0] };
+    if (group.length === 1) {
+      return { kind: 'single' as const, part: group[0] };
+    }
     const titles = group.map(sessionTitleFromPart).filter((t): t is string => Boolean(t));
     const { hint, debug } = failureHintForPart(group[0]);
     return {
@@ -177,7 +191,9 @@ export function condensedFailureLabel(
   entry: Extract<ToolDisplayEntry, { kind: 'condensed-failures' }>,
 ): string {
   const base = FAILURE_LABEL[entry.toolType] ?? 'Échec';
-  if (entry.count === 1) return base;
+  if (entry.count === 1) {
+    return base;
+  }
   if (entry.toolType === 'tool-createPlannedSession') {
     return `${entry.count} séances non ajoutées`;
   }

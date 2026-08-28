@@ -38,14 +38,16 @@ export async function backfillActivityObservedLocation(
     },
   });
 
-  if (!activity) return null;
+  if (!activity) {
+    return null;
+  }
 
   const streamData = activity.stream?.data as { latlng?: unknown } | null | undefined;
   const fromStream = streamData?.latlng ? midpointFromLatLng(streamData.latlng) : null;
 
   if (fromStream) {
     const stored =
-      activity.observedLocationLat != null && activity.observedLocationLng != null
+      activity.observedLocationLat !== null && activity.observedLocationLng !== null
         ? {
             latitude: activity.observedLocationLat,
             longitude: activity.observedLocationLng,
@@ -75,7 +77,7 @@ export async function backfillActivityObservedLocation(
     return { label, latitude: fromStream.latitude, longitude: fromStream.longitude };
   }
 
-  if (activity.observedLocationLat != null && activity.observedLocationLng != null) {
+  if (activity.observedLocationLat !== null && activity.observedLocationLng !== null) {
     const coords = {
       latitude: activity.observedLocationLat,
       longitude: activity.observedLocationLng,

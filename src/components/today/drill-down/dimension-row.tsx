@@ -13,7 +13,9 @@ function resolveColorScore(
   score: number | null,
   higherIsWorse?: boolean,
 ): number | null {
-  if (!available || score === null) return null;
+  if (!available || score === null) {
+    return null;
+  }
   return higherIsWorse ? 100 - score : score;
 }
 

@@ -17,7 +17,9 @@ const OAUTH_COOKIE_OPTS = {
 
 export async function GET(request: NextRequest) {
   const bindRedirect = redirectIfBindHost(request);
-  if (bindRedirect) return bindRedirect;
+  if (bindRedirect) {
+    return bindRedirect;
+  }
 
   if (!isGoogleConfigured()) {
     return NextResponse.json(

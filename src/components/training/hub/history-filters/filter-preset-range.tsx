@@ -14,8 +14,12 @@ function getVisualState(
   selected: number[],
   presets: readonly number[],
 ): VisualState {
-  if (selected.includes(value)) return 'selected';
-  if (presetsInScope(selected, presets).includes(value)) return 'in-scope';
+  if (selected.includes(value)) {
+    return 'selected';
+  }
+  if (presetsInScope(selected, presets).includes(value)) {
+    return 'in-scope';
+  }
   return 'idle';
 }
 

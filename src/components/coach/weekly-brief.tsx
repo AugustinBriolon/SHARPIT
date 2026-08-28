@@ -88,7 +88,7 @@ export function WeeklyBrief({ onClose }: { onClose: () => void }) {
                   {[
                     vm.goalContext.horizonLabel,
                     vm.goalContext.targetDateLabel,
-                    vm.goalContext.daysToGo != null ? `J-${vm.goalContext.daysToGo}` : null,
+                    vm.goalContext.daysToGo !== null ? `J-${vm.goalContext.daysToGo}` : null,
                   ]
                     .filter(Boolean)
                     .join(' · ')}
@@ -100,7 +100,7 @@ export function WeeklyBrief({ onClose }: { onClose: () => void }) {
               <Section title="Charge planifiée vs. tolérée">
                 <p>
                   {formatTrainingLoad(vm.load.plannedLoad, mode)} planifiés
-                  {vm.load.toleratedCeiling != null
+                  {vm.load.toleratedCeiling !== null
                     ? ` sur ~${formatTrainingLoad(vm.load.toleratedCeiling, mode)} tolérés`
                     : ''}
                 </p>

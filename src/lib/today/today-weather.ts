@@ -52,7 +52,9 @@ export function toWeatherHours(predictions: EnvironmentalPrediction[]): WeatherH
     .flatMap((prediction) => {
       const data = readWeatherMeasurements(prediction);
       const at = prediction.targetAt ? new Date(prediction.targetAt) : null;
-      if (!data || !at || Number.isNaN(at.getTime())) return [];
+      if (!data || !at || Number.isNaN(at.getTime())) {
+        return [];
+      }
       return [
         {
           at,
@@ -67,7 +69,9 @@ export function toWeatherHours(predictions: EnvironmentalPrediction[]): WeatherH
 }
 
 function mean(values: number[]): number | null {
-  if (values.length === 0) return null;
+  if (values.length === 0) {
+    return null;
+  }
   return values.reduce((sum, value) => sum + value, 0) / values.length;
 }
 
@@ -89,10 +93,14 @@ export function selectTodayWeather(
     const time = hour.at.getTime();
     return time >= dayStart && time <= dayEnd;
   });
-  if (today.length === 0) return null;
+  if (today.length === 0) {
+    return null;
+  }
 
-  const withTemp = today.filter((hour) => hour.airTemperatureC != null);
-  if (withTemp.length === 0) return null;
+  const withTemp = today.filter((hour) => hour.airTemperatureC !== null);
+  if (withTemp.length === 0) {
+    return null;
+  }
 
   const nearest = withTemp.reduce((best, hour) =>
     Math.abs(hour.at.getTime() - now.getTime()) < Math.abs(best.at.getTime() - now.getTime())
@@ -105,7 +113,7 @@ export function selectTodayWeather(
 
   const precipitations = forCondition
     .map((hour) => hour.precipitationMm)
-    .filter((value): value is number => value != null);
+    .filter((value): value is number => value !== null);
 
   return {
     tempC: nearest.airTemperatureC as number,
@@ -115,12 +123,12 @@ export function selectTodayWeather(
       avgCloudCoverPct: mean(
         forCondition
           .map((hour) => hour.cloudCoverPct)
-          .filter((value): value is number => value != null),
+          .filter((value): value is number => value !== null),
       ),
       avgSolarRadiationWm2: mean(
         forCondition
           .map((hour) => hour.solarRadiationWm2)
-          .filter((value): value is number => value != null),
+          .filter((value): value is number => value !== null),
       ),
     }),
   };
@@ -139,7 +147,9 @@ export function nameWeatherLocation(location: { label?: string | null; source: s
   locationKnown: boolean;
 } {
   const city = location.label?.trim();
-  if (!city || location.source === 'default') return { city: '', locationKnown: false };
+  if (!city || location.source === 'default') {
+    return { city: '', locationKnown: false };
+  }
   return { city: formatCityFromLocationLabel(city), locationKnown: true };
 }
 
@@ -160,7 +170,9 @@ export async function loadTodayWeather(
     });
 
     const selected = selectTodayWeather(toWeatherHours(predictions), new Date());
-    if (!selected) return null;
+    if (!selected) {
+      return null;
+    }
 
     return {
       ...nameWeatherLocation(location),

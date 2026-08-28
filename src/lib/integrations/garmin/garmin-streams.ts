@@ -46,13 +46,17 @@ interface GarminDetailsBody {
 }
 
 function unwrapGarminDetails(raw: unknown): GarminDetailsBody | null {
-  if (!raw || typeof raw !== 'object') return null;
+  if (!raw || typeof raw !== 'object') {
+    return null;
+  }
   const obj = raw as Record<string, unknown>;
   if (Array.isArray(obj.activityDetailMetrics) || Array.isArray(obj.metricDescriptors)) {
     return obj as GarminDetailsBody;
   }
   for (const value of Object.values(obj)) {
-    if (!value || typeof value !== 'object') continue;
+    if (!value || typeof value !== 'object') {
+      continue;
+    }
     const nested = value as GarminDetailsBody;
     if (Array.isArray(nested.activityDetailMetrics) || Array.isArray(nested.metricDescriptors)) {
       return nested;
@@ -64,15 +68,19 @@ function unwrapGarminDetails(raw: unknown): GarminDetailsBody | null {
 function metricIndexMap(descriptors: MetricDescriptor[]): Map<string, number> {
   const map = new Map<string, number>();
   for (const d of descriptors) {
-    if (d.key != null && d.metricsIndex != null) map.set(d.key, d.metricsIndex);
+    if (d.key !== null && d.metricsIndex !== null) {
+      map.set(d.key, d.metricsIndex);
+    }
   }
   return map;
 }
 
 function numAt(metrics: Array<number | null>, idx: number | undefined): number | null {
-  if (idx == null || idx < 0 || idx >= metrics.length) return null;
+  if (idx === null || idx < 0 || idx >= metrics.length) {
+    return null;
+  }
   const v = metrics[idx];
-  return v != null && Number.isFinite(v) ? v : null;
+  return v !== null && Number.isFinite(v) ? v : null;
 }
 
 function buildFromPolyline(polyline: PolylinePoint[]): RawStreams {
@@ -87,12 +95,16 @@ function buildFromPolyline(polyline: PolylinePoint[]): RawStreams {
   for (const p of polyline) {
     const { lat } = p;
     const lon = p.lng ?? p.lon;
-    if (lat == null || lon == null) continue;
+    if (lat === null || lon === null) {
+      continue;
+    }
 
     latlng.push([lat, lon]);
 
-    if (p.time != null) {
-      if (t0 == null) t0 = p.time;
+    if (p.time !== null) {
+      if (t0 === null) {
+        t0 = p.time;
+      }
       const sec = p.time > 1_000_000_000_000 ? (p.time - t0) / 1000 : p.time - t0;
       time.push(Math.max(0, sec));
     } else {
@@ -140,7 +152,9 @@ export function parseGarminDetailsToRawStreams(details: GarminDetailsBody): RawS
 
   if (rows.length === 0) {
     const poly = details.geoPolylineDTO?.polyline ?? [];
-    if (poly.length > 1) return buildFromPolyline(poly);
+    if (poly.length > 1) {
+      return buildFromPolyline(poly);
+    }
     return null;
   }
 
@@ -159,8 +173,10 @@ export function parseGarminDetailsToRawStreams(details: GarminDetailsBody): RawS
     const m = row.metrics ?? [];
 
     const ts = numAt(m, tsIdx);
-    if (ts != null) {
-      if (t0 == null) t0 = ts;
+    if (ts !== null) {
+      if (t0 === null) {
+        t0 = ts;
+      }
       const sec = ts > 1_000_000_000_000 ? (ts - t0) / 1000 : ts - (t0 ?? 0);
       time.push(Math.max(0, Math.round(sec)));
     } else {
@@ -179,7 +195,9 @@ export function parseGarminDetailsToRawStreams(details: GarminDetailsBody): RawS
 
     const lat = numAt(m, latIdx);
     const lon = numAt(m, lonIdx);
-    if (lat != null && lon != null) latlng.push([lat, lon]);
+    if (lat !== null && lon !== null) {
+      latlng.push([lat, lon]);
+    }
   }
 
   if (latlng.length === 0) {
@@ -187,7 +205,9 @@ export function parseGarminDetailsToRawStreams(details: GarminDetailsBody): RawS
     for (const p of poly) {
       const { lat } = p;
       const lon = p.lng ?? p.lon;
-      if (lat != null && lon != null) latlng.push([lat, lon]);
+      if (lat !== null && lon !== null) {
+        latlng.push([lat, lon]);
+      }
     }
   }
 
@@ -195,7 +215,7 @@ export function parseGarminDetailsToRawStreams(details: GarminDetailsBody): RawS
 }
 
 export function rawStreamsHaveSignal(raw: RawStreams): boolean {
-  const has = (arr: number[]) => arr.length > 0 && arr.some((v) => v != null && v !== 0);
+  const has = (arr: number[]) => arr.length > 0 && arr.some((v) => v !== null && v !== 0);
   return (
     raw.latlng.length > 0 ||
     has(raw.heartrate) ||
@@ -217,8 +237,12 @@ export async function fetchGarminActivityStreams(
       params: { maxChartSize: '2000', maxPolylineSize: '4000' },
     });
     const details = unwrapGarminDetails(raw);
-    if (!details) return null;
-    if (details.detailsAvailable === false) return null;
+    if (!details) {
+      return null;
+    }
+    if (details.detailsAvailable === false) {
+      return null;
+    }
     return parseGarminDetailsToRawStreams(details);
   } catch {
     return null;
@@ -239,9 +263,15 @@ export async function fetchGarminActivityWeather(
       windSpeed?: number;
     };
     const parts: string[] = [];
-    if (raw.weatherTypeDTO?.desc) parts.push(raw.weatherTypeDTO.desc);
-    if (raw.temp != null) parts.push(`${Math.round(raw.temp)}°C`);
-    if (raw.windSpeed != null) parts.push(`vent ${Math.round(raw.windSpeed)} km/h`);
+    if (raw.weatherTypeDTO?.desc) {
+      parts.push(raw.weatherTypeDTO.desc);
+    }
+    if (raw.temp !== null) {
+      parts.push(`${Math.round(raw.temp)}°C`);
+    }
+    if (raw.windSpeed !== null) {
+      parts.push(`vent ${Math.round(raw.windSpeed)} km/h`);
+    }
     return parts.length ? parts.join(' · ') : null;
   } catch {
     return null;

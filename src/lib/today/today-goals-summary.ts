@@ -22,13 +22,15 @@ function goalSortKey(goal: ClientGoal): [number, number, number] {
   const priorityRank =
     goal.kind === GoalKind.RACE && goal.priority ? PRIORITY_RANK[goal.priority] : 9;
   const days = daysUntil(goal.targetDate ? new Date(goal.targetDate) : null);
-  const dateRank = days != null && days >= 0 ? days : 9999;
+  const dateRank = days !== null && days >= 0 ? days : 9999;
   return [kindRank, priorityRank, dateRank];
 }
 
 function formatMetricDetail(goal: ClientGoal): string | null {
   const config = parseGoalMetricConfig(goal.metricKey);
-  if (goal.currentValue == null || goal.targetValue == null) return null;
+  if (goal.currentValue === null || goal.targetValue === null) {
+    return null;
+  }
 
   const current = formatGoalDisplayValue(goal.currentValue, goal.unit, config);
   const target = formatGoalDisplayValue(goal.targetValue, goal.unit, config);
@@ -37,7 +39,9 @@ function formatMetricDetail(goal: ClientGoal): string | null {
 
 function formatGoalBadge(goal: ClientGoal): string | null {
   const days = daysUntil(goal.targetDate ? new Date(goal.targetDate) : null);
-  if (days == null) return null;
+  if (days === null) {
+    return null;
+  }
   return days >= 0 ? `J-${days}` : `J+${Math.abs(days)}`;
 }
 
@@ -74,7 +78,9 @@ export function selectTodayGoals(goals: ClientGoal[], max = 3): TodayGoalLine[] 
       const ka = goalSortKey(a);
       const kb = goalSortKey(b);
       for (let i = 0; i < ka.length; i += 1) {
-        if (ka[i] !== kb[i]) return ka[i] - kb[i];
+        if (ka[i] !== kb[i]) {
+          return ka[i] - kb[i];
+        }
       }
       return a.title.localeCompare(b.title, 'fr');
     })

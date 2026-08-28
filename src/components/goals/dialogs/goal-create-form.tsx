@@ -40,7 +40,9 @@ const RADIO_FOCUS =
   'focus-visible:ring-primary/35 focus-visible:ring-2 focus-visible:outline-hidden';
 
 function getPriorityLabel(priority: string): string {
-  if (priority === NO_PRIORITY) return 'Non définie';
+  if (priority === NO_PRIORITY) {
+    return 'Non définie';
+  }
   const p = priority as GoalPriority;
   return `${priorityLabels[p]} — ${priorityDescriptions[p]}`;
 }
@@ -84,7 +86,9 @@ export function GoalCreateForm({
 
   function selectVariantAt(index: number) {
     const option = CREATE_VARIANTS[index];
-    if (!option) return;
+    if (!option) {
+      return;
+    }
     setVariant(option.id);
     focusVariant(index);
   }

@@ -19,7 +19,9 @@ function ChartTooltip({
   active?: boolean;
   payload?: Array<{ payload: PowerCurvePoint }>;
 }) {
-  if (!active || !payload?.length) return null;
+  if (!active || !payload?.length) {
+    return null;
+  }
   const point = payload[0].payload;
   return (
     <div className="analysis-panel rounded-analysis px-3 py-2 text-xs shadow-none">

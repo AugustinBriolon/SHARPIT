@@ -24,15 +24,21 @@ export function buildActivityRecordLabels(
   records: RecordsPayload | null | undefined,
 ): Map<string, string> {
   const labels = new Map<string, string>();
-  if (!records) return labels;
+  if (!records) {
+    return labels;
+  }
 
   const claim = (activityId: string | null, label: string) => {
-    if (activityId && !labels.has(activityId)) labels.set(activityId, label);
+    if (activityId && !labels.has(activityId)) {
+      labels.set(activityId, label);
+    }
   };
 
   for (const category of records.runBests) {
     const best = category.entries.find((entry) => entry.rank === 1);
-    if (best) claim(best.activityId, `Record ${category.label}`);
+    if (best) {
+      claim(best.activityId, `Record ${category.label}`);
+    }
   }
 
   for (const point of records.powerCurve) {
@@ -42,7 +48,9 @@ export function buildActivityRecordLabels(
   for (const categories of [records.prs.run, records.prs.bike, records.prs.swim]) {
     for (const category of categories) {
       const best = category.entries.find((entry) => entry.rank === 1);
-      if (best) claim(best.activityId, PR_BADGE_LABELS[category.key] ?? 'Record');
+      if (best) {
+        claim(best.activityId, PR_BADGE_LABELS[category.key] ?? 'Record');
+      }
     }
   }
 

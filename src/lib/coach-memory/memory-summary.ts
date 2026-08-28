@@ -26,7 +26,7 @@ const ABBREVIATIONS = new Set([
 
 function endsWithAbbreviation(text: string): boolean {
   const match = /(\p{L}+)\.$/u.exec(text.trimEnd());
-  return match != null && ABBREVIATIONS.has(match[1].toLowerCase());
+  return match !== null && ABBREVIATIONS.has(match[1].toLowerCase());
 }
 
 /**
@@ -40,7 +40,7 @@ function splitIntoSentences(paragraph: string): string[] {
 
   for (const fragment of fragments) {
     const previous = sentences.at(-1);
-    if (previous != null && endsWithAbbreviation(previous)) {
+    if (previous !== null && endsWithAbbreviation(previous)) {
       sentences[sentences.length - 1] = `${previous} ${fragment}`;
     } else {
       sentences.push(fragment);
@@ -64,7 +64,9 @@ export function parseDurablePreferences(profileContext: string): string[] {
     .map((line) => line.replace(/^\s*[-•*]\s*/, '').trim())
     .filter((line) => line.length > 0);
 
-  if (lines.length !== 1) return lines;
+  if (lines.length !== 1) {
+    return lines;
+  }
   return splitIntoSentences(lines[0]);
 }
 
@@ -91,7 +93,9 @@ function describeEntry(entry: CoachMemoryEntry): string {
     entry.trainingConstraint !== 'FULL'
       ? travelTrainingConstraintLabel(entry.trainingConstraint)
       : null;
-  if (constraint) text += ` — ${constraint.toLowerCase()}`;
+  if (constraint) {
+    text += ` — ${constraint.toLowerCase()}`;
+  }
 
   return text;
 }
@@ -113,7 +117,9 @@ export function buildCoachMemorySummary({
   const durableCount = parseDurablePreferences(profileContext).length;
   const active = entries.filter((entry) => entry.isActive);
 
-  if (durableCount === 0 && active.length === 0) return null;
+  if (durableCount === 0 && active.length === 0) {
+    return null;
+  }
 
   const sentences: string[] = [];
 

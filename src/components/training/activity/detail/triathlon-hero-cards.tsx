@@ -31,7 +31,9 @@ const kindToActivityType: Record<'swim' | 'bike' | 'run', ActivityType> = {
 type SportLeg = MultisportLeg & { kind: 'swim' | 'bike' | 'run' };
 
 function formatLegPace(leg: SportLeg): string | null {
-  if (leg.avgSpeedMs == null || leg.avgSpeedMs <= 0) return null;
+  if (leg.avgSpeedMs === null || leg.avgSpeedMs <= 0) {
+    return null;
+  }
   switch (leg.kind) {
     case 'swim':
       return formatSwimPace(100 / leg.avgSpeedMs);
@@ -49,9 +51,15 @@ function SportCard({ leg }: { leg: SportLeg }) {
   const sportType = kindToActivityType[leg.kind];
   const pace = formatLegPace(leg);
   const subParts: string[] = [];
-  if (pace) subParts.push(pace);
-  if (leg.avgHr != null) subParts.push(`FC ${leg.avgHr}`);
-  if (leg.elevationM != null && leg.elevationM > 0) subParts.push(`D+${leg.elevationM} m`);
+  if (pace) {
+    subParts.push(pace);
+  }
+  if (leg.avgHr !== null) {
+    subParts.push(`FC ${leg.avgHr}`);
+  }
+  if (leg.elevationM !== null && leg.elevationM > 0) {
+    subParts.push(`D+${leg.elevationM} m`);
+  }
 
   return (
     <div
@@ -72,10 +80,10 @@ function SportCard({ leg }: { leg: SportLeg }) {
         <p className={cn('text-label', SPORT_IDENTITY_TEXT[sportType])}>{leg.label}</p>
       </div>
       <p className="font-mono text-2xl font-semibold tabular-nums">
-        {leg.distanceM != null ? formatDistance(leg.distanceM) : formatDuration(leg.durationSec)}
+        {leg.distanceM !== null ? formatDistance(leg.distanceM) : formatDuration(leg.durationSec)}
       </p>
       <p className="text-muted-foreground mt-1 font-mono text-sm tabular-nums">
-        {leg.distanceM != null ? formatDuration(leg.durationSec) : null}
+        {leg.distanceM !== null ? formatDuration(leg.durationSec) : null}
       </p>
       {subParts.length > 0 && (
         <p className="text-muted-foreground mt-2 text-xs">{subParts.join(' · ')}</p>
@@ -89,7 +97,9 @@ export function TriathlonHeroCards({ legs }: { legs: MultisportLeg[] }) {
   const transitions = transitionLegs(legs);
   const transitionTotal = totalTransitionSec(legs);
 
-  if (sportLegs.length === 0) return null;
+  if (sportLegs.length === 0) {
+    return null;
+  }
 
   return (
     <div className="space-y-3">
@@ -111,7 +121,7 @@ export function TriathlonHeroCards({ legs }: { legs: MultisportLeg[] }) {
             >
               <span className="text-muted-foreground text-xs">{leg.label}</span>
               <span className="font-medium">{formatDuration(legDisplayDurationSec(leg))}</span>
-              {leg.movingDurationSec != null &&
+              {leg.movingDurationSec !== null &&
                 leg.movingDurationSec > 0 &&
                 leg.movingDurationSec < leg.durationSec && (
                   <span className="text-muted-foreground text-xs">

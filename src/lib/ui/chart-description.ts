@@ -22,7 +22,7 @@ export type ChartSeries = {
 };
 
 function definedValues(points: readonly ChartSeriesPoint[]): number[] {
-  return points.map((p) => p.value).filter((v): v is number => v != null);
+  return points.map((p) => p.value).filter((v): v is number => v !== null);
 }
 
 function formatValue(value: number, unit?: string): string {
@@ -32,8 +32,12 @@ function formatValue(value: number, unit?: string): string {
 
 /** Direction between the first and last reading — the shape of the line. */
 function trendWord(first: number, last: number): string {
-  if (last > first) return 'en hausse';
-  if (last < first) return 'en baisse';
+  if (last > first) {
+    return 'en hausse';
+  }
+  if (last < first) {
+    return 'en baisse';
+  }
   return 'stable';
 }
 
@@ -43,10 +47,12 @@ function trendWord(first: number, last: number): string {
  */
 export function describeChartSeries(series: ChartSeries): string {
   const values = definedValues(series.points);
-  if (values.length === 0) return `${series.name} : aucune donnée.`;
+  if (values.length === 0) {
+    return `${series.name} : aucune donnée.`;
+  }
 
-  const first = series.points.find((p) => p.value != null)!;
-  const last = [...series.points].reverse().find((p) => p.value != null)!;
+  const first = series.points.find((p) => p.value !== null)!;
+  const last = [...series.points].reverse().find((p) => p.value !== null)!;
   const min = Math.min(...values);
   const max = Math.max(...values);
 

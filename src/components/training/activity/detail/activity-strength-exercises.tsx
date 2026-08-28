@@ -37,7 +37,9 @@ export function ActivityStrengthExercises({
   const [pushing, setPushing] = useState(false);
 
   async function sendToWatch() {
-    if (pushing || sets.length === 0) return;
+    if (pushing || sets.length === 0) {
+      return;
+    }
     setPushing(true);
     const loadingToast = toast.loading('Envoi vers Garmin…');
     try {
@@ -128,7 +130,7 @@ export function ActivityStrengthExercises({
                       </span>
                       <span className="text-muted-foreground flex items-center gap-2 text-xs">
                         {volume > 0 && <span className="font-mono">{Math.round(volume)} kg</span>}
-                        {set.rpe != null && (
+                        {set.rpe !== null && (
                           <span className="border-border rounded-full border px-2 py-0.5 font-mono">
                             RPE {set.rpe}
                           </span>

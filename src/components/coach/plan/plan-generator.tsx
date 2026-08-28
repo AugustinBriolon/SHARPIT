@@ -69,7 +69,9 @@ function renderGenerateButtonContent(
       </>
     );
   }
-  if (offline) return offlineLabel;
+  if (offline) {
+    return offlineLabel;
+  }
   return (
     <>
       <CalendarPlus className="size-4" />
@@ -102,7 +104,9 @@ export function PlanGenerator({ startDate, onClose }: PlanGeneratorProps) {
 
   const planWeek = useMemo(() => {
     const active = planQuery.data;
-    if (!active?.weeks?.length) return null;
+    if (!active?.weeks?.length) {
+      return null;
+    }
     const blockStart = startDate ? parseISO(startDate) : new Date();
     const ws = format(startOfWeek(blockStart, WEEK_OPTS), 'yyyy-MM-dd');
     return active.weeks.find((w) => format(new Date(w.weekStart), 'yyyy-MM-dd') === ws);
@@ -121,12 +125,16 @@ export function PlanGenerator({ startDate, onClose }: PlanGeneratorProps) {
   // Inherit active macro-plan goal so « Remplir ma semaine » stamps goalId on insert.
   useEffect(() => {
     const fromPlan = resolveDefaultPlanGoalId(planQuery.data?.goalId, selectableGoalIds);
-    if (!fromPlan) return;
+    if (!fromPlan) {
+      return;
+    }
     setGoalId((current) => (current === NO_GOAL ? fromPlan : current));
   }, [planQuery.data?.goalId, selectableGoalIds]);
 
   async function handleGenerate() {
-    if (guardDisabled) return;
+    if (guardDisabled) {
+      return;
+    }
     setProgress(null);
     const result = await coachPlan.mutateAsync({
       days: Number(days),
@@ -150,15 +158,20 @@ export function PlanGenerator({ startDate, onClose }: PlanGeneratorProps) {
   function toggle(index: number) {
     setSelected((prev) => {
       const next = new Set(prev);
-      if (next.has(index)) next.delete(index);
-      else next.add(index);
+      if (next.has(index)) {
+        next.delete(index);
+      } else {
+        next.add(index);
+      }
       return next;
     });
   }
 
   /** Instant UX: optimistic batch + close immediately; toast comes from the mutation. */
   function handleInsert() {
-    if (guardDisabled || !plan || selected.size === 0) return;
+    if (guardDisabled || !plan || selected.size === 0) {
+      return;
+    }
     const payloads = plan.sessions
       .filter((_, i) => selected.has(i))
       .map((s) => {

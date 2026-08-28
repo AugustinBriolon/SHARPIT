@@ -19,9 +19,15 @@ export function getApprovalStatusLabel(status: ApprovalCardStatus): string {
 }
 
 export function getApprovalStatusIconClass(status: ApprovalCardStatus): string {
-  if (status === 'rejected') return 'text-signal-risk';
-  if (status === 'changes-requested' || status === 'pending') return 'text-signal-caution';
-  if (status === 'submitting') return 'text-muted-foreground';
+  if (status === 'rejected') {
+    return 'text-signal-risk';
+  }
+  if (status === 'changes-requested' || status === 'pending') {
+    return 'text-signal-caution';
+  }
+  if (status === 'submitting') {
+    return 'text-muted-foreground';
+  }
   return 'text-foreground';
 }
 
@@ -29,6 +35,8 @@ export function getApprovalStatusBadgeClass(status: ApprovalCardStatus): string 
   if (status === 'pending' || status === 'changes-requested') {
     return 'border-signal-caution/30 text-signal-caution';
   }
-  if (status === 'rejected') return 'border-signal-risk/30 text-signal-risk';
+  if (status === 'rejected') {
+    return 'border-signal-risk/30 text-signal-risk';
+  }
   return 'border-border text-muted-foreground';
 }

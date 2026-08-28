@@ -65,7 +65,9 @@ const DOMAIN_CAUTION: Record<string, ProjectedAthleteCaution> = {
 };
 
 function limitingFactorDomainLabel(domain: string | null): string | null {
-  if (!domain) return null;
+  if (!domain) {
+    return null;
+  }
   const labels: Record<string, string> = {
     RECOVERY: 'récupération',
     FATIGUE: 'fatigue',
@@ -83,9 +85,13 @@ export function buildProjectionTrajectory(state: ProjectedAthleteState): string 
   const tsbEnd = days[days.length - 1]?.load.tsb ?? state.anchor.tsb;
 
   let opener: string;
-  if (tsbEnd >= 5) opener = 'Ta forme devrait remonter';
-  else if (tsbEnd <= -15) opener = "La fatigue risque de s'accumuler";
-  else opener = 'La charge devrait rester équilibrée';
+  if (tsbEnd >= 5) {
+    opener = 'Ta forme devrait remonter';
+  } else if (tsbEnd <= -15) {
+    opener = "La fatigue risque de s'accumuler";
+  } else {
+    opener = 'La charge devrait rester équilibrée';
+  }
 
   if (summary.peakReadinessDay) {
     opener += ` d'ici ${localDateLabel(summary.peakReadinessDay)}`;

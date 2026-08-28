@@ -24,11 +24,11 @@ const TERMINAL_TOOL_STATES = new Set(['output-available', 'output-error', 'outpu
 const PENDING_APPROVAL_STATES = new Set(['approval-requested', 'approval-responded']);
 
 export function isTerminalToolState(state: string | undefined): boolean {
-  return state != null && TERMINAL_TOOL_STATES.has(state);
+  return state !== null && TERMINAL_TOOL_STATES.has(state);
 }
 
 export function isPendingApprovalToolState(state: string | undefined): boolean {
-  return state != null && PENDING_APPROVAL_STATES.has(state);
+  return state !== null && PENDING_APPROVAL_STATES.has(state);
 }
 
 /**
@@ -38,18 +38,28 @@ export function isPendingApprovalToolState(state: string | undefined): boolean {
  * the step has a response.
  */
 export function isStaleCalendarToolPart(part: ToolPartLite, streamIdle: boolean): boolean {
-  if (!streamIdle || !CALENDAR_MUTATION_TOOL_TYPES.has(part.type)) return false;
-  if (isTerminalToolState(part.state)) return false;
-  if (isPendingApprovalToolState(part.state)) return false;
+  if (!streamIdle || !CALENDAR_MUTATION_TOOL_TYPES.has(part.type)) {
+    return false;
+  }
+  if (isTerminalToolState(part.state)) {
+    return false;
+  }
+  if (isPendingApprovalToolState(part.state)) {
+    return false;
+  }
   return true;
 }
 
 export function collectPendingApprovals(messages: UIMessage[]): ToolPartLite[] {
   const pending: ToolPartLite[] = [];
   for (const message of messages) {
-    if (message.role !== 'assistant') continue;
+    if (message.role !== 'assistant') {
+      continue;
+    }
     for (const part of message.parts) {
-      if (!part.type.startsWith('tool-')) continue;
+      if (!part.type.startsWith('tool-')) {
+        continue;
+      }
       const toolPart = part as ToolPartLite;
       if (
         toolPart.state === 'approval-requested' &&
@@ -65,12 +75,20 @@ export function collectPendingApprovals(messages: UIMessage[]): ToolPartLite[] {
 
 export function hasUnresolvedCalendarTools(messages: UIMessage[]): boolean {
   for (const message of messages) {
-    if (message.role !== 'assistant') continue;
+    if (message.role !== 'assistant') {
+      continue;
+    }
     for (const part of message.parts) {
-      if (!part.type.startsWith('tool-')) continue;
+      if (!part.type.startsWith('tool-')) {
+        continue;
+      }
       const toolPart = part as ToolPartLite;
-      if (!CALENDAR_MUTATION_TOOL_TYPES.has(toolPart.type)) continue;
-      if (!isTerminalToolState(toolPart.state)) return true;
+      if (!CALENDAR_MUTATION_TOOL_TYPES.has(toolPart.type)) {
+        continue;
+      }
+      if (!isTerminalToolState(toolPart.state)) {
+        return true;
+      }
     }
   }
   return false;
@@ -79,14 +97,22 @@ export function hasUnresolvedCalendarTools(messages: UIMessage[]): boolean {
 /** Marque les propositions calendrier non finalisées comme refusées (nouvelle demande utilisateur). */
 export function dismissUnresolvedCalendarTools(messages: UIMessage[]): UIMessage[] {
   return messages.map((message) => {
-    if (message.role !== 'assistant') return message;
+    if (message.role !== 'assistant') {
+      return message;
+    }
     return {
       ...message,
       parts: message.parts.map((part) => {
-        if (!part.type.startsWith('tool-')) return part;
+        if (!part.type.startsWith('tool-')) {
+          return part;
+        }
         const toolPart = part as ToolPartLite;
-        if (!CALENDAR_MUTATION_TOOL_TYPES.has(toolPart.type)) return part;
-        if (isTerminalToolState(toolPart.state)) return part;
+        if (!CALENDAR_MUTATION_TOOL_TYPES.has(toolPart.type)) {
+          return part;
+        }
+        if (isTerminalToolState(toolPart.state)) {
+          return part;
+        }
 
         const approvalId = toolPart.approval?.id ?? `dismissed-${toolPart.type}`;
         return {

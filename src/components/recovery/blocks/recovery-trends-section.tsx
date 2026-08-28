@@ -75,7 +75,9 @@ function MiniSparkline({
           <YAxis domain={['auto', 'auto']} hide />
           <Tooltip
             content={({ active, payload }) => {
-              if (!active || !payload?.[0]) return null;
+              if (!active || !payload?.[0]) {
+                return null;
+              }
               const pt = payload[0].payload as SparkPoint;
               return (
                 <ChartTooltipCard>
@@ -87,7 +89,7 @@ function MiniSparkline({
               );
             }}
           />
-          {baselineLow != null && baselineHigh != null && (
+          {baselineLow !== null && baselineHigh !== null && (
             <ReferenceArea
               fill={CHART_RECOVERY_STROKE}
               fillOpacity={0.12}
@@ -120,7 +122,9 @@ function DualSparkline({
   unitB: string;
 }) {
   const hasData = data.some((d) => d.a !== null || d.b !== null);
-  if (!hasData) return <p className="text-muted-foreground text-sm">Pas de données</p>;
+  if (!hasData) {
+    return <p className="text-muted-foreground text-sm">Pas de données</p>;
+  }
 
   return (
     <div className="space-y-2">
@@ -155,7 +159,9 @@ function DualSparkline({
           <YAxis domain={['auto', 'auto']} hide />
           <Tooltip
             content={({ active, payload }) => {
-              if (!active || !payload?.length) return null;
+              if (!active || !payload?.length) {
+                return null;
+              }
               const pt = payload[0]?.payload as {
                 date: string;
                 a: number | null;
@@ -215,7 +221,7 @@ export function RecoveryTrendsSection({
             label="VFC"
             unit="ms"
           />
-          {baselineLow != null && baselineHigh != null && (
+          {baselineLow !== null && baselineHigh !== null && (
             <p className="text-muted-foreground mt-1 text-xs">
               Zone = norme personnelle ({baselineLow}–{baselineHigh} ms)
             </p>

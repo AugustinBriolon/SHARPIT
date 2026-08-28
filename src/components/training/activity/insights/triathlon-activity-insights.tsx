@@ -89,7 +89,9 @@ function ZoneSection({
     );
   }
 
-  if (blocks.length === 0) return null;
+  if (blocks.length === 0) {
+    return null;
+  }
   return <div className={cn('grid gap-4', blocks.length > 1 && 'lg:grid-cols-2')}>{blocks}</div>;
 }
 
@@ -120,7 +122,7 @@ function SportLegInsights({ entry }: { entry: MultisportLegStream }) {
   const runSplits = analysis?.run?.splits ?? [];
   const bikeSplits = analysis?.bike?.splits ?? [];
 
-  const showMap = path != null && path.length > 1;
+  const showMap = path !== null && path.length > 1;
 
   return (
     <div className="space-y-5">
@@ -131,9 +133,9 @@ function SportLegInsights({ entry }: { entry: MultisportLegStream }) {
         <div>
           <p className="text-muted-foreground text-sm">{header.description}</p>
           <p className="text-muted-foreground mt-1 font-mono text-xs tabular-nums">
-            {leg.distanceM != null && <span>{formatDistance(leg.distanceM)} · </span>}
+            {leg.distanceM !== null && <span>{formatDistance(leg.distanceM)} · </span>}
             {formatDuration(leg.durationSec)}
-            {leg.avgHr != null && <span> · FC {leg.avgHr}</span>}
+            {leg.avgHr !== null && <span> · FC {leg.avgHr}</span>}
           </p>
         </div>
       </div>
@@ -220,7 +222,7 @@ export function TriathlonActivityInsights({ activityId }: { activityId: string }
 
   const legs = data?.legs ?? [];
   let effectiveKey: string | null = null;
-  if (selectedKey != null && legs.some((entry) => legKey(entry) === selectedKey)) {
+  if (selectedKey !== null && legs.some((entry) => legKey(entry) === selectedKey)) {
     effectiveKey = selectedKey;
   } else if (legs[0]) {
     effectiveKey = legKey(legs[0]);

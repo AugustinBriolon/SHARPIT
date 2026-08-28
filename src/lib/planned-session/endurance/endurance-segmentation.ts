@@ -86,7 +86,9 @@ function sampleAtTime(
 ): { sample: StreamSample; index: number } {
   for (let i = fromIndex; i < samples.length; i += 1) {
     const sample = samples[i] as StreamSample;
-    if (sample.t >= seconds) return { sample, index: i };
+    if (sample.t >= seconds) {
+      return { sample, index: i };
+    }
   }
   const index = samples.length - 1;
   return { sample: samples[index] as StreamSample, index };
@@ -100,7 +102,9 @@ function sampleAtDistance(
 ): { sample: StreamSample; index: number } | null {
   for (let i = fromIndex; i < samples.length; i += 1) {
     const sample = samples[i] as StreamSample;
-    if (sample.d >= metres) return { sample, index: i };
+    if (sample.d >= metres) {
+      return { sample, index: i };
+    }
   }
   return null;
 }
@@ -112,15 +116,20 @@ function sampleAtDistance(
  */
 function lapShareSeconds(steps: readonly PrescribedStepRef[], last: StreamSample): number {
   const lapCount = steps.filter((ref) => ref.step.duration.type === 'lap').length;
-  if (lapCount === 0) return 0;
+  if (lapCount === 0) {
+    return 0;
+  }
 
   const avgSpeed = last.t > 0 && last.d > 0 ? last.d / last.t : 0;
 
   let accounted = 0;
   for (const ref of steps) {
     const { duration } = ref.step;
-    if (duration.type === 'time') accounted += duration.seconds;
-    else if (duration.type === 'distance' && avgSpeed > 0) accounted += duration.meters / avgSpeed;
+    if (duration.type === 'time') {
+      accounted += duration.seconds;
+    } else if (duration.type === 'distance' && avgSpeed > 0) {
+      accounted += duration.meters / avgSpeed;
+    }
   }
 
   return Math.max(0, (last.t - accounted) / lapCount);
@@ -139,7 +148,9 @@ export function segmentEnduranceActivity(input: {
 }): EnduranceSegmentation | null {
   const steps = flattenEnduranceSteps(input.prescription);
   const last = lastSample(input.samples);
-  if (steps.length === 0 || !last || last.t <= 0) return null;
+  if (steps.length === 0 || !last || last.t <= 0) {
+    return null;
+  }
 
   const lapShare = lapShareSeconds(steps, last);
   const segments: StepSegment[] = [];
@@ -196,7 +207,9 @@ export function segmentEnduranceActivity(input: {
     cursorIndex = end.index;
   }
 
-  if (segments.length < steps.length) truncated = true;
+  if (segments.length < steps.length) {
+    truncated = true;
+  }
 
   const lastSegment = segments[segments.length - 1];
   const residualSec = lastSegment ? Math.max(0, Math.round(last.t - lastSegment.endSec)) : 0;

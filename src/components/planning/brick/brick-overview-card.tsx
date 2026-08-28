@@ -46,9 +46,7 @@ export function BrickOverviewCard({
         <Layers className="text-primary size-4 shrink-0" aria-hidden />
         <span className="flex min-w-0 flex-1 flex-col gap-0.5">
           <span className="flex min-w-0 items-center gap-1.5">
-            <span className="text-foreground truncate text-sm font-medium">
-              Brick · {sequence}
-            </span>
+            <span className="text-foreground truncate text-sm font-medium">Brick · {sequence}</span>
             {badge ? (
               <span className="border-primary/40 text-primary text-data w-fit shrink-0 rounded-full border px-2 py-0.5 text-[10px]">
                 {badge}
@@ -82,7 +80,7 @@ export function BrickOverviewCard({
               <span className="min-w-0 flex-1">
                 <span className="text-foreground block truncate text-sm">{leg.title}</span>
                 <span className="text-muted-foreground flex flex-wrap items-center gap-x-1.5 text-xs">
-                  {leg.durationMin != null ? (
+                  {leg.durationMin !== null ? (
                     <span className="tabular-nums">{formatPlannedDuration(leg.durationMin)}</span>
                   ) : null}
                   {leg.intensity ? (

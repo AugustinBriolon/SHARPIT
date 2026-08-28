@@ -51,7 +51,9 @@ export function TravelContextBanner({
     queryKey: queryKeys.travelContext,
     queryFn: async (): Promise<TravelContextResponse> => {
       const res = await fetch('/api/travel-context');
-      if (!res.ok) throw new Error('travel context fetch failed');
+      if (!res.ok) {
+        throw new Error('travel context fetch failed');
+      }
       return res.json();
     },
     staleTime: 60_000,
@@ -67,7 +69,9 @@ export function TravelContextBanner({
     return filterTravelsOverlappingRange(pool, from, to);
   }, [query.data, rangeEnd, rangeStart]);
 
-  if (travels.length === 0) return null;
+  if (travels.length === 0) {
+    return null;
+  }
 
   const primary = travels[0]!;
   const title = primary.label?.trim() || primary.locationLabel || 'Déplacement';

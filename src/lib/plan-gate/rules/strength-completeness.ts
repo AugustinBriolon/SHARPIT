@@ -12,7 +12,9 @@ export const strengthCompletenessRule: PlanGateRule = (
   _context: GateContext,
   proposal: GateProposal,
 ): RuleFinding[] => {
-  if (proposal.type !== 'STRENGTH') return [];
+  if (proposal.type !== 'STRENGTH') {
+    return [];
+  }
 
   if (!proposal.strengthPrescription || proposal.strengthPrescription.sets.length === 0) {
     return [
@@ -30,7 +32,9 @@ export const strengthCompletenessRule: PlanGateRule = (
     durationMin: proposal.durationMin,
     prescription: proposal.strengthPrescription,
   });
-  if (!audit || audit.verdict === 'ok') return [];
+  if (!audit || audit.verdict === 'ok') {
+    return [];
+  }
 
   return [
     {

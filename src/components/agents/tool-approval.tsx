@@ -18,9 +18,15 @@ function approvalStatusIcon(
   if (busy) {
     return <LoaderCircle className={cn('size-4', !reduce && 'animate-spin')} />;
   }
-  if (error) return <CircleAlert className="size-4" />;
-  if (status === 'denied') return <X className="size-4" />;
-  if (status === 'approved' || status === 'complete') return <Check className="size-4" />;
+  if (error) {
+    return <CircleAlert className="size-4" />;
+  }
+  if (status === 'denied') {
+    return <X className="size-4" />;
+  }
+  if (status === 'approved' || status === 'complete') {
+    return <Check className="size-4" />;
+  }
   return <ShieldCheck className="size-4" />;
 }
 
@@ -55,12 +61,24 @@ export interface ToolApprovalProps {
 }
 
 function getStatusCopy(status: ToolApprovalStatus) {
-  if (status === 'approving') return 'Approving';
-  if (status === 'approved') return 'Approved';
-  if (status === 'denied') return 'Denied';
-  if (status === 'running') return 'Running';
-  if (status === 'complete') return 'Completed';
-  if (status === 'error') return 'Failed';
+  if (status === 'approving') {
+    return 'Approving';
+  }
+  if (status === 'approved') {
+    return 'Approved';
+  }
+  if (status === 'denied') {
+    return 'Denied';
+  }
+  if (status === 'running') {
+    return 'Running';
+  }
+  if (status === 'complete') {
+    return 'Completed';
+  }
+  if (status === 'error') {
+    return 'Failed';
+  }
   return 'Approval required';
 }
 
@@ -114,7 +132,9 @@ export function ToolApproval({
   const currentOpen = open ?? internalOpen;
   const setOpen = useCallback(
     (next: boolean) => {
-      if (open === undefined) setInternalOpen(next);
+      if (open === undefined) {
+        setInternalOpen(next);
+      }
       onOpenChange?.(next);
     },
     [onOpenChange, open],

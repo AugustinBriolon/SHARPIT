@@ -303,7 +303,9 @@ export function ActionSwapButton({
   const hasIcon = items.some((item) => item.icon);
   const nextItem = cycle && items.length > 0 ? items[(activeIndex + 1) % items.length] : undefined;
 
-  if (!activeItem) return null;
+  if (!activeItem) {
+    return null;
+  }
 
   const accessibleLabel =
     activeItem.ariaLabel ??
@@ -325,8 +327,12 @@ export function ActionSwapButton({
       )}
       onClick={(event) => {
         onClick?.(event);
-        if (event.defaultPrevented || disabled || !cycle || !nextItem) return;
-        if (value === undefined) setInternalValue(nextItem.id);
+        if (event.defaultPrevented || disabled || !cycle || !nextItem) {
+          return;
+        }
+        if (value === undefined) {
+          setInternalValue(nextItem.id);
+        }
         onValueChange?.(nextItem.id, nextItem);
       }}
       {...rest}

@@ -114,7 +114,9 @@ function HikeSelectionConfirmBar({
     setMounted(true);
   }, []);
 
-  if (!mounted) return null;
+  if (!mounted) {
+    return null;
+  }
 
   // Portal to body so fixed escapes the scroll shell. Width tracks the main column
   // (sidebar w-60 on lg) with the same horizontal gutters as AppShell content.
@@ -192,7 +194,9 @@ export function TrainingList() {
 
   useEffect(() => {
     return () => {
-      if (urlSyncTimerRef.current) clearTimeout(urlSyncTimerRef.current);
+      if (urlSyncTimerRef.current) {
+        clearTimeout(urlSyncTimerRef.current);
+      }
     };
   }, []);
 
@@ -221,7 +225,7 @@ export function TrainingList() {
   const hasLinkableHikes = useMemo(
     () =>
       filtered.some(
-        (activity) => activity.type === ActivityType.HIKE && activity.hikeTripId == null,
+        (activity) => activity.type === ActivityType.HIKE && activity.hikeTripId === null,
       ),
     [filtered],
   );
@@ -230,7 +234,9 @@ export function TrainingList() {
 
   function toggleSelectionMode() {
     setSelectionMode((active) => {
-      if (active) setSelectedIds(new Set());
+      if (active) {
+        setSelectedIds(new Set());
+      }
       return !active;
     });
   }
@@ -238,8 +244,11 @@ export function TrainingList() {
   function toggleActivitySelection(activityId: string) {
     setSelectedIds((prev) => {
       const next = new Set(prev);
-      if (next.has(activityId)) next.delete(activityId);
-      else next.add(activityId);
+      if (next.has(activityId)) {
+        next.delete(activityId);
+      } else {
+        next.add(activityId);
+      }
       return next;
     });
   }
@@ -254,7 +263,9 @@ export function TrainingList() {
 
   function setFilters(nextFilters: TrainingHistoryFilters) {
     setOptimisticFilters(nextFilters);
-    if (urlSyncTimerRef.current) clearTimeout(urlSyncTimerRef.current);
+    if (urlSyncTimerRef.current) {
+      clearTimeout(urlSyncTimerRef.current);
+    }
     urlSyncTimerRef.current = setTimeout(() => {
       startTransition(() => {
         const query = serializeTrainingHistoryFilters(nextFilters).toString();

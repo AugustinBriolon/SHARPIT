@@ -24,8 +24,12 @@ import {
 } from '@/core/physical-health/legacy-mapping';
 
 function legacyConfidenceFromCheckins(count: number): number {
-  if (count >= 3) return 0.75;
-  if (count > 0) return 0.6;
+  if (count >= 3) {
+    return 0.75;
+  }
+  if (count > 0) {
+    return 0.6;
+  }
   return 0.45;
 }
 
@@ -83,15 +87,17 @@ export type MigrationReportRow = {
 function peakSeverity(note: LegacyPhysicalNote): number | null {
   const values = [
     note.severity,
-    ...note.checkins.map((c) => c.severity).filter((s): s is number => s != null),
-  ].filter((s): s is number => s != null);
+    ...note.checkins.map((c) => c.severity).filter((s): s is number => s !== null),
+  ].filter((s): s is number => s !== null);
 
   return values.length > 0 ? Math.max(...values) : null;
 }
 
 function lastObservationAt(note: LegacyPhysicalNote): Date | null {
   const dates = note.checkins.map((c) => c.date);
-  if (dates.length === 0) return note.updatedAt;
+  if (dates.length === 0) {
+    return note.updatedAt;
+  }
   return new Date(Math.max(...dates.map((d) => d.getTime())));
 }
 
@@ -217,7 +223,7 @@ export function migrateLegacyPhysicalNote(
       legacyPhysicalCheckinId: checkin.id,
     });
 
-    if (checkin.severity != null) {
+    if (checkin.severity !== null) {
       functionalCapacities.push({
         id: idFactory('fc'),
         conditionId,
@@ -262,12 +268,16 @@ export function extractReassessmentsFromPlannedSessions(
   const result: LegacySessionReassessment[] = [];
 
   for (const session of sessions) {
-    if (!session.analysis || typeof session.analysis !== 'object') continue;
+    if (!session.analysis || typeof session.analysis !== 'object') {
+      continue;
+    }
     const analysis = session.analysis as {
       physicalReassessments?: Array<{ noteId: string }>;
     };
     const items = analysis.physicalReassessments ?? [];
-    if (items.length === 0) continue;
+    if (items.length === 0) {
+      continue;
+    }
 
     result.push({
       plannedSessionId: session.id,

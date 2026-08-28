@@ -15,11 +15,11 @@ export function RecoveryStatsStrip({
     <DrillDownStatsStrip
       loading={loading}
       items={[
-        { label: 'VFC', value: hrv != null ? `${hrv}` : '—', sub: 'ms' },
-        { label: 'FC repos', value: restingHr != null ? `${restingHr}` : '—', sub: 'bpm' },
+        { label: 'VFC', value: hrv !== null ? `${hrv}` : '—', sub: 'ms' },
+        { label: 'FC repos', value: restingHr !== null ? `${restingHr}` : '—', sub: 'bpm' },
         {
           label: 'Batterie',
-          value: bodyBattery != null ? `${bodyBattery}` : '—',
+          value: bodyBattery !== null ? `${bodyBattery}` : '—',
           sub: 'énergie',
         },
       ]}

@@ -13,7 +13,9 @@ import { cn } from '@/lib/utils';
 export function InstallCard() {
   const { kind, visible, install, dismiss } = useInstallPrompt();
 
-  if (!visible) return null;
+  if (!visible) {
+    return null;
+  }
 
   return (
     <div

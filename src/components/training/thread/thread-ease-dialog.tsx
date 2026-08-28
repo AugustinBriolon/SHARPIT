@@ -58,15 +58,15 @@ export function ThreadEaseDialog({
       ? describeStrengthEase(strengthBefore, proposal.strengthPrescription)
       : [];
 
-  const durationBefore = session.durationMin != null ? `${session.durationMin} min` : '—';
-  const durationAfter = proposal?.durationMin != null ? `${proposal.durationMin} min` : '—';
-  const loadBefore = session.load != null ? formatTrainingLoad(session.load, mode) : '—';
-  const loadAfter = proposal?.load != null ? formatTrainingLoad(proposal.load, mode) : '—';
+  const durationBefore = session.durationMin !== null ? `${session.durationMin} min` : '—';
+  const durationAfter = proposal?.durationMin !== null ? `${proposal.durationMin} min` : '—';
+  const loadBefore = session.load !== null ? formatTrainingLoad(session.load, mode) : '—';
+  const loadAfter = proposal?.load !== null ? formatTrainingLoad(proposal.load, mode) : '—';
 
   const changesDuration =
-    proposal?.durationMin != null && proposal.durationMin !== session.durationMin;
+    proposal?.durationMin !== null && proposal.durationMin !== session.durationMin;
   const changesLoad =
-    proposal?.load != null && Math.round(proposal.load) !== Math.round(session.load ?? 0);
+    proposal?.load !== null && Math.round(proposal.load) !== Math.round(session.load ?? 0);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -161,7 +161,7 @@ export function ThreadEaseDialog({
             Annuler
           </Button>
           <Button
-            disabled={proposal == null}
+            disabled={proposal === null}
             type="button"
             onClick={() => {
               onConfirm();

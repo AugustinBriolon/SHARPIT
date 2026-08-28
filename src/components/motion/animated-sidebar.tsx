@@ -132,8 +132,9 @@ function getMobileSnapshot() {
 function mergeRefs<T>(...refs: Array<Ref<T> | undefined>) {
   return (node: T | null) => {
     for (const ref of refs) {
-      if (typeof ref === 'function') ref(node);
-      else if (ref && typeof ref === 'object') {
+      if (typeof ref === 'function') {
+        ref(node);
+      } else if (ref && typeof ref === 'object') {
         (ref as React.MutableRefObject<T | null>).current = node;
       }
     }
@@ -141,30 +142,46 @@ function mergeRefs<T>(...refs: Array<Ref<T> | undefined>) {
 }
 
 function mobilePanelOpacity(reduce: boolean, openMobile: boolean): number {
-  if (!reduce) return 1;
+  if (!reduce) {
+    return 1;
+  }
   return openMobile ? 1 : 0;
 }
 
 function mobilePanelX(reduce: boolean, openMobile: boolean, side: SidebarSide): string | number {
-  if (reduce) return 0;
-  if (openMobile) return '0%';
+  if (reduce) {
+    return 0;
+  }
+  if (openMobile) {
+    return '0%';
+  }
   return side === 'left' ? '-100%' : '100%';
 }
 
 function sidebarRailWidth(offcanvas: boolean, collapsed: boolean): string {
-  if (offcanvas) return '0px';
-  if (collapsed) return 'var(--sidebar-width-icon)';
+  if (offcanvas) {
+    return '0px';
+  }
+  if (collapsed) {
+    return 'var(--sidebar-width-icon)';
+  }
   return 'var(--sidebar-width)';
 }
 
 function offcanvasPanelX(offcanvas: boolean, side: SidebarSide): string {
-  if (!offcanvas) return '0%';
+  if (!offcanvas) {
+    return '0%';
+  }
   return side === 'left' ? '-100%' : '100%';
 }
 
 function sidebarLabelTransition(reduce: boolean, collapsed: boolean) {
-  if (reduce) return REDUCED_TRANSITION;
-  if (collapsed) return LABEL_EXIT_TRANSITION;
+  if (reduce) {
+    return REDUCED_TRANSITION;
+  }
+  if (collapsed) {
+    return LABEL_EXIT_TRANSITION;
+  }
   return LABEL_ENTER_TRANSITION;
 }
 
@@ -255,7 +272,9 @@ export function AnimatedSidebarProvider({
 
   const setOpen = useCallback(
     (nextOpen: boolean) => {
-      if (open === undefined) setInternalOpen(nextOpen);
+      if (open === undefined) {
+        setInternalOpen(nextOpen);
+      }
       onOpenChange?.(nextOpen);
     },
     [onOpenChange, open],
@@ -263,15 +282,20 @@ export function AnimatedSidebarProvider({
 
   const setOpenMobile = useCallback(
     (nextOpen: boolean) => {
-      if (openMobile === undefined) setInternalOpenMobile(nextOpen);
+      if (openMobile === undefined) {
+        setInternalOpenMobile(nextOpen);
+      }
       onOpenMobileChange?.(nextOpen);
     },
     [onOpenMobileChange, openMobile],
   );
 
   const toggleSidebar = useCallback(() => {
-    if (isMobile) setOpenMobile(!mobileOpen);
-    else setOpen(!desktopOpen);
+    if (isMobile) {
+      setOpenMobile(!mobileOpen);
+    } else {
+      setOpen(!desktopOpen);
+    }
   }, [desktopOpen, isMobile, mobileOpen, setOpen, setOpenMobile]);
 
   const registerTrigger = useCallback((node: HTMLButtonElement | null) => {
@@ -356,11 +380,15 @@ function MobileSidebar({
 
   useEffect(() => {
     openMobileRef.current = context.openMobile;
-    if (context.openMobile) setHidden(false);
+    if (context.openMobile) {
+      setHidden(false);
+    }
   }, [context.openMobile]);
 
   useEffect(() => {
-    if (!context.openMobile) return;
+    if (!context.openMobile) {
+      return;
+    }
 
     const { body } = document;
     const { scrollY } = window;
@@ -395,7 +423,9 @@ function MobileSidebar({
     };
   }, [context.openMobile, context.triggerRef]);
 
-  if (!mounted) return null;
+  if (!mounted) {
+    return null;
+  }
 
   // This container groups the sheet for hiding and the z-index and carries no
   // box: both children are `fixed` and resolve against the viewport themselves.
@@ -448,7 +478,9 @@ function MobileSidebar({
           className,
         )}
         onAnimationComplete={() => {
-          if (!openMobileRef.current) setHidden(true);
+          if (!openMobileRef.current) {
+            setHidden(true);
+          }
         }}
         onKeyDown={(event) => {
           if (event.key === 'Escape') {
@@ -457,7 +489,9 @@ function MobileSidebar({
             return;
           }
 
-          if (event.key !== 'Tab') return;
+          if (event.key !== 'Tab') {
+            return;
+          }
           const focusable = panelRef.current
             ? Array.from(panelRef.current.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR))
             : [];
@@ -470,7 +504,9 @@ function MobileSidebar({
 
           const [first] = focusable;
           const last = focusable.at(-1);
-          if (!last) return;
+          if (!last) {
+            return;
+          }
           if (event.shiftKey && document.activeElement === first) {
             event.preventDefault();
             last.focus();
@@ -599,7 +635,9 @@ export const AnimatedSidebarTrigger = forwardRef<HTMLButtonElement, AnimatedSide
         )}
         onClick={(event) => {
           onClick?.(event);
-          if (!event.defaultPrevented) context.toggleSidebar();
+          if (!event.defaultPrevented) {
+            context.toggleSidebar();
+          }
         }}
       />
     );
@@ -625,9 +663,14 @@ export const AnimatedSidebarClose = forwardRef<HTMLButtonElement, AnimatedSideba
         )}
         onClick={(event) => {
           onClick?.(event);
-          if (event.defaultPrevented) return;
-          if (context.isMobile) context.setOpenMobile(false);
-          else context.setOpen(false);
+          if (event.defaultPrevented) {
+            return;
+          }
+          if (context.isMobile) {
+            context.setOpenMobile(false);
+          } else {
+            context.setOpen(false);
+          }
         }}
       />
     );
@@ -658,7 +701,9 @@ export const AnimatedSidebarRail = forwardRef<HTMLButtonElement, AnimatedSidebar
         )}
         onClick={(event) => {
           onClick?.(event);
-          if (!event.defaultPrevented) context.toggleSidebar();
+          if (!event.defaultPrevented) {
+            context.toggleSidebar();
+          }
         }}
       />
     );
@@ -895,7 +940,9 @@ export function AnimatedSidebarMenuSubButton({
       return;
     }
     onSelect?.();
-    if (context.isMobile && closeOnSelect) context.setOpenMobile(false);
+    if (context.isMobile && closeOnSelect) {
+      context.setOpenMobile(false);
+    }
   };
 
   const content = (

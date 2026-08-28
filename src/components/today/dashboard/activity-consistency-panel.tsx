@@ -90,7 +90,7 @@ function ProgramWeekStrip({ weeks }: { weeks: ProgramWeek[] }) {
     weeks.find((week) => week.weekStart === hotKey) ??
     weeks.find((week) => week.isCurrent) ??
     weeks.at(-1);
-  const scrubbing = hotKey != null;
+  const scrubbing = hotKey !== null;
 
   const probe = (week: ProgramWeek, x: number, y: number) => {
     setHotKey(week.weekStart);

@@ -18,7 +18,9 @@ export function changedProfileFields<T extends Record<string, unknown>>(
 ): Partial<T> {
   const patch: Partial<T> = {};
   for (const key of Object.keys(next) as (keyof T)[]) {
-    if (!Object.is(baseline[key], next[key])) patch[key] = next[key];
+    if (!Object.is(baseline[key], next[key])) {
+      patch[key] = next[key];
+    }
   }
   return patch;
 }

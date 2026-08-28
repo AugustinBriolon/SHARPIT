@@ -30,13 +30,19 @@ const DOMAIN_LABELS: Record<string, string> = {
 const GENERIC_EQUIVALENT = 'Équivalent au plan actuel sur les sorties Decision Engine comparées.';
 
 function confidenceLabel(confidence: number): string | null {
-  if (confidence >= 0.75) return 'Élevée';
-  if (confidence >= 0.55) return 'Modérée';
+  if (confidence >= 0.75) {
+    return 'Élevée';
+  }
+  if (confidence >= 0.55) {
+    return 'Modérée';
+  }
   return 'Partielle';
 }
 
 function formatScore(value: number | null): string | null {
-  if (value == null) return null;
+  if (value === null) {
+    return null;
+  }
   return String(Math.round(value));
 }
 
@@ -73,7 +79,9 @@ function humanizePreferabilityClause(clause: string): string | null {
 
 function humanizePreferability(text: string): string | null {
   const clauses = text.split(' · ').map(humanizePreferabilityClause).filter(Boolean);
-  if (clauses.length === 0) return null;
+  if (clauses.length === 0) {
+    return null;
+  }
   const sentence = clauses.join(', ');
   return sentence.charAt(0).toUpperCase() + sentence.slice(1) + '.';
 }
@@ -103,7 +111,9 @@ function buildSummaryLine(input: {
   }
 
   if (equivalent) {
-    if (input.allAlternativesEquivalent) return action;
+    if (input.allAlternativesEquivalent) {
+      return action;
+    }
     return `${action} Pas d'avantage net par rapport au plan actuel.`;
   }
 
@@ -122,7 +132,7 @@ function buildScenarioRow(
 ): ScenarioComparisonRow {
   const lastDay = entry.projection.days[entry.projection.days.length - 1];
   const limiting =
-    lastDay != null
+    lastDay !== null
       ? (limitingFactorLabel(lastDay.decision.limitingFactor) ??
         (entry.decision.endLimitingFactorDomain
           ? (DOMAIN_LABELS[entry.decision.endLimitingFactorDomain] ??
@@ -151,7 +161,7 @@ function buildScenarioRow(
     isRecommended,
     isBaseline,
     targetSessionId: entry.targetSessionId,
-    canApply: entry.kind !== 'KEEP_PLAN' && entry.targetSessionId != null,
+    canApply: entry.kind !== 'KEEP_PLAN' && entry.targetSessionId !== null,
     technicalDetail: {
       endVerdict: mapVerdictToDisplay(entry.decision.endVerdict).label,
       endReadiness: formatScore(entry.outcome.endReadiness),
@@ -233,15 +243,21 @@ function coachScenarioMarker(
   entry: ScenarioComparison['scenarios'][number],
   recommendedScenarioId: string,
 ): string {
-  if (entry.scenarioId === recommendedScenarioId) return '★ ';
-  if (entry.kind === 'KEEP_PLAN') return '● ';
+  if (entry.scenarioId === recommendedScenarioId) {
+    return '★ ';
+  }
+  if (entry.kind === 'KEEP_PLAN') {
+    return '● ';
+  }
   return '- ';
 }
 
 export function formatScenarioComparisonForCoach(
   comparison: ScenarioComparison | null,
 ): string | null {
-  if (!comparison || comparison.scenarios.length <= 1) return null;
+  if (!comparison || comparison.scenarios.length <= 1) {
+    return null;
+  }
 
   const lines: string[] = [];
   lines.push('## Comparaison de scénarios (Scenario Engine — orchestration)');

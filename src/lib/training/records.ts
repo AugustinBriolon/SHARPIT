@@ -115,7 +115,9 @@ export interface RecordChange {
 // ---------------------------------------------------------------------------
 
 function durationLabel(sec: number): string {
-  if (sec < 60) return `${sec} s`;
+  if (sec < 60) {
+    return `${sec} s`;
+  }
   const min = sec / 60;
   return Number.isInteger(min) ? `${min} min` : `${(sec / 60).toFixed(1)} min`;
 }
@@ -158,9 +160,13 @@ function fmtPace100(secPer100m: number): string {
 function fmtDuration(sec: number): string {
   const h = Math.floor(sec / 3600);
   const m = Math.floor((sec % 3600) / 60);
-  if (h > 0) return `${h}h${String(m).padStart(2, '0')}`;
+  if (h > 0) {
+    return `${h}h${String(m).padStart(2, '0')}`;
+  }
   const s = Math.round(sec % 60);
-  if (m > 0) return `${m}min${s > 0 ? ` ${String(s).padStart(2, '0')}s` : ''}`;
+  if (m > 0) {
+    return `${m}min${s > 0 ? ` ${String(s).padStart(2, '0')}s` : ''}`;
+  }
   return `${s}s`;
 }
 
@@ -173,18 +179,24 @@ function fmtDistance(m: number): string {
 // ---------------------------------------------------------------------------
 
 function hasSignal(arr: number[]): boolean {
-  return arr.length > 0 && arr.some((v) => v != null && v !== 0);
+  return arr.length > 0 && arr.some((v) => v !== null && v !== 0);
 }
 
 /** Ré-échantillonne une série (time, values) à 1 Hz par maintien de la valeur. */
 function resample1Hz(time: number[], values: number[]): number[] {
-  if (!time.length) return [];
+  if (!time.length) {
+    return [];
+  }
   const maxT = Math.floor(time[time.length - 1]);
-  if (maxT <= 0 || maxT > 200_000) return [];
+  if (maxT <= 0 || maxT > 200_000) {
+    return [];
+  }
   const grid = new Array<number>(maxT + 1).fill(0);
   let idx = 0;
   for (let s = 0; s <= maxT; s++) {
-    while (idx < time.length - 1 && time[idx + 1] <= s) idx++;
+    while (idx < time.length - 1 && time[idx + 1] <= s) {
+      idx++;
+    }
     grid[s] = values[idx] ?? 0;
   }
   return grid;
@@ -192,13 +204,19 @@ function resample1Hz(time: number[], values: number[]): number[] {
 
 /** Meilleure moyenne glissante sur une fenêtre de `window` secondes. */
 function bestAverage(grid: number[], window: number): number | null {
-  if (grid.length < window || window <= 0) return null;
+  if (grid.length < window || window <= 0) {
+    return null;
+  }
   let sum = 0;
-  for (let i = 0; i < window; i++) sum += grid[i];
+  for (let i = 0; i < window; i++) {
+    sum += grid[i];
+  }
   let best = sum;
   for (let i = window; i < grid.length; i++) {
     sum += grid[i] - grid[i - window];
-    if (sum > best) best = sum;
+    if (sum > best) {
+      best = sum;
+    }
   }
   return best / window;
 }
@@ -208,11 +226,19 @@ function fastestTime(distGrid: number[], meters: number): number | null {
   let j = 0;
   let best = Infinity;
   for (let i = 0; i < distGrid.length; i++) {
-    if (j < i) j = i;
-    while (j < distGrid.length && distGrid[j] - distGrid[i] < meters) j++;
-    if (j >= distGrid.length) break;
+    if (j < i) {
+      j = i;
+    }
+    while (j < distGrid.length && distGrid[j] - distGrid[i] < meters) {
+      j++;
+    }
+    if (j >= distGrid.length) {
+      break;
+    }
     const t = j - i;
-    if (t < best) best = t;
+    if (t < best) {
+      best = t;
+    }
   }
   return best === Infinity ? null : best;
 }
@@ -258,7 +284,7 @@ function topNEntries(
 ): RecordEntry[] {
   const cands = activities
     .map((a) => ({ value: accessor(a), activity: a }))
-    .filter((c): c is Candidate => c.value != null && !Number.isNaN(c.value) && c.value > 0);
+    .filter((c): c is Candidate => c.value !== null && !Number.isNaN(c.value) && c.value > 0);
   cands.sort((a, b) => (mode === 'max' ? b.value - a.value : a.value - b.value));
   return cands.slice(0, TOP_N).map((c, i) => ({
     rank: i + 1,
@@ -313,25 +339,37 @@ export function durationPrLeadersNeedRepair(
     activityType?: ActivityType | null;
   }>,
 ): boolean {
-  if (leaders.length === 0) return false;
+  if (leaders.length === 0) {
+    return false;
+  }
 
   // Pre-fix generic label (shared across run/bike/swim).
-  if (leaders.some((r) => r.label === 'Plus longue durée')) return true;
+  if (leaders.some((r) => r.label === 'Plus longue durée')) {
+    return true;
+  }
 
   const ids = leaders.map((r) => r.activityId).filter((id): id is string => Boolean(id));
-  if (ids.length > 1 && new Set(ids).size < ids.length) return true;
+  if (ids.length > 1 && new Set(ids).size < ids.length) {
+    return true;
+  }
 
   for (const row of leaders) {
-    if (!row.activityId || row.activityType == null) continue;
+    if (!row.activityId || row.activityType === null) {
+      continue;
+    }
     const expected = DURATION_PR_TYPE[row.category];
-    if (expected && row.activityType !== expected) return true;
+    if (expected && row.activityType !== expected) {
+      return true;
+    }
   }
   return false;
 }
 
 function activitiesForDurationPr(defKey: string, activities: MetricActivity[]): MetricActivity[] {
   const type = DURATION_PR_TYPE[defKey];
-  if (!type) return activities;
+  if (!type) {
+    return activities;
+  }
   return activities.filter((a) => a.type === type);
 }
 
@@ -463,13 +501,19 @@ function computePowerCurveFrom(streamActivities: StreamActivity[]): PowerCurvePo
 
   for (const a of streamActivities) {
     const raw = a.stream?.data as unknown as RawStreams | null;
-    if (!raw || !raw.time?.length) continue;
-    if (a.type !== ActivityType.BIKE || !hasSignal(raw.watts ?? [])) continue;
+    if (!raw || !raw.time?.length) {
+      continue;
+    }
+    if (a.type !== ActivityType.BIKE || !hasSignal(raw.watts ?? [])) {
+      continue;
+    }
 
     const grid = resample1Hz(raw.time, raw.watts);
     for (const dur of POWER_DURATIONS) {
       const avg = bestAverage(grid, dur);
-      if (avg == null || avg <= 0) continue;
+      if (avg === null || avg <= 0) {
+        continue;
+      }
       const list = powerCand.get(dur) ?? [];
       list.push({ value: Math.round(avg), id: a.id, date: a.date, title: a.title });
       powerCand.set(dur, list);
@@ -488,7 +532,7 @@ function computePowerCurveFrom(streamActivities: StreamActivity[]): PowerCurvePo
           title: best.title,
         }
       : null;
-  }).filter((p): p is PowerCurvePoint => p != null);
+  }).filter((p): p is PowerCurvePoint => p !== null);
 }
 
 /** Meilleurs temps de course (top 5 par distance) à partir des streams course. */
@@ -497,15 +541,23 @@ function computeRunBestsFrom(streamActivities: StreamActivity[]): RunBestCategor
 
   for (const a of streamActivities) {
     const raw = a.stream?.data as unknown as RawStreams | null;
-    if (!raw || !raw.time?.length) continue;
-    if (a.type !== ActivityType.RUN || !hasSignal(raw.distance ?? [])) continue;
+    if (!raw || !raw.time?.length) {
+      continue;
+    }
+    if (a.type !== ActivityType.RUN || !hasSignal(raw.distance ?? [])) {
+      continue;
+    }
 
     const distGrid = resample1Hz(raw.time, raw.distance);
     const total = distGrid.length ? distGrid[distGrid.length - 1] : 0;
     for (const meters of RUN_DISTANCES) {
-      if (total < meters) continue;
+      if (total < meters) {
+        continue;
+      }
       const secs = fastestTime(distGrid, meters);
-      if (secs == null || secs <= 0) continue;
+      if (secs === null || secs <= 0) {
+        continue;
+      }
       const list = runCand.get(meters) ?? [];
       list.push({ value: secs, id: a.id, date: a.date, title: a.title });
       runCand.set(meters, list);
@@ -514,7 +566,9 @@ function computeRunBestsFrom(streamActivities: StreamActivity[]): RunBestCategor
 
   return RUN_DISTANCES.map((meters): RunBestCategory | null => {
     const arr = (runCand.get(meters) ?? []).sort((a, b) => a.value - b.value).slice(0, TOP_N);
-    if (!arr.length) return null;
+    if (!arr.length) {
+      return null;
+    }
     return {
       meters,
       label: distanceLabel(meters),
@@ -528,7 +582,7 @@ function computeRunBestsFrom(streamActivities: StreamActivity[]): RunBestCategor
         title: c.title,
       })),
     };
-  }).filter((r): r is RunBestCategory => r != null);
+  }).filter((r): r is RunBestCategory => r !== null);
 }
 
 /**
@@ -546,7 +600,9 @@ function computeMetricEfforts(metrics: MetricActivity[]): {
   for (const a of metrics) {
     if (a.type === ActivityType.RUN) {
       const meters = a.runMetrics?.distanceM ?? null;
-      if (!meters || meters < 1500) continue; // bruit en dessous de 1,5 km
+      if (!meters || meters < 1500) {
+        continue;
+      } // bruit en dessous de 1,5 km
       let seconds: number | null = null;
       if (a.duration && a.duration > 0) {
         seconds = a.duration;
@@ -563,7 +619,9 @@ function computeMetricEfforts(metrics: MetricActivity[]): {
       }
     } else if (a.type === ActivityType.BIKE) {
       const watts = a.bikeMetrics?.normalizedPower ?? a.bikeMetrics?.avgPower ?? null;
-      if (!watts || watts <= 0 || !a.duration || a.duration < 1200) continue; // >=20 min
+      if (!watts || watts <= 0 || !a.duration || a.duration < 1200) {
+        continue;
+      } // >=20 min
       bikeEfforts.push({
         seconds: a.duration,
         watts,
@@ -857,7 +915,9 @@ async function buildRowsForGroups(
     metricGroups.length > 0 || needsEfforts ? await loadMetricActivities(athleteId) : null;
 
   if (metrics && metricGroups.length) {
-    for (const g of metricGroups) rows.push(...metricRowsForGroup(athleteId, g, metrics));
+    for (const g of metricGroups) {
+      rows.push(...metricRowsForGroup(athleteId, g, metrics));
+    }
   }
 
   if (metrics && needsEfforts) {
@@ -900,7 +960,9 @@ function diffRecordChanges(
 ): RecordChange[] {
   const afterLeaders = new Map<string, RecordRow>();
   for (const row of excludeEffortRows(afterRows)) {
-    if (row.rank === 1) afterLeaders.set(row.category, row);
+    if (row.rank === 1) {
+      afterLeaders.set(row.category, row);
+    }
   }
 
   const changes: RecordChange[] = [];
@@ -928,7 +990,7 @@ export function filterRecordChangesByActivities(
   activityIds: Iterable<string>,
 ): RecordChange[] {
   const ids = new Set(activityIds);
-  return changes.filter((c) => c.activityId != null && ids.has(c.activityId));
+  return changes.filter((c) => c.activityId !== null && ids.has(c.activityId));
 }
 
 /** Records personnels (#1) détenus par une séance. */
@@ -955,9 +1017,15 @@ export function recordCategoryAnchorId(category: string): string {
 
 /** Onglet sport de la page Progression pour une catégorie de record. */
 export function recordSportTabFromCategory(category: string): RecordSportTab | null {
-  if (category.startsWith('swim-')) return 'swim';
-  if (category.startsWith('bike-') || category.startsWith('power-')) return 'bike';
-  if (category.startsWith('run-') || category.startsWith('run-best')) return 'run';
+  if (category.startsWith('swim-')) {
+    return 'swim';
+  }
+  if (category.startsWith('bike-') || category.startsWith('power-')) {
+    return 'bike';
+  }
+  if (category.startsWith('run-') || category.startsWith('run-best')) {
+    return 'run';
+  }
   return null;
 }
 
@@ -973,7 +1041,9 @@ export async function recomputeRecordGroups(
   athleteId: string,
   groups: Set<RecordGroup>,
 ): Promise<RecordChange[]> {
-  if (groups.size === 0) return [];
+  if (groups.size === 0) {
+    return [];
+  }
   const affected = [...groups];
 
   const beforeRows = await prisma.performanceRecord.findMany({
@@ -1022,7 +1092,11 @@ export async function updateRecordsForTypes(
   types: Iterable<ActivityType>,
 ): Promise<RecordChange[]> {
   const groups = new Set<RecordGroup>();
-  for (const t of types) for (const g of groupsForType(t)) groups.add(g);
+  for (const t of types) {
+    for (const g of groupsForType(t)) {
+      groups.add(g);
+    }
+  }
   return recomputeRecordGroups(athleteId, groups);
 }
 
@@ -1068,7 +1142,9 @@ export async function updateRecordsAfterProviderSync(
 
     const groups = new Set<RecordGroup>();
     for (const t of input.importedTypes) {
-      for (const g of groupsForType(t)) groups.add(g);
+      for (const g of groupsForType(t)) {
+        groups.add(g);
+      }
     }
 
     const backfillIds = [...(input.backfilledActivityIds ?? [])];
@@ -1078,7 +1154,9 @@ export async function updateRecordsAfterProviderSync(
         select: { type: true },
       });
       for (const a of activities) {
-        for (const g of groupsForType(a.type)) groups.add(g);
+        for (const g of groupsForType(a.type)) {
+          groups.add(g);
+        }
       }
     }
 
@@ -1132,7 +1210,9 @@ export async function getStoredRecords(athleteId: string): Promise<RecordsPayloa
 
   // Premier accès (rien de stocké) : on calcule à la volée puis on stocke.
   if (rows.length === 0) {
-    if (totalActivities > 0) return recomputeAndStoreRecords(athleteId);
+    if (totalActivities > 0) {
+      return recomputeAndStoreRecords(athleteId);
+    }
     return emptyPayload(totalActivities, streamsAnalyzed);
   }
 
@@ -1189,7 +1269,9 @@ export async function getStoredRecords(athleteId: string): Promise<RecordsPayloa
 
   const byCategory = new Map<string, typeof rows>();
   for (const row of rows) {
-    if (row.group === 'run-effort' || row.group === 'bike-effort') continue;
+    if (row.group === 'run-effort' || row.group === 'bike-effort') {
+      continue;
+    }
     const list = byCategory.get(row.category) ?? [];
     list.push(row);
     byCategory.set(row.category, list);

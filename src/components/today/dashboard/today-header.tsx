@@ -40,7 +40,9 @@ function useDeviceLocation(options?: { autoRefresh?: boolean }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ latitude, longitude }),
       });
-      if (!res.ok) throw new Error(`save failed: ${res.status}`);
+      if (!res.ok) {
+        throw new Error(`save failed: ${res.status}`);
+      }
       writeLastHomeLocationRefreshMs(Date.now());
       await invalidateAfterAthleteProfileSave(queryClient);
     },
@@ -50,10 +52,14 @@ function useDeviceLocation(options?: { autoRefresh?: boolean }) {
   const ask = useCallback(
     (opts?: { silent?: boolean; maximumAge?: number }) => {
       if (typeof navigator === 'undefined' || !navigator.geolocation) {
-        if (!opts?.silent) setState('unsupported');
+        if (!opts?.silent) {
+          setState('unsupported');
+        }
         return;
       }
-      if (!opts?.silent) setState('asking');
+      if (!opts?.silent) {
+        setState('asking');
+      }
       navigator.geolocation.getCurrentPosition(
         async (position) => {
           try {
@@ -61,7 +67,9 @@ function useDeviceLocation(options?: { autoRefresh?: boolean }) {
             setState('idle');
           } catch (error) {
             console.error('[home-location] save failed', error);
-            if (!opts?.silent) setState('saveFailed');
+            if (!opts?.silent) {
+              setState('saveFailed');
+            }
           }
         },
         (error) => {
@@ -69,10 +77,16 @@ function useDeviceLocation(options?: { autoRefresh?: boolean }) {
             code: error.code,
             message: error.message,
           });
-          if (opts?.silent) return;
-          if (error.code === error.PERMISSION_DENIED) setState('denied');
-          else if (error.code === error.TIMEOUT) setState('timeout');
-          else setState('unavailable');
+          if (opts?.silent) {
+            return;
+          }
+          if (error.code === error.PERMISSION_DENIED) {
+            setState('denied');
+          } else if (error.code === error.TIMEOUT) {
+            setState('timeout');
+          } else {
+            setState('unavailable');
+          }
         },
         { timeout: 15_000, maximumAge: opts?.maximumAge ?? 60_000 },
       );
@@ -81,11 +95,15 @@ function useDeviceLocation(options?: { autoRefresh?: boolean }) {
   );
 
   useEffect(() => {
-    if (!options?.autoRefresh || autoTriedRef.current) return;
+    if (!options?.autoRefresh || autoTriedRef.current) {
+      return;
+    }
     autoTriedRef.current = true;
 
     const now = Date.now();
-    if (!shouldRefreshHomeLocation(readLastHomeLocationRefreshMs(), now)) return;
+    if (!shouldRefreshHomeLocation(readLastHomeLocationRefreshMs(), now)) {
+      return;
+    }
 
     let cancelled = false;
 
@@ -94,7 +112,9 @@ function useDeviceLocation(options?: { autoRefresh?: boolean }) {
       // answer (Safari). Never call when the OS says denied/prompt — that
       // would either fail loudly or re-prompt.
       const permission = await queryGeolocationPermission();
-      if (cancelled || !canAttemptSilentGeolocation(permission)) return;
+      if (cancelled || !canAttemptSilentGeolocation(permission)) {
+        return;
+      }
       // Fresh reading — a cached fix from the first save kept Today stuck.
       ask({ silent: true, maximumAge: 0 });
     })();
@@ -108,7 +128,9 @@ function useDeviceLocation(options?: { autoRefresh?: boolean }) {
 }
 
 async function queryGeolocationPermission(): Promise<PermissionState | 'unknown'> {
-  if (typeof navigator === 'undefined' || !navigator.permissions?.query) return 'unknown';
+  if (typeof navigator === 'undefined' || !navigator.permissions?.query) {
+    return 'unknown';
+  }
   try {
     const status = await navigator.permissions.query({ name: 'geolocation' });
     return status.state;
@@ -129,9 +151,13 @@ type TodayHeaderWeather = {
 };
 
 function formatDay(dayKey: string): string {
-  if (!dayKey) return '';
+  if (!dayKey) {
+    return '';
+  }
   const [year, month, day] = dayKey.split('-').map(Number);
-  if (!year || !month || !day) return '';
+  if (!year || !month || !day) {
+    return '';
+  }
   return toLocalCalendarDate(new Date(Date.UTC(year, month - 1, day))).toLocaleDateString('fr-FR', {
     weekday: 'long',
     day: 'numeric',
@@ -194,11 +220,11 @@ function KnownLocation({ city }: { city: string }) {
 
   return (
     <button
-      type="button"
+      aria-label={`Localisation ${city}. Mettre à jour la position`}
       className="hover:text-foreground underline-offset-2 hover:underline disabled:no-underline"
       disabled={refreshing}
       title="Mettre à jour la position"
-      aria-label={`Localisation ${city}. Mettre à jour la position`}
+      type="button"
       onClick={() => ask({ maximumAge: 0 })}
     >
       {refreshing ? 'Localisation…' : city}
@@ -224,7 +250,9 @@ export function TodayHeader({
   loading?: boolean;
 }) {
   const label = formatDay(dayKey);
-  if (!label && !weather && !loading) return null;
+  if (!label && !weather && !loading) {
+    return null;
+  }
 
   return (
     <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">

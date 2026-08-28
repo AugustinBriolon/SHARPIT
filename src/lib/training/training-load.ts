@@ -64,12 +64,16 @@ function isWithinWindow(trainingDayId: string, anchorDayId: string, windowDays: 
 }
 
 function mean(values: number[]) {
-  if (values.length === 0) return 0;
+  if (values.length === 0) {
+    return 0;
+  }
   return values.reduce((sum, value) => sum + value, 0) / values.length;
 }
 
 function stdDev(values: number[]) {
-  if (values.length === 0) return 0;
+  if (values.length === 0) {
+    return 0;
+  }
   const avg = mean(values);
   const variance = values.reduce((sum, value) => sum + (value - avg) ** 2, 0) / values.length;
   return Math.sqrt(variance);
@@ -118,23 +122,26 @@ export function computeTrainingLoad(
   const avgDailyLoad = mean(dailyLoads7d);
   const sdDailyLoad = stdDev(dailyLoads7d);
   const loadMonotony = sdDailyLoad > 0 ? avgDailyLoad / sdDailyLoad : null;
-  const loadStrain = loadMonotony != null ? acuteLoad * loadMonotony : null;
+  const loadStrain = loadMonotony !== null ? acuteLoad * loadMonotony : null;
 
   // ACWR : ratio de la charge aiguë (7j) sur la charge chronique moyenne hebdo
   const acwr = chronicWeeklyAvg > 0 ? acuteLoad / chronicWeeklyAvg : 0;
 
   // Classification du niveau de fatigue / risque selon seuils validés
   let fatigue: 'Low' | 'Medium' | 'High' = 'Low';
-  if (acwr >= ACWR_THRESHOLDS.OVERLOAD_MODERATE) fatigue = 'High';
-  else if (acwr >= ACWR_THRESHOLDS.UNDERLOAD) fatigue = 'Medium';
+  if (acwr >= ACWR_THRESHOLDS.OVERLOAD_MODERATE) {
+    fatigue = 'High';
+  } else if (acwr >= ACWR_THRESHOLDS.UNDERLOAD) {
+    fatigue = 'Medium';
+  }
 
   return {
     dailyLoad: Math.round(dailyLoad),
     weeklyLoad: Math.round(acuteLoad),
     acwr: Number(acwr.toFixed(2)),
     fatigue,
-    loadMonotony: loadMonotony != null ? Number(loadMonotony.toFixed(2)) : null,
-    loadStrain: loadStrain != null ? Math.round(loadStrain) : null,
+    loadMonotony: loadMonotony !== null ? Number(loadMonotony.toFixed(2)) : null,
+    loadStrain: loadStrain !== null ? Math.round(loadStrain) : null,
   };
 }
 
@@ -150,7 +157,9 @@ export function enrichFatigueLoadDimension<T extends Record<string, FatigueDimen
   acwr: number,
 ): T {
   const { load } = dimensions;
-  if (!load || load.available || acwr <= 0) return dimensions;
+  if (!load || load.available || acwr <= 0) {
+    return dimensions;
+  }
 
   const score = Math.round(Math.max(Math.min((acwr / 1.5) * 100, 100), 0));
   return {

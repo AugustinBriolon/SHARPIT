@@ -111,7 +111,7 @@ export function ActivityFeelingPrompt({ activityId }: { activityId: string }) {
               <Select
                 value={feeling || '__none__'}
                 onValueChange={(v) => {
-                  setFeeling(v == null || v === '__none__' ? '' : v);
+                  setFeeling(v === null || v === '__none__' ? '' : v);
                   setFeelingError(null);
                 }}
               >

@@ -5,9 +5,15 @@ import type { NutritionDaySummary } from '@/core/presentation/nutrition-view-mod
 import { buildNutritionDayReading } from '@/lib/nutrition/day-reading';
 
 function confidencePctForDay(day: NutritionDaySummary | null): number | null {
-  if (!day) return null;
-  if (day.complete) return 100;
-  if (day.goalsProgress) return 90;
+  if (!day) {
+    return null;
+  }
+  if (day.complete) {
+    return 100;
+  }
+  if (day.goalsProgress) {
+    return 90;
+  }
   return 70;
 }
 

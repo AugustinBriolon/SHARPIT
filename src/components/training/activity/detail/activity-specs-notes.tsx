@@ -15,7 +15,9 @@ export function ActivitySpecsNotes({
   const { mode } = useDisplayMode();
   const visibleSpecs = filterByAudience(specs, mode);
 
-  if (visibleSpecs.length === 0 && !activity.notes) return null;
+  if (visibleSpecs.length === 0 && !activity.notes) {
+    return null;
+  }
 
   return (
     <section className="grid gap-4 lg:grid-cols-3">

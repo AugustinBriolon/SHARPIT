@@ -3,7 +3,9 @@ import type { UIMessage } from 'ai';
 /** True when the thread has an assistant turn worth persisting. */
 export function hasPersistableAssistant(messages: UIMessage[]): boolean {
   return messages.some((message) => {
-    if (message.role !== 'assistant') return false;
+    if (message.role !== 'assistant') {
+      return false;
+    }
     return message.parts.some((part) => {
       if (part.type === 'text') {
         return Boolean((part as { text?: string }).text?.trim());

@@ -22,7 +22,7 @@ function NavLink({
   pathname: string | null;
   onPrefetch: (href: string) => void;
 }) {
-  const isActive = pathname != null && item.match(pathname);
+  const isActive = pathname !== null && item.match(pathname);
   const Icon = item.icon;
   const reduce = useReducedMotion();
 
@@ -89,7 +89,7 @@ function SidebarNavLink({
 function AthleteIdentityLink({ onPrefetch }: { onPrefetch: (href: string) => void }) {
   const pathname = usePathname();
   const identity = useAthleteNavIdentity();
-  const isActive = pathname != null && profileNavItem.match(pathname);
+  const isActive = pathname !== null && profileNavItem.match(pathname);
   const reduce = useReducedMotion();
 
   return (

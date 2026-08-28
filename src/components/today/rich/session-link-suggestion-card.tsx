@@ -69,12 +69,16 @@ export function SessionLinkSuggestionCard({
   useEffect(() => {
     if (phase === 'linking' || phase === 'analyzing') {
       const details = detailsRef.current;
-      if (details) details.open = true;
+      if (details) {
+        details.open = true;
+      }
     }
   }, [phase]);
 
   useEffect(() => {
-    if (phase !== 'analyzing' || !isDemo) return;
+    if (phase !== 'analyzing' || !isDemo) {
+      return;
+    }
     const timer = window.setTimeout(() => {
       setPhase('done');
       window.setTimeout(() => {

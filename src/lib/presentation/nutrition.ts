@@ -46,7 +46,9 @@ type NutritionRow = {
 };
 
 function normalizeMeals(raw: unknown): NutritionMealSummary[] {
-  if (!Array.isArray(raw)) return [];
+  if (!Array.isArray(raw)) {
+    return [];
+  }
 
   return (raw as StoredMeal[])
     .map((meal) => ({
@@ -98,12 +100,14 @@ async function fallbackFuelDensity(
 ): Promise<NutritionFuelDensity | null> {
   const meals = normalizeMeals(row.meals);
   const entryCount = meals.reduce((sum, meal) => sum + meal.entries.length, 0);
-  if (entryCount === 0 || row.protein <= 0) return null;
+  if (entryCount === 0 || row.protein <= 0) {
+    return null;
+  }
 
   const referenceWeightKg = await getLatestBodyWeightKg(athleteId, trainingDayId);
   const proteinGPerKg = macroGPerKg(row.protein, referenceWeightKg);
   const carbohydratesGPerKg = macroGPerKg(row.carbohydrates, referenceWeightKg);
-  if (referenceWeightKg == null || proteinGPerKg == null || carbohydratesGPerKg == null) {
+  if (referenceWeightKg === null || proteinGPerKg === null || carbohydratesGPerKg === null) {
     return null;
   }
 
@@ -119,13 +123,17 @@ async function loadFuelDensity(
     const dayFeatures = await featureEngine.computeDayFeatures(athleteId, trainingDayId);
     if (dayFeatures.fuel !== 'PENDING') {
       const fromEngine = fuelFeatureSetToDensity(dayFeatures.fuel as FuelFeatureSet);
-      if (fromEngine) return fromEngine;
+      if (fromEngine) {
+        return fromEngine;
+      }
     }
   } catch (error) {
     console.error('[nutrition] fuel density lookup failed:', error);
   }
 
-  if (!row) return null;
+  if (!row) {
+    return null;
+  }
   return fallbackFuelDensity(athleteId, trainingDayId, row);
 }
 
@@ -135,10 +143,14 @@ async function resolveGoalsProgress(
   fetchLive: boolean,
 ): Promise<NutritionGoalsProgress | null> {
   const cached = goalsFromRow(row);
-  if (cached || !fetchLive) return cached;
+  if (cached || !fetchLive) {
+    return cached;
+  }
 
   const live = await getLiveNutrientGoals(athleteId, format(row.date, 'yyyy-MM-dd'));
-  if (!live) return null;
+  if (!live) {
+    return null;
+  }
 
   return buildGoalsProgress({
     consumedCalories: row.calories,
@@ -159,7 +171,9 @@ async function enrichSelectedDay(
   row: NutritionRow | undefined,
   fetchLiveGoals: boolean,
 ): Promise<NutritionDaySummary> {
-  if (!row) return { ...day, goalsProgress: null, fuelDensity: null };
+  if (!row) {
+    return { ...day, goalsProgress: null, fuelDensity: null };
+  }
   const [goalsProgress, fuelDensity] = await Promise.all([
     resolveGoalsProgress(athleteId, row, fetchLiveGoals),
     loadFuelDensity(athleteId, day.date, row),
@@ -209,14 +223,14 @@ export async function buildNutritionViewModel(
         athleteId,
         selectedDayBase,
         selectedRow,
-        selectedRow?.goalCalories == null,
+        selectedRow?.goalCalories === null,
       )
     : null;
 
   const todayRow = rows.find((d) => format(d.date, 'yyyy-MM-dd') === todayId);
   const todayBase = history.find((d) => d.date === todayId) ?? null;
   const today = todayBase
-    ? await enrichSelectedDay(athleteId, todayBase, todayRow, todayRow?.goalCalories == null)
+    ? await enrichSelectedDay(athleteId, todayBase, todayRow, todayRow?.goalCalories === null)
     : null;
 
   const averages =
@@ -233,7 +247,7 @@ export async function buildNutritionViewModel(
       : null;
 
   const emptyState =
-    selectedDay == null
+    selectedDay === null
       ? {
           title: 'Aucune donnée ce jour-là',
           description:

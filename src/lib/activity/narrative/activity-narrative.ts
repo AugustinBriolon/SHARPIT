@@ -61,20 +61,28 @@ export async function runActivityNarrativeAnalysis(
   activityId: string,
   options?: { force?: boolean; allowHistorical?: boolean },
 ): Promise<boolean> {
-  if (!isCoachConfigured()) return false;
+  if (!isCoachConfigured()) {
+    return false;
+  }
 
   const existing = await prisma.activity.findFirst({
     where: { id: activityId, athleteId },
     select: { narrativeAnalyzedAt: true, date: true, narrativeAnalysis: true },
   });
-  if (!existing || !isEligibleForActivityNarrative(existing.date)) return false;
-  if (existing.narrativeAnalyzedAt && !options?.force) return false;
+  if (!existing || !isEligibleForActivityNarrative(existing.date)) {
+    return false;
+  }
+  if (existing.narrativeAnalyzedAt && !options?.force) {
+    return false;
+  }
   if (!options?.force && !options?.allowHistorical && !isActivityToday(existing.date)) {
     return false;
   }
 
   const facts = await buildActivityNarrativeFacts(athleteId, activityId);
-  if (!facts) return false;
+  if (!facts) {
+    return false;
+  }
 
   const { output, usage } = await generateText({
     model: COACH_MODEL,
@@ -85,7 +93,9 @@ export async function runActivityNarrativeAnalysis(
   });
   void recordAiUsage(athleteId, 'analysis', usage);
 
-  if (!output) return false;
+  if (!output) {
+    return false;
+  }
 
   await setActivityNarrativeAnalysis(activityId, output);
   return true;
@@ -110,7 +120,9 @@ export async function backfillActivityNarratives(athleteId: string): Promise<{
   eligible: number;
   created: number;
 }> {
-  if (!isCoachConfigured()) return { eligible: 0, created: 0 };
+  if (!isCoachConfigured()) {
+    return { eligible: 0, created: 0 };
+  }
 
   const activities = await prisma.activity.findMany({
     where: {

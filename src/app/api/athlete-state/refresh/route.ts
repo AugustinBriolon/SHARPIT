@@ -22,7 +22,9 @@ export async function POST(request: NextRequest) {
   let source: 'app_shell' | 'today_refresh' = 'app_shell';
   try {
     const body = await request.json();
-    if (body?.source === 'today_refresh') source = 'today_refresh';
+    if (body?.source === 'today_refresh') {
+      source = 'today_refresh';
+    }
   } catch {
     // empty body ok
   }

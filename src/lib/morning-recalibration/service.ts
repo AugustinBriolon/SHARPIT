@@ -124,8 +124,12 @@ function isStaleSportProposal(
   if (!sessionType || !isStrengthLikeMorningSport(sessionType)) {
     return false;
   }
-  if (mr.fromDescription === undefined && mr.toDescription === undefined) return true;
-  if (/tempo/i.test(mr.why) || /tempo/i.test(mr.changeSummary)) return true;
+  if (mr.fromDescription === undefined && mr.toDescription === undefined) {
+    return true;
+  }
+  if (/tempo/i.test(mr.why) || /tempo/i.test(mr.changeSummary)) {
+    return true;
+  }
   return false;
 }
 
@@ -139,12 +143,16 @@ export async function ensureMorningRecalibration(
   options?: { athleteSnapshot?: Awaited<ReturnType<typeof getOrBuildAthleteSnapshot>> },
 ): Promise<EnsureMorningRecalibrationResult> {
   const wellnessCompleted = await hasMorningWellnessCheckin(athleteId, trainingDayId);
-  if (!wellnessCompleted) return { presentation: null, created: false };
+  if (!wellnessCompleted) {
+    return { presentation: null, created: false };
+  }
 
   const existing = await findMorningRecalibrationDecision(athleteId, trainingDayId);
   if (existing) {
     const mr = existing.snapshotContext.morningRecalibration;
-    if (!mr || !existing.proposal.sessionId) return { presentation: null, created: false };
+    if (!mr || !existing.proposal.sessionId) {
+      return { presentation: null, created: false };
+    }
 
     const existingSession = await prisma.plannedSession.findFirst({
       where: { id: existing.proposal.sessionId, athleteId },
@@ -189,7 +197,9 @@ export async function ensureMorningRecalibration(
   });
 
   const session = sessions[0] ?? null;
-  if (!session) return { presentation: null, created: false };
+  if (!session) {
+    return { presentation: null, created: false };
+  }
 
   const snapshot =
     options?.athleteSnapshot ?? (await getOrBuildAthleteSnapshot(athleteId, trainingDayId));
@@ -213,7 +223,9 @@ export async function ensureMorningRecalibration(
     },
   });
 
-  if (!proposal) return { presentation: null, created: false };
+  if (!proposal) {
+    return { presentation: null, created: false };
+  }
 
   const gateProposal = toGateProposal(proposal, session);
   const gateResult = toGateResult(gateProposal, proposal.direction);
@@ -271,7 +283,9 @@ export async function acceptMorningRecalibration(
 
   const { sessionId } = decision.proposal;
   const mr = decision.snapshotContext.morningRecalibration;
-  if (!sessionId) return { ok: false, error: 'Proposition invalide' };
+  if (!sessionId) {
+    return { ok: false, error: 'Proposition invalide' };
+  }
 
   await updatePlannedSession(athleteId, sessionId, {
     intensity: decision.proposal.intensity ?? undefined,

@@ -15,7 +15,9 @@ export function AppClerkProvider({ children }: { children: React.ReactNode }) {
   );
 
   useEffect(() => {
-    if (process.env.NODE_ENV !== 'development') return;
+    if (process.env.NODE_ENV !== 'development') {
+      return;
+    }
     const port = window.location.port || '3000';
     const origins = new Set<string>([`http://localhost:${port}`, window.location.origin]);
     setAllowedRedirectOrigins([...origins]);

@@ -47,8 +47,12 @@ async function main() {
   console.log(`derived SESSION feature sets: ${featureSets}`);
 
   const bySource = new Map<string, number>();
-  for (const o of doomed) bySource.set(o.source, (bySource.get(o.source) ?? 0) + 1);
-  for (const [source, count] of bySource) console.log(`  source ${source}: ${count}`);
+  for (const o of doomed) {
+    bySource.set(o.source, (bySource.get(o.source) ?? 0) + 1);
+  }
+  for (const [source, count] of bySource) {
+    console.log(`  source ${source}: ${count}`);
+  }
 
   if (dryRun) {
     console.log('\ndry-run: nothing deleted.');

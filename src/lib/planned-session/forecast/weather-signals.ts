@@ -10,19 +10,23 @@ export function extractSessionWeatherSignals(
   let maxWindMps: number | null = null;
 
   for (const prediction of predictions) {
-    if (prediction.dimension !== 'WEATHER') continue;
+    if (prediction.dimension !== 'WEATHER') {
+      continue;
+    }
     const payload = readWeatherMeasurements(prediction);
-    if (!payload) continue;
-    if (payload.precipitationMm != null) {
+    if (!payload) {
+      continue;
+    }
+    if (payload.precipitationMm !== null) {
       maxPrecipitationMm = Math.max(maxPrecipitationMm ?? 0, payload.precipitationMm);
     }
-    if (payload.airTemperatureC != null) {
+    if (payload.airTemperatureC !== null) {
       minTemperatureC =
-        minTemperatureC == null
+        minTemperatureC === null
           ? payload.airTemperatureC
           : Math.min(minTemperatureC, payload.airTemperatureC);
     }
-    if (payload.windSpeedMps != null) {
+    if (payload.windSpeedMps !== null) {
       maxWindMps = Math.max(maxWindMps ?? 0, payload.windSpeedMps);
     }
   }

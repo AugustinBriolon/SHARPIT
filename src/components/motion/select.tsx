@@ -54,7 +54,9 @@ const SelectContext = createContext<SelectContextValue | null>(null);
 
 function useSelectContext(component: string) {
   const ctx = useContext(SelectContext);
-  if (!ctx) throw new Error(`${component} must be used within <Select>`);
+  if (!ctx) {
+    throw new Error(`${component} must be used within <Select>`);
+  }
   return ctx;
 }
 
@@ -107,7 +109,9 @@ export function Select({
 
   const setOpen = useCallback(
     (next: boolean) => {
-      if (!openControlled) setInternalOpen(next);
+      if (!openControlled) {
+        setInternalOpen(next);
+      }
       onOpenChange?.(next);
     },
     [onOpenChange, openControlled],
@@ -115,7 +119,9 @@ export function Select({
 
   const select = useCallback(
     (next: string) => {
-      if (!controlled) setInternal(next);
+      if (!controlled) {
+        setInternal(next);
+      }
       onValueChange?.(next);
       setOpen(false);
     },
@@ -127,7 +133,9 @@ export function Select({
   }, []);
   const unregister = useCallback((v: string) => {
     setLabels((m) => {
-      if (!m.has(v)) return m;
+      if (!m.has(v)) {
+        return m;
+      }
       const next = new Map(m);
       next.delete(v);
       return next;
@@ -136,10 +144,14 @@ export function Select({
 
   // close on outside pointer / escape
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      return;
+    }
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false);
     const onPointer = (e: PointerEvent) => {
-      if (rootRef.current && !rootRef.current.contains(e.target as Node)) setOpen(false);
+      if (rootRef.current && !rootRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
     };
     window.addEventListener('keydown', onKey);
     window.addEventListener('pointerdown', onPointer);
@@ -195,8 +207,12 @@ export interface SelectTriggerProps {
 }
 
 function selectKeyframeTransition(open: boolean, reduce: boolean): Transition {
-  if (reduce) return { duration: 0 };
-  if (open) return { duration: 0.6, times: [0, 0.4, 1], ease: EASE_OUT };
+  if (reduce) {
+    return { duration: 0 };
+  }
+  if (open) {
+    return { duration: 0.6, times: [0, 0.4, 1], ease: EASE_OUT };
+  }
   return { duration: 0.42, times: [0, 0.5, 1], ease: EASE_OUT };
 }
 
@@ -278,7 +294,9 @@ export function SelectContent({ className, children }: SelectContentProps) {
 
   useLayoutEffect(() => {
     const node = innerRef.current;
-    if (!node) return;
+    if (!node) {
+      return;
+    }
     const measure = () => setHeight(node.offsetHeight);
     measure();
     const observer = new ResizeObserver(measure);
@@ -288,10 +306,14 @@ export function SelectContent({ className, children }: SelectContentProps) {
 
   // On open, flip upward when there isn't room below and there's more above.
   useLayoutEffect(() => {
-    if (!open) return;
+    if (!open) {
+      return;
+    }
     const trigger = document.getElementById(ctx.triggerId);
     const node = innerRef.current;
-    if (!trigger || !node) return;
+    if (!trigger || !node) {
+      return;
+    }
     const rect = trigger.getBoundingClientRect();
     const h = node.offsetHeight;
     const below = window.innerHeight - rect.bottom;

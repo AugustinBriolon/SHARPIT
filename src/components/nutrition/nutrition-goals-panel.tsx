@@ -49,10 +49,10 @@ function CalorieRing({
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center px-3 text-center">
         <p className={cn('text-data text-2xl font-semibold tabular-nums', CALORIE_RING.text)}>
-          {remaining != null ? Math.abs(Math.round(remaining)).toLocaleString('fr-FR') : '-'}
+          {remaining !== null ? Math.abs(Math.round(remaining)).toLocaleString('fr-FR') : '-'}
         </p>
         <p className="text-muted-foreground text-[11px] leading-tight">
-          {remaining != null && remaining < 0 ? 'kcal au-dessus' : 'kcal restantes'}
+          {remaining !== null && remaining < 0 ? 'kcal au-dessus' : 'kcal restantes'}
         </p>
       </div>
     </div>
@@ -84,7 +84,9 @@ export function NutritionGoalsPanel({
     );
   }
 
-  if (!progress) return null;
+  if (!progress) {
+    return null;
+  }
 
   const { calories, protein, carbohydrates, fat, exerciseCalories, calorieBudget } = progress;
 

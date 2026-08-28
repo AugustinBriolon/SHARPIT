@@ -26,7 +26,9 @@ export function maxEnvironmentalImpact(
 export function parseSessionEnvironmentalImpact(
   environmentContext: unknown,
 ): TrainingEnvironmentalImpact {
-  if (!environmentContext || typeof environmentContext !== 'object') return 'NONE';
+  if (!environmentContext || typeof environmentContext !== 'object') {
+    return 'NONE';
+  }
   const ctx = environmentContext as PlannedSessionContext;
   return ctx.environment?.trainingImpact ?? 'NONE';
 }
@@ -53,9 +55,13 @@ export function slicePlannedSessions(
   const slices: ScenarioSessionSlice[] = [];
 
   for (const session of sessions) {
-    if (session.completed || session.activityId) continue;
+    if (session.completed || session.activityId) {
+      continue;
+    }
     const trainingDayId = computeTrainingDayId(new Date(session.date));
-    if (!allowed.has(trainingDayId)) continue;
+    if (!allowed.has(trainingDayId)) {
+      continue;
+    }
 
     slices.push({
       sessionId: session.id,
@@ -91,7 +97,9 @@ export function aggregatePlanningMaps(
   }
 
   for (const session of sessions) {
-    if (!plannedTssByDay.has(session.trainingDayId)) continue;
+    if (!plannedTssByDay.has(session.trainingDayId)) {
+      continue;
+    }
     plannedTssByDay.set(
       session.trainingDayId,
       (plannedTssByDay.get(session.trainingDayId) ?? 0) + session.tss,

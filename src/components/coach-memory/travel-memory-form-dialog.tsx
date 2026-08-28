@@ -46,7 +46,7 @@ type TravelMemoryFormDialogProps = {
 };
 
 function entryToPlace(entry: CoachMemoryEntry | null | undefined): LocationPlaceValue {
-  if (!entry?.locationLabel || entry.locationLat == null || entry.locationLng == null) {
+  if (!entry?.locationLabel || entry.locationLat === null || entry.locationLng === null) {
     return null;
   }
   return {
@@ -86,7 +86,9 @@ export function TravelMemoryFormDialog({
   const { offline, guardDisabled, offlineLabel } = useOfflineGuard();
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      return;
+    }
     const timer = window.setTimeout(() => labelRef.current?.focus(), 50);
     return () => window.clearTimeout(timer);
   }, [open]);
@@ -106,7 +108,9 @@ export function TravelMemoryFormDialog({
 
   function selectTypeAt(index: number) {
     const option = ENTRY_TYPE_OPTIONS[index];
-    if (!option) return;
+    if (!option) {
+      return;
+    }
     setEntryType(option.type);
     focusType(index);
   }
@@ -151,8 +155,12 @@ export function TravelMemoryFormDialog({
   }
 
   function submitLabel(): string {
-    if (saving) return 'Enregistrement…';
-    if (isEdit) return 'Enregistrer';
+    if (saving) {
+      return 'Enregistrement…';
+    }
+    if (isEdit) {
+      return 'Enregistrer';
+    }
     return 'Ajouter';
   }
 
@@ -160,7 +168,9 @@ export function TravelMemoryFormDialog({
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
-    if (guardDisabled) return;
+    if (guardDisabled) {
+      return;
+    }
     setError(null);
 
     if (isTravel && !place) {
@@ -315,7 +325,9 @@ export function TravelMemoryFormDialog({
                     onCheckedChange={(checked) => {
                       const next = checked === true;
                       setNoStructuredTraining(next);
-                      if (next) setAllowedDisciplines([]);
+                      if (next) {
+                        setAllowedDisciplines([]);
+                      }
                     }}
                   />
                   <span>Aucun sport structuré</span>

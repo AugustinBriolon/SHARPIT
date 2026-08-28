@@ -51,7 +51,7 @@ export function TrainingNextSession({ session }: { session: ClientPlannedSession
     session.durationMin ? `${session.durationMin} min` : null,
     dateStr,
     intensityLabel,
-    session.load != null ? formatTrainingLoad(session.load, mode) : null,
+    session.load !== null ? formatTrainingLoad(session.load, mode) : null,
   ].filter((part): part is string => Boolean(part));
 
   return (

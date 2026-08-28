@@ -260,7 +260,9 @@ export interface GarminHeartRateZoneRow {
 export function pickMaxHeartRateFromZones(
   zones: GarminHeartRateZoneRow[] | null | undefined,
 ): number | null {
-  if (!Array.isArray(zones) || zones.length === 0) return null;
+  if (!Array.isArray(zones) || zones.length === 0) {
+    return null;
+  }
   const preferred =
     zones.find((z) => z.sport === 'DEFAULT') ??
     zones.find((z) => z.sport === 'RUNNING') ??
@@ -307,8 +309,10 @@ export async function fetchAthleteThresholds(client: GCClient): Promise<GarminAt
       // 10. On normalise : aucune allure seuil de course n'est < 1,5 m/s
       // (~11 min/km), donc on remet à l'échelle dans ce cas.
       let speed = num(u.lactateThresholdSpeed);
-      if (speed != null) {
-        if (speed < 1.5) speed *= 10;
+      if (speed !== null) {
+        if (speed < 1.5) {
+          speed *= 10;
+        }
         result.runThresholdPaceSecPerKm = speed > 0 ? Math.round(1000 / speed) : null;
       }
     }
@@ -369,14 +373,18 @@ const EMPTY_SLEEP: GarminSleepDetail = {
  * UTC donne donc l'heure murale locale. */
 function localMinutesOfDay(localEpochMs: unknown): number | null {
   const ms = Number(localEpochMs);
-  if (!Number.isFinite(ms) || ms <= 0) return null;
+  if (!Number.isFinite(ms) || ms <= 0) {
+    return null;
+  }
   const d = new Date(ms);
   return d.getUTCHours() * 60 + d.getUTCMinutes();
 }
 
 function secToMin(v: unknown): number | null {
   const n = Number(v);
-  if (!Number.isFinite(n) || n < 0) return null;
+  if (!Number.isFinite(n) || n < 0) {
+    return null;
+  }
   return Math.round(n / 60);
 }
 
@@ -429,13 +437,13 @@ async function fetchSleepDetail(client: GCClient, date: Date): Promise<GarminSle
     const awake = secToMin(dto.awakeSleepSeconds);
 
     let sleepMinutes = secToMin(dto.sleepTimeSeconds);
-    if (sleepMinutes == null) {
+    if (sleepMinutes === null) {
       const sum = (deep ?? 0) + (light ?? 0) + (rem ?? 0);
       sleepMinutes = sum > 0 ? sum : await fetchSleepDuration(client, date);
     }
 
     const napMinutesRaw = secToMin(dto.napTimeSeconds);
-    const napMinutes = napMinutesRaw != null && napMinutesRaw > 0 ? napMinutesRaw : null;
+    const napMinutes = napMinutesRaw !== null && napMinutesRaw > 0 ? napMinutesRaw : null;
 
     return {
       sleepMinutes,
@@ -496,7 +504,7 @@ export async function fetchWeightRange(
     for (const day of data?.dailyWeightSummaries ?? []) {
       const grams = day?.latestWeight?.weight;
       const key = day?.summaryDate ?? day?.latestWeight?.calendarDate;
-      if (grams != null && !Number.isNaN(grams) && key) {
+      if (grams !== null && !Number.isNaN(grams) && key) {
         map.set(key, Number((grams / 1000).toFixed(1)));
       }
     }
@@ -526,7 +534,9 @@ async function fetchTrainingReadiness(client: GCClient, date: Date): Promise<Rea
       `https://connectapi.garmin.com/metrics-service/metrics/trainingreadiness/${ds}`,
     )) as Array<Record<string, unknown>> | null;
     const r = Array.isArray(raw) ? raw[0] : null;
-    if (!r) return empty;
+    if (!r) {
+      return empty;
+    }
 
     const num = (v: unknown) => (typeof v === 'number' && !Number.isNaN(v) ? v : null);
     const str = (v: unknown) => (typeof v === 'string' ? v : null);
@@ -554,7 +564,7 @@ async function fetchTrainingReadiness(client: GCClient, date: Date): Promise<Rea
         percent: num(r.sleepHistoryFactorPercent),
         feedback: str(r.sleepHistoryFactorFeedback),
       },
-    ].filter((f) => f.percent != null || f.feedback != null);
+    ].filter((f) => f.percent !== null || f.feedback !== null);
 
     return {
       readinessScore: num(r.score),
@@ -635,8 +645,11 @@ async function fetchTotalSteps(client: GCClient, date: Date): Promise<number | n
     )) as GarminDailyStepsRow[] | GarminDailyStepsRow | null;
 
     let rows: GarminDailyStepsRow[] = [];
-    if (Array.isArray(payload)) rows = payload;
-    else if (payload) rows = [payload];
+    if (Array.isArray(payload)) {
+      rows = payload;
+    } else if (payload) {
+      rows = [payload];
+    }
     const match = rows.find((row) => row.calendarDate === ds) ?? rows[0];
     const steps = match?.totalSteps;
     return typeof steps === 'number' && Number.isFinite(steps) && steps >= 0

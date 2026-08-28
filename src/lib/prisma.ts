@@ -6,9 +6,15 @@ const globalForPrisma = globalThis as unknown as {
 };
 
 function useNeonAdapter(connectionString: string | undefined): boolean {
-  if (!connectionString) return false;
-  if (process.env.PRISMA_NEON_ADAPTER === 'false') return false;
-  if (process.env.PRISMA_NEON_ADAPTER === 'true') return true;
+  if (!connectionString) {
+    return false;
+  }
+  if (process.env.PRISMA_NEON_ADAPTER === 'false') {
+    return false;
+  }
+  if (process.env.PRISMA_NEON_ADAPTER === 'true') {
+    return true;
+  }
   return connectionString.includes('neon.tech');
 }
 

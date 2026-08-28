@@ -17,9 +17,15 @@ function fieldDataState(
   success: boolean,
   focused: boolean,
 ): 'error' | 'success' | 'focused' | 'idle' {
-  if (hasError) return 'error';
-  if (success) return 'success';
-  if (focused) return 'focused';
+  if (hasError) {
+    return 'error';
+  }
+  if (success) {
+    return 'success';
+  }
+  if (focused) {
+    return 'focused';
+  }
   return 'idle';
 }
 
@@ -92,12 +98,16 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
 
   // Shake the field when an error appears.
   useEffect(() => {
-    if (!fieldRef.current || reduce || !hasError) return;
+    if (!fieldRef.current || reduce || !hasError) {
+      return;
+    }
     animate(fieldRef.current, { x: [0, -6, 6, -4, 4, -2, 0] }, { duration: 0.45 });
   }, [hasError, reduce]);
 
   const handleChange = (next: string) => {
-    if (!controlled) setInternal(next);
+    if (!controlled) {
+      setInternal(next);
+    }
     onChange?.(next);
   };
 

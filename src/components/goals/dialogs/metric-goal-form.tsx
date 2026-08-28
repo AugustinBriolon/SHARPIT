@@ -50,9 +50,13 @@ const periodSportOptions: (ActivityType | typeof ALL_SPORTS)[] = [
 ];
 
 function toDateInput(value: string | Date | null | undefined): string {
-  if (!value) return '';
+  if (!value) {
+    return '';
+  }
   const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return '';
+  if (Number.isNaN(d.getTime())) {
+    return '';
+  }
   return d.toISOString().slice(0, 10);
 }
 
@@ -109,11 +113,15 @@ export function MetricGoalForm({ template, goal, onError, formId, onSubmit }: Me
   const existing = useMemo(() => parseGoalMetricConfig(goal?.metricKey), [goal?.metricKey]);
 
   const [sport, setSport] = useState<ActivityType>(() => {
-    if (existing?.template === 'performance') return existing.sport;
+    if (existing?.template === 'performance') {
+      return existing.sport;
+    }
     return ActivityType.RUN;
   });
   const [distancePreset, setDistancePreset] = useState<string>(() => {
-    if (existing?.template !== 'performance') return '5k';
+    if (existing?.template !== 'performance') {
+      return '5k';
+    }
     const presets = distancePresetsForSport(existing.sport);
     const match = presets.find((p) => p.distanceM === existing.distanceM);
     return match?.id ?? 'custom';
@@ -122,12 +130,14 @@ export function MetricGoalForm({ template, goal, onError, formId, onSubmit }: Me
     if (existing?.template === 'performance') {
       const presets = distancePresetsForSport(existing.sport);
       const isCustom = !presets.some((p) => p.distanceM === existing.distanceM);
-      if (isCustom) return String(existing.distanceM / 1000);
+      if (isCustom) {
+        return String(existing.distanceM / 1000);
+      }
     }
     return '';
   });
   const [chronoTarget, setChronoTarget] = useState(() => {
-    if (existing?.template === 'performance' && goal?.targetValue != null) {
+    if (existing?.template === 'performance' && goal?.targetValue !== null) {
       return formatChronoSeconds(goal.targetValue);
     }
     return '';
@@ -161,7 +171,7 @@ export function MetricGoalForm({ template, goal, onError, formId, onSubmit }: Me
     return ALL_SPORTS;
   });
   const [periodTarget, setPeriodTarget] = useState(() => {
-    if (existing?.template === 'period' && goal?.targetValue != null) {
+    if (existing?.template === 'period' && goal?.targetValue !== null) {
       return targetInputFromStored(existing.measure, goal.targetValue);
     }
     return '';
@@ -182,7 +192,9 @@ export function MetricGoalForm({ template, goal, onError, formId, onSubmit }: Me
   function resolveDistanceM(): number | null {
     if (distancePreset === 'custom') {
       const km = Number(customDistanceKm.replace(',', '.'));
-      if (!Number.isFinite(km) || km <= 0) return null;
+      if (!Number.isFinite(km) || km <= 0) {
+        return null;
+      }
       return Math.round(km * 1000);
     }
     const preset = presets.find((p) => p.id === distancePreset);
@@ -230,7 +242,7 @@ export function MetricGoalForm({ template, goal, onError, formId, onSubmit }: Me
     }
 
     const target = parseTargetInput(measure, periodTarget);
-    if (target == null) {
+    if (target === null) {
       onError('Saisis une cible valide.');
       return;
     }
@@ -262,7 +274,9 @@ export function MetricGoalForm({ template, goal, onError, formId, onSubmit }: Me
   const suggestedPerformanceTitle = useMemo(() => {
     const distanceM = resolveDistanceM();
     const targetSeconds = parseChronoInput(chronoTarget);
-    if (!distanceM || !targetSeconds) return '';
+    if (!distanceM || !targetSeconds) {
+      return '';
+    }
     return `${formatDistanceLabel(distanceM)} en ${formatChronoSeconds(targetSeconds)}`;
   }, [chronoTarget, customDistanceKm, distancePreset, sport]);
 
@@ -274,7 +288,9 @@ export function MetricGoalForm({ template, goal, onError, formId, onSubmit }: Me
           <Select
             value={sport}
             onValueChange={(v) => {
-              if (!v) return;
+              if (!v) {
+                return;
+              }
               const next = v as ActivityType;
               setSport(next);
               const nextPresets = distancePresetsForSport(next);

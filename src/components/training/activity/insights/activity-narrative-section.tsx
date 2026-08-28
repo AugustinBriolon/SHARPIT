@@ -42,7 +42,9 @@ function parseNarrative(raw: unknown): ActivityNarrative | null {
 }
 
 function readTimedOut(activityId: string): boolean {
-  if (typeof window === 'undefined') return false;
+  if (typeof window === 'undefined') {
+    return false;
+  }
   try {
     return sessionStorage.getItem(`${NARRATIVE_TIMEOUT_PREFIX}${activityId}`) === '1';
   } catch {
@@ -116,14 +118,18 @@ export function ActivityNarrativeSection({
   }, [activityId]);
 
   useEffect(() => {
-    if (!initialAnalyzedAt) return;
+    if (!initialAnalyzedAt) {
+      return;
+    }
     setPolled(null);
     clearTimedOut(activityId);
     setPollTimedOut(false);
   }, [activityId, initialAnalyzedAt]);
 
   useEffect(() => {
-    if (!isPending) return;
+    if (!isPending) {
+      return;
+    }
 
     const startedAt = Date.now();
     let cancelled = false;
@@ -131,11 +137,15 @@ export function ActivityNarrativeSection({
     async function poll() {
       while (!cancelled && Date.now() - startedAt < NARRATIVE_POLL_MAX_MS) {
         await new Promise((resolve) => setTimeout(resolve, NARRATIVE_POLL_MS));
-        if (cancelled) return;
+        if (cancelled) {
+          return;
+        }
 
         try {
           const response = await fetch(`/api/activities/${activityId}`);
-          if (!response.ok) continue;
+          if (!response.ok) {
+            continue;
+          }
           const activity = (await response.json()) as {
             narrativeAnalysis?: unknown;
             narrativeAnalyzedAt?: string | null;
@@ -231,9 +241,13 @@ export function ActivityNarrativeSection({
     );
   }
 
-  if (!eligible && !isDemoLinkStory) return null;
+  if (!eligible && !isDemoLinkStory) {
+    return null;
+  }
 
-  if (isDemoLinkStory && !demoLink) return null;
+  if (isDemoLinkStory && !demoLink) {
+    return null;
+  }
 
   if (demoReadingPending || isPending || generating) {
     return (

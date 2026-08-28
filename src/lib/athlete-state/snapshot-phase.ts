@@ -45,7 +45,9 @@ export type SnapshotPhaseBuildParams = {
 
 function totalTssToday(activities: SnapshotActivityInput[], trainingDayId: string): number | null {
   const today = activities.filter((a) => activityMatchesTrainingDay(a.date, trainingDayId));
-  if (today.length === 0) return null;
+  if (today.length === 0) {
+    return null;
+  }
   return Math.round(today.reduce((sum, a) => sum + (a.load ?? 0), 0));
 }
 
@@ -97,7 +99,7 @@ export function buildSnapshotDailyPhase(params: SnapshotPhaseBuildParams): {
     : null;
 
   const dailyStrainAvailable = Boolean(
-    todayState.dailyStrain?.available && todayState.dailyStrain.strainScore != null,
+    todayState.dailyStrain?.available && todayState.dailyStrain.strainScore !== null,
   );
 
   const recommendationAvailable = Boolean(
@@ -151,7 +153,7 @@ export function buildSnapshotDailyPhase(params: SnapshotPhaseBuildParams): {
     evening: {
       effortLevel: effort?.level ?? null,
       totalDurationMin:
-        effort?.totalDurationSec != null ? Math.round(effort.totalDurationSec / 60) : null,
+        effort?.totalDurationSec !== null ? Math.round(effort.totalDurationSec / 60) : null,
       completedSessionCount: resolution.signals.completedSessionCount,
       tomorrowSession: pickTomorrowSessionHint(refDate, plannedSessions),
       sleep: {
@@ -172,15 +174,25 @@ export function shouldRefreshSnapshotForPhaseDrift(
   now: Date = new Date(),
 ): boolean {
   const phase = snapshot.dailyPhase?.phase;
-  if (!phase) return true;
+  if (!phase) {
+    return true;
+  }
 
   const hour = now.getHours();
   const ageMin = minutesBetween(snapshot.generatedAt, now);
 
-  if (phase === 'SESSION_COMPLETED' && ageMin >= 55) return true;
-  if (phase === 'RECOVERY_WINDOW' && ageMin >= 120) return true;
-  if (phase === 'MORNING' && ageMin >= 90) return true;
-  if (hour >= 22 && phase !== 'END_OF_DAY') return true;
+  if (phase === 'SESSION_COMPLETED' && ageMin >= 55) {
+    return true;
+  }
+  if (phase === 'RECOVERY_WINDOW' && ageMin >= 120) {
+    return true;
+  }
+  if (phase === 'MORNING' && ageMin >= 90) {
+    return true;
+  }
+  if (hour >= 22 && phase !== 'END_OF_DAY') {
+    return true;
+  }
 
   return false;
 }

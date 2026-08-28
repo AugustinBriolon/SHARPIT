@@ -86,19 +86,19 @@ function buildExerciseStep(
 
   // Stretches and massage are held for a time; "1 rep" would end the step instantly.
   const isMobility = garmin.category === MOBILITY_CATEGORY;
-  const useDuration = set.reps == null || set.reps <= 0 || (isMobility && set.reps <= 1);
+  const useDuration = set.reps === null || set.reps <= 0 || (isMobility && set.reps <= 1);
 
   if (useDuration) {
     const defaultSec = isMobility ? DEFAULT_MOBILITY_SEC : DEFAULT_ISOMETRIC_SEC;
     step.endCondition = TIME_CONDITION;
     step.endConditionValue =
-      set.durationSec != null && set.durationSec > 0 ? set.durationSec : defaultSec;
+      set.durationSec !== null && set.durationSec > 0 ? set.durationSec : defaultSec;
   } else {
     step.endCondition = REPS_CONDITION;
     step.endConditionValue = Math.max(1, set.reps || 1);
   }
 
-  if (set.weightKg != null && set.weightKg > 0) {
+  if (set.weightKg !== null && set.weightKg > 0) {
     step.weightValue = kgToLbs(set.weightKg);
     step.weightUnit = POUND_UNIT;
   }
@@ -107,7 +107,9 @@ function buildExerciseStep(
 }
 
 function resolveRestMode(set: StrengthWorkoutSetInput): StrengthRestMode {
-  if (set.restMode === 'time' && set.restSec != null && set.restSec > 0) return 'time';
+  if (set.restMode === 'time' && set.restSec !== null && set.restSec > 0) {
+    return 'time';
+  }
   return 'lap';
 }
 
@@ -119,7 +121,7 @@ function buildRestStep(
 ): StepBag {
   const step = baseExecutableStep(order.nextOrder(), STEP_REST, childStepId);
   const mode = resolveRestMode(set);
-  if (mode === 'time' && set.restSec != null && set.restSec > 0) {
+  if (mode === 'time' && set.restSec !== null && set.restSec > 0) {
     step.endCondition = TIME_CONDITION;
     step.endConditionValue = set.restSec;
     step.description = `Repos ${set.restSec}s`;

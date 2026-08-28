@@ -12,9 +12,11 @@ export function applyPlannedSessionLinkOptimistic(
   activities: ClientActivity[] | undefined,
 ): ClientPlannedSession[] {
   return sessions.map((session) => {
-    if (session.id !== id) return session;
+    if (session.id !== id) {
+      return session;
+    }
 
-    if (activityId == null) {
+    if (activityId === null) {
       return {
         ...session,
         activityId: null,

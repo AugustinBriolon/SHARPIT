@@ -18,8 +18,12 @@ import { corpsToneFromPhysicalSeverity } from '@/lib/health/health-status';
 import { cn } from '@/lib/utils';
 
 function TrendIcon({ trend }: { trend: string }) {
-  if (trend === 'IMPROVING') return <TrendingDown className="text-primary size-3.5" />;
-  if (trend === 'WORSENING') return <TrendingUp className="text-signal-risk size-3.5" />;
+  if (trend === 'IMPROVING') {
+    return <TrendingDown className="text-primary size-3.5" />;
+  }
+  if (trend === 'WORSENING') {
+    return <TrendingUp className="text-signal-risk size-3.5" />;
+  }
   return <Minus className="text-muted-foreground size-3.5" />;
 }
 
@@ -86,7 +90,7 @@ export function PhysicalHealthConditionCardView({
 
       {!compact && (
         <CardContent className="space-y-3 pt-0">
-          {condition.estimatedRecoveryDays != null && condition.isActive && (
+          {condition.estimatedRecoveryDays !== null && condition.isActive && (
             <p className="text-muted-foreground text-xs">
               Estimation de retour au baseline : ~{condition.estimatedRecoveryDays} jours
               <span className="block text-xs opacity-80">
@@ -144,7 +148,7 @@ function SeveritySparkline({
 }: {
   points: Array<{ date: string; severity: number | null }>;
 }) {
-  const valid = points.filter((p) => p.severity != null) as Array<{
+  const valid = points.filter((p) => p.severity !== null) as Array<{
     date: string;
     severity: number;
   }>;
@@ -243,7 +247,7 @@ function ConditionDetailDialog({ condition }: { condition: PhysicalHealthConditi
             </div>
           )}
 
-          {condition.estimatedRecoveryDays != null && condition.isActive && (
+          {condition.estimatedRecoveryDays !== null && condition.isActive && (
             <p className="text-muted-foreground text-xs">
               Retour au baseline estimé : ~{condition.estimatedRecoveryDays} jours
             </p>

@@ -20,7 +20,9 @@ export function StrengthVenuePicker({
 
   function selectAt(index: number) {
     const option = STRENGTH_VENUE_OPTIONS[index];
-    if (!option) return;
+    if (!option) {
+      return;
+    }
     onSelect(option.id);
     focusOption(index);
   }
@@ -60,7 +62,7 @@ export function StrengthVenuePicker({
       <p className="text-sm font-medium">Où t&apos;entraînes-tu en musculation ?</p>
       {STRENGTH_VENUE_OPTIONS.map((option, index) => {
         const active = value === option.id;
-        const tabIndex = active || (value == null && index === 0) ? 0 : -1;
+        const tabIndex = active || (value === null && index === 0) ? 0 : -1;
         return (
           <button
             key={option.id}

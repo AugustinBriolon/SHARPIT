@@ -38,7 +38,9 @@ async function loadNutritionSummary(
     const row = await prisma.dailyNutrition.findFirst({
       where: { athleteId, date: new Date(`${trainingDayId}T00:00:00Z`) },
     });
-    if (!row) return null;
+    if (!row) {
+      return null;
+    }
     return {
       calories: row.calories,
       protein: Math.round(row.protein),
@@ -77,25 +79,33 @@ async function loadHomeWeatherHint(
     orderBy: { observedAt: 'desc' },
     select: { payload: true },
   });
-  if (!row?.payload || typeof row.payload !== 'object') return null;
+  if (!row?.payload || typeof row.payload !== 'object') {
+    return null;
+  }
   const payload = row.payload as Record<string, unknown>;
   const airTemperatureC =
     typeof payload.airTemperatureC === 'number' ? payload.airTemperatureC : null;
   const relativeHumidityPct =
     typeof payload.relativeHumidityPct === 'number' ? payload.relativeHumidityPct : null;
-  if (airTemperatureC == null && relativeHumidityPct == null) return null;
+  if (airTemperatureC === null && relativeHumidityPct === null) {
+    return null;
+  }
   return { airTemperatureC, relativeHumidityPct };
 }
 
 function formatPace(secPerKm?: number | null): string | null {
-  if (secPerKm == null || secPerKm <= 0) return null;
+  if (secPerKm === null || secPerKm <= 0) {
+    return null;
+  }
   const m = Math.floor(secPerKm / 60);
   const s = Math.round(secPerKm % 60);
   return `${m}:${s.toString().padStart(2, '0')}/km`;
 }
 
 function formatMin(seconds?: number | null): string {
-  if (!seconds) return '—';
+  if (!seconds) {
+    return '—';
+  }
   return `${Math.round(seconds / 60)} min`;
 }
 
@@ -207,7 +217,9 @@ async function buildCoachContextUncached(
   const dayCounts = new Array(7).fill(0);
   let weeksSpan = 0;
   for (const a of activities) {
-    if (a.date >= since) dayCounts[new Date(a.date).getDay()] += 1;
+    if (a.date >= since) {
+      dayCounts[new Date(a.date).getDay()] += 1;
+    }
   }
   weeksSpan = 8;
   const availableDays = dayCounts
@@ -219,29 +231,46 @@ async function buildCoachContextUncached(
   const recent = activities.slice(0, 14).map((a) => {
     const rel = (() => {
       const diff = differenceInCalendarDays(today, startOfDay(a.date));
-      if (diff === 0) return "aujourd'hui";
-      if (diff === 1) return 'hier';
+      if (diff === 0) {
+        return "aujourd'hui";
+      }
+      if (diff === 1) {
+        return 'hier';
+      }
       return null;
     })();
     const parts: string[] = [];
     if (a.runMetrics) {
-      if (a.runMetrics.distanceM) parts.push(`${(a.runMetrics.distanceM / 1000).toFixed(1)} km`);
+      if (a.runMetrics.distanceM) {
+        parts.push(`${(a.runMetrics.distanceM / 1000).toFixed(1)} km`);
+      }
       const pace = formatPace(a.runMetrics.paceSecPerKm);
-      if (pace) parts.push(pace);
-      if (a.runMetrics.avgHr) parts.push(`${a.runMetrics.avgHr} bpm`);
+      if (pace) {
+        parts.push(pace);
+      }
+      if (a.runMetrics.avgHr) {
+        parts.push(`${a.runMetrics.avgHr} bpm`);
+      }
     }
     if (a.bikeMetrics) {
-      if (a.bikeMetrics.avgPower) parts.push(`${Math.round(a.bikeMetrics.avgPower)} W`);
-      if (a.bikeMetrics.normalizedPower)
+      if (a.bikeMetrics.avgPower) {
+        parts.push(`${Math.round(a.bikeMetrics.avgPower)} W`);
+      }
+      if (a.bikeMetrics.normalizedPower) {
         parts.push(`NP ${Math.round(a.bikeMetrics.normalizedPower)}`);
-      if (a.bikeMetrics.tss) parts.push(`TSS ${Math.round(a.bikeMetrics.tss)}`);
+      }
+      if (a.bikeMetrics.tss) {
+        parts.push(`TSS ${Math.round(a.bikeMetrics.tss)}`);
+      }
     }
-    if (a.swimMetrics?.distanceM) parts.push(`${a.swimMetrics.distanceM} m`);
+    if (a.swimMetrics?.distanceM) {
+      parts.push(`${a.swimMetrics.distanceM} m`);
+    }
     if (a.type === 'STRENGTH' && a.strengthSets.length) {
       const exos = a.strengthSets
         .slice(0, 5)
         .map((s) => {
-          const w = s.weightKg != null ? ` ${s.weightKg}kg` : '';
+          const w = s.weightKg !== null ? ` ${s.weightKg}kg` : '';
           return `${s.exercise} ${s.sets}x${s.reps}${w}`;
         })
         .join(', ');
@@ -253,7 +282,7 @@ async function buildCoachContextUncached(
       type: TYPE_FR[a.type] ?? a.type,
       title: a.title ?? '',
       duration: formatMin(a.duration),
-      load: a.load != null ? Math.round(a.load) : null,
+      load: a.load !== null ? Math.round(a.load) : null,
       rpe: a.rpe,
       feeling: a.feeling ?? null,
       detail: parts.join(' · '),
@@ -282,7 +311,7 @@ async function buildCoachContextUncached(
   // ---- Santé / récup (7 derniers jours) ----
   const last7 = healthEntries.slice(0, 7);
   const avg = (vals: (number | null | undefined)[]) => {
-    const ok = vals.filter((v): v is number => v != null);
+    const ok = vals.filter((v): v is number => v !== null);
     return ok.length ? Math.round(ok.reduce((s, v) => s + v, 0) / ok.length) : null;
   };
   const [todayHealth] = healthEntries;
@@ -339,7 +368,7 @@ async function buildCoachContextUncached(
 
   const envPresentation = buildEnvironmentPresentationContext(athleteSnapshot.environment);
   const homeLabel =
-    profile?.homeLocationLabel?.trim() || (profile?.homeLocationLat != null ? 'Domicile' : null);
+    profile?.homeLocationLabel?.trim() || (profile?.homeLocationLat !== null ? 'Domicile' : null);
   const environment = {
     homeLabel,
     thermalLabel: envPresentation.thermalLabel,
@@ -400,9 +429,15 @@ async function buildCoachContextUncached(
               ? (() => {
                   const last = n.checkins[0]?.severity;
                   const prev = n.checkins[1]?.severity;
-                  if (last == null || prev == null) return null;
-                  if (last < prev) return 'en amélioration';
-                  if (last > prev) return 'en aggravation';
+                  if (last === null || prev === null) {
+                    return null;
+                  }
+                  if (last < prev) {
+                    return 'en amélioration';
+                  }
+                  if (last > prev) {
+                    return 'en aggravation';
+                  }
                   return 'stable';
                 })()
               : null;
@@ -510,7 +545,7 @@ async function buildCoachContextUncached(
         // applyTruthfulnessOverlay in snapshot-truthfulness.ts): reusing the snapshot's
         // own already-gated field, not re-deriving the phase check, so Coach can never
         // drift from what Today is showing.
-        prescriptiveAdviceAllowed: athleteSnapshot.todaysDecision != null,
+        prescriptiveAdviceAllowed: athleteSnapshot.todaysDecision !== null,
       }
     : null;
 
@@ -579,7 +614,9 @@ const CONSISTENCY_FR: Record<string, string> = {
  * still surfaced either way — only the prescriptive framing is gated.
  */
 export function formatDecisionSection(decision: CoachContext['decision']): string[] {
-  if (!decision || decision.verdict === 'INSUFFICIENT_DATA') return [];
+  if (!decision || decision.verdict === 'INSUFFICIENT_DATA') {
+    return [];
+  }
 
   const d = decision;
   const lines: string[] = [];
@@ -588,7 +625,9 @@ export function formatDecisionSection(decision: CoachContext['decision']): strin
     lines.push(
       `Verdict : ${VERDICT_FR[d.verdict] ?? d.verdict} · confiance ${Math.round((d.confidence ?? 0) * 100)}% (${d.confidenceTier ?? '—'}).`,
     );
-    if (d.headline) lines.push(`Message : ${d.headline}.`);
+    if (d.headline) {
+      lines.push(`Message : ${d.headline}.`);
+    }
     if (d.topAction) {
       lines.push(`Action prioritaire : ${d.topAction}${d.rationale ? `. ${d.rationale}` : ''}.`);
     }
@@ -634,7 +673,9 @@ export function formatDecisionSection(decision: CoachContext['decision']): strin
  * as the travel block, without the location/logistics dimension.
  */
 export function formatConstraintsSection(constraints: CoachContext['constraints']): string[] {
-  if (constraints.length === 0) return [];
+  if (constraints.length === 0) {
+    return [];
+  }
 
   const lines: string[] = ['\n## Contraintes temporaires'];
   lines.push(
@@ -675,14 +716,16 @@ export function formatCoachContext(ctx: CoachContext): string {
   if (ctx.profile) {
     const p = ctx.profile;
     const seuils = [
-      p.ftpW != null ? `FTP ${p.ftpW} W` : null,
-      p.lthr != null ? `LTHR ${p.lthr} bpm` : null,
-      p.maxHr != null ? `FC max ${p.maxHr} bpm` : null,
+      p.ftpW !== null ? `FTP ${p.ftpW} W` : null,
+      p.lthr !== null ? `LTHR ${p.lthr} bpm` : null,
+      p.maxHr !== null ? `FC max ${p.maxHr} bpm` : null,
       p.thresholdPace ? `Allure seuil ${p.thresholdPace}` : null,
-      p.vo2maxRunning != null ? `VO2max course ${p.vo2maxRunning}` : null,
-      p.vo2maxCycling != null ? `VO2max vélo ${p.vo2maxCycling}` : null,
+      p.vo2maxRunning !== null ? `VO2max course ${p.vo2maxRunning}` : null,
+      p.vo2maxCycling !== null ? `VO2max vélo ${p.vo2maxCycling}` : null,
     ].filter(Boolean);
-    if (seuils.length) lines.push(`Seuils physiologiques : ${seuils.join(', ')}.`);
+    if (seuils.length) {
+      lines.push(`Seuils physiologiques : ${seuils.join(', ')}.`);
+    }
   } else {
     lines.push('Seuils physiologiques : non renseignés (estimations à utiliser).');
   }
@@ -715,7 +758,7 @@ export function formatCoachContext(ctx: CoachContext): string {
       REST_ONLY: 'repos uniquement',
     };
     const bits = [
-      f.fatigueIndex != null ? `Index ${f.fatigueIndex}/100` : null,
+      f.fatigueIndex !== null ? `Index ${f.fatigueIndex}/100` : null,
       f.fatigueLevel ? (LEVEL_FR[f.fatigueLevel] ?? f.fatigueLevel) : null,
       f.trainingCapacity
         ? `Capacité d'entraînement ${CAPACITY_FR[f.trainingCapacity] ?? f.trainingCapacity}`
@@ -733,7 +776,7 @@ export function formatCoachContext(ctx: CoachContext): string {
         `⚠ Risque de surentraînement fonctionnel : ${f.functionalOverreachingRisk}. Priorise la récupération avant d'augmenter la charge.`,
       );
     }
-    if (f.estimatedTimeToFresh != null && f.fatigueLevel !== 'FRESH') {
+    if (f.estimatedTimeToFresh !== null && f.fatigueLevel !== 'FRESH') {
       lines.push(`Retour à l'état frais estimé dans ${f.estimatedTimeToFresh} jour(s).`);
     }
     if (f.performanceImpairmentEstimate && f.performanceImpairmentEstimate > 0.1) {
@@ -763,7 +806,7 @@ export function formatCoachContext(ctx: CoachContext): string {
       DECLINING: 'En déclin',
     };
     const bits = [
-      a.adaptationIndex != null ? `Index ${a.adaptationIndex}/100` : null,
+      a.adaptationIndex !== null ? `Index ${a.adaptationIndex}/100` : null,
       a.adaptationStatus ? (STATUS_FR[a.adaptationStatus] ?? a.adaptationStatus) : null,
       a.adaptationTrend ? (TREND_FR[a.adaptationTrend] ?? a.adaptationTrend) : null,
     ].filter(Boolean);
@@ -783,7 +826,7 @@ export function formatCoachContext(ctx: CoachContext): string {
         `⚠ Risque de plateau : ≥ 14 jours sans progression d'adaptation. Un changement de stimulus est nécessaire.`,
       );
     }
-    if (a.estimatedAdaptationPeak != null) {
+    if (a.estimatedAdaptationPeak !== null) {
       lines.push(`Pic de forme estimé dans ${a.estimatedAdaptationPeak} jour(s).`);
     }
   }
@@ -795,21 +838,27 @@ export function formatCoachContext(ctx: CoachContext): string {
     const e = ctx.environment;
     const bits = [
       e.homeLabel ? `lieu ${e.homeLabel}` : null,
-      e.airTemperatureC != null ? `${Math.round(e.airTemperatureC)} °C` : null,
-      e.relativeHumidityPct != null ? `humidité ${Math.round(e.relativeHumidityPct)} %` : null,
+      e.airTemperatureC !== null ? `${Math.round(e.airTemperatureC)} °C` : null,
+      e.relativeHumidityPct !== null ? `humidité ${Math.round(e.relativeHumidityPct)} %` : null,
       e.thermalLabel,
     ].filter(Boolean);
     if (bits.length || e.summaryLine || e.detailLine) {
       lines.push(`\n## Environnement du jour`);
-      if (bits.length) lines.push(bits.join(' · ') + '.');
-      if (e.summaryLine) lines.push(e.summaryLine);
-      if (e.detailLine) lines.push(e.detailLine);
-      if (e.recoveryDemandAdjustment != null && e.recoveryDemandAdjustment !== 0) {
+      if (bits.length) {
+        lines.push(bits.join(' · ') + '.');
+      }
+      if (e.summaryLine) {
+        lines.push(e.summaryLine);
+      }
+      if (e.detailLine) {
+        lines.push(e.detailLine);
+      }
+      if (e.recoveryDemandAdjustment !== null && e.recoveryDemandAdjustment !== 0) {
         lines.push(
           `Ajustement récupération lié à l'environnement : ${e.recoveryDemandAdjustment > 0 ? '+' : ''}${Math.round(e.recoveryDemandAdjustment * 100)} %.`,
         );
       }
-      if (e.performanceAdjustment != null && e.performanceAdjustment !== 0) {
+      if (e.performanceAdjustment !== null && e.performanceAdjustment !== 0) {
         lines.push(
           `Ajustement performance attendu : ${e.performanceAdjustment > 0 ? '+' : ''}${Math.round(e.performanceAdjustment * 100)} %.`,
         );
@@ -820,23 +869,26 @@ export function formatCoachContext(ctx: CoachContext): string {
   // Santé
   const h = ctx.health;
   const healthBits = [
-    h.readinessToday != null ? `Readiness du jour ${h.readinessToday}/100` : null,
+    h.readinessToday !== null ? `Readiness du jour ${h.readinessToday}/100` : null,
     h.readinessLevel ? `(${h.readinessLevel})` : null,
     h.hrvStatus ? `HRV ${h.hrvStatus}` : null,
-    h.bodyBattery != null ? `Body Battery ${h.bodyBattery}` : null,
-    h.avgSleepMin != null
+    h.bodyBattery !== null ? `Body Battery ${h.bodyBattery}` : null,
+    h.avgSleepMin !== null
       ? `sommeil moy 7j ${Math.floor(h.avgSleepMin / 60)}h${(h.avgSleepMin % 60).toString().padStart(2, '0')}`
       : null,
-    h.avgRestingHr != null ? `FC repos moy ${h.avgRestingHr}` : null,
-    h.avgHrv != null ? `HRV moy ${h.avgHrv}` : null,
+    h.avgRestingHr !== null ? `FC repos moy ${h.avgRestingHr}` : null,
+    h.avgHrv !== null ? `HRV moy ${h.avgHrv}` : null,
   ].filter(Boolean);
-  if (healthBits.length) lines.push(`\n## Récupération\n${healthBits.join(' · ')}.`);
+  if (healthBits.length) {
+    lines.push(`\n## Récupération\n${healthBits.join(' · ')}.`);
+  }
 
   // Disponibilités
-  if (ctx.availableDays.length)
+  if (ctx.availableDays.length) {
     lines.push(
       `\n## Disponibilités\nJours d'entraînement habituels : ${ctx.availableDays.join(', ')}.`,
     );
+  }
 
   // Objectifs
   lines.push('\n## Objectifs');
@@ -864,7 +916,7 @@ export function formatCoachContext(ctx: CoachContext): string {
   }
   for (const g of ctx.metricGoals) {
     lines.push(
-      `Objectif métrique : ${g.title}${g.target != null ? ` → cible ${g.target}${g.unit ?? ''}${g.current != null ? ` (actuel ${g.current})` : ''}` : ''}.`,
+      `Objectif métrique : ${g.title}${g.target !== null ? ` → cible ${g.target}${g.unit ?? ''}${g.current !== null ? ` (actuel ${g.current})` : ''}` : ''}.`,
     );
   }
 
@@ -873,8 +925,8 @@ export function formatCoachContext(ctx: CoachContext): string {
     lines.push('\n## Séances récentes (14 dernières)');
     for (const a of ctx.recent) {
       const extra = [
-        a.load != null ? `charge ${a.load}` : null,
-        a.rpe != null ? `RPE ${a.rpe}` : null,
+        a.load !== null ? `charge ${a.load}` : null,
+        a.rpe !== null ? `RPE ${a.rpe}` : null,
         a.feeling ? `ressenti ${a.feeling}` : null,
         a.detail || null,
       ]
@@ -918,11 +970,11 @@ export function formatCoachContext(ctx: CoachContext): string {
       const bits = [
         `${p.category} : ${p.title}`,
         p.bodyPart ? `zone ${p.bodyPart}${p.side ? ` (${p.side})` : ''}` : null,
-        p.severity != null ? `sévérité inférée ${p.severity}/10` : null,
+        p.severity !== null ? `sévérité inférée ${p.severity}/10` : null,
         `statut ${p.status}`,
         p.trend ? `tendance ${p.trend}` : null,
         p.functionalCapacity ? `capacité fonctionnelle ${p.functionalCapacity}` : null,
-        p.confidence != null ? `confiance ${Math.round(p.confidence * 100)}%` : null,
+        p.confidence !== null ? `confiance ${Math.round(p.confidence * 100)}%` : null,
         p.description || null,
       ]
         .filter(Boolean)

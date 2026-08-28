@@ -59,11 +59,17 @@ function scheduleSessionContextRefresh(athleteId: string, sessionId: string) {
 async function resolveCoachDefaultGoalId(athleteId: string): Promise<string | null> {
   const [plan, goals] = await Promise.all([getActiveTrainingPlan(athleteId), getGoals(athleteId)]);
   const fromPlan = resolveDefaultPlanGoalId(plan?.goalId, selectableDatedGoalIds(goals));
-  if (fromPlan) return fromPlan;
+  if (fromPlan) {
+    return fromPlan;
+  }
   // Fallback: plan goal still exists even if undated / past filter edge cases.
-  if (!plan?.goalId) return null;
+  if (!plan?.goalId) {
+    return null;
+  }
   const goal = await getGoalById(athleteId, plan.goalId);
-  if (!goal || goal.achieved) return null;
+  if (!goal || goal.achieved) {
+    return null;
+  }
   return plan.goalId;
 }
 
@@ -232,8 +238,8 @@ export function createCoachTools(athleteId: string) {
             description: endurance.description,
             strengthPrescription: strength.strengthPrescription ?? undefined,
             endurancePrescription: endurance.endurancePrescription ?? undefined,
-            durationMin: input.durationMin != null ? Math.round(input.durationMin) : null,
-            load: input.load != null ? Math.round(input.load) : null,
+            durationMin: input.durationMin !== null ? Math.round(input.durationMin) : null,
+            load: input.load !== null ? Math.round(input.load) : null,
             intensity: input.intensity ?? null,
             goalId,
             exposureSetting: input.exposureSetting ?? null,
@@ -308,8 +314,8 @@ export function createCoachTools(athleteId: string) {
               startTime: input.startTime ?? null,
               title: leg.title,
               description: leg.description ?? null,
-              durationMin: leg.durationMin != null ? Math.round(leg.durationMin) : null,
-              load: leg.load != null ? Math.round(leg.load) : null,
+              durationMin: leg.durationMin !== null ? Math.round(leg.durationMin) : null,
+              load: leg.load !== null ? Math.round(leg.load) : null,
               intensity: leg.intensity ?? null,
               goalId,
             })),
@@ -374,18 +380,42 @@ export function createCoachTools(athleteId: string) {
             return { ok: false as const, error: 'Séance introuvable' };
           }
           const data: Prisma.PlannedSessionUncheckedUpdateInput = {};
-          if (input.date) data.date = toDate(input.date);
-          if (input.startTime !== undefined) data.startTime = input.startTime;
-          if (input.type) data.type = input.type;
-          if (input.intensity) data.intensity = input.intensity;
-          if (input.title !== undefined) data.title = input.title;
-          if (input.description !== undefined) data.description = input.description;
-          if (input.durationMin !== undefined) data.durationMin = input.durationMin;
-          if (input.load !== undefined) data.load = input.load;
-          if (input.exposureSetting !== undefined) data.exposureSetting = input.exposureSetting;
-          if (input.locationLabel !== undefined) data.locationLabel = input.locationLabel;
-          if (input.locationLat !== undefined) data.locationLat = input.locationLat;
-          if (input.locationLng !== undefined) data.locationLng = input.locationLng;
+          if (input.date) {
+            data.date = toDate(input.date);
+          }
+          if (input.startTime !== undefined) {
+            data.startTime = input.startTime;
+          }
+          if (input.type) {
+            data.type = input.type;
+          }
+          if (input.intensity) {
+            data.intensity = input.intensity;
+          }
+          if (input.title !== undefined) {
+            data.title = input.title;
+          }
+          if (input.description !== undefined) {
+            data.description = input.description;
+          }
+          if (input.durationMin !== undefined) {
+            data.durationMin = input.durationMin;
+          }
+          if (input.load !== undefined) {
+            data.load = input.load;
+          }
+          if (input.exposureSetting !== undefined) {
+            data.exposureSetting = input.exposureSetting;
+          }
+          if (input.locationLabel !== undefined) {
+            data.locationLabel = input.locationLabel;
+          }
+          if (input.locationLat !== undefined) {
+            data.locationLat = input.locationLat;
+          }
+          if (input.locationLng !== undefined) {
+            data.locationLng = input.locationLng;
+          }
 
           const nextType = input.type ?? existing.type;
           if (input.strengthPrescription !== undefined) {

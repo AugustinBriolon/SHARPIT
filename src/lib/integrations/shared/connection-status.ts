@@ -43,7 +43,9 @@ export const RENPHO_CONNECTION_SELECT = { email: true, passwordEnc: true } as co
 export const MFP_CONNECTION_SELECT = { sessionTokenEnc: true } as const;
 
 export function isOAuthAccountConnected(account: MaybeAccount): boolean {
-  if (!account) return false;
+  if (!account) {
+    return false;
+  }
   return (
     typeof account.accessTokenEnc === 'string' &&
     account.accessTokenEnc.length > 0 &&
@@ -53,7 +55,9 @@ export function isOAuthAccountConnected(account: MaybeAccount): boolean {
 }
 
 export function isGarminAccountConnected(account: MaybeAccount): boolean {
-  if (!account) return false;
+  if (!account) {
+    return false;
+  }
   return (
     typeof account.oauth1TokenEnc === 'string' &&
     account.oauth1TokenEnc.length > 0 &&
@@ -63,16 +67,20 @@ export function isGarminAccountConnected(account: MaybeAccount): boolean {
 }
 
 export function isRenphoAccountConnected(account: MaybeAccount): boolean {
-  if (!account) return false;
+  if (!account) {
+    return false;
+  }
   return (
-    account.email != null &&
+    account.email !== null &&
     typeof account.passwordEnc === 'string' &&
     account.passwordEnc.length > 0
   );
 }
 
 export function isMfpAccountConnected(account: MaybeAccount): boolean {
-  if (!account) return false;
+  if (!account) {
+    return false;
+  }
   return typeof account.sessionTokenEnc === 'string' && account.sessionTokenEnc.length > 0;
 }
 
@@ -97,18 +105,31 @@ interface ProviderAccounts {
  */
 export function reconnectProviderNames(accounts: ProviderAccounts): string[] {
   const names: string[] = [];
-  if (accounts.strava && !isOAuthAccountConnected(accounts.strava)) names.push('Strava');
-  if (accounts.garmin && !isGarminAccountConnected(accounts.garmin)) names.push('Garmin');
-  if (accounts.withings && !isOAuthAccountConnected(accounts.withings)) names.push('Withings');
-  if (accounts.renpho && !isRenphoAccountConnected(accounts.renpho)) names.push('Renpho');
-  if (accounts.google && !isOAuthAccountConnected(accounts.google)) names.push('Google');
-  if (accounts.myfitnesspal && !isMfpAccountConnected(accounts.myfitnesspal))
+  if (accounts.strava && !isOAuthAccountConnected(accounts.strava)) {
+    names.push('Strava');
+  }
+  if (accounts.garmin && !isGarminAccountConnected(accounts.garmin)) {
+    names.push('Garmin');
+  }
+  if (accounts.withings && !isOAuthAccountConnected(accounts.withings)) {
+    names.push('Withings');
+  }
+  if (accounts.renpho && !isRenphoAccountConnected(accounts.renpho)) {
+    names.push('Renpho');
+  }
+  if (accounts.google && !isOAuthAccountConnected(accounts.google)) {
+    names.push('Google');
+  }
+  if (accounts.myfitnesspal && !isMfpAccountConnected(accounts.myfitnesspal)) {
     names.push('MyFitnessPal');
+  }
   return names;
 }
 
 export function reconnectProductMessage(names: string[]): string | null {
-  if (names.length === 0) return null;
+  if (names.length === 0) {
+    return null;
+  }
   const joined = names.join(', ');
   return names.length === 1
     ? `La connexion ${joined} a expiré. Reconnecte-la dans les paramètres.`

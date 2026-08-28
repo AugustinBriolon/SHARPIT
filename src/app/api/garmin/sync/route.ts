@@ -8,6 +8,26 @@ import { filterRecordChangesByActivities, updateRecordsForTypes } from '@/lib/tr
 
 export const maxDuration = 300;
 
+async function parseFullSyncFlag(request: NextRequest) {
+  try {
+    const body = await request.json();
+    return Boolean(body?.full);
+  } catch {
+    return false;
+  }
+}
+
+async function updateRecordChanges(
+  athleteId: string,
+  activities: Awaited<ReturnType<typeof syncGarminActivities>>,
+) {
+  if (activities.changedTypes.length === 0) {
+    return [];
+  }
+  const allChanges = await updateRecordsForTypes(athleteId, activities.changedTypes);
+  return filterRecordChangesByActivities(allChanges, activities.changedActivityIds);
+}
+
 export async function POST(request: NextRequest) {
   try {
     const athleteId = await getCurrentAthleteId();
@@ -17,24 +37,15 @@ export async function POST(request: NextRequest) {
         status: 429,
       });
     }
-    let full = false;
-    try {
-      const body = await request.json();
-      if (body?.full) full = true;
-    } catch {
-      // pas de body → sync incrémentale depuis dernière sync
-    }
+    const full = await parseFullSyncFlag(request);
+    const syncOptions = full ? { full: true as const } : {};
 
     const [health, activities] = await Promise.all([
-      syncGarminHealth(athleteId, full ? { full: true } : {}),
-      syncGarminActivities(athleteId, full ? { full: true } : {}),
+      syncGarminHealth(athleteId, syncOptions),
+      syncGarminActivities(athleteId, syncOptions),
     ]);
 
-    let recordChanges: Awaited<ReturnType<typeof updateRecordsForTypes>> = [];
-    if (activities.changedTypes.length > 0) {
-      const allChanges = await updateRecordsForTypes(athleteId, activities.changedTypes);
-      recordChanges = filterRecordChangesByActivities(allChanges, activities.changedActivityIds);
-    }
+    const recordChanges = await updateRecordChanges(athleteId, activities);
 
     await onProviderSyncCompleted(
       athleteId,

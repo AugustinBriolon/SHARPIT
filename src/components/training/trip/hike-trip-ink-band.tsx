@@ -18,7 +18,9 @@ type BandMetric = { label: string; value: string; unit?: string; accent?: boolea
  */
 function splitUnit(reading: string): { value: string; unit?: string } {
   const index = reading.lastIndexOf(' ');
-  if (index === -1) return { value: reading };
+  if (index === -1) {
+    return { value: reading };
+  }
   return { value: reading.slice(0, index), unit: reading.slice(index + 1) };
 }
 
@@ -30,17 +32,17 @@ function splitUnit(reading: string): { value: string; unit?: string } {
 export function buildHikeTripBandMetrics(summary: HikeTripSummary): BandMetric[] {
   const metrics: BandMetric[] = [];
 
-  if (summary.distanceM != null) {
+  if (summary.distanceM !== null) {
     metrics.push({
       label: 'Distance',
       ...splitUnit(formatDistance(summary.distanceM)),
       accent: true,
     });
   }
-  if (summary.elevationM != null) {
+  if (summary.elevationM !== null) {
     metrics.push({ label: 'D+ cumulé', value: `${Math.round(summary.elevationM)}`, unit: 'm' });
   }
-  if (summary.durationSec != null) {
+  if (summary.durationSec !== null) {
     metrics.push({ label: 'Durée', ...splitUnit(formatDuration(summary.durationSec)) });
   }
 

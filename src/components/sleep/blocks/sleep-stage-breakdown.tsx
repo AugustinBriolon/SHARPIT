@@ -55,7 +55,7 @@ function buildStageRows(
   ];
 
   return entries
-    .filter((e) => e.minutes != null && e.minutes > 0)
+    .filter((e) => e.minutes !== null && e.minutes > 0)
     .map((e) => ({
       key: e.key,
       minutes: e.minutes!,
@@ -66,7 +66,9 @@ function buildStageRows(
 /** La couleur ne signale que l'écart — une phase dans la norme reste neutre. */
 function stageStatus(key: StageKey, percent: number): { label: string; className: string } | null {
   const style = STAGE_STYLES[key];
-  if (style.low == null || style.high == null) return null;
+  if (style.low === null || style.high === null) {
+    return null;
+  }
   if (percent < style.low) {
     return { label: 'sous la norme', className: 'text-signal-caution' };
   }

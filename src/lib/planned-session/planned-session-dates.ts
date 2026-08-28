@@ -18,7 +18,9 @@ export function isUpcomingPlannedSession(
   session: PlannedSessionLike,
   ref: Date = new Date(),
 ): boolean {
-  if (session.completed || session.activityId) return false;
+  if (session.completed || session.activityId) {
+    return false;
+  }
   const sessionDay = startOfDay(new Date(session.date));
   const refDay = startOfDay(ref);
   return sessionDay.getTime() >= refDay.getTime();
@@ -30,12 +32,17 @@ export function filterUpcomingPlannedSessions<T extends PlannedSessionLike>(
   options?: { horizonDays?: number },
 ): T[] {
   const horizonDays = options?.horizonDays;
-  const horizonEnd = horizonDays != null ? startOfDay(addDays(startOfDay(ref), horizonDays)) : null;
+  const horizonEnd =
+    horizonDays !== null ? startOfDay(addDays(startOfDay(ref), horizonDays)) : null;
 
   return sessions
     .filter((s) => {
-      if (!isUpcomingPlannedSession(s, ref)) return false;
-      if (horizonEnd == null) return true;
+      if (!isUpcomingPlannedSession(s, ref)) {
+        return false;
+      }
+      if (horizonEnd === null) {
+        return true;
+      }
       return startOfDay(new Date(s.date)).getTime() <= horizonEnd.getTime();
     })
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
@@ -56,8 +63,12 @@ export function selectUpcomingPlannedPreview<T extends PlannedSessionLike>(
   limit = 4,
 ): T[] {
   const upcoming = filterUpcomingPlannedSessions(sessions, ref);
-  if (upcoming.length <= limit) return upcoming;
-  if (limit < 4) return upcoming.slice(0, limit);
+  if (upcoming.length <= limit) {
+    return upcoming;
+  }
+  if (limit < 4) {
+    return upcoming.slice(0, limit);
+  }
 
   const thisWeekEnd = startOfDay(endOfWeek(ref, WEEK_OPTS));
   const nextWeekEnd = startOfDay(endOfWeek(addWeeks(ref, 1), WEEK_OPTS));
@@ -67,8 +78,11 @@ export function selectUpcomingPlannedPreview<T extends PlannedSessionLike>(
 
   for (const session of upcoming) {
     const day = startOfDay(new Date(session.date)).getTime();
-    if (day <= thisWeekEnd.getTime()) remainingThisWeek.push(session);
-    else if (day <= nextWeekEnd.getTime()) nextWeek.push(session);
+    if (day <= thisWeekEnd.getTime()) {
+      remainingThisWeek.push(session);
+    } else if (day <= nextWeekEnd.getTime()) {
+      nextWeek.push(session);
+    }
   }
 
   if (nextWeek.length === 0) {
@@ -84,8 +98,12 @@ export function selectUpcomingPlannedPreview<T extends PlannedSessionLike>(
   if (selected.length < limit) {
     const selectedSet = new Set(selected);
     for (const session of upcoming) {
-      if (selected.length >= limit) break;
-      if (selectedSet.has(session)) continue;
+      if (selected.length >= limit) {
+        break;
+      }
+      if (selectedSet.has(session)) {
+        continue;
+      }
       selected.push(session);
       selectedSet.add(session);
     }
@@ -103,8 +121,14 @@ export function formatPlannedSessionRelativeDay(
   const today = startOfDay(ref);
   const diff = differenceInCalendarDays(day, today);
 
-  if (diff === 0) return "Aujourd'hui";
-  if (diff === 1) return 'Demain';
-  if (diff < 7) return `dans ${diff} jours`;
+  if (diff === 0) {
+    return "Aujourd'hui";
+  }
+  if (diff === 1) {
+    return 'Demain';
+  }
+  if (diff < 7) {
+    return `dans ${diff} jours`;
+  }
   return format(day, 'EEEE d MMMM', { locale: fr });
 }

@@ -161,7 +161,9 @@ function describeInput(
     if (travel.startDate && travel.endDate) {
       lines.push(`${travel.startDate} → ${travel.endDate}`);
     }
-    if (type === 'tool-setTravelContext' && travel.locationLabel) lines.push(travel.locationLabel);
+    if (type === 'tool-setTravelContext' && travel.locationLabel) {
+      lines.push(travel.locationLabel);
+    }
     if (travel.noStructuredTraining) {
       lines.push('Aucun sport structuré');
     } else if (travel.allowedDisciplines && travel.allowedDisciplines.length > 0) {
@@ -181,7 +183,9 @@ function describeInput(
       } as const;
       lines.push(constraintLabels[travel.trainingConstraint]);
     }
-    if (travel.note) lines.push(travel.note);
+    if (travel.note) {
+      lines.push(travel.note);
+    }
     return { headline, lines };
   }
 
@@ -205,7 +209,9 @@ function describeInput(
       }[];
     };
     const headline = brick.title ?? 'Brick (multisport)';
-    if (brick.date) lines.push(brick.date);
+    if (brick.date) {
+      lines.push(brick.date);
+    }
     for (const leg of brick.legs ?? []) {
       const legMeta = [
         fmtType(leg.type),
@@ -231,10 +237,16 @@ function describeInput(
     ]
       .filter(Boolean)
       .join(' · ');
-    if (meta) lines.push(meta);
-    if (input.description) lines.push(input.description);
+    if (meta) {
+      lines.push(meta);
+    }
+    if (input.description) {
+      lines.push(input.description);
+    }
     const exoCount = input.strengthPrescription?.sets?.length ?? 0;
-    if (exoCount > 0) lines.push(`${exoCount} exercice${exoCount > 1 ? 's' : ''} prescrits`);
+    if (exoCount > 0) {
+      lines.push(`${exoCount} exercice${exoCount > 1 ? 's' : ''} prescrits`);
+    }
     return { headline, lines };
   }
 
@@ -243,13 +255,27 @@ function describeInput(
   const headline = sessionTitle
     ? `${sessionTitle}${ref?.date ? ` — ${ref.date}` : ''}`
     : (input.title ?? 'Séance');
-  if (input.date) lines.push(`Date → ${input.date}`);
-  if (input.type) lines.push(`Type → ${fmtType(input.type)}`);
-  if (input.intensity) lines.push(`Intensité → ${intensityLabels[input.intensity]}`);
-  if (input.title) lines.push(`Titre → ${input.title}`);
-  if (input.durationMin) lines.push(`Durée → ${input.durationMin} min`);
-  if (input.load) lines.push(`Charge → ${input.load} TSS`);
-  if (input.startTime) lines.push(`Heure → ${input.startTime}`);
+  if (input.date) {
+    lines.push(`Date → ${input.date}`);
+  }
+  if (input.type) {
+    lines.push(`Type → ${fmtType(input.type)}`);
+  }
+  if (input.intensity) {
+    lines.push(`Intensité → ${intensityLabels[input.intensity]}`);
+  }
+  if (input.title) {
+    lines.push(`Titre → ${input.title}`);
+  }
+  if (input.durationMin) {
+    lines.push(`Durée → ${input.durationMin} min`);
+  }
+  if (input.load) {
+    lines.push(`Charge → ${input.load} TSS`);
+  }
+  if (input.startTime) {
+    lines.push(`Heure → ${input.startTime}`);
+  }
   if (input.exposureSetting) {
     lines.push(`Exposition → ${EXPOSURE_LABELS[input.exposureSetting]}`);
   }
@@ -257,8 +283,12 @@ function describeInput(
   if (updateExoCount > 0) {
     lines.push(`Exercices → ${updateExoCount} prescrits`);
   }
-  if (input.locationLabel) lines.push(`Lieu → ${input.locationLabel}`);
-  if (input.description) lines.push(input.description);
+  if (input.locationLabel) {
+    lines.push(`Lieu → ${input.locationLabel}`);
+  }
+  if (input.description) {
+    lines.push(input.description);
+  }
   if (lines.length === 0 && ref) {
     lines.push('Mise à jour sans détail supplémentaire');
   }
@@ -278,9 +308,13 @@ export function ToolActivity({
   disabled?: boolean;
   streamIdle?: boolean;
 }) {
-  if (!part?.type) return null;
+  if (!part?.type) {
+    return null;
+  }
   const meta = META[part.type];
-  if (!meta) return null;
+  if (!meta) {
+    return null;
+  }
 
   const Icon = meta.icon;
   const { state } = part;

@@ -2,7 +2,9 @@ import { MapPin } from 'lucide-react';
 
 /** Observed locations across the trip's steps — hidden when nothing was recorded. */
 export function HikeTripWaypoints({ labels }: { labels: string[] }) {
-  if (labels.length === 0) return null;
+  if (labels.length === 0) {
+    return null;
+  }
 
   return (
     <section className="space-y-2">

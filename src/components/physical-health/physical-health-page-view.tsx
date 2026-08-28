@@ -24,8 +24,12 @@ import { PhysicalNoteDialog } from './dialogs/physical-note-dialog';
 type DialogState = { mode: 'create' } | { mode: 'edit'; note: ClientPhysicalNote } | null;
 
 function confidenceToneClass(tone: string): 'ok' | 'watch' | 'neutral' {
-  if (tone === 'good') return 'ok';
-  if (tone === 'warn') return 'watch';
+  if (tone === 'good') {
+    return 'ok';
+  }
+  if (tone === 'warn') {
+    return 'watch';
+  }
   return 'neutral';
 }
 
@@ -67,14 +71,18 @@ export function PhysicalHealthPageView({
 
   function openLegacyCheckin(legacyNoteId: string) {
     const note = notesQuery.data?.find((n) => n.id === legacyNoteId);
-    if (note) setDialog({ mode: 'edit', note });
+    if (note) {
+      setDialog({ mode: 'edit', note });
+    }
   }
 
   const { aggregate, activeConditions, resolvedConditions } = viewModel;
   const hasAny = !loading && (activeConditions.length > 0 || resolvedConditions.length > 0);
 
   let capacityValue = '';
-  if (!loading) capacityValue = aggregate.trainingBlocked ? 'Limitée' : 'OK';
+  if (!loading) {
+    capacityValue = aggregate.trainingBlocked ? 'Limitée' : 'OK';
+  }
 
   let verdictValue = '';
   if (!loading) {

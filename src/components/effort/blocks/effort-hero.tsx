@@ -46,11 +46,11 @@ export function EffortHero({
   const { mode } = useDisplayMode();
   let actionLine: string | null = null;
   if (!loading) {
-    if (estimatedDaysToFresh != null && estimatedDaysToFresh > 0) {
+    if (estimatedDaysToFresh !== null && estimatedDaysToFresh > 0) {
       actionLine = `Frais dans ${estimatedDaysToFresh === 1 ? '1 jour' : `${estimatedDaysToFresh} jours`}`;
     } else if (consecutiveDays > 1) {
       actionLine = `${consecutiveDays} j d'accumulation`;
-    } else if (performancePercent != null && performancePercent < 100) {
+    } else if (performancePercent !== null && performancePercent < 100) {
       actionLine = `Capacité ~${performancePercent} %`;
     } else if (fatigueTypeLabel && fatigueType !== 'UNDETERMINED') {
       actionLine = fatigueTypeLabel;

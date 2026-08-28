@@ -114,7 +114,9 @@ export function ActivityCompositionSkeleton({
   withCoach?: boolean;
   withMap?: boolean;
 }) {
-  if (!withCoach && !withMap) return null;
+  if (!withCoach && !withMap) {
+    return null;
+  }
 
   if (withCoach && !withMap) {
     return (

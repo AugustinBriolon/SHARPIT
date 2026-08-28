@@ -28,18 +28,30 @@ const CONVERSATION_START =
 function normalizeHeader(line: string): string | null {
   const trimmed = line.trim();
   const heading = trimmed.match(/^#{1,3}\s+(.+)$/);
-  if (heading) return heading[1]!.replace(/\*\*/g, '').trim();
+  if (heading) {
+    return heading[1]!.replace(/\*\*/g, '').trim();
+  }
   const bold = trimmed.match(/^\*\*(.+)\*\*\s*$/);
-  if (bold) return bold[1]!.trim();
-  if (PHASE_TITLE.test(trimmed)) return trimmed.replace(/\*\*/g, '').trim();
-  if (SYNTHESIS_TITLE.test(trimmed)) return trimmed.replace(/\*\*/g, '').trim();
+  if (bold) {
+    return bold[1]!.trim();
+  }
+  if (PHASE_TITLE.test(trimmed)) {
+    return trimmed.replace(/\*\*/g, '').trim();
+  }
+  if (SYNTHESIS_TITLE.test(trimmed)) {
+    return trimmed.replace(/\*\*/g, '').trim();
+  }
   return null;
 }
 
 function isConversationalParagraph(paragraph: string): boolean {
   const text = paragraph.trim();
-  if (!text) return false;
-  if (text.endsWith('?')) return true;
+  if (!text) {
+    return false;
+  }
+  if (text.endsWith('?')) {
+    return true;
+  }
   return CONVERSATION_START.test(text);
 }
 
@@ -52,10 +64,14 @@ export function splitConversationTail(content: string): {
 
   while (paragraphs.length > 0) {
     const last = paragraphs[paragraphs.length - 1]!;
-    if (!isConversationalParagraph(last)) break;
+    if (!isConversationalParagraph(last)) {
+      break;
+    }
     tail.unshift(last);
     paragraphs.pop();
-    if (tail.length >= 2) break;
+    if (tail.length >= 2) {
+      break;
+    }
   }
 
   return {
@@ -70,7 +86,9 @@ type RawSection = {
 };
 
 export function splitIntoSections(body: string): RawSection[] {
-  if (!body.trim()) return [];
+  if (!body.trim()) {
+    return [];
+  }
 
   const lines = body.split('\n');
   const sections: RawSection[] = [];
@@ -102,8 +120,12 @@ export function splitIntoSections(body: string): RawSection[] {
 
 function looksLikeMarkdownProse(line: string): boolean {
   const trimmed = line.trim();
-  if (/^\*\*/.test(trimmed) && !/^\*\*[^*]+\*\*\s*$/.test(trimmed)) return true;
-  if (/^(?:[-*•]|\d+\.)\s+\*\*/.test(trimmed)) return true;
+  if (/^\*\*/.test(trimmed) && !/^\*\*[^*]+\*\*\s*$/.test(trimmed)) {
+    return true;
+  }
+  if (/^(?:[-*•]|\d+\.)\s+\*\*/.test(trimmed)) {
+    return true;
+  }
   return false;
 }
 
@@ -197,7 +219,9 @@ function classifySection(section: RawSection): CoachMessageBlock {
 
 export function parseCoachMessage(raw: string): CoachMessageBlock[] {
   const trimmed = raw.trim();
-  if (!trimmed) return [];
+  if (!trimmed) {
+    return [];
+  }
 
   const { body, conversation } = splitConversationTail(trimmed);
   const blocks: CoachMessageBlock[] = [];

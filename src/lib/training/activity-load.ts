@@ -55,11 +55,15 @@ const LOAD_FACTOR: Record<ActivityType, number> = {
 };
 
 export function estimateActivityLoad(activity: ActivityForAnalytics): number {
-  if (activity.load != null && activity.load > 0) return activity.load;
-  if (activity.bikeMetrics?.tss != null && activity.bikeMetrics.tss > 0) {
+  if (activity.load !== null && activity.load > 0) {
+    return activity.load;
+  }
+  if (activity.bikeMetrics?.tss !== null && activity.bikeMetrics.tss > 0) {
     return activity.bikeMetrics.tss;
   }
-  if (!activity.duration) return 0;
+  if (!activity.duration) {
+    return 0;
+  }
   const minutes = activity.duration / 60;
   return Math.round(minutes * LOAD_FACTOR[activity.type]);
 }

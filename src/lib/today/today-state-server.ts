@@ -35,9 +35,13 @@ import type {
 import { prisma } from '@/lib/prisma';
 
 function readStateComputedAt(state: unknown): Date | null {
-  if (!state || typeof state !== 'object') return null;
+  if (!state || typeof state !== 'object') {
+    return null;
+  }
   const raw = (state as { computedAt?: unknown }).computedAt;
-  if (typeof raw !== 'string' && !(raw instanceof Date)) return null;
+  if (typeof raw !== 'string' && !(raw instanceof Date)) {
+    return null;
+  }
   const date = new Date(raw);
   return Number.isNaN(date.getTime()) ? null : date;
 }
@@ -53,7 +57,9 @@ async function isReasoningStale(athleteId: string, reasoningComputedAt: Date): P
       environmentalStateMeta: true,
     },
   });
-  if (!twin) return true;
+  if (!twin) {
+    return true;
+  }
 
   const subModelTimes = [
     readStateComputedAt(twin.recoveryState),
@@ -224,7 +230,9 @@ async function loadRecoveryState(
   try {
     if (!forceRefresh) {
       const cached = await recoveryEngine.getLatest(athleteId, trainingDayId);
-      if (cached) return formatRecoveryResult(cached);
+      if (cached) {
+        return formatRecoveryResult(cached);
+      }
     }
     const result = await recoveryEngine.run(athleteId, trainingDayId);
     return formatRecoveryResult(result);
@@ -242,7 +250,9 @@ async function loadFatigueState(
   try {
     if (!forceRefresh) {
       const cached = await fatigueEngine.getLatest(athleteId, trainingDayId);
-      if (cached) return formatFatigueResult(cached);
+      if (cached) {
+        return formatFatigueResult(cached);
+      }
     }
     const result = await fatigueEngine.run(athleteId, trainingDayId);
     return formatFatigueResult(result);
@@ -260,7 +270,9 @@ async function loadAdaptationState(
   try {
     if (!forceRefresh) {
       const cached = await adaptationEngine.getLatest(athleteId, trainingDayId);
-      if (cached) return formatAdaptationResult(cached);
+      if (cached) {
+        return formatAdaptationResult(cached);
+      }
     }
     const result = await adaptationEngine.run(athleteId, trainingDayId);
     return formatAdaptationResult(result);
@@ -339,7 +351,9 @@ async function loadEnvironmentState(
   try {
     if (!forceRefresh) {
       const cached = await environmentEngine.getLatest(athleteId, trainingDayId);
-      if (cached) return formatEnvironmentResult(cached);
+      if (cached) {
+        return formatEnvironmentResult(cached);
+      }
     }
     const result = await environmentEngine.run(athleteId, trainingDayId, { forceRefresh });
     return formatEnvironmentResult(result);
@@ -367,7 +381,9 @@ async function loadPhysicalHealthState(
   try {
     if (!forceRefresh) {
       const cached = await physicalHealthEngine.getLatest(athleteId, trainingDayId);
-      if (cached) return formatPhysicalHealthResult(cached);
+      if (cached) {
+        return formatPhysicalHealthResult(cached);
+      }
     }
     const result = await physicalHealthEngine.run(athleteId, trainingDayId);
     return formatPhysicalHealthResult(result);
@@ -431,8 +447,8 @@ async function loadReasoningState(
   try {
     if (!forceRefresh) {
       const cached = await reasoningEngine.getLatest(athleteId, trainingDayId);
-      const cachedHasI18nTopAction = cached?.output.reasoningState.topAction?.verbCode != null;
-      const stale = cached != null && (await isReasoningStale(athleteId, cached.computedAt));
+      const cachedHasI18nTopAction = cached?.output.reasoningState.topAction?.verbCode !== null;
+      const stale = cached !== null && (await isReasoningStale(athleteId, cached.computedAt));
       if (
         cached &&
         cached.output.reasoningState.overallVerdict !== 'INSUFFICIENT_DATA' &&

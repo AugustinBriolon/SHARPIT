@@ -41,14 +41,20 @@ export function SessionRationaleCard({ sessionId }: { sessionId: string }) {
       </div>
     );
   }
-  if (!vm) return null;
-  if (vm.origin === 'MANUAL') return null;
+  if (!vm) {
+    return null;
+  }
+  if (vm.origin === 'MANUAL') {
+    return null;
+  }
 
   const { suggested, outcome } = vm;
   const hasSuggested = Boolean(suggested);
   const hasOutcome = Boolean(outcome);
 
-  if (!hasSuggested && !hasOutcome) return null;
+  if (!hasSuggested && !hasOutcome) {
+    return null;
+  }
 
   return (
     <div className="space-y-3">

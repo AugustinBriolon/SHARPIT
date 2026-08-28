@@ -115,10 +115,16 @@ export function emptyStrengthPrescription(): StrengthPrescription {
 
 /** Soft-parse Json from DB — invalid / empty → null. */
 export function parseStrengthPrescription(raw: unknown): StrengthPrescription | null {
-  if (raw == null) return null;
+  if (raw === null) {
+    return null;
+  }
   const parsed = strengthPrescriptionSchema.safeParse(raw);
-  if (!parsed.success) return null;
-  if (parsed.data.sets.length === 0) return null;
+  if (!parsed.success) {
+    return null;
+  }
+  if (parsed.data.sets.length === 0) {
+    return null;
+  }
   return parsed.data;
 }
 
@@ -133,7 +139,9 @@ export function attachGarminRefsToPrescription(
         exercise: set.exercise,
         exerciseCatalogId: set.exerciseCatalogId,
       });
-      if (!match) return { ...set, garmin: null };
+      if (!match) {
+        return { ...set, garmin: null };
+      }
       return {
         ...set,
         garmin: {
@@ -172,7 +180,9 @@ export function strengthSetWatchCompat(set: Pick<StrengthPrescriptionSet, 'garmi
 export function normalizeCoachStrengthPrescription(
   raw: CoachStrengthPrescription | StrengthPrescription | null | undefined,
 ): StrengthPrescription | null {
-  if (raw == null) return null;
+  if (raw === null) {
+    return null;
+  }
 
   if ('version' in raw && raw.version === 1) {
     const parsed = parseStrengthPrescription(raw);
@@ -182,12 +192,14 @@ export function normalizeCoachStrengthPrescription(
   const sets = raw.sets
     .map((set, order) => {
       const exercise = set.exercise?.trim();
-      if (!exercise) return null;
+      if (!exercise) {
+        return null;
+      }
       // Legacy coach payloads only sent restSec — treat that as timed rest.
       let restMode: StrengthRestMode = 'lap';
       if (set.restMode === 'lap') {
         restMode = 'lap';
-      } else if (set.restMode === 'time' || (set.restSec != null && set.restSec > 0)) {
+      } else if (set.restMode === 'time' || (set.restSec !== null && set.restSec > 0)) {
         restMode = 'time';
       }
       return {
@@ -204,7 +216,7 @@ export function normalizeCoachStrengthPrescription(
         garmin: null,
       };
     })
-    .filter((s): s is NonNullable<typeof s> => s != null);
+    .filter((s): s is NonNullable<typeof s> => s !== null);
 
   const parsed = parseStrengthPrescription({ version: 1, sets });
   return parsed ? attachGarminRefsToPrescription(parsed) : null;
@@ -219,7 +231,9 @@ export function extractStrengthSessionIntent(
   description: string | null | undefined,
 ): string | null {
   const trimmed = description?.trim();
-  if (!trimmed) return null;
+  if (!trimmed) {
+    return null;
+  }
 
   const numbered = trimmed.match(/^([\s\S]*?)(?=(?:\n|\s)1[.)\-–—:]\s+\S)/);
   if (numbered) {
@@ -228,10 +242,14 @@ export function extractStrengthSessionIntent(
   }
 
   // Also catch "1. Exo" at the very start (no preamble).
-  if (/^1[.)\-–—:]\s+\S/.test(trimmed)) return null;
+  if (/^1[.)\-–—:]\s+\S/.test(trimmed)) {
+    return null;
+  }
 
   // Derived summaries look like "Squat 3×12 · Pont 3×15" — not athlete-facing intent.
-  if (trimmed.includes('·') && /×/.test(trimmed)) return null;
+  if (trimmed.includes('·') && /×/.test(trimmed)) {
+    return null;
+  }
 
   return trimmed;
 }
@@ -282,7 +300,7 @@ export function formatStrengthPrescriptionSummary(prescription: StrengthPrescrip
         set.durationSec && set.durationSec > 0 && set.reps <= 0
           ? `${set.sets}×${set.durationSec}s`
           : `${set.sets}×${set.reps}`;
-      const weight = set.weightKg != null && set.weightKg > 0 ? ` @ ${set.weightKg}kg` : '';
+      const weight = set.weightKg !== null && set.weightKg > 0 ? ` @ ${set.weightKg}kg` : '';
       return `${set.exercise} ${volume}${weight}`;
     })
     .join(' · ');

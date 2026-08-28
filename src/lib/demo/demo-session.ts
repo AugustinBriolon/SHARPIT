@@ -21,10 +21,14 @@ export const DEMO_CLERK_USER_ID = 'demo';
  * consistent without each re-deriving the same precedence.
  */
 export async function isDemoSession(): Promise<boolean> {
-  if (isDevClerkBypass()) return false;
+  if (isDevClerkBypass()) {
+    return false;
+  }
 
   const store = await cookies();
-  if (store.get(DEMO_COOKIE)?.value !== '1') return false;
+  if (store.get(DEMO_COOKIE)?.value !== '1') {
+    return false;
+  }
 
   const { userId } = await auth();
   return !userId;

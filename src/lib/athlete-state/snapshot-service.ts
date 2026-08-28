@@ -28,11 +28,18 @@ import { prisma } from '@/lib/prisma';
 
 function phaseNarrativeNeedsUpgrade(snapshot: AthleteSnapshot): boolean {
   const phase = snapshot.dailyPhase?.phase;
-  if (!phase || !snapshot.phaseNarrative) return false;
-  if (!snapshot.phaseNarrative.posture) return true;
-  if (/à protéger|demain à protéger|demain : ménage/i.test(snapshot.phaseNarrative.heroHeadline))
+  if (!phase || !snapshot.phaseNarrative) {
+    return false;
+  }
+  if (!snapshot.phaseNarrative.posture) {
     return true;
-  if (isForwardAdvicePhase(phase)) return false;
+  }
+  if (/à protéger|demain à protéger|demain : ménage/i.test(snapshot.phaseNarrative.heroHeadline)) {
+    return true;
+  }
+  if (isForwardAdvicePhase(phase)) {
+    return false;
+  }
   return /entraîne-toi|train hard/i.test(snapshot.phaseNarrative.heroSubline);
 }
 
@@ -42,7 +49,9 @@ async function loadBriefingForDay(
 ): Promise<AthleteSnapshotBriefing | null> {
   const refDate = new Date(`${trainingDayId}T12:00:00.000Z`);
   const row = await getDailyBriefing(athleteId, refDate);
-  if (!row) return null;
+  if (!row) {
+    return null;
+  }
   return {
     content: row.content,
     generatedAt: row.generatedAt.toISOString(),
@@ -171,7 +180,9 @@ export async function generateAthleteSnapshot(
 
   const snapshot = buildAthleteSnapshot(buildInput);
   const existing = await getSnapshotByFingerprint(athleteId, trainingDayId, snapshot.snapshotId);
-  if (existing) return existing;
+  if (existing) {
+    return existing;
+  }
 
   if (!options.skipPersist) {
     await saveAthleteSnapshot(snapshot);
@@ -254,7 +265,9 @@ export async function regenerateAthleteSnapshotAfterBriefing(
     athleteId,
     trainingDayId: dayId,
   });
-  if (!existing) return null;
+  if (!existing) {
+    return null;
+  }
 
   return generateAthleteSnapshot({
     athleteId,

@@ -6,7 +6,9 @@ export type ApiErrorBody = {
 };
 
 export function parseApiErrorBody(data: unknown): ApiErrorBody | null {
-  if (data == null || typeof data !== 'object') return null;
+  if (data === null || typeof data !== 'object') {
+    return null;
+  }
   const body = data as ApiErrorBody;
   return {
     error: typeof body.error === 'string' ? body.error : undefined,
@@ -28,7 +30,9 @@ export function formatApiErrorMessage(
   const fieldErr = body.details?.fieldErrors;
   if (fieldErr) {
     const [first] = Object.values(fieldErr).flat();
-    if (first) message = first;
+    if (first) {
+      message = first;
+    }
   }
   return message;
 }

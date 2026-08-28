@@ -9,7 +9,9 @@ import { cn } from '@/lib/utils';
  */
 export function SyncingIndicator({ className }: { className?: string }) {
   const mutating = useIsMutating();
-  if (mutating === 0) return null;
+  if (mutating === 0) {
+    return null;
+  }
 
   return (
     <div

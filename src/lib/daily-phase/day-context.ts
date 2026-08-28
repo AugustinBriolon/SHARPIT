@@ -7,9 +7,15 @@ function deriveSessionStatus(
   completedCount: number,
   remainingPlanned: number,
 ): DailyPhaseSessionStatus {
-  if (completedCount === 0 && remainingPlanned === 0) return 'NONE_TODAY';
-  if (completedCount === 0 && remainingPlanned > 0) return 'PLANNED_ONLY';
-  if (completedCount > 0 && remainingPlanned > 0) return 'COMPLETED_WITH_REMAINING';
+  if (completedCount === 0 && remainingPlanned === 0) {
+    return 'NONE_TODAY';
+  }
+  if (completedCount === 0 && remainingPlanned > 0) {
+    return 'PLANNED_ONLY';
+  }
+  if (completedCount > 0 && remainingPlanned > 0) {
+    return 'COMPLETED_WITH_REMAINING';
+  }
   return 'COMPLETED_ONLY';
 }
 
@@ -17,12 +23,18 @@ export function parsePlannedStart(
   trainingDay: Date,
   startTime: string | null | undefined,
 ): Date | null {
-  if (!startTime?.trim()) return null;
+  if (!startTime?.trim()) {
+    return null;
+  }
   const match = /^(\d{1,2}):(\d{2})$/.exec(startTime.trim());
-  if (!match) return null;
+  if (!match) {
+    return null;
+  }
   const hours = Number(match[1]);
   const minutes = Number(match[2]);
-  if (Number.isNaN(hours) || Number.isNaN(minutes)) return null;
+  if (Number.isNaN(hours) || Number.isNaN(minutes)) {
+    return null;
+  }
   const d = startOfDay(trainingDay);
   d.setHours(hours, minutes, 0, 0);
   return d;

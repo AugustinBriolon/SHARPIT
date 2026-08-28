@@ -33,6 +33,62 @@ import {
 type AdaptChange = AdaptPlan['changes'][number];
 type UpcomingSession = Awaited<ReturnType<typeof getPlannedSessionsForCoach>>[number];
 
+function pickNullable<T>(changeVal: T | null | undefined, existingVal?: T | null): T | null {
+  return changeVal ?? existingVal ?? null;
+}
+
+function optionalAdaptFields(change: AdaptChange) {
+  return {
+    intensity: change.intensity ?? null,
+    durationMin: change.durationMin ?? null,
+    load: change.load ?? null,
+    title: change.title ?? null,
+    strengthPrescription: change.strengthPrescription ?? null,
+    endurancePrescription: change.endurancePrescription ?? null,
+    rationale: change.reason ?? null,
+  };
+}
+
+function gateProposalFromAdd(
+  change: AdaptChange,
+  defaultGoalId: string | null,
+): GateProposal | null {
+  if (!change.date || !change.type) {
+    return null;
+  }
+  return {
+    sessionId: change.sessionId,
+    action: 'ADD',
+    date: change.date,
+    startTime: null,
+    type: change.type,
+    goalId: defaultGoalId,
+    ...optionalAdaptFields(change),
+  };
+}
+
+function gateProposalFromModify(
+  change: AdaptChange,
+  existing: UpcomingSession,
+  defaultGoalId: string | null,
+): GateProposal {
+  return {
+    sessionId: change.sessionId,
+    action: 'MODIFY',
+    date: change.date ?? dayKeyFromDate(existing.date),
+    startTime: null,
+    type: change.type ?? existing.type,
+    intensity: pickNullable(change.intensity, existing.intensity),
+    durationMin: pickNullable(change.durationMin, existing.durationMin),
+    load: pickNullable(change.load, existing.load),
+    title: pickNullable(change.title, existing.title),
+    strengthPrescription: change.strengthPrescription ?? null,
+    endurancePrescription: change.endurancePrescription ?? null,
+    rationale: change.reason ?? null,
+    goalId: existing.goalId ?? defaultGoalId,
+  };
+}
+
 /** Merges a MODIFY's partial fields onto the current session so date/type-dependent
  * rules (weekly load, recovery spacing, ...) evaluate the resulting state, not a
  * half-empty proposal. ADD proposals use the change's own fields directly. */
@@ -41,26 +97,13 @@ function toGateProposal(
   existing: UpcomingSession | null,
   defaultGoalId: string | null,
 ): GateProposal | null {
-  const date = change.date ?? (existing ? dayKeyFromDate(existing.date) : null);
-  const type = change.type ?? existing?.type ?? null;
-  if (!date || !type) return null;
-
-  return {
-    sessionId: change.sessionId,
-    action: change.action === 'ADD' ? 'ADD' : 'MODIFY',
-    date,
-    startTime: null,
-    type,
-    intensity: change.intensity ?? existing?.intensity ?? null,
-    durationMin: change.durationMin ?? existing?.durationMin ?? null,
-    load: change.load ?? existing?.load ?? null,
-    title: change.title ?? existing?.title ?? null,
-    strengthPrescription: change.strengthPrescription ?? null,
-    endurancePrescription: change.endurancePrescription ?? null,
-    rationale: change.reason ?? null,
-    // Option B: keep existing link on MODIFY; stamp plan goal on ADD.
-    goalId: existing?.goalId ?? (change.action === 'ADD' ? defaultGoalId : null),
-  };
+  if (change.action === 'ADD') {
+    return gateProposalFromAdd(change, defaultGoalId);
+  }
+  if (!existing) {
+    return null;
+  }
+  return gateProposalFromModify(change, existing, defaultGoalId);
 }
 
 // Measured at 58-68s with reasoning: 'medium' — over Vercel's 60s default and
@@ -109,6 +152,71 @@ function adaptErrorMessage(error: unknown): string {
   return 'La réadaptation a échoué. Réessaie dans un instant.';
 }
 
+function buildUpcomingLines(upcoming: UpcomingSession[]) {
+  return upcoming.map((p) => {
+    const bits = [
+      `id=${p.id}`,
+      format(p.date, 'EEE d MMM', { locale: fr }),
+      TYPE_FR[p.type] ?? p.type,
+      p.intensity ? intensityLabels[p.intensity] : null,
+      p.durationMin ? `${p.durationMin} min` : null,
+      p.load ? `${Math.round(p.load)} TSS` : null,
+      p.title ? `"${p.title}"` : null,
+      p.brickGroupId ? '[brick]' : null,
+      p.completed ? '[réalisée]' : null,
+    ]
+      .filter(Boolean)
+      .join(' · ');
+    return `- ${bits}`;
+  });
+}
+
+function buildAdaptPrompt(input: {
+  focus: string | undefined;
+  today: Date;
+  horizon: Date;
+  ctx: Awaited<ReturnType<typeof buildCoachContext>>;
+  upcomingLines: string[];
+}) {
+  const { focus, today, horizon, ctx, upcomingLines } = input;
+  return `${focus ? `Demande de l'athlète : ${focus}\n\n` : ''}Fenêtre d'ajustement : du ${format(today, 'd MMM', { locale: fr })} au ${format(horizon, 'd MMM yyyy', { locale: fr })} (dates ADD au format yyyy-MM-dd dans cette fenêtre).
+
+${formatCoachContext(ctx)}
+
+## Séances déjà planifiées à venir (à ajuster)
+${upcomingLines.length ? upcomingLines.join('\n') : 'Aucune séance planifiée à venir.'}`;
+}
+
+function emptyAdaptResponse() {
+  return new Response(
+    encodeCoachProgressEvent<AdaptPayload, unknown>({
+      type: 'result',
+      value: {
+        summary:
+          "Aucune séance planifiée sur la fenêtre : il n'y a rien à réadapter. Génère d'abord une semaine, puis reviens ici pour l'ajuster.",
+        changes: [],
+        gate: { sessions: [], planLevelFindings: [] },
+      },
+    }),
+    { headers: COACH_PROGRESS_HEADERS },
+  );
+}
+
+async function loadAdaptContext(athleteId: string, today: Date, days: number) {
+  const horizon = addDays(today, days);
+  const [ctx, upcoming, activePlan, goals] = await Promise.all([
+    buildCoachContext(athleteId, today, { includeScenario: true }),
+    getPlannedSessionsForCoach(athleteId, { from: today, to: horizon }),
+    getActiveTrainingPlan(athleteId),
+    getGoals(athleteId),
+  ]);
+  const defaultGoalId = resolveDefaultPlanGoalId(
+    activePlan?.goalId,
+    selectableDatedGoalIds(goals),
+  );
+  return { ctx, upcoming, defaultGoalId, horizon };
+}
+
 export async function POST(req: Request) {
   if (!isCoachConfigured()) {
     return NextResponse.json(
@@ -128,7 +236,6 @@ export async function POST(req: Request) {
     const { days = 14, focus } = parsed.data;
 
     const today = startOfDay(new Date());
-    const horizon = addDays(today, days);
     const athleteId = await getCurrentAthleteId();
 
     const rateLimit = await checkRateLimit(rateLimiters.coachAdapt, athleteId);
@@ -138,15 +245,10 @@ export async function POST(req: Request) {
       });
     }
 
-    const [ctx, upcoming, activePlan, goals] = await Promise.all([
-      buildCoachContext(athleteId, today, { includeScenario: true }),
-      getPlannedSessionsForCoach(athleteId, { from: today, to: horizon }),
-      getActiveTrainingPlan(athleteId),
-      getGoals(athleteId),
-    ]);
-    const defaultGoalId = resolveDefaultPlanGoalId(
-      activePlan?.goalId,
-      selectableDatedGoalIds(goals),
+    const { ctx, upcoming, defaultGoalId, horizon } = await loadAdaptContext(
+      athleteId,
+      today,
+      days,
     );
 
     // Nothing to adapt: the model has no anchor and drifts into generating a
@@ -154,50 +256,25 @@ export async function POST(req: Request) {
     // validation after a full ~60s generation. Answer directly rather than pay
     // for an answer that cannot be right.
     if (upcoming.length === 0) {
-      return new Response(
-        encodeCoachProgressEvent<AdaptPayload, unknown>({
-          type: 'result',
-          value: {
-            summary:
-              "Aucune séance planifiée sur la fenêtre : il n'y a rien à réadapter. Génère d'abord une semaine, puis reviens ici pour l'ajuster.",
-            changes: [],
-            gate: { sessions: [], planLevelFindings: [] },
-          },
-        }),
-        { headers: COACH_PROGRESS_HEADERS },
-      );
+      return emptyAdaptResponse();
     }
 
-    const upcomingLines = upcoming.map((p) => {
-      const bits = [
-        `id=${p.id}`,
-        format(p.date, 'EEE d MMM', { locale: fr }),
-        TYPE_FR[p.type] ?? p.type,
-        p.intensity ? intensityLabels[p.intensity] : null,
-        p.durationMin ? `${p.durationMin} min` : null,
-        p.load ? `${Math.round(p.load)} TSS` : null,
-        p.title ? `"${p.title}"` : null,
-        p.brickGroupId ? '[brick]' : null,
-        p.completed ? '[réalisée]' : null,
-      ]
-        .filter(Boolean)
-        .join(' · ');
-      return `- ${bits}`;
+    const prompt = buildAdaptPrompt({
+      focus,
+      today,
+      horizon,
+      ctx,
+      upcomingLines: buildUpcomingLines(upcoming),
     });
-
-    const prompt = `${focus ? `Demande de l'athlète : ${focus}\n\n` : ''}Fenêtre d'ajustement : du ${format(today, 'd MMM', { locale: fr })} au ${format(horizon, 'd MMM yyyy', { locale: fr })} (dates ADD au format yyyy-MM-dd dans cette fenêtre).
-
-${formatCoachContext(ctx)}
-
-## Séances déjà planifiées à venir (à ajuster)
-${upcomingLines.length ? upcomingLines.join('\n') : 'Aucune séance planifiée à venir.'}`;
 
     const encoder = new TextEncoder();
     const stream = new ReadableStream<Uint8Array>({
       async start(controller) {
         let closed = false;
         const send = (event: CoachProgressEvent<AdaptPayload, unknown>) => {
-          if (closed) return;
+          if (closed) {
+            return;
+          }
           try {
             controller.enqueue(encoder.encode(encodeCoachProgressEvent(event)));
           } catch {
@@ -217,7 +294,13 @@ ${upcomingLines.length ? upcomingLines.join('\n') : 'Aucune séance planifiée �
           void recordAiUsage(athleteId, 'coach', usage);
           send({
             type: 'result',
-            value: await finalizeAdapt(athleteId, output, upcoming, defaultGoalId, today),
+            value: await finalizeAdapt({
+              athleteId,
+              output,
+              upcoming,
+              defaultGoalId,
+              today,
+            }),
           });
         } catch (error) {
           console.error('[coach/adapt]', error);
@@ -242,14 +325,17 @@ export type AdaptPayload = {
   gate: GateResult;
 };
 
+type FinalizeAdaptInput = {
+  athleteId: string;
+  output: unknown;
+  upcoming: UpcomingSession[];
+  defaultGoalId: string | null;
+  today: Date;
+};
+
 /** Validates the model output, runs the Gate and records the coaching decisions. */
-async function finalizeAdapt(
-  athleteId: string,
-  output: unknown,
-  upcoming: UpcomingSession[],
-  defaultGoalId: string | null,
-  today: Date,
-): Promise<AdaptPayload> {
+async function finalizeAdapt(input: FinalizeAdaptInput): Promise<AdaptPayload> {
+  const { athleteId, output, upcoming, defaultGoalId, today } = input;
   {
     const validated = adaptPlanSchema.safeParse(output);
     if (!validated.success) {
@@ -273,7 +359,7 @@ async function finalizeAdapt(
         ),
       }))
       .filter(
-        (pair): pair is { change: AdaptChange; proposal: GateProposal } => pair.proposal != null,
+        (pair): pair is { change: AdaptChange; proposal: GateProposal } => pair.proposal !== null,
       );
     const proposals = gatedPairs.map((pair) => pair.proposal);
 

@@ -50,17 +50,25 @@ function ShellFit({ minWidth }: { minWidth: number }) {
 
   useEffect(() => {
     const shell = markerRef.current?.parentElement;
-    if (!shell) return;
+    if (!shell) {
+      return;
+    }
     const observer = new ResizeObserver(([entry]) => {
       const narrow = entry.contentRect.width < minWidth;
-      if (narrowRef.current === narrow) return;
+      if (narrowRef.current === narrow) {
+        return;
+      }
       const first = narrowRef.current === null;
       narrowRef.current = narrow;
-      if (first && !narrow) return;
+      if (first && !narrow) {
+        return;
+      }
       const wanted = !narrow;
       // Already where the shell wants it — saying so again would only be an
       // onOpenChange the caller never asked for.
-      if (openRef.current === wanted) return;
+      if (openRef.current === wanted) {
+        return;
+      }
       setOpen(wanted);
     });
     observer.observe(shell);

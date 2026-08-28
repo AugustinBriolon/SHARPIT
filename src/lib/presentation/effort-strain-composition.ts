@@ -59,7 +59,7 @@ function toContributor(
   signalSummary: string | null,
 ): EffortStrainContributorView {
   const meta = CONTRIBUTOR_META[key];
-  if (!contribution.available || contribution.load == null) {
+  if (!contribution.available || contribution.load === null) {
     return {
       key,
       label: meta.label,
@@ -85,9 +85,15 @@ function toContributor(
 function mapDominantKey(
   dominant: DailyStrainData['dominantContributor'],
 ): EffortStrainContributorKey | null {
-  if (dominant === 'TRAINING') return 'training';
-  if (dominant === 'CARDIOVASCULAR') return 'cardiovascular';
-  if (dominant === 'MOVEMENT') return 'movement';
+  if (dominant === 'TRAINING') {
+    return 'training';
+  }
+  if (dominant === 'CARDIOVASCULAR') {
+    return 'cardiovascular';
+  }
+  if (dominant === 'MOVEMENT') {
+    return 'movement';
+  }
   return null;
 }
 

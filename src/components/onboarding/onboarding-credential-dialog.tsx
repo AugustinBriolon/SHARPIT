@@ -56,12 +56,16 @@ export function OnboardingCredentialDialog({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  if (!provider) return null;
+  if (!provider) {
+    return null;
+  }
   const copy = COPY[provider];
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (!provider) return;
+    if (!provider) {
+      return;
+    }
     const activeProvider = provider;
     setBusy(true);
     setError(null);

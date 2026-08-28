@@ -38,7 +38,9 @@ type RowOption = {
 };
 
 function OptionSelectionMark({ active, inScope }: { active: boolean; inScope: boolean }) {
-  if (active) return <Check className="text-foreground size-3.5 shrink-0" aria-hidden />;
+  if (active) {
+    return <Check className="text-foreground size-3.5 shrink-0" aria-hidden />;
+  }
   if (inScope) {
     return (
       <span
@@ -113,7 +115,9 @@ function OptionRows({
 // ─── Dimension badge ──────────────────────────────────────────────────────────
 
 function DimBadge({ count }: { count: number }) {
-  if (count === 0) return null;
+  if (count === 0) {
+    return null;
+  }
   return (
     <>
       <span className="sr-only">
@@ -148,10 +152,14 @@ export function DesktopFilterMenu({
 
   useEffect(() => {
     function onPointerDown(e: PointerEvent) {
-      if (!containerRef.current?.contains(e.target as Node)) onClose();
+      if (!containerRef.current?.contains(e.target as Node)) {
+        onClose();
+      }
     }
     function onKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') {
+        onClose();
+      }
     }
     document.addEventListener('pointerdown', onPointerDown);
     document.addEventListener('keydown', onKeyDown);

@@ -52,7 +52,9 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (preference !== 'system') return;
+    if (preference !== 'system') {
+      return;
+    }
 
     const media = window.matchMedia('(prefers-color-scheme: dark)');
     const sync = () => {

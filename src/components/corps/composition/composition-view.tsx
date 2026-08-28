@@ -97,7 +97,9 @@ function MetricCardsExpand({
   cards: BodyMetricCardVm[];
   onExplain: (id: CompositionMetricId) => void;
 }) {
-  if (cards.length === 0) return null;
+  if (cards.length === 0) {
+    return null;
+  }
   const priority = cards.slice(0, 4);
   const rest = cards.slice(4);
 
@@ -152,7 +154,9 @@ function CompositionDetailList({
   cards: BodyMetricCardVm[];
   onExplain: (id: CompositionMetricId) => void;
 }) {
-  if (cards.length === 0) return null;
+  if (cards.length === 0) {
+    return null;
+  }
 
   return (
     <div className="chip-surface rounded-analysis-lg divide-analysis-border/60 divide-y">
@@ -185,10 +189,14 @@ function windowDeltaDisplay(
   unit: string,
   windowLabel: string,
 ): string | null {
-  const values = points.map((p) => p[key]).filter((v): v is number => v != null);
-  if (values.length < 2) return null;
+  const values = points.map((p) => p[key]).filter((v): v is number => v !== null);
+  if (values.length < 2) {
+    return null;
+  }
   const delta = values[values.length - 1]! - values[0]!;
-  if (Math.abs(delta) < 0.05) return null;
+  if (Math.abs(delta) < 0.05) {
+    return null;
+  }
   const sign = delta > 0 ? '+' : '';
   return `${sign}${delta.toFixed(1)}${unit} sur ${windowLabel}`;
 }
@@ -296,7 +304,9 @@ export function CompositionView({ embedded: _embedded = false }: { embedded?: bo
     : [];
 
   const heroMiniMetrics = useMemo(() => {
-    if (!vm?.hasData) return [];
+    if (!vm?.hasData) {
+      return [];
+    }
     return (
       [
         { key: 'bodyFatPct', label: 'Masse grasse', unit: '%' },
@@ -310,24 +320,32 @@ export function CompositionView({ embedded: _embedded = false }: { embedded?: bo
         key,
         label,
         metric,
-        value: metric.value != null ? `${metric.value}${unit ? ` ${unit}` : ''}` : '—',
+        value: metric.value !== null ? `${metric.value}${unit ? ` ${unit}` : ''}` : '—',
         delta: metric.deltaDisplay && metric.deltaDisplay !== '—' ? metric.deltaDisplay : undefined,
       };
     });
   }, [vm]);
 
   const heroHints = useMemo(() => {
-    if (!vm?.hasData || valuesLoading) return [];
+    if (!vm?.hasData || valuesLoading) {
+      return [];
+    }
     const hints: { label: string; text: string }[] = [];
-    if (vm.hero.weightDeltaHint) hints.push({ label: 'Poids', text: vm.hero.weightDeltaHint });
+    if (vm.hero.weightDeltaHint) {
+      hints.push({ label: 'Poids', text: vm.hero.weightDeltaHint });
+    }
     for (const { label, metric } of heroMiniMetrics) {
-      if (metric.deltaHint) hints.push({ label, text: metric.deltaHint });
+      if (metric.deltaHint) {
+        hints.push({ label, text: metric.deltaHint });
+      }
     }
     return hints;
   }, [vm, heroMiniMetrics, valuesLoading]);
 
   const allDetailCards = useMemo(() => {
-    if (!vm?.hasData) return [];
+    if (!vm?.hasData) {
+      return [];
+    }
     return [...vm.trajectoryCards, ...vm.contextCards, ...vm.healthScanCards];
   }, [vm]);
 
@@ -335,7 +353,9 @@ export function CompositionView({ embedded: _embedded = false }: { embedded?: bo
     ? windowDeltaDisplay(chartData, 'weightKg', ' kg', selectedWindow.label)
     : null;
 
-  if (valuesLoading && !vm?.hasData) return <CompositionSkeleton />;
+  if (valuesLoading && !vm?.hasData) {
+    return <CompositionSkeleton />;
+  }
 
   if (!valuesLoading && (!vm || !vm.hasData)) {
     return (
@@ -356,7 +376,9 @@ export function CompositionView({ embedded: _embedded = false }: { embedded?: bo
     );
   }
 
-  if (!vm?.hasData) return <CompositionSkeleton />;
+  if (!vm?.hasData) {
+    return <CompositionSkeleton />;
+  }
 
   const chartEmptyInWindow = chartData.length === 0;
 
@@ -483,7 +505,7 @@ export function CompositionView({ embedded: _embedded = false }: { embedded?: bo
           ) : (
             <>
               {vm.hero.latestWeightDisplay}
-              {vm.hero.latestWeightKg != null ? (
+              {vm.hero.latestWeightKg !== null ? (
                 <span className="text-ink-surface-foreground/70 ml-1.5 text-lg font-normal">
                   kg
                 </span>

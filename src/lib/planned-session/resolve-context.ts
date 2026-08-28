@@ -26,14 +26,22 @@ import type {
 import { defaultExposureForActivityType } from '@/core/planned-session/defaults';
 
 function indoorFlagFromExposure(exposure: PlannedSessionIntention['exposure']): boolean | null {
-  if (exposure === 'INDOOR') return true;
-  if (exposure === 'OUTDOOR') return false;
+  if (exposure === 'INDOOR') {
+    return true;
+  }
+  if (exposure === 'OUTDOOR') {
+    return false;
+  }
   return null;
 }
 
 function dataCompletenessFromPredictionCount(count: number): EnvironmentalDataCompleteness {
-  if (count >= 3) return 'COMPLETE';
-  if (count >= 1) return 'PARTIAL';
+  if (count >= 3) {
+    return 'COMPLETE';
+  }
+  if (count >= 1) {
+    return 'PARTIAL';
+  }
   return 'MINIMAL';
 }
 import { geocodePlaceLabel } from '@/lib/geocoding/nominatim';
@@ -90,7 +98,7 @@ function resolveLocationFromRecord(
   session: PlannedSessionRecord,
   fallback: GeoLocation,
 ): GeoLocation | null {
-  if (session.locationLat != null && session.locationLng != null) {
+  if (session.locationLat !== null && session.locationLng !== null) {
     return {
       latitude: session.locationLat,
       longitude: session.locationLng,
@@ -105,7 +113,7 @@ async function resolveSessionGeoLocation(
   sessionDate: Date,
 ): Promise<GeoLocation> {
   const { athleteId } = session;
-  if (session.locationLat != null && session.locationLng != null) {
+  if (session.locationLat !== null && session.locationLng !== null) {
     return {
       latitude: session.locationLat,
       longitude: session.locationLng,
@@ -147,7 +155,9 @@ async function resolveSessionGeoLocation(
 
 function exposureFromRecord(session: PlannedSessionRecord): PlannedSessionExposureSetting {
   const raw = session.exposureSetting;
-  if (raw === 'INDOOR' || raw === 'OUTDOOR' || raw === 'UNKNOWN') return raw;
+  if (raw === 'INDOOR' || raw === 'OUTDOOR' || raw === 'UNKNOWN') {
+    return raw;
+  }
   return defaultExposureForActivityType(session.type);
 }
 
@@ -190,7 +200,9 @@ function buildIntention(
 
 function projectionFreshness(computedAt: Date): 'FRESH' | 'STALE' | 'UNAVAILABLE' {
   const age = Date.now() - computedAt.getTime();
-  if (age <= CONTEXT_STALE_MS) return 'FRESH';
+  if (age <= CONTEXT_STALE_MS) {
+    return 'FRESH';
+  }
   return 'STALE';
 }
 
@@ -310,14 +322,20 @@ async function buildEnvironmentalProjection(input: {
 }
 
 export function isContextCacheValid(session: PlannedSessionRecord): boolean {
-  if (!session.environmentContext || !session.environmentContextAt) return false;
+  if (!session.environmentContext || !session.environmentContextAt) {
+    return false;
+  }
   return projectionFreshness(session.environmentContextAt) === 'FRESH';
 }
 
 export function contextFromCache(session: PlannedSessionRecord): PlannedSessionContext | null {
-  if (!session.environmentContext || typeof session.environmentContext !== 'object') return null;
+  if (!session.environmentContext || typeof session.environmentContext !== 'object') {
+    return null;
+  }
   const cached = session.environmentContext as unknown as PlannedSessionContext;
-  if (!cached.intention || cached.intention.sessionId !== session.id) return null;
+  if (!cached.intention || cached.intention.sessionId !== session.id) {
+    return null;
+  }
   return cached;
 }
 
@@ -327,7 +345,9 @@ export async function resolvePlannedSessionContext(
 ): Promise<PlannedSessionContext> {
   if (!options?.forceRefresh && isContextCacheValid(session)) {
     const cached = contextFromCache(session);
-    if (cached) return cached;
+    if (cached) {
+      return cached;
+    }
   }
 
   const intention = buildIntention(
@@ -364,7 +384,9 @@ export async function refreshAndPersistPlannedSessionContext(
   sessionId: string,
 ): Promise<PlannedSessionContext | null> {
   const session = await prisma.plannedSession.findFirst({ where: { id: sessionId, athleteId } });
-  if (!session) return null;
+  if (!session) {
+    return null;
+  }
 
   const context = await resolvePlannedSessionContext(session, { forceRefresh: true });
 

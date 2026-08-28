@@ -7,7 +7,9 @@ import { isToolUIPart, type UIMessage } from 'ai';
  */
 export function lastStepApprovalResponseFingerprint(messages: UIMessage[]): string | null {
   const message = messages[messages.length - 1];
-  if (!message || message.role !== 'assistant') return null;
+  if (!message || message.role !== 'assistant') {
+    return null;
+  }
 
   const lastStepStartIndex = message.parts.reduce((lastIndex, part, index) => {
     return part.type === 'step-start' ? index : lastIndex;
@@ -29,6 +31,8 @@ export function lastStepApprovalResponseFingerprint(messages: UIMessage[]): stri
     })
     .sort();
 
-  if (approvalIds.length === 0) return null;
+  if (approvalIds.length === 0) {
+    return null;
+  }
   return approvalIds.join('|');
 }

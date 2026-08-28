@@ -112,10 +112,14 @@ async function parseGoogleTokenError(response: Response, context: string): Promi
 
 /** Extrait l'email du compte depuis l'id_token (JWT) sans appel réseau supplémentaire. */
 export function emailFromIdToken(idToken?: string): string | null {
-  if (!idToken) return null;
+  if (!idToken) {
+    return null;
+  }
   try {
     const [, payload] = idToken.split('.');
-    if (!payload) return null;
+    if (!payload) {
+      return null;
+    }
     const json = Buffer.from(payload, 'base64url').toString('utf8');
     const data = JSON.parse(json) as { email?: string };
     return data.email ?? null;
@@ -179,7 +183,9 @@ async function calendarFetch(accessToken: string, path: string, init?: RequestIn
     const text = await response.text().catch(() => '');
     throw new Error(`Google Calendar API ${path} → ${response.status} ${text}`.trim());
   }
-  if (response.status === 204) return null;
+  if (response.status === 204) {
+    return null;
+  }
   return response.json();
 }
 
@@ -211,7 +217,9 @@ export async function getFreeBusy(
   timeMax: Date,
   calendarIds: string[],
 ): Promise<BusyInterval[]> {
-  if (calendarIds.length === 0) return [];
+  if (calendarIds.length === 0) {
+    return [];
+  }
   const data = await calendarFetch(accessToken, '/freeBusy', {
     method: 'POST',
     body: JSON.stringify({
@@ -223,7 +231,9 @@ export async function getFreeBusy(
   const calendars = (data?.calendars ?? {}) as Record<string, { busy?: BusyInterval[] }>;
   const busy: BusyInterval[] = [];
   for (const cal of Object.values(calendars)) {
-    if (cal.busy) busy.push(...cal.busy);
+    if (cal.busy) {
+      busy.push(...cal.busy);
+    }
   }
   return busy.sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime());
 }

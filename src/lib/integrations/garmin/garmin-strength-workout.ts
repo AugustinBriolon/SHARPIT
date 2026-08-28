@@ -87,8 +87,8 @@ async function uploadStrengthSets(
     skipped: built.skipped,
     scheduledDate: created.scheduledDate,
     alreadyPushed: false,
-    calendarActive: created.scheduledDate != null,
-    workoutExists: created.workoutId != null,
+    calendarActive: created.scheduledDate !== null,
+    workoutExists: created.workoutId !== null,
     pushedAt: created.pushedAt,
   };
 }
@@ -129,7 +129,9 @@ export async function pushStrengthWorkoutFromActivity(
     },
   });
 
-  if (!activity) throw new Error('Séance introuvable');
+  if (!activity) {
+    throw new Error('Séance introuvable');
+  }
   if (activity.type !== ActivityType.STRENGTH) {
     throw new Error('Seules les séances de musculation peuvent être envoyées à la montre');
   }
@@ -179,12 +181,16 @@ export async function pushStrengthWorkoutFromPlannedSession(
     },
   });
 
-  if (!session) throw new Error('Séance planifiée introuvable');
+  if (!session) {
+    throw new Error('Séance planifiée introuvable');
+  }
   if (session.type !== ActivityType.STRENGTH) {
     throw new Error('Seules les séances de musculation peuvent être envoyées à la montre');
   }
 
-  if (!options.force) await assertNotAlreadyPushed(athleteId, session);
+  if (!options.force) {
+    await assertNotAlreadyPushed(athleteId, session);
+  }
 
   const prescriptionParsed = parseStrengthPrescription(session.strengthPrescription);
   const prescription = prescriptionParsed
@@ -227,7 +233,7 @@ export async function pushStrengthWorkoutFromPlannedSession(
     replaceWorkoutId: options.force ? session.garminWorkoutId : null,
   });
 
-  if (result.workoutId != null) {
+  if (result.workoutId !== null) {
     const pushedAt = new Date();
     await prisma.plannedSession.update({
       where: { id: session.id },

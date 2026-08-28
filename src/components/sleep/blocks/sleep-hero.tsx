@@ -34,7 +34,7 @@ export function SleepHero({
   loading?: boolean;
 }) {
   const subtitle =
-    !loading && bedtimeMin != null && wakeMin != null
+    !loading && bedtimeMin !== null && wakeMin !== null
       ? `${formatClock(bedtimeMin)} → ${formatClock(wakeMin)}`
       : null;
 
@@ -52,7 +52,7 @@ export function SleepHero({
       quickReadCaption={loading ? undefined : (insightLine ?? undefined)}
       quickReadLabel="score sommeil"
       quickReadSuffix="/ 100"
-      quickReadValue={sleepScore != null ? String(sleepScore) : '—'}
+      quickReadValue={sleepScore !== null ? String(sleepScore) : '—'}
       railCaption="insuffisant vers récupérant"
       railValue={sleepScore}
       subline={subtitle}

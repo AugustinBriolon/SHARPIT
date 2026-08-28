@@ -20,7 +20,9 @@ function renderAnalyzeButtonContent(isAnalyzing: boolean, offline: boolean, offl
       </>
     );
   }
-  if (offline) return offlineLabel;
+  if (offline) {
+    return offlineLabel;
+  }
   return (
     <>
       <Sparkles className="size-4" /> Analyser l&apos;enchaînement
@@ -141,7 +143,9 @@ export function BrickAnalysisPanel({ brickGroupId }: { brickGroupId: string }) {
   const isAnalyzing = analyzeBrick.isPending;
 
   async function handleAnalyze() {
-    if (guardDisabled) return;
+    if (guardDisabled) {
+      return;
+    }
     setError(null);
     const loadingToast = toast.loading("Analyse de l'enchaînement en cours");
     try {

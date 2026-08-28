@@ -18,7 +18,9 @@ const STATUS_CLASS: Record<GateStatus, string> = {
 
 /** Small pill summarizing a proposed session's Gate verdict. Renders nothing for ACCEPTED with no findings. */
 export function GateStatusBadge({ status }: { status: GateStatus }) {
-  if (status === 'ACCEPTED') return null;
+  if (status === 'ACCEPTED') {
+    return null;
+  }
   return (
     <span
       className={cn(
@@ -36,7 +38,9 @@ export function GateStatusBadge({ status }: { status: GateStatus }) {
 
 /** Athlete-facing rationale for every Gate finding on a session — never hides why a change was made. */
 export function GateFindingsList({ result }: { result: GateSessionResult }) {
-  if (result.findings.length === 0) return null;
+  if (result.findings.length === 0) {
+    return null;
+  }
   return (
     <ul className="mt-1 space-y-0.5">
       {result.findings.map((finding) => (
@@ -47,7 +51,7 @@ export function GateFindingsList({ result }: { result: GateSessionResult }) {
       {result.saferAlternative && (
         <li className="text-muted-foreground/80 text-xs leading-snug italic">
           Alternative plus sûre : {result.saferAlternative.intensity ?? 'intensité inchangée'}
-          {result.saferAlternative.load != null ? `, ~${result.saferAlternative.load} TSS` : ''}.
+          {result.saferAlternative.load !== null ? `, ~${result.saferAlternative.load} TSS` : ''}.
         </li>
       )}
     </ul>

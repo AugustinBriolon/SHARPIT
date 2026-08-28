@@ -46,7 +46,9 @@ async function ingestGarminActivity(
 ): Promise<void> {
   try {
     const rawSession = garminActivityToSession(activity, receivedAt);
-    if (!rawSession) return;
+    if (!rawSession) {
+      return;
+    }
 
     await observationEngine.ingest(athleteId, rawSession);
 
@@ -79,10 +81,14 @@ async function backfillMultisportLegs(
     where: { id: activityId },
     select: { multisportLegs: true },
   });
-  if (existing?.multisportLegs != null) return false;
+  if (existing?.multisportLegs !== null) {
+    return false;
+  }
 
   const legs = await fetchGarminMultisportLegs(client, garminId);
-  if (!legs) return false;
+  if (!legs) {
+    return false;
+  }
 
   await prisma.activity.update({
     where: { id: activityId },
@@ -102,10 +108,14 @@ function strengthSetsMatch(
   }>,
   incoming: ParsedStrengthSet[],
 ): boolean {
-  if (existing.length !== incoming.length) return false;
+  if (existing.length !== incoming.length) {
+    return false;
+  }
   return existing.every((row, index) => {
     const next = incoming[index];
-    if (!next) return false;
+    if (!next) {
+      return false;
+    }
     return (
       row.exercise === next.exercise &&
       row.sets === next.sets &&
@@ -122,7 +132,9 @@ async function backfillStrengthSets(
   activityId: string,
   sets: ParsedStrengthSet[],
 ): Promise<boolean> {
-  if (sets.length === 0) return false;
+  if (sets.length === 0) {
+    return false;
+  }
 
   const existing = await prisma.strengthSet.findMany({
     where: { activityId },
@@ -222,13 +234,15 @@ async function processOneGarminActivity(
 
   if (existingByGarmin) {
     const patch: Prisma.ActivityUpdateInput = {};
-    if (evaluation.rpe != null && evaluation.rpe !== existingByGarmin.rpe) {
+    if (evaluation.rpe !== null && evaluation.rpe !== existingByGarmin.rpe) {
       patch.rpe = evaluation.rpe;
     }
-    if (evaluation.feeling != null && evaluation.feeling !== existingByGarmin.feeling) {
+    if (evaluation.feeling !== null && evaluation.feeling !== existingByGarmin.feeling) {
       patch.feeling = evaluation.feeling;
     }
-    if (evaluation.notes) patch.notes = evaluation.notes;
+    if (evaluation.notes) {
+      patch.notes = evaluation.notes;
+    }
 
     const addedSets = await backfillStrengthSets(existingByGarmin.id, strengthSets);
     const addedLegs =
@@ -375,7 +389,9 @@ export async function syncGarminActivities(
 
     for (let page = 0; page < maxPages; page++) {
       const batch = await client.getActivities(start, PAGE_SIZE);
-      if (!batch.length) break;
+      if (!batch.length) {
+        break;
+      }
 
       result.fetched += batch.length;
       let reachedCutoff = false;
@@ -402,14 +418,18 @@ export async function syncGarminActivities(
         result.updated += outcome.updated;
         result.merged += outcome.merged;
         result.importedActivityIds.push(...outcome.importedActivityIds);
-        for (const type of outcome.importedTypes) importedTypes.add(type);
+        for (const type of outcome.importedTypes) {
+          importedTypes.add(type);
+        }
         for (const change of outcome.changed) {
           changedTypes.add(change.type);
           changedActivityIds.add(change.id);
         }
       }
 
-      if (reachedCutoff || batch.length < PAGE_SIZE) break;
+      if (reachedCutoff || batch.length < PAGE_SIZE) {
+        break;
+      }
       start += PAGE_SIZE;
     }
 

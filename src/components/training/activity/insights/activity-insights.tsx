@@ -209,7 +209,9 @@ function ZoneSection({
     );
   }
 
-  if (blocks.length === 0) return null;
+  if (blocks.length === 0) {
+    return null;
+  }
   return (
     <div
       className={cn(

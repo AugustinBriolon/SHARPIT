@@ -20,7 +20,9 @@ export type PlannedSessionCacheSeed = {
 };
 
 function toDate(value: Date | string | null | undefined): Date | null {
-  if (value == null) return null;
+  if (value === null) {
+    return null;
+  }
   return value instanceof Date ? value : new Date(value);
 }
 
@@ -28,8 +30,12 @@ function coalesceField<T>(
   seedValue: T | null | undefined,
   baseValue: T | null | undefined,
 ): T | null {
-  if (seedValue !== undefined && seedValue !== null) return seedValue;
-  if (baseValue !== undefined && baseValue !== null) return baseValue;
+  if (seedValue !== undefined && seedValue !== null) {
+    return seedValue;
+  }
+  if (baseValue !== undefined && baseValue !== null) {
+    return baseValue;
+  }
   return seedValue ?? baseValue ?? null;
 }
 
@@ -65,9 +71,13 @@ export function seedPlannedSessionIntoCache(
   seed: PlannedSessionCacheSeed,
 ): void {
   queryClient.setQueryData<ClientPlannedSession[]>(queryKeys.plannedSessions, (prev) => {
-    if (!prev) return [mergeSeed(undefined, seed)];
+    if (!prev) {
+      return [mergeSeed(undefined, seed)];
+    }
     const index = prev.findIndex((session) => session.id === seed.id);
-    if (index < 0) return [...prev, mergeSeed(undefined, seed)];
+    if (index < 0) {
+      return [...prev, mergeSeed(undefined, seed)];
+    }
     const next = prev.slice();
     next[index] = mergeSeed(prev[index], seed);
     return next;

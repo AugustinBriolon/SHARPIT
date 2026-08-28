@@ -137,7 +137,9 @@ export function pickDefaultStreamMetricKeys(
   };
 
   const defaults = priorities[type].filter((key) => available.has(key)).slice(0, 2);
-  if (defaults.length > 0) return defaults;
+  if (defaults.length > 0) {
+    return defaults;
+  }
   return metrics.slice(0, 2).map((metric) => metric.key);
 }
 
@@ -189,7 +191,9 @@ function ActivityStreamChartComponent({
 
   const selectedMetrics = metrics.filter((metric) => selectedKeys.includes(metric.key));
 
-  if (!metrics.length || !selectedMetrics.length) return null;
+  if (!metrics.length || !selectedMetrics.length) {
+    return null;
+  }
 
   const xLabel = useDistance ? 'km' : 'min';
   const xFmt = (v: number) => (useDistance ? `${v.toFixed(0)}` : `${Math.round(v)}`);
@@ -199,10 +203,14 @@ function ActivityStreamChartComponent({
       const base = current ?? defaultSelected;
       const isSelected = base.includes(key);
       if (isSelected) {
-        if (base.length === 1) return base;
+        if (base.length === 1) {
+          return base;
+        }
         return base.filter((entry) => entry !== key);
       }
-      if (base.length >= 2) return base;
+      if (base.length >= 2) {
+        return base;
+      }
       return [...base, key];
     });
   }
@@ -291,7 +299,9 @@ function ActivityStreamChartComponent({
             ))}
             <Tooltip
               content={({ active, payload, label }) => {
-                if (!active || !payload?.length) return null;
+                if (!active || !payload?.length) {
+                  return null;
+                }
                 return (
                   <ChartTooltipCard>
                     <p className="text-muted-foreground mb-1">
@@ -299,7 +309,9 @@ function ActivityStreamChartComponent({
                     </p>
                     {selectedMetrics.map((metric) => {
                       const datum = payload.find((entry) => entry.dataKey === metric.key);
-                      if (!datum || datum.value == null) return null;
+                      if (!datum || datum.value === null) {
+                        return null;
+                      }
                       return (
                         <p key={metric.key} style={{ color: metric.color }}>
                           {metric.shortLabel}:{' '}

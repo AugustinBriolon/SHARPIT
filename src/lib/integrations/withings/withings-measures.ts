@@ -89,7 +89,9 @@ export function mergeWithingsMeasureGroups(
   groups: WithingsRawMeasureGroup[],
 ): Array<{ grpid: number; date: number; measures: WithingsRawMeasureGroup['measures'] }> {
   const real = groups.filter((g) => g.category === 1);
-  if (real.length === 0) return [];
+  if (real.length === 0) {
+    return [];
+  }
 
   const sorted = [...real].sort((a, b) => a.date - b.date);
   const clusters: WithingsRawMeasureGroup[][] = [];
@@ -97,7 +99,7 @@ export function mergeWithingsMeasureGroups(
   for (const group of sorted) {
     const last = clusters[clusters.length - 1];
     const clusterStart = last?.[0]?.date;
-    if (clusterStart == null || group.date - clusterStart > WITHINGS_SESSION_MERGE_SEC) {
+    if (clusterStart === null || group.date - clusterStart > WITHINGS_SESSION_MERGE_SEC) {
       clusters.push([group]);
     } else {
       last.push(group);
@@ -152,7 +154,7 @@ function decodeEcgStoredValue(m: {
   fm?: number;
 }): number {
   const decoded = decodeWithingsValue(m.value, m.unit);
-  if (AFIB_CLASSIFICATION_TYPES.has(m.type) && m.fm != null && m.fm >= 0 && m.fm <= 20) {
+  if (AFIB_CLASSIFICATION_TYPES.has(m.type) && m.fm !== null && m.fm >= 0 && m.fm <= 20) {
     return m.fm;
   }
   return decoded;
@@ -175,7 +177,9 @@ export function enrichMeasurementsWithHeartEcg(
     let bestDelta = Infinity;
 
     for (const record of heartRecords) {
-      if (record.ecg?.afib == null) continue;
+      if (record.ecg?.afib === null) {
+        continue;
+      }
       const delta = Math.abs(record.timestamp * 1000 - tMs);
       if (delta <= WITHINGS_SESSION_MERGE_SEC * 1000 && delta < bestDelta) {
         best = record;
@@ -183,7 +187,9 @@ export function enrichMeasurementsWithHeartEcg(
       }
     }
 
-    if (!best?.ecg) return m;
+    if (!best?.ecg) {
+      return m;
+    }
 
     const extras: WithingsExtras = { ...(m.withingsExtras ?? {}) };
     extras.ecgAfibClassification = best.ecg.afib;
@@ -191,7 +197,7 @@ export function enrichMeasurementsWithHeartEcg(
       ...(extras.ecg ?? {}),
       [String(WITHINGS_MEASURE.AFIB_ECG)]: best.ecg.afib,
     };
-    if (best.heart_rate != null && m.heartRate == null) {
+    if (best.heart_rate !== null && m.heartRate === null) {
       return { ...m, heartRate: best.heart_rate, withingsExtras: extras };
     }
     return { ...m, withingsExtras: extras };
@@ -243,7 +249,7 @@ export function decodeWithingsValue(value: number, unit: number): number {
 
 function getScalar(byType: Map<number, number>, type: number): number | null {
   const v = byType.get(type);
-  return v != null ? v : null;
+  return v !== null ? v : null;
 }
 
 function computeWaterPct(
@@ -252,16 +258,22 @@ function computeWaterPct(
   extraKg: number | null,
   intraKg: number | null,
 ): number | null {
-  if (weightKg == null || weightKg <= 0) return null;
-  if (hydrationKg != null) return Number(((hydrationKg / weightKg) * 100).toFixed(1));
-  if (extraKg != null && intraKg != null) {
+  if (weightKg === null || weightKg <= 0) {
+    return null;
+  }
+  if (hydrationKg !== null) {
+    return Number(((hydrationKg / weightKg) * 100).toFixed(1));
+  }
+  if (extraKg !== null && intraKg !== null) {
     return Number((((extraKg + intraKg) / weightKg) * 100).toFixed(1));
   }
   return null;
 }
 
 function computeBmi(weightKg: number | null, heightM: number | null): number | null {
-  if (weightKg == null || heightM == null || heightM <= 0) return null;
+  if (weightKg === null || heightM === null || heightM <= 0) {
+    return null;
+  }
   return Number((weightKg / (heightM * heightM)).toFixed(1));
 }
 
@@ -298,11 +310,11 @@ export function parseWithingsMeasureGroup(group: {
   const intraKg = getScalar(byType, WITHINGS_MEASURE.INTRACELLULAR_WATER);
 
   const withingsExtras: WithingsExtras | null =
-    segmental!.length > 0 || Object.keys(ecg).length > 0 || heightM != null
+    segmental!.length > 0 || Object.keys(ecg).length > 0 || heightM !== null
       ? {
           ...(segmental!.length > 0 ? { segmental: segmental! } : {}),
           ...(Object.keys(ecg).length > 0 ? { ecg } : {}),
-          ...(heightM != null ? { heightM } : {}),
+          ...(heightM !== null ? { heightM } : {}),
         }
       : null;
 

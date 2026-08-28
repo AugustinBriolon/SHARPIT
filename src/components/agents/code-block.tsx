@@ -69,17 +69,23 @@ export function CodeBlock({
 
   useEffect(
     () => () => {
-      if (copyTimer.current) window.clearTimeout(copyTimer.current);
+      if (copyTimer.current) {
+        window.clearTimeout(copyTimer.current);
+      }
     },
     [],
   );
 
   useLayoutEffect(() => {
     const viewport = viewportRef.current;
-    if (!viewport || !streaming) return;
+    if (!viewport || !streaming) {
+      return;
+    }
 
     const frame = requestAnimationFrame(() => {
-      if (viewport.scrollHeight <= viewport.clientHeight) return;
+      if (viewport.scrollHeight <= viewport.clientHeight) {
+        return;
+      }
       if (typeof viewport.scrollTo === 'function') {
         viewport.scrollTo({
           top: viewport.scrollHeight,
@@ -93,11 +99,16 @@ export function CodeBlock({
   });
 
   const handleCopy = useCallback(async () => {
-    if (onCopy) await onCopy();
-    else await navigator.clipboard?.writeText(code);
+    if (onCopy) {
+      await onCopy();
+    } else {
+      await navigator.clipboard?.writeText(code);
+    }
 
     setCopied(true);
-    if (copyTimer.current) window.clearTimeout(copyTimer.current);
+    if (copyTimer.current) {
+      window.clearTimeout(copyTimer.current);
+    }
     copyTimer.current = window.setTimeout(() => setCopied(false), 1600);
   }, [code, onCopy]);
 

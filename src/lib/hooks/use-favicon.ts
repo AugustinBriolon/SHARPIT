@@ -19,11 +19,15 @@ export function useFavicon(url?: string) {
 
   const ref = useCallback(
     (img: HTMLImageElement | null) => {
-      if (!img || !src) return;
+      if (!img || !src) {
+        return;
+      }
 
       let released = false;
       img.decode().catch(() => {
-        if (!released) setFailedSrc(src);
+        if (!released) {
+          setFailedSrc(src);
+        }
       });
 
       // The node is going away or the source changed; a late rejection then

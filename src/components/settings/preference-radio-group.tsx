@@ -37,7 +37,9 @@ export function PreferenceRadioGroup<TId extends string>({
 
   function selectAt(index: number) {
     const option = options[index];
-    if (!option) return;
+    if (!option) {
+      return;
+    }
     onChange(option.id);
     focusOption(index);
   }

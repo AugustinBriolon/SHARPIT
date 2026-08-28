@@ -38,7 +38,7 @@ function enduranceParts(data: GarminPushSummaryInput): Array<string | null> {
 }
 
 export function buildPushToastDescription(data: GarminPushSummaryInput): string {
-  const sportParts = data.stepCount != null ? enduranceParts(data) : strengthParts(data);
+  const sportParts = data.stepCount !== null ? enduranceParts(data) : strengthParts(data);
   return [
     data.workoutName,
     ...sportParts,

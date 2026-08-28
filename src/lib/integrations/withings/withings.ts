@@ -171,18 +171,24 @@ export async function fetchWithingsMeasurements(
     meastypes: WITHINGS_BODY_SCAN_MEASTYPES,
   };
 
-  if (options?.lastupdate != null) {
+  if (options?.lastupdate !== null) {
     params.lastupdate = String(options.lastupdate);
   } else {
-    if (options?.startdate != null) params.startdate = String(options.startdate);
-    if (options?.enddate != null) params.enddate = String(options.enddate);
+    if (options?.startdate !== null) {
+      params.startdate = String(options.startdate);
+    }
+    if (options?.enddate !== null) {
+      params.enddate = String(options.enddate);
+    }
   }
 
   const all: WithingsParsedMeasurement[] = [];
   let offset = 0;
 
   for (;;) {
-    if (offset > 0) params.offset = String(offset);
+    if (offset > 0) {
+      params.offset = String(offset);
+    }
 
     const body = await withingsFormPost<{
       updatetime: number;
@@ -197,7 +203,9 @@ export async function fetchWithingsMeasurements(
     }
 
     const { more, offset: nextOffset } = body;
-    if (more !== 1 || nextOffset == null) break;
+    if (more !== 1 || nextOffset === null) {
+      break;
+    }
     offset = nextOffset;
   }
 
@@ -209,14 +217,20 @@ export async function fetchWithingsHeartList(
   options?: { startdate?: number; enddate?: number },
 ): Promise<WithingsHeartRecord[]> {
   const params: Record<string, string> = { action: 'list' };
-  if (options?.startdate != null) params.startdate = String(options.startdate);
-  if (options?.enddate != null) params.enddate = String(options.enddate);
+  if (options?.startdate !== null) {
+    params.startdate = String(options.startdate);
+  }
+  if (options?.enddate !== null) {
+    params.enddate = String(options.enddate);
+  }
 
   const all: WithingsHeartRecord[] = [];
   let offset = 0;
 
   for (;;) {
-    if (offset > 0) params.offset = String(offset);
+    if (offset > 0) {
+      params.offset = String(offset);
+    }
 
     const body = await withingsFormPost<{
       series: WithingsHeartRecord[];
@@ -227,7 +241,9 @@ export async function fetchWithingsHeartList(
     all.push(...(body.series ?? []));
 
     const { more, offset: nextOffset } = body;
-    if (more !== 1 || nextOffset == null) break;
+    if (more !== 1 || nextOffset === null) {
+      break;
+    }
     offset = nextOffset;
   }
 

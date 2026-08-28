@@ -25,7 +25,9 @@ async function ingestWithingsMeasurement(
 ): Promise<void> {
   try {
     const raw = withingsMeasurementToBodyComposition(measurement, new Date());
-    if (!raw) return;
+    if (!raw) {
+      return;
+    }
     await observationEngine.ingest(athleteId, raw);
   } catch (err) {
     console.error('[ObservationEngine] withings ingest failed:', err);
@@ -43,7 +45,9 @@ export async function disconnectWithings(athleteId: string) {
 /** Keeps the Withings profile row so the hub can ask for a reconnect. */
 export async function revokeWithingsCredentials(athleteId: string) {
   const account = await getWithingsAccount(athleteId);
-  if (!account) return;
+  if (!account) {
+    return;
+  }
   await prisma.withingsAccount.update({
     where: { athleteId },
     data: {
@@ -56,7 +60,9 @@ export async function revokeWithingsCredentials(athleteId: string) {
 
 export async function getValidWithingsAccessToken(athleteId: string): Promise<string> {
   const account = await getWithingsAccount(athleteId);
-  if (!account) throw new Error('Compte Withings non connecté');
+  if (!account) {
+    throw new Error('Compte Withings non connecté');
+  }
   if (!isOAuthAccountConnected(account)) {
     throw new ProviderAuthError(
       'Session Withings expirée. Reconnecte Withings dans les paramètres.',
@@ -64,7 +70,9 @@ export async function getValidWithingsAccessToken(athleteId: string): Promise<st
   }
 
   const expiresSoon = account.expiresAt.getTime() - Date.now() < 60_000;
-  if (!expiresSoon) return decryptSecret(account.accessTokenEnc);
+  if (!expiresSoon) {
+    return decryptSecret(account.accessTokenEnc);
+  }
 
   try {
     const refreshed = await refreshWithingsToken(decryptSecret(account.refreshTokenEnc));
@@ -93,7 +101,7 @@ function measurementToPrisma(
   m: WithingsParsedMeasurement,
 ): Omit<Prisma.BodyCompositionMeasurementUncheckedCreateInput, 'athleteId'> {
   const musclePct =
-    m.muscleKg != null && m.weightKg != null && m.weightKg > 0
+    m.muscleKg !== null && m.weightKg !== null && m.weightKg > 0
       ? (m.muscleKg / m.weightKg) * 100
       : null;
 
@@ -110,9 +118,9 @@ function measurementToPrisma(
     visceralFat: m.visceralFat,
     waterPct: m.waterPct,
     fatFreeWeightKg: m.fatFreeWeightKg,
-    heartRate: m.heartRate != null ? Math.round(m.heartRate) : null,
-    bodyAge: m.metabolicAge != null ? Math.round(m.metabolicAge) : null,
-    vascularAgeYears: m.vascularAgeYears != null ? Math.round(m.vascularAgeYears) : null,
+    heartRate: m.heartRate !== null ? Math.round(m.heartRate) : null,
+    bodyAge: m.metabolicAge !== null ? Math.round(m.metabolicAge) : null,
+    vascularAgeYears: m.vascularAgeYears !== null ? Math.round(m.vascularAgeYears) : null,
     pulseWaveVelocity: m.pulseWaveVelocity,
     vo2Max: m.vo2Max,
     nerveHealthScore: m.nerveHealthScore,
@@ -120,7 +128,7 @@ function measurementToPrisma(
     nerveHealthRight: m.nerveHealthRight,
     nerveResponseScore: m.nerveResponseScore,
     skinConductance: m.skinConductance,
-    metabolicAge: m.metabolicAge != null ? Math.round(m.metabolicAge) : null,
+    metabolicAge: m.metabolicAge !== null ? Math.round(m.metabolicAge) : null,
     hydrationKg: m.hydrationKg,
     fatMassKg: m.fatMassKg,
     extracellularWaterKg: m.extracellularWaterKg,
@@ -130,7 +138,9 @@ function measurementToPrisma(
 }
 
 async function upsertDailyWeightFromWithings(athleteId: string, m: WithingsParsedMeasurement) {
-  if (m.weightKg == null) return;
+  if (m.weightKg === null) {
+    return;
+  }
 
   const local = m.measuredAt;
   const day = new Date(Date.UTC(local.getFullYear(), local.getMonth(), local.getDate()));
@@ -157,7 +167,9 @@ export async function syncWithingsHealth(
   },
 ): Promise<WithingsSyncResult> {
   const account = await getWithingsAccount(athleteId);
-  if (!account) throw new Error('Compte Withings non connecté');
+  if (!account) {
+    throw new Error('Compte Withings non connecté');
+  }
 
   const accessToken = await getValidWithingsAccessToken(athleteId);
   const since = options?.full
@@ -196,7 +208,7 @@ export async function syncWithingsHealth(
       select: { externalId: true },
     });
     const existingIds = new Set(
-      existingRows.map((r) => r.externalId).filter((id): id is string => id != null),
+      existingRows.map((r) => r.externalId).filter((id): id is string => id !== null),
     );
 
     const toCreate: Prisma.BodyCompositionMeasurementCreateManyInput[] = [];

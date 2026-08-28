@@ -17,7 +17,9 @@ export function buildThreadAdherence(weeks: readonly ThreadWeek[]): ThreadAdhere
   let worstRatio = Number.POSITIVE_INFINITY;
 
   for (const week of weeks) {
-    if (week.isFuture) continue;
+    if (week.isFuture) {
+      continue;
+    }
 
     let weekCompleted = 0;
     let weekPrescribed = 0;

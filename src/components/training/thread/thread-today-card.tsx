@@ -57,7 +57,9 @@ export function ThreadTodayCard({
   const meta = entryMeta(entry, mode);
 
   const open = () => {
-    if (sessionId) openPlannedSession({ sessionId });
+    if (sessionId) {
+      openPlannedSession({ sessionId });
+    }
   };
 
   return (

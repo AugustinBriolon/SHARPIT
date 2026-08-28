@@ -27,7 +27,9 @@ export type ThreadDelta = {
 };
 
 function toDelta(actual: number, planned: number): ThreadDelta | null {
-  if (!Number.isFinite(actual) || !Number.isFinite(planned) || planned <= 0) return null;
+  if (!Number.isFinite(actual) || !Number.isFinite(planned) || planned <= 0) {
+    return null;
+  }
   const value = actual - planned;
   const ratio = value / planned;
   return {
@@ -42,7 +44,9 @@ export function durationDelta(
   actualSeconds: number | null | undefined,
   plannedMinutes: number | null | undefined,
 ): ThreadDelta | null {
-  if (actualSeconds == null || plannedMinutes == null) return null;
+  if (actualSeconds === null || plannedMinutes === null) {
+    return null;
+  }
   return toDelta(Math.round(actualSeconds / 60), plannedMinutes);
 }
 
@@ -51,14 +55,18 @@ export function loadDelta(
   actualLoad: number | null | undefined,
   plannedLoad: number | null | undefined,
 ): ThreadDelta | null {
-  if (actualLoad == null || plannedLoad == null) return null;
+  if (actualLoad === null || plannedLoad === null) {
+    return null;
+  }
   return toDelta(Math.round(actualLoad), Math.round(plannedLoad));
 }
 
 /** "+8 min", "−12 TSS" — the sign is always shown, including for a shortfall. */
 export function formatDelta(delta: ThreadDelta, unit: string): string {
   const rounded = Math.round(delta.value);
-  if (rounded === 0) return `±0 ${unit}`.trim();
+  if (rounded === 0) {
+    return `±0 ${unit}`.trim();
+  }
   const sign = rounded > 0 ? '+' : '−';
   return `${sign}${Math.abs(rounded)} ${unit}`.trim();
 }

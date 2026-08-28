@@ -13,7 +13,7 @@ function makeActivity(
   return {
     date,
     type,
-    duration: durationMin != null ? durationMin * 60 : null,
+    duration: durationMin !== null ? durationMin * 60 : null,
     load,
     bikeMetrics: null,
   };

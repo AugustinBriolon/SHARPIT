@@ -72,7 +72,9 @@ export function ActivityDetailHeader({ activity }: { activity: ActivityDetailHea
       confirmLabel: 'Supprimer',
       variant: 'destructive',
     });
-    if (!confirmed) return;
+    if (!confirmed) {
+      return;
+    }
     remove.mutate(activity.id);
     router.push('/training');
   }

@@ -50,7 +50,9 @@ export async function updateTravelMemoryEntry(
   input: Omit<TravelMemoryInput, 'source' | 'applyToPlannedSessions'>,
 ) {
   const travel = await updateTravelContext(prisma, athleteId, id, input);
-  if (!travel) return null;
+  if (!travel) {
+    return null;
+  }
   return travelContextToEntry(travel);
 }
 

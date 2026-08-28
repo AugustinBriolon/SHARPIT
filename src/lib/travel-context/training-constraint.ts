@@ -42,7 +42,9 @@ export function isTravelTrainingConstraint(value: unknown): value is TravelTrain
 }
 
 export function travelTrainingConstraintLabel(value: unknown): string | null {
-  if (!isTravelTrainingConstraint(value)) return null;
+  if (!isTravelTrainingConstraint(value)) {
+    return null;
+  }
   return TRAVEL_TRAINING_CONSTRAINT_LABELS[value];
 }
 
@@ -59,7 +61,9 @@ export function overlappingCalendarDays(
 ): number {
   const start = dayOnly(aStart) > dayOnly(bStart) ? dayOnly(aStart) : dayOnly(bStart);
   const end = dayOnly(aEnd) < dayOnly(bEnd) ? dayOnly(aEnd) : dayOnly(bEnd);
-  if (end < start) return 0;
+  if (end < start) {
+    return 0;
+  }
   return differenceInCalendarDays(end, start) + 1;
 }
 
@@ -72,9 +76,13 @@ export function resolveConstraintForWeek(
   let best: { constraint: TravelTrainingConstraint; travel: TravelConstraintWindow } | null = null;
 
   for (const travel of travels) {
-    if (travel.trainingConstraint === 'FULL') continue;
+    if (travel.trainingConstraint === 'FULL') {
+      continue;
+    }
     const overlap = overlappingCalendarDays(weekStart, weekEnd, travel.startDate, travel.endDate);
-    if (overlap < minOverlapDays) continue;
+    if (overlap < minOverlapDays) {
+      continue;
+    }
 
     if (!best || CONSTRAINT_RANK[travel.trainingConstraint] > CONSTRAINT_RANK[best.constraint]) {
       best = { constraint: travel.trainingConstraint, travel };
@@ -82,6 +90,18 @@ export function resolveConstraintForWeek(
   }
 
   return best;
+}
+
+function constraintFocusLabel(
+  constraint: TravelTrainingConstraint,
+  suffix: string,
+): string {
+  const labels: Partial<Record<TravelTrainingConstraint, string>> = {
+    REDUCED: `Voyage — charge réduite${suffix}`,
+    MOBILITY_ONLY: `Voyage — mobilité et étirements uniquement${suffix}`,
+    NONE: `Voyage — pas d’entraînement structuré${suffix}`,
+  };
+  return labels[constraint] ?? `Voyage${suffix}`;
 }
 
 function focusForConstraint(
@@ -94,16 +114,7 @@ function focusForConstraint(
     const labels = travelDisciplineLabels(disciplines).join(', ');
     return `Voyage — ${labels}${suffix}`;
   }
-  switch (constraint) {
-    case 'REDUCED':
-      return `Voyage — charge réduite${suffix}`;
-    case 'MOBILITY_ONLY':
-      return `Voyage — mobilité et étirements uniquement${suffix}`;
-    case 'NONE':
-      return `Voyage — pas d’entraînement structuré${suffix}`;
-    default:
-      return `Voyage${suffix}`;
-  }
+  return constraintFocusLabel(constraint, suffix);
 }
 
 function applyConstraintToWeek(
@@ -111,7 +122,9 @@ function applyConstraintToWeek(
   constraint: TravelTrainingConstraint,
   travel: TravelConstraintWindow,
 ): MacroWeekDraft {
-  if (constraint === 'FULL') return week;
+  if (constraint === 'FULL') {
+    return week;
+  }
 
   const { targetLoad: currentLoad } = week;
   let targetLoad = currentLoad;
@@ -138,11 +151,15 @@ export function applyTravelConstraintsToMacroWeeks(
   weeks: MacroWeekDraft[],
   travels: readonly TravelConstraintWindow[],
 ): MacroWeekDraft[] {
-  if (travels.length === 0) return weeks;
+  if (travels.length === 0) {
+    return weeks;
+  }
 
   return weeks.map((week) => {
     const resolved = resolveConstraintForWeek(week.weekStart, travels);
-    if (!resolved) return week;
+    if (!resolved) {
+      return week;
+    }
     return applyConstraintToWeek(week, resolved.constraint, resolved.travel);
   });
 }
@@ -151,6 +168,69 @@ export function applyTravelConstraintsToMacroWeeks(
  * Resolve effective weekly target for coach plan fill, preferring live travel
  * constraints over a stale macro target when a trip covers the block.
  */
+type DominantTravelMatch = {
+  strongest: TravelTrainingConstraint;
+  matched: TravelConstraintWindow;
+  overlapDays: number;
+};
+
+function findDominantTravelMatch(
+  startDate: Date,
+  endDate: Date,
+  travels: readonly TravelConstraintWindow[],
+): DominantTravelMatch | null {
+  let strongest: TravelTrainingConstraint = 'FULL';
+  let matched: TravelConstraintWindow | null = null;
+  let overlapDays = 0;
+
+  for (const travel of travels) {
+    const overlap = overlappingCalendarDays(startDate, endDate, travel.startDate, travel.endDate);
+    if (overlap === 0) {
+      continue;
+    }
+    if (
+      !matched ||
+      CONSTRAINT_RANK[travel.trainingConstraint] > CONSTRAINT_RANK[strongest] ||
+      (travel.trainingConstraint === strongest && overlap > overlapDays)
+    ) {
+      strongest = travel.trainingConstraint;
+      matched = travel;
+      overlapDays = overlap;
+    }
+  }
+
+  return matched ? { strongest, matched, overlapDays } : null;
+}
+
+function capLoadForConstraint(baseLoad: number, constraint: TravelTrainingConstraint): number {
+  if (constraint === 'NONE') {
+    return Math.min(baseLoad, NONE_CAP_TSS);
+  }
+  if (constraint === 'MOBILITY_ONLY') {
+    return Math.min(baseLoad, MOBILITY_ONLY_CAP_TSS);
+  }
+  if (constraint === 'REDUCED') {
+    return Math.max(40, Math.round(baseLoad * 0.72));
+  }
+  return baseLoad;
+}
+
+function asNull<T>(value: T | null | undefined): T | null {
+  return value ?? null;
+}
+
+function unconstrainedTravelResult(params: {
+  targetLoad: number | null | undefined;
+  planFocus: string | null | undefined;
+}) {
+  return {
+    targetLoad: asNull(params.targetLoad),
+    planFocus: asNull(params.planFocus),
+    constraint: null,
+    allowedDisciplines: [] as TravelDiscipline[],
+  };
+}
+
 export function resolvePlanTargetUnderTravel(params: {
   startDate: Date;
   days: number;
@@ -165,62 +245,31 @@ export function resolvePlanTargetUnderTravel(params: {
 } {
   const { startDate, days, travels } = params;
   const endDate = addDays(dayOnly(startDate), Math.max(0, days - 1));
-
-  let strongest: TravelTrainingConstraint = 'FULL';
-  let matched: TravelConstraintWindow | null = null;
-  let overlapDays = 0;
-
-  for (const travel of travels) {
-    const overlap = overlappingCalendarDays(startDate, endDate, travel.startDate, travel.endDate);
-    if (overlap === 0) continue;
-
-    if (
-      !matched ||
-      CONSTRAINT_RANK[travel.trainingConstraint] > CONSTRAINT_RANK[strongest] ||
-      (travel.trainingConstraint === strongest && overlap > overlapDays)
-    ) {
-      strongest = travel.trainingConstraint;
-      matched = travel;
-      overlapDays = overlap;
-    }
-  }
-
-  const allowedDisciplines = [...(matched?.allowedDisciplines ?? [])];
+  const dominant = findDominantTravelMatch(startDate, endDate, travels);
   const minOverlap = Math.min(MIN_OVERLAP_DAYS_FOR_MACRO, days);
 
-  if (!matched || overlapDays < minOverlap) {
-    return {
-      targetLoad: params.targetLoad ?? null,
-      planFocus: params.planFocus ?? null,
-      constraint: null,
-      allowedDisciplines: [],
-    };
+  if (!dominant || dominant.overlapDays < minOverlap) {
+    return unconstrainedTravelResult(params);
   }
+
+  const { strongest, matched } = dominant;
+  const allowedDisciplines = [...(matched.allowedDisciplines ?? [])];
 
   if (strongest === 'FULL') {
     return {
-      targetLoad: params.targetLoad ?? null,
+      targetLoad: asNull(params.targetLoad),
       planFocus:
         allowedDisciplines.length > 0
           ? focusForConstraint('FULL', matched)
-          : (params.planFocus ?? null),
+          : asNull(params.planFocus),
       constraint: null,
       allowedDisciplines,
     };
   }
 
   const baseLoad = params.targetLoad ?? 200;
-  let capped = baseLoad;
-  if (strongest === 'NONE') {
-    capped = Math.min(baseLoad, NONE_CAP_TSS);
-  } else if (strongest === 'MOBILITY_ONLY') {
-    capped = Math.min(baseLoad, MOBILITY_ONLY_CAP_TSS);
-  } else if (strongest === 'REDUCED') {
-    capped = Math.max(40, Math.round(baseLoad * 0.72));
-  }
-
   return {
-    targetLoad: capped,
+    targetLoad: capLoadForConstraint(baseLoad, strongest),
     planFocus: focusForConstraint(strongest, matched),
     constraint: strongest,
     allowedDisciplines,

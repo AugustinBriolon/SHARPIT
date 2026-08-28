@@ -21,7 +21,9 @@ export function ThreadPlanChart({
 }) {
   const { mode } = useDisplayMode();
   const window = weeks.slice(-8);
-  if (window.length === 0) return null;
+  if (window.length === 0) {
+    return null;
+  }
 
   const tallest = Math.max(...window.flatMap((w) => [w.plannedLoad, w.doneLoad]), 1);
 
@@ -48,7 +50,7 @@ export function ThreadPlanChart({
       </div>
 
       <p className="text-data text-muted-foreground mt-2.5 text-[11px] tabular-nums">
-        {adherence.ratio != null
+        {adherence.ratio !== null
           ? `Ratio tenu ${Math.round(adherence.ratio * 100)} %`
           : 'Aucune séance prescrite sur la fenêtre'}
         {adherence.worstWeekLabel ? ` · dernier creux ${adherence.worstWeekLabel}` : ''}

@@ -21,7 +21,9 @@ function todoProgressTransition(status: string, progress: number | undefined, re
   if (status === 'in-progress' && progress === undefined && !reduce) {
     return { rotate: { duration: 1.1, repeat: Infinity, ease: 'linear' as const } };
   }
-  if (reduce) return { duration: 0 };
+  if (reduce) {
+    return { duration: 0 };
+  }
   return SPRING_LAYOUT;
 }
 
@@ -47,9 +49,15 @@ export interface TodoListProps {
 }
 
 function statusLabel(status: TodoItemStatus) {
-  if (status === 'in-progress') return 'In progress';
-  if (status === 'completed') return 'Completed';
-  if (status === 'cancelled') return 'Cancelled';
+  if (status === 'in-progress') {
+    return 'In progress';
+  }
+  if (status === 'completed') {
+    return 'Completed';
+  }
+  if (status === 'cancelled') {
+    return 'Cancelled';
+  }
   return 'Pending';
 }
 
@@ -202,7 +210,9 @@ export function TodoList({
 
   const setOpen = useCallback(
     (next: boolean) => {
-      if (open === undefined) setInternalOpen(next);
+      if (open === undefined) {
+        setInternalOpen(next);
+      }
       onOpenChange?.(next);
     },
     [onOpenChange, open],
@@ -220,10 +230,14 @@ export function TodoList({
 
   useLayoutEffect(() => {
     const viewport = viewportRef.current;
-    if (!viewport || itemCount === 0) return;
+    if (!viewport || itemCount === 0) {
+      return;
+    }
 
     const frame = requestAnimationFrame(() => {
-      if (viewport.scrollHeight <= viewport.clientHeight) return;
+      if (viewport.scrollHeight <= viewport.clientHeight) {
+        return;
+      }
       if (typeof viewport.scrollTo === 'function') {
         viewport.scrollTo({
           top: viewport.scrollHeight,

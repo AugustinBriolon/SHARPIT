@@ -22,7 +22,9 @@ export function forecastBadgeFromContext(
     return { tone: 'neutral', label: 'Intérieur' };
   }
 
-  if (!context || typeof context !== 'object') return null;
+  if (!context || typeof context !== 'object') {
+    return null;
+  }
   const parsed = context as PlannedSessionContext;
   const env = parsed.environment;
   const advisories = parsed.advisories ?? [];

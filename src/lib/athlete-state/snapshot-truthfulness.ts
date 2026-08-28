@@ -19,13 +19,23 @@ export type TruthfulnessOverlay = {
 };
 
 function missingSignals(decision: DecisionData | null): string[] {
-  if (!decision) return ['synthèse du jour'];
+  if (!decision) {
+    return ['synthèse du jour'];
+  }
   const missing: string[] = [];
   const graph = decision.evidenceGraph;
-  if (!graph || graph.recoveryContribution <= 0) missing.push('récupération');
-  if (!graph || graph.fatigueContribution <= 0) missing.push('charge / fatigue');
-  if (!graph || graph.adaptationContribution <= 0) missing.push('adaptation');
-  if (missing.length === 3) return ['synthèse du jour'];
+  if (!graph || graph.recoveryContribution <= 0) {
+    missing.push('récupération');
+  }
+  if (!graph || graph.fatigueContribution <= 0) {
+    missing.push('charge / fatigue');
+  }
+  if (!graph || graph.adaptationContribution <= 0) {
+    missing.push('adaptation');
+  }
+  if (missing.length === 3) {
+    return ['synthèse du jour'];
+  }
   return missing;
 }
 
@@ -62,9 +72,15 @@ export function buildInsufficientDataMessage(
 }
 
 export function confidenceLabelFor(confidence: number | null): string | null {
-  if (confidence == null) return null;
-  if (confidence >= 0.75) return 'Estimation fiable';
-  if (confidence >= MIN_ADVICE_CONFIDENCE) return 'Estimation modérée';
+  if (confidence === null) {
+    return null;
+  }
+  if (confidence >= 0.75) {
+    return 'Estimation fiable';
+  }
+  if (confidence >= MIN_ADVICE_CONFIDENCE) {
+    return 'Estimation modérée';
+  }
   return 'Estimation partielle — données incomplètes';
 }
 
@@ -72,7 +88,9 @@ export function effortUnavailableMessage(
   dailyStrain: TodayState['dailyStrain'],
   domainMessages: Partial<Record<string, string>>,
 ): string | null {
-  if (dailyStrain?.available && dailyStrain.strainScore != null) return null;
+  if (dailyStrain?.available && dailyStrain.strainScore !== null) {
+    return null;
+  }
   return domainMessages.training ?? "La charge d'entraînement du jour n'a pas encore été mesurée.";
 }
 
@@ -81,8 +99,12 @@ function resolveSnapshotRecommendation(
   actionable: boolean,
   recommendation: AthleteSnapshot['recommendation'],
 ): AthleteSnapshot['recommendation'] {
-  if (!gateForwardAdvice) return recommendation;
-  if (actionable) return recommendation;
+  if (!gateForwardAdvice) {
+    return recommendation;
+  }
+  if (actionable) {
+    return recommendation;
+  }
   return null;
 }
 
@@ -141,8 +163,12 @@ export function applyTruthfulnessOverlay(
 export function formatLimitingFactorMessage(
   limitingFactor: NonNullable<AthleteSnapshot['limitingFactor']>,
 ): string | null {
-  if (!limitingFactor.description) return null;
+  if (!limitingFactor.description) {
+    return null;
+  }
   const text = resolve(limitingFactor.description);
-  if (!text || text === limitingFactor.description.code) return null;
+  if (!text || text === limitingFactor.description.code) {
+    return null;
+  }
   return text;
 }

@@ -105,14 +105,18 @@ export async function pushEnduranceWorkoutFromPlannedSession(
     },
   });
 
-  if (!session) throw new Error('Séance planifiée introuvable');
+  if (!session) {
+    throw new Error('Séance planifiée introuvable');
+  }
 
   const sport = enduranceSportFromActivityType(session.type);
   if (!sport) {
     throw new Error('Seules les séances course, vélo et natation peuvent être envoyées ainsi');
   }
 
-  if (!options.force) await assertNotAlreadyPushed(athleteId, session);
+  if (!options.force) {
+    await assertNotAlreadyPushed(athleteId, session);
+  }
 
   const { thresholds, defaultPoolLengthM } = await loadPushProfile(athleteId);
   const { prescription, derived, warnings } = effectiveEndurancePrescription({
@@ -134,7 +138,9 @@ export async function pushEnduranceWorkoutFromPlannedSession(
     thresholds,
   });
 
-  if (built.stepCount === 0) throw new Error('Aucune étape à envoyer');
+  if (built.stepCount === 0) {
+    throw new Error('Aucune étape à envoyer');
+  }
 
   const created = await createAndScheduleWorkout(athleteId, {
     payload: built.payload,
@@ -143,7 +149,7 @@ export async function pushEnduranceWorkoutFromPlannedSession(
     replaceWorkoutId: options.force ? session.garminWorkoutId : null,
   });
 
-  if (created.workoutId != null) {
+  if (created.workoutId !== null) {
     await prisma.plannedSession.update({
       where: { id: session.id },
       data: {
@@ -165,8 +171,8 @@ export async function pushEnduranceWorkoutFromPlannedSession(
     derived,
     scheduledDate: created.scheduledDate,
     alreadyPushed: false,
-    calendarActive: created.scheduledDate != null,
-    workoutExists: created.workoutId != null,
+    calendarActive: created.scheduledDate !== null,
+    workoutExists: created.workoutId !== null,
     pushedAt: created.pushedAt,
   };
 }

@@ -38,7 +38,9 @@ function ContextReadClamp({ text, empty }: { text: string; empty: boolean }) {
 
   useLayoutEffect(() => {
     const el = contentRef.current;
-    if (!el) return;
+    if (!el) {
+      return;
+    }
 
     const measure = () => {
       setOverflows(el.scrollHeight > READ_MAX_COLLAPSED_PX + 1);
@@ -141,7 +143,9 @@ export function CoachProfileContextSection({
   useDesktopAutofocus(editRef, mode === 'edit');
 
   useEffect(() => {
-    if (mode === 'read') setEditValue(savedContext);
+    if (mode === 'read') {
+      setEditValue(savedContext);
+    }
   }, [savedContext, mode]);
 
   const dirty = mode === 'edit' && savedContext !== editValue;
@@ -158,7 +162,9 @@ export function CoachProfileContextSection({
   }
 
   function handleSave() {
-    if (guardDisabled) return;
+    if (guardDisabled) {
+      return;
+    }
     save.mutate(editValue, {
       onSuccess: () => {
         setJustSaved(true);
@@ -208,7 +214,9 @@ export function CoachProfileContextSection({
   /** Read mode only confirms a save; edit mode carries the commit controls. */
   function renderFooterAction() {
     if (mode === 'read') {
-      if (!justSaved) return null;
+      if (!justSaved) {
+        return null;
+      }
       return (
         <span aria-live="polite" className="text-primary inline-flex items-center gap-1 text-xs">
           <Check className="size-3.5" aria-hidden />

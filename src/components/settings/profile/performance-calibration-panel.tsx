@@ -82,7 +82,9 @@ export function PerformanceCalibrationPanel({ initial }: { initial: ProfileData 
   const { offline, guardDisabled, offlineLabel } = useOfflineGuard();
 
   useEffect(() => {
-    if (!shouldHydrateProfileForm(initial)) return;
+    if (!shouldHydrateProfileForm(initial)) {
+      return;
+    }
     setFtpW(initial.ftpW?.toString() ?? '');
     setMaxHr(initial.maxHr?.toString() ?? '');
     setLthr(initial.lthr?.toString() ?? '');
@@ -104,7 +106,9 @@ export function PerformanceCalibrationPanel({ initial }: { initial: ProfileData 
   ]);
 
   async function handleGarminImport() {
-    if (guardDisabled) return;
+    if (guardDisabled) {
+      return;
+    }
     setImporting(true);
     setError(null);
     setMessage(null);
@@ -130,10 +134,16 @@ export function PerformanceCalibrationPanel({ initial }: { initial: ProfileData 
         }
         return;
       }
-      if (data.ftpW != null) setFtpW(String(data.ftpW));
-      if (data.maxHr != null) setMaxHr(String(data.maxHr));
-      if (data.lthr != null) setLthr(String(data.lthr));
-      if (data.runThresholdPaceSecPerKm != null) {
+      if (data.ftpW !== null) {
+        setFtpW(String(data.ftpW));
+      }
+      if (data.maxHr !== null) {
+        setMaxHr(String(data.maxHr));
+      }
+      if (data.lthr !== null) {
+        setLthr(String(data.lthr));
+      }
+      if (data.runThresholdPaceSecPerKm !== null) {
         setThresholdPace(paceToInput(data.runThresholdPaceSecPerKm));
       }
       setVo2maxRunning(data.vo2maxRunning);
@@ -154,7 +164,9 @@ export function PerformanceCalibrationPanel({ initial }: { initial: ProfileData 
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (guardDisabled) return;
+    if (guardDisabled) {
+      return;
+    }
     setSaving(true);
     setError(null);
     setMessage(null);
@@ -205,7 +217,9 @@ export function PerformanceCalibrationPanel({ initial }: { initial: ProfileData 
   }
 
   async function handleApplyEstimates(fields: ThresholdField[]) {
-    if (guardDisabled) return;
+    if (guardDisabled) {
+      return;
+    }
     setError(null);
     setMessage(null);
     try {
@@ -217,11 +231,13 @@ export function PerformanceCalibrationPanel({ initial }: { initial: ProfileData 
           swimCssSecPer100m?: number | null;
         };
       };
-      if (applied.profile?.swimCssSecPer100m != null) {
+      if (applied.profile?.swimCssSecPer100m !== null) {
         setSwimCss(paceToInput(applied.profile.swimCssSecPer100m));
       }
-      if (applied.profile?.ftpW != null) setFtpW(String(applied.profile.ftpW));
-      if (applied.profile?.runThresholdPaceSecPerKm != null) {
+      if (applied.profile?.ftpW !== null) {
+        setFtpW(String(applied.profile.ftpW));
+      }
+      if (applied.profile?.runThresholdPaceSecPerKm !== null) {
         setThresholdPace(paceToInput(applied.profile.runThresholdPaceSecPerKm));
       }
       setMessage('Seuils estimés appliqués depuis tes records.');
@@ -444,7 +460,7 @@ export function PerformanceCalibrationPanel({ initial }: { initial: ProfileData 
         </p>
       ) : null}
       {/* A diff needs a baseline: no profile loaded, nothing safe to write. */}
-      <Button disabled={guardDisabled || saving || !dirty || initial == null} type="submit">
+      <Button disabled={guardDisabled || saving || !dirty || initial === null} type="submit">
         {guardedActionLabel(offline, offlineLabel, 'Enregistrer', {
           active: saving,
           label: 'Enregistrement…',

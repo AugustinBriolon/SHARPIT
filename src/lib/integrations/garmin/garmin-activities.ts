@@ -62,14 +62,20 @@ interface GarminSummarizedExerciseSet {
 
 /** Garmin envoie le poids en grammes (gros nombres) ou parfois déjà en kg. */
 function garminWeightToKg(weight: number | null | undefined): number | null {
-  if (weight == null || weight <= 0) return null;
-  if (weight >= 100) return Math.round((weight / 1000) * 10) / 10;
+  if (weight === null || weight <= 0) {
+    return null;
+  }
+  if (weight >= 100) {
+    return Math.round((weight / 1000) * 10) / 10;
+  }
   return Math.round(weight * 10) / 10;
 }
 
 function bestExerciseEntry(set: GarminExerciseSet): GarminExerciseEntry | null {
   const exercises = set.exercises ?? [];
-  if (exercises.length === 0) return null;
+  if (exercises.length === 0) {
+    return null;
+  }
   return exercises.reduce((best, entry) =>
     (entry.probability ?? 0) >= (best.probability ?? 0) ? entry : best,
   );
@@ -83,7 +89,9 @@ function exerciseKeyFromEntry(entry: GarminExerciseEntry): string {
 
 function labelFromExerciseKey(key: string, labels: Map<string, string>): string {
   const [category, name] = key.split('::');
-  if (key.startsWith('step::')) return 'Inconnu';
+  if (key.startsWith('step::')) {
+    return 'Inconnu';
+  }
   return resolveGarminExerciseLabel(category, name, labels);
 }
 
@@ -96,7 +104,9 @@ function pushStrengthGroup(
   rests: number[],
   order: number,
 ): number {
-  if (reps.length === 0) return order;
+  if (reps.length === 0) {
+    return order;
+  }
   const avgReps = Math.round(reps.reduce((s, v) => s + v, 0) / reps.length);
   const maxWeight = weights.length ? Math.max(...weights) : 0;
   const avgRest = rests.length ? Math.round(rests.reduce((s, v) => s + v, 0) / rests.length) : null;
@@ -124,7 +134,9 @@ export function parseGarminSummarizedExerciseSets(
   labels: Map<string, string>,
 ): ParsedStrengthSet[] {
   const raw = activity.summarizedExerciseSets;
-  if (!Array.isArray(raw) || raw.length === 0) return [];
+  if (!Array.isArray(raw) || raw.length === 0) {
+    return [];
+  }
 
   const results: ParsedStrengthSet[] = [];
 
@@ -132,7 +144,9 @@ export function parseGarminSummarizedExerciseSets(
     const item = entry as GarminSummarizedExerciseSet;
     const category = item.category?.trim();
     const subCategory = item.subCategory?.trim();
-    if (!category && !subCategory) return;
+    if (!category && !subCategory) {
+      return;
+    }
 
     const setCount = item.sets ?? 0;
     const totalReps = item.reps ?? 0;
@@ -170,8 +184,12 @@ export function resolveGarminStrengthSets(
   labels: Map<string, string>,
 ): ParsedStrengthSet[] {
   const summarizedSets = parseGarminSummarizedExerciseSets(activity, labels);
-  if (detailedSets.length === 0) return summarizedSets;
-  if (summarizedSets.length === 0) return detailedSets;
+  if (detailedSets.length === 0) {
+    return summarizedSets;
+  }
+  if (summarizedSets.length === 0) {
+    return detailedSets;
+  }
 
   const detailedLooksBroken =
     detailedSets.length < summarizedSets.length &&
@@ -204,7 +222,9 @@ export function parseGarminExerciseSets(
   let lastActiveWktStep: number | null = null;
 
   const flush = () => {
-    if (currentKey == null || currentLabel == null || reps.length === 0) return;
+    if (currentKey === null || currentLabel === null || reps.length === 0) {
+      return;
+    }
     order = pushStrengthGroup(groups, currentLabel, reps, durations, weights, rests, order);
     currentKey = null;
     currentLabel = null;
@@ -218,31 +238,42 @@ export function parseGarminExerciseSets(
     const type = (set.setType ?? '').toUpperCase();
 
     if (type === 'REST') {
-      if (set.duration != null && set.duration > 0) rests.push(set.duration);
+      if (set.duration !== null && set.duration > 0) {
+        rests.push(set.duration);
+      }
       continue;
     }
 
     const entry = bestExerciseEntry(set);
     let key: string | null = entry ? exerciseKeyFromEntry(entry) : null;
 
-    if (!key && set.wktStepIndex != null && lastActiveWktStep != null) {
+    if (!key && set.wktStepIndex !== null && lastActiveWktStep !== null) {
       if (set.wktStepIndex !== lastActiveWktStep) {
         key = `step::${set.wktStepIndex}`;
       }
     }
 
-    if (!key) key = currentKey;
-    if (!key) continue;
+    if (!key) {
+      key = currentKey;
+    }
+    if (!key) {
+      continue;
+    }
 
     const label: string = entry
       ? labelFromExerciseKey(key, labels)
       : (currentLabel ?? labelFromExerciseKey(key, labels));
     const repCount = set.repetitionCount ?? 0;
-    const durationSec = set.duration != null && set.duration > 0 ? Math.round(set.duration) : 0;
+    const durationSec = set.duration !== null && set.duration > 0 ? Math.round(set.duration) : 0;
     let effectiveReps = 0;
-    if (repCount > 0) effectiveReps = repCount;
-    else if (durationSec > 0) effectiveReps = 1;
-    if (effectiveReps <= 0) continue;
+    if (repCount > 0) {
+      effectiveReps = repCount;
+    } else if (durationSec > 0) {
+      effectiveReps = 1;
+    }
+    if (effectiveReps <= 0) {
+      continue;
+    }
 
     if (key !== currentKey) {
       flush();
@@ -255,9 +286,15 @@ export function parseGarminExerciseSets(
     }
 
     reps.push(effectiveReps);
-    if (durationSec > 0 && repCount <= 0) durations.push(durationSec);
-    if (set.weight != null && set.weight > 0) weights.push(set.weight);
-    if (set.wktStepIndex != null) lastActiveWktStep = set.wktStepIndex;
+    if (durationSec > 0 && repCount <= 0) {
+      durations.push(durationSec);
+    }
+    if (set.weight !== null && set.weight > 0) {
+      weights.push(set.weight);
+    }
+    if (set.wktStepIndex !== null) {
+      lastActiveWktStep = set.wktStepIndex;
+    }
   }
 
   flush();
@@ -296,9 +333,13 @@ export function garminSessionDurationSec(activity: IActivity, type: ActivityType
 /** Durée Garmin : secondes ou millisecondes selon le champ / endpoint. */
 export function garminDurationSec(...values: Array<number | null | undefined>): number | null {
   for (const v of values) {
-    if (v == null || !Number.isFinite(v) || v <= 0) continue;
+    if (v === null || !Number.isFinite(v) || v <= 0) {
+      continue;
+    }
     const sec = v > 1_000_000 ? Math.round(v / 1000) : Math.round(v);
-    if (sec > 0) return sec;
+    if (sec > 0) {
+      return sec;
+    }
   }
   return null;
 }

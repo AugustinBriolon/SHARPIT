@@ -8,9 +8,15 @@ export type InstrumentMetricItem = {
 };
 
 function desktopCols(count: number): string {
-  if (count >= 4) return 'sm:grid-cols-4';
-  if (count === 3) return 'sm:grid-cols-3';
-  if (count === 1) return 'sm:grid-cols-1';
+  if (count >= 4) {
+    return 'sm:grid-cols-4';
+  }
+  if (count === 3) {
+    return 'sm:grid-cols-3';
+  }
+  if (count === 1) {
+    return 'sm:grid-cols-1';
+  }
   return 'sm:grid-cols-2';
 }
 
@@ -66,7 +72,9 @@ export function InstrumentMetricGrid({
   loading?: boolean;
   className?: string;
 }) {
-  if (items.length === 0 && !loading) return null;
+  if (items.length === 0 && !loading) {
+    return null;
+  }
 
   const visible =
     loading && items.length === 0

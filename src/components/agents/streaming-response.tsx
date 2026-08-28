@@ -111,29 +111,40 @@ export function StreamingResponse({
 
   useEffect(
     () => () => {
-      if (copyTimer.current) window.clearTimeout(copyTimer.current);
+      if (copyTimer.current) {
+        window.clearTimeout(copyTimer.current);
+      }
     },
     [],
   );
 
   const handleCopy = useCallback(async () => {
-    if (onCopy) await onCopy();
-    else if (copyText) await navigator.clipboard?.writeText(copyText);
+    if (onCopy) {
+      await onCopy();
+    } else if (copyText) {
+      await navigator.clipboard?.writeText(copyText);
+    }
 
     setCopied(true);
-    if (copyTimer.current) window.clearTimeout(copyTimer.current);
+    if (copyTimer.current) {
+      window.clearTimeout(copyTimer.current);
+    }
     copyTimer.current = window.setTimeout(() => setCopied(false), 1600);
   }, [copyText, onCopy]);
 
   const setFeedback = (next: Exclude<StreamingResponseFeedback, null>) => {
     const value = currentFeedback === next ? null : next;
-    if (feedback === undefined) setInternalFeedback(value);
+    if (feedback === undefined) {
+      setInternalFeedback(value);
+    }
     onFeedbackChange?.(value);
   };
 
   const setSourcesOpen = useCallback(
     (next: boolean) => {
-      if (sourcesOpen === undefined) setInternalSourcesOpen(next);
+      if (sourcesOpen === undefined) {
+        setInternalSourcesOpen(next);
+      }
       onSourcesOpenChange?.(next);
     },
     [onSourcesOpenChange, sourcesOpen],

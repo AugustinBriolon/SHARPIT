@@ -10,7 +10,9 @@ import { buildAuthorizeUrl, isStravaConfigured } from '@/lib/integrations/strava
 
 export async function GET(request: NextRequest) {
   const bindRedirect = redirectIfBindHost(request);
-  if (bindRedirect) return bindRedirect;
+  if (bindRedirect) {
+    return bindRedirect;
+  }
 
   if (!isStravaConfigured()) {
     return NextResponse.json(

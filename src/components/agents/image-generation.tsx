@@ -10,7 +10,9 @@ import { useHoverCapable } from '@/lib/hooks/use-hover-capable';
 import { cn } from '@/lib/utils';
 
 function pointerFollowRate(reduce: boolean, inside: boolean): number {
-  if (reduce) return 1;
+  if (reduce) {
+    return 1;
+  }
   return inside ? 0.16 : 0.045;
 }
 
@@ -110,7 +112,9 @@ function DitherField({
   useEffect(() => {
     const canvas = canvasRef.current;
     const context = canvas?.getContext('2d');
-    if (!canvas || !context) return;
+    if (!canvas || !context) {
+      return;
+    }
 
     let frame = 0;
     let width = 0;
@@ -185,11 +189,15 @@ function DitherField({
       }
 
       context.globalAlpha = 1;
-      if (!reduce) frame = window.requestAnimationFrame(draw);
+      if (!reduce) {
+        frame = window.requestAnimationFrame(draw);
+      }
     };
 
     const handlePointerMove = (event: PointerEvent) => {
-      if (!pointerEnabled) return;
+      if (!pointerEnabled) {
+        return;
+      }
       const rect = canvas.getBoundingClientRect();
       pointer.inside = true;
       pointer.targetX = event.clientX - rect.left;
@@ -210,7 +218,9 @@ function DitherField({
     draw(0);
 
     return () => {
-      if (frame) window.cancelAnimationFrame(frame);
+      if (frame) {
+        window.cancelAnimationFrame(frame);
+      }
       resizeObserver?.disconnect();
       canvas.removeEventListener('pointermove', handlePointerMove);
       canvas.removeEventListener('pointerleave', handlePointerLeave);

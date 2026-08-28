@@ -20,7 +20,7 @@ export function isMultisportLegArray(value: unknown): value is MultisportLeg[] {
     Array.isArray(value) &&
     value.every(
       (leg) =>
-        leg != null &&
+        leg !== null &&
         typeof leg === 'object' &&
         typeof (leg as MultisportLeg).kind === 'string' &&
         typeof (leg as MultisportLeg).label === 'string' &&
@@ -31,10 +31,18 @@ export function isMultisportLegArray(value: unknown): value is MultisportLeg[] {
 
 export function mapGarminChildTypeToKind(typeKey: string): MultisportLegKind {
   const k = typeKey.toLowerCase();
-  if (k.includes('transition')) return 'transition';
-  if (k.includes('swim')) return 'swim';
-  if (k.includes('cycl') || k.includes('bike') || k.includes('ride')) return 'bike';
-  if (k.includes('run')) return 'run';
+  if (k.includes('transition')) {
+    return 'transition';
+  }
+  if (k.includes('swim')) {
+    return 'swim';
+  }
+  if (k.includes('cycl') || k.includes('bike') || k.includes('ride')) {
+    return 'bike';
+  }
+  if (k.includes('run')) {
+    return 'run';
+  }
   return 'run';
 }
 
@@ -61,7 +69,7 @@ export function transitionLegs(legs: MultisportLeg[]): MultisportLeg[] {
 
 /** Temps affiché pour une transition : mouvement réel (T1/T2 actif), pas le temps zone. */
 export function legDisplayDurationSec(leg: MultisportLeg): number {
-  if (leg.kind === 'transition' && leg.movingDurationSec != null && leg.movingDurationSec > 0) {
+  if (leg.kind === 'transition' && leg.movingDurationSec !== null && leg.movingDurationSec > 0) {
     return leg.movingDurationSec;
   }
   return leg.durationSec;

@@ -64,7 +64,9 @@ function isRestDayRecoveryWindow(input: PhaseNarrativeInput): boolean {
 }
 
 function postureLabelForPhase(posture: TodayPosture, phase: DailyPhase): string | null {
-  if (phase === 'END_OF_DAY' || phase === 'SESSION_COMPLETED') return null;
+  if (phase === 'END_OF_DAY' || phase === 'SESSION_COMPLETED') {
+    return null;
+  }
 
   switch (posture) {
     case 'protect':
@@ -119,7 +121,9 @@ function resolvePosture(input: PhaseNarrativeInput): TodayPosture {
   }
 
   if (goalContext?.linkedToTodaySession && isForwardAdvicePhase(phase)) {
-    if (verdict === 'RECOVER' || verdict === 'CAUTION') return 'protect';
+    if (verdict === 'RECOVER' || verdict === 'CAUTION') {
+      return 'protect';
+    }
     return 'push';
   }
 
@@ -145,13 +149,15 @@ function goalSuffix(goalContext: TodayGoalContext): string {
 
 function goalLineForPhase(input: PhaseNarrativeInput): string | null {
   const { goalContext } = input;
-  if (!goalContext) return null;
+  if (!goalContext) {
+    return null;
+  }
 
   if (goalContext.isPrimaryRace) {
     return `${goalContext.title}${goalSuffix(goalContext)}`;
   }
 
-  if (goalContext.daysUntil != null && goalContext.daysUntil <= 21) {
+  if (goalContext.daysUntil !== null && goalContext.daysUntil <= 21) {
     return `${goalContext.title}${goalSuffix(goalContext)}`;
   }
 
@@ -196,7 +202,9 @@ function focusPriorityForPhase(
   }
 
   if (phase === 'RECOVERY_WINDOW' || phase === 'END_OF_DAY') {
-    if (phase === 'END_OF_DAY') return null;
+    if (phase === 'END_OF_DAY') {
+      return null;
+    }
     return adaptationReminders[0] ?? null;
   }
 
@@ -204,9 +212,15 @@ function focusPriorityForPhase(
 }
 
 function inferEffortFromTss(totalTssToday: number | null): TodayEffortLevel | null {
-  if (totalTssToday == null) return null;
-  if (totalTssToday >= 65) return 'high';
-  if (totalTssToday >= 30) return 'moderate';
+  if (totalTssToday === null) {
+    return null;
+  }
+  if (totalTssToday >= 65) {
+    return 'high';
+  }
+  if (totalTssToday >= 30) {
+    return 'moderate';
+  }
   return 'light';
 }
 
@@ -274,11 +288,21 @@ function headlineForPhase(input: PhaseNarrativeInput, posture: TodayPosture): st
 
   switch (phase) {
     case 'MORNING':
-      if (verdict === 'RECOVER') return 'Récupération prioritaire';
-      if (verdict === 'TRAIN_HARD' || verdict === 'RACE_READY') return 'Journée propice à l’effort';
-      if (verdict === 'TRAIN_EASY') return 'Journée modérée';
-      if (verdict === 'CAUTION') return 'Journée à ménager';
-      if (verdict === 'TRAIN_SMART') return 'Journée ciblée';
+      if (verdict === 'RECOVER') {
+        return 'Récupération prioritaire';
+      }
+      if (verdict === 'TRAIN_HARD' || verdict === 'RACE_READY') {
+        return 'Journée propice à l’effort';
+      }
+      if (verdict === 'TRAIN_EASY') {
+        return 'Journée modérée';
+      }
+      if (verdict === 'CAUTION') {
+        return 'Journée à ménager';
+      }
+      if (verdict === 'TRAIN_SMART') {
+        return 'Journée ciblée';
+      }
       return 'Lis ton état avant d’agir';
 
     case 'BEFORE_SESSION':
@@ -335,7 +359,9 @@ function sublineForPhase(input: PhaseNarrativeInput, focusPriority: string | nul
       return focusPriority ? '' : 'La fenêtre de sommeil de ce soir oriente demain.';
 
     default:
-      if (isForwardAdvicePhase(phase) && sportLabel) return sportLabel;
+      if (isForwardAdvicePhase(phase) && sportLabel) {
+        return sportLabel;
+      }
       return '';
   }
 }
@@ -383,7 +409,9 @@ export function buildPhaseNarrative(input: PhaseNarrativeInput): PhaseNarrative 
 }
 
 export function assertPhaseNarrativeConsistency(phase: DailyPhase, heroEyebrow: string): void {
-  if (!isPostTrainingPhase(phase)) return;
+  if (!isPostTrainingPhase(phase)) {
+    return;
+  }
 
   const forbidden = /entraîner fort|train hard|peux-tu t/i;
   if (forbidden.test(heroEyebrow)) {
@@ -398,6 +426,8 @@ export function pickAdaptationReminders(phase: DailyPhase, limit = 2, isRestDay 
       limit,
     );
   }
-  if (phase === 'END_OF_DAY') return ADAPTATION_REMINDERS.END_OF_DAY.slice(0, limit);
+  if (phase === 'END_OF_DAY') {
+    return ADAPTATION_REMINDERS.END_OF_DAY.slice(0, limit);
+  }
   return [];
 }

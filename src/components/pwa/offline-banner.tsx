@@ -7,7 +7,9 @@ import { cn } from '@/lib/utils';
 export function OfflineBanner() {
   const online = useOnlineStatus();
 
-  if (online) return null;
+  if (online) {
+    return null;
+  }
 
   return (
     <div

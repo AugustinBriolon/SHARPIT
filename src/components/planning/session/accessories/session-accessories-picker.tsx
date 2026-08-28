@@ -15,7 +15,9 @@ export function SessionAccessoriesPicker({
   onChange: (next: EquipmentItemId[]) => void;
 }) {
   const options = accessoryOptionsForActivityType(type);
-  if (options.length === 0) return null;
+  if (options.length === 0) {
+    return null;
+  }
 
   function toggle(id: EquipmentItemId) {
     if (selected.includes(id)) {

@@ -44,34 +44,56 @@ export function legacyDefaultsFromConnected(
 }
 
 function pickDefaultPrimary(classId: DataClassId, enabled: IntegrationId[]): IntegrationId | null {
-  if (enabled.length === 0) return null;
+  if (enabled.length === 0) {
+    return null;
+  }
   if (classId === 'activities') {
-    if (enabled.includes('garmin')) return 'garmin';
-    if (enabled.includes('strava')) return 'strava';
+    if (enabled.includes('garmin')) {
+      return 'garmin';
+    }
+    if (enabled.includes('strava')) {
+      return 'strava';
+    }
   }
   if (classId === 'wearable_health') {
-    if (enabled.includes('garmin')) return 'garmin';
+    if (enabled.includes('garmin')) {
+      return 'garmin';
+    }
   }
   if (classId === 'body') {
-    if (enabled.includes('withings')) return 'withings';
-    if (enabled.includes('renpho')) return 'renpho';
+    if (enabled.includes('withings')) {
+      return 'withings';
+    }
+    if (enabled.includes('renpho')) {
+      return 'renpho';
+    }
   }
-  if (classId === 'nutrition' && enabled.includes('myfitnesspal')) return 'myfitnesspal';
-  if (classId === 'calendar' && enabled.includes('google')) return 'google';
+  if (classId === 'nutrition' && enabled.includes('myfitnesspal')) {
+    return 'myfitnesspal';
+  }
+  if (classId === 'calendar' && enabled.includes('google')) {
+    return 'google';
+  }
   return enabled[0] ?? null;
 }
 
 export function parseSourcePrefs(raw: unknown): IntegrationSourcePrefs | null {
-  if (!raw || typeof raw !== 'object') return null;
+  if (!raw || typeof raw !== 'object') {
+    return null;
+  }
   const obj = raw as Record<string, unknown>;
-  if (obj.version !== 1 || !obj.classes || typeof obj.classes !== 'object') return null;
+  if (obj.version !== 1 || !obj.classes || typeof obj.classes !== 'object') {
+    return null;
+  }
 
   const classes = obj.classes as Record<string, unknown>;
   const result = emptySourcePrefs();
 
   for (const classDef of DATA_CLASSES) {
     const entry = classes[classDef.id];
-    if (!entry || typeof entry !== 'object') continue;
+    if (!entry || typeof entry !== 'object') {
+      continue;
+    }
     const e = entry as Record<string, unknown>;
     const enabled = Array.isArray(e.enabled)
       ? (e.enabled.filter((id): id is IntegrationId => typeof id === 'string') as IntegrationId[])
@@ -94,7 +116,9 @@ export function resolveSourcePrefs(
   connected: readonly IntegrationId[],
 ): IntegrationSourcePrefs {
   const parsed = parseSourcePrefs(raw);
-  if (!parsed) return legacyDefaultsFromConnected(connected);
+  if (!parsed) {
+    return legacyDefaultsFromConnected(connected);
+  }
   return sanitizePrefs(parsed, connected);
 }
 
@@ -112,8 +136,12 @@ export function sanitizePrefs(
       (id) => connectedSet.has(id) && providerCoversClass(id, classDef.id),
     );
     let { primary } = current;
-    if (primary && !enabled.includes(primary)) primary = enabled[0] ?? null;
-    if (!primary && enabled.length > 0) primary = enabled[0] ?? null;
+    if (primary && !enabled.includes(primary)) {
+      primary = enabled[0] ?? null;
+    }
+    if (!primary && enabled.length > 0) {
+      primary = enabled[0] ?? null;
+    }
     next.classes[classDef.id] = { primary, enabled };
   }
   return next;
@@ -143,13 +171,15 @@ export function enableProviderForClass(
   classId: DataClassId,
   provider: IntegrationId,
 ): IntegrationSourcePrefs {
-  if (!providerCoversClass(provider, classId)) return prefs;
+  if (!providerCoversClass(provider, classId)) {
+    return prefs;
+  }
   const next = clonePrefs(prefs);
   const slot = next.classes[classId];
   if (!slot.enabled.includes(provider)) {
     slot.enabled = [...slot.enabled, provider];
   }
-  if (slot.enabled.length === 1 || slot.primary == null) {
+  if (slot.enabled.length === 1 || slot.primary === null) {
     slot.primary = provider;
   }
   return next;
@@ -191,7 +221,9 @@ export function setPrimaryForClass(
   classId: DataClassId,
   provider: IntegrationId,
 ): IntegrationSourcePrefs {
-  if (!providerCoversClass(provider, classId)) return prefs;
+  if (!providerCoversClass(provider, classId)) {
+    return prefs;
+  }
   const next = clonePrefs(prefs);
   const slot = next.classes[classId];
   if (!slot.enabled.includes(provider)) {

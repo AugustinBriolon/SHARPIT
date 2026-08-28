@@ -38,7 +38,9 @@ function goalFor(
 }
 
 export function macroColumnFillPx(grams: number | null, scalePeak: number): number {
-  if (grams == null || grams <= 0 || scalePeak <= 0) return 0;
+  if (grams === null || grams <= 0 || scalePeak <= 0) {
+    return 0;
+  }
   return Math.max(MIN_FILL_PX, Math.round((grams / scalePeak) * DAY_TRACK_PX));
 }
 
@@ -59,15 +61,21 @@ function averageFor(
 ): number | null {
   const logged = days
     .map((d) => d.entry?.[field] ?? null)
-    .filter((v): v is number => v != null && v > 0);
-  if (logged.length === 0) return null;
+    .filter((v): v is number => v !== null && v > 0);
+  if (logged.length === 0) {
+    return null;
+  }
   return Math.round(logged.reduce((s, v) => s + v, 0) / logged.length);
 }
 
 function macroLine(kind: MacroKind, grams: number | null, goal: number | null): string | null {
-  if (grams == null) return null;
+  if (grams === null) {
+    return null;
+  }
   const g = Math.round(grams);
-  if (goal != null && goal > 0) return `${MACRO_LABELS[kind]} ${g}/${Math.round(goal)} g`;
+  if (goal !== null && goal > 0) {
+    return `${MACRO_LABELS[kind]} ${g}/${Math.round(goal)} g`;
+  }
   return `${MACRO_LABELS[kind]} ${g} g`;
 }
 
@@ -89,7 +97,9 @@ function dayHint(day: BreakdownDay): {
   lines: Array<string | { text: string; swatchClassName: string; textClassName: string }>;
 } {
   const title = format(parseISO(day.key), 'EEEE d MMM', { locale: fr });
-  if (!day.entry) return { title, lines: ['Pas de journal'] };
+  if (!day.entry) {
+    return { title, lines: ['Pas de journal'] };
+  }
   const lines = ROWS.flatMap(({ kind, field }) => {
     const text = macroLine(kind, day.entry?.[field] ?? null, goalFor(day.entry, field));
     return text ? [coloredMacroLine(kind, text)] : [];
@@ -103,7 +113,7 @@ function averageHint(days: BreakdownDay[]): {
 } {
   const lines = ROWS.flatMap(({ kind, field }) => {
     const average = averageFor(days, field);
-    return average != null ? [coloredMacroLine(kind, `${MACRO_LABELS[kind]} ${average} g`)] : [];
+    return average !== null ? [coloredMacroLine(kind, `${MACRO_LABELS[kind]} ${average} g`)] : [];
   });
   return {
     title: 'Moyenne 7 j.',
@@ -132,10 +142,12 @@ export function NutritionMacroBreakdownSection({
     );
   }
 
-  if (history.length === 0) return null;
+  if (history.length === 0) {
+    return null;
+  }
 
   const days = breakdownDays(date, history);
-  const scrubbing = hotKey != null;
+  const scrubbing = hotKey !== null;
 
   const probeDay = (day: BreakdownDay, x: number, y: number) => {
     setHotKey(day.key);
@@ -278,7 +290,7 @@ function MacroMatrixRow({
         aria-pressed={hotKey === 'avg'}
         type="button"
         aria-label={
-          average != null ? `Moyenne ${MACRO_LABELS[kind]} ${average} g` : 'Pas de moyenne'
+          average !== null ? `Moyenne ${MACRO_LABELS[kind]} ${average} g` : 'Pas de moyenne'
         }
         className={cn(
           'text-data text-muted-foreground flex h-10 cursor-pointer items-center justify-end border-0 bg-transparent p-0 text-xs tabular-nums',
@@ -293,7 +305,7 @@ function MacroMatrixRow({
           onProbeAvg(box.left + box.width / 2, box.top);
         }}
       >
-        {average != null ? `${average} g` : '—'}
+        {average !== null ? `${average} g` : '—'}
       </button>
     </>
   );

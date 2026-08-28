@@ -12,8 +12,12 @@ type PerformanceRow = {
 };
 
 function decouplingLabel(pct: number): string {
-  if (pct < 5) return 'Excellent — peu de dérive cardiaque';
-  if (pct < 10) return 'Correct pour une sortie longue';
+  if (pct < 5) {
+    return 'Excellent — peu de dérive cardiaque';
+  }
+  if (pct < 10) {
+    return 'Correct pour une sortie longue';
+  }
   return "Dérive élevée — chaleur, fatigue ou manque d'endurance";
 }
 
@@ -31,48 +35,57 @@ export function PerformanceMetrics({ analysis }: { analysis: ActivityAnalysis })
   const { power, hr, load, thresholds } = analysis;
   const rows: PerformanceRow[] = [];
 
-  if (power?.normalized)
+  if (power?.normalized) {
     rows.push({
       label: 'NP',
       value: `${power.normalized} W`,
       note: power.avg ? `moy ${power.avg} W` : undefined,
     });
-  if (load.intensityFactor != null)
+  }
+  if (load.intensityFactor !== null) {
     rows.push({
       label: 'IF',
       value: load.intensityFactor.toFixed(2),
       note: intensityFactorSublabel(load.method, thresholds),
     });
-  if (power?.variabilityIndex != null)
+  }
+  if (power?.variabilityIndex !== null) {
     rows.push({
       label: 'VI',
       value: power.variabilityIndex.toFixed(2),
       note: power.variabilityIndex > 1.1 ? 'effort variable' : 'effort régulier',
     });
-  if (load.tss != null)
+  }
+  if (load.tss !== null) {
     rows.push({
       label: load.method === 'hr' ? 'TSS (FC)' : 'TSS',
       value: String(load.tss),
     });
-  if (hr.efficiencyFactor != null)
+  }
+  if (hr.efficiencyFactor !== null) {
     rows.push({
       label: hr.efficiencyLabel,
       value: String(hr.efficiencyFactor),
     });
-  if (hr.decouplingPct != null)
+  }
+  if (hr.decouplingPct !== null) {
     rows.push({
       label: 'Découplage',
       value: `${hr.decouplingPct > 0 ? '+' : ''}${hr.decouplingPct}%`,
       note: decouplingLabel(Math.abs(hr.decouplingPct)),
     });
-  if (analysis.run?.paceVariabilityPct != null)
+  }
+  if (analysis.run?.paceVariabilityPct !== null) {
     rows.push({
       label: 'Variabilité allure',
       value: `${analysis.run.paceVariabilityPct}%`,
       note: 'écart-type / moyenne',
     });
+  }
 
-  if (!rows.length) return null;
+  if (!rows.length) {
+    return null;
+  }
 
   const compact = rows.length >= 6;
 
@@ -128,7 +141,9 @@ export function PerformanceMetrics({ analysis }: { analysis: ActivityAnalysis })
 
 export function ThresholdsHint({ analysis }: { analysis: ActivityAnalysis }) {
   const { thresholds } = analysis;
-  if (thresholds.source === 'profile') return null;
+  if (thresholds.source === 'profile') {
+    return null;
+  }
 
   return (
     <ClinicalAnnotation title="Seuils estimés">

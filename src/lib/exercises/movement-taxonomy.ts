@@ -84,6 +84,55 @@ const BODYWEIGHT_MODALITIES: ReadonlySet<LoadModality> = new Set<LoadModality>([
   'ASSISTED',
 ]);
 
+type TaxonomyValidationEntry = {
+  id: string;
+  intent: z.infer<typeof movementIntentSchema>;
+  pattern: z.infer<typeof movementPatternSchema> | null;
+  modality: LoadModality;
+  centrality: number;
+  leverageFactor: number | null;
+};
+
+function validateMobilityEntry(
+  entry: TaxonomyValidationEntry,
+  fail: (message: string) => void,
+): void {
+  if (entry.intent === 'MOBILITY' && (entry.pattern !== null || entry.modality !== 'NONE')) {
+    fail(`${entry.id}: mobility carries no pattern and no load axis`);
+  }
+}
+
+function validatePatternEntry(
+  entry: TaxonomyValidationEntry,
+  fail: (message: string) => void,
+): void {
+  if (entry.pattern === null && entry.intent !== 'MOBILITY' && entry.intent !== 'CONDITIONING') {
+    fail(`${entry.id}: only mobility and conditioning may have no pattern`);
+  }
+}
+
+function validateCentralityEntry(
+  entry: TaxonomyValidationEntry,
+  fail: (message: string) => void,
+): void {
+  if (entry.centrality > 0 && entry.intent !== 'STRENGTH') {
+    fail(`${entry.id}: centrality must be 0 outside STRENGTH intent`);
+  }
+}
+
+function validateLeverageEntry(
+  entry: TaxonomyValidationEntry,
+  fail: (message: string) => void,
+): void {
+  const needsLeverage = BODYWEIGHT_MODALITIES.has(entry.modality);
+  if (needsLeverage && entry.leverageFactor === null) {
+    fail(`${entry.id}: ${entry.modality} requires a leverageFactor`);
+  }
+  if (!needsLeverage && entry.leverageFactor !== null) {
+    fail(`${entry.id}: ${entry.modality} carries no bodyweight term`);
+  }
+}
+
 const movementTaxonomyEntrySchema = z
   .object({
     id: z.string().trim().min(1).max(64),
@@ -102,24 +151,10 @@ const movementTaxonomyEntrySchema = z
   })
   .superRefine((entry, ctx) => {
     const fail = (message: string) => ctx.addIssue({ code: 'custom', message });
-
-    if (entry.intent === 'MOBILITY' && (entry.pattern !== null || entry.modality !== 'NONE')) {
-      fail(`${entry.id}: mobility carries no pattern and no load axis`);
-    }
-    if (entry.pattern === null && entry.intent !== 'MOBILITY' && entry.intent !== 'CONDITIONING') {
-      fail(`${entry.id}: only mobility and conditioning may have no pattern`);
-    }
-    // A movement only informs a one-rep-max when it is trained for strength.
-    if (entry.centrality > 0 && entry.intent !== 'STRENGTH') {
-      fail(`${entry.id}: centrality must be 0 outside STRENGTH intent`);
-    }
-    const needsLeverage = BODYWEIGHT_MODALITIES.has(entry.modality);
-    if (needsLeverage && entry.leverageFactor === null) {
-      fail(`${entry.id}: ${entry.modality} requires a leverageFactor`);
-    }
-    if (!needsLeverage && entry.leverageFactor !== null) {
-      fail(`${entry.id}: ${entry.modality} carries no bodyweight term`);
-    }
+    validateMobilityEntry(entry, fail);
+    validatePatternEntry(entry, fail);
+    validateCentralityEntry(entry, fail);
+    validateLeverageEntry(entry, fail);
   });
 
 export type MovementTaxonomyEntry = z.infer<typeof movementTaxonomyEntrySchema>;
@@ -142,14 +177,18 @@ let cachedIndex: MovementTaxonomyIndex | null = null;
  * here would surface later as a load prescribed against the wrong pattern.
  */
 export function movementTaxonomyIndex(): MovementTaxonomyIndex {
-  if (cachedIndex) return cachedIndex;
+  if (cachedIndex) {
+    return cachedIndex;
+  }
 
   const file = movementTaxonomyFileSchema.parse(taxonomyJson);
   const byId = new Map<string, MovementTaxonomyEntry>();
   const byNormalizedLabel = new Map<string, MovementTaxonomyEntry>();
 
   for (const entry of file.entries) {
-    if (byId.has(entry.id)) throw new Error(`movement-taxonomy: duplicate id "${entry.id}"`);
+    if (byId.has(entry.id)) {
+      throw new Error(`movement-taxonomy: duplicate id "${entry.id}"`);
+    }
     byId.set(entry.id, entry);
 
     for (const label of entry.labels) {
@@ -189,14 +228,20 @@ export function resolveMovement(input: {
   const index = movementTaxonomyIndex();
 
   const direct = index.byNormalizedLabel.get(normalizeExerciseKey(input.exercise));
-  if (direct) return direct;
+  if (direct) {
+    return direct;
+  }
 
   const catalogId =
     input.exerciseCatalogId?.trim() || EXERCISE_ALIASES[normalizeExerciseKey(input.exercise)];
-  if (!catalogId) return null;
+  if (!catalogId) {
+    return null;
+  }
 
   const catalogEntry = getExerciseMediaByCatalogId(catalogId);
-  if (!catalogEntry) return null;
+  if (!catalogEntry) {
+    return null;
+  }
 
   return index.byNormalizedLabel.get(normalizeExerciseKey(catalogEntry.name)) ?? null;
 }

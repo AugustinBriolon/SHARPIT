@@ -26,11 +26,21 @@ async function pushBySport(athleteId: string, input: PushInput) {
     where: { id: input.plannedSessionId, athleteId },
     select: { type: true },
   });
-  if (!session) throw new Error('Séance planifiée introuvable');
+  if (!session) {throw new Error('Séance planifiée introuvable');}
 
   return session.type === ActivityType.STRENGTH
     ? pushStrengthWorkoutFromPlannedSession(athleteId, input)
     : pushEnduranceWorkoutFromPlannedSession(athleteId, input);
+}
+
+function garminPushErrorStatus(message: string) {
+  if (message.includes('non connecté') || message.includes('introuvable')) {
+    return 404;
+  }
+  if (message.includes('Seules') || message.includes('Aucun')) {
+    return 400;
+  }
+  return 500;
 }
 
 export async function POST(request: NextRequest) {
@@ -59,9 +69,6 @@ export async function POST(request: NextRequest) {
     }
     console.error('[garmin/workouts/from-planned-session]', error);
     const message = error instanceof Error ? error.message : 'Envoi vers Garmin impossible';
-    let status = 500;
-    if (message.includes('non connecté') || message.includes('introuvable')) status = 404;
-    else if (message.includes('Seules') || message.includes('Aucun')) status = 400;
-    return NextResponse.json({ error: message }, { status });
+    return NextResponse.json({ error: message }, { status: garminPushErrorStatus(message) });
   }
 }

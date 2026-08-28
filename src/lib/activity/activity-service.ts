@@ -3,7 +3,9 @@ import { resolveExerciseCatalogId } from '@/lib/exercises';
 import type { CreateActivityInput, UpdateActivityInput } from '@/lib/validators/activity';
 
 function cleanMetrics<T extends Record<string, unknown>>(metrics?: T | null) {
-  if (!metrics) return undefined;
+  if (!metrics) {
+    return undefined;
+  }
   const entries = Object.entries(metrics).filter(
     ([, value]) => value !== null && value !== undefined && value !== '',
   );
@@ -48,7 +50,9 @@ export function buildActivityUpdateData(input: UpdateActivityInput) {
   const { runMetrics, bikeMetrics, swimMetrics, hikeMetrics, strengthSets, type, ...base } = input;
 
   const data: Record<string, unknown> = { ...base };
-  if (type) data.type = type;
+  if (type) {
+    data.type = type;
+  }
 
   const activityType = type;
 

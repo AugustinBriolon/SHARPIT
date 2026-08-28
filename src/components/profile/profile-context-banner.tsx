@@ -10,7 +10,9 @@ export function ProfileContextBanner() {
   const { data: profile, isPending: profilePending } = useAthleteProfile();
   const { data: context, isPending: contextPending } = useCoachContext();
 
-  if (profilePending || contextPending) return null;
+  if (profilePending || contextPending) {
+    return null;
+  }
 
   const { isComplete, gaps, hasContext, contextLength } = getProfileCompleteness(profile, context);
 

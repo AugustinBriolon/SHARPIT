@@ -12,7 +12,9 @@ export function isThemePreference(value: string | null | undefined): value is Th
 }
 
 export function readStoredThemePreference(): ThemePreference {
-  if (typeof window === 'undefined') return 'system';
+  if (typeof window === 'undefined') {
+    return 'system';
+  }
   try {
     const stored = window.localStorage.getItem(THEME_STORAGE_KEY);
     return isThemePreference(stored) ? stored : 'system';
@@ -22,12 +24,16 @@ export function readStoredThemePreference(): ThemePreference {
 }
 
 export function getSystemTheme(): ResolvedTheme {
-  if (typeof window === 'undefined') return 'light';
+  if (typeof window === 'undefined') {
+    return 'light';
+  }
   return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 }
 
 export function resolveTheme(preference: ThemePreference): ResolvedTheme {
-  if (preference === 'system') return getSystemTheme();
+  if (preference === 'system') {
+    return getSystemTheme();
+  }
   return preference;
 }
 
@@ -36,12 +42,16 @@ export function resolveThemeForPreference(
   preference: ThemePreference,
   systemFallback: ResolvedTheme = 'light',
 ): ResolvedTheme {
-  if (preference === 'system') return systemFallback;
+  if (preference === 'system') {
+    return systemFallback;
+  }
   return preference;
 }
 
 export function applyResolvedTheme(resolved: ResolvedTheme): void {
-  if (typeof document === 'undefined') return;
+  if (typeof document === 'undefined') {
+    return;
+  }
   const root = document.documentElement;
   root.classList.toggle('dark', resolved === 'dark');
   root.style.colorScheme = resolved;
@@ -55,19 +65,25 @@ export function applyResolvedTheme(resolved: ResolvedTheme): void {
 function readThemePreferenceFromCookieString(
   cookieHeader: string | null | undefined,
 ): ThemePreference | null {
-  if (!cookieHeader) return null;
+  if (!cookieHeader) {
+    return null;
+  }
   const match = cookieHeader.match(new RegExp(`(?:^|; )${THEME_STORAGE_KEY}=([^;]*)`));
   const value = match?.[1] ? decodeURIComponent(match[1]) : null;
   return isThemePreference(value) ? value : null;
 }
 
 export function readThemePreferenceFromDocumentCookie(): ThemePreference | null {
-  if (typeof document === 'undefined') return null;
+  if (typeof document === 'undefined') {
+    return null;
+  }
   return readThemePreferenceFromCookieString(document.cookie);
 }
 
 export function syncThemeCookie(preference: ThemePreference): void {
-  if (typeof document === 'undefined') return;
+  if (typeof document === 'undefined') {
+    return;
+  }
   document.cookie = `${THEME_STORAGE_KEY}=${encodeURIComponent(preference)};path=/;max-age=${THEME_COOKIE_MAX_AGE};SameSite=Lax`;
 }
 

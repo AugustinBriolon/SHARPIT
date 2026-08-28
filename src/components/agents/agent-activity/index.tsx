@@ -36,7 +36,9 @@ export type {
 
 function formatDuration(duration: number) {
   const seconds = Math.max(0, Math.round(duration));
-  if (seconds < 60) return `${seconds}s`;
+  if (seconds < 60) {
+    return `${seconds}s`;
+  }
 
   const minutes = Math.floor(seconds / 60);
   const remainder = seconds % 60;
@@ -44,14 +46,22 @@ function formatDuration(duration: number) {
 }
 
 function activityMaskImage(capped: boolean, working: boolean): string | undefined {
-  if (!capped) return undefined;
-  if (working) return 'linear-gradient(to bottom, transparent, black 12px)';
+  if (!capped) {
+    return undefined;
+  }
+  if (working) {
+    return 'linear-gradient(to bottom, transparent, black 12px)';
+  }
   return 'linear-gradient(to bottom, transparent, black 12px, black calc(100% - 12px), transparent)';
 }
 
 function activityPanelState(working: boolean, expanded: boolean): 'working' | 'open' | 'closed' {
-  if (working) return 'working';
-  if (expanded) return 'open';
+  if (working) {
+    return 'working';
+  }
+  if (expanded) {
+    return 'open';
+  }
   return 'closed';
 }
 
@@ -70,7 +80,9 @@ function useControllableOpen({
 
   const setOpen = useCallback(
     (next: boolean) => {
-      if (!controlled) setInternalOpen(next);
+      if (!controlled) {
+        setInternalOpen(next);
+      }
       onOpenChange?.(next);
     },
     [controlled, onOpenChange],
@@ -85,10 +97,18 @@ function getContentType(items: AgentActivityItem[]): AgentActivityContentType {
 }
 
 function getActiveLabel(type: AgentActivityContentType) {
-  if (type === 'search') return 'Searching the web…';
-  if (type === 'tool') return 'Running tools…';
-  if (type === 'trace') return 'Working through the run…';
-  if (type === 'mixed') return 'Working through it…';
+  if (type === 'search') {
+    return 'Searching the web…';
+  }
+  if (type === 'tool') {
+    return 'Running tools…';
+  }
+  if (type === 'trace') {
+    return 'Working through the run…';
+  }
+  if (type === 'mixed') {
+    return 'Working through it…';
+  }
   return 'Thinking…';
 }
 
@@ -104,7 +124,9 @@ function getSummary(
       </>
     );
   }
-  if (type === 'search') return 'Searched the web';
+  if (type === 'search') {
+    return 'Searched the web';
+  }
   if (type === 'tool') {
     return `Ran ${items.length} ${items.length === 1 ? 'tool' : 'tools'}`;
   }
@@ -158,12 +180,16 @@ export function AgentActivity({
 
   useLayoutEffect(() => {
     const node = contentRef.current;
-    if (!node) return;
+    if (!node) {
+      return;
+    }
 
     const measure = () => setContentHeight(node.offsetHeight);
     measure();
 
-    if (typeof ResizeObserver === 'undefined') return;
+    if (typeof ResizeObserver === 'undefined') {
+      return;
+    }
     const observer = new ResizeObserver(measure);
     observer.observe(node);
     return () => observer.disconnect();
@@ -179,7 +205,9 @@ export function AgentActivity({
   const toggle = () => {
     const next = !currentOpen;
     setOpen(next);
-    if (next) requestAnimationFrame(() => viewportRef.current?.scrollTo({ top: 0 }));
+    if (next) {
+      requestAnimationFrame(() => viewportRef.current?.scrollTo({ top: 0 }));
+    }
   };
 
   const liveLabel = activeLabel ?? getActiveLabel(contentType);

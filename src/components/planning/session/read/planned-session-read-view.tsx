@@ -67,16 +67,21 @@ function KeyChipsRow({ chips }: { chips: KeyChip[] }) {
 function PlannedVsDoneStrip({ session }: { session: ClientPlannedSession }) {
   const { mode } = useDisplayMode();
   const { activity } = session;
-  if (!activity) return null;
+  if (!activity) {
+    return null;
+  }
 
-  const plannedDuration = session.durationMin != null ? `${session.durationMin} min` : '—';
-  const doneDuration = activity.duration != null ? formatDuration(activity.duration) : '—';
-  const plannedLoad = session.load != null ? formatTrainingLoad(session.load, mode) : '—';
-  const doneLoad = activity.load != null ? formatTrainingLoad(activity.load, mode) : '—';
+  const plannedDuration = session.durationMin !== null ? `${session.durationMin} min` : '—';
+  const doneDuration = activity.duration !== null ? formatDuration(activity.duration) : '—';
+  const plannedLoad = session.load !== null ? formatTrainingLoad(session.load, mode) : '—';
+  const doneLoad = activity.load !== null ? formatTrainingLoad(activity.load, mode) : '—';
   const plannedIntensity = session.intensity ? intensityLabels[session.intensity] : '—';
   let doneFeeling = '—';
-  if (activity.rpe != null) doneFeeling = `RPE ${activity.rpe}`;
-  else if (activity.feeling?.trim()) doneFeeling = activity.feeling;
+  if (activity.rpe !== null) {
+    doneFeeling = `RPE ${activity.rpe}`;
+  } else if (activity.feeling?.trim()) {
+    doneFeeling = activity.feeling;
+  }
 
   const rows = [
     { label: 'Durée', planned: plannedDuration, done: doneDuration },
@@ -165,7 +170,7 @@ export function PlannedSessionReadView({
   const rationaleVm = rationaleQuery.data;
   const hasRationale =
     rationaleQuery.isPending ||
-    (rationaleVm != null &&
+    (rationaleVm !== null &&
       rationaleVm.origin !== 'MANUAL' &&
       (Boolean(rationaleVm.suggested) || Boolean(rationaleVm.outcome)));
   const rationaleOpenByDefault =
@@ -190,7 +195,7 @@ export function PlannedSessionReadView({
   const orderedSets = prescription
     ? prescription.sets.slice().sort((a, b) => a.order - b.order)
     : [];
-  const hasExerciseMedia = orderedSets.some((set) => resolveStrengthSetMedia(set) != null);
+  const hasExerciseMedia = orderedSets.some((set) => resolveStrengthSetMedia(set) !== null);
   const strengthIntent =
     session.type === ActivityType.STRENGTH && prescription
       ? extractStrengthSessionIntent(session.description)
@@ -208,20 +213,28 @@ export function PlannedSessionReadView({
    * exists (strength sets / endurance steps). Free-text only fills the gap for
    * sessions without a structured plan — never a second copy of the same list.
    */
-  const hasStrengthPlan = session.type === ActivityType.STRENGTH && prescription != null;
+  const hasStrengthPlan = session.type === ActivityType.STRENGTH && prescription !== null;
   const hasEndurancePlan = pushableSport && !isRealized;
   const hasStructuredDeroule = hasStrengthPlan || hasEndurancePlan;
   const freeTextDeroule = hasStructuredDeroule ? null : session.description?.trim() || null;
 
   function watchPushButtonLabel(): string {
-    if (pushing) return alreadyOnWatch ? 'Renvoi…' : 'Envoi…';
-    if (watchStaleness.stale) return 'Mettre à jour';
+    if (pushing) {
+      return alreadyOnWatch ? 'Renvoi…' : 'Envoi…';
+    }
+    if (watchStaleness.stale) {
+      return 'Mettre à jour';
+    }
     return alreadyOnWatch ? 'Renvoyer' : 'Envoyer à la montre';
   }
 
   function watchPushButtonLabelShort(): string {
-    if (pushing) return 'Envoi…';
-    if (watchStaleness.stale) return 'Màj';
+    if (pushing) {
+      return 'Envoi…';
+    }
+    if (watchStaleness.stale) {
+      return 'Màj';
+    }
     return alreadyOnWatch ? 'Renvoyer' : 'Montre';
   }
 
@@ -269,9 +282,9 @@ export function PlannedSessionReadView({
           set.durationSec && set.durationSec > 0 && set.reps <= 0
             ? `${set.sets}×${set.durationSec}s`
             : `${set.sets}×${set.reps}`;
-        const weight = set.weightKg != null && set.weightKg > 0 ? ` @ ${set.weightKg} kg` : '';
+        const weight = set.weightKg !== null && set.weightKg > 0 ? ` @ ${set.weightKg} kg` : '';
         const restLabel =
-          set.restMode === 'time' && set.restSec != null && set.restSec > 0
+          set.restMode === 'time' && set.restSec !== null && set.restSec > 0
             ? `Repos ${set.restSec}s`
             : 'Repos Lap';
         const watch = strengthSetWatchCompat(set);
@@ -453,7 +466,7 @@ export function PlannedSessionReadView({
             icon={ClipboardList}
             label="Plan prescrit"
             summary={
-              session.durationMin != null
+              session.durationMin !== null
                 ? `${session.durationMin} min${session.intensity ? ` · ${intensityLabels[session.intensity]}` : ''}`
                 : null
             }

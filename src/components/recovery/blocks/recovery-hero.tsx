@@ -9,11 +9,19 @@ function buildActionLine({
   intensityLabel: string;
   limiterLabel: string | null;
 }): string | null {
-  if (loading) return null;
+  if (loading) {
+    return null;
+  }
   const intensity = intensityLabel?.trim() || null;
-  if (intensity && limiterLabel) return `${intensity} · limité par ${limiterLabel.toLowerCase()}`;
-  if (intensity) return intensity;
-  if (limiterLabel) return `Limité par · ${limiterLabel}`;
+  if (intensity && limiterLabel) {
+    return `${intensity} · limité par ${limiterLabel.toLowerCase()}`;
+  }
+  if (intensity) {
+    return intensity;
+  }
+  if (limiterLabel) {
+    return `Limité par · ${limiterLabel}`;
+  }
   return null;
 }
 
@@ -57,7 +65,7 @@ export function RecoveryHero({
   // rides the plate next to the limiter instead of forming a section of its own.
   const actionLine = buildActionLine({ loading, intensityLabel, limiterLabel });
   const recoveryEta =
-    !loading && estimatedRecoveryDays != null && estimatedRecoveryDays > 0
+    !loading && estimatedRecoveryDays !== null && estimatedRecoveryDays > 0
       ? `Récupération estimée dans ${
           estimatedRecoveryDays === 1 ? '1 jour' : `${estimatedRecoveryDays} jours`
         }`
@@ -78,7 +86,7 @@ export function RecoveryHero({
       quickReadCaption={actionLine}
       quickReadLabel="score récupération"
       quickReadSuffix="%"
-      quickReadValue={readinessScore != null ? String(Math.round(readinessScore)) : '—'}
+      quickReadValue={readinessScore !== null ? String(Math.round(readinessScore)) : '—'}
       railValue={readinessScore}
       badge={
         !loading && isCalibrating ? (

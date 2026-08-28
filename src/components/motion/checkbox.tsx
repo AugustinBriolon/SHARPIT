@@ -9,8 +9,12 @@ const CHECK_PATH = 'M5 13l4 4L19 7';
 const INDETERMINATE_PATH = 'M6 12h12';
 
 function checkboxDataState(checked: boolean, indeterminate: boolean): string {
-  if (checked) return 'checked';
-  if (indeterminate) return 'indeterminate';
+  if (checked) {
+    return 'checked';
+  }
+  if (indeterminate) {
+    return 'indeterminate';
+  }
   return 'unchecked';
 }
 

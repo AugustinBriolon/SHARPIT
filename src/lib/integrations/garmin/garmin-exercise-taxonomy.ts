@@ -76,7 +76,9 @@ function indexEntry(entry: GarminTaxonomyEntry): IndexedEntry {
 }
 
 function getIndex(): TaxonomyIndex {
-  if (cachedIndex) return cachedIndex;
+  if (cachedIndex) {
+    return cachedIndex;
+  }
   const entries: IndexedEntry[] = [];
   const byNormLabel = new Map<string, IndexedEntry>();
   const byLeaf = new Map<string, IndexedEntry>();
@@ -85,10 +87,14 @@ function getIndex(): TaxonomyIndex {
     entries.push(entry);
     byLeaf.set(entry.leaf, entry);
     const norm = normalizeExerciseKey(entry.labelFr);
-    if (!norm) continue;
+    if (!norm) {
+      continue;
+    }
     const prev = byNormLabel.get(norm);
     // Prefer longer / more specific leaves on label collisions
-    if (!prev || entry.leaf.length > prev.leaf.length) byNormLabel.set(norm, entry);
+    if (!prev || entry.leaf.length > prev.leaf.length) {
+      byNormLabel.set(norm, entry);
+    }
   }
   const documentFrequency = new Map<string, number>();
   for (const entry of entries) {
@@ -144,20 +150,26 @@ function scoreEntry(
       hitWeight += weight;
     }
   }
-  if (hits === 0) return { score: 0, hits: 0, headMatch: false };
+  if (hits === 0) {
+    return { score: 0, hits: 0, headMatch: false };
+  }
 
   const headMatch = entry.conceptSet.has(query.concepts[0]);
 
   let qualifierHits = 0;
   for (const qualifier of query.qualifiers) {
-    if (entry.conceptSet.has(qualifier)) qualifierHits += 1;
+    if (entry.conceptSet.has(qualifier)) {
+      qualifierHits += 1;
+    }
   }
   const qualifierRatio = query.qualifiers.length > 0 ? qualifierHits / query.qualifiers.length : 0;
 
   const queryConceptSet = new Set(query.concepts);
   let unwantedEquipment = 0;
   for (const concept of entry.concepts) {
-    if (EQUIPMENT_CONCEPTS.has(concept) && !queryConceptSet.has(concept)) unwantedEquipment += 1;
+    if (EQUIPMENT_CONCEPTS.has(concept) && !queryConceptSet.has(concept)) {
+      unwantedEquipment += 1;
+    }
   }
 
   const score =
@@ -186,16 +198,22 @@ function toMatch(
 /** Exact hits only: normalized FR label, or an already-canonical leaf enum. */
 function matchExact(rawLabel: string): GarminExerciseMatch | null {
   const key = normalizeExerciseKey(rawLabel);
-  if (!key) return null;
+  if (!key) {
+    return null;
+  }
   const { byNormLabel, byLeaf } = getIndex();
 
   const byLabel = byNormLabel.get(key);
-  if (byLabel) return toMatch(byLabel, 'exact', 1);
+  if (byLabel) {
+    return toMatch(byLabel, 'exact', 1);
+  }
 
   const asEnum = key.toUpperCase().replace(/\s+/g, '_');
   if (/^[A-Z][A-Z0-9_]+$/.test(asEnum)) {
     const leafHit = byLeaf.get(asEnum);
-    if (leafHit) return toMatch(leafHit, 'exact', 1);
+    if (leafHit) {
+      return toMatch(leafHit, 'exact', 1);
+    }
   }
   return null;
 }
@@ -204,13 +222,17 @@ type RankedEntry = { entry: IndexedEntry; scored: EntryScore };
 
 function rankEntries(rawLabel: string): { query: ExercisePhrase; ranked: RankedEntry[] } {
   const query = parseExercisePhrase(rawLabel);
-  if (query.concepts.length === 0) return { query, ranked: [] };
+  if (query.concepts.length === 0) {
+    return { query, ranked: [] };
+  }
 
   const { entries, idf } = getIndex();
   const ranked: RankedEntry[] = [];
   for (const entry of entries) {
     const scored = scoreEntry(query, entry, idf);
-    if (scored.score <= 0) continue;
+    if (scored.score <= 0) {
+      continue;
+    }
     ranked.push({ entry, scored });
   }
   ranked.sort(
@@ -232,16 +254,24 @@ export function matchGarminTaxonomy(
   options?: { minFuzzyScore?: number },
 ): GarminExerciseMatch | null {
   const exact = matchExact(rawLabel);
-  if (exact) return exact;
+  if (exact) {
+    return exact;
+  }
 
   const { ranked } = rankEntries(rawLabel);
   const [best] = ranked;
-  if (!best) return null;
+  if (!best) {
+    return null;
+  }
 
   const floor = options?.minFuzzyScore ?? MIN_FUZZY_SCORE;
-  if (best.scored.score < floor) return null;
+  if (best.scored.score < floor) {
+    return null;
+  }
   // One incidental token hit is noise unless it is the head of the movement.
-  if (!best.scored.headMatch && best.scored.hits < 2) return null;
+  if (!best.scored.headMatch && best.scored.hits < 2) {
+    return null;
+  }
 
   return toMatch(best.entry, 'fuzzy', best.scored.score);
 }
@@ -249,7 +279,9 @@ export function matchGarminTaxonomy(
 /** Suggest top-N Garmin catalog matches for picker / coach disambiguation. */
 export function suggestGarminTaxonomy(rawLabel: string, limit = 5): GarminExerciseMatch[] {
   const exact = matchExact(rawLabel);
-  if (exact) return [exact];
+  if (exact) {
+    return [exact];
+  }
 
   const { ranked } = rankEntries(rawLabel);
   return ranked

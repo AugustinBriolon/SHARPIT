@@ -6,6 +6,8 @@ export function needsOnboardingFromProfile(input: {
   isDemo: boolean;
   isDevBypass: boolean;
 }): boolean {
-  if (input.isDevBypass || input.isDemo) return false;
-  return input.onboardingCompletedAt == null;
+  if (input.isDevBypass || input.isDemo) {
+    return false;
+  }
+  return input.onboardingCompletedAt === null;
 }

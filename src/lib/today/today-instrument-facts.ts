@@ -60,19 +60,27 @@ function limiterFromDescription(
   description: LimitingFactor['description'] | DecisionData['limitingFactor']['description'],
 ): string | null {
   const raw = description?.params?.limiter;
-  if (raw == null) return null;
+  if (raw === null) {
+    return null;
+  }
   return LIMITER_LABEL[String(raw)] ?? String(raw);
 }
 
 function systemLabel(system: string | null | undefined, domain?: string | null): string | null {
-  if (system && SYSTEM_LABEL[system]) return SYSTEM_LABEL[system];
-  if (domain && SYSTEM_LABEL[domain]) return SYSTEM_LABEL[domain];
+  if (system && SYSTEM_LABEL[system]) {
+    return SYSTEM_LABEL[system];
+  }
+  if (domain && SYSTEM_LABEL[domain]) {
+    return SYSTEM_LABEL[domain];
+  }
   return null;
 }
 
 function shortText(text: string, max = 72): string {
   const cleaned = text.replace(/\s+/g, ' ').trim();
-  if (cleaned.length <= max) return cleaned;
+  if (cleaned.length <= max) {
+    return cleaned;
+  }
   return `${cleaned.slice(0, max - 1).trimEnd()}…`;
 }
 
@@ -85,9 +93,13 @@ export function verdictFactValue(verdict: OverallVerdict | null | undefined): {
   value: string;
   hint: string | null;
 } | null {
-  if (!verdict || verdict === 'INSUFFICIENT_DATA') return null;
+  if (!verdict || verdict === 'INSUFFICIENT_DATA') {
+    return null;
+  }
   const why = VERDICT_WHY[verdict];
-  if (!why) return null;
+  if (!why) {
+    return null;
+  }
   return { value: why.value, hint: why.hint };
 }
 
@@ -96,7 +108,9 @@ function pickWhyEvidence(
   whyFocus: DailyPhaseWhyFocus,
 ): TodayFactRow | null {
   const evidence = decision?.supportingEvidence;
-  if (!evidence?.length) return null;
+  if (!evidence?.length) {
+    return null;
+  }
 
   const order: Record<DailyPhaseWhyFocus, string[]> = {
     readiness: ['RECOVERY', 'ENVIRONMENT', 'PHYSICAL_HEALTH'],
@@ -110,14 +124,20 @@ function pickWhyEvidence(
     const ai = prefs.indexOf(a.domain);
     const bi = prefs.indexOf(b.domain);
     const rankDiff = (a.rank ?? 99) - (b.rank ?? 99);
-    if (rankDiff !== 0) return rankDiff;
+    if (rankDiff !== 0) {
+      return rankDiff;
+    }
     return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
   });
 
   for (const item of sorted.slice(0, 3)) {
     const title = resolve(item.title);
-    if (!title || title === item.title.code) continue;
-    if (looksLikeScoreRestatement(title)) continue;
+    if (!title || title === item.title.code) {
+      continue;
+    }
+    if (looksLikeScoreRestatement(title)) {
+      continue;
+    }
 
     const detailRaw = item.evidenceItems[0] ? resolve(item.evidenceItems[0]) : null;
     const detail =

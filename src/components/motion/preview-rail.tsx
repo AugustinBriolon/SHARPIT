@@ -17,9 +17,15 @@ import { useTapGesture } from '@/lib/hooks/use-tap-gesture';
 import { cn } from '@/lib/utils';
 
 function previewRailItemScale(highlighted: boolean, distance: number): number {
-  if (highlighted) return 1;
-  if (distance === 1) return 0.68;
-  if (distance === 2) return 0.44;
+  if (highlighted) {
+    return 1;
+  }
+  if (distance === 1) {
+    return 0.68;
+  }
+  if (distance === 2) {
+    return 0.44;
+  }
   return 0.25;
 }
 
@@ -27,7 +33,9 @@ function previewRailOverlayClass(isHorizontal: boolean, previewSide: 'before' | 
   if (isHorizontal) {
     return 'top-1/2 left-1/2 h-5 w-fit max-w-full -translate-x-1/2 -translate-y-1/2 justify-center';
   }
-  if (previewSide === 'before') return 'inset-y-0 right-16 left-4 content-center';
+  if (previewSide === 'before') {
+    return 'inset-y-0 right-16 left-4 content-center';
+  }
   return 'inset-y-0 right-4 left-16 content-center';
 }
 
@@ -133,7 +141,9 @@ export function PreviewRail({
   const isHorizontal = orientation === 'horizontal';
 
   const selectItem = (id: string) => {
-    if (activeId === undefined) setInternalActiveId(id);
+    if (activeId === undefined) {
+      setInternalActiveId(id);
+    }
     onActiveChange?.(id);
   };
 
@@ -168,7 +178,9 @@ export function PreviewRail({
         onPointerLeave={(event) => {
           // A touch pointer leaves on lift, which would clear the tick the tap
           // just chose — that one is cleared by the outside tap instead.
-          if (hover.leave(event)) setHoveredId(null);
+          if (hover.leave(event)) {
+            setHoveredId(null);
+          }
         }}
       >
         {items.map((item, index) => {
@@ -200,7 +212,9 @@ export function PreviewRail({
           );
           const sharedStyle = isHorizontal ? { width: itemSize } : { height: itemSize };
           const handlePointerEnter = (event: PointerEvent<HTMLElement>) => {
-            if (hover.enter(event)) setHoveredId(item.id);
+            if (hover.enter(event)) {
+              setHoveredId(item.id);
+            }
           };
           const handlePointerDown = (event: PointerEvent<HTMLElement>) => {
             tap.start(event, pinnedId === item.id);

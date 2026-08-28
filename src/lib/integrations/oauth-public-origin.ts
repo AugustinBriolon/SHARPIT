@@ -14,7 +14,9 @@ const ALLOWED_RETURN_PATHS = new Set(['/onboarding', '/settings/integrations', '
 const DATA_CLASS_IDS = new Set<string>(DATA_CLASSES.map((c) => c.id));
 
 export function sanitizeDataClass(raw: string | null | undefined): DataClassId | null {
-  if (!raw || !DATA_CLASS_IDS.has(raw)) return null;
+  if (!raw || !DATA_CLASS_IDS.has(raw)) {
+    return null;
+  }
   return raw as DataClassId;
 }
 
@@ -36,10 +38,14 @@ export function normalizeOAuthPublicOrigin(origin: string): string {
 
 /** Sanitize a returnTo query value to an allow-listed in-app path. */
 export function sanitizeIntegrationReturnTo(raw: string | null | undefined): string {
-  if (!raw) return DEFAULT_INTEGRATION_RETURN_PATH;
+  if (!raw) {
+    return DEFAULT_INTEGRATION_RETURN_PATH;
+  }
   try {
     const path = raw.startsWith('http') ? new URL(raw).pathname : raw.split('?')[0];
-    if (ALLOWED_RETURN_PATHS.has(path)) return path;
+    if (ALLOWED_RETURN_PATHS.has(path)) {
+      return path;
+    }
   } catch {
     // ignore
   }

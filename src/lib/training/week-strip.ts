@@ -60,8 +60,12 @@ export type WeekCellKind = 'done' | 'planned' | 'empty';
  * (neutral) — « nb d'activités réalisées ou prévues selon le code couleur ».
  */
 export function weekCellReading(cell: WeekCell): { count: number; kind: WeekCellKind } {
-  if (cell.doneCount > 0) return { count: cell.doneCount, kind: 'done' };
-  if (cell.plannedCount > 0) return { count: cell.plannedCount, kind: 'planned' };
+  if (cell.doneCount > 0) {
+    return { count: cell.doneCount, kind: 'done' };
+  }
+  if (cell.plannedCount > 0) {
+    return { count: cell.plannedCount, kind: 'planned' };
+  }
   return { count: 0, kind: 'empty' };
 }
 
@@ -100,7 +104,9 @@ export function buildWeekSummary(days: WeekStripDay[]): WeekSummary {
     doneCount += day.activities.length;
     plannedCount += day.planned.length;
     for (const activity of day.activities) {
-      if (activity.load != null) weekLoad += activity.load;
+      if (activity.load !== null) {
+        weekLoad += activity.load;
+      }
     }
   }
 

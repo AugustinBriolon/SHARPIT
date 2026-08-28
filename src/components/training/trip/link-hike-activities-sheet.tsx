@@ -45,7 +45,7 @@ export function LinkHikeActivitiesSheet({
         (activity) =>
           activity.id !== seedActivityId &&
           activity.type === ActivityType.HIKE &&
-          activity.hikeTripId == null,
+          activity.hikeTripId === null,
       ),
     [activities, seedActivityId],
   );
@@ -58,8 +58,11 @@ export function LinkHikeActivitiesSheet({
   function toggleOther(id: string) {
     setSelectedIds((prev) => {
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
       return next;
     });
   }

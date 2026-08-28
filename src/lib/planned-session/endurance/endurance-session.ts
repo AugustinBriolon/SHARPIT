@@ -53,7 +53,7 @@ export function fallbackTarget(
   if (sport === 'SWIM') {
     // Heart rate is unusable in the water on most watches, so it is pace or nothing.
     const paceDefault = defaultTargetForIntensity(sport, intensity);
-    if (paceDefault.target.metric === 'pace' && thresholds.swimCssSecPer100m != null) {
+    if (paceDefault.target.metric === 'pace' && thresholds.swimCssSecPer100m !== null) {
       return paceDefault;
     }
     return { target: NO_TARGET, warnings: [...paceDefault.warnings, NO_CSS_WARNING] };
@@ -62,15 +62,17 @@ export function fallbackTarget(
   if (sport === 'BIKE') {
     // Power only: heart rate would be anchored on running references, which are not the bike's.
     const powerDefault = defaultTargetForIntensity(sport, intensity);
-    if (powerDefault.target.metric === 'power' && thresholds.ftpW != null) return powerDefault;
+    if (powerDefault.target.metric === 'power' && thresholds.ftpW !== null) {
+      return powerDefault;
+    }
     return { target: NO_TARGET, warnings: [...powerDefault.warnings, NO_FTP_WARNING] };
   }
 
   const paceDefault = defaultTargetForIntensity(sport, intensity);
-  if (paceDefault.target.metric === 'pace' && thresholds.runThresholdPaceSecPerKm != null) {
+  if (paceDefault.target.metric === 'pace' && thresholds.runThresholdPaceSecPerKm !== null) {
     return paceDefault;
   }
-  if (thresholds.lthr != null || thresholds.maxHr != null) {
+  if (thresholds.lthr !== null || thresholds.maxHr !== null) {
     return { target: defaultHrTargetForIntensity(intensity), warnings: paceDefault.warnings };
   }
   return paceDefault;
@@ -100,7 +102,7 @@ export function effectiveEndurancePrescription(input: {
   }
 
   const durationMin =
-    input.durationMin != null && input.durationMin > 0 ? input.durationMin : DEFAULT_SESSION_MIN;
+    input.durationMin !== null && input.durationMin > 0 ? input.durationMin : DEFAULT_SESSION_MIN;
   const { target, warnings } = fallbackTarget(input.sport, input.intensity, input.thresholds);
 
   return {
@@ -118,7 +120,9 @@ function withPoolLength(
   prescription: EndurancePrescription,
   defaultPoolLengthM: number | null | undefined,
 ): EndurancePrescription {
-  if (prescription.sport !== 'SWIM') return prescription;
+  if (prescription.sport !== 'SWIM') {
+    return prescription;
+  }
   return {
     ...prescription,
     poolLengthM: prescription.poolLengthM ?? defaultPoolLengthM ?? DEFAULT_POOL_LENGTH_M,

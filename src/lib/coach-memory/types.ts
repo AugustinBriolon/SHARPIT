@@ -88,7 +88,9 @@ export function isCoachMemorySource(value: unknown): value is CoachMemorySource 
 
 /** Returns null when source is missing, unknown, or not badge-worthy (USER). */
 export function coachMemorySourceLabel(source: unknown): string | null {
-  if (!isCoachMemorySource(source)) return null;
+  if (!isCoachMemorySource(source)) {
+    return null;
+  }
   return COACH_MEMORY_SOURCE_BADGE[source] ?? null;
 }
 
@@ -97,6 +99,8 @@ export function isCoachMemoryType(value: unknown): value is CoachMemoryType {
 }
 
 export function coachMemoryTypeLabel(type: unknown): string | null {
-  if (!isCoachMemoryType(type)) return null;
+  if (!isCoachMemoryType(type)) {
+    return null;
+  }
   return COACH_MEMORY_TYPE_LABELS[type];
 }

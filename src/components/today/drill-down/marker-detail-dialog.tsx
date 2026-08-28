@@ -56,7 +56,9 @@ export function MarkerDetailDialog({
   detail: MarkerDetail | null;
   onClose: () => void;
 }) {
-  if (!detail) return null;
+  if (!detail) {
+    return null;
+  }
 
   const { range, value, delta, series } = detail;
   const format = detail.format ?? ((raw: number) => String(raw));
@@ -77,12 +79,12 @@ export function MarkerDetailDialog({
               detail.concerning ? 'text-signal-caution' : 'text-primary',
             )}
           >
-            {value != null ? format(value) : '—'}
+            {value !== null ? format(value) : '—'}
           </span>
           <span className="text-muted-foreground text-sm">{detail.unit}</span>
         </div>
 
-        {range && value != null ? (
+        {range && value !== null ? (
           <div>
             <MarkerScale concerning={detail.concerning} range={range} value={value} />
             {/* Pinned to the band edges, not the rail edges: printed at the extremes
@@ -128,7 +130,7 @@ export function MarkerDetailDialog({
           <div className="border-analysis-border/40 border-t pt-3">
             <div className="flex items-baseline justify-between gap-3">
               <p className="text-label text-muted-foreground">Évolution</p>
-              {delta != null ? (
+              {delta !== null ? (
                 <span className="text-data text-muted-foreground text-xs tabular-nums">
                   {delta > 0 ? '+' : '−'}
                   {Math.abs(Math.round(delta))} {detail.unit} / 7 j

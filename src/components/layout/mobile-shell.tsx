@@ -27,7 +27,7 @@ function BottomNavLink({
   onNavigate?: () => void;
   onPrefetch: (href: string) => void;
 }) {
-  const isActive = pathname != null && item.match(pathname);
+  const isActive = pathname !== null && item.match(pathname);
   const Icon = item.icon;
   const reduce = useReducedMotion();
   const hint = () => onPrefetch(item.href);
@@ -65,7 +65,9 @@ function BottomNavLink({
       onMouseEnter={hint}
       onTouchStart={hint}
       onClick={() => {
-        if (!isActive) haptic('tap');
+        if (!isActive) {
+          haptic('tap');
+        }
         onNavigate?.();
       }}
     >

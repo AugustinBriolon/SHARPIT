@@ -19,8 +19,12 @@ async function parseError(res: Response): Promise<string> {
 }
 
 function equipmentEqual(a: AthleteEquipment, b: AthleteEquipment): boolean {
-  if (a.strengthVenue !== b.strengthVenue) return false;
-  if (a.owned.length !== b.owned.length) return false;
+  if (a.strengthVenue !== b.strengthVenue) {
+    return false;
+  }
+  if (a.owned.length !== b.owned.length) {
+    return false;
+  }
   const left = [...a.owned].sort();
   const right = [...b.owned].sort();
   return left.every((id, index) => id === right[index]);
@@ -49,7 +53,9 @@ export function useEquipmentPersist(initial: AthleteEquipment) {
   }, [equipment]);
 
   useEffect(() => {
-    if (dirtyRef.current || inFlightRef.current) return;
+    if (dirtyRef.current || inFlightRef.current) {
+      return;
+    }
     const next = normalizeAthleteEquipment(initial);
     setEquipment(next);
     savedRef.current = next;
@@ -58,8 +64,12 @@ export function useEquipmentPersist(initial: AthleteEquipment) {
 
   useEffect(() => {
     return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
-      if (!dirtyRef.current) return;
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+      }
+      if (!dirtyRef.current) {
+        return;
+      }
       void fetch('/api/athlete-profile', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -70,8 +80,12 @@ export function useEquipmentPersist(initial: AthleteEquipment) {
   }, []);
 
   async function flushPersist() {
-    if (inFlightRef.current) return;
-    if (!dirtyRef.current) return;
+    if (inFlightRef.current) {
+      return;
+    }
+    if (!dirtyRef.current) {
+      return;
+    }
     if (equipmentEqual(equipmentRef.current, savedRef.current)) {
       dirtyRef.current = false;
       setDirty(false);
@@ -91,7 +105,9 @@ export function useEquipmentPersist(initial: AthleteEquipment) {
     setMessage(null);
 
     queryClient.setQueryData(queryKeys.athleteProfile, (current: unknown) => {
-      if (!current || typeof current !== 'object') return current;
+      if (!current || typeof current !== 'object') {
+        return current;
+      }
       return { ...current, equipment: payload };
     });
 
@@ -102,7 +118,9 @@ export function useEquipmentPersist(initial: AthleteEquipment) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ equipment: payload }),
       });
-      if (!res.ok) throw new Error(await parseError(res));
+      if (!res.ok) {
+        throw new Error(await parseError(res));
+      }
 
       if (seq === saveSeq.current) {
         savedRef.current = payload;
@@ -111,7 +129,9 @@ export function useEquipmentPersist(initial: AthleteEquipment) {
         const saved = (await res.json().catch(() => null)) as Record<string, unknown> | null;
         if (saved && typeof saved === 'object') {
           queryClient.setQueryData(queryKeys.athleteProfile, (current: unknown) => {
-            if (!current || typeof current !== 'object') return saved;
+            if (!current || typeof current !== 'object') {
+              return saved;
+            }
             return { ...current, ...saved };
           });
         }
@@ -142,14 +162,18 @@ export function useEquipmentPersist(initial: AthleteEquipment) {
       }
     }
 
-    if (seq !== saveSeq.current || !dirtyRef.current) return;
+    if (seq !== saveSeq.current || !dirtyRef.current) {
+      return;
+    }
 
     if (succeeded) {
       void flushPersist();
       return;
     }
 
-    if (timerRef.current) clearTimeout(timerRef.current);
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+    }
     timerRef.current = setTimeout(() => {
       timerRef.current = null;
       void flushPersist();
@@ -164,11 +188,15 @@ export function useEquipmentPersist(initial: AthleteEquipment) {
     setMessage(null);
 
     queryClient.setQueryData(queryKeys.athleteProfile, (current: unknown) => {
-      if (!current || typeof current !== 'object') return current;
+      if (!current || typeof current !== 'object') {
+        return current;
+      }
       return { ...current, equipment: next };
     });
 
-    if (timerRef.current) clearTimeout(timerRef.current);
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+    }
     timerRef.current = setTimeout(() => {
       timerRef.current = null;
       void flushPersist();

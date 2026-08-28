@@ -153,10 +153,14 @@ export function MorningWellnessDialog({ onCompleted }: { onCompleted?: () => voi
   const [stressLevel, setStressLevel] = useState(2);
   const [notes, setNotes] = useState('');
 
-  if (loading || completed) return null;
+  if (loading || completed) {
+    return null;
+  }
 
   async function handleSubmit() {
-    if (guardDisabled) return;
+    if (guardDisabled) {
+      return;
+    }
     try {
       await submit({
         mood,

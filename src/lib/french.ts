@@ -312,30 +312,30 @@ const STRINGS: Record<string, string> = {
 // Resolve an I18nItem to French
 // ─────────────────────────────────────────────────────────────────────────────
 
+const PARAM_RESOLVERS: Record<string, (raw: unknown) => string> = {
+  dimension: (raw) => DIMENSION_FR[String(raw)] ?? String(raw),
+  system: (raw) => MODEL_SYSTEM_FR[String(raw)] ?? DIMENSION_FR[String(raw)] ?? String(raw),
+  trend: (raw) => TREND_FR[String(raw)] ?? String(raw),
+  limiter: (raw) => LIMITER_FR[String(raw)] ?? String(raw),
+};
+
+function resolveParam(key: string, raw: unknown): string {
+  if (raw === undefined) {
+    return `{${key}}`;
+  }
+  return PARAM_RESOLVERS[key]?.(raw) ?? String(raw);
+}
+
 export function resolve(item: I18nItem): string {
   const template = STRINGS[item.code];
-  if (!template) return item.code;
-  if (!item.params) return template;
+  if (!template) {
+    return item.code;
+  }
+  if (!item.params) {
+    return template;
+  }
 
-  return template.replace(/\{(\w+)\}/g, (_, key) => {
-    const raw = item.params![key];
-    if (raw === undefined) return `{${key}}`;
-
-    if (key === 'dimension') {
-      return DIMENSION_FR[String(raw)] ?? String(raw);
-    }
-    if (key === 'system') {
-      return MODEL_SYSTEM_FR[String(raw)] ?? DIMENSION_FR[String(raw)] ?? String(raw);
-    }
-    if (key === 'trend') {
-      return TREND_FR[String(raw)] ?? String(raw);
-    }
-    if (key === 'limiter') {
-      return LIMITER_FR[String(raw)] ?? String(raw);
-    }
-
-    return String(raw);
-  });
+  return template.replace(/\{(\w+)\}/g, (_, key) => resolveParam(key, item.params![key]));
 }
 
 // Convenience: resolve a plain code string (for TopAction verbCode / focusCode / rationaleCode)

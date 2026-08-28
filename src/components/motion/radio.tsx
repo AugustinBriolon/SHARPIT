@@ -53,7 +53,9 @@ export function RadioGroup({
   const current = controlled ? value : internal;
   const setValue = useCallback(
     (next: string) => {
-      if (!controlled) setInternal(next);
+      if (!controlled) {
+        setInternal(next);
+      }
       onValueChange?.(next);
     },
     [controlled, onValueChange],

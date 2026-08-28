@@ -13,7 +13,9 @@ function CalorieTrend({
   selectedDate: string;
   onDateSelect?: (date: Date) => void;
 }) {
-  if (history.length === 0) return null;
+  if (history.length === 0) {
+    return null;
+  }
 
   const ordered = history.slice().reverse();
   const max = Math.max(...ordered.map((d) => d.calories), 1);
@@ -83,7 +85,9 @@ export function NutritionTrendSection({
     );
   }
 
-  if (history.length <= 1) return null;
+  if (history.length <= 1) {
+    return null;
+  }
 
   return (
     <section className="analysis-panel rounded-analysis-lg space-y-4 p-4 sm:p-5">

@@ -18,7 +18,7 @@ export const patchHikeTripSchema = z
   })
   .refine(
     (v) =>
-      v.name != null ||
+      v.name !== null ||
       (v.addActivityIds?.length ?? 0) > 0 ||
       (v.removeActivityIds?.length ?? 0) > 0,
     { message: 'Aucune modification' },

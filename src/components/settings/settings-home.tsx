@@ -119,7 +119,9 @@ const GROUPS: SettingsGroup[] = [
 ];
 
 function entryStatus(statusKey: SettingsEntry['statusKey']) {
-  if (!statusKey) return null;
+  if (!statusKey) {
+    return null;
+  }
   if (statusKey === 'appearance') {
     return <SettingsAppearanceStatus />;
   }

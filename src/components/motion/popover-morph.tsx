@@ -40,7 +40,9 @@ const MorphContext = createContext<MorphContextValue | null>(null);
 
 function useMorphContext(component: string) {
   const ctx = useContext(MorphContext);
-  if (!ctx) throw new Error(`${component} must be used within <MorphPopover>`);
+  if (!ctx) {
+    throw new Error(`${component} must be used within <MorphPopover>`);
+  }
   return ctx;
 }
 
@@ -76,7 +78,9 @@ export function MorphPopover({
 
   const setOpen = useCallback(
     (next: boolean) => {
-      if (!controlled) setInternalOpen(next);
+      if (!controlled) {
+        setInternalOpen(next);
+      }
       onOpenChange?.(next);
     },
     [controlled, onOpenChange],
@@ -106,17 +110,23 @@ export function MorphPopover({
     setOpen(false);
     const focused = document.activeElement;
     const inPanel = focused instanceof HTMLElement && contentRef.current?.contains(focused);
-    if (!inPanel) return;
+    if (!inPanel) {
+      return;
+    }
     const restore = trigger ?? (root && root.tabIndex >= 0 ? root : null);
     restore?.focus();
   }, [root, setOpen, trigger]);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      return;
+    }
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && close();
     const onPointer = (e: PointerEvent) => {
       const target = e.target as Node;
-      if (root && !root.contains(target) && !contentRef.current?.contains(target)) close();
+      if (root && !root.contains(target) && !contentRef.current?.contains(target)) {
+        close();
+      }
     };
     window.addEventListener('keydown', onKey);
     window.addEventListener('pointerdown', onPointer);
@@ -156,9 +166,11 @@ export interface MorphPopoverTriggerProps {
 function mergeRefs<T>(...refs: Array<Ref<T> | undefined>) {
   return (node: T | null) => {
     for (const ref of refs) {
-      if (typeof ref === 'function') ref(node);
-      else if (ref && typeof ref === 'object')
+      if (typeof ref === 'function') {
+        ref(node);
+      } else if (ref && typeof ref === 'object') {
         (ref as React.MutableRefObject<T | null>).current = node;
+      }
     }
   };
 }
@@ -166,7 +178,9 @@ function mergeRefs<T>(...refs: Array<Ref<T> | undefined>) {
 /** Wraps a single element, toggling the popover on click. */
 export function MorphPopoverTrigger({ children }: MorphPopoverTriggerProps) {
   const ctx = useMorphContext('MorphPopoverTrigger');
-  if (!isValidElement(children)) return children;
+  if (!isValidElement(children)) {
+    return children;
+  }
 
   const child = children as ReactElement<Record<string, unknown>>;
   const childOnClick = child.props.onClick as ((e: unknown) => void) | undefined;
@@ -264,7 +278,9 @@ export function MorphPopoverContent({
       };
 
   // Keep the server and first client render identical, then mount the portal.
-  if (!portalReady) return null;
+  if (!portalReady) {
+    return null;
+  }
 
   return createPortal(
     <AnimatePresence>

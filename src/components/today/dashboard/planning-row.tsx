@@ -33,7 +33,9 @@ export function PlanningRow({
   const today = new Date();
   const upcoming = selectUpcomingPlannedPreview(sessions, today, limit);
 
-  if (upcoming.length === 0) return null;
+  if (upcoming.length === 0) {
+    return null;
+  }
 
   return (
     <ul className={cn('grid grid-cols-1 gap-2 sm:grid-cols-2', className)}>
@@ -41,9 +43,13 @@ export function PlanningRow({
         const { intensityLabel, dateStr, title } = resolvePlannedSessionDisplay(s, today);
         const badge = forecastBadgeFromContext(s.environmentContext, s.exposureSetting);
         const meta: InstrumentListChipMeta[] = [];
-        if (s.durationMin) meta.push(`${s.durationMin} min`);
+        if (s.durationMin) {
+          meta.push(`${s.durationMin} min`);
+        }
         meta.push(dateStr);
-        if (intensityLabel) meta.push(intensityLabel);
+        if (intensityLabel) {
+          meta.push(intensityLabel);
+        }
         if (badge) {
           meta.push({
             text: badge.label,

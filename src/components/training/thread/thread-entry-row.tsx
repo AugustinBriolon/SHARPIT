@@ -40,13 +40,13 @@ export function entryMeta(entry: ThreadEntry, mode: DisplayMode = 'essential'): 
   if (entry.activity) {
     return [
       entry.activity.duration ? formatDuration(entry.activity.duration) : null,
-      entry.activity.load != null ? formatTrainingLoad(entry.activity.load, mode) : null,
-      entry.activity.rpe != null ? `RPE ${entry.activity.rpe}` : null,
+      entry.activity.load !== null ? formatTrainingLoad(entry.activity.load, mode) : null,
+      entry.activity.rpe !== null ? `RPE ${entry.activity.rpe}` : null,
     ].filter((part): part is string => Boolean(part));
   }
   return [
     entry.planned?.durationMin ? `${entry.planned.durationMin} min` : null,
-    entry.planned?.load != null ? formatTrainingLoad(entry.planned.load, mode) : null,
+    entry.planned?.load !== null ? formatTrainingLoad(entry.planned.load, mode) : null,
   ].filter((part): part is string => Boolean(part));
 }
 
@@ -59,12 +59,16 @@ export function entryMeta(entry: ThreadEntry, mode: DisplayMode = 'essential'): 
  */
 export function ComparisonPill({ entry }: { entry: ThreadEntry }) {
   const { mode } = useDisplayMode();
-  if (entry.kind !== 'paired' || !entry.planned) return null;
+  if (entry.kind !== 'paired' || !entry.planned) {
+    return null;
+  }
 
   const duration = durationDelta(entry.activity?.duration, entry.planned.durationMin);
   const load = loadDelta(entry.activity?.load, entry.planned.load);
   const shown = duration ?? load;
-  if (!shown) return null;
+  if (!shown) {
+    return null;
+  }
 
   const unit = duration ? 'min' : trainingLoadUnit(mode);
   const prescribed = duration
@@ -246,7 +250,9 @@ function PlannedRow({
           onFocus={onPrefetch}
           onPointerEnter={onPrefetch}
           onClick={(event) => {
-            if (swipe.swallowClick(event)) return;
+            if (swipe.swallowClick(event)) {
+              return;
+            }
             onOpen();
           }}
         >

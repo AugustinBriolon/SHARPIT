@@ -60,9 +60,15 @@ export interface ToolResultOutputProps {
 }
 
 function getStatusLabel(status: ToolResultStatus) {
-  if (status === 'running') return 'Running';
-  if (status === 'success') return 'Completed';
-  if (status === 'error') return 'Failed';
+  if (status === 'running') {
+    return 'Running';
+  }
+  if (status === 'success') {
+    return 'Completed';
+  }
+  if (status === 'error') {
+    return 'Failed';
+  }
   return 'Cancelled';
 }
 
@@ -84,8 +90,12 @@ function getStatusClass(status: ToolResultStatus) {
 }
 
 function KindIcon({ kind }: { kind: ToolResultKind }) {
-  if (kind === 'terminal') return <SquareTerminal className="size-4" />;
-  if (kind === 'request') return <Braces className="size-4" />;
+  if (kind === 'terminal') {
+    return <SquareTerminal className="size-4" />;
+  }
+  if (kind === 'request') {
+    return <Braces className="size-4" />;
+  }
   return <Wrench className="size-4" />;
 }
 
@@ -93,8 +103,12 @@ function StatusIcon({ status, reduce }: { status: ToolResultStatus; reduce: bool
   if (status === 'running') {
     return <LoaderCircle className={cn('size-3', !reduce && 'animate-spin')} />;
   }
-  if (status === 'success') return <CircleCheck className="size-3" />;
-  if (status === 'error') return <CircleX className="size-3" />;
+  if (status === 'success') {
+    return <CircleCheck className="size-3" />;
+  }
+  if (status === 'error') {
+    return <CircleX className="size-3" />;
+  }
   return <Ban className="size-3" />;
 }
 
@@ -176,7 +190,9 @@ export function ToolResult({
 
   const setOpen = useCallback(
     (next: boolean) => {
-      if (open === undefined) setInternalOpen(next);
+      if (open === undefined) {
+        setInternalOpen(next);
+      }
       onOpenChange?.(next);
     },
     [onOpenChange, open],
@@ -194,14 +210,18 @@ export function ToolResult({
 
   useEffect(
     () => () => {
-      if (copyTimer.current) window.clearTimeout(copyTimer.current);
+      if (copyTimer.current) {
+        window.clearTimeout(copyTimer.current);
+      }
     },
     [],
   );
 
   useLayoutEffect(() => {
     const viewport = viewportRef.current;
-    if (!viewport || !currentOpen || !running) return;
+    if (!viewport || !currentOpen || !running) {
+      return;
+    }
 
     const frame = requestAnimationFrame(() => {
       if (typeof viewport.scrollTo === 'function') {
@@ -217,11 +237,16 @@ export function ToolResult({
   });
 
   const handleCopy = useCallback(async () => {
-    if (onCopy) await onCopy();
-    else if (copyText) await navigator.clipboard?.writeText(copyText);
+    if (onCopy) {
+      await onCopy();
+    } else if (copyText) {
+      await navigator.clipboard?.writeText(copyText);
+    }
 
     setCopied(true);
-    if (copyTimer.current) window.clearTimeout(copyTimer.current);
+    if (copyTimer.current) {
+      window.clearTimeout(copyTimer.current);
+    }
     copyTimer.current = window.setTimeout(() => setCopied(false), 1600);
   }, [copyText, onCopy]);
 

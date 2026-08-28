@@ -178,10 +178,12 @@ export function MobileFilterDrawer({
                     const empty = count === 0;
                     const Icon = SPORT_ICONS[type];
                     let chipClass = 'border-foreground/15 text-muted-foreground border';
-                    if (empty)
+                    if (empty) {
                       chipClass =
                         'border-foreground/8 text-foreground/25 cursor-not-allowed border';
-                    else if (active) chipClass = SPORT_IDENTITY_SURFACE[type];
+                    } else if (active) {
+                      chipClass = SPORT_IDENTITY_SURFACE[type];
+                    }
                     return (
                       <button
                         key={type}

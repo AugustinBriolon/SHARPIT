@@ -5,7 +5,9 @@ import { authAppearance } from '@/lib/theme/clerk-appearance';
 import { isDevClerkBypass } from '@/lib/dev/dev-auth';
 
 export default function SignInPage() {
-  if (isDevClerkBypass()) redirect('/');
+  if (isDevClerkBypass()) {
+    redirect('/');
+  }
   return (
     <AuthShell>
       <SignIn appearance={authAppearance} />

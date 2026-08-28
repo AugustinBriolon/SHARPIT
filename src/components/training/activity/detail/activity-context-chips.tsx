@@ -74,6 +74,8 @@ export function ActivityContextChips({
     );
   }
 
-  if (chips.length === 0) return null;
+  if (chips.length === 0) {
+    return null;
+  }
   return <>{chips}</>;
 }

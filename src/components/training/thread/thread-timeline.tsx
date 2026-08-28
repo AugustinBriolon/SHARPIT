@@ -88,7 +88,7 @@ function DayGroup({
               );
             }
 
-            const entry = item.entry;
+            const { entry } = item;
             return (
               <li key={entry.id}>
                 {/* One card, not every session of the day: the expanded treatment

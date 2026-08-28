@@ -45,7 +45,9 @@ function metaTone(item: InstrumentListChipMeta): 'default' | 'caution' {
 
 /** Split a pre-joined “a · b · c” secondary line into chip meta parts. */
 export function splitInstrumentMeta(secondary: string | null | undefined): string[] {
-  if (!secondary?.trim()) return [];
+  if (!secondary?.trim()) {
+    return [];
+  }
   return secondary
     .split(' · ')
     .map((part) => part.trim())
@@ -100,7 +102,7 @@ export const InstrumentListChip = memo(function InstrumentListChip({
   onFocus,
   onPointerEnter,
 }: InstrumentListChipProps) {
-  const hasMetaRow = activityType != null || meta.length > 0;
+  const hasMetaRow = activityType !== null || meta.length > 0;
   const label = linkTitle ?? `Voir le détail — ${title}`;
 
   const body = (
@@ -111,14 +113,14 @@ export const InstrumentListChip = memo(function InstrumentListChip({
         </span>
         {hasMetaRow ? (
           <span className="text-muted-foreground flex min-w-0 flex-wrap items-center gap-x-1.5 gap-y-0.5 text-xs">
-            {activityType != null ? (
+            {activityType !== null ? (
               <span className="shrink-0">
                 <ActivityTypeIndicator type={activityType} />
               </span>
             ) : null}
             {meta.map((item, index) => (
               <span key={`meta-${index}-${metaText(item)}`} className="contents">
-                {activityType != null || index > 0 ? (
+                {activityType !== null || index > 0 ? (
                   <span className="shrink-0 opacity-30" aria-hidden>
                     ·
                   </span>

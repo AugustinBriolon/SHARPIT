@@ -8,14 +8,16 @@ export const recoverySpacingRule: PlanGateRule = (
   context: GateContext,
   proposal: GateProposal,
 ): RuleFinding[] => {
-  if (proposal.intensity == null || !HIGH_INTENSITY.has(proposal.intensity)) return [];
+  if (proposal.intensity === null || !HIGH_INTENSITY.has(proposal.intensity)) {
+    return [];
+  }
 
   const proposedTime = new Date(`${proposal.date}T00:00:00`).getTime();
 
   const nearbyExisting = context.existingSessions.find(
     (s) =>
       s.id !== proposal.sessionId &&
-      s.intensity != null &&
+      s.intensity !== null &&
       HIGH_INTENSITY.has(s.intensity) &&
       Math.abs(s.date.getTime() - proposedTime) < MIN_SPACING_MS &&
       s.date.getTime() !== proposedTime,

@@ -45,7 +45,9 @@ export async function disconnectMfp(athleteId: string) {
 
 async function revokeMfpCredentials(athleteId: string) {
   const account = await getMfpAccount(athleteId);
-  if (!account) return;
+  if (!account) {
+    return;
+  }
   await prisma.myFitnessPalAccount.update({
     where: { athleteId },
     data: { sessionTokenEnc: '' },
@@ -60,7 +62,9 @@ async function revokeMfpCredentials(athleteId: string) {
  */
 async function rollSessionForward(athleteId: string, session: MfpSession): Promise<MfpSession> {
   const refreshed = await refreshMfpSession(session);
-  if (!refreshed.rotated) return session;
+  if (!refreshed.rotated) {
+    return session;
+  }
 
   await prisma.myFitnessPalAccount.update({
     where: { athleteId },
@@ -80,7 +84,9 @@ async function rollSessionForward(athleteId: string, session: MfpSession): Promi
 async function ingestNutritionObservation(athleteId: string, day: MfpDayResult): Promise<void> {
   try {
     const raw = mfpDayToNutritionObservation(day, new Date());
-    if (!raw) return;
+    if (!raw) {
+      return;
+    }
     await observationEngine.ingest(athleteId, raw);
   } catch (err) {
     console.error('[ObservationEngine] myfitnesspal ingest failed:', err);
@@ -94,7 +100,9 @@ export interface MfpSyncResult {
 
 export async function getLiveNutrientGoals(athleteId: string, dateStr: string) {
   const account = await getMfpAccount(athleteId);
-  if (!account || !isMfpAccountConnected(account)) return null;
+  if (!account || !isMfpAccountConnected(account)) {
+    return null;
+  }
 
   const session: MfpSession = { sessionToken: decryptSecret(account.sessionTokenEnc) };
   try {
@@ -137,7 +145,9 @@ export async function syncMfpNutrition(
     try {
       const result = await fetchDiaryDay(session, dateStr);
       const hasMeals = result.meals.some((m: MfpScrapedMeal) => m.entries.length > 0);
-      if (!hasMeals && !result.goals) continue;
+      if (!hasMeals && !result.goals) {
+        continue;
+      }
 
       await ingestNutritionObservation(athleteId, result);
 

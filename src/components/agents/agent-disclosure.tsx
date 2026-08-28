@@ -6,7 +6,9 @@ import { EASE_OUT } from '@/lib/ease';
 import { cn } from '@/lib/utils';
 
 function disclosureTransitionDuration(reduce: boolean, open: boolean): number {
-  if (reduce) return 0;
+  if (reduce) {
+    return 0;
+  }
   return open ? 0.22 : 0.14;
 }
 

@@ -55,7 +55,9 @@ export function MacroPlanDialog({ goals, onClose }: MacroPlanDialogProps) {
   const isArchiving = archive.isPending;
 
   async function handleGenerate() {
-    if (goalId === NO_GOAL) return;
+    if (goalId === NO_GOAL) {
+      return;
+    }
     setError(null);
     try {
       await generate.mutateAsync(goalId);
@@ -65,7 +67,9 @@ export function MacroPlanDialog({ goals, onClose }: MacroPlanDialogProps) {
   }
 
   async function handleArchive() {
-    if (!activePlan) return;
+    if (!activePlan) {
+      return;
+    }
     setError(null);
     try {
       await archive.mutateAsync(activePlan.id);

@@ -114,7 +114,9 @@ function ScenarioComparisonBody({
     null;
 
   function applySelected() {
-    if (!selected) return;
+    if (!selected) {
+      return;
+    }
 
     if (!selected.canApply) {
       onClose();
@@ -195,8 +197,12 @@ function ScenarioComparisonList({
   onSelect: (scenarioId: string) => void;
 }) {
   const ordered = [...scenarios].sort((a, b) => {
-    if (a.isRecommended !== b.isRecommended) return a.isRecommended ? -1 : 1;
-    if (a.isBaseline !== b.isBaseline) return a.isBaseline ? 1 : -1;
+    if (a.isRecommended !== b.isRecommended) {
+      return a.isRecommended ? -1 : 1;
+    }
+    if (a.isBaseline !== b.isBaseline) {
+      return a.isBaseline ? 1 : -1;
+    }
     return 0;
   });
 

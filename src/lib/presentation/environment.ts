@@ -58,19 +58,19 @@ export function buildEnvironmentPresentationContext(
   const thermalLabel = THERMAL_LABELS[environment.thermalStressLevel];
   const summaryLine = IMPACT_SUMMARY[environment.trainingImpact];
   const recoveryPct =
-    environment.recoveryDemandAdjustment != null
+    environment.recoveryDemandAdjustment !== null
       ? Math.round(environment.recoveryDemandAdjustment * 100)
       : null;
   const performancePct =
-    environment.performanceAdjustment != null
+    environment.performanceAdjustment !== null
       ? Math.round(Math.abs(environment.performanceAdjustment) * 100)
       : null;
 
   const detailParts: string[] = [];
-  if (recoveryPct != null && recoveryPct > 0) {
+  if (recoveryPct !== null && recoveryPct > 0) {
     detailParts.push(`demande de récupération +${recoveryPct} %`);
   }
-  if (performancePct != null && performancePct > 0) {
+  if (performancePct !== null && performancePct > 0) {
     detailParts.push(`performance attendue −${performancePct} %`);
   }
 
@@ -97,10 +97,12 @@ export function resolveEnvironmentalExplanation(
   };
 
   const template = templates[code];
-  if (!template) return code;
+  if (!template) {
+    return code;
+  }
 
   return template.replace(/\{(\w+)\}/g, (_, key: string) => {
     const value = params?.[key];
-    return value != null ? String(value) : '';
+    return value !== null ? String(value) : '';
   });
 }

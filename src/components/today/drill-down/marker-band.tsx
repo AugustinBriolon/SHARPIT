@@ -43,7 +43,9 @@ const MARKER_MAX_PCT = 96;
 
 function markerPositionPct(value: number, range: MarkerRange): number {
   const span = range.high - range.low;
-  if (span <= 0) return 50;
+  if (span <= 0) {
+    return 50;
+  }
   const ratio = (value - range.low) / span;
   return Math.min(
     MARKER_MAX_PCT,
@@ -54,8 +56,12 @@ function markerPositionPct(value: number, range: MarkerRange): number {
 type Position = 'below' | 'inside' | 'above';
 
 function positionOf(value: number, range: MarkerRange): Position {
-  if (value < range.low) return 'below';
-  if (value > range.high) return 'above';
+  if (value < range.low) {
+    return 'below';
+  }
+  if (value > range.high) {
+    return 'above';
+  }
   return 'inside';
 }
 
@@ -66,7 +72,9 @@ const POSITION_WORD: Record<Position, string> = {
 };
 
 function isConcerning(position: Position, lowerIsBetter: boolean): boolean {
-  if (position === 'inside') return false;
+  if (position === 'inside') {
+    return false;
+  }
   return lowerIsBetter ? position === 'above' : position === 'below';
 }
 
@@ -135,8 +143,8 @@ export function MarkerCard({
   format?: (value: number) => string;
   onOpen: () => void;
 }) {
-  const position = value != null && range != null ? positionOf(value, range) : null;
-  const concerning = position != null && isConcerning(position, lowerIsBetter);
+  const position = value !== null && range !== null ? positionOf(value, range) : null;
+  const concerning = position !== null && isConcerning(position, lowerIsBetter);
   const rangeWord = range?.kind === 'baseline' ? 'norme' : '14 j';
 
   return (
@@ -158,12 +166,12 @@ export function MarkerCard({
             concerning ? 'text-signal-caution' : 'text-primary',
           )}
         >
-          {value != null ? format(value) : '—'}
+          {value !== null ? format(value) : '—'}
         </span>
         <span className="text-muted-foreground text-xs">{unit}</span>
       </span>
 
-      {range && value != null ? (
+      {range && value !== null ? (
         <MarkerScale className="mt-2" concerning={concerning} range={range} value={value} />
       ) : null}
 

@@ -38,9 +38,15 @@ export function shouldForceInferenceOnRefresh(input: {
   forceSync?: boolean;
   syncedProviderCount: number;
 }): boolean {
-  if (input.forceSync) return true;
-  if (input.source === 'today_refresh' || input.source === 'cron') return true;
-  if (input.syncedProviderCount > 0) return true;
+  if (input.forceSync) {
+    return true;
+  }
+  if (input.source === 'today_refresh' || input.source === 'cron') {
+    return true;
+  }
+  if (input.syncedProviderCount > 0) {
+    return true;
+  }
   return false;
 }
 
@@ -56,11 +62,21 @@ export function shouldSkipTodayPresentationRebuild(input: {
   snapshotChanged: boolean;
   morningRecalibrationCreated: boolean;
 }): boolean {
-  if (input.forceSync) return false;
-  if (input.source !== 'app_shell') return false;
-  if (input.syncedProviderCount > 0) return false;
-  if (input.snapshotChanged) return false;
-  if (input.morningRecalibrationCreated) return false;
+  if (input.forceSync) {
+    return false;
+  }
+  if (input.source !== 'app_shell') {
+    return false;
+  }
+  if (input.syncedProviderCount > 0) {
+    return false;
+  }
+  if (input.snapshotChanged) {
+    return false;
+  }
+  if (input.morningRecalibrationCreated) {
+    return false;
+  }
   return true;
 }
 
@@ -68,7 +84,9 @@ async function autoLinkAndCollectSessionIds(
   athleteId: string,
   activityIds: string[],
 ): Promise<string[]> {
-  if (activityIds.length === 0) return [];
+  if (activityIds.length === 0) {
+    return [];
+  }
   try {
     const { autoLinkActivities } = await import('@/lib/planned-session/linking/session-linking');
     const result = await autoLinkActivities(athleteId, activityIds);

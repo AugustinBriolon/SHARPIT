@@ -25,7 +25,9 @@ export const STRAVA_ACTIVITY_CONCURRENCY = 6;
 async function ingestStravaActivity(athleteId: string, activity: StravaActivity): Promise<void> {
   try {
     const raw = stravaActivityToSession(activity, new Date());
-    if (!raw) return;
+    if (!raw) {
+      return;
+    }
     await observationEngine.ingest(athleteId, raw);
   } catch (err) {
     console.error('[ObservationEngine] strava ingest failed:', err);
@@ -43,7 +45,9 @@ export async function disconnectStrava(athleteId: string) {
 /** Keeps the Strava profile row so the hub can ask for a reconnect. */
 export async function revokeStravaCredentials(athleteId: string) {
   const account = await getStravaAccount(athleteId);
-  if (!account) return;
+  if (!account) {
+    return;
+  }
   await prisma.stravaAccount.update({
     where: { athleteId },
     data: {
@@ -56,13 +60,17 @@ export async function revokeStravaCredentials(athleteId: string) {
 
 export async function getValidAccessToken(athleteId: string) {
   const account = await getStravaAccount(athleteId);
-  if (!account) throw new Error('Compte Strava non connecté');
+  if (!account) {
+    throw new Error('Compte Strava non connecté');
+  }
   if (!isOAuthAccountConnected(account)) {
     throw new ProviderAuthError('Session Strava expirée. Reconnecte Strava dans les paramètres.');
   }
 
   const expiresSoon = account.expiresAt.getTime() - Date.now() < 60_000;
-  if (!expiresSoon) return decryptSecret(account.accessTokenEnc);
+  if (!expiresSoon) {
+    return decryptSecret(account.accessTokenEnc);
+  }
 
   try {
     const refreshed = await refreshAccessToken(decryptSecret(account.refreshTokenEnc));
@@ -270,7 +278,9 @@ export async function syncStravaActivities(athleteId: string): Promise<SyncResul
 
   while (page <= 10) {
     const activities = await fetchActivities(accessToken, { after, page });
-    if (!activities.length) break;
+    if (!activities.length) {
+      break;
+    }
     fetched += activities.length;
 
     // 1) Dédoublonnage intra-sync + mapping de type.
@@ -369,11 +379,16 @@ export async function syncStravaActivities(athleteId: string): Promise<SyncResul
       }
       importedTypes.add(outcome.type);
       importedActivityIds.push(outcome.activityId);
-      if (outcome.kind === 'merged') merged += 1;
-      else imported += 1;
+      if (outcome.kind === 'merged') {
+        merged += 1;
+      } else {
+        imported += 1;
+      }
     }
 
-    if (activities.length < 100) break;
+    if (activities.length < 100) {
+      break;
+    }
     page += 1;
   }
 

@@ -66,8 +66,12 @@ export function activitySourceLabel(activity: {
   if (activity.source === 'both' || (activity.garminId && activity.stravaId)) {
     return 'Garmin + Strava';
   }
-  if (activity.garminId || activity.source === 'garmin') return 'Garmin';
-  if (activity.stravaId || activity.source === 'strava') return 'Strava';
+  if (activity.garminId || activity.source === 'garmin') {
+    return 'Garmin';
+  }
+  if (activity.stravaId || activity.source === 'strava') {
+    return 'Strava';
+  }
   return 'Manuel';
 }
 
@@ -96,15 +100,25 @@ export function formatActivityDetailStats(
   mode: DisplayMode = 'essential',
 ): string {
   const parts: string[] = [formatDuration(activity.duration)];
-  if (activity.load != null) parts.push(formatTrainingLoad(activity.load, mode));
-  if (activity.rpe != null) parts.push(`RPE ${activity.rpe}`);
+  if (activity.load !== null) {
+    parts.push(formatTrainingLoad(activity.load, mode));
+  }
+  if (activity.rpe !== null) {
+    parts.push(`RPE ${activity.rpe}`);
+  }
   return parts.join(' · ');
 }
 
 export function rpeTone(rpe: number): ChipTone {
-  if (rpe <= 3) return 'done';
-  if (rpe <= 6) return 'amber';
-  if (rpe <= 8) return 'orange';
+  if (rpe <= 3) {
+    return 'done';
+  }
+  if (rpe <= 6) {
+    return 'amber';
+  }
+  if (rpe <= 8) {
+    return 'orange';
+  }
   return 'red';
 }
 
@@ -138,9 +152,13 @@ export function toHeroActivity(activity: ActivityDetail): HeroActivity {
 }
 
 export function buildStrengthStats(activity: ActivityDetail): ActivityStat[] {
-  if (activity.type !== ActivityType.STRENGTH) return [];
+  if (activity.type !== ActivityType.STRENGTH) {
+    return [];
+  }
   const sets = activity.strengthSets;
-  if (sets.length === 0) return [];
+  if (sets.length === 0) {
+    return [];
+  }
 
   const totalSets = sets.reduce((acc, s) => acc + s.sets, 0);
   const volume = sets.reduce((acc, s) => acc + s.sets * s.reps * (s.weightKg ?? 0), 0);
@@ -149,8 +167,10 @@ export function buildStrengthStats(activity: ActivityDetail): ActivityStat[] {
     { label: 'Exercices', value: String(sets.length) },
     { label: 'Séries', value: String(totalSets) },
   ];
-  if (volume > 0) stats.push({ label: 'Volume', value: `${Math.round(volume)} kg` });
-  if (activity.duration != null) {
+  if (volume > 0) {
+    stats.push({ label: 'Volume', value: `${Math.round(volume)} kg` });
+  }
+  if (activity.duration !== null) {
     stats.push({ label: 'Temps', value: formatDuration(activity.duration) });
   }
 
@@ -164,32 +184,37 @@ export function buildActivitySpecs(activity: ActivityDetail): ActivitySpec[] {
     value: string | number | null | undefined,
     audience: MetricAudience = 'core',
   ) => {
-    if (value === null || value === undefined || value === '') return;
+    if (value === null || value === undefined || value === '') {
+      return;
+    }
     specs.push({ label, value, audience });
   };
 
   if (activity.type === ActivityType.RUN && activity.runMetrics) {
     const m = activity.runMetrics;
-    push('Dénivelé', m.elevationM != null ? `${m.elevationM} m` : null);
-    push('Puissance moy.', m.avgPower != null ? `${Math.round(m.avgPower)} W` : null);
+    push('Dénivelé', m.elevationM !== null ? `${m.elevationM} m` : null);
+    push('Puissance moy.', m.avgPower !== null ? `${Math.round(m.avgPower)} W` : null);
     push('Chaussures', m.shoes);
   }
 
   if (activity.type === ActivityType.BIKE && activity.bikeMetrics) {
     const m = activity.bikeMetrics;
     push('FTP %', m.ftpPercent, 'expert');
-    push('NP', m.normalizedPower != null ? `${Math.round(m.normalizedPower)} W` : null, 'expert');
-    push('IF', m.intensityFactor != null ? m.intensityFactor.toFixed(2) : null, 'expert');
-    push('TSS', m.tss != null ? Math.round(m.tss) : null, 'expert');
-    push('Cadence', m.avgCadence != null ? `${m.avgCadence} rpm` : null);
+    push('NP', m.normalizedPower !== null ? `${Math.round(m.normalizedPower)} W` : null, 'expert');
+    push('IF', m.intensityFactor !== null ? m.intensityFactor.toFixed(2) : null, 'expert');
+    push('TSS', m.tss !== null ? Math.round(m.tss) : null, 'expert');
+    push('Cadence', m.avgCadence !== null ? `${m.avgCadence} rpm` : null);
     push('Calories', m.calories);
     push('Vélo', m.bikeName);
   }
 
   if (activity.type === ActivityType.HIKE && activity.hikeMetrics) {
     const m = activity.hikeMetrics;
-    push('D−', m.elevationLossM != null ? `${Math.round(m.elevationLossM)} m` : null);
-    push('Vitesse moy.', m.avgSpeedMps != null ? `${(m.avgSpeedMps * 3.6).toFixed(1)} km/h` : null);
+    push('D−', m.elevationLossM !== null ? `${Math.round(m.elevationLossM)} m` : null);
+    push(
+      'Vitesse moy.',
+      m.avgSpeedMps !== null ? `${(m.avgSpeedMps * 3.6).toFixed(1)} km/h` : null,
+    );
     push('Calories', m.calories);
   }
 
@@ -198,7 +223,7 @@ export function buildActivitySpecs(activity: ActivityDetail): ActivitySpec[] {
     push('Séries', m.sets);
     push(
       'CSS',
-      m.cssSecPer100m != null
+      m.cssSecPer100m !== null
         ? `${Math.floor(m.cssSecPer100m / 60)}:${String(Math.round(m.cssSecPer100m % 60)).padStart(
             2,
             '0',

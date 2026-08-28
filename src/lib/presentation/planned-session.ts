@@ -74,16 +74,28 @@ const IMPACT_SUMMARY: Record<string, string | null> = {
 };
 
 function confidenceLabel(confidence: number): string | null {
-  if (confidence >= 0.75) return 'Prévision fiable';
-  if (confidence >= 0.5) return 'Prévision modérée';
-  if (confidence > 0) return 'Prévision partielle';
+  if (confidence >= 0.75) {
+    return 'Prévision fiable';
+  }
+  if (confidence >= 0.5) {
+    return 'Prévision modérée';
+  }
+  if (confidence > 0) {
+    return 'Prévision partielle';
+  }
   return null;
 }
 
 function freshnessLabel(freshness: string | null | undefined): string | null {
-  if (freshness === 'FRESH') return 'Prévision à jour';
-  if (freshness === 'STALE') return 'Prévision à rafraîchir';
-  if (freshness === 'UNAVAILABLE') return 'Données indisponibles';
+  if (freshness === 'FRESH') {
+    return 'Prévision à jour';
+  }
+  if (freshness === 'STALE') {
+    return 'Prévision à rafraîchir';
+  }
+  if (freshness === 'UNAVAILABLE') {
+    return 'Données indisponibles';
+  }
   return null;
 }
 
@@ -100,8 +112,12 @@ export function buildPlannedSessionViewModel(input: {
     needsLocation: boolean,
     env: PlannedSessionContext['environment'] | null,
   ): string | null {
-    if (needsLocation) return 'Contexte à confirmer';
-    if (!env) return null;
+    if (needsLocation) {
+      return 'Contexte à confirmer';
+    }
+    if (!env) {
+      return null;
+    }
     return THERMAL_CONDITIONS[env.thermalStressLevel] ?? null;
   }
 

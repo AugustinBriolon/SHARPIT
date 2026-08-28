@@ -9,7 +9,9 @@ export function saveProfilePatch(
 ) {
   const previousProfile = queryClient.getQueryData(queryKeys.athleteProfile);
   queryClient.setQueryData(queryKeys.athleteProfile, (current: unknown) => {
-    if (!current || typeof current !== 'object') return current;
+    if (!current || typeof current !== 'object') {
+      return current;
+    }
     return { ...current, ...patch };
   });
   return previousProfile;
@@ -42,7 +44,9 @@ export async function commitProfileSave(
   const saved = (await res.json().catch(() => null)) as Record<string, unknown> | null;
   if (saved && typeof saved === 'object') {
     queryClient.setQueryData(queryKeys.athleteProfile, (current: unknown) => {
-      if (!current || typeof current !== 'object') return saved;
+      if (!current || typeof current !== 'object') {
+        return saved;
+      }
       return { ...current, ...saved };
     });
   }

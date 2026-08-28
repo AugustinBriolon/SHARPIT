@@ -45,7 +45,7 @@ type ActivityItem = {
 };
 
 function isSelectableHike(activity: Pick<ActivityItem, 'type' | 'hikeTripId'>): boolean {
-  return activity.type === ActivityType.HIKE && activity.hikeTripId == null;
+  return activity.type === ActivityType.HIKE && activity.hikeTripId === null;
 }
 
 export function ActivityList({
@@ -131,7 +131,9 @@ export function ActivityList({
 function formatActivityWeatherLine(
   activity: Pick<ActivityItem, 'type' | 'title' | 'weather'>,
 ): string | null {
-  if (isIndoorActivitySession(activity)) return null;
+  if (isIndoorActivitySession(activity)) {
+    return null;
+  }
   const weather = parseActivityWeather(activity.weather);
   return weather ? formatActivityWeatherChip(weather) : activity.weather?.trim() || null;
 }
@@ -158,13 +160,17 @@ function ActivityChip({
     formatDate(new Date(activity.date)),
     formatDuration(activity.duration),
     metric,
-    loadValue != null ? String(loadValue) : undefined,
+    loadValue !== null ? String(loadValue) : undefined,
   ].filter((part): part is string => Boolean(part));
   const selectable = isSelectableHike(activity);
 
   function handleClick() {
-    if (!selectionMode) return;
-    if (!selectable) return;
+    if (!selectionMode) {
+      return;
+    }
+    if (!selectable) {
+      return;
+    }
     onToggle?.(activity.id);
   }
 
@@ -220,9 +226,9 @@ function ActivityRow({
   const analysis = activity.plannedSession
     ? parseSessionAnalysis(activity.plannedSession.analysis)
     : null;
-  const loadValue = activity.load != null ? Math.round(activity.load) : null;
+  const loadValue = activity.load !== null ? Math.round(activity.load) : null;
   let railLabel = 'charge non disponible';
-  if (loadValue != null) {
+  if (loadValue !== null) {
     railLabel = `charge estimée ${loadValue} tss`;
   }
   const metaParts = [
@@ -234,8 +240,12 @@ function ActivityRow({
   const selectable = isSelectableHike(activity);
 
   function handleClick() {
-    if (!selectionMode) return;
-    if (!selectable) return;
+    if (!selectionMode) {
+      return;
+    }
+    if (!selectable) {
+      return;
+    }
     onToggle?.(activity.id);
   }
 
@@ -327,7 +337,9 @@ export function DeleteActivityButton({ id }: { id: string }) {
       confirmLabel: 'Supprimer',
       variant: 'destructive',
     });
-    if (!confirmed) return;
+    if (!confirmed) {
+      return;
+    }
     remove.mutate(id);
     router.push('/training');
   }

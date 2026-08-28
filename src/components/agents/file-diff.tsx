@@ -22,8 +22,12 @@ import { SPRING_PRESS, SPRING_SWAP } from '@/lib/ease';
 import { cn } from '@/lib/utils';
 
 function diffLinePrefix(type?: FileDiffLineType): string {
-  if (type === 'added') return '+';
-  if (type === 'removed') return '−';
+  if (type === 'added') {
+    return '+';
+  }
+  if (type === 'removed') {
+    return '−';
+  }
   return '';
 }
 
@@ -54,7 +58,9 @@ export interface FileDiffProps {
 }
 
 function ChangeCount({ value, type }: { value: number; type: 'added' | 'removed' }) {
-  if (!value) return null;
+  if (!value) {
+    return null;
+  }
   return (
     <span
       className={cn(
@@ -103,7 +109,9 @@ export function FileDiff({
 
   const setOpen = useCallback(
     (next: boolean) => {
-      if (open === undefined) setInternalOpen(next);
+      if (open === undefined) {
+        setInternalOpen(next);
+      }
       onOpenChange?.(next);
     },
     [onOpenChange, open],
@@ -121,17 +129,23 @@ export function FileDiff({
 
   useEffect(
     () => () => {
-      if (copyTimer.current) window.clearTimeout(copyTimer.current);
+      if (copyTimer.current) {
+        window.clearTimeout(copyTimer.current);
+      }
     },
     [],
   );
 
   useLayoutEffect(() => {
     const viewport = viewportRef.current;
-    if (!viewport || !currentOpen || !streaming) return;
+    if (!viewport || !currentOpen || !streaming) {
+      return;
+    }
 
     const frame = requestAnimationFrame(() => {
-      if (viewport.scrollHeight <= viewport.clientHeight) return;
+      if (viewport.scrollHeight <= viewport.clientHeight) {
+        return;
+      }
       if (typeof viewport.scrollTo === 'function') {
         viewport.scrollTo({
           top: viewport.scrollHeight,
@@ -145,11 +159,16 @@ export function FileDiff({
   });
 
   const handleCopy = useCallback(async () => {
-    if (onCopy) await onCopy();
-    else if (copyText) await navigator.clipboard?.writeText(copyText);
+    if (onCopy) {
+      await onCopy();
+    } else if (copyText) {
+      await navigator.clipboard?.writeText(copyText);
+    }
 
     setCopied(true);
-    if (copyTimer.current) window.clearTimeout(copyTimer.current);
+    if (copyTimer.current) {
+      window.clearTimeout(copyTimer.current);
+    }
     copyTimer.current = window.setTimeout(() => setCopied(false), 1600);
   }, [copyText, onCopy]);
 

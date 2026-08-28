@@ -36,10 +36,14 @@ export async function POST(request: NextRequest, context: RouteContext) {
         } catch (error) {
           console.error('[planned-sessions/link/enrich]', error);
         }
-        if (!isCoachConfigured()) return;
+        if (!isCoachConfigured()) {
+          return;
+        }
         try {
           const analysis = await analyzePlannedSession(athleteId, id);
-          if (analysis) await setPlannedSessionAnalysis(athleteId, id, analysis);
+          if (analysis) {
+            await setPlannedSessionAnalysis(athleteId, id, analysis);
+          }
         } catch (error) {
           console.error('[planned-sessions/link/analyze]', error);
         }

@@ -47,7 +47,9 @@ export function PlannedSessionContextPanel({
 }) {
   const { update } = usePlannedSessionMutations();
 
-  if (!viewModel.visible) return null;
+  if (!viewModel.visible) {
+    return null;
+  }
 
   if (viewModel.needsLocationConfirmation) {
     const proposed = viewModel.locationLabel;
@@ -94,7 +96,7 @@ export function PlannedSessionContextPanel({
           </div>
           <div className="flex flex-wrap gap-2">
             <Button
-              disabled={pending || !proposed || viewModel.locationLatitude == null}
+              disabled={pending || !proposed || viewModel.locationLatitude === null}
               size="sm"
               type="button"
               onClick={confirmOutdoor}
@@ -199,7 +201,9 @@ export function PlannedSessionCompletionPanel({
   completion: NonNullable<PlannedSessionViewModel['completion']>;
   className?: string;
 }) {
-  if (!completion.visible) return null;
+  if (!completion.visible) {
+    return null;
+  }
 
   return (
     <Card className={cn('border-border/60', className)}>

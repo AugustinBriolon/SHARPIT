@@ -32,7 +32,9 @@ function num(v: unknown): number | null {
 
 function durationSec(v: unknown): number | null {
   const n = num(v);
-  if (n == null) return null;
+  if (n === null) {
+    return null;
+  }
   return n > 1_000_000 ? Math.round(n / 1000) : Math.round(n);
 }
 
@@ -44,7 +46,9 @@ function parseChildSummary(
 ): MultisportLeg | null {
   const kind = mapGarminChildTypeToKind(typeKey);
   const duration = durationSec(summary?.duration);
-  if (duration == null) return null;
+  if (duration === null) {
+    return null;
+  }
 
   return {
     kind,
@@ -112,7 +116,9 @@ export async function fetchGarminMultisportLegs(
         child?.summaryDTO,
         meta.transitionIndex,
       );
-      if (leg) legs.push(leg);
+      if (leg) {
+        legs.push(leg);
+      }
     }
 
     return legs.length > 0 ? legs : null;

@@ -19,7 +19,9 @@ function parseActivityNarrative(raw: unknown) {
 }
 
 function ReanalyzeButtonIcon({ analyzing }: { analyzing: boolean }) {
-  if (analyzing) return <Loader2 className="size-3.5 animate-spin" />;
+  if (analyzing) {
+    return <Loader2 className="size-3.5 animate-spin" />;
+  }
   return <RefreshCw className="size-3.5" />;
 }
 
@@ -48,7 +50,9 @@ function renderComplianceBadge(
     );
   }
 
-  if (!isAnalyzing) return null;
+  if (!isAnalyzing) {
+    return null;
+  }
 
   return (
     <span
@@ -81,19 +85,21 @@ export function CompletedSessionStory({
   const { activity } = session;
   const analysis = parseSessionAnalysis(session.analysis);
   const narrative =
-    activity?.narrativeAnalyzedAt != null
+    activity?.narrativeAnalyzedAt !== null
       ? parseActivityNarrative(activity.narrativeAnalysis)
       : null;
   const notes = activity?.notes?.trim() || null;
 
   const hasStory = Boolean(narrative || analysis || notes);
-  if (!hasStory && !isAnalyzing && !onReanalyze) return null;
+  if (!hasStory && !isAnalyzing && !onReanalyze) {
+    return null;
+  }
 
   const primaryHeadline = narrative?.headline ?? null;
   const primaryBody =
     narrative?.narrative ?? (analysis && !isAnalyzing ? analysis.summary : null) ?? null;
   const showPlanGaps =
-    analysis != null && (analysis.remarks.length > 0 || Boolean(analysis.recommendation?.trim()));
+    analysis !== null && (analysis.remarks.length > 0 || Boolean(analysis.recommendation?.trim()));
 
   return (
     <section

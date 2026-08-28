@@ -26,7 +26,9 @@ export function morningHoldStorageKey(trainingDayId: string): string {
 }
 
 export function readClientMorningHold(trainingDayId: string): boolean {
-  if (typeof window === 'undefined') return false;
+  if (typeof window === 'undefined') {
+    return false;
+  }
   try {
     return sessionStorage.getItem(morningHoldStorageKey(trainingDayId)) === '1';
   } catch {
@@ -35,7 +37,9 @@ export function readClientMorningHold(trainingDayId: string): boolean {
 }
 
 function emitMorningHoldChanged(): void {
-  if (typeof window === 'undefined') return;
+  if (typeof window === 'undefined') {
+    return;
+  }
   window.dispatchEvent(new Event(MORNING_HOLD_EVENT));
 }
 
@@ -49,7 +53,9 @@ export function writeClientMorningHold(trainingDayId: string): void {
 }
 
 function subscribeMorningHold(callback: () => void): () => void {
-  if (typeof window === 'undefined') return () => undefined;
+  if (typeof window === 'undefined') {
+    return () => undefined;
+  }
   window.addEventListener(MORNING_HOLD_EVENT, callback);
   return () => window.removeEventListener(MORNING_HOLD_EVENT, callback);
 }
@@ -77,14 +83,16 @@ function compareMeta(
 ): string | null {
   const parts: string[] = [];
   const duration = proposed.durationMin ?? current.durationMin;
-  if (duration != null) parts.push(formatPlannedDuration(duration));
-  if (current.load != null && proposed.load != null && current.load !== proposed.load) {
+  if (duration !== null) {
+    parts.push(formatPlannedDuration(duration));
+  }
+  if (current.load !== null && proposed.load !== null && current.load !== proposed.load) {
     parts.push(
       `${formatTrainingLoad(current.load, mode)} → ${formatTrainingLoad(proposed.load, mode)}`,
     );
-  } else if (proposed.load != null) {
+  } else if (proposed.load !== null) {
     parts.push(formatTrainingLoad(proposed.load, mode));
-  } else if (current.load != null) {
+  } else if (current.load !== null) {
     parts.push(formatTrainingLoad(current.load, mode));
   }
   return parts.length > 0 ? parts.join(' · ') : null;
@@ -120,7 +128,9 @@ export function MorningOrientationActions({
   }, [onRefreshed, queryClient, trainingDayId]);
 
   async function refreshEvidence() {
-    if (guardDisabled) return;
+    if (guardDisabled) {
+      return;
+    }
     setPending('refresh');
     try {
       const res = await fetch(
@@ -148,7 +158,9 @@ export function MorningOrientationActions({
     decisionId: string,
     direction: 'DOWN' | 'UP' | null,
   ) {
-    if (guardDisabled) return;
+    if (guardDisabled) {
+      return;
+    }
     setPending(action === 'reject' ? 'hold' : 'apply');
 
     try {
@@ -162,13 +174,19 @@ export function MorningOrientationActions({
         toast.error(data.error ?? 'Action impossible');
         return;
       }
-      if (action === 'reject') writeClientMorningHold(trainingDayId);
+      if (action === 'reject') {
+        writeClientMorningHold(trainingDayId);
+      }
       startTransition(() => {
         void refreshCaches();
       });
-      if (action === 'reject') toast.success('Plan tenu');
-      else if (direction === 'UP') toast.success('Hausse appliquée');
-      else toast.success('Ajustement appliqué');
+      if (action === 'reject') {
+        toast.success('Plan tenu');
+      } else if (direction === 'UP') {
+        toast.success('Hausse appliquée');
+      } else {
+        toast.success('Ajustement appliqué');
+      }
     } catch {
       toast.error('Action impossible');
     } finally {
@@ -176,7 +194,9 @@ export function MorningOrientationActions({
     }
   }
 
-  if (orientation.phase === 'POST_CHOICE') return null;
+  if (orientation.phase === 'POST_CHOICE') {
+    return null;
+  }
 
   if (orientation.phase === 'EVIDENCE_PENDING' && orientation.showRefreshEvidence) {
     return (
@@ -211,10 +231,12 @@ export function MorningOrientationActions({
 
   const proposal: Proposal | null = orientation.confirmEase ?? orientation.confirmIncrease;
   const decisionId = orientation.holdDecisionId ?? proposal?.decisionId ?? null;
-  if (!proposal || !decisionId) return null;
+  if (!proposal || !decisionId) {
+    return null;
+  }
 
   const direction: 'DOWN' | 'UP' = orientation.confirmIncrease ? 'UP' : 'DOWN';
-  const busy = pending != null;
+  const busy = pending !== null;
   const detailSessionId = proposal.sessionId || null;
   const fromLabel = proposal.current.intensityLabel ?? '—';
   const toLabel = proposal.proposed.intensityLabel ?? '—';
@@ -227,7 +249,9 @@ export function MorningOrientationActions({
   };
 
   function openDetails() {
-    if (!detailSessionId) return;
+    if (!detailSessionId) {
+      return;
+    }
     openPlannedSession({
       morningProposal,
       sessionId: detailSessionId,
@@ -235,9 +259,13 @@ export function MorningOrientationActions({
   }
 
   let statusMessage: string | null = null;
-  if (pending === 'refresh') statusMessage = 'Actualisation des preuves en cours.';
-  else if (pending === 'apply') statusMessage = 'Application de la proposition en cours.';
-  else if (pending === 'hold') statusMessage = 'Conservation du plan en cours.';
+  if (pending === 'refresh') {
+    statusMessage = 'Actualisation des preuves en cours.';
+  } else if (pending === 'apply') {
+    statusMessage = 'Application de la proposition en cours.';
+  } else if (pending === 'hold') {
+    statusMessage = 'Conservation du plan en cours.';
+  }
 
   return (
     <section
@@ -267,10 +295,14 @@ export function MorningOrientationActions({
         )}
         onClick={openDetails}
         onFocus={() => {
-          if (detailSessionId) prefetchPlannedSessionDetail(queryClient, detailSessionId);
+          if (detailSessionId) {
+            prefetchPlannedSessionDetail(queryClient, detailSessionId);
+          }
         }}
         onPointerEnter={() => {
-          if (detailSessionId) prefetchPlannedSessionDetail(queryClient, detailSessionId);
+          if (detailSessionId) {
+            prefetchPlannedSessionDetail(queryClient, detailSessionId);
+          }
         }}
       >
         <span className="flex min-w-0 flex-1 flex-col gap-0.5">

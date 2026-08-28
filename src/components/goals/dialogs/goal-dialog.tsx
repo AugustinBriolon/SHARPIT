@@ -42,11 +42,19 @@ const NO_PRIORITY = 'none';
 type GoalFormVariant = 'race' | 'performance' | 'period' | 'legacy';
 
 function initialVariant(goal: GoalForEdit | null | undefined): GoalFormVariant {
-  if (!goal) return 'race';
-  if (goal.kind === GoalKind.RACE) return 'race';
+  if (!goal) {
+    return 'race';
+  }
+  if (goal.kind === GoalKind.RACE) {
+    return 'race';
+  }
   const config = parseGoalMetricConfig(goal.metricKey);
-  if (config?.template === 'performance') return 'performance';
-  if (config?.template === 'period') return 'period';
+  if (config?.template === 'performance') {
+    return 'performance';
+  }
+  if (config?.template === 'period') {
+    return 'period';
+  }
   return 'legacy';
 }
 
@@ -77,19 +85,27 @@ interface GoalDialogProps {
 }
 
 function toDateInput(value: string | Date | null | undefined): string {
-  if (!value) return '';
+  if (!value) {
+    return '';
+  }
   const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return '';
+  if (Number.isNaN(d.getTime())) {
+    return '';
+  }
   return d.toISOString().slice(0, 10);
 }
 
 function getSubmitButtonLabel(pending: boolean): string {
-  if (pending) return 'Enregistrement…';
+  if (pending) {
+    return 'Enregistrement…';
+  }
   return 'Enregistrer';
 }
 
 function getPriorityLabel(priority: string): string {
-  if (priority === NO_PRIORITY) return 'Non définie';
+  if (priority === NO_PRIORITY) {
+    return 'Non définie';
+  }
   const p = priority as GoalPriority;
   return `${priorityLabels[p]} — ${priorityDescriptions[p]}`;
 }

@@ -198,6 +198,8 @@ export function oauthConnectHref(
 ): string {
   const url = new URL(oauthPath, 'http://local.invalid');
   url.searchParams.set('returnTo', returnTo);
-  if (dataClass) url.searchParams.set('dataClass', dataClass);
+  if (dataClass) {
+    url.searchParams.set('dataClass', dataClass);
+  }
   return `${url.pathname}${url.search}`;
 }

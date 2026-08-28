@@ -57,7 +57,9 @@ type WeeklyCoachingBriefInput = {
 };
 
 function median(values: number[]): number {
-  if (values.length === 0) return 0;
+  if (values.length === 0) {
+    return 0;
+  }
   const sorted = [...values].sort((a, b) => a - b);
   const mid = Math.floor(sorted.length / 2);
   return sorted.length % 2 === 0 ? (sorted[mid - 1] + sorted[mid]) / 2 : sorted[mid];
@@ -69,7 +71,7 @@ function buildKeySessions(
   goalTitleById: ReadonlyMap<string, string> | undefined,
 ): WeeklyBriefKeySession[] {
   const durationMedian = median(
-    plannedSessions.map((s) => s.durationMin).filter((d): d is number => d != null),
+    plannedSessions.map((s) => s.durationMin).filter((d): d is number => d !== null),
   );
 
   return plannedSessions
@@ -113,7 +115,9 @@ function buildRecoveryDays(
     const daySessions = sessionsByDay.get(key) ?? [];
     const isProtected =
       daySessions.length === 0 || daySessions.every((s) => s.intensity === 'RECOVERY');
-    if (isProtected) protectedDayLabels.push(format(day, 'EEEE', { locale: fr }));
+    if (isProtected) {
+      protectedDayLabels.push(format(day, 'EEEE', { locale: fr }));
+    }
   }
 
   const note =
@@ -205,11 +209,16 @@ export function buildWeeklyCoachingBriefViewModel(
   const dataGaps = new Set<string>();
   const whatWouldChange = new Set<string>();
   for (const decision of sessionDecisions.values()) {
-    for (const assumption of decision.gateResult.requiredAssumptions) assumptions.add(assumption);
+    for (const assumption of decision.gateResult.requiredAssumptions) {
+      assumptions.add(assumption);
+    }
     for (const finding of decision.gateResult.findings) {
-      if (finding.severity === 'REQUIRES_CONFIRMATION') dataGaps.add(finding.rationale);
-      if (WHAT_WOULD_CHANGE_RULE_CODES.has(finding.ruleCode))
+      if (finding.severity === 'REQUIRES_CONFIRMATION') {
+        dataGaps.add(finding.rationale);
+      }
+      if (WHAT_WOULD_CHANGE_RULE_CODES.has(finding.ruleCode)) {
         whatWouldChange.add(finding.rationale);
+      }
     }
   }
 

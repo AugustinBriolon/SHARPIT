@@ -12,7 +12,9 @@ function sportsInLines(lines: string[]): Set<string> {
   const found = new Set<string>();
   const blob = lines.join('\n').toLowerCase();
   for (const { key, patterns } of SPORT_PATTERNS) {
-    if (patterns.some((p) => p.test(blob))) found.add(key);
+    if (patterns.some((p) => p.test(blob))) {
+      found.add(key);
+    }
   }
   return found;
 }
@@ -20,7 +22,9 @@ function sportsInLines(lines: string[]): Set<string> {
 function sportsMentionedInText(text: string): Set<string> {
   const found = new Set<string>();
   for (const { key, patterns } of SPORT_PATTERNS) {
-    if (patterns.some((p) => p.test(text))) found.add(key);
+    if (patterns.some((p) => p.test(text))) {
+      found.add(key);
+    }
   }
   return found;
 }
@@ -30,11 +34,95 @@ function extractAllowedRaceTitles(ctx: CoachContext): string[] {
 }
 
 function mentionsUnknownRace(text: string, allowed: string[]): boolean {
-  if (allowed.length === 0) return false;
+  if (allowed.length === 0) {
+    return false;
+  }
   const lower = text.toLowerCase();
   const raceMention = /\b(course|marathon|ironman|semi|10\s?km|objectif|race)\b/i.test(lower);
-  if (!raceMention) return false;
+  if (!raceMention) {
+    return false;
+  }
   return !allowed.some((title) => title.length > 3 && lower.includes(title));
+}
+
+function validateMentionedSports(
+  trimmed: string,
+  allowedSports: Set<string>,
+): { valid: true } | { valid: false; reason: string } {
+  for (const sport of sportsMentionedInText(trimmed)) {
+    if (!allowedSports.has(sport)) {
+      return { valid: false, reason: `séance inventée (${sport})` };
+    }
+  }
+  return { valid: true };
+}
+
+function validateTodayAttribution(input: {
+  trimmed: string;
+  mentionedSports: Set<string>;
+  todaySports: Set<string>;
+  yesterdaySports: Set<string>;
+  plannedSports: Set<string>;
+}): { valid: true } | { valid: false; reason: string } {
+  const { trimmed, mentionedSports, todaySports, yesterdaySports, plannedSports } = input;
+  const attributesToday =
+    /\baujourd'?hui\b/i.test(trimmed) ||
+    /\bce (matin|midi|soir)\b/i.test(trimmed) ||
+    /\bce jour\b/i.test(trimmed);
+
+  if (!attributesToday) {
+    return { valid: true };
+  }
+
+  for (const sport of mentionedSports) {
+    if (yesterdaySports.has(sport) && !todaySports.has(sport) && !plannedSports.has(sport)) {
+      return {
+        valid: false,
+        reason: `séance d'hier présentée comme aujourd'hui (${sport})`,
+      };
+    }
+  }
+  return { valid: true };
+}
+
+function validateReadinessCitation(
+  trimmed: string,
+  readiness: number | null,
+): { valid: true } | { valid: false; reason: string } {
+  if (readiness === null) {
+    return { valid: true };
+  }
+  const cited = trimmed.match(/\b(\d{2,3})\s*\/\s*100\b/g);
+  if (!cited) {
+    return { valid: true };
+  }
+  const values = cited.map((m) => Number.parseInt(m, 10));
+  const plausible = values.some((v) => Math.abs(v - readiness) <= 8);
+  if (!plausible && values.some((v) => v >= 40 && v <= 100)) {
+    return { valid: false, reason: 'readiness citée incompatible avec les données' };
+  }
+  return { valid: true };
+}
+
+function validateDoneTodayClaim(input: {
+  trimmed: string;
+  mentionedSports: Set<string>;
+  plannedSports: Set<string>;
+  todaySports: Set<string>;
+  sessionsDoneTodayCount: number;
+}): { valid: true } | { valid: false; reason: string } {
+  const { trimmed, mentionedSports, plannedSports, todaySports, sessionsDoneTodayCount } = input;
+  if (sessionsDoneTodayCount > 0) {
+    return { valid: true };
+  }
+  if (!/\b(déjà|terminé|réalisé|fait)\b/i.test(trimmed)) {
+    return { valid: true };
+  }
+  const impliesDoneToday = [...mentionedSports].some((s) => !plannedSports.has(s));
+  if (impliesDoneToday && todaySports.size === 0) {
+    return { valid: false, reason: 'séance réalisée inventée pour aujourd’hui' };
+  }
+  return { valid: true };
 }
 
 /**
@@ -56,33 +144,31 @@ export function validateBriefingContent(
   const allowedSports = new Set([...todaySports, ...yesterdaySports, ...plannedSports]);
   const mentionedSports = sportsMentionedInText(trimmed);
 
-  for (const sport of mentionedSports) {
-    if (!allowedSports.has(sport)) {
-      return { valid: false, reason: `séance inventée (${sport})` };
-    }
+  const sportCheck = validateMentionedSports(trimmed, allowedSports);
+  if (!sportCheck.valid) {
+    return sportCheck;
   }
 
-  const attributesToday =
-    /\baujourd'?hui\b/i.test(trimmed) ||
-    /\bce (matin|midi|soir)\b/i.test(trimmed) ||
-    /\bce jour\b/i.test(trimmed);
-
-  if (attributesToday) {
-    for (const sport of mentionedSports) {
-      if (yesterdaySports.has(sport) && !todaySports.has(sport) && !plannedSports.has(sport)) {
-        return {
-          valid: false,
-          reason: `séance d'hier présentée comme aujourd'hui (${sport})`,
-        };
-      }
-    }
+  const todayCheck = validateTodayAttribution({
+    trimmed,
+    mentionedSports,
+    todaySports,
+    yesterdaySports,
+    plannedSports,
+  });
+  if (!todayCheck.valid) {
+    return todayCheck;
   }
 
-  if (dayCtx.sessionsDoneToday.length === 0 && /\b(déjà|terminé|réalisé|fait)\b/i.test(trimmed)) {
-    const impliesDoneToday = [...mentionedSports].some((s) => !plannedSports.has(s));
-    if (impliesDoneToday && todaySports.size === 0) {
-      return { valid: false, reason: 'séance réalisée inventée pour aujourd’hui' };
-    }
+  const doneCheck = validateDoneTodayClaim({
+    trimmed,
+    mentionedSports,
+    plannedSports,
+    todaySports,
+    sessionsDoneTodayCount: dayCtx.sessionsDoneToday.length,
+  });
+  if (!doneCheck.valid) {
+    return doneCheck;
   }
 
   const allowedRaces = extractAllowedRaceTitles(coachCtx);
@@ -90,55 +176,42 @@ export function validateBriefingContent(
     return { valid: false, reason: 'course ou objectif non présent dans le contexte' };
   }
 
-  const readiness = coachCtx.health.readinessToday;
-  if (readiness != null) {
-    const cited = trimmed.match(/\b(\d{2,3})\s*\/\s*100\b/g);
-    if (cited) {
-      const values = cited.map((m) => Number.parseInt(m, 10));
-      const plausible = values.some((v) => Math.abs(v - readiness) <= 8);
-      if (!plausible && values.some((v) => v >= 40 && v <= 100)) {
-        return { valid: false, reason: 'readiness citée incompatible avec les données' };
-      }
-    }
-  }
+  return validateReadinessCitation(trimmed, coachCtx.health.readinessToday);
+}
 
-  return { valid: true };
+function buildReadinessLine(readiness: number | null, tsb: number | null): string {
+  if (readiness !== null) {
+    return `Ta readiness est à ${readiness}/100${tsb !== null ? `, avec une fraîcheur (TSB) à ${tsb > 0 ? '+' : ''}${tsb}` : ''}.`;
+  }
+  if (tsb !== null) {
+    return `Ta fraîcheur (TSB) est à ${tsb > 0 ? '+' : ''}${tsb} aujourd'hui.`;
+  }
+  return "SHARPIT n'a pas encore assez de signaux pour un bilan personnalisé complet aujourd'hui.";
+}
+
+function buildSessionLine(dayCtx: BriefingDayContext): string {
+  if (dayCtx.sessionsDoneToday.length > 0) {
+    return `Séance${dayCtx.sessionsDoneToday.length > 1 ? 's' : ''} déjà réalisée${dayCtx.sessionsDoneToday.length > 1 ? 's' : ''} aujourd'hui — consulte le détail dans ton journal.`;
+  }
+  if (dayCtx.sessionsStillPlannedToday.length > 0) {
+    return 'Une séance est prévue aujourd’hui — adapte l’intensité à ta forme du moment.';
+  }
+  return 'Aucune séance planifiée pour le reste de la journée.';
 }
 
 export function buildDeterministicBriefingFallback(
   dayCtx: BriefingDayContext,
   coachCtx: CoachContext,
 ): string {
-  const lines: string[] = [];
-  const readiness = coachCtx.health.readinessToday;
-  const { tsb } = coachCtx.fitness;
-
-  if (readiness != null) {
-    lines.push(
-      `Ta readiness est à ${readiness}/100${tsb != null ? `, avec une fraîcheur (TSB) à ${tsb > 0 ? '+' : ''}${tsb}` : ''}.`,
-    );
-  } else if (tsb != null) {
-    lines.push(`Ta fraîcheur (TSB) est à ${tsb > 0 ? '+' : ''}${tsb} aujourd'hui.`);
-  } else {
-    lines.push(
-      "SHARPIT n'a pas encore assez de signaux pour un bilan personnalisé complet aujourd'hui.",
-    );
-  }
-
-  if (dayCtx.sessionsDoneToday.length > 0) {
-    lines.push(
-      `Séance${dayCtx.sessionsDoneToday.length > 1 ? 's' : ''} déjà réalisée${dayCtx.sessionsDoneToday.length > 1 ? 's' : ''} aujourd'hui — consulte le détail dans ton journal.`,
-    );
-  } else if (dayCtx.sessionsStillPlannedToday.length > 0) {
-    lines.push('Une séance est prévue aujourd’hui — adapte l’intensité à ta forme du moment.');
-  } else {
-    lines.push('Aucune séance planifiée pour le reste de la journée.');
-  }
+  const lines: string[] = [
+    buildReadinessLine(coachCtx.health.readinessToday, coachCtx.fitness.tsb),
+    buildSessionLine(dayCtx),
+  ];
 
   if (coachCtx.physical.length > 0) {
     const [note] = coachCtx.physical;
     lines.push(
-      `Point de vigilance : ${note.title}${note.severity != null ? ` (sévérité ${note.severity}/10)` : ''} — respecte cette contrainte.`,
+      `Point de vigilance : ${note.title}${note.severity !== null ? ` (sévérité ${note.severity}/10)` : ''} — respecte cette contrainte.`,
     );
   }
 

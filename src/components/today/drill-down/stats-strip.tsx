@@ -12,8 +12,12 @@ export type StatsStripItem = {
 };
 
 function desktopChipCols(count: number): string {
-  if (count >= 4) return 'sm:grid-cols-4';
-  if (count === 3) return 'sm:grid-cols-3';
+  if (count >= 4) {
+    return 'sm:grid-cols-4';
+  }
+  if (count === 3) {
+    return 'sm:grid-cols-3';
+  }
   return 'sm:grid-cols-2';
 }
 
@@ -34,7 +38,9 @@ export function DrillDownStatsStrip({
   items: StatsStripItem[];
   loading?: boolean;
 }) {
-  if (items.length === 0) return null;
+  if (items.length === 0) {
+    return null;
+  }
 
   return (
     <ul

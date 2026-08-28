@@ -17,7 +17,9 @@ export async function POST(request: NextRequest) {
     let full = false;
     try {
       const body = await request.json();
-      if (body?.full) full = true;
+      if (body?.full) {
+        full = true;
+      }
     } catch {
       // pas de body → sync incrémentale depuis dernière sync
     }

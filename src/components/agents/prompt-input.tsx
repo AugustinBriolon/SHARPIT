@@ -99,7 +99,9 @@ export function PromptInput({
   const resizeTextarea = useCallback(() => {
     const textarea = textareaRef.current;
     const measurement = measurementRef.current;
-    if (!textarea || !measurement) return;
+    if (!textarea || !measurement) {
+      return;
+    }
 
     const maxHeight = maxRows * LINE_HEIGHT_PX;
 
@@ -125,22 +127,30 @@ export function PromptInput({
   }, [currentValue, resizeTextarea]);
 
   const setValue = (next: string) => {
-    if (value === undefined) setInternalValue(next);
+    if (value === undefined) {
+      setInternalValue(next);
+    }
     onValueChange?.(next);
   };
 
   const setModel = (next: string) => {
-    if (model === undefined) setInternalModel(next);
+    if (model === undefined) {
+      setInternalModel(next);
+    }
     onModelChange?.(next);
   };
 
   const submit = (event?: FormEvent) => {
     event?.preventDefault();
     const prompt = currentValue.trim();
-    if (!prompt || disabled || loading) return;
+    if (!prompt || disabled || loading) {
+      return;
+    }
 
     onSubmit?.(prompt, currentModelValue);
-    if (value === undefined) setInternalValue('');
+    if (value === undefined) {
+      setInternalValue('');
+    }
     textareaRef.current?.focus({ preventScroll: true });
   };
 
@@ -170,7 +180,7 @@ export function PromptInput({
       <div
         ref={measurementRef}
         aria-hidden="true"
-        className="pointer-events-none invisible absolute inset-x-2 top-0 px-2 pt-1.5 text-base leading-6 lg:text-sm [overflow-wrap:break-word] whitespace-pre-wrap"
+        className="pointer-events-none invisible absolute inset-x-2 top-0 px-2 pt-1.5 text-base leading-6 [overflow-wrap:break-word] whitespace-pre-wrap lg:text-sm"
       >
         {currentValue || '\u00a0'}
       </div>

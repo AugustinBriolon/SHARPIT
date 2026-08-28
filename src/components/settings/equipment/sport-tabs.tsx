@@ -42,7 +42,9 @@ export function EquipmentSportTabs({
 
   function selectAt(index: number) {
     const option = SPORT_TABS[index];
-    if (!option) return;
+    if (!option) {
+      return;
+    }
     onSportChange(option.id);
     focusOption(index);
   }

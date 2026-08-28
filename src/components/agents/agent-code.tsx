@@ -65,7 +65,9 @@ export function useAgentCodeTokens(code: string, language: AgentCodeLanguage) {
 
     let cancelled = false;
     getAgentCodeHighlighter().then((highlighter) => {
-      if (cancelled) return;
+      if (cancelled) {
+        return;
+      }
       const lines = highlighter
         .codeToTokensWithThemes(code, {
           lang: language,
@@ -90,7 +92,9 @@ export function useAgentCodeTokens(code: string, language: AgentCodeLanguage) {
     };
   }, [code, key, language]);
 
-  if (result?.key === key) return result.lines;
+  if (result?.key === key) {
+    return result.lines;
+  }
   if (result?.language === language && code.startsWith(result.code)) {
     return result.lines;
   }

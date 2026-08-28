@@ -116,7 +116,9 @@ export function PlannedSessionDialog({
   const planQuery = useTrainingPlan();
   const liveSession = useDemoPlannedSessionOverlay(
     useMemo(() => {
-      if (!session?.id) return session ?? null;
+      if (!session?.id) {
+        return session ?? null;
+      }
       return plannedQuery.data?.find((item) => item.id === session.id) ?? session;
     }, [plannedQuery.data, session]),
   );
@@ -158,7 +160,9 @@ export function PlannedSessionDialog({
       (g) => !g.achieved && g.targetDate && new Date(g.targetDate as unknown as string) >= now,
     );
     const linked = session?.goalId ? goals.find((g) => g.id === session.goalId) : null;
-    if (linked && !dated.some((g) => g.id === linked.id)) return [linked, ...dated];
+    if (linked && !dated.some((g) => g.id === linked.id)) {
+      return [linked, ...dated];
+    }
     return dated;
   }, [goals, session]);
 
@@ -166,9 +170,13 @@ export function PlannedSessionDialog({
 
   // Create mode: inherit active TrainingPlan.goalId (option B fil directeur).
   useEffect(() => {
-    if (isEdit || session) return;
+    if (isEdit || session) {
+      return;
+    }
     const fromPlan = resolveDefaultPlanGoalId(planQuery.data?.goalId, selectableGoalIds);
-    if (!fromPlan) return;
+    if (!fromPlan) {
+      return;
+    }
     setGoalId((current) => (current === NO_GOAL ? fromPlan : current));
   }, [isEdit, session, planQuery.data?.goalId, selectableGoalIds]);
 
@@ -184,7 +192,9 @@ export function PlannedSessionDialog({
     queryKey: ['geocoding', 'home'],
     queryFn: async () => {
       const res = await fetch('/api/geocoding/home');
-      if (!res.ok) throw new Error('home fetch failed');
+      if (!res.ok) {
+        throw new Error('home fetch failed');
+      }
       return res.json() as Promise<{
         home: { label?: string; latitude: number; longitude: number };
       }>;
@@ -196,7 +206,9 @@ export function PlannedSessionDialog({
     queryKey: queryKeys.travelContext,
     queryFn: async () => {
       const res = await fetch('/api/travel-context');
-      if (!res.ok) throw new Error('travel fetch failed');
+      if (!res.ok) {
+        throw new Error('travel fetch failed');
+      }
       return res.json() as Promise<{
         active: {
           locationLabel: string;
@@ -209,9 +221,13 @@ export function PlannedSessionDialog({
   });
 
   useEffect(() => {
-    if (isEdit || session) return;
+    if (isEdit || session) {
+      return;
+    }
     const active = travelQuery.data?.active;
-    if (!active) return;
+    if (!active) {
+      return;
+    }
     setExposure('OUTDOOR');
     setLocationSource('travel');
     setCustomPlace({
@@ -229,7 +245,9 @@ export function PlannedSessionDialog({
   }
 
   function resetFormFromSession() {
-    if (!session) return;
+    if (!session) {
+      return;
+    }
     setType(session.type);
     setIntensity(session.intensity ?? 'ENDURANCE');
     setGoalId(session.goalId ?? NO_GOAL);
@@ -265,7 +283,9 @@ export function PlannedSessionDialog({
    */
   function resolveEndurancePayload(description: string | null) {
     const prescription = endurancePrescriptionFromDraft(enduranceBlocks, { type, intensity });
-    if (!prescription) return { endurancePrescription: null, description };
+    if (!prescription) {
+      return { endurancePrescription: null, description };
+    }
     return {
       endurancePrescription: prescription,
       description: formatEndurancePrescriptionSummary(prescription),
@@ -345,7 +365,9 @@ export function PlannedSessionDialog({
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (guardDisabled) return;
+    if (guardDisabled) {
+      return;
+    }
     setError(null);
     const formData = new FormData(e.currentTarget);
 
@@ -465,14 +487,18 @@ export function PlannedSessionDialog({
   }
 
   async function handleDelete() {
-    if (!session || guardDisabled) return;
+    if (!session || guardDisabled) {
+      return;
+    }
     const confirmed = await confirm({
       title: 'Supprimer cette séance planifiée ?',
       description: 'Cette action est définitive.',
       confirmLabel: 'Supprimer',
       variant: 'destructive',
     });
-    if (!confirmed) return;
+    if (!confirmed) {
+      return;
+    }
     setError(null);
     remove.mutate(session.id, {
       onError: (err) => {

@@ -160,7 +160,9 @@ function buildStep(
 
   // Connect only reads a stroke on a pool workout; on land it must stay unset.
   const stroke = context.sport === 'SWIM' ? (step.stroke ?? null) : null;
-  if (stroke) bag.strokeType = SWIM_STROKE_BY_KEY[stroke];
+  if (stroke) {
+    bag.strokeType = SWIM_STROKE_BY_KEY[stroke];
+  }
   applyTarget(bag, resolved);
 
   const targetLabel = formatTargetLabel(resolved);
@@ -235,7 +237,7 @@ export function buildEnduranceWorkoutPayload(
     estimatedDistanceInMeters: endurancePlannedMeters(prescription),
   };
 
-  if (prescription.sport === 'SWIM' && prescription.poolLengthM != null) {
+  if (prescription.sport === 'SWIM' && prescription.poolLengthM !== null) {
     payload.poolLength = prescription.poolLengthM;
     payload.poolLengthUnit = METER_UNIT;
   }

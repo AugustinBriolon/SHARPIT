@@ -94,9 +94,9 @@ export function ProgressHub({ basePath = '/progress' }: { basePath?: string }) {
   const bodyQuery = useBodyPresentationViewModel();
   const healthQuery = usePhysicalHealthViewModel(trainingDayId);
   const hasNoLiveContent =
-    goalsQuery.data == null && bodyQuery.data == null && healthQuery.data == null;
+    goalsQuery.data === null && bodyQuery.data === null && healthQuery.data === null;
   const { entry: offlineEntry } = useOfflineSnapshot(!online && hasNoLiveContent);
-  const showOfflineSnapshot = !online && hasNoLiveContent && offlineEntry != null;
+  const showOfflineSnapshot = !online && hasNoLiveContent && offlineEntry !== null;
 
   function setSection(next: string) {
     router.replace(`${basePath}?tab=${next}`, { scroll: false });

@@ -17,8 +17,12 @@ import {
 import { cn } from '@/lib/utils';
 
 function calorieValueText(pct: number, remaining: number | null): string {
-  if (remaining == null) return `${pct} %`;
-  if (remaining < 0) return `${pct} %, ${formatRemainingCalories(remaining)}`;
+  if (remaining === null) {
+    return `${pct} %`;
+  }
+  if (remaining < 0) {
+    return `${pct} %, ${formatRemainingCalories(remaining)}`;
+  }
   return formatRemainingCalories(remaining);
 }
 
@@ -57,14 +61,17 @@ function MacroCell({
   goal: number | null;
   pct: number | null;
 }) {
-  const fill = pct != null ? Math.max(0, Math.min(100, pct)) : null;
+  const fill = pct !== null ? Math.max(0, Math.min(100, pct)) : null;
   const colors = MACRO_COLORS[kind];
   const rounded = Math.round(grams);
   const label = MACRO_LABELS[kind];
-  const status = goal != null ? `${label} ${rounded} g sur ${goal} g` : `${label} ${rounded} g`;
+  const status = goal !== null ? `${label} ${rounded} g sur ${goal} g` : `${label} ${rounded} g`;
   let fillText: string | undefined;
-  if (fill != null) fillText = `${fill} %`;
-  else if (goal == null) fillText = 'Sans objectif';
+  if (fill !== null) {
+    fillText = `${fill} %`;
+  } else if (goal === null) {
+    fillText = 'Sans objectif';
+  }
 
   return (
     <div aria-label={status} className="min-w-0 flex-1 space-y-1.5">
@@ -73,7 +80,7 @@ function MacroCell({
           {MACRO_SHORT[kind]}
         </span>
         <span className="sr-only">{label}</span>
-        {goal != null ? (
+        {goal !== null ? (
           <span className="text-muted-foreground text-data text-[0.6875rem] tabular-nums">
             /{goal}
           </span>
@@ -94,7 +101,7 @@ function MacroCell({
       >
         <div
           className={cn('h-full rounded-full', colors.bar)}
-          style={{ width: fill != null ? `${fill}%` : '100%', opacity: fill != null ? 1 : 0.45 }}
+          style={{ width: fill !== null ? `${fill}%` : '100%', opacity: fill !== null ? 1 : 0.45 }}
         />
       </div>
     </div>
@@ -103,7 +110,9 @@ function MacroCell({
 
 function MacroStackShare({ protein, carbs, fat }: { protein: number; carbs: number; fat: number }) {
   const total = protein + carbs + fat;
-  if (total <= 0) return null;
+  if (total <= 0) {
+    return null;
+  }
 
   const segments: Array<{ kind: MacroKind; grams: number }> = [
     { kind: 'protein', grams: protein },
@@ -137,7 +146,9 @@ function MacroStackShare({ protein, carbs, fat }: { protein: number; carbs: numb
 
 function budgetCaptionClass(remaining: number | null): string {
   /* Over budget stays informational — clearer ink, not caution/risk Frein chrome. */
-  if (remaining != null && remaining < 0) return 'text-foreground';
+  if (remaining !== null && remaining < 0) {
+    return 'text-foreground';
+  }
   return 'text-muted-foreground';
 }
 
@@ -160,15 +171,15 @@ export function TodayNutritionCard() {
   });
 
   const today = data?.today;
-  const disconnected = !isPending && !isError && data != null && !data.connected;
+  const disconnected = !isPending && !isError && data !== null && !data.connected;
   /* Keep the card when connected with nothing logged: zeros beat “rien aujourd’hui”,
      and the section stops jumping once the first meal lands. */
   const day = today ?? (!isPending && !isError && data?.connected ? ZERO_DAY : null);
   const goals = day?.goalsProgress ?? null;
-  const hasMacroIntake = day != null && day.protein + day.carbohydrates + day.fat > 0;
+  const hasMacroIntake = day !== null && day.protein + day.carbohydrates + day.fat > 0;
 
   let intakeTrack: ReactNode = null;
-  if (day && goals?.calories.pct != null) {
+  if (day && goals?.calories.pct !== null) {
     intakeTrack = <CalorieTrack pct={goals.calories.pct} remaining={goals.calories.remaining} />;
   } else if (day && !goals && hasMacroIntake) {
     intakeTrack = <MacroStackShare carbs={day.carbohydrates} fat={day.fat} protein={day.protein} />;
@@ -180,8 +191,12 @@ export function TodayNutritionCard() {
   const errorCta = 'Ouvrir le journal';
 
   const linkTitle = (() => {
-    if (isError) return 'Ouvrir le journal alimentaire';
-    if (disconnected) return 'Connecter le journal alimentaire';
+    if (isError) {
+      return 'Ouvrir le journal alimentaire';
+    }
+    if (disconnected) {
+      return 'Connecter le journal alimentaire';
+    }
     return 'Voir le journal alimentaire';
   })();
 

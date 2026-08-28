@@ -44,7 +44,9 @@ function describeApproval(
 }
 
 function formatDescription(headline: string, date?: string) {
-  if (!date) return headline;
+  if (!date) {
+    return headline;
+  }
   return (
     <>
       {headline}
@@ -54,8 +56,12 @@ function formatDescription(headline: string, date?: string) {
 }
 
 function resolveApproveLabel(isDelete: boolean, confirmDelete: boolean) {
-  if (!isDelete) return coachBeuiCopy.approve;
-  if (confirmDelete) return coachBeuiCopy.confirmDelete;
+  if (!isDelete) {
+    return coachBeuiCopy.approve;
+  }
+  if (confirmDelete) {
+    return coachBeuiCopy.confirmDelete;
+  }
   return coachBeuiCopy.delete;
 }
 
@@ -74,7 +80,9 @@ export function CoachToolApprovalCard({
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [resolvedStatus, setResolvedStatus] = useState<ApprovalCardStatus | null>(null);
 
-  if (!approvalId) return null;
+  if (!approvalId) {
+    return null;
+  }
 
   const proposal = PROPOSAL[part.type] ?? coachBeuiCopy.approvalRequired;
   const input = (part.input ?? {}) as SessionInput;

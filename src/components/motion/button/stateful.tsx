@@ -27,9 +27,15 @@ function resolveStatefulButtonText(
   errorText: ReactNode,
   children: ReactNode,
 ): ReactNode {
-  if (state === 'loading') return loadingText;
-  if (state === 'success') return successText;
-  if (state === 'error') return errorText;
+  if (state === 'loading') {
+    return loadingText;
+  }
+  if (state === 'success') {
+    return successText;
+  }
+  if (state === 'error') {
+    return errorText;
+  }
   return children;
 }
 
@@ -98,7 +104,9 @@ function TextSlot({ value, children }: { value: string; children: ReactNode }) {
   // inline-block letters and clip the final glyph during the width animation.
   useLayoutEffect(() => {
     const nextWidth = measureRef.current?.offsetWidth;
-    if (!nextWidth) return;
+    if (!nextWidth) {
+      return;
+    }
     setWidth((current) => (current === nextWidth ? current : nextWidth));
   });
 

@@ -43,7 +43,7 @@ describe('hip rehab session mapping (regression)', () => {
       exercise,
       match: resolveGarminExerciseMatch({ exercise }),
     }));
-    expect(resolved.filter((r) => r.match == null)).toEqual([]);
+    expect(resolved.filter((r) => r.match === null)).toEqual([]);
   });
 
   it('picks the specific catalog entry when one exists', () => {

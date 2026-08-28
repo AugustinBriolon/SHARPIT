@@ -53,7 +53,9 @@ export function PhysicalNoteDialog({ note, onClose }: Props) {
 
   const bodyPartOptions = useMemo(() => {
     const parts = [...COMMON_BODY_PARTS];
-    if (bodyPart && !parts.includes(bodyPart)) parts.unshift(bodyPart);
+    if (bodyPart && !parts.includes(bodyPart)) {
+      parts.unshift(bodyPart);
+    }
     return parts;
   }, [bodyPart]);
 
@@ -61,7 +63,9 @@ export function PhysicalNoteDialog({ note, onClose }: Props) {
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    if (guardDisabled) return;
+    if (guardDisabled) {
+      return;
+    }
     setError(null);
     const fd = new FormData(e.currentTarget);
     const payload = {
@@ -92,14 +96,18 @@ export function PhysicalNoteDialog({ note, onClose }: Props) {
   }
 
   async function handleDelete() {
-    if (!note || guardDisabled) return;
+    if (!note || guardDisabled) {
+      return;
+    }
     const confirmed = await confirm({
       title: 'Supprimer cette note et son historique ?',
       description: 'Toutes les check-ins associés seront aussi supprimés.',
       confirmLabel: 'Supprimer',
       variant: 'destructive',
     });
-    if (!confirmed) return;
+    if (!confirmed) {
+      return;
+    }
     try {
       await remove.mutateAsync(note.id);
       onClose();
@@ -111,9 +119,15 @@ export function PhysicalNoteDialog({ note, onClose }: Props) {
   const initialDate = note?.startDate ? new Date(note.startDate) : new Date();
 
   function getSubmitButtonLabel(): string {
-    if (pending) return 'Enregistrement…';
-    if (offline) return offlineLabel;
-    if (isEdit) return 'Mettre à jour';
+    if (pending) {
+      return 'Enregistrement…';
+    }
+    if (offline) {
+      return offlineLabel;
+    }
+    if (isEdit) {
+      return 'Mettre à jour';
+    }
     return 'Créer';
   }
 

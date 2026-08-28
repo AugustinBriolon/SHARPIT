@@ -84,7 +84,9 @@ export function aggregateDailyTssPreferringCore(
   const coreTssByDay = new Map<string, number>();
   const coreCountByDay = new Map<string, number>();
   for (const session of coreSessions) {
-    if (!Number.isFinite(session.tssScore)) continue;
+    if (!Number.isFinite(session.tssScore)) {
+      continue;
+    }
     const key = session.trainingDayId;
     coreTssByDay.set(key, (coreTssByDay.get(key) ?? 0) + session.tssScore);
     coreCountByDay.set(key, (coreCountByDay.get(key) ?? 0) + 1);
@@ -137,7 +139,9 @@ export function computeAthletePmc(
     : aggregateDailyTss(activities);
 
   const from = options?.from ? startOfDay(options.from) : earliestDay(activities);
-  if (!from) return [];
+  if (!from) {
+    return [];
+  }
 
   return runPmc({ from, to, dailyTss, initial: options?.initial });
 }
@@ -146,7 +150,9 @@ function earliestDay(activities: readonly ActivityForAnalytics[]): Date | null {
   let earliest: Date | null = null;
   for (const activity of activities) {
     const day = startOfDay(activity.date);
-    if (!earliest || day < earliest) earliest = day;
+    if (!earliest || day < earliest) {
+      earliest = day;
+    }
   }
   return earliest;
 }

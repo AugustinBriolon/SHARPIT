@@ -14,7 +14,9 @@ export function coachInputDraftKey(conversationId: string): string {
 }
 
 export function readCoachInputDraft(conversationId: string): string {
-  if (!canUseStorage() || !conversationId) return '';
+  if (!canUseStorage() || !conversationId) {
+    return '';
+  }
   try {
     return window.sessionStorage.getItem(coachInputDraftKey(conversationId)) ?? '';
   } catch {
@@ -24,7 +26,9 @@ export function readCoachInputDraft(conversationId: string): string {
 
 /** Persist draft; empty / whitespace-only clears the slot. */
 export function writeCoachInputDraft(conversationId: string, text: string): void {
-  if (!canUseStorage() || !conversationId) return;
+  if (!canUseStorage() || !conversationId) {
+    return;
+  }
   try {
     const key = coachInputDraftKey(conversationId);
     if (!text.trim()) {
@@ -38,7 +42,9 @@ export function writeCoachInputDraft(conversationId: string, text: string): void
 }
 
 export function clearCoachInputDraft(conversationId: string): void {
-  if (!canUseStorage() || !conversationId) return;
+  if (!canUseStorage() || !conversationId) {
+    return;
+  }
   try {
     window.sessionStorage.removeItem(coachInputDraftKey(conversationId));
   } catch {

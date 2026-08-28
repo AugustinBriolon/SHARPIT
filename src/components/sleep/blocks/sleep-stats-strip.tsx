@@ -35,19 +35,19 @@ export function SleepStatsStrip({
       items={[
         {
           label: 'Durée',
-          value: totalSleepMin != null ? formatSleepDuration(totalSleepMin) : null,
+          value: totalSleepMin !== null ? formatSleepDuration(totalSleepMin) : null,
         },
         {
           label: 'Efficacité',
-          value: efficiency != null ? `${efficiency} %` : null,
+          value: efficiency !== null ? `${efficiency} %` : null,
         },
         {
           label: 'Sommeil profond',
-          value: deepMin != null ? formatSleepDuration(deepMin) : null,
+          value: deepMin !== null ? formatSleepDuration(deepMin) : null,
         },
         {
           label: 'Restaurateur',
-          value: restorativeRatio != null ? `${restorativeRatio} %` : null,
+          value: restorativeRatio !== null ? `${restorativeRatio} %` : null,
         },
       ]}
     />

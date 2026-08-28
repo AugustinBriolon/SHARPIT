@@ -51,9 +51,13 @@ function limitingScoreFromDimensions(
   limitingFactor: string | null,
   dimensions: AdaptationPageViewProps['dimensions'],
 ): number | null {
-  if (!limitingFactor) return null;
+  if (!limitingFactor) {
+    return null;
+  }
   const match = dimensions.find((d) => d.label === limitingFactor);
-  if (!match?.dim.available || match.dim.score == null) return null;
+  if (!match?.dim.available || match.dim.score === null) {
+    return null;
+  }
   return match.dim.score;
 }
 
@@ -102,16 +106,18 @@ export function AdaptationPageView({
       ).filter((alert): alert is DrillDownAlert => alert !== false);
 
   const neuromuscular = dimensions.find((d) => d.key === 'neuromuscularEfficiency');
-  const neuromuscularMissing = !loading && neuromuscular != null && !neuromuscular.dim.available;
+  const neuromuscularMissing = !loading && neuromuscular !== null && !neuromuscular.dim.available;
   const displayDimensions = loading
     ? dimensions.filter((d) => d.key !== 'neuromuscularEfficiency')
     : dimensions.filter((d) => {
-        if (d.key === 'neuromuscularEfficiency' && !d.dim.available) return false;
+        if (d.key === 'neuromuscularEfficiency' && !d.dim.available) {
+          return false;
+        }
         return true;
       });
 
   const freinDimension =
-    !loading && limitingFactor != null
+    !loading && limitingFactor !== null
       ? (displayDimensions.find((d) => d.label === limitingFactor) ?? null)
       : null;
   const otherDimensions = displayDimensions.filter((d) => d !== freinDimension);
@@ -146,7 +152,7 @@ export function AdaptationPageView({
         quickReadCaption={actionLine ?? undefined}
         quickReadLabel="indice d'adaptation"
         quickReadSuffix="%"
-        quickReadValue={adaptationIndex != null ? String(Math.round(adaptationIndex)) : '—'}
+        quickReadValue={adaptationIndex !== null ? String(Math.round(adaptationIndex)) : '—'}
         railValue={adaptationIndex}
         onDateChange={onDateChange}
         onNextDay={onNextDay}
@@ -171,7 +177,7 @@ export function AdaptationPageView({
               key={d.key}
               description={d.description}
               dim={d.dim}
-              emphasized={!loading && freinDimension != null && d.key === freinDimension.key}
+              emphasized={!loading && freinDimension !== null && d.key === freinDimension.key}
               label={d.label}
               loading={loading}
               protectiveTone

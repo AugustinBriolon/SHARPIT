@@ -18,7 +18,7 @@ export function ActivityMetaRow({
   const plannedSession = useDemoActivityPlannedSession(activity.id, activity.plannedSession);
   const activityWithLink =
     plannedSession === activity.plannedSession ? activity : { ...activity, plannedSession };
-  const needsFeeling = activity.rpe == null && !activity.feeling?.trim();
+  const needsFeeling = activity.rpe === null && !activity.feeling?.trim();
   // RPE is shown in the header — chips cover feeling / weather / planned / records.
   const hasContext =
     Boolean(activity.feeling) ||
@@ -26,7 +26,9 @@ export function ActivityMetaRow({
     Boolean(plannedSession) ||
     records.length > 0;
 
-  if (!hasContext && !needsFeeling) return null;
+  if (!hasContext && !needsFeeling) {
+    return null;
+  }
 
   return (
     <div className="flex flex-wrap items-center gap-2">

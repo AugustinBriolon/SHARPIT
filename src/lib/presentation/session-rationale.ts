@@ -61,7 +61,7 @@ function buildGate(decision: CoachingDecisionWithHistory): SessionRationaleGate 
           gateResult.saferAlternative.intensity
             ? intensityLabels[gateResult.saferAlternative.intensity]
             : null,
-          gateResult.saferAlternative.load != null
+          gateResult.saferAlternative.load !== null
             ? `~${gateResult.saferAlternative.load} TSS`
             : null,
         ]
@@ -102,7 +102,9 @@ function buildChosen(
 }
 
 function buildOutcome(decision: CoachingDecisionWithHistory): SessionRationaleOutcome | null {
-  if (!decision.outcome) return null;
+  if (!decision.outcome) {
+    return null;
+  }
   return {
     status: decision.outcome.outcomeStatus,
     wording: describeOutcome(decision.outcome),

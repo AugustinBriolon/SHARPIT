@@ -138,7 +138,9 @@ export async function fetchActivities(
     per_page: String(options.perPage ?? 100),
     page: String(options.page ?? 1),
   });
-  if (options.after) params.set('after', String(options.after));
+  if (options.after) {
+    params.set('after', String(options.after));
+  }
 
   const response = await fetch(`${STRAVA_API_BASE}/athlete/activities?${params.toString()}`, {
     headers: { Authorization: `Bearer ${accessToken}` },
@@ -169,7 +171,9 @@ export async function fetchActivityDetail(
     headers: { Authorization: `Bearer ${accessToken}` },
     cache: 'no-store',
   });
-  if (!response.ok) return null;
+  if (!response.ok) {
+    return null;
+  }
   return response.json();
 }
 
@@ -229,7 +233,9 @@ export async function fetchActivityStreams(
     },
   );
 
-  if (response.status === 404) return null;
+  if (response.status === 404) {
+    return null;
+  }
   if (!response.ok) {
     throw new Error(`Récupération des streams Strava échouée (${response.status})`);
   }
@@ -239,7 +245,9 @@ export async function fetchActivityStreams(
 
 export function mapStravaType(stravaType: string): ActivityType | null {
   const type = stravaType.toLowerCase();
-  if (type.includes('run')) return ActivityType.RUN;
+  if (type.includes('run')) {
+    return ActivityType.RUN;
+  }
   if (
     type.includes('ride') ||
     type.includes('bike') ||
@@ -248,7 +256,9 @@ export function mapStravaType(stravaType: string): ActivityType | null {
   ) {
     return ActivityType.BIKE;
   }
-  if (type.includes('swim')) return ActivityType.SWIM;
+  if (type.includes('swim')) {
+    return ActivityType.SWIM;
+  }
   if (type.includes('weighttraining') || type.includes('workout') || type.includes('crossfit')) {
     return ActivityType.STRENGTH;
   }

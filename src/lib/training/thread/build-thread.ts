@@ -59,7 +59,9 @@ function buildEntries(
 
   const performed = activities.map((activity): ThreadEntry => {
     const planned = activity.plannedSession ?? null;
-    if (planned) claimedPlannedIds.add(planned.id);
+    if (planned) {
+      claimedPlannedIds.add(planned.id);
+    }
     return {
       id: activity.id,
       dayKey: localDayKey(activity.date),
@@ -116,11 +118,16 @@ export function buildThread({
   for (const entry of buildEntries(activities, plannedSessions)) {
     const [year, month, day] = entry.dayKey.split('-').map(Number);
     const date = new Date(year!, (month ?? 1) - 1, day ?? 1);
-    if (date < floor) continue;
+    if (date < floor) {
+      continue;
+    }
     const key = isoWeekKeyOf(date);
     const bucket = byWeek.get(key);
-    if (bucket) bucket.push(entry);
-    else byWeek.set(key, [entry]);
+    if (bucket) {
+      bucket.push(entry);
+    } else {
+      byWeek.set(key, [entry]);
+    }
   }
 
   const weeks: ThreadWeek[] = [];
@@ -128,8 +135,11 @@ export function buildThread({
     const byDay = new Map<string, ThreadEntry[]>();
     for (const entry of entries) {
       const bucket = byDay.get(entry.dayKey);
-      if (bucket) bucket.push(entry);
-      else byDay.set(entry.dayKey, [entry]);
+      if (bucket) {
+        bucket.push(entry);
+      } else {
+        byDay.set(entry.dayKey, [entry]);
+      }
     }
 
     const days: ThreadDay[] = [...byDay.entries()]
@@ -149,7 +159,7 @@ export function buildThread({
         return {
           done: acc.done + done,
           planned: acc.planned + planned,
-          doneKnown: acc.doneKnown || entry.activity?.load != null,
+          doneKnown: acc.doneKnown || entry.activity?.load !== null,
         };
       },
       { done: 0, planned: 0, doneKnown: false },

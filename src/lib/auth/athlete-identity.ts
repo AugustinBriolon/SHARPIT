@@ -13,7 +13,9 @@ export type NameParts = {
 
 function firstLetter(value: string): string {
   const trimmed = value.trim();
-  if (!trimmed) return '';
+  if (!trimmed) {
+    return '';
+  }
   return trimmed[0]!.toLocaleUpperCase('fr-FR');
 }
 
@@ -30,7 +32,9 @@ export function initialsFromName({ firstName, lastName, fullName }: NameParts): 
     const a = firstLetter(first);
     const b = firstLetter(last);
     const joined = `${a}${b}`;
-    if (joined) return joined;
+    if (joined) {
+      return joined;
+    }
   }
 
   const full = fullName?.trim() ?? '';
@@ -40,7 +44,9 @@ export function initialsFromName({ firstName, lastName, fullName }: NameParts): 
       return `${firstLetter(parts[0]!)}${firstLetter(parts[parts.length - 1]!)}`;
     }
     const letter = firstLetter(parts[0] ?? '');
-    if (letter) return letter;
+    if (letter) {
+      return letter;
+    }
   }
 
   return '?';
@@ -49,10 +55,14 @@ export function initialsFromName({ firstName, lastName, fullName }: NameParts): 
 /** Bottom-nav / sidebar primary label — first name when known. */
 export function shortLabelFromName({ firstName, fullName }: NameParts): string {
   const first = firstName?.trim();
-  if (first) return first;
+  if (first) {
+    return first;
+  }
 
   const fromFull = fullName?.trim() ? firstWord(fullName) : '';
-  if (fromFull) return fromFull;
+  if (fromFull) {
+    return fromFull;
+  }
 
   return 'Profil';
 }

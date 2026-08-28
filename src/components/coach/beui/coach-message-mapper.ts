@@ -89,9 +89,13 @@ export function mapCoachMessages({
 export function collectPendingApprovals(messages: UIMessage[]): ToolPartLite[] {
   const pending: ToolPartLite[] = [];
   for (const message of messages) {
-    if (message.role !== 'assistant') continue;
+    if (message.role !== 'assistant') {
+      continue;
+    }
     for (const part of message.parts) {
-      if (!part.type.startsWith('tool-')) continue;
+      if (!part.type.startsWith('tool-')) {
+        continue;
+      }
       const lite = part as ToolPartLite;
       if (lite.state === 'approval-requested' && lite.approval && !lite.approval.isAutomatic) {
         pending.push(lite);
@@ -105,6 +109,8 @@ export function showSubmittedPlaceholder(
   status: MapCoachMessagesInput['status'],
   messages: UIMessage[],
 ): boolean {
-  if (status !== 'submitted' || messages.length === 0) return false;
+  if (status !== 'submitted' || messages.length === 0) {
+    return false;
+  }
   return messages[messages.length - 1]?.role === 'user';
 }

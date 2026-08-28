@@ -27,10 +27,14 @@ export function morningIntensityLabel(
   type: ActivityType | string,
   intensity: string | null | undefined,
 ): string | null {
-  if (!intensity) return null;
+  if (!intensity) {
+    return null;
+  }
   if (intensity in intensityLabels) {
     const key = intensity as SessionIntensity;
-    if (isStrengthLikeMorningSport(type)) return STRENGTH_INTENSITY_LABELS[key];
+    if (isStrengthLikeMorningSport(type)) {
+      return STRENGTH_INTENSITY_LABELS[key];
+    }
     return intensityLabels[key];
   }
   return intensity;

@@ -62,16 +62,22 @@ const IntegrationModalContent = dynamic(
 type RowSyncState = 'running' | 'done' | 'error';
 
 function syncLabel(lastSyncAt: string | null): string {
-  if (!lastSyncAt) return 'Jamais synchronisé';
+  if (!lastSyncAt) {
+    return 'Jamais synchronisé';
+  }
   return formatDistanceToNow(new Date(lastSyncAt), { addSuffix: true, locale: fr });
 }
 
 function integrationStatusLabel(integration: IntegrationDefinition): string {
-  if (integration.needsReconnect) return 'Session expirée, reconnecte';
+  if (integration.needsReconnect) {
+    return 'Session expirée, reconnecte';
+  }
   if (integration.connected) {
     return syncLabel(integration.account?.lastSyncAt ?? null);
   }
-  if (integration.configured) return 'Clique pour connecter';
+  if (integration.configured) {
+    return 'Clique pour connecter';
+  }
   return 'Configuration serveur requise';
 }
 
@@ -286,7 +292,9 @@ export function IntegrationsHub({
   const active = openId ? integrations.find((i) => i.id === openId) : null;
 
   async function handleSyncAll() {
-    if (guardDisabled) return;
+    if (guardDisabled) {
+      return;
+    }
     if (connected.length === 0) {
       toast.info('Aucune source connectée', {
         description: 'Connecte au moins une application pour synchroniser.',
@@ -372,7 +380,9 @@ export function IntegrationsHub({
             <div className="grid gap-3 sm:grid-cols-2">
               {providers.map((provider) => {
                 const integration = byId[provider.integrationId!];
-                if (!integration) return null;
+                if (!integration) {
+                  return null;
+                }
                 return (
                   <ClassProviderRow
                     key={`${dataClass.id}-${integration.id}`}
@@ -390,7 +400,7 @@ export function IntegrationsHub({
         );
       })}
 
-      <Dialog open={openId != null} onOpenChange={(open) => !open && setOpenId(null)}>
+      <Dialog open={openId !== null} onOpenChange={(open) => !open && setOpenId(null)}>
         <DialogContent className="max-h-[min(90vh,640px)] overflow-y-auto sm:max-w-md">
           {active && (
             <>

@@ -24,16 +24,24 @@ export type SessionLinkSuggestion = {
 
 function activityPrimary(activity: ClientActivity): string {
   const plannedTitle = activity.plannedSession?.title?.trim();
-  if (plannedTitle) return plannedTitle;
+  if (plannedTitle) {
+    return plannedTitle;
+  }
   const title = activity.title?.trim();
   return title ?? activityTypeLabels[activity.type];
 }
 
 function activitySecondary(activity: ClientActivity): string | undefined {
   const parts: string[] = [];
-  if (activity.duration) parts.push(formatDuration(activity.duration));
-  if (activity.load != null) parts.push(`${Math.round(activity.load)} TSS`);
-  if (activity.rpe != null) parts.push(`RPE ${activity.rpe}`);
+  if (activity.duration) {
+    parts.push(formatDuration(activity.duration));
+  }
+  if (activity.load !== null) {
+    parts.push(`${Math.round(activity.load)} TSS`);
+  }
+  if (activity.rpe !== null) {
+    parts.push(`RPE ${activity.rpe}`);
+  }
   return parts.length > 0 ? parts.join(' · ') : undefined;
 }
 
@@ -44,15 +52,25 @@ function plannedPrimary(session: ClientPlannedSession): string {
 
 function plannedSecondary(session: ClientPlannedSession): string | undefined {
   const parts: string[] = [];
-  if (session.intensity) parts.push(intensityLabels[session.intensity]);
-  if (session.durationMin) parts.push(formatPlannedDuration(session.durationMin));
-  if (session.load != null) parts.push(`${Math.round(session.load)} TSS`);
+  if (session.intensity) {
+    parts.push(intensityLabels[session.intensity]);
+  }
+  if (session.durationMin) {
+    parts.push(formatPlannedDuration(session.durationMin));
+  }
+  if (session.load !== null) {
+    parts.push(`${Math.round(session.load)} TSS`);
+  }
   return parts.length > 0 ? parts.join(' · ') : undefined;
 }
 
 function matchLabelForScore(score: number): string {
-  if (score >= 120) return 'Correspondance forte';
-  if (score >= 100) return 'Même jour · même discipline';
+  if (score >= 120) {
+    return 'Correspondance forte';
+  }
+  if (score >= 100) {
+    return 'Même jour · même discipline';
+  }
   return 'Rapprochement possible';
 }
 
@@ -71,7 +89,7 @@ export function findSessionLinkSuggestions(
     [
       ...plannedSessions.map((s) => (s.activityId ? s.id : null)),
       ...activities.map((a) => a.plannedSession?.id ?? null),
-    ].filter((id): id is string => id != null),
+    ].filter((id): id is string => id !== null),
   );
 
   const todayActivities = activities.filter(
@@ -98,25 +116,39 @@ export function findSessionLinkSuggestions(
 
   /** Demo story pair is deterministic — greedy matching would steal the wrong planned run. */
   for (const activity of todayActivities) {
-    if (!isDemoSessionLinkActivityTitle(activity.title)) continue;
+    if (!isDemoSessionLinkActivityTitle(activity.title)) {
+      continue;
+    }
     const planned = todayPlanned.find((session) => isDemoSessionLinkPlannedTitle(session.title));
-    if (!planned) continue;
+    if (!planned) {
+      continue;
+    }
     usedActivities.add(activity.id);
     usedPlanned.add(planned.id);
     suggestions.push(buildSuggestion(activity, planned, 200));
   }
 
   for (const activity of todayActivities) {
-    if (usedActivities.has(activity.id)) continue;
+    if (usedActivities.has(activity.id)) {
+      continue;
+    }
     for (const planned of todayPlanned) {
-      if (usedPlanned.has(planned.id)) continue;
-      if (isDemoSessionLinkPlannedTitle(planned.title)) continue;
-      if (activity.type !== planned.type) continue;
+      if (usedPlanned.has(planned.id)) {
+        continue;
+      }
+      if (isDemoSessionLinkPlannedTitle(planned.title)) {
+        continue;
+      }
+      if (activity.type !== planned.type) {
+        continue;
+      }
       const score = scorePlannedActivityMatch(
         { date: planned.date, durationMin: planned.durationMin },
         { date: activity.date, duration: activity.duration },
       );
-      if (score <= 0) continue;
+      if (score <= 0) {
+        continue;
+      }
       candidates.push({ activity, planned, score });
     }
   }
@@ -124,7 +156,9 @@ export function findSessionLinkSuggestions(
   candidates.sort((a, b) => b.score - a.score);
 
   for (const { activity, planned, score } of candidates) {
-    if (usedActivities.has(activity.id) || usedPlanned.has(planned.id)) continue;
+    if (usedActivities.has(activity.id) || usedPlanned.has(planned.id)) {
+      continue;
+    }
     usedActivities.add(activity.id);
     usedPlanned.add(planned.id);
     suggestions.push(buildSuggestion(activity, planned, score));
@@ -170,8 +204,12 @@ export function mergeLinkExclusions(
   const activityIds = new Set<string>();
   const plannedSessionIds = new Set<string>();
   for (const source of sources) {
-    for (const id of source.activityIds) activityIds.add(id);
-    for (const id of source.plannedSessionIds) plannedSessionIds.add(id);
+    for (const id of source.activityIds) {
+      activityIds.add(id);
+    }
+    for (const id of source.plannedSessionIds) {
+      plannedSessionIds.add(id);
+    }
   }
   return { activityIds, plannedSessionIds };
 }
@@ -187,7 +225,9 @@ export function filterDaySummaryForLinkExclusions<
     return [...lines];
   }
   return lines.filter((line) => {
-    if (line.kind === 'done' && excluded.activityIds.has(line.id)) return false;
+    if (line.kind === 'done' && excluded.activityIds.has(line.id)) {
+      return false;
+    }
     if (
       (line.kind === 'planned' || line.kind === 'missed') &&
       excluded.plannedSessionIds.has(line.id)

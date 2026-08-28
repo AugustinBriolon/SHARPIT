@@ -31,7 +31,7 @@ function asTime(value: Date | string): number {
 }
 
 function positive(value: number | null | undefined): number {
-  return value != null && Number.isFinite(value) && value > 0 ? value : 0;
+  return value !== null && Number.isFinite(value) && value > 0 ? value : 0;
 }
 
 /**
@@ -42,11 +42,15 @@ function positive(value: number | null | undefined): number {
 export function buildHikeTripElevationProfile(
   members: HikeTripMemberInput[],
 ): HikeTripElevationProfile | null {
-  if (members.length === 0) return null;
+  if (members.length === 0) {
+    return null;
+  }
 
   const ordered = [...members].sort((a, b) => asTime(a.date) - asTime(b.date));
   const totalGain = ordered.reduce((sum, m) => sum + positive(m.hikeMetrics?.elevationM), 0);
-  if (totalGain <= 0) return null;
+  if (totalGain <= 0) {
+    return null;
+  }
 
   const points: HikeTripElevationPoint[] = [{ x: 0, gain: 0, stepIndex: 0 }];
   const stepBoundaries: number[] = [];
@@ -62,12 +66,16 @@ export function buildHikeTripElevationProfile(
     current -= loss;
     const endX = stepIndex * 2 + 2;
     points.push({ x: endX, gain: current, stepIndex });
-    if (stepIndex < ordered.length - 1) stepBoundaries.push(endX);
+    if (stepIndex < ordered.length - 1) {
+      stepBoundaries.push(endX);
+    }
   });
 
   let [peak] = points;
   for (const point of points) {
-    if (point.gain > peak.gain) peak = point;
+    if (point.gain > peak.gain) {
+      peak = point;
+    }
   }
 
   return {
@@ -88,7 +96,9 @@ export function buildHikeStepSparkline(
   member: Pick<HikeTripMemberInput, 'hikeMetrics'>,
 ): { x: number; gain: number }[] | null {
   const gain = positive(member.hikeMetrics?.elevationM);
-  if (gain <= 0) return null;
+  if (gain <= 0) {
+    return null;
+  }
 
   const loss = positive(member.hikeMetrics?.elevationLossM);
   return [

@@ -7,7 +7,9 @@ import { isLowEndDevice } from '@/lib/motion/device-capability';
  */
 export const motionConfig = {
   isLowEnd(): boolean {
-    if (typeof navigator === 'undefined') return false;
+    if (typeof navigator === 'undefined') {
+      return false;
+    }
     const nav = navigator as Navigator & { deviceMemory?: number };
     return isLowEndDevice({
       deviceMemory: nav.deviceMemory,
@@ -22,13 +24,19 @@ export const motionConfig = {
   },
 
   shouldAnimate({ essential = false }: { essential?: boolean } = {}): boolean {
-    if (this.prefersReduced()) return false;
-    if (!essential && this.isLowEnd()) return false;
+    if (this.prefersReduced()) {
+      return false;
+    }
+    if (!essential && this.isLowEnd()) {
+      return false;
+    }
     return true;
   },
 
   durationSeconds(): number {
-    if (this.prefersReduced() || this.isLowEnd()) return motionTokens.duration.instant;
+    if (this.prefersReduced() || this.isLowEnd()) {
+      return motionTokens.duration.instant;
+    }
     return motionTokens.duration.normal;
   },
 };

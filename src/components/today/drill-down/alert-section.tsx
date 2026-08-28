@@ -28,7 +28,9 @@ const SURFACE: Record<AlertTone, string> = {
  * position before any colour is read at all.
  */
 export function DrillDownAlertSection({ alerts }: { alerts: DrillDownAlert[] }) {
-  if (!alerts.length) return null;
+  if (!alerts.length) {
+    return null;
+  }
 
   const tone: AlertTone = alerts.some((alert) => alert.tone === 'risk') ? 'risk' : 'caution';
 

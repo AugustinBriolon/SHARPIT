@@ -46,7 +46,7 @@ export async function backfillBodyCompositionObservationsFromMeasurements(
     select: { externalId: true },
   });
   const existingIds = new Set(
-    existing.map((row) => row.externalId).filter((id): id is string => id != null),
+    existing.map((row) => row.externalId).filter((id): id is string => id !== null),
   );
 
   const raws: RawObservation[] = [];

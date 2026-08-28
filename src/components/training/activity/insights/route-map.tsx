@@ -26,7 +26,9 @@ export function RouteMap({
     let cancelled = false;
 
     const enable = () => {
-      if (!cancelled) setReady(true);
+      if (!cancelled) {
+        setReady(true);
+      }
     };
 
     if ('requestIdleCallback' in window) {
@@ -37,10 +39,12 @@ export function RouteMap({
 
     return () => {
       cancelled = true;
-      if (idleId != null && 'cancelIdleCallback' in window) {
+      if (idleId !== null && 'cancelIdleCallback' in window) {
         window.cancelIdleCallback(idleId);
       }
-      if (timeoutId != null) window.clearTimeout(timeoutId);
+      if (timeoutId !== null) {
+        window.clearTimeout(timeoutId);
+      }
     };
   }, []);
 

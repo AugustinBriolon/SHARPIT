@@ -77,7 +77,9 @@ export function TodayActionRow({
     [dismissedSnapshot],
   );
   const demoLinks = useMemo(() => {
-    if (!demoLinksSnapshot) return readDemoSessionLinks();
+    if (!demoLinksSnapshot) {
+      return readDemoSessionLinks();
+    }
     return demoLinksSnapshot
       .split('\n')
       .map((line) => {

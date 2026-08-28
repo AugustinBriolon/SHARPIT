@@ -139,7 +139,9 @@ function match(href: string): { entry: RouteEntry } | null {
   const pathname = pathnameOf(href);
   for (const { pattern, resolve } of MATCHERS) {
     const m = pathname.match(pattern);
-    if (m) return { entry: resolve(m) };
+    if (m) {
+      return { entry: resolve(m) };
+    }
   }
   return null;
 }

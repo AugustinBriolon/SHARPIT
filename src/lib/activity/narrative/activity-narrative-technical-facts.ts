@@ -29,7 +29,9 @@ export const DOMINANT_ZONE_PCT = 50;
 
 function zoneSummary(zones: ZoneBucket[]): string | null {
   const active = zones.filter((z) => z.seconds > 0 && z.percent > 0);
-  if (!active.length) return null;
+  if (!active.length) {
+    return null;
+  }
   return active.map((z) => `${z.shortLabel} ${z.percent}%`).join(', ');
 }
 
@@ -38,7 +40,9 @@ function hardZoneShare(zones: ZoneBucket[]): number {
 }
 
 function dominantZone(zones: ZoneBucket[]): ZoneBucket | null {
-  if (!zones.length) return null;
+  if (!zones.length) {
+    return null;
+  }
   return zones.reduce((best, z) => (z.percent > best.percent ? z : best), zones[0]!);
 }
 
@@ -49,7 +53,9 @@ function dominantZone(zones: ZoneBucket[]): ZoneBucket | null {
 export function buildTechnicalSessionFacts(input: TechnicalFactInput): string[] {
   const lines: string[] = [];
   const { analysis } = input;
-  if (!analysis) return lines;
+  if (!analysis) {
+    return lines;
+  }
 
   const { thresholds, hr, power, run } = analysis;
   const sourceLabel = thresholds.source === 'profile' ? 'profil' : 'estimé';
@@ -79,7 +85,7 @@ export function buildTechnicalSessionFacts(input: TechnicalFactInput): string[] 
     }
   }
 
-  if (hr.decouplingPct != null && Math.abs(hr.decouplingPct) >= DECOUPLING_NOTEWORTHY_PCT) {
+  if (hr.decouplingPct !== null && Math.abs(hr.decouplingPct) >= DECOUPLING_NOTEWORTHY_PCT) {
     const sign = hr.decouplingPct > 0 ? '+' : '';
     lines.push(
       `Découplage cardiaque : ${sign}${hr.decouplingPct.toFixed(1)}% (dérive aérobie notable au-delà de ~${DECOUPLING_NOTEWORTHY_PCT}%).`,
@@ -87,13 +93,13 @@ export function buildTechnicalSessionFacts(input: TechnicalFactInput): string[] 
   }
 
   if (
-    run?.paceVariabilityPct != null &&
+    run?.paceVariabilityPct !== null &&
     run.paceVariabilityPct >= PACE_VARIABILITY_NOTEWORTHY_PCT
   ) {
     lines.push(`Variabilité d’allure : ${run.paceVariabilityPct.toFixed(0)}% (rythme irrégulier).`);
   }
 
-  if (power?.variabilityIndex != null && power.variabilityIndex >= VI_NOTEWORTHY) {
+  if (power?.variabilityIndex !== null && power.variabilityIndex >= VI_NOTEWORTHY) {
     lines.push(
       `Variabilité de puissance (VI) : ${power.variabilityIndex.toFixed(2)} (effort irrégulier).`,
     );

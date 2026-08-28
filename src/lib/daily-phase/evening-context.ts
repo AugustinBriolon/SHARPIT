@@ -46,7 +46,7 @@ function todayBilanHeadline(input: {
   if (completedSessionCount === 0) {
     if (tomorrowSession) {
       const tomorrowSport = tomorrowSession.sportLabel;
-      if (tomorrowSession.startHour != null && tomorrowSession.startHour < 9) {
+      if (tomorrowSession.startHour !== null && tomorrowSession.startHour < 9) {
         return `Repos aujourd'hui — ${tomorrowSport} tôt demain`;
       }
       return `Repos aujourd'hui — ${tomorrowSport} au programme demain`;
@@ -87,7 +87,7 @@ function todayBilanHeadline(input: {
     return `${load} — le corps digère encore`;
   }
 
-  if (tomorrowSession?.startHour != null && tomorrowSession.startHour < 9) {
+  if (tomorrowSession?.startHour !== null && tomorrowSession.startHour < 9) {
     return `${load} — couche-toi tôt pour demain`;
   }
 
@@ -110,7 +110,9 @@ export function pickTomorrowSessionHint(
       return ta - tb;
     });
 
-  if (!tomorrow) return null;
+  if (!tomorrow) {
+    return null;
+  }
 
   const sportLabel = activityTypeLabels[tomorrow.type as ActivityType] ?? tomorrow.type;
   const start = parsePlannedStart(tomorrowDay, tomorrow.startTime);
@@ -129,18 +131,22 @@ function resolveTonightBedtime(
 ): number | null {
   let bed = sleep.recommendedBedtimeMin ?? sleep.bedtimeTargetMin;
 
-  if (bed == null && tomorrow?.startHour != null) {
+  if (bed === null && tomorrow?.startHour !== null) {
     const sessionMin = tomorrow.startHour * 60;
     const raw = sessionMin - sleep.recommendedDurationMin - 20;
     bed = ((raw % 1440) + 1440) % 1440;
   }
 
-  if (bed == null) return null;
+  if (bed === null) {
+    return null;
+  }
 
-  if (recoveryStress) bed = (bed - 30 + 1440) % 1440;
-  if (tomorrow?.startHour != null && tomorrow.startHour < 8) {
+  if (recoveryStress) {
+    bed = (bed - 30 + 1440) % 1440;
+  }
+  if (tomorrow?.startHour !== null && tomorrow.startHour < 8) {
     bed = (bed - 45 + 1440) % 1440;
-  } else if (tomorrow?.startHour != null && tomorrow.startHour < 10) {
+  } else if (tomorrow?.startHour !== null && tomorrow.startHour < 10) {
     bed = (bed - 20 + 1440) % 1440;
   }
 
@@ -154,12 +160,12 @@ function buildTonightFocus(
   todayHadTraining: boolean,
 ): string {
   const bedtime = resolveTonightBedtime(sleep, tomorrow, recoveryStress);
-  const clock = bedtime != null ? formatClock(bedtime) : null;
-  const debt = sleep.debt7Min != null && sleep.debt7Min > 30;
+  const clock = bedtime !== null ? formatClock(bedtime) : null;
+  const debt = sleep.debt7Min !== null && sleep.debt7Min > 30;
 
   if (tomorrow && todayHadTraining && clock) {
     const when =
-      tomorrow.startTime != null
+      tomorrow.startTime !== null
         ? `séance demain à ${tomorrow.startTime}`
         : `séance demain (${tomorrow.sportLabel})`;
     return `Coucher vers ${clock} — récupérer ce soir, ${when}`;
@@ -167,7 +173,7 @@ function buildTonightFocus(
 
   if (tomorrow && clock) {
     const when =
-      tomorrow.startTime != null
+      tomorrow.startTime !== null
         ? `séance demain à ${tomorrow.startTime}`
         : `séance demain (${tomorrow.sportLabel})`;
     return `Coucher vers ${clock} — ${when}`;
@@ -214,7 +220,7 @@ export function buildEndOfDayNarrativeCopy(input: {
     completedSessionCount: input.completedSessionCount,
     tomorrowSession: input.tomorrowSession,
     recoveryStress: input.recoveryStress,
-    sleepDebt: input.sleep.debt7Min != null && input.sleep.debt7Min > 30,
+    sleepDebt: input.sleep.debt7Min !== null && input.sleep.debt7Min > 30,
   });
 
   const focusPriority = buildTonightFocus(
@@ -228,7 +234,9 @@ export function buildEndOfDayNarrativeCopy(input: {
 }
 
 function isRecoveryStress(limitingFactorMessage?: string | null): boolean {
-  if (!limitingFactorMessage) return false;
+  if (!limitingFactorMessage) {
+    return false;
+  }
   return /récupération|déficit|fatigue|sommeil/i.test(limitingFactorMessage);
 }
 

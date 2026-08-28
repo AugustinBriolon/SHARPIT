@@ -44,7 +44,9 @@ const TYPE_FR: Record<string, string> = {
 };
 
 function fmtPace(secPerKm?: number | null): string | null {
-  if (secPerKm == null || secPerKm <= 0) return null;
+  if (secPerKm === null || secPerKm <= 0) {
+    return null;
+  }
   const m = Math.floor(secPerKm / 60);
   const s = Math.round(secPerKm % 60);
   return `${m}:${s.toString().padStart(2, '0')}/km`;
@@ -56,10 +58,10 @@ type LinkedActivity = NonNullable<PlannedWithActivity['activity']>;
 /** Volume line for one prescribed / realized movement. */
 function formatStrengthSetLine(set: ComparableStrengthSet & { weightKg?: number | null }): string {
   const volume =
-    set.durationSec != null && set.durationSec > 0 && set.reps <= 0
+    set.durationSec !== null && set.durationSec > 0 && set.reps <= 0
       ? `${set.sets}×${set.durationSec}s`
       : `${set.sets}×${set.reps}`;
-  const weight = set.weightKg != null && set.weightKg > 0 ? ` @ ${set.weightKg} kg` : '';
+  const weight = set.weightKg !== null && set.weightKg > 0 ? ` @ ${set.weightKg} kg` : '';
   return `- ${set.exercise} ${volume}${weight}`;
 }
 
@@ -73,8 +75,8 @@ function describePlanned(p: PlannedWithActivity, opts?: { ftpW?: number | null }
     p.intensity ? `Intensité prévue : ${intensityLabels[p.intensity]}` : null,
     // Duration and TSS are deliberately withheld for strength: execution speed is
     // not prescribable, so they must not become compliance evidence.
-    !isStrength && p.durationMin != null ? `Durée prévue : ${p.durationMin} min` : null,
-    !isStrength && p.load != null ? `Charge prévue : ${Math.round(p.load)} TSS` : null,
+    !isStrength && p.durationMin !== null ? `Durée prévue : ${p.durationMin} min` : null,
+    !isStrength && p.load !== null ? `Charge prévue : ${Math.round(p.load)} TSS` : null,
     p.title ? `Titre : ${p.title}` : null,
     p.description ? `Consigne : ${p.description}` : null,
   ].filter(Boolean) as string[];
@@ -91,15 +93,15 @@ function describePlanned(p: PlannedWithActivity, opts?: { ftpW?: number | null }
   }
 
   const ftpW = opts?.ftpW;
-  if (ftpW != null && ftpW > 0 && p.type === 'BIKE') {
+  if (ftpW !== null && ftpW > 0 && p.type === 'BIKE') {
     const parsed = parsePrescriptionTargets(p.description);
-    if (parsed.ftpPct != null) {
+    if (parsed.ftpPct !== null) {
       const targetW = Math.round((parsed.ftpPct / 100) * ftpW);
       bits.push(
         `Cible puissance (dérivée de la consigne) : ${parsed.ftpPct}% FTP = ${targetW} W (FTP ${ftpW} W)`,
       );
     }
-    if (parsed.plannedWorkMin != null) {
+    if (parsed.plannedWorkMin !== null) {
       bits.push(
         `Volume de travail suggéré par la consigne (lecture texte) : ~${parsed.plannedWorkMin} min`,
       );
@@ -117,9 +119,9 @@ function describeActual(
   const isStrength = a.type === 'STRENGTH';
   const bits: string[] = [
     `Sport : ${TYPE_FR[a.type] ?? a.type}`,
-    !isStrength && a.duration != null ? `Durée : ${Math.round(a.duration / 60)} min` : null,
-    !isStrength && a.load != null ? `Charge : ${Math.round(a.load)} TSS` : null,
-    a.rpe != null ? `RPE ressenti : ${a.rpe}/10` : null,
+    !isStrength && a.duration !== null ? `Durée : ${Math.round(a.duration / 60)} min` : null,
+    !isStrength && a.load !== null ? `Charge : ${Math.round(a.load)} TSS` : null,
+    a.rpe !== null ? `RPE ressenti : ${a.rpe}/10` : null,
     a.feeling ? `Ressenti : ${a.feeling}` : null,
     a.notes ? `Notes : ${a.notes}` : null,
   ].filter(Boolean) as string[];
@@ -131,36 +133,60 @@ function describeActual(
 
   // Description libre saisie sur Strava (souvent le détail réel des exercices).
   const desc = description?.trim();
-  if (desc) bits.push(`Description (athlète) : ${desc}`);
+  if (desc) {
+    bits.push(`Description (athlète) : ${desc}`);
+  }
 
   if (a.runMetrics) {
     const r = a.runMetrics;
-    if (r.distanceM) bits.push(`Distance : ${(r.distanceM / 1000).toFixed(2)} km`);
+    if (r.distanceM) {
+      bits.push(`Distance : ${(r.distanceM / 1000).toFixed(2)} km`);
+    }
     const pace = fmtPace(r.paceSecPerKm);
-    if (pace) bits.push(`Allure moyenne : ${pace}`);
-    if (r.avgHr) bits.push(`FC moyenne : ${r.avgHr} bpm`);
-    if (r.avgPower) bits.push(`Puissance moyenne : ${Math.round(r.avgPower)} W`);
-    if (r.elevationM) bits.push(`D+ : ${Math.round(r.elevationM)} m`);
+    if (pace) {
+      bits.push(`Allure moyenne : ${pace}`);
+    }
+    if (r.avgHr) {
+      bits.push(`FC moyenne : ${r.avgHr} bpm`);
+    }
+    if (r.avgPower) {
+      bits.push(`Puissance moyenne : ${Math.round(r.avgPower)} W`);
+    }
+    if (r.elevationM) {
+      bits.push(`D+ : ${Math.round(r.elevationM)} m`);
+    }
   }
   if (a.bikeMetrics) {
     const b = a.bikeMetrics;
-    if (b.avgPower) bits.push(`Puissance moyenne (séance entière) : ${Math.round(b.avgPower)} W`);
-    if (b.normalizedPower) bits.push(`NP (séance entière) : ${Math.round(b.normalizedPower)} W`);
+    if (b.avgPower) {
+      bits.push(`Puissance moyenne (séance entière) : ${Math.round(b.avgPower)} W`);
+    }
+    if (b.normalizedPower) {
+      bits.push(`NP (séance entière) : ${Math.round(b.normalizedPower)} W`);
+    }
     const intensityFactor =
       b.intensityFactor ??
-      (b.normalizedPower != null && opts?.ftpW != null && opts.ftpW > 0
+      (b.normalizedPower !== null && opts?.ftpW !== null && opts.ftpW > 0
         ? b.normalizedPower / opts.ftpW
         : null);
-    if (intensityFactor != null) bits.push(`IF (séance entière) : ${intensityFactor.toFixed(2)}`);
-    if (b.tss) bits.push(`TSS : ${Math.round(b.tss)}`);
-    if (b.elevationM) bits.push(`D+ : ${Math.round(b.elevationM)} m`);
+    if (intensityFactor !== null) {
+      bits.push(`IF (séance entière) : ${intensityFactor.toFixed(2)}`);
+    }
+    if (b.tss) {
+      bits.push(`TSS : ${Math.round(b.tss)}`);
+    }
+    if (b.elevationM) {
+      bits.push(`D+ : ${Math.round(b.elevationM)} m`);
+    }
     bits.push(
       'Note : avg/NP/IF ci-dessus couvrent toute la séance (échauffement + travail + récup) — ne pas les confondre avec l’intensité des blocs de travail.',
     );
   }
   if (a.swimMetrics) {
     const s = a.swimMetrics;
-    if (s.distanceM) bits.push(`Distance : ${s.distanceM} m`);
+    if (s.distanceM) {
+      bits.push(`Distance : ${s.distanceM} m`);
+    }
     if (s.avgPaceSecPer100m) {
       const m = Math.floor(s.avgPaceSecPer100m / 60);
       const sec = Math.round(s.avgPaceSecPer100m % 60);
@@ -198,7 +224,7 @@ function describePhysicalNotes(notes: ActivePhysicalNote[]): string {
         n.bodyPart
           ? `zone ${n.bodyPart}${n.side && n.side !== 'NA' ? ` (${sideLabels[n.side]})` : ''}`
           : null,
-        n.severity != null ? `sévérité actuelle ${n.severity}/10` : null,
+        n.severity !== null ? `sévérité actuelle ${n.severity}/10` : null,
         `statut ${statusLabels[n.status]}`,
       ].filter(Boolean);
       return `- ${bits.join(' · ')}`;
@@ -247,8 +273,12 @@ async function fetchStravaDescription(
   athleteId: string,
   activity: LinkedActivity,
 ): Promise<string | null> {
-  if (activity.source !== 'strava' && activity.source !== 'both') return null;
-  if (!activity.stravaId) return null;
+  if (activity.source !== 'strava' && activity.source !== 'both') {
+    return null;
+  }
+  if (!activity.stravaId) {
+    return null;
+  }
   try {
     const token = await getValidAccessToken(athleteId);
     const detail = await fetchActivityDetail(token, activity.stravaId);
@@ -268,9 +298,13 @@ export async function resolveAthleteDescription(
   activity: LinkedActivity,
 ): Promise<string | null> {
   const local = activity.notes?.trim() || null;
-  if (hasSubstantialLocalDescription(local)) return local;
+  if (hasSubstantialLocalDescription(local)) {
+    return local;
+  }
   const remote = await fetchStravaDescription(athleteId, activity);
-  if (remote?.trim()) return remote.trim();
+  if (remote?.trim()) {
+    return remote.trim();
+  }
   return local;
 }
 
@@ -280,9 +314,13 @@ async function loadCachedWatts(activityId: string): Promise<number[] | null> {
     where: { activityId },
     select: { available: true, data: true },
   });
-  if (!row?.available || row.data == null) return null;
+  if (!row?.available || row.data === null) {
+    return null;
+  }
   const data = row.data as { watts?: unknown };
-  if (!Array.isArray(data.watts) || data.watts.length < 60) return null;
+  if (!Array.isArray(data.watts) || data.watts.length < 60) {
+    return null;
+  }
   return data.watts.map((w) => (typeof w === 'number' && Number.isFinite(w) ? w : 0));
 }
 
@@ -291,7 +329,9 @@ export async function analyzePlannedSession(
   id: string,
 ): Promise<SessionAnalysis | null> {
   const planned = await getPlannedSessionById(athleteId, id);
-  if (!planned || !planned.activity) return null;
+  if (!planned || !planned.activity) {
+    return null;
+  }
 
   const [stravaDescription, profile, physicalNotes, watts] = await Promise.all([
     resolveAthleteDescription(athleteId, planned.activity),
@@ -302,7 +342,7 @@ export async function analyzePlannedSession(
 
   const ftpW = profile?.ftpW ?? null;
   const workSummary =
-    watts && ftpW != null
+    watts && ftpW !== null
       ? summarizeBikeWorkBlocks({
           watts,
           ftpW,
@@ -313,9 +353,9 @@ export async function analyzePlannedSession(
 
   const seuils = profile
     ? [
-        profile.ftpW != null ? `FTP ${profile.ftpW} W` : null,
-        profile.lthr != null ? `LTHR ${profile.lthr} bpm` : null,
-        profile.maxHr != null ? `FC max ${profile.maxHr} bpm` : null,
+        profile.ftpW !== null ? `FTP ${profile.ftpW} W` : null,
+        profile.lthr !== null ? `LTHR ${profile.lthr} bpm` : null,
+        profile.maxHr !== null ? `FC max ${profile.maxHr} bpm` : null,
         fmtPace(profile.runThresholdPaceSecPerKm)
           ? `allure seuil ${fmtPace(profile.runThresholdPaceSecPerKm)}`
           : null,
@@ -348,7 +388,9 @@ ${describePhysicalNotes(physicalNotes)}`;
   });
   void recordAiUsage(athleteId, 'analysis', usage);
 
-  if (!output) return null;
+  if (!output) {
+    return null;
+  }
 
   const painIds = new Set(painInjuryNotes(physicalNotes).map((n) => n.id));
   const physicalReassessments = (output.physicalReassessments ?? []).filter((r) =>
@@ -364,9 +406,13 @@ ${describePhysicalNotes(physicalNotes)}`;
 
 /** Prescribed vs realized sets — null unless both sides exist. */
 function resolveStrengthCompliance(planned: PlannedWithActivity): StrengthCompliance | null {
-  if (planned.type !== 'STRENGTH' || !planned.activity) return null;
+  if (planned.type !== 'STRENGTH' || !planned.activity) {
+    return null;
+  }
   const prescription = parseStrengthPrescription(planned.strengthPrescription);
-  if (!prescription) return null;
+  if (!prescription) {
+    return null;
+  }
   return computeStrengthCompliance(prescription.sets, planned.activity.strengthSets);
 }
 
@@ -398,8 +444,12 @@ export async function analyzeBrick(
   brickGroupId: string,
 ): Promise<BrickAnalysis | null> {
   const legs = await getBrickSessions(athleteId, brickGroupId);
-  if (legs.length < 2) return null;
-  if (legs.some((l) => !l.activity)) return null;
+  if (legs.length < 2) {
+    return null;
+  }
+  if (legs.some((l) => !l.activity)) {
+    return null;
+  }
 
   const [profile, descriptions, wattsList] = await Promise.all([
     getAthleteProfile(athleteId),
@@ -415,9 +465,9 @@ export async function analyzeBrick(
 
   const seuils = profile
     ? [
-        profile.ftpW != null ? `FTP ${profile.ftpW} W` : null,
-        profile.lthr != null ? `LTHR ${profile.lthr} bpm` : null,
-        profile.maxHr != null ? `FC max ${profile.maxHr} bpm` : null,
+        profile.ftpW !== null ? `FTP ${profile.ftpW} W` : null,
+        profile.lthr !== null ? `LTHR ${profile.lthr} bpm` : null,
+        profile.maxHr !== null ? `FC max ${profile.maxHr} bpm` : null,
         fmtPace(profile.runThresholdPaceSecPerKm)
           ? `allure seuil ${fmtPace(profile.runThresholdPaceSecPerKm)}`
           : null,
@@ -430,7 +480,7 @@ export async function analyzeBrick(
     const a = leg.activity!;
     const watts = wattsList[i];
     const workSummary =
-      watts && ftpW != null
+      watts && ftpW !== null
         ? summarizeBikeWorkBlocks({
             watts,
             ftpW,
@@ -452,7 +502,9 @@ ${describeActual(a, descriptions[i], { ftpW, workSummary })}`;
   for (let i = 1; i < legs.length; i++) {
     const prev = legs[i - 1].activity!;
     const curr = legs[i].activity!;
-    if (prev.duration == null) continue;
+    if (prev.duration === null) {
+      continue;
+    }
     const prevEnd = new Date(new Date(prev.date).getTime() + prev.duration * 1000);
     const currStart = new Date(curr.date);
     const gapMin = Math.round((currStart.getTime() - prevEnd.getTime()) / 60000);

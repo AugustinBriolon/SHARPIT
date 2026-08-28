@@ -117,7 +117,9 @@ export async function buildRecoveryViewModel(
   const snapshot: AthleteSnapshot = await getOrBuildAthleteSnapshot(athleteId, trainingDayId);
   const { recovery } = snapshot;
 
-  if (!recovery) return emptyRecoveryViewModel();
+  if (!recovery) {
+    return emptyRecoveryViewModel();
+  }
 
   const refDate = new Date(`${trainingDayId}T12:00:00.000Z`);
   const healthEntries = await getHealthEntries(athleteId, 14, refDate);
