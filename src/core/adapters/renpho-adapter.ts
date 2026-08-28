@@ -16,21 +16,17 @@ import type { RawBodyCompositionObservation } from '@/core/observation/types';
  * Converts a Renpho measurement to a RawBodyCompositionObservation.
  * Returns null if no weight is present (weight is required).
  */
-export function renphoMeasurementToBodyComposition(
+function buildRenphoObservationFields(
   measurement: RenphoMeasurement,
   receivedAt: Date,
-): RawBodyCompositionObservation | null {
-  if (measurement.weight == null || measurement.weight <= 0) return null;
-
-  const timestamp = new Date(measurement.time_stamp * 1000);
-
+): RawBodyCompositionObservation {
   return {
     type: 'BODY_COMPOSITION',
     source: 'RENPHO',
-    timestamp,
+    timestamp: new Date(measurement.time_stamp * 1000),
     receivedAt,
     externalId: measurement.id,
-    weightKg: measurement.weight,
+    weightKg: measurement.weight!,
     fatPercent: measurement.bodyfat ?? undefined,
     musclePercent: measurement.muscle ?? undefined,
     waterPercent: measurement.water ?? undefined,
@@ -38,4 +34,15 @@ export function renphoMeasurementToBodyComposition(
     visceralFat: measurement.visceral_fat ?? undefined,
     bmi: measurement.bmi ?? undefined,
   };
+}
+
+export function renphoMeasurementToBodyComposition(
+  measurement: RenphoMeasurement,
+  receivedAt: Date,
+): RawBodyCompositionObservation | null {
+  if (measurement.weight === null || measurement.weight <= 0) {
+    return null;
+  }
+
+  return buildRenphoObservationFields(measurement, receivedAt);
 }

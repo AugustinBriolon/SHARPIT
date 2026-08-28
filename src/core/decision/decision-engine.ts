@@ -78,16 +78,16 @@ export function runDecisionEngine(input: DecisionEngineInput): DecisionEngineOut
     actionable: limitingFactor.actionable,
   };
 
-  const rawFindings = buildKeyFindings(
+  const rawFindings = buildKeyFindings({
     recovery,
     fatigue,
     adaptation,
-    reasoningConflicts,
+    conflicts: reasoningConflicts,
     modelDirections,
     physiologicalConsistency,
     overallVerdict,
-    legacyLimiting,
-  );
+    limitingFactor: legacyLimiting,
+  });
 
   const { supportingEvidence, suppressedEvidence, explanationOrder } = rankAndSuppressEvidence({
     findings: rawFindings,
@@ -117,13 +117,13 @@ export function runDecisionEngine(input: DecisionEngineInput): DecisionEngineOut
     expectedBenefit: primaryDecision.expectedBenefit,
   };
 
-  const evidenceGraph = buildEvidenceGraph(
+  const evidenceGraph = buildEvidenceGraph({
     recovery,
     fatigue,
     adaptation,
-    overallVerdict,
-    legacyLimiting,
-  );
+    verdict: overallVerdict,
+    limitingFactor: legacyLimiting,
+  });
 
   const { confidence: modelConfidence, dataCompleteness } = computeReasoningConfidence(
     recovery,
@@ -133,7 +133,7 @@ export function runDecisionEngine(input: DecisionEngineInput): DecisionEngineOut
   );
 
   const freshnessFactor =
-    freshnessConfidence != null ? Math.min(1, Math.max(0, freshnessConfidence)) : 1;
+    freshnessConfidence !== null ? Math.min(1, Math.max(0, freshnessConfidence)) : 1;
   const confidence = Math.round(modelConfidence * freshnessFactor * 100) / 100;
   const confidenceGated = shouldGateAdvice(confidence, overallVerdict);
   const attentionDomain = resolveAttentionDomain(limitingFactor, overallVerdict);
@@ -173,11 +173,11 @@ export function runDecisionEngine(input: DecisionEngineInput): DecisionEngineOut
     decisionState,
     signals: {
       availableModelCount,
-      hasRecoveryState: recovery != null,
-      hasFatigueState: fatigue != null,
-      hasAdaptationState: adaptation != null,
-      hasPhysicalHealthState: physicalHealth != null,
-      hasEnvironmentState: environment != null,
+      hasRecoveryState: recovery !== null,
+      hasFatigueState: fatigue !== null,
+      hasAdaptationState: adaptation !== null,
+      hasPhysicalHealthState: physicalHealth !== null,
+      hasEnvironmentState: environment !== null,
       conflictCount: conflicts.length,
       suppressedEvidenceCount: suppressedEvidence.length,
     },

@@ -157,7 +157,7 @@ function buildWindStressor(input: {
 }): EnvironmentalStressor {
   const wind = input.weather.windSpeedMps;
 
-  if (wind == null) {
+  if (wind === null) {
     return {
       id: 'WIND',
       intensity: unavailableMetric(
@@ -192,8 +192,12 @@ function buildWindStressor(input: {
 function pickHeatProxy(
   features: ReturnType<typeof buildEnvironmentalFeatures>,
 ): import('./types').AvailableMetric<number> | null {
-  if (features.heatIndexC.available) return features.heatIndexC;
-  if (features.estimatedWetBulbC.available) return features.estimatedWetBulbC;
+  if (features.heatIndexC.available) {
+    return features.heatIndexC;
+  }
+  if (features.estimatedWetBulbC.available) {
+    return features.estimatedWetBulbC;
+  }
   return null;
 }
 

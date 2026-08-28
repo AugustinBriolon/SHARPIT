@@ -49,28 +49,35 @@ function matchesPrefix(specifier: string, prefix: string): boolean {
   return specifier === prefix || specifier.startsWith(`${prefix}/`);
 }
 
+type ForbiddenSpecifierRule = {
+  prefix: string;
+  reason: string;
+  allowedSpecifier?: string;
+};
+
+const FORBIDDEN_SPECIFIER_RULES: ForbiddenSpecifierRule[] = [
+  { prefix: FORBIDDEN_ALIASES.inference, reason: 'inference' },
+  { prefix: FORBIDDEN_ALIASES.digitalTwin, reason: 'digital-twin' },
+  { prefix: FORBIDDEN_ALIASES.featureEngine, reason: 'feature-engine' },
+  { prefix: FORBIDDEN_ALIASES.observationEngine, reason: 'observation-engine' },
+  { prefix: FORBIDDEN_ALIASES.featureOrInferenceEnginesSingletons, reason: 'engines' },
+  { prefix: FORBIDDEN_ALIASES.productInsightProjections, reason: 'product-insight-projections' },
+  {
+    prefix: FORBIDDEN_ALIASES.productInsightBuilders,
+    reason: 'product-insight-builders',
+    allowedSpecifier: ALLOWED_PRODUCT_INSIGHT_TYPES,
+  },
+];
+
 function isForbiddenBySpecifier(specifier: string): string | null {
-  if (matchesPrefix(specifier, FORBIDDEN_ALIASES.inference)) {
-    return 'inference';
-  }
-  if (matchesPrefix(specifier, FORBIDDEN_ALIASES.digitalTwin)) {
-    return 'digital-twin';
-  }
-  if (matchesPrefix(specifier, FORBIDDEN_ALIASES.featureEngine)) {
-    return 'feature-engine';
-  }
-  if (matchesPrefix(specifier, FORBIDDEN_ALIASES.observationEngine)) {
-    return 'observation-engine';
-  }
-  if (matchesPrefix(specifier, FORBIDDEN_ALIASES.featureOrInferenceEnginesSingletons)) {
-    return 'engines';
-  }
-  if (matchesPrefix(specifier, FORBIDDEN_ALIASES.productInsightProjections)) {
-    return 'product-insight-projections';
-  }
-  if (matchesPrefix(specifier, FORBIDDEN_ALIASES.productInsightBuilders)) {
-    if (specifier === ALLOWED_PRODUCT_INSIGHT_TYPES) return null;
-    return 'product-insight-builders';
+  for (const rule of FORBIDDEN_SPECIFIER_RULES) {
+    if (!matchesPrefix(specifier, rule.prefix)) {
+      continue;
+    }
+    if (rule.allowedSpecifier && specifier === rule.allowedSpecifier) {
+      return null;
+    }
+    return rule.reason;
   }
   return null;
 }
@@ -78,8 +85,12 @@ function isForbiddenBySpecifier(specifier: string): string | null {
 function isImportDeclarationTypeOnly(node: Ts.ImportDeclaration): boolean {
   const clause = node.importClause;
   // Side-effect import: `import 'x'`.
-  if (!clause) return false;
-  if (clause.isTypeOnly) return true;
+  if (!clause) {
+    return false;
+  }
+  if (clause.isTypeOnly) {
+    return true;
+  }
 
   // TS supports `import { type X } from '...'`.
   if (clause.namedBindings && ts.isNamedImports(clause.namedBindings)) {
@@ -98,7 +109,9 @@ function collectTsFiles(dir: string, predicate: (filePath: string) => boolean): 
     const full = path.join(dir, entry.name);
     if (entry.isDirectory()) {
       // Avoid traversing node_modules even if it appears under roots.
-      if (entry.name === 'node_modules' || entry.name.startsWith('.next')) continue;
+      if (entry.name === 'node_modules' || entry.name.startsWith('.next')) {
+        continue;
+      }
       out.push(...collectTsFiles(full, predicate));
     } else if (entry.isFile() && predicate(full)) {
       out.push(full);
@@ -129,13 +142,30 @@ function resolveToRepoAbsPath(importerFilePath: string, specifier: string): stri
   ];
 
   for (const c of candidates) {
-    if (fs.existsSync(c) && fs.statSync(c).isFile()) return c;
+    if (fs.existsSync(c) && fs.statSync(c).isFile()) {
+      return c;
+    }
   }
   return null;
 }
 
+const FORBIDDEN_RESOLVED_PREFIXES: Array<{ prefix: string; reason: string }> = [
+  { prefix: path.join(REPO_ROOT, 'src', 'core', 'inference'), reason: 'inference' },
+  { prefix: path.join(REPO_ROOT, 'src', 'core', 'digital-twin'), reason: 'digital-twin' },
+  { prefix: path.join(REPO_ROOT, 'src', 'core', 'features'), reason: 'feature-engine' },
+  { prefix: path.join(REPO_ROOT, 'src', 'core', 'observation'), reason: 'observation-engine' },
+  { prefix: path.join(REPO_ROOT, 'src', 'lib', 'engines'), reason: 'engines' },
+  {
+    prefix: path.join(REPO_ROOT, 'src', 'core', 'product-insight'),
+    reason: 'product-insight-builders',
+  },
+  {
+    prefix: path.join(REPO_ROOT, 'src', 'lib', 'product-insight'),
+    reason: 'product-insight-projections',
+  },
+];
+
 function isForbiddenByResolvedPath(resolvedAbsPath: string): string | null {
-  // Only needed when specifier isn't an alias we can match reliably.
   const allowedProductInsightTypesResolved = path.join(
     REPO_ROOT,
     'src',
@@ -143,35 +173,159 @@ function isForbiddenByResolvedPath(resolvedAbsPath: string): string | null {
     'product-insight',
     'types.ts',
   );
-  if (resolvedAbsPath === allowedProductInsightTypesResolved) return null;
+  if (resolvedAbsPath === allowedProductInsightTypesResolved) {
+    return null;
+  }
 
-  const forbiddenPrefixesAbs = [
-    path.join(REPO_ROOT, 'src', 'core', 'inference'),
-    path.join(REPO_ROOT, 'src', 'core', 'digital-twin'),
-    path.join(REPO_ROOT, 'src', 'core', 'features'),
-    path.join(REPO_ROOT, 'src', 'core', 'observation'),
-    path.join(REPO_ROOT, 'src', 'lib', 'engines'),
-    path.join(REPO_ROOT, 'src', 'core', 'product-insight'),
-    path.join(REPO_ROOT, 'src', 'lib', 'product-insight'),
-  ];
-
-  for (const p of forbiddenPrefixesAbs) {
-    if (resolvedAbsPath === p || resolvedAbsPath.startsWith(`${p}${path.sep}`)) {
-      // Split message category for better UX.
-      if (p.includes(`${path.sep}core${path.sep}product-insight`))
-        return 'product-insight-builders';
-      if (p.includes(`${path.sep}lib${path.sep}product-insight`))
-        return 'product-insight-projections';
-      if (p.includes(`${path.sep}lib${path.sep}engines`)) return 'engines';
-      if (p.includes(`${path.sep}core${path.sep}inference`)) return 'inference';
-      if (p.includes(`${path.sep}core${path.sep}digital-twin`)) return 'digital-twin';
-      if (p.includes(`${path.sep}core${path.sep}features`)) return 'feature-engine';
-      if (p.includes(`${path.sep}core${path.sep}observation`)) return 'observation-engine';
-      return 'forbidden-module';
+  for (const rule of FORBIDDEN_RESOLVED_PREFIXES) {
+    if (
+      resolvedAbsPath === rule.prefix ||
+      resolvedAbsPath.startsWith(`${rule.prefix}${path.sep}`)
+    ) {
+      return rule.reason;
     }
   }
 
   return null;
+}
+
+type SpecifierViolationContext = {
+  violations: Violation[];
+  rel: string;
+  filePath: string;
+};
+
+function pushResolvedSpecifierViolation(
+  context: SpecifierViolationContext,
+  kind: Violation['kind'],
+  specifier: string,
+): void {
+  const resolvedAbs = resolveToRepoAbsPath(context.filePath, specifier);
+  if (!resolvedAbs) {
+    return;
+  }
+
+  const forbiddenByResolved = isForbiddenByResolvedPath(resolvedAbs);
+  if (!forbiddenByResolved) {
+    return;
+  }
+
+  context.violations.push({
+    file: context.rel,
+    kind,
+    specifier,
+    forbiddenReason: forbiddenByResolved,
+  });
+}
+
+function recordSpecifierViolation(
+  context: SpecifierViolationContext,
+  kind: Violation['kind'],
+  specifier: string,
+): void {
+  const forbiddenReason = isForbiddenBySpecifier(specifier);
+  if (forbiddenReason) {
+    context.violations.push({
+      file: context.rel,
+      kind,
+      specifier,
+      forbiddenReason,
+    });
+    return;
+  }
+
+  pushResolvedSpecifierViolation(context, kind, specifier);
+}
+
+function visitImportDeclaration(node: Ts.ImportDeclaration, context: SpecifierViolationContext) {
+  const specifierNode = node.moduleSpecifier;
+  if (!specifierNode || !ts.isStringLiteral(specifierNode)) {
+    return;
+  }
+
+  const isValueImport = !isImportDeclarationTypeOnly(node);
+  if (!isValueImport) {
+    return;
+  }
+
+  const kind: Violation['kind'] = node.importClause === null ? 'side-effect-import' : 'import';
+  recordSpecifierViolation(context, kind, specifierNode.text);
+}
+
+function visitExportDeclaration(node: Ts.ExportDeclaration, context: SpecifierViolationContext) {
+  const { moduleSpecifier } = node;
+  if (!moduleSpecifier || !ts.isStringLiteral(moduleSpecifier)) {
+    return;
+  }
+
+  const isTypeOnly = (node as Ts.ExportDeclaration & { isTypeOnly?: boolean }).isTypeOnly === true;
+  if (isTypeOnly) {
+    return;
+  }
+
+  recordSpecifierViolation(context, 'export', moduleSpecifier.text);
+}
+
+function visitDynamicImport(node: Ts.CallExpression, context: SpecifierViolationContext) {
+  const [arg0] = node.arguments;
+  if (!arg0 || !ts.isStringLiteral(arg0)) {
+    return;
+  }
+
+  recordSpecifierViolation(context, 'dynamic-import', arg0.text);
+}
+
+function visitRequireCall(node: Ts.CallExpression, context: SpecifierViolationContext) {
+  const [arg0] = node.arguments;
+  if (!arg0 || !ts.isStringLiteral(arg0)) {
+    return;
+  }
+
+  recordSpecifierViolation(context, 'require', arg0.text);
+}
+
+function visitImportEquals(node: Ts.ImportEqualsDeclaration, context: SpecifierViolationContext) {
+  const moduleRef = node.moduleReference;
+  if (
+    !moduleRef ||
+    !ts.isExternalModuleReference(moduleRef) ||
+    !moduleRef.expression ||
+    !ts.isStringLiteral(moduleRef.expression)
+  ) {
+    return;
+  }
+
+  recordSpecifierViolation(context, 'import', moduleRef.expression.text);
+}
+
+function isDynamicImportCall(node: Ts.CallExpression): boolean {
+  return node.expression.kind === ts.SyntaxKind.ImportKeyword;
+}
+
+function isRequireCall(node: Ts.CallExpression): boolean {
+  return ts.isIdentifier(node.expression) && node.expression.text === 'require';
+}
+
+function visitSourceNode(node: Ts.Node, context: SpecifierViolationContext): void {
+  if (ts.isImportDeclaration(node)) {
+    visitImportDeclaration(node, context);
+    return;
+  }
+  if (ts.isExportDeclaration(node)) {
+    visitExportDeclaration(node, context);
+    return;
+  }
+  if (ts.isCallExpression(node) && isDynamicImportCall(node)) {
+    visitDynamicImport(node, context);
+    return;
+  }
+  if (ts.isCallExpression(node) && isRequireCall(node)) {
+    visitRequireCall(node, context);
+    return;
+  }
+  if (ts.isImportEqualsDeclaration(node)) {
+    visitImportEquals(node, context);
+  }
 }
 
 function collectViolationsInFile(filePath: string): Violation[] {
@@ -180,181 +334,10 @@ function collectViolationsInFile(filePath: string): Violation[] {
   const source = ts.createSourceFile(filePath, text, ts.ScriptTarget.Latest, true, scriptKind);
 
   const rel = path.relative(REPO_ROOT, filePath).replaceAll(path.sep, '/');
-  const violations: Violation[] = [];
+  const context: SpecifierViolationContext = { violations: [], rel, filePath };
 
   const visit = (node: Ts.Node) => {
-    if (ts.isImportDeclaration(node)) {
-      const specifierNode = node.moduleSpecifier;
-      if (specifierNode && ts.isStringLiteral(specifierNode)) {
-        const specifier = specifierNode.text;
-        const forbiddenReason = isForbiddenBySpecifier(specifier);
-        const isTypeOnly = isImportDeclarationTypeOnly(node);
-        const isValueImport = !isTypeOnly;
-
-        // `import 'x'` is always a value/side-effect import.
-        const isSideEffectImport = node.importClause == null;
-        const kind: Violation['kind'] = isSideEffectImport ? 'side-effect-import' : 'import';
-
-        if (forbiddenReason && isValueImport) {
-          violations.push({
-            file: rel,
-            kind,
-            specifier,
-            forbiddenReason,
-          });
-        } else if (!forbiddenReason && isValueImport) {
-          // Fallback for relative imports: resolve and check physical path.
-          const resolvedAbs = resolveToRepoAbsPath(filePath, specifier);
-          if (resolvedAbs) {
-            const forbiddenByResolved = isForbiddenByResolvedPath(resolvedAbs);
-            if (forbiddenByResolved) {
-              violations.push({
-                file: rel,
-                kind,
-                specifier,
-                forbiddenReason: forbiddenByResolved,
-              });
-            }
-          }
-        }
-      }
-    }
-
-    if (ts.isExportDeclaration(node)) {
-      const { moduleSpecifier } = node;
-      if (moduleSpecifier && ts.isStringLiteral(moduleSpecifier)) {
-        const specifier = moduleSpecifier.text;
-        // `export type { X } from '...'` => node.isTypeOnly is true.
-        const isTypeOnly =
-          (node as Ts.ExportDeclaration & { isTypeOnly?: boolean }).isTypeOnly === true;
-        if (!isTypeOnly) {
-          const forbiddenReason = isForbiddenBySpecifier(specifier);
-          if (forbiddenReason) {
-            violations.push({
-              file: rel,
-              kind: 'export',
-              specifier,
-              forbiddenReason,
-            });
-          } else {
-            const resolvedAbs = resolveToRepoAbsPath(filePath, specifier);
-            if (resolvedAbs) {
-              const forbiddenByResolved = isForbiddenByResolvedPath(resolvedAbs);
-              if (forbiddenByResolved) {
-                violations.push({
-                  file: rel,
-                  kind: 'export',
-                  specifier,
-                  forbiddenReason: forbiddenByResolved,
-                });
-              }
-            }
-          }
-        }
-      }
-    }
-
-    // import('...')
-    if (ts.isCallExpression(node) && node.expression.kind === ts.SyntaxKind.ImportKeyword) {
-      const args = node.arguments;
-      const [arg0] = args;
-      if (arg0 && ts.isStringLiteral(arg0)) {
-        const specifier = arg0.text;
-        const forbiddenReason = isForbiddenBySpecifier(specifier);
-        if (forbiddenReason) {
-          violations.push({
-            file: rel,
-            kind: 'dynamic-import',
-            specifier,
-            forbiddenReason,
-          });
-        } else {
-          const resolvedAbs = resolveToRepoAbsPath(filePath, specifier);
-          if (resolvedAbs) {
-            const forbiddenByResolved = isForbiddenByResolvedPath(resolvedAbs);
-            if (forbiddenByResolved) {
-              violations.push({
-                file: rel,
-                kind: 'dynamic-import',
-                specifier,
-                forbiddenReason: forbiddenByResolved,
-              });
-            }
-          }
-        }
-      }
-    }
-
-    // require('...')
-    if (
-      ts.isCallExpression(node) &&
-      ts.isIdentifier(node.expression) &&
-      node.expression.text === 'require'
-    ) {
-      const args = node.arguments;
-      const [arg0] = args;
-      if (arg0 && ts.isStringLiteral(arg0)) {
-        const specifier = arg0.text;
-        const forbiddenReason = isForbiddenBySpecifier(specifier);
-        if (forbiddenReason) {
-          violations.push({
-            file: rel,
-            kind: 'require',
-            specifier,
-            forbiddenReason,
-          });
-        } else {
-          const resolvedAbs = resolveToRepoAbsPath(filePath, specifier);
-          if (resolvedAbs) {
-            const forbiddenByResolved = isForbiddenByResolvedPath(resolvedAbs);
-            if (forbiddenByResolved) {
-              violations.push({
-                file: rel,
-                kind: 'require',
-                specifier,
-                forbiddenReason: forbiddenByResolved,
-              });
-            }
-          }
-        }
-      }
-    }
-
-    // import x = require('...')
-    if (ts.isImportEqualsDeclaration(node)) {
-      const moduleRef = node.moduleReference;
-      if (
-        moduleRef &&
-        ts.isExternalModuleReference(moduleRef) &&
-        moduleRef.expression &&
-        ts.isStringLiteral(moduleRef.expression)
-      ) {
-        const specifier = moduleRef.expression.text;
-        const forbiddenReason = isForbiddenBySpecifier(specifier);
-        if (forbiddenReason) {
-          violations.push({
-            file: rel,
-            kind: 'import',
-            specifier,
-            forbiddenReason,
-          });
-        } else {
-          const resolvedAbs = resolveToRepoAbsPath(filePath, specifier);
-          if (resolvedAbs) {
-            const forbiddenByResolved = isForbiddenByResolvedPath(resolvedAbs);
-            if (forbiddenByResolved) {
-              violations.push({
-                file: rel,
-                kind: 'import',
-                specifier,
-                forbiddenReason: forbiddenByResolved,
-              });
-            }
-          }
-        }
-      }
-    }
-
+    visitSourceNode(node, context);
     ts.forEachChild(node, visit);
   };
 
@@ -363,7 +346,9 @@ function collectViolationsInFile(filePath: string): Violation[] {
   // De-duplicate (same specifier could appear in both alias-based + resolved-based checks).
   const keyFn = (v: Violation) => `${v.file}::${v.kind}::${v.specifier}::${v.forbiddenReason}`;
   const uniq = new Map<string, Violation>();
-  for (const v of violations) uniq.set(keyFn(v), v);
+  for (const v of context.violations) {
+    uniq.set(keyFn(v), v);
+  }
 
   return Array.from(uniq.values());
 }
@@ -371,14 +356,20 @@ function collectViolationsInFile(filePath: string): Violation[] {
 describe('Presentation Architecture Guard', () => {
   it('fails on forbidden dependency imports inside presentation files', () => {
     const predicate = (filePath: string) => {
-      if (!filePath.endsWith('.ts') && !filePath.endsWith('.tsx')) return false;
-      if (filePath.endsWith('.d.ts')) return false;
+      if (!filePath.endsWith('.ts') && !filePath.endsWith('.tsx')) {
+        return false;
+      }
+      if (filePath.endsWith('.d.ts')) {
+        return false;
+      }
       return true;
     };
 
     const allFiles: string[] = [];
     for (const root of PRESENTATION_ROOTS) {
-      if (!fs.existsSync(root.dir)) continue;
+      if (!fs.existsSync(root.dir)) {
+        continue;
+      }
       allFiles.push(...collectTsFiles(root.dir, predicate));
     }
 
@@ -389,7 +380,9 @@ describe('Presentation Architecture Guard', () => {
         rel.startsWith(path.relative(REPO_ROOT, r.dir).replaceAll(path.sep, '/')),
       );
       const isExcluded = root ? root.isExcluded(rel) : false;
-      if (isExcluded) continue;
+      if (isExcluded) {
+        continue;
+      }
 
       violations.push(...collectViolationsInFile(filePath));
     }
@@ -474,7 +467,9 @@ function collectLegacyPatternHits(filePath: string): LegacyPatternHit[] {
   for (const { id, regex, hint } of LEGACY_FORBIDDEN_PATTERNS) {
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i] ?? '';
-      if (line.trimStart().startsWith('//') || line.trimStart().startsWith('*')) continue;
+      if (line.trimStart().startsWith('//') || line.trimStart().startsWith('*')) {
+        continue;
+      }
       if (regex.test(line)) {
         hits.push({
           file: rel,
@@ -497,7 +492,9 @@ describe('Presentation Legacy Pattern Guard (P2)', () => {
 
     const allFiles: string[] = [];
     for (const root of LEGACY_PATTERN_ROOTS) {
-      if (!fs.existsSync(root)) continue;
+      if (!fs.existsSync(root)) {
+        continue;
+      }
       allFiles.push(...collectTsFiles(root, predicate));
     }
 

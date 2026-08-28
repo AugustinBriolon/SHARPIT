@@ -75,10 +75,14 @@ async function checkDeduplication(
   type: ObservationType,
   externalId: string | undefined,
 ): Promise<DeduplicationResult> {
-  if (!externalId) return { isDuplicate: false };
+  if (!externalId) {
+    return { isDuplicate: false };
+  }
 
   const existing = await repository.findByExternalId(athleteId, type, externalId);
-  if (existing) return { isDuplicate: true, existingId: existing.id };
+  if (existing) {
+    return { isDuplicate: true, existingId: existing.id };
+  }
 
   return { isDuplicate: false };
 }
@@ -136,7 +140,13 @@ export class ObservationEngine {
 
     // Step 3: Normalization
     const id = randomUUID();
-    const observation = normalize(id, athleteId, raw, validation.flags, config);
+    const observation = normalize({
+      id,
+      athleteId,
+      raw,
+      validationFlags: validation.flags,
+      config,
+    });
 
     // Step 4: Persistence
     await this.repository.save(observation);

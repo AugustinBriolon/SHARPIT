@@ -94,11 +94,17 @@ export function resolveBodyRegion(
   title: string,
   type: ConditionType,
 ): string {
-  if (bodyPart?.trim()) return bodyPart.trim();
+  if (bodyPart?.trim()) {
+    return bodyPart.trim();
+  }
 
   if (scope === 'SYSTEMIC') {
-    if (type === 'POSTURE_ISSUE') return 'Posture générale';
-    if (type === 'MOBILITY_LIMITATION') return 'Mobilité générale';
+    if (type === 'POSTURE_ISSUE') {
+      return 'Posture générale';
+    }
+    if (type === 'MOBILITY_LIMITATION') {
+      return 'Mobilité générale';
+    }
     return 'Condition générale';
   }
 
@@ -112,28 +118,48 @@ export function resolveBodyRegion(
 export function inferSymptomPresentFromLegacySeverity(
   severity: number | null | undefined,
 ): boolean {
-  if (severity == null) return true;
+  if (severity === null) {
+    return true;
+  }
   return severity > 0;
 }
 
 export function inferFunctionalImpactFromLegacySeverity(
   severity: number | null | undefined,
 ): FunctionalImpact | null {
-  if (severity == null) return null;
-  if (severity === 0) return 'NONE';
-  if (severity <= 3) return 'MILD';
-  if (severity <= 6) return 'MODERATE';
-  if (severity <= 8) return 'LIMITING';
+  if (severity === null) {
+    return null;
+  }
+  if (severity === 0) {
+    return 'NONE';
+  }
+  if (severity <= 3) {
+    return 'MILD';
+  }
+  if (severity <= 6) {
+    return 'MODERATE';
+  }
+  if (severity <= 8) {
+    return 'LIMITING';
+  }
   return 'STOPPED';
 }
 
 export function inferTrainingCapacityFromSeverity(
   severity: number | null | undefined,
 ): import('./types').TrainingCapacityLevel {
-  if (severity == null) return 'REDUCED';
-  if (severity === 0) return 'FULL';
-  if (severity <= 3) return 'REDUCED';
-  if (severity <= 6) return 'LIMITED';
+  if (severity === null) {
+    return 'REDUCED';
+  }
+  if (severity === 0) {
+    return 'FULL';
+  }
+  if (severity <= 3) {
+    return 'REDUCED';
+  }
+  if (severity <= 6) {
+    return 'LIMITED';
+  }
   return 'UNABLE';
 }
 

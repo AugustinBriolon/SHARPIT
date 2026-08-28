@@ -133,19 +133,40 @@ const EMPTY_HISTORY: RecoveryHistory = {
 describe('extractRecoveryFeatures — sleepEfficiencyPercent', () => {
   it('computes (deepMin + remMin) / totalMinutes × 100', () => {
     const sleep = makeSleep(480, { deep: 90, rem: 100 });
-    const result = extractRecoveryFeatures(null, null, sleep, null, EMPTY_HISTORY, makeContext());
+    const result = extractRecoveryFeatures({
+      hrv: null,
+      rhr: null,
+      sleep: sleep,
+      subjective: null,
+      history: EMPTY_HISTORY,
+      ctx: makeContext(),
+    });
     // (90 + 100) / 480 × 100 = 39.58%
     expect(result.sleepEfficiencyPercent).toBeCloseTo(39.58, 1);
   });
 
   it('returns null when deep or rem data is absent', () => {
     const sleep = makeSleep(480); // no deep/rem data
-    const result = extractRecoveryFeatures(null, null, sleep, null, EMPTY_HISTORY, makeContext());
+    const result = extractRecoveryFeatures({
+      hrv: null,
+      rhr: null,
+      sleep: sleep,
+      subjective: null,
+      history: EMPTY_HISTORY,
+      ctx: makeContext(),
+    });
     expect(result.sleepEfficiencyPercent).toBeNull();
   });
 
   it('returns null when no sleep observation', () => {
-    const result = extractRecoveryFeatures(null, null, null, null, EMPTY_HISTORY, makeContext());
+    const result = extractRecoveryFeatures({
+      hrv: null,
+      rhr: null,
+      sleep: null,
+      subjective: null,
+      history: EMPTY_HISTORY,
+      ctx: makeContext(),
+    });
     expect(result.sleepEfficiencyPercent).toBeNull();
   });
 });
@@ -163,14 +184,14 @@ describe('extractRecoveryFeatures — sleepDebtMin', () => {
       return { totalMinutes: 420, timestamp: d };
     });
     const history: RecoveryHistory = { ...EMPTY_HISTORY, sleep14d };
-    const result = extractRecoveryFeatures(
-      null,
-      null,
-      null,
-      null,
-      history,
-      makeContext({ sleepTargetMinutes: 480 }),
-    );
+    const result = extractRecoveryFeatures({
+      hrv: null,
+      rhr: null,
+      sleep: null,
+      subjective: null,
+      history: history,
+      ctx: makeContext({ sleepTargetMinutes: 480 }),
+    });
     // Debt = 480 × 7 - 420 × 7 = 3360 - 2940 = 420 min
     expect(result.sleepDebtMin).toBeCloseTo(420, 1);
   });
@@ -182,20 +203,27 @@ describe('extractRecoveryFeatures — sleepDebtMin', () => {
       return { totalMinutes: 540, timestamp: d };
     });
     const history: RecoveryHistory = { ...EMPTY_HISTORY, sleep14d };
-    const result = extractRecoveryFeatures(
-      null,
-      null,
-      null,
-      null,
-      history,
-      makeContext({ sleepTargetMinutes: 480 }),
-    );
+    const result = extractRecoveryFeatures({
+      hrv: null,
+      rhr: null,
+      sleep: null,
+      subjective: null,
+      history: history,
+      ctx: makeContext({ sleepTargetMinutes: 480 }),
+    });
     // Surplus = 480 × 7 - 540 × 7 = -420 (negative debt = surplus)
     expect(result.sleepDebtMin).toBeLessThan(0);
   });
 
   it('returns null when no sleep history', () => {
-    const result = extractRecoveryFeatures(null, null, null, null, EMPTY_HISTORY, makeContext());
+    const result = extractRecoveryFeatures({
+      hrv: null,
+      rhr: null,
+      sleep: null,
+      subjective: null,
+      history: EMPTY_HISTORY,
+      ctx: makeContext(),
+    });
     expect(result.sleepDebtMin).toBeNull();
   });
 
@@ -207,14 +235,14 @@ describe('extractRecoveryFeatures — sleepDebtMin', () => {
     });
     const history: RecoveryHistory = { ...EMPTY_HISTORY, sleep14d };
     // No sleepTargetMinutes in context → defaults to 450 (7h30)
-    const result = extractRecoveryFeatures(
-      null,
-      null,
-      null,
-      null,
-      history,
-      makeContext({ sleepTargetMinutes: undefined }),
-    );
+    const result = extractRecoveryFeatures({
+      hrv: null,
+      rhr: null,
+      sleep: null,
+      subjective: null,
+      history: history,
+      ctx: makeContext({ sleepTargetMinutes: undefined }),
+    });
     expect(result.sleepDebtMin).toBeCloseTo(0, 1);
   });
 });
@@ -230,7 +258,14 @@ describe('extractRecoveryFeatures — sleepOnsetConsistencyMin', () => {
       { totalMinutes: 480, bedtimeMinFromMidnight: 1400, timestamp: new Date('2026-06-30') },
     ];
     const history: RecoveryHistory = { ...EMPTY_HISTORY, sleep14d };
-    const result = extractRecoveryFeatures(null, null, null, null, history, makeContext());
+    const result = extractRecoveryFeatures({
+      hrv: null,
+      rhr: null,
+      sleep: null,
+      subjective: null,
+      history: history,
+      ctx: makeContext(),
+    });
     expect(result.sleepOnsetConsistencyMin).toBeNull();
   });
 
@@ -241,7 +276,14 @@ describe('extractRecoveryFeatures — sleepOnsetConsistencyMin', () => {
       timestamp: new Date(Date.UTC(2026, 6, 2 - i)),
     }));
     const history: RecoveryHistory = { ...EMPTY_HISTORY, sleep14d };
-    const result = extractRecoveryFeatures(null, null, null, null, history, makeContext());
+    const result = extractRecoveryFeatures({
+      hrv: null,
+      rhr: null,
+      sleep: null,
+      subjective: null,
+      history: history,
+      ctx: makeContext(),
+    });
     expect(result.sleepOnsetConsistencyMin).toBeCloseTo(0, 1);
   });
 });
@@ -256,7 +298,14 @@ describe('extractRecoveryFeatures — hrvDeltaFromBaseline', () => {
     const hrv14d = buildHrvHistory(60, 70); // baseline 60, today 70
     const history: RecoveryHistory = { ...EMPTY_HISTORY, hrv14d };
 
-    const result = extractRecoveryFeatures(todayHrv, null, null, null, history, makeContext());
+    const result = extractRecoveryFeatures({
+      hrv: todayHrv,
+      rhr: null,
+      sleep: null,
+      subjective: null,
+      history: history,
+      ctx: makeContext(),
+    });
     // Delta = (70 - 60) / 60 × 100 = +16.67%
     expect(result.hrvDeltaFromBaseline).toBeCloseTo(16.67, 1);
   });
@@ -266,7 +315,14 @@ describe('extractRecoveryFeatures — hrvDeltaFromBaseline', () => {
     const hrv14d = buildHrvHistory(60, 50); // baseline 60, today 50
     const history: RecoveryHistory = { ...EMPTY_HISTORY, hrv14d };
 
-    const result = extractRecoveryFeatures(todayHrv, null, null, null, history, makeContext());
+    const result = extractRecoveryFeatures({
+      hrv: todayHrv,
+      rhr: null,
+      sleep: null,
+      subjective: null,
+      history: history,
+      ctx: makeContext(),
+    });
     expect(result.hrvDeltaFromBaseline).toBeCloseTo(-16.67, 1);
   });
 
@@ -279,7 +335,14 @@ describe('extractRecoveryFeatures — hrvDeltaFromBaseline', () => {
     ];
     const history: RecoveryHistory = { ...EMPTY_HISTORY, hrv14d };
 
-    const result = extractRecoveryFeatures(todayHrv, null, null, null, history, makeContext());
+    const result = extractRecoveryFeatures({
+      hrv: todayHrv,
+      rhr: null,
+      sleep: null,
+      subjective: null,
+      history: history,
+      ctx: makeContext(),
+    });
     expect(result.hrvDeltaFromBaseline).toBeNull();
   });
 
@@ -294,7 +357,14 @@ describe('extractRecoveryFeatures — hrvDeltaFromBaseline', () => {
     ];
     const history: RecoveryHistory = { ...EMPTY_HISTORY, hrv14d };
 
-    const result = extractRecoveryFeatures(todayHrv, null, null, null, history, makeContext());
+    const result = extractRecoveryFeatures({
+      hrv: todayHrv,
+      rhr: null,
+      sleep: null,
+      subjective: null,
+      history: history,
+      ctx: makeContext(),
+    });
     // Garmin midpoint = 50 → (55 - 50) / 50 × 100 = +10%
     expect(result.hrvDeltaFromBaseline).toBeCloseTo(10, 1);
   });
@@ -302,20 +372,27 @@ describe('extractRecoveryFeatures — hrvDeltaFromBaseline', () => {
   it('returns null when no HRV observation today', () => {
     const hrv14d = buildHrvHistory(60, 60);
     const history: RecoveryHistory = { ...EMPTY_HISTORY, hrv14d };
-    const result = extractRecoveryFeatures(null, null, null, null, history, makeContext());
+    const result = extractRecoveryFeatures({
+      hrv: null,
+      rhr: null,
+      sleep: null,
+      subjective: null,
+      history: history,
+      ctx: makeContext(),
+    });
     expect(result.hrvDeltaFromBaseline).toBeNull();
   });
 
   it('hrvAbsolute is set even when baseline is not established', () => {
     const todayHrv = makeHrv(65);
-    const result = extractRecoveryFeatures(
-      todayHrv,
-      null,
-      null,
-      null,
-      EMPTY_HISTORY,
-      makeContext(),
-    );
+    const result = extractRecoveryFeatures({
+      hrv: todayHrv,
+      rhr: null,
+      sleep: null,
+      subjective: null,
+      history: EMPTY_HISTORY,
+      ctx: makeContext(),
+    });
     expect(result.hrvAbsolute).toBe(65);
     expect(result.hrvDeltaFromBaseline).toBeNull();
   });
@@ -336,7 +413,14 @@ describe('extractRecoveryFeatures — rhrDeltaFromBaseline', () => {
       })),
     ];
     const history: RecoveryHistory = { ...EMPTY_HISTORY, rhr14d };
-    const result = extractRecoveryFeatures(null, todayRhr, null, null, history, makeContext());
+    const result = extractRecoveryFeatures({
+      hrv: null,
+      rhr: todayRhr,
+      sleep: null,
+      subjective: null,
+      history: history,
+      ctx: makeContext(),
+    });
     // Today=52, baseline=48 → delta=+4 bpm
     expect(result.rhrDeltaFromBaseline).toBeCloseTo(4, 1);
   });
@@ -348,7 +432,14 @@ describe('extractRecoveryFeatures — rhrDeltaFromBaseline', () => {
       { valueBpm: 48, timestamp: new Date('2026-07-01') },
     ];
     const history: RecoveryHistory = { ...EMPTY_HISTORY, rhr14d };
-    const result = extractRecoveryFeatures(null, todayRhr, null, null, history, makeContext());
+    const result = extractRecoveryFeatures({
+      hrv: null,
+      rhr: todayRhr,
+      sleep: null,
+      subjective: null,
+      history: history,
+      ctx: makeContext(),
+    });
     expect(result.rhrDeltaFromBaseline).toBeNull();
   });
 });
@@ -361,7 +452,14 @@ describe('extractRecoveryFeatures — subjectiveWellnessIndex', () => {
   it('computes composite index from mood, energy, soreness and stress', () => {
     // mood=4 → 8/10, energy=5 → 10/10, soreness=2 → 8/10, stress=2 → 6/10
     const subj = makeSubjective({ mood: 4, energyLevel: 5, perceivedSoreness: 2, stressLevel: 2 });
-    const result = extractRecoveryFeatures(null, null, null, subj, EMPTY_HISTORY, makeContext());
+    const result = extractRecoveryFeatures({
+      hrv: null,
+      rhr: null,
+      sleep: null,
+      subjective: subj,
+      history: EMPTY_HISTORY,
+      ctx: makeContext(),
+    });
     // index = 0.30×8 + 0.35×10 + 0.25×8 + 0.10×6 = 2.4 + 3.5 + 2.0 + 0.6 = 8.5
     expect(result.subjectiveWellnessIndex).toBeCloseTo(8.5, 1);
   });
@@ -369,20 +467,41 @@ describe('extractRecoveryFeatures — subjectiveWellnessIndex', () => {
   it('re-normalizes weights when only some dimensions are available', () => {
     // Only mood available (weight 0.30 → normalized to 1.0)
     const subj = makeSubjective({ mood: 5 });
-    const result = extractRecoveryFeatures(null, null, null, subj, EMPTY_HISTORY, makeContext());
+    const result = extractRecoveryFeatures({
+      hrv: null,
+      rhr: null,
+      sleep: null,
+      subjective: subj,
+      history: EMPTY_HISTORY,
+      ctx: makeContext(),
+    });
     // index = (mood=5 → 10/10) × 1.0 = 10.0
     expect(result.subjectiveWellnessIndex).toBeCloseTo(10.0, 1);
   });
 
   it('returns null when no subjective observation', () => {
-    const result = extractRecoveryFeatures(null, null, null, null, EMPTY_HISTORY, makeContext());
+    const result = extractRecoveryFeatures({
+      hrv: null,
+      rhr: null,
+      sleep: null,
+      subjective: null,
+      history: EMPTY_HISTORY,
+      ctx: makeContext(),
+    });
     expect(result.subjectiveWellnessIndex).toBeNull();
     expect(result.subjectiveWellnessComponents).toBeNull();
   });
 
   it('caps mood value at 10 (scale: 1-5 → multiply by 2 → max 10)', () => {
     const subj = makeSubjective({ mood: 5 }); // max mood
-    const result = extractRecoveryFeatures(null, null, null, subj, EMPTY_HISTORY, makeContext());
+    const result = extractRecoveryFeatures({
+      hrv: null,
+      rhr: null,
+      sleep: null,
+      subjective: subj,
+      history: EMPTY_HISTORY,
+      ctx: makeContext(),
+    });
     expect(result.subjectiveWellnessIndex).toBeLessThanOrEqual(10);
     expect(result.subjectiveWellnessIndex).toBeGreaterThanOrEqual(0);
   });
@@ -391,14 +510,35 @@ describe('extractRecoveryFeatures — subjectiveWellnessIndex', () => {
     const lowSoreness = makeSubjective({ mood: 4, energyLevel: 4, perceivedSoreness: 0 });
     const highSoreness = makeSubjective({ mood: 4, energyLevel: 4, perceivedSoreness: 8 });
     const ctx = makeContext();
-    const r1 = extractRecoveryFeatures(null, null, null, lowSoreness, EMPTY_HISTORY, ctx);
-    const r2 = extractRecoveryFeatures(null, null, null, highSoreness, EMPTY_HISTORY, ctx);
+    const r1 = extractRecoveryFeatures({
+      hrv: null,
+      rhr: null,
+      sleep: null,
+      subjective: lowSoreness,
+      history: EMPTY_HISTORY,
+      ctx: ctx,
+    });
+    const r2 = extractRecoveryFeatures({
+      hrv: null,
+      rhr: null,
+      sleep: null,
+      subjective: highSoreness,
+      history: EMPTY_HISTORY,
+      ctx: ctx,
+    });
     expect(r1.subjectiveWellnessIndex!).toBeGreaterThan(r2.subjectiveWellnessIndex!);
   });
 
   it('preserves raw component values alongside composite index', () => {
     const subj = makeSubjective({ mood: 3, energyLevel: 4, perceivedSoreness: 5, stressLevel: 4 });
-    const result = extractRecoveryFeatures(null, null, null, subj, EMPTY_HISTORY, makeContext());
+    const result = extractRecoveryFeatures({
+      hrv: null,
+      rhr: null,
+      sleep: null,
+      subjective: subj,
+      history: EMPTY_HISTORY,
+      ctx: makeContext(),
+    });
     expect(result.subjectiveWellnessComponents?.mood).toBe(3);
     expect(result.subjectiveWellnessComponents?.energyLevel).toBe(4);
     expect(result.subjectiveWellnessComponents?.perceivedSoreness).toBe(5);
@@ -419,8 +559,22 @@ describe('extractRecoveryFeatures — subjectiveWellnessIndex', () => {
       stressLevel: 5,
     });
     const ctx = makeContext();
-    const r1 = extractRecoveryFeatures(null, null, null, lowStress, EMPTY_HISTORY, ctx);
-    const r2 = extractRecoveryFeatures(null, null, null, highStress, EMPTY_HISTORY, ctx);
+    const r1 = extractRecoveryFeatures({
+      hrv: null,
+      rhr: null,
+      sleep: null,
+      subjective: lowStress,
+      history: EMPTY_HISTORY,
+      ctx: ctx,
+    });
+    const r2 = extractRecoveryFeatures({
+      hrv: null,
+      rhr: null,
+      sleep: null,
+      subjective: highStress,
+      history: EMPTY_HISTORY,
+      ctx: ctx,
+    });
     expect(r1.subjectiveWellnessIndex!).toBeGreaterThan(r2.subjectiveWellnessIndex!);
   });
 });
@@ -457,26 +611,40 @@ describe('computeRpeVsTargetZone', () => {
 
 describe('extractRecoveryFeatures — confidence', () => {
   it('returns very low confidence when no observations at all', () => {
-    const result = extractRecoveryFeatures(null, null, null, null, EMPTY_HISTORY, makeContext());
+    const result = extractRecoveryFeatures({
+      hrv: null,
+      rhr: null,
+      sleep: null,
+      subjective: null,
+      history: EMPTY_HISTORY,
+      ctx: makeContext(),
+    });
     expect(result.confidence).toBeLessThan(0.3);
   });
 
   it('returns higher confidence with multiple observation types', () => {
     const hrv14d = buildHrvHistory(60, 65);
     const history: RecoveryHistory = { ...EMPTY_HISTORY, hrv14d };
-    const result = extractRecoveryFeatures(
-      makeHrv(65),
-      makeRhr(50),
-      makeSleep(480, { deep: 90, rem: 100 }),
-      makeSubjective({ mood: 4, energyLevel: 4 }),
+    const result = extractRecoveryFeatures({
+      hrv: makeHrv(65),
+      rhr: makeRhr(50),
+      sleep: makeSleep(480, { deep: 90, rem: 100 }),
+      subjective: makeSubjective({ mood: 4, energyLevel: 4 }),
       history,
-      makeContext(),
-    );
+      ctx: makeContext(),
+    });
     expect(result.confidence).toBeGreaterThan(0.6);
   });
 
   it('algorithmId is recovery-features-v1', () => {
-    const result = extractRecoveryFeatures(null, null, null, null, EMPTY_HISTORY, makeContext());
+    const result = extractRecoveryFeatures({
+      hrv: null,
+      rhr: null,
+      sleep: null,
+      subjective: null,
+      history: EMPTY_HISTORY,
+      ctx: makeContext(),
+    });
     expect(result.algorithmId).toBe('recovery-features-v1');
   });
 });
@@ -492,7 +660,14 @@ describe('extractRecoveryFeatures — source observation IDs', () => {
     const sleep = makeSleep(480);
     const subj = makeSubjective({ mood: 4 });
 
-    const result = extractRecoveryFeatures(hrv, rhr, sleep, subj, EMPTY_HISTORY, makeContext());
+    const result = extractRecoveryFeatures({
+      hrv: hrv,
+      rhr: rhr,
+      sleep: sleep,
+      subjective: subj,
+      history: EMPTY_HISTORY,
+      ctx: makeContext(),
+    });
 
     expect(result.sourceObsIds).toContain(hrv.id);
     expect(result.sourceObsIds).toContain(rhr.id);
@@ -502,7 +677,14 @@ describe('extractRecoveryFeatures — source observation IDs', () => {
 
   it('excludes IDs for null observations', () => {
     const hrv = makeHrv(65);
-    const result = extractRecoveryFeatures(hrv, null, null, null, EMPTY_HISTORY, makeContext());
+    const result = extractRecoveryFeatures({
+      hrv: hrv,
+      rhr: null,
+      sleep: null,
+      subjective: null,
+      history: EMPTY_HISTORY,
+      ctx: makeContext(),
+    });
     expect(result.sourceObsIds).toHaveLength(1);
     expect(result.sourceObsIds[0]).toBe(hrv.id);
   });

@@ -85,7 +85,9 @@ export interface MetricsCollector {
 // ─────────────────────────────────────────────────────────────────────────────
 
 function computeLatencyStats(samples: number[]): LatencyStats | null {
-  if (samples.length === 0) return null;
+  if (samples.length === 0) {
+    return null;
+  }
   const sorted = [...samples].sort((a, b) => a - b);
   const n = sorted.length;
   const sum = sorted.reduce((acc, v) => acc + v, 0);
@@ -151,7 +153,9 @@ export class EngineMetricsCollector implements MetricsCollector {
 
   recordReplay(event: ReplayEvent): void {
     this.replayTotal++;
-    if (!event.success) this.replayFailed++;
+    if (!event.success) {
+      this.replayFailed++;
+    }
     this.replayTotalDays += event.daysReplayed;
     this.lastReplayDurationMs = event.totalDurationMs;
   }
@@ -160,7 +164,9 @@ export class EngineMetricsCollector implements MetricsCollector {
     const perCategory: Partial<Record<ExtractionCategory, LatencyStats>> = {};
     for (const cat of Object.keys(this.latencyByCategory) as ExtractionCategory[]) {
       const stats = computeLatencyStats(this.latencyByCategory[cat]);
-      if (stats) perCategory[cat] = stats;
+      if (stats) {
+        perCategory[cat] = stats;
+      }
     }
 
     return {

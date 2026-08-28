@@ -5,7 +5,7 @@
 import type { MetricValue, WeatherMeasurements } from '../types';
 
 export function computeEstimatedWetBulbC(measurements: WeatherMeasurements): MetricValue<number> {
-  if (measurements.wetBulbC != null) {
+  if (measurements.wetBulbC !== null) {
     return {
       available: true,
       value: measurements.wetBulbC,
@@ -19,7 +19,7 @@ export function computeEstimatedWetBulbC(measurements: WeatherMeasurements): Met
   const temp = measurements.airTemperatureC;
   const rh = measurements.relativeHumidityPct;
 
-  if (temp == null || rh == null) {
+  if (temp === null || rh === null) {
     return {
       available: false,
       quality: 'MISSING',
@@ -28,8 +28,8 @@ export function computeEstimatedWetBulbC(measurements: WeatherMeasurements): Met
       explanation:
         'Température de bulbe humide indisponible : mesure directe ou couple température/humidité requis.',
       missingFields: [
-        ...(temp == null ? (['airTemperatureC'] as const) : []),
-        ...(rh == null ? (['relativeHumidityPct'] as const) : []),
+        ...(temp === null ? (['airTemperatureC'] as const) : []),
+        ...(rh === null ? (['relativeHumidityPct'] as const) : []),
       ],
     };
   }

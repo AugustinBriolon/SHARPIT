@@ -19,6 +19,136 @@ function sortProviders(providers: readonly EnvironmentalProvider[]): Environment
   return [...providers].sort((a, b) => a.priority - b.priority);
 }
 
+function unavailableProviderOutcome(
+  provider: EnvironmentalProvider,
+  reason: ProviderAttempt['reason'],
+  message: string,
+): {
+  status: 'unavailable';
+  attempt: ProviderAttempt;
+} {
+  return {
+    status: 'unavailable',
+    attempt: {
+      providerId: provider.id,
+      status: 'unavailable',
+      reason,
+      message,
+      draftCount: 0,
+    },
+  };
+}
+
+function skippedProviderOutcome(provider: EnvironmentalProvider): {
+  status: 'skipped';
+  attempt: ProviderAttempt;
+} {
+  return {
+    status: 'skipped',
+    attempt: {
+      providerId: provider.id,
+      status: 'skipped',
+      message: 'Provider not available for this context',
+      draftCount: 0,
+    },
+  };
+}
+
+function buildProviderSuccessOutcome(
+  provider: EnvironmentalProvider,
+  drafts: ObservationRecordDraft[],
+): {
+  status: 'success';
+  attempt: ProviderAttempt;
+  bundle: {
+    providerId: EnvironmentalProviderId;
+    priority: number;
+    drafts: ObservationRecordDraft[];
+  } | null;
+} {
+  const bundle =
+    drafts.length > 0 ? { providerId: provider.id, priority: provider.priority, drafts } : null;
+
+  return {
+    status: 'success',
+    attempt: {
+      providerId: provider.id,
+      status: 'success',
+      draftCount: drafts.length,
+    },
+    bundle,
+  };
+}
+
+async function fetchProviderDrafts(
+  provider: EnvironmentalProvider,
+  registry: Pick<EnvironmentalProviderRegistry, 'adapters'>,
+  request: EnvironmentalFetchRequest,
+): Promise<
+  | { status: 'skipped'; attempt: ProviderAttempt }
+  | { status: 'unavailable'; attempt: ProviderAttempt }
+  | {
+      status: 'success';
+      attempt: ProviderAttempt;
+      bundle: {
+        providerId: EnvironmentalProviderId;
+        priority: number;
+        drafts: ObservationRecordDraft[];
+      } | null;
+    }
+> {
+  const context = {
+    location: request.location,
+    from: request.from,
+    to: request.to,
+  };
+
+  if (!provider.isAvailable(context)) {
+    return skippedProviderOutcome(provider);
+  }
+
+  let result;
+  try {
+    result = await provider.fetch(request);
+  } catch (error) {
+    return unavailableProviderOutcome(
+      provider,
+      'UNKNOWN',
+      error instanceof Error ? error.message : 'Provider fetch failed',
+    );
+  }
+
+  if (result.status === 'unavailable') {
+    return unavailableProviderOutcome(provider, result.reason, result.message);
+  }
+
+  const adapter = registry.adapters.get(provider.id);
+  if (!adapter) {
+    return unavailableProviderOutcome(
+      provider,
+      'UNKNOWN',
+      `No adapter registered for provider ${provider.id}`,
+    );
+  }
+
+  const providerSnapshot = createProviderSnapshot({
+    providerId: provider.id,
+    providerVersion: result.providerVersion ?? null,
+    payload: result.payload,
+    fetchedAt: result.fetchedAt,
+  });
+
+  const drafts = adapter.adapt(result.payload, {
+    athleteId: request.athleteId,
+    receivedAt: result.fetchedAt,
+    trainingDayId: request.trainingDayId ?? null,
+    location: request.location,
+    providerSnapshot,
+  });
+
+  return buildProviderSuccessOutcome(provider, drafts);
+}
+
 export async function collectEnvironmentalObservationDrafts(
   registry: Pick<EnvironmentalProviderRegistry, 'providers' | 'adapters'>,
   request: EnvironmentalFetchRequest,
@@ -32,87 +162,11 @@ export async function collectEnvironmentalObservationDrafts(
   const collectedAt = new Date();
 
   for (const provider of sortProviders(registry.providers)) {
-    const context = {
-      location: request.location,
-      from: request.from,
-      to: request.to,
-    };
-
-    if (!provider.isAvailable(context)) {
-      attempts.push({
-        providerId: provider.id,
-        status: 'skipped',
-        message: 'Provider not available for this context',
-        draftCount: 0,
-      });
-      continue;
+    const outcome = await fetchProviderDrafts(provider, registry, request);
+    attempts.push(outcome.attempt);
+    if (outcome.status === 'success' && outcome.bundle) {
+      bundles.push(outcome.bundle);
     }
-
-    let result;
-    try {
-      result = await provider.fetch(request);
-    } catch (error) {
-      attempts.push({
-        providerId: provider.id,
-        status: 'unavailable',
-        reason: 'UNKNOWN',
-        message: error instanceof Error ? error.message : 'Provider fetch failed',
-        draftCount: 0,
-      });
-      continue;
-    }
-
-    if (result.status === 'unavailable') {
-      attempts.push({
-        providerId: provider.id,
-        status: 'unavailable',
-        reason: result.reason,
-        message: result.message,
-        draftCount: 0,
-      });
-      continue;
-    }
-
-    const adapter = registry.adapters.get(provider.id);
-    if (!adapter) {
-      attempts.push({
-        providerId: provider.id,
-        status: 'unavailable',
-        reason: 'UNKNOWN',
-        message: `No adapter registered for provider ${provider.id}`,
-        draftCount: 0,
-      });
-      continue;
-    }
-
-    const providerSnapshot = createProviderSnapshot({
-      providerId: provider.id,
-      providerVersion: result.providerVersion ?? null,
-      payload: result.payload,
-      fetchedAt: result.fetchedAt,
-    });
-
-    const drafts = adapter.adapt(result.payload, {
-      athleteId: request.athleteId,
-      receivedAt: result.fetchedAt,
-      trainingDayId: request.trainingDayId ?? null,
-      location: request.location,
-      providerSnapshot,
-    });
-
-    if (drafts.length > 0) {
-      bundles.push({
-        providerId: provider.id,
-        priority: provider.priority,
-        drafts,
-      });
-    }
-
-    attempts.push({
-      providerId: provider.id,
-      status: 'success',
-      draftCount: drafts.length,
-    });
   }
 
   return { bundles, attempts, collectedAt };

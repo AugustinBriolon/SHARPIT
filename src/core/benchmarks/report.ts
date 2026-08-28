@@ -59,8 +59,12 @@ function statusIcon(passed: boolean): string {
 }
 
 function formatVerdictSymbol(verdict: ModelComparison['verdict']): string {
-  if (verdict === 'DEPLOY') return '✓';
-  if (verdict === 'REJECT') return '✗';
+  if (verdict === 'DEPLOY') {
+    return '✓';
+  }
+  if (verdict === 'REJECT') {
+    return '✗';
+  }
   return '⚠';
 }
 

@@ -33,7 +33,9 @@ export function mfpDayToNutritionObservation(
   receivedAt: Date,
 ): RawNutritionObservation | null {
   const entryCount = countEntries(day);
-  if (entryCount === 0 && !day.goals) return null;
+  if (entryCount === 0 && !day.goals) {
+    return null;
+  }
 
   return {
     type: 'NUTRITION',

@@ -76,93 +76,129 @@ function evaluateRange(
  * Evaluate all defined expectations for a scenario against one model output.
  * Only defined (non-undefined) expectations are evaluated.
  */
-function evaluateExpectations(
+function requiredExpectationResults(
   expectations: PhysiologicalExpectations,
   output: RecoveryModelOutput,
-): readonly ExpectationResult[] {
-  const results: ExpectationResult[] = [];
-
-  // Required expectations — always evaluated
-  results.push(
+): ExpectationResult[] {
+  return [
     evaluateValue(
       'readinessCategory',
       expectations.readinessCategory,
       output.recoveryState.readinessCategory,
     ),
-  );
-  results.push(
     evaluateValue(
       'recommendedIntensity',
       expectations.recommendedIntensity,
       output.recommendation.type,
     ),
-  );
-  results.push(evaluateValue('verdict', expectations.verdict, output.decision.verdict));
-  results.push(
+    evaluateValue('verdict', expectations.verdict, output.decision.verdict),
     evaluateRange('confidence', expectations.confidenceRange, output.recoveryState.confidence),
-  );
+  ];
+}
 
-  // Optional expectations — evaluated when defined
-  if (expectations.overreachingRisk !== undefined) {
-    results.push(
-      evaluateValue(
-        'overreachingRisk',
-        expectations.overreachingRisk,
-        output.signals.overreachingRisk,
-      ),
-    );
-  }
-  if (expectations.illnessRisk !== undefined) {
-    results.push(
-      evaluateValue('illnessRisk', expectations.illnessRisk, output.signals.illnessRisk),
-    );
-  }
-  if (expectations.primaryLimitingFactor !== undefined) {
-    results.push(
-      evaluateValue(
-        'primaryLimitingFactor',
-        expectations.primaryLimitingFactor,
-        output.recoveryState.primaryLimitingFactor as string | null,
-      ),
-    );
-  }
-  if (expectations.autonomicBalance !== undefined) {
-    results.push(
-      evaluateValue(
-        'autonomicBalance',
-        expectations.autonomicBalance,
-        output.signals.autonomicBalance,
-      ),
-    );
-  }
-  if (expectations.sleepAdequacy !== undefined) {
-    results.push(
-      evaluateValue('sleepAdequacy', expectations.sleepAdequacy, output.signals.sleepAdequacy),
-    );
-  }
-  if (expectations.dissonanceDetected !== undefined) {
-    results.push(
-      evaluateValue(
-        'dissonanceDetected',
-        expectations.dissonanceDetected,
-        output.signals.dissonanceDetected,
-      ),
-    );
-  }
-  if (
-    expectations.readinessScoreRange !== undefined &&
-    output.recoveryState.readinessScore !== null
-  ) {
-    results.push(
-      evaluateRange(
-        'readinessScore',
-        expectations.readinessScoreRange,
-        output.recoveryState.readinessScore,
-      ),
-    );
-  }
+type OptionalExpectationKey =
+  | 'overreachingRisk'
+  | 'illnessRisk'
+  | 'primaryLimitingFactor'
+  | 'autonomicBalance'
+  | 'sleepAdequacy'
+  | 'dissonanceDetected'
+  | 'readinessScoreRange';
 
-  return results;
+type OptionalExpectationEvaluator = (
+  expectations: PhysiologicalExpectations,
+  output: RecoveryModelOutput,
+) => ExpectationResult | null;
+
+const OPTIONAL_EXPECTATION_EVALUATORS: Record<
+  OptionalExpectationKey,
+  OptionalExpectationEvaluator
+> = {
+  overreachingRisk: (expectations, output) =>
+    expectations.overreachingRisk !== undefined
+      ? evaluateValue(
+          'overreachingRisk',
+          expectations.overreachingRisk,
+          output.signals.overreachingRisk,
+        )
+      : null,
+  illnessRisk: (expectations, output) =>
+    expectations.illnessRisk !== undefined
+      ? evaluateValue('illnessRisk', expectations.illnessRisk, output.signals.illnessRisk)
+      : null,
+  primaryLimitingFactor: (expectations, output) =>
+    expectations.primaryLimitingFactor !== undefined
+      ? evaluateValue(
+          'primaryLimitingFactor',
+          expectations.primaryLimitingFactor,
+          output.recoveryState.primaryLimitingFactor as string | null,
+        )
+      : null,
+  autonomicBalance: (expectations, output) =>
+    expectations.autonomicBalance !== undefined
+      ? evaluateValue(
+          'autonomicBalance',
+          expectations.autonomicBalance,
+          output.signals.autonomicBalance,
+        )
+      : null,
+  sleepAdequacy: (expectations, output) =>
+    expectations.sleepAdequacy !== undefined
+      ? evaluateValue('sleepAdequacy', expectations.sleepAdequacy, output.signals.sleepAdequacy)
+      : null,
+  dissonanceDetected: (expectations, output) =>
+    expectations.dissonanceDetected !== undefined
+      ? evaluateValue(
+          'dissonanceDetected',
+          expectations.dissonanceDetected,
+          output.signals.dissonanceDetected,
+        )
+      : null,
+  readinessScoreRange: (expectations, output) =>
+    expectations.readinessScoreRange !== undefined && output.recoveryState.readinessScore !== null
+      ? evaluateRange(
+          'readinessScore',
+          expectations.readinessScoreRange,
+          output.recoveryState.readinessScore,
+        )
+      : null,
+};
+
+function optionalExpectation(
+  expectations: PhysiologicalExpectations,
+  output: RecoveryModelOutput,
+  key: OptionalExpectationKey,
+): ExpectationResult | null {
+  return OPTIONAL_EXPECTATION_EVALUATORS[key](expectations, output);
+}
+
+function optionalExpectationResults(
+  expectations: PhysiologicalExpectations,
+  output: RecoveryModelOutput,
+): ExpectationResult[] {
+  const keys: OptionalExpectationKey[] = [
+    'overreachingRisk',
+    'illnessRisk',
+    'primaryLimitingFactor',
+    'autonomicBalance',
+    'sleepAdequacy',
+    'dissonanceDetected',
+    'readinessScoreRange',
+  ];
+
+  return keys
+    .map((key) => optionalExpectation(expectations, output, key))
+    .filter((result): result is ExpectationResult => result !== null);
+}
+
+function evaluateExpectations(
+  expectations: PhysiologicalExpectations,
+  output: RecoveryModelOutput,
+): readonly ExpectationResult[] {
+  return [
+    ...requiredExpectationResults(expectations, output),
+    ...optionalExpectationResults(expectations, output),
+  ];
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -172,7 +208,9 @@ function evaluateExpectations(
 function classifyConfidenceCalibration(
   confidenceExps: readonly ExpectationResult[],
 ): ConfidenceCalibration {
-  if (confidenceExps.length < 3) return 'INSUFFICIENT_DATA';
+  if (confidenceExps.length < 3) {
+    return 'INSUFFICIENT_DATA';
+  }
   const passRate = confidenceExps.filter((e) => e.met).length / confidenceExps.length;
   return passRate >= 0.8 ? 'WELL_CALIBRATED' : 'MISCALIBRATED';
 }
@@ -180,8 +218,12 @@ function classifyConfidenceCalibration(
 function comparisonVerdict(
   regressions: readonly BenchmarkRegression[],
 ): ModelComparison['verdict'] {
-  if (regressions.length === 0) return 'DEPLOY';
-  if (regressions.some((r) => r.isSafetyCritical)) return 'REJECT';
+  if (regressions.length === 0) {
+    return 'DEPLOY';
+  }
+  if (regressions.some((r) => r.isSafetyCritical)) {
+    return 'REJECT';
+  }
   return 'INVESTIGATE';
 }
 
@@ -350,6 +392,51 @@ export function runBenchmark(
  * }
  * ```
  */
+function compareScenarioExpectations(
+  baselineScenario: BenchmarkReport['scenarios'][number],
+  candidateScenario: BenchmarkReport['scenarios'][number],
+): {
+  regressions: BenchmarkRegression[];
+  improvements: BenchmarkImprovement[];
+} {
+  const regressions: BenchmarkRegression[] = [];
+  const improvements: BenchmarkImprovement[] = [];
+
+  for (const candidateExp of candidateScenario.expectations) {
+    const baselineExp = baselineScenario.expectations.find(
+      (e) => e.expectationId === candidateExp.expectationId,
+    );
+    if (!baselineExp) {
+      continue;
+    }
+
+    if (baselineExp.met && !candidateExp.met) {
+      regressions.push({
+        scenarioId: candidateScenario.scenarioId,
+        scenarioName: candidateScenario.scenarioName,
+        expectationId: candidateExp.expectationId,
+        expectationLabel: candidateExp.label,
+        expectedValue: candidateExp.expected,
+        baselineActual: baselineExp.actual,
+        candidateActual: candidateExp.actual,
+        isSafetyCritical: candidateExp.weight >= 3.0,
+      });
+      continue;
+    }
+
+    if (!baselineExp.met && candidateExp.met) {
+      improvements.push({
+        scenarioId: candidateScenario.scenarioId,
+        scenarioName: candidateScenario.scenarioName,
+        expectationId: candidateExp.expectationId,
+        expectationLabel: candidateExp.label,
+      });
+    }
+  }
+
+  return { regressions, improvements };
+}
+
 export function compareModels(
   baseline: BenchmarkReport,
   candidate: BenchmarkReport,
@@ -361,42 +448,18 @@ export function compareModels(
     const baselineScenario = baseline.scenarios.find(
       (s) => s.scenarioId === candidateScenario.scenarioId,
     );
-    if (!baselineScenario) continue;
-
-    for (const candidateExp of candidateScenario.expectations) {
-      const baselineExp = baselineScenario.expectations.find(
-        (e) => e.expectationId === candidateExp.expectationId,
-      );
-      if (!baselineExp) continue;
-
-      if (baselineExp.met && !candidateExp.met) {
-        regressions.push({
-          scenarioId: candidateScenario.scenarioId,
-          scenarioName: candidateScenario.scenarioName,
-          expectationId: candidateExp.expectationId,
-          expectationLabel: candidateExp.label,
-          expectedValue: candidateExp.expected,
-          baselineActual: baselineExp.actual,
-          candidateActual: candidateExp.actual,
-          isSafetyCritical: candidateExp.weight >= 3.0,
-        });
-      } else if (!baselineExp.met && candidateExp.met) {
-        improvements.push({
-          scenarioId: candidateScenario.scenarioId,
-          scenarioName: candidateScenario.scenarioName,
-          expectationId: candidateExp.expectationId,
-          expectationLabel: candidateExp.label,
-        });
-      }
+    if (!baselineScenario) {
+      continue;
     }
+
+    const comparison = compareScenarioExpectations(baselineScenario, candidateScenario);
+    regressions.push(...comparison.regressions);
+    improvements.push(...comparison.improvements);
   }
 
   const verdict = comparisonVerdict(regressions);
-
   const deltaScore =
     candidate.metrics.scientificRegressionScore - baseline.metrics.scientificRegressionScore;
-
-  const summary = comparisonSummary(verdict, regressions, candidate, deltaScore);
 
   return {
     baseline,
@@ -404,6 +467,6 @@ export function compareModels(
     regressions,
     improvements,
     verdict,
-    summary,
+    summary: comparisonSummary(verdict, regressions, candidate, deltaScore),
   };
 }

@@ -44,7 +44,9 @@ function resolveConflict(
   modelDirections: ModelDirections,
   verdict: import('@/core/digital-twin/types').OverallVerdict,
 ): DecisionDomain | null {
-  if (limitingFactor.domain === 'PHYSICAL_HEALTH') return 'PHYSICAL_HEALTH';
+  if (limitingFactor.domain === 'PHYSICAL_HEALTH') {
+    return 'PHYSICAL_HEALTH';
+  }
 
   const arbitration = arbitrateModelConflict(modelDirections, verdict, {
     system: limitingFactor.system === 'PHYSICAL_HEALTH' ? null : limitingFactor.system,
@@ -52,10 +54,14 @@ function resolveConflict(
     actionable: limitingFactor.actionable,
   });
 
-  if (arbitration) return arbitration;
+  if (arbitration) {
+    return arbitration;
+  }
 
   const domains = mapConflictDomains(conflict.models);
-  if (domains.length === 0) return null;
+  if (domains.length === 0) {
+    return null;
+  }
 
   return [...domains].sort((a, b) => domainPriorityIndex(a) - domainPriorityIndex(b))[0] ?? null;
 }
@@ -102,7 +108,9 @@ export function resolveDecisionConflicts(input: {
   baseConflicts: readonly ReasoningConflict[];
 }): DecisionConflict[] {
   return input.conflicts.map((conflict) => {
-    if (conflict.resolvedBy) return conflict;
+    if (conflict.resolvedBy) {
+      return conflict;
+    }
 
     const base = input.baseConflicts.find((b) => b.id === conflict.id);
     const resolvedBy = base

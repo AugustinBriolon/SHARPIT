@@ -8,8 +8,12 @@ export function sportSupportsOutdoorContext(type: ActivityType): boolean {
 }
 
 export function defaultExposureForActivityType(type: ActivityType): PlannedSessionExposureSetting {
-  if (type === 'STRENGTH') return 'INDOOR';
-  if (sportSupportsOutdoorContext(type)) return 'UNKNOWN';
+  if (type === 'STRENGTH') {
+    return 'INDOOR';
+  }
+  if (sportSupportsOutdoorContext(type)) {
+    return 'UNKNOWN';
+  }
   return 'UNKNOWN';
 }
 

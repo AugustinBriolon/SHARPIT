@@ -16,7 +16,9 @@ function byImportance(insight: ProductInsight): number {
 function sortInsights(insights: ProductInsight[]): ProductInsight[] {
   return [...insights].sort((a, b) => {
     const importanceDelta = byImportance(b) - byImportance(a);
-    if (importanceDelta !== 0) return importanceDelta;
+    if (importanceDelta !== 0) {
+      return importanceDelta;
+    }
     return b.confidence - a.confidence;
   });
 }

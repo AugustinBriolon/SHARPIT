@@ -37,13 +37,27 @@ function clamp(value: number, min: number, max: number): number {
  *   ±5% = noise. Meaningful suppression begins at -10–15%.
  */
 function mapHrvDeltaToAutonomicRaw(pct: number): number {
-  if (pct > 10) return 100;
-  if (pct > 5) return 90;
-  if (pct > 0) return 80;
-  if (pct > -5) return 70;
-  if (pct > -10) return 55;
-  if (pct > -15) return 40;
-  if (pct > -25) return 25;
+  if (pct > 10) {
+    return 100;
+  }
+  if (pct > 5) {
+    return 90;
+  }
+  if (pct > 0) {
+    return 80;
+  }
+  if (pct > -5) {
+    return 70;
+  }
+  if (pct > -10) {
+    return 55;
+  }
+  if (pct > -15) {
+    return 40;
+  }
+  if (pct > -25) {
+    return 25;
+  }
   return 10;
 }
 
@@ -53,10 +67,18 @@ function mapHrvDeltaToAutonomicRaw(pct: number): number {
  * Only used when baseline cannot be established.
  */
 function mapHrvAbsoluteToAutonomicRaw(rmssd: number): number {
-  if (rmssd >= 60) return 80; // above population norm for athletes
-  if (rmssd >= 50) return 70; // near population norm
-  if (rmssd >= 40) return 55; // below norm
-  if (rmssd >= 30) return 40; // significantly below
+  if (rmssd >= 60) {
+    return 80;
+  } // above population norm for athletes
+  if (rmssd >= 50) {
+    return 70;
+  } // near population norm
+  if (rmssd >= 40) {
+    return 55;
+  } // below norm
+  if (rmssd >= 30) {
+    return 40;
+  } // significantly below
   return 25; // very low — likely suppressed
 }
 
@@ -65,12 +87,24 @@ function mapHrvAbsoluteToAutonomicRaw(rmssd: number): number {
  * Thresholds: Noakes 1991, Friel 2009 (practitioner consensus, Level 5).
  */
 function rhrModifier(rhrDelta: number | null): number {
-  if (rhrDelta === null) return 1.0; // no data — no change
-  if (rhrDelta > 7) return 0.65;
-  if (rhrDelta > 5) return 0.75;
-  if (rhrDelta > 3) return 0.85;
-  if (rhrDelta > -2) return 1.0;
-  if (rhrDelta > -5) return 1.05;
+  if (rhrDelta === null) {
+    return 1.0;
+  } // no data — no change
+  if (rhrDelta > 7) {
+    return 0.65;
+  }
+  if (rhrDelta > 5) {
+    return 0.75;
+  }
+  if (rhrDelta > 3) {
+    return 0.85;
+  }
+  if (rhrDelta > -2) {
+    return 1.0;
+  }
+  if (rhrDelta > -5) {
+    return 1.05;
+  }
   return 1.1;
 }
 
@@ -121,11 +155,21 @@ export function scoreAutonomic(features: RecoveryFeatureSet): DimensionScore {
 export function mapRestorativeSleepRatioToRaw(ratioPercent: number): number {
   // Legacy mapping (used by scientific-validation + unit tests):
   // >= 55% → 100 | >= 45% → 85 | >= 40% → 70 | >= 32% → 50 | >= 25% → 35 | < 25% → 20
-  if (ratioPercent >= 55) return 100;
-  if (ratioPercent >= 45) return 85;
-  if (ratioPercent >= 40) return 70;
-  if (ratioPercent >= 32) return 50;
-  if (ratioPercent >= 25) return 35;
+  if (ratioPercent >= 55) {
+    return 100;
+  }
+  if (ratioPercent >= 45) {
+    return 85;
+  }
+  if (ratioPercent >= 40) {
+    return 70;
+  }
+  if (ratioPercent >= 32) {
+    return 50;
+  }
+  if (ratioPercent >= 25) {
+    return 35;
+  }
   return 20;
 }
 
@@ -134,16 +178,30 @@ export function mapRestorativeSleepRatioToRaw(ratioPercent: number): number {
  * Van Dongen et al. 2003: 6h/night × 14 days ≈ 24h total deprivation (Level 2).
  */
 export function sleepDebtModifier(debtMinutes: number | null): number {
-  if (debtMinutes === null) return 1.0;
+  if (debtMinutes === null) {
+    return 1.0;
+  }
   // Legacy mapping (used by scientific-validation + unit tests):
   // <= 30min → 1.00 | <= 90min → 0.95 | <= 150min → 0.90 | <= 210min → 0.85 | <= 300min → 0.75 |
   // <= 420min → 0.65 | > 420min → 0.55
-  if (debtMinutes <= 30) return 1.0;
-  if (debtMinutes <= 90) return 0.95;
-  if (debtMinutes <= 150) return 0.9;
-  if (debtMinutes <= 210) return 0.85;
-  if (debtMinutes <= 300) return 0.75;
-  if (debtMinutes <= 420) return 0.65;
+  if (debtMinutes <= 30) {
+    return 1.0;
+  }
+  if (debtMinutes <= 90) {
+    return 0.95;
+  }
+  if (debtMinutes <= 150) {
+    return 0.9;
+  }
+  if (debtMinutes <= 210) {
+    return 0.85;
+  }
+  if (debtMinutes <= 300) {
+    return 0.75;
+  }
+  if (debtMinutes <= 420) {
+    return 0.65;
+  }
   return 0.55;
 }
 
@@ -152,10 +210,18 @@ export function sleepDebtModifier(debtMinutes: number | null): number {
  * Elevated nocturnal stress indicates incomplete parasympathetic recovery.
  */
 export function sleepStressModifier(avgStressDuringSleep: number | null): number {
-  if (avgStressDuringSleep === null) return 1.0;
-  if (avgStressDuringSleep > 50) return 0.85;
-  if (avgStressDuringSleep > 35) return 0.92;
-  if (avgStressDuringSleep > 25) return 0.97;
+  if (avgStressDuringSleep === null) {
+    return 1.0;
+  }
+  if (avgStressDuringSleep > 50) {
+    return 0.85;
+  }
+  if (avgStressDuringSleep > 35) {
+    return 0.92;
+  }
+  if (avgStressDuringSleep > 25) {
+    return 0.97;
+  }
   return 1.0;
 }
 
@@ -188,11 +254,21 @@ export function scoreSleep(features: RecoveryFeatureSet): DimensionScore {
  * Evidence: Saw et al. 2016 — subjective measures as sensitive as objective (Level 3).
  */
 function mapWellnessToSubjectiveRaw(index: number): number {
-  if (index >= 8.0) return 100;
-  if (index >= 6.5) return 80;
-  if (index >= 5.0) return 60;
-  if (index >= 3.5) return 40;
-  if (index >= 2.0) return 20;
+  if (index >= 8.0) {
+    return 100;
+  }
+  if (index >= 6.5) {
+    return 80;
+  }
+  if (index >= 5.0) {
+    return 60;
+  }
+  if (index >= 3.5) {
+    return 40;
+  }
+  if (index >= 2.0) {
+    return 20;
+  }
   return 10;
 }
 
@@ -201,10 +277,18 @@ function mapWellnessToSubjectiveRaw(index: number): number {
  * Foster et al. 2001 — RPE drift as early overreaching indicator (Level 3-5).
  */
 function rpeVsTargetModifier(rpeVsTarget: number | null): number {
-  if (rpeVsTarget === null) return 1.0;
-  if (rpeVsTarget < -1.5) return 1.05;
-  if (rpeVsTarget <= 1.5) return 1.0;
-  if (rpeVsTarget <= 3.0) return 0.9;
+  if (rpeVsTarget === null) {
+    return 1.0;
+  }
+  if (rpeVsTarget < -1.5) {
+    return 1.05;
+  }
+  if (rpeVsTarget <= 1.5) {
+    return 1.0;
+  }
+  if (rpeVsTarget <= 3.0) {
+    return 0.9;
+  }
   return 0.75;
 }
 
@@ -237,13 +321,27 @@ export function scoreSubjective(features: RecoveryFeatureSet): DimensionScore {
  * The "sweet spot" is 0.8–1.3 ACWR where recovery is achievable.
  */
 function mapAcwrToLoadContextRaw(acwr: number | null): number {
-  if (acwr === null) return 75; // neutral assumption when no data
-  if (acwr < 0.8) return 70; // undertrained
-  if (acwr <= 1.0) return 85; // well-managed
-  if (acwr <= 1.3) return 100; // optimal zone
-  if (acwr <= 1.5) return 65; // elevated
-  if (acwr <= 1.8) return 40; // high
-  if (acwr <= 2.0) return 20; // dangerously high
+  if (acwr === null) {
+    return 75;
+  } // neutral assumption when no data
+  if (acwr < 0.8) {
+    return 70;
+  } // undertrained
+  if (acwr <= 1.0) {
+    return 85;
+  } // well-managed
+  if (acwr <= 1.3) {
+    return 100;
+  } // optimal zone
+  if (acwr <= 1.5) {
+    return 65;
+  } // elevated
+  if (acwr <= 1.8) {
+    return 40;
+  } // high
+  if (acwr <= 2.0) {
+    return 20;
+  } // dangerously high
   return 5; // critical
 }
 
@@ -252,10 +350,18 @@ function mapAcwrToLoadContextRaw(acwr: number | null): number {
  * Foster et al. 1998 — high monotony impairs recovery efficiency (Level 5).
  */
 function monotonyModifier(monotony: number | null): number {
-  if (monotony === null) return 1.0;
-  if (monotony < 1.5) return 1.05;
-  if (monotony <= 2.0) return 1.0;
-  if (monotony <= 2.5) return 0.9;
+  if (monotony === null) {
+    return 1.0;
+  }
+  if (monotony < 1.5) {
+    return 1.05;
+  }
+  if (monotony <= 2.0) {
+    return 1.0;
+  }
+  if (monotony <= 2.5) {
+    return 0.9;
+  }
   return 0.8;
 }
 
@@ -386,13 +492,19 @@ export function signalConsistencyFactor(
 
   // Objective = average of available objective markers
   const objectiveScores = [autonomicScore, sleepScore].filter((s): s is number => s !== null);
-  if (objectiveScores.length === 0) return { factor: 1.0, dissonanceDetected: false };
+  if (objectiveScores.length === 0) {
+    return { factor: 1.0, dissonanceDetected: false };
+  }
 
   const objectiveAvg = objectiveScores.reduce((a, b) => a + b, 0) / objectiveScores.length;
   const diff = Math.abs(objectiveAvg - subjectiveScore);
 
-  if (diff > 40) return { factor: 0.7, dissonanceDetected: true };
-  if (diff > 20) return { factor: 0.85, dissonanceDetected: true };
+  if (diff > 40) {
+    return { factor: 0.7, dissonanceDetected: true };
+  }
+  if (diff > 20) {
+    return { factor: 0.85, dissonanceDetected: true };
+  }
   return { factor: 1.0, dissonanceDetected: false };
 }
 

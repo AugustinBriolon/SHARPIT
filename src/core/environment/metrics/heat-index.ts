@@ -10,7 +10,7 @@ export function computeHeatIndexC(measurements: WeatherMeasurements): MetricValu
   const temp = measurements.airTemperatureC;
   const rh = measurements.relativeHumidityPct;
 
-  if (temp == null || rh == null) {
+  if (temp === null || rh === null) {
     return {
       available: false,
       quality: 'MISSING',
@@ -19,8 +19,8 @@ export function computeHeatIndexC(measurements: WeatherMeasurements): MetricValu
       explanation:
         'Indice de chaleur indisponible : température de l’air et humidité relative requises.',
       missingFields: [
-        ...(temp == null ? (['airTemperatureC'] as const) : []),
-        ...(rh == null ? (['relativeHumidityPct'] as const) : []),
+        ...(temp === null ? (['airTemperatureC'] as const) : []),
+        ...(rh === null ? (['relativeHumidityPct'] as const) : []),
       ],
     };
   }

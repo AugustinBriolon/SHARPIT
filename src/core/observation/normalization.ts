@@ -85,7 +85,9 @@ function computeTrainingDayId(
  * For all other types: use the observation timestamp directly.
  */
 function getTrainingDayAnchor(raw: RawObservation): Date {
-  if (raw.type === 'SLEEP') return raw.wakeTimestamp;
+  if (raw.type === 'SLEEP') {
+    return raw.wakeTimestamp;
+  }
   return raw.timestamp;
 }
 
@@ -93,32 +95,38 @@ function getTrainingDayAnchor(raw: RawObservation): Date {
 // Quality classification
 // ─────────────────────────────────────────────────────────────────────────────
 
-function deriveQuality(raw: RawObservation): ObservationQuality {
-  switch (raw.type) {
-    case 'SESSION': {
-      if (raw.powerData?.quality === 'MEASURED_DIRECT') return 'MEASURED_DIRECT';
-      if (raw.hrData?.quality === 'MEASURED_DIRECT') return 'MEASURED_DIRECT';
-      if (raw.hrData?.quality === 'MEASURED_OPTICAL') return 'MEASURED_OPTICAL';
-      return 'ESTIMATED';
-    }
-    case 'HRV':
-      return raw.measurementMethod === 'CHEST_STRAP' ? 'MEASURED_DIRECT' : 'MEASURED_OPTICAL';
-    case 'SLEEP':
-    case 'RESTING_HR':
-      return 'MEASURED_OPTICAL';
-    case 'SUBJECTIVE':
-    case 'PHYSICAL_CONDITION':
-      return 'MANUAL';
-    case 'BODY_COMPOSITION':
-      return raw.source === 'MANUAL' ? 'MANUAL' : 'MEASURED_DIRECT';
-    case 'GARMIN_READINESS':
-    case 'GARMIN_BATTERY':
-      return 'PROPRIETARY_MODEL';
-    // Food logging is the athlete choosing foods and portions by hand; no
-    // provider can raise that above self-report.
-    case 'NUTRITION':
-      return 'MANUAL';
+function deriveSessionQuality(
+  raw: Extract<RawObservation, { type: 'SESSION' }>,
+): ObservationQuality {
+  if (raw.powerData?.quality === 'MEASURED_DIRECT') {
+    return 'MEASURED_DIRECT';
   }
+  if (raw.hrData?.quality === 'MEASURED_DIRECT') {
+    return 'MEASURED_DIRECT';
+  }
+  if (raw.hrData?.quality === 'MEASURED_OPTICAL') {
+    return 'MEASURED_OPTICAL';
+  }
+  return 'ESTIMATED';
+}
+
+const QUALITY_BY_TYPE: {
+  [K in RawObservation['type']]: (raw: Extract<RawObservation, { type: K }>) => ObservationQuality;
+} = {
+  SESSION: deriveSessionQuality,
+  HRV: (raw) => (raw.measurementMethod === 'CHEST_STRAP' ? 'MEASURED_DIRECT' : 'MEASURED_OPTICAL'),
+  SLEEP: () => 'MEASURED_OPTICAL',
+  RESTING_HR: () => 'MEASURED_OPTICAL',
+  SUBJECTIVE: () => 'MANUAL',
+  PHYSICAL_CONDITION: () => 'MANUAL',
+  BODY_COMPOSITION: (raw) => (raw.source === 'MANUAL' ? 'MANUAL' : 'MEASURED_DIRECT'),
+  GARMIN_READINESS: () => 'PROPRIETARY_MODEL',
+  GARMIN_BATTERY: () => 'PROPRIETARY_MODEL',
+  NUTRITION: () => 'MANUAL',
+};
+
+function deriveQuality(raw: RawObservation): ObservationQuality {
+  return QUALITY_BY_TYPE[raw.type](raw as never);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -131,13 +139,16 @@ function deriveQuality(raw: RawObservation): ObservationQuality {
  * Called exclusively by the engine after a successful validate() call.
  * The `id` has already been assigned by the engine before this call.
  */
-export function normalize(
-  id: string,
-  athleteId: string,
-  raw: RawObservation,
-  validationFlags: QualityFlag[],
-  config?: AthleteObservationConfig,
-): Observation {
+type NormalizeInput = {
+  id: string;
+  athleteId: string;
+  raw: RawObservation;
+  validationFlags: QualityFlag[];
+  config?: AthleteObservationConfig;
+};
+
+export function normalize(input: NormalizeInput): Observation {
+  const { id, athleteId, raw, validationFlags, config } = input;
   const trainingDayStartHour = config?.trainingDayStartHour ?? DEFAULT_TRAINING_DAY_START_HOUR;
   const timezone = config?.timezone ?? DEFAULT_TIMEZONE;
 
@@ -154,7 +165,5 @@ export function normalize(
     normalizedAt: new Date(),
   };
 
-  // Spread order matters: meta fields must not be overwritten by raw fields.
-  // The discriminant `type` comes from raw; meta fields (id, athleteId, etc.) are new.
   return { ...raw, ...meta } as Observation;
 }

@@ -148,7 +148,9 @@ export class ReasoningInferenceOrchestrator {
       'reasoning-v1',
       trainingDayId,
     );
-    if (!record) return null;
+    if (!record) {
+      return null;
+    }
 
     const stateUpdate = record.stateUpdate as Record<string, unknown>;
     const rawDecision = stateUpdate.decisionState as

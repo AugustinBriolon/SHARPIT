@@ -37,7 +37,9 @@ export type ObservationRecordDraft = {
 
 export function computeProviderPayloadHash(payload: unknown): string {
   const normalized = JSON.stringify(payload, (_key, value) => {
-    if (value instanceof Date) return value.toISOString();
+    if (value instanceof Date) {
+      return value.toISOString();
+    }
     return value;
   });
   return createHash('sha256').update(normalized).digest('hex');
@@ -104,7 +106,32 @@ export function supersedeObservationRecord(
 }
 
 export function isRecordActive(record: EnvironmentalObservationRecord): boolean {
-  return record.supersededBy == null;
+  return record.supersededBy === null;
+}
+
+function mergeWeatherFieldValue(current: number | null | undefined, value: number): number {
+  if (current === null || current === undefined) {
+    return value;
+  }
+  return (current + value) / 2;
+}
+
+function mergeWeatherRecordData(
+  merged: Record<string, number | null | undefined>,
+  record: EnvironmentalObservationRecord,
+): void {
+  if (record.dimension !== 'WEATHER' || record.payload.dimension !== 'WEATHER') {
+    return;
+  }
+  if (!isRecordActive(record)) {
+    return;
+  }
+  for (const [key, value] of Object.entries(record.payload.data)) {
+    if (value === null) {
+      continue;
+    }
+    merged[key] = mergeWeatherFieldValue(merged[key], value);
+  }
 }
 
 export function extractWeatherFromRecords(
@@ -113,14 +140,7 @@ export function extractWeatherFromRecords(
   const merged: Record<string, number | null | undefined> = {};
 
   for (const record of records) {
-    if (record.dimension !== 'WEATHER' || record.payload.dimension !== 'WEATHER') continue;
-    if (!isRecordActive(record)) continue;
-    for (const [key, value] of Object.entries(record.payload.data)) {
-      if (value == null) continue;
-      const current = merged[key];
-      if (current == null) merged[key] = value;
-      else if (typeof current === 'number') merged[key] = (current + value) / 2;
-    }
+    mergeWeatherRecordData(merged, record);
   }
 
   return merged as import('./types').WeatherMeasurements;

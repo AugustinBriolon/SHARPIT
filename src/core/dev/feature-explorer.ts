@@ -136,6 +136,14 @@ function toView(record: FeatureSetRecord): FeatureSetView {
   };
 }
 
+function toOptionalView(record: FeatureSetRecord | null | undefined): FeatureSetView | null {
+  return record ? toView(record) : null;
+}
+
+function collectNonNullViews(...views: Array<FeatureSetView | null>): FeatureSetView[] {
+  return views.filter((view): view is FeatureSetView => view !== null);
+}
+
 function summaryFromViews(views: FeatureSetView[]) {
   const computed = views.filter((v) => v.status === 'COMPUTED');
   const pending = views.filter((v) => v.status === 'PENDING');
@@ -199,18 +207,11 @@ export class FeatureExplorer {
       ]);
 
     const sessions = sessionRecords.map(toView);
-    const load = loadRecord ? toView(loadRecord) : null;
-    const recovery = recoveryRecord ? toView(recoveryRecord) : null;
-    const body = bodyRecord ? toView(bodyRecord) : null;
-    const condition = conditionRecord ? toView(conditionRecord) : null;
-
-    const all = [
-      ...sessions,
-      ...(load ? [load] : []),
-      ...(recovery ? [recovery] : []),
-      ...(body ? [body] : []),
-      ...(condition ? [condition] : []),
-    ];
+    const load = toOptionalView(loadRecord);
+    const recovery = toOptionalView(recoveryRecord);
+    const body = toOptionalView(bodyRecord);
+    const condition = toOptionalView(conditionRecord);
+    const all = [...sessions, ...collectNonNullViews(load, recovery, body, condition)];
 
     return {
       athleteId,
@@ -285,7 +286,9 @@ export class FeatureExplorer {
       );
 
       const found = records.filter((r): r is FeatureSetRecord => r !== null);
-      if (found.length === 0) continue;
+      if (found.length === 0) {
+        continue;
+      }
 
       const computed = found.filter((r) => r.status === 'COMPUTED');
       const pending = found.filter((r) => r.status === 'PENDING');

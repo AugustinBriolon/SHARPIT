@@ -15,7 +15,7 @@ export function runReasoningModel(input: ReasoningModelInput): ReasoningModelOut
   const { recovery, fatigue, adaptation, physicalHealth, environmental } = athleteState;
 
   const environmentSnapshot =
-    environmental != null
+    environmental !== null
       ? buildEnvironmentalDecisionSnapshotFromParts({
           stress: environmental.stress,
           impact: environmental.impact,

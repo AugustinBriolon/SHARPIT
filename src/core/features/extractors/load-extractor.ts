@@ -48,12 +48,16 @@ function isWithinWindow(trainingDayId: string, anchorDayId: string, windowDays: 
 // ─────────────────────────────────────────────────────────────────────────────
 
 function mean(values: number[]): number {
-  if (values.length === 0) return 0;
+  if (values.length === 0) {
+    return 0;
+  }
   return values.reduce((a, b) => a + b, 0) / values.length;
 }
 
 function stdDev(values: number[]): number {
-  if (values.length < 2) return 0;
+  if (values.length < 2) {
+    return 0;
+  }
   const avg = mean(values);
   const variance = values.reduce((acc, v) => acc + (v - avg) ** 2, 0) / values.length;
   return Math.sqrt(variance);
@@ -65,7 +69,9 @@ function stdDev(values: number[]): number {
  */
 function linearRegressionSlope(pairs: Array<[number, number]>): number | null {
   const n = pairs.length;
-  if (n < 3) return null;
+  if (n < 3) {
+    return null;
+  }
 
   const sumX = pairs.reduce((a, [x]) => a + x, 0);
   const sumY = pairs.reduce((a, [, y]) => a + y, 0);
@@ -73,7 +79,9 @@ function linearRegressionSlope(pairs: Array<[number, number]>): number | null {
   const sumX2 = pairs.reduce((a, [x]) => a + x * x, 0);
 
   const denominator = n * sumX2 - sumX * sumX;
-  if (denominator === 0) return null;
+  if (denominator === 0) {
+    return null;
+  }
 
   return (n * sumXY - sumX * sumY) / denominator;
 }
@@ -97,7 +105,9 @@ function computeAcwrTrend(
   for (const entry of daily42d) {
     const entryEpoch = dayIdToEpochDays(entry.trainingDayId);
     const daysAgo = anchorEpoch - entryEpoch;
-    if (daysAgo < 0 || daysAgo >= 14) continue;
+    if (daysAgo < 0 || daysAgo >= 14) {
+      continue;
+    }
 
     // Compute a "local" ACWR for this day (using data available at that point)
     const acute7dFromEntry = daily42d
@@ -115,7 +125,9 @@ function computeAcwrTrend(
       .reduce((acc, e) => acc + e.tssScore, 0);
 
     const chronicWeekly = chronic42dFromEntry / 6;
-    if (chronicWeekly <= 0) continue;
+    if (chronicWeekly <= 0) {
+      continue;
+    }
 
     const acwr = acute7dFromEntry / chronicWeekly;
     acwrByDay.push([entryEpoch, acwr]);
@@ -136,66 +148,49 @@ function computeAcwrTrend(
  *
  * Pure function — no side effects, no async, fully deterministic.
  */
+function sumSportTss(entries: LoadHistory['dailyLoad42d'], sport: 'run' | 'bike'): number {
+  return entries.reduce((acc, e) => acc + e.sportBreakdown[sport], 0);
+}
+
+function chronicSportLoad(total: number): number | null {
+  return total > 0 ? total / 6 : null;
+}
+
+function computeLoadConfidence(last7dCount: number, last42dCount: number): number {
+  let confidence = 0.85;
+  if (last7dCount < 3) {
+    confidence *= 0.5;
+  }
+  if (last42dCount < 14) {
+    confidence *= 0.75;
+  }
+  return confidence;
+}
+
 export function extractLoadFeatures(history: LoadHistory, trainingDayId: string): LoadFeatureSet {
   const { dailyLoad42d } = history;
-
-  // ── Window slices ─────────────────────────────────────────────────────────
-
   const last7d = dailyLoad42d.filter((e) => isWithinWindow(e.trainingDayId, trainingDayId, 7));
   const last42d = dailyLoad42d.filter((e) => isWithinWindow(e.trainingDayId, trainingDayId, 42));
 
-  // ── Acute / Chronic load ──────────────────────────────────────────────────
-
   const acuteLoad = last7d.reduce((acc, e) => acc + e.tssScore, 0);
-  const chronicLoadRaw = last42d.reduce((acc, e) => acc + e.tssScore, 0);
-  const chronicLoad = chronicLoadRaw / 6; // weekly equivalent
-
+  const chronicLoad = last42d.reduce((acc, e) => acc + e.tssScore, 0) / 6;
   const acwr = chronicLoad > 0 ? acuteLoad / chronicLoad : null;
 
-  // ── Sport-specific loads ──────────────────────────────────────────────────
-
-  const acuteLoadRun = last7d.reduce((acc, e) => acc + e.sportBreakdown.run, 0) || null;
-
-  const acuteLoadBike = last7d.reduce((acc, e) => acc + e.sportBreakdown.bike, 0) || null;
-
-  const chronicLoadRun =
-    last42d.reduce((acc, e) => acc + e.sportBreakdown.run, 0) > 0
-      ? last42d.reduce((acc, e) => acc + e.sportBreakdown.run, 0) / 6
-      : null;
-
-  const chronicLoadBike =
-    last42d.reduce((acc, e) => acc + e.sportBreakdown.bike, 0) > 0
-      ? last42d.reduce((acc, e) => acc + e.sportBreakdown.bike, 0) / 6
-      : null;
-
-  // ── Monotony and strain ───────────────────────────────────────────────────
+  const acuteLoadRun = sumSportTss(last7d, 'run') || null;
+  const acuteLoadBike = sumSportTss(last7d, 'bike') || null;
+  const chronicLoadRun = chronicSportLoad(sumSportTss(last42d, 'run'));
+  const chronicLoadBike = chronicSportLoad(sumSportTss(last42d, 'bike'));
 
   const dailyTssValues7d = last7d.map((e) => e.tssScore);
   const avgDailyLoad = mean(dailyTssValues7d);
   const sdDailyLoad = stdDev(dailyTssValues7d);
-
   const loadMonotony = sdDailyLoad > 0 ? avgDailyLoad / sdDailyLoad : null;
-  const loadStrain = loadMonotony != null ? acuteLoad * loadMonotony : null;
-
-  // ── Frequency and rest ────────────────────────────────────────────────────
+  const loadStrain = loadMonotony !== null ? acuteLoad * loadMonotony : null;
 
   const trainingFrequency = last7d.filter((e) => e.tssScore > 0).length;
   const restDayCount = Math.max(0, 7 - trainingFrequency);
-
-  // ── ACWR trend ────────────────────────────────────────────────────────────
-
   const acuteChronicLoadTrend = computeAcwrTrend(dailyLoad42d, trainingDayId);
-
-  // ── Confidence ────────────────────────────────────────────────────────────
-
-  // Confidence degrades when the window is sparse
-  const dataPoints7d = last7d.length;
-  const dataPoints42d = last42d.length;
-
-  let confidence = 0.85; // base confidence for load features
-
-  if (dataPoints7d < 3) confidence *= 0.5; // SPARSE_DATA penalty
-  if (dataPoints42d < 14) confidence *= 0.75; // insufficient chronic baseline
+  const confidence = computeLoadConfidence(last7d.length, last42d.length);
 
   return {
     trainingDayId,

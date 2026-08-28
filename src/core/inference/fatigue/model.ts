@@ -52,18 +52,12 @@ import type { I18nItem } from '@/core/inference/shared/types';
 // Main entry point
 // ─────────────────────────────────────────────────────────────────────────────
 
-export function runFatigueModel(
+function scoreFatigueDimensions(
   features: DayFeatures,
   context: FatigueModelContext,
-): FatigueModelOutput {
-  const computedAt = new Date();
-
-  const load = features.load !== 'PENDING' ? features.load : null;
+): ScoredFatigueDimensions {
   const recovery = features.recovery !== 'PENDING' ? features.recovery : null;
-  const condition = features.condition !== 'PENDING' ? features.condition : null;
-
-  // ── Step 1: Score each dimension ─────────────────────────────────────────
-  let dims: ScoredFatigueDimensions = {
+  const initial: ScoredFatigueDimensions = {
     load: scoreLoadFatigue(features.load),
     neuromuscular: scoreNeuromuscularFatigue(
       features.recovery,
@@ -79,14 +73,53 @@ export function runFatigueModel(
     psychological: scorePsychologicalFatigue(features.recovery),
   };
 
-  // ── Step 2: Apply dissonance bias correction ────────────────────────────
-  dims = applyDissonanceBias(
-    dims,
+  return applyDissonanceBias(
+    initial,
     context.consecutiveAccumulationDays,
     context.recoveryState?.dissonanceDetected ?? false,
   );
+}
 
-  // ── Step 3: Synthesize FatigueIndex ──────────────────────────────────────
+function buildFatigueSignals(
+  dims: ScoredFatigueDimensions,
+  fatigueIndex: number | null,
+  context: FatigueModelContext,
+  trainingBlockedByCondition: boolean,
+): FatigueSignals {
+  const fatigueLevel = classifyFatigueLevel(fatigueIndex);
+  const dominantDimension = getDominantDimension(dims);
+  const trajectory = computeFatigueTrajectory(context.recentFatigueHistory);
+
+  return {
+    fatigueLevel,
+    fatigueType: classifyFatigueType(dims),
+    fatigueTrajectory: trajectory,
+    dominantFatigueDimension: dominantDimension,
+    primaryLimitingFactor: buildPrimaryLimitingFactor(dims, dominantDimension),
+    functionalOverreachingRisk: computeOverreachingRisk(
+      fatigueIndex,
+      trajectory,
+      context.recoveryState,
+      context.consecutiveAccumulationDays,
+    ),
+    estimatedTimeToFresh: estimateTimeToFresh(dims, fatigueLevel),
+    performanceImpairmentEstimate:
+      fatigueIndex !== null ? Math.min((fatigueIndex / 100) * 0.25, 0.25) : 0,
+    trainingCapacity: classifyTrainingCapacity(fatigueLevel, trainingBlockedByCondition),
+    isAccumulating: trajectory === 'ACCUMULATING' || trajectory === 'ACCELERATING',
+    consecutiveAccumulationDays: context.consecutiveAccumulationDays,
+  };
+}
+
+export function runFatigueModel(
+  features: DayFeatures,
+  context: FatigueModelContext,
+): FatigueModelOutput {
+  const computedAt = new Date();
+  const load = features.load !== 'PENDING' ? features.load : null;
+  const condition = features.condition !== 'PENDING' ? features.condition : null;
+
+  const dims = scoreFatigueDimensions(features, context);
   const {
     score: rawFatigueIndex,
     confidence: rawConfidence,
@@ -97,62 +130,22 @@ export function runFatigueModel(
     rawFatigueIndex,
     context.environmentalImpact ?? null,
   );
+  const confidence =
+    rawConfidence * fatigueHistoryMaturityModifier(context.recentFatigueHistory.length);
 
-  // Maturity modifier: < 7 days history → 60%, 7-14 → 80%, 14+ → 100%
-  const historyDays = context.recentFatigueHistory.length;
-  const maturityModifier = fatigueHistoryMaturityModifier(historyDays);
-  const confidence = rawConfidence * maturityModifier;
-
-  // ── Step 4: Classify ──────────────────────────────────────────────────────
-  const fatigueLevel = classifyFatigueLevel(fatigueIndex);
-  const fatigueType = classifyFatigueType(dims);
-  const dominantDimension = getDominantDimension(dims);
-  const trajectory = computeFatigueTrajectory(context.recentFatigueHistory);
-
-  const trainingBlockedByCondition = condition?.trainingBlockedByCondition ?? false;
-  const trainingCapacity = classifyTrainingCapacity(fatigueLevel, trainingBlockedByCondition);
-
-  const estimatedTimeToFresh = estimateTimeToFresh(dims, fatigueLevel);
-  const performanceImpairmentEstimate =
-    fatigueIndex !== null ? Math.min((fatigueIndex / 100) * 0.25, 0.25) : 0;
-
-  // ── Step 5: Compute overreaching risk ─────────────────────────────────────
-  const functionalOverreachingRisk = computeOverreachingRisk(
+  const signals = buildFatigueSignals(
+    dims,
     fatigueIndex,
-    trajectory,
-    context.recoveryState,
-    context.consecutiveAccumulationDays,
+    context,
+    condition?.trainingBlockedByCondition ?? false,
   );
-
-  // ── Step 6: Primary limiting factor ──────────────────────────────────────
-  const primaryLimitingFactor = buildPrimaryLimitingFactor(dims, dominantDimension);
-
-  // ── Step 7: Build signals ─────────────────────────────────────────────────
-  const signals: FatigueSignals = {
-    fatigueLevel,
-    fatigueType,
-    fatigueTrajectory: trajectory,
-    dominantFatigueDimension: dominantDimension,
-    primaryLimitingFactor,
-    functionalOverreachingRisk,
-    estimatedTimeToFresh,
-    performanceImpairmentEstimate,
-    trainingCapacity,
-    isAccumulating: trajectory === 'ACCUMULATING' || trajectory === 'ACCELERATING',
-    consecutiveAccumulationDays: context.consecutiveAccumulationDays,
-  };
-
-  // ── Step 8: Build decision ────────────────────────────────────────────────
   const decision = buildDecision(signals, dims, load);
-
-  // ── Step 9: Build recommendation ─────────────────────────────────────────
   const recommendation = buildRecommendation(signals, decision, confidence);
 
-  // ── Step 10: Build FatigueState ───────────────────────────────────────────
   const fatigueState: FatigueState = {
     fatigueIndex,
-    fatigueLevel,
-    fatigueType,
+    fatigueLevel: signals.fatigueLevel,
+    fatigueType: signals.fatigueType,
     dimensions: {
       load: toDimensionResult(dims.load),
       neuromuscular: toDimensionResult(dims.neuromuscular),
@@ -160,14 +153,14 @@ export function runFatigueModel(
       cumulative: toDimensionResult(dims.cumulative),
       psychological: toDimensionResult(dims.psychological),
     },
-    trajectory,
+    trajectory: signals.fatigueTrajectory,
     consecutiveAccumulationDays: context.consecutiveAccumulationDays,
-    dominantDimension,
-    primaryLimitingFactor,
-    functionalOverreachingRisk,
-    estimatedTimeToFresh,
-    performanceImpairmentEstimate,
-    trainingCapacity,
+    dominantDimension: signals.dominantFatigueDimension,
+    primaryLimitingFactor: signals.primaryLimitingFactor,
+    functionalOverreachingRisk: signals.functionalOverreachingRisk,
+    estimatedTimeToFresh: signals.estimatedTimeToFresh,
+    performanceImpairmentEstimate: signals.performanceImpairmentEstimate,
+    trainingCapacity: signals.trainingCapacity,
     confidence,
     dataCompleteness,
     modelId: 'fatigue-v1',
@@ -183,14 +176,22 @@ export function runFatigueModel(
 // ─────────────────────────────────────────────────────────────────────────────
 
 function fatigueHistoryMaturityModifier(historyDays: number): number {
-  if (historyDays >= 14) return 1.0;
-  if (historyDays >= 7) return 0.8;
+  if (historyDays >= 14) {
+    return 1.0;
+  }
+  if (historyDays >= 7) {
+    return 0.8;
+  }
   return 0.6;
 }
 
 function dimensionResultStatus(d: import('./types').DimensionScore): string {
-  if (!d.available) return 'unavailable';
-  if (d.score !== null) return `score=${d.score}`;
+  if (!d.available) {
+    return 'unavailable';
+  }
+  if (d.score !== null) {
+    return `score=${d.score}`;
+  }
   return 'computed';
 }
 
@@ -202,40 +203,69 @@ function toDimensionResult(d: import('./types').DimensionScore): DimensionResult
   };
 }
 
+function isLowReadinessCategory(recoveryState: import('./types').RecoveryState | null): boolean {
+  return (
+    recoveryState?.readinessCategory === 'LOW' || recoveryState?.readinessCategory === 'VERY_LOW'
+  );
+}
+
+function isAccumulatingTrajectory(trajectory: import('./types').FatigueTrajectory): boolean {
+  return trajectory === 'ACCUMULATING' || trajectory === 'ACCELERATING';
+}
+
+function criticalOverreachingRisk(
+  fatigueIndex: number,
+  recoveryState: import('./types').RecoveryState | null,
+  consecutiveDays: number,
+): OverreachingRisk | null {
+  if (fatigueIndex > 80 && isLowReadinessCategory(recoveryState) && consecutiveDays >= 5) {
+    return 'CRITICAL';
+  }
+  return null;
+}
+
+function highOverreachingRisk(
+  fatigueIndex: number,
+  trajectory: import('./types').FatigueTrajectory,
+  recoveryState: import('./types').RecoveryState | null,
+): OverreachingRisk | null {
+  if (
+    fatigueIndex > 65 &&
+    isAccumulatingTrajectory(trajectory) &&
+    (recoveryState?.dimensions?.autonomic?.score ?? 100) < 50
+  ) {
+    return 'HIGH';
+  }
+  return null;
+}
+
+function moderateOverreachingRisk(
+  fatigueIndex: number,
+  trajectory: import('./types').FatigueTrajectory,
+  consecutiveDays: number,
+): OverreachingRisk | null {
+  if (!isAccumulatingTrajectory(trajectory) || fatigueIndex <= 55) {
+    return null;
+  }
+  return consecutiveDays >= 4 ? 'HIGH' : 'MODERATE';
+}
+
 function computeOverreachingRisk(
   fatigueIndex: number | null,
   trajectory: import('./types').FatigueTrajectory,
   recoveryState: import('./types').RecoveryState | null,
   consecutiveDays: number,
 ): OverreachingRisk {
-  if (fatigueIndex === null) return 'LOW';
-
-  // Guard: illness-driven fatigue should not trigger overreaching classification
-  if (recoveryState?.illnessRisk === 'HIGH') return 'LOW';
-
-  // CRITICAL: severe fatigue + poor recovery + declining for many days
-  if (
-    fatigueIndex > 80 &&
-    (recoveryState?.readinessCategory === 'LOW' ||
-      recoveryState?.readinessCategory === 'VERY_LOW') &&
-    consecutiveDays >= 5
-  )
-    return 'CRITICAL';
-
-  // HIGH: significant fatigue, accumulating trend, autonomic suppression
-  if (
-    fatigueIndex > 65 &&
-    (trajectory === 'ACCUMULATING' || trajectory === 'ACCELERATING') &&
-    (recoveryState?.dimensions?.autonomic?.score ?? 100) < 50
-  )
-    return 'HIGH';
-
-  // MODERATE: accumulated fatigue with ongoing accumulation
-  if (fatigueIndex > 55 && (trajectory === 'ACCUMULATING' || trajectory === 'ACCELERATING')) {
-    return consecutiveDays >= 4 ? 'HIGH' : 'MODERATE';
+  if (fatigueIndex === null || recoveryState?.illnessRisk === 'HIGH') {
+    return 'LOW';
   }
 
-  return 'LOW';
+  return (
+    criticalOverreachingRisk(fatigueIndex, recoveryState, consecutiveDays) ??
+    highOverreachingRisk(fatigueIndex, trajectory, recoveryState) ??
+    moderateOverreachingRisk(fatigueIndex, trajectory, consecutiveDays) ??
+    'LOW'
+  );
 }
 
 function buildPrimaryLimitingFactor(
@@ -252,15 +282,105 @@ function buildPrimaryLimitingFactor(
   return CODES[dominant] ?? 'fatigue.primaryLimitingFactor.multiple';
 }
 
+function appendFatigueTypeRationale(rationale: I18nItem[], signals: FatigueSignals): void {
+  if (signals.fatigueType === 'NEUROMUSCULAR_DOMINANT' && rationale.length < 3) {
+    rationale.push({ code: 'fatigue.rationale.neuromuscularDominant' });
+  }
+  if (signals.fatigueType === 'METABOLIC_DOMINANT' && rationale.length < 3) {
+    rationale.push({ code: 'fatigue.rationale.metabolicDominant' });
+  }
+}
+
+function resolveCriticalOverreachingDecision(signals: FatigueSignals): FatigueDecision {
+  return {
+    verdict: 'REST_WEEK',
+    trainingCapacity: signals.trainingCapacity,
+    rationale: [
+      { code: 'fatigue.rationale.criticalOverreaching' },
+      {
+        code: 'fatigue.rationale.consecutiveDays',
+        params: { days: signals.consecutiveAccumulationDays },
+      },
+    ],
+  };
+}
+
+function resolveHighRiskLevelDecision(signals: FatigueSignals): FatigueDecision {
+  const verdict = signals.fatigueLevel === 'OVERREACHING_RISK' ? 'REST_WEEK' : 'REDUCE';
+  const rationale: I18nItem[] = [{ code: 'fatigue.rationale.loadReductionRequired' }];
+  if (signals.isAccumulating) {
+    rationale.push({ code: 'fatigue.rationale.stillAccumulating' });
+  }
+  return { verdict, trainingCapacity: signals.trainingCapacity, rationale };
+}
+
+function resolveAccumulatedDecision(signals: FatigueSignals): FatigueDecision {
+  const rationale: I18nItem[] = [{ code: 'fatigue.rationale.accumulatedFatigue' }];
+  if (signals.estimatedTimeToFresh !== null) {
+    rationale.push({
+      code: 'fatigue.rationale.estimatedFresh',
+      params: { days: signals.estimatedTimeToFresh },
+    });
+  }
+  return { verdict: 'REDUCE', trainingCapacity: signals.trainingCapacity, rationale };
+}
+
+function resolveFunctionalHighDecision(signals: FatigueSignals): FatigueDecision {
+  if (signals.fatigueTrajectory === 'ACCUMULATING') {
+    return {
+      verdict: 'REDUCE',
+      trainingCapacity: signals.trainingCapacity,
+      rationale: [
+        { code: 'fatigue.rationale.productiveState' },
+        { code: 'fatigue.rationale.avoidAddingLoad' },
+      ],
+    };
+  }
+  return {
+    verdict: 'MAINTAIN',
+    trainingCapacity: signals.trainingCapacity,
+    rationale: [{ code: 'fatigue.rationale.productiveState' }],
+  };
+}
+
+function resolveFunctionalLowDecision(
+  signals: FatigueSignals,
+  load: import('@/core/features/types').LoadFeatureSet | null,
+): FatigueDecision {
+  const isRising = isAccumulatingTrajectory(signals.fatigueTrajectory);
+  const canBuild = load?.acwr !== null && load?.acwr !== undefined && load.acwr < 0.8 && !isRising;
+  return {
+    verdict: canBuild ? 'BUILD' : 'MAINTAIN',
+    trainingCapacity: signals.trainingCapacity,
+    rationale: [
+      {
+        code: canBuild ? 'fatigue.rationale.loadBelowOptimal' : 'fatigue.rationale.maintainCurrent',
+      },
+    ],
+  };
+}
+
+function resolveFreshDecision(
+  signals: FatigueSignals,
+  load: import('@/core/features/types').LoadFeatureSet | null,
+): FatigueDecision {
+  const elevatedLoad = load?.acwr !== null && load?.acwr !== undefined && load.acwr > 1.2;
+  return {
+    verdict: elevatedLoad ? 'MAINTAIN' : 'BUILD',
+    trainingCapacity: signals.trainingCapacity,
+    rationale: [
+      {
+        code: elevatedLoad ? 'fatigue.rationale.loadRatioElevated' : 'fatigue.rationale.lowFatigue',
+      },
+    ],
+  };
+}
+
 function buildDecision(
   signals: FatigueSignals,
   dims: ScoredFatigueDimensions,
   load: import('@/core/features/types').LoadFeatureSet | null,
 ): FatigueDecision {
-  const rationale: I18nItem[] = [];
-  let verdict: FatigueVerdict;
-  const capacity: TrainingCapacity = signals.trainingCapacity;
-
   if (signals.fatigueLevel === 'INSUFFICIENT_DATA') {
     return {
       verdict: 'INSUFFICIENT_DATA',
@@ -269,67 +389,27 @@ function buildDecision(
     };
   }
 
+  let decision: FatigueDecision;
   if (signals.functionalOverreachingRisk === 'CRITICAL') {
-    verdict = 'REST_WEEK';
-    rationale.push({ code: 'fatigue.rationale.criticalOverreaching' });
-    rationale.push({
-      code: 'fatigue.rationale.consecutiveDays',
-      params: { days: signals.consecutiveAccumulationDays },
-    });
+    decision = resolveCriticalOverreachingDecision(signals);
   } else if (
     signals.fatigueLevel === 'OVERREACHING_RISK' ||
     signals.fatigueLevel === 'NON_FUNCTIONAL_RISK'
   ) {
-    verdict = signals.fatigueLevel === 'OVERREACHING_RISK' ? 'REST_WEEK' : 'REDUCE';
-    rationale.push({ code: 'fatigue.rationale.loadReductionRequired' });
-    if (signals.isAccumulating) rationale.push({ code: 'fatigue.rationale.stillAccumulating' });
+    decision = resolveHighRiskLevelDecision(signals);
   } else if (signals.fatigueLevel === 'ACCUMULATED') {
-    verdict = 'REDUCE';
-    rationale.push({ code: 'fatigue.rationale.accumulatedFatigue' });
-    if (signals.estimatedTimeToFresh !== null) {
-      rationale.push({
-        code: 'fatigue.rationale.estimatedFresh',
-        params: { days: signals.estimatedTimeToFresh },
-      });
-    }
+    decision = resolveAccumulatedDecision(signals);
   } else if (signals.fatigueLevel === 'FUNCTIONAL_HIGH') {
-    verdict = 'MAINTAIN';
-    rationale.push({ code: 'fatigue.rationale.productiveState' });
-    if (signals.fatigueTrajectory === 'ACCUMULATING') {
-      verdict = 'REDUCE';
-      rationale.push({ code: 'fatigue.rationale.avoidAddingLoad' });
-    }
+    decision = resolveFunctionalHighDecision(signals);
   } else if (signals.fatigueLevel === 'FUNCTIONAL_LOW') {
-    verdict = 'MAINTAIN';
-    const isRising =
-      signals.fatigueTrajectory === 'ACCUMULATING' || signals.fatigueTrajectory === 'ACCELERATING';
-    if (load?.acwr !== null && load?.acwr !== undefined && load.acwr < 0.8 && !isRising) {
-      verdict = 'BUILD';
-      rationale.push({ code: 'fatigue.rationale.loadBelowOptimal' });
-    } else {
-      rationale.push({ code: 'fatigue.rationale.maintainCurrent' });
-    }
+    decision = resolveFunctionalLowDecision(signals, load);
   } else {
-    verdict = 'BUILD';
-    rationale.push({ code: 'fatigue.rationale.lowFatigue' });
-    if (load?.acwr !== null && load?.acwr !== undefined && load.acwr > 1.2) {
-      verdict = 'MAINTAIN';
-      rationale[0] = { code: 'fatigue.rationale.loadRatioElevated' };
-    }
+    decision = resolveFreshDecision(signals, load);
   }
 
-  if (signals.fatigueType === 'NEUROMUSCULAR_DOMINANT' && rationale.length < 3) {
-    rationale.push({ code: 'fatigue.rationale.neuromuscularDominant' });
-  }
-  if (signals.fatigueType === 'METABOLIC_DOMINANT' && rationale.length < 3) {
-    rationale.push({ code: 'fatigue.rationale.metabolicDominant' });
-  }
-
-  return {
-    verdict,
-    trainingCapacity: capacity,
-    rationale: rationale.slice(0, 3),
-  };
+  const rationale = [...decision.rationale];
+  appendFatigueTypeRationale(rationale, signals);
+  return { ...decision, rationale: rationale.slice(0, 3) };
 }
 
 function buildRecommendation(

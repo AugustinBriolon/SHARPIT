@@ -23,7 +23,7 @@ export function computeWbgtC(
     };
   }
 
-  if (globe == null) {
+  if (globe === null) {
     return {
       available: false,
       quality: 'MISSING',
@@ -61,7 +61,7 @@ export function computeWbgtC(
   }
 
   const dry = measurements.airTemperatureC;
-  if (dry == null) {
+  if (dry === null) {
     return {
       available: false,
       quality: 'MISSING',

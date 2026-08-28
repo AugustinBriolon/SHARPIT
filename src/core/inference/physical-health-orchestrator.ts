@@ -52,7 +52,9 @@ function latestObservationAt(
   conditionId: string,
 ): Date | null {
   const condition = conditions.find((c) => c.id === conditionId);
-  if (!condition || condition.observations.length === 0) return null;
+  if (!condition || condition.observations.length === 0) {
+    return null;
+  }
   return condition.observations.reduce(
     (latest, o) => (o.observedAt > latest ? o.observedAt : latest),
     condition.observations[0].observedAt,
@@ -147,7 +149,9 @@ export class PhysicalHealthInferenceOrchestrator {
       'physical-health-v1',
       trainingDayId,
     );
-    if (!record) return null;
+    if (!record) {
+      return null;
+    }
 
     const output: PhysicalHealthModelOutput = {
       signals: record.signals as PhysicalHealthModelOutput['signals'],

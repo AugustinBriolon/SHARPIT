@@ -109,7 +109,7 @@ describe('environment phase 2 integration', () => {
     const baseScore = 80;
     const adjusted = applyEnvironmentalImpactToReadiness(baseScore, impact);
     expect(adjusted).not.toBeNull();
-    if (adjusted != null) {
+    if (adjusted !== null) {
       expect(adjusted).toBeLessThan(baseScore);
     }
   });

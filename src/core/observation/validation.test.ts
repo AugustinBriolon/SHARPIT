@@ -36,7 +36,9 @@ describe('validate SESSION', () => {
     };
     const result = validate(raw);
     expect(result.valid).toBe(false);
-    if (!result.valid) expect(result.reason.code).toBe('OUT_OF_PLAUSIBLE_RANGE');
+    if (!result.valid) {
+      expect(result.reason.code).toBe('OUT_OF_PLAUSIBLE_RANGE');
+    }
   });
 
   it('rejects biologically impossible duration (>24h)', () => {
@@ -81,7 +83,9 @@ describe('validate SESSION', () => {
     };
     const result = validate(raw);
     expect(result.valid).toBe(true);
-    if (result.valid) expect(result.flags).toContain('OPTICAL_SENSOR');
+    if (result.valid) {
+      expect(result.flags).toContain('OPTICAL_SENSOR');
+    }
   });
 
   it('flags ESTIMATED_FROM_DURATION when no power, no HR, no sourceProvidedStress', () => {
@@ -94,7 +98,9 @@ describe('validate SESSION', () => {
     };
     const result = validate(raw);
     expect(result.valid).toBe(true);
-    if (result.valid) expect(result.flags).toContain('ESTIMATED_FROM_DURATION');
+    if (result.valid) {
+      expect(result.flags).toContain('ESTIMATED_FROM_DURATION');
+    }
   });
 
   it('flags ESTIMATED_FROM_HR when sourceProvidedStress quality is ESTIMATED', () => {
@@ -109,7 +115,9 @@ describe('validate SESSION', () => {
     };
     const result = validate(raw);
     expect(result.valid).toBe(true);
-    if (result.valid) expect(result.flags).toContain('ESTIMATED_FROM_HR');
+    if (result.valid) {
+      expect(result.flags).toContain('ESTIMATED_FROM_HR');
+    }
   });
 });
 
@@ -132,7 +140,9 @@ describe('validate SLEEP', () => {
     };
     const result = validate(raw);
     expect(result.valid).toBe(true);
-    if (result.valid) expect(result.flags).toContain('OPTICAL_SENSOR');
+    if (result.valid) {
+      expect(result.flags).toContain('OPTICAL_SENSOR');
+    }
   });
 
   it('rejects when wakeTimestamp is before bedtime', () => {
@@ -146,7 +156,9 @@ describe('validate SLEEP', () => {
     };
     const result = validate(raw);
     expect(result.valid).toBe(false);
-    if (!result.valid) expect(result.reason.code).toBe('TEMPORAL_INCONSISTENCY');
+    if (!result.valid) {
+      expect(result.reason.code).toBe('TEMPORAL_INCONSISTENCY');
+    }
   });
 
   it('rejects totalMinutes > 960 (>16h)', () => {
@@ -174,7 +186,9 @@ describe('validate SLEEP', () => {
     };
     const result = validate(raw);
     expect(result.valid).toBe(true);
-    if (result.valid) expect(result.flags).toContain('UNUSUALLY_LONG_SLEEP');
+    if (result.valid) {
+      expect(result.flags).toContain('UNUSUALLY_LONG_SLEEP');
+    }
   });
 });
 
@@ -193,7 +207,9 @@ describe('validate HRV', () => {
     };
     const result = validate(raw);
     expect(result.valid).toBe(true);
-    if (result.valid) expect(result.flags).toContain('OPTICAL_SENSOR');
+    if (result.valid) {
+      expect(result.flags).toContain('OPTICAL_SENSOR');
+    }
   });
 
   it('accepts chest strap HRV with no quality flags', () => {
@@ -206,7 +222,9 @@ describe('validate HRV', () => {
     };
     const result = validate(raw);
     expect(result.valid).toBe(true);
-    if (result.valid) expect(result.flags).not.toContain('OPTICAL_SENSOR');
+    if (result.valid) {
+      expect(result.flags).not.toContain('OPTICAL_SENSOR');
+    }
   });
 
   it('rejects HRV below physiological minimum (< 10 ms)', () => {
@@ -248,7 +266,9 @@ describe('validate RESTING_HR', () => {
     };
     const result = validate(raw);
     expect(result.valid).toBe(true);
-    if (result.valid) expect(result.flags).toContain('OPTICAL_SENSOR');
+    if (result.valid) {
+      expect(result.flags).toContain('OPTICAL_SENSOR');
+    }
   });
 
   it('rejects bradycardia below minimum (< 20 bpm)', () => {
@@ -286,7 +306,9 @@ describe('validate SUBJECTIVE', () => {
     };
     const result = validate(raw);
     expect(result.valid).toBe(true);
-    if (result.valid) expect(result.flags).toHaveLength(0);
+    if (result.valid) {
+      expect(result.flags).toHaveLength(0);
+    }
   });
 
   it('rejects when no meaningful field is set', () => {
@@ -297,7 +319,9 @@ describe('validate SUBJECTIVE', () => {
     };
     const result = validate(raw);
     expect(result.valid).toBe(false);
-    if (!result.valid) expect(result.reason.code).toBe('NO_MEANINGFUL_DATA');
+    if (!result.valid) {
+      expect(result.reason.code).toBe('NO_MEANINGFUL_DATA');
+    }
   });
 
   it('rejects RPE > 10', () => {
@@ -351,7 +375,9 @@ describe('validate PHYSICAL_CONDITION', () => {
     };
     const result = validate(raw);
     expect(result.valid).toBe(false);
-    if (!result.valid) expect(result.reason.code).toBe('REQUIRED_FIELD_MISSING');
+    if (!result.valid) {
+      expect(result.reason.code).toBe('REQUIRED_FIELD_MISSING');
+    }
   });
 
   it('rejects severity > 10', () => {
@@ -422,7 +448,9 @@ describe('validate GARMIN_READINESS', () => {
     };
     const result = validate(raw);
     expect(result.valid).toBe(true);
-    if (result.valid) expect(result.flags).toContain('PROPRIETARY_MODEL_OUTPUT');
+    if (result.valid) {
+      expect(result.flags).toContain('PROPRIETARY_MODEL_OUTPUT');
+    }
   });
 
   it('rejects score > 100', () => {
@@ -451,7 +479,9 @@ describe('validate GARMIN_BATTERY', () => {
     };
     const result = validate(raw);
     expect(result.valid).toBe(true);
-    if (result.valid) expect(result.flags).toContain('PROPRIETARY_MODEL_OUTPUT');
+    if (result.valid) {
+      expect(result.flags).toContain('PROPRIETARY_MODEL_OUTPUT');
+    }
   });
 
   it('rejects peakValue > 100', () => {

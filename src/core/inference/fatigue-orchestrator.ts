@@ -186,7 +186,9 @@ export class FatigueInferenceOrchestrator {
       'fatigue-v1',
       trainingDayId,
     );
-    if (!record) return null;
+    if (!record) {
+      return null;
+    }
 
     const output: FatigueModelOutput = {
       signals: record.signals as import('./fatigue/types').FatigueSignals,
@@ -227,47 +229,83 @@ export class FatigueInferenceOrchestrator {
     recentFatigueHistory: readonly number[];
   }> {
     const ACCUMULATION_THRESHOLD = 55;
+    const records = await this.loadRecentFatigueRecords(athleteId);
 
-    // Load the last 14 Decision Records for this model
-    let records: Array<{
-      stateUpdate: Record<string, unknown>;
-    }> = [];
-
-    try {
-      records = (await this.deps.decisionRecordRepo.findRecent(
-        athleteId,
-        'fatigue-v1',
-        14,
-      )) as typeof records;
-    } catch {
-      // findRecent might not be implemented — fall back to previousFatigueState only
+    if (records.length === 0) {
+      return this.coldStartFatigueHistory(previousFatigueState, ACCUMULATION_THRESHOLD);
     }
 
-    if (records.length === 0 && previousFatigueState) {
-      // Minimal cold-start: use previous state index only
-      const idx = previousFatigueState.fatigueIndex;
-      if (idx !== null) {
-        return {
-          consecutiveAccumulationDays: idx > ACCUMULATION_THRESHOLD ? 1 : 0,
-          recentFatigueHistory: [idx],
-        };
+    const history = this.extractFatigueHistory(records);
+    return {
+      consecutiveAccumulationDays: this.countConsecutiveAccumulationDays(
+        history,
+        ACCUMULATION_THRESHOLD,
+      ),
+      recentFatigueHistory: history,
+    };
+  }
+
+  private async loadRecentFatigueRecords(athleteId: string): Promise<
+    Array<{
+      stateUpdate: Record<string, unknown>;
+    }>
+  > {
+    try {
+      return (await this.deps.decisionRecordRepo.findRecent(athleteId, 'fatigue-v1', 14)) as Array<{
+        stateUpdate: Record<string, unknown>;
+      }>;
+    } catch {
+      return [];
+    }
+  }
+
+  private coldStartFatigueHistory(
+    previousFatigueState: import('./fatigue/types').FatigueState | null,
+    accumulationThreshold: number,
+  ): {
+    consecutiveAccumulationDays: number;
+    recentFatigueHistory: readonly number[];
+  } {
+    if (!previousFatigueState) {
+      return { consecutiveAccumulationDays: 0, recentFatigueHistory: [] };
+    }
+
+    const idx = previousFatigueState.fatigueIndex;
+    if (idx === null) {
+      return { consecutiveAccumulationDays: 0, recentFatigueHistory: [] };
+    }
+
+    return {
+      consecutiveAccumulationDays: idx > accumulationThreshold ? 1 : 0,
+      recentFatigueHistory: [idx],
+    };
+  }
+
+  private extractFatigueHistory(
+    records: Array<{ stateUpdate: Record<string, unknown> }>,
+  ): number[] {
+    const history: number[] = [];
+    for (const record of records) {
+      const idx = (record.stateUpdate as { fatigueIndex?: number | null }).fatigueIndex;
+      if (idx !== null && idx !== undefined) {
+        history.push(idx);
       }
     }
+    return history;
+  }
 
-    // Build history from records (most recent first)
-    const history: number[] = [];
-    for (const r of records) {
-      const idx = (r.stateUpdate as { fatigueIndex?: number | null }).fatigueIndex;
-      if (idx !== null && idx !== undefined) history.push(idx);
-    }
-
-    // Count consecutive accumulation days from the start of history
+  private countConsecutiveAccumulationDays(
+    history: readonly number[],
+    accumulationThreshold: number,
+  ): number {
     let consecutiveAccumulationDays = 0;
-    for (const v of history) {
-      if (v > ACCUMULATION_THRESHOLD) consecutiveAccumulationDays++;
-      else break;
+    for (const value of history) {
+      if (value > accumulationThreshold) {
+        consecutiveAccumulationDays++;
+      } else {
+        break;
+      }
     }
-
-    return { consecutiveAccumulationDays, recentFatigueHistory: history };
+    return consecutiveAccumulationDays;
   }
 }

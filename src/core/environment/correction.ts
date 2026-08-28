@@ -57,7 +57,9 @@ function readMultiplier(metric: MetricValue<number>): number | null {
 }
 
 function intensityOf(stressor: EnvironmentalStressor | undefined): number {
-  if (!stressor?.intensity.available) return 0;
+  if (!stressor?.intensity.available) {
+    return 0;
+  }
   return stressor.intensity.value;
 }
 
@@ -69,16 +71,18 @@ function impactIsMaterial(impact: EnvironmentalImpact): boolean {
   const thresholds = ENVIRONMENTAL_SIGNIFICANCE_THRESHOLDS;
 
   return (
-    (recovery != null && recovery >= thresholds.recoveryDemand) ||
-    (fatigue != null && fatigue >= thresholds.fatigueAccumulation) ||
-    (performance != null && performance <= thresholds.performanceRatio) ||
-    (hydration != null && hydration >= thresholds.hydrationDemand)
+    (recovery !== null && recovery >= thresholds.recoveryDemand) ||
+    (fatigue !== null && fatigue >= thresholds.fatigueAccumulation) ||
+    (performance !== null && performance <= thresholds.performanceRatio) ||
+    (hydration !== null && hydration >= thresholds.hydrationDemand)
   );
 }
 
 function performancePenalty(impact: EnvironmentalImpact): number {
   const ratio = readMultiplier(impact.performance.expectedOutputRatio);
-  if (ratio == null || ratio >= 1) return 0;
+  if (ratio === null || ratio >= 1) {
+    return 0;
+  }
   return roundImpact(1 - ratio);
 }
 
@@ -145,11 +149,26 @@ function metricNumericValue(metric: MetricValue<number>): number {
   return isMetricAvailable(metric) ? metric.value : 0;
 }
 
+const DOMINANT_NARRATIVE_CODE: Partial<Record<EnvironmentalStressorId, string>> = {
+  THERMAL: 'environment.correction.narrative.thermalDominant',
+  WIND: 'environment.correction.narrative.windDominant',
+  HYDRATION: 'environment.correction.narrative.hydrationDominant',
+};
+
+function dominantNarrativeItem(
+  dominant: ActivityEnvironmentalCorrectionFactor | undefined,
+): EnvironmentalExplanation | null {
+  const code = dominant ? DOMINANT_NARRATIVE_CODE[dominant.stressorId] : undefined;
+  return code ? { code } : null;
+}
+
 function buildNarrative(
   factors: readonly ActivityEnvironmentalCorrectionFactor[],
   totalPenalty: number,
 ): readonly EnvironmentalExplanation[] {
-  if (factors.length === 0 || totalPenalty <= 0) return Object.freeze([]);
+  if (factors.length === 0 || totalPenalty <= 0) {
+    return Object.freeze([]);
+  }
 
   const penaltyPct = Math.round(totalPenalty * 100);
   const [dominant] = [...factors].sort(
@@ -163,12 +182,9 @@ function buildNarrative(
     },
   ];
 
-  if (dominant?.stressorId === 'THERMAL') {
-    items.push({ code: 'environment.correction.narrative.thermalDominant' });
-  } else if (dominant?.stressorId === 'WIND') {
-    items.push({ code: 'environment.correction.narrative.windDominant' });
-  } else if (dominant?.stressorId === 'HYDRATION') {
-    items.push({ code: 'environment.correction.narrative.hydrationDominant' });
+  const dominantItem = dominantNarrativeItem(dominant);
+  if (dominantItem) {
+    items.push(dominantItem);
   }
 
   if (factors.length > 1) {
@@ -191,55 +207,61 @@ function stressorExplanation(stressorId: EnvironmentalStressorId): string {
   }
 }
 
-export function buildActivityEnvironmentalCorrection(
-  input: BuildActivityEnvironmentalCorrectionInput,
-): ActivityEnvironmentalCorrection {
-  const { activityId, stress, impact } = input;
+function buildSuppressedCorrection(activityId: string): ActivityEnvironmentalCorrection {
+  return {
+    activityId,
+    rawMetricsPreserved: true,
+    factors: Object.freeze([]),
+    totalAttributedEffect: unavailableEffect('Correction non applicable — environnement supprimé.'),
+    narrative: Object.freeze([]),
+  };
+}
 
-  if (stress.suppressionReason != null) {
-    return {
-      activityId,
-      rawMetricsPreserved: true,
-      factors: Object.freeze([]),
-      totalAttributedEffect: unavailableEffect(
-        'Correction non applicable — environnement supprimé.',
-      ),
-      narrative: Object.freeze([]),
-    };
-  }
+function buildNeutralCorrection(activityId: string): ActivityEnvironmentalCorrection {
+  return {
+    activityId,
+    rawMetricsPreserved: true,
+    factors: Object.freeze([]),
+    totalAttributedEffect: neutralEffect('ENVIRONMENTAL_CORRECTION_NEUTRAL'),
+    narrative: Object.freeze([]),
+  };
+}
 
-  const composite = stress.compositeIntensity.available ? stress.compositeIntensity.value : null;
-
-  if (isWithinImpactNeutralZone(composite) || !impactIsMaterial(impact)) {
-    return {
-      activityId,
-      rawMetricsPreserved: true,
-      factors: Object.freeze([]),
-      totalAttributedEffect: neutralEffect('ENVIRONMENTAL_CORRECTION_NEUTRAL'),
-      narrative: Object.freeze([]),
-    };
-  }
-
-  const totalPenalty = performancePenalty(impact);
-  const hydrationDelta = Math.max(0, (readMultiplier(impact.hydration.demandMultiplier) ?? 1) - 1);
-
+function appendPerformanceStressorFactors(
+  stress: BuildActivityEnvironmentalCorrectionInput['stress'],
+  totalPenalty: number,
+): ActivityEnvironmentalCorrectionFactor[] {
   const performanceWeights = (['THERMAL', 'WIND'] as const).map((id) => ({
     id,
     weight: calibratedStressorWeight(id, stress) * (PERFORMANCE_WEIGHTS[id] ?? 0),
   }));
   const performanceWeightSum = performanceWeights.reduce((sum, w) => sum + w.weight, 0);
-
   const factors: ActivityEnvironmentalCorrectionFactor[] = [];
 
   for (const { id, weight } of performanceWeights) {
-    if (weight <= 0 || totalPenalty <= 0) continue;
+    if (weight <= 0 || totalPenalty <= 0) {
+      continue;
+    }
     const stressor = getEnvironmentalStressor(stress, id);
-    if (!stressor) continue;
+    if (!stressor) {
+      continue;
+    }
     const share = performanceWeightSum > 0 ? (weight / performanceWeightSum) * totalPenalty : 0;
-    if (share <= 0) continue;
+    if (share <= 0) {
+      continue;
+    }
     factors.push(buildFactor(stressor, share, stressorExplanation(id)));
   }
 
+  return factors;
+}
+
+function appendHydrationFactor(
+  stress: BuildActivityEnvironmentalCorrectionInput['stress'],
+  impact: BuildActivityEnvironmentalCorrectionInput['impact'],
+  factors: ActivityEnvironmentalCorrectionFactor[],
+): void {
+  const hydrationDelta = Math.max(0, (readMultiplier(impact.hydration.demandMultiplier) ?? 1) - 1);
   const hydrationStressor = getEnvironmentalStressor(stress, 'HYDRATION');
   const hydrationWeight = calibratedStressorWeight('HYDRATION', stress);
   if (hydrationStressor && hydrationWeight > 0 && hydrationDelta > 0) {
@@ -251,7 +273,34 @@ export function buildActivityEnvironmentalCorrection(
       ),
     );
   }
+}
 
+function buildPerformanceFactors(
+  stress: BuildActivityEnvironmentalCorrectionInput['stress'],
+  impact: BuildActivityEnvironmentalCorrectionInput['impact'],
+  totalPenalty: number,
+): ActivityEnvironmentalCorrectionFactor[] {
+  const factors = appendPerformanceStressorFactors(stress, totalPenalty);
+  appendHydrationFactor(stress, impact, factors);
+  return factors;
+}
+
+export function buildActivityEnvironmentalCorrection(
+  input: BuildActivityEnvironmentalCorrectionInput,
+): ActivityEnvironmentalCorrection {
+  const { activityId, stress, impact } = input;
+
+  if (stress.suppressionReason !== null) {
+    return buildSuppressedCorrection(activityId);
+  }
+
+  const composite = stress.compositeIntensity.available ? stress.compositeIntensity.value : null;
+  if (isWithinImpactNeutralZone(composite) || !impactIsMaterial(impact)) {
+    return buildNeutralCorrection(activityId);
+  }
+
+  const totalPenalty = performancePenalty(impact);
+  const factors = buildPerformanceFactors(stress, impact, totalPenalty);
   const attributedTotal =
     factors.length > 0
       ? roundImpact(factors.reduce((sum, f) => sum + metricNumericValue(f.attributedEffect), 0))

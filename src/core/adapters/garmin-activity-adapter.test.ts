@@ -76,6 +76,14 @@ describe('mapGarminSportType', () => {
 // garminActivityToSession
 // ─────────────────────────────────────────────────────────────────────────────
 
+function expectBasicGarminSession(
+  session: ReturnType<typeof garminActivityToSession>,
+): asserts session is NonNullable<ReturnType<typeof garminActivityToSession>> {
+  expect(session).not.toBeNull();
+  expect(session?.type).toBe('SESSION');
+  expect(session?.source).toBe('GARMIN');
+}
+
 describe('garminActivityToSession', () => {
   it('returns null for unsupported activity type', () => {
     const activity = buildActivity({
@@ -88,15 +96,13 @@ describe('garminActivityToSession', () => {
     const activity = buildActivity();
     const session = garminActivityToSession(activity, RECEIVED_AT);
 
-    expect(session).not.toBeNull();
-    expect(session?.type).toBe('SESSION');
-    expect(session?.source).toBe('GARMIN');
-    expect(session?.sportType).toBe('RUN');
-    expect(session?.externalId).toBe('12345678');
-    expect(session?.durationSec).toBe(3550); // movingDuration preferred for runs
-    expect(session?.hrData?.avgBpm).toBe(155);
-    expect(session?.hrData?.maxBpm).toBe(178);
-    expect(session?.hrData?.quality).toBe('MEASURED_OPTICAL');
+    expectBasicGarminSession(session);
+    expect(session.sportType).toBe('RUN');
+    expect(session.externalId).toBe('12345678');
+    expect(session.durationSec).toBe(3550);
+    expect(session.hrData?.avgBpm).toBe(155);
+    expect(session.hrData?.maxBpm).toBe(178);
+    expect(session.hrData?.quality).toBe('MEASURED_OPTICAL');
   });
 
   it('uses elapsed duration for STRENGTH activities', () => {
@@ -117,10 +123,11 @@ describe('garminActivityToSession', () => {
       trainingStressScore: 85,
     });
     const session = garminActivityToSession(activity, RECEIVED_AT);
-    expect(session?.powerData?.avgWatts).toBe(250);
-    expect(session?.powerData?.normalizedPower).toBe(265);
-    expect(session?.powerData?.quality).toBe('MEASURED_DIRECT');
-    expect(session?.powerData?.sourceComputedTss).toBe(85);
+    const power = session?.powerData;
+    expect(power?.avgWatts).toBe(250);
+    expect(power?.normalizedPower).toBe(265);
+    expect(power?.quality).toBe('MEASURED_DIRECT');
+    expect(power?.sourceComputedTss).toBe(85);
   });
 
   it('includes paceData for running activities', () => {

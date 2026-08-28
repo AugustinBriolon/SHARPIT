@@ -14,22 +14,38 @@ import { computeEstimatedWetBulbC } from './wet-bulb';
 import { computeWbgtC } from './wbgt';
 
 function bandFromWbgt(wbgt: number): ThermalStressBand {
-  if (wbgt < 18) return 'LOW';
-  if (wbgt < 23) return 'MODERATE';
-  if (wbgt < 28) return 'HIGH';
+  if (wbgt < 18) {
+    return 'LOW';
+  }
+  if (wbgt < 23) {
+    return 'MODERATE';
+  }
+  if (wbgt < 28) {
+    return 'HIGH';
+  }
   return 'EXTREME';
 }
 
 function bandFromHeatIndex(hi: number): ThermalStressBand {
-  if (hi < 27) return 'LOW';
-  if (hi < 32) return 'MODERATE';
-  if (hi < 39) return 'HIGH';
+  if (hi < 27) {
+    return 'LOW';
+  }
+  if (hi < 32) {
+    return 'MODERATE';
+  }
+  if (hi < 39) {
+    return 'HIGH';
+  }
   return 'EXTREME';
 }
 
 function thermalBandFromAirTemp(temp: number): ThermalStressBand {
-  if (temp < 18) return 'LOW';
-  if (temp < 28) return 'MODERATE';
+  if (temp < 18) {
+    return 'LOW';
+  }
+  if (temp < 28) {
+    return 'MODERATE';
+  }
   return 'HIGH';
 }
 
@@ -62,7 +78,7 @@ export function computeThermalStressBand(
   }
 
   const temp = measurements.airTemperatureC;
-  if (temp != null && exposure !== 'INDOOR') {
+  if (temp !== null && exposure !== 'INDOOR') {
     const band = thermalBandFromAirTemp(temp);
     return {
       available: true,
@@ -88,7 +104,7 @@ export function computeWindChillC(measurements: WeatherMeasurements): MetricValu
   const temp = measurements.airTemperatureC;
   const wind = measurements.windSpeedMps;
 
-  if (temp == null || wind == null) {
+  if (temp === null || wind === null) {
     return {
       available: false,
       quality: 'MISSING',
@@ -96,8 +112,8 @@ export function computeWindChillC(measurements: WeatherMeasurements): MetricValu
       reason: 'MISSING_INPUT',
       explanation: 'Refroidissement éolien indisponible : température et vent requis.',
       missingFields: [
-        ...(temp == null ? (['airTemperatureC'] as const) : []),
-        ...(wind == null ? (['windSpeedMps'] as const) : []),
+        ...(temp === null ? (['airTemperatureC'] as const) : []),
+        ...(wind === null ? (['windSpeedMps'] as const) : []),
       ],
     };
   }

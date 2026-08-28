@@ -47,12 +47,41 @@ const MODELS: Record<string, ModelDescriptor> = {
 // CLI entry point
 // ─────────────────────────────────────────────────────────────────────────────
 
+function printReports(reports: ReturnType<typeof runBenchmark>[], flags: Set<string>): void {
+  if (flags.has('--json')) {
+    const output =
+      reports.length === 1 ? serializeReport(reports[0]!) : reports.map(serializeReport);
+    console.info(JSON.stringify(output, null, 2));
+    return;
+  }
+
+  if (flags.has('--compact')) {
+    for (const report of reports) {
+      console.info(formatCompactSummary(report));
+    }
+    return;
+  }
+
+  for (const report of reports) {
+    console.info(formatBenchmarkReport(report));
+  }
+  if (reports.length === 2) {
+    console.info('\n');
+    console.info(formatModelComparison(compareModels(reports[0]!, reports[1]!)));
+  }
+}
+
+function exitCodeForReports(reports: ReturnType<typeof runBenchmark>[]): number {
+  if (reports.some((r) => r.metrics.safetyScore < 1.0)) {
+    return 2;
+  }
+  return reports.every((r) => r.metrics.scientificRegressionScore === 100) ? 0 : 1;
+}
+
 function main(): void {
   const args = process.argv.slice(2);
   const flags = new Set(args.filter((a) => a.startsWith('--')));
   const modelArgs = args.filter((a) => !a.startsWith('--'));
-
-  // Determine which models to run
   const modelKeys = modelArgs.length > 0 ? modelArgs.filter((k) => k in MODELS) : ['v1'];
 
   if (modelKeys.length === 0) {
@@ -61,40 +90,9 @@ function main(): void {
     process.exit(1);
   }
 
-  // Run benchmarks
   const reports = modelKeys.map((key) => runBenchmark(MODELS[key]!, BENCHMARK_SCENARIOS));
-
-  // Output format
-  if (flags.has('--json')) {
-    const output =
-      reports.length === 1 ? serializeReport(reports[0]!) : reports.map(serializeReport);
-    console.info(JSON.stringify(output, null, 2));
-  } else if (flags.has('--compact')) {
-    for (const report of reports) {
-      console.info(formatCompactSummary(report));
-    }
-  } else {
-    for (const report of reports) {
-      console.info(formatBenchmarkReport(report));
-    }
-
-    // If multiple models, show comparison
-    if (reports.length === 2) {
-      console.info('\n');
-      const comparison = compareModels(reports[0]!, reports[1]!);
-      console.info(formatModelComparison(comparison));
-    }
-  }
-
-  // Exit code
-  const allPassed = reports.every((r) => r.metrics.scientificRegressionScore === 100);
-  const hasSafetyFailure = reports.some((r) => r.metrics.safetyScore < 1.0);
-
-  if (hasSafetyFailure) {
-    process.exit(2);
-  } else if (!allPassed) {
-    process.exit(1);
-  }
+  printReports(reports, flags);
+  process.exit(exitCodeForReports(reports));
 }
 
 main();

@@ -26,7 +26,9 @@ function round(value: number, decimals = 1): number {
 }
 
 function perKg(grams: number, weightKg: number | null): number | null {
-  if (weightKg == null || weightKg <= 0) return null;
+  if (weightKg === null || weightKg <= 0) {
+    return null;
+  }
   return round(grams / weightKg, 2);
 }
 
@@ -39,49 +41,89 @@ function perKg(grams: number, weightKg: number | null): number | null {
  * one we can call complete.
  */
 function deriveConfidence(observation: NutritionObservation): number {
-  if (observation.entryCount === 0) return 0;
-  if (observation.diaryComplete) return 0.9;
+  if (observation.entryCount === 0) {
+    return 0;
+  }
+  if (observation.diaryComplete) {
+    return 0.9;
+  }
   return 0.6;
+}
+
+function computeEnergyBudget(observation: NutritionObservation): number | null {
+  const goal = observation.goalEnergyKcal ?? null;
+  if (goal === null) {
+    return null;
+  }
+  const exercise = observation.exerciseEnergyKcal ?? null;
+  return goal + (exercise ?? 0);
+}
+
+function computeEnergyBalance(
+  observation: NutritionObservation,
+  budget: number | null,
+  logged: boolean,
+): number | null {
+  if (budget === null || !logged) {
+    return null;
+  }
+  return Math.round(observation.energyKcal - budget);
+}
+
+function computeEnergyBudgetRatio(
+  observation: NutritionObservation,
+  budget: number | null,
+  logged: boolean,
+): number | null {
+  if (budget === null || budget <= 0 || !logged) {
+    return null;
+  }
+  return round(observation.energyKcal / budget, 2);
+}
+
+function computeEnergyMetrics(
+  observation: NutritionObservation,
+  weightKg: number | null,
+): Pick<
+  FuelFeatureSet,
+  | 'energyBudgetKcal'
+  | 'energyBalanceKcal'
+  | 'energyBudgetRatio'
+  | 'proteinGPerKg'
+  | 'carbohydratesGPerKg'
+  | 'referenceWeightKg'
+> {
+  const budget = computeEnergyBudget(observation);
+  const logged = observation.entryCount > 0;
+
+  return {
+    energyBudgetKcal: budget,
+    energyBalanceKcal: computeEnergyBalance(observation, budget, logged),
+    energyBudgetRatio: computeEnergyBudgetRatio(observation, budget, logged),
+    proteinGPerKg: logged ? perKg(observation.proteinG, weightKg) : null,
+    carbohydratesGPerKg: logged ? perKg(observation.carbohydratesG, weightKg) : null,
+    referenceWeightKg: logged ? weightKg : null,
+  };
 }
 
 export function extractFuelFeatures(input: FuelExtractorInput): FuelFeatureSet {
   const { observation, weightKg } = input;
-
-  const goal = observation.goalEnergyKcal ?? null;
-  const exercise = observation.exerciseEnergyKcal ?? null;
-  const budget = goal == null ? null : goal + (exercise ?? 0);
   const logged = observation.entryCount > 0;
-
-  // Balance and ratio describe intake against the allowance, so they are
-  // meaningless on a day with no food behind the totals.
-  const balance = budget == null || !logged ? null : Math.round(observation.energyKcal - budget);
-  const ratio =
-    budget == null || budget <= 0 || !logged ? null : round(observation.energyKcal / budget, 2);
+  const energyMetrics = computeEnergyMetrics(observation, weightKg);
 
   return {
     trainingDayId: observation.trainingDayId,
     observationId: observation.id,
-
     logged,
     entryCount: observation.entryCount,
-
     energyKcal: observation.energyKcal,
     proteinG: round(observation.proteinG),
     carbohydratesG: round(observation.carbohydratesG),
     fatG: round(observation.fatG),
-
-    energyGoalKcal: goal,
-    exerciseEnergyKcal: exercise,
-    energyBudgetKcal: budget,
-    energyBalanceKcal: balance,
-    energyBudgetRatio: ratio,
-
-    proteinGPerKg: logged ? perKg(observation.proteinG, weightKg) : null,
-    carbohydratesGPerKg: logged ? perKg(observation.carbohydratesG, weightKg) : null,
-    referenceWeightKg: logged ? weightKg : null,
-
+    energyGoalKcal: observation.goalEnergyKcal ?? null,
+    exerciseEnergyKcal: observation.exerciseEnergyKcal ?? null,
+    ...energyMetrics,
     diaryComplete: observation.diaryComplete ?? false,
-
     confidence: deriveConfidence(observation),
     algorithmId: 'fuel-features-v1',
     sourceObsIds: [observation.id],

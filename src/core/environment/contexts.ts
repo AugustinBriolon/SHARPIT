@@ -38,10 +38,16 @@ function assessCompleteness(
   records: readonly EnvironmentalObservationRecord[],
 ): EnvironmentalDataCompleteness {
   const weather = extractWeatherFromRecords(records);
-  const present = CORE_WEATHER_FIELDS.filter((f) => weather[f] != null).length;
-  if (present === 0) return records.length === 0 ? 'NONE' : 'MINIMAL';
-  if (present === CORE_WEATHER_FIELDS.length) return 'COMPLETE';
-  if (present >= 2) return 'PARTIAL';
+  const present = CORE_WEATHER_FIELDS.filter((f) => weather[f] !== null).length;
+  if (present === 0) {
+    return records.length === 0 ? 'NONE' : 'MINIMAL';
+  }
+  if (present === CORE_WEATHER_FIELDS.length) {
+    return 'COMPLETE';
+  }
+  if (present >= 2) {
+    return 'PARTIAL';
+  }
   return 'MINIMAL';
 }
 
@@ -50,7 +56,9 @@ function pickLocation(
   fallback: GeoLocation,
 ): GeoLocation {
   const active = activeRecords(records);
-  if (active.length === 0) return fallback;
+  if (active.length === 0) {
+    return fallback;
+  }
   const sorted = [...active].sort((a, b) => b.observedAt.getTime() - a.observedAt.getTime());
   return sorted[0].location;
 }
@@ -62,7 +70,7 @@ function providerIdsFromRecords(
     ...new Set(
       activeRecords(records)
         .map((r) => r.providerId)
-        .filter((id): id is EnvironmentalProviderId => id != null),
+        .filter((id): id is EnvironmentalProviderId => id !== null),
     ),
   ];
 }
