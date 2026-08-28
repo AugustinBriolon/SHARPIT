@@ -9,6 +9,7 @@ import {
   usePhysicalHealthViewModel,
 } from '@/hooks/use-presentation-view-model';
 import { useTodaySelectedDate } from '@/hooks/use-today-selected-date';
+import { isSet } from '@/lib/util/value';
 
 export function useProgressHubOffline() {
   const online = useOnlineStatus();
@@ -18,7 +19,7 @@ export function useProgressHubOffline() {
   const bodyQuery = useBodyPresentationViewModel();
   const healthQuery = usePhysicalHealthViewModel(trainingDayId);
   const hasNoLiveContent =
-    goalsQuery.data === null && bodyQuery.data === null && healthQuery.data === null;
+    !isSet(goalsQuery.data) && !isSet(bodyQuery.data) && !isSet(healthQuery.data);
   const { entry: offlineEntry } = useOfflineSnapshot(!online && hasNoLiveContent);
   const showOfflineSnapshot = !online && hasNoLiveContent && offlineEntry !== null;
 

@@ -97,12 +97,24 @@ describe('hub offline snapshot contracts', () => {
     resolve(process.cwd(), 'src/components/progress/progress-hub.tsx'),
     'utf8',
   );
+  const progressOfflineSource = readFileSync(
+    resolve(process.cwd(), 'src/components/progress/use-progress-hub-offline.ts'),
+    'utf8',
+  );
+  const progressContentSource = readFileSync(
+    resolve(process.cwd(), 'src/components/progress/progress-hub-content.tsx'),
+    'utf8',
+  );
   const trainingSource = readFileSync(
     resolve(process.cwd(), 'src/components/training/thread/training-thread-view.tsx'),
     'utf8',
   );
-  const coachSource = readFileSync(
-    resolve(process.cwd(), 'src/components/coach/coach-view.tsx'),
+  const coachSelectionSource = readFileSync(
+    resolve(process.cwd(), 'src/components/coach/use-coach-conversation-selection.ts'),
+    'utf8',
+  );
+  const coachLayoutSource = readFileSync(
+    resolve(process.cwd(), 'src/components/coach/coach-view-layout.tsx'),
     'utf8',
   );
   const todaySource = readFileSync(
@@ -112,9 +124,9 @@ describe('hub offline snapshot contracts', () => {
 
   it('ProgressHub keeps chrome and gates the snapshot on cold data across sections', () => {
     expect(progressSource).toContain('StickyHeader');
-    expect(progressSource).toContain('goalsQuery.data == null');
-    expect(progressSource).toContain('useOfflineSnapshot(!online && hasNoLiveContent)');
-    expect(progressSource).toContain('<OfflineSnapshotSummary entry={offlineEntry} />');
+    expect(progressOfflineSource).toContain('!isSet(goalsQuery.data)');
+    expect(progressOfflineSource).toContain('useOfflineSnapshot(!online && hasNoLiveContent)');
+    expect(progressContentSource).toContain('<OfflineSnapshotSummary entry={offlineEntry} />');
   });
 
   it('TrainingThreadView short-circuits the skeletons when offline and all queries cold', () => {
@@ -125,14 +137,18 @@ describe('hub offline snapshot contracts', () => {
   });
 
   it('CoachView shows snapshot in main panel when offline without live threads', () => {
-    expect(coachSource).toContain('conversationsQuery.data == null');
-    expect(coachSource).toContain('useOfflineSnapshot(!online && hasNoLiveContent)');
-    expect(coachSource).toContain('<CoachPageHeader />');
+    expect(coachSelectionSource).toContain('!isSet(conversationsQuery.data)');
+    expect(coachSelectionSource).toContain('useOfflineSnapshot(!online && hasNoLiveContent)');
+    expect(coachLayoutSource).toContain('<CoachPageHeader />');
   });
 
   it('TodayDashboard offline path is unchanged', () => {
+    const todayViewsSource = readFileSync(
+      resolve(process.cwd(), 'src/components/today/today-dashboard-views.tsx'),
+      'utf8',
+    );
     expect(todaySource).toContain('useOfflineSnapshot(!online && hasNoLiveContent)');
-    expect(todaySource).toContain('<OfflineSnapshotSummary entry={offlineEntry} />');
+    expect(todayViewsSource).toContain('<OfflineSnapshotSummary entry={entry} />');
   });
 });
 

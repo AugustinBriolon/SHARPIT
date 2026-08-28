@@ -4,6 +4,7 @@ import { useSearchParams } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { useConversation, useConversations } from '@/hooks/use-coach';
 import { useOfflineSnapshot } from '@/hooks/use-offline-snapshot';
+import { isSet } from '@/lib/util/value';
 import { useOnlineStatus } from '@/hooks/use-online-status';
 import type { ProjectionHorizonDays } from '@/core/projection/types';
 import { createClientId } from '@/lib/client-id';
@@ -80,7 +81,7 @@ export function useCoachConversationSelection(hasDiscussIntent: boolean, online:
     !isEphemeral &&
     Array.isArray(activeConversation.data?.messages) &&
     activeConversation.data.messages.length > 0;
-  const hasNoLiveContent = conversationsQuery.data === null && !activeHasMessages;
+  const hasNoLiveContent = !isSet(conversationsQuery.data) && !activeHasMessages;
   const { entry: offlineEntry } = useOfflineSnapshot(!online && hasNoLiveContent);
 
   useEffect(() => {

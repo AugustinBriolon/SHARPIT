@@ -82,19 +82,31 @@ describe('TodayDashboardShell', () => {
 });
 
 describe('TodayDashboard loading gate contract', () => {
-  const source = readFileSync(
+  const dashboardSource = readFileSync(
     resolve(process.cwd(), 'src/components/today/today-dashboard.tsx'),
+    'utf8',
+  );
+  const viewSource = readFileSync(
+    resolve(process.cwd(), 'src/components/today/today-dashboard-view.ts'),
+    'utf8',
+  );
+  const viewsSource = readFileSync(
+    resolve(process.cwd(), 'src/components/today/today-dashboard-views.tsx'),
+    'utf8',
+  );
+  const mainSource = readFileSync(
+    resolve(process.cwd(), 'src/components/today/today-dashboard-main.tsx'),
     'utf8',
   );
 
   it('uses shell only on cold start without vm', () => {
-    expect(source).toMatch(/if\s*\(\s*valuesLoading\s*&&\s*!vm\s*\)/);
-    expect(source).toContain('<TodayDashboardShell trainingDayId={trainingDayId} />');
+    expect(viewSource).toMatch(/if\s*\(\s*valuesLoading\s*&&\s*!vm\s*\)/);
+    expect(viewsSource).toContain('<TodayDashboardShell trainingDayId={trainingDayId} />');
   });
 
   it('keeps placeholder SWR tree with loading props and wellness refetch', () => {
-    expect(source).toContain('loading={valuesLoading}');
-    expect(source).toMatch(/!valuesLoading\s*&&\s*content\.statusMessage/);
-    expect(source).toContain('onWellnessCompleted={() => void query.refetch()}');
+    expect(mainSource).toContain('loading={valuesLoading}');
+    expect(mainSource).toMatch(/!valuesLoading\s*&&\s*content\.statusMessage/);
+    expect(dashboardSource).toContain('onWellnessCompleted={() => void query.refetch()}');
   });
 });
