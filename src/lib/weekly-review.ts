@@ -257,6 +257,18 @@ export async function getWeeklyReview(athleteId: string, refDate: Date = new Dat
 }
 
 /**
+ * Rétro la plus récente, quelle que soit la semaine — évite au lecteur de
+ * deviner si la dernière génération porte sur la semaine écoulée (cron du
+ * dimanche) ou la semaine en cours (génération à la demande, `current: true`).
+ */
+export async function getLatestWeeklyReview(athleteId: string) {
+  return prisma.weeklyReview.findFirst({
+    where: { athleteId },
+    orderBy: { weekStart: 'desc' },
+  });
+}
+
+/**
  * Génère et stocke la rétro hebdo. Par défaut on traite la semaine ÉCOULÉE
  * (utile pour un cron lancé en début de semaine), sauf si `current` est vrai.
  */

@@ -2,7 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { isCoachConfigured } from '@/lib/ai';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { checkRateLimit, rateLimitResponseBody, rateLimiters } from '@/lib/rate-limit';
-import { generateAndStoreWeeklyReview, getWeeklyReview } from '@/lib/weekly-review';
+import { hasExpertAccess } from '@/lib/access/tier';
+import { getAthleteProfile } from '@/lib/queries';
+import {
+  generateAndStoreWeeklyReview,
+  getLatestWeeklyReview,
+  getWeeklyReview,
+} from '@/lib/weekly-review';
 
 export const maxDuration = 60;
 
@@ -18,13 +24,30 @@ function parseDate(value: string | null): Date {
   return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
 }
 
+/** Le bilan hebdo est un gate Expert — vérifié ici indépendamment de la page,
+ * qui n'est qu'une des façons d'atteindre cette route. */
+async function requireExpertAthlete(): Promise<string | NextResponse> {
+  const athleteId = await getCurrentAthleteId();
+  const profile = await getAthleteProfile(athleteId);
+  if (!hasExpertAccess(profile?.tier ?? 'FREE')) {
+    return NextResponse.json({ error: 'Fonctionnalité Expert' }, { status: 403 });
+  }
+  return athleteId;
+}
+
 export async function GET(request: NextRequest) {
   // Read search params before try so Cache Components prerender interrupts propagate.
+  const latest = request.nextUrl.searchParams.get('latest') === '1';
   const date = parseDate(request.nextUrl.searchParams.get('date'));
 
   try {
-    const athleteId = await getCurrentAthleteId();
-    const review = await getWeeklyReview(athleteId, date);
+    const athleteId = await requireExpertAthlete();
+    if (athleteId instanceof NextResponse) {
+      return athleteId;
+    }
+    const review = latest
+      ? await getLatestWeeklyReview(athleteId)
+      : await getWeeklyReview(athleteId, date);
     return NextResponse.json({ review: review ?? null });
   } catch (error) {
     console.error('[coach/weekly-review] GET', error);
@@ -42,8 +65,11 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json().catch(() => ({}));
     const date = parseDate((body as { date?: string }).date ?? null);
+    const athleteId = await requireExpertAthlete();
+    if (athleteId instanceof NextResponse) {
+      return athleteId;
+    }
     // Depuis l'app, on veut la rétro de la semaine EN COURS (current: true).
-    const athleteId = await getCurrentAthleteId();
     const rateLimit = await checkRateLimit(rateLimiters.coachReview, athleteId);
     if (!rateLimit.ok) {
       return NextResponse.json(rateLimitResponseBody(rateLimit.retryAfterSeconds), {
