@@ -24,12 +24,20 @@ export function parseSelectedDate(
   today: Date,
   minDate: Date | undefined,
 ): Date {
-  if (!raw) return today;
+  if (!raw) {
+    return today;
+  }
   const parsed = parseISO(raw);
-  if (!isValid(parsed)) return today;
+  if (!isValid(parsed)) {
+    return today;
+  }
   const normalized = startOfDay(parsed);
-  if (isAfter(normalized, today)) return today;
-  if (minDate && isBefore(normalized, minDate)) return minDate;
+  if (isAfter(normalized, today)) {
+    return today;
+  }
+  if (minDate && isBefore(normalized, minDate)) {
+    return minDate;
+  }
   return normalized;
 }
 
@@ -57,8 +65,12 @@ export function useTodaySelectedDate() {
   const setDate = useCallback(
     (next: Date) => {
       let normalized = startOfDay(next);
-      if (isAfter(normalized, today)) normalized = today;
-      if (minDate && isBefore(normalized, minDate)) normalized = minDate;
+      if (isAfter(normalized, today)) {
+        normalized = today;
+      }
+      if (minDate && isBefore(normalized, minDate)) {
+        normalized = minDate;
+      }
       const params = new URLSearchParams(searchParams.toString());
       if (format(normalized, 'yyyy-MM-dd') === format(today, 'yyyy-MM-dd')) {
         params.delete('date');
@@ -72,11 +84,15 @@ export function useTodaySelectedDate() {
   );
 
   const goToPreviousDay = useCallback(() => {
-    if (isAtMinDate) return;
+    if (isAtMinDate) {
+      return;
+    }
     setDate(addDays(date, -1));
   }, [date, isAtMinDate, setDate]);
   const goToNextDay = useCallback(() => {
-    if (!isToday) setDate(addDays(date, 1));
+    if (!isToday) {
+      setDate(addDays(date, 1));
+    }
   }, [date, isToday, setDate]);
 
   return {

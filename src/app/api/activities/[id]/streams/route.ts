@@ -10,7 +10,7 @@ export async function GET(_request: NextRequest, context: RouteContext) {
     const athleteId = await getCurrentAthleteId();
     const payload = await getActivityStreams(athleteId, id);
 
-    if (payload == null) {
+    if (payload === null) {
       return NextResponse.json({ error: 'Streams indisponibles pour le moment' }, { status: 503 });
     }
 

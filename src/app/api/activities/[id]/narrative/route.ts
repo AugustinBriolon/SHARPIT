@@ -15,55 +15,80 @@ const narrativeRequestSchema = z.object({
   wait: z.boolean().optional(),
 });
 
+async function checkNarrativeRateLimit(
+  athleteId: string,
+  activityId: string,
+): Promise<NextResponse | null> {
+  const rateLimit = await checkRateLimit(
+    rateLimiters.activityNarrative,
+    `${athleteId}:${activityId}`,
+  );
+  if (rateLimit.ok) {
+    return null;
+  }
+  return NextResponse.json(rateLimitResponseBody(rateLimit.retryAfterSeconds), { status: 429 });
+}
+
+async function runNarrativeAndRespond(athleteId: string, id: string, force: boolean) {
+  const ok = await runActivityNarrativeAnalysis(athleteId, id, { force });
+  if (!ok) {
+    return NextResponse.json({ error: 'Synthèse impossible' }, { status: 500 });
+  }
+  const activity = await prisma.activity.findUnique({ where: { id } });
+  return NextResponse.json(activity);
+}
+
+async function validateNarrativePost(
+  athleteId: string,
+  id: string,
+  request: NextRequest,
+): Promise<{ force: boolean; wait: boolean } | NextResponse> {
+  if (!isCoachConfigured()) {
+    return NextResponse.json(
+      { error: 'Coach IA non configuré. Ajoute AI_GATEWAY_API_KEY dans .env.' },
+      { status: 503 },
+    );
+  }
+
+  const existing = await prisma.activity.findFirst({
+    where: { id, athleteId },
+    select: { id: true },
+  });
+  if (!existing) {
+    return NextResponse.json({ error: 'Activité introuvable' }, { status: 404 });
+  }
+
+  const body = await request.json().catch(() => ({}));
+  const parsed = narrativeRequestSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json({ error: 'Paramètres invalides' }, { status: 400 });
+  }
+
+  return { force: parsed.data.force ?? false, wait: parsed.data.wait ?? false };
+}
+
 /** Generate or refresh the coach narrative for an activity (survives client leave via after). */
 export async function POST(request: NextRequest, context: RouteContext) {
   try {
     const { id } = await context.params;
     const athleteId = await getCurrentAthleteId();
-    if (!isCoachConfigured()) {
-      return NextResponse.json(
-        { error: 'Coach IA non configuré. Ajoute AI_GATEWAY_API_KEY dans .env.' },
-        { status: 503 },
-      );
+    const validated = await validateNarrativePost(athleteId, id, request);
+    if (validated instanceof NextResponse) {
+      return validated;
     }
-
-    const existing = await prisma.activity.findFirst({
-      where: { id, athleteId },
-      select: { id: true },
-    });
-    if (!existing) {
-      return NextResponse.json({ error: 'Activité introuvable' }, { status: 404 });
-    }
-
-    const body = await request.json().catch(() => ({}));
-    const parsed = narrativeRequestSchema.safeParse(body);
-    if (!parsed.success) {
-      return NextResponse.json({ error: 'Paramètres invalides' }, { status: 400 });
-    }
-    // Idempotent by default — runActivityNarrativeAnalysis() already skips a
-    // re-roll when narrativeAnalyzedAt is set unless force is explicitly true.
-    // This used to default force to true whenever the body omitted it, making
-    // every call regenerate regardless of intent.
-    const { force = false, wait = false } = parsed.data;
+    const { force, wait } = validated;
 
     // A real re-roll (force) is rate-limited per activity — the auto-triggered,
     // non-force path (new imports) is unaffected.
     if (force) {
-      const rateLimit = await checkRateLimit(rateLimiters.activityNarrative, `${athleteId}:${id}`);
-      if (!rateLimit.ok) {
-        return NextResponse.json(rateLimitResponseBody(rateLimit.retryAfterSeconds), {
-          status: 429,
-        });
+      const limited = await checkNarrativeRateLimit(athleteId, id);
+      if (limited) {
+        return limited;
       }
     }
 
     if (wait) {
-      const ok = await runActivityNarrativeAnalysis(athleteId, id, { force });
-      if (!ok) {
-        return NextResponse.json({ error: 'Synthèse impossible' }, { status: 500 });
-      }
-      const activity = await prisma.activity.findUnique({ where: { id } });
-      return NextResponse.json(activity);
+      return runNarrativeAndRespond(athleteId, id, force);
     }
 
     after(async () => {

@@ -45,6 +45,8 @@ export function useDemoPlannedSessionOverlay(
   const links = useDemoSessionLinks();
   const activitiesQuery = useActivities();
 
-  if (!session) return session;
+  if (!session) {
+    return session;
+  }
   return overlayDemoLinkOnPlannedSession(session, activitiesQuery.data, links);
 }

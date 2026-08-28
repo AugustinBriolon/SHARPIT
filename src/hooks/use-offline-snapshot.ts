@@ -29,7 +29,9 @@ export function useOfflineSnapshot(active: boolean): UseOfflineSnapshotResult {
     let cancelled = false;
     setLoading(true);
     void loadSnapshot({ ownerKey: user.id }).then((result) => {
-      if (cancelled) return;
+      if (cancelled) {
+        return;
+      }
       setEntry(result);
       setLoading(false);
     });

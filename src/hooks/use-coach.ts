@@ -80,7 +80,9 @@ export type CoachGenerationProgress = {
 };
 
 function countPartialItems(value: unknown, key: 'sessions' | 'changes'): number {
-  if (typeof value !== 'object' || value == null) return 0;
+  if (typeof value !== 'object' || value === null) {
+    return 0;
+  }
   const list = (value as Record<string, unknown>)[key];
   return Array.isArray(list) ? list.length : 0;
 }
@@ -89,13 +91,21 @@ function countPartialItems(value: unknown, key: 'sessions' | 'changes'): number 
  * POSTs to a streaming coach endpoint and reports progress as it arrives.
  * Non-2xx responses still answer with plain JSON (bad params, coach unconfigured).
  */
-async function postCoachGeneration<TResult>(
-  url: string,
-  params: unknown,
-  partialKey: 'sessions' | 'changes',
-  onProgress?: (progress: CoachGenerationProgress) => void,
+type PostCoachGenerationOptions = {
+  url: string;
+  params: unknown;
+  partialKey: 'sessions' | 'changes';
+  onProgress?: (progress: CoachGenerationProgress) => void;
+  fallbackError?: string;
+};
+
+async function postCoachGeneration<TResult>({
+  url,
+  params,
+  partialKey,
+  onProgress,
   fallbackError = 'La génération a échoué.',
-): Promise<TResult> {
+}: PostCoachGenerationOptions): Promise<TResult> {
   const res = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -124,7 +134,12 @@ async function postCoachGeneration<TResult>(
 export function useCoachPlan(onProgress?: (progress: CoachGenerationProgress) => void) {
   return useMutation<GeneratedPlan, Error, GeneratePlanParams>({
     mutationFn: (params) =>
-      postCoachGeneration<GeneratedPlan>('/api/coach/plan', params, 'sessions', onProgress),
+      postCoachGeneration<GeneratedPlan>({
+        url: '/api/coach/plan',
+        params,
+        partialKey: 'sessions',
+        onProgress,
+      }),
   });
 }
 
@@ -166,13 +181,13 @@ export interface AdaptPlanResult {
 export function useAdaptPlan(onProgress?: (progress: CoachGenerationProgress) => void) {
   return useMutation<AdaptPlanResult, Error, { days?: number; focus?: string }>({
     mutationFn: (params) =>
-      postCoachGeneration<AdaptPlanResult>(
-        '/api/coach/adapt',
+      postCoachGeneration<AdaptPlanResult>({
+        url: '/api/coach/adapt',
         params,
-        'changes',
+        partialKey: 'changes',
         onProgress,
-        'La réadaptation a échoué.',
-      ),
+        fallbackError: 'La réadaptation a échoué.',
+      }),
   });
 }
 
@@ -181,7 +196,9 @@ export function useCoachContext() {
     queryKey: queryKeys.coachContext,
     queryFn: async (): Promise<string> => {
       const res = await fetch('/api/coach/context');
-      if (!res.ok) throw new Error('Impossible de charger le contexte.');
+      if (!res.ok) {
+        throw new Error('Impossible de charger le contexte.');
+      }
       const data = (await res.json()) as { context: string };
       return data.context ?? '';
     },
@@ -308,7 +325,9 @@ export function useCreateConversation() {
     { bootstrapKey?: string; messages?: UIMessage[] } | void
   >({
     mutationFn: async (input) => {
-      if (createConversationPromise) return createConversationPromise;
+      if (createConversationPromise) {
+        return createConversationPromise;
+      }
 
       createConversationPromise = (async () => {
         const body =
@@ -351,7 +370,9 @@ export function useCreateConversation() {
             createdAt: conversation.createdAt,
             updatedAt: conversation.updatedAt,
           };
-          if (!existing || existing.length === 0) return [summary];
+          if (!existing || existing.length === 0) {
+            return [summary];
+          }
           const withoutDuplicate = existing.filter((item) => item.id !== conversation.id);
           return [summary, ...withoutDuplicate];
         },
@@ -384,7 +405,9 @@ export function useSaveConversation() {
       queryClient.setQueryData<ClientConversationSummary[] | undefined>(
         queryKeys.conversations,
         (existing) => {
-          if (!existing) return existing;
+          if (!existing) {
+            return existing;
+          }
           return existing.map((item) =>
             item.id === data.id
               ? {
@@ -446,7 +469,9 @@ export function useRenameConversation() {
       queryClient.setQueryData<ClientConversationSummary[] | undefined>(
         queryKeys.conversations,
         (existing) => {
-          if (!existing) return [data];
+          if (!existing) {
+            return [data];
+          }
           return existing.map((item) => (item.id === data.id ? data : item));
         },
       );

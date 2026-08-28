@@ -19,13 +19,19 @@ export function resolveIsDemoMode(
   userId: string | null | undefined,
   authLoaded: boolean,
 ): boolean {
-  if (!authLoaded) return false;
-  if (userId) return false;
+  if (!authLoaded) {
+    return false;
+  }
+  if (userId) {
+    return false;
+  }
   return cookieIsDemo;
 }
 
 function hasDemoCookie(): boolean {
-  if (typeof document === 'undefined') return false;
+  if (typeof document === 'undefined') {
+    return false;
+  }
   return hasDemoCookieValue(document.cookie);
 }
 

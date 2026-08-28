@@ -70,8 +70,8 @@ export async function POST(request: NextRequest) {
     const activityType = parsed.data.type;
     const shouldEnrich =
       sportSupportsOutdoorContext(activityType) &&
-      parsed.data.observedLocationLat != null &&
-      parsed.data.observedLocationLng != null;
+      parsed.data.observedLocationLat !== null &&
+      parsed.data.observedLocationLng !== null;
 
     // Return the createActivity row immediately (Instant UX). Weather / observed
     // context / narrative / auto-link land via later invalidate+refetch once

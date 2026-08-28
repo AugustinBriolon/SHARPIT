@@ -20,13 +20,17 @@ function readMode(mq: MediaQueryList): ViewportMode {
 }
 
 function ensureSubscription(): MediaQueryList {
-  if (mediaQuery) return mediaQuery;
+  if (mediaQuery) {
+    return mediaQuery;
+  }
 
   mediaQuery = window.matchMedia(DESKTOP_QUERY);
   currentMode = readMode(mediaQuery);
 
   const onChange = () => {
-    if (!mediaQuery) return;
+    if (!mediaQuery) {
+      return;
+    }
     currentMode = readMode(mediaQuery);
     listeners.forEach((listener) => listener());
   };

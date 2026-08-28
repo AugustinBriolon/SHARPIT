@@ -7,6 +7,41 @@ import { refreshAndPersistPlannedSessionContext } from '@/lib/planned-session/re
 import { createPlannedSessionSchema } from '@/lib/validators/planned-session';
 import { findCoachingDecisionById, recordDecisionAction } from '@/lib/decision-memory/repository';
 
+async function assertDecisionNotRejected(athleteId: string, decisionId: string) {
+  const decision = await findCoachingDecisionById(athleteId, decisionId);
+  if (decision?.gateResult.status !== 'REJECTED') {
+    return null;
+  }
+  return NextResponse.json(
+    { error: 'Cette proposition a été rejetée par le Gate et ne peut pas être appliquée.' },
+    { status: 422 },
+  );
+}
+
+async function recordAcceptedDecision(athleteId: string, decisionId: string, sessionId: string) {
+  try {
+    await recordDecisionAction(athleteId, {
+      decisionId,
+      actionType: 'ACCEPTED',
+      source: 'PLAN_REVIEW_UI',
+      resultingPlannedSessionId: sessionId,
+    });
+  } catch (decisionError) {
+    console.error('[planned-sessions/decision-action]', decisionError);
+  }
+}
+
+async function runPlannedSessionSideEffects(athleteId: string, session: { id: string }) {
+  await Promise.all([
+    refreshAndPersistPlannedSessionContext(athleteId, session.id).catch((ctxError) => {
+      console.error('[planned-sessions/context]', ctxError);
+    }),
+    pushSessionToGoogle(session).catch((syncError) => {
+      console.error('Push Google Calendar échoué', syncError);
+    }),
+  ]);
+}
+
 export async function GET(request: NextRequest) {
   // Read search params before try so Cache Components prerender interrupts propagate.
   const { searchParams } = new URL(request.url);
@@ -48,12 +83,9 @@ export async function POST(request: NextRequest) {
     // control for REJECTED sessions, but the server is the enforcement boundary: a
     // direct API call must not be able to bypass the Gate's verdict.
     if (decisionId) {
-      const decision = await findCoachingDecisionById(athleteId, decisionId);
-      if (decision?.gateResult.status === 'REJECTED') {
-        return NextResponse.json(
-          { error: 'Cette proposition a été rejetée par le Gate et ne peut pas être appliquée.' },
-          { status: 422 },
-        );
+      const rejected = await assertDecisionNotRejected(athleteId, decisionId);
+      if (rejected) {
+        return rejected;
       }
     }
 
@@ -66,27 +98,10 @@ export async function POST(request: NextRequest) {
     // Records the athlete's acceptance of a coach recommendation (best-effort —
     // an invalid/unknown decisionId must never fail the session creation itself).
     if (decisionId) {
-      try {
-        await recordDecisionAction(athleteId, {
-          decisionId,
-          actionType: 'ACCEPTED',
-          source: 'PLAN_REVIEW_UI',
-          resultingPlannedSessionId: session.id,
-        });
-      } catch (decisionError) {
-        console.error('[planned-sessions/decision-action]', decisionError);
-      }
+      await recordAcceptedDecision(athleteId, decisionId, session.id);
     }
 
-    // Context refresh + Google push are independent best-effort side effects.
-    await Promise.all([
-      refreshAndPersistPlannedSessionContext(athleteId, session.id).catch((ctxError) => {
-        console.error('[planned-sessions/context]', ctxError);
-      }),
-      pushSessionToGoogle(session).catch((syncError) => {
-        console.error('Push Google Calendar échoué', syncError);
-      }),
-    ]);
+    await runPlannedSessionSideEffects(athleteId, session);
 
     const fresh = await getPlannedSessionById(athleteId, session.id);
     return NextResponse.json(fresh ?? session, { status: 201 });

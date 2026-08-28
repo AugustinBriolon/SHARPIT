@@ -17,7 +17,6 @@ type GarminPushResponse = {
   error?: string;
   workoutName?: string;
   workoutId?: number | null;
-  /** Strength: one entry per exercise. Endurance: one per prescribed step. */
   mapped?: Array<{
     exercise?: string;
     watchLabel?: string;
@@ -43,10 +42,16 @@ function garminStatusHint(data: {
   calendarActive?: boolean | null;
 }): string | null {
   const parts: string[] = [];
-  if (data.workoutExists === true) parts.push('workout encore dans Connect');
-  else if (data.workoutExists === false) parts.push('workout introuvable dans Connect');
-  if (data.calendarActive === true) parts.push('présent au calendrier');
-  else if (data.calendarActive === false) parts.push('absent du calendrier');
+  if (data.workoutExists === true) {
+    parts.push('workout encore dans Connect');
+  } else if (data.workoutExists === false) {
+    parts.push('workout introuvable dans Connect');
+  }
+  if (data.calendarActive === true) {
+    parts.push('présent au calendrier');
+  } else if (data.calendarActive === false) {
+    parts.push('absent du calendrier');
+  }
   return parts.length > 0 ? parts.join(' · ') : null;
 }
 
@@ -60,17 +65,95 @@ function patchPlannedSessionGarminFields(
   },
 ): void {
   queryClient.setQueryData<ClientPlannedSession[]>(queryKeys.plannedSessions, (prev) => {
-    if (!prev) return prev;
+    if (!prev) {
+      return prev;
+    }
     return prev.map((session) => {
-      if (session.id !== sessionId) return session;
-      return {
-        ...session,
-        garminWorkoutId: fields.garminWorkoutId,
-        garminWorkoutScheduledDate: fields.garminWorkoutScheduledDate,
-        garminWorkoutPushedAt: fields.garminWorkoutPushedAt,
-      };
+      if (session.id !== sessionId) {
+        return session;
+      }
+      return { ...session, ...fields };
     });
   });
+}
+
+function alreadyPushedToast(data: GarminPushResponse, scheduledDate: string | null): void {
+  toast.info('Déjà sur Garmin', {
+    description: [scheduledDate ? `calendrier ${scheduledDate}` : null, garminStatusHint(data)]
+      .filter(Boolean)
+      .join(' · '),
+  });
+}
+
+async function pushPlannedSessionToGarmin(
+  sessionId: string,
+  force: boolean,
+): Promise<GarminPushResponse & { ok: boolean; status: number }> {
+  const response = await fetch('/api/garmin/workouts/from-planned-session', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ plannedSessionId: sessionId, schedule: true, force }),
+  });
+  const data = (await response.json()) as GarminPushResponse;
+  return { ...data, ok: response.ok, status: response.status };
+}
+
+function confirmGarminRepush(alreadyOnWatch: boolean, forceRequested: boolean): boolean | 'cancel' {
+  if (!alreadyOnWatch || forceRequested) {
+    return forceRequested;
+  }
+  const ok = window.confirm(
+    'Cette séance est déjà sur Garmin. Renvoyer remplace le workout précédent. Continuer ?',
+  );
+  return ok ? true : 'cancel';
+}
+
+function buildNextGarminPush(
+  data: GarminPushResponse,
+  watchPush: GarminWatchPushState,
+): GarminWatchPushState {
+  return {
+    workoutId: data.workoutId !== null ? String(data.workoutId) : watchPush.workoutId,
+    scheduledDate: data.scheduledDate ?? watchPush.scheduledDate,
+    pushedAt: data.pushedAt ?? new Date().toISOString(),
+  };
+}
+
+type ApplyGarminPushSuccessOptions = {
+  data: GarminPushResponse;
+  watchPush: GarminWatchPushState;
+  queryClient: ReturnType<typeof useQueryClient>;
+  sessionId: string;
+  force: boolean;
+  setOptimisticWatchPush: (state: GarminWatchPushState) => void;
+};
+
+function applyGarminPushSuccess(opts: ApplyGarminPushSuccessOptions): void {
+  const nextPush = buildNextGarminPush(opts.data, opts.watchPush);
+  opts.setOptimisticWatchPush(nextPush);
+  patchPlannedSessionGarminFields(opts.queryClient, opts.sessionId, {
+    garminWorkoutId: nextPush.workoutId,
+    garminWorkoutScheduledDate: nextPush.scheduledDate,
+    garminWorkoutPushedAt: nextPush.pushedAt ? new Date(nextPush.pushedAt) : null,
+  });
+  void opts.queryClient.invalidateQueries({ queryKey: queryKeys.plannedSessions });
+  toast.success(opts.force ? 'Workout renvoyé à Garmin' : 'Workout envoyé à Garmin', {
+    description: buildPushToastDescription(opts.data),
+  });
+}
+
+type ExecuteGarminWatchPushOptions = Omit<ApplyGarminPushSuccessOptions, 'data'>;
+
+async function executeGarminWatchPush(opts: ExecuteGarminWatchPushOptions): Promise<void> {
+  const data = await pushPlannedSessionToGarmin(opts.sessionId, opts.force);
+  if (data.status === 409 && data.alreadyPushed) {
+    alreadyPushedToast(data, data.receipt?.scheduledDate ?? opts.watchPush.scheduledDate);
+    return;
+  }
+  if (!data.ok) {
+    throw new Error(data.error || 'Envoi impossible');
+  }
+  applyGarminPushSuccess({ ...opts, data });
 }
 
 /**
@@ -103,55 +186,25 @@ export function useGarminWorkoutPush(session: {
 
   const sendToWatch = useCallback(
     async (opts: { force?: boolean; canPush: boolean } = { canPush: true }) => {
-      const forceRequested = Boolean(opts.force);
-      if (pushing || !opts.canPush) return;
-
-      let force = forceRequested;
-      if (alreadyOnWatch && !force) {
-        const ok = window.confirm(
-          'Cette séance est déjà sur Garmin. Renvoyer remplace le workout précédent. Continuer ?',
-        );
-        if (!ok) return;
-        force = true;
+      if (pushing || !opts.canPush) {
+        return;
+      }
+      const confirmResult = confirmGarminRepush(alreadyOnWatch, Boolean(opts.force));
+      if (confirmResult === 'cancel') {
+        return;
       }
 
       setPushing(true);
-      const loadingToast = toast.loading(force ? 'Renvoi vers Garmin…' : 'Envoi vers Garmin…');
+      const loadingToast = toast.loading(
+        confirmResult ? 'Renvoi vers Garmin…' : 'Envoi vers Garmin…',
+      );
       try {
-        const response = await fetch('/api/garmin/workouts/from-planned-session', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ plannedSessionId: session.id, schedule: true, force }),
-        });
-        const data = (await response.json()) as GarminPushResponse;
-
-        if (response.status === 409 && data.alreadyPushed) {
-          const scheduled = data.receipt?.scheduledDate ?? watchPush.scheduledDate;
-          toast.info('Déjà sur Garmin', {
-            description: [scheduled ? `calendrier ${scheduled}` : null, garminStatusHint(data)]
-              .filter(Boolean)
-              .join(' · '),
-          });
-          return;
-        }
-
-        if (!response.ok) throw new Error(data.error || 'Envoi impossible');
-
-        const nextPush: GarminWatchPushState = {
-          workoutId: data.workoutId != null ? String(data.workoutId) : watchPush.workoutId,
-          scheduledDate: data.scheduledDate ?? watchPush.scheduledDate,
-          pushedAt: data.pushedAt ?? new Date().toISOString(),
-        };
-        setOptimisticWatchPush(nextPush);
-        patchPlannedSessionGarminFields(queryClient, session.id, {
-          garminWorkoutId: nextPush.workoutId,
-          garminWorkoutScheduledDate: nextPush.scheduledDate,
-          garminWorkoutPushedAt: nextPush.pushedAt ? new Date(nextPush.pushedAt) : null,
-        });
-        void queryClient.invalidateQueries({ queryKey: queryKeys.plannedSessions });
-
-        toast.success(force ? 'Workout renvoyé à Garmin' : 'Workout envoyé à Garmin', {
-          description: buildPushToastDescription(data),
+        await executeGarminWatchPush({
+          watchPush,
+          queryClient,
+          sessionId: session.id,
+          force: confirmResult,
+          setOptimisticWatchPush,
         });
       } catch (error) {
         toast.error(error instanceof Error ? error.message : 'Envoi vers Garmin impossible');
@@ -160,20 +213,8 @@ export function useGarminWorkoutPush(session: {
         setPushing(false);
       }
     },
-    [
-      alreadyOnWatch,
-      pushing,
-      queryClient,
-      session.id,
-      watchPush.scheduledDate,
-      watchPush.workoutId,
-    ],
+    [alreadyOnWatch, pushing, queryClient, session.id, watchPush],
   );
 
-  return {
-    pushing,
-    watchPush,
-    alreadyOnWatch,
-    sendToWatch,
-  };
+  return { pushing, watchPush, alreadyOnWatch, sendToWatch };
 }

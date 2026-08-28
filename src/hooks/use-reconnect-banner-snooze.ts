@@ -32,7 +32,9 @@ export function useReconnectBannerSnooze(snoozeKey: string | null | undefined) {
   }, [snoozeKey]);
 
   const snooze = useCallback(() => {
-    if (!snoozeKey) return;
+    if (!snoozeKey) {
+      return;
+    }
     try {
       localStorage.setItem(storageKey(snoozeKey), String(Date.now()));
     } catch {

@@ -30,10 +30,14 @@ function patchSessionsForScenario(
   prev: ClientPlannedSession[],
   vars: ApplyScenarioComparisonVars,
 ): ClientPlannedSession[] {
-  if (vars.kind === 'KEEP_PLAN' || !vars.targetSessionId) return prev;
+  if (vars.kind === 'KEEP_PLAN' || !vars.targetSessionId) {
+    return prev;
+  }
 
   const target = prev.find((s) => s.id === vars.targetSessionId);
-  if (!target) return prev;
+  if (!target) {
+    return prev;
+  }
 
   const fields = optimisticSessionFieldsForKind(vars.kind, {
     date: new Date(target.date),
@@ -41,8 +45,12 @@ function patchSessionsForScenario(
     load: target.load,
   });
 
-  if (fields === null) return prev;
-  if (fields === 'remove') return prev.filter((s) => s.id !== vars.targetSessionId);
+  if (fields === null) {
+    return prev;
+  }
+  if (fields === 'remove') {
+    return prev.filter((s) => s.id !== vars.targetSessionId);
+  }
 
   return prev.map((s) =>
     s.id === vars.targetSessionId

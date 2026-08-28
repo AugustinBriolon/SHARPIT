@@ -113,7 +113,7 @@ export function useToday(date: Date = new Date()): UseTodayResult {
 
   return {
     data: query.data ?? EMPTY_PRODUCT_VIEW,
-    loading: query.isPending && query.data == null,
+    loading: query.isPending && query.data === null,
     isPending: query.isPending,
     isFetching: query.isFetching,
     error: query.error instanceof Error ? query.error.message : null,

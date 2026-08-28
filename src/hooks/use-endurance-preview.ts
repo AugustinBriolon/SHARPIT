@@ -37,7 +37,9 @@ export function useEndurancePreview(session: {
 
   return useMemo(() => {
     const sport = enduranceSportFromActivityType(session.type);
-    if (!sport || !profile) return EMPTY;
+    if (!sport || !profile) {
+      return EMPTY;
+    }
 
     const thresholds: AthleteThresholds = {
       runThresholdPaceSecPerKm: profile.runThresholdPaceSecPerKm,

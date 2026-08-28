@@ -78,7 +78,9 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
     const existing = await getActivityById(athleteId, id);
     await deleteActivity(athleteId, id);
     await removeManualActivityObservations(athleteId, id);
-    if (existing) await updateRecordsForTypesSafe(athleteId, [existing.type]);
+    if (existing) {
+      await updateRecordsForTypesSafe(athleteId, [existing.type]);
+    }
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error(error);

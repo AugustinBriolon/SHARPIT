@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { type NextRequest, NextResponse } from 'next/server';
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 import { isDevClerkBypass } from '@/lib/dev/dev-auth';
 import { DEMO_COOKIE } from '@/lib/demo/demo-session';
@@ -24,20 +24,47 @@ const isDemoMutatingCallback = createRouteMatcher([
   '/api/google/callback(.*)',
 ]);
 
+function isDemoWriteBlocked(req: NextRequest): boolean {
+  const isWrite = req.method !== 'GET' && req.method !== 'HEAD';
+  if (!req.nextUrl.pathname.startsWith('/api/')) {
+    return false;
+  }
+  return isWrite || isDemoMutatingCallback(req);
+}
+
+function demoSessionResponse(req: NextRequest): NextResponse | null {
+  const isDemo = req.cookies.get(DEMO_COOKIE)?.value === '1';
+  if (!isDemo || !isDemoWriteBlocked(req)) {
+    return null;
+  }
+  return NextResponse.json({ error: 'Mode démo : lecture seule' }, { status: 403 });
+}
+
+async function rateLimitApiUser(userId: string, pathname: string): Promise<NextResponse | null> {
+  if (!pathname.startsWith('/api/')) {
+    return null;
+  }
+  const result = await checkRateLimit(rateLimiters.apiGeneral, userId);
+  if (result.ok) {
+    return null;
+  }
+  return NextResponse.json(rateLimitResponseBody(result.retryAfterSeconds), { status: 429 });
+}
+
 export default clerkMiddleware(async (auth, req) => {
-  if (isDevClerkBypass()) return;
+  if (isDevClerkBypass()) {
+    return;
+  }
 
   // A real session always wins over a stray demo cookie left over in the
   // same browser (e.g. a signed-in athlete who once visited /demo) — otherwise
   // their own writes would be misread as a demo session and blocked.
   const { userId } = await auth();
-  const isDemo = !userId && req.cookies.get(DEMO_COOKIE)?.value === '1';
-  if (isDemo) {
-    const isWrite = req.method !== 'GET' && req.method !== 'HEAD';
-    if (req.nextUrl.pathname.startsWith('/api/') && (isWrite || isDemoMutatingCallback(req))) {
-      return NextResponse.json({ error: 'Mode démo : lecture seule' }, { status: 403 });
+  if (!userId) {
+    const blocked = demoSessionResponse(req);
+    if (blocked) {
+      return blocked;
     }
-    return;
   }
 
   if (!isPublicRoute(req)) {
@@ -47,12 +74,10 @@ export default clerkMiddleware(async (auth, req) => {
   // Flooding backstop for every authenticated API call — generous, catches
   // raw request-hammering regardless of which route. Skipped for demo
   // sessions (already fully read-only) and unauthenticated/public routes.
-  if (userId && req.nextUrl.pathname.startsWith('/api/')) {
-    const result = await checkRateLimit(rateLimiters.apiGeneral, userId);
-    if (!result.ok) {
-      return NextResponse.json(rateLimitResponseBody(result.retryAfterSeconds), { status: 429 });
-    }
+  if (!userId) {
+    return;
   }
+  return rateLimitApiUser(userId, req.nextUrl.pathname);
 });
 
 export const config = {

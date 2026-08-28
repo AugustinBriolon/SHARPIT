@@ -1,6 +1,49 @@
 import { getDevTools, isDevToolsEnabled } from '@/lib/dev/dev-tools';
 import { NextRequest, NextResponse } from 'next/server';
 
+type ReplayRequestBody = {
+  athleteId?: string;
+  since?: string;
+  until?: string;
+  mode?: string;
+};
+
+function parseReplayRequest(body: unknown): ReplayRequestBody | NextResponse {
+  if (!body || typeof body !== 'object') {
+    return NextResponse.json({ error: 'Invalid JSON body.' }, { status: 400 });
+  }
+  return body as ReplayRequestBody;
+}
+
+function validateReplayRequest(body: ReplayRequestBody): NextResponse | null {
+  if (!body.athleteId) {
+    return NextResponse.json({ error: 'athleteId is required.' }, { status: 400 });
+  }
+  if (body.mode && body.mode !== 'dry-run' && body.mode !== 'write') {
+    return NextResponse.json({ error: 'mode must be "dry-run" or "write".' }, { status: 400 });
+  }
+  return null;
+}
+
+async function readReplayRequest(request: NextRequest): Promise<ReplayRequestBody | NextResponse> {
+  try {
+    const body = await request.json();
+    return parseReplayRequest(body);
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON body.' }, { status: 400 });
+  }
+}
+
+async function runReplay(body: ReplayRequestBody) {
+  const { replayEngine } = getDevTools();
+  return replayEngine.replay({
+    athleteId: body.athleteId!,
+    since: body.since ? new Date(`${body.since}T00:00:00Z`) : undefined,
+    until: body.until ? new Date(`${body.until}T23:59:59Z`) : undefined,
+    mode: (body.mode as 'dry-run' | 'write') ?? 'dry-run',
+  });
+}
+
 /**
  * Replay Engine API
  *
@@ -26,33 +69,17 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Developer tools are not enabled.' }, { status: 404 });
   }
 
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: 'Invalid JSON body.' }, { status: 400 });
+  const parsed = await readReplayRequest(request);
+  if (parsed instanceof NextResponse) {
+    return parsed;
   }
-
-  const { athleteId, since, until, mode } = body as Record<string, string>;
-
-  if (!athleteId) {
-    return NextResponse.json({ error: 'athleteId is required.' }, { status: 400 });
-  }
-
-  if (mode && mode !== 'dry-run' && mode !== 'write') {
-    return NextResponse.json({ error: 'mode must be "dry-run" or "write".' }, { status: 400 });
+  const invalid = validateReplayRequest(parsed);
+  if (invalid) {
+    return invalid;
   }
 
   try {
-    const { replayEngine } = getDevTools();
-
-    const result = await replayEngine.replay({
-      athleteId,
-      since: since ? new Date(`${since}T00:00:00Z`) : undefined,
-      until: until ? new Date(`${until}T23:59:59Z`) : undefined,
-      mode: (mode as 'dry-run' | 'write') ?? 'dry-run',
-    });
-
+    const result = await runReplay(parsed);
     return NextResponse.json(result);
   } catch (error) {
     console.error('[dev/replay]', error);
