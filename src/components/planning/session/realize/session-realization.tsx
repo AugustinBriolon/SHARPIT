@@ -11,6 +11,8 @@ import { LinkAnalysisStatus } from '@/components/planning/session/link-analysis-
 import { formatActivityMatchLabel } from '@/lib/planned-session/linking/session-link-match-score';
 import { HeartPulse, Link2, Unlink } from 'lucide-react';
 import Link from 'next/link';
+import { usePlannedSessionNavDismiss } from '@/components/planning/session/edit/planned-session-nav-dismiss';
+import { useAppModalOptional } from '@/providers/app-modal-provider';
 import {
   PhysicalReassessmentCard,
   type PhysicalReassessment,
@@ -78,6 +80,12 @@ function AnalysisTimeoutBanner({
 }
 
 function LinkedActivityCard({ linked, delink }: { linked: ClientActivity; delink: ReactNode }) {
+  // Rendered inside the planned-session modal (brick or standalone) — without
+  // this, the click navigates but the dialog stays mounted on top of the
+  // destination page. Both hooks no-op outside a modal context.
+  const dismissFromDialog = usePlannedSessionNavDismiss();
+  const appModal = useAppModalOptional();
+
   return (
     <div className="border-analysis-border/60 bg-analysis-surface-alt/50 overflow-hidden rounded-lg border">
       <div className="border-analysis-border/50 flex items-center justify-between gap-2 border-b px-3 py-2">
@@ -87,6 +95,10 @@ function LinkedActivityCard({ linked, delink }: { linked: ClientActivity; delink
       <Link
         className="hover:bg-analysis-surface-alt/80 chip-surface flex items-center justify-between gap-2 px-3 py-2.5 transition-colors"
         href={`/training/${linked.id}`}
+        onClick={() => {
+          dismissFromDialog?.();
+          appModal?.closePlannedSession();
+        }}
       >
         <div className="flex min-w-0 items-start gap-1.5">
           <ActivityTypeIndicator type={linked.type} />
