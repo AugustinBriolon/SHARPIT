@@ -29,7 +29,7 @@ function StoryBody({ body }: { body: string }) {
 
 function StoryNotes({ notes }: { notes: string }) {
   return (
-    <div className="border-analysis-border/60 bg-analysis-surface-alt/80 min-w-0 space-y-1 rounded-md border px-3 py-2.5">
+    <div className="border-highlight min-w-0 space-y-1 border-l-2 pl-3">
       <p className="text-label">Ta note</p>
       <p className="text-foreground text-sm leading-relaxed wrap-break-word whitespace-pre-wrap">
         {notes}
