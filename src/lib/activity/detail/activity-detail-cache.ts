@@ -17,6 +17,7 @@ export function clientActivityToHeaderActivity(
     duration: activity.duration,
     load: activity.load,
     rpe: activity.rpe,
+    feeling: activity.feeling,
     hikeTrip: null,
     plannedSession: activity.plannedSession,
   };

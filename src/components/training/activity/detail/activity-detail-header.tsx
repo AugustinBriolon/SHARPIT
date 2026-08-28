@@ -14,13 +14,13 @@ export function ActivityDetailHeader({ activity }: { activity: ActivityDetailHea
   const header = useActivityDetailHeaderActions(activity);
 
   return (
-    <StickyHeader>
+    <StickyHeader className="py-2 lg:py-3">
       <ActivityDetailHeaderContent
         activity={activity}
         editHref={header.editHref}
         hikeTrip={header.hikeTrip}
         isHike={header.isHike}
-        plannedSessionId={header.plannedSession?.id}
+        plannedSession={header.plannedSession}
         onDelete={header.handleDelete}
         onLinkHikes={header.openLinkHikes}
       />

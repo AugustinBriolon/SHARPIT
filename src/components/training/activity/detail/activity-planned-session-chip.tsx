@@ -4,34 +4,12 @@ import { useQueryClient } from '@tanstack/react-query';
 import { CalendarCheck } from 'lucide-react';
 import { ActivityMetaChip } from '@/components/training/activity/detail/activity-meta-chip';
 import { useAppModal } from '@/providers/app-modal-provider';
-import { activityTypeLabels } from '@/lib/format';
-import { parseSessionAnalysis } from '@/lib/planned-session/display/session-analysis-display';
+import {
+  plannedSessionChipLabel,
+  plannedSessionChipValue,
+} from '@/lib/activity/planned-session/activity-planned-session-display';
 import { prefetchPlannedSessionDetail } from '@/lib/query/prefetch-planned-session-detail';
 import type { PlannedSessionSummary } from './types';
-
-function plannedChipValue(
-  analysis: ReturnType<typeof parseSessionAnalysis>,
-  isAnalyzing: boolean,
-  planned: PlannedSessionSummary,
-): string {
-  if (analysis) {
-    return `${analysis.complianceScore}/100`;
-  }
-  if (isAnalyzing) {
-    return 'Analyse…';
-  }
-  return planned.title ?? activityTypeLabels[planned.type];
-}
-
-function plannedChipLabel(
-  analysis: ReturnType<typeof parseSessionAnalysis>,
-  isAnalyzing: boolean,
-): string {
-  if (analysis || isAnalyzing) {
-    return 'Conformité';
-  }
-  return 'Liée au plan';
-}
 
 /**
  * Opens the planned-session modal in place (no /planning redirect).
@@ -49,8 +27,6 @@ export function ActivityPlannedSessionChip({
 }) {
   const queryClient = useQueryClient();
   const { openPlannedSession } = useAppModal();
-  const analysis = parseSessionAnalysis(planned.analysis);
-  const value = plannedChipValue(analysis, isAnalyzing, planned);
 
   function prefetch() {
     prefetchPlannedSessionDetail(queryClient, planned.id);
@@ -77,8 +53,8 @@ export function ActivityPlannedSessionChip({
   return (
     <ActivityMetaChip
       icon={CalendarCheck}
-      label={plannedChipLabel(analysis, isAnalyzing)}
-      value={value}
+      label={plannedSessionChipLabel(planned, isAnalyzing)}
+      value={plannedSessionChipValue(planned, isAnalyzing)}
       onClick={open}
       onPointerEnter={prefetch}
     />
