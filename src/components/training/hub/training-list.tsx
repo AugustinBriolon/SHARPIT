@@ -4,37 +4,27 @@ import { ActivityType } from '@prisma/client';
 import { format, isSameWeek, startOfWeek } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import dynamic from 'next/dynamic';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useMemo, useRef, useState, useTransition } from 'react';
+import { useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { ActivityList } from '@/components/training/activity/list/activity-list';
-import { HistoryFilters } from '@/components/training/hub/history-filters';
+import {
+  TrainingListEmptyStates,
+  TrainingListToolbar,
+  TrainingListWeekGroups,
+} from '@/components/training/hub/training-list-parts';
 import type { ClientActivity } from '@/lib/query/types';
 import { Button } from '@/components/ui/button';
-import { InkEmptyState } from '@/components/ui/ink-empty-state';
-import { LinkButton } from '@/components/ui/link-button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SkeletonDataValue } from '@/components/ui/skeleton-data-value';
 import { InstrumentListChipSkeleton } from '@/components/ui/instruments/instrument-list-chip';
 import { useActivities, useRecords } from '@/hooks/use-data';
 import { useResetWhenHidden } from '@/hooks/use-reset-when-hidden';
 import {
-  applyTrainingHistoryFilters,
   DEFAULT_TRAINING_HISTORY_FILTERS,
   formatTrainingHistoryFilterStatus,
-  parseTrainingHistoryFilters,
-  serializeTrainingHistoryFilters,
-  type TrainingHistoryFilters,
 } from '@/lib/training/history-filters';
-import { buildActivityRecordLabels } from '@/lib/training/activity-record-labels';
+import { useTrainingListState } from '@/components/training/hub/use-training-list-state';
 import { cn } from '@/lib/utils';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { CalendarPlus, FilterX, Link2, MoreHorizontal, X } from 'lucide-react';
+import { CalendarPlus, X } from 'lucide-react';
 
 const CreateHikeTripDialog = dynamic(
   () =>
@@ -43,16 +33,6 @@ const CreateHikeTripDialog = dynamic(
     ),
   { ssr: false },
 );
-
-const TYPE_ORDER: ActivityType[] = [
-  ActivityType.RUN,
-  ActivityType.BIKE,
-  ActivityType.SWIM,
-  ActivityType.STRENGTH,
-  ActivityType.TRIATHLON,
-  ActivityType.HIKE,
-  ActivityType.OTHER,
-];
 
 const FILTER_URL_DEBOUNCE_MS = 200;
 
@@ -163,116 +143,26 @@ function HikeSelectionConfirmBar({
 export function TrainingList() {
   const { data, isPending } = useActivities();
   const { data: records } = useRecords();
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const [, startTransition] = useTransition();
-  const urlSyncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
   const activities = data ?? [];
-  const urlFilters = useMemo(
-    () => parseTrainingHistoryFilters(new URLSearchParams(searchParams.toString())),
-    [searchParams],
-  );
-  const [optimisticFilters, setOptimisticFilters] = useState<TrainingHistoryFilters | null>(null);
-  const [selectionMode, setSelectionMode] = useState(false);
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
-  const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
-  // Selection and the create dialog are transient; the filter overlay is not.
-  useResetWhenHidden(() => {
-    setCreateDialogOpen(false);
-    setSelectionMode(false);
-    setSelectedIds(new Set());
-  });
-  const filters = optimisticFilters ?? urlFilters;
-
-  // Drop optimistic overlay when URL catches up (debounce) or browser history navigates.
-  useEffect(() => {
-    setOptimisticFilters(null);
-  }, [urlFilters]);
-
-  useEffect(() => {
-    return () => {
-      if (urlSyncTimerRef.current) {
-        clearTimeout(urlSyncTimerRef.current);
-      }
-    };
-  }, []);
-
-  const baseFilters = useMemo(() => ({ ...filters, types: [] }), [filters]);
-
-  const activitiesMatchingNonTypeFilters = useMemo(
-    () => applyTrainingHistoryFilters(activities, baseFilters),
-    [activities, baseFilters],
-  );
-
-  const counts = useMemo(() => {
-    const next = Object.fromEntries(TYPE_ORDER.map((t) => [t, 0])) as Record<ActivityType, number>;
-    for (const activity of activitiesMatchingNonTypeFilters) {
-      next[activity.type] += 1;
-    }
-    return next;
-  }, [activitiesMatchingNonTypeFilters]);
-
-  const filtered = useMemo(
-    () => applyTrainingHistoryFilters(activities, filters),
-    [activities, filters],
-  );
+  const {
+    counts,
+    createDialogOpen,
+    exitSelectionMode,
+    filtered,
+    filters,
+    hasLinkableHikes,
+    recordLabelsById,
+    selectedIds,
+    selectedIdsArray,
+    selectionMode,
+    setCreateDialogOpen,
+    setFilters,
+    toggleActivitySelection,
+    toggleSelectionMode,
+  } = useTrainingListState(activities, records);
 
   const weekGroups = useMemo(() => groupByWeek(filtered), [filtered]);
-
-  const hasLinkableHikes = useMemo(
-    () =>
-      filtered.some(
-        (activity) => activity.type === ActivityType.HIKE && activity.hikeTripId === null,
-      ),
-    [filtered],
-  );
-
-  const selectedIdsArray = useMemo(() => [...selectedIds], [selectedIds]);
-
-  function toggleSelectionMode() {
-    setSelectionMode((active) => {
-      if (active) {
-        setSelectedIds(new Set());
-      }
-      return !active;
-    });
-  }
-
-  function toggleActivitySelection(activityId: string) {
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(activityId)) {
-        next.delete(activityId);
-      } else {
-        next.add(activityId);
-      }
-      return next;
-    });
-  }
-
-  function exitSelectionMode() {
-    setSelectionMode(false);
-    setSelectedIds(new Set());
-    setCreateDialogOpen(false);
-  }
-
-  const recordLabelsById = useMemo(() => buildActivityRecordLabels(records), [records]);
-
-  function setFilters(nextFilters: TrainingHistoryFilters) {
-    setOptimisticFilters(nextFilters);
-    if (urlSyncTimerRef.current) {
-      clearTimeout(urlSyncTimerRef.current);
-    }
-    urlSyncTimerRef.current = setTimeout(() => {
-      startTransition(() => {
-        const query = serializeTrainingHistoryFilters(nextFilters).toString();
-        router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
-      });
-    }, FILTER_URL_DEBOUNCE_MS);
-  }
 
   if (isPending) {
     return <TrainingListFallback />;
@@ -280,90 +170,32 @@ export function TrainingList() {
 
   return (
     <div className={cn('space-y-6', selectionMode && SELECTION_BAR_SPACE)}>
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="min-w-0 flex-1">
-          <HistoryFilters counts={counts} filters={filters} onApply={setFilters} />
-        </div>
-        {selectionMode ? (
-          <Button size="sm" type="button" variant="secondary" onClick={exitSelectionMode}>
-            <X className="size-3.5" aria-hidden />
-            Annuler
-          </Button>
-        ) : (
-          hasLinkableHikes && (
-            <DropdownMenu>
-              <DropdownMenuTrigger
-                render={
-                  <Button
-                    aria-label="Actions de l'historique"
-                    size="icon-sm"
-                    type="button"
-                    variant="outline"
-                  />
-                }
-              >
-                <MoreHorizontal className="size-4" aria-hidden />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="min-w-52">
-                <DropdownMenuItem className="cursor-pointer gap-2" onClick={toggleSelectionMode}>
-                  <Link2 className="size-3.5" aria-hidden />
-                  Lier des randonnées
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )
-        )}
-      </div>
+      <TrainingListToolbar
+        counts={counts}
+        filters={filters}
+        hasLinkableHikes={hasLinkableHikes}
+        selectionMode={selectionMode}
+        onApplyFilters={setFilters}
+        onExitSelectionMode={exitSelectionMode}
+        onToggleSelectionMode={toggleSelectionMode}
+      />
       <p aria-live="polite" className="sr-only" role="status">
         {activities.length === 0
           ? 'Aucune activité enregistrée.'
           : formatTrainingHistoryFilterStatus(filtered.length)}
       </p>
-      {weekGroups.length === 0 && activities.length === 0 ? (
-        <InkEmptyState
-          description="Connecte une source ou ajoute une séance manuelle pour construire l’historique."
-          title="Aucune activité enregistrée"
-          action={
-            <LinkButton href="/training/manual" size="sm" variant="outline">
-              <CalendarPlus className="size-3.5" aria-hidden />
-              Saisir une activité
-            </LinkButton>
-          }
-        />
-      ) : null}
-      {weekGroups.length === 0 && activities.length > 0 ? (
-        <InkEmptyState
-          description="Élargis ou réinitialise les filtres pour revoir l’historique."
-          title="Aucun résultat pour ces filtres"
-          action={
-            <Button
-              size="sm"
-              type="button"
-              variant="outline"
-              onClick={() => setFilters(DEFAULT_TRAINING_HISTORY_FILTERS)}
-            >
-              <FilterX className="size-3.5" aria-hidden />
-              Effacer les filtres
-            </Button>
-          }
-        />
-      ) : null}
-      {weekGroups.length > 0
-        ? weekGroups.map((group) => (
-            <section key={group.key} className="cv-auto">
-              <p className="text-label mb-2 px-0.5">{group.label}</p>
-              <ActivityList
-                activities={group.activities}
-                chipListClassName="sm:grid sm:grid-cols-2 sm:gap-2 sm:space-y-0"
-                recordLabelsById={recordLabelsById}
-                selectedIds={selectedIds}
-                selectionMode={selectionMode}
-                variant="chip"
-                onToggle={toggleActivitySelection}
-              />
-            </section>
-          ))
-        : null}
+      <TrainingListEmptyStates
+        activitiesCount={activities.length}
+        weekGroupsCount={weekGroups.length}
+        onClearFilters={() => setFilters(DEFAULT_TRAINING_HISTORY_FILTERS)}
+      />
+      <TrainingListWeekGroups
+        recordLabelsById={recordLabelsById}
+        selectedIds={selectedIds}
+        selectionMode={selectionMode}
+        weekGroups={weekGroups}
+        onToggle={toggleActivitySelection}
+      />
 
       {selectionMode ? (
         <HikeSelectionConfirmBar

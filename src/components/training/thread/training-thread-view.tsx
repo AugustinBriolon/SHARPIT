@@ -1,23 +1,8 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { GoalKind } from '@prisma/client';
-import { Plus } from 'lucide-react';
-import Link from 'next/link';
-import {
-  ThreadConstraintsCard,
-  buildThreadConstraints,
-} from '@/components/training/thread/thread-constraints-card';
-import { ThreadFormReadings } from '@/components/training/thread/thread-form-readings';
-import { ThreadGoalBanner } from '@/components/training/thread/thread-goal-banner';
-import { ThreadLoadRuler } from '@/components/training/thread/thread-load-ruler';
-import { ThreadPlanChart } from '@/components/training/thread/thread-plan-chart';
-import { ThreadSportFilters } from '@/components/training/thread/thread-sport-filters';
-import { ThreadTimeline } from '@/components/training/thread/thread-timeline';
 import { StickyHeader } from '@/components/layout/sticky-header';
 import {
-  ThreadGoalBannerSkeleton,
-  ThreadRailSkeleton,
   ThreadRulerSkeleton,
   ThreadTimelineSkeleton,
 } from '@/components/training/thread/thread-skeleton';
@@ -28,39 +13,24 @@ import { useOnlineStatus } from '@/hooks/use-online-status';
 import { useTrainingThread } from '@/hooks/use-training-thread';
 import { useThreadFormReadings } from '@/hooks/use-thread-form-readings';
 import { isoWeekKeyOf } from '@/lib/training/thread/build-thread';
-import { partitionThread, takeThreadDays } from '@/lib/training/thread/partition-thread';
-import { dayKeyFromDate } from '@/lib/date/day-key';
-
-/** Sunday of the week starting on `start` — the last day it contains. */
-function endOfWeekDay(start: Date): Date {
-  const end = new Date(start);
-  end.setDate(end.getDate() + 6);
-  return end;
-}
 import { buildThreadAdherence } from '@/lib/training/thread/thread-adherence';
 import { buildThreadCoachLine } from '@/lib/training/thread/thread-coach-line';
-import { cn } from '@/lib/utils';
+import {
+  selectNextRaceGoal,
+  useTrainingThreadDigest,
+} from '@/components/training/thread/use-training-thread-digest';
+import {
+  TrainingThreadHeader,
+  TrainingThreadLayout,
+} from '@/components/training/thread/training-thread-layout';
+import { buildThreadConstraints } from '@/components/training/thread/thread-constraints-card';
+import { ThreadSportFilters } from '@/components/training/thread/thread-sport-filters';
 
-/**
- * Le fil — planning, calendar and history as one continuous view.
- *
- * Those three were separate routes that each held half an answer: the plan never
- * showed what was done against it, the history never showed what had been asked.
- * The athlete had to hold one in his head while reading the other. Here they are
- * the same list, and the comparison is drawn for him.
- *
- * Desktop is not the phone stretched. The thread keeps a readable measure in the
- * left column and the readings that were a grid of cards become a 300 px rail —
- * present, glanceable, and never competing with the list for the eye.
- */
 export function TrainingThreadView() {
   const thread = useTrainingThread();
   const memory = useCoachMemory();
   const readings = useThreadFormReadings();
 
-  /* Offline with every cache cold: show the last snapshot rather than skeletons
-     that will never resolve. A spinner with no network behind it is a lie about
-     what is about to happen. */
   const online = useOnlineStatus();
   const { hasNoLiveData } = thread;
   const { entry: offlineEntry } = useOfflineSnapshot(!online && hasNoLiveData);
@@ -70,176 +40,60 @@ export function TrainingThreadView() {
   const previousWeek = currentIndex > 0 ? thread.weeks[currentIndex - 1] : null;
 
   const coachLine = useMemo(() => buildThreadCoachLine(currentWeek ?? null), [currentWeek]);
-
-  /* Which week the digest reads from. Null means today, which is the only state
-     where "aujourd'hui" is a waterline rather than a date somewhere above. */
   const [anchorWeekKey, setAnchorWeekKey] = useState<string | null>(null);
+  const { anchorLabel, digest } = useTrainingThreadDigest({
+    seasonWeeks: thread.seasonWeeks,
+    anchorWeekKey,
+  });
 
-  const anchorLabel = anchorWeekKey
-    ? (thread.seasonWeeks.find((week) => week.weekKey === anchorWeekKey)?.label ?? null)
-    : null;
-
-  /**
-   * The digest: the next few sessions and the last few.
-   *
-   * Three ahead is enough to see what today sits inside; five behind is enough to
-   * explain how the legs feel. Anything more is the Planning and History pages,
-   * which is why each side carries a link to its own.
-   */
-  const digest = useMemo(() => {
-    const anchored = anchorWeekKey
-      ? thread.seasonWeeks.find((week) => week.weekKey === anchorWeekKey)
-      : null;
-
-    /* Scrubbed: read from the end of that week, so its own sessions land in the
-       "already done" half rather than being split across the waterline. */
-    const pivot = anchored ? endOfWeekDay(anchored.start) : new Date();
-    const pivotDayKey = dayKeyFromDate(
-      new Date(Date.UTC(pivot.getFullYear(), pivot.getMonth(), pivot.getDate())),
-    );
-
-    const { upcoming, past } = partitionThread(thread.seasonWeeks, pivotDayKey);
-    return {
-      upcoming: takeThreadDays(upcoming, 3),
-      past: takeThreadDays(past, 5),
-    };
-  }, [thread.seasonWeeks, anchorWeekKey]);
-  /* Graded over the season, not over what happens to be loaded: "5/7" flipping to
-     "23/29" because the athlete pressed "charger plus" would make the figure a
-     property of the scroll position rather than of the plan. */
   const adherence = useMemo(() => buildThreadAdherence(thread.seasonWeeks), [thread.seasonWeeks]);
-
   const constraints = useMemo(
     () => buildThreadConstraints(memory.data?.entries ?? [], isoWeekKeyOf),
     [memory.data],
   );
-
-  const nextRaceGoal = useMemo(() => {
-    const now = Date.now();
-    return (
-      thread.goals
-        .filter((goal) => goal.kind === GoalKind.RACE && !goal.achieved && goal.targetDate)
-        .filter((goal) => new Date(goal.targetDate!).getTime() >= now)
-        .sort((a, b) => new Date(a.targetDate!).getTime() - new Date(b.targetDate!).getTime())[0] ??
-      null
-    );
-  }, [thread.goals]);
+  const nextRaceGoal = useMemo(() => selectNextRaceGoal(thread.goals), [thread.goals]);
 
   if (!online && hasNoLiveData && offlineEntry) {
     return <OfflineSnapshotSummary entry={offlineEntry} />;
   }
 
   const { loading } = thread;
-
   const filters = (
     <ThreadSportFilters counts={thread.counts} value={thread.sport} onChange={thread.setSport} />
   );
 
+  function handleAnchorWeekChange(weekKey: string) {
+    setAnchorWeekKey(
+      thread.ruler.find((bar) => bar.weekKey === weekKey)?.state === 'current' ? null : weekKey,
+    );
+  }
+
   return (
     <div className="space-y-5">
       <StickyHeader>
-        <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-3">
-          <div>
-            <p className="text-label">Ma semaine</p>
-            <h1 className="text-page-title mt-1">Le fil</h1>
-          </div>
-
-          <div className="hidden items-center gap-2 lg:flex">
-            {loading ? null : filters}
-            <Link
-              href="/training/manual"
-              className={cn(
-                'bg-highlight text-highlight-foreground inline-flex min-h-9 shrink-0 items-center gap-1.5',
-                'rounded-full px-3.5 text-xs font-medium',
-                'focus-visible:ring-primary/35 focus-visible:ring-2 focus-visible:outline-hidden',
-              )}
-            >
-              <Plus className="size-3.5" aria-hidden />
-              Séance
-            </Link>
-          </div>
-        </div>
+        <TrainingThreadHeader filters={filters} loading={loading} />
       </StickyHeader>
 
-      {/* The chrome is not data: headings, rules and doors are on screen from the
-          first frame, and only the figures pulse. Nothing moves when the fetch
-          returns, and the page reads as this page before a number exists. */}
-      {loading ? (
-        <ThreadGoalBannerSkeleton />
-      ) : (
-        <ThreadGoalBanner
-          adherence={adherence}
-          coachLine={coachLine}
-          currentWeek={currentWeek}
-          goal={nextRaceGoal}
-          previousWeek={previousWeek}
-        />
-      )}
-
-      <div className="grid gap-6 lg:grid-cols-[1fr_300px] lg:items-start lg:gap-8">
-        <div className="min-w-0 space-y-4">
-          {loading ? <ThreadRulerSkeleton /> : null}
-          {loading ? null : (
-            <ThreadLoadRuler
-              anchorWeekKey={anchorWeekKey}
-              bars={thread.ruler}
-              onAnchorChange={(weekKey) =>
-                setAnchorWeekKey(
-                  thread.ruler.find((bar) => bar.weekKey === weekKey)?.state === 'current'
-                    ? null
-                    : weekKey,
-                )
-              }
-            />
-          )}
-
-          {/* Only while away from today: a permanent "back to today" on a page
-              already showing today is a control that does nothing. */}
-          {anchorWeekKey ? (
-            <button
-              type="button"
-              className={cn(
-                'text-primary hover:text-foreground text-data inline-flex items-center gap-1.5',
-                'text-xs transition-colors',
-                'focus-visible:ring-primary/35 rounded-sm focus-visible:ring-2 focus-visible:outline-hidden',
-              )}
-              onClick={() => setAnchorWeekKey(null)}
-            >
-              ← Revenir à aujourd’hui
-            </button>
-          ) : null}
-
-          <div className="lg:hidden">{loading ? null : filters}</div>
-
-          {/* `pivotEntryId` is this week's turning point; pointing at it from
-              another week would mark a session with nothing to do with what is
-              on screen, so it goes when the reader scrubs away. */}
-          {loading ? (
-            <ThreadTimelineSkeleton />
-          ) : (
-            <ThreadTimeline
-              anchorLabel={anchorLabel}
-              past={digest.past}
-              pivotEntryId={anchorWeekKey ? null : (coachLine?.pivotEntryId ?? null)}
-              upcoming={digest.upcoming}
-            />
-          )}
-
-          {/* Mobile keeps the readings at the foot of the thread; desktop lifts
-              them into the rail, where they are visible without a scroll. */}
-          <ThreadFormReadings className="lg:hidden" readings={readings} />
-        </div>
-
-        {loading ? (
-          <ThreadRailSkeleton className="hidden lg:block" />
-        ) : (
-          <aside className="hidden space-y-4 lg:block">
-            <ThreadPlanChart adherence={adherence} weeks={thread.seasonWeeks} />
-            <ThreadFormReadings readings={readings} title="Ta forme" />
-            <ThreadConstraintsCard constraints={constraints} />
-          </aside>
-        )}
-      </div>
+      <TrainingThreadLayout
+        adherence={adherence}
+        anchorLabel={anchorLabel}
+        anchorWeekKey={anchorWeekKey}
+        coachLine={coachLine}
+        constraints={constraints}
+        currentWeek={currentWeek}
+        digest={digest}
+        filters={filters}
+        loading={loading}
+        nextRaceGoal={nextRaceGoal}
+        previousWeek={previousWeek}
+        readings={readings}
+        ruler={thread.ruler}
+        rulerSkeleton={<ThreadRulerSkeleton />}
+        seasonWeeks={thread.seasonWeeks}
+        timelineSkeleton={<ThreadTimelineSkeleton />}
+        onAnchorWeekChange={handleAnchorWeekChange}
+        onBackToToday={() => setAnchorWeekKey(null)}
+      />
     </div>
   );
 }

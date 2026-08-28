@@ -1,274 +1,37 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { ActivityType } from '@prisma/client';
-import { ActivityNarrativeCard } from './activity-narrative-card';
-import { Button } from '@/components/ui/button';
-import { toast } from '@/components/ui/toast';
 import { Loader2, Sparkles } from 'lucide-react';
-import { isEligibleForActivityNarrative } from '@/lib/activity/narrative/activity-narrative-config';
-import { isActivityToday } from '@/lib/activity/list/activity-day';
-import { activityNarrativeSchema, type ActivityNarrative } from '@/lib/validators/coach';
-import { useIsDemoMode } from '@/hooks/use-is-demo-mode';
-import { isDemoSessionLinkActivityTitle } from '@/lib/demo/demo-session-link-markers';
-import { applyDemoSessionLinkReading } from '@/lib/demo/demo-session-link-reading';
-import { findDemoSessionLinkByActivityId } from '@/lib/demo/demo-session-link-state';
-import { useActivities } from '@/hooks/use-data';
-import { useDemoSessionLinksSnapshot } from '@/hooks/use-demo-session-link-overlay';
-import { useQueryClient } from '@tanstack/react-query';
+import { ActivityNarrativeCard } from '@/components/training/activity/insights/activity-narrative-card';
+import { Button } from '@/components/ui/button';
+import { useActivityNarrativeSection } from '@/components/training/activity/insights/use-activity-narrative-section';
 
-const NARRATIVE_POLL_MS = 3_000;
-const NARRATIVE_POLL_MAX_MS = 120_000;
-const NARRATIVE_TIMEOUT_PREFIX = 'sharpit.narrative-poll-timeout.';
-
-const NARRATIVE_TYPES = new Set<ActivityType>([
-  ActivityType.RUN,
-  ActivityType.BIKE,
-  ActivityType.SWIM,
-]);
-
-interface ActivityNarrativeSectionProps {
-  activityId: string;
-  activityType: ActivityType;
-  activityDate: Date | string;
-  narrativeAnalysis: unknown;
-  narrativeAnalyzedAt: Date | string | null;
-  coachEnabled: boolean;
-}
-
-function parseNarrative(raw: unknown): ActivityNarrative | null {
-  const parsed = activityNarrativeSchema.safeParse(raw);
-  return parsed.success ? parsed.data : null;
-}
-
-function readTimedOut(activityId: string): boolean {
-  if (typeof window === 'undefined') {
-    return false;
-  }
-  try {
-    return sessionStorage.getItem(`${NARRATIVE_TIMEOUT_PREFIX}${activityId}`) === '1';
-  } catch {
-    return false;
-  }
-}
-
-function writeTimedOut(activityId: string): void {
-  try {
-    sessionStorage.setItem(`${NARRATIVE_TIMEOUT_PREFIX}${activityId}`, '1');
-  } catch {
-    // ignore
-  }
-}
-
-function clearTimedOut(activityId: string): void {
-  try {
-    sessionStorage.removeItem(`${NARRATIVE_TIMEOUT_PREFIX}${activityId}`);
-  } catch {
-    // ignore
-  }
-}
-
-export function ActivityNarrativeSection({
-  activityId,
-  activityType,
-  activityDate,
-  narrativeAnalysis: initialAnalysis,
-  narrativeAnalyzedAt: initialAnalyzedAt,
-  coachEnabled,
-}: ActivityNarrativeSectionProps) {
-  const queryClient = useQueryClient();
-  const isDemo = useIsDemoMode();
-  useDemoSessionLinksSnapshot();
-  const activitiesQuery = useActivities();
-  const activityTitle = activitiesQuery.data?.find((item) => item.id === activityId)?.title;
-  const demoLink = findDemoSessionLinkByActivityId(activityId);
-  const isDemoLinkStory =
-    isDemo && (Boolean(demoLink) || isDemoSessionLinkActivityTitle(activityTitle));
-  const demoReading = demoLink?.reading ?? null;
-
-  const [polled, setPolled] = useState<{
-    analysis: typeof initialAnalysis;
-    analyzedAt: typeof initialAnalyzedAt;
-  } | null>(null);
-  const [pollTimedOut, setPollTimedOut] = useState(() => readTimedOut(activityId));
-  const [generating, setGenerating] = useState(false);
-
-  const narrativeAnalysis = demoReading?.narrative ?? polled?.analysis ?? initialAnalysis;
-  const narrativeAnalyzedAt = demoReading?.analyzedAt ?? polled?.analyzedAt ?? initialAnalyzedAt;
-
-  const hasAnalysis = Boolean(parseNarrative(narrativeAnalysis) && narrativeAnalyzedAt);
-  const eligible =
-    coachEnabled &&
-    NARRATIVE_TYPES.has(activityType) &&
-    isEligibleForActivityNarrative(new Date(activityDate));
-  const expectBackgroundIngest = isActivityToday(new Date(activityDate));
-  const demoReadingPending = isDemoLinkStory && Boolean(demoLink) && !demoReading;
-  const isPending =
-    eligible &&
-    !hasAnalysis &&
-    !pollTimedOut &&
-    !generating &&
-    expectBackgroundIngest &&
-    !isDemoLinkStory &&
-    !demoReadingPending;
-
-  useEffect(() => {
-    setPolled(null);
-    setPollTimedOut(readTimedOut(activityId));
-  }, [activityId]);
-
-  useEffect(() => {
-    if (!initialAnalyzedAt) {
-      return;
-    }
-    setPolled(null);
-    clearTimedOut(activityId);
-    setPollTimedOut(false);
-  }, [activityId, initialAnalyzedAt]);
-
-  useEffect(() => {
-    if (!isPending) {
-      return;
-    }
-
-    const startedAt = Date.now();
-    let cancelled = false;
-
-    async function poll() {
-      while (!cancelled && Date.now() - startedAt < NARRATIVE_POLL_MAX_MS) {
-        await new Promise((resolve) => setTimeout(resolve, NARRATIVE_POLL_MS));
-        if (cancelled) {
-          return;
-        }
-
-        try {
-          const response = await fetch(`/api/activities/${activityId}`);
-          if (!response.ok) {
-            continue;
-          }
-          const activity = (await response.json()) as {
-            narrativeAnalysis?: unknown;
-            narrativeAnalyzedAt?: string | null;
-          };
-          if (activity.narrativeAnalyzedAt) {
-            setPolled({
-              analysis: activity.narrativeAnalysis ?? null,
-              analyzedAt: activity.narrativeAnalyzedAt,
-            });
-            clearTimedOut(activityId);
-            setPollTimedOut(false);
-            return;
-          }
-        } catch {
-          // best-effort polling
-        }
-      }
-
-      if (!cancelled) {
-        writeTimedOut(activityId);
-        setPollTimedOut(true);
-      }
-    }
-
-    void poll();
-    return () => {
-      cancelled = true;
-    };
-  }, [activityId, isPending]);
-
-  async function handleGenerate() {
-    if (isDemo && demoLink && !demoReading) {
-      setGenerating(true);
-      const loadingToast = toast.loading('Synthèse en cours');
-      try {
-        applyDemoSessionLinkReading(queryClient, demoLink.plannedSessionId, activityId);
-        toast.success('Synthèse prête');
-      } finally {
-        toast.close(loadingToast);
-        setGenerating(false);
-      }
-      return;
-    }
-
-    clearTimedOut(activityId);
-    setPollTimedOut(false);
-    setGenerating(true);
-    const loadingToast = toast.loading('Synthèse en cours');
-    try {
-      const res = await fetch(`/api/activities/${activityId}/narrative`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ force: true, wait: true }),
-      });
-      const data = (await res.json().catch(() => null)) as {
-        narrativeAnalysis?: unknown;
-        narrativeAnalyzedAt?: string | null;
-        error?: string;
-      } | null;
-      if (!res.ok) {
-        toast.error(data?.error ?? 'Synthèse impossible');
-        writeTimedOut(activityId);
-        setPollTimedOut(true);
-        return;
-      }
-      if (data?.narrativeAnalyzedAt) {
-        setPolled({
-          analysis: data.narrativeAnalysis ?? null,
-          analyzedAt: data.narrativeAnalyzedAt,
-        });
-        clearTimedOut(activityId);
-        setPollTimedOut(false);
-        toast.success('Synthèse prête');
-      }
-    } catch {
-      toast.error('Synthèse impossible');
-      writeTimedOut(activityId);
-      setPollTimedOut(true);
-    } finally {
-      toast.close(loadingToast);
-      setGenerating(false);
-    }
-  }
-
-  if (hasAnalysis) {
-    const analysis = parseNarrative(narrativeAnalysis)!;
-    return (
-      <ActivityNarrativeCard
-        activityType={activityType}
-        analysis={analysis}
-        narrativeAnalyzedAt={narrativeAnalyzedAt}
-      />
-    );
-  }
-
-  if (!eligible && !isDemoLinkStory) {
-    return null;
-  }
-
-  if (isDemoLinkStory && !demoLink) {
-    return null;
-  }
-
-  if (demoReadingPending || isPending || generating) {
-    return (
-      <section className="bg-analysis-surface-alt rounded-analysis-lg flex h-full flex-col px-5 py-5 sm:px-6 sm:py-6">
-        <p className="text-label inline-flex items-center gap-2">
-          <span className="bg-primary size-2 shrink-0 rounded-full" aria-hidden />
-          Lecture du coach
-        </p>
-        <div className="mt-4 flex items-start gap-3">
-          <Loader2 className="text-primary mt-0.5 size-4 shrink-0 animate-spin" />
-          <div className="space-y-1">
-            <p className="font-medium">Synthèse en cours</p>
-            <p className="text-muted-foreground text-sm leading-relaxed">
-              SHARPIT prépare une lecture de ta séance. Tu peux quitter — elle sera prête au retour.
-            </p>
-          </div>
+function NarrativeLoadingSection() {
+  return (
+    <section className="bg-analysis-surface-alt rounded-analysis-lg flex h-full flex-col px-5 py-5 sm:px-6 sm:py-6">
+      <p className="text-label inline-flex items-center gap-2">
+        <span className="bg-primary size-2 shrink-0 rounded-full" aria-hidden />
+        Lecture du coach
+      </p>
+      <div className="mt-4 flex items-start gap-3">
+        <Loader2 className="text-primary mt-0.5 size-4 shrink-0 animate-spin" />
+        <div className="space-y-1">
+          <p className="font-medium">Synthèse en cours</p>
+          <p className="text-muted-foreground text-sm leading-relaxed">
+            SHARPIT prépare une lecture de ta séance. Tu peux quitter — elle sera prête au retour.
+          </p>
         </div>
-      </section>
-    );
-  }
+      </div>
+    </section>
+  );
+}
 
+function NarrativeGenerateSection({
+  generating,
+  onGenerate,
+}: {
+  generating: boolean;
+  onGenerate: () => void;
+}) {
   return (
     <section className="bg-analysis-surface-alt rounded-analysis-lg flex h-full flex-col space-y-3 px-5 py-5 sm:px-6 sm:py-6">
       <p className="text-label inline-flex items-center gap-2">
@@ -278,16 +41,70 @@ export function ActivityNarrativeSection({
       <p className="text-muted-foreground text-sm leading-relaxed">
         La synthèse n’est pas encore disponible. Tu peux la relancer.
       </p>
-      <Button
-        disabled={generating}
-        size="sm"
-        type="button"
-        variant="outline"
-        onClick={handleGenerate}
-      >
+      <Button disabled={generating} size="sm" type="button" variant="outline" onClick={onGenerate}>
         <Sparkles className="size-4" />
         Générer la synthèse
       </Button>
     </section>
+  );
+}
+
+interface ActivityNarrativeSectionProps {
+  activityId: string;
+  activityType: import('@prisma/client').ActivityType;
+  activityDate: Date | string;
+  narrativeAnalysis: unknown;
+  narrativeAnalyzedAt: Date | string | null;
+  coachEnabled: boolean;
+}
+
+function isNarrativeLoadingState(state: ReturnType<typeof useActivityNarrativeSection>): boolean {
+  return state.demoReadingPending || state.isPending || state.generating;
+}
+
+function resolveNarrativeView(state: ReturnType<typeof useActivityNarrativeSection>) {
+  if (state.hasAnalysis) {
+    return 'card' as const;
+  }
+  if (!state.eligible && !state.isDemoLinkStory) {
+    return 'hidden' as const;
+  }
+  if (state.isDemoLinkStory && !state.demoLink) {
+    return 'hidden' as const;
+  }
+  if (isNarrativeLoadingState(state)) {
+    return 'loading' as const;
+  }
+  return 'generate' as const;
+}
+
+export function ActivityNarrativeSection(props: ActivityNarrativeSectionProps) {
+  const state = useActivityNarrativeSection(props);
+  const view = resolveNarrativeView(state);
+
+  if (view === 'hidden') {
+    return null;
+  }
+
+  if (view === 'card') {
+    const analysis = state.parseNarrative(state.narrativeAnalysis)!;
+    return (
+      <ActivityNarrativeCard
+        activityType={state.activityType}
+        analysis={analysis}
+        narrativeAnalyzedAt={state.narrativeAnalyzedAt}
+      />
+    );
+  }
+
+  if (view === 'loading') {
+    return <NarrativeLoadingSection />;
+  }
+
+  return (
+    <NarrativeGenerateSection
+      generating={state.generating}
+      onGenerate={() => void state.handleGenerate()}
+    />
   );
 }

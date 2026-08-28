@@ -5,6 +5,7 @@ import { fr } from 'date-fns/locale';
 import { ThreadEntryRow } from '@/components/training/thread/thread-entry-row';
 import { ThreadBrickRow } from '@/components/training/thread/thread-brick-row';
 import { ThreadTodayCard } from '@/components/training/thread/thread-today-card';
+import { ThreadWaterline } from '@/components/training/thread/thread-waterline';
 import Link from 'next/link';
 import { dayKeyFromDate } from '@/lib/date/day-key';
 import type { ThreadDay } from '@/lib/training/thread/thread-model';
@@ -159,31 +160,7 @@ export function ThreadTimeline({
         ))}
       </ol>
 
-      {/* The waterline: owed above, done below. Scrubbed into the past there is
-          nothing owed, so it names the week being read instead of lying about
-          which day this is. */}
-      <div className="my-3 flex items-center gap-3" aria-hidden>
-        <span
-          className={cn(
-            'h-0.5 flex-1 rounded-full',
-            anchorLabel ? 'bg-muted-foreground/30' : 'bg-primary',
-          )}
-        />
-        <p
-          className={cn(
-            'text-data shrink-0 text-[11px] font-semibold tracking-wide uppercase',
-            anchorLabel ? 'text-muted-foreground' : 'text-primary',
-          )}
-        >
-          {anchorLabel ?? `Aujourd’hui · ${format(new Date(), 'EEE d', { locale: fr })}`}
-        </p>
-        <span
-          className={cn(
-            'h-0.5 flex-1 rounded-full',
-            anchorLabel ? 'bg-muted-foreground/30' : 'bg-primary',
-          )}
-        />
-      </div>
+      <ThreadWaterline anchorLabel={anchorLabel} />
 
       {past.length > 0 ? (
         <ol className="space-y-2">

@@ -5,8 +5,37 @@ import { ActivityFeelingPrompt } from './activity-feeling-prompt';
 import { useDemoActivityPlannedSession } from '@/hooks/use-demo-session-link-overlay';
 import type { ActivityDetail, ActivityPerformanceRecordChip } from './types';
 
-/** Stable empty default — avoids a new [] identity every render when records is omitted. */
 const EMPTY_RECORDS: ActivityPerformanceRecordChip[] = [];
+
+function activityHasMetaContext(
+  activity: ActivityDetail,
+  plannedSession: ActivityDetail['plannedSession'],
+  records: ActivityPerformanceRecordChip[],
+): boolean {
+  return (
+    Boolean(activity.feeling) ||
+    Boolean(activity.weather) ||
+    Boolean(plannedSession) ||
+    records.length > 0
+  );
+}
+
+function ActivityMetaRowContent({
+  activity,
+  records,
+  needsFeeling,
+}: {
+  activity: ActivityDetail;
+  records: ActivityPerformanceRecordChip[];
+  needsFeeling: boolean;
+}) {
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <ActivityContextChips activity={activity} records={records} />
+      {needsFeeling ? <ActivityFeelingPrompt activityId={activity.id} /> : null}
+    </div>
+  );
+}
 
 export function ActivityMetaRow({
   activity,
@@ -19,21 +48,21 @@ export function ActivityMetaRow({
   const activityWithLink =
     plannedSession === activity.plannedSession ? activity : { ...activity, plannedSession };
   const needsFeeling = activity.rpe === null && !activity.feeling?.trim();
-  // RPE is shown in the header — chips cover feeling / weather / planned / records.
-  const hasContext =
-    Boolean(activity.feeling) ||
-    Boolean(activity.weather) ||
-    Boolean(plannedSession) ||
-    records.length > 0;
+  const hasContext = activityHasMetaContext(activity, plannedSession, records);
 
   if (!hasContext && !needsFeeling) {
     return null;
   }
 
+  if (!hasContext) {
+    return <ActivityFeelingPrompt activityId={activity.id} />;
+  }
+
   return (
-    <div className="flex flex-wrap items-center gap-2">
-      {hasContext ? <ActivityContextChips activity={activityWithLink} records={records} /> : null}
-      {needsFeeling ? <ActivityFeelingPrompt activityId={activity.id} /> : null}
-    </div>
+    <ActivityMetaRowContent
+      activity={activityWithLink}
+      needsFeeling={needsFeeling}
+      records={records}
+    />
   );
 }

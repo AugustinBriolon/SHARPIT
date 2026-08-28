@@ -15,51 +15,53 @@ import type { ActivityDetail, ActivityPerformanceRecordChip } from './types';
 /** Stable empty default — avoids a new [] identity every render when records is omitted. */
 const EMPTY_RECORDS: ActivityPerformanceRecordChip[] = [];
 
-export function ActivityContextChips({
-  activity,
-  records = EMPTY_RECORDS,
-}: {
-  activity: ActivityDetail;
-  records?: ActivityPerformanceRecordChip[];
-}) {
-  const chips: ReactNode[] = [];
-
-  // RPE lives in the header meta line — keep chips for context only.
-  if (activity.feeling) {
-    chips.push(
-      <ActivityMetaChip key="feeling" icon={Smile} label="Ressenti" value={activity.feeling} />,
-    );
+function pushFeelingChip(chips: ReactNode[], activity: ActivityDetail) {
+  if (!activity.feeling) {
+    return;
   }
-  const weather = !isIndoorActivitySession(activity)
-    ? parseActivityWeather(activity.weather)
-    : null;
-  if (weather) {
-    const WeatherIcon = activityWeatherIcon(weather.condition);
-    chips.push(
-      <ActivityMetaChip
-        key="weather"
-        icon={WeatherIcon}
-        iconClassName={activityWeatherIconClassName(weather.condition)}
-        label="Météo"
-        value={formatActivityWeatherChip(weather)}
-      />,
-    );
-  }
+  chips.push(
+    <ActivityMetaChip key="feeling" icon={Smile} label="Ressenti" value={activity.feeling} />,
+  );
+}
 
-  if (activity.plannedSession) {
-    const plannedAnalysisReady = Boolean(
-      activity.plannedSession.analysis && activity.plannedSession.analyzedAt,
-    );
-    chips.push(
-      <ActivityPlannedSessionChip
-        key="planned"
-        activityId={activity.id}
-        isAnalyzing={!plannedAnalysisReady}
-        planned={activity.plannedSession}
-      />,
-    );
+function pushWeatherChip(chips: ReactNode[], activity: ActivityDetail) {
+  if (isIndoorActivitySession(activity)) {
+    return;
   }
+  const weather = parseActivityWeather(activity.weather);
+  if (!weather) {
+    return;
+  }
+  const WeatherIcon = activityWeatherIcon(weather.condition);
+  chips.push(
+    <ActivityMetaChip
+      key="weather"
+      icon={WeatherIcon}
+      iconClassName={activityWeatherIconClassName(weather.condition)}
+      label="Météo"
+      value={formatActivityWeatherChip(weather)}
+    />,
+  );
+}
 
+function pushPlannedSessionChip(chips: ReactNode[], activity: ActivityDetail) {
+  if (!activity.plannedSession) {
+    return;
+  }
+  const plannedAnalysisReady = Boolean(
+    activity.plannedSession.analysis && activity.plannedSession.analyzedAt,
+  );
+  chips.push(
+    <ActivityPlannedSessionChip
+      key="planned"
+      activityId={activity.id}
+      isAnalyzing={!plannedAnalysisReady}
+      planned={activity.plannedSession}
+    />,
+  );
+}
+
+function pushRecordChips(chips: ReactNode[], records: ActivityPerformanceRecordChip[]) {
   for (const record of records) {
     chips.push(
       <ActivityMetaChip
@@ -73,6 +75,28 @@ export function ActivityContextChips({
       />,
     );
   }
+}
+
+function collectActivityContextChips(
+  activity: ActivityDetail,
+  records: ActivityPerformanceRecordChip[],
+): ReactNode[] {
+  const chips: ReactNode[] = [];
+  pushFeelingChip(chips, activity);
+  pushWeatherChip(chips, activity);
+  pushPlannedSessionChip(chips, activity);
+  pushRecordChips(chips, records);
+  return chips;
+}
+
+export function ActivityContextChips({
+  activity,
+  records = EMPTY_RECORDS,
+}: {
+  activity: ActivityDetail;
+  records?: ActivityPerformanceRecordChip[];
+}) {
+  const chips = collectActivityContextChips(activity, records);
 
   if (chips.length === 0) {
     return null;

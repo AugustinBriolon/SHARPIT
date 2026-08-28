@@ -1,22 +1,17 @@
 'use client';
 
-import type { ReactNode } from 'react';
-import Link from 'next/link';
 import type { TodayViewModel } from '@/core/presentation/today-view-model';
+import { confidenceBarsFromPct } from '@/components/ui/instruments/confidence-bars';
+import {
+  TodayVerdictActionLine,
+  TodayVerdictConfidence,
+  TodayVerdictGoalBadge,
+  TodayVerdictContextLabel,
+  TodayVerdictHeadline,
+} from '@/components/today/rich/today-verdict-hero-parts';
+import { deriveVerdictHeroDisplay } from '@/components/today/rich/today-verdict-hero-helpers';
 import { cn } from '@/lib/utils';
-import { Badge } from '@/components/ui/badge';
-import { ConfidenceBars, confidenceBarsFromPct } from '@/components/ui/instruments/confidence-bars';
-import { SkeletonDataValue } from '@/components/ui/skeleton-data-value';
-import { Skeleton } from '@/components/ui/skeleton';
 
-/**
- * Morning Instrument plate — first viewport answers one question:
- * what should I do with my state today?
- * Bande ink direction: Forest plate, Lime Pulse punctuation. The verdict's
- * semantic color lives in the copy, never in the plate background — RECOVER
- * gets the same band as PUSH.
- * Loading keeps the same DOM tree as loaded; only text values skeleton.
- */
 export function TodayVerdictHero({
   loading = false,
   vm,
@@ -26,87 +21,8 @@ export function TodayVerdictHero({
 }) {
   const { hero } = vm;
   const trust = hero.twinTrustStrip;
-
-  const priority = hero.focusPriority ?? hero.actionLine;
-  const contextLabel = [hero.postureLabel, hero.eyebrow].filter(Boolean).join(' · ') || 'Ce matin';
-  const secondaryLine = priority ?? hero.subline ?? null;
-  const secondaryMuted = !priority && Boolean(hero.subline);
+  const display = deriveVerdictHeroDisplay(hero);
   const bars = confidenceBarsFromPct(loading ? null : trust.confidencePctRounded);
-
-  let actionContent: ReactNode = null;
-  if (loading) {
-    actionContent = (
-      <div className="h-5.75 max-w-2xl text-sm leading-relaxed" aria-hidden>
-        <Skeleton className="bg-ink-surface-foreground/20 h-5 w-[min(100%,18rem)] rounded-full" />
-      </div>
-    );
-  } else if (secondaryLine) {
-    actionContent = (
-      <p
-        className={cn(
-          'max-w-2xl text-sm leading-relaxed text-pretty',
-          secondaryMuted
-            ? 'text-ink-surface-foreground/70'
-            : 'text-ink-surface-foreground/80 font-medium',
-        )}
-      >
-        {secondaryLine}
-      </p>
-    );
-  }
-
-  const confidenceInner = loading ? (
-    <>
-      <ConfidenceBars filled={0} tone="highlight" />
-      <SkeletonDataValue
-        className="bg-ink-surface-foreground/20"
-        heightClassName="h-[11px]"
-        widthClassName="w-44 sm:w-56"
-      />
-    </>
-  ) : (
-    <>
-      <ConfidenceBars filled={bars} tone="highlight" />
-      <span className="text-data text-xs font-medium tracking-wide uppercase">
-        {trust.confidenceLabel}
-      </span>
-    </>
-  );
-
-  const confidenceTitle =
-    trust.confidencePctRounded !== null
-      ? `${trust.confidenceLabel} (${trust.confidencePctRounded} %)`
-      : (trust.confidenceLabel ?? undefined);
-
-  let confidenceNode: ReactNode = null;
-  if (loading) {
-    confidenceNode = (
-      <div className="text-ink-surface-foreground/65 inline-flex items-center gap-2">
-        {confidenceInner}
-      </div>
-    );
-  } else if (trust.confidenceLabel !== null) {
-    if (trust.confidenceHref) {
-      confidenceNode = (
-        <Link
-          className="text-ink-surface-foreground/65 hover:text-ink-surface-foreground inline-flex items-center gap-2 transition-colors"
-          href={trust.confidenceHref}
-          title={confidenceTitle}
-        >
-          {confidenceInner}
-        </Link>
-      );
-    } else {
-      confidenceNode = (
-        <div
-          className="text-ink-surface-foreground/65 inline-flex items-center gap-2"
-          title={confidenceTitle}
-        >
-          {confidenceInner}
-        </div>
-      );
-    }
-  }
 
   return (
     <section
@@ -114,65 +30,22 @@ export function TodayVerdictHero({
       className={cn('surface-ink relative overflow-hidden px-5 py-8 sm:px-8 sm:py-10')}
     >
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="text-ink-surface-foreground/65 text-data inline-flex min-w-0 items-center gap-2 text-xs font-semibold tracking-wide uppercase">
-          <span
-            className="bg-highlight dark:bg-ink-surface-foreground h-2.5 w-2.5 shrink-0 rounded-full"
-            aria-hidden
-          />
-          {loading ? (
-            <SkeletonDataValue
-              className="bg-ink-surface-foreground/20"
-              heightClassName="h-3"
-              widthClassName="w-48 sm:w-64"
-            />
-          ) : (
-            contextLabel
-          )}
-        </div>
+        <TodayVerdictContextLabel contextLabel={display.contextLabel} loading={loading} />
         <div className="flex flex-wrap items-center gap-3">
-          {confidenceNode}
-          {loading && !hero.goalLine ? (
-            <Badge
-              className="border-ink-surface-foreground/25 text-ink-surface-foreground/80 rounded-full bg-transparent text-xs font-normal"
-              variant="outline"
-              aria-hidden
-            >
-              <SkeletonDataValue
-                className="bg-ink-surface-foreground/20"
-                heightClassName="h-3"
-                widthClassName="w-36"
-              />
-            </Badge>
-          ) : null}
-          {!loading && hero.goalLine ? (
-            <Badge
-              className="border-ink-surface-foreground/25 text-ink-surface-foreground/80 text-data rounded-full bg-transparent text-xs font-normal"
-              variant="outline"
-            >
-              {hero.goalLine}
-            </Badge>
-          ) : null}
+          <TodayVerdictConfidence bars={bars} loading={loading} trust={trust} />
+          <TodayVerdictGoalBadge goalLine={hero.goalLine} loading={loading} />
         </div>
       </div>
 
-      {loading ? (
-        <div
-          className="text-verdict text-ink-surface-foreground mt-6 max-w-3xl text-[1.75rem] leading-[1.15] sm:text-[2.125rem]"
-          aria-hidden
-        >
-          <SkeletonDataValue
-            className="bg-ink-surface-foreground/20"
-            heightClassName="h-8 sm:h-10"
-            widthClassName="w-[min(100%,20rem)]"
-          />
-        </div>
-      ) : (
-        <h1 className="text-verdict text-ink-surface-foreground mt-6 max-w-3xl text-[1.75rem] leading-[1.15] text-balance sm:text-[2.125rem]">
-          {hero.headline}
-        </h1>
-      )}
+      <TodayVerdictHeadline headline={hero.headline} loading={loading} />
 
-      {actionContent ? <div className="mt-5">{actionContent}</div> : null}
+      <div className="mt-5">
+        <TodayVerdictActionLine
+          loading={loading}
+          secondaryLine={display.secondaryLine}
+          secondaryMuted={display.secondaryMuted}
+        />
+      </div>
     </section>
   );
 }

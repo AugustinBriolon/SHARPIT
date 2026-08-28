@@ -26,6 +26,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
+import { CalendarDayCell } from '@/components/today/drill-down/calendar-day-cell';
 
 /** Fixed pill width — long FR weekdays (“mercredi 18 septembre”) still fit. */
 const DATE_PILL_CLASS = 'h-9 w-[15.5rem] shrink-0 justify-center gap-2 rounded-full px-3';
@@ -176,41 +177,20 @@ export function TodayDateSelector({
                   {label}
                 </span>
               ))}
-              {monthDays.map((day) => {
-                const dayStart = startOfDay(day);
-                const isSelected = isSameDay(dayStart, date);
-                const isCurrentMonth = isSameMonth(dayStart, visibleMonth);
-                const isDisabled =
-                  isAfter(dayStart, maxDate) || (minDate !== null && isBefore(dayStart, minDate));
-                const isCurrentDay = isSameDay(dayStart, maxDate);
-                const dayLabel = formatDate(dayStart, 'EEEE d MMMM yyyy', { locale: fr });
-
-                return (
-                  <button
-                    key={day.toISOString()}
-                    aria-current={isCurrentDay ? 'date' : undefined}
-                    aria-disabled={isDisabled || undefined}
-                    aria-label={dayLabel}
-                    aria-selected={isSelected}
-                    disabled={isDisabled}
-                    role="gridcell"
-                    type="button"
-                    className={cn(
-                      'hover:bg-muted inline-flex aspect-square min-h-11 items-center justify-center rounded-lg text-sm font-medium transition-colors sm:min-h-0',
-                      !isCurrentMonth && 'text-muted-foreground/45',
-                      isSelected && 'bg-primary text-primary-foreground hover:bg-primary/90',
-                      !isSelected && isCurrentDay && 'ring-ring/50 ring-1',
-                      isDisabled && 'pointer-events-none opacity-35',
-                    )}
-                    onClick={() => {
-                      onChange(dayStart);
-                      setOpen(false);
-                    }}
-                  >
-                    {formatDate(dayStart, 'd')}
-                  </button>
-                );
-              })}
+              {monthDays.map((day) => (
+                <CalendarDayCell
+                  key={day.toISOString()}
+                  date={date}
+                  day={day}
+                  maxDate={maxDate}
+                  minDate={minDate}
+                  visibleMonth={visibleMonth}
+                  onSelect={(dayStart) => {
+                    onChange(dayStart);
+                    setOpen(false);
+                  }}
+                />
+              ))}
             </div>
 
             {minDate ? (

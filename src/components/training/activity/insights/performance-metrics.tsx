@@ -4,90 +4,54 @@ import type { ActivityAnalysis } from '@/lib/activity/detail/activity-analysis';
 import { ClinicalAnnotation } from '@/components/ui/instruments/clinical-annotation';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
+import {
+  buildPerformanceRows,
+  type PerformanceRow,
+} from '@/components/training/activity/insights/performance-metrics-helpers';
 
-type PerformanceRow = {
-  label: string;
-  value: string;
-  note?: string;
-};
+function PerformanceMetricRow({ row, compact }: { row: PerformanceRow; compact: boolean }) {
+  return (
+    <div
+      className={cn(
+        'grid items-start gap-x-4 border-b last:border-b-0',
+        compact
+          ? 'grid-cols-[minmax(0,1fr)_auto] gap-y-1 py-3 last:pb-2'
+          : 'grid-cols-[minmax(0,1fr)_auto] gap-y-1.5 py-3.5 last:pb-2 sm:grid-cols-[minmax(0,11rem)_1fr_auto]',
+      )}
+    >
+      <div className="min-w-0">
+        <p className="text-label">{row.label}</p>
+        {row.note ? (
+          <p className="text-muted-foreground mt-1 text-xs leading-snug sm:hidden">{row.note}</p>
+        ) : null}
+      </div>
 
-function decouplingLabel(pct: number): string {
-  if (pct < 5) {
-    return 'Excellent — peu de dérive cardiaque';
-  }
-  if (pct < 10) {
-    return 'Correct pour une sortie longue';
-  }
-  return "Dérive élevée — chaleur, fatigue ou manque d'endurance";
-}
+      {!compact ? (
+        <div className="text-muted-foreground hidden min-w-0 text-xs leading-snug sm:block">
+          {row.note ?? '—'}
+        </div>
+      ) : null}
 
-function intensityFactorSublabel(
-  method: ActivityAnalysis['load']['method'],
-  thresholds: ActivityAnalysis['thresholds'],
-): string | undefined {
-  if (method === 'power') {
-    return thresholds.ftp ? `FTP ${thresholds.ftp} W` : undefined;
-  }
-  return thresholds.lthr ? `LTHR ${thresholds.lthr} bpm` : undefined;
+      <p
+        className={cn(
+          'text-data text-foreground text-right font-semibold tabular-nums',
+          compact ? 'text-base' : 'text-lg',
+        )}
+      >
+        {row.value}
+      </p>
+    </div>
+  );
 }
 
 export function PerformanceMetrics({ analysis }: { analysis: ActivityAnalysis }) {
-  const { power, hr, load, thresholds } = analysis;
-  const rows: PerformanceRow[] = [];
-
-  if (power?.normalized) {
-    rows.push({
-      label: 'NP',
-      value: `${power.normalized} W`,
-      note: power.avg ? `moy ${power.avg} W` : undefined,
-    });
-  }
-  if (load.intensityFactor !== null) {
-    rows.push({
-      label: 'IF',
-      value: load.intensityFactor.toFixed(2),
-      note: intensityFactorSublabel(load.method, thresholds),
-    });
-  }
-  if (power?.variabilityIndex !== null) {
-    rows.push({
-      label: 'VI',
-      value: power.variabilityIndex.toFixed(2),
-      note: power.variabilityIndex > 1.1 ? 'effort variable' : 'effort régulier',
-    });
-  }
-  if (load.tss !== null) {
-    rows.push({
-      label: load.method === 'hr' ? 'TSS (FC)' : 'TSS',
-      value: String(load.tss),
-    });
-  }
-  if (hr.efficiencyFactor !== null) {
-    rows.push({
-      label: hr.efficiencyLabel,
-      value: String(hr.efficiencyFactor),
-    });
-  }
-  if (hr.decouplingPct !== null) {
-    rows.push({
-      label: 'Découplage',
-      value: `${hr.decouplingPct > 0 ? '+' : ''}${hr.decouplingPct}%`,
-      note: decouplingLabel(Math.abs(hr.decouplingPct)),
-    });
-  }
-  if (analysis.run?.paceVariabilityPct !== null) {
-    rows.push({
-      label: 'Variabilité allure',
-      value: `${analysis.run.paceVariabilityPct}%`,
-      note: 'écart-type / moyenne',
-    });
-  }
-
+  const rows = buildPerformanceRows(analysis);
   if (!rows.length) {
     return null;
   }
 
   const compact = rows.length >= 6;
+  const { thresholds } = analysis;
 
   return (
     <section className="analysis-panel rounded-analysis-lg px-5 pt-5 pb-2 sm:px-6">
@@ -100,39 +64,7 @@ export function PerformanceMetrics({ analysis }: { analysis: ActivityAnalysis })
 
       <div className="border-analysis-border/70 divide-analysis-border/60 mt-4 border-t">
         {rows.map((row) => (
-          <div
-            key={row.label}
-            className={cn(
-              'grid items-start gap-x-4 border-b last:border-b-0',
-              compact
-                ? 'grid-cols-[minmax(0,1fr)_auto] gap-y-1 py-3 last:pb-2'
-                : 'grid-cols-[minmax(0,1fr)_auto] gap-y-1.5 py-3.5 last:pb-2 sm:grid-cols-[minmax(0,11rem)_1fr_auto]',
-            )}
-          >
-            <div className="min-w-0">
-              <p className="text-label">{row.label}</p>
-              {row.note ? (
-                <p className="text-muted-foreground mt-1 text-xs leading-snug sm:hidden">
-                  {row.note}
-                </p>
-              ) : null}
-            </div>
-
-            {!compact ? (
-              <div className="text-muted-foreground hidden min-w-0 text-xs leading-snug sm:block">
-                {row.note ?? '—'}
-              </div>
-            ) : null}
-
-            <p
-              className={cn(
-                'text-data text-foreground text-right font-semibold tabular-nums',
-                compact ? 'text-base' : 'text-lg',
-              )}
-            >
-              {row.value}
-            </p>
-          </div>
+          <PerformanceMetricRow key={row.label} compact={compact} row={row} />
         ))}
       </div>
     </section>
@@ -160,12 +92,12 @@ export function ThresholdsHint({ analysis }: { analysis: ActivityAnalysis }) {
         Compte
       </a>
       .
-      {thresholds.lthr && (
+      {thresholds.lthr ? (
         <span className="text-data mt-1 block text-xs">
           LTHR estimé : {thresholds.lthr} bpm
           {thresholds.ftp ? ` · FTP estimé : ${thresholds.ftp} W` : ''}
         </span>
-      )}
+      ) : null}
     </ClinicalAnnotation>
   );
 }

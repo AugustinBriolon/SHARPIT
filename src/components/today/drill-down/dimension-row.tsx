@@ -19,6 +19,84 @@ function resolveColorScore(
   return higherIsWorse ? 100 - score : score;
 }
 
+function dimensionRowColors(colorScore: number | null, protectiveTone: boolean) {
+  if (colorScore === null) {
+    return {
+      colorClass: 'text-muted-foreground/40',
+      barColorClass: 'bg-muted-foreground/10',
+    };
+  }
+  return {
+    colorClass: protectiveTone
+      ? mapScoreToColorClassProtective(colorScore)
+      : mapScoreToColorClass(colorScore),
+    barColorClass: protectiveTone
+      ? mapScoreToBarColorClassProtective(colorScore)
+      : mapScoreToBarColorClass(colorScore),
+  };
+}
+
+function DimensionRowValue({
+  loading,
+  available,
+  score,
+  intensityLabel,
+  colorClass,
+}: {
+  loading: boolean;
+  available: boolean;
+  score: number | null;
+  intensityLabel?: string | null;
+  colorClass: string;
+}) {
+  if (loading) {
+    return <SkeletonDataValue heightClassName="h-4" widthClassName="w-7" />;
+  }
+  return (
+    <>
+      {!available ? (
+        <span className="text-muted-foreground/40 text-xs">Signal manquant</span>
+      ) : null}
+      {available && intensityLabel ? (
+        <span className={cn('text-xs font-medium tracking-wide uppercase', colorClass)}>
+          {intensityLabel}
+        </span>
+      ) : null}
+      <span className={cn('w-7 text-right text-sm font-bold tabular-nums', colorClass)}>
+        {available && score !== null ? score : '—'}
+      </span>
+    </>
+  );
+}
+
+function DimensionRowHeader({
+  label,
+  description,
+  loading,
+  available,
+  emphasized,
+}: {
+  label: string;
+  description: string;
+  loading: boolean;
+  available: boolean;
+  emphasized: boolean;
+}) {
+  return (
+    <div className="min-w-0">
+      <p
+        className={cn('text-sm font-medium', !loading && !available && 'text-muted-foreground/50')}
+      >
+        {label}
+        {emphasized ? (
+          <span className="text-label text-muted-foreground ml-2 font-normal">frein</span>
+        ) : null}
+      </p>
+      <p className="text-muted-foreground text-xs">{description}</p>
+    </div>
+  );
+}
+
 export function DrillDownDimensionRow({
   label,
   description,
@@ -45,53 +123,26 @@ export function DrillDownDimensionRow({
   const invert = higherIsWorse ?? invertScore;
   const { score, available } = dim;
   const colorScore = resolveColorScore(available, score, invert);
-
-  let colorClass = 'text-muted-foreground/40';
-  let barColorClass = 'bg-muted-foreground/10';
-  if (colorScore !== null) {
-    colorClass = protectiveTone
-      ? mapScoreToColorClassProtective(colorScore)
-      : mapScoreToColorClass(colorScore);
-    barColorClass = protectiveTone
-      ? mapScoreToBarColorClassProtective(colorScore)
-      : mapScoreToBarColorClass(colorScore);
-  }
+  const { colorClass, barColorClass } = dimensionRowColors(colorScore, protectiveTone);
 
   return (
     <div className="space-y-1.5">
       <div className="flex items-center justify-between gap-2">
-        <div className="min-w-0">
-          <p
-            className={cn(
-              'text-sm font-medium',
-              !loading && !available && 'text-muted-foreground/50',
-            )}
-          >
-            {label}
-            {emphasized ? (
-              <span className="text-label text-muted-foreground ml-2 font-normal">frein</span>
-            ) : null}
-          </p>
-          <p className="text-muted-foreground text-xs">{description}</p>
-        </div>
+        <DimensionRowHeader
+          available={available}
+          description={description}
+          emphasized={emphasized}
+          label={label}
+          loading={loading}
+        />
         <div className="flex shrink-0 items-center gap-2">
-          {loading ? (
-            <SkeletonDataValue heightClassName="h-4" widthClassName="w-7" />
-          ) : (
-            <>
-              {!available && (
-                <span className="text-muted-foreground/40 text-xs">Signal manquant</span>
-              )}
-              {available && intensityLabel && (
-                <span className={cn('text-xs font-medium tracking-wide uppercase', colorClass)}>
-                  {intensityLabel}
-                </span>
-              )}
-              <span className={cn('w-7 text-right text-sm font-bold tabular-nums', colorClass)}>
-                {available && score !== null ? score : '—'}
-              </span>
-            </>
-          )}
+          <DimensionRowValue
+            available={available}
+            colorClass={colorClass}
+            intensityLabel={intensityLabel}
+            loading={loading}
+            score={score}
+          />
         </div>
       </div>
       {loading ? (

@@ -15,23 +15,29 @@ import { cn } from '@/lib/utils';
 
 export type HikeTripMember = ClientHikeTrip['activities'][number];
 
-export function buildHikeTripMemberMeta(member: HikeTripMember): string[] {
-  const meta: string[] = [formatDate(member.date)];
-
-  const distanceM = member.hikeMetrics?.distanceM;
+function appendPositiveDistance(meta: string[], distanceM: number | null | undefined) {
   if (distanceM !== null && distanceM > 0) {
     meta.push(formatDistance(distanceM));
   }
+}
 
-  const elevationM = member.hikeMetrics?.elevationM;
+function appendPositiveElevation(meta: string[], elevationM: number | null | undefined) {
   if (elevationM !== null && elevationM > 0) {
     meta.push(`D+ ${Math.round(elevationM)} m`);
   }
+}
 
-  if (member.duration !== null && member.duration > 0) {
-    meta.push(formatDuration(member.duration));
+function appendPositiveDuration(meta: string[], duration: number | null | undefined) {
+  if (duration !== null && duration > 0) {
+    meta.push(formatDuration(duration));
   }
+}
 
+export function buildHikeTripMemberMeta(member: HikeTripMember): string[] {
+  const meta: string[] = [formatDate(member.date)];
+  appendPositiveDistance(meta, member.hikeMetrics?.distanceM);
+  appendPositiveElevation(meta, member.hikeMetrics?.elevationM);
+  appendPositiveDuration(meta, member.duration);
   return meta;
 }
 
