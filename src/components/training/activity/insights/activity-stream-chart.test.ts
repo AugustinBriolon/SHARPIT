@@ -92,7 +92,7 @@ describe('ActivityStreamChart', () => {
     );
 
     expect(html).toContain('Comparer les courbes');
-    expect(html).toContain('2/5 actives');
+    expect(html).not.toContain('actives');
     expect(html).toContain('FC');
     expect(html).toContain('Puissance');
     expect(html).toContain('Dénivelé');
