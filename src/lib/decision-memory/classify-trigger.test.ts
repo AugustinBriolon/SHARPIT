@@ -8,9 +8,15 @@ function finding(ruleCode: string, severity: RuleFinding['severity'] = 'WARNING'
 }
 
 function worstStatus(findings: RuleFinding[]): GateSessionResult['status'] {
-  if (findings.some((f) => f.severity === 'REJECTED')) return 'REJECTED';
-  if (findings.some((f) => f.severity === 'REQUIRES_CONFIRMATION')) return 'REQUIRES_CONFIRMATION';
-  if (findings.length > 0) return 'WARNING';
+  if (findings.some((f) => f.severity === 'REJECTED')) {
+    return 'REJECTED';
+  }
+  if (findings.some((f) => f.severity === 'REQUIRES_CONFIRMATION')) {
+    return 'REQUIRES_CONFIRMATION';
+  }
+  if (findings.length > 0) {
+    return 'WARNING';
+  }
   return 'ACCEPTED';
 }
 

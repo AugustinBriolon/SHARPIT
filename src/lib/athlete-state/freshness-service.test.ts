@@ -8,47 +8,69 @@ import {
 const EARLIER = new Date('2026-07-15T08:00:00.000Z');
 const LATER = new Date('2026-07-15T12:00:00.000Z');
 
+function recommendationsInput(
+  overrides: Partial<Parameters<typeof resolveRecommendationsFreshness>[0]> = {},
+) {
+  return {
+    computingRecommendations: false,
+    briefingAt: EARLIER,
+    reasoningAt: null,
+    sessionEvidence: null,
+    phaseAtGeneration: null,
+    currentBriefingPhase: 'morning',
+    ...overrides,
+  };
+}
+
 describe('resolveRecommendationsFreshness', () => {
   it('is computing while a recommendation run is in flight', () => {
-    expect(resolveRecommendationsFreshness(true, EARLIER, null, null, null, 'morning')).toBe(
-      'computing',
-    );
+    expect(
+      resolveRecommendationsFreshness(
+        recommendationsInput({ computingRecommendations: true }),
+      ),
+    ).toBe('computing');
   });
 
   it('is awaiting_data when no briefing exists yet', () => {
-    expect(resolveRecommendationsFreshness(false, null, null, null, null, 'morning')).toBe(
-      'awaiting_data',
-    );
+    expect(
+      resolveRecommendationsFreshness(recommendationsInput({ briefingAt: null })),
+    ).toBe('awaiting_data');
   });
 
   it('is stale when reasoning ran after the briefing', () => {
-    expect(resolveRecommendationsFreshness(false, EARLIER, LATER, null, null, 'morning')).toBe(
-      'stale',
-    );
+    expect(
+      resolveRecommendationsFreshness(recommendationsInput({ reasoningAt: LATER })),
+    ).toBe('stale');
   });
 
   it('is stale when a new session landed after the briefing', () => {
-    expect(resolveRecommendationsFreshness(false, EARLIER, null, LATER, null, 'morning')).toBe(
-      'stale',
-    );
+    expect(
+      resolveRecommendationsFreshness(recommendationsInput({ sessionEvidence: LATER })),
+    ).toBe('stale');
   });
 
   it('is stale when the briefing phase differs from the current phase (morning → afternoon)', () => {
     expect(
-      resolveRecommendationsFreshness(false, EARLIER, null, null, 'morning', 'afternoon'),
+      resolveRecommendationsFreshness(
+        recommendationsInput({ phaseAtGeneration: 'morning', currentBriefingPhase: 'afternoon' }),
+      ),
     ).toBe('stale');
   });
 
   it('is fresh when nothing changed and the phase matches', () => {
-    expect(resolveRecommendationsFreshness(false, EARLIER, null, null, 'morning', 'morning')).toBe(
-      'fresh',
-    );
+    expect(
+      resolveRecommendationsFreshness(
+        recommendationsInput({ phaseAtGeneration: 'morning', currentBriefingPhase: 'morning' }),
+      ),
+    ).toBe('fresh');
   });
 
   it('is fresh when phaseAtGeneration is unknown (legacy briefing, no phase recorded)', () => {
-    expect(resolveRecommendationsFreshness(false, EARLIER, null, null, null, 'afternoon')).toBe(
-      'fresh',
-    );
+    expect(
+      resolveRecommendationsFreshness(
+        recommendationsInput({ currentBriefingPhase: 'afternoon' }),
+      ),
+    ).toBe('fresh');
   });
 });
 

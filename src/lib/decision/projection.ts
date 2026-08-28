@@ -33,7 +33,9 @@ export function decisionTopAction(decision: DecisionData | null | undefined): To
 export function limitingFactorFromDecision(
   decision: DecisionData | null | undefined,
 ): LimitingFactor | null {
-  if (!decision?.limitingFactor.description) return null;
+  if (!decision?.limitingFactor.description) {
+    return null;
+  }
   const { limitingFactor } = decision;
   const { domain, system, description, actionable } = limitingFactor;
   let resolvedSystem: LimitingFactor['system'] = null;
@@ -48,72 +50,96 @@ export function limitingFactorFromDecision(
 }
 
 export function isAdviceActionableFromDecision(decision: DecisionData | null | undefined): boolean {
-  if (!decision) return false;
-  if (decisionVerdict(decision) === 'INSUFFICIENT_DATA') return false;
-  if (!decision.topAction) return false;
-  if (decision.dataCompleteness === 'INSUFFICIENT') return false;
-  if (decision.priority.confidenceGated) return false;
-  if (decision.confidence == null || decision.confidence < MIN_DECISION_ADVICE_CONFIDENCE) {
+  if (!decision) {
+    return false;
+  }
+  if (decisionVerdict(decision) === 'INSUFFICIENT_DATA') {
+    return false;
+  }
+  if (!decision.topAction) {
+    return false;
+  }
+  if (decision.dataCompleteness === 'INSUFFICIENT') {
+    return false;
+  }
+  if (decision.priority.confidenceGated) {
+    return false;
+  }
+  if (decision.confidence === null || decision.confidence < MIN_DECISION_ADVICE_CONFIDENCE) {
     return false;
   }
   return true;
+}
+
+function physicalHealthRecommendation(
+  todayState: TodayState,
+): EngineRecommendation | null {
+  const recommendation = todayState.physicalHealth?.recommendation;
+  if (!recommendation) {
+    return null;
+  }
+  return {
+    type: 'physical-health',
+    keyEvidence: [...recommendation.evidence],
+    confidence: recommendation.confidence,
+  };
+}
+
+const RECOMMENDATION_BY_ATTENTION_DOMAIN: Record<
+  DecisionData['priority']['attentionDomain'],
+  (todayState: TodayState) => EngineRecommendation | null
+> = {
+  RECOVERY: (todayState) => todayState.recovery?.recommendation ?? null,
+  FATIGUE: (todayState) => todayState.fatigue?.recommendation ?? null,
+  ADAPTATION: (todayState) => todayState.adaptation?.recommendation ?? null,
+  PHYSICAL_HEALTH: physicalHealthRecommendation,
+  ENVIRONMENT: () => null,
+  BALANCED: () => null,
+};
+
+function recommendationForAttentionDomain(
+  attentionDomain: DecisionData['priority']['attentionDomain'],
+  todayState: TodayState,
+): EngineRecommendation | null {
+  return RECOMMENDATION_BY_ATTENTION_DOMAIN[attentionDomain](todayState);
 }
 
 export function resolveRecommendationFromDecision(
   decision: DecisionData | null | undefined,
   todayState: TodayState,
 ): EngineRecommendation | null {
-  if (!decision || decision.priority.confidenceGated) return null;
-
-  switch (decision.priority.attentionDomain) {
-    case 'RECOVERY':
-      return todayState.recovery?.recommendation ?? null;
-    case 'FATIGUE':
-      return todayState.fatigue?.recommendation ?? null;
-    case 'ADAPTATION':
-      return todayState.adaptation?.recommendation ?? null;
-    case 'PHYSICAL_HEALTH': {
-      const recommendation = todayState.physicalHealth?.recommendation;
-      if (!recommendation) return null;
-      return {
-        type: 'physical-health',
-        keyEvidence: [...recommendation.evidence],
-        confidence: recommendation.confidence,
-      };
-    }
-    case 'ENVIRONMENT':
-    case 'BALANCED':
-    default:
-      return null;
+  if (!decision || decision.priority.confidenceGated) {
+    return null;
   }
+  return recommendationForAttentionDomain(decision.priority.attentionDomain, todayState);
 }
+
+const CONFIDENCE_HREF_BY_DOMAIN: Record<string, string> = {
+  FATIGUE: TWIN_DRILL_DOWN.effort,
+  ADAPTATION: TWIN_DRILL_DOWN.adaptation,
+  PHYSICAL_HEALTH: TWIN_DRILL_DOWN.physical,
+  ENVIRONMENT: TWIN_DRILL_DOWN.recovery,
+  RECOVERY: TWIN_DRILL_DOWN.recovery,
+  BALANCED: TWIN_DRILL_DOWN.recovery,
+};
 
 export function resolveConfidenceHrefFromDecision(
   decision: DecisionData | null | undefined,
 ): string {
   const domain = decision?.priority.attentionDomain ?? decision?.systemAttentionPriority;
-  switch (domain) {
-    case 'FATIGUE':
-      return TWIN_DRILL_DOWN.effort;
-    case 'ADAPTATION':
-      return TWIN_DRILL_DOWN.adaptation;
-    case 'PHYSICAL_HEALTH':
-      return TWIN_DRILL_DOWN.physical;
-    case 'ENVIRONMENT':
-      return TWIN_DRILL_DOWN.recovery;
-    case 'RECOVERY':
-    case 'BALANCED':
-    default:
-      return TWIN_DRILL_DOWN.recovery;
-  }
+  return CONFIDENCE_HREF_BY_DOMAIN[domain ?? 'RECOVERY'] ?? TWIN_DRILL_DOWN.recovery;
 }
 
 export function resolveLimitingFactorHrefFromDecision(
   decision: DecisionData | null | undefined,
 ): string | null {
   const domain = decision?.limitingFactor.domain;
-  if (domain === 'PHYSICAL_HEALTH') return TWIN_DRILL_DOWN.physical;
-  if (domain === 'ENVIRONMENT') return TWIN_DRILL_DOWN.recovery;
+  if (domain === 'PHYSICAL_HEALTH') {
+    return TWIN_DRILL_DOWN.physical;
+  }
+  if (domain === 'ENVIRONMENT') {
+    return TWIN_DRILL_DOWN.recovery;
+  }
 
   const system = decision?.limitingFactor.system;
   switch (system) {
@@ -128,52 +154,95 @@ export function resolveLimitingFactorHrefFromDecision(
   }
 }
 
+function parseBriefingParagraphs(briefing: string): string[] {
+  return briefing
+    .split('\n')
+    .map((paragraph) => paragraph.replace(/\*\*/g, '').trim())
+    .filter(Boolean);
+}
+
+function firstResolvedEvidenceItem(
+  evidence: NonNullable<DecisionData['supportingEvidence']>[number],
+): string | null {
+  const [item] = evidence.evidenceItems;
+  if (!item) {
+    return null;
+  }
+  const text = resolve(item);
+  if (text && text !== item.code) {
+    return text;
+  }
+  return null;
+}
+
+function buildEvidenceLinesFromDecision(
+  decision: DecisionData,
+  whyFocus: DailyPhaseWhyFocus,
+): string[] {
+  const lines: string[] = [];
+  const prioritized = prioritizeDecisionEvidence(decision.supportingEvidence, whyFocus);
+  for (const evidence of prioritized.slice(0, 2)) {
+    lines.push(resolve(evidence.title));
+    const itemLine = firstResolvedEvidenceItem(evidence);
+    if (itemLine) {
+      lines.push(itemLine);
+    }
+  }
+  return lines.slice(0, 3);
+}
+
+function buildBriefingLines(briefing: string, whyFocus: DailyPhaseWhyFocus): string[] | null {
+  const paragraphs = parseBriefingParagraphs(briefing);
+  if (whyFocus === 'adaptation_recovery' || whyFocus === 'tomorrow_impact') {
+    return paragraphs.slice(-2);
+  }
+  if (whyFocus === 'readiness' || whyFocus === 'session_prep') {
+    return paragraphs.slice(0, 2);
+  }
+  return null;
+}
+
+function buildTopActionRationaleLine(decision: DecisionData | null | undefined): string | null {
+  const topAction = decisionTopAction(decision);
+  if (!topAction) {
+    return null;
+  }
+  const rationale = resolveCode(topAction.rationaleCode);
+  if (rationale && rationale !== topAction.rationaleCode) {
+    return rationale;
+  }
+  return null;
+}
+
+function resolveWhyEvidenceLines(
+  decision: DecisionData | null | undefined,
+  briefing: string | null | undefined,
+  whyFocus: DailyPhaseWhyFocus,
+): string[] | null {
+  if (decision?.supportingEvidence?.length) {
+    const evidenceLines = buildEvidenceLinesFromDecision(decision, whyFocus);
+    if (evidenceLines.length > 0) {
+      return evidenceLines;
+    }
+  }
+
+  if (briefing) {
+    const briefingLines = buildBriefingLines(briefing, whyFocus);
+    if (briefingLines) {
+      return briefingLines;
+    }
+  }
+
+  const rationaleLine = buildTopActionRationaleLine(decision);
+  return rationaleLine ? [rationaleLine] : null;
+}
+
 export function buildWhyEvidenceFromDecision(
   decision: DecisionData | null | undefined,
   briefing: string | null | undefined,
   whyFocus: DailyPhaseWhyFocus = 'readiness',
 ): string[] {
-  const lines: string[] = [];
-
-  if (decision?.supportingEvidence?.length) {
-    const prioritized = prioritizeDecisionEvidence(decision.supportingEvidence, whyFocus);
-    for (const evidence of prioritized.slice(0, 2)) {
-      lines.push(resolve(evidence.title));
-      for (const item of evidence.evidenceItems.slice(0, 1)) {
-        const text = resolve(item);
-        if (text && text !== item.code) lines.push(text);
-      }
-    }
-    if (lines.length > 0) return lines.slice(0, 3);
-  }
-
-  if (whyFocus === 'adaptation_recovery' || whyFocus === 'tomorrow_impact') {
-    if (briefing) {
-      const paragraphs = briefing
-        .split('\n')
-        .map((p) => p.replace(/\*\*/g, '').trim())
-        .filter(Boolean);
-      return paragraphs.slice(-2);
-    }
-  }
-
-  if (briefing && (whyFocus === 'readiness' || whyFocus === 'session_prep')) {
-    const paragraphs = briefing
-      .split('\n')
-      .map((p) => p.replace(/\*\*/g, '').trim())
-      .filter(Boolean);
-    return paragraphs.slice(0, 2);
-  }
-
-  const topAction = decisionTopAction(decision);
-  if (topAction) {
-    const rationale = resolveCode(topAction.rationaleCode);
-    if (rationale && rationale !== topAction.rationaleCode) {
-      lines.push(rationale);
-    }
-  }
-
-  return lines;
+  return resolveWhyEvidenceLines(decision, briefing, whyFocus) ?? [];
 }
 
 function prioritizeDecisionEvidence(
@@ -192,7 +261,9 @@ function prioritizeDecisionEvidence(
     const ai = prefs.indexOf(a.domain);
     const bi = prefs.indexOf(b.domain);
     const rankDiff = (a.rank ?? 99) - (b.rank ?? 99);
-    if (rankDiff !== 0) return rankDiff;
+    if (rankDiff !== 0) {
+      return rankDiff;
+    }
     return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
   });
 }

@@ -93,7 +93,9 @@ const PHASE_COLORS = {
 } as const;
 
 export function formatClock(min: number | null): string {
-  if (min == null) return '—';
+  if (min === null) {
+    return '—';
+  }
   const norm = ((Math.round(min) % 1440) + 1440) % 1440;
   const h = Math.floor(norm / 60);
   const m = norm % 60;
@@ -101,19 +103,25 @@ export function formatClock(min: number | null): string {
 }
 
 export function formatDuration(min: number | null): string {
-  if (min == null) return '—';
+  if (min === null) {
+    return '—';
+  }
   const h = Math.floor(min / 60);
   const m = Math.round(min % 60);
   return `${h}h${String(m).padStart(2, '0')}`;
 }
 
 function avg(values: number[]): number | null {
-  if (!values.length) return null;
+  if (!values.length) {
+    return null;
+  }
   return values.reduce((s, v) => s + v, 0) / values.length;
 }
 
 function median(values: number[]): number | null {
-  if (!values.length) return null;
+  if (!values.length) {
+    return null;
+  }
   const sorted = [...values].sort((a, b) => a - b);
   const mid = Math.floor(sorted.length / 2);
   return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
@@ -124,7 +132,9 @@ function median(values: number[]): number | null {
  * aberrantes, contrairement à l'écart-type. Sert d'indicateur de régularité.
  */
 function medianAbsoluteDeviation(values: number[]): number | null {
-  if (values.length < 2) return null;
+  if (values.length < 2) {
+    return null;
+  }
   const m = median(values)!;
   return median(values.map((v) => Math.abs(v - m)));
 }
@@ -136,16 +146,85 @@ function normalizeBedtime(min: number): number {
 }
 
 function scoreTone(score: number | null): RecoveryTone {
-  if (score == null) return 'neutral';
-  if (score >= 80) return 'good';
-  if (score >= 60) return 'moderate';
+  if (score === null) {
+    return 'neutral';
+  }
+  if (score >= 80) {
+    return 'good';
+  }
+  if (score >= 60) {
+    return 'moderate';
+  }
   return 'low';
 }
 
 function phaseTone(pct: number, goodMin: number, moderateMin: number): RecoveryTone {
-  if (pct >= goodMin) return 'good';
-  if (pct >= moderateMin) return 'moderate';
+  if (pct >= goodMin) {
+    return 'good';
+  }
+  if (pct >= moderateMin) {
+    return 'moderate';
+  }
   return 'low';
+}
+
+type PhaseDraft = Pick<SleepPhase, 'key' | 'label' | 'minutes' | 'percent' | 'ideal' | 'tone'>;
+
+function makePhase(phase: PhaseDraft): SleepPhase {
+  return {
+    ...phase,
+    color: PHASE_COLORS[phase.key],
+  };
+}
+
+function buildPhaseDrafts(phaseMinutes: {
+  deep: number;
+  rem: number;
+  light: number;
+  awake: number;
+  inBed: number;
+  sleep: number;
+}): PhaseDraft[] {
+  const { deep, rem, light, awake, inBed, sleep } = phaseMinutes;
+  const pct = (value: number) => Math.round((value / inBed) * 100);
+  const deepPct = sleep > 0 ? (deep / sleep) * 100 : 0;
+  const remPct = sleep > 0 ? (rem / sleep) * 100 : 0;
+  const awakeTone: RecoveryTone = awake > 45 ? 'moderate' : 'neutral';
+
+  return [
+    {
+      key: 'deep',
+      label: 'Profond',
+      minutes: deep,
+      percent: pct(deep),
+      ideal: '13-23 %',
+      tone: phaseTone(deepPct, 13, 9),
+    },
+    {
+      key: 'rem',
+      label: 'Paradoxal (REM)',
+      minutes: rem,
+      percent: pct(rem),
+      ideal: '20-25 %',
+      tone: phaseTone(remPct, 20, 15),
+    },
+    {
+      key: 'light',
+      label: 'Léger',
+      minutes: light,
+      percent: pct(light),
+      ideal: null,
+      tone: 'neutral',
+    },
+    {
+      key: 'awake',
+      label: 'Éveillé',
+      minutes: awake,
+      percent: pct(awake),
+      ideal: null,
+      tone: awakeTone,
+    },
+  ];
 }
 
 function buildPhases(entry: SleepEntryInput): SleepPhase[] {
@@ -155,126 +234,80 @@ function buildPhases(entry: SleepEntryInput): SleepPhase[] {
   const awake = entry.sleepAwakeMin ?? 0;
   const inBed = deep + rem + light + awake;
   const sleep = deep + rem + light;
-  if (inBed === 0) return [];
+  if (inBed === 0) {
+    return [];
+  }
 
-  const pct = (v: number) => Math.round((v / inBed) * 100);
-  const deepPct = sleep > 0 ? (deep / sleep) * 100 : 0;
-  const remPct = sleep > 0 ? (rem / sleep) * 100 : 0;
-
-  const deepTone = phaseTone(deepPct, 13, 9);
-  const remTone = phaseTone(remPct, 20, 15);
-
-  return [
-    {
-      key: 'deep',
-      label: 'Profond',
-      minutes: deep,
-      percent: pct(deep),
-      color: PHASE_COLORS.deep,
-      ideal: '13-23 %',
-      tone: deepTone,
-    },
-    {
-      key: 'rem',
-      label: 'Paradoxal (REM)',
-      minutes: rem,
-      percent: pct(rem),
-      color: PHASE_COLORS.rem,
-      ideal: '20-25 %',
-      tone: remTone,
-    },
-    {
-      key: 'light',
-      label: 'Léger',
-      minutes: light,
-      percent: pct(light),
-      color: PHASE_COLORS.light,
-      ideal: null,
-      tone: 'neutral',
-    },
-    {
-      key: 'awake',
-      label: 'Éveillé',
-      minutes: awake,
-      percent: pct(awake),
-      color: PHASE_COLORS.awake,
-      ideal: null,
-      tone: awake > 45 ? 'moderate' : 'neutral',
-    },
-  ];
+  return buildPhaseDrafts({ deep, rem, light, awake, inBed, sleep }).map(makePhase);
 }
 
-function buildInsights(params: {
-  avgDuration: number | null;
-  avgDeepPct: number | null;
-  avgRemPct: number | null;
-  regularity: number | null;
-  avgBedtime: number | null;
-  recommendedBedtime: number | null;
-  avgStress: number | null;
-  targetDuration: number;
-  recommendedDuration: number;
-  bedtimeGoal: number | null;
-  debt7Min: number | null;
-  debt14Min: number | null;
-}): SleepInsight[] {
-  const insights: SleepInsight[] = [];
-  const {
-    avgDuration,
-    avgDeepPct,
-    avgRemPct,
-    regularity,
-    avgBedtime,
-    recommendedBedtime,
-    avgStress,
-    targetDuration,
-    recommendedDuration,
-    bedtimeGoal,
-    debt7Min,
-    debt14Min,
-  } = params;
+type InsightParams = Parameters<typeof buildInsights>[0];
 
+function buildDebtInsights(params: InsightParams): SleepInsight[] {
+  const { debt7Min, debt14Min, targetDuration, recommendedDuration } = params;
   const targetLabel = formatDuration(targetDuration);
-
-  if (debt7Min != null && debt7Min > 60) {
-    insights.push({
-      tone: debt7Min > 180 ? 'low' : 'moderate',
-      title: 'Dette de sommeil sur 7 nuits',
-      detail: `Tu as environ ${formatDuration(
-        Math.round(debt7Min),
-      )} de retard cumulé sur 7 nuits (objectif ${targetLabel}/nuit). Ce soir, vise ${formatDuration(
-        recommendedDuration,
-      )} pour rattraper progressivement.`,
-    });
-  } else if (debt14Min != null && debt14Min > 120) {
-    insights.push({
-      tone: 'moderate',
-      title: 'Dette sur 14 nuits',
-      detail: `Sur 14 nuits, tu es en retard d'environ ${formatDuration(
-        Math.round(debt14Min),
-      )} par rapport à ton objectif. Priorise la régularité et la durée les prochains jours.`,
-    });
+  if (debt7Min !== null && debt7Min > 60) {
+    return [
+      {
+        tone: debt7Min > 180 ? 'low' : 'moderate',
+        title: 'Dette de sommeil sur 7 nuits',
+        detail: `Tu as environ ${formatDuration(
+          Math.round(debt7Min),
+        )} de retard cumulé sur 7 nuits (objectif ${targetLabel}/nuit). Ce soir, vise ${formatDuration(
+          recommendedDuration,
+        )} pour rattraper progressivement.`,
+      },
+    ];
   }
-
-  if (avgDuration != null && avgDuration < targetDuration - 30) {
-    insights.push({
-      tone: 'low',
-      title: 'Sous ton objectif de sommeil',
-      detail: `Tu dors en moyenne ${formatDuration(
-        Math.round(avgDuration),
-      )} par nuit, sous ton objectif de ${targetLabel}. Avance ton coucher pour combler l'écart.`,
-    });
-  } else if (avgDuration != null && avgDuration < targetDuration) {
-    insights.push({
-      tone: 'moderate',
-      title: "Proche de l'objectif",
-      detail: `Moyenne de ${formatDuration(
-        Math.round(avgDuration),
-      )} — objectif ${targetLabel}. Quelques minutes de plus par nuit feraient la différence.`,
-    });
+  if (debt14Min !== null && debt14Min > 120) {
+    return [
+      {
+        tone: 'moderate',
+        title: 'Dette sur 14 nuits',
+        detail: `Sur 14 nuits, tu es en retard d'environ ${formatDuration(
+          Math.round(debt14Min),
+        )} par rapport à ton objectif. Priorise la régularité et la durée les prochains jours.`,
+      },
+    ];
   }
+  return [];
+}
 
-  if (bedtimeGoal != null && avgBedtime != null) {
+function buildDurationInsights(params: InsightParams): SleepInsight[] {
+  const { avgDuration, targetDuration } = params;
+  const targetLabel = formatDuration(targetDuration);
+  if (avgDuration === null) {
+    return [];
+  }
+  if (avgDuration < targetDuration - 30) {
+    return [
+      {
+        tone: 'low',
+        title: 'Sous ton objectif de sommeil',
+        detail: `Tu dors en moyenne ${formatDuration(
+          Math.round(avgDuration),
+        )} par nuit, sous ton objectif de ${targetLabel}. Avance ton coucher pour combler l'écart.`,
+      },
+    ];
+  }
+  if (avgDuration < targetDuration) {
+    return [
+      {
+        tone: 'moderate',
+        title: "Proche de l'objectif",
+        detail: `Moyenne de ${formatDuration(
+          Math.round(avgDuration),
+        )} — objectif ${targetLabel}. Quelques minutes de plus par nuit feraient la différence.`,
+      },
+    ];
+  }
+  return [];
+}
+
+function buildBedtimeInsights(params: InsightParams): SleepInsight[] {
+  const insights: SleepInsight[] = [];
+  const { bedtimeGoal, avgBedtime, recommendedBedtime } = params;
+  if (bedtimeGoal !== null && avgBedtime !== null) {
     const diff = Math.abs(normalizeBedtime(avgBedtime) - normalizeBedtime(bedtimeGoal));
     if (diff > 45) {
       insights.push({
@@ -284,40 +317,9 @@ function buildInsights(params: {
       });
     }
   }
-
-  if (avgDeepPct != null && avgDeepPct < 13) {
-    insights.push({
-      tone: avgDeepPct < 9 ? 'low' : 'moderate',
-      title: 'Sommeil profond bas',
-      detail: `Profond à ${Math.round(
-        avgDeepPct,
-      )} % (cible 13-23 %). Le profond se joue en début de nuit : évite l'alcool et les repas lourds le soir, baisse la température de la chambre (~18 °C) et évite les séances très intenses juste avant le coucher.`,
-    });
-  }
-
-  if (avgRemPct != null && avgRemPct < 18) {
-    insights.push({
-      tone: avgRemPct < 15 ? 'low' : 'moderate',
-      title: 'Sommeil paradoxal (REM) bas',
-      detail: `REM à ${Math.round(
-        avgRemPct,
-      )} % (cible 20-25 %). Le REM est concentré en fin de nuit : dors suffisamment longtemps, garde des horaires réguliers et limite l'alcool qui le fragmente.`,
-    });
-  }
-
-  if (regularity != null && regularity > 60) {
-    insights.push({
-      tone: 'moderate',
-      title: 'Horaires irréguliers',
-      detail: `Ton heure de coucher varie de ±${Math.round(
-        regularity,
-      )} min. Un coucher et un lever réguliers (même le week-end) stabilisent ton horloge interne et la qualité du sommeil.`,
-    });
-  }
-
   if (
-    avgBedtime != null &&
-    recommendedBedtime != null &&
+    avgBedtime !== null &&
+    recommendedBedtime !== null &&
     normalizeBedtime(avgBedtime) - normalizeBedtime(recommendedBedtime) > 45
   ) {
     insights.push({
@@ -330,24 +332,82 @@ function buildInsights(params: {
       )}). Avancer le coucher protège surtout ton sommeil profond.`,
     });
   }
+  return insights;
+}
 
-  if (avgStress != null && avgStress > 30) {
+function buildPhaseInsights(params: InsightParams): SleepInsight[] {
+  const insights: SleepInsight[] = [];
+  const { avgDeepPct, avgRemPct } = params;
+  if (avgDeepPct !== null && avgDeepPct < 13) {
     insights.push({
+      tone: avgDeepPct < 9 ? 'low' : 'moderate',
+      title: 'Sommeil profond bas',
+      detail: `Profond à ${Math.round(
+        avgDeepPct,
+      )} % (cible 13-23 %). Le profond se joue en début de nuit : évite l'alcool et les repas lourds le soir, baisse la température de la chambre (~18 °C) et évite les séances très intenses juste avant le coucher.`,
+    });
+  }
+  if (avgRemPct !== null && avgRemPct < 18) {
+    insights.push({
+      tone: avgRemPct < 15 ? 'low' : 'moderate',
+      title: 'Sommeil paradoxal (REM) bas',
+      detail: `REM à ${Math.round(
+        avgRemPct,
+      )} % (cible 20-25 %). Le REM est concentré en fin de nuit : dors suffisamment longtemps, garde des horaires réguliers et limite l'alcool qui le fragmente.`,
+    });
+  }
+  return insights;
+}
+
+function buildRegularityInsight(regularity: number | null): SleepInsight[] {
+  if (regularity === null || regularity <= 60) {
+    return [];
+  }
+  return [
+    {
+      tone: 'moderate',
+      title: 'Horaires irréguliers',
+      detail: `Ton heure de coucher varie de ±${Math.round(
+        regularity,
+      )} min. Un coucher et un lever réguliers (même le week-end) stabilisent ton horloge interne et la qualité du sommeil.`,
+    },
+  ];
+}
+
+function buildStressInsight(avgStress: number | null): SleepInsight[] {
+  if (avgStress === null || avgStress <= 30) {
+    return [];
+  }
+  return [
+    {
       tone: 'moderate',
       title: 'Stress nocturne élevé',
       detail: `Stress moyen de ${Math.round(
         avgStress,
       )} pendant le sommeil. Une routine de décompression (respiration, lecture, pas d'écran 30 min avant) peut aider à abaisser ton stress nocturne.`,
-    });
-  }
+    },
+  ];
+}
+
+function buildInsights(params: InsightParams): SleepInsight[] {
+  const insights = [
+    ...buildDebtInsights(params),
+    ...buildDurationInsights(params),
+    ...buildBedtimeInsights(params),
+    ...buildPhaseInsights(params),
+    ...buildRegularityInsight(params.regularity),
+    ...buildStressInsight(params.avgStress),
+  ];
 
   if (!insights.length) {
-    insights.push({
-      tone: 'good',
-      title: 'Sommeil de qualité',
-      detail:
-        "Durée, phases et régularité sont dans les clous. Continue sur cette lancée : c'est un pilier de ta progression.",
-    });
+    return [
+      {
+        tone: 'good',
+        title: 'Sommeil de qualité',
+        detail:
+          "Durée, phases et régularité sont dans les clous. Continue sur cette lancée : c'est un pilier de ta progression.",
+      },
+    ];
   }
 
   return insights.slice(0, 4);
@@ -359,10 +419,39 @@ export interface SleepGoals {
 }
 
 function computeCumulativeDebt(nights: SleepEntryInput[], targetMin: number): number | null {
-  const valid = nights.filter((n) => n.sleepMinutes != null);
-  if (valid.length === 0) return null;
+  const valid = nights.filter((n) => n.sleepMinutes !== null);
+  if (valid.length === 0) {
+    return null;
+  }
   const totalActual = valid.reduce((sum, n) => sum + (n.sleepMinutes ?? 0), 0);
   return Math.max(0, targetMin * valid.length - totalActual);
+}
+
+const SLEEP_ENTRY_FIELDS = [
+  'sleepMinutes',
+  'sleepScore',
+  'sleepDeepMin',
+  'sleepLightMin',
+  'sleepRemMin',
+  'sleepAwakeMin',
+  'sleepBedtimeMin',
+  'sleepWakeMin',
+  'sleepRespiration',
+  'sleepAvgStress',
+  'sleepScoreFeedback',
+] as const;
+
+type RawSleepEntry = Parameters<typeof mapSleepEntryInput>[0];
+
+function mapSleepEntryInput(entry: RawSleepEntry): SleepEntryInput {
+  const mapped = Object.fromEntries(
+    SLEEP_ENTRY_FIELDS.map((field) => [field, entry[field] ?? null]),
+  ) as Omit<SleepEntryInput, 'date'>;
+
+  return {
+    date: new Date(entry.date),
+    ...mapped,
+  };
 }
 
 /** Mappe les entrées santé API vers le format du coach sommeil. */
@@ -382,40 +471,82 @@ export function toSleepEntryInputs(
     sleepScoreFeedback?: string | null;
   }>,
 ): SleepEntryInput[] {
-  return entries.map((e) => ({
-    date: new Date(e.date),
-    sleepMinutes: e.sleepMinutes ?? null,
-    sleepScore: e.sleepScore ?? null,
-    sleepDeepMin: e.sleepDeepMin ?? null,
-    sleepLightMin: e.sleepLightMin ?? null,
-    sleepRemMin: e.sleepRemMin ?? null,
-    sleepAwakeMin: e.sleepAwakeMin ?? null,
-    sleepBedtimeMin: e.sleepBedtimeMin ?? null,
-    sleepWakeMin: e.sleepWakeMin ?? null,
-    sleepRespiration: e.sleepRespiration ?? null,
-    sleepAvgStress: e.sleepAvgStress ?? null,
-    sleepScoreFeedback: e.sleepScoreFeedback ?? null,
-  }));
+  return entries.map(mapSleepEntryInput);
 }
 
-export function analyzeSleep(entries: SleepEntryInput[], goals?: SleepGoals): SleepCoachView {
-  const targetDuration = goals?.targetDurationMin ?? TARGET_DURATION_MIN;
-  const sorted = [...entries].sort(
-    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+function isCoachNight(entry: SleepEntryInput): boolean {
+  return (
+    entry.sleepScore !== null ||
+    entry.sleepDeepMin !== null ||
+    entry.sleepRemMin !== null ||
+    entry.sleepMinutes !== null
   );
+}
 
-  // Nuits exploitables (fenêtre "habitudes") avec au moins des phases ou un score.
-  const nights = sorted
-    .filter(
-      (e) =>
-        e.sleepScore != null ||
-        e.sleepDeepMin != null ||
-        e.sleepRemMin != null ||
-        e.sleepMinutes != null,
-    )
-    .slice(0, COACH_WINDOW_NIGHTS);
+function computePhasePercentages(recent7: SleepEntryInput[]): {
+  avgDeepPct: number | null;
+  avgRemPct: number | null;
+} {
+  const deepPcts: number[] = [];
+  const remPcts: number[] = [];
+  for (const night of recent7) {
+    const sleep = (night.sleepDeepMin ?? 0) + (night.sleepLightMin ?? 0) + (night.sleepRemMin ?? 0);
+    if (sleep <= 0) {
+      continue;
+    }
+    if (night.sleepDeepMin !== null) {
+      deepPcts.push((night.sleepDeepMin / sleep) * 100);
+    }
+    if (night.sleepRemMin !== null) {
+      remPcts.push((night.sleepRemMin / sleep) * 100);
+    }
+  }
+  return { avgDeepPct: avg(deepPcts), avgRemPct: avg(remPcts) };
+}
 
-  const empty: SleepCoachView = {
+function computeRecommendedBedtimeMin(
+  medianWake: number | null,
+  recommendedDurationMin: number,
+  goals: SleepGoals | undefined,
+  debt7Min: number | null,
+): number | null {
+  let recommendedBedtime: number | null = null;
+  if (medianWake !== null) {
+    const raw = medianWake - recommendedDurationMin - FALL_ASLEEP_BUFFER_MIN;
+    recommendedBedtime = ((raw % 1440) + 1440) % 1440;
+  }
+  if (goals?.bedtimeTargetMin !== null && debt7Min !== null && debt7Min <= 30) {
+    recommendedBedtime = goals.bedtimeTargetMin;
+  }
+  return recommendedBedtime;
+}
+
+function buildLatestSleep(
+  latestNight: SleepEntryInput,
+  targetMin: number,
+): SleepLatest {
+  const latestBreakdown = buildSleepScoreBreakdown({
+    deepMin: latestNight.sleepDeepMin,
+    remMin: latestNight.sleepRemMin,
+    totalMin: latestNight.sleepMinutes,
+    debtMin: null,
+    targetMin,
+  });
+  return {
+    date: latestNight.date,
+    sharpitScore: latestBreakdown.sharpitScore,
+    sharpitScoreTone: scoreTone(latestBreakdown.sharpitScore),
+    restorativeRatio: latestBreakdown.restorativeRatio,
+    garminScore: latestNight.sleepScore,
+    durationMin: latestNight.sleepMinutes,
+    bedtimeMin: latestNight.sleepBedtimeMin,
+    wakeMin: latestNight.sleepWakeMin,
+    phases: buildPhases(latestNight),
+  };
+}
+
+function emptySleepCoachView(targetDuration: number): SleepCoachView {
+  return {
     hasData: false,
     hasDetailedData: false,
     latest: null,
@@ -434,77 +565,156 @@ export function analyzeSleep(entries: SleepEntryInput[], goals?: SleepGoals): Sl
     debt14Min: null,
     insights: [],
   };
+}
 
-  if (!nights.length) return empty;
-
-  const recent7 = nights.slice(0, RECENT_WINDOW_NIGHTS);
+function computeDebtAndRecommendedDuration(
+  recent7: SleepEntryInput[],
+  nights: SleepEntryInput[],
+  targetDuration: number,
+): {
+  debt7Min: number | null;
+  debt14Min: number | null;
+  recommendedDurationMin: number;
+} {
   const debt7Min = computeCumulativeDebt(recent7, targetDuration);
   const debt14Min = computeCumulativeDebt(nights, targetDuration);
-
   const recoveryBoost =
-    debt7Min != null && debt7Min > 30
+    debt7Min !== null && debt7Min > 30
       ? Math.min(Math.ceil(debt7Min / RECENT_WINDOW_NIGHTS), MAX_RECOVERY_BOOST_MIN)
       : 0;
-  const recommendedDurationMin = targetDuration + recoveryBoost;
+  return {
+    debt7Min,
+    debt14Min,
+    recommendedDurationMin: targetDuration + recoveryBoost,
+  };
+}
 
-  const avgScore = avg(recent7.map((n) => n.sleepScore).filter((v): v is number => v != null));
-  const avgDuration = avg(recent7.map((n) => n.sleepMinutes).filter((v): v is number => v != null));
+function computeRecentNightAverages(recent7: SleepEntryInput[]): {
+  avgScore: number | null;
+  avgDuration: number | null;
+  avgDeepPct: number | null;
+  avgRemPct: number | null;
+  avgStress: number | null;
+} {
+  const { avgDeepPct, avgRemPct } = computePhasePercentages(recent7);
+  const stresses = recent7
+    .map((night) => night.sleepAvgStress)
+    .filter((value): value is number => value !== null);
+  return {
+    avgScore: avg(recent7.map((night) => night.sleepScore).filter((v): v is number => v !== null)),
+    avgDuration: avg(
+      recent7.map((night) => night.sleepMinutes).filter((v): v is number => v !== null),
+    ),
+    avgDeepPct,
+    avgRemPct,
+    avgStress: avg(stresses),
+  };
+}
 
-  const deepPcts: number[] = [];
-  const remPcts: number[] = [];
-  for (const n of recent7) {
-    const sleep = (n.sleepDeepMin ?? 0) + (n.sleepLightMin ?? 0) + (n.sleepRemMin ?? 0);
-    if (sleep > 0) {
-      if (n.sleepDeepMin != null) deepPcts.push((n.sleepDeepMin / sleep) * 100);
-      if (n.sleepRemMin != null) remPcts.push((n.sleepRemMin / sleep) * 100);
-    }
-  }
-  const avgDeepPct = avg(deepPcts);
-  const avgRemPct = avg(remPcts);
-
-  // Coucher conseillé & régularité : médiane sur 14 nuits (habitudes récentes).
+function computeBedtimeStats(
+  nights: SleepEntryInput[],
+  recommendedDurationMin: number,
+  goals: SleepGoals | undefined,
+  debt7Min: number | null,
+): {
+  regularity: number | null;
+  avgBedtime: number | null;
+  recommendedBedtime: number | null;
+} {
   const bedtimes = nights
-    .map((n) => n.sleepBedtimeMin)
-    .filter((v): v is number => v != null)
+    .map((night) => night.sleepBedtimeMin)
+    .filter((value): value is number => value !== null)
     .map(normalizeBedtime);
-  const wakes = nights.map((n) => n.sleepWakeMin).filter((v): v is number => v != null);
-  const stresses = recent7.map((n) => n.sleepAvgStress).filter((v): v is number => v != null);
-
+  const wakes = nights.map((night) => night.sleepWakeMin).filter((value): value is number => value !== null);
   const regularity = medianAbsoluteDeviation(bedtimes);
   const medianBedtimeNorm = median(bedtimes);
-  const avgBedtime = medianBedtimeNorm != null ? medianBedtimeNorm % 1440 : null;
-  const medianWake = median(wakes);
-
-  let recommendedBedtime: number | null = null;
-  if (medianWake != null) {
-    const raw = medianWake - recommendedDurationMin - FALL_ASLEEP_BUFFER_MIN;
-    recommendedBedtime = ((raw % 1440) + 1440) % 1440;
-  }
-  if (goals?.bedtimeTargetMin != null && debt7Min != null && debt7Min <= 30) {
-    recommendedBedtime = goals.bedtimeTargetMin;
-  }
-
-  const [latestNight] = nights;
-  const targetMin = goals?.targetDurationMin ?? TARGET_DURATION_MIN;
-  const latestBreakdown = buildSleepScoreBreakdown(
-    latestNight.sleepDeepMin,
-    latestNight.sleepRemMin,
-    latestNight.sleepMinutes,
-    null,
-    targetMin,
+  const avgBedtime = medianBedtimeNorm !== null ? medianBedtimeNorm % 1440 : null;
+  const recommendedBedtime = computeRecommendedBedtimeMin(
+    median(wakes),
+    recommendedDurationMin,
+    goals,
+    debt7Min,
   );
-  const latest: SleepLatest = {
-    date: latestNight.date,
-    sharpitScore: latestBreakdown.sharpitScore,
-    sharpitScoreTone: scoreTone(latestBreakdown.sharpitScore),
-    restorativeRatio: latestBreakdown.restorativeRatio,
-    garminScore: latestNight.sleepScore,
-    durationMin: latestNight.sleepMinutes,
-    bedtimeMin: latestNight.sleepBedtimeMin,
-    wakeMin: latestNight.sleepWakeMin,
-    phases: buildPhases(latestNight),
-  };
+  return { regularity, avgBedtime, recommendedBedtime };
+}
 
+function hasDetailedNightData(nights: SleepEntryInput[]): boolean {
+  return nights.some(
+    (night) =>
+      night.sleepScore !== null ||
+      night.sleepDeepMin !== null ||
+      night.sleepBedtimeMin !== null ||
+      night.sleepWakeMin !== null,
+  );
+}
+
+function roundNullable(value: number | null): number | null {
+  return value !== null ? Math.round(value) : null;
+}
+
+function buildSleepCoachResult(input: {
+  nights: SleepEntryInput[];
+  latest: SleepLatest;
+  insights: SleepInsight[];
+  avgScore: number | null;
+  avgDuration: number | null;
+  avgDeepPct: number | null;
+  avgRemPct: number | null;
+  regularity: number | null;
+  recommendedBedtime: number | null;
+  recommendedDurationMin: number;
+  targetDuration: number;
+  debt7Min: number | null;
+  debt14Min: number | null;
+}): SleepCoachView {
+  return {
+    hasData: true,
+    hasDetailedData: hasDetailedNightData(input.nights),
+    latest: input.latest,
+    avg: {
+      score: roundNullable(input.avgScore),
+      durationMin: roundNullable(input.avgDuration),
+      deepPct: roundNullable(input.avgDeepPct),
+      remPct: roundNullable(input.avgRemPct),
+      nights: input.nights.length,
+    },
+    regularityMin: roundNullable(input.regularity),
+    recommendedBedtimeMin: input.recommendedBedtime,
+    recommendedDurationMin: input.recommendedDurationMin,
+    targetDurationMin: input.targetDuration,
+    debt7Min: roundNullable(input.debt7Min),
+    debt14Min: roundNullable(input.debt14Min),
+    insights: input.insights,
+  };
+}
+
+export function analyzeSleep(entries: SleepEntryInput[], goals?: SleepGoals): SleepCoachView {
+  const targetDuration = goals?.targetDurationMin ?? TARGET_DURATION_MIN;
+  const sorted = [...entries].sort(
+    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+  );
+  const nights = sorted.filter(isCoachNight).slice(0, COACH_WINDOW_NIGHTS);
+  if (!nights.length) {
+    return emptySleepCoachView(targetDuration);
+  }
+
+  const recent7 = nights.slice(0, RECENT_WINDOW_NIGHTS);
+  const { debt7Min, debt14Min, recommendedDurationMin } = computeDebtAndRecommendedDuration(
+    recent7,
+    nights,
+    targetDuration,
+  );
+  const { avgScore, avgDuration, avgDeepPct, avgRemPct, avgStress } =
+    computeRecentNightAverages(recent7);
+  const { regularity, avgBedtime, recommendedBedtime } = computeBedtimeStats(
+    nights,
+    recommendedDurationMin,
+    goals,
+    debt7Min,
+  );
+
+  const targetMin = goals?.targetDurationMin ?? TARGET_DURATION_MIN;
+  const latest = buildLatestSleep(nights[0]!, targetMin);
   const insights = buildInsights({
     avgDuration,
     avgDeepPct,
@@ -512,7 +722,7 @@ export function analyzeSleep(entries: SleepEntryInput[], goals?: SleepGoals): Sl
     regularity,
     avgBedtime,
     recommendedBedtime,
-    avgStress: avg(stresses),
+    avgStress,
     targetDuration,
     recommendedDuration: recommendedDurationMin,
     bedtimeGoal: goals?.bedtimeTargetMin ?? null,
@@ -520,31 +730,19 @@ export function analyzeSleep(entries: SleepEntryInput[], goals?: SleepGoals): Sl
     debt14Min,
   });
 
-  const hasDetailedData = nights.some(
-    (n) =>
-      n.sleepScore != null ||
-      n.sleepDeepMin != null ||
-      n.sleepBedtimeMin != null ||
-      n.sleepWakeMin != null,
-  );
-
-  return {
-    hasData: true,
-    hasDetailedData,
+  return buildSleepCoachResult({
+    nights,
     latest,
-    avg: {
-      score: avgScore != null ? Math.round(avgScore) : null,
-      durationMin: avgDuration != null ? Math.round(avgDuration) : null,
-      deepPct: avgDeepPct != null ? Math.round(avgDeepPct) : null,
-      remPct: avgRemPct != null ? Math.round(avgRemPct) : null,
-      nights: nights.length,
-    },
-    regularityMin: regularity != null ? Math.round(regularity) : null,
-    recommendedBedtimeMin: recommendedBedtime,
-    recommendedDurationMin,
-    targetDurationMin: targetDuration,
-    debt7Min: debt7Min != null ? Math.round(debt7Min) : null,
-    debt14Min: debt14Min != null ? Math.round(debt14Min) : null,
     insights,
-  };
+    avgScore,
+    avgDuration,
+    avgDeepPct,
+    avgRemPct,
+    regularity,
+    recommendedBedtime,
+    recommendedDurationMin,
+    targetDuration,
+    debt7Min,
+    debt14Min,
+  });
 }

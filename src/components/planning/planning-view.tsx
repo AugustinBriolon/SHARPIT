@@ -2,7 +2,9 @@
 
 /** `?date=2026-08-23` from a deep link, or nothing if it is not a plain day. */
 function parseCalendarDateParam(value: string | null): Date | null {
-  if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
+  if (!value || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return null;
+  }
   const parsed = new Date(`${value}T00:00:00`);
   return Number.isNaN(parsed.getTime()) ? null : parsed;
 }
@@ -121,7 +123,7 @@ export function PlanningView({
     () =>
       goals
         .flatMap((g) =>
-          g.kind === 'RACE' && !g.achieved && g.targetDate != null
+          g.kind === 'RACE' && !g.achieved && g.targetDate !== null
             ? { goal: g, target: new Date(g.targetDate) }
             : [],
         )
@@ -136,13 +138,22 @@ export function PlanningView({
   );
 
   const week = useMemo(
-    () => resolvePlanningWeek(weekStart, activities, planned, nextRace?.target ?? null, builtWeeks),
+    () =>
+      resolvePlanningWeek({
+        weekStart,
+        activities,
+        planned,
+        raceDate: nextRace?.target ?? null,
+        builtWeeks,
+      }),
     [weekStart, activities, planned, nextRace?.target, builtWeeks],
   );
 
   const planWeek = useMemo(() => {
     const plan = planQuery.data;
-    if (!plan?.weeks) return undefined;
+    if (!plan?.weeks) {
+      return undefined;
+    }
     const key = format(week.start, 'yyyy-MM-dd');
     return plan.weeks.find((w) => format(new Date(w.weekStart), 'yyyy-MM-dd') === key);
   }, [planQuery.data, week.start]);
@@ -153,7 +164,7 @@ export function PlanningView({
       date.setDate(date.getDate() + i);
       const dayPlanned = week.planned.filter((p) => isSameDay(new Date(p.date), date));
       const linkedIds = new Set(
-        dayPlanned.map((p) => p.activityId).filter((id): id is string => id != null),
+        dayPlanned.map((p) => p.activityId).filter((id): id is string => id !== null),
       );
       const dayActivities = week.activities.filter(
         (a) => isSameDay(new Date(a.date), date) && !linkedIds.has(a.id),
@@ -176,17 +187,23 @@ export function PlanningView({
   );
 
   const deepLinkSession = useMemo(() => {
-    if (!plannedIdFromUrl || plannedQuery.isPending) return null;
+    if (!plannedIdFromUrl || plannedQuery.isPending) {
+      return null;
+    }
     return planned.find((s) => s.id === plannedIdFromUrl) ?? null;
   }, [plannedIdFromUrl, plannedQuery.isPending, planned]);
 
   useEffect(() => {
-    if (!plannedIdFromUrl) return;
+    if (!plannedIdFromUrl) {
+      return;
+    }
     prefetchPlannedSessionDetail(queryClient, plannedIdFromUrl);
   }, [plannedIdFromUrl, queryClient]);
 
   useEffect(() => {
-    if (!deepLinkSession) return;
+    if (!deepLinkSession) {
+      return;
+    }
     const sessionWeek = startOfWeek(new Date(deepLinkSession.date), WEEK_OPTS);
     setWeekStart((current) => (isSameDay(current, sessionWeek) ? current : sessionWeek));
   }, [deepLinkSession]);
@@ -205,9 +222,13 @@ export function PlanningView({
     const params = new URLSearchParams(searchParams.toString());
     const hadPlanned = params.has('planned');
     const hadCreate = showCoachMenu && params.has('create');
-    if (!hadPlanned && !hadCreate) return;
+    if (!hadPlanned && !hadCreate) {
+      return;
+    }
     params.delete('planned');
-    if (hadCreate) params.delete('create');
+    if (hadCreate) {
+      params.delete('create');
+    }
     const query = params.toString();
     router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
   }
@@ -236,7 +257,7 @@ export function PlanningView({
   }
 
   const isCreateDialog = dialog?.mode === 'create' || createFromUrl;
-  const showPlannedDialog = isCreateDialog || dialog?.mode === 'edit' || deepLinkSession != null;
+  const showPlannedDialog = isCreateDialog || dialog?.mode === 'edit' || deepLinkSession !== null;
   const editSession = dialog?.mode === 'edit' ? dialog.session : deepLinkSession;
   const createDefaultDate = dialog?.mode === 'create' ? dialog.date : new Date();
 
@@ -403,17 +424,19 @@ function WeekSummary({
     );
   }
 
-  const hasMeta = (weeksToRace != null && weeksToRace >= 0) || planWeek != null || total > 0;
-  if (!hasMeta) return null;
+  const hasMeta = (weeksToRace !== null && weeksToRace >= 0) || planWeek !== null || total > 0;
+  if (!hasMeta) {
+    return null;
+  }
 
   return (
     <div className="text-muted-foreground flex flex-wrap items-center gap-x-2 gap-y-0.5 text-sm">
-      {weeksToRace != null && weeksToRace >= 0 && (
+      {weeksToRace !== null && weeksToRace >= 0 && (
         <span>{weeksToRace === 0 ? 'Semaine course' : `S-${weeksToRace}`}</span>
       )}
       {planWeek && (
         <>
-          {weeksToRace != null && weeksToRace >= 0 && <span className="opacity-30">·</span>}
+          {weeksToRace !== null && weeksToRace >= 0 && <span className="opacity-30">·</span>}
           <span style={{ color: phaseColors[planWeek.phase] }}>
             {phaseLabels[planWeek.phase]}
             {planWeek.isDeload ? ' · deload' : ''}
@@ -600,10 +623,14 @@ function DayRow({
 
 function firstOpenPlannedSessionId(groups: ReturnType<typeof groupPlannedSessions>): string | null {
   for (const item of groups) {
-    if (item.kind === 'single' && !item.session.completed) return item.session.id;
+    if (item.kind === 'single' && !item.session.completed) {
+      return item.session.id;
+    }
     if (item.kind === 'brick') {
       const open = item.sessions.find((s) => !s.completed);
-      if (open) return open.id;
+      if (open) {
+        return open.id;
+      }
     }
   }
   return null;
@@ -614,9 +641,15 @@ function plannedSessionMeta(
   goalTitle?: string | null,
 ): InstrumentListChipMeta[] {
   const meta: InstrumentListChipMeta[] = [];
-  if (session.startTime) meta.push(session.startTime);
-  if (session.durationMin != null) meta.push(formatPlannedDuration(session.durationMin));
-  if (goalTitle) meta.push(`Sert ${goalTitle}`);
+  if (session.startTime) {
+    meta.push(session.startTime);
+  }
+  if (session.durationMin !== null) {
+    meta.push(formatPlannedDuration(session.durationMin));
+  }
+  if (goalTitle) {
+    meta.push(`Sert ${goalTitle}`);
+  }
   return meta;
 }
 

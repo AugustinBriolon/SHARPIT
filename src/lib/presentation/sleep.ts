@@ -37,7 +37,12 @@ function emptySleepViewModel(): SleepViewModel {
     nightStatus: 'missing',
     sleepScore: null,
     adequacyDisplay: { label: '—', colorClass: 'text-muted-foreground' },
-    scoreBreakdown: buildSleepScoreBreakdown(null, null, null, null),
+    scoreBreakdown: buildSleepScoreBreakdown({
+      deepMin: null,
+      remMin: null,
+      totalMin: null,
+      debtMin: null,
+    }),
     totalSleepMin: null,
     deepMin: null,
     remMin: null,
@@ -85,7 +90,9 @@ export function resolveSleepNightStatus(
   totalSleepMin: number | null,
   liveDayId: string = format(new Date(), 'yyyy-MM-dd'),
 ): SleepNightStatus {
-  if (totalSleepMin != null && totalSleepMin > 0) return 'present';
+  if (totalSleepMin !== null && totalSleepMin > 0) {
+    return 'present';
+  }
   return trainingDayId === liveDayId ? 'pending' : 'missing';
 }
 
@@ -93,8 +100,12 @@ export function sleepAdequacySignalForNight(
   nightStatus: SleepNightStatus,
   sleepScore: number | null,
 ): SleepAdequacySignal {
-  if (nightStatus === 'pending') return 'PENDING';
-  if (nightStatus === 'missing') return 'MISSING';
+  if (nightStatus === 'pending') {
+    return 'PENDING';
+  }
+  if (nightStatus === 'missing') {
+    return 'MISSING';
+  }
   return mapSleepScoreToAdequacy(sleepScore) ?? 'MISSING';
 }
 
@@ -105,7 +116,9 @@ export async function buildSleepViewModel(
   const snapshot = await getOrBuildAthleteSnapshot(athleteId, trainingDayId);
   const { recovery } = snapshot;
 
-  if (!recovery) return emptySleepViewModel();
+  if (!recovery) {
+    return emptySleepViewModel();
+  }
 
   const refDate = parseISO(trainingDayId);
 
@@ -128,7 +141,7 @@ export async function buildSleepViewModel(
   const totalSleepMin = todayEntry ? effectiveSleepMinutes(todayEntry) : null;
 
   const awakeMin =
-    totalSleepMin != null && deepMin != null && remMin != null && lightMin != null
+    totalSleepMin !== null && deepMin !== null && remMin !== null && lightMin !== null
       ? Math.max(0, totalSleepMin - deepMin - remMin - lightMin)
       : (todayEntry?.sleepAwakeMin ?? null);
 
@@ -140,13 +153,13 @@ export async function buildSleepViewModel(
     ...sleepGoals,
   });
 
-  const scoreBreakdown = buildSleepScoreBreakdown(
+  const scoreBreakdown = buildSleepScoreBreakdown({
     deepMin,
     remMin,
-    totalSleepMin,
-    null,
-    sleepTargetMin,
-  );
+    totalMin: totalSleepMin,
+    debtMin: null,
+    targetMin: sleepTargetMin,
+  });
 
   // Never fall back to twin sleep dimension when tonight's health row is absent —
   // that reused yesterday's score as "Sommeil insuffisant" for an unslept night.
@@ -159,11 +172,13 @@ export async function buildSleepViewModel(
     healthByDay,
     7,
     (d, e) => {
-      if (isSameDay(d, refDate)) return null;
+      if (isSameDay(d, refDate)) {
+        return null;
+      }
       return e ? effectiveSleepMinutes(e) : null;
     },
     refDate,
-  ).filter((value): value is number => value != null);
+  ).filter((value): value is number => value !== null);
 
   const avgSleepMinutes7d =
     last7Sleep.length > 0
@@ -171,11 +186,11 @@ export async function buildSleepViewModel(
       : null;
 
   const sleepDelta7d =
-    nightPresent && totalSleepMin != null && avgSleepMinutes7d != null
+    nightPresent && totalSleepMin !== null && avgSleepMinutes7d !== null
       ? totalSleepMin - avgSleepMinutes7d
       : null;
   const targetDeltaMin =
-    nightPresent && totalSleepMin != null ? totalSleepMin - sleepTargetMin : null;
+    nightPresent && totalSleepMin !== null ? totalSleepMin - sleepTargetMin : null;
 
   const autonomicScore = recovery.dimensions.autonomic.available
     ? recovery.dimensions.autonomic.score
@@ -183,8 +198,8 @@ export async function buildSleepViewModel(
   const recoverySignal = mapRecoveryToSignal(recovery.readinessCategory as ReadinessCategory);
 
   let recoveryNote: string | null = null;
-  if (nightPresent && recovery.readinessScore != null) {
-    if (autonomicScore != null && sleepScore != null && autonomicScore > sleepScore) {
+  if (nightPresent && recovery.readinessScore !== null) {
+    if (autonomicScore !== null && sleepScore !== null && autonomicScore > sleepScore) {
       recoveryNote = `Récupération ${recovery.readinessScore}/100 (${recoverySignal.label.toLowerCase()}) — la VFC compense partiellement le sommeil.`;
     } else if (recovery.primaryLimitingFactor === 'sleep') {
       recoveryNote = `Récupération ${recovery.readinessScore}/100 — le sommeil est le facteur limitant aujourd'hui.`;

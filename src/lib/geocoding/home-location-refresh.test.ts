@@ -50,11 +50,15 @@ describe('distanceMeters / hasMovedSignificantly', () => {
   });
 
   it('ignores GPS jitter under the move threshold', () => {
-    expect(hasMovedSignificantly(48.92, 2.25, 48.92, 2.2513)).toBe(false);
+    expect(hasMovedSignificantly({ lat: 48.92, lng: 2.25 }, { lat: 48.92, lng: 2.2513 })).toBe(
+      false,
+    );
   });
 
   it('flags a real relocation past the move threshold', () => {
-    expect(hasMovedSignificantly(48.92, 2.25, 48.8566, 2.3522)).toBe(true);
+    expect(hasMovedSignificantly({ lat: 48.92, lng: 2.25 }, { lat: 48.8566, lng: 2.3522 })).toBe(
+      true,
+    );
     expect(HOME_LOCATION_MOVE_METERS).toBeGreaterThan(500);
   });
 });

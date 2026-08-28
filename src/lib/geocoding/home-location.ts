@@ -36,8 +36,8 @@ export async function resolveHomeLocation(
   });
 
   if (
-    profile?.homeLocationLat != null &&
-    profile.homeLocationLng != null &&
+    profile?.homeLocationLat !== null &&
+    profile.homeLocationLng !== null &&
     Number.isFinite(profile.homeLocationLat) &&
     Number.isFinite(profile.homeLocationLng)
   ) {

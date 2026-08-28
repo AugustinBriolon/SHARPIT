@@ -55,7 +55,9 @@ function resolveApplicability(activity: {
   title?: string | null;
   notes?: string | null;
 }): EnvironmentalApplicability {
-  if (isIndoorActivitySession(activity)) return 'INDOOR';
+  if (isIndoorActivitySession(activity)) {
+    return 'INDOOR';
+  }
   return 'OUTDOOR';
 }
 
@@ -97,7 +99,7 @@ export async function resolveActivityEnvironmentPresentation(input: {
     ]);
 
     const location =
-      input.activity.observedLocationLat != null && input.activity.observedLocationLng != null
+      input.activity.observedLocationLat !== null && input.activity.observedLocationLng !== null
         ? {
             latitude: input.activity.observedLocationLat,
             longitude: input.activity.observedLocationLng,

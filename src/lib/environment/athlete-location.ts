@@ -20,6 +20,38 @@ import { midpointFromLatLng } from '@/lib/geo/midpoint';
 
 import { resolveDefaultActivityLocation } from '@/lib/geocoding/default-activity-location';
 
+type RecentActivityLocation = {
+  observedLocationLat: number | null;
+  observedLocationLng: number | null;
+  observedLocationLabel: string | null;
+  stream: { data: unknown } | null;
+};
+
+function locationFromActivityStream(
+  activity: RecentActivityLocation | null | undefined,
+): (GeoLocation & { source: 'activity-gps' }) | null {
+  const streamData = activity?.stream?.data as { latlng?: unknown } | null | undefined;
+  const fromStream = streamData?.latlng ? midpointFromLatLng(streamData.latlng) : null;
+  if (!fromStream) {
+    return null;
+  }
+  return { ...fromStream, source: 'activity-gps' };
+}
+
+function locationFromObservedCoords(
+  activity: RecentActivityLocation | null | undefined,
+): (GeoLocation & { source: 'activity-observed' }) | null {
+  if (activity?.observedLocationLat === null || activity?.observedLocationLng === null) {
+    return null;
+  }
+  return {
+    latitude: activity.observedLocationLat,
+    longitude: activity.observedLocationLng,
+    label: activity.observedLocationLabel ?? undefined,
+    source: 'activity-observed',
+  };
+}
+
 export async function resolveAthleteGeoLocation(
   prisma: PrismaClient,
   athleteId: string,
@@ -40,18 +72,9 @@ export async function resolveAthleteGeoLocation(
     },
   });
 
-  const streamData = recentActivity?.stream?.data as { latlng?: unknown } | null | undefined;
-  const fromStream = streamData?.latlng ? midpointFromLatLng(streamData.latlng) : null;
-  if (fromStream) return { ...fromStream, source: 'activity-gps' };
-
-  if (recentActivity?.observedLocationLat != null && recentActivity.observedLocationLng != null) {
-    return {
-      latitude: recentActivity.observedLocationLat,
-      longitude: recentActivity.observedLocationLng,
-      label: recentActivity.observedLocationLabel ?? undefined,
-      source: 'activity-observed',
-    };
-  }
-
-  return resolveDefaultActivityLocation(prisma, athleteId, start);
+  return (
+    locationFromActivityStream(recentActivity) ??
+    locationFromObservedCoords(recentActivity) ??
+    resolveDefaultActivityLocation(prisma, athleteId, start)
+  );
 }

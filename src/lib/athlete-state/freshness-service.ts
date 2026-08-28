@@ -24,21 +24,31 @@ import {
 type TwinState = { computedAt?: string | Date } | null;
 
 function readComputedAt(state: unknown): Date | null {
-  if (!state || typeof state !== 'object') return null;
+  if (!state || typeof state !== 'object') {
+    return null;
+  }
   const raw = (state as TwinState)?.computedAt;
-  if (!raw) return null;
+  if (!raw) {
+    return null;
+  }
   const d = raw instanceof Date ? raw : new Date(raw);
   return Number.isNaN(d.getTime()) ? null : d;
 }
 
 function isStale(computed: Date | null, evidence: Date | null): boolean {
-  if (!evidence) return false;
-  if (!computed) return true;
+  if (!evidence) {
+    return false;
+  }
+  if (!computed) {
+    return true;
+  }
   return evidence > computed;
 }
 
 function hoursSince(date: Date | null): number | null {
-  if (!date) return null;
+  if (!date) {
+    return null;
+  }
   return (Date.now() - date.getTime()) / 3_600_000;
 }
 
@@ -50,7 +60,9 @@ export const BODY_PROVIDER_STALE_HOURS = 24;
 export const PLANNING_PROVIDER_STALE_HOURS = 2;
 
 function providerStale(lastSync: Date | null | undefined, thresholdHours: number): boolean {
-  if (!lastSync) return true;
+  if (!lastSync) {
+    return true;
+  }
   return hoursSince(lastSync)! > thresholdHours;
 }
 
@@ -59,8 +71,12 @@ export function garminSyncReference(
   lastSyncAt: Date | null | undefined,
   lastActivitySyncAt: Date | null | undefined,
 ): Date | null {
-  if (!lastActivitySyncAt) return null;
-  if (!lastSyncAt) return lastActivitySyncAt;
+  if (!lastActivitySyncAt) {
+    return null;
+  }
+  if (!lastSyncAt) {
+    return lastActivitySyncAt;
+  }
   return lastSyncAt.getTime() <= lastActivitySyncAt.getTime() ? lastSyncAt : lastActivitySyncAt;
 }
 
@@ -68,8 +84,12 @@ type ComputingFlags = Partial<Record<AthleteStateDomain, boolean>>;
 type SyncingFlags = Partial<Record<string, boolean>>;
 
 function syncOrComputing(computing: boolean, syncing: boolean): FreshnessLevel | null {
-  if (!computing && !syncing) return null;
-  if (computing) return 'computing';
+  if (!computing && !syncing) {
+    return null;
+  }
+  if (computing) {
+    return 'computing';
+  }
   return 'syncing';
 }
 
@@ -79,56 +99,94 @@ function resolveSleepFreshness(
   sleepEvidence: Date | null,
   recoveryAt: Date | null,
 ): FreshnessLevel {
-  if (syncingGarmin) return 'syncing';
-  if (expectSleep && !sleepEvidence) return 'awaiting_data';
-  if (isStale(recoveryAt, sleepEvidence)) return 'stale';
-  if (recoveryAt) return 'fresh';
+  if (syncingGarmin) {
+    return 'syncing';
+  }
+  if (expectSleep && !sleepEvidence) {
+    return 'awaiting_data';
+  }
+  if (isStale(recoveryAt, sleepEvidence)) {
+    return 'stale';
+  }
+  if (recoveryAt) {
+    return 'fresh';
+  }
   return 'awaiting_data';
 }
 
-function resolveRecoveryFreshness(
-  computingRecovery: boolean,
-  syncingGarmin: boolean,
-  recoveryAt: Date | null,
-  sleepEvidence: Date | null,
-  subjectiveEvidence: Date | null,
-): FreshnessLevel {
+type RecoveryFreshnessInput = {
+  computingRecovery: boolean;
+  syncingGarmin: boolean;
+  recoveryAt: Date | null;
+  sleepEvidence: Date | null;
+  subjectiveEvidence: Date | null;
+};
+
+function resolveRecoveryFreshness(input: RecoveryFreshnessInput): FreshnessLevel {
+  const { computingRecovery, syncingGarmin, recoveryAt, sleepEvidence, subjectiveEvidence } =
+    input;
   const busy = syncOrComputing(computingRecovery, syncingGarmin);
-  if (busy) return busy;
-  if (!recoveryAt) return 'unavailable';
+  if (busy) {
+    return busy;
+  }
+  if (!recoveryAt) {
+    return 'unavailable';
+  }
   if (isStale(recoveryAt, sleepEvidence) || isStale(recoveryAt, subjectiveEvidence)) {
     return 'stale';
   }
   return 'fresh';
 }
 
-function resolveTrainingFreshness(
-  computingTraining: boolean,
-  syncingGarmin: boolean,
-  syncingStrava: boolean,
-  sessionEvidence: Date | null,
-  dailyStrainUpdatedAt: Date | null,
-  dailyStrainAvailable: boolean,
-): FreshnessLevel {
+type TrainingFreshnessInput = {
+  computingTraining: boolean;
+  syncingGarmin: boolean;
+  syncingStrava: boolean;
+  sessionEvidence: Date | null;
+  dailyStrainUpdatedAt: Date | null;
+  dailyStrainAvailable: boolean;
+};
+
+function isTrainingEvidenceStale(input: TrainingFreshnessInput): boolean {
+  const { sessionEvidence, dailyStrainUpdatedAt } = input;
+  return Boolean(sessionEvidence && dailyStrainUpdatedAt && sessionEvidence > dailyStrainUpdatedAt);
+}
+
+function resolveTrainingFreshness(input: TrainingFreshnessInput): FreshnessLevel {
+  const { computingTraining, syncingGarmin, syncingStrava, sessionEvidence, dailyStrainAvailable } =
+    input;
   const busy = syncOrComputing(computingTraining, syncingGarmin || syncingStrava);
-  if (busy) return busy;
-  if (sessionEvidence && dailyStrainUpdatedAt && sessionEvidence > dailyStrainUpdatedAt) {
+  if (busy) {
+    return busy;
+  }
+  if (isTrainingEvidenceStale(input)) {
     return 'stale';
   }
-  if (sessionEvidence && !dailyStrainAvailable) return 'computing';
-  if (dailyStrainAvailable || sessionEvidence) return 'fresh';
+  if (sessionEvidence && !dailyStrainAvailable) {
+    return 'computing';
+  }
+  if (dailyStrainAvailable || sessionEvidence) {
+    return 'fresh';
+  }
   return 'awaiting_data';
 }
 
-function resolveReasoningFreshness(
-  computingReasoning: boolean,
-  reasoningAt: Date | null,
-  recoveryAt: Date | null,
-  fatigueAt: Date | null,
-  adaptationAt: Date | null,
-): FreshnessLevel {
-  if (computingReasoning) return 'computing';
-  if (!reasoningAt) return 'unavailable';
+type ReasoningFreshnessInput = {
+  computingReasoning: boolean;
+  reasoningAt: Date | null;
+  recoveryAt: Date | null;
+  fatigueAt: Date | null;
+  adaptationAt: Date | null;
+};
+
+function resolveReasoningFreshness(input: ReasoningFreshnessInput): FreshnessLevel {
+  const { computingReasoning, reasoningAt, recoveryAt, fatigueAt, adaptationAt } = input;
+  if (computingReasoning) {
+    return 'computing';
+  }
+  if (!reasoningAt) {
+    return 'unavailable';
+  }
   if (
     isStale(reasoningAt, recoveryAt) ||
     isStale(reasoningAt, fatigueAt) ||
@@ -139,32 +197,65 @@ function resolveReasoningFreshness(
   return 'fresh';
 }
 
+type RecommendationsFreshnessInput = {
+  computingRecommendations: boolean;
+  briefingAt: Date | null;
+  reasoningAt: Date | null;
+  sessionEvidence: Date | null;
+  phaseAtGeneration: string | null;
+  currentBriefingPhase: string;
+};
+
+function isRecommendationsStale(input: RecommendationsFreshnessInput): boolean {
+  const { briefingAt, reasoningAt, sessionEvidence, phaseAtGeneration, currentBriefingPhase } =
+    input;
+  if (!briefingAt) {
+    return false;
+  }
+  if (reasoningAt && briefingAt < reasoningAt) {
+    return true;
+  }
+  if (sessionEvidence && briefingAt < sessionEvidence) {
+    return true;
+  }
+  return Boolean(phaseAtGeneration && phaseAtGeneration !== currentBriefingPhase);
+}
+
 export function resolveRecommendationsFreshness(
-  computingRecommendations: boolean,
-  briefingAt: Date | null,
-  reasoningAt: Date | null,
-  sessionEvidence: Date | null,
-  phaseAtGeneration: string | null,
-  currentBriefingPhase: string,
+  input: RecommendationsFreshnessInput,
 ): FreshnessLevel {
-  if (computingRecommendations) return 'computing';
-  if (!briefingAt) return 'awaiting_data';
-  if (reasoningAt && briefingAt < reasoningAt) return 'stale';
-  if (sessionEvidence && briefingAt < sessionEvidence) return 'stale';
-  if (phaseAtGeneration && phaseAtGeneration !== currentBriefingPhase) return 'stale';
+  if (input.computingRecommendations) {
+    return 'computing';
+  }
+  if (!input.briefingAt) {
+    return 'awaiting_data';
+  }
+  if (isRecommendationsStale(input)) {
+    return 'stale';
+  }
   return 'fresh';
 }
 
-function resolveBodyFreshness(
-  syncingRenpho: boolean,
-  syncingWithings: boolean,
-  renphoConnected: boolean,
-  withingsConnected: boolean,
-  bodyEvidence: Date | null,
-): FreshnessLevel {
-  if (syncingRenpho || syncingWithings) return 'syncing';
-  if (!renphoConnected && !withingsConnected) return 'unavailable';
-  if (bodyEvidence && hoursSince(bodyEvidence)! < 24 * 14) return 'fresh';
+type BodyFreshnessInput = {
+  syncingRenpho: boolean;
+  syncingWithings: boolean;
+  renphoConnected: boolean;
+  withingsConnected: boolean;
+  bodyEvidence: Date | null;
+};
+
+function resolveBodyFreshness(input: BodyFreshnessInput): FreshnessLevel {
+  const { syncingRenpho, syncingWithings, renphoConnected, withingsConnected, bodyEvidence } =
+    input;
+  if (syncingRenpho || syncingWithings) {
+    return 'syncing';
+  }
+  if (!renphoConnected && !withingsConnected) {
+    return 'unavailable';
+  }
+  if (bodyEvidence && hoursSince(bodyEvidence)! < 24 * 14) {
+    return 'fresh';
+  }
   return 'awaiting_data';
 }
 
@@ -172,35 +263,17 @@ function resolvePlanningFreshness(
   syncingGoogle: boolean,
   googleLastSync: Date | null,
 ): FreshnessLevel {
-  if (syncingGoogle) return 'syncing';
-  if (googleLastSync) return 'fresh';
+  if (syncingGoogle) {
+    return 'syncing';
+  }
+  if (googleLastSync) {
+    return 'fresh';
+  }
   return 'awaiting_data';
 }
 
-export async function computeFreshnessSnapshot(params: {
-  athleteId: string;
-  trainingDayId: string;
-  computing?: ComputingFlags;
-  syncing?: SyncingFlags;
-}): Promise<AthleteFreshnessSnapshot> {
-  const { athleteId, trainingDayId } = params;
-  const computing = params.computing ?? {};
-  const syncing = params.syncing ?? {};
-
-  const [
-    twin,
-    latestSleep,
-    latestSession,
-    latestSubjective,
-    latestBody,
-    strava,
-    garmin,
-    renpho,
-    withings,
-    google,
-    briefing,
-    latestSnapshot,
-  ] = await Promise.all([
+async function loadFreshnessQueryData(athleteId: string, trainingDayId: string) {
+  return Promise.all([
     prisma.digitalTwin.findUnique({ where: { athleteId } }),
     prisma.observation.findFirst({
       where: { athleteId, type: 'SLEEP', trainingDayId },
@@ -253,199 +326,392 @@ export async function computeFreshnessSnapshot(params: {
       select: { generatedAt: true, payload: true },
     }),
   ]);
+}
 
-  const recoveryAt = readComputedAt(twin?.recoveryState);
-  const fatigueAt = readComputedAt(twin?.fatigueState);
-  const adaptationAt = readComputedAt(twin?.adaptationState);
-  const reasoningAt = readComputedAt(twin?.reasoningState);
-  const physicalHealthAt = readComputedAt(twin?.physicalHealthState);
-  const environmentAt = readComputedAt(twin?.environmentalStateMeta);
+type FreshnessQueryData = Awaited<ReturnType<typeof loadFreshnessQueryData>>;
 
-  const sleepEvidence = latestSleep?.timestamp ?? null;
-  const sessionEvidence = latestSession?.timestamp ?? null;
-  const subjectiveEvidence = latestSubjective?.timestamp ?? null;
-  const bodyEvidence = latestBody?.timestamp ?? null;
+function buildAccountProviderFreshness(input: {
+  provider: ProviderFreshness['provider'];
+  connected: boolean;
+  lastSyncAt: Date | null | undefined;
+  staleHours: number;
+  syncing: boolean;
+}): ProviderFreshness {
+  return {
+    provider: input.provider,
+    connected: input.connected,
+    lastSyncAt: input.lastSyncAt?.toISOString() ?? null,
+    stale: input.connected && providerStale(input.lastSyncAt ?? null, input.staleHours),
+    syncing: input.syncing,
+  };
+}
 
+function buildProviderFreshnessList(
+  accounts: {
+    strava: FreshnessQueryData[5];
+    garmin: FreshnessQueryData[6];
+    renpho: FreshnessQueryData[7];
+    withings: FreshnessQueryData[8];
+    google: FreshnessQueryData[9];
+  },
+  syncing: SyncingFlags,
+): ProviderFreshness[] {
+  const { strava, garmin, renpho, withings, google } = accounts;
+  const garminLastSync = garminSyncReference(garmin?.lastSyncAt, garmin?.lastActivitySyncAt);
+
+  return [
+    buildAccountProviderFreshness({
+      provider: 'garmin',
+      connected: isGarminAccountConnected(garmin),
+      lastSyncAt: garminLastSync,
+      staleHours: ACTIVITY_PROVIDER_STALE_HOURS,
+      syncing: syncing.garmin === true,
+    }),
+    buildAccountProviderFreshness({
+      provider: 'strava',
+      connected: isOAuthAccountConnected(strava),
+      lastSyncAt: strava?.lastSyncAt,
+      staleHours: ACTIVITY_PROVIDER_STALE_HOURS,
+      syncing: syncing.strava === true,
+    }),
+    buildAccountProviderFreshness({
+      provider: 'renpho',
+      connected: isRenphoAccountConnected(renpho),
+      lastSyncAt: renpho?.lastSyncAt,
+      staleHours: BODY_PROVIDER_STALE_HOURS,
+      syncing: syncing.renpho === true,
+    }),
+    buildAccountProviderFreshness({
+      provider: 'withings',
+      connected: isOAuthAccountConnected(withings),
+      lastSyncAt: withings?.lastSyncAt,
+      staleHours: BODY_PROVIDER_STALE_HOURS,
+      syncing: syncing.withings === true,
+    }),
+    buildAccountProviderFreshness({
+      provider: 'google',
+      connected: isOAuthAccountConnected(google),
+      lastSyncAt: google?.lastSyncAt,
+      staleHours: PLANNING_PROVIDER_STALE_HOURS,
+      syncing: syncing.google === true,
+    }),
+  ];
+}
+
+function makeDomainFreshness(input: {
+  computing: ComputingFlags;
+  domainName: AthleteStateDomain;
+  lastUpdatedAt: Date | null;
+  freshness: FreshnessLevel;
+  state: string;
+}): DomainFreshness {
+  const effectiveFreshness = input.computing[input.domainName] ? 'computing' : input.freshness;
+  return {
+    domain: input.domainName,
+    lastUpdatedAt: input.lastUpdatedAt?.toISOString() ?? null,
+    freshness: effectiveFreshness,
+    state: input.state,
+    productMessage: productMessageForDomain(input.domainName, effectiveFreshness),
+  };
+}
+
+function readTwinComputedTimes(twin: FreshnessQueryData[0]) {
+  return {
+    recoveryAt: readComputedAt(twin?.recoveryState),
+    fatigueAt: readComputedAt(twin?.fatigueState),
+    adaptationAt: readComputedAt(twin?.adaptationState),
+    reasoningAt: readComputedAt(twin?.reasoningState),
+    physicalHealthAt: readComputedAt(twin?.physicalHealthState),
+    environmentAt: readComputedAt(twin?.environmentalStateMeta),
+  };
+}
+
+function readDailyStrainEvidence(latestSnapshot: FreshnessQueryData[11]) {
   const snapshotPayload = latestSnapshot?.payload as
-    { dailyStrain?: { available?: boolean; strainScore?: number | null } } | undefined;
+    | { dailyStrain?: { available?: boolean; strainScore?: number | null } }
+    | undefined;
   const dailyStrainAvailable = Boolean(
-    snapshotPayload?.dailyStrain?.available && snapshotPayload.dailyStrain.strainScore != null,
+    snapshotPayload?.dailyStrain?.available && snapshotPayload.dailyStrain.strainScore !== null,
   );
   const dailyStrainUpdatedAt =
     dailyStrainAvailable && latestSnapshot?.generatedAt ? latestSnapshot.generatedAt : null;
-  const trainingEvidenceAt = sessionEvidence ?? dailyStrainUpdatedAt;
+  return { dailyStrainAvailable, dailyStrainUpdatedAt };
+}
 
-  const garminConnected = isGarminAccountConnected(garmin);
-  const stravaConnected = isOAuthAccountConnected(strava);
-  const renphoConnected = isRenphoAccountConnected(renpho);
-  const withingsConnected = isOAuthAccountConnected(withings);
-  const googleConnected = isOAuthAccountConnected(google);
+function readObservationTimestamp(
+  entry: { timestamp: Date } | null | undefined,
+): Date | null {
+  return entry?.timestamp ?? null;
+}
 
-  const providers: ProviderFreshness[] = [
-    {
-      provider: 'garmin',
-      connected: garminConnected,
-      lastSyncAt:
-        garminSyncReference(garmin?.lastSyncAt, garmin?.lastActivitySyncAt)?.toISOString() ?? null,
-      stale:
-        garminConnected &&
-        providerStale(
-          garminSyncReference(garmin?.lastSyncAt, garmin?.lastActivitySyncAt),
-          ACTIVITY_PROVIDER_STALE_HOURS,
-        ),
-      syncing: syncing.garmin === true,
-    },
-    {
-      provider: 'strava',
-      connected: stravaConnected,
-      lastSyncAt: strava?.lastSyncAt?.toISOString() ?? null,
-      stale: stravaConnected && providerStale(strava?.lastSyncAt, ACTIVITY_PROVIDER_STALE_HOURS),
-      syncing: syncing.strava === true,
-    },
-    {
-      provider: 'renpho',
-      connected: renphoConnected,
-      lastSyncAt: renpho?.lastSyncAt?.toISOString() ?? null,
-      stale: renphoConnected && providerStale(renpho?.lastSyncAt, BODY_PROVIDER_STALE_HOURS),
-      syncing: syncing.renpho === true,
-    },
-    {
-      provider: 'withings',
-      connected: withingsConnected,
-      lastSyncAt: withings?.lastSyncAt?.toISOString() ?? null,
-      stale: withingsConnected && providerStale(withings?.lastSyncAt, BODY_PROVIDER_STALE_HOURS),
-      syncing: syncing.withings === true,
-    },
-    {
-      provider: 'google',
-      connected: googleConnected,
-      lastSyncAt: google?.lastSyncAt?.toISOString() ?? null,
-      stale: googleConnected && providerStale(google?.lastSyncAt, PLANNING_PROVIDER_STALE_HOURS),
-      syncing: syncing.google === true,
-    },
-  ];
-
-  const morningWindow = new Date();
-  const expectSleep = morningWindow.getHours() < 14;
-
-  function domain(
-    domainName: AthleteStateDomain,
-    lastUpdatedAt: Date | null,
-    freshness: FreshnessLevel,
-    state: string,
-  ): DomainFreshness {
-    return {
-      domain: domainName,
-      lastUpdatedAt: lastUpdatedAt?.toISOString() ?? null,
-      freshness: computing[domainName] ? 'computing' : freshness,
-      state,
-      productMessage: productMessageForDomain(
-        domainName,
-        computing[domainName] ? 'computing' : freshness,
-      ),
-    };
-  }
-
-  const sleepFreshness = resolveSleepFreshness(
-    syncing.garmin === true,
-    expectSleep,
-    sleepEvidence,
-    recoveryAt,
+function readObservationEvidence(input: {
+  latestSleep: FreshnessQueryData[1];
+  latestSession: FreshnessQueryData[2];
+  latestSubjective: FreshnessQueryData[3];
+  latestBody: FreshnessQueryData[4];
+  latestSnapshot: FreshnessQueryData[11];
+}) {
+  const sessionEvidence = readObservationTimestamp(input.latestSession);
+  const { dailyStrainAvailable, dailyStrainUpdatedAt } = readDailyStrainEvidence(
+    input.latestSnapshot,
   );
 
-  const recoveryFreshness = resolveRecoveryFreshness(
-    computing.recovery === true,
-    syncing.garmin === true,
-    recoveryAt,
-    sleepEvidence,
-    subjectiveEvidence,
-  );
-
-  const trainingFreshness = resolveTrainingFreshness(
-    computing.training === true,
-    syncing.garmin === true,
-    syncing.strava === true,
+  return {
+    sleepEvidence: readObservationTimestamp(input.latestSleep),
     sessionEvidence,
-    dailyStrainUpdatedAt,
+    subjectiveEvidence: readObservationTimestamp(input.latestSubjective),
+    bodyEvidence: readObservationTimestamp(input.latestBody),
     dailyStrainAvailable,
-  );
+    dailyStrainUpdatedAt,
+    trainingEvidenceAt: sessionEvidence ?? dailyStrainUpdatedAt,
+  };
+}
 
-  const reasoningFreshness = resolveReasoningFreshness(
-    computing.reasoning === true,
-    reasoningAt,
-    recoveryAt,
-    fatigueAt,
-    adaptationAt,
-  );
+function readFreshnessEvidence(input: {
+  twin: FreshnessQueryData[0];
+  latestSleep: FreshnessQueryData[1];
+  latestSession: FreshnessQueryData[2];
+  latestSubjective: FreshnessQueryData[3];
+  latestBody: FreshnessQueryData[4];
+  latestSnapshot: FreshnessQueryData[11];
+}) {
+  return {
+    ...readTwinComputedTimes(input.twin),
+    ...readObservationEvidence(input),
+  };
+}
 
-  const briefingAt = briefing?.generatedAt ?? null;
-  const recommendationsFreshness = resolveRecommendationsFreshness(
-    computing.recommendations === true,
-    briefingAt,
-    reasoningAt,
-    sessionEvidence,
-    briefing?.phaseAtGeneration ?? null,
-    resolveBriefingPhase(new Date()),
-  );
-
-  const bodyFreshness = resolveBodyFreshness(
-    syncing.renpho === true,
-    syncing.withings === true,
-    renpho != null && isRenphoAccountConnected(renpho),
-    withings != null && isOAuthAccountConnected(withings),
-    bodyEvidence,
-  );
-
-  const planningFreshness = resolvePlanningFreshness(
-    syncing.google === true,
-    google?.lastSyncAt ?? null,
-  );
-
-  const domains: DomainFreshness[] = [
-    domain('sleep', recoveryAt, sleepFreshness, `sleep_obs=${sleepEvidence != null}`),
-    domain('recovery', recoveryAt, recoveryFreshness, `recovery_computed=${recoveryAt != null}`),
-    domain(
-      'training',
-      trainingEvidenceAt,
-      trainingFreshness,
-      `session_obs=${sessionEvidence != null},strain=${dailyStrainAvailable}`,
-    ),
-    domain('body', bodyEvidence, bodyFreshness, `body_obs=${bodyEvidence != null}`),
-    domain(
-      'physical',
-      physicalHealthAt,
-      physicalHealthAt ? 'fresh' : 'awaiting_data',
-      `physical_computed=${physicalHealthAt != null}`,
-    ),
-    domain(
-      'environment',
-      environmentAt,
-      environmentAt ? 'fresh' : 'awaiting_data',
-      `environment_computed=${environmentAt != null}`,
-    ),
-    domain(
-      'reasoning',
-      reasoningAt,
-      reasoningFreshness,
-      `reasoning_computed=${reasoningAt != null}`,
-    ),
-    domain(
-      'recommendations',
-      briefingAt,
-      recommendationsFreshness,
-      `briefing=${briefingAt != null}`,
-    ),
-    domain(
-      'planning',
-      google?.lastSyncAt ?? null,
-      planningFreshness,
-      `google_sync=${googleConnected}`,
-    ),
+function buildCoreDomainFreshnessList(input: {
+  computing: ComputingFlags;
+  syncing: SyncingFlags;
+  evidence: ReturnType<typeof readFreshnessEvidence>;
+  renpho: FreshnessQueryData[7];
+  withings: FreshnessQueryData[8];
+}): DomainFreshness[] {
+  const { computing, syncing, evidence, renpho, withings } = input;
+  return [
+    makeDomainFreshness({
+      computing,
+      domainName: 'sleep',
+      lastUpdatedAt: evidence.recoveryAt,
+      freshness: resolveSleepFreshness(
+        syncing.garmin === true,
+        new Date().getHours() < 14,
+        evidence.sleepEvidence,
+        evidence.recoveryAt,
+      ),
+      state: `sleep_obs=${evidence.sleepEvidence !== null}`,
+    }),
+    makeDomainFreshness({
+      computing,
+      domainName: 'recovery',
+      lastUpdatedAt: evidence.recoveryAt,
+      freshness: resolveRecoveryFreshness({
+        computingRecovery: computing.recovery === true,
+        syncingGarmin: syncing.garmin === true,
+        recoveryAt: evidence.recoveryAt,
+        sleepEvidence: evidence.sleepEvidence,
+        subjectiveEvidence: evidence.subjectiveEvidence,
+      }),
+      state: `recovery_computed=${evidence.recoveryAt !== null}`,
+    }),
+    makeDomainFreshness({
+      computing,
+      domainName: 'training',
+      lastUpdatedAt: evidence.trainingEvidenceAt,
+      freshness: resolveTrainingFreshness({
+        computingTraining: computing.training === true,
+        syncingGarmin: syncing.garmin === true,
+        syncingStrava: syncing.strava === true,
+        sessionEvidence: evidence.sessionEvidence,
+        dailyStrainUpdatedAt: evidence.dailyStrainUpdatedAt,
+        dailyStrainAvailable: evidence.dailyStrainAvailable,
+      }),
+      state: `session_obs=${evidence.sessionEvidence !== null},strain=${evidence.dailyStrainAvailable}`,
+    }),
+    makeDomainFreshness({
+      computing,
+      domainName: 'body',
+      lastUpdatedAt: evidence.bodyEvidence,
+      freshness: resolveBodyFreshness({
+        syncingRenpho: syncing.renpho === true,
+        syncingWithings: syncing.withings === true,
+        renphoConnected: isRenphoAccountConnected(renpho),
+        withingsConnected: isOAuthAccountConnected(withings),
+        bodyEvidence: evidence.bodyEvidence,
+      }),
+      state: `body_obs=${evidence.bodyEvidence !== null}`,
+    }),
   ];
+}
 
-  const productMessages = domains.map((d) => d.productMessage);
+function buildPhysicalEnvironmentDomains(input: {
+  computing: ComputingFlags;
+  evidence: ReturnType<typeof readFreshnessEvidence>;
+}): DomainFreshness[] {
+  return [
+    makeDomainFreshness({
+      computing: input.computing,
+      domainName: 'physical',
+      lastUpdatedAt: input.evidence.physicalHealthAt,
+      freshness: input.evidence.physicalHealthAt ? 'fresh' : 'awaiting_data',
+      state: `physical_computed=${input.evidence.physicalHealthAt !== null}`,
+    }),
+    makeDomainFreshness({
+      computing: input.computing,
+      domainName: 'environment',
+      lastUpdatedAt: input.evidence.environmentAt,
+      freshness: input.evidence.environmentAt ? 'fresh' : 'awaiting_data',
+      state: `environment_computed=${input.evidence.environmentAt !== null}`,
+    }),
+  ];
+}
+
+function buildRecommendationsDomain(input: {
+  computing: ComputingFlags;
+  evidence: ReturnType<typeof readFreshnessEvidence>;
+  briefing: FreshnessQueryData[10];
+}): DomainFreshness {
+  const briefingAt = input.briefing?.generatedAt ?? null;
+  return makeDomainFreshness({
+    computing: input.computing,
+    domainName: 'recommendations',
+    lastUpdatedAt: briefingAt,
+    freshness: resolveRecommendationsFreshness({
+      computingRecommendations: input.computing.recommendations === true,
+      briefingAt,
+      reasoningAt: input.evidence.reasoningAt,
+      sessionEvidence: input.evidence.sessionEvidence,
+      phaseAtGeneration: input.briefing?.phaseAtGeneration ?? null,
+      currentBriefingPhase: resolveBriefingPhase(new Date()),
+    }),
+    state: `briefing=${briefingAt !== null}`,
+  });
+}
+
+function buildReasoningPlanningDomains(input: {
+  computing: ComputingFlags;
+  syncing: SyncingFlags;
+  evidence: ReturnType<typeof readFreshnessEvidence>;
+  google: FreshnessQueryData[9];
+  briefing: FreshnessQueryData[10];
+}): DomainFreshness[] {
+  return [
+    makeDomainFreshness({
+      computing: input.computing,
+      domainName: 'reasoning',
+      lastUpdatedAt: input.evidence.reasoningAt,
+      freshness: resolveReasoningFreshness({
+        computingReasoning: input.computing.reasoning === true,
+        reasoningAt: input.evidence.reasoningAt,
+        recoveryAt: input.evidence.recoveryAt,
+        fatigueAt: input.evidence.fatigueAt,
+        adaptationAt: input.evidence.adaptationAt,
+      }),
+      state: `reasoning_computed=${input.evidence.reasoningAt !== null}`,
+    }),
+    buildRecommendationsDomain(input),
+    makeDomainFreshness({
+      computing: input.computing,
+      domainName: 'planning',
+      lastUpdatedAt: input.google?.lastSyncAt ?? null,
+      freshness: resolvePlanningFreshness(
+        input.syncing.google === true,
+        input.google?.lastSyncAt ?? null,
+      ),
+      state: `google_sync=${isOAuthAccountConnected(input.google)}`,
+    }),
+  ];
+}
+
+function buildExtendedDomainFreshnessList(input: {
+  computing: ComputingFlags;
+  syncing: SyncingFlags;
+  evidence: ReturnType<typeof readFreshnessEvidence>;
+  google: FreshnessQueryData[9];
+  briefing: FreshnessQueryData[10];
+}): DomainFreshness[] {
+  return [
+    ...buildPhysicalEnvironmentDomains(input),
+    ...buildReasoningPlanningDomains(input),
+  ];
+}
+
+function buildDomainFreshnessList(input: {
+  computing: ComputingFlags;
+  syncing: SyncingFlags;
+  twin: FreshnessQueryData[0];
+  latestSleep: FreshnessQueryData[1];
+  latestSession: FreshnessQueryData[2];
+  latestSubjective: FreshnessQueryData[3];
+  latestBody: FreshnessQueryData[4];
+  renpho: FreshnessQueryData[7];
+  withings: FreshnessQueryData[8];
+  google: FreshnessQueryData[9];
+  briefing: FreshnessQueryData[10];
+  latestSnapshot: FreshnessQueryData[11];
+}): DomainFreshness[] {
+  const evidence = readFreshnessEvidence(input);
+  return [
+    ...buildCoreDomainFreshnessList({
+      computing: input.computing,
+      syncing: input.syncing,
+      evidence,
+      renpho: input.renpho,
+      withings: input.withings,
+    }),
+    ...buildExtendedDomainFreshnessList({
+      computing: input.computing,
+      syncing: input.syncing,
+      evidence,
+      google: input.google,
+      briefing: input.briefing,
+    }),
+  ];
+}
+
+export async function computeFreshnessSnapshot(params: {
+  athleteId: string;
+  trainingDayId: string;
+  computing?: ComputingFlags;
+  syncing?: SyncingFlags;
+}): Promise<AthleteFreshnessSnapshot> {
+  const { athleteId, trainingDayId } = params;
+  const computing = params.computing ?? {};
+  const syncing = params.syncing ?? {};
+  const [
+    twin,
+    latestSleep,
+    latestSession,
+    latestSubjective,
+    latestBody,
+    strava,
+    garmin,
+    renpho,
+    withings,
+    google,
+    briefing,
+    latestSnapshot,
+  ] = await loadFreshnessQueryData(athleteId, trainingDayId);
+
+  const providers = buildProviderFreshnessList({ strava, garmin, renpho, withings, google }, syncing);
+  const domains = buildDomainFreshnessList({
+    computing,
+    syncing,
+    twin,
+    latestSleep,
+    latestSession,
+    latestSubjective,
+    latestBody,
+    renpho,
+    withings,
+    google,
+    briefing,
+    latestSnapshot,
+  });
+  const productMessages = domains.map((entry) => entry.productMessage);
   const overallFresh = domains.every(
-    (d) => d.freshness === 'fresh' || d.freshness === 'unavailable',
+    (entry) => entry.freshness === 'fresh' || entry.freshness === 'unavailable',
   );
 
   return {
@@ -459,32 +725,39 @@ export async function computeFreshnessSnapshot(params: {
   };
 }
 
+const PROVIDER_SYNC_MIN_HOUR: Partial<Record<ProviderFreshness['provider'], number>> = {
+  renpho: 6,
+  withings: 6,
+  google: 7,
+};
+
+function providerNeedsSyncNow(provider: ProviderFreshness, hour: number): boolean {
+  if (!provider.connected || provider.syncing || !provider.stale) {
+    return false;
+  }
+  if (provider.provider === 'garmin' || provider.provider === 'strava') {
+    return true;
+  }
+  const minHour = PROVIDER_SYNC_MIN_HOUR[provider.provider];
+  return minHour !== undefined && hour >= minHour;
+}
+
 export function providersNeedingSync(
   snapshot: AthleteFreshnessSnapshot,
   options?: { force?: boolean },
 ): string[] {
   if (options?.force) {
-    return snapshot.providers.filter((p) => p.connected).map((p) => p.provider);
+    return snapshot.providers.filter((provider) => provider.connected).map((provider) => provider.provider);
   }
 
   const hour = new Date().getHours();
-  const needs: string[] = [];
-
-  for (const p of snapshot.providers) {
-    if (!p.connected || p.syncing) continue;
-    if (!p.stale) continue;
-    if (p.provider === 'garmin' || p.provider === 'strava') {
-      needs.push(p.provider);
-    }
-    if ((p.provider === 'renpho' || p.provider === 'withings') && hour >= 6) {
-      needs.push(p.provider);
-    }
-    if (p.provider === 'google' && hour >= 7) {
-      needs.push(p.provider);
-    }
-  }
-
-  return [...new Set(needs)];
+  return [
+    ...new Set(
+      snapshot.providers
+        .filter((provider) => providerNeedsSyncNow(provider, hour))
+        .map((provider) => provider.provider),
+    ),
+  ];
 }
 
 export function trainingDayIdNow(): string {
@@ -493,7 +766,11 @@ export function trainingDayIdNow(): string {
 
 export function shouldSyncOnOpen(snapshot: AthleteFreshnessSnapshot): boolean {
   const hour = new Date().getHours();
-  if (hour < 5) return false;
-  if (!snapshot.overallFresh) return true;
+  if (hour < 5) {
+    return false;
+  }
+  if (!snapshot.overallFresh) {
+    return true;
+  }
   return snapshot.providers.some((p) => p.connected && p.stale);
 }

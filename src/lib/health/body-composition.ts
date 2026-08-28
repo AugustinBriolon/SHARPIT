@@ -44,9 +44,53 @@ export type BodySourcePrefs = {
 };
 
 function integrationToSource(id: IntegrationId): BodyCompositionSource | null {
-  if (id === 'withings') return BodyCompositionSource.WITHINGS;
-  if (id === 'renpho') return BodyCompositionSource.RENPHO;
+  if (id === 'withings') {
+    return BodyCompositionSource.WITHINGS;
+  }
+  if (id === 'renpho') {
+    return BodyCompositionSource.RENPHO;
+  }
   return null;
+}
+
+function resolveEnabledSources(
+  prefs?: BodySourcePrefs | null,
+): Set<BodyCompositionSource> | null {
+  if (!prefs) {
+    return null;
+  }
+  return new Set(
+    prefs.enabled
+      .map(integrationToSource)
+      .filter((s): s is BodyCompositionSource => s !== null),
+  );
+}
+
+function pickPreferredDayRows(
+  dayRows: BodyCompositionMeasurement[],
+  primarySource: BodyCompositionSource | null,
+  enabledSources: Set<BodyCompositionSource> | null,
+): BodyCompositionMeasurement | null {
+  const filtered = enabledSources
+    ? dayRows.filter((row) => enabledSources.has(row.source))
+    : dayRows;
+  if (filtered.length === 0) {
+    return null;
+  }
+
+  const preferred =
+    primarySource !== null
+      ? filtered.filter((row) => row.source === primarySource)
+      : filtered.filter((row) => row.source === BodyCompositionSource.WITHINGS);
+
+  const pool = preferred.length > 0 ? preferred : filtered;
+
+  if (pool.length > 1 && pool.every((row) => row.source === BodyCompositionSource.WITHINGS)) {
+    return mergeWithingsDayRows(pool);
+  }
+
+  pool.sort((a, b) => b.measuredAt.getTime() - a.measuredAt.getTime());
+  return pool[0]!;
 }
 
 /**
@@ -63,38 +107,21 @@ export function dedupeBodyCompositionByDay(
   for (const row of rows) {
     const dayKey = format(row.measuredAt, 'yyyy-MM-dd');
     const bucket = byDay.get(dayKey);
-    if (bucket) bucket.push(row);
-    else byDay.set(dayKey, [row]);
+    if (bucket) {
+      bucket.push(row);
+    } else {
+      byDay.set(dayKey, [row]);
+    }
   }
 
-  const picked: BodyCompositionMeasurement[] = [];
   const primarySource = prefs?.primary ? integrationToSource(prefs.primary) : null;
-  // `prefs` presence (not `enabled.length`) decides whether to filter — a caller
-  // that explicitly disabled every source for this class (enabled: []) means
-  // "show nothing", not "no filtering info, show everything". Only a genuinely
-  // absent `prefs` (a caller that never resolved any) means the latter.
-  const enabledSources = prefs
-    ? new Set(
-        prefs.enabled.map(integrationToSource).filter((s): s is BodyCompositionSource => s != null),
-      )
-    : null;
+  const enabledSources = resolveEnabledSources(prefs);
+  const picked: BodyCompositionMeasurement[] = [];
 
   for (const dayRows of byDay.values()) {
-    const filtered = enabledSources ? dayRows.filter((r) => enabledSources.has(r.source)) : dayRows;
-    if (filtered.length === 0) continue;
-
-    const preferred =
-      primarySource != null
-        ? filtered.filter((r) => r.source === primarySource)
-        : filtered.filter((r) => r.source === BodyCompositionSource.WITHINGS);
-
-    const pool = preferred.length > 0 ? preferred : filtered;
-
-    if (pool.length > 1 && pool.every((r) => r.source === BodyCompositionSource.WITHINGS)) {
-      picked.push(mergeWithingsDayRows(pool));
-    } else {
-      pool.sort((a, b) => b.measuredAt.getTime() - a.measuredAt.getTime());
-      picked.push(pool[0]!);
+    const measurement = pickPreferredDayRows(dayRows, primarySource, enabledSources);
+    if (measurement) {
+      picked.push(measurement);
     }
   }
 
@@ -137,10 +164,12 @@ function mergeWithingsDayRows(rows: BodyCompositionMeasurement[]): BodyCompositi
   const merged: BodyCompositionMeasurement = { ...sorted[0]! };
 
   for (const key of WITHINGS_MERGE_SCALAR_KEYS) {
-    if (merged[key] != null) continue;
+    if (merged[key] !== null) {
+      continue;
+    }
     for (const row of sorted) {
       const value = row[key];
-      if (value != null) {
+      if (value !== null) {
         (merged as Record<string, unknown>)[key] = value;
         break;
       }
@@ -149,7 +178,9 @@ function mergeWithingsDayRows(rows: BodyCompositionMeasurement[]): BodyCompositi
 
   let extras = merged.withingsExtras;
   for (const row of sorted) {
-    if (row.withingsExtras == null) continue;
+    if (row.withingsExtras === null) {
+      continue;
+    }
     extras = mergeWithingsExtrasJson(extras, row.withingsExtras);
   }
   merged.withingsExtras = extras;
@@ -157,39 +188,69 @@ function mergeWithingsDayRows(rows: BodyCompositionMeasurement[]): BodyCompositi
   return merged;
 }
 
+function mergeEcgExtras(
+  objA: Record<string, unknown>,
+  objB: Record<string, unknown>,
+): Record<string, unknown> {
+  const ecgA = (objA.ecg as Record<string, number> | undefined) ?? {};
+  const ecgB = (objB.ecg as Record<string, number> | undefined) ?? {};
+  if (Object.keys(ecgA).length + Object.keys(ecgB).length === 0) {
+    return {};
+  }
+  return { ecg: { ...ecgA, ...ecgB } };
+}
+
+function mergeSegmentalExtras(
+  objA: Record<string, unknown>,
+  objB: Record<string, unknown>,
+): Record<string, unknown> {
+  const segmentalA = (objA.segmental as unknown[] | undefined) ?? [];
+  const segmentalB = (objB.segmental as unknown[] | undefined) ?? [];
+  if (segmentalA.length + segmentalB.length === 0) {
+    return {};
+  }
+  return { segmental: [...segmentalA, ...segmentalB] };
+}
+
+function mergeEcgAfibClassification(
+  objA: Record<string, unknown>,
+  objB: Record<string, unknown>,
+): Record<string, unknown> {
+  if (objA.ecgAfibClassification === null && objB.ecgAfibClassification === null) {
+    return {};
+  }
+  return {
+    ecgAfibClassification:
+      (objB.ecgAfibClassification as number | undefined) ??
+      (objA.ecgAfibClassification as number | undefined),
+  };
+}
+
 function mergeWithingsExtrasJson(
   a: BodyCompositionMeasurement['withingsExtras'],
   b: BodyCompositionMeasurement['withingsExtras'],
 ): BodyCompositionMeasurement['withingsExtras'] {
-  if (a == null) return b;
-  if (b == null) return a;
+  if (a === null) {
+    return b;
+  }
+  if (b === null) {
+    return a;
+  }
   const objA = a as Record<string, unknown>;
   const objB = b as Record<string, unknown>;
-  const ecgA = (objA.ecg as Record<string, number> | undefined) ?? {};
-  const ecgB = (objB.ecg as Record<string, number> | undefined) ?? {};
-  const segmentalA = (objA.segmental as unknown[] | undefined) ?? [];
-  const segmentalB = (objB.segmental as unknown[] | undefined) ?? [];
   return {
     ...objA,
     ...objB,
-    ...(objA.ecgAfibClassification != null || objB.ecgAfibClassification != null
-      ? {
-          ecgAfibClassification:
-            (objB.ecgAfibClassification as number | undefined) ??
-            (objA.ecgAfibClassification as number | undefined),
-        }
-      : {}),
-    ...(Object.keys(ecgA).length + Object.keys(ecgB).length > 0
-      ? { ecg: { ...ecgA, ...ecgB } }
-      : {}),
-    ...(segmentalA.length + segmentalB.length > 0
-      ? { segmental: [...segmentalA, ...segmentalB] }
-      : {}),
+    ...mergeEcgAfibClassification(objA, objB),
+    ...mergeEcgExtras(objA, objB),
+    ...mergeSegmentalExtras(objA, objB),
   } as BodyCompositionMeasurement['withingsExtras'];
 }
 
 function average(values: number[]): number | null {
-  if (!values.length) return null;
+  if (!values.length) {
+    return null;
+  }
   return values.reduce((sum, value) => sum + value, 0) / values.length;
 }
 
@@ -203,18 +264,18 @@ export function computeCompositionTrend(
   const sorted = [...entries].sort((a, b) => b.measuredAt.getTime() - a.measuredAt.getTime());
   const values = sorted
     .map((entry) => entry[key])
-    .filter((value): value is number => value != null);
+    .filter((value): value is number => value !== null);
 
   const latest = values[0] ?? null;
   const last7 = values.slice(0, 7);
   const prev7 = values.slice(7, 14);
   const avg7 = average(last7);
   const avgPrev = average(prev7);
-  const delta = avg7 != null && avgPrev != null ? Number((avg7 - avgPrev).toFixed(2)) : null;
+  const delta = avg7 !== null && avgPrev !== null ? Number((avg7 - avgPrev).toFixed(2)) : null;
 
   return {
-    latest: latest != null ? Number(latest.toFixed(2)) : null,
-    avg7: avg7 != null ? Number(avg7.toFixed(2)) : null,
+    latest: latest !== null ? Number(latest.toFixed(2)) : null,
+    avg7: avg7 !== null ? Number(avg7.toFixed(2)) : null,
     delta,
   };
 }
@@ -252,7 +313,9 @@ export function filterCompositionSeriesByDays<T extends { date: string }>(
   days: number | null,
   now: Date = new Date(),
 ): T[] {
-  if (days == null) return points;
+  if (days === null) {
+    return points;
+  }
   const sinceKey = format(startOfDay(addDays(now, -days)), 'yyyy-MM-dd');
   return points.filter((point) => point.date >= sinceKey);
 }
@@ -264,7 +327,9 @@ export function formatWeightKgDisplay(weightKg: number): string {
 }
 
 export function formatCompositionDelta(delta: number | null, unit = ''): string | undefined {
-  if (delta == null) return undefined;
+  if (delta === null) {
+    return undefined;
+  }
   const rounded = Number(delta.toFixed(2));
   const sign = rounded > 0 ? '+' : '';
   return `${sign}${rounded}${unit} vs 7j préc.`;

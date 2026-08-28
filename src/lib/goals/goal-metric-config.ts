@@ -100,10 +100,14 @@ export const measureLabels: Record<PeriodMeasure, string> = {
 export function parseGoalMetricConfig(
   metricKey: string | null | undefined,
 ): GoalMetricConfig | null {
-  if (!metricKey) return null;
+  if (!metricKey) {
+    return null;
+  }
   try {
     const parsed = JSON.parse(metricKey) as GoalMetricConfig;
-    if (parsed?.v !== 1 || !parsed.template) return null;
+    if (parsed?.v !== 1 || !parsed.template) {
+      return null;
+    }
     return parsed;
   } catch {
     return null;
@@ -139,7 +143,7 @@ export function buildPeriodGoalFields(
   customTitle?: string | null,
 ) {
   const sportPart =
-    config.sport != null ? activityTypeLabels[config.sport].toLowerCase() : 'tous sports';
+    config.sport !== null ? activityTypeLabels[config.sport].toLowerCase() : 'tous sports';
   const measurePart = measureLabels[config.measure].toLowerCase();
   const defaultTitle = `${periodLabels[config.period]} — ${measurePart} (${sportPart})`;
 
@@ -177,20 +181,28 @@ export function formatDistanceLabel(meters: number): string {
 }
 
 export function formatChronoSeconds(seconds: number | null | undefined): string {
-  if (seconds == null || !Number.isFinite(seconds) || seconds < 0) return '—';
+  if (seconds === null || !Number.isFinite(seconds) || seconds < 0) {
+    return '—';
+  }
   const total = Math.round(seconds);
   const h = Math.floor(total / 3600);
   const m = Math.floor((total % 3600) / 60);
   const s = total % 60;
-  if (h > 0) return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  if (h > 0) {
+    return `${h}:${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  }
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
 export function parseChronoInput(value: string): number | null {
   const trimmed = value.trim();
-  if (!trimmed) return null;
+  if (!trimmed) {
+    return null;
+  }
   const parts = trimmed.split(':').map((p) => p.trim());
-  if (parts.some((p) => p === '' || Number.isNaN(Number(p)))) return null;
+  if (parts.some((p) => p === '' || Number.isNaN(Number(p)))) {
+    return null;
+  }
   if (parts.length === 2) {
     const [m, s] = parts.map(Number);
     return m * 60 + s;
@@ -202,25 +214,34 @@ export function parseChronoInput(value: string): number | null {
   return null;
 }
 
+const GOAL_UNIT_FORMATTERS: Record<string, (value: number) => string> = {
+  h: (value) => {
+    const hours = value / 3600;
+    return hours >= 10 ? `${Math.round(hours)} h` : `${hours.toFixed(1)} h`;
+  },
+  km: (value) => {
+    const km = value / 1000;
+    return km >= 100 ? `${Math.round(km)} km` : `${km.toFixed(1)} km`;
+  },
+  m: (value) => `${Math.round(value)} m`,
+  séances: (value) => `${Math.round(value)} séance${value > 1 ? 's' : ''}`,
+};
+
 export function formatGoalDisplayValue(
   value: number | null,
   unit: string | null,
   config: GoalMetricConfig | null,
 ): string {
-  if (value == null) return '—';
+  if (value === null) {
+    return '—';
+  }
   if (unit === 'chrono' || config?.template === 'performance') {
     return formatChronoSeconds(value);
   }
-  if (unit === 'h') {
-    const h = value / 3600;
-    return h >= 10 ? `${Math.round(h)} h` : `${h.toFixed(1)} h`;
+  const formatter = unit ? GOAL_UNIT_FORMATTERS[unit] : null;
+  if (formatter) {
+    return formatter(value);
   }
-  if (unit === 'km') {
-    const km = value / 1000;
-    return km >= 100 ? `${Math.round(km)} km` : `${km.toFixed(1)} km`;
-  }
-  if (unit === 'm') return `${Math.round(value)} m`;
-  if (unit === 'séances') return `${Math.round(value)} séance${value > 1 ? 's' : ''}`;
   return unit ? `${value} ${unit}` : String(value);
 }
 
@@ -228,7 +249,9 @@ export function inferPerformanceEndMode(
   config: PerformanceMetricConfig,
   targetDate: string | Date | null | undefined,
 ): GoalEndMode {
-  if (config.endMode) return config.endMode;
+  if (config.endMode) {
+    return config.endMode;
+  }
   return targetDate ? 'on_date' : 'on_achieved';
 }
 
@@ -236,7 +259,9 @@ export function describeMetricGoal(
   config: GoalMetricConfig | null,
   targetDate?: string | Date | null,
 ): string | null {
-  if (!config) return null;
+  if (!config) {
+    return null;
+  }
   if (config.template === 'performance') {
     const end =
       inferPerformanceEndMode(config, targetDate) === 'on_date' && targetDate
@@ -244,14 +269,16 @@ export function describeMetricGoal(
         : '';
     return `${activityTypeLabels[config.sport]} · ${formatDistanceLabel(config.distanceM)}${end}`;
   }
-  const sport = config.sport != null ? activityTypeLabels[config.sport] : 'Tous sports';
+  const sport = config.sport !== null ? activityTypeLabels[config.sport] : 'Tous sports';
   const end = targetDate ? ` · jusqu'au ${formatGoalEndDate(targetDate)}` : '';
   return `${periodLabels[config.period]} · ${measureLabels[config.measure]} · ${sport}${end}`;
 }
 
 export function formatGoalEndDate(value: string | Date): string {
   const d = new Date(value);
-  if (Number.isNaN(d.getTime())) return '—';
+  if (Number.isNaN(d.getTime())) {
+    return '—';
+  }
   return new Intl.DateTimeFormat('fr-FR', {
     day: 'numeric',
     month: 'short',
@@ -260,15 +287,21 @@ export function formatGoalEndDate(value: string | Date): string {
 }
 
 export function formatAchievementPeriodKey(periodKey: string): string | null {
-  if (periodKey === '_performance') return null;
+  if (periodKey === '_performance') {
+    return null;
+  }
   const week = periodKey.match(/^(\d{4})-W(\d{2})$/);
-  if (week) return `Semaine ${week[2]} · ${week[1]}`;
+  if (week) {
+    return `Semaine ${week[2]} · ${week[1]}`;
+  }
   const month = periodKey.match(/^(\d{4})-(\d{2})$/);
   if (month) {
     const d = new Date(Number(month[1]), Number(month[2]) - 1, 1);
     return new Intl.DateTimeFormat('fr-FR', { month: 'long', year: 'numeric' }).format(d);
   }
-  if (/^\d{4}$/.test(periodKey)) return `Année ${periodKey}`;
+  if (/^\d{4}$/.test(periodKey)) {
+    return `Année ${periodKey}`;
+  }
   return periodKey;
 }
 
@@ -276,9 +309,13 @@ export function isGoalExpired(
   targetDate: string | Date | null | undefined,
   ref = new Date(),
 ): boolean {
-  if (!targetDate) return false;
+  if (!targetDate) {
+    return false;
+  }
   const end = new Date(targetDate);
-  if (Number.isNaN(end.getTime())) return false;
+  if (Number.isNaN(end.getTime())) {
+    return false;
+  }
   end.setHours(23, 59, 59, 999);
   return ref > end;
 }
@@ -286,7 +323,9 @@ export function isGoalExpired(
 /** Convertit la saisie utilisateur (km, h, etc.) en valeur stockée. */
 export function parseTargetInput(measure: PeriodMeasure, raw: string): number | null {
   const n = Number(raw.replace(',', '.'));
-  if (!Number.isFinite(n) || n <= 0) return null;
+  if (!Number.isFinite(n) || n <= 0) {
+    return null;
+  }
   switch (measure) {
     case 'activity_count':
       return Math.round(n);
@@ -300,7 +339,9 @@ export function parseTargetInput(measure: PeriodMeasure, raw: string): number | 
 }
 
 export function targetInputFromStored(measure: PeriodMeasure, stored: number | null): string {
-  if (stored == null) return '';
+  if (stored === null) {
+    return '';
+  }
   switch (measure) {
     case 'activity_count':
       return String(Math.round(stored));
