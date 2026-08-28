@@ -28,6 +28,7 @@ export type ActivityDetailHeaderActivity = Pick<
   | 'load'
   | 'rpe'
   | 'feeling'
+  | 'weather'
   | 'hikeTrip'
   | 'plannedSession'
 >;
@@ -93,32 +94,31 @@ function ActivityDetailIdentityBlock({
 }
 
 function ActivityDetailHeaderCoachSection({
-  activityId,
-  feeling,
-  rpe,
+  activity,
   plannedSession,
   plannedAnalysisReady,
 }: {
-  activityId: string;
-  feeling: string | null;
-  rpe: number | null;
+  activity: ActivityDetailHeaderActivity;
   plannedSession: PlannedSessionSummary | null;
   plannedAnalysisReady: boolean;
 }) {
   return (
-    <div className="space-y-3">
+    <div className="flex flex-col gap-4">
       <DiscussWithCoachButton
         className="w-full"
         label="Discuter de cette séance"
         size="sm"
-        target={{ kind: 'activity', activityId }}
+        target={{ kind: 'activity', activityId: activity.id }}
       />
       <ActivityHeaderContextChips
-        activityId={activityId}
-        feeling={feeling}
+        activityId={activity.id}
+        activityTitle={activity.title}
+        activityType={activity.type}
+        feeling={activity.feeling}
         plannedAnalysisReady={plannedAnalysisReady}
         plannedSession={plannedSession}
-        rpe={rpe}
+        rpe={activity.rpe}
+        weather={activity.weather}
       />
     </div>
   );
@@ -160,11 +160,9 @@ export function ActivityDetailHeaderContent({
       <ActivityDetailIdentityBlock activity={activity} summary={summary} title={title} />
 
       <ActivityDetailHeaderCoachSection
-        activityId={activity.id}
-        feeling={activity.feeling}
+        activity={activity}
         plannedAnalysisReady={plannedAnalysisReady}
         plannedSession={plannedSession}
-        rpe={activity.rpe}
       />
     </div>
   );
