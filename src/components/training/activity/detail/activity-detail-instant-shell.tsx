@@ -2,6 +2,7 @@
 
 import { ActivityType } from '@prisma/client';
 import { useQueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import { ActivityDetailHeader } from '@/components/training/activity/detail/activity-detail-header';
 import { ActivityDetailHero } from '@/components/training/activity/detail/activity-detail-hero';
 import { ActivityDetailSkeleton } from '@/components/training/activity/detail/activity-detail-skeleton';
@@ -9,12 +10,16 @@ import { ActivityMetaRow } from '@/components/training/activity/detail/activity-
 import { ActivityDetailInsights } from '@/components/training/activity/insights/activity-detail-insights';
 import { buildStrengthStats } from '@/components/training/activity/detail/activity-detail-helpers';
 import { useActivities } from '@/hooks/use-data';
+import { useActivityDetail } from '@/hooks/use-activity-detail';
+import { fetchActivityStream } from '@/lib/query/fetchers';
 import { queryKeys } from '@/lib/query/keys';
 import {
+  activityDetailToDetailShell,
+  activityDetailToHeaderActivity,
   clientActivityToDetailShell,
-  clientActivityToHeaderActivity,
 } from '@/lib/activity/detail/activity-detail-cache';
 import { activityDetailExpectsMap } from '@/lib/activity/detail/activity-detail-skeleton-layout';
+import type { ActivityDetail } from '@/components/training/activity/detail/types';
 import type { ClientActivity } from '@/lib/query/types';
 
 function InstantShellFrame({ children }: { children: React.ReactNode }) {
@@ -25,14 +30,24 @@ function InstantShellFrame({ children }: { children: React.ReactNode }) {
   );
 }
 
-function CachedActivityInstantBody({ cached }: { cached: ClientActivity }) {
+function CachedActivityInstantBody({ activity }: { activity: ActivityDetail }) {
   const queryClient = useQueryClient();
-  const activity = clientActivityToDetailShell(cached);
-  const headerActivity = clientActivityToHeaderActivity(cached);
-  const isStrength = cached.type === ActivityType.STRENGTH;
-  const isTriathlon = cached.type === ActivityType.TRIATHLON;
-  const streamCached = queryClient.getQueryData(queryKeys.activityStream(cached.id));
+  const headerActivity = activityDetailToHeaderActivity(activity);
+  const isStrength = activity.type === ActivityType.STRENGTH;
+  const isTriathlon = activity.type === ActivityType.TRIATHLON;
+  const streamCached = queryClient.getQueryData(queryKeys.activityStream(activity.id));
   const showInsights = Boolean(streamCached) && !isStrength && !isTriathlon;
+
+  useEffect(() => {
+    if (isStrength || isTriathlon || streamCached) {
+      return;
+    }
+    void queryClient.prefetchQuery({
+      queryKey: queryKeys.activityStream(activity.id),
+      queryFn: () => fetchActivityStream(activity.id),
+      staleTime: Infinity,
+    });
+  }, [activity.id, isStrength, isTriathlon, queryClient, streamCached]);
 
   return (
     <>
@@ -49,27 +64,43 @@ function CachedActivityInstantBody({ cached }: { cached: ClientActivity }) {
       </div>
       {showInsights ? (
         <ActivityDetailInsights
-          activityId={cached.id}
-          expectMap={activityDetailExpectsMap(cached)}
+          activityId={activity.id}
+          expectMap={activityDetailExpectsMap(activity)}
           isTriathlon={false}
-          type={cached.type}
+          type={activity.type}
         />
       ) : null}
     </>
   );
 }
 
-function useCachedActivity(id: string | null | undefined): ClientActivity | undefined {
+function listRowToDetailShell(cached: ClientActivity): ActivityDetail {
+  return activityDetailToDetailShell(clientActivityToDetailShell(cached));
+}
+
+function useCachedActivityShell(id: string | null | undefined): ActivityDetail | undefined {
+  const { data: detail } = useActivityDetail(id ?? undefined);
   const { data: activities } = useActivities();
+
+  if (detail) {
+    return activityDetailToDetailShell(detail);
+  }
+
   if (!id || !activities) {
     return undefined;
   }
-  return activities.find((activity) => activity.id === id);
+
+  const listRow = activities.find((activity) => activity.id === id);
+  if (!listRow) {
+    return undefined;
+  }
+
+  return listRowToDetailShell(listRow);
 }
 
 /**
  * Instant shell while the activity detail RSC resolves.
- * When the activity is already in the shared list cache, render real chrome
+ * When the activity is already in the detail or list cache, render real chrome
  * (header, meta, hero) instead of a skeleton — revisit stays Instant.
  */
 export function ActivityDetailInstantShell({
@@ -77,7 +108,7 @@ export function ActivityDetailInstantShell({
 }: {
   activityId?: string;
 }) {
-  const cached = useCachedActivity(activityIdProp);
+  const cached = useCachedActivityShell(activityIdProp);
 
   if (!cached) {
     return (
@@ -89,7 +120,7 @@ export function ActivityDetailInstantShell({
 
   return (
     <InstantShellFrame>
-      <CachedActivityInstantBody cached={cached} />
+      <CachedActivityInstantBody activity={cached} />
     </InstantShellFrame>
   );
 }

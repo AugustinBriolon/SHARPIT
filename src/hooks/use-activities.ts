@@ -10,7 +10,8 @@ import {
   patchTodayPostSessionLoopAfterFeeling,
 } from '@/lib/query/patch-post-session-loop';
 import { sendJson } from '@/lib/query/send-json';
-import type { ClientActivity } from '@/lib/query/types';
+import type { QueryClient } from '@tanstack/react-query';
+import type { ClientActivity, ClientActivityDetail } from '@/lib/query/types';
 import type { createActivitySchema } from '@/lib/validators/activity';
 import { nullishFields } from '@/lib/query/nullish-fields';
 import type { z } from 'zod';
@@ -65,6 +66,28 @@ function optimisticSwimMetrics(payload: ActivityMutationPayload) {
 
 function containsFeelingUpdate(data: Partial<ActivityMutationPayload>): boolean {
   return data.feeling !== undefined || data.rpe !== undefined;
+}
+
+function patchActivityDetailCache(
+  queryClient: QueryClient,
+  id: string,
+  data: Partial<ActivityMutationPayload>,
+): void {
+  queryClient.setQueryData<ClientActivityDetail>(queryKeys.activity(id), (prev) => {
+    if (!prev) {
+      return prev;
+    }
+    let nextDate = prev.date;
+    if (data.date) {
+      nextDate = data.date instanceof Date ? data.date : new Date(data.date as string);
+    }
+    return {
+      ...prev,
+      ...data,
+      date: nextDate,
+      updatedAt: new Date(),
+    } as ClientActivityDetail;
+  });
 }
 
 function optimisticActivity(payload: ActivityMutationPayload): ClientActivity {
@@ -156,6 +179,7 @@ export function useActivityMutations() {
       if (containsFeelingUpdate(vars.data)) {
         patchTodayPostSessionLoopAfterFeeling(queryClient, vars.id);
       }
+      patchActivityDetailCache(queryClient, vars.id, vars.data);
       return updateOptimistic.onMutate(vars);
     },
     onError: (err, vars, context) => {
@@ -167,22 +191,31 @@ export function useActivityMutations() {
     onSettled: (_data, _error, vars) => {
       void queryClient.invalidateQueries({ queryKey: key });
       void queryClient.invalidateQueries({ queryKey: queryKeys.records });
-      if (vars && containsFeelingUpdate(vars.data)) {
-        invalidateTodayPresentationCaches(queryClient);
+      if (vars) {
+        void queryClient.invalidateQueries({ queryKey: queryKeys.activity(vars.id) });
+        if (containsFeelingUpdate(vars.data)) {
+          invalidateTodayPresentationCaches(queryClient);
+        }
       }
     },
   });
 
+  const removeOptimistic = listOptimistic<ClientActivity, string>({
+    queryClient,
+    queryKey: key,
+    apply: (prev, id) => prev.filter((a) => a.id !== id),
+    success: 'Séance supprimée',
+    error: 'Impossible de supprimer la séance.',
+    invalidateOnSettle: false,
+  });
+
   const remove = useMutation({
     mutationFn: (id: string) => sendJson(`/api/activities/${id}`, 'DELETE'),
-    ...listOptimistic<ClientActivity, string>({
-      queryClient,
-      queryKey: key,
-      apply: (prev, id) => prev.filter((a) => a.id !== id),
-      success: 'Séance supprimée',
-      error: 'Impossible de supprimer la séance.',
-      invalidateOnSettle: true,
-    }),
+    ...removeOptimistic,
+    onMutate: async (id) => {
+      queryClient.removeQueries({ queryKey: queryKeys.activity(id) });
+      return removeOptimistic.onMutate(id);
+    },
     onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: key });
       // Deleting a linked activity resets the planned session (completed → false).

@@ -10,6 +10,7 @@ import {
 import { ActivityHikeOvernightPanel } from '@/components/training/activity/detail/activity-hike-overnight-panel';
 import { ActivityMetaRow } from '@/components/training/activity/detail/activity-meta-row';
 import { ActivityDetailRouteSkeleton } from '@/components/training/activity/detail/activity-detail-route-skeleton';
+import { ActivityDetailCacheSeeder } from '@/components/training/activity/detail/activity-detail-cache-seeder';
 import { ActivitySpecsNotes } from '@/components/training/activity/detail/activity-specs-notes';
 import { ActivityStrengthExercises } from '@/components/training/activity/detail/activity-strength-exercises';
 import { ActivityGoalValidationsCard } from '@/components/goals/cards/activity-goal-validations-card';
@@ -141,6 +142,7 @@ function ActivityDetailContent({
 }) {
   return (
     <>
+      <ActivityDetailCacheSeeder activity={activity} />
       <ActivityDetailHeader
         activity={{
           id: activity.id,

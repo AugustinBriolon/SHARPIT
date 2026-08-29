@@ -38,6 +38,7 @@ export {
   useActivityStream,
   useMultisportStreams,
 } from '@/hooks/use-activities';
+export { useActivityDetail } from '@/hooks/use-activity-detail';
 export type { ActivityMutationPayload } from '@/hooks/use-activities';
 
 export { useGoalAchievements, useGoalMutations, useGoals } from '@/hooks/use-goals';

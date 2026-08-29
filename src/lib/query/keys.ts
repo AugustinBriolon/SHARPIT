@@ -1,5 +1,6 @@
 export const queryKeys = {
   activities: ['activities'] as const,
+  activity: (id: string) => ['activity', id] as const,
   health: (days: number, date?: string) => ['health', days, date ?? 'today'] as const,
   bodyComposition: (days?: number | 'all') => ['body-composition', days ?? 'all'] as const,
   goals: ['goals'] as const,
