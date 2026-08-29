@@ -37,8 +37,7 @@ import {
 } from '@/lib/coach/chat/coach-chat-cache';
 import { readCoachInputDraft, writeCoachInputDraft } from '@/lib/coach/chat/coach-input-draft';
 import type { CoachDiscussContext } from '@/lib/coach/chat/coach-discuss-context';
-import { AI_BUDGET_WARNING_HEADER, aiBudgetWarningMessage } from '@/lib/access/ai-budget-shared';
-import { toast } from '@/components/ui/toast';
+import { AI_BUDGET_WARNING_HEADER, RETRY_AFTER_HEADER } from '@/lib/access/ai-budget-shared';
 
 function coachInputPlaceholder(guardDisabled: boolean, hasPendingApprovals: boolean): string {
   if (guardDisabled) {
@@ -97,6 +96,11 @@ export function useCoachChat({
   const lastPersistedFingerprint = useRef<string>('');
   const messagesRef = useRef<UIMessage[]>(initialMessages);
   const viewportRef = useRef<HTMLElement>(null);
+  const [budgetWarning, setBudgetWarning] = useState(false);
+  // Epoch ms, not a boolean: lets a stale block from a previous mount/timer
+  // race auto-clear itself against wall-clock time rather than trusting a
+  // flag that could outlive its own timeout.
+  const [budgetBlockedUntil, setBudgetBlockedUntil] = useState<number | null>(null);
 
   const coachTransport = useMemo(
     () =>
@@ -105,14 +109,45 @@ export function useCoachChat({
         fetch: async (input, init) => {
           const signal = replaceChatFetchSignal(conversationId, init?.signal);
           const response = await fetch(input, { ...init, signal });
-          if (response.ok && response.headers.get(AI_BUDGET_WARNING_HEADER) === '1') {
-            toast.info(aiBudgetWarningMessage());
+          if (response.ok) {
+            setBudgetWarning(response.headers.get(AI_BUDGET_WARNING_HEADER) === '1');
+            setBudgetBlockedUntil(null);
+          } else if (response.status === 402) {
+            setBudgetWarning(false);
+            const retryAfterSeconds = Number(response.headers.get(RETRY_AFTER_HEADER));
+            setBudgetBlockedUntil(
+              Number.isFinite(retryAfterSeconds) && retryAfterSeconds > 0
+                ? Date.now() + retryAfterSeconds * 1000
+                : null,
+            );
           }
           return response;
         },
       }),
     [conversationId],
   );
+
+  // Server enforces the budget on every request regardless — this only
+  // re-enables the composer once the wait it quoted has actually elapsed,
+  // so the athlete isn't stuck disabled forever without a fresh response
+  // to tell them otherwise.
+  useEffect(() => {
+    if (budgetBlockedUntil === null) {
+      return;
+    }
+    const remainingMs = budgetBlockedUntil - Date.now();
+    if (remainingMs <= 0) {
+      setBudgetBlockedUntil(null);
+      return;
+    }
+    const timer = setTimeout(() => setBudgetBlockedUntil(null), remainingMs);
+    return () => clearTimeout(timer);
+  }, [budgetBlockedUntil]);
+
+  const budgetBlocked = budgetBlockedUntil !== null && budgetBlockedUntil > Date.now();
+  const budgetRetryAfterSeconds = budgetBlocked
+    ? Math.max(1, Math.ceil((budgetBlockedUntil - Date.now()) / 1000))
+    : null;
 
   const persistMessages = useCallback(
     (all: UIMessage[]) => {
@@ -193,7 +228,7 @@ export function useCoachChat({
 
   const isBusy = status === 'submitted' || status === 'streaming';
   const streamIdle = !isBusy;
-  const inputLocked = isBusy || guardDisabled;
+  const inputLocked = isBusy || guardDisabled || budgetBlocked;
 
   useEffect(() => {
     autoReplyStarted.current = false;
@@ -201,6 +236,8 @@ export function useCoachChat({
     blockAutoSend.current = false;
     lastPersistedFingerprint.current = '';
     setShowJumpToLatest(false);
+    setBudgetWarning(false);
+    setBudgetBlockedUntil(null);
   }, [conversationId]);
 
   useEffect(() => {
@@ -366,6 +403,9 @@ export function useCoachChat({
     streamIdle,
     inputLocked,
     guardDisabled,
+    budgetWarning,
+    budgetBlocked,
+    budgetRetryAfterSeconds,
     showJumpToLatest,
     setShowJumpToLatest,
     viewportRef,

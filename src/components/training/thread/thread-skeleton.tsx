@@ -22,7 +22,7 @@ function Row({ wide = false }: { wide?: boolean }) {
         <SkeletonDataValue heightClassName="h-3" widthClassName="w-7" />
       </div>
       <div
-        className="border-analysis-border/50 flex min-w-0 flex-1 items-center gap-2.5 rounded-[14px] border px-3 py-2.5"
+        className="border-analysis-border/50 rounded-analysis flex min-w-0 flex-1 items-center gap-2.5 border px-3 py-2.5"
         aria-hidden
       >
         <span className="bg-muted/60 size-[7px] shrink-0 animate-pulse rounded-full" />

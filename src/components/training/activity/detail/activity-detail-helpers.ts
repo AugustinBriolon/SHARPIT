@@ -90,23 +90,16 @@ export function formatActivityDetailMeta(activity: {
   ].join(' · ');
 }
 
-/** Secondary stats under the title — durée · charge/TSS · RPE. */
-export function formatActivityDetailStats(
-  activity: {
-    duration: number | null;
-    load: number | null;
-    rpe: number | null;
-  },
+/**
+ * Secondary stat under the title — charge/TSS only. Duration lives in its own
+ * card below the chips and RPE lives in the feeling chip; repeating them here
+ * was redundant.
+ */
+export function formatActivityDetailLoad(
+  activity: { load: number | null },
   mode: DisplayMode = 'essential',
-): string {
-  const parts: string[] = [formatDuration(activity.duration)];
-  if (activity.load !== null) {
-    parts.push(formatTrainingLoad(activity.load, mode));
-  }
-  if (activity.rpe !== null) {
-    parts.push(`RPE ${activity.rpe}`);
-  }
-  return parts.join(' · ');
+): string | null {
+  return activity.load !== null ? formatTrainingLoad(activity.load, mode) : null;
 }
 
 export function rpeTone(rpe: number): ChipTone {

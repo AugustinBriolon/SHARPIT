@@ -21,6 +21,7 @@ import { createCoachTools } from '@/lib/coach/chat/coach-tools';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { recordAiUsage } from '@/lib/ai-usage';
 import {
+  RETRY_AFTER_HEADER,
   aiBudgetResponseBody,
   ensureFreeAiBudget,
   withAiBudgetWarningHeader,
@@ -105,7 +106,10 @@ export async function POST(req: Request) {
 
   const budget = await ensureFreeAiBudget(athleteId);
   if (!budget.allowed) {
-    return NextResponse.json(aiBudgetResponseBody(), { status: 402 });
+    return NextResponse.json(aiBudgetResponseBody(budget.retryAfterSeconds!), {
+      status: 402,
+      headers: { [RETRY_AFTER_HEADER]: String(budget.retryAfterSeconds) },
+    });
   }
 
   // The agenda ships with the context rather than behind a tool: a scheduling

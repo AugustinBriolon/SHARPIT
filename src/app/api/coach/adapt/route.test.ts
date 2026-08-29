@@ -54,10 +54,16 @@ vi.mock('@/lib/decision-memory/repository', () => ({
 // withAiBudgetWarningHeader/aiBudgetResponseBody are trivial, so re-implementing
 // them stays truthful without importActual pulling prisma init back in.
 vi.mock('@/lib/access/ai-budget', () => ({
-  ensureFreeAiBudget: vi.fn().mockResolvedValue({ allowed: true, isPro: false, warning: false }),
-  aiBudgetResponseBody: () => ({ error: 'quota_exceeded' }),
+  ensureFreeAiBudget: vi
+    .fn()
+    .mockResolvedValue({ allowed: true, isPro: false, warning: false, retryAfterSeconds: null }),
+  aiBudgetResponseBody: (retryAfterSeconds: number) => ({
+    error: 'quota_exceeded',
+    retryAfterSeconds,
+  }),
   withAiBudgetWarningHeader: (headers: Record<string, string>, warning: boolean) =>
     warning ? { ...headers, 'X-Ai-Budget-Warning': '1' } : headers,
+  RETRY_AFTER_HEADER: 'Retry-After',
 }));
 
 async function importRoute() {
@@ -112,7 +118,12 @@ describe('POST /api/coach/adapt', () => {
     const { ensureFreeAiBudget } = await import('@/lib/access/ai-budget');
     const { getPlannedSessionsForCoach } = await import('@/lib/queries');
     vi.mocked(getPlannedSessionsForCoach).mockResolvedValue([] as never);
-    vi.mocked(ensureFreeAiBudget).mockResolvedValue({ allowed: true, isPro: false, warning: true });
+    vi.mocked(ensureFreeAiBudget).mockResolvedValueOnce({
+      allowed: true,
+      isPro: false,
+      warning: true,
+      retryAfterSeconds: null,
+    });
 
     const { POST } = await importRoute();
     const response = await POST(
@@ -120,6 +131,26 @@ describe('POST /api/coach/adapt', () => {
     );
 
     expect(response.headers.get('X-Ai-Budget-Warning')).toBe('1');
+  });
+
+  it('answers 402 with a Retry-After header once the budget is exhausted', async () => {
+    const { ensureFreeAiBudget } = await import('@/lib/access/ai-budget');
+    vi.mocked(ensureFreeAiBudget).mockResolvedValueOnce({
+      allowed: false,
+      isPro: false,
+      warning: false,
+      retryAfterSeconds: 5_400,
+    });
+
+    const { POST } = await importRoute();
+    const response = await POST(
+      new Request('http://localhost/api/coach/adapt', { method: 'POST', body: JSON.stringify({}) }),
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(402);
+    expect(response.headers.get('Retry-After')).toBe('5400');
+    expect(body.retryAfterSeconds).toBe(5_400);
   });
 
   it('does not gate REMOVE changes — they pass through with no gate entry', async () => {

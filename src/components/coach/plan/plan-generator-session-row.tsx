@@ -18,7 +18,7 @@ function SessionRowCheckbox({ rejected, selected }: { rejected: boolean; selecte
   return (
     <span
       className={cn(
-        'mt-0.5 flex size-5 shrink-0 items-center justify-center rounded border',
+        'mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-[4px] border',
         selected && !rejected
           ? 'border-primary bg-primary text-primary-foreground'
           : 'border-border',

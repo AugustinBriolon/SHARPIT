@@ -40,7 +40,7 @@ export function SessionsCoachMenu({
       />
       <DropdownMenuContent
         align="end"
-        className="analysis-panel-alt border-foreground/18 w-72 rounded-xl border p-1.5 ring-0"
+        className="analysis-panel-alt border-foreground/18 rounded-analysis-lg w-72 border p-1.5 ring-0"
       >
         <DropdownMenuGroup>
           <DropdownMenuLabel>Actions</DropdownMenuLabel>
