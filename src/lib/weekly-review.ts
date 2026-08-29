@@ -52,7 +52,7 @@ Liste à puces courte (2-4 points) : ce qui a bien marché, ce qui doit être su
 ## Plan pour la semaine prochaine
 2-3 recommandations concrètes (orientation des séances, récupération, sommeil) cohérentes avec la forme actuelle et l'objectif.
 
-Règles : reste concis (12-18 lignes au total). Appuie-toi sur les chiffres réels, ne les invente pas. Respecte IMPÉRATIVEMENT les douleurs/blessures. Tutoie l'athlète, en français. Sois bienveillant mais honnête.`;
+Règles : reste concis (12-18 lignes au total). Appuie-toi sur les chiffres réels, ne les invente pas. Dans "Bilan d'entraînement" et "Sommeil & récupération", mets en **gras** (markdown) les 2-3 chiffres ou notions les plus importants de chaque section — pas plus, sinon plus rien ne ressort à la lecture rapide. Respecte IMPÉRATIVEMENT les douleurs/blessures. Tutoie l'athlète, en français. Sois bienveillant mais honnête.`;
 }
 
 function utcDateOnly(d: Date): Date {
