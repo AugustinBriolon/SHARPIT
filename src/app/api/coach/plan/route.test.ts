@@ -48,6 +48,10 @@ vi.mock('@/lib/decision-memory/repository', () => ({
   createCoachingDecision: vi.fn().mockResolvedValue({ id: 'mock-decision-id' }),
 }));
 
+vi.mock('@/lib/access/ai-budget', () => ({
+  ensureFreeAiBudget: vi.fn().mockResolvedValue({ allowed: true, isPro: false }),
+}));
+
 async function importRoute() {
   return await import('./route');
 }

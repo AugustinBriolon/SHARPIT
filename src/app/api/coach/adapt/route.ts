@@ -5,6 +5,7 @@ import { NextResponse } from 'next/server';
 import { isCoachConfigured } from '@/lib/ai';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { recordAiUsage } from '@/lib/ai-usage';
+import { ensureFreeAiBudget } from '@/lib/access/ai-budget';
 import { checkRateLimit, rateLimitResponseBody, rateLimiters } from '@/lib/rate-limit';
 import { buildCoachContext, formatCoachContext } from '@/lib/coach/context/coach-context';
 import { getActiveTrainingPlan, getGoals, getPlannedSessionsForCoach } from '@/lib/queries';
@@ -217,6 +218,18 @@ async function loadAdaptContext(athleteId: string, today: Date, days: number) {
   return { ctx, upcoming, defaultGoalId, horizon };
 }
 
+async function checkAdaptAccess(athleteId: string): Promise<NextResponse | null> {
+  const rateLimit = await checkRateLimit(rateLimiters.coachAdapt, athleteId);
+  if (!rateLimit.ok) {
+    return NextResponse.json(rateLimitResponseBody(rateLimit.retryAfterSeconds), { status: 429 });
+  }
+  const budget = await ensureFreeAiBudget(athleteId);
+  if (!budget.allowed) {
+    return NextResponse.json({ error: 'quota_exceeded' }, { status: 402 });
+  }
+  return null;
+}
+
 export async function POST(req: Request) {
   if (!isCoachConfigured()) {
     return NextResponse.json(
@@ -238,11 +251,9 @@ export async function POST(req: Request) {
     const today = startOfDay(new Date());
     const athleteId = await getCurrentAthleteId();
 
-    const rateLimit = await checkRateLimit(rateLimiters.coachAdapt, athleteId);
-    if (!rateLimit.ok) {
-      return NextResponse.json(rateLimitResponseBody(rateLimit.retryAfterSeconds), {
-        status: 429,
-      });
+    const blocked = await checkAdaptAccess(athleteId);
+    if (blocked) {
+      return blocked;
     }
 
     const { ctx, upcoming, defaultGoalId, horizon } = await loadAdaptContext(

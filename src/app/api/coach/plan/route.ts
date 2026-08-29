@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server';
 import { isCoachConfigured } from '@/lib/ai';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { recordAiUsage } from '@/lib/ai-usage';
+import { ensureFreeAiBudget } from '@/lib/access/ai-budget';
 import { checkRateLimit, rateLimitResponseBody, rateLimiters } from '@/lib/rate-limit';
 import {
   buildCoachContext,
@@ -186,6 +187,14 @@ async function preparePlanGeneration(
       response: NextResponse.json(rateLimitResponseBody(rateLimit.retryAfterSeconds), {
         status: 429,
       }),
+    };
+  }
+
+  const budget = await ensureFreeAiBudget(athleteId);
+  if (!budget.allowed) {
+    return {
+      ok: false as const,
+      response: NextResponse.json({ error: 'quota_exceeded' }, { status: 402 }),
     };
   }
 
