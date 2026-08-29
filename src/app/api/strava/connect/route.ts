@@ -34,6 +34,7 @@ export async function GET(request: NextRequest) {
     sameSite: 'lax',
     path: '/',
     maxAge: 600,
+    secure: process.env.NODE_ENV === 'production',
   });
 
   const origin = publicOriginFromRequest(request);
