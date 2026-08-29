@@ -99,7 +99,7 @@ function MarkerHistorySlider({
         aria-valuemax={points.length - 1}
         aria-valuemin={0}
         aria-valuenow={activeIndex ?? 0}
-        className="focus-visible:outline-ring relative mt-1.5 h-14 w-full touch-none rounded focus-visible:outline-2 focus-visible:outline-offset-2"
+        className="focus-visible:outline-ring rounded-analysis relative mt-1.5 h-14 w-full touch-none focus-visible:outline-2 focus-visible:outline-offset-2"
         role="slider"
         tabIndex={0}
         aria-valuetext={

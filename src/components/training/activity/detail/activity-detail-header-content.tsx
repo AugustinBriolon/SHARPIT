@@ -5,10 +5,11 @@ import { DiscussWithCoachButton } from '@/components/coach/discuss-with-coach-bu
 import { ActivityDetailActionsMenu } from '@/components/training/activity/detail/activity-detail-header-actions';
 import { MobileBackLink } from '@/components/layout/mobile-back-link';
 import { ActivityHeaderContextChips } from '@/components/training/activity/detail/activity-header-context-chips';
-import { activityTypeLabels } from '@/lib/format';
+import { InstrumentMetricChip } from '@/components/ui/instruments/instrument-metric-chip';
+import { activityTypeLabels, formatDuration } from '@/lib/format';
 import {
+  formatActivityDetailLoad,
   formatActivityDetailMeta,
-  formatActivityDetailStats,
   sportIcon,
 } from './activity-detail-helpers';
 import type { ActivityDetail } from './types';
@@ -70,7 +71,7 @@ function ActivityDetailIdentityBlock({
 }: {
   activity: ActivityDetailHeaderActivity;
   title: string;
-  summary: string;
+  summary: string | null;
 }) {
   const Icon = sportIcon[activity.type];
 
@@ -85,7 +86,9 @@ function ActivityDetailIdentityBlock({
         </p>
         <h1 className="text-page-title line-clamp-2 leading-snug wrap-break-word">{title}</h1>
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-          <p className="text-data text-muted-foreground text-sm tabular-nums">{summary}</p>
+          {summary ? (
+            <p className="text-data text-muted-foreground text-sm tabular-nums">{summary}</p>
+          ) : null}
           <ExpertModeBadge />
         </div>
       </div>
@@ -120,6 +123,9 @@ function ActivityDetailHeaderCoachSection({
         rpe={activity.rpe}
         weather={activity.weather}
       />
+      {activity.duration !== null ? (
+        <InstrumentMetricChip label="Durée" value={formatDuration(activity.duration)} />
+      ) : null}
     </div>
   );
 }
@@ -143,7 +149,7 @@ export function ActivityDetailHeaderContent({
 }) {
   const { mode } = useDisplayMode();
   const title = activity.title ?? activityTypeLabels[activity.type];
-  const summary = formatActivityDetailStats(activity, mode);
+  const summary = formatActivityDetailLoad(activity, mode);
   const plannedAnalysisReady = Boolean(plannedSession?.analysis && plannedSession.analyzedAt);
 
   return (

@@ -216,7 +216,7 @@ export function DesktopFilterMenu({
       onMouseLeave={() => setActiveSection(null)}
     >
       {/* Left panel */}
-      <div className="analysis-panel-alt border-foreground/12 w-44 rounded-xl border p-1">
+      <div className="analysis-panel-alt border-foreground/12 rounded-analysis-lg w-44 border p-1">
         {dims.map((dim) => {
           const active = activeSection === dim.id;
           return (
@@ -248,7 +248,7 @@ export function DesktopFilterMenu({
       {/* Right panel — separate box, appears on hover (Desktop 1 pattern) */}
       {activeSection && (
         <div
-          className="analysis-panel-alt border-foreground/12 w-52 rounded-xl border p-1"
+          className="analysis-panel-alt border-foreground/12 rounded-analysis-lg w-52 border p-1"
           id={`history-filter-panel-${activeSection}`}
         >
           {activeSection === 'types' && (

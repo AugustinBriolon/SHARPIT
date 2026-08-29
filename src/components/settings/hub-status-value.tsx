@@ -19,7 +19,7 @@ export function HubStatusValue({ statusKey }: { statusKey: keyof SettingsHubStat
   });
 
   if (isLoading || !data) {
-    return <span className="bg-muted inline-block h-3 w-16 animate-pulse rounded" />;
+    return <span className="bg-muted inline-block h-3 w-16 animate-pulse rounded-full" />;
   }
 
   return <>{data[statusKey]}</>;
