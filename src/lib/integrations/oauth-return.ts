@@ -30,6 +30,7 @@ const OAUTH_COOKIE_OPTS = {
   sameSite: 'lax' as const,
   path: '/',
   maxAge: 600,
+  secure: process.env.NODE_ENV === 'production',
 };
 
 export async function setIntegrationReturnTo(
