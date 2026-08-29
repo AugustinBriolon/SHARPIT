@@ -5,7 +5,7 @@ import { NextResponse } from 'next/server';
 import { isCoachConfigured } from '@/lib/ai';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { recordAiUsage } from '@/lib/ai-usage';
-import { ensureFreeAiBudget } from '@/lib/access/ai-budget';
+import { aiBudgetResponseBody, ensureFreeAiBudget } from '@/lib/access/ai-budget';
 import { checkRateLimit, rateLimitResponseBody, rateLimiters } from '@/lib/rate-limit';
 import { buildCoachContext, formatCoachContext } from '@/lib/coach/context/coach-context';
 import { getActiveTrainingPlan, getGoals, getPlannedSessionsForCoach } from '@/lib/queries';
@@ -225,7 +225,7 @@ async function checkAdaptAccess(athleteId: string): Promise<NextResponse | null>
   }
   const budget = await ensureFreeAiBudget(athleteId);
   if (!budget.allowed) {
-    return NextResponse.json({ error: 'quota_exceeded' }, { status: 402 });
+    return NextResponse.json(aiBudgetResponseBody(), { status: 402 });
   }
   return null;
 }

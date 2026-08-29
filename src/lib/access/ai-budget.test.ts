@@ -58,4 +58,18 @@ describe('ensureFreeAiBudget', () => {
 
     expect(status).toEqual({ allowed: true, isPro: false });
   });
+
+  it('only sums coach usage — narrative analysis has its own separate gate and must not count here', async () => {
+    findUniqueMock.mockResolvedValue({ tier: 'FREE' });
+    aggregateMock.mockResolvedValue({ _sum: { totalTokens: 1_000 } });
+    const { ensureFreeAiBudget } = await importModule();
+
+    await ensureFreeAiBudget('athlete-1');
+
+    expect(aggregateMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ feature: 'coach' }),
+      }),
+    );
+  });
 });

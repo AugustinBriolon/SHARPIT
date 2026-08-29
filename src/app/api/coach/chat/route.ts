@@ -20,7 +20,7 @@ import { buildCoachContext, formatCoachContext } from '@/lib/coach/context/coach
 import { createCoachTools } from '@/lib/coach/chat/coach-tools';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { recordAiUsage } from '@/lib/ai-usage';
-import { ensureFreeAiBudget } from '@/lib/access/ai-budget';
+import { aiBudgetResponseBody, ensureFreeAiBudget } from '@/lib/access/ai-budget';
 import { formatStrengthSessionRules } from '@/lib/planned-session/strength/strength-session-template';
 import { checkRateLimit, rateLimitResponseBody, rateLimiters } from '@/lib/rate-limit';
 
@@ -101,7 +101,7 @@ export async function POST(req: Request) {
 
   const budget = await ensureFreeAiBudget(athleteId);
   if (!budget.allowed) {
-    return NextResponse.json({ error: 'quota_exceeded' }, { status: 402 });
+    return NextResponse.json(aiBudgetResponseBody(), { status: 402 });
   }
 
   // The agenda ships with the context rather than behind a tool: a scheduling
