@@ -6,12 +6,45 @@ import { PromptInput } from '@/components/agents/prompt-input';
 import { coachBeuiCopy } from '@/components/coach/beui/coach-beui-copy';
 import { coachBeuiTheme } from '@/components/coach/beui/coach-beui-theme';
 import { CoachChatScrollerContent } from '@/components/coach/chat/coach-chat-scroller-content';
+import {
+  CoachBudgetBlockedChip,
+  CoachBudgetWarningChip,
+} from '@/components/coach/chat/coach-budget-warning-chip';
 import { CoachComposerShell } from '@/components/coach/chat/coach-composer-chrome';
 import { CoachContextChip } from '@/components/coach/chat/coach-context-chip';
 import { useCoachChat } from '@/components/coach/chat/use-coach-chat';
 import { Button } from '@/components/ui/button';
 import type { UIMessage } from 'ai';
 import type { CoachDiscussContext } from '@/lib/coach/chat/coach-discuss-context';
+
+function composerContextSlot({
+  attachedContext,
+  onDetachContext,
+  chat,
+}: {
+  attachedContext?: CoachDiscussContext | null;
+  onDetachContext?: () => void;
+  chat: ReturnType<typeof useCoachChat>;
+}) {
+  let budgetChip: React.ReactNode = null;
+  if (chat.budgetBlocked && chat.budgetRetryAfterSeconds) {
+    budgetChip = <CoachBudgetBlockedChip retryAfterSeconds={chat.budgetRetryAfterSeconds} />;
+  } else if (chat.budgetWarning) {
+    budgetChip = <CoachBudgetWarningChip />;
+  }
+
+  if (!attachedContext && !budgetChip) {
+    return null;
+  }
+  return (
+    <>
+      {attachedContext ? (
+        <CoachContextChip context={attachedContext} onDetach={() => onDetachContext?.()} />
+      ) : null}
+      {budgetChip}
+    </>
+  );
+}
 
 export function CoachChat({
   conversationId,
@@ -79,11 +112,7 @@ export function CoachChat({
       ) : null}
 
       <CoachComposerShell
-        contextSlot={
-          attachedContext ? (
-            <CoachContextChip context={attachedContext} onDetach={() => onDetachContext?.()} />
-          ) : null
-        }
+        contextSlot={composerContextSlot({ attachedContext, onDetachContext, chat })}
       >
         <PromptInput
           aria-label={coachBeuiCopy.composerAriaLabel}

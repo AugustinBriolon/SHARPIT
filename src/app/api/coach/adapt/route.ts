@@ -6,6 +6,7 @@ import { isCoachConfigured } from '@/lib/ai';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { recordAiUsage } from '@/lib/ai-usage';
 import {
+  RETRY_AFTER_HEADER,
   aiBudgetResponseBody,
   ensureFreeAiBudget,
   withAiBudgetWarningHeader,
@@ -234,7 +235,10 @@ async function checkAdaptAccess(athleteId: string): Promise<AdaptAccess> {
   const budget = await ensureFreeAiBudget(athleteId);
   if (!budget.allowed) {
     return {
-      blocked: NextResponse.json(aiBudgetResponseBody(), { status: 402 }),
+      blocked: NextResponse.json(aiBudgetResponseBody(budget.retryAfterSeconds!), {
+        status: 402,
+        headers: { [RETRY_AFTER_HEADER]: String(budget.retryAfterSeconds) },
+      }),
       budgetWarning: false,
     };
   }

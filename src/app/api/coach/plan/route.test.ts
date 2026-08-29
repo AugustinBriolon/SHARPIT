@@ -52,10 +52,16 @@ vi.mock('@/lib/decision-memory/repository', () => ({
 // withAiBudgetWarningHeader/aiBudgetResponseBody are trivial, so re-implementing
 // them stays truthful without importActual pulling prisma init back in.
 vi.mock('@/lib/access/ai-budget', () => ({
-  ensureFreeAiBudget: vi.fn().mockResolvedValue({ allowed: true, isPro: false, warning: false }),
-  aiBudgetResponseBody: () => ({ error: 'quota_exceeded' }),
+  ensureFreeAiBudget: vi
+    .fn()
+    .mockResolvedValue({ allowed: true, isPro: false, warning: false, retryAfterSeconds: null }),
+  aiBudgetResponseBody: (retryAfterSeconds: number) => ({
+    error: 'quota_exceeded',
+    retryAfterSeconds,
+  }),
   withAiBudgetWarningHeader: (headers: Record<string, string>, warning: boolean) =>
     warning ? { ...headers, 'X-Ai-Budget-Warning': '1' } : headers,
+  RETRY_AFTER_HEADER: 'Retry-After',
 }));
 
 async function importRoute() {
@@ -175,7 +181,12 @@ describe('POST /api/coach/plan', () => {
     const { runStructuredCoachStream } = await import('@/lib/coach/stream-structured-generation');
     const { getOrBuildAthleteSnapshot } = await import('@/lib/athlete-state/snapshot-service');
 
-    vi.mocked(ensureFreeAiBudget).mockResolvedValue({ allowed: true, isPro: false, warning: true });
+    vi.mocked(ensureFreeAiBudget).mockResolvedValueOnce({
+      allowed: true,
+      isPro: false,
+      warning: true,
+      retryAfterSeconds: null,
+    });
     vi.mocked(runStructuredCoachStream).mockResolvedValue({
       output: { summary: 'Semaine calme', sessions: [] },
       usage: { inputTokens: 10, outputTokens: 10, totalTokens: 20 },
@@ -198,6 +209,30 @@ describe('POST /api/coach/plan', () => {
     );
 
     expect(response.headers.get('X-Ai-Budget-Warning')).toBe('1');
+  });
+
+  it('answers 402 with a Retry-After header once the budget is exhausted', async () => {
+    const { ensureFreeAiBudget } = await import('@/lib/access/ai-budget');
+
+    vi.mocked(ensureFreeAiBudget).mockResolvedValueOnce({
+      allowed: false,
+      isPro: false,
+      warning: false,
+      retryAfterSeconds: 5_400,
+    });
+
+    const { POST } = await importRoute();
+    const response = await POST(
+      new Request('http://localhost/api/coach/plan', {
+        method: 'POST',
+        body: JSON.stringify({ days: 7 }),
+      }),
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(402);
+    expect(response.headers.get('Retry-After')).toBe('5400');
+    expect(body.retryAfterSeconds).toBe(5_400);
   });
 
   it('carries an authored endurance structure through to the proposal', async () => {
