@@ -14,7 +14,6 @@ import {
   buildPlannedSessionDerouleFlags,
   buildPlannedSessionPrescription,
   buildPlannedSessionRationaleFlags,
-  buildRealizedSessionChips,
 } from '@/components/planning/session/read/planned-session-read-helpers';
 
 export function usePlannedSessionReadData({
@@ -43,7 +42,6 @@ export function usePlannedSessionReadData({
   const goal = goals.find((g) => g.id === session.goalId);
   const dateLabel = buildPlannedSessionDateLabel(session);
   const chips = buildPlannedSessionChips({ session, goalTitle: goal?.title, mode });
-  const realizedChips = buildRealizedSessionChips({ session, mode });
   const contextMeta = buildPlannedSessionContextMeta({
     session,
     context,
@@ -75,7 +73,6 @@ export function usePlannedSessionReadData({
     ...contextMeta,
     ...rationaleFlags,
     chips,
-    realizedChips,
     ...prescriptionData,
     ...derouleFlags,
     endurancePreview,

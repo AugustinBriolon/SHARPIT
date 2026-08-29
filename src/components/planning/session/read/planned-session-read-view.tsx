@@ -139,7 +139,6 @@ export function PlannedSessionReadView({
     return (
       <div className="min-w-0 space-y-4">
         {header}
-        {!morningProposal ? <KeyChipsRow chips={readData.realizedChips} /> : null}
         <SessionRealization
           omitLinkedActivityNavigation={omitLinkedActivityNavigation}
           session={session}
