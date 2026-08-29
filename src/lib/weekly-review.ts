@@ -40,7 +40,7 @@ function buildWeeklySystem(mode: DisplayMode): string {
   return `Tu es le coach d'endurance personnel de l'athlète. Tu rédiges sa RÉTROSPECTIVE HEBDOMADAIRE : un bilan de la semaine écoulée, factuel et actionnable, basé uniquement sur ses données réelles fournies plus bas.
 
 Structure imposée (markdown concis, pas de titre de niveau 1) :
-## Bilan de la semaine
+## Bilan d'entraînement
 ${formLine}
 
 ## Sommeil & récupération
@@ -113,7 +113,7 @@ export interface WeeklyStats {
   totalLoad: number;
   totalDurationMin: number;
   prevTotalLoad: number;
-  /** 7 points lundi→dimanche, pour illustrer la section "Bilan de la semaine". */
+  /** 7 points lundi→dimanche, pour illustrer la section "Bilan d'entraînement". */
   dailyLoad: (number | null)[];
   /** 7 points lundi→dimanche, pour illustrer la section "Sommeil & récupération". */
   dailySleepScore: (number | null)[];
