@@ -1,5 +1,5 @@
 import { sportSupportsOutdoorContext } from '@/core/planned-session/defaults';
-import { formatDate, formatDuration } from '@/lib/format';
+import { formatDate } from '@/lib/format';
 import { formatPlannedSessionLocationDisplay } from '@/lib/planned-session/display/planned-session-display';
 import {
   attachGarminRefsToPrescription,
@@ -43,47 +43,6 @@ export function buildPlannedSessionChips({
     chips.push({ label: 'Objectif', value: goalTitle });
   }
   return chips;
-}
-
-function doneFeelingLabel(activity: NonNullable<ClientPlannedSession['activity']>): string {
-  if (activity.rpe !== null) {
-    return `RPE ${activity.rpe}`;
-  }
-  if (activity.feeling?.trim()) {
-    return activity.feeling;
-  }
-  return '—';
-}
-
-/** Plan → réalisé chips for completed sessions in the modal header area. */
-export function buildRealizedSessionChips({
-  session,
-  mode,
-}: {
-  session: ClientPlannedSession;
-  mode: DisplayMode;
-}): PlannedSessionKeyChip[] {
-  const { activity } = session;
-  if (!activity) {
-    return buildPlannedSessionChips({ session, mode });
-  }
-
-  const plannedDuration = session.durationMin !== null ? `${session.durationMin} min` : '—';
-  const doneDuration = activity.duration !== null ? formatDuration(activity.duration) : '—';
-  const plannedLoad = session.load !== null ? formatTrainingLoad(session.load, mode) : '—';
-  const doneLoad = activity.load !== null ? formatTrainingLoad(activity.load, mode) : '—';
-  const plannedIntensity = session.intensity ? intensityLabels[session.intensity] : '—';
-  const doneFeeling = doneFeelingLabel(activity);
-
-  return [
-    { label: 'Durée', value: `${plannedDuration} → ${doneDuration}` },
-    {
-      label: 'Charge',
-      value: `${plannedLoad} → ${doneLoad}`,
-      valueClassName: 'text-primary',
-    },
-    { label: 'Effort', value: `${plannedIntensity} → ${doneFeeling}` },
-  ];
 }
 
 function buildLocationValue(

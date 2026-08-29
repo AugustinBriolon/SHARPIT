@@ -32,12 +32,17 @@ function StoryBody({ body }: { body: string }) {
   return <p className="text-foreground/90 text-sm leading-relaxed">{body}</p>;
 }
 
-/** The athlete's own words on the session — the primary thing they came to read: the largest, boldest text on this card. */
+/**
+ * The athlete's own words on the session — the primary thing they came to
+ * read. Gets the text-verdict treatment ("the single most important signal
+ * on any screen") that the coach headline gave up above: real heading
+ * typeface (Syne) at 20-24.8px, not just bigger body text.
+ */
 export function CompletedSessionNote({ notes }: { notes: string }) {
   return (
     <div className="min-w-0 space-y-1">
       <p className="text-label">Ta note</p>
-      <p className="text-foreground text-lg leading-snug font-semibold wrap-break-word whitespace-pre-wrap">
+      <p className="text-verdict text-foreground leading-snug wrap-break-word whitespace-pre-wrap">
         {notes}
       </p>
     </div>
