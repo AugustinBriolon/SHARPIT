@@ -5,6 +5,7 @@ import { isCoachConfigured } from '@/lib/ai';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { recordAiUsage } from '@/lib/ai-usage';
 import {
+  RETRY_AFTER_HEADER,
   aiBudgetResponseBody,
   ensureFreeAiBudget,
   withAiBudgetWarningHeader,
@@ -198,7 +199,10 @@ async function preparePlanGeneration(
   if (!budget.allowed) {
     return {
       ok: false as const,
-      response: NextResponse.json(aiBudgetResponseBody(), { status: 402 }),
+      response: NextResponse.json(aiBudgetResponseBody(budget.retryAfterSeconds!), {
+        status: 402,
+        headers: { [RETRY_AFTER_HEADER]: String(budget.retryAfterSeconds) },
+      }),
     };
   }
 
