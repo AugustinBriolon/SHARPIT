@@ -56,7 +56,7 @@ function sessionFixture(
 }
 
 describe('CompletedSessionStory', () => {
-  it('leads with activity narrative and keeps compliance as status, not a second essay', () => {
+  it('leads with the athlete note, keeps narrative and compliance as supporting context', () => {
     const html = renderToStaticMarkup(
       createElement(CompletedSessionStory, { session: sessionFixture({}) }),
     );
@@ -64,6 +64,7 @@ describe('CompletedSessionStory', () => {
     expect(html).toContain('Lecture de la séance');
     expect(html).toContain('Bonne densité');
     expect(html).toContain('Tu as tenu la zone tempo sans dérive.');
+    expect(html).toContain('Ta note');
     expect(html).toContain('Jambes légères');
     expect(html).toContain('Conforme');
     expect(html).toContain('88');
@@ -73,6 +74,8 @@ describe('CompletedSessionStory', () => {
     expect(html).toContain('Garder ce rythme mardi.');
     // Compliance summary must not compete as a second coach paragraph.
     expect(html).not.toContain('Séance exécutée comme prévu.');
+    // The athlete's own note leads — it's what they came to read.
+    expect(html.indexOf('Jambes légères')).toBeLessThan(html.indexOf('Bonne densité'));
   });
 
   it('shows an analyzing badge when compliance is pending', () => {
