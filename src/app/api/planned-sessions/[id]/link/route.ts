@@ -29,6 +29,9 @@ export async function POST(request: NextRequest, context: RouteContext) {
     }
 
     const session = await linkPlannedSessionActivity(athleteId, id, activityId);
+    if (!session) {
+      return NextResponse.json({ error: 'Activité introuvable' }, { status: 404 });
+    }
     if (activityId) {
       after(async () => {
         try {

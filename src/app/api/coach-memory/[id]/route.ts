@@ -36,7 +36,8 @@ type RouteContext = { params: Promise<{ id: string }> };
 export async function GET(_request: Request, context: RouteContext) {
   try {
     const { id } = await context.params;
-    const travel = await prisma.athleteTravelContext.findUnique({ where: { id } });
+    const athleteId = await getCurrentAthleteId();
+    const travel = await prisma.athleteTravelContext.findFirst({ where: { id, athleteId } });
     if (!travel) {
       return NextResponse.json({ error: 'Entrée introuvable' }, { status: 404 });
     }
@@ -53,7 +54,8 @@ export async function GET(_request: Request, context: RouteContext) {
 export async function PATCH(request: NextRequest, context: RouteContext) {
   try {
     const { id } = await context.params;
-    const existing = await prisma.athleteTravelContext.findUnique({ where: { id } });
+    const athleteId = await getCurrentAthleteId();
+    const existing = await prisma.athleteTravelContext.findFirst({ where: { id, athleteId } });
     if (!existing) {
       return NextResponse.json({ error: 'Entrée introuvable' }, { status: 404 });
     }
@@ -74,8 +76,10 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       );
     }
 
-    const athleteId = await getCurrentAthleteId();
     const entry = await updateTravelMemoryEntry(prisma, athleteId, id, parsed.data);
+    if (!entry) {
+      return NextResponse.json({ error: 'Entrée introuvable' }, { status: 404 });
+    }
     return NextResponse.json({ entry });
   } catch (error) {
     console.error(error);
@@ -88,12 +92,12 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
 export async function DELETE(_request: Request, context: RouteContext) {
   try {
     const { id } = await context.params;
-    const existing = await prisma.athleteTravelContext.findUnique({ where: { id } });
+    const athleteId = await getCurrentAthleteId();
+    const existing = await prisma.athleteTravelContext.findFirst({ where: { id, athleteId } });
     if (!existing) {
       return NextResponse.json({ error: 'Entrée introuvable' }, { status: 404 });
     }
 
-    const athleteId = await getCurrentAthleteId();
     await deleteCoachMemoryEntry(prisma, athleteId, id);
     return NextResponse.json({ success: true });
   } catch (error) {

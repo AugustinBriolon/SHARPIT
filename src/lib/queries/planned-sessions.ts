@@ -45,6 +45,16 @@ export async function linkPlannedSessionActivity(
   id: string,
   activityId: string | null,
 ) {
+  if (activityId) {
+    const owned = await prisma.activity.findFirst({
+      where: { id: activityId, athleteId },
+      select: { id: true },
+    });
+    if (!owned) {
+      return null;
+    }
+  }
+
   const { count } = await prisma.plannedSession.updateMany({
     where: { id, athleteId },
     data: {

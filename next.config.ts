@@ -34,6 +34,27 @@ const nextConfig: NextConfig = {
     ],
   },
   async headers() {
+    // Report-Only for now: Clerk's auth flow and the MapLibre/CartoDB map
+    // tiles (src/components/ui/map/map.tsx) depend on external domains this
+    // config can't fully verify against a live browser session. Ship this to
+    // staging, check the browser console for csp-report violations, tighten
+    // any missing directive, then flip to `Content-Security-Policy` once
+    // clean — flipping blind risks breaking sign-in for every user.
+    const csp = [
+      "default-src 'self'",
+      "script-src 'self' 'unsafe-inline'",
+      "style-src 'self' 'unsafe-inline'",
+      "img-src 'self' data: blob: https:",
+      "font-src 'self' data:",
+      "connect-src 'self' https://*.clerk.accounts.dev https://*.clerk.com https://basemaps.cartocdn.com https://*.basemaps.cartocdn.com",
+      "frame-src 'self' https://*.clerk.accounts.dev https://*.clerk.com https://challenges.cloudflare.com",
+      "worker-src 'self' blob:",
+      "object-src 'none'",
+      "base-uri 'self'",
+      "form-action 'self'",
+      "frame-ancestors 'none'",
+    ].join('; ');
+
     return [
       {
         source: '/:path*',
@@ -45,6 +66,12 @@ const nextConfig: NextConfig = {
           { key: 'X-Content-Type-Options', value: 'nosniff' },
           { key: 'X-Frame-Options', value: 'DENY' },
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+          {
+            key: 'Permissions-Policy',
+            value:
+              'geolocation=(self), camera=(), microphone=(), payment=(), usb=(), midi=(), magnetometer=(), gyroscope=()',
+          },
+          { key: 'Content-Security-Policy-Report-Only', value: csp },
         ],
       },
     ];

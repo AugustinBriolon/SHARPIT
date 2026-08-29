@@ -1,4 +1,4 @@
-import { getDevTools, isDevToolsEnabled } from '@/lib/dev/dev-tools';
+import { getDevTools, isDevToolsAccessAllowed } from '@/lib/dev/dev-tools';
 import { NextRequest, NextResponse } from 'next/server';
 
 type ReplayRequestBody = {
@@ -65,7 +65,7 @@ async function runReplay(body: ReplayRequestBody) {
  * ⚠️  mode="write" replaces production feature sets. Use with caution.
  */
 export async function POST(request: NextRequest) {
-  if (!isDevToolsEnabled) {
+  if (!(await isDevToolsAccessAllowed())) {
     return NextResponse.json({ error: 'Developer tools are not enabled.' }, { status: 404 });
   }
 
@@ -96,7 +96,7 @@ export async function POST(request: NextRequest) {
  * For in-process comparison, use ReplayEngine.compareChecksums() directly.
  */
 export async function GET() {
-  if (!isDevToolsEnabled) {
+  if (!(await isDevToolsAccessAllowed())) {
     return NextResponse.json({ error: 'Developer tools are not enabled.' }, { status: 404 });
   }
 
