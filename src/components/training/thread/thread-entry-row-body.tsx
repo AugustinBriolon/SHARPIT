@@ -18,7 +18,7 @@ export function buildThreadEntryRowShell({
   isPivot: boolean;
 }): string {
   return cn(
-    'group flex w-full items-start gap-2.5 rounded-[14px] px-3 py-2.5 text-left transition-colors lg:items-center',
+    'group flex w-full items-start gap-2.5 rounded-analysis px-3 py-2.5 text-left transition-colors lg:items-center',
     'focus-visible:ring-primary/35 focus-visible:ring-2 focus-visible:outline-hidden',
     isPlanned
       ? 'border-analysis-border/70 hover:border-primary/30 border border-dashed'

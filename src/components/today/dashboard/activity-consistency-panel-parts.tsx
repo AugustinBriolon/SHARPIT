@@ -179,7 +179,7 @@ export function ActivityConsistencyLoading() {
         <SkeletonDataValue heightClassName="h-7" widthClassName="w-20" />
       </div>
       <div className="space-y-1.5">
-        <div className="bg-muted/40 h-3 w-24 animate-pulse rounded" />
+        <div className="bg-muted/40 h-3 w-24 animate-pulse rounded-full" />
         <div
           className="flex w-full items-end gap-1.5"
           style={{ minHeight: Math.max(STRIP_HEIGHT_PX, STRIP_HIT_MIN_PX) }}

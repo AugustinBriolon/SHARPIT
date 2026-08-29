@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ActivityType } from '@prisma/client';
 
-import { formatActivityDetailMeta, formatActivityDetailStats } from './activity-detail-helpers';
+import { formatActivityDetailLoad, formatActivityDetailMeta } from './activity-detail-helpers';
 
 describe('activity detail header helpers', () => {
   it('formats meta as type · date · SOURCE', () => {
@@ -15,49 +15,19 @@ describe('activity detail header helpers', () => {
     expect(meta).toContain('GARMIN');
   });
 
-  it('formats stats as duration · charge · RPE on the essential reading', () => {
-    expect(
-      formatActivityDetailStats(
-        {
-          duration: 2712,
-          load: 32.4,
-          rpe: 3,
-        },
-        'essential',
-      ),
-    ).toBe('45 min · charge 32 · RPE 3');
+  it('formats the load as charge on the essential reading', () => {
+    expect(formatActivityDetailLoad({ load: 32.4 }, 'essential')).toBe('charge 32');
   });
 
-  it('formats stats as duration · TSS · RPE on the expert reading', () => {
-    expect(
-      formatActivityDetailStats(
-        {
-          duration: 2712,
-          load: 32.4,
-          rpe: 3,
-        },
-        'expert',
-      ),
-    ).toBe('45 min · 32 TSS · RPE 3');
+  it('formats the load as TSS on the expert reading', () => {
+    expect(formatActivityDetailLoad({ load: 32.4 }, 'expert')).toBe('32 TSS');
   });
 
   it('defaults to essential when mode is omitted', () => {
-    expect(
-      formatActivityDetailStats({
-        duration: 2712,
-        load: 32.4,
-        rpe: 3,
-      }),
-    ).toBe('45 min · charge 32 · RPE 3');
+    expect(formatActivityDetailLoad({ load: 32.4 })).toBe('charge 32');
   });
 
-  it('omits load and RPE when missing', () => {
-    expect(
-      formatActivityDetailStats({
-        duration: 1800,
-        load: null,
-        rpe: null,
-      }),
-    ).toBe('30 min');
+  it('returns null when load is missing', () => {
+    expect(formatActivityDetailLoad({ load: null })).toBeNull();
   });
 });

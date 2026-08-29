@@ -85,7 +85,7 @@ export function TodayHeaderWeatherLine({
   weather: TodayHeaderWeather | null;
 }) {
   if (loading && !weather) {
-    return <Skeleton className="h-4 w-28 rounded" />;
+    return <Skeleton className="h-4 w-28 rounded-full" />;
   }
 
   if (!weather) {

@@ -53,7 +53,7 @@ export function CoachMemoryEntryCard({
       data-memory-id={entry.id}
       id={`memory-${entry.id}`}
       className={cn(
-        'rounded-[16px] px-4 py-3.5',
+        'rounded-lg px-4 py-3.5',
         entry.isActive ? 'border-signal-caution/35 bg-signal-caution/8 border' : 'chip-surface',
         highlighted && 'ring-primary/35 ring-2',
       )}

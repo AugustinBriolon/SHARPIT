@@ -20,7 +20,7 @@ export function BrickChipHeader({
       title="Voir le brick"
       type="button"
       className={cn(
-        'hover:bg-primary/10 mb-0.5 flex w-full items-center gap-1 rounded px-0.5 py-0.5 text-left transition-colors',
+        'hover:bg-primary/10 mb-0.5 flex w-full items-center gap-1 rounded-sm px-0.5 py-0.5 text-left transition-colors',
         allDone && 'opacity-90',
       )}
       onClick={(e) => {

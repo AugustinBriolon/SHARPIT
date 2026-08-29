@@ -57,7 +57,7 @@ function RowActions({
   const [easeOpen, setEaseOpen] = useState(false);
 
   const buttonClass = cn(
-    'text-muted-foreground/70 hover:text-foreground rounded-[14px] px-3',
+    'text-muted-foreground/70 hover:text-foreground rounded-analysis px-3',
     'inline-flex items-center gap-1.5 text-[11px] whitespace-nowrap',
     'focus-visible:ring-primary/35 focus-visible:ring-2 focus-visible:outline-hidden',
     'disabled:opacity-30',
@@ -156,7 +156,7 @@ function PlannedRow({
   return (
     /* Clipped: the row slides the full width of the panel, and without this it
        travels past the page gutter and over whatever sits to its left. */
-    <div className="group relative overflow-hidden rounded-[14px]">
+    <div className="group rounded-analysis relative overflow-hidden">
       {/* Behind the row, uncovered as it slides. On a desktop this same panel is
           what hover reveals, sitting flush to the right instead. */}
       <div

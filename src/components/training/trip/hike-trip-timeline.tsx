@@ -93,7 +93,7 @@ export function HikeTripTimelineList({
               title={`Voir le détail — ${member.title?.trim() || 'Randonnée'}`}
               className={cn(
                 'chip-surface-lg group focus-visible:ring-primary/35 flex min-w-0 flex-1 items-center',
-                'gap-3 rounded-[14px] px-3 py-3 text-left focus-visible:ring-2 focus-visible:outline-hidden',
+                'rounded-analysis gap-3 px-3 py-3 text-left focus-visible:ring-2 focus-visible:outline-hidden',
               )}
             >
               <span className="flex min-w-0 flex-1 flex-col gap-1">

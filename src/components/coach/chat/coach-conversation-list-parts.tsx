@@ -50,7 +50,7 @@ export function InlineRenameInput({
   return (
     <input
       ref={ref}
-      className="bg-background ring-primary/40 focus-visible:ring-ring w-full rounded px-1 py-0.5 text-sm font-medium ring-1 outline-none focus-visible:ring-2"
+      className="bg-background ring-primary/40 focus-visible:ring-ring w-full rounded-md px-1 py-0.5 text-sm font-medium ring-1 outline-none focus-visible:ring-2"
       maxLength={60}
       value={value}
       onBlur={commit}
