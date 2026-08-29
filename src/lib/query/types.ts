@@ -1,6 +1,7 @@
 import type {
   getActiveTrainingPlan,
   getActivitiesList,
+  getActivityById,
   getHealthEntries,
   getBodyCompositionMeasurements,
   getHikeTripById,
@@ -19,6 +20,7 @@ import type { Goal } from '@prisma/client';
  * uniquement, aucun runtime Prisma n'est embarqué dans le bundle client).
  */
 export type ClientActivity = Awaited<ReturnType<typeof getActivitiesList>>[number];
+export type ClientActivityDetail = NonNullable<Awaited<ReturnType<typeof getActivityById>>>;
 export type ClientHealthEntry = Awaited<ReturnType<typeof getHealthEntries>>[number];
 export type ClientBodyCompositionEntry = Awaited<
   ReturnType<typeof getBodyCompositionMeasurements>

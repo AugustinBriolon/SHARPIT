@@ -11,8 +11,10 @@ import {
 import { isIndoorActivitySession } from '@/lib/activity/location/indoor-activity';
 import { activityTypeLabels, formatDate, formatDuration } from '@/lib/format';
 import { parseSessionAnalysis } from '@/lib/planned-session/display/session-analysis-display';
+import { prefetchActivityDetail } from '@/lib/query/prefetch-activity-detail';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   isSelectableHike,
   type ActivityListItem,
@@ -188,6 +190,7 @@ export function ActivityRow({
   selected?: boolean;
   onToggle?: (activityId: string) => void;
 }) {
+  const queryClient = useQueryClient();
   const metric = getActivityListMetric(activity);
   const weatherLine = formatActivityWeatherLine(activity);
   const loadValue = activity.load !== null ? Math.round(activity.load) : null;
@@ -234,7 +237,11 @@ export function ActivityRow({
   }
 
   return (
-    <Link className={panelClassName} href={`/training/${activity.id}`}>
+    <Link
+      className={panelClassName}
+      href={`/training/${activity.id}`}
+      onPointerEnter={() => prefetchActivityDetail(queryClient, activity.id, activity.type)}
+    >
       {content}
     </Link>
   );

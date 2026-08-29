@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ActivityType } from '@prisma/client';
 import {
+  activityDetailToHeaderActivity,
   clientActivityToDetailShell,
   clientActivityToHeaderActivity,
 } from '@/lib/activity/detail/activity-detail-cache';
@@ -47,5 +48,15 @@ describe('activity-detail-cache', () => {
     const shell = clientActivityToDetailShell(cached);
     expect(shell.feeling).toBe('Correct');
     expect(shell.type).toBe(ActivityType.RUN);
+  });
+
+  it('maps full detail row to header activity with hikeTrip', () => {
+    const cached = sampleActivity({ id: 'a3' });
+    const detail = {
+      ...clientActivityToDetailShell(cached),
+      hikeTrip: { id: 'trip1', name: 'GR20' },
+    };
+    const header = activityDetailToHeaderActivity(detail);
+    expect(header.hikeTrip).toEqual({ id: 'trip1', name: 'GR20' });
   });
 });

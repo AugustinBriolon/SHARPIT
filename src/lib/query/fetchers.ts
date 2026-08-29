@@ -4,6 +4,7 @@ import { isSet } from '@/lib/util/value';
 import type { ActivityStreamPayload, MultisportStreamsPayload } from '@/lib/streams/streams';
 import type {
   ClientActivity,
+  ClientActivityDetail,
   ClientGoal,
   ClientHealthEntry,
   ClientBodyCompositionEntry,
@@ -108,6 +109,32 @@ export async function fetchActivities(): Promise<ClientActivity[]> {
         }
       : null,
   }));
+}
+
+function hydrateActivityDetail(
+  a: Serialized<ClientActivityDetail> | ClientActivityDetail,
+): ClientActivityDetail {
+  return {
+    ...a,
+    date: toDate(a.date as string | Date),
+    createdAt: toDate(a.createdAt as string | Date),
+    updatedAt: toDate(a.updatedAt as string | Date),
+    narrativeAnalyzedAt: toDateOrNull(a.narrativeAnalyzedAt as string | Date | null),
+    plannedSession: a.plannedSession
+      ? {
+          ...a.plannedSession,
+          date: toDate(a.plannedSession.date as string | Date),
+          analyzedAt: toDateOrNull(a.plannedSession.analyzedAt as string | Date | null),
+        }
+      : null,
+  } as ClientActivityDetail;
+}
+
+export async function fetchActivity(id: string): Promise<ClientActivityDetail> {
+  const data = await fetchJson<Serialized<ClientActivityDetail>>(
+    `/api/activities/${encodeURIComponent(id)}`,
+  );
+  return hydrateActivityDetail(data);
 }
 
 export async function fetchHealthEntries(
