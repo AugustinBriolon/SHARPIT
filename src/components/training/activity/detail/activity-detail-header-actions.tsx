@@ -11,6 +11,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { floatingHeaderButtonClass } from '@/components/layout/floating-header-button';
+import { cn } from '@/lib/utils';
 import type { ActivityDetailHeaderActivity } from '@/components/training/activity/detail/activity-detail-header';
 
 export function ActivityDetailActionsMenu({
@@ -34,7 +36,10 @@ export function ActivityDetailActionsMenu({
         render={
           <Button
             aria-label="Actions de la séance"
-            className="text-muted-foreground"
+            className={cn(
+              floatingHeaderButtonClass('right'),
+              'lg:text-muted-foreground lg:hover:bg-muted lg:hover:text-foreground',
+            )}
             size="icon-sm"
             type="button"
             variant="ghost"

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ChevronLeft } from 'lucide-react';
 import { useBackTarget } from '@/hooks/use-back-target';
+import { floatingHeaderButtonClass } from '@/components/layout/floating-header-button';
 import { cn } from '@/lib/utils';
 
 function canUseHistoryBack(): boolean {
@@ -48,15 +49,17 @@ function BackLinkChrome({
     <>
       <Link
         href={href}
+        aria-label={typeof label === 'string' ? label : undefined}
         className={cn(
-          'text-muted-foreground hover:text-foreground bg-background/80 fixed inset-x-0 top-0 z-50 flex min-h-14 items-center gap-1 px-4 text-sm backdrop-blur-sm transition-colors lg:static lg:mb-3 lg:min-h-11 lg:bg-transparent lg:px-0 lg:backdrop-blur-none',
+          floatingHeaderButtonClass('left'),
+          'lg:mb-3 lg:justify-start lg:gap-1 lg:px-0 lg:text-muted-foreground',
           !showOnDesktop && 'lg:hidden',
           className,
         )}
         onClick={onClick}
       >
-        <ChevronLeft className="size-4 shrink-0" aria-hidden />
-        {label}
+        <ChevronLeft className="size-5 shrink-0 lg:size-4" aria-hidden />
+        <span className="hidden text-sm lg:inline">{label}</span>
       </Link>
       <div className="h-14 lg:hidden" aria-hidden />
     </>

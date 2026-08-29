@@ -26,12 +26,13 @@ function PhysioDrillDownDateLine({
   onPreviousDay?: () => void;
   onNextDay?: () => void;
 }) {
+  // minDate is legitimately undefined outside demo mode (see use-today-selected-date.ts)
+  // — it must not gate the nav, only clamp it when present.
   const showDateNav =
     onDateChange !== undefined &&
     onPreviousDay !== undefined &&
     onNextDay !== undefined &&
-    maxDate !== undefined &&
-    minDate !== undefined;
+    maxDate !== undefined;
 
   if (showDateNav) {
     return (

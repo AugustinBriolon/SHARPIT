@@ -3,7 +3,7 @@
 import { ExpertModeBadge } from '@/components/display-mode';
 import { DiscussWithCoachButton } from '@/components/coach/discuss-with-coach-button';
 import { ActivityDetailActionsMenu } from '@/components/training/activity/detail/activity-detail-header-actions';
-import { ActivityDetailBackLink } from '@/components/training/activity/detail/activity-detail-back-link';
+import { MobileBackLink } from '@/components/layout/mobile-back-link';
 import { ActivityHeaderContextChips } from '@/components/training/activity/detail/activity-header-context-chips';
 import { activityTypeLabels } from '@/lib/format';
 import {
@@ -50,7 +50,7 @@ function ActivityDetailHeaderToolbar({
 }) {
   return (
     <div className="flex items-center justify-between gap-2">
-      <ActivityDetailBackLink />
+      <MobileBackLink showOnDesktop />
       <ActivityDetailActionsMenu
         activity={activity}
         editHref={editHref}
