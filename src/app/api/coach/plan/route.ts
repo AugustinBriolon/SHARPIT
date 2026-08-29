@@ -4,7 +4,11 @@ import { NextResponse } from 'next/server';
 import { isCoachConfigured } from '@/lib/ai';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { recordAiUsage } from '@/lib/ai-usage';
-import { aiBudgetResponseBody, ensureFreeAiBudget } from '@/lib/access/ai-budget';
+import {
+  aiBudgetResponseBody,
+  ensureFreeAiBudget,
+  withAiBudgetWarningHeader,
+} from '@/lib/access/ai-budget';
 import { checkRateLimit, rateLimitResponseBody, rateLimiters } from '@/lib/rate-limit';
 import {
   buildCoachContext,
@@ -219,7 +223,13 @@ async function preparePlanGeneration(
     agendaBlock,
   });
 
-  return { ok: true as const, start, goalId: goalId ?? null, prompt };
+  return {
+    ok: true as const,
+    start,
+    goalId: goalId ?? null,
+    prompt,
+    budgetWarning: budget.warning,
+  };
 }
 
 export async function POST(req: Request) {
@@ -244,7 +254,7 @@ export async function POST(req: Request) {
   if (!prepared.ok) {
     return prepared.response;
   }
-  const { start, goalId, prompt } = prepared;
+  const { start, goalId, prompt, budgetWarning } = prepared;
 
   const encoder = new TextEncoder();
   const stream = new ReadableStream<Uint8Array>({
@@ -285,7 +295,9 @@ export async function POST(req: Request) {
     },
   });
 
-  return new Response(stream, { headers: COACH_PROGRESS_HEADERS });
+  return new Response(stream, {
+    headers: withAiBudgetWarningHeader(COACH_PROGRESS_HEADERS, budgetWarning),
+  });
 }
 
 export type PlanPayload = {

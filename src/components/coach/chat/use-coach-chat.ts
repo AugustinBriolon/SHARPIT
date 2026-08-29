@@ -37,6 +37,8 @@ import {
 } from '@/lib/coach/chat/coach-chat-cache';
 import { readCoachInputDraft, writeCoachInputDraft } from '@/lib/coach/chat/coach-input-draft';
 import type { CoachDiscussContext } from '@/lib/coach/chat/coach-discuss-context';
+import { AI_BUDGET_WARNING_HEADER, aiBudgetWarningMessage } from '@/lib/access/ai-budget-shared';
+import { toast } from '@/components/ui/toast';
 
 function coachInputPlaceholder(guardDisabled: boolean, hasPendingApprovals: boolean): string {
   if (guardDisabled) {
@@ -100,9 +102,13 @@ export function useCoachChat({
     () =>
       new DefaultChatTransport({
         api: '/api/coach/chat',
-        fetch: (input, init) => {
+        fetch: async (input, init) => {
           const signal = replaceChatFetchSignal(conversationId, init?.signal);
-          return fetch(input, { ...init, signal });
+          const response = await fetch(input, { ...init, signal });
+          if (response.ok && response.headers.get(AI_BUDGET_WARNING_HEADER) === '1') {
+            toast.info(aiBudgetWarningMessage());
+          }
+          return response;
         },
       }),
     [conversationId],

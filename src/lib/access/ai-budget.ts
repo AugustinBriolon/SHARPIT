@@ -1,6 +1,7 @@
 import { startOfDay } from 'date-fns';
 import { prisma } from '@/lib/prisma';
 import { hasProAccess } from '@/lib/access/tier';
+import { AI_BUDGET_WARNING_HEADER, aiBudgetWarningMessage } from '@/lib/access/ai-budget-shared';
 
 /**
  * Global cost ceiling for the coach conversation surface (chat/plan/adapt),
@@ -17,7 +18,10 @@ import { hasProAccess } from '@/lib/access/tier';
  */
 const FREE_DAILY_TOKEN_BUDGET = 50_000;
 
-export type AiBudgetStatus = { allowed: boolean; isPro: boolean };
+/** Ratio of the daily budget at which a still-allowed FREE athlete gets a heads-up before the cutoff. */
+const WARNING_THRESHOLD_RATIO = 0.8;
+
+export type AiBudgetStatus = { allowed: boolean; isPro: boolean; warning: boolean };
 
 /** Read-only check — never spends anything itself, the AiUsageEvent rows recordAiUsage already writes are the ledger. */
 export async function ensureFreeAiBudget(athleteId: string): Promise<AiBudgetStatus> {
@@ -27,7 +31,7 @@ export async function ensureFreeAiBudget(athleteId: string): Promise<AiBudgetSta
   });
   const isPro = hasProAccess(profile?.tier ?? 'FREE');
   if (isPro) {
-    return { allowed: true, isPro: true };
+    return { allowed: true, isPro: true, warning: false };
   }
 
   const since = startOfDay(new Date());
@@ -36,8 +40,13 @@ export async function ensureFreeAiBudget(athleteId: string): Promise<AiBudgetSta
     _sum: { totalTokens: true },
   });
   const usedToday = usage._sum.totalTokens ?? 0;
+  const allowed = usedToday < FREE_DAILY_TOKEN_BUDGET;
 
-  return { allowed: usedToday < FREE_DAILY_TOKEN_BUDGET, isPro: false };
+  return {
+    allowed,
+    isPro: false,
+    warning: allowed && usedToday >= FREE_DAILY_TOKEN_BUDGET * WARNING_THRESHOLD_RATIO,
+  };
 }
 
 export function aiBudgetResponseBody(): { error: string } {
@@ -45,4 +54,14 @@ export function aiBudgetResponseBody(): { error: string } {
     error:
       "Tu as atteint ta limite d'échanges avec le coach pour aujourd'hui. Réessaie demain, ou passe Pro pour un usage illimité.",
   };
+}
+
+export { AI_BUDGET_WARNING_HEADER, aiBudgetWarningMessage };
+
+/** Merges the warning header onto a coach route's response headers when the budget check flagged one. */
+export function withAiBudgetWarningHeader<T extends Record<string, string>>(
+  headers: T,
+  warning: boolean,
+): T | (T & Record<typeof AI_BUDGET_WARNING_HEADER, string>) {
+  return warning ? { ...headers, [AI_BUDGET_WARNING_HEADER]: '1' } : headers;
 }

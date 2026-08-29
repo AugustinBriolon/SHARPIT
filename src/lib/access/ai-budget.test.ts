@@ -25,7 +25,7 @@ describe('ensureFreeAiBudget', () => {
 
     const status = await ensureFreeAiBudget('athlete-1');
 
-    expect(status).toEqual({ allowed: true, isPro: true });
+    expect(status).toEqual({ allowed: true, isPro: true, warning: false });
     expect(aggregateMock).not.toHaveBeenCalled();
   });
 
@@ -36,7 +36,7 @@ describe('ensureFreeAiBudget', () => {
 
     const status = await ensureFreeAiBudget('athlete-1');
 
-    expect(status).toEqual({ allowed: true, isPro: false });
+    expect(status).toEqual({ allowed: true, isPro: false, warning: false });
   });
 
   it('blocks a FREE athlete once today’s token budget is spent', async () => {
@@ -46,7 +46,7 @@ describe('ensureFreeAiBudget', () => {
 
     const status = await ensureFreeAiBudget('athlete-1');
 
-    expect(status).toEqual({ allowed: false, isPro: false });
+    expect(status).toEqual({ allowed: false, isPro: false, warning: false });
   });
 
   it('treats a missing profile as FREE with no usage yet', async () => {
@@ -56,7 +56,26 @@ describe('ensureFreeAiBudget', () => {
 
     const status = await ensureFreeAiBudget('athlete-1');
 
-    expect(status).toEqual({ allowed: true, isPro: false });
+    expect(status).toEqual({ allowed: true, isPro: false, warning: false });
+  });
+
+  it('warns a FREE athlete who is still allowed but close to today’s budget', async () => {
+    findUniqueMock.mockResolvedValue({ tier: 'FREE' });
+    aggregateMock.mockResolvedValue({ _sum: { totalTokens: 42_000 } });
+    const { ensureFreeAiBudget } = await importModule();
+
+    const status = await ensureFreeAiBudget('athlete-1');
+
+    expect(status).toEqual({ allowed: true, isPro: false, warning: true });
+  });
+
+  it('never warns a Pro athlete, even at high usage', async () => {
+    findUniqueMock.mockResolvedValue({ tier: 'PRO' });
+    const { ensureFreeAiBudget } = await importModule();
+
+    const status = await ensureFreeAiBudget('athlete-1');
+
+    expect(status.warning).toBe(false);
   });
 
   it('only sums coach usage — narrative analysis has its own separate gate and must not count here', async () => {

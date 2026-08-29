@@ -50,8 +50,14 @@ vi.mock('@/lib/decision-memory/repository', () => ({
   createCoachingDecision: vi.fn().mockResolvedValue({ id: 'mock-decision-id' }),
 }));
 
+// Mocked wholesale — ai-budget.ts imports @/lib/prisma, which must not run here.
+// withAiBudgetWarningHeader/aiBudgetResponseBody are trivial, so re-implementing
+// them stays truthful without importActual pulling prisma init back in.
 vi.mock('@/lib/access/ai-budget', () => ({
-  ensureFreeAiBudget: vi.fn().mockResolvedValue({ allowed: true, isPro: false }),
+  ensureFreeAiBudget: vi.fn().mockResolvedValue({ allowed: true, isPro: false, warning: false }),
+  aiBudgetResponseBody: () => ({ error: 'quota_exceeded' }),
+  withAiBudgetWarningHeader: (headers: Record<string, string>, warning: boolean) =>
+    warning ? { ...headers, 'X-Ai-Budget-Warning': '1' } : headers,
 }));
 
 async function importRoute() {
@@ -100,6 +106,20 @@ describe('POST /api/coach/adapt', () => {
     expect(body.summary).toMatch(/rien à réadapter/i);
     // The whole point: no generation is paid for when there is nothing to adapt.
     expect(runStructuredCoachStream).not.toHaveBeenCalled();
+  });
+
+  it('carries the near-limit warning header when the budget check flags one', async () => {
+    const { ensureFreeAiBudget } = await import('@/lib/access/ai-budget');
+    const { getPlannedSessionsForCoach } = await import('@/lib/queries');
+    vi.mocked(getPlannedSessionsForCoach).mockResolvedValue([] as never);
+    vi.mocked(ensureFreeAiBudget).mockResolvedValue({ allowed: true, isPro: false, warning: true });
+
+    const { POST } = await importRoute();
+    const response = await POST(
+      new Request('http://localhost/api/coach/adapt', { method: 'POST', body: JSON.stringify({}) }),
+    );
+
+    expect(response.headers.get('X-Ai-Budget-Warning')).toBe('1');
   });
 
   it('does not gate REMOVE changes — they pass through with no gate entry', async () => {

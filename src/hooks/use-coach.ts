@@ -16,6 +16,8 @@ import {
 } from '@/lib/query/fetchers';
 import { queryKeys } from '@/lib/query/keys';
 import { consumeCoachProgressStream } from '@/lib/coach/chat/coach-progress-stream';
+import { AI_BUDGET_WARNING_HEADER, aiBudgetWarningMessage } from '@/lib/access/ai-budget-shared';
+import { toast } from '@/components/ui/toast';
 import type { CoachMemoryResponse } from '@/hooks/use-coach-memory';
 import type { CoachEndurancePrescription } from '@/lib/planned-session/endurance/coach-endurance-prescription';
 import type { GateResult } from '@/lib/plan-gate/types';
@@ -116,6 +118,10 @@ async function postCoachGeneration<TResult>({
   if (!res.ok) {
     const data = await res.json().catch(() => null);
     throw new Error((data as { error?: string } | null)?.error ?? fallbackError);
+  }
+
+  if (res.headers.get(AI_BUDGET_WARNING_HEADER) === '1') {
+    toast.info(aiBudgetWarningMessage());
   }
 
   let reasoning = '';

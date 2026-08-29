@@ -48,8 +48,14 @@ vi.mock('@/lib/decision-memory/repository', () => ({
   createCoachingDecision: vi.fn().mockResolvedValue({ id: 'mock-decision-id' }),
 }));
 
+// Mocked wholesale — ai-budget.ts imports @/lib/prisma, which must not run here.
+// withAiBudgetWarningHeader/aiBudgetResponseBody are trivial, so re-implementing
+// them stays truthful without importActual pulling prisma init back in.
 vi.mock('@/lib/access/ai-budget', () => ({
-  ensureFreeAiBudget: vi.fn().mockResolvedValue({ allowed: true, isPro: false }),
+  ensureFreeAiBudget: vi.fn().mockResolvedValue({ allowed: true, isPro: false, warning: false }),
+  aiBudgetResponseBody: () => ({ error: 'quota_exceeded' }),
+  withAiBudgetWarningHeader: (headers: Record<string, string>, warning: boolean) =>
+    warning ? { ...headers, 'X-Ai-Budget-Warning': '1' } : headers,
 }));
 
 async function importRoute() {
@@ -162,6 +168,36 @@ describe('POST /api/coach/plan', () => {
 
     expect(response.status).toBe(200);
     expect(body.gate.sessions[0].status).toBe('ACCEPTED');
+  });
+
+  it('carries the near-limit warning header when the budget check flags one', async () => {
+    const { ensureFreeAiBudget } = await import('@/lib/access/ai-budget');
+    const { runStructuredCoachStream } = await import('@/lib/coach/stream-structured-generation');
+    const { getOrBuildAthleteSnapshot } = await import('@/lib/athlete-state/snapshot-service');
+
+    vi.mocked(ensureFreeAiBudget).mockResolvedValue({ allowed: true, isPro: false, warning: true });
+    vi.mocked(runStructuredCoachStream).mockResolvedValue({
+      output: { summary: 'Semaine calme', sessions: [] },
+      usage: { inputTokens: 10, outputTokens: 10, totalTokens: 20 },
+    } as never);
+    vi.mocked(getOrBuildAthleteSnapshot).mockResolvedValue({
+      snapshotId: 'snap-3',
+      confidence: 0.8,
+      decision: decisionState(),
+      physicalHealth: physicalHealthData(),
+      fatigue: { trainingCapacity: 'FULL' },
+      todaysDecision: 'TRAIN_SMART',
+    } as never);
+
+    const { POST } = await importRoute();
+    const response = await POST(
+      new Request('http://localhost/api/coach/plan', {
+        method: 'POST',
+        body: JSON.stringify({ days: 7 }),
+      }),
+    );
+
+    expect(response.headers.get('X-Ai-Budget-Warning')).toBe('1');
   });
 
   it('carries an authored endurance structure through to the proposal', async () => {
