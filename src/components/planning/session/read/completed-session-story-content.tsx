@@ -19,20 +19,25 @@ function StoryLoadingRow() {
   );
 }
 
+/**
+ * Demoted on purpose: with the note leading now, the coach headline is
+ * supporting context, not "the single most important signal on any screen"
+ * — it no longer gets the text-verdict treatment that implies.
+ */
 function StoryHeadline({ headline }: { headline: string }) {
-  return <h3 className="text-verdict text-foreground leading-snug">{headline}</h3>;
+  return <h3 className="text-foreground text-sm leading-snug font-semibold">{headline}</h3>;
 }
 
 function StoryBody({ body }: { body: string }) {
   return <p className="text-foreground/90 text-sm leading-relaxed">{body}</p>;
 }
 
-/** The athlete's own words on the session — the primary thing they came to read, sized and placed accordingly. */
+/** The athlete's own words on the session — the primary thing they came to read: the largest, boldest text on this card. */
 export function CompletedSessionNote({ notes }: { notes: string }) {
   return (
     <div className="min-w-0 space-y-1">
       <p className="text-label">Ta note</p>
-      <p className="text-foreground text-base leading-relaxed font-medium wrap-break-word whitespace-pre-wrap">
+      <p className="text-foreground text-lg leading-snug font-semibold wrap-break-word whitespace-pre-wrap">
         {notes}
       </p>
     </div>
