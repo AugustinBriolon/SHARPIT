@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ChevronLeft } from 'lucide-react';
 import { useBackTarget } from '@/hooks/use-back-target';
+import { floatingHeaderButtonClass } from '@/components/layout/floating-header-button';
 import { cn } from '@/lib/utils';
 
 function canUseHistoryBack(): boolean {
@@ -50,7 +51,8 @@ function BackLinkChrome({
         href={href}
         aria-label={typeof label === 'string' ? label : undefined}
         className={cn(
-          'bg-background/70 text-foreground/70 hover:text-foreground hover:bg-background/85 fixed top-3 left-4 z-50 flex size-10 items-center justify-center rounded-full backdrop-blur-xl transition-colors lg:static lg:mb-3 lg:size-auto lg:justify-start lg:gap-1 lg:rounded-none lg:bg-transparent lg:px-0 lg:text-muted-foreground lg:backdrop-blur-none lg:hover:bg-transparent',
+          floatingHeaderButtonClass('left'),
+          'lg:mb-3 lg:justify-start lg:gap-1 lg:px-0 lg:text-muted-foreground',
           !showOnDesktop && 'lg:hidden',
           className,
         )}
