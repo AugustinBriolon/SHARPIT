@@ -5,8 +5,7 @@ import { DiscussWithCoachButton } from '@/components/coach/discuss-with-coach-bu
 import { ActivityDetailActionsMenu } from '@/components/training/activity/detail/activity-detail-header-actions';
 import { ActivityDetailBackLink } from '@/components/training/activity/detail/activity-detail-back-link';
 import { ActivityHeaderContextChips } from '@/components/training/activity/detail/activity-header-context-chips';
-import { InstrumentMetricChip } from '@/components/ui/instruments/instrument-metric-chip';
-import { activityTypeLabels, formatDuration } from '@/lib/format';
+import { activityTypeLabels } from '@/lib/format';
 import {
   formatActivityDetailLoad,
   formatActivityDetailMeta,
@@ -123,9 +122,6 @@ function ActivityDetailHeaderCoachSection({
         rpe={activity.rpe}
         weather={activity.weather}
       />
-      {activity.duration !== null ? (
-        <InstrumentMetricChip label="Durée" value={formatDuration(activity.duration)} />
-      ) : null}
     </div>
   );
 }
