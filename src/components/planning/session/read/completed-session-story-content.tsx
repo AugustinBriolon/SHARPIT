@@ -27,11 +27,12 @@ function StoryBody({ body }: { body: string }) {
   return <p className="text-foreground/90 text-sm leading-relaxed">{body}</p>;
 }
 
-function StoryNotes({ notes }: { notes: string }) {
+/** The athlete's own words on the session — the primary thing they came to read, sized and placed accordingly. */
+export function CompletedSessionNote({ notes }: { notes: string }) {
   return (
-    <div className="min-w-0 space-y-1 px-3 py-2.5">
+    <div className="min-w-0 space-y-1">
       <p className="text-label">Ta note</p>
-      <p className="text-foreground text-sm leading-relaxed wrap-break-word whitespace-pre-wrap">
+      <p className="text-foreground text-base leading-relaxed font-medium wrap-break-word whitespace-pre-wrap">
         {notes}
       </p>
     </div>
@@ -104,27 +105,19 @@ function hasPlanGaps(analysis: ReturnType<typeof parseSessionAnalysis>): boolean
   return analysis.remarks.length > 0 || Boolean(analysis.recommendation?.trim());
 }
 
-/**
- * "Ta note" + "Écarts au plan" grouped under one boundary instead of each
- * managing its own top hairline — reads as one supporting-detail block under
- * the narrative, not a loose stack of same-weight fragments.
- */
+/** Compliance detail — secondary to the note and the coach narrative, kept in its own quiet box. */
 export function CompletedSessionDetails({
-  notes,
   analysis,
 }: {
-  notes: string | null;
   analysis: ReturnType<typeof parseSessionAnalysis>;
 }) {
-  const showPlanGaps = hasPlanGaps(analysis);
-  if (!notes && !showPlanGaps) {
+  if (!hasPlanGaps(analysis) || !analysis) {
     return null;
   }
 
   return (
-    <div className="border-analysis-border/60 divide-analysis-border/50 min-w-0 divide-y overflow-hidden rounded-md border">
-      {notes ? <StoryNotes notes={notes} /> : null}
-      {showPlanGaps && analysis ? <CompletedSessionPlanGaps analysis={analysis} /> : null}
+    <div className="border-analysis-border/60 min-w-0 overflow-hidden rounded-md border">
+      <CompletedSessionPlanGaps analysis={analysis} />
     </div>
   );
 }

@@ -3,12 +3,12 @@
 import type { ClientPlannedSession } from '@/lib/query/types';
 import {
   CompletedSessionDetails,
+  CompletedSessionNote,
   CompletedSessionStoryContent,
   parseActivityNarrative,
   parseSessionAnalysis,
 } from '@/components/planning/session/read/completed-session-story-content';
 import { ComplianceBadge } from '@/components/planning/session/read/completed-session-story-parts';
-import { PlannedVsDoneStrip } from '@/components/planning/session/read/planned-vs-done-strip';
 import { CompletedSessionStoryActions } from '@/components/planning/session/read/completed-session-story-actions';
 
 function readActivityNarrative(activity: ClientPlannedSession['activity']) {
@@ -36,7 +36,9 @@ function parseSessionStory(session: ClientPlannedSession) {
 
 /**
  * One coach reading for a completed planned session.
- * Compliance is a status chip — not a second essay competing with the activity narrative.
+ * The athlete's own note is the primary reason to open this card — it leads,
+ * sized up. The coach narrative and compliance detail are supporting context
+ * underneath, not competing for the same attention.
  */
 export function CompletedSessionStory({
   session,
@@ -65,6 +67,8 @@ export function CompletedSessionStory({
         <ComplianceBadge analysis={analysis} isAnalyzing={isAnalyzing} />
       </div>
 
+      {notes ? <CompletedSessionNote notes={notes} /> : null}
+
       <CompletedSessionStoryContent
         analysis={analysis}
         isAnalyzing={isAnalyzing}
@@ -72,9 +76,7 @@ export function CompletedSessionStory({
         notes={notes}
       />
 
-      <CompletedSessionDetails analysis={analysis} notes={notes} />
-
-      {session.activity ? <PlannedVsDoneStrip session={session} /> : null}
+      <CompletedSessionDetails analysis={analysis} />
 
       <CompletedSessionStoryActions
         analysis={analysis}
