@@ -49,10 +49,14 @@ export function Sparkline({
   values,
   stroke,
   h = 32,
+  strokeWidth = 2,
+  fillOpacity = 0.12,
 }: {
   values: (number | null)[];
   stroke: string;
   h?: number;
+  strokeWidth?: number;
+  fillOpacity?: number;
 }) {
   const W = 200;
   const { line, area } = buildSparkPaths(values, W, h);
@@ -62,14 +66,14 @@ export function Sparkline({
 
   return (
     <svg height={h} preserveAspectRatio="none" viewBox={`0 0 ${W} ${h}`} width="100%" aria-hidden>
-      {area && <path d={area} fill={stroke} fillOpacity={0.12} />}
+      {area && <path d={area} fill={stroke} fillOpacity={fillOpacity} />}
       <path
         d={line}
         fill="none"
         stroke={stroke}
         strokeLinecap="round"
         strokeLinejoin="round"
-        strokeWidth={2}
+        strokeWidth={strokeWidth}
         vectorEffect="non-scaling-stroke"
       />
     </svg>
