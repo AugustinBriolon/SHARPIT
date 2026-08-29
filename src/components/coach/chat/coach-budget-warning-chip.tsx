@@ -1,6 +1,6 @@
 'use client';
 
-import { formatRetryDuration } from '@/lib/access/ai-budget-shared';
+import { formatBudgetRetryEta } from '@/lib/access/ai-budget-shared';
 import { cn } from '@/lib/utils';
 
 /**
@@ -49,7 +49,7 @@ export function CoachBudgetBlockedChip({
         )}
       >
         <span className="truncate text-xs font-medium tracking-tight">
-          Limite atteinte · réessaie dans {formatRetryDuration(retryAfterSeconds)}
+          Limite atteinte · réessaie {formatBudgetRetryEta(retryAfterSeconds)}
         </span>
       </div>
     </div>
