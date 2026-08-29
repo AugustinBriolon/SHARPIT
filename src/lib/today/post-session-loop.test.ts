@@ -50,9 +50,7 @@ describe('buildPostSessionLoop', () => {
     });
   });
 
-  it('stays hidden when there is nothing left to say — RPE known, twin not fresh', () => {
-    // Otherwise the card just repeats the "Voir le récit" link the day summary
-    // already shows for this same activity, with no distinct content of its own.
+  it('still prompts for ressenti when RPE is known but feeling is missing', () => {
     const loop = buildPostSessionLoop({
       phase: 'RECOVERY_WINDOW',
       overallFresh: false,
@@ -65,6 +63,31 @@ describe('buildPostSessionLoop', () => {
           date: '2026-08-25T10:00:00',
           rpe: 6,
           feeling: null,
+        },
+      ],
+    });
+    expect(loop).toMatchObject({
+      visible: true,
+      activityId: 'a2',
+      activityTitle: 'Vélo',
+      needsFeeling: true,
+      freshnessLine: null,
+    });
+  });
+
+  it('stays hidden when ressenti is complete and twin is not fresh', () => {
+    const loop = buildPostSessionLoop({
+      phase: 'RECOVERY_WINDOW',
+      overallFresh: false,
+      day: DAY,
+      activities: [
+        {
+          id: 'a2',
+          title: null,
+          typeLabel: 'Vélo',
+          date: '2026-08-25T10:00:00',
+          rpe: 6,
+          feeling: 'Solide',
         },
       ],
     });

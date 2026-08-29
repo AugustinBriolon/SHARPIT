@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse, after } from 'next/server';
 import { buildActivityUpdateData } from '@/lib/activity/activity-service';
+import { onWellnessSubmitted } from '@/lib/athlete-state/orchestrator';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import {
   removeManualActivityObservations,
@@ -7,6 +8,7 @@ import {
 } from '@/lib/manual-observation-sync';
 import { deleteActivity, getActivityById, updateActivity } from '@/lib/queries';
 import { updateRecordsForTypesSafe } from '@/lib/training/records';
+import { computeTrainingDayId } from '@/lib/training/training-day';
 import { updateActivitySchema } from '@/lib/validators/activity';
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -59,11 +61,17 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: 'Séance introuvable' }, { status: 404 });
     }
 
+    const touchesSubjective = parsed.data.feeling !== undefined || parsed.data.rpe !== undefined;
+
     // Instant UX: return the updated row immediately; twin sync must not block PATCH.
     after(async () => {
       try {
         await syncManualActivityObservations(activity);
         await updateRecordsForTypesSafe(athleteId, [existing.type, newType]);
+        if (touchesSubjective) {
+          const trainingDayId = computeTrainingDayId(new Date(activity.date));
+          await onWellnessSubmitted(athleteId, trainingDayId);
+        }
       } catch (error) {
         console.error('[activities/PATCH] background sync', error);
       }

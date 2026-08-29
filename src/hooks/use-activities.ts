@@ -5,6 +5,10 @@ import { isSet } from '@/lib/util/value';
 import { fetchActivities, fetchActivityStream, fetchMultisportStreams } from '@/lib/query/fetchers';
 import { queryKeys } from '@/lib/query/keys';
 import { listOptimistic, tempId, isTempId } from '@/lib/query/optimistic';
+import {
+  invalidateTodayPresentationCaches,
+  patchTodayPostSessionLoopAfterFeeling,
+} from '@/lib/query/patch-post-session-loop';
 import { sendJson } from '@/lib/query/send-json';
 import type { ClientActivity } from '@/lib/query/types';
 import type { createActivitySchema } from '@/lib/validators/activity';
@@ -57,6 +61,10 @@ function optimisticBikeMetrics(payload: ActivityMutationPayload) {
 function optimisticSwimMetrics(payload: ActivityMutationPayload) {
   const distanceM = payload.swimMetrics?.distanceM;
   return isSet(distanceM) && distanceM !== undefined ? { distanceM } : null;
+}
+
+function containsFeelingUpdate(data: Partial<ActivityMutationPayload>): boolean {
+  return data.feeling !== undefined || data.rpe !== undefined;
 }
 
 function optimisticActivity(payload: ActivityMutationPayload): ClientActivity {
@@ -113,37 +121,55 @@ export function useActivityMutations() {
     },
   });
 
+  const updateOptimistic = listOptimistic<
+    ClientActivity,
+    { id: string; data: Partial<ActivityMutationPayload> },
+    { id: string }
+  >({
+    queryClient,
+    queryKey: key,
+    apply: (prev, { id, data }) =>
+      prev.map((a) => {
+        if (a.id !== id) {
+          return a;
+        }
+        let nextDate = a.date;
+        if (data.date) {
+          nextDate = data.date instanceof Date ? data.date : new Date(data.date as string);
+        }
+        return {
+          ...a,
+          ...data,
+          date: nextDate,
+          updatedAt: new Date(),
+        } as ClientActivity;
+      }),
+    error: 'Impossible de mettre à jour la séance.',
+    invalidateOnSettle: false,
+  });
+
   const update = useMutation({
     mutationFn: ({ id, data }: { id: string; data: Partial<ActivityMutationPayload> }) =>
       sendJson(`/api/activities/${id}`, 'PATCH', data) as Promise<{ id: string }>,
-    ...listOptimistic<
-      ClientActivity,
-      { id: string; data: Partial<ActivityMutationPayload> },
-      { id: string }
-    >({
-      queryClient,
-      queryKey: key,
-      apply: (prev, { id, data }) =>
-        prev.map((a) => {
-          if (a.id !== id) {
-            return a;
-          }
-          let nextDate = a.date;
-          if (data.date) {
-            nextDate = data.date instanceof Date ? data.date : new Date(data.date as string);
-          }
-          return {
-            ...a,
-            ...data,
-            date: nextDate,
-            updatedAt: new Date(),
-          } as ClientActivity;
-        }),
-      error: 'Impossible de mettre à jour la séance.',
-    }),
-    onSettled: () => {
+    ...updateOptimistic,
+    onMutate: async (vars) => {
+      if (containsFeelingUpdate(vars.data)) {
+        patchTodayPostSessionLoopAfterFeeling(queryClient, vars.id);
+      }
+      return updateOptimistic.onMutate(vars);
+    },
+    onError: (err, vars, context) => {
+      updateOptimistic.onError(err, vars, context);
+      if (containsFeelingUpdate(vars.data)) {
+        invalidateTodayPresentationCaches(queryClient);
+      }
+    },
+    onSettled: (_data, _error, vars) => {
       void queryClient.invalidateQueries({ queryKey: key });
       void queryClient.invalidateQueries({ queryKey: queryKeys.records });
+      if (vars && containsFeelingUpdate(vars.data)) {
+        invalidateTodayPresentationCaches(queryClient);
+      }
     },
   });
 

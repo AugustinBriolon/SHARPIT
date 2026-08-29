@@ -58,7 +58,10 @@ function pickLatestActivity(
 }
 
 function activityNeedsFeeling(activity: PostSessionLoopInput['activities'][number]): boolean {
-  return (activity.rpe === undefined || activity.rpe === null) && ((activity.feeling === undefined || activity.feeling === null) || activity.feeling.trim() === '');
+  const missingRpe = activity.rpe === undefined || activity.rpe === null;
+  const missingFeeling =
+    activity.feeling === undefined || activity.feeling === null || activity.feeling.trim() === '';
+  return missingRpe || missingFeeling;
 }
 
 function buildVisiblePostSessionLoop(
@@ -81,7 +84,10 @@ export function buildPostSessionLoop(input: PostSessionLoopInput): PostSessionLo
     return null;
   }
 
-  const latest = pickLatestActivity(activitiesToday(input.activities, input.day), input.excludeActivityIds);
+  const latest = pickLatestActivity(
+    activitiesToday(input.activities, input.day),
+    input.excludeActivityIds,
+  );
   if (!latest) {
     return null;
   }
