@@ -20,6 +20,11 @@ import { buildCoachContext, formatCoachContext } from '@/lib/coach/context/coach
 import { createCoachTools } from '@/lib/coach/chat/coach-tools';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { recordAiUsage } from '@/lib/ai-usage';
+import {
+  aiBudgetResponseBody,
+  ensureFreeAiBudget,
+  withAiBudgetWarningHeader,
+} from '@/lib/access/ai-budget';
 import { formatStrengthSessionRules } from '@/lib/planned-session/strength/strength-session-template';
 import { checkRateLimit, rateLimitResponseBody, rateLimiters } from '@/lib/rate-limit';
 
@@ -98,6 +103,11 @@ export async function POST(req: Request) {
     return NextResponse.json(rateLimitResponseBody(rateLimit.retryAfterSeconds), { status: 429 });
   }
 
+  const budget = await ensureFreeAiBudget(athleteId);
+  if (!budget.allowed) {
+    return NextResponse.json(aiBudgetResponseBody(), { status: 402 });
+  }
+
   // The agenda ships with the context rather than behind a tool: a scheduling
   // turn otherwise spent a whole extra step fetching it, resending the entire
   // prefix afterwards. One cheap read here replaces that round trip.
@@ -143,5 +153,6 @@ export async function POST(req: Request) {
 
   return createUIMessageStreamResponse({
     stream: toUIMessageStream({ stream: result.stream }),
+    headers: withAiBudgetWarningHeader({}, budget.warning),
   });
 }

@@ -5,6 +5,11 @@ import { NextResponse } from 'next/server';
 import { isCoachConfigured } from '@/lib/ai';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { recordAiUsage } from '@/lib/ai-usage';
+import {
+  aiBudgetResponseBody,
+  ensureFreeAiBudget,
+  withAiBudgetWarningHeader,
+} from '@/lib/access/ai-budget';
 import { checkRateLimit, rateLimitResponseBody, rateLimiters } from '@/lib/rate-limit';
 import { buildCoachContext, formatCoachContext } from '@/lib/coach/context/coach-context';
 import { getActiveTrainingPlan, getGoals, getPlannedSessionsForCoach } from '@/lib/queries';
@@ -187,7 +192,7 @@ ${formatCoachContext(ctx)}
 ${upcomingLines.length ? upcomingLines.join('\n') : 'Aucune séance planifiée à venir.'}`;
 }
 
-function emptyAdaptResponse() {
+function emptyAdaptResponse(budgetWarning: boolean) {
   return new Response(
     encodeCoachProgressEvent<AdaptPayload, unknown>({
       type: 'result',
@@ -198,7 +203,7 @@ function emptyAdaptResponse() {
         gate: { sessions: [], planLevelFindings: [] },
       },
     }),
-    { headers: COACH_PROGRESS_HEADERS },
+    { headers: withAiBudgetWarningHeader(COACH_PROGRESS_HEADERS, budgetWarning) },
   );
 }
 
@@ -210,11 +215,30 @@ async function loadAdaptContext(athleteId: string, today: Date, days: number) {
     getActiveTrainingPlan(athleteId),
     getGoals(athleteId),
   ]);
-  const defaultGoalId = resolveDefaultPlanGoalId(
-    activePlan?.goalId,
-    selectableDatedGoalIds(goals),
-  );
+  const defaultGoalId = resolveDefaultPlanGoalId(activePlan?.goalId, selectableDatedGoalIds(goals));
   return { ctx, upcoming, defaultGoalId, horizon };
+}
+
+type AdaptAccess = { blocked: NextResponse | null; budgetWarning: boolean };
+
+async function checkAdaptAccess(athleteId: string): Promise<AdaptAccess> {
+  const rateLimit = await checkRateLimit(rateLimiters.coachAdapt, athleteId);
+  if (!rateLimit.ok) {
+    return {
+      blocked: NextResponse.json(rateLimitResponseBody(rateLimit.retryAfterSeconds), {
+        status: 429,
+      }),
+      budgetWarning: false,
+    };
+  }
+  const budget = await ensureFreeAiBudget(athleteId);
+  if (!budget.allowed) {
+    return {
+      blocked: NextResponse.json(aiBudgetResponseBody(), { status: 402 }),
+      budgetWarning: false,
+    };
+  }
+  return { blocked: null, budgetWarning: budget.warning };
 }
 
 export async function POST(req: Request) {
@@ -238,11 +262,9 @@ export async function POST(req: Request) {
     const today = startOfDay(new Date());
     const athleteId = await getCurrentAthleteId();
 
-    const rateLimit = await checkRateLimit(rateLimiters.coachAdapt, athleteId);
-    if (!rateLimit.ok) {
-      return NextResponse.json(rateLimitResponseBody(rateLimit.retryAfterSeconds), {
-        status: 429,
-      });
+    const access = await checkAdaptAccess(athleteId);
+    if (access.blocked) {
+      return access.blocked;
     }
 
     const { ctx, upcoming, defaultGoalId, horizon } = await loadAdaptContext(
@@ -256,7 +278,7 @@ export async function POST(req: Request) {
     // validation after a full ~60s generation. Answer directly rather than pay
     // for an answer that cannot be right.
     if (upcoming.length === 0) {
-      return emptyAdaptResponse();
+      return emptyAdaptResponse(access.budgetWarning);
     }
 
     const prompt = buildAdaptPrompt({
@@ -312,7 +334,9 @@ export async function POST(req: Request) {
       },
     });
 
-    return new Response(stream, { headers: COACH_PROGRESS_HEADERS });
+    return new Response(stream, {
+      headers: withAiBudgetWarningHeader(COACH_PROGRESS_HEADERS, access.budgetWarning),
+    });
   } catch (error) {
     console.error('[coach/adapt]', error);
     return NextResponse.json({ error: adaptErrorMessage(error) }, { status: 500 });
