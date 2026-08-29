@@ -13,9 +13,10 @@ import { COACH_MODEL, coachGatewayOptions, isCoachConfigured } from './ai';
 import { buildCoachContext, formatCoachContext } from '@/lib/coach/context/coach-context';
 import { recordAiUsage } from '@/lib/ai-usage';
 import { prisma } from './prisma';
-import { getActivities, getHealthEntries, getPlannedSessions } from './queries';
+import { getActivities, getAthleteProfile, getHealthEntries, getPlannedSessions } from './queries';
 import { analyzeSleep, formatClock, formatDuration, type SleepEntryInput } from '@/lib/sleep/sleep';
 import { loadDailyTrainingStressEntries } from '@/lib/training/pmc-server';
+import { isExpertMode, toDisplayMode, type DisplayMode } from '@/lib/preferences/display-mode';
 
 const TYPE_FR: Record<string, string> = {
   RUN: 'Course',
@@ -24,11 +25,23 @@ const TYPE_FR: Record<string, string> = {
   STRENGTH: 'Renfo',
 };
 
-const WEEKLY_SYSTEM = `Tu es le coach d'endurance personnel de l'athlète. Tu rédiges sa RÉTROSPECTIVE HEBDOMADAIRE : un bilan de la semaine écoulée, factuel et actionnable, basé uniquement sur ses données réelles fournies plus bas.
+/**
+ * Density-aware like every other reading in the app (ADR-023): 'essential'
+ * keeps the same underlying figures but never prints the technical acronyms
+ * (TSS, TSB, ACWR, CTL/ATL) — only 'expert' athletes asked to see that
+ * vocabulary. The facts fed to the model still carry the raw numbers either
+ * way; this only constrains what makes it into the written narrative.
+ */
+function buildWeeklySystem(mode: DisplayMode): string {
+  const formLine = isExpertMode(mode)
+    ? '2-3 phrases : volume réalisé vs prévu, respect du plan, et état de forme global (charge, TSB). Cite des chiffres clés, acronymes inclus (TSS, TSB, ACWR).'
+    : '2-3 phrases : volume réalisé vs prévu, respect du plan, et état de forme global (charge, fraîcheur) en langage clair — jamais d\'acronymes techniques (interdits : TSS, TSB, ACWR, CTL, ATL). Dis "ta fraîcheur reste bonne" ou "ta charge a bien progressé", jamais "TSB +12" ou "ACWR 1.37".';
+
+  return `Tu es le coach d'endurance personnel de l'athlète. Tu rédiges sa RÉTROSPECTIVE HEBDOMADAIRE : un bilan de la semaine écoulée, factuel et actionnable, basé uniquement sur ses données réelles fournies plus bas.
 
 Structure imposée (markdown concis, pas de titre de niveau 1) :
 ## Bilan de la semaine
-2-3 phrases : volume réalisé vs prévu, respect du plan, et état de forme global (charge, TSB). Cite des chiffres clés.
+${formLine}
 
 ## Sommeil & récupération
 2-3 phrases sur la qualité du sommeil de la semaine (durée, score, phases profond/REM, régularité des horaires) et son impact sur la récupération (HRV, FC repos, readiness). Sois précis avec les chiffres du sommeil.
@@ -40,6 +53,7 @@ Liste à puces courte (2-4 points) : ce qui a bien marché, ce qui doit être su
 2-3 recommandations concrètes (orientation des séances, récupération, sommeil) cohérentes avec la forme actuelle et l'objectif.
 
 Règles : reste concis (12-18 lignes au total). Appuie-toi sur les chiffres réels, ne les invente pas. Respecte IMPÉRATIVEMENT les douleurs/blessures. Tutoie l'athlète, en français. Sois bienveillant mais honnête.`;
+}
 
 function utcDateOnly(d: Date): Date {
   return new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
@@ -274,9 +288,10 @@ export async function generateWeeklyReviewContent(
   athleteId: string,
   weekStart: Date,
 ): Promise<{ content: string; stats: WeeklyStats }> {
-  const [stats, ctx] = await Promise.all([
+  const [stats, ctx, profile] = await Promise.all([
     buildWeeklyStats(athleteId, weekStart),
     buildCoachContext(athleteId, addDays(weekStart, 6)),
+    getAthleteProfile(athleteId),
   ]);
   // Contexte global de l'athlète (objectifs, forme, blessures, planifié à venir),
   // pris à la fin de la semaine concernée.
@@ -289,7 +304,7 @@ Rédige la rétrospective hebdomadaire en suivant la structure imposée. Mets l'
 
   const { text, usage } = await generateText({
     model: COACH_MODEL,
-    system: WEEKLY_SYSTEM,
+    system: buildWeeklySystem(toDisplayMode(profile?.displayMode)),
     prompt,
     providerOptions: coachGatewayOptions,
   });
