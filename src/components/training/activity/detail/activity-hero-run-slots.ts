@@ -1,4 +1,4 @@
-import { formatDistance, formatPace } from '@/lib/format';
+import { formatDistance, formatDuration, formatPace } from '@/lib/format';
 import type { HeroActivity } from '@/components/training/activity/detail/activity-hero-stats';
 
 export type HeroStatSlot = {
@@ -42,10 +42,23 @@ function runCadenceSlot(m: HeroActivity['runMetrics']): HeroStatSlot {
   };
 }
 
+function runDurationSlot(activity: HeroActivity): HeroStatSlot {
+  return {
+    label: 'Temps',
+    value: activity.duration !== null ? formatDuration(activity.duration) : null,
+  };
+}
+
 export function buildRunHeroSlots(
   activity: HeroActivity,
   stream: StreamStats | null,
 ): HeroStatSlot[] {
   const m = activity.runMetrics;
-  return [runDistanceSlot(m), runPaceSlot(m), runHrSlot(m, stream), runCadenceSlot(m)];
+  return [
+    runDistanceSlot(m),
+    runDurationSlot(activity),
+    runPaceSlot(m),
+    runHrSlot(m, stream),
+    runCadenceSlot(m),
+  ];
 }
