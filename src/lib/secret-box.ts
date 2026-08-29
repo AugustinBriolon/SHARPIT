@@ -3,24 +3,24 @@ import crypto from 'crypto';
 /**
  * `SECRET_ENCRYPTION_KEY` is the only secret this module should ever use —
  * a dedicated value with no purpose but encrypting provider credentials at
- * rest. `CRON_SECRET`/`DATABASE_URL` stay as a local-dev convenience only
- * (never set `SECRET_ENCRYPTION_KEY` locally? this still works); production
- * must configure the dedicated key explicitly, since silently falling back
- * to a secret rotated for an unrelated reason would make every already-
- * encrypted row unreadable without warning.
+ * rest. Production must configure the dedicated key explicitly, since
+ * silently falling back to a secret rotated for an unrelated reason would
+ * make every already-encrypted row unreadable without warning — so the
+ * `CRON_SECRET`/`DATABASE_URL` convenience fallback below only ever applies
+ * outside production, where `DATABASE_URL` is otherwise always set and would
+ * defeat the production check entirely.
  */
 function encryptionKey(): Buffer {
-  const secret =
-    process.env.SECRET_ENCRYPTION_KEY ?? process.env.CRON_SECRET ?? process.env.DATABASE_URL;
-  if (secret) {
-    return crypto.createHash('sha256').update(secret).digest();
+  if (process.env.SECRET_ENCRYPTION_KEY) {
+    return crypto.createHash('sha256').update(process.env.SECRET_ENCRYPTION_KEY).digest();
   }
-  if (process.env.NODE_ENV === 'development') {
-    return crypto.createHash('sha256').update('sharpit-dev-insecure').digest();
+  if (process.env.NODE_ENV !== 'development') {
+    throw new Error(
+      'SECRET_ENCRYPTION_KEY is not configured — refusing to encrypt/decrypt provider credentials with no key in production.',
+    );
   }
-  throw new Error(
-    'SECRET_ENCRYPTION_KEY is not configured — refusing to encrypt/decrypt provider credentials with no key in production.',
-  );
+  const devFallback = process.env.CRON_SECRET ?? process.env.DATABASE_URL ?? 'sharpit-dev-insecure';
+  return crypto.createHash('sha256').update(devFallback).digest();
 }
 
 /** Chiffre une valeur sensible (ex. mot de passe Renpho) avant stockage en base. */

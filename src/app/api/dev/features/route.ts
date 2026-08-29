@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDevTools, isDevToolsEnabled } from '@/lib/dev/dev-tools';
+import { getDevTools, isDevToolsAccessAllowed } from '@/lib/dev/dev-tools';
 import type { FeatureCategory } from '@/core/features/types';
 
 const VALID_CATEGORIES: FeatureCategory[] = ['SESSION', 'LOAD', 'RECOVERY', 'BODY', 'CONDITION'];
@@ -93,7 +93,7 @@ async function resolveFeatureExplorerRequest(input: {
  * Protected by DEV_TOOLS_ENABLED environment flag.
  */
 export async function GET(request: NextRequest) {
-  if (!isDevToolsEnabled) {
+  if (!(await isDevToolsAccessAllowed())) {
     return NextResponse.json({ error: 'Developer tools are not enabled.' }, { status: 404 });
   }
 

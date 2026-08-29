@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { seedDemoAthlete } from '@/lib/demo/seed-demo-data';
-import { timingSafeEqualString } from '@/lib/crypto/timing-safe-equal';
+import { verifyCronSecret } from '@/lib/cron/verify-cron-secret';
 
 export const maxDuration = 60;
 
@@ -9,8 +9,7 @@ export const maxDuration = 60;
  * date in seedDemoAthlete() is computed at run time, so a daily rerun is what
  * actually prevents the demo from going stale (see ADR-026). */
 export async function GET(request: Request) {
-  const auth = request.headers.get('authorization');
-  if (!auth || !timingSafeEqualString(auth, `Bearer ${process.env.CRON_SECRET}`)) {
+  if (!verifyCronSecret(request)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 

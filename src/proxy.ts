@@ -7,13 +7,16 @@ import { checkRateLimit, rateLimiters, rateLimitResponseBody } from '@/lib/rate-
 // Routes accessibles sans session Clerk :
 // - pages de connexion/inscription
 // - le cron Vercel (protégé par CRON_SECRET, pas par une session)
-// - l'entrée du mode démo, qui pose le cookie avant toute session
+// - l'entrée et la sortie du mode démo, qui posent/effacent le cookie avant
+//   toute session — listées explicitement (pas de wildcard `/api/demo(.*)`)
+//   pour ne jamais exposer d'autre route sous /api/demo sans session.
 const isPublicRoute = createRouteMatcher([
   '/sign-in(.*)',
   '/sign-up(.*)',
   '/api/cron(.*)',
   '/~offline',
   '/demo',
+  '/api/demo/exit',
 ]);
 
 // Callbacks OAuth : des GET qui écrivent en base au retour du fournisseur.

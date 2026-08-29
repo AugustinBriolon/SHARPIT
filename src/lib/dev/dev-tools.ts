@@ -15,9 +15,20 @@ import { PipelineInspector } from '@/core/dev/pipeline-inspector';
 import { FeatureExplorer } from '@/core/dev/feature-explorer';
 import { globalMetrics } from '@/core/dev/metrics';
 import { prisma } from '@/lib/prisma';
+import { isCurrentUserAdmin } from '@/lib/auth/admin';
 
 export const isDevToolsEnabled =
   process.env.DEV_TOOLS_ENABLED === 'true' || process.env.NODE_ENV === 'development';
+
+/**
+ * These tools accept an arbitrary `athleteId` and return that athlete's raw
+ * pipeline/feature data — being signed in isn't enough to call them, an
+ * authenticated athlete could otherwise inspect any other athlete's data.
+ * Gated to admins on top of the env flag, same as /api/admin/*.
+ */
+export async function isDevToolsAccessAllowed(): Promise<boolean> {
+  return isDevToolsEnabled && (await isCurrentUserAdmin());
+}
 
 function createDevTools() {
   const obsRepo = new PrismaObservationRepository(prisma);

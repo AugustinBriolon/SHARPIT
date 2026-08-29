@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getDevTools, isDevToolsEnabled } from '@/lib/dev/dev-tools';
+import { getDevTools, isDevToolsAccessAllowed } from '@/lib/dev/dev-tools';
 
 /**
  * GET /api/dev/metrics
@@ -10,7 +10,7 @@ import { getDevTools, isDevToolsEnabled } from '@/lib/dev/dev-tools';
  * Protected by DEV_TOOLS_ENABLED environment flag.
  */
 export async function GET() {
-  if (!isDevToolsEnabled) {
+  if (!(await isDevToolsAccessAllowed())) {
     return NextResponse.json({ error: 'Developer tools are not enabled.' }, { status: 404 });
   }
 
@@ -30,7 +30,7 @@ export async function GET() {
  * Resets all in-memory metric counters.
  */
 export async function DELETE() {
-  if (!isDevToolsEnabled) {
+  if (!(await isDevToolsAccessAllowed())) {
     return NextResponse.json({ error: 'Developer tools are not enabled.' }, { status: 404 });
   }
 
