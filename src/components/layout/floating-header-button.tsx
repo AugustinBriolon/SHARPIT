@@ -11,11 +11,15 @@ import { cn } from '@/lib/utils';
  * `rounded-full` is a deliberate exception to DESIGN_LANGUAGE.md's
  * instrument `rounded-lg` button rule — this is floating nav chrome, not a
  * CTA, and every button sharing a header row must read as one circular
- * family: same 40px size, same frosted-glass opacity, same top offset.
+ * family: same 48px size, same frosted-glass opacity, same top offset.
+ *
+ * Icon color dims to `/70` at rest on light canvas, but stays full-strength
+ * `text-foreground` (Snow White) in dark mode — at 70% it read as a dull
+ * gray against the dark, blurred backdrop instead of a clean white.
  */
 export function floatingHeaderButtonClass(side: 'left' | 'right'): string {
   return cn(
-    'bg-background/70 text-foreground/70 hover:text-foreground hover:bg-background/85 fixed top-3 z-40 flex size-10 items-center justify-center rounded-full backdrop-blur-xl transition-colors lg:static lg:size-auto lg:rounded-none lg:bg-transparent lg:backdrop-blur-none lg:hover:bg-transparent',
+    'bg-background/70 text-foreground/70 hover:text-foreground hover:bg-background/85 dark:text-foreground fixed top-3 z-40 flex size-12 items-center justify-center rounded-full backdrop-blur-xl transition-colors lg:static lg:size-auto lg:rounded-none lg:bg-transparent lg:backdrop-blur-none lg:hover:bg-transparent',
     side === 'left' ? 'left-4' : 'right-4',
   );
 }

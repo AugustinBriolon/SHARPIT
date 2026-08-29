@@ -58,10 +58,10 @@ function BackLinkChrome({
         )}
         onClick={onClick}
       >
-        <ChevronLeft className="size-5 shrink-0 lg:size-4" aria-hidden />
+        <ChevronLeft className="size-6 shrink-0 lg:size-4" aria-hidden />
         <span className="hidden text-sm lg:inline">{label}</span>
       </Link>
-      <div className="h-14 lg:hidden" aria-hidden />
+      <div className="h-16 lg:hidden" aria-hidden />
     </>
   );
 }

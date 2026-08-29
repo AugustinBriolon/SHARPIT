@@ -10,7 +10,7 @@ import { cn } from '@/lib/utils';
  * Mobile pins the back button to the viewport as a floating, frosted-glass
  * control (iOS-style: no bar, no bg on the row it sits in) so it never
  * masks the title or banner beneath it; the row below only reserves the
- * gutter it needs (`max-lg:pt-14`), not a full-width band. Desktop leaves it
+ * gutter it needs (`max-lg:pt-16`), not a full-width band. Desktop leaves it
  * inline and sticks through the shared `StickyHeader`, which fades a blur in
  * only once the page has actually moved.
  *
@@ -34,7 +34,7 @@ export function MobileDrillDownHeader({
   titleBadge?: React.ReactNode;
 }) {
   return (
-    <StickyHeader className={cn('mb-3 space-y-1 max-lg:pt-14 lg:mb-4', className)}>
+    <StickyHeader className={cn('mb-3 space-y-1 max-lg:pt-16 lg:mb-4', className)}>
       <Link
         aria-label={backLabel}
         className={cn(
@@ -43,7 +43,7 @@ export function MobileDrillDownHeader({
         )}
         href={backHref}
       >
-        <ChevronLeft className="size-5 shrink-0 lg:size-4" aria-hidden />
+        <ChevronLeft className="size-6 shrink-0 lg:size-4" aria-hidden />
         <span className="hidden text-sm lg:inline">{backLabel}</span>
       </Link>
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1">

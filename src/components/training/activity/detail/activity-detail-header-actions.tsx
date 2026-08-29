@@ -46,7 +46,7 @@ export function ActivityDetailActionsMenu({
           />
         }
       >
-        <MoreHorizontal className="size-4" aria-hidden />
+        <MoreHorizontal className="size-5 lg:size-4" aria-hidden />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="min-w-52">
         <DropdownMenuItem
