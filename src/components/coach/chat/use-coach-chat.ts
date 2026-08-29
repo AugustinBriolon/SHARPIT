@@ -37,8 +37,7 @@ import {
 } from '@/lib/coach/chat/coach-chat-cache';
 import { readCoachInputDraft, writeCoachInputDraft } from '@/lib/coach/chat/coach-input-draft';
 import type { CoachDiscussContext } from '@/lib/coach/chat/coach-discuss-context';
-import { AI_BUDGET_WARNING_HEADER, aiBudgetWarningMessage } from '@/lib/access/ai-budget-shared';
-import { toast } from '@/components/ui/toast';
+import { AI_BUDGET_WARNING_HEADER } from '@/lib/access/ai-budget-shared';
 
 function coachInputPlaceholder(guardDisabled: boolean, hasPendingApprovals: boolean): string {
   if (guardDisabled) {
@@ -97,6 +96,7 @@ export function useCoachChat({
   const lastPersistedFingerprint = useRef<string>('');
   const messagesRef = useRef<UIMessage[]>(initialMessages);
   const viewportRef = useRef<HTMLElement>(null);
+  const [budgetWarning, setBudgetWarning] = useState(false);
 
   const coachTransport = useMemo(
     () =>
@@ -105,8 +105,8 @@ export function useCoachChat({
         fetch: async (input, init) => {
           const signal = replaceChatFetchSignal(conversationId, init?.signal);
           const response = await fetch(input, { ...init, signal });
-          if (response.ok && response.headers.get(AI_BUDGET_WARNING_HEADER) === '1') {
-            toast.info(aiBudgetWarningMessage());
+          if (response.ok) {
+            setBudgetWarning(response.headers.get(AI_BUDGET_WARNING_HEADER) === '1');
           }
           return response;
         },
@@ -201,6 +201,7 @@ export function useCoachChat({
     blockAutoSend.current = false;
     lastPersistedFingerprint.current = '';
     setShowJumpToLatest(false);
+    setBudgetWarning(false);
   }, [conversationId]);
 
   useEffect(() => {
@@ -366,6 +367,7 @@ export function useCoachChat({
     streamIdle,
     inputLocked,
     guardDisabled,
+    budgetWarning,
     showJumpToLatest,
     setShowJumpToLatest,
     viewportRef,

@@ -29,7 +29,7 @@ describe('ensureFreeAiBudget', () => {
     expect(aggregateMock).not.toHaveBeenCalled();
   });
 
-  it('allows a FREE athlete under today’s token budget', async () => {
+  it('allows a FREE athlete under the rolling 24h budget', async () => {
     findUniqueMock.mockResolvedValue({ tier: 'FREE' });
     aggregateMock.mockResolvedValue({ _sum: { totalTokens: 10_000 } });
     const { ensureFreeAiBudget } = await importModule();
@@ -39,7 +39,7 @@ describe('ensureFreeAiBudget', () => {
     expect(status).toEqual({ allowed: true, isPro: false, warning: false });
   });
 
-  it('blocks a FREE athlete once today’s token budget is spent', async () => {
+  it('blocks a FREE athlete once the rolling 24h budget is spent', async () => {
     findUniqueMock.mockResolvedValue({ tier: 'FREE' });
     aggregateMock.mockResolvedValue({ _sum: { totalTokens: 150_000 } });
     const { ensureFreeAiBudget } = await importModule();
@@ -76,6 +76,22 @@ describe('ensureFreeAiBudget', () => {
     const status = await ensureFreeAiBudget('athlete-1');
 
     expect(status.warning).toBe(false);
+  });
+
+  it('queries a rolling 24h window, not a calendar-day reset', async () => {
+    findUniqueMock.mockResolvedValue({ tier: 'FREE' });
+    aggregateMock.mockResolvedValue({ _sum: { totalTokens: 0 } });
+    const { ensureFreeAiBudget } = await importModule();
+
+    const before = Date.now();
+    await ensureFreeAiBudget('athlete-1');
+    const after = Date.now();
+
+    const call = aggregateMock.mock.calls[0][0] as { where: { createdAt: { gte: Date } } };
+    const gteMs = call.where.createdAt.gte.getTime();
+    // "24h ago" relative to the call, not midnight — bounded by the call's own timing window.
+    expect(gteMs).toBeGreaterThanOrEqual(before - 24 * 60 * 60 * 1000);
+    expect(gteMs).toBeLessThanOrEqual(after - 24 * 60 * 60 * 1000);
   });
 
   it('only sums coach usage — narrative analysis has its own separate gate and must not count here', async () => {

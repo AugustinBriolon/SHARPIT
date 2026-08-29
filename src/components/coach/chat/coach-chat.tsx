@@ -6,6 +6,7 @@ import { PromptInput } from '@/components/agents/prompt-input';
 import { coachBeuiCopy } from '@/components/coach/beui/coach-beui-copy';
 import { coachBeuiTheme } from '@/components/coach/beui/coach-beui-theme';
 import { CoachChatScrollerContent } from '@/components/coach/chat/coach-chat-scroller-content';
+import { CoachBudgetWarningChip } from '@/components/coach/chat/coach-budget-warning-chip';
 import { CoachComposerShell } from '@/components/coach/chat/coach-composer-chrome';
 import { CoachContextChip } from '@/components/coach/chat/coach-context-chip';
 import { useCoachChat } from '@/components/coach/chat/use-coach-chat';
@@ -80,8 +81,13 @@ export function CoachChat({
 
       <CoachComposerShell
         contextSlot={
-          attachedContext ? (
-            <CoachContextChip context={attachedContext} onDetach={() => onDetachContext?.()} />
+          attachedContext || chat.budgetWarning ? (
+            <>
+              {attachedContext ? (
+                <CoachContextChip context={attachedContext} onDetach={() => onDetachContext?.()} />
+              ) : null}
+              {chat.budgetWarning ? <CoachBudgetWarningChip /> : null}
+            </>
           ) : null
         }
       >

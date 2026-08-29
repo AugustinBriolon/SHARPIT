@@ -1,4 +1,4 @@
-import { startOfDay } from 'date-fns';
+import { subHours } from 'date-fns';
 import { prisma } from '@/lib/prisma';
 import { hasProAccess } from '@/lib/access/tier';
 import { AI_BUDGET_WARNING_HEADER, aiBudgetWarningMessage } from '@/lib/access/ai-budget-shared';
@@ -18,6 +18,16 @@ import { AI_BUDGET_WARNING_HEADER, aiBudgetWarningMessage } from '@/lib/access/a
  */
 const FREE_DAILY_TOKEN_BUDGET = 50_000;
 
+/**
+ * Rolling window, not a calendar-day reset: usage counts if it happened in
+ * the last 24h, sliding with `now` rather than resetting at local midnight.
+ * A fixed midnight reset lets an athlete spend a full budget at 23:59 and
+ * another at 00:01 — two budgets within minutes. The rolling window closes
+ * that: hitting the cap at 15:00 means waiting for that usage to age past
+ * 24h, i.e. back below the cap around 15:00 the next day, not "at midnight".
+ */
+const BUDGET_WINDOW_HOURS = 24;
+
 /** Ratio of the daily budget at which a still-allowed FREE athlete gets a heads-up before the cutoff. */
 const WARNING_THRESHOLD_RATIO = 0.8;
 
@@ -34,25 +44,25 @@ export async function ensureFreeAiBudget(athleteId: string): Promise<AiBudgetSta
     return { allowed: true, isPro: true, warning: false };
   }
 
-  const since = startOfDay(new Date());
+  const since = subHours(new Date(), BUDGET_WINDOW_HOURS);
   const usage = await prisma.aiUsageEvent.aggregate({
     where: { athleteId, feature: 'coach', createdAt: { gte: since } },
     _sum: { totalTokens: true },
   });
-  const usedToday = usage._sum.totalTokens ?? 0;
-  const allowed = usedToday < FREE_DAILY_TOKEN_BUDGET;
+  const usedRecently = usage._sum.totalTokens ?? 0;
+  const allowed = usedRecently < FREE_DAILY_TOKEN_BUDGET;
 
   return {
     allowed,
     isPro: false,
-    warning: allowed && usedToday >= FREE_DAILY_TOKEN_BUDGET * WARNING_THRESHOLD_RATIO,
+    warning: allowed && usedRecently >= FREE_DAILY_TOKEN_BUDGET * WARNING_THRESHOLD_RATIO,
   };
 }
 
 export function aiBudgetResponseBody(): { error: string } {
   return {
     error:
-      "Tu as atteint ta limite d'échanges avec le coach pour aujourd'hui. Réessaie demain, ou passe Pro pour un usage illimité.",
+      "Tu as atteint ta limite d'échanges avec le coach pour les dernières 24h. Réessaie un peu plus tard, ou passe Pro pour un usage illimité.",
   };
 }
 

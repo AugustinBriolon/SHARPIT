@@ -10,5 +10,5 @@
 export const AI_BUDGET_WARNING_HEADER = 'X-Ai-Budget-Warning';
 
 export function aiBudgetWarningMessage(): string {
-  return "Tu approches de ta limite d'échanges avec le coach pour aujourd'hui.";
+  return "Tu approches de ta limite d'échanges avec le coach sur les dernières 24h.";
 }
