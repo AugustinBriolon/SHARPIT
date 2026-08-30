@@ -2,8 +2,10 @@ import { Suspense } from 'react';
 import { MobileBackLink } from '@/components/layout/mobile-back-link';
 import { StickyHeader } from '@/components/layout/sticky-header';
 import { PersonalProfilePanel } from '@/components/settings/profile';
+import { SettingsDemoBlock } from '@/components/settings/settings-demo-block';
 import { Skeleton } from '@/components/ui/skeleton';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
+import { isDemoSession } from '@/lib/demo/demo-session';
 import { isHangingPromiseRejection } from '@/lib/next/hanging-promise';
 import { mapAthleteProfileToFormData } from '@/lib/profile/map-athlete-profile';
 import { getAthleteProfile } from '@/lib/queries';
@@ -19,6 +21,12 @@ function ProfilePanelSkeleton() {
 }
 
 async function ProfilePanelWithData() {
+  if (await isDemoSession()) {
+    return (
+      <SettingsDemoBlock description="L'identité, le sommeil et les paramètres personnels touchent un compte réel. Désactivés sur le compte démo partagé." />
+    );
+  }
+
   let loadError: string | null = null;
   let athleteProfile = null;
   try {

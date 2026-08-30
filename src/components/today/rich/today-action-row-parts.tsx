@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import { DiscussWithCoachButton } from '@/components/coach/discuss-with-coach-button';
-import { ExpertModeToggle } from '@/components/display-mode/expert-mode-toggle';
 import { CalendarClock } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { MorningOrientationActions } from '@/components/today/rich/morning-orientation-actions';
@@ -22,12 +21,10 @@ const MorningWellnessDialog = dynamic(
 
 export function TodayActionRowHeader({
   loading,
-  isDemo,
   actionLabel,
   onWellnessCompleted,
 }: {
   loading: boolean;
-  isDemo: boolean;
   actionLabel: string;
   onWellnessCompleted?: () => void;
 }) {
@@ -35,7 +32,6 @@ export function TodayActionRowHeader({
     <div className="flex min-h-8 items-center justify-between gap-2 px-0.5">
       <h2 className="text-label text-balance">{actionLabel}</h2>
       <div className="flex shrink-0 items-center gap-2">
-        {!loading && isDemo ? <ExpertModeToggle /> : null}
         {loading ? (
           <SkeletonDataValue heightClassName="h-8" widthClassName="w-24" />
         ) : (

@@ -2,9 +2,7 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createContext, useCallback, useContext, useMemo, type ReactNode } from 'react';
-import { useSyncExternalStore } from 'react';
 import { useAthleteProfile } from '@/hooks/use-data';
-import { useIsDemoMode } from '@/hooks/use-is-demo-mode';
 import type { AthleteProfilePayload } from '@/lib/query/fetchers';
 import { queryKeys } from '@/lib/query/keys';
 import { sendJson } from '@/lib/query/send-json';
@@ -14,10 +12,6 @@ import {
   toDisplayMode,
   type DisplayMode,
 } from '@/lib/preferences/display-mode';
-import {
-  DEMO_DISPLAY_MODE_KEY,
-  getDemoDisplayModeOverride,
-} from '@/components/display-mode/expert-mode-toggle';
 
 type DisplayModeContextValue = {
   mode: DisplayMode;
@@ -38,27 +32,8 @@ const DisplayModeContext = createContext<DisplayModeContextValue | null>(null);
 export function DisplayModeProvider({ children }: { children: ReactNode }) {
   const profile = useAthleteProfile();
   const queryClient = useQueryClient();
-  const isDemo = useIsDemoMode();
 
-  const demoOverride = useSyncExternalStore(
-    (onStoreChange) => {
-      if (typeof window === 'undefined') {
-        return () => {};
-      }
-      const handler = () => onStoreChange();
-      window.addEventListener('sharpit:demo-display-mode', handler);
-      window.addEventListener('storage', handler);
-      return () => {
-        window.removeEventListener('sharpit:demo-display-mode', handler);
-        window.removeEventListener('storage', handler);
-      };
-    },
-    getDemoDisplayModeOverride,
-    () => null,
-  );
-
-  const profileMode = toDisplayMode(profile.data?.displayMode);
-  const mode = isDemo ? (demoOverride ?? profileMode) : profileMode;
+  const mode = toDisplayMode(profile.data?.displayMode);
 
   const save = useMutation({
     mutationFn: (next: DisplayMode) =>
@@ -86,18 +61,9 @@ export function DisplayModeProvider({ children }: { children: ReactNode }) {
 
   const setMode = useCallback(
     (next: DisplayMode) => {
-      if (isDemo) {
-        try {
-          localStorage.setItem(DEMO_DISPLAY_MODE_KEY, next);
-          window.dispatchEvent(new Event('sharpit:demo-display-mode'));
-        } catch {
-          // ignore
-        }
-        return;
-      }
       save.mutate(next);
     },
-    [isDemo, save],
+    [save],
   );
 
   const value = useMemo<DisplayModeContextValue>(

@@ -113,6 +113,7 @@ export function useActivityNarrativeSection({
     generating,
     handleGenerate,
     hasAnalysis: flags.hasAnalysis,
+    isDemo: overlay.isDemo,
     isDemoLinkStory: overlay.isDemoLinkStory,
     isPending: flags.isPending,
     narrativeAnalysis,

@@ -3,6 +3,7 @@ import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import type { ReactNode } from 'react';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { guardedActionLabel, useOfflineGuard } from '@/hooks/use-offline-guard';
+import { useIsDemoMode } from '@/hooks/use-is-demo-mode';
 import { motionTokens } from '@/lib/motion/tokens';
 import { cn } from '@/lib/utils';
 import {
@@ -64,6 +65,8 @@ export function IntegrationNotConnectedView({
   connectHref: string;
   lanHint?: string;
 }) {
+  const isDemo = useIsDemoMode();
+
   return (
     <div className="space-y-4">
       <IntegrationModalHeader integration={integration} />
@@ -75,9 +78,15 @@ export function IntegrationNotConnectedView({
           {lanHint}
         </p>
       ) : null}
-      <a className={cn(buttonVariants(), 'w-full sm:w-auto')} href={connectHref}>
-        {integrationConnectCta(integration)}
-      </a>
+      {isDemo ? (
+        <p className="text-muted-foreground bg-muted rounded-lg px-3 py-2 text-sm leading-relaxed">
+          Connexion disponible avec un compte personnel — désactivée sur le compte démo partagé.
+        </p>
+      ) : (
+        <a className={cn(buttonVariants(), 'w-full sm:w-auto')} href={connectHref}>
+          {integrationConnectCta(integration)}
+        </a>
+      )}
       <IntegrationStatusMessage message={integration.statusMessage} assertive />
     </div>
   );

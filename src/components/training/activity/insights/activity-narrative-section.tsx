@@ -3,6 +3,7 @@
 import { Loader2, Lock, Sparkles } from 'lucide-react';
 import { ActivityNarrativeCard } from '@/components/training/activity/insights/activity-narrative-card';
 import { Button } from '@/components/ui/button';
+import { DemoSignupNudge } from '@/components/demo/demo-signup-nudge';
 import { InkEmptyState } from '@/components/ui/ink-empty-state';
 import { LinkButton } from '@/components/ui/link-button';
 import { useActivityNarrativeSection } from '@/components/training/activity/insights/use-activity-narrative-section';
@@ -138,11 +139,16 @@ export function ActivityNarrativeSection(props: ActivityNarrativeSectionProps) {
   if (view === 'card') {
     const analysis = state.parseNarrative(state.narrativeAnalysis)!;
     return (
-      <ActivityNarrativeCard
-        activityType={state.activityType}
-        analysis={analysis}
-        narrativeAnalyzedAt={state.narrativeAnalyzedAt}
-      />
+      <div className="space-y-3">
+        <ActivityNarrativeCard
+          activityType={state.activityType}
+          analysis={analysis}
+          narrativeAnalyzedAt={state.narrativeAnalyzedAt}
+        />
+        {state.isDemo ? (
+          <DemoSignupNudge label="Sur tes vraies séances, cette lecture vient de ton coach personnel." />
+        ) : null}
+      </div>
     );
   }
 

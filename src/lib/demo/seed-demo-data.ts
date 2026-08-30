@@ -481,7 +481,56 @@ async function purgeDemoAthleteRecords(prisma: PrismaClient, athleteId: string):
   await prisma.goal.deleteMany({ where: { athleteId } });
   await prisma.bodyCompositionMeasurement.deleteMany({ where: { athleteId } });
   await prisma.condition.deleteMany({ where: { athleteId } });
+  await prisma.conversation.deleteMany({ where: { athleteId } });
   await purgeDemoDerivedState(prisma, athleteId);
+}
+
+/**
+ * One hand-written exchange, read-only in demo (composer disabled — see
+ * CoachDemoTranscript). Deliberately avoids citing figures that drift day to
+ * day (recovery score, days-to-race) — same reasoning as the seeded
+ * narrativeAnalysis text: written once, never stale because it never quotes
+ * a number that moves.
+ */
+function demoCoachMessages() {
+  const turn = (id: string, role: 'user' | 'assistant', text: string) => ({
+    id,
+    role,
+    parts: [{ type: 'text', text }],
+  });
+
+  return [
+    turn(
+      'demo-msg-1',
+      'user',
+      'Comment se présente ma forme en ce moment, avec Ironman Nice qui approche ?',
+    ),
+    turn(
+      'demo-msg-2',
+      'assistant',
+      "Ta charge des trois dernières semaines progresse de façon régulière, sans pic isolé qui viendrait fragiliser la récupération — c'est le signal que je regarde en premier avant tout le reste. Le sommeil de cette semaine tire légèrement la récupération vers le bas, sans que ça remette en cause le bloc en cours. Pour Ironman Nice, on est encore dans la phase de construction : la priorité reste la régularité sur les trois disciplines plutôt que la performance sur une séance isolée.",
+    ),
+    turn(
+      'demo-msg-3',
+      'user',
+      "Je sens un peu de fatigue sur les jambes après la sortie vélo de dimanche. J'adapte la séance de demain ?",
+    ),
+    turn(
+      'demo-msg-4',
+      'assistant',
+      "C'est cohérent avec la charge de la sortie longue — une fatigue localisée après un gros volume vélo est un signal normal, pas un signal d'alerte. Je garderais la séance prévue mais en abaissant l'intensité d'un cran : l'objectif est de maintenir la fréquence sans creuser la dette. Si la sensation est encore présente au réveil demain, dis-le-moi et on décale plutôt que de forcer.",
+    ),
+  ];
+}
+
+async function seedDemoCoachConversation(prisma: PrismaClient, athleteId: string): Promise<void> {
+  await prisma.conversation.create({
+    data: {
+      athleteId,
+      title: 'Forme et préparation Ironman Nice',
+      messages: demoCoachMessages(),
+    },
+  });
 }
 
 async function seedDemoPrimaryGoal(prisma: PrismaClient, athleteId: string, today: Date) {
@@ -718,9 +767,32 @@ export async function seedDemoAthlete(prisma: PrismaClient): Promise<void> {
   await seedDemoUpcomingPlanned(prisma, athleteId, today);
   await seedDemoBodyComposition(prisma, athleteId, today);
   await seedDemoCondition(prisma, athleteId, today);
+  await seedDemoCoachConversation(prisma, athleteId);
 
   await ensureDemoSessionLinkStory(prisma, athleteId);
   await finalizeDemoSeed(prisma, athleteId);
+}
+
+async function demoSeedNeedsRefresh(prisma: PrismaClient, athleteId: string): Promise<boolean> {
+  const today = startOfDay(new Date());
+  const [garmin, renpho, latestHealth, goalCount, conversationCount] = await Promise.all([
+    prisma.garminAccount.findUnique({ where: { athleteId }, select: { athleteId: true } }),
+    prisma.renphoAccount.findUnique({ where: { athleteId }, select: { athleteId: true } }),
+    prisma.dailyHealth.findFirst({
+      where: { athleteId },
+      orderBy: { date: 'desc' },
+      select: { date: true },
+    }),
+    prisma.goal.count({ where: { athleteId } }),
+    prisma.conversation.count({ where: { athleteId } }),
+  ]);
+
+  const healthStale =
+    latestHealth === undefined ||
+    latestHealth === null ||
+    startOfDay(latestHealth.date).getTime() !== today.getTime();
+
+  return !garmin || !renpho || healthStale || goalCount !== 1 || conversationCount === 0;
 }
 
 /** Reseed when the demo tenant is missing, stale, or polluted (e.g. onboarding test goals). */
@@ -734,31 +806,7 @@ export async function ensureDemoSeedFresh(prisma: PrismaClient): Promise<boolean
     return true;
   }
 
-  const today = startOfDay(new Date());
-  const [garmin, renpho, latestHealth, goalCount] = await Promise.all([
-    prisma.garminAccount.findUnique({
-      where: { athleteId: athlete.id },
-      select: { athleteId: true },
-    }),
-    prisma.renphoAccount.findUnique({
-      where: { athleteId: athlete.id },
-      select: { athleteId: true },
-    }),
-    prisma.dailyHealth.findFirst({
-      where: { athleteId: athlete.id },
-      orderBy: { date: 'desc' },
-      select: { date: true },
-    }),
-    prisma.goal.count({ where: { athleteId: athlete.id } }),
-  ]);
-
-  const healthStale =
-    latestHealth === undefined ||
-    latestHealth === null ||
-    startOfDay(latestHealth.date).getTime() !== today.getTime();
-  const needsReseed = !garmin || !renpho || healthStale || goalCount !== 1;
-
-  if (needsReseed) {
+  if (await demoSeedNeedsRefresh(prisma, athlete.id)) {
     await seedDemoAthlete(prisma);
     return true;
   }
