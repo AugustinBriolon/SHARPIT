@@ -2,8 +2,10 @@ import { Suspense } from 'react';
 import { MobileBackLink } from '@/components/layout/mobile-back-link';
 import { StickyHeader } from '@/components/layout/sticky-header';
 import { PerformanceCalibrationPanel } from '@/components/settings/profile/performance-calibration-panel';
+import { SettingsDemoBlock } from '@/components/settings/settings-demo-block';
 import { Skeleton } from '@/components/ui/skeleton';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
+import { isDemoSession } from '@/lib/demo/demo-session';
 import { mapAthleteProfileToFormData } from '@/lib/profile/map-athlete-profile';
 import { getAthleteProfile } from '@/lib/queries';
 
@@ -12,6 +14,12 @@ function CalibrationPanelSkeleton() {
 }
 
 async function CalibrationPanelWithProfile() {
+  if (await isDemoSession()) {
+    return (
+      <SettingsDemoBlock description="Tes seuils (FTP, allure, FC) sont des réglages de compte réel. Désactivés sur le compte démo partagé." />
+    );
+  }
+
   const athleteId = await getCurrentAthleteId();
   const athleteProfile = await getAthleteProfile(athleteId).catch(() => null);
 

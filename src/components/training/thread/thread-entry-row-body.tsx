@@ -9,6 +9,8 @@ import {
   SportDot,
 } from '@/components/training/thread/thread-entry-row-meta';
 import type { DisplayMode } from '@/lib/preferences/display-mode';
+import { useIsDemoMode } from '@/hooks/use-is-demo-mode';
+import { isDemoSessionLinkActivityTitle } from '@/lib/demo/demo-session-link-markers';
 
 export function buildThreadEntryRowShell({
   isPlanned,
@@ -39,6 +41,8 @@ export function ThreadEntryRowBody({
   mode: DisplayMode;
 }) {
   const meta = entryMeta(entry, mode);
+  const isDemo = useIsDemoMode();
+  const isDemoStory = isDemo && isDemoSessionLinkActivityTitle(entry.title);
 
   return (
     <>
@@ -52,6 +56,12 @@ export function ThreadEntryRowBody({
         {isPivot ? (
           <span className="border-primary/40 text-primary text-data w-fit shrink-0 rounded-full border px-2 py-0.5 text-[10px]">
             Point de bascule
+          </span>
+        ) : null}
+
+        {isDemoStory ? (
+          <span className="border-highlight/40 bg-highlight/20 text-data text-foreground w-fit shrink-0 rounded-full border px-2 py-0.5 text-[10px]">
+            Histoire coach
           </span>
         ) : null}
 

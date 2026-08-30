@@ -2,8 +2,10 @@ import { Suspense } from 'react';
 import { MobileBackLink } from '@/components/layout/mobile-back-link';
 import { StickyHeader } from '@/components/layout/sticky-header';
 import { EquipmentPanel } from '@/components/settings/equipment';
+import { SettingsDemoBlock } from '@/components/settings/settings-demo-block';
 import { Skeleton } from '@/components/ui/skeleton';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
+import { isDemoSession } from '@/lib/demo/demo-session';
 import { normalizeAthleteEquipment } from '@/lib/equipment/parse';
 import { getAthleteProfile } from '@/lib/queries';
 
@@ -27,6 +29,12 @@ function EquipmentPanelSkeleton() {
 }
 
 async function EquipmentPanelWithProfile() {
+  if (await isDemoSession()) {
+    return (
+      <SettingsDemoBlock description="L'équipement touche un compte réel. Désactivé sur le compte démo partagé." />
+    );
+  }
+
   const athleteId = await getCurrentAthleteId();
   const athleteProfile = await getAthleteProfile(athleteId).catch(() => null);
 

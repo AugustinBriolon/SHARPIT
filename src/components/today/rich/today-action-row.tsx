@@ -10,7 +10,6 @@ import {
 import { useTodayActionRowDerived } from '@/components/today/rich/use-today-action-row-derived';
 import type { TodayViewModel } from '@/core/presentation/today-view-model';
 import { useAppModal } from '@/providers/app-modal-provider';
-import { useIsDemoMode } from '@/hooks/use-is-demo-mode';
 
 export function TodayActionRow({
   loading = false,
@@ -24,14 +23,12 @@ export function TodayActionRow({
   loading?: boolean;
 }) {
   const { openPlannedSession } = useAppModal();
-  const isDemo = useIsDemoMode();
   const derived = useTodayActionRowDerived(vm, loading);
 
   return (
     <section aria-busy={loading || undefined} className="space-y-3">
       <TodayActionRowHeader
         actionLabel={vm.actionRow.actionLabel}
-        isDemo={isDemo}
         loading={loading}
         onWellnessCompleted={onWellnessCompleted}
       />

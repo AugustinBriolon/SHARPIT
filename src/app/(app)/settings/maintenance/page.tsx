@@ -1,6 +1,24 @@
+import { Suspense } from 'react';
 import { MobileBackLink } from '@/components/layout/mobile-back-link';
 import { StickyHeader } from '@/components/layout/sticky-header';
 import { SettingsMaintenancePanel } from '@/components/settings/maintenance';
+import { SettingsDemoBlock } from '@/components/settings/settings-demo-block';
+import { Skeleton } from '@/components/ui/skeleton';
+import { isDemoSession } from '@/lib/demo/demo-session';
+
+function MaintenanceSkeleton() {
+  return <Skeleton className="h-48 w-full rounded-xl" aria-busy />;
+}
+
+async function MaintenanceSection() {
+  if (await isDemoSession()) {
+    return (
+      <SettingsDemoBlock description="Les outils de maintenance touchent un compte réel. Désactivés sur le compte démo partagé." />
+    );
+  }
+
+  return <SettingsMaintenancePanel />;
+}
 
 export default function SettingsMaintenancePage() {
   return (
@@ -14,7 +32,10 @@ export default function SettingsMaintenancePage() {
         </p>
       </StickyHeader>
 
-      <SettingsMaintenancePanel />
+      {/* Header above is static and prerenders; only the demo check waits. */}
+      <Suspense fallback={<MaintenanceSkeleton />}>
+        <MaintenanceSection />
+      </Suspense>
     </div>
   );
 }

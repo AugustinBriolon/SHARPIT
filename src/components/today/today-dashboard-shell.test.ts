@@ -10,7 +10,7 @@ vi.mock('@/providers/app-modal-provider', () => ({
   useAppModal: () => ({ openPlannedSession: vi.fn() }),
 }));
 
-/* TodayActionRow gates ExpertModeToggle on demo — no Clerk in node tests. */
+/* Session-link suggestions read demo mode — no Clerk in node tests. */
 vi.mock('@/hooks/use-is-demo-mode', () => ({
   useIsDemoMode: () => false,
 }));

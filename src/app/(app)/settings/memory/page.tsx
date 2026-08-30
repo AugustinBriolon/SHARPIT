@@ -2,12 +2,20 @@ import { Suspense } from 'react';
 import { MobileBackLink } from '@/components/layout/mobile-back-link';
 import { CoachMemoryManager } from '@/components/coach-memory/coach-memory-manager';
 import { CoachMemoryShell } from '@/components/coach-memory/coach-memory-shell';
+import { SettingsDemoBlock } from '@/components/settings/settings-demo-block';
+import { isDemoSession } from '@/lib/demo/demo-session';
 
 async function CoachMemoryManagerForFocus({
   searchParams,
 }: {
   searchParams: Promise<{ focus?: string }>;
 }) {
+  if (await isDemoSession()) {
+    return (
+      <SettingsDemoBlock description="La mémoire du coach est un réglage de compte réel. Désactivée sur le compte démo partagé." />
+    );
+  }
+
   const { focus } = await searchParams;
   return <CoachMemoryManager focusId={focus ?? null} />;
 }

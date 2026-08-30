@@ -2,12 +2,27 @@ import { MessageCircleOff } from 'lucide-react';
 import { Suspense } from 'react';
 import { CoachView } from '@/components/coach/coach-view';
 import { CoachHubSkeleton } from '@/components/coach/coach-hub-skeleton';
+import { DemoCoachTranscript } from '@/components/coach/demo-coach-transcript';
 import { DemoExitButton } from '@/components/demo/demo-exit';
+import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { isDemoSession } from '@/lib/demo/demo-session';
+import { parseDemoTranscriptMessages } from '@/lib/demo/demo-coach-transcript';
+import { prisma } from '@/lib/prisma';
 
 async function CoachDemoDisabled() {
   if (!(await isDemoSession())) {
     return <CoachView />;
+  }
+
+  const athleteId = await getCurrentAthleteId();
+  const conversation = await prisma.conversation.findFirst({
+    where: { athleteId },
+    orderBy: { createdAt: 'asc' },
+  });
+  const messages = conversation ? parseDemoTranscriptMessages(conversation.messages) : [];
+
+  if (conversation && messages.length > 0) {
+    return <DemoCoachTranscript messages={messages} title={conversation.title} />;
   }
 
   return (
