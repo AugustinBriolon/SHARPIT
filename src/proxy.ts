@@ -35,9 +35,12 @@ function isDemoWriteBlocked(req: NextRequest): boolean {
   return isWrite || isDemoMutatingCallback(req);
 }
 
+function hasDemoCookie(req: NextRequest): boolean {
+  return req.cookies.get(DEMO_COOKIE)?.value === '1';
+}
+
 function demoSessionResponse(req: NextRequest): NextResponse | null {
-  const isDemo = req.cookies.get(DEMO_COOKIE)?.value === '1';
-  if (!isDemo || !isDemoWriteBlocked(req)) {
+  if (!hasDemoCookie(req) || !isDemoWriteBlocked(req)) {
     return null;
   }
   return NextResponse.json({ error: 'Mode démo : lecture seule' }, { status: 403 });
@@ -63,6 +66,7 @@ export default clerkMiddleware(async (auth, req) => {
   // same browser (e.g. a signed-in athlete who once visited /demo) — otherwise
   // their own writes would be misread as a demo session and blocked.
   const { userId } = await auth();
+  const isDemoVisitor = !userId && hasDemoCookie(req);
   if (!userId) {
     const blocked = demoSessionResponse(req);
     if (blocked) {
@@ -70,7 +74,10 @@ export default clerkMiddleware(async (auth, req) => {
     }
   }
 
-  if (!isPublicRoute(req)) {
+  // A demo visitor carries no Clerk session by design (ADR-026) — mutations
+  // are already 403'd above, so reads are let through the real (app) route
+  // tree instead of being bounced to /sign-in by auth.protect().
+  if (!isPublicRoute(req) && !isDemoVisitor) {
     await auth.protect();
   }
 

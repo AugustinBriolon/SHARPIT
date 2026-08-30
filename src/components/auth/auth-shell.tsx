@@ -5,9 +5,13 @@ import { Skeleton } from '@/components/ui/skeleton';
 export function AuthShell({
   children,
   subtitle = "Connecte-toi pour accéder à ton espace d'entraînement.",
+  beforeForm,
 }: {
   children: React.ReactNode;
   subtitle?: string;
+  /** Renders above the Clerk widget's Suspense boundary — e.g. a demo callout —
+   * so it paints with the rest of the static chrome instead of waiting on Clerk. */
+  beforeForm?: React.ReactNode;
 }) {
   return (
     <div className="bg-background relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-6 py-12">
@@ -21,6 +25,7 @@ export function AuthShell({
             <p className="text-muted-foreground mt-1 text-sm">{subtitle}</p>
           </div>
         </div>
+        {beforeForm ? <div className="w-full">{beforeForm}</div> : null}
         {/* Clerk's widget reads the URL, so it can't be prerendered. The
             branding above it can — keep the boundary here so the auth page
             paints its chrome immediately. */}
