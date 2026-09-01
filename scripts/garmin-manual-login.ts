@@ -1,12 +1,12 @@
 /**
- * One-off local helper to mint DI tokens via the widget SSO path (no clientId).
+ * One-off local helper to mint DI tokens via the mobile SSO path (primary connect).
  *
  * Prefer reconnecting in the app UI (prod encrypts with prod's
  * SECRET_ENCRYPTION_KEY). Copying tokens across envs is unsupported — keys differ.
  *
  * Run locally: `yarn tsx scripts/garmin-manual-login.ts`
  */
-import { loginGarminWidget } from '@/lib/integrations/garmin/garmin-widget-auth';
+import { loginGarminMobile } from '@/lib/integrations/garmin/garmin-mobile-auth';
 import { diTokensToGarminTokens } from '@/lib/integrations/garmin/garmin';
 import { createInterface } from 'node:readline/promises';
 
@@ -24,10 +24,7 @@ async function main() {
   const username = await prompt('Email Garmin: ');
   const password = await prompt('Mot de passe Garmin: ');
 
-  const di = await loginGarminWidget(username, password, {
-    // Local scripts can skip the anti-WAF delay when debugging.
-    sleep: async () => undefined,
-  });
+  const di = await loginGarminMobile(username, password);
   const tokens = diTokensToGarminTokens(di);
 
   console.info('\n--- Tokens DI (stockage app) ---\n');
