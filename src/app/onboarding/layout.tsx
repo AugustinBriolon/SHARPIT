@@ -10,7 +10,7 @@ export default function OnboardingLayout({ children }: { children: React.ReactNo
           </div>
           <div>
             <p className="text-page-title">SharpIt</p>
-            <p className="text-muted-foreground mt-1 text-sm text-pretty">
+            <p className="text-foreground/80 mt-1 text-sm text-pretty">
               Premiers pas pour rendre ton Twin utilisable.
             </p>
           </div>

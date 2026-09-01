@@ -22,7 +22,8 @@ export function AuthShell({
           </div>
           <div>
             <h1 className="text-page-title">SharpIt</h1>
-            <p className="text-muted-foreground mt-1 text-sm">{subtitle}</p>
+            {/* Supporting copy — not metadata; keep above muted so dark mode stays AA */}
+            <p className="text-foreground/80 mt-1 text-sm">{subtitle}</p>
           </div>
         </div>
         {beforeForm ? <div className="w-full">{beforeForm}</div> : null}
