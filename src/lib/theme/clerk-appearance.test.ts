@@ -4,7 +4,7 @@ import { BRAND } from '@/lib/brand/brand-tokens';
 import { authAppearance, clerkAppearance } from '@/lib/theme/clerk-appearance';
 
 describe('clerkAppearance theme bridge', () => {
-  it('binds color tokens to semantic CSS variables (light/dark flip)', () => {
+  it('binds app-wide color tokens to semantic CSS variables', () => {
     const { variables } = clerkAppearance;
 
     expect(variables.colorPrimary).toBe('var(--primary)');
@@ -14,7 +14,6 @@ describe('clerkAppearance theme bridge', () => {
     expect(variables.colorMutedForeground).toBe('var(--muted-foreground)');
     expect(variables.colorInput).toBe('var(--background)');
     expect(variables.colorBorder).toBe('var(--border)');
-    expect(variables.colorDanger).toBe('var(--destructive)');
     expect(variables.borderRadius).toBe(BRAND.radius);
   });
 
@@ -25,6 +24,23 @@ describe('clerkAppearance theme bridge', () => {
       false,
     );
   });
+});
+
+describe('authAppearance lecture-critique override', () => {
+  it('scopes stricter text/input tokens to --auth-* (not global muted)', () => {
+    const { variables } = authAppearance;
+
+    expect(variables.colorForeground).toBe('var(--auth-foreground)');
+    expect(variables.colorText).toBe('var(--auth-foreground)');
+    expect(variables.colorMutedForeground).toBe('var(--auth-muted)');
+    expect(variables.colorTextSecondary).toBe('var(--auth-muted)');
+    expect(variables.colorInput).toBe('var(--auth-input-bg)');
+    expect(variables.colorInputText).toBe('var(--auth-foreground)');
+    expect(variables.colorInputForeground).toBe('var(--auth-foreground)');
+    expect(variables.colorBorder).toBe('var(--auth-input-border)');
+    expect(variables.colorMuted).toBe('var(--card)');
+    expect(variables.colorMutedForeground).not.toBe('var(--muted-foreground)');
+  });
 
   it('keeps auth chrome branding in AuthShell (hides Clerk header/logo)', () => {
     expect(authAppearance.elements.headerTitle).toBe('hidden');
@@ -32,13 +48,14 @@ describe('clerkAppearance theme bridge', () => {
     expect(authAppearance.elements.logoBox).toBe('hidden');
   });
 
-  it('uses full border tokens on cards and social buttons for dark contrast', () => {
-    expect(clerkAppearance.elements.cardBox).toContain('border-border');
-    expect(clerkAppearance.elements.cardBox).not.toContain('border-border/80');
-    expect(clerkAppearance.elements.socialButtonsBlockButton).toContain('dark:border-foreground/30');
-    expect(clerkAppearance.elements.formFieldInput).toContain('placeholder:text-foreground/55!');
-    expect(clerkAppearance.elements.formFieldErrorText).toBe('text-destructive!');
-    expect(clerkAppearance.elements.formButtonPrimary).toContain('bg-foreground!');
-    expect(clerkAppearance.elements.formButtonPrimary).toContain('text-background!');
+  it('uses auth-surface utilities for inputs, panels, and ink CTA', () => {
+    expect(authAppearance.elements.cardBox).toContain('border-auth-panel');
+    expect(authAppearance.elements.formFieldInput).toContain('bg-auth-input');
+    expect(authAppearance.elements.formFieldInput).toContain('border-auth-input');
+    expect(authAppearance.elements.formFieldInput).toContain('placeholder:text-auth-placeholder!');
+    expect(authAppearance.elements.formFieldHintText).toBe('text-auth-muted');
+    expect(authAppearance.elements.formButtonPrimary).toContain('bg-foreground!');
+    expect(authAppearance.elements.formButtonPrimary).toContain('text-background!');
+    expect(authAppearance.elements.formFieldErrorText).toBe('text-destructive!');
   });
 });

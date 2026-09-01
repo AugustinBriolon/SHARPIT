@@ -3,11 +3,9 @@ import { shadcn } from '@clerk/themes';
 import { BRAND } from '@/lib/brand/brand-tokens';
 
 /**
- * Clerk ↔ SHARPIT theme bridge.
- *
- * Use semantic CSS variables (not hex) so light/dark flip with `.dark` /
- * `color-scheme` — the previous Forest Depths hex primary was illegible on the
- * dark canvas. Surfaces already follow globals.css via the shadcn base theme.
+ * App-wide Clerk bridge (UserButton, etc.).
+ * Semantic CSS vars only — follows `.dark` without hard-coded Forest primary.
+ * Auth pages use {@link authAppearance} for stricter « lecture critique » contrast.
  */
 const clerkColorVariables = {
   colorPrimary: 'var(--primary)',
@@ -25,51 +23,31 @@ const clerkColorVariables = {
   colorDanger: 'var(--destructive)',
 } as const;
 
-/**
- * Element classNames reinforce token contrast on auth controls.
- * Prefer full `border-border` (not /80) so dark-mode hairlines stay readable.
- */
-const elements = {
+const sharedElements = {
   rootBox: 'mx-auto w-full max-w-[420px]',
-  cardBox: 'shadow-none border border-border rounded-xl bg-card dark:border-foreground/20',
+  cardBox: 'shadow-none border border-border rounded-xl bg-card',
   card: 'rounded-xl border-0 bg-transparent shadow-none gap-4',
   header: 'gap-1',
   headerTitle: 'font-heading text-lg font-semibold text-foreground',
   headerSubtitle: 'text-sm text-muted-foreground',
   socialButtonsBlockButton:
-    'rounded-lg border border-border bg-background text-foreground! shadow-none hover:bg-muted/60 dark:border-foreground/30 dark:bg-card dark:hover:bg-muted',
-  socialButtonsBlockButtonText: 'font-medium text-foreground!',
-  /**
-   * Ink CTA (Seed) — force over Clerk solid primary paint. Without `!`,
-   * colorPrimary + flipped colorPrimaryForeground made Continuer illegible
-   * when primary was still a dark hex.
-   */
-  formButtonPrimary:
-    'rounded-lg bg-foreground! text-background! shadow-none hover:bg-foreground/90!',
+    'rounded-lg border border-border bg-background text-foreground shadow-none hover:bg-muted/60',
+  socialButtonsBlockButtonText: 'font-medium text-foreground',
+  formButtonPrimary: 'rounded-lg bg-foreground text-background shadow-none hover:bg-foreground/90',
   formFieldInput:
-    'rounded-lg border border-input bg-background! text-foreground! placeholder:text-foreground/55! shadow-none focus:ring-2 focus:ring-ring/40 dark:border-foreground/30 dark:bg-background!',
-  formFieldLabel: 'font-medium text-foreground!',
-  formFieldHintText: 'text-muted-foreground',
-  formFieldErrorText: 'text-destructive!',
-  formFieldSuccessText: 'text-foreground',
-  formFieldInputShowPasswordButton: 'text-muted-foreground hover:text-foreground',
-  footerActionLink: 'text-primary! hover:text-primary/80 font-medium',
-  identityPreviewEditButton: 'text-primary!',
-  identityPreviewText: 'text-foreground!',
-  dividerLine: 'bg-border dark:bg-foreground/25',
-  dividerText: 'text-foreground/70 text-xs uppercase tracking-wider',
+    'rounded-lg border border-input bg-background text-foreground shadow-none focus:ring-2 focus:ring-ring/30',
+  formFieldLabel: 'font-medium text-foreground',
+  footerActionLink: 'text-primary hover:text-primary/80 font-medium',
+  identityPreviewEditButton: 'text-primary',
+  dividerLine: 'bg-border',
+  dividerText: 'text-muted-foreground text-xs uppercase tracking-wider',
   navbar: 'hidden',
   footer: 'bg-transparent',
-  footerActionText: 'text-foreground/70',
-  formFieldAction: 'text-primary!',
-  otpCodeFieldInput:
-    'rounded-lg border border-input bg-background! text-foreground! dark:border-foreground/30',
-  alertText: 'text-foreground!',
-  alertText__danger: 'text-destructive!',
-  formResendCodeLink: 'text-primary!',
-  alternativeMethodsBlockButton:
-    'rounded-lg border border-border bg-background text-foreground! shadow-none hover:bg-muted/60 dark:border-foreground/30 dark:bg-card',
-  alternativeMethodsBlockButtonText: 'font-medium text-foreground!',
+  footerActionText: 'text-muted-foreground',
+  formFieldAction: 'text-primary',
+  otpCodeFieldInput: 'rounded-lg border border-input bg-background text-foreground',
+  alertText: 'text-foreground',
+  formResendCodeLink: 'text-primary',
   userButtonPopoverCard: 'rounded-xl border border-border bg-card shadow-none',
   userButtonPopoverActionButton: 'hover:bg-muted/60',
   userButtonPopoverActionButtonText: 'text-foreground',
@@ -87,17 +65,80 @@ export const clerkAppearance = {
     fontFamilyButtons: 'var(--font-sans), ui-sans-serif, system-ui, sans-serif',
     fontSize: '0.875rem',
   },
-  elements,
+  elements: sharedElements,
 };
 
-/** Auth pages : branding déjà dans AuthShell → header Clerk allégé. */
+/**
+ * Sign-in / sign-up only — « lecture critique » contrast (WCAG AA).
+ * Requires an ancestor with `.auth-surface` (AuthShell) so --auth-* vars resolve.
+ * Does not retune global theme tokens.
+ */
+const authColorVariables = {
+  ...clerkColorVariables,
+  colorForeground: 'var(--auth-foreground)',
+  /** @deprecated alias — Clerk still reads this in some builds */
+  colorText: 'var(--auth-foreground)',
+  colorMutedForeground: 'var(--auth-muted)',
+  /** @deprecated alias */
+  colorTextSecondary: 'var(--auth-muted)',
+  colorInput: 'var(--auth-input-bg)',
+  colorInputForeground: 'var(--auth-foreground)',
+  /** @deprecated alias */
+  colorInputText: 'var(--auth-foreground)',
+  colorBorder: 'var(--auth-input-border)',
+  /** Keep muted wash off the page canvas — use card, not near-bg muted */
+  colorMuted: 'var(--card)',
+  colorNeutral: 'var(--auth-foreground)',
+} as const;
+
+const authElements = {
+  ...sharedElements,
+  headerTitle: 'hidden',
+  headerSubtitle: 'hidden',
+  logoBox: 'hidden',
+  footer: 'bg-transparent pt-2',
+  cardBox: 'shadow-none border border-auth-panel rounded-xl bg-card',
+  socialButtonsBlockButton:
+    'rounded-lg border border-auth-input bg-auth-input text-foreground! shadow-none hover:bg-muted/60',
+  socialButtonsBlockButtonText: 'font-medium text-foreground!',
+  /**
+   * Ink CTA — Snow fill + Forest text on dark (≥ 4.5:1). Forces over Clerk
+   * solid primary paint (Lime would also pass; ink matches Seed filled CTA).
+   */
+  formButtonPrimary:
+    'rounded-lg bg-foreground! text-background! shadow-none hover:bg-foreground/90!',
+  formFieldInput:
+    'rounded-lg border border-auth-input bg-auth-input text-foreground! placeholder:text-auth-placeholder! shadow-none focus:ring-2 focus:ring-ring/40',
+  formFieldLabel: 'font-medium text-foreground!',
+  formFieldHintText: 'text-auth-muted',
+  formFieldErrorText: 'text-destructive!',
+  formFieldSuccessText: 'text-foreground',
+  formFieldInputShowPasswordButton: 'text-auth-muted hover:text-foreground',
+  footerActionLink: 'text-primary! hover:text-primary/80 font-medium',
+  identityPreviewEditButton: 'text-primary!',
+  identityPreviewText: 'text-foreground!',
+  dividerLine: 'bg-auth-divider',
+  dividerText: 'text-auth-muted text-xs uppercase tracking-wider',
+  footerActionText: 'text-auth-muted',
+  formFieldAction: 'text-primary!',
+  otpCodeFieldInput:
+    'rounded-lg border border-auth-input bg-auth-input text-foreground!',
+  alertText: 'text-foreground!',
+  alertText__danger: 'text-destructive!',
+  formResendCodeLink: 'text-primary!',
+  alternativeMethodsBlockButton:
+    'rounded-lg border border-auth-input bg-auth-input text-foreground! shadow-none hover:bg-muted/60',
+  alternativeMethodsBlockButtonText: 'font-medium text-foreground!',
+} as const;
+
 export const authAppearance = {
-  ...clerkAppearance,
-  elements: {
-    ...elements,
-    headerTitle: 'hidden',
-    headerSubtitle: 'hidden',
-    logoBox: 'hidden',
-    footer: 'bg-transparent pt-2',
+  theme: shadcn,
+  variables: {
+    ...authColorVariables,
+    borderRadius: BRAND.radius,
+    fontFamily: 'var(--font-sans), ui-sans-serif, system-ui, sans-serif',
+    fontFamilyButtons: 'var(--font-sans), ui-sans-serif, system-ui, sans-serif',
+    fontSize: '0.875rem',
   },
+  elements: authElements,
 };

@@ -14,7 +14,7 @@ export function AuthShell({
   beforeForm?: React.ReactNode;
 }) {
   return (
-    <div className="bg-background relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-6 py-12">
+    <div className="auth-surface bg-background relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-6 py-12">
       <div className="relative z-10 flex w-full max-w-[420px] flex-col items-center gap-8">
         <div className="flex flex-col items-center gap-3 text-center">
           <div className="icon-well size-12" aria-hidden>
@@ -22,8 +22,8 @@ export function AuthShell({
           </div>
           <div>
             <h1 className="text-page-title">SharpIt</h1>
-            {/* Supporting copy — not metadata; keep above muted so dark mode stays AA */}
-            <p className="text-foreground/80 mt-1 text-sm">{subtitle}</p>
+            {/* Supporting copy — lecture critique: auth-muted clears AA on dark */}
+            <p className="text-auth-muted mt-1 text-sm">{subtitle}</p>
           </div>
         </div>
         {beforeForm ? <div className="w-full">{beforeForm}</div> : null}
