@@ -55,6 +55,7 @@ export type IntegrationsPayload = {
       lastSyncAt: string | null;
     } | null;
     needsReconnect?: boolean;
+    statusMessage?: string;
   };
   withings: {
     configured: boolean;

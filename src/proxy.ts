@@ -25,6 +25,7 @@ const isDemoMutatingCallback = createRouteMatcher([
   '/api/strava/callback(.*)',
   '/api/withings/callback(.*)',
   '/api/google/callback(.*)',
+  '/api/garmin/sso-callback(.*)',
 ]);
 
 function isDemoWriteBlocked(req: NextRequest): boolean {

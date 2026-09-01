@@ -24,8 +24,8 @@ const COPY: Record<CredentialProvider, { title: string; description: string; sub
   garmin: {
     title: 'Connecter Garmin',
     description:
-      'Auth Garmin 2026 : mint les jetons en local (python-garminconnect), puis colle le JSON di_token / di_refresh_token. Sharpit ne stocke que les jetons DI.',
-    submit: 'Importer les jetons Garmin',
+      'Tu te connectes sur le site Garmin dans ton navigateur. Le mot de passe reste chez Garmin — Sharpit reçoit ensuite des jetons DI.',
+    submit: 'Continuer vers Garmin',
   },
   renpho: {
     title: 'Connecter Renpho',
@@ -74,14 +74,12 @@ export function OnboardingCredentialDialog({
     try {
       let response: Response;
       if (activeProvider === 'garmin') {
-        response = await fetch('/api/garmin/import-tokens', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            tokenStore: form.get('tokenStore'),
-            dataClass,
-          }),
+        const params = new URLSearchParams({
+          returnTo: '/onboarding',
+          ...(dataClass ? { dataClass } : {}),
         });
+        window.location.href = `/api/garmin/connect?${params.toString()}`;
+        return;
       } else if (activeProvider === 'renpho') {
         response = await fetch('/api/renpho/connect', {
           method: 'POST',
@@ -130,22 +128,10 @@ export function OnboardingCredentialDialog({
         </DialogHeader>
         <form className="min-w-0 space-y-4" onSubmit={(e) => void handleSubmit(e)}>
           {provider === 'garmin' ? (
-            <div className="min-w-0 space-y-2">
-              <Label htmlFor="onboarding-garmin-tokens">JSON garmin_tokens.json</Label>
-              <Textarea
-                autoComplete="off"
-                className="[field-sizing:fixed] max-h-32 min-h-20 w-full max-w-full resize-y overflow-auto break-all font-mono text-xs"
-                id="onboarding-garmin-tokens"
-                name="tokenStore"
-                placeholder='{"di_token":"…","di_refresh_token":"…","di_client_id":"…"}'
-                rows={5}
-                spellCheck={false}
-                required
-              />
-              <p className="text-muted-foreground text-xs leading-relaxed">
-                Local : <code>python3 scripts/garmin-login.py</code> puis colle le fichier ici.
-              </p>
-            </div>
+            <p className="text-muted-foreground text-sm leading-relaxed">
+              Tu vas être redirigé vers Garmin Connect pour te connecter, puis ramené ici
+              automatiquement.
+            </p>
           ) : null}
           {provider === 'renpho' ? (
             <>

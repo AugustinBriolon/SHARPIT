@@ -297,6 +297,7 @@ function GarminContent({
   const [error, setError] = useState<string | null>(null);
   const [stage, setStage] = useState<'manage' | 'confirm'>('manage');
   const [disconnecting, setDisconnecting] = useState(false);
+  const [showAdvancedImport, setShowAdvancedImport] = useState(false);
 
   async function handleImportTokens(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -362,50 +363,53 @@ function GarminContent({
 
   if (!integration.connected) {
     return (
-      <form className="space-y-4" onSubmit={(e) => void handleImportTokens(e)}>
-        <IntegrationModalHeader integration={integration} />
-        <p className="text-muted-foreground text-sm leading-relaxed">
-          {integrationConnectBody(
-            integration,
-            'Sommeil, HRV, FC repos et séances. L’auth Garmin 2026 exige un mint local (python-garminconnect) — Sharpit ne stocke que les jetons DI et les rafraîchit.',
-          )}
+      <div className="space-y-4">
+        <IntegrationNotConnectedView
+          body="Tu te connectes sur le site Garmin dans ton navigateur (téléphone OK). Sharpit reçoit un ticket via le SSO embarqué, l’échange contre des jetons DI, puis rafraîchit en arrière-plan."
+          connectHref="/api/garmin/connect?returnTo=/settings/integrations"
+          integration={integration}
+        />
+        <p className="text-muted-foreground text-xs leading-relaxed">
+          Le mot de passe reste sur Garmin — jamais envoyé à Sharpit.
         </p>
-        <ol className="text-muted-foreground list-decimal space-y-1 pl-4 text-xs leading-relaxed">
-          <li>
-            Sur ta machine :{' '}
-            <code className="text-foreground">pip install -r scripts/requirements-garmin.txt</code>
-          </li>
-          <li>
-            <code className="text-foreground">python3 scripts/garmin-login.py</code> → écrit{' '}
-            <code className="text-foreground">garmin_tokens.json</code>
-          </li>
-          <li>Colle le JSON ci-dessous (ou <code className="text-foreground">yarn garmin:import-tokens</code>)</li>
-        </ol>
-        <div className="space-y-2">
-          <Label htmlFor="garmin-token-store">Jetons DI (garmin_tokens.json)</Label>
-          <Textarea
-            autoComplete="off"
-            className="[field-sizing:fixed] max-h-40 min-h-24 font-mono text-xs"
-            id="garmin-token-store"
-            name="tokenStore"
-            placeholder='{"di_token":"…","di_refresh_token":"…","di_client_id":"…"}'
-            required
-            rows={6}
-            spellCheck={false}
-          />
-        </div>
-        {error && (
-          <p aria-live="assertive" className="text-destructive text-sm">
-            {error}
-          </p>
-        )}
-        <Button className="w-full sm:w-auto" disabled={connecting} type="submit">
-          {connecting ? 'Import…' : 'Importer les jetons Garmin'}
-        </Button>
-        <p className="text-muted-foreground text-xs">
-          Ne colle pas de jetons chiffrés d’un autre environnement — la clé de chiffrement diffère.
-        </p>
-      </form>
+        <button
+          className="text-muted-foreground text-xs underline-offset-2 hover:underline"
+          type="button"
+          onClick={() => setShowAdvancedImport((v) => !v)}
+        >
+          {showAdvancedImport ? 'Masquer l’import avancé' : 'Import avancé (jetons DI / laptop)'}
+        </button>
+        {showAdvancedImport ? (
+          <form className="space-y-3" onSubmit={(e) => void handleImportTokens(e)}>
+            <p className="text-muted-foreground text-xs leading-relaxed">
+              Fallback laptop :{' '}
+              <code className="text-foreground">python3 scripts/garmin-login.py</code> puis colle le
+              JSON, ou <code className="text-foreground">yarn garmin:import-tokens</code>.
+            </p>
+            <div className="space-y-2">
+              <Label htmlFor="garmin-token-store">Jetons DI (garmin_tokens.json)</Label>
+              <Textarea
+                autoComplete="off"
+                className="[field-sizing:fixed] max-h-40 min-h-24 font-mono text-xs"
+                id="garmin-token-store"
+                name="tokenStore"
+                placeholder='{"di_token":"…","di_refresh_token":"…","di_client_id":"…"}'
+                required
+                rows={5}
+                spellCheck={false}
+              />
+            </div>
+            {error && (
+              <p aria-live="assertive" className="text-destructive text-sm">
+                {error}
+              </p>
+            )}
+            <Button className="w-full sm:w-auto" disabled={connecting} type="submit">
+              {connecting ? 'Import…' : 'Importer les jetons'}
+            </Button>
+          </form>
+        ) : null}
+      </div>
     );
   }
 

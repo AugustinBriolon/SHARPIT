@@ -47,7 +47,7 @@ const nextConfig: NextConfig = {
       "img-src 'self' data: blob: https:",
       "font-src 'self' data:",
       "connect-src 'self' https://*.clerk.accounts.dev https://*.clerk.com https://basemaps.cartocdn.com https://*.basemaps.cartocdn.com",
-      "frame-src 'self' https://*.clerk.accounts.dev https://*.clerk.com https://challenges.cloudflare.com",
+      "frame-src 'self' https://*.clerk.accounts.dev https://*.clerk.com https://challenges.cloudflare.com https://sso.garmin.com",
       "worker-src 'self' blob:",
       "object-src 'none'",
       "base-uri 'self'",

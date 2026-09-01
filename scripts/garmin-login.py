@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 """Mint Garmin DI OAuth2 tokens locally with python-garminconnect ≥ 0.3.
 
-Node fetch SSO (mobile JSON / widget HTML) no longer works against Garmin's
-post-March-2026 auth without curl_cffi TLS impersonation — which we refuse to
-ship inside the Next.js / Vercel app. Mint tokens on your machine, then import
-them into Sharpit (UI paste or CLI). Cron only refreshes stored DI tokens.
+Optional laptop fallback only. Production / phone UX uses browser SSO embed
+inside Sharpit (Settings → Connecter Garmin). Node fetch SSO (mobile JSON /
+widget HTML) no longer works against Garmin's post-March-2026 auth without
+curl_cffi TLS impersonation — which we refuse to ship inside the Next.js /
+Vercel app. Mint tokens on your machine, then import them into Sharpit
+(UI paste or CLI). Cron only refreshes stored DI tokens.
 
 Install (once):
   pip install -r scripts/requirements-garmin.txt
