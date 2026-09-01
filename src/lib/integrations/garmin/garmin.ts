@@ -3,11 +3,14 @@ import { isSet } from '@/lib/util/value';
 import { format } from 'date-fns';
 import { pickCurrentBodyBattery } from '@/lib/integrations/garmin/garmin-body-battery';
 import {
-  GarminMobileAuthError,
-  loginGarminMobile,
-  refreshGarminMobileToken,
-  type GarminMobileTokens,
-} from '@/lib/integrations/garmin/garmin-mobile-auth';
+  refreshDiAccessToken,
+  type GarminDiTokens,
+  GarminDiAuthError,
+} from '@/lib/integrations/garmin/garmin-di-oauth';
+import {
+  loginGarminWidget,
+  GarminWidgetAuthError,
+} from '@/lib/integrations/garmin/garmin-widget-auth';
 
 export type GarminTokens = IGarminTokens;
 
@@ -74,11 +77,8 @@ export class GarminLoginError extends Error {
 }
 
 /**
- * `@flow-js/garmin-connect` throws a handful of fixed strings from its SSO
- * scraping — matched here to tell "wrong password" apart from "Garmin's SSO
- * page didn't return what the library expected" (a CAPTCHA/anti-bot challenge
- * or an unannounced Garmin-side change both look identical to "Ticket not
- * found or MFA", so that case can't be narrowed further than blocked_or_mfa).
+ * Classifies interactive login failures. Sync/cron never call SSO — they only
+ * refresh stored DI tokens or mark needs-reconnect.
  */
 function classifyGarminLoginError(error: unknown): GarminLoginError {
   const message = error instanceof Error ? error.message : String(error);
@@ -98,54 +98,84 @@ function classifyGarminLoginError(error: unknown): GarminLoginError {
 }
 
 /**
- * Marks tokens minted via the mobile DI fallback so `garmin-sync.ts` knows to
- * refresh them through `refreshGarminMobileToken` instead of letting
- * `@flow-js/garmin-connect`'s internal 401 handler retry the (also blocked)
- * classic oauth1→oauth2 exchange. Stored inside the existing oauth1/oauth2
- * JSON columns — no schema field for this, deliberately, to avoid adding a
- * migration for what is a fallback auth path.
+ * Marks tokens minted via DI OAuth2 (widget SSO or legacy mobile) so
+ * `garmin-sync.ts` refreshes through `refreshDiAccessToken` instead of letting
+ * `@flow-js/garmin-connect`'s internal 401 handler retry the dead Garth
+ * oauth1→oauth2 exchange. Stored inside existing oauth1/oauth2 JSON columns —
+ * no schema migration.
+ *
+ * Encoding:
+ * - `oauth1.oauth_token` = `__DI__` (legacy) or `__DI__:<diClientId>`
+ * - `oauth1.oauth_token_secret` = refresh token
  */
-const DI_MARKER = '__DI__';
+export const DI_MARKER = '__DI__';
 
 export function isDiGarminTokens(tokens: GarminTokens): boolean {
-  return tokens.oauth1?.oauth_token === DI_MARKER;
+  const marker = tokens.oauth1?.oauth_token ?? '';
+  return marker === DI_MARKER || marker.startsWith(`${DI_MARKER}:`);
+}
+
+export function diClientIdFromGarminTokens(tokens: GarminTokens): string | null {
+  const marker = tokens.oauth1?.oauth_token ?? '';
+  if (marker.startsWith(`${DI_MARKER}:`)) {
+    const id = marker.slice(DI_MARKER.length + 1);
+    return id.length > 0 ? id : null;
+  }
+  return null;
 }
 
 export function diGarminTokensExpiresAtMs(tokens: GarminTokens): number {
   return tokens.oauth2.expires_at * 1000;
 }
 
-function diTokensToGarminTokens(mobile: GarminMobileTokens): GarminTokens {
+/** True when a legacy (non-DI / Garth) access token is close to expiry. */
+export function garminAccessTokenExpiresAtMs(tokens: GarminTokens): number {
+  if (typeof tokens.oauth2?.expires_at === 'number' && Number.isFinite(tokens.oauth2.expires_at)) {
+    return tokens.oauth2.expires_at * 1000;
+  }
+  return 0;
+}
+
+export function diTokensToGarminTokens(di: GarminDiTokens): GarminTokens {
   const nowIso = new Date().toISOString();
   return {
-    oauth1: { oauth_token: DI_MARKER, oauth_token_secret: mobile.refreshToken },
+    oauth1: {
+      oauth_token: `${DI_MARKER}:${di.diClientId}`,
+      oauth_token_secret: di.refreshToken,
+    },
     oauth2: {
       scope: '',
       jti: '',
-      access_token: mobile.accessToken,
+      access_token: di.accessToken,
       token_type: 'Bearer',
-      refresh_token: mobile.refreshToken,
-      expires_in: Math.max(0, Math.round((mobile.expiresAt - Date.now()) / 1000)),
+      refresh_token: di.refreshToken,
+      expires_in: Math.max(0, Math.round((di.expiresAt - Date.now()) / 1000)),
       refresh_token_expires_in: 0,
-      expires_at: Math.round(mobile.expiresAt / 1000),
+      expires_at: Math.round(di.expiresAt / 1000),
       refresh_token_expires_at: 0,
       last_update_date: nowIso,
-      expires_date: new Date(mobile.expiresAt).toISOString(),
+      expires_date: new Date(di.expiresAt).toISOString(),
     },
   };
 }
 
 export async function refreshDiGarminTokens(tokens: GarminTokens): Promise<GarminTokens> {
-  const mobile = await refreshGarminMobileToken(tokens.oauth1.oauth_token_secret);
-  return diTokensToGarminTokens(mobile);
+  const refreshed = await refreshDiAccessToken({
+    refreshToken: tokens.oauth1.oauth_token_secret || tokens.oauth2.refresh_token,
+    diClientId: diClientIdFromGarminTokens(tokens),
+    accessToken: tokens.oauth2.access_token,
+  });
+  return diTokensToGarminTokens(refreshed);
 }
 
-function garminMobileAuthErrorToLoginError(error: GarminMobileAuthError): GarminLoginError {
+function widgetAuthErrorToLoginError(error: GarminWidgetAuthError): GarminLoginError {
   switch (error.kind) {
     case 'mfa_required':
       return new GarminLoginError(error.message, 'blocked_or_mfa');
     case 'invalid_credentials':
       return new GarminLoginError(error.message, 'invalid_credentials');
+    case 'account_locked':
+      return new GarminLoginError(error.message, 'account_locked');
     case 'rate_limited':
       return new GarminLoginError(error.message, 'rate_limited');
     default:
@@ -153,40 +183,35 @@ function garminMobileAuthErrorToLoginError(error: GarminMobileAuthError): Garmin
   }
 }
 
+/**
+ * Interactive connect only. Widget SSO (no clientId) → DI OAuth2 tokens.
+ * Cron / API sync must never call this — use stored tokens + refresh.
+ */
 export async function loginWithCredentials(
   username: string,
   password: string,
 ): Promise<{ client: GCClient; tokens: GarminTokens; profile: ProfileInfo }> {
-  const client = new GarminConnect({ username, password });
+  let di: GarminDiTokens;
   try {
-    await client.login();
-    const tokens = client.exportToken();
-    const profile = await safeProfile(client);
-    return { client, tokens, profile };
+    di = await loginGarminWidget(username, password);
   } catch (error) {
-    const classified = classifyGarminLoginError(error);
-    if (classified.reason !== 'rate_limited' && classified.reason !== 'blocked_or_mfa') {
-      throw classified;
+    if (error instanceof GarminWidgetAuthError) {
+      throw widgetAuthErrorToLoginError(error);
     }
-
-    // The web/widget SSO surface is blocked (429 or an opaque "ticket not
-    // found") — fall back to the mobile app's login surface, which Garmin
-    // rate-limits under a separate bucket (see garmin-mobile-auth.ts).
-    let mobile: GarminMobileTokens;
-    try {
-      mobile = await loginGarminMobile(username, password);
-    } catch (mobileError) {
-      if (mobileError instanceof GarminMobileAuthError) {
-        throw garminMobileAuthErrorToLoginError(mobileError);
-      }
-      throw classified;
+    if (error instanceof GarminDiAuthError) {
+      throw new GarminLoginError(
+        error.message,
+        error.kind === 'rate_limited' ? 'rate_limited' : 'unknown',
+      );
     }
-
-    const tokens = diTokensToGarminTokens(mobile);
-    client.loadToken(tokens.oauth1, tokens.oauth2);
-    const profile = await safeProfile(client);
-    return { client, tokens, profile };
+    throw classifyGarminLoginError(error);
   }
+
+  const tokens = diTokensToGarminTokens(di);
+  const client = new GarminConnect({ username: '', password: '' });
+  client.loadToken(tokens.oauth1, tokens.oauth2);
+  const profile = await safeProfile(client);
+  return { client, tokens, profile };
 }
 
 export function clientFromTokens(tokens: GarminTokens): GCClient {

@@ -1,22 +1,42 @@
 /**
- * Garmin's "native mobile app" auth flow (SSO ticket → DI OAuth2 bearer token).
+ * @deprecated Prefer `garmin-di-oauth` + `garmin-widget-auth`.
  *
- * SHARPIT's normal Garmin login goes through `@flow-js/garmin-connect`'s web/widget
- * SSO scrape, whose ticket-exchange endpoint shares a rate-limit bucket keyed on
- * (clientId=GarminConnect, account email) with every other unofficial web client.
- * Once that bucket trips it can stay 429'd for 48h+, independent of credentials.
- * The official Android app authenticates through a separate endpoint under its own
- * clientId (GCM_ANDROID_DARK) with its own bucket — this module replicates that
- * flow as a fallback when the web path is blocked. Endpoint/field names verified
- * against the equivalent, currently-working Python implementation (no JS reference
- * existed to copy from), not against a live Garmin account.
+ * Kept as a thin compatibility shim so older call sites / scripts that imported
+ * mobile DI helpers keep compiling. Interactive connect no longer uses the
+ * mobile clientId SSO path (rate-limited per email+clientId).
  */
 
+import {
+  exchangeServiceTicketForDiTokens,
+  refreshDiAccessToken,
+  GarminDiAuthError,
+  type GarminDiTokens,
+  LEGACY_MOBILE_SSO_CLIENT_ID,
+  DI_TOKEN_URL,
+  DI_GRANT_TYPE,
+} from '@/lib/integrations/garmin/garmin-di-oauth';
+
+export type GarminMobileAuthFailureKind =
+  | 'invalid_credentials'
+  | 'mfa_required'
+  | 'rate_limited'
+  | 'unknown';
+
+export class GarminMobileAuthError extends Error {
+  constructor(
+    message: string,
+    public readonly kind: GarminMobileAuthFailureKind,
+  ) {
+    super(message);
+    this.name = 'GarminMobileAuthError';
+  }
+}
+
+export type GarminMobileTokens = GarminDiTokens;
+
 const SSO_HOST = 'https://sso.garmin.com';
-const DI_TOKEN_URL = 'https://diauth.garmin.com/di-oauth2-service/oauth/token';
-const CLIENT_ID = 'GCM_ANDROID_DARK';
+const CLIENT_ID = LEGACY_MOBILE_SSO_CLIENT_ID;
 const SERVICE_URL = 'https://mobile.integration.garmin.com/gcm/android';
-const DI_GRANT_TYPE = 'https://connectapi.garmin.com/di-oauth2-service/oauth/grant/service_ticket';
 
 const NATIVE_HEADERS: Record<string, string> = {
   'User-Agent': 'GCM-Android-5.23',
@@ -30,72 +50,17 @@ const NATIVE_HEADERS: Record<string, string> = {
   'Accept-Language': 'en-US,en;q=0.9',
 };
 
-export type GarminMobileAuthFailureKind =
-  'invalid_credentials' | 'mfa_required' | 'rate_limited' | 'unknown';
-
-export class GarminMobileAuthError extends Error {
-  constructor(
-    message: string,
-    public readonly kind: GarminMobileAuthFailureKind,
-  ) {
-    super(message);
-    this.name = 'GarminMobileAuthError';
+function toMobileError(error: unknown): never {
+  if (error instanceof GarminDiAuthError) {
+    throw new GarminMobileAuthError(error.message, error.kind);
   }
+  throw error;
 }
 
-export interface GarminMobileTokens {
-  accessToken: string;
-  refreshToken: string;
-  expiresAt: number;
-}
-
-function basicAuthHeader(): string {
-  return 'Basic ' + Buffer.from(`${CLIENT_ID}:`).toString('base64');
-}
-
-async function exchangeServiceTicket(ticket: string): Promise<GarminMobileTokens> {
-  const res = await fetch(DI_TOKEN_URL, {
-    method: 'POST',
-    headers: {
-      ...NATIVE_HEADERS,
-      Authorization: basicAuthHeader(),
-      Accept: 'application/json,text/html;q=0.9,*/*;q=0.8',
-      'Content-Type': 'application/x-www-form-urlencoded',
-      'Cache-Control': 'no-cache',
-    },
-    body: new URLSearchParams({
-      client_id: CLIENT_ID,
-      service_ticket: ticket,
-      grant_type: DI_GRANT_TYPE,
-      service_url: SERVICE_URL,
-    }),
-  });
-
-  if (!res.ok) {
-    const body = await res.text().catch(() => '');
-    throw new GarminMobileAuthError(
-      `DI token exchange failed: HTTP ${res.status} ${body.slice(0, 300)}`,
-      'unknown',
-    );
-  }
-
-  const data = (await res.json().catch(() => ({}))) as {
-    access_token?: string;
-    refresh_token?: string;
-    expires_in?: number;
-  };
-  if (!data.access_token) {
-    throw new GarminMobileAuthError('DI token exchange returned no access_token', 'unknown');
-  }
-
-  return {
-    accessToken: data.access_token,
-    refreshToken: data.refresh_token ?? '',
-    expiresAt: Date.now() + (data.expires_in ?? 3600) * 1000,
-  };
-}
-
-/** Logs in via Garmin's mobile (Android) SSO surface. MFA accounts are rejected explicitly rather than silently mishandled — this path isn't wired up. */
+/**
+ * @deprecated Rate-limited per email+clientId. Use `loginGarminWidget` instead.
+ * Retained only for emergency local debugging — not wired into connect/cron.
+ */
 export async function loginGarminMobile(
   username: string,
   password: string,
@@ -135,49 +100,23 @@ export async function loginGarminMobile(
     );
   }
 
-  return exchangeServiceTicket(data.serviceTicketId);
+  try {
+    return await exchangeServiceTicketForDiTokens(data.serviceTicketId, SERVICE_URL);
+  } catch (error) {
+    toMobileError(error);
+  }
 }
 
 export async function refreshGarminMobileToken(refreshToken: string): Promise<GarminMobileTokens> {
-  if (!refreshToken) {
-    throw new GarminMobileAuthError('No refresh token available for the mobile session', 'unknown');
+  try {
+    return await refreshDiAccessToken({
+      refreshToken,
+      diClientId: CLIENT_ID,
+    });
+  } catch (error) {
+    toMobileError(error);
   }
-  const res = await fetch(DI_TOKEN_URL, {
-    method: 'POST',
-    headers: {
-      ...NATIVE_HEADERS,
-      Authorization: basicAuthHeader(),
-      Accept: 'application/json,text/html;q=0.9,*/*;q=0.8',
-      'Content-Type': 'application/x-www-form-urlencoded',
-      'Cache-Control': 'no-cache',
-    },
-    body: new URLSearchParams({
-      grant_type: 'refresh_token',
-      client_id: CLIENT_ID,
-      refresh_token: refreshToken,
-    }),
-  });
-
-  if (!res.ok) {
-    const body = await res.text().catch(() => '');
-    throw new GarminMobileAuthError(
-      `DI token refresh failed: HTTP ${res.status} ${body.slice(0, 300)}`,
-      'unknown',
-    );
-  }
-
-  const data = (await res.json().catch(() => ({}))) as {
-    access_token?: string;
-    refresh_token?: string;
-    expires_in?: number;
-  };
-  if (!data.access_token) {
-    throw new GarminMobileAuthError('DI token refresh returned no access_token', 'unknown');
-  }
-
-  return {
-    accessToken: data.access_token,
-    refreshToken: data.refresh_token ?? refreshToken,
-    expiresAt: Date.now() + (data.expires_in ?? 3600) * 1000,
-  };
 }
+
+// Re-export constants used by older notes / scripts.
+export { DI_TOKEN_URL, DI_GRANT_TYPE, CLIENT_ID as MOBILE_CLIENT_ID };

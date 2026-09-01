@@ -86,7 +86,7 @@ function garminConnectErrorMessage(error: unknown): string {
       case 'update_phone':
         return 'Garmin te demande de mettre à jour ton numéro de téléphone. Connecte-toi sur connect.garmin.com pour compléter cette étape, puis réessaie ici.';
       case 'blocked_or_mfa':
-        return 'Connexion Garmin refusée. Si le MFA est activé, désactive-le temporairement. Si tes identifiants sont corrects et que ça persiste, Garmin bloque probablement cette connexion automatisée — réessaie plus tard.';
+        return 'Connexion Garmin refusée (MFA ou challenge). Si le MFA est activé, désactive-le temporairement pour connecter, puis réactive-le — la sync utilisera ensuite le refresh token. Si ça persiste, réessaie plus tard.';
       case 'invalid_credentials':
       case 'unknown':
       default:
