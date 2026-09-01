@@ -51,10 +51,13 @@ export function buildStravaPayloadSection(options: {
   };
 }
 
-export function buildGarminPayloadSection(
-  account: OAuthAccountSlice | null,
-  needsReconnect: boolean,
-): IntegrationsPayload['garmin'] {
+export function buildGarminPayloadSection(options: {
+  account: OAuthAccountSlice | null;
+  needsReconnect: boolean;
+  status?: string;
+  statusMessages?: Record<string, string>;
+}): IntegrationsPayload['garmin'] {
+  const { account, needsReconnect, status, statusMessages = {} } = options;
   return {
     account: account
       ? {
@@ -64,6 +67,7 @@ export function buildGarminPayloadSection(
         }
       : null,
     needsReconnect,
+    statusMessage: status ? statusMessages[status] : undefined,
   };
 }
 

@@ -43,6 +43,7 @@ function buildGarminIntegration(payload: IntegrationsPayload): IntegrationBase {
           lastSyncAt: payload.garmin.account.lastSyncAt,
         }
       : null,
+    statusMessage: payload.garmin.statusMessage,
   };
 }
 

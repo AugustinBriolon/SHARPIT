@@ -7,16 +7,18 @@ import {
   clientFromTokens,
   currentTokens,
   diGarminTokensExpiresAtMs,
+  diTokensToGarminTokens,
+  garminAccessTokenExpiresAtMs,
   garminTokensFromStorage,
   fetchAthleteThresholds,
   fetchDailyHealth,
   fetchWeightRange,
   isDiGarminTokens,
-  loginWithCredentials,
   refreshDiGarminTokens,
   type GarminAthleteThresholds,
   type GarminDailyHealth,
 } from '@/lib/integrations/garmin/garmin';
+import { mapPythonGarminconnectTokenStore } from '@/lib/integrations/garmin/garmin-tokenstore';
 import { observationEngine } from '@/lib/engines/observation-engine';
 import { garminHealthToObservations } from '@/core/adapters/garmin-health-adapter';
 import {
@@ -85,47 +87,56 @@ export async function getGarminAccount(athleteId: string) {
   return prisma.garminAccount.findUnique({ where: { athleteId } });
 }
 
-/** Refresh a stored DI (mobile-fallback) token once it's close to expiry. */
+/** Refresh a stored DI access token once it's close to expiry. */
 const DI_REFRESH_MARGIN_MS = 5 * 60 * 1000;
 
 /**
- * Decrypts an account's stored tokens into a ready-to-use client, refreshing
- * first if they came from the mobile DI fallback and are close to expiry.
+ * Decrypts an account's stored tokens into a ready-to-use client.
  *
- * That proactive check matters: `@flow-js/garmin-connect`'s own client retries
- * a 401 by calling its internal oauth1→oauth2 exchange, which is the same
- * endpoint the DI fallback exists to avoid. Refreshing here, before that can
- * fire, keeps a DI-authenticated account from silently falling back into the
- * blocked exchange mid-sync.
+ * Auth rules (cron + API sync):
+ * - Never runs email/password SSO (`loginWithCredentials` / widget login).
+ * - DI tokens: refresh via diauth when near expiry; on failure → needs-reconnect.
+ * - Legacy Garth/oauth1 tokens: usable until expiry, then needs-reconnect
+ *   (Garth exchange is dead — do not re-login from cron).
  */
 export async function buildFreshGarminClient(
   athleteId: string,
   account: { oauth1TokenEnc: string; oauth2TokenEnc: string },
 ) {
   let tokens = decryptGarminTokens(account.oauth1TokenEnc, account.oauth2TokenEnc);
-  if (
-    isDiGarminTokens(tokens) &&
-    diGarminTokensExpiresAtMs(tokens) - Date.now() < DI_REFRESH_MARGIN_MS
-  ) {
-    try {
-      tokens = await refreshDiGarminTokens(tokens);
-    } catch (error) {
-      await revokeGarminCredentials(athleteId);
-      throw new ProviderAuthError(
-        'Session Garmin expirée. Reconnecte Garmin dans les paramètres.',
-        {
-          cause: error,
+
+  if (isDiGarminTokens(tokens)) {
+    if (diGarminTokensExpiresAtMs(tokens) - Date.now() < DI_REFRESH_MARGIN_MS) {
+      try {
+        tokens = await refreshDiGarminTokens(tokens);
+      } catch (error) {
+        await revokeGarminCredentials(athleteId);
+        throw new ProviderAuthError(
+          'Session Garmin expirée. Reconnecte Garmin dans les paramètres.',
+          {
+            cause: error,
+          },
+        );
+      }
+      await prisma.garminAccount.update({
+        where: { athleteId },
+        data: {
+          oauth1TokenEnc: encryptGarminToken(tokens.oauth1),
+          oauth2TokenEnc: encryptGarminToken(tokens.oauth2),
         },
-      );
+      });
     }
-    await prisma.garminAccount.update({
-      where: { athleteId },
-      data: {
-        oauth1TokenEnc: encryptGarminToken(tokens.oauth1),
-        oauth2TokenEnc: encryptGarminToken(tokens.oauth2),
-      },
-    });
+    return clientFromTokens(tokens);
   }
+
+  // Legacy oauth1/Garth session: never attempt SSO or dead oauth1→oauth2 exchange.
+  if (garminAccessTokenExpiresAtMs(tokens) - Date.now() < DI_REFRESH_MARGIN_MS) {
+    await revokeGarminCredentials(athleteId);
+    throw new ProviderAuthError(
+      'Session Garmin expirée. Reconnecte Garmin dans les paramètres.',
+    );
+  }
+
   return clientFromTokens(tokens);
 }
 
@@ -176,27 +187,58 @@ export async function runGarminCall<T>(athleteId: string, fn: () => Promise<T>):
   }
 }
 
-export async function connectGarmin(athleteId: string, username: string, password: string) {
-  const { tokens, profile } = await loginWithCredentials(username, password);
+export async function connectGarmin(
+  athleteId: string,
+  _username: string,
+  _password: string,
+): Promise<never> {
+  throw new ProviderAuthError(
+    'La connexion Garmin email/mot de passe via le serveur Sharpit ne fonctionne plus (auth Garmin 2026). Mint les jetons en local avec python-garminconnect (≥0.3), puis importe-les.',
+  );
+}
+
+/**
+ * Persists DI tokens minted by python-garminconnect ≥ 0.3 (or a Sharpit DI export).
+ * Cron/API sync only refresh these tokens — they never re-run email/password SSO.
+ */
+export async function importGarminDiTokenStore(athleteId: string, rawStore: unknown) {
+  const di = mapPythonGarminconnectTokenStore(rawStore);
+  let tokens = diTokensToGarminTokens(di);
+
+  let displayName: string | null = null;
+  let fullName: string | null = null;
+  try {
+    const client = clientFromTokens(tokens);
+    const profile = (await client.getUserProfile()) as {
+      displayName?: string;
+      fullName?: string;
+      userName?: string;
+    };
+    displayName = profile.displayName ?? profile.userName ?? null;
+    fullName = profile.fullName ?? null;
+    tokens = currentTokens(client);
+  } catch {
+    // Profile is best-effort — tokens are still persisted for cron refresh.
+  }
 
   await prisma.garminAccount.upsert({
     where: { athleteId },
     create: {
       athleteId,
-      displayName: profile.displayName,
-      fullName: profile.fullName,
+      displayName,
+      fullName,
       oauth1TokenEnc: encryptGarminToken(tokens.oauth1),
       oauth2TokenEnc: encryptGarminToken(tokens.oauth2),
     },
     update: {
-      displayName: profile.displayName,
-      fullName: profile.fullName,
+      displayName,
+      fullName,
       oauth1TokenEnc: encryptGarminToken(tokens.oauth1),
       oauth2TokenEnc: encryptGarminToken(tokens.oauth2),
     },
   });
 
-  return profile;
+  return { displayName, fullName };
 }
 
 export interface GarminThresholdsImport extends GarminAthleteThresholds {

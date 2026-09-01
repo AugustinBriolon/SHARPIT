@@ -11,6 +11,7 @@ type PageProps = {
     googleDetail?: string;
     withings?: string;
     withingsDetail?: string;
+    garmin?: string;
   }>;
 };
 

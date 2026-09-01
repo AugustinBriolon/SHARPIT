@@ -24,8 +24,8 @@ const COPY: Record<CredentialProvider, { title: string; description: string; sub
   garmin: {
     title: 'Connecter Garmin',
     description:
-      'Email et mot de passe du compte Garmin Connect. Le mot de passe n’est pas stocké — jetons de session uniquement.',
-    submit: 'Connecter Garmin',
+      'Tu t’identifies sur Garmin dans Sharpit, sans quitter l’app. Le mot de passe reste chez Garmin.',
+    submit: 'Continuer',
   },
   renpho: {
     title: 'Connecter Renpho',
@@ -74,15 +74,12 @@ export function OnboardingCredentialDialog({
     try {
       let response: Response;
       if (activeProvider === 'garmin') {
-        response = await fetch('/api/garmin/connect', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            username: form.get('username'),
-            password: form.get('password'),
-            dataClass,
-          }),
+        const params = new URLSearchParams({
+          returnTo: '/onboarding',
+          ...(dataClass ? { dataClass } : {}),
         });
+        window.location.href = `/api/garmin/connect?${params.toString()}`;
+        return;
       } else if (activeProvider === 'renpho') {
         response = await fetch('/api/renpho/connect', {
           method: 'POST',
@@ -131,28 +128,10 @@ export function OnboardingCredentialDialog({
         </DialogHeader>
         <form className="min-w-0 space-y-4" onSubmit={(e) => void handleSubmit(e)}>
           {provider === 'garmin' ? (
-            <>
-              <div className="space-y-2">
-                <Label htmlFor="onboarding-garmin-username">Email</Label>
-                <Input
-                  autoComplete="username"
-                  id="onboarding-garmin-username"
-                  name="username"
-                  type="email"
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="onboarding-garmin-password">Mot de passe</Label>
-                <Input
-                  autoComplete="current-password"
-                  id="onboarding-garmin-password"
-                  name="password"
-                  type="password"
-                  required
-                />
-              </div>
-            </>
+            <p className="text-muted-foreground text-sm leading-relaxed">
+              L’écran suivant affiche le formulaire Garmin dans Sharpit. Après connexion, tu
+              reviens ici automatiquement.
+            </p>
           ) : null}
           {provider === 'renpho' ? (
             <>

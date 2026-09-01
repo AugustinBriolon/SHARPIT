@@ -1,26 +1,73 @@
-import { NextRequest, NextResponse, after } from 'next/server';
-import { z } from 'zod';
-import { onProviderSyncCompleted } from '@/lib/athlete-state/orchestrator';
+import { cookies } from 'next/headers';
+import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { syncGarminActivities } from '@/lib/integrations/garmin/garmin-activity-sync';
-import { connectGarmin, syncGarminHealth } from '@/lib/integrations/garmin/garmin-sync';
-import { GarminLoginError } from '@/lib/integrations/garmin/garmin';
-import { sanitizeDataClass } from '@/lib/integrations/oauth-public-origin';
 import {
-  enableProviderForAllCoveredClasses,
-  enableProviderForClass,
-} from '@/lib/integrations/source-prefs';
-import { persistSourcePrefsMutation } from '@/lib/integrations/source-prefs-store';
-import { updateRecordsForTypes } from '@/lib/training/records';
+  garminConnectErrorMessage,
+  garminConnectSchema,
+  SSO_DISABLED_MESSAGE,
+} from '@/app/api/garmin/connect/connect-shared';
+import {
+  createGarminSsoState,
+  GARMIN_SSO_PAGE_PATH,
+  GARMIN_SSO_STATE_COOKIE,
+} from '@/lib/integrations/garmin/garmin-browser-sso';
+import {
+  publicOriginFromRequest,
+  redirectIfBindHost,
+  sanitizeIntegrationReturnTo,
+  setIntegrationReturnTo,
+} from '@/lib/integrations/oauth-return';
 
-export const maxDuration = 300;
+export const maxDuration = 60;
 
-export const garminConnectSchema = z.object({
-  username: z.string().min(1).max(200),
-  password: z.string().min(1).max(200),
-  dataClass: z.string().optional().nullable(),
-});
+export {
+  garminConnectErrorMessage,
+  garminConnectSchema,
+  SSO_DISABLED_MESSAGE,
+} from '@/app/api/garmin/connect/connect-shared';
 
+const OAUTH_COOKIE_OPTS = {
+  httpOnly: true,
+  sameSite: 'lax' as const,
+  path: '/',
+  maxAge: 600,
+  secure: process.env.NODE_ENV === 'production',
+};
+
+/**
+ * Start browser CAS SSO — sets CSRF state, then opens the Sharpit page that
+ * embeds Garmin's SSO iframe (password typed on Garmin, never on Sharpit).
+ */
+export async function GET(request: NextRequest) {
+  const bindRedirect = redirectIfBindHost(request);
+  if (bindRedirect) {
+    return bindRedirect;
+  }
+
+  try {
+    const athleteId = await getCurrentAthleteId();
+    const returnTo = request.nextUrl.searchParams.get('returnTo');
+    const dataClass = request.nextUrl.searchParams.get('dataClass');
+    await setIntegrationReturnTo(returnTo, dataClass);
+
+    const state = createGarminSsoState({ athleteId });
+    const cookieStore = await cookies();
+    cookieStore.set(GARMIN_SSO_STATE_COOKIE, state, OAUTH_COOKIE_OPTS);
+
+    const target = new URL(GARMIN_SSO_PAGE_PATH, publicOriginFromRequest(request));
+    target.searchParams.set('returnTo', sanitizeIntegrationReturnTo(returnTo));
+    return NextResponse.redirect(target);
+  } catch (error) {
+    console.error('[api/garmin/connect] start SSO failed', {
+      name: error instanceof Error ? error.name : 'Error',
+    });
+    return NextResponse.redirect(
+      new URL('/settings/integrations?garmin=error', publicOriginFromRequest(request)),
+    );
+  }
+}
+
+/** Password SSO via Node fetch is a dead end — honest 501 only. */
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
@@ -29,69 +76,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Email et mot de passe requis' }, { status: 400 });
     }
 
-    const athleteId = await getCurrentAthleteId();
-    const profile = await connectGarmin(athleteId, parsed.data.username, parsed.data.password);
-
-    const dataClass = sanitizeDataClass(parsed.data.dataClass);
-    await persistSourcePrefsMutation(athleteId, (prefs) =>
-      dataClass
-        ? enableProviderForClass(prefs, dataClass, 'garmin')
-        : enableProviderForAllCoveredClasses(prefs, 'garmin'),
+    return NextResponse.json(
+      { error: SSO_DISABLED_MESSAGE, code: 'garmin_sso_disabled' },
+      { status: 501 },
     );
-
-    // First pull right after connect — health + activities land without a manual sync.
-    after(async () => {
-      try {
-        const [health, activities] = await Promise.all([
-          syncGarminHealth(athleteId, {}),
-          syncGarminActivities(athleteId, {}),
-        ]);
-        if (activities.changedTypes.length > 0) {
-          await updateRecordsForTypes(athleteId, activities.changedTypes);
-        }
-        await onProviderSyncCompleted(
-          athleteId,
-          [
-            {
-              provider: 'garmin',
-              imported: activities.imported,
-              updated: activities.updated + activities.merged,
-              observationCount: health.updated,
-              activityIds: activities.importedActivityIds,
-            },
-          ],
-          undefined,
-          { skipRecordUpdate: activities.changedTypes.length > 0 },
-        );
-      } catch (error) {
-        console.error('[api/garmin/connect] background sync failed:', error);
-      }
-    });
-
-    return NextResponse.json({ success: true, profile, syncStarted: true });
   } catch (error) {
     console.error('[api/garmin/connect]', error);
-    const status = error instanceof GarminLoginError && error.reason === 'rate_limited' ? 429 : 401;
-    return NextResponse.json({ error: garminConnectErrorMessage(error) }, { status });
+    return NextResponse.json({ error: garminConnectErrorMessage(error) }, { status: 401 });
   }
-}
-
-function garminConnectErrorMessage(error: unknown): string {
-  if (error instanceof GarminLoginError) {
-    switch (error.reason) {
-      case 'rate_limited':
-        return "Garmin limite temporairement les connexions (trop de requêtes sur son service, indépendamment de ton compte). Réessaie dans quelques heures — tes identifiants sont corrects, ce n'est pas la cause.";
-      case 'account_locked':
-        return 'Ton compte Garmin est verrouillé. Ouvre connect.garmin.com dans un navigateur pour le déverrouiller, puis réessaie ici.';
-      case 'update_phone':
-        return 'Garmin te demande de mettre à jour ton numéro de téléphone. Connecte-toi sur connect.garmin.com pour compléter cette étape, puis réessaie ici.';
-      case 'blocked_or_mfa':
-        return 'Connexion Garmin refusée. Si le MFA est activé, désactive-le temporairement. Si tes identifiants sont corrects et que ça persiste, Garmin bloque probablement cette connexion automatisée — réessaie plus tard.';
-      case 'invalid_credentials':
-      case 'unknown':
-      default:
-        return 'Connexion Garmin échouée. Vérifie tes identifiants.';
-    }
-  }
-  return 'Connexion Garmin échouée.';
 }

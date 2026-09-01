@@ -52,12 +52,20 @@ const withingsStatusMessages: Record<string, string> = {
   error: 'Une erreur est survenue lors de la connexion à Withings.',
 };
 
+const garminStatusMessages: Record<string, string> = {
+  connected: 'Compte Garmin connecté.',
+  denied: 'Connexion refusée sur Garmin.',
+  invalid_state: 'Session expirée, réessaie la connexion Garmin.',
+  error: 'Une erreur est survenue lors de la connexion à Garmin.',
+};
+
 type IntegrationsSearchParams = {
   strava?: string;
   google?: string;
   googleDetail?: string;
   withings?: string;
   withingsDetail?: string;
+  garmin?: string;
 };
 
 async function buildIntegrationsPayload(
@@ -88,7 +96,7 @@ async function buildIntegrationsPayload(
     Promise.resolve(isMfpConfigured()),
   ]);
 
-  const { strava, google, googleDetail, withings, withingsDetail } = params;
+  const { strava, google, googleDetail, withings, withingsDetail, garmin } = params;
 
   return {
     strava: buildStravaPayloadSection({
@@ -98,10 +106,12 @@ async function buildIntegrationsPayload(
       status: strava,
       statusMessages,
     }),
-    garmin: buildGarminPayloadSection(
-      garminAccount,
-      Boolean(garminAccount) && !isGarminAccountConnected(garminAccount),
-    ),
+    garmin: buildGarminPayloadSection({
+      account: garminAccount,
+      needsReconnect: Boolean(garminAccount) && !isGarminAccountConnected(garminAccount),
+      status: garmin,
+      statusMessages: garminStatusMessages,
+    }),
     withings: buildWithingsPayloadSection({
       account: withingsAccount,
       configured: withingsConfigured,
