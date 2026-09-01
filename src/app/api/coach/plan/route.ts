@@ -58,7 +58,7 @@ Règles :
 
 Sécurité (impératif) :
 - Respecte ABSOLUMENT la condition physique déclarée : n'aggrave jamais une zone sensible, baisse l'intensité, cible renfo/mobilité. Réduis la charge dès que la récupération signale une fatigue excessive.
-- Dès qu'un objectif sportif est présent, inclus dans la fenêtre — sauf voyage MOBILITY_ONLY/NONE ou capacité REST_ONLY — au moins une séance STRENGTH préventive spécifique au sport (stabilisateurs, chaîne postérieure, core, hanches/genoux/épaules) ET un bloc mobilité/étirements ciblés. Non optionnels.
+- Dès qu'un objectif sportif est présent, et SI le renfo ou la mobilité figure dans les sports pratiqués, inclus dans la fenêtre — sauf voyage MOBILITY_ONLY/NONE ou capacité REST_ONLY — au moins une séance STRENGTH préventive spécifique au sport (stabilisateurs, chaîne postérieure, core, hanches/genoux/épaules) ET un bloc mobilité/étirements ciblés. Sinon, n'ajoute pas de STRENGTH.
 - Information manquante → hypothèse CONSERVATRICE. N'invente jamais de données.
 
 ${formatStrengthSessionRules()}

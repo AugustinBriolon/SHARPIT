@@ -29,6 +29,10 @@ import {
 } from '@/lib/presentation/scenario-comparison';
 import { formatEquipmentForCoach } from '@/lib/equipment/format';
 import { normalizeAthleteEquipment } from '@/lib/equipment/parse';
+import {
+  formatPracticedSportsForCoach,
+  normalizeAthletePracticedSports,
+} from '@/lib/practiced-sports';
 import { dayKeyFromDate, toLocalCalendarDate } from '@/lib/date/day-key';
 
 async function loadNutritionSummary(
@@ -691,6 +695,7 @@ async function buildCoachContextUncached(
     today: format(today, 'EEEE d MMMM yyyy', { locale: fr }),
     note: profile?.context?.trim() || null,
     equipment: normalizeAthleteEquipment(profile?.equipment ?? null),
+    practicedSports: normalizeAthletePracticedSports(profile?.practicedSports ?? null).sports,
     profile: buildCoachProfile(profile),
     fitness,
     load,
@@ -1215,6 +1220,7 @@ function collectCoachContextLines(ctx: CoachContext): string[] {
     `# Profil athlète — ${ctx.today}`,
     ...formatPersonalNoteSection(ctx.note),
     ...formatProfileThresholdLines(ctx.profile),
+    `\n${formatPracticedSportsForCoach(ctx.practicedSports)}`,
     `\n${formatEquipmentForCoach(ctx.equipment)}`,
     ...formatPmcSection(ctx),
     ...formatFatigueSection(ctx.fatigue),

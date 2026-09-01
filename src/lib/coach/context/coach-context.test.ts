@@ -50,6 +50,7 @@ function minimalContext(overrides: Partial<CoachContext> = {}): CoachContext {
     today: 'lundi 10 août 2026',
     note: null,
     equipment: normalizeAthleteEquipment(null),
+    practicedSports: ['run', 'bike', 'swim', 'triathlon'],
     profile: null,
     fitness: { ctl: 50, atl: 40, tsb: 10 },
     load: {
@@ -155,6 +156,14 @@ describe('formatConstraintsSection', () => {
 });
 
 describe('formatCoachContext relevance contract', () => {
+  it('includes practiced sports allowlist for twin-informed proposals', () => {
+    const text = formatCoachContext(minimalContext({ practicedSports: ['run'] }));
+    expect(text).toContain('## Sports pratiqués');
+    expect(text).toContain('IMPÉRATIF');
+    expect(text).toContain('Course');
+    expect(text).toContain('historique');
+  });
+
   it('includes planned session ids for update without listPlannedSessions', () => {
     const text = formatCoachContext(minimalContext());
     expect(text).toContain('id=ps_abc');

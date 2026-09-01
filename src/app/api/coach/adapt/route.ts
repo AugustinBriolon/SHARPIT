@@ -144,7 +144,7 @@ Principes :
 ${formatStrengthSessionRules()}
 
 FORMAT : le schéma de sortie fait autorité — noms de champs, valeurs autorisées et types viennent de lui, jamais de ce texte. N'ajoute aucun champ hors schéma et n'invente aucune valeur d'énumération.
-- Si le plan manque de renfo/mobilité préventive alors qu'un objectif sportif est actif, ADD des séances STRENGTH (préventif + mobilité) adaptées au sport — sauf MOBILITY_ONLY/NONE / REST_ONLY.
+- Si le plan manque de renfo/mobilité préventive alors qu'un objectif sportif est actif ET que le renfo ou la mobilité figure dans les sports pratiqués, ADD des séances STRENGTH (préventif + mobilité) adaptées au sport — sauf MOBILITY_ONLY/NONE / REST_ONLY. Sinon, n'ajoute pas de STRENGTH.
 Réponds en français.`;
 
 function adaptErrorMessage(error: unknown): string {

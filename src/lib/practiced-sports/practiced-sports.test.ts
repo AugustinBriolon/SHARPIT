@@ -2,12 +2,16 @@ import { ActivityType } from '@prisma/client';
 import { describe, expect, it } from 'vitest';
 import {
   DEFAULT_CORE_PRACTICED_SPORTS,
+  coachActivityTypesForPracticed,
   equipmentSportsForPracticed,
+  formatPracticedSportsForCoach,
   hasCorePracticedSport,
+  isCoachActivityTypeAllowed,
   normalizeAthletePracticedSports,
   performanceSportsForPracticed,
   periodSportOptionsForPracticed,
   togglePracticedSport,
+  travelDisciplinesForPracticed,
   type PracticedSportId,
 } from './index';
 
@@ -135,5 +139,66 @@ describe('intention / goals filtering', () => {
     expect(options).toEqual(['ALL', ActivityType.RUN]);
     expect(options).not.toContain(ActivityType.BIKE);
     expect(options).not.toContain(ActivityType.SWIM);
+  });
+});
+
+describe('coach / twin proposal filtering', () => {
+  it('offers only RUN for a run-only athlete', () => {
+    expect(coachActivityTypesForPracticed(['run'])).toEqual([ActivityType.RUN]);
+    expect(isCoachActivityTypeAllowed('BIKE', ['run'])).toBe(false);
+    expect(isCoachActivityTypeAllowed('STRENGTH', ['run'])).toBe(false);
+  });
+
+  it('expands triathlon to run+bike+swim without STRENGTH', () => {
+    expect(coachActivityTypesForPracticed(['triathlon'])).toEqual([
+      ActivityType.RUN,
+      ActivityType.BIKE,
+      ActivityType.SWIM,
+    ]);
+  });
+
+  it('null normalize → all core, so coach allowlist is run+bike+swim', () => {
+    const sports = normalizeAthletePracticedSports(null).sports;
+    expect(sports).toEqual([...DEFAULT_CORE_PRACTICED_SPORTS]);
+    expect(coachActivityTypesForPracticed(sports)).toEqual([
+      ActivityType.RUN,
+      ActivityType.BIKE,
+      ActivityType.SWIM,
+    ]);
+  });
+
+  it('unlocks STRENGTH when complementary strength/mobility/stretching is practiced', () => {
+    expect(coachActivityTypesForPracticed(['run', 'strength'])).toEqual([
+      ActivityType.RUN,
+      ActivityType.STRENGTH,
+    ]);
+    expect(coachActivityTypesForPracticed(['run', 'mobility'])).toEqual([
+      ActivityType.RUN,
+      ActivityType.STRENGTH,
+    ]);
+    expect(coachActivityTypesForPracticed(['run', 'stretching'])).toEqual([
+      ActivityType.RUN,
+      ActivityType.STRENGTH,
+    ]);
+  });
+
+  it('maps travel disciplines from practiced sports (triathlon + mobility)', () => {
+    expect(travelDisciplinesForPracticed(['triathlon', 'mobility'])).toEqual([
+      'RUN',
+      'BIKE',
+      'SWIM',
+      'MOBILITY',
+    ]);
+    expect(travelDisciplinesForPracticed(['run'])).toEqual(['RUN']);
+  });
+
+  it('formats a coach prompt that forbids non-practiced sports and preserves history', () => {
+    const text = formatPracticedSportsForCoach(['run']);
+    expect(text).toContain('## Sports pratiqués');
+    expect(text).toContain('Course');
+    expect(text).toContain('IMPÉRATIF');
+    expect(text).toContain('historique');
+    expect(text).toContain('STRENGTH');
+    expect(text).not.toContain('Vélo');
   });
 });

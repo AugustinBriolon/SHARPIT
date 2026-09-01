@@ -69,7 +69,7 @@ ${formatStrengthSessionRules()}
 ## Sécurité (impératif)
 - Respecte ABSOLUMENT la condition physique déclarée (douleurs, blessures, mobilité) : n'aggrave jamais une zone sensible ; baisse l'intensité, propose renfo/mobilité ciblé si pertinent.
 - Agis comme un coach formé à la prévention blessures (médecine du sport / ostéo) : longévité articulaire et musculaire avant le volume.
-- Dès qu'un objectif sportif est actif, le planning hebdo doit inclure du STRENGTH préventif spécifique au sport ET de la mobilité/étirements ciblés — sauf contrainte voyage MOBILITY_ONLY/NONE ou capacité REST_ONLY. Ces séances ne sont pas optionnelles.
+- Dès qu'un objectif sportif est actif, et SI le renfo ou la mobilité figure dans les sports pratiqués, le planning hebdo doit inclure du STRENGTH préventif spécifique au sport ET de la mobilité/étirements ciblés — sauf contrainte voyage MOBILITY_ONLY/NONE ou capacité REST_ONLY. Sinon, n'ajoute pas de STRENGTH.
 - Réduis volume/intensité dès que les indicateurs de récupération signalent une fatigue excessive. Ne recommande jamais une charge qui augmente nettement le risque de blessure.
 
 ## Cohérence & honnêteté
@@ -131,7 +131,7 @@ export async function POST(req: Request) {
     model: COACH_MODEL,
     system,
     messages: await convertToModelMessages(messages),
-    tools: createCoachTools(athleteId),
+    tools: createCoachTools(athleteId, { practicedSports: ctx.practicedSports }),
     // Les actions qui modifient le calendrier nécessitent la validation de l'athlète.
     // listPlannedSessions (lecture seule) s'exécute automatiquement.
     toolApproval: {

@@ -45,6 +45,15 @@ import {
   formatScenarioComparisonForCoach,
   loadScenarioComparisonForCoach,
 } from '@/lib/presentation/scenario-comparison';
+import {
+  coachActivityTypesForPracticed,
+  isCoachActivityTypeAllowed,
+  travelDisciplinesForPracticed,
+  DEFAULT_CORE_PRACTICED_SPORTS,
+  type CoachActivityType,
+  type PracticedSportId,
+} from '@/lib/practiced-sports';
+import type { TravelDiscipline } from '@/lib/travel-context/disciplines';
 
 function scheduleSessionContextRefresh(athleteId: string, sessionId: string) {
   after(async () => {
@@ -77,6 +86,42 @@ async function resolveCoachDefaultGoalId(athleteId: string): Promise<string | nu
 const typeEnum = z.enum(['RUN', 'BIKE', 'SWIM', 'STRENGTH']);
 const intensityEnum = z.enum(['RECOVERY', 'ENDURANCE', 'TEMPO', 'THRESHOLD', 'VO2MAX', 'RACE']);
 const exposureEnum = z.enum(['INDOOR', 'OUTDOOR', 'UNKNOWN']);
+const travelDisciplineEnum = z.enum(['RUN', 'BIKE', 'SWIM', 'STRENGTH', 'MOBILITY']);
+
+function coachTypeEnumForSports(sports: readonly PracticedSportId[]) {
+  const allowed = coachActivityTypesForPracticed(sports);
+  if (allowed.length === 0) {
+    return typeEnum;
+  }
+  if (allowed.length === 1) {
+    return z.enum([allowed[0]]);
+  }
+  return z.enum(allowed as [CoachActivityType, ...CoachActivityType[]]);
+}
+
+function travelDisciplineEnumForSports(sports: readonly PracticedSportId[]) {
+  const allowed = travelDisciplinesForPracticed(sports);
+  if (allowed.length === 0) {
+    return travelDisciplineEnum;
+  }
+  if (allowed.length === 1) {
+    return z.enum([allowed[0]]);
+  }
+  return z.enum(allowed as [TravelDiscipline, ...TravelDiscipline[]]);
+}
+
+function rejectIfSportNotPracticed(
+  type: string,
+  practicedSports: readonly PracticedSportId[],
+): { ok: false; error: string } | null {
+  if (isCoachActivityTypeAllowed(type, practicedSports)) {
+    return null;
+  }
+  return {
+    ok: false as const,
+    error: `Sport ${type} hors sports pratiqués — propose uniquement ${coachActivityTypesForPracticed(practicedSports).join(', ')}.`,
+  };
+}
 
 const toDate = (d: string) => new Date(`${d}T12:00:00`);
 
@@ -506,8 +551,16 @@ async function executeCreateBrickSessionTool(
 
 /**
  * Tous s'exécutent côté serveur et renvoient un résumé compact.
+ * `practicedSports` narrows create/update/travel proposal enums (proposals only).
  */
-export function createCoachTools(athleteId: string) {
+export function createCoachTools(
+  athleteId: string,
+  options?: { practicedSports?: readonly PracticedSportId[] },
+) {
+  const practicedSports = options?.practicedSports ?? [...DEFAULT_CORE_PRACTICED_SPORTS];
+  const proposalTypeEnum = coachTypeEnumForSports(practicedSports);
+  const proposalTravelEnum = travelDisciplineEnumForSports(practicedSports);
+
   return {
     listPlannedSessions: tool({
       description:
@@ -598,7 +651,7 @@ export function createCoachTools(athleteId: string) {
       inputSchema: z.object({
         date: z.string().describe('Date au format yyyy-MM-dd.'),
         startTime: startTimeSchema,
-        type: typeEnum,
+        type: proposalTypeEnum,
         intensity: intensityEnum.optional(),
         title: z.string().describe('Titre court de la séance.'),
         description: z
@@ -620,6 +673,10 @@ export function createCoachTools(athleteId: string) {
         locationLng: z.number().optional(),
       }),
       execute: async (input) => {
+        const rejected = rejectIfSportNotPracticed(input.type, practicedSports);
+        if (rejected) {
+          return rejected;
+        }
         try {
           return await executeCreatePlannedSessionTool(athleteId, input);
         } catch (error) {
@@ -642,7 +699,7 @@ export function createCoachTools(athleteId: string) {
         legs: z
           .array(
             z.object({
-              type: typeEnum,
+              type: proposalTypeEnum,
               intensity: intensityEnum.optional(),
               title: z.string().describe('Titre court de la jambe.'),
               description: z
@@ -657,6 +714,12 @@ export function createCoachTools(athleteId: string) {
           .describe("Les jambes du brick, dans l'ordre d'enchaînement (ex. [vélo, course])."),
       }),
       execute: async (input) => {
+        for (const leg of input.legs) {
+          const rejected = rejectIfSportNotPracticed(leg.type, practicedSports);
+          if (rejected) {
+            return rejected;
+          }
+        }
         try {
           return await executeCreateBrickSessionTool(athleteId, input);
         } catch (error) {
@@ -675,7 +738,7 @@ export function createCoachTools(athleteId: string) {
           .describe('id de la séance (contexte « Déjà planifié » ou listPlannedSessions).'),
         date: z.string().optional().describe('Nouvelle date yyyy-MM-dd.'),
         startTime: startTimeSchema,
-        type: typeEnum.optional(),
+        type: proposalTypeEnum.optional(),
         intensity: intensityEnum.optional(),
         title: z.string().optional(),
         description: z.string().optional(),
@@ -689,6 +752,12 @@ export function createCoachTools(athleteId: string) {
         locationLng: z.number().optional(),
       }),
       execute: async (input) => {
+        if (input.type) {
+          const rejected = rejectIfSportNotPracticed(input.type, practicedSports);
+          if (rejected) {
+            return rejected;
+          }
+        }
         try {
           return await executeUpdatePlannedSessionTool(athleteId, input);
         } catch (error) {
@@ -740,7 +809,7 @@ export function createCoachTools(athleteId: string) {
         label: z.string().optional().describe('Titre court (ex. Vacances juillet).'),
         note: z.string().optional(),
         allowedDisciplines: z
-          .array(z.enum(['RUN', 'BIKE', 'SWIM', 'STRENGTH', 'MOBILITY']))
+          .array(proposalTravelEnum)
           .optional()
           .describe(
             'Sports possibles pendant le voyage. MOBILITY = mobilité/étirements. Vide = tout autorisé.',
@@ -803,7 +872,7 @@ export function createCoachTools(athleteId: string) {
         label: z.string().optional().describe('Titre court (ex. Tendinite genou).'),
         note: z.string().optional(),
         allowedDisciplines: z
-          .array(z.enum(['RUN', 'BIKE', 'SWIM', 'STRENGTH', 'MOBILITY']))
+          .array(proposalTravelEnum)
           .optional()
           .describe(
             'Sports encore possibles pendant cette période. MOBILITY = mobilité/étirements. Vide = tout autorisé.',
