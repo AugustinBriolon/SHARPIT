@@ -2,9 +2,9 @@ import { format, subDays } from 'date-fns';
 import { mfpDayToNutritionObservation } from '@/core/adapters/myfitnesspal-adapter';
 import { observationEngine } from '@/lib/engines/observation-engine';
 import { prisma } from '@/lib/prisma';
-import { decryptSecret, encryptSecret } from '@/lib/secret-box';
+import { decryptSecret, encryptSecret, isSecretAuthenticityFailure } from '@/lib/secret-box';
 import {
-  isCredentialFailure,
+  isDecryptMalformedSoftFailure,
   isMfpAccountConnected,
   ProviderAuthError,
 } from '@/lib/integrations/shared/connection-status';
@@ -245,22 +245,14 @@ async function syncMfpLookbackDays(
   return { synced, errors };
 }
 
-export async function syncMfpNutrition(
-  athleteId: string,
-  lookbackDays = 7,
-): Promise<MfpSyncResult> {
-  const account = await getMfpAccount(athleteId);
-  // Already revoked / never connected: skip quietly so cron does not re-spam.
-  if (!account || !isMfpAccountConnected(account)) {
-    return { synced: 0, errors: 0 };
-  }
-
-  let session: MfpSession;
+function readMfpSessionOrThrow(sessionTokenEnc: string): MfpSession {
   try {
-    session = { sessionToken: decryptSecret(account.sessionTokenEnc) };
+    return { sessionToken: decryptSecret(sessionTokenEnc) };
   } catch (error) {
-    if (isCredentialFailure(error)) {
-      await revokeMfpCredentials(athleteId);
+    if (isSecretAuthenticityFailure(error)) {
+      throw error;
+    }
+    if (isDecryptMalformedSoftFailure(error)) {
       throw new ProviderAuthError(
         'Session MyFitnessPal expirée. Reconnecte MyFitnessPal dans les paramètres.',
         { cause: error },
@@ -268,13 +260,30 @@ export async function syncMfpNutrition(
     }
     throw error;
   }
+}
+
+export async function syncMfpNutrition(
+  athleteId: string,
+  lookbackDays = 7,
+): Promise<MfpSyncResult> {
+  const account = await getMfpAccount(athleteId);
+  if (!account || !isMfpAccountConnected(account)) {
+    return { synced: 0, errors: 0 };
+  }
+
+  let session: MfpSession;
+  try {
+    session = readMfpSessionOrThrow(account.sessionTokenEnc);
+  } catch (error) {
+    if (error instanceof ProviderAuthError && isDecryptMalformedSoftFailure(error.cause)) {
+      await revokeMfpCredentials(athleteId);
+    }
+    throw error;
+  }
 
   try {
     session = await rollSessionForward(athleteId, session);
   } catch (err) {
-    // Never destructive: the refresh is an optimisation, and it cannot tell a
-    // dead cookie apart from a bad minute at the edge. Expiry is decided by the
-    // diary reads below, which answer 401/403 when the credential is truly gone.
     console.error('[MFP] session refresh failed, syncing with the stored cookie:', err);
   }
 

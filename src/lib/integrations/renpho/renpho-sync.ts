@@ -2,6 +2,7 @@ import { BodyCompositionSource, Prisma } from '@prisma/client';
 import { isSet } from '@/lib/util/value';
 import {
   isCredentialFailure,
+  isDecryptMalformedSoftFailure,
   isRenphoAccountConnected,
   ProviderAuthError,
 } from '@/lib/integrations/shared/connection-status';
@@ -11,7 +12,7 @@ import {
   type RenphoMeasurement,
   renphoClientFromCredentials,
 } from '@/lib/integrations/renpho/renpho';
-import { decryptSecret, encryptSecret } from '@/lib/secret-box';
+import { decryptSecret, encryptSecret, isSecretAuthenticityFailure } from '@/lib/secret-box';
 import { observationEngine } from '@/lib/engines/observation-engine';
 import { renphoMeasurementToBodyComposition } from '@/core/adapters/renpho-adapter';
 import { backfillBodyCompositionObservationsFromMeasurements } from '@/lib/integrations/shared/body-composition-observation-backfill';
@@ -364,7 +365,10 @@ export async function syncRenphoHealth(
       days: window.days,
     });
   } catch (error) {
-    if (isCredentialFailure(error)) {
+    if (isSecretAuthenticityFailure(error)) {
+      throw error;
+    }
+    if (isDecryptMalformedSoftFailure(error) || isCredentialFailure(error)) {
       await revokeRenphoCredentials(athleteId);
       throw new ProviderAuthError(
         'Session Renpho expirée. Reconnecte Renpho dans les paramètres.',

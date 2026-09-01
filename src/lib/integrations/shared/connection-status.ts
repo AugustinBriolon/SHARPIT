@@ -5,7 +5,12 @@
  * and look like real AES-GCM ciphertext on a provider account row.
  */
 
-import { isEncryptedSecret, isSecretDecryptFailure } from '@/lib/secret-box';
+import {
+  isEncryptedSecret,
+  isSecretAuthenticityFailure,
+  isSecretDecryptFailure,
+  isSecretMalformedFailure,
+} from '@/lib/secret-box';
 import { isSet } from '@/lib/util/value';
 
 // ---------------------------------------------------------------------------
@@ -23,9 +28,26 @@ export function isProviderAuthFailure(error: unknown): error is ProviderAuthErro
   return error instanceof ProviderAuthError;
 }
 
-/** Auth expiry or undecryptable stored credentials — both warrant reconnect. */
+/**
+ * True provider-side auth expiry. Safe to wipe local credentials and prompt
+ * reconnect. Does NOT include AES-GCM authenticity failures (wrong key) —
+ * those are fleet incidents and must never mass-revoke.
+ */
 export function isCredentialFailure(error: unknown): boolean {
+  return isProviderAuthFailure(error);
+}
+
+/** Soft skip path for cron: provider auth OR any decrypt failure (no hard spam). */
+export function isCredentialSoftFailure(error: unknown): boolean {
   return isProviderAuthFailure(error) || isSecretDecryptFailure(error);
+}
+
+export function isDecryptAuthenticitySoftFailure(error: unknown): boolean {
+  return isSecretAuthenticityFailure(error);
+}
+
+export function isDecryptMalformedSoftFailure(error: unknown): boolean {
+  return isSecretMalformedFailure(error);
 }
 
 // ---------------------------------------------------------------------------

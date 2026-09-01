@@ -4,7 +4,9 @@ import {
   decryptSecret,
   encryptSecret,
   isEncryptedSecret,
+  isSecretAuthenticityFailure,
   isSecretDecryptFailure,
+  isSecretMalformedFailure,
 } from '@/lib/secret-box';
 
 const ORIGINAL_KEY = process.env.SECRET_ENCRYPTION_KEY;
@@ -24,6 +26,7 @@ describe('isEncryptedSecret', () => {
     expect(isEncryptedSecret(undefined)).toBe(false);
     expect(isEncryptedSecret('demo')).toBe(false);
     expect(isEncryptedSecret('x')).toBe(false);
+    expect(isEncryptedSecret('!!!not-base64!!!')).toBe(false);
   });
 
   it('accepts a real encryptSecret payload', () => {
@@ -38,31 +41,31 @@ describe('decryptSecret', () => {
     expect(decryptSecret(encryptSecret('garmin-oauth'))).toBe('garmin-oauth');
   });
 
-  it('throws SecretDecryptError for empty ciphertext instead of Node auth-tag noise', () => {
+  it('throws malformed SecretDecryptError for empty/short placeholders (no auth-tag noise)', () => {
     process.env.SECRET_ENCRYPTION_KEY = 'test-key-for-secret-box';
-    expect(() => decryptSecret('')).toThrow(SecretDecryptError);
-    try {
-      decryptSecret('');
-    } catch (error) {
-      expect(isSecretDecryptFailure(error)).toBe(true);
-      expect((error as Error).message).not.toMatch(/authentication tag length/i);
+    for (const value of ['', 'demo', 'x']) {
+      expect(() => decryptSecret(value)).toThrow(SecretDecryptError);
+      try {
+        decryptSecret(value);
+      } catch (error) {
+        expect(isSecretMalformedFailure(error)).toBe(true);
+        expect(isSecretAuthenticityFailure(error)).toBe(false);
+        expect((error as Error).message).not.toMatch(/authentication tag length/i);
+      }
     }
   });
 
-  it('throws SecretDecryptError for short placeholders like demo seed tokens', () => {
-    process.env.SECRET_ENCRYPTION_KEY = 'test-key-for-secret-box';
-    expect(() => decryptSecret('demo')).toThrow(SecretDecryptError);
-    try {
-      decryptSecret('demo');
-    } catch (error) {
-      expect((error as Error).message).not.toMatch(/authentication tag length/i);
-    }
-  });
-
-  it('throws SecretDecryptError when ciphertext was encrypted with a different key', () => {
+  it('throws authenticity SecretDecryptError when ciphertext was encrypted with a different key', () => {
     process.env.SECRET_ENCRYPTION_KEY = 'key-a';
     const blob = encryptSecret('provider-token');
     process.env.SECRET_ENCRYPTION_KEY = 'key-b';
     expect(() => decryptSecret(blob)).toThrow(SecretDecryptError);
+    try {
+      decryptSecret(blob);
+    } catch (error) {
+      expect(isSecretAuthenticityFailure(error)).toBe(true);
+      expect(isSecretMalformedFailure(error)).toBe(false);
+      expect(isSecretDecryptFailure(error)).toBe(true);
+    }
   });
 });

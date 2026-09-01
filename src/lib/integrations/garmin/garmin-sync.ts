@@ -22,11 +22,17 @@ import { garminHealthToObservations } from '@/core/adapters/garmin-health-adapte
 import {
   isCredentialFailure,
   isGarminAccountConnected,
+  isDecryptMalformedSoftFailure,
   ProviderAuthError,
 } from '@/lib/integrations/shared/connection-status';
 import { backfillHealthObservationsFromDailyHealth } from '../shared/health-observation-backfill';
 import { mapWithConcurrency } from '@/lib/async/map-with-concurrency';
-import { decryptSecret, encryptSecret, isSecretDecryptFailure } from '@/lib/secret-box';
+import {
+  decryptSecret,
+  encryptSecret,
+  isSecretAuthenticityFailure,
+  isSecretDecryptFailure,
+} from '@/lib/secret-box';
 import type { GarminTokens } from '@/lib/integrations/garmin/garmin';
 
 /** Encrypts one OAuth token object for storage in the `*TokenEnc` columns. */
@@ -152,7 +158,12 @@ export async function runGarminCall<T>(athleteId: string, fn: () => Promise<T>):
   try {
     return await fn();
   } catch (error) {
-    if (isCredentialFailure(error)) {
+    // Wrong-key / GCM auth failure: fleet incident — never wipe stored tokens.
+    if (isSecretAuthenticityFailure(error)) {
+      throw error;
+    }
+    // Local placeholder / unframed blob: clear so the hub shows reconnect.
+    if (isDecryptMalformedSoftFailure(error) || isCredentialFailure(error)) {
       await revokeGarminCredentials(athleteId);
       throw new ProviderAuthError(
         'Session Garmin expirée. Reconnecte Garmin dans les paramètres.',

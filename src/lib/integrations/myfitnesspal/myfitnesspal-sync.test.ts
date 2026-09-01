@@ -43,13 +43,13 @@ describe('syncMfpNutrition credential resilience', () => {
     } as never);
 
     await expect(syncMfpNutrition('ath-1')).resolves.toEqual({ synced: 0, errors: 0 });
+    expect(prisma.myFitnessPalAccount.update).not.toHaveBeenCalled();
   });
 
-  it('revokes and raises ProviderAuthError when stored ciphertext cannot be decrypted', async () => {
+  it('does not revoke when ciphertext fails authenticity (wrong key)', async () => {
     const { prisma } = await import('@/lib/prisma');
     const { syncMfpNutrition } = await import('@/lib/integrations/myfitnesspal/myfitnesspal-sync');
-    const { encryptSecret } = await import('@/lib/secret-box');
-    const { ProviderAuthError } = await import('@/lib/integrations/shared/connection-status');
+    const { encryptSecret, isSecretAuthenticityFailure } = await import('@/lib/secret-box');
 
     process.env.SECRET_ENCRYPTION_KEY = 'key-that-wrote-the-blob';
     const blob = encryptSecret('cookie');
@@ -60,12 +60,8 @@ describe('syncMfpNutrition credential resilience', () => {
       sessionTokenEnc: blob,
       displayName: 'Athlete',
     } as never);
-    vi.mocked(prisma.myFitnessPalAccount.update).mockResolvedValue({} as never);
 
-    await expect(syncMfpNutrition('ath-1')).rejects.toBeInstanceOf(ProviderAuthError);
-    expect(prisma.myFitnessPalAccount.update).toHaveBeenCalledWith({
-      where: { athleteId: 'ath-1' },
-      data: { sessionTokenEnc: '' },
-    });
+    await expect(syncMfpNutrition('ath-1')).rejects.toSatisfy(isSecretAuthenticityFailure);
+    expect(prisma.myFitnessPalAccount.update).not.toHaveBeenCalled();
   });
 });
