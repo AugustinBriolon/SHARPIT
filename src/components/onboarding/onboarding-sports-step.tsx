@@ -59,7 +59,7 @@ export function OnboardingSportsStep({
   return (
     <section
       aria-labelledby="onboarding-sports-title"
-      className="flex max-h-[calc(100dvh-10.5rem)] flex-col sm:max-h-[calc(100dvh-12rem)]"
+      className="flex h-[calc(100dvh-10.5rem)] max-h-[calc(100dvh-10.5rem)] flex-col sm:h-[calc(100dvh-12rem)] sm:max-h-[calc(100dvh-12rem)]"
     >
       <div className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain">
         <SportsStepHeader />
