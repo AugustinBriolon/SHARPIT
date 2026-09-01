@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 import { Bike, Dumbbell, Footprints, StretchHorizontal, Waves } from 'lucide-react';
 import { handleRadioGroupKeyDown } from '@/components/settings/equipment/radio-group-keydown';
 
-const SPORT_TABS: {
+const ALL_SPORT_TABS: {
   id: EquipmentSport;
   label: string;
   icon: typeof Footprints;
@@ -30,19 +30,26 @@ function sportSwitcherClass(active: boolean) {
 export function EquipmentSportTabs({
   sport,
   onSportChange,
+  availableSports,
 }: {
   sport: EquipmentSport;
   onSportChange: (sport: EquipmentSport) => void;
+  /** When set, only these tabs are shown (practiced-sports filter). */
+  availableSports?: readonly EquipmentSport[];
 }) {
+  const tabs =
+    availableSports && availableSports.length > 0
+      ? ALL_SPORT_TABS.filter((tab) => availableSports.includes(tab.id))
+      : ALL_SPORT_TABS;
   const optionRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
   function focusOption(index: number) {
-    const clamped = Math.max(0, Math.min(SPORT_TABS.length - 1, index));
+    const clamped = Math.max(0, Math.min(tabs.length - 1, index));
     optionRefs.current[clamped]?.focus();
   }
 
   function selectAt(index: number) {
-    const option = SPORT_TABS[index];
+    const option = tabs[index];
     if (!option) {
       return;
     }
@@ -51,7 +58,11 @@ export function EquipmentSportTabs({
   }
 
   function onRadioKeyDown(event: React.KeyboardEvent<HTMLButtonElement>, index: number) {
-    handleRadioGroupKeyDown(event, index, SPORT_TABS.length, selectAt);
+    handleRadioGroupKeyDown(event, index, tabs.length, selectAt);
+  }
+
+  if (tabs.length === 0) {
+    return null;
   }
 
   return (
@@ -60,7 +71,7 @@ export function EquipmentSportTabs({
       className="bg-muted/45 no-scrollbar inline-flex max-w-full overflow-x-auto rounded-full p-1"
       role="radiogroup"
     >
-      {SPORT_TABS.map(({ id, label, icon: Icon }, index) => {
+      {tabs.map(({ id, label, icon: Icon }, index) => {
         const active = sport === id;
         return (
           <button

@@ -7,13 +7,19 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { isDemoSession } from '@/lib/demo/demo-session';
 import { normalizeAthleteEquipment } from '@/lib/equipment/parse';
+import { normalizeAthletePracticedSports } from '@/lib/practiced-sports';
 import { getAthleteProfile } from '@/lib/queries';
 
 function EquipmentPanelSkeleton() {
   return (
     <div className="space-y-4" aria-busy>
+      <div className="space-y-2">
+        {Array.from({ length: 4 }).map((_, index) => (
+          <Skeleton key={index} className="h-11 w-full max-w-sm rounded-lg border-0" />
+        ))}
+      </div>
       <div className="bg-muted/45 inline-flex max-w-full gap-1 rounded-full p-1">
-        {Array.from({ length: 5 }).map((_, index) => (
+        {Array.from({ length: 3 }).map((_, index) => (
           <Skeleton key={index} className="h-9 w-20 shrink-0 rounded-full border-0" />
         ))}
       </div>
@@ -38,7 +44,14 @@ async function EquipmentPanelWithProfile() {
   const athleteId = await getCurrentAthleteId();
   const athleteProfile = await getAthleteProfile(athleteId).catch(() => null);
 
-  return <EquipmentPanel initial={normalizeAthleteEquipment(athleteProfile?.equipment ?? null)} />;
+  return (
+    <EquipmentPanel
+      initial={normalizeAthleteEquipment(athleteProfile?.equipment ?? null)}
+      initialPracticedSports={normalizeAthletePracticedSports(
+        athleteProfile?.practicedSports ?? null,
+      )}
+    />
+  );
 }
 
 export default function SettingsEquipmentPage() {
@@ -49,8 +62,8 @@ export default function SettingsEquipmentPage() {
         <p className="text-label">Profil</p>
         <h1 className="text-page-title mt-1">Équipement</h1>
         <p className="text-muted-foreground mt-1 text-sm">
-          Capacités d&apos;entraînement par sport — pour adapter les séances à ce que tu as
-          vraiment.
+          Sports pratiqués et capacités d&apos;entraînement — pour adapter les propositions à ce que
+          tu fais vraiment.
         </p>
       </StickyHeader>
 

@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { Prisma } from '@prisma/client';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { getAthleteProfile, upsertAthleteProfile } from '@/lib/queries';
-import { athleteProfileSchema } from '@/lib/validators/athlete-profile';
+import { athleteProfileSchema, type AthleteProfileInput } from '@/lib/validators/athlete-profile';
 import { invalidateCoachContext } from '@/lib/coach/context/coach-context';
 import { normalizeAthleteEquipment } from '@/lib/equipment/parse';
+import { sanitizePracticedSportsForPersist } from '@/lib/practiced-sports';
 import { DEFAULT_DISPLAY_MODE } from '@/lib/preferences/display-mode';
 
 function profileUpdateError(error: unknown) {
@@ -30,6 +31,34 @@ function profileUpdateError(error: unknown) {
     },
     { status: 500 },
   );
+}
+
+function equipmentPatch(
+  equipment: AthleteProfileInput['equipment'],
+): { equipment: Prisma.InputJsonValue | null } | Record<string, never> {
+  if (equipment === undefined) {
+    return {};
+  }
+  if (equipment === null) {
+    return { equipment: null };
+  }
+  return { equipment: normalizeAthleteEquipment(equipment) as Prisma.InputJsonValue };
+}
+
+function practicedSportsPatch(
+  practicedSports: AthleteProfileInput['practicedSports'],
+): { practicedSports: Prisma.InputJsonValue | null } | Record<string, never> {
+  if (practicedSports === undefined) {
+    return {};
+  }
+  if (practicedSports === null) {
+    return { practicedSports: null };
+  }
+  const sanitized = sanitizePracticedSportsForPersist(practicedSports) ?? {
+    version: 1 as const,
+    sports: [],
+  };
+  return { practicedSports: sanitized as Prisma.InputJsonValue };
 }
 
 export async function GET() {
@@ -65,18 +94,12 @@ export async function PATCH(request: NextRequest) {
   }
 
   try {
-    const { equipment, ...rest } = parsed.data;
+    const { equipment, practicedSports, ...rest } = parsed.data;
     const athleteId = await getCurrentAthleteId();
     const profile = await upsertAthleteProfile(athleteId, {
       ...rest,
-      ...(equipment !== undefined
-        ? {
-            equipment:
-              equipment === null
-                ? null
-                : (normalizeAthleteEquipment(equipment) as Prisma.InputJsonValue),
-          }
-        : {}),
+      ...equipmentPatch(equipment),
+      ...practicedSportsPatch(practicedSports),
     });
     // Any profile field can affect coach prompts / twin — clear the 30s cache.
     invalidateCoachContext();

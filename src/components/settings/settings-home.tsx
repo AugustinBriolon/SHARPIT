@@ -57,7 +57,7 @@ const GROUPS: SettingsGroup[] = [
       {
         href: '/settings/equipment',
         title: 'Équipement',
-        description: 'Matériel disponible par sport.',
+        description: 'Sports pratiqués et matériel disponible.',
         icon: Dumbbell,
         statusKey: 'equipment',
       },

@@ -567,14 +567,23 @@ export async function upsertAthleteProfile(
     sleepTargetMinutes?: number | null;
     sleepBedtimeTargetMin?: number | null;
     equipment?: Prisma.InputJsonValue | typeof Prisma.JsonNull | null;
+    practicedSports?: Prisma.InputJsonValue | typeof Prisma.JsonNull | null;
     displayMode?: DisplayMode;
   },
 ) {
-  const { equipment, ...rest } = data;
+  const { equipment, practicedSports, ...rest } = data;
   const payload = {
     ...rest,
     ...(equipment !== undefined
       ? { equipment: equipment === undefined || equipment === null ? Prisma.JsonNull : equipment }
+      : {}),
+    ...(practicedSports !== undefined
+      ? {
+          practicedSports:
+            practicedSports === undefined || practicedSports === null
+              ? Prisma.JsonNull
+              : practicedSports,
+        }
       : {}),
   };
 

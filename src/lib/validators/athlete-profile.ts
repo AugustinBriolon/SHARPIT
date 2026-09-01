@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { parseBirthDateInput } from '@/lib/profile/athlete-profile-utils';
 import { EQUIPMENT_ITEM_IDS, STRENGTH_VENUES } from '@/lib/equipment/catalog';
 import { DISPLAY_MODES } from '@/lib/preferences/display-mode';
+import { PRACTICED_SPORTS } from '@/lib/practiced-sports';
 
 /**
  * Absent is not the same as cleared.
@@ -20,7 +21,7 @@ function patchField<T extends z.ZodTypeAny>(coerce: (value: unknown) => unknown,
     if (value === undefined) {
       return undefined;
     }
-    if (value === '' || (value === undefined || value === null)) {
+    if (value === '' || value === undefined || value === null) {
       return null;
     }
     return coerce(value);
@@ -78,6 +79,11 @@ export const athleteEquipmentSchema = z.object({
   owned: z.array(z.enum(EQUIPMENT_ITEM_IDS)),
 });
 
+export const athletePracticedSportsSchema = z.object({
+  version: z.literal(1),
+  sports: z.array(z.enum(PRACTICED_SPORTS)),
+});
+
 /** Partial patch — personal profile, calibration and equipment save independently. */
 export const athleteProfileSchema = z
   .object({
@@ -92,6 +98,7 @@ export const athleteProfileSchema = z
     sleepTargetMinutes: nullableSleepMinutes,
     sleepBedtimeTargetMin: nullableBedtimeMin,
     equipment: athleteEquipmentSchema.nullable(),
+    practicedSports: athletePracticedSportsSchema.nullable(),
     displayMode: z.enum(DISPLAY_MODES),
   })
   .partial()
@@ -101,3 +108,4 @@ export const athleteProfileSchema = z
 
 export type AthleteProfileInput = z.infer<typeof athleteProfileSchema>;
 export type AthleteEquipmentInput = z.infer<typeof athleteEquipmentSchema>;
+export type AthletePracticedSportsInput = z.infer<typeof athletePracticedSportsSchema>;

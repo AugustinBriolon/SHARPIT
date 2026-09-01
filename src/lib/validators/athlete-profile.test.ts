@@ -60,4 +60,22 @@ describe('athleteProfileSchema', () => {
     expect(() => athleteProfileSchema.parse({ displayMode: 'advanced' })).toThrow();
     expect(() => athleteProfileSchema.parse({ displayMode: null })).toThrow();
   });
+
+  it('carries practiced sports on their own', () => {
+    expect(
+      athleteProfileSchema.parse({
+        practicedSports: { version: 1, sports: ['run', 'strength'] },
+      }),
+    ).toEqual({
+      practicedSports: { version: 1, sports: ['run', 'strength'] },
+    });
+  });
+
+  it('refuses unknown practiced sport ids', () => {
+    expect(() =>
+      athleteProfileSchema.parse({
+        practicedSports: { version: 1, sports: ['hike'] },
+      }),
+    ).toThrow();
+  });
 });

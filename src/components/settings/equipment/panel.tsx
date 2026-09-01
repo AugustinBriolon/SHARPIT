@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { EquipmentItemChecklist } from '@/components/settings/equipment/item-checklist';
 import { EquipmentSportTabs } from '@/components/settings/equipment/sport-tabs';
 import {
@@ -9,6 +9,8 @@ import {
 } from '@/components/settings/equipment/status-line';
 import { StrengthVenuePicker } from '@/components/settings/equipment/strength-venue-picker';
 import { useEquipmentPersist } from '@/components/settings/equipment/use-equipment-persist';
+import { PracticedSportsPicker } from '@/components/practiced-sports/practiced-sports-picker';
+import { usePracticedSportsPersist } from '@/components/practiced-sports/use-practiced-sports-persist';
 import {
   catalogItemsForSport,
   EQUIPMENT_SPORT_LABELS,
@@ -19,6 +21,7 @@ import {
 import { equipmentSportHint } from '@/lib/equipment/format';
 import { setStrengthVenue, toggleOwnedItem } from '@/lib/equipment/parse';
 import type { AthleteEquipment } from '@/lib/equipment/types';
+import { equipmentSportsForPracticed, type AthletePracticedSports } from '@/lib/practiced-sports';
 
 function EquipmentStrengthSection({
   equipment,
@@ -67,9 +70,33 @@ function EquipmentInventorySection({
   );
 }
 
-export function EquipmentPanel({ initial }: { initial: AthleteEquipment }) {
+export function EquipmentPanel({
+  initial,
+  initialPracticedSports,
+}: {
+  initial: AthleteEquipment;
+  initialPracticedSports: AthletePracticedSports;
+}) {
   const { equipment, message, error, saving, dirty, update } = useEquipmentPersist(initial);
-  const [sport, setSport] = useState<EquipmentSport>('BIKE');
+  const {
+    sports,
+    message: sportsMessage,
+    error: sportsError,
+    saving: sportsSaving,
+    updateSports,
+  } = usePracticedSportsPersist(initialPracticedSports);
+
+  const availableSports = useMemo(() => equipmentSportsForPracticed(sports), [sports]);
+  const [sport, setSport] = useState<EquipmentSport>(() => availableSports[0] ?? 'RUN');
+
+  useEffect(() => {
+    if (availableSports.length === 0) {
+      return;
+    }
+    if (!availableSports.includes(sport)) {
+      setSport(availableSports[0]!);
+    }
+  }, [availableSports, sport]);
 
   function onToggleItem(itemId: EquipmentItemId, enabled: boolean) {
     update((prev) => toggleOwnedItem(prev, itemId, enabled));
@@ -80,30 +107,72 @@ export function EquipmentPanel({ initial }: { initial: AthleteEquipment }) {
   }
 
   const items = catalogItemsForSport(sport, equipment.strengthVenue);
+  const statusMessage = sportsMessage ?? message;
+  const statusError = sportsError ?? error;
+  const statusSaving = sportsSaving || saving;
 
   return (
-    <div className="space-y-4">
-      <EquipmentSportTabs sport={sport} onSportChange={setSport} />
+    <div className="space-y-8">
+      <section aria-labelledby="practiced-sports-title" className="space-y-4">
+        <div className="space-y-1">
+          <h2 className="text-section-title" id="practiced-sports-title">
+            Sports pratiqués
+          </h2>
+          <p className="text-muted-foreground text-sm">
+            Endurance d&apos;abord — les onglets d&apos;équipement suivent ta sélection.
+          </p>
+        </div>
+        <PracticedSportsPicker
+          idPrefix="settings-sports"
+          sports={sports}
+          onSportsChange={updateSports}
+        />
+      </section>
 
-      <div className="space-y-1">
-        <p className="text-label">{EQUIPMENT_SPORT_LABELS[sport]}</p>
-        <p className="text-muted-foreground text-xs leading-relaxed">
-          Coche uniquement ce qui a un impact réel sur la génération de séances.
+      {availableSports.length > 0 ? (
+        <section aria-labelledby="equipment-inventory-title" className="space-y-4">
+          <div className="space-y-1">
+            <h2 className="text-section-title" id="equipment-inventory-title">
+              Équipement
+            </h2>
+            <p className="text-muted-foreground text-xs leading-relaxed">
+              Coche uniquement ce qui a un impact réel sur la génération de séances.
+            </p>
+          </div>
+
+          <EquipmentSportTabs
+            availableSports={availableSports}
+            sport={sport}
+            onSportChange={setSport}
+          />
+
+          <div className="space-y-1">
+            <p className="text-label">{EQUIPMENT_SPORT_LABELS[sport]}</p>
+          </div>
+
+          {sport === 'STRENGTH' ? (
+            <EquipmentStrengthSection equipment={equipment} onSelectVenue={onSelectVenue} />
+          ) : null}
+
+          <EquipmentInventorySection
+            equipment={equipment}
+            items={items}
+            sport={sport}
+            onToggleItem={onToggleItem}
+          />
+        </section>
+      ) : (
+        <p className="text-muted-foreground text-sm" role="status">
+          Choisis au moins un sport d&apos;endurance pour voir l&apos;équipement associé.
         </p>
-      </div>
+      )}
 
-      {sport === 'STRENGTH' ? (
-        <EquipmentStrengthSection equipment={equipment} onSelectVenue={onSelectVenue} />
-      ) : null}
-
-      <EquipmentInventorySection
-        equipment={equipment}
-        items={items}
-        sport={sport}
-        onToggleItem={onToggleItem}
+      <EquipmentStatusLine
+        dirty={dirty}
+        error={statusError}
+        message={statusMessage}
+        saving={statusSaving}
       />
-
-      <EquipmentStatusLine dirty={dirty} error={error} message={message} saving={saving} />
     </div>
   );
 }

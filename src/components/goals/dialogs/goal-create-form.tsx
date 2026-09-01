@@ -14,6 +14,8 @@ import type { MetricGoalFormResult } from '@/components/goals/dialogs/metric-goa
 import { Button } from '@/components/ui/button';
 import { GoalKind } from '@prisma/client';
 import type { GoalPayload } from '@/hooks/use-data';
+import type { PracticedSportId } from '@/lib/practiced-sports';
+import { useResolvedPracticedSports } from '@/components/practiced-sports/use-resolved-practiced-sports';
 
 export type GoalCreateFormProps = {
   submitLabel?: string;
@@ -22,6 +24,8 @@ export type GoalCreateFormProps = {
   onCancel?: () => void;
   onSubmit: (payload: GoalPayload) => void | Promise<void>;
   error?: string | null;
+  /** When set, metric sport pickers are filtered to these practiced sports. */
+  practicedSports?: readonly PracticedSportId[];
 };
 
 export function GoalCreateForm({
@@ -31,8 +35,10 @@ export function GoalCreateForm({
   onCancel,
   onSubmit,
   error: externalError,
+  practicedSports,
 }: GoalCreateFormProps) {
   const metricFormId = useId();
+  const resolvedSports = useResolvedPracticedSports(practicedSports);
   const [variant, setVariant] = useState<GoalFormVariant>('race');
   const [priority, setPriority] = useState<string>('A');
   const [error, setError] = useState<string | null>(null);
@@ -111,6 +117,7 @@ export function GoalCreateForm({
         <>
           <GoalCreateMetricSection
             metricFormId={metricFormId}
+            practicedSports={resolvedSports}
             variant={variant}
             onError={setError}
             onSubmit={(result) => void handleStructuredMetricSubmit(result)}

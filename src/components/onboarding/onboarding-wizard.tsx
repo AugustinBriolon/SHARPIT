@@ -6,6 +6,7 @@ import { OnboardingCredentialHost } from '@/components/onboarding/onboarding-cre
 import { OnboardingBootstrapScreen } from '@/components/onboarding/onboarding-bootstrap-screen';
 import { OnboardingIntentionStep } from '@/components/onboarding/onboarding-intention-step';
 import { OnboardingProvidersStep } from '@/components/onboarding/onboarding-providers-step';
+import { OnboardingSportsStep } from '@/components/onboarding/onboarding-sports-step';
 import { toast } from '@/components/ui/toast';
 import { useGoalMutations } from '@/hooks/use-data';
 import {
@@ -21,9 +22,10 @@ import {
   setPrimaryForClass,
   type IntegrationSourcePrefs,
 } from '@/lib/integrations/source-prefs';
+import { hasCorePracticedSport, type PracticedSportId } from '@/lib/practiced-sports';
 import { cn } from '@/lib/utils';
 
-type Step = 'intention' | 'providers' | 'bootstrap';
+type Step = 'sports' | 'intention' | 'providers' | 'bootstrap';
 type CredentialProvider = Extract<IntegrationId, 'garmin' | 'renpho' | 'myfitnesspal'>;
 
 const OAUTH_STATUS_LABELS: Record<string, string> = {
@@ -50,6 +52,15 @@ async function patchPrefs(
   }
   const data = (await response.json()) as { prefs: IntegrationSourcePrefs };
   return data.prefs;
+}
+
+async function patchPracticedSports(sports: PracticedSportId[]): Promise<boolean> {
+  const response = await fetch('/api/athlete-profile', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ practicedSports: { version: 1, sports } }),
+  });
+  return response.ok;
 }
 
 function providerLabel(id: string): string {
@@ -85,14 +96,27 @@ function processOAuthReturn(
 
 function OnboardingStepHeader({ step }: { step: Step }) {
   return (
-    <div className="text-muted-foreground flex items-center justify-center gap-2 text-xs tracking-wide">
+    <div className="text-muted-foreground flex flex-wrap items-center justify-center gap-2 text-xs tracking-wide">
+      <span className={cn(step === 'sports' && 'text-foreground font-medium')}>1 · Sports</span>
+      <span aria-hidden>·</span>
       <span className={cn(step === 'intention' && 'text-foreground font-medium')}>
-        1 · Intention
+        2 · Intention
       </span>
       <span aria-hidden>·</span>
-      <span className={cn(step === 'providers' && 'text-foreground font-medium')}>2 · Sources</span>
+      <span className={cn(step === 'providers' && 'text-foreground font-medium')}>3 · Sources</span>
     </div>
   );
+}
+
+function initialWizardStep(searchParams: URLSearchParams): Step {
+  const step = searchParams.get('step');
+  if (step === 'providers') {
+    return 'providers';
+  }
+  if (step === 'intention') {
+    return 'intention';
+  }
+  return 'sports';
 }
 
 export function OnboardingWizard({
@@ -105,9 +129,8 @@ export function OnboardingWizard({
   const router = useRouter();
   const searchParams = useSearchParams();
   const { create: createGoal } = useGoalMutations();
-  const [step, setStep] = useState<Step>(() =>
-    searchParams.get('step') === 'providers' ? 'providers' : 'intention',
-  );
+  const [step, setStep] = useState<Step>(() => initialWizardStep(searchParams));
+  const [sports, setSports] = useState<PracticedSportId[]>([]);
   const [connected, setConnected] = useState<Set<string>>(() => new Set(initiallyConnected));
   const [prefs, setPrefs] = useState<IntegrationSourcePrefs>(initialPrefs);
   const [credentialTarget, setCredentialTarget] = useState<{
@@ -184,6 +207,25 @@ export function OnboardingWizard({
     }
   }
 
+  async function continueFromSports() {
+    if (!hasCorePracticedSport(sports)) {
+      setError('Choisis au moins un sport d’endurance pour continuer.');
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    try {
+      const ok = await patchPracticedSports(sports);
+      if (!ok) {
+        setError('Impossible d’enregistrer tes sports — réessaie.');
+        return;
+      }
+      setStep('intention');
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function submitIntentionGoal(payload: import('@/hooks/use-data').GoalPayload) {
     setError(null);
     setStep('providers');
@@ -203,17 +245,34 @@ export function OnboardingWizard({
     <div className="space-y-6">
       <OnboardingStepHeader step={step} />
 
+      {step === 'sports' ? (
+        <OnboardingSportsStep
+          busy={busy}
+          error={error}
+          sports={sports}
+          onContinue={() => void continueFromSports()}
+          onSportsChange={setSports}
+        />
+      ) : null}
+
       {step === 'intention' ? (
         <OnboardingIntentionStep
           busy={busy}
           error={error}
+          practicedSports={sports}
           onSubmit={submitIntentionGoal}
+          onBack={() => {
+            setError(null);
+            setStep('sports');
+          }}
           onSkip={() => {
             setError(null);
             setStep('providers');
           }}
         />
-      ) : (
+      ) : null}
+
+      {step === 'providers' ? (
         <OnboardingProvidersStep
           busy={busy}
           connected={connected}
@@ -225,7 +284,7 @@ export function OnboardingWizard({
           onSetPrimary={handleSetPrimary}
           onToggleUse={handleToggleUse}
         />
-      )}
+      ) : null}
 
       <OnboardingCredentialHost
         credentialTarget={credentialTarget}
