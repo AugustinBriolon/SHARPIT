@@ -586,6 +586,83 @@
   color: var(--color-highlight-foreground);
 }
 
+/*
+  Auth « lecture critique » — scoped contrast for /sign-in & /sign-up only.
+  Does NOT retune app-wide --muted-foreground; atmospheric dark stays intact.
+  Targets WCAG AA: body/labels/placeholders ≥ 4.5:1; control borders ≥ 3:1.
+*/
+.auth-surface {
+  --auth-foreground: var(--foreground);
+  /* Slightly stronger than Pewter so labels clear 4.5:1 on Snow */
+  --auth-muted: oklch(0.42 0 0);
+  --auth-placeholder: oklch(0.42 0 0);
+  --auth-input-bg: var(--background);
+  --auth-input-border: oklch(0.315 0.073 139 / 28%);
+  --auth-panel-border: oklch(0.315 0.073 139 / 20%);
+  --auth-divider: oklch(0.315 0.073 139 / 22%);
+}
+
+.dark .auth-surface {
+  --auth-foreground: oklch(0.99 0.007 106.5);
+  --auth-muted: oklch(0.88 0.015 145);
+  --auth-placeholder: oklch(0.86 0.015 145);
+  /* Inset fill — distinct from page (0.22) and card (0.28) */
+  --auth-input-bg: oklch(0.16 0.04 139);
+  --auth-input-border: oklch(0.99 0.007 106.5 / 38%);
+  --auth-panel-border: oklch(0.99 0.007 106.5 / 28%);
+  --auth-divider: oklch(0.99 0.007 106.5 / 32%);
+}
+
+@utility text-auth-muted {
+  color: var(--auth-muted);
+}
+
+@utility text-auth-placeholder {
+  color: var(--auth-placeholder);
+}
+
+@utility border-auth-panel {
+  border-color: var(--auth-panel-border);
+}
+
+@utility border-auth-input {
+  border-color: var(--auth-input-border);
+}
+
+@utility bg-auth-input {
+  background-color: var(--auth-input-bg);
+}
+
+@utility bg-auth-divider {
+  background-color: var(--auth-divider);
+}
+
+/* Force Clerk field paint under lecture-critique (beats shadcn dark:bg-input/30) */
+.dark .auth-surface :is(.cl-input, .cl-formFieldInput, input.cl-input) {
+  background-color: var(--auth-input-bg) !important;
+  border-color: var(--auth-input-border) !important;
+  color: var(--auth-foreground) !important;
+}
+
+.dark .auth-surface :is(.cl-input, .cl-formFieldInput, input.cl-input)::placeholder {
+  color: var(--auth-placeholder) !important;
+  opacity: 1;
+}
+
+.dark .auth-surface :is(.cl-formFieldLabel, .cl-footerActionText, .cl-dividerText, .cl-formFieldHintText) {
+  color: var(--auth-muted) !important;
+}
+
+.dark .auth-surface :is(.cl-socialButtonsBlockButton, .cl-alternativeMethodsBlockButton) {
+  background-color: var(--auth-input-bg) !important;
+  border-color: var(--auth-input-border) !important;
+  color: var(--auth-foreground) !important;
+}
+
+.dark .auth-surface .cl-cardBox {
+  border-color: var(--auth-panel-border) !important;
+}
+
 /* Break out of shell page gutter (--page-gutter set on AppShell page wrapper) */
 @utility page-bleed {
   margin-inline: calc(var(--page-gutter, 1rem) * -1);
