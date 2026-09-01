@@ -38,4 +38,31 @@ describe('buildActivityUpdateData', () => {
 
     expect(data).toEqual({ rpe: 5, feeling: 'Correct' });
   });
+
+  it('does not invent empty metric upserts when runMetrics has no set fields', () => {
+    const data = buildActivityUpdateData({
+      type: ActivityType.RUN,
+      rpe: 7,
+      feeling: 'Bien',
+      runMetrics: {},
+    });
+
+    expect(data).toEqual({
+      type: ActivityType.RUN,
+      rpe: 7,
+      feeling: 'Bien',
+    });
+    expect(data).not.toHaveProperty('runMetrics');
+  });
+
+  it('does not invent empty swimMetrics upsert when all fields are null', () => {
+    const data = buildActivityUpdateData({
+      type: ActivityType.SWIM,
+      feeling: 'Correct',
+      swimMetrics: { distanceM: null, sets: null },
+    });
+
+    expect(data).not.toHaveProperty('swimMetrics');
+    expect(data).toMatchObject({ type: ActivityType.SWIM, feeling: 'Correct' });
+  });
 });

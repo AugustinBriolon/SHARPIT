@@ -32,8 +32,13 @@ function createMetricRelation(type: ActivityType, metrics: unknown): MetricRelat
   return CREATE_METRIC_HANDLERS[type]?.(metrics);
 }
 
-function upsertMetricRelation(metrics: unknown): MetricRelation {
-  const cleaned = cleanMetrics(metrics as Record<string, unknown>) ?? {};
+function upsertMetricRelation(metrics: unknown): MetricRelation | undefined {
+  const cleaned = cleanMetrics(metrics as Record<string, unknown>);
+  // Empty `{}` after cleaning means the client sent no real metric fields —
+  // do not invent an empty nested upsert (prod symptom: create:{}, update:{}).
+  if (!cleaned) {
+    return undefined;
+  }
   return { upsert: { create: cleaned, update: cleaned } };
 }
 
@@ -72,16 +77,28 @@ export function buildActivityUpdateData(input: UpdateActivityInput) {
   }
 
   if (runMetrics !== undefined) {
-    data.runMetrics = upsertMetricRelation(runMetrics);
+    const relation = upsertMetricRelation(runMetrics);
+    if (relation) {
+      data.runMetrics = relation;
+    }
   }
   if (bikeMetrics !== undefined) {
-    data.bikeMetrics = upsertMetricRelation(bikeMetrics);
+    const relation = upsertMetricRelation(bikeMetrics);
+    if (relation) {
+      data.bikeMetrics = relation;
+    }
   }
   if (swimMetrics !== undefined) {
-    data.swimMetrics = upsertMetricRelation(swimMetrics);
+    const relation = upsertMetricRelation(swimMetrics);
+    if (relation) {
+      data.swimMetrics = relation;
+    }
   }
   if (hikeMetrics !== undefined) {
-    data.hikeMetrics = upsertMetricRelation(hikeMetrics);
+    const relation = upsertMetricRelation(hikeMetrics);
+    if (relation) {
+      data.hikeMetrics = relation;
+    }
   }
 
   if (type === ActivityType.STRENGTH && strengthSets) {

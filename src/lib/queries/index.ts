@@ -218,11 +218,20 @@ export async function updateActivity(
   id: string,
   data: Prisma.ActivityUpdateInput,
 ) {
-  const { count } = await prisma.activity.updateMany({ where: { id, athleteId }, data });
-  if (count === 0) {
+  // updateMany rejects nested relation writes (runMetrics / swimMetrics / …).
+  // Scope by athleteId first (IDOR), then update by primary key so upserts work.
+  const owned = await prisma.activity.findFirst({
+    where: { id, athleteId },
+    select: { id: true },
+  });
+  if (!owned) {
     return null;
   }
-  return prisma.activity.findUnique({ where: { id }, include: activityInclude });
+  return prisma.activity.update({
+    where: { id },
+    data,
+    include: activityInclude,
+  });
 }
 
 export async function deleteActivity(athleteId: string, id: string) {
