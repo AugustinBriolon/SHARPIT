@@ -418,7 +418,11 @@ export function IntegrationsHub({
                 <DialogTitle>{active.name}</DialogTitle>
                 <DialogDescription>{active.tagline}</DialogDescription>
               </DialogHeader>
-              <IntegrationModalContent integration={active} onUpdated={() => router.refresh()} />
+              <IntegrationModalContent
+                integration={active}
+                onSyncStart={() => setOpenId(null)}
+                onUpdated={() => router.refresh()}
+              />
             </>
           )}
         </DialogContent>
