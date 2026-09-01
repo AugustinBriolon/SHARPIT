@@ -8,8 +8,8 @@ import { cn } from '@/lib/utils';
 
 function DemoCallout() {
   return (
-    <div className="analysis-panel rounded-analysis-lg flex flex-col items-center gap-3 px-5 py-5 text-center">
-      <p className="text-label">Sans inscription</p>
+    <div className="analysis-panel rounded-analysis-lg flex flex-col items-center gap-3 px-5 py-5 text-center dark:border-foreground/20">
+      <p className="text-label text-foreground/70">Sans inscription</p>
       <p className="text-foreground text-sm leading-relaxed">
         Explore SharpIt avec des données réalistes, en lecture seule.
       </p>
@@ -29,11 +29,11 @@ function DemoCallout() {
 function AuthDivider() {
   return (
     <div className="flex items-center gap-3" aria-hidden>
-      <span className="bg-border dark:bg-foreground/20 h-px flex-1" />
-      <span className="text-muted-foreground text-xs tracking-wider uppercase">
+      <span className="bg-border dark:bg-foreground/25 h-px flex-1" />
+      <span className="text-foreground/70 text-xs tracking-wider uppercase">
         ou connecte-toi
       </span>
-      <span className="bg-border dark:bg-foreground/20 h-px flex-1" />
+      <span className="bg-border dark:bg-foreground/25 h-px flex-1" />
     </div>
   );
 }

@@ -35,8 +35,10 @@ describe('clerkAppearance theme bridge', () => {
   it('uses full border tokens on cards and social buttons for dark contrast', () => {
     expect(clerkAppearance.elements.cardBox).toContain('border-border');
     expect(clerkAppearance.elements.cardBox).not.toContain('border-border/80');
-    expect(clerkAppearance.elements.socialButtonsBlockButton).toContain('dark:border-foreground/25');
+    expect(clerkAppearance.elements.socialButtonsBlockButton).toContain('dark:border-foreground/30');
     expect(clerkAppearance.elements.formFieldInput).toContain('placeholder:text-muted-foreground');
-    expect(clerkAppearance.elements.formFieldErrorText).toBe('text-destructive');
+    expect(clerkAppearance.elements.formFieldErrorText).toBe('text-destructive!');
+    expect(clerkAppearance.elements.formButtonPrimary).toContain('bg-foreground!');
+    expect(clerkAppearance.elements.formButtonPrimary).toContain('text-background!');
   });
 });

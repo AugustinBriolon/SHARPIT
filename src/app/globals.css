@@ -208,7 +208,8 @@
   --secondary: oklch(0.32 0.045 139);
   --secondary-foreground: oklch(0.99 0.007 106.5);
   --muted: oklch(0.32 0.045 139);
-  --muted-foreground: oklch(0.78 0.02 145);
+  /* 0.84 keeps secondary copy AA-comfortable on the green dark canvas (was 0.78) */
+  --muted-foreground: oklch(0.84 0.02 145);
   --accent: oklch(0.36 0.055 130);
   --accent-foreground: oklch(0.99 0.007 106.5);
   --highlight: oklch(0.936 0.13 126.6);
