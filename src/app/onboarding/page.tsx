@@ -8,6 +8,8 @@ import {
   loadResolvedSourcePrefs,
 } from '@/lib/integrations/source-prefs-store';
 import { awaitRequest } from '@/lib/next/await-request';
+import { normalizeAthleteEquipment } from '@/lib/equipment/parse';
+import { getAthleteProfile } from '@/lib/queries';
 
 export const metadata = {
   title: 'Bienvenue — SharpIt',
@@ -28,9 +30,16 @@ async function OnboardingPageContent() {
     redirect('/');
   }
 
-  const [connected, prefs] = await Promise.all([
+  const [connected, prefs, profile] = await Promise.all([
     loadConnectedIntegrationIds(athleteId),
     loadResolvedSourcePrefs(athleteId),
+    getAthleteProfile(athleteId).catch(() => null),
   ]);
-  return <OnboardingWizard initiallyConnected={connected} initialPrefs={prefs} />;
+  return (
+    <OnboardingWizard
+      initialEquipment={normalizeAthleteEquipment(profile?.equipment ?? null)}
+      initiallyConnected={connected}
+      initialPrefs={prefs}
+    />
+  );
 }

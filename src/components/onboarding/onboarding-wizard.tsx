@@ -4,11 +4,13 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useEffect, useState } from 'react';
 import { OnboardingCredentialHost } from '@/components/onboarding/onboarding-credential-host';
 import { OnboardingBootstrapScreen } from '@/components/onboarding/onboarding-bootstrap-screen';
+import { OnboardingEquipmentStep } from '@/components/onboarding/onboarding-equipment-step';
 import { OnboardingIntentionStep } from '@/components/onboarding/onboarding-intention-step';
 import { OnboardingProvidersStep } from '@/components/onboarding/onboarding-providers-step';
 import { OnboardingSportsStep } from '@/components/onboarding/onboarding-sports-step';
 import { toast } from '@/components/ui/toast';
 import { useGoalMutations } from '@/hooks/use-data';
+import type { AthleteEquipment } from '@/lib/equipment/types';
 import {
   oauthConnectHref,
   providersForClass,
@@ -22,10 +24,15 @@ import {
   setPrimaryForClass,
   type IntegrationSourcePrefs,
 } from '@/lib/integrations/source-prefs';
+import {
+  ONBOARDING_STEP_LABELS,
+  ONBOARDING_STEPS,
+  parseOnboardingStepParam,
+  type OnboardingWizardStep,
+} from '@/lib/onboarding/wizard-steps';
 import { hasCorePracticedSport, type PracticedSportId } from '@/lib/practiced-sports';
 import { cn } from '@/lib/utils';
 
-type Step = 'sports' | 'intention' | 'providers' | 'bootstrap';
 type CredentialProvider = Extract<IntegrationId, 'garmin' | 'renpho' | 'myfitnesspal'>;
 
 const OAUTH_STATUS_LABELS: Record<string, string> = {
@@ -74,7 +81,7 @@ function providerLabel(id: string): string {
 function processOAuthReturn(
   searchParams: URLSearchParams,
   setConnected: React.Dispatch<React.SetStateAction<Set<string>>>,
-  setStep: React.Dispatch<React.SetStateAction<Step>>,
+  setStep: React.Dispatch<React.SetStateAction<OnboardingWizardStep>>,
 ) {
   if (searchParams.get('step') === 'providers') {
     setStep('providers');
@@ -94,42 +101,36 @@ function processOAuthReturn(
   }
 }
 
-function OnboardingStepHeader({ step }: { step: Step }) {
+function OnboardingStepHeader({ step }: { step: OnboardingWizardStep }) {
   return (
     <div className="text-muted-foreground flex flex-wrap items-center justify-center gap-2 text-xs tracking-wide">
-      <span className={cn(step === 'sports' && 'text-foreground font-medium')}>1 · Sports</span>
-      <span aria-hidden>·</span>
-      <span className={cn(step === 'intention' && 'text-foreground font-medium')}>
-        2 · Intention
-      </span>
-      <span aria-hidden>·</span>
-      <span className={cn(step === 'providers' && 'text-foreground font-medium')}>3 · Sources</span>
+      {ONBOARDING_STEPS.map((id, index) => (
+        <span key={id} className="inline-flex items-center gap-2">
+          {index > 0 ? <span aria-hidden>·</span> : null}
+          <span className={cn(step === id && 'text-foreground font-medium')}>
+            {ONBOARDING_STEP_LABELS[id]}
+          </span>
+        </span>
+      ))}
     </div>
   );
-}
-
-function initialWizardStep(searchParams: URLSearchParams): Step {
-  const step = searchParams.get('step');
-  if (step === 'providers') {
-    return 'providers';
-  }
-  if (step === 'intention') {
-    return 'intention';
-  }
-  return 'sports';
 }
 
 export function OnboardingWizard({
   initiallyConnected,
   initialPrefs,
+  initialEquipment,
 }: {
   initiallyConnected: IntegrationId[];
   initialPrefs: IntegrationSourcePrefs;
+  initialEquipment?: AthleteEquipment | null;
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { create: createGoal } = useGoalMutations();
-  const [step, setStep] = useState<Step>(() => initialWizardStep(searchParams));
+  const [step, setStep] = useState<OnboardingWizardStep>(() =>
+    parseOnboardingStepParam(searchParams.get('step')),
+  );
   const [sports, setSports] = useState<PracticedSportId[]>([]);
   const [connected, setConnected] = useState<Set<string>>(() => new Set(initiallyConnected));
   const [prefs, setPrefs] = useState<IntegrationSourcePrefs>(initialPrefs);
@@ -147,7 +148,6 @@ export function OnboardingWizard({
 
   useEffect(() => {
     processOAuthReturn(searchParams, setConnected, setStep);
-    // Toast once when landing from OAuth return.
   }, [searchParams]);
 
   async function finish() {
@@ -280,9 +280,27 @@ export function OnboardingWizard({
           prefs={prefs}
           onBack={() => setStep('intention')}
           onConnect={handleConnect}
-          onFinish={() => void finish()}
           onSetPrimary={handleSetPrimary}
           onToggleUse={handleToggleUse}
+          onContinue={() => {
+            setError(null);
+            setStep('equipment');
+          }}
+        />
+      ) : null}
+
+      {step === 'equipment' ? (
+        <OnboardingEquipmentStep
+          busy={busy}
+          error={error}
+          initialEquipment={initialEquipment}
+          practicedSports={sports}
+          onContinue={() => void finish()}
+          onSkip={() => void finish()}
+          onBack={() => {
+            setError(null);
+            setStep('providers');
+          }}
         />
       ) : null}
 

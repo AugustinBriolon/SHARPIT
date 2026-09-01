@@ -16,7 +16,7 @@ export function OnboardingProvidersStep({
   onConnect,
   onSetPrimary,
   onToggleUse,
-  onFinish,
+  onContinue,
 }: {
   prefs: IntegrationSourcePrefs;
   connected: Set<string>;
@@ -26,7 +26,7 @@ export function OnboardingProvidersStep({
   onConnect: (provider: CatalogProvider, dataClassId: DataClassId) => void;
   onSetPrimary: (integrationId: IntegrationId, dataClassId: DataClassId) => void;
   onToggleUse: (integrationId: IntegrationId, dataClassId: DataClassId, enable: boolean) => void;
-  onFinish: () => void;
+  onContinue: () => void;
 }) {
   return (
     <section aria-labelledby="onboarding-providers-title" className="space-y-6">
@@ -82,16 +82,16 @@ export function OnboardingProvidersStep({
         </p>
       ) : null}
 
-      <Button className="w-full" disabled={busy} type="button" onClick={onFinish}>
-        {finishButtonLabel(busy, connected.size > 0)}
+      <Button className="w-full" disabled={busy} type="button" onClick={onContinue}>
+        {continueButtonLabel(busy, connected.size > 0)}
       </Button>
     </section>
   );
 }
 
-function finishButtonLabel(busy: boolean, hasConnectedAny: boolean): string {
+function continueButtonLabel(busy: boolean, hasConnectedAny: boolean): string {
   if (busy) {
-    return 'Ouverture…';
+    return 'Suite…';
   }
-  return hasConnectedAny ? 'Terminer et ouvrir Today' : 'Continuer sans connexion';
+  return hasConnectedAny ? 'Continuer' : 'Continuer sans connexion';
 }

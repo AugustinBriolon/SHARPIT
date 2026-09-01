@@ -15,11 +15,11 @@ SharpIt is endurance-first, but onboarding and equipment treat all sports as equ
 ## Goal
 
 1. **Catalog locked** — core endurance (≥1 required): `run`, `bike`, `swim`, `triathlon`. Complementary optional: `strength`, `mobility`, `stretching`. No randonnée / Autre.
-2. **Onboarding** — Sports → Intention → Sources → bootstrap. Cannot leave Sports without ≥1 core sport.
+2. **Onboarding** — Sports → Intention → Sources → **Equipment (optional)** → bootstrap. Cannot leave Sports without ≥1 core sport. Equipment can be skipped via « Passer ».
 3. **Triathlon UX** — check triathlon ⇒ run+bike+swim; uncheck any of the three ⇒ uncheck triathlon; checking all three may auto-check triathlon.
 4. **Filter proposals only (V1)** — Intention/goal sport options + equipment tabs filtered by practiced sports. Do not hide historical activities or rewrite Today/Training hubs.
 5. **Settings** — no new nav page. « Sports pratiqués » block at top of existing Equipment page; same model + persistence as onboarding.
-6. **Out of scope** — new onboarding Equipment step (later, reuse same filter).
+6. **Onboarding Equipment** — filtered checklist only (no sports editor); reuses Settings inventory + `use-equipment-persist`.
 
 ---
 
@@ -52,5 +52,4 @@ One multi-select component reused by onboarding Sports step and Equipment settin
 
 - Hiding past activities by sport.
 - Rewriting Today / Training hubs.
-- Onboarding equipment step.
 - New Settings navigation entry.
