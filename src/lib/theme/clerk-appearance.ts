@@ -47,7 +47,7 @@ const elements = {
   formButtonPrimary:
     'rounded-lg bg-foreground! text-background! shadow-none hover:bg-foreground/90!',
   formFieldInput:
-    'rounded-lg border border-input bg-background! text-foreground! placeholder:text-muted-foreground shadow-none focus:ring-2 focus:ring-ring/40 dark:border-foreground/30 dark:bg-background!',
+    'rounded-lg border border-input bg-background! text-foreground! placeholder:text-foreground/55! shadow-none focus:ring-2 focus:ring-ring/40 dark:border-foreground/30 dark:bg-background!',
   formFieldLabel: 'font-medium text-foreground!',
   formFieldHintText: 'text-muted-foreground',
   formFieldErrorText: 'text-destructive!',

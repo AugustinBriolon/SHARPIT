@@ -36,7 +36,7 @@ describe('clerkAppearance theme bridge', () => {
     expect(clerkAppearance.elements.cardBox).toContain('border-border');
     expect(clerkAppearance.elements.cardBox).not.toContain('border-border/80');
     expect(clerkAppearance.elements.socialButtonsBlockButton).toContain('dark:border-foreground/30');
-    expect(clerkAppearance.elements.formFieldInput).toContain('placeholder:text-muted-foreground');
+    expect(clerkAppearance.elements.formFieldInput).toContain('placeholder:text-foreground/55!');
     expect(clerkAppearance.elements.formFieldErrorText).toBe('text-destructive!');
     expect(clerkAppearance.elements.formButtonPrimary).toContain('bg-foreground!');
     expect(clerkAppearance.elements.formButtonPrimary).toContain('text-background!');
