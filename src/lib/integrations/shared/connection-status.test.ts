@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { encryptSecret } from '@/lib/secret-box';
 import {
   GARMIN_CONNECTION_SELECT,
   MFP_CONNECTION_SELECT,
@@ -27,15 +28,20 @@ function rowFrom(select: Record<string, true>, value: unknown): Record<string, u
   return Object.fromEntries(Object.keys(select).map((key) => [key, value]));
 }
 
+function validCiphertext(): string {
+  process.env.SECRET_ENCRYPTION_KEY ??= 'connection-status-test-key';
+  return encryptSecret('provider-credential');
+}
+
 describe.each(CASES)('$name connection select', ({ select, check }) => {
   it('carries every column its predicate reads', () => {
-    expect(check(rowFrom(select, 'x'))).toBe(true);
+    expect(check(rowFrom(select, validCiphertext()))).toBe(true);
   });
 
   it('reports disconnected when any one of them is missing', () => {
     const keys = Object.keys(select);
     for (const omitted of keys) {
-      const partial = rowFrom(select, 'x');
+      const partial = rowFrom(select, validCiphertext());
       delete partial[omitted];
       expect(check(partial), `missing ${omitted} must not read as connected`).toBe(false);
     }
@@ -48,5 +54,10 @@ describe.each(CASES)('$name connection select', ({ select, check }) => {
   it('reports disconnected without an account at all', () => {
     expect(check(null)).toBe(false);
     expect(check(undefined)).toBe(false);
+  });
+
+  it('reports disconnected for short placeholder ciphertext (e.g. demo)', () => {
+    expect(check(rowFrom(select, 'demo'))).toBe(false);
+    expect(check(rowFrom(select, 'x'))).toBe(false);
   });
 });

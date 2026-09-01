@@ -15,7 +15,18 @@ import {
 } from '@/lib/integrations/google/google';
 
 import { syncSinceFromLastSync } from '@/lib/integrations/shared/sync-since';
-import { decryptSecret, encryptSecret } from '@/lib/secret-box';
+import {
+  isDecryptMalformedSoftFailure,
+  isOAuthAccountConnected,
+  ProviderAuthError,
+} from '@/lib/integrations/shared/connection-status';
+import {
+  decryptSecret,
+  encryptSecret,
+  isEncryptedSecret,
+  isSecretAuthenticityFailure,
+  isSecretDecryptFailure,
+} from '@/lib/secret-box';
 
 const DAY_START_MIN = 6 * 60; // 06:00
 const DAY_END_MIN = 21 * 60; // 21:00
@@ -33,10 +44,17 @@ export async function getGoogleAccount(athleteId: string) {
   return prisma.googleAccount.findUnique({ where: { athleteId } });
 }
 
+/** Both OAuth blobs must look like live ciphertext — same bar as Strava/Withings. */
 export function isGoogleConnected(
-  account: { refreshTokenEnc: string } | null | undefined,
-): account is { refreshTokenEnc: string } {
-  return Boolean(account?.refreshTokenEnc);
+  account:
+    | {
+        accessTokenEnc?: string | null;
+        refreshTokenEnc?: string | null;
+      }
+    | null
+    | undefined,
+): boolean {
+  return isOAuthAccountConnected(account);
 }
 
 /** Invalide les jetons OAuth tout en conservant le calendrier cible et les préférences. */
@@ -86,25 +104,17 @@ export async function setHiddenCalendars(athleteId: string, ids: string[]) {
   });
 }
 
-export async function getValidAccessToken(athleteId: string) {
-  const account = await getGoogleAccount(athleteId);
-  if (!isGoogleConnected(account)) {
-    throw new Error('Compte Google non connecté');
-  }
-
-  const expiresSoon = account.expiresAt.getTime() - Date.now() < 60_000;
-  if (!expiresSoon) {
-    return decryptSecret(account.accessTokenEnc);
-  }
-
+async function refreshGoogleAccessToken(
+  athleteId: string,
+  refreshTokenEnc: string,
+): Promise<string> {
   try {
-    const refreshed = await refreshAccessToken(decryptSecret(account.refreshTokenEnc));
+    const refreshed = await refreshAccessToken(decryptSecret(refreshTokenEnc));
     await prisma.googleAccount.update({
       where: { athleteId },
       data: {
         accessTokenEnc: encryptSecret(refreshed.access_token),
         expiresAt: new Date(Date.now() + refreshed.expires_in * 1000),
-        // Google ne renvoie pas toujours un nouveau refresh_token : on garde l'ancien.
         ...(refreshed.refresh_token
           ? { refreshTokenEnc: encryptSecret(refreshed.refresh_token) }
           : {}),
@@ -112,11 +122,43 @@ export async function getValidAccessToken(athleteId: string) {
     });
     return refreshed.access_token;
   } catch (error) {
-    if (error instanceof GoogleOAuthError && error.needsReconnect) {
+    if (isSecretAuthenticityFailure(error)) {
+      throw error;
+    }
+    if (
+      (error instanceof GoogleOAuthError && error.needsReconnect) ||
+      isDecryptMalformedSoftFailure(error)
+    ) {
       await revokeGoogleCredentials(athleteId);
+      throw new ProviderAuthError(
+        'Session Google expirée. Reconnecte Google dans les paramètres.',
+        {
+          cause: error,
+        },
+      );
     }
     throw error;
   }
+}
+
+export async function getValidAccessToken(athleteId: string) {
+  const account = await getGoogleAccount(athleteId);
+  if (!account || !isEncryptedSecret(account.refreshTokenEnc)) {
+    throw new ProviderAuthError('Session Google expirée. Reconnecte Google dans les paramètres.');
+  }
+
+  const expiresSoon = account.expiresAt.getTime() - Date.now() < 60_000;
+  if (!expiresSoon && isEncryptedSecret(account.accessTokenEnc)) {
+    try {
+      return decryptSecret(account.accessTokenEnc);
+    } catch (error) {
+      if (!isSecretDecryptFailure(error)) {
+        throw error;
+      }
+    }
+  }
+
+  return refreshGoogleAccessToken(athleteId, account.refreshTokenEnc);
 }
 
 export async function listGoogleCalendars(athleteId: string) {

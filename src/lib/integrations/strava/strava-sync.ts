@@ -3,11 +3,7 @@ import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { findMatchingActivity, mergedSource } from '@/lib/activity/list/activity-dedup';
 import { prisma } from '@/lib/prisma';
 import { syncSinceFromLastSync } from '@/lib/integrations/shared/sync-since';
-import {
-  isOAuthAccountConnected,
-  isProviderAuthFailure,
-  ProviderAuthError,
-} from '@/lib/integrations/shared/connection-status';
+import { resolveOAuthAccessToken } from '@/lib/integrations/shared/oauth-access-token';
 import {
   fetchActivities,
   mapStravaType,
@@ -17,7 +13,7 @@ import {
 import { observationEngine } from '@/lib/engines/observation-engine';
 import { stravaActivityToSession } from '@/core/adapters/strava-adapter';
 import { mapWithConcurrency } from '@/lib/async/map-with-concurrency';
-import { decryptSecret, encryptSecret } from '@/lib/secret-box';
+import { encryptSecret } from '@/lib/secret-box';
 
 /** Parallel DB upserts for Strava candidates within a page. */
 export const STRAVA_ACTIVITY_CONCURRENCY = 6;
@@ -63,33 +59,25 @@ export async function getValidAccessToken(athleteId: string) {
   if (!account) {
     throw new Error('Compte Strava non connecté');
   }
-  if (!isOAuthAccountConnected(account)) {
-    throw new ProviderAuthError('Session Strava expirée. Reconnecte Strava dans les paramètres.');
-  }
 
-  const expiresSoon = account.expiresAt.getTime() - Date.now() < 60_000;
-  if (!expiresSoon) {
-    return decryptSecret(account.accessTokenEnc);
-  }
-
-  try {
-    const refreshed = await refreshAccessToken(decryptSecret(account.refreshTokenEnc));
-    await prisma.stravaAccount.update({
-      where: { athleteId },
-      data: {
-        accessTokenEnc: encryptSecret(refreshed.access_token),
-        refreshTokenEnc: encryptSecret(refreshed.refresh_token),
-        expiresAt: new Date(refreshed.expires_at * 1000),
-      },
-    });
-    return refreshed.access_token;
-  } catch (error) {
-    if (isProviderAuthFailure(error)) {
-      await revokeStravaCredentials(athleteId);
-      throw new ProviderAuthError('Session Strava expirée. Reconnecte Strava dans les paramètres.');
-    }
-    throw error;
-  }
+  return resolveOAuthAccessToken({
+    athleteId,
+    account,
+    reconnectMessage: 'Session Strava expirée. Reconnecte Strava dans les paramètres.',
+    revoke: revokeStravaCredentials,
+    refresh: refreshAccessToken,
+    extractAccessToken: (refreshed) => refreshed.access_token,
+    persist: async (refreshed) => {
+      await prisma.stravaAccount.update({
+        where: { athleteId },
+        data: {
+          accessTokenEnc: encryptSecret(refreshed.access_token),
+          refreshTokenEnc: encryptSecret(refreshed.refresh_token),
+          expiresAt: new Date(refreshed.expires_at * 1000),
+        },
+      });
+    },
+  });
 }
 
 function stravaPaceSecPerKm(strava: StravaActivity): number | null {
@@ -142,7 +130,10 @@ function attachStravaSwimMetrics(
 }
 
 const STRAVA_SPORT_METRIC_ATTACHERS: Partial<
-  Record<ActivityType, (base: Omit<Prisma.ActivityUncheckedCreateInput, 'athleteId'>, strava: StravaActivity) => void>
+  Record<
+    ActivityType,
+    (base: Omit<Prisma.ActivityUncheckedCreateInput, 'athleteId'>, strava: StravaActivity) => void
+  >
 > = {
   [ActivityType.RUN]: attachStravaRunMetrics,
   [ActivityType.BIKE]: attachStravaBikeMetrics,
@@ -240,9 +231,7 @@ function enrichStravaSwimMetrics(data: Prisma.ActivityUpdateInput, strava: Strav
       update: {
         distanceM: strava.distance || undefined,
         avgPaceSecPer100m:
-          strava.average_speed && strava.average_speed > 0
-            ? 100 / strava.average_speed
-            : undefined,
+          strava.average_speed && strava.average_speed > 0 ? 100 / strava.average_speed : undefined,
       },
     },
   };
@@ -408,10 +397,8 @@ async function processStravaActivityPage(
   const pending = candidates.filter((c) => !existingIds.has(c.stravaId));
   counters.skipped += candidates.length - pending.length;
 
-  const outcomes = await mapWithConcurrency(
-    pending,
-    STRAVA_ACTIVITY_CONCURRENCY,
-    (candidate) => processStravaCandidate(athleteId, candidate),
+  const outcomes = await mapWithConcurrency(pending, STRAVA_ACTIVITY_CONCURRENCY, (candidate) =>
+    processStravaCandidate(athleteId, candidate),
   );
 
   for (const outcome of outcomes) {

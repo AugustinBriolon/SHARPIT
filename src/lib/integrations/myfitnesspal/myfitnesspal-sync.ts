@@ -2,8 +2,9 @@ import { format, subDays } from 'date-fns';
 import { mfpDayToNutritionObservation } from '@/core/adapters/myfitnesspal-adapter';
 import { observationEngine } from '@/lib/engines/observation-engine';
 import { prisma } from '@/lib/prisma';
-import { decryptSecret, encryptSecret } from '@/lib/secret-box';
+import { decryptSecret, encryptSecret, isSecretAuthenticityFailure } from '@/lib/secret-box';
 import {
+  isDecryptMalformedSoftFailure,
   isMfpAccountConnected,
   ProviderAuthError,
 } from '@/lib/integrations/shared/connection-status';
@@ -104,8 +105,8 @@ export async function getLiveNutrientGoals(athleteId: string, dateStr: string) {
     return null;
   }
 
-  const session: MfpSession = { sessionToken: decryptSecret(account.sessionTokenEnc) };
   try {
+    const session: MfpSession = { sessionToken: decryptSecret(account.sessionTokenEnc) };
     return await fetchNutrientGoals(session, dateStr);
   } catch {
     return null;
@@ -198,7 +199,11 @@ function mfpDailyNutritionPayload(athleteId: string, dateStr: string, result: Mf
   };
 }
 
-async function syncMfpDay(athleteId: string, session: MfpSession, dateStr: string): Promise<boolean> {
+async function syncMfpDay(
+  athleteId: string,
+  session: MfpSession,
+  dateStr: string,
+): Promise<boolean> {
   const result = await fetchDiaryDay(session, dateStr);
   const hasMeals = result.meals.some((m: MfpScrapedMeal) => m.entries.length > 0);
   if (!hasMeals && !result.goals) {
@@ -240,25 +245,45 @@ async function syncMfpLookbackDays(
   return { synced, errors };
 }
 
+function readMfpSessionOrThrow(sessionTokenEnc: string): MfpSession {
+  try {
+    return { sessionToken: decryptSecret(sessionTokenEnc) };
+  } catch (error) {
+    if (isSecretAuthenticityFailure(error)) {
+      throw error;
+    }
+    if (isDecryptMalformedSoftFailure(error)) {
+      throw new ProviderAuthError(
+        'Session MyFitnessPal expirée. Reconnecte MyFitnessPal dans les paramètres.',
+        { cause: error },
+      );
+    }
+    throw error;
+  }
+}
+
 export async function syncMfpNutrition(
   athleteId: string,
   lookbackDays = 7,
 ): Promise<MfpSyncResult> {
   const account = await getMfpAccount(athleteId);
   if (!account || !isMfpAccountConnected(account)) {
-    throw new ProviderAuthError(
-      'Session MyFitnessPal expirée. Reconnecte MyFitnessPal dans les paramètres.',
-    );
+    return { synced: 0, errors: 0 };
   }
 
-  let session: MfpSession = { sessionToken: decryptSecret(account.sessionTokenEnc) };
+  let session: MfpSession;
+  try {
+    session = readMfpSessionOrThrow(account.sessionTokenEnc);
+  } catch (error) {
+    if (error instanceof ProviderAuthError && isDecryptMalformedSoftFailure(error.cause)) {
+      await revokeMfpCredentials(athleteId);
+    }
+    throw error;
+  }
 
   try {
     session = await rollSessionForward(athleteId, session);
   } catch (err) {
-    // Never destructive: the refresh is an optimisation, and it cannot tell a
-    // dead cookie apart from a bad minute at the edge. Expiry is decided by the
-    // diary reads below, which answer 401/403 when the credential is truly gone.
     console.error('[MFP] session refresh failed, syncing with the stored cookie:', err);
   }
 

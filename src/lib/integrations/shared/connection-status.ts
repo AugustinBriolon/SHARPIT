@@ -2,9 +2,15 @@
  * Provider connection checks and auth-failure utilities.
  *
  * Each `is*Connected` guard checks that required credential fields are present
- * and non-null on a provider account row.
+ * and look like real AES-GCM ciphertext on a provider account row.
  */
 
+import {
+  isEncryptedSecret,
+  isSecretAuthenticityFailure,
+  isSecretDecryptFailure,
+  isSecretMalformedFailure,
+} from '@/lib/secret-box';
 import { isSet } from '@/lib/util/value';
 
 // ---------------------------------------------------------------------------
@@ -20,6 +26,28 @@ export class ProviderAuthError extends Error {
 
 export function isProviderAuthFailure(error: unknown): error is ProviderAuthError {
   return error instanceof ProviderAuthError;
+}
+
+/**
+ * True provider-side auth expiry. Safe to wipe local credentials and prompt
+ * reconnect. Does NOT include AES-GCM authenticity failures (wrong key) —
+ * those are fleet incidents and must never mass-revoke.
+ */
+export function isCredentialFailure(error: unknown): boolean {
+  return isProviderAuthFailure(error);
+}
+
+/** Soft skip path for cron: provider auth OR any decrypt failure (no hard spam). */
+export function isCredentialSoftFailure(error: unknown): boolean {
+  return isProviderAuthFailure(error) || isSecretDecryptFailure(error);
+}
+
+export function isDecryptAuthenticitySoftFailure(error: unknown): boolean {
+  return isSecretAuthenticityFailure(error);
+}
+
+export function isDecryptMalformedSoftFailure(error: unknown): boolean {
+  return isSecretMalformedFailure(error);
 }
 
 // ---------------------------------------------------------------------------
@@ -48,42 +76,28 @@ export function isOAuthAccountConnected(account: MaybeAccount): boolean {
   if (!account) {
     return false;
   }
-  return (
-    typeof account.accessTokenEnc === 'string' &&
-    account.accessTokenEnc.length > 0 &&
-    typeof account.refreshTokenEnc === 'string' &&
-    account.refreshTokenEnc.length > 0
-  );
+  return isEncryptedSecret(account.accessTokenEnc) && isEncryptedSecret(account.refreshTokenEnc);
 }
 
 export function isGarminAccountConnected(account: MaybeAccount): boolean {
   if (!account) {
     return false;
   }
-  return (
-    typeof account.oauth1TokenEnc === 'string' &&
-    account.oauth1TokenEnc.length > 0 &&
-    typeof account.oauth2TokenEnc === 'string' &&
-    account.oauth2TokenEnc.length > 0
-  );
+  return isEncryptedSecret(account.oauth1TokenEnc) && isEncryptedSecret(account.oauth2TokenEnc);
 }
 
 export function isRenphoAccountConnected(account: MaybeAccount): boolean {
   if (!account) {
     return false;
   }
-  return (
-    isSet(account.email) &&
-    typeof account.passwordEnc === 'string' &&
-    account.passwordEnc.length > 0
-  );
+  return isSet(account.email) && isEncryptedSecret(account.passwordEnc);
 }
 
 export function isMfpAccountConnected(account: MaybeAccount): boolean {
   if (!account) {
     return false;
   }
-  return typeof account.sessionTokenEnc === 'string' && account.sessionTokenEnc.length > 0;
+  return isEncryptedSecret(account.sessionTokenEnc);
 }
 
 // ---------------------------------------------------------------------------

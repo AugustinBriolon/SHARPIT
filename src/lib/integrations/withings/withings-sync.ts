@@ -1,10 +1,6 @@
 import { BodyCompositionSource, Prisma } from '@prisma/client';
 import { isSet } from '@/lib/util/value';
-import {
-  isOAuthAccountConnected,
-  isProviderAuthFailure,
-  ProviderAuthError,
-} from '@/lib/integrations/shared/connection-status';
+import { resolveOAuthAccessToken } from '@/lib/integrations/shared/oauth-access-token';
 import { format, startOfDay, subDays } from 'date-fns';
 import { prisma } from '@/lib/prisma';
 import { observationEngine } from '@/lib/engines/observation-engine';
@@ -18,7 +14,7 @@ import {
 import { enrichMeasurementsWithHeartEcg } from '@/lib/integrations/withings/withings-measures';
 import { backfillBodyCompositionObservationsFromMeasurements } from '@/lib/integrations/shared/body-composition-observation-backfill';
 import { syncSinceFromLastSync, syncWindowDays } from '@/lib/integrations/shared/sync-since';
-import { decryptSecret, encryptSecret } from '@/lib/secret-box';
+import { encryptSecret } from '@/lib/secret-box';
 
 async function ingestWithingsMeasurement(
   athleteId: string,
@@ -64,38 +60,26 @@ export async function getValidWithingsAccessToken(athleteId: string): Promise<st
   if (!account) {
     throw new Error('Compte Withings non connecté');
   }
-  if (!isOAuthAccountConnected(account)) {
-    throw new ProviderAuthError(
-      'Session Withings expirée. Reconnecte Withings dans les paramètres.',
-    );
-  }
 
-  const expiresSoon = account.expiresAt.getTime() - Date.now() < 60_000;
-  if (!expiresSoon) {
-    return decryptSecret(account.accessTokenEnc);
-  }
-
-  try {
-    const refreshed = await refreshWithingsToken(decryptSecret(account.refreshTokenEnc));
-    await prisma.withingsAccount.update({
-      where: { athleteId },
-      data: {
-        accessTokenEnc: encryptSecret(refreshed.access_token),
-        refreshTokenEnc: encryptSecret(refreshed.refresh_token),
-        expiresAt: new Date(Date.now() + refreshed.expires_in * 1000),
-        withingsUserId: String(refreshed.userid),
-      },
-    });
-    return refreshed.access_token;
-  } catch (error) {
-    if (isProviderAuthFailure(error)) {
-      await revokeWithingsCredentials(athleteId);
-      throw new ProviderAuthError(
-        'Session Withings expirée. Reconnecte Withings dans les paramètres.',
-      );
-    }
-    throw error;
-  }
+  return resolveOAuthAccessToken({
+    athleteId,
+    account,
+    reconnectMessage: 'Session Withings expirée. Reconnecte Withings dans les paramètres.',
+    revoke: revokeWithingsCredentials,
+    refresh: refreshWithingsToken,
+    extractAccessToken: (refreshed) => refreshed.access_token,
+    persist: async (refreshed) => {
+      await prisma.withingsAccount.update({
+        where: { athleteId },
+        data: {
+          accessTokenEnc: encryptSecret(refreshed.access_token),
+          refreshTokenEnc: encryptSecret(refreshed.refresh_token),
+          expiresAt: new Date(Date.now() + refreshed.expires_in * 1000),
+          withingsUserId: String(refreshed.userid),
+        },
+      });
+    },
+  });
 }
 
 function computeMusclePct(m: WithingsParsedMeasurement): number | null {

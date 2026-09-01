@@ -445,13 +445,13 @@ function sleepFieldsForDemo(daysAgo: number, recoveryScore: number) {
 
 async function seedDemoIntegrationStubs(prisma: PrismaClient, athleteId: string): Promise<void> {
   // Row presence drives source-prefs legacy defaults (Garmin health + Renpho body).
-  // Tokens are placeholders — cron sync no-ops on auth failure, reads still work.
+  // Empty credentials = needsReconnect in the hub; cron skips via is*Connected.
   await prisma.garminAccount.upsert({
     where: { athleteId },
     create: {
       athleteId,
-      oauth1TokenEnc: 'demo',
-      oauth2TokenEnc: 'demo',
+      oauth1TokenEnc: '',
+      oauth2TokenEnc: '',
       displayName: 'Athlète Démo',
     },
     update: { displayName: 'Athlète Démo' },
@@ -461,7 +461,7 @@ async function seedDemoIntegrationStubs(prisma: PrismaClient, athleteId: string)
     create: {
       athleteId,
       email: 'demo@sharpit.app',
-      passwordEnc: 'demo',
+      passwordEnc: '',
       displayName: 'Athlète Démo',
     },
     update: { displayName: 'Athlète Démo' },

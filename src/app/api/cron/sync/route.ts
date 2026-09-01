@@ -14,6 +14,14 @@ import { getStravaAccount, syncStravaActivities } from '@/lib/integrations/strav
 import { generateAndStoreWeeklyReview, isSunday } from '@/lib/weekly-review';
 import { isCoachConfigured } from '@/lib/ai';
 import { verifyCronSecret } from '@/lib/cron/verify-cron-secret';
+import { shouldCronSyncProvider } from '@/lib/cron/provider-sync-gates';
+import { DecryptCircuitBreaker } from '@/lib/cron/decrypt-circuit-breaker';
+import { summarizeCronSyncResults, type CronAthleteSyncResult } from '@/lib/cron/sync-summary';
+import {
+  isDecryptAuthenticitySoftFailure,
+  isDecryptMalformedSoftFailure,
+  isProviderAuthFailure,
+} from '@/lib/integrations/shared/connection-status';
 
 export const maxDuration = 300;
 
@@ -24,19 +32,9 @@ function unauthorized() {
   return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 }
 
-type AthleteSyncResult = {
-  athleteId: string;
-  strava: Awaited<ReturnType<typeof syncStravaActivities>> | null;
-  garmin: Awaited<ReturnType<typeof syncGarminHealth>> | null;
-  garminActivities: Awaited<ReturnType<typeof syncGarminActivities>> | null;
-  renpho: Awaited<ReturnType<typeof syncRenphoHealth>> | null;
-  withings: Awaited<ReturnType<typeof syncWithingsHealth>> | null;
-  google: Awaited<ReturnType<typeof syncFromGoogle>> | null;
-  mfp: Awaited<ReturnType<typeof syncMfpNutrition>> | null;
-  backfill: Awaited<ReturnType<typeof backfillActivityStreams>> | null;
-  briefing: boolean;
-  weeklyReview: boolean;
-  errors: string[];
+type AthleteSyncResult = CronAthleteSyncResult & {
+  importedTypes: string[];
+  backfilledActivityIds: string[];
 };
 
 function syncErrorMessage(error: unknown, fallback: string) {
@@ -55,17 +53,50 @@ function recordSyncError(input: {
   input.result.errors.push(`${input.provider}: ${msg}`);
 }
 
-async function runProviderSync<T>(input: {
+function recordNeedsReconnect(input: {
+  result: AthleteSyncResult;
+  provider: string;
+  athleteId: string;
+  error: unknown;
+}) {
+  const msg = syncErrorMessage(input.error, 'needs reconnect');
+  console.warn(`[cron/sync] ${input.provider} needs reconnect:`, input.athleteId, msg);
+  if (!input.result.needsReconnect.includes(input.provider)) {
+    input.result.needsReconnect.push(input.provider);
+  }
+}
+
+function recordDecryptSkip(input: {
+  result: AthleteSyncResult;
+  provider: string;
+  athleteId: string;
+}) {
+  console.error(
+    `[cron/sync] ${input.provider}: decrypt authenticity failure (credentials preserved)`,
+    input.athleteId,
+  );
+  input.result.decryptAuthenticity = true;
+}
+
+async function runProviderSync(input: {
   result: AthleteSyncResult;
   provider: string;
   athleteId: string;
   fallback: string;
-  assign: (value: T) => void;
-  task: () => Promise<T>;
+  task: () => Promise<unknown>;
 }) {
   try {
-    input.assign(await input.task());
+    await input.task();
+    input.result.providerSyncCount += 1;
   } catch (error) {
+    if (isDecryptAuthenticitySoftFailure(error)) {
+      recordDecryptSkip(input);
+      return;
+    }
+    if (isProviderAuthFailure(error) || isDecryptMalformedSoftFailure(error)) {
+      recordNeedsReconnect({ ...input, error });
+      return;
+    }
     recordSyncError({ ...input, error });
   }
 }
@@ -73,7 +104,6 @@ async function runProviderSync<T>(input: {
 type ProviderSyncSpec = {
   provider: string;
   fallback: string;
-  assign: (value: unknown) => void;
   task: () => Promise<unknown>;
 };
 
@@ -92,75 +122,68 @@ function buildProviderSyncSpecs(
   result: AthleteSyncResult,
 ): ProviderSyncSpec[] {
   const specs: ProviderSyncSpec[] = [];
-  if (accounts.strava) {
+  if (shouldCronSyncProvider('strava', accounts.strava)) {
     specs.push({
       provider: 'Strava',
       fallback: 'Sync Strava échouée',
-      assign: (value) => {
-        result.strava = value as AthleteSyncResult['strava'];
+      task: async () => {
+        const strava = await syncStravaActivities(athleteId);
+        result.importedTypes.push(...strava.importedTypes);
       },
-      task: () => syncStravaActivities(athleteId),
     });
   }
-  if (accounts.garmin) {
+  if (shouldCronSyncProvider('garmin', accounts.garmin)) {
     specs.push({
       provider: 'Garmin',
       fallback: 'Sync Garmin échouée',
-      assign: (value) => {
-        result.garmin = value as AthleteSyncResult['garmin'];
-      },
       task: () => syncGarminHealth(athleteId),
     });
     specs.push({
       provider: 'Garmin activities',
       fallback: 'Sync activités Garmin échouée',
-      assign: (value) => {
-        result.garminActivities = value as AthleteSyncResult['garminActivities'];
+      task: async () => {
+        const activities = await syncGarminActivities(athleteId);
+        result.importedTypes.push(...activities.importedTypes);
       },
-      task: () => syncGarminActivities(athleteId),
     });
   }
-  if (accounts.withings) {
+  appendOptionalProviderSpecs(athleteId, accounts, specs);
+  return specs;
+}
+
+function appendOptionalProviderSpecs(
+  athleteId: string,
+  accounts: ProviderAccounts,
+  specs: ProviderSyncSpec[],
+): void {
+  if (shouldCronSyncProvider('withings', accounts.withings)) {
     specs.push({
       provider: 'Withings',
       fallback: 'Sync Withings échouée',
-      assign: (value) => {
-        result.withings = value as AthleteSyncResult['withings'];
-      },
       task: () => syncWithingsHealth(athleteId),
     });
   }
-  if (accounts.renpho) {
+  if (shouldCronSyncProvider('renpho', accounts.renpho)) {
     specs.push({
       provider: 'Renpho',
       fallback: 'Sync Renpho échouée',
-      assign: (value) => {
-        result.renpho = value as AthleteSyncResult['renpho'];
-      },
       task: () => syncRenphoHealth(athleteId),
     });
   }
-  if (accounts.google?.targetCalendarId) {
+  if (shouldCronSyncProvider('google', accounts.google)) {
     specs.push({
       provider: 'Google',
       fallback: 'Sync Google échouée',
-      assign: (value) => {
-        result.google = value as AthleteSyncResult['google'];
-      },
       task: () => syncFromGoogle(athleteId),
     });
   }
-  if (accounts.mfp) {
+  if (shouldCronSyncProvider('myfitnesspal', accounts.mfp)) {
     specs.push({
       provider: 'MyFitnessPal',
       fallback: 'Sync MyFitnessPal échouée',
-      assign: (value) => {
-        result.mfp = value as AthleteSyncResult['mfp'];
-      },
       task: () => syncMfpNutrition(athleteId),
     });
   }
-  return specs;
 }
 
 async function syncConnectedProviders(
@@ -176,7 +199,6 @@ async function syncConnectedProviders(
         athleteId,
         provider: spec.provider,
         fallback: spec.fallback,
-        assign: spec.assign,
         task: spec.task,
       }),
     ),
@@ -188,11 +210,19 @@ async function backfillStreamsIfNeeded(
   accounts: ProviderAccounts,
   result: AthleteSyncResult,
 ) {
-  if (!accounts.strava && !accounts.garmin) {
+  if (
+    !shouldCronSyncProvider('strava', accounts.strava) &&
+    !shouldCronSyncProvider('garmin', accounts.garmin)
+  ) {
     return;
   }
   try {
-    result.backfill = await backfillActivityStreams(athleteId, CRON_BACKFILL_BATCH);
+    const backfill = await backfillActivityStreams(athleteId, CRON_BACKFILL_BATCH);
+    result.backfilledActivityIds = backfill.activityIdsWithData;
+    await updateRecordsAfterProviderSync(athleteId, {
+      importedTypes: result.importedTypes as never[],
+      backfilledActivityIds: backfill.activityIdsWithData,
+    });
   } catch (error) {
     recordSyncError({
       result,
@@ -202,24 +232,6 @@ async function backfillStreamsIfNeeded(
       fallback: 'Backfill streams échoué',
     });
   }
-}
-
-async function updateRecordsIfNeeded(
-  athleteId: string,
-  accounts: ProviderAccounts,
-  result: AthleteSyncResult,
-) {
-  if (!accounts.strava && !accounts.garmin) {
-    return;
-  }
-  const importedTypes = [
-    ...(result.strava?.importedTypes ?? []),
-    ...(result.garminActivities?.importedTypes ?? []),
-  ];
-  await updateRecordsAfterProviderSync(athleteId, {
-    importedTypes,
-    backfilledActivityIds: result.backfill?.activityIdsWithData,
-  });
 }
 
 async function refreshAthleteBriefing(athleteId: string, result: AthleteSyncResult) {
@@ -255,21 +267,31 @@ async function generateWeeklyReviewIfSunday(athleteId: string, result: AthleteSy
   }
 }
 
-async function syncOneAthlete(athleteId: string): Promise<AthleteSyncResult> {
-  const result: AthleteSyncResult = {
+function emptyAthleteResult(athleteId: string): AthleteSyncResult {
+  return {
     athleteId,
-    strava: null,
-    garmin: null,
-    garminActivities: null,
-    renpho: null,
-    withings: null,
-    google: null,
-    mfp: null,
-    backfill: null,
+    providerSyncCount: 0,
     briefing: false,
     weeklyReview: false,
     errors: [],
+    needsReconnect: [],
+    decryptAuthenticity: false,
+    skippedByCircuitBreaker: false,
+    importedTypes: [],
+    backfilledActivityIds: [],
   };
+}
+
+async function syncOneAthlete(
+  athleteId: string,
+  breaker: DecryptCircuitBreaker,
+): Promise<CronAthleteSyncResult> {
+  const result = emptyAthleteResult(athleteId);
+
+  if (breaker.isTripped()) {
+    result.skippedByCircuitBreaker = true;
+    return result;
+  }
 
   const [strava, garmin, renpho, withings, google, mfp] = await Promise.all([
     getStravaAccount(athleteId),
@@ -282,28 +304,44 @@ async function syncOneAthlete(athleteId: string): Promise<AthleteSyncResult> {
   const accounts: ProviderAccounts = { strava, garmin, renpho, withings, google, mfp };
 
   await syncConnectedProviders(athleteId, accounts, result);
+  breaker.recordAthleteProcessed({ authenticityFailure: result.decryptAuthenticity });
+
+  if (breaker.isTripped()) {
+    // Stop further credential-mutating / heavy work for this athlete once tripped mid-flight.
+    return result;
+  }
+
   await backfillStreamsIfNeeded(athleteId, accounts, result);
-  await updateRecordsIfNeeded(athleteId, accounts, result);
   await refreshAthleteBriefing(athleteId, result);
   await generateWeeklyReviewIfSunday(athleteId, result);
 
   return result;
 }
 
-/** Synchro planifiée (Vercel Cron) : Strava, Garmin, Renpho, Withings, Google, MyFitnessPal si connectés, pour chaque athlète. */
+/** Synchro planifiée (Vercel Cron) : providers connectés, pour chaque athlète. */
 export async function GET(request: Request) {
   if (!verifyCronSecret(request)) {
     return unauthorized();
   }
 
   const athletes = await prisma.athleteProfile.findMany({ select: { id: true } });
+  const breaker = new DecryptCircuitBreaker();
 
   const results = await mapWithConcurrency(athletes, ATHLETE_CONCURRENCY, (athlete) =>
-    syncOneAthlete(athlete.id),
+    syncOneAthlete(athlete.id, breaker),
   );
 
-  return NextResponse.json({
-    ok: results.every((r) => r.errors.length === 0),
-    athletes: results,
+  if (breaker.isTripped()) {
+    console.error(`[cron/sync] ${breaker.tripReason()}`);
+  }
+
+  const summary = summarizeCronSyncResults(results, {
+    circuitBreakerTripped: breaker.isTripped(),
+    circuitBreakerReason: breaker.isTripped() ? breaker.tripReason() : null,
+    authenticityFailureCount: breaker.authenticityFailureCount,
+  });
+
+  return NextResponse.json(summary, {
+    status: summary.circuitBreakerTripped ? 503 : 200,
   });
 }

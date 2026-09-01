@@ -20,13 +20,19 @@ import {
 import { observationEngine } from '@/lib/engines/observation-engine';
 import { garminHealthToObservations } from '@/core/adapters/garmin-health-adapter';
 import {
+  isCredentialFailure,
   isGarminAccountConnected,
-  isProviderAuthFailure,
+  isDecryptMalformedSoftFailure,
   ProviderAuthError,
 } from '@/lib/integrations/shared/connection-status';
 import { backfillHealthObservationsFromDailyHealth } from '../shared/health-observation-backfill';
 import { mapWithConcurrency } from '@/lib/async/map-with-concurrency';
-import { decryptSecret, encryptSecret } from '@/lib/secret-box';
+import {
+  decryptSecret,
+  encryptSecret,
+  isSecretAuthenticityFailure,
+  isSecretDecryptFailure,
+} from '@/lib/secret-box';
 import type { GarminTokens } from '@/lib/integrations/garmin/garmin';
 
 /** Encrypts one OAuth token object for storage in the `*TokenEnc` columns. */
@@ -36,10 +42,20 @@ export function encryptGarminToken(token: unknown): string {
 
 /** Reverses `encryptGarminToken` — reads a stored `*TokenEnc` column back into tokens. */
 export function decryptGarminTokens(oauth1Enc: string, oauth2Enc: string): GarminTokens {
-  return garminTokensFromStorage(
-    JSON.parse(decryptSecret(oauth1Enc)),
-    JSON.parse(decryptSecret(oauth2Enc)),
-  );
+  try {
+    return garminTokensFromStorage(
+      JSON.parse(decryptSecret(oauth1Enc)),
+      JSON.parse(decryptSecret(oauth2Enc)),
+    );
+  } catch (error) {
+    if (isSecretDecryptFailure(error)) {
+      throw error;
+    }
+    // Corrupted JSON after a successful decrypt is not recoverable — treat as dead credentials.
+    throw new ProviderAuthError('Session Garmin expirée. Reconnecte Garmin dans les paramètres.', {
+      cause: error,
+    });
+  }
 }
 
 /** Cold open-path fallback when Garmin never synced — cron covers deeper history. */
@@ -142,9 +158,19 @@ export async function runGarminCall<T>(athleteId: string, fn: () => Promise<T>):
   try {
     return await fn();
   } catch (error) {
-    if (isProviderAuthFailure(error)) {
+    // Wrong-key / GCM auth failure: fleet incident — never wipe stored tokens.
+    if (isSecretAuthenticityFailure(error)) {
+      throw error;
+    }
+    // Local placeholder / unframed blob: clear so the hub shows reconnect.
+    if (isDecryptMalformedSoftFailure(error) || isCredentialFailure(error)) {
       await revokeGarminCredentials(athleteId);
-      throw new ProviderAuthError('Session Garmin expirée. Reconnecte Garmin dans les paramètres.');
+      throw new ProviderAuthError(
+        'Session Garmin expirée. Reconnecte Garmin dans les paramètres.',
+        {
+          cause: error,
+        },
+      );
     }
     throw error;
   }
