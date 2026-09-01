@@ -52,7 +52,7 @@ export function ActivityDetailActionsMenu({
         <DropdownMenuItem
           className="cursor-pointer gap-2"
           nativeButton={false}
-          render={<Link href={editHref} />}
+          render={<Link href={editHref} replace />}
         >
           <Pencil className="size-3.5" aria-hidden />
           Modifier

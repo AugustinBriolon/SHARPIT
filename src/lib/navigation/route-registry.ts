@@ -10,6 +10,11 @@ export type RouteEntry = {
   label: string;
   /** Fallback destination when the nav stack has no previous entry. */
   defaultParent?: { href: string; label: string };
+  /**
+   * Modal-like screen: never sits on the app nav stack.
+   * After leaving, Back must return to the real previous page — not reopen this route.
+   */
+  transient?: boolean;
 };
 
 type Matcher = {
@@ -57,6 +62,7 @@ const MATCHERS: Matcher[] = [
     resolve: (m) => ({
       label: 'Édition',
       defaultParent: { href: `/training/${m[1]}`, label: 'Séance' },
+      transient: true,
     }),
   },
   {
@@ -149,6 +155,11 @@ function match(href: string): { entry: RouteEntry } | null {
 /** Human label for a pushed stack entry. */
 export function resolveRouteLabel(href: string): string {
   return match(href)?.entry.label ?? 'Retour';
+}
+
+/** True for modal-like routes that must not accumulate on the nav stack. */
+export function isTransientRoute(href: string): boolean {
+  return match(href)?.entry.transient === true;
 }
 
 /** Where to send Back when the app stack is empty for this route. */

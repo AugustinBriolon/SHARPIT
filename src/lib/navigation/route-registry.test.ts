@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { resolveRouteFallback, resolveRouteLabel } from './route-registry';
+import {
+  isTransientRoute,
+  resolveRouteFallback,
+  resolveRouteLabel,
+} from './route-registry';
 
 describe('route-registry', () => {
   describe('resolveRouteLabel', () => {
@@ -23,6 +27,19 @@ describe('route-registry', () => {
 
     it('falls back to a generic label for unknown routes', () => {
       expect(resolveRouteLabel('/unknown/path')).toBe('Retour');
+    });
+  });
+
+  describe('isTransientRoute', () => {
+    it('marks activity edit as transient (skipped by the nav stack)', () => {
+      expect(isTransientRoute('/training/abc123/edit')).toBe(true);
+      expect(isTransientRoute('/training/abc123/edit?x=1')).toBe(true);
+    });
+
+    it('does not mark activity detail or other training routes as transient', () => {
+      expect(isTransientRoute('/training/abc123')).toBe(false);
+      expect(isTransientRoute('/training/history')).toBe(false);
+      expect(isTransientRoute('/training/manual')).toBe(false);
     });
   });
 

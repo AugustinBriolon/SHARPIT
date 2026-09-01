@@ -8,6 +8,8 @@
  * (e.g. arriving at a session from Training vs from History should back differently).
  */
 
+import { isTransientRoute } from '@/lib/navigation/route-registry';
+
 export type NavStackEntry = {
   /** Full href — pathname + optional search string. */
   href: string;
@@ -72,6 +74,8 @@ function pathnameOf(href: string): string {
 /**
  * Push a navigation entry with true navigation-controller semantics:
  *
+ * - Transient routes (e.g. activity edit) are ignored — they must not sit under
+ *   the destination after save / dismiss.
  * - Same pathname as an existing entry → **rewind** to that entry (pop all
  *   entries above) and refresh its href/label to preserve the latest state
  *   (e.g. `?tab=performance&sport=bike`). This is how Back from an activity
@@ -82,6 +86,9 @@ function pathnameOf(href: string): string {
  * - New pathname → push on top.
  */
 function push(entry: NavStackEntry): void {
+  if (isTransientRoute(entry.href)) {
+    return;
+  }
   const stack = readRaw();
   const targetPath = pathnameOf(entry.href);
   const existingIdx = stack.findIndex((e) => pathnameOf(e.href) === targetPath);
@@ -112,7 +119,8 @@ function peek(): NavStackEntry | null {
 }
 
 /**
- * Walk down from the top, skipping any entry equal to `currentHref`.
+ * Walk down from the top, skipping any entry equal to `currentHref`
+ * and any transient (modal-like) route that should never be a Back target.
  * Returns the first different entry, or null if none.
  *
  * This is what powers Back: from A we never return to A even if the top
@@ -122,9 +130,13 @@ function peekBackFrom(currentHref: string): NavStackEntry | null {
   const stack = readRaw();
   for (let i = stack.length - 1; i >= 0; i--) {
     const entry = stack[i]!;
-    if (entry.href !== currentHref) {
-      return entry;
+    if (entry.href === currentHref) {
+      continue;
     }
+    if (isTransientRoute(entry.href)) {
+      continue;
+    }
+    return entry;
   }
   return null;
 }

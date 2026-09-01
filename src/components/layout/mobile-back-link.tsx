@@ -27,6 +27,11 @@ type MobileBackLinkProps = {
   fallbackHref?: string;
   /** Override the registry default label when the stack is empty. */
   fallbackLabel?: string;
+  /**
+   * Use history.replace for the static Link (e.g. leaving a transient edit screen
+   * so the edit route does not sit under the destination in browser history).
+   */
+  replace?: boolean;
   className?: string;
   /** Affiche le lien sur desktop aussi (défaut : mobile uniquement). */
   showOnDesktop?: boolean;
@@ -37,18 +42,21 @@ function BackLinkChrome({
   label,
   className,
   showOnDesktop,
+  replace = false,
   onClick,
 }: {
   href: string;
   label: React.ReactNode;
   className?: string;
   showOnDesktop: boolean;
+  replace?: boolean;
   onClick?: (event: React.MouseEvent<HTMLAnchorElement>) => void;
 }) {
   return (
     <>
       <Link
         href={href}
+        replace={replace}
         aria-label={typeof label === 'string' ? label : undefined}
         className={cn(
           floatingHeaderButtonClass('left'),
@@ -115,6 +123,7 @@ export function MobileBackLink({
   label,
   fallbackHref,
   fallbackLabel,
+  replace = false,
   className,
   showOnDesktop = false,
 }: MobileBackLinkProps) {
@@ -124,6 +133,7 @@ export function MobileBackLink({
         className={className}
         href={href}
         label={label}
+        replace={replace}
         showOnDesktop={showOnDesktop}
       />
     );
