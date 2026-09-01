@@ -1,7 +1,7 @@
 import { BodyCompositionSource, Prisma } from '@prisma/client';
 import { isSet } from '@/lib/util/value';
 import {
-  isProviderAuthFailure,
+  isCredentialFailure,
   isRenphoAccountConnected,
   ProviderAuthError,
 } from '@/lib/integrations/shared/connection-status';
@@ -364,9 +364,14 @@ export async function syncRenphoHealth(
       days: window.days,
     });
   } catch (error) {
-    if (isProviderAuthFailure(error)) {
+    if (isCredentialFailure(error)) {
       await revokeRenphoCredentials(athleteId);
-      throw new ProviderAuthError('Session Renpho expirée. Reconnecte Renpho dans les paramètres.');
+      throw new ProviderAuthError(
+        'Session Renpho expirée. Reconnecte Renpho dans les paramètres.',
+        {
+          cause: error,
+        },
+      );
     }
     throw error;
   }

@@ -15,7 +15,12 @@ import {
 } from '@/lib/integrations/google/google';
 
 import { syncSinceFromLastSync } from '@/lib/integrations/shared/sync-since';
-import { decryptSecret, encryptSecret } from '@/lib/secret-box';
+import {
+  decryptSecret,
+  encryptSecret,
+  isEncryptedSecret,
+  isSecretDecryptFailure,
+} from '@/lib/secret-box';
 
 const DAY_START_MIN = 6 * 60; // 06:00
 const DAY_END_MIN = 21 * 60; // 21:00
@@ -36,7 +41,7 @@ export async function getGoogleAccount(athleteId: string) {
 export function isGoogleConnected(
   account: { refreshTokenEnc: string } | null | undefined,
 ): account is { refreshTokenEnc: string } {
-  return Boolean(account?.refreshTokenEnc);
+  return isEncryptedSecret(account?.refreshTokenEnc);
 }
 
 /** Invalide les jetons OAuth tout en conservant le calendrier cible et les préférences. */
@@ -92,12 +97,12 @@ export async function getValidAccessToken(athleteId: string) {
     throw new Error('Compte Google non connecté');
   }
 
-  const expiresSoon = account.expiresAt.getTime() - Date.now() < 60_000;
-  if (!expiresSoon) {
-    return decryptSecret(account.accessTokenEnc);
-  }
-
   try {
+    const expiresSoon = account.expiresAt.getTime() - Date.now() < 60_000;
+    if (!expiresSoon) {
+      return decryptSecret(account.accessTokenEnc);
+    }
+
     const refreshed = await refreshAccessToken(decryptSecret(account.refreshTokenEnc));
     await prisma.googleAccount.update({
       where: { athleteId },
@@ -112,7 +117,10 @@ export async function getValidAccessToken(athleteId: string) {
     });
     return refreshed.access_token;
   } catch (error) {
-    if (error instanceof GoogleOAuthError && error.needsReconnect) {
+    if (
+      isSecretDecryptFailure(error) ||
+      (error instanceof GoogleOAuthError && error.needsReconnect)
+    ) {
       await revokeGoogleCredentials(athleteId);
     }
     throw error;

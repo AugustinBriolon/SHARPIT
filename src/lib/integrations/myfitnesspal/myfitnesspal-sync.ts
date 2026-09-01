@@ -4,6 +4,7 @@ import { observationEngine } from '@/lib/engines/observation-engine';
 import { prisma } from '@/lib/prisma';
 import { decryptSecret, encryptSecret } from '@/lib/secret-box';
 import {
+  isCredentialFailure,
   isMfpAccountConnected,
   ProviderAuthError,
 } from '@/lib/integrations/shared/connection-status';
@@ -104,8 +105,8 @@ export async function getLiveNutrientGoals(athleteId: string, dateStr: string) {
     return null;
   }
 
-  const session: MfpSession = { sessionToken: decryptSecret(account.sessionTokenEnc) };
   try {
+    const session: MfpSession = { sessionToken: decryptSecret(account.sessionTokenEnc) };
     return await fetchNutrientGoals(session, dateStr);
   } catch {
     return null;
@@ -198,7 +199,11 @@ function mfpDailyNutritionPayload(athleteId: string, dateStr: string, result: Mf
   };
 }
 
-async function syncMfpDay(athleteId: string, session: MfpSession, dateStr: string): Promise<boolean> {
+async function syncMfpDay(
+  athleteId: string,
+  session: MfpSession,
+  dateStr: string,
+): Promise<boolean> {
   const result = await fetchDiaryDay(session, dateStr);
   const hasMeals = result.meals.some((m: MfpScrapedMeal) => m.entries.length > 0);
   if (!hasMeals && !result.goals) {
@@ -245,13 +250,24 @@ export async function syncMfpNutrition(
   lookbackDays = 7,
 ): Promise<MfpSyncResult> {
   const account = await getMfpAccount(athleteId);
+  // Already revoked / never connected: skip quietly so cron does not re-spam.
   if (!account || !isMfpAccountConnected(account)) {
-    throw new ProviderAuthError(
-      'Session MyFitnessPal expirée. Reconnecte MyFitnessPal dans les paramètres.',
-    );
+    return { synced: 0, errors: 0 };
   }
 
-  let session: MfpSession = { sessionToken: decryptSecret(account.sessionTokenEnc) };
+  let session: MfpSession;
+  try {
+    session = { sessionToken: decryptSecret(account.sessionTokenEnc) };
+  } catch (error) {
+    if (isCredentialFailure(error)) {
+      await revokeMfpCredentials(athleteId);
+      throw new ProviderAuthError(
+        'Session MyFitnessPal expirée. Reconnecte MyFitnessPal dans les paramètres.',
+        { cause: error },
+      );
+    }
+    throw error;
+  }
 
   try {
     session = await rollSessionForward(athleteId, session);

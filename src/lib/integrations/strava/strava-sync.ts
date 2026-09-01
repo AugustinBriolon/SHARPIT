@@ -4,8 +4,8 @@ import { findMatchingActivity, mergedSource } from '@/lib/activity/list/activity
 import { prisma } from '@/lib/prisma';
 import { syncSinceFromLastSync } from '@/lib/integrations/shared/sync-since';
 import {
+  isCredentialFailure,
   isOAuthAccountConnected,
-  isProviderAuthFailure,
   ProviderAuthError,
 } from '@/lib/integrations/shared/connection-status';
 import {
@@ -67,12 +67,12 @@ export async function getValidAccessToken(athleteId: string) {
     throw new ProviderAuthError('Session Strava expirée. Reconnecte Strava dans les paramètres.');
   }
 
-  const expiresSoon = account.expiresAt.getTime() - Date.now() < 60_000;
-  if (!expiresSoon) {
-    return decryptSecret(account.accessTokenEnc);
-  }
-
   try {
+    const expiresSoon = account.expiresAt.getTime() - Date.now() < 60_000;
+    if (!expiresSoon) {
+      return decryptSecret(account.accessTokenEnc);
+    }
+
     const refreshed = await refreshAccessToken(decryptSecret(account.refreshTokenEnc));
     await prisma.stravaAccount.update({
       where: { athleteId },
@@ -84,9 +84,14 @@ export async function getValidAccessToken(athleteId: string) {
     });
     return refreshed.access_token;
   } catch (error) {
-    if (isProviderAuthFailure(error)) {
+    if (isCredentialFailure(error)) {
       await revokeStravaCredentials(athleteId);
-      throw new ProviderAuthError('Session Strava expirée. Reconnecte Strava dans les paramètres.');
+      throw new ProviderAuthError(
+        'Session Strava expirée. Reconnecte Strava dans les paramètres.',
+        {
+          cause: error,
+        },
+      );
     }
     throw error;
   }
@@ -142,7 +147,10 @@ function attachStravaSwimMetrics(
 }
 
 const STRAVA_SPORT_METRIC_ATTACHERS: Partial<
-  Record<ActivityType, (base: Omit<Prisma.ActivityUncheckedCreateInput, 'athleteId'>, strava: StravaActivity) => void>
+  Record<
+    ActivityType,
+    (base: Omit<Prisma.ActivityUncheckedCreateInput, 'athleteId'>, strava: StravaActivity) => void
+  >
 > = {
   [ActivityType.RUN]: attachStravaRunMetrics,
   [ActivityType.BIKE]: attachStravaBikeMetrics,
@@ -240,9 +248,7 @@ function enrichStravaSwimMetrics(data: Prisma.ActivityUpdateInput, strava: Strav
       update: {
         distanceM: strava.distance || undefined,
         avgPaceSecPer100m:
-          strava.average_speed && strava.average_speed > 0
-            ? 100 / strava.average_speed
-            : undefined,
+          strava.average_speed && strava.average_speed > 0 ? 100 / strava.average_speed : undefined,
       },
     },
   };
@@ -408,10 +414,8 @@ async function processStravaActivityPage(
   const pending = candidates.filter((c) => !existingIds.has(c.stravaId));
   counters.skipped += candidates.length - pending.length;
 
-  const outcomes = await mapWithConcurrency(
-    pending,
-    STRAVA_ACTIVITY_CONCURRENCY,
-    (candidate) => processStravaCandidate(athleteId, candidate),
+  const outcomes = await mapWithConcurrency(pending, STRAVA_ACTIVITY_CONCURRENCY, (candidate) =>
+    processStravaCandidate(athleteId, candidate),
   );
 
   for (const outcome of outcomes) {

@@ -1,8 +1,8 @@
 import { BodyCompositionSource, Prisma } from '@prisma/client';
 import { isSet } from '@/lib/util/value';
 import {
+  isCredentialFailure,
   isOAuthAccountConnected,
-  isProviderAuthFailure,
   ProviderAuthError,
 } from '@/lib/integrations/shared/connection-status';
 import { format, startOfDay, subDays } from 'date-fns';
@@ -70,12 +70,12 @@ export async function getValidWithingsAccessToken(athleteId: string): Promise<st
     );
   }
 
-  const expiresSoon = account.expiresAt.getTime() - Date.now() < 60_000;
-  if (!expiresSoon) {
-    return decryptSecret(account.accessTokenEnc);
-  }
-
   try {
+    const expiresSoon = account.expiresAt.getTime() - Date.now() < 60_000;
+    if (!expiresSoon) {
+      return decryptSecret(account.accessTokenEnc);
+    }
+
     const refreshed = await refreshWithingsToken(decryptSecret(account.refreshTokenEnc));
     await prisma.withingsAccount.update({
       where: { athleteId },
@@ -88,10 +88,11 @@ export async function getValidWithingsAccessToken(athleteId: string): Promise<st
     });
     return refreshed.access_token;
   } catch (error) {
-    if (isProviderAuthFailure(error)) {
+    if (isCredentialFailure(error)) {
       await revokeWithingsCredentials(athleteId);
       throw new ProviderAuthError(
         'Session Withings expirée. Reconnecte Withings dans les paramètres.',
+        { cause: error },
       );
     }
     throw error;

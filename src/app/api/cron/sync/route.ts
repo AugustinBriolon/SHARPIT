@@ -14,6 +14,8 @@ import { getStravaAccount, syncStravaActivities } from '@/lib/integrations/strav
 import { generateAndStoreWeeklyReview, isSunday } from '@/lib/weekly-review';
 import { isCoachConfigured } from '@/lib/ai';
 import { verifyCronSecret } from '@/lib/cron/verify-cron-secret';
+import { shouldCronSyncProvider } from '@/lib/cron/provider-sync-gates';
+import { isProviderAuthFailure } from '@/lib/integrations/shared/connection-status';
 
 export const maxDuration = 300;
 
@@ -37,6 +39,7 @@ type AthleteSyncResult = {
   briefing: boolean;
   weeklyReview: boolean;
   errors: string[];
+  needsReconnect: string[];
 };
 
 function syncErrorMessage(error: unknown, fallback: string) {
@@ -55,6 +58,20 @@ function recordSyncError(input: {
   input.result.errors.push(`${input.provider}: ${msg}`);
 }
 
+function recordNeedsReconnect(input: {
+  result: AthleteSyncResult;
+  provider: string;
+  athleteId: string;
+  error: unknown;
+  fallback: string;
+}) {
+  const msg = syncErrorMessage(input.error, input.fallback);
+  console.warn(`[cron/sync] ${input.provider} needs reconnect:`, input.athleteId, msg);
+  if (!input.result.needsReconnect.includes(input.provider)) {
+    input.result.needsReconnect.push(input.provider);
+  }
+}
+
 async function runProviderSync<T>(input: {
   result: AthleteSyncResult;
   provider: string;
@@ -66,6 +83,10 @@ async function runProviderSync<T>(input: {
   try {
     input.assign(await input.task());
   } catch (error) {
+    if (isProviderAuthFailure(error)) {
+      recordNeedsReconnect({ ...input, error });
+      return;
+    }
     recordSyncError({ ...input, error });
   }
 }
@@ -92,7 +113,7 @@ function buildProviderSyncSpecs(
   result: AthleteSyncResult,
 ): ProviderSyncSpec[] {
   const specs: ProviderSyncSpec[] = [];
-  if (accounts.strava) {
+  if (shouldCronSyncProvider('strava', accounts.strava)) {
     specs.push({
       provider: 'Strava',
       fallback: 'Sync Strava échouée',
@@ -102,7 +123,7 @@ function buildProviderSyncSpecs(
       task: () => syncStravaActivities(athleteId),
     });
   }
-  if (accounts.garmin) {
+  if (shouldCronSyncProvider('garmin', accounts.garmin)) {
     specs.push({
       provider: 'Garmin',
       fallback: 'Sync Garmin échouée',
@@ -120,7 +141,17 @@ function buildProviderSyncSpecs(
       task: () => syncGarminActivities(athleteId),
     });
   }
-  if (accounts.withings) {
+  appendOptionalProviderSpecs(athleteId, accounts, result, specs);
+  return specs;
+}
+
+function appendOptionalProviderSpecs(
+  athleteId: string,
+  accounts: ProviderAccounts,
+  result: AthleteSyncResult,
+  specs: ProviderSyncSpec[],
+): void {
+  if (shouldCronSyncProvider('withings', accounts.withings)) {
     specs.push({
       provider: 'Withings',
       fallback: 'Sync Withings échouée',
@@ -130,7 +161,7 @@ function buildProviderSyncSpecs(
       task: () => syncWithingsHealth(athleteId),
     });
   }
-  if (accounts.renpho) {
+  if (shouldCronSyncProvider('renpho', accounts.renpho)) {
     specs.push({
       provider: 'Renpho',
       fallback: 'Sync Renpho échouée',
@@ -140,7 +171,7 @@ function buildProviderSyncSpecs(
       task: () => syncRenphoHealth(athleteId),
     });
   }
-  if (accounts.google?.targetCalendarId) {
+  if (shouldCronSyncProvider('google', accounts.google)) {
     specs.push({
       provider: 'Google',
       fallback: 'Sync Google échouée',
@@ -150,7 +181,7 @@ function buildProviderSyncSpecs(
       task: () => syncFromGoogle(athleteId),
     });
   }
-  if (accounts.mfp) {
+  if (shouldCronSyncProvider('myfitnesspal', accounts.mfp)) {
     specs.push({
       provider: 'MyFitnessPal',
       fallback: 'Sync MyFitnessPal échouée',
@@ -160,7 +191,6 @@ function buildProviderSyncSpecs(
       task: () => syncMfpNutrition(athleteId),
     });
   }
-  return specs;
 }
 
 async function syncConnectedProviders(
@@ -188,7 +218,10 @@ async function backfillStreamsIfNeeded(
   accounts: ProviderAccounts,
   result: AthleteSyncResult,
 ) {
-  if (!accounts.strava && !accounts.garmin) {
+  if (
+    !shouldCronSyncProvider('strava', accounts.strava) &&
+    !shouldCronSyncProvider('garmin', accounts.garmin)
+  ) {
     return;
   }
   try {
@@ -209,7 +242,10 @@ async function updateRecordsIfNeeded(
   accounts: ProviderAccounts,
   result: AthleteSyncResult,
 ) {
-  if (!accounts.strava && !accounts.garmin) {
+  if (
+    !shouldCronSyncProvider('strava', accounts.strava) &&
+    !shouldCronSyncProvider('garmin', accounts.garmin)
+  ) {
     return;
   }
   const importedTypes = [
@@ -269,6 +305,7 @@ async function syncOneAthlete(athleteId: string): Promise<AthleteSyncResult> {
     briefing: false,
     weeklyReview: false,
     errors: [],
+    needsReconnect: [],
   };
 
   const [strava, garmin, renpho, withings, google, mfp] = await Promise.all([
