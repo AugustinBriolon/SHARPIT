@@ -107,8 +107,11 @@ const authElements = {
    */
   formButtonPrimary:
     'rounded-lg bg-foreground! text-background! shadow-none hover:bg-foreground/90!',
+  /** Beat shadcn theme `input: dark:bg-input/30` so auth fill stays distinct */
+  input:
+    'bg-auth-input! border-auth-input! text-foreground! placeholder:text-auth-placeholder! dark:bg-[color:var(--auth-input-bg)]! dark:border-[color:var(--auth-input-border)]! dark:text-[color:var(--auth-foreground)]! dark:placeholder:text-[color:var(--auth-placeholder)]!',
   formFieldInput:
-    'rounded-lg border border-auth-input bg-auth-input text-foreground! placeholder:text-auth-placeholder! shadow-none focus:ring-2 focus:ring-ring/40',
+    'rounded-lg border border-auth-input bg-auth-input! text-foreground! placeholder:text-auth-placeholder! shadow-none focus:ring-2 focus:ring-ring/40 dark:bg-[color:var(--auth-input-bg)]! dark:border-[color:var(--auth-input-border)]! dark:text-[color:var(--auth-foreground)]! dark:placeholder:text-[color:var(--auth-placeholder)]!',
   formFieldLabel: 'font-medium text-foreground!',
   formFieldHintText: 'text-auth-muted',
   formFieldErrorText: 'text-destructive!',

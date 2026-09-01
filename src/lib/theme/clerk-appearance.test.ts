@@ -50,7 +50,9 @@ describe('authAppearance lecture-critique override', () => {
 
   it('uses auth-surface utilities for inputs, panels, and ink CTA', () => {
     expect(authAppearance.elements.cardBox).toContain('border-auth-panel');
-    expect(authAppearance.elements.formFieldInput).toContain('bg-auth-input');
+    expect(authAppearance.elements.input).toContain('bg-auth-input!');
+    expect(authAppearance.elements.input).toContain('dark:bg-[color:var(--auth-input-bg)]!');
+    expect(authAppearance.elements.formFieldInput).toContain('bg-auth-input!');
     expect(authAppearance.elements.formFieldInput).toContain('border-auth-input');
     expect(authAppearance.elements.formFieldInput).toContain('placeholder:text-auth-placeholder!');
     expect(authAppearance.elements.formFieldHintText).toBe('text-auth-muted');
