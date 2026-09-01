@@ -37,6 +37,8 @@
     "db:studio": "prisma studio",
     "db:up": "docker compose up -d",
     "db:migrate-neon": "bash scripts/migrate-to-neon.sh",
+    "garmin:login": "python3 scripts/garmin-login.py",
+    "garmin:import-tokens": "tsx scripts/import-garmin-tokens.ts",
     "test:e2e": "playwright test",
     "test:e2e:dev": "PLAYWRIGHT_BASE_URL=http://localhost:3000 playwright test activity-state navigation-shell"
   },

@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { garminConnectSchema, garminConnectErrorMessage } from './route';
+import {
+  garminConnectSchema,
+  garminConnectErrorMessage,
+  SSO_DISABLED_MESSAGE,
+} from './route';
 import { GarminLoginError } from '@/lib/integrations/garmin/garmin';
 
 describe('garminConnectSchema', () => {
@@ -28,16 +32,16 @@ describe('garminConnectSchema', () => {
 });
 
 describe('garminConnectErrorMessage', () => {
-  it('does not blame the password for server_sso_rejected', () => {
+  it('points at local python mint for server_sso_rejected / unknown', () => {
     const msg = garminConnectErrorMessage(
       new GarminLoginError('widget blocked', 'server_sso_rejected'),
     );
+    expect(msg).toBe(SSO_DISABLED_MESSAGE);
     expect(msg.toLowerCase()).not.toContain('identifiants');
-    expect(msg.toLowerCase()).toContain('serveur');
   });
 
-  it('does not blame the password for unknown failures', () => {
-    const msg = garminConnectErrorMessage(new GarminLoginError('boom', 'unknown'));
-    expect(msg.toLowerCase()).not.toContain('identifiants');
+  it('still allows explicit invalid_credentials wording', () => {
+    const msg = garminConnectErrorMessage(new GarminLoginError('bad', 'invalid_credentials'));
+    expect(msg.toLowerCase()).toContain('identifiants');
   });
 });

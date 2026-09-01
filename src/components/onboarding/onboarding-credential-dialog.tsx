@@ -24,8 +24,8 @@ const COPY: Record<CredentialProvider, { title: string; description: string; sub
   garmin: {
     title: 'Connecter Garmin',
     description:
-      'Email et mot de passe du compte Garmin Connect. Le mot de passe n’est pas stocké — jetons de session uniquement.',
-    submit: 'Connecter Garmin',
+      'Auth Garmin 2026 : mint les jetons en local (python-garminconnect), puis colle le JSON di_token / di_refresh_token. Sharpit ne stocke que les jetons DI.',
+    submit: 'Importer les jetons Garmin',
   },
   renpho: {
     title: 'Connecter Renpho',
@@ -74,12 +74,11 @@ export function OnboardingCredentialDialog({
     try {
       let response: Response;
       if (activeProvider === 'garmin') {
-        response = await fetch('/api/garmin/connect', {
+        response = await fetch('/api/garmin/import-tokens', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            username: form.get('username'),
-            password: form.get('password'),
+            tokenStore: form.get('tokenStore'),
             dataClass,
           }),
         });
@@ -131,28 +130,22 @@ export function OnboardingCredentialDialog({
         </DialogHeader>
         <form className="min-w-0 space-y-4" onSubmit={(e) => void handleSubmit(e)}>
           {provider === 'garmin' ? (
-            <>
-              <div className="space-y-2">
-                <Label htmlFor="onboarding-garmin-username">Email</Label>
-                <Input
-                  autoComplete="username"
-                  id="onboarding-garmin-username"
-                  name="username"
-                  type="email"
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="onboarding-garmin-password">Mot de passe</Label>
-                <Input
-                  autoComplete="current-password"
-                  id="onboarding-garmin-password"
-                  name="password"
-                  type="password"
-                  required
-                />
-              </div>
-            </>
+            <div className="min-w-0 space-y-2">
+              <Label htmlFor="onboarding-garmin-tokens">JSON garmin_tokens.json</Label>
+              <Textarea
+                autoComplete="off"
+                className="[field-sizing:fixed] max-h-32 min-h-20 w-full max-w-full resize-y overflow-auto break-all font-mono text-xs"
+                id="onboarding-garmin-tokens"
+                name="tokenStore"
+                placeholder='{"di_token":"…","di_refresh_token":"…","di_client_id":"…"}'
+                rows={5}
+                spellCheck={false}
+                required
+              />
+              <p className="text-muted-foreground text-xs leading-relaxed">
+                Local : <code>python3 scripts/garmin-login.py</code> puis colle le fichier ici.
+              </p>
+            </div>
           ) : null}
           {provider === 'renpho' ? (
             <>

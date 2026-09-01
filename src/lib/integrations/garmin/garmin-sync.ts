@@ -7,17 +7,18 @@ import {
   clientFromTokens,
   currentTokens,
   diGarminTokensExpiresAtMs,
+  diTokensToGarminTokens,
   garminAccessTokenExpiresAtMs,
   garminTokensFromStorage,
   fetchAthleteThresholds,
   fetchDailyHealth,
   fetchWeightRange,
   isDiGarminTokens,
-  loginWithCredentials,
   refreshDiGarminTokens,
   type GarminAthleteThresholds,
   type GarminDailyHealth,
 } from '@/lib/integrations/garmin/garmin';
+import { mapPythonGarminconnectTokenStore } from '@/lib/integrations/garmin/garmin-tokenstore';
 import { observationEngine } from '@/lib/engines/observation-engine';
 import { garminHealthToObservations } from '@/core/adapters/garmin-health-adapter';
 import {
@@ -186,27 +187,58 @@ export async function runGarminCall<T>(athleteId: string, fn: () => Promise<T>):
   }
 }
 
-export async function connectGarmin(athleteId: string, username: string, password: string) {
-  const { tokens, profile } = await loginWithCredentials(username, password);
+export async function connectGarmin(
+  athleteId: string,
+  _username: string,
+  _password: string,
+): Promise<never> {
+  throw new ProviderAuthError(
+    'La connexion Garmin email/mot de passe via le serveur Sharpit ne fonctionne plus (auth Garmin 2026). Mint les jetons en local avec python-garminconnect (≥0.3), puis importe-les.',
+  );
+}
+
+/**
+ * Persists DI tokens minted by python-garminconnect ≥ 0.3 (or a Sharpit DI export).
+ * Cron/API sync only refresh these tokens — they never re-run email/password SSO.
+ */
+export async function importGarminDiTokenStore(athleteId: string, rawStore: unknown) {
+  const di = mapPythonGarminconnectTokenStore(rawStore);
+  let tokens = diTokensToGarminTokens(di);
+
+  let displayName: string | null = null;
+  let fullName: string | null = null;
+  try {
+    const client = clientFromTokens(tokens);
+    const profile = (await client.getUserProfile()) as {
+      displayName?: string;
+      fullName?: string;
+      userName?: string;
+    };
+    displayName = profile.displayName ?? profile.userName ?? null;
+    fullName = profile.fullName ?? null;
+    tokens = currentTokens(client);
+  } catch {
+    // Profile is best-effort — tokens are still persisted for cron refresh.
+  }
 
   await prisma.garminAccount.upsert({
     where: { athleteId },
     create: {
       athleteId,
-      displayName: profile.displayName,
-      fullName: profile.fullName,
+      displayName,
+      fullName,
       oauth1TokenEnc: encryptGarminToken(tokens.oauth1),
       oauth2TokenEnc: encryptGarminToken(tokens.oauth2),
     },
     update: {
-      displayName: profile.displayName,
-      fullName: profile.fullName,
+      displayName,
+      fullName,
       oauth1TokenEnc: encryptGarminToken(tokens.oauth1),
       oauth2TokenEnc: encryptGarminToken(tokens.oauth2),
     },
   });
 
-  return profile;
+  return { displayName, fullName };
 }
 
 export interface GarminThresholdsImport extends GarminAthleteThresholds {

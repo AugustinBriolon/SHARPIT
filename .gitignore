@@ -65,6 +65,10 @@ next-env.d.ts
 /scripts/tmp-*.ts
 /scripts/tmp-*.mts
 
+# Local Garmin DI mint (python-garminconnect) — never commit
+/garmin_tokens.json
+**/garmin_tokens.json
+
 # Playwright
 /test-results
 /playwright-report
