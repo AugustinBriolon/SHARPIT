@@ -20,9 +20,14 @@ export type {
 } from './catalog';
 
 export {
+  coachActivityTypesForPracticed,
   enduranceActivityTypesForPracticed,
   equipmentSportsForPracticed,
+  formatPracticedSportsForCoach,
+  hasComplementaryCoachStrength,
+  isCoachActivityTypeAllowed,
   performanceSportsForPracticed,
   periodSportOptionsForPracticed,
+  travelDisciplinesForPracticed,
 } from './filter';
-export type { PeriodSportOption } from './filter';
+export type { CoachActivityType, PeriodSportOption } from './filter';

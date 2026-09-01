@@ -10,6 +10,7 @@ import {
 import { getGoogleAccount, getUpcomingBusy } from '@/lib/integrations/google/google-sync';
 import { loadDailyTrainingStressEntries } from '@/lib/training/pmc-server';
 import type { AthleteSnapshot } from '@/core/athlete-state/snapshot';
+import { normalizeAthletePracticedSports } from '@/lib/practiced-sports';
 import type { GateContext, GateProposal } from './types';
 
 const WINDOW_PADDING_DAYS = 7; // for recovery-spacing / duplicate checks near the proposal window edges
@@ -107,6 +108,7 @@ function buildGateContextPayload(input: {
       : [],
     busyBlocks,
     athleteProfile: { hasThresholds: hasThresholds(athleteProfile) },
+    practicedSports: normalizeAthletePracticedSports(athleteProfile?.practicedSports ?? null).sports,
     now,
   };
 }

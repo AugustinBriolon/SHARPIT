@@ -8,6 +8,7 @@ import { goalPhaseCoherenceRule } from './rules/goal-phase-coherence';
 import { dataSufficiencyRule } from './rules/data-sufficiency';
 import { calendarConflictRule } from './rules/calendar-conflict';
 import { strengthCompletenessRule } from './rules/strength-completeness';
+import { practicedSportsRule } from './rules/practiced-sports';
 import { weeklyLoadRule } from './rules/weekly-load';
 import { intensityDistributionRule } from './rules/intensity-distribution';
 import type {
@@ -26,6 +27,7 @@ import { GATE_STATUS_SEVERITY_ORDER } from './types';
 const RULES: readonly PlanGateRule[] = [
   malformedAndDuplicateRule,
   completedConflictRule,
+  practicedSportsRule,
   decisionCompatibilityRule,
   physicalHealthRule,
   recoverySpacingRule,

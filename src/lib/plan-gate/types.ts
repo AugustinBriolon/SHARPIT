@@ -14,6 +14,7 @@ import type { CoachEndurancePrescription } from '@/lib/planned-session/endurance
 import type { CoachStrengthPrescription } from '@/lib/planned-session/strength/strength-prescription';
 import type { SerializedDecisionState } from '@/core/decision/adapters';
 import type { PhysicalHealthData, TrainingCapacity } from '@/hooks/use-today';
+import type { PracticedSportId } from '@/lib/practiced-sports';
 
 /** Minimal, deterministic input the Gate needs — built once at the API boundary, never fetched by the Gate itself. */
 export type GateContext = {
@@ -38,6 +39,11 @@ export type GateContext = {
   /** null when no calendar is connected — calendar-conflict rule is skipped, not warned. */
   readonly busyBlocks: readonly { dayKey: string; start: string; end: string }[] | null;
   readonly athleteProfile: { hasThresholds: boolean } | null;
+  /**
+   * Normalized practiced sports (null → all core). Used to reject ADD of non-practiced types.
+   * Empty skips the rule (legacy fixtures).
+   */
+  readonly practicedSports: readonly PracticedSportId[];
   /** Reference "now" for past-date / spacing checks — injected, not read from Date.now() inside rules. */
   readonly now: Date;
 };

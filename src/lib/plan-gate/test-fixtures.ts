@@ -14,6 +14,7 @@ export function baseContext(overrides: Partial<GateContext> = {}): GateContext {
     planWeeks: [],
     busyBlocks: null,
     athleteProfile: { hasThresholds: true },
+    practicedSports: ['run', 'bike', 'swim', 'triathlon'],
     now: NOW,
     ...overrides,
   };
