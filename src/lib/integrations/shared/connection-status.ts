@@ -2,10 +2,12 @@
  * Provider connection checks and auth-failure utilities.
  *
  * Each `is*Connected` guard checks that required credential fields are present
- * and look like real AES-GCM ciphertext on a provider account row.
+ * and decrypt to live secrets (Garmin: oauth1/oauth2 token JSON). Same meaning
+ * for the Settings integrations hub and `/api/cron/sync`.
  */
 
 import {
+  decryptSecret,
   isEncryptedSecret,
   isSecretAuthenticityFailure,
   isSecretDecryptFailure,
@@ -72,32 +74,88 @@ export const GARMIN_CONNECTION_SELECT = { oauth1TokenEnc: true, oauth2TokenEnc: 
 export const RENPHO_CONNECTION_SELECT = { email: true, passwordEnc: true } as const;
 export const MFP_CONNECTION_SELECT = { sessionTokenEnc: true } as const;
 
+/**
+ * Live credentials for hub + cron: framed AES-GCM that decrypts to a non-empty
+ * secret. Authenticity failures (wrong fleet key) still count as connected so
+ * cron can hit the decrypt circuit breaker instead of silently skipping.
+ */
+function isLiveEncryptedSecret(encoded: unknown): boolean {
+  if (!isEncryptedSecret(encoded)) {
+    return false;
+  }
+  try {
+    return decryptSecret(encoded).length > 0;
+  } catch (error) {
+    return isSecretAuthenticityFailure(error);
+  }
+}
+
+function looksLikeGarminOauth1(value: unknown): value is { oauth_token: string } {
+  return (
+    !!value &&
+    typeof value === 'object' &&
+    typeof (value as { oauth_token?: unknown }).oauth_token === 'string' &&
+    (value as { oauth_token: string }).oauth_token.length > 0
+  );
+}
+
+function looksLikeGarminOauth2(value: unknown): value is { access_token: string } {
+  return (
+    !!value &&
+    typeof value === 'object' &&
+    typeof (value as { access_token?: unknown }).access_token === 'string' &&
+    (value as { access_token: string }).access_token.length > 0
+  );
+}
+
+function isGarminTokenPairConnected(oauth1Enc: unknown, oauth2Enc: unknown): boolean {
+  if (!isEncryptedSecret(oauth1Enc) || !isEncryptedSecret(oauth2Enc)) {
+    return false;
+  }
+  try {
+    const oauth1: unknown = JSON.parse(decryptSecret(oauth1Enc));
+    const oauth2: unknown = JSON.parse(decryptSecret(oauth2Enc));
+    return looksLikeGarminOauth1(oauth1) && looksLikeGarminOauth2(oauth2);
+  } catch (error) {
+    // Wrong-key / GCM auth: preserve "connected" so cron still attempts decrypt
+    // and the fleet circuit breaker can trip. Malformed JSON / empty leftovers → disconnected.
+    return isSecretAuthenticityFailure(error);
+  }
+}
+
 export function isOAuthAccountConnected(account: MaybeAccount): boolean {
   if (!account) {
     return false;
   }
-  return isEncryptedSecret(account.accessTokenEnc) && isEncryptedSecret(account.refreshTokenEnc);
+  return (
+    isLiveEncryptedSecret(account.accessTokenEnc) && isLiveEncryptedSecret(account.refreshTokenEnc)
+  );
 }
 
+/**
+ * Garmin DI (#54) and legacy Garth tokens share `oauth1TokenEnc` / `oauth2TokenEnc`.
+ * Connected = both columns hold decryptable token JSON the Settings hub would treat
+ * as live — not revoked empties, demo placeholders, or ciphertext junk.
+ */
 export function isGarminAccountConnected(account: MaybeAccount): boolean {
   if (!account) {
     return false;
   }
-  return isEncryptedSecret(account.oauth1TokenEnc) && isEncryptedSecret(account.oauth2TokenEnc);
+  return isGarminTokenPairConnected(account.oauth1TokenEnc, account.oauth2TokenEnc);
 }
 
 export function isRenphoAccountConnected(account: MaybeAccount): boolean {
   if (!account) {
     return false;
   }
-  return isSet(account.email) && isEncryptedSecret(account.passwordEnc);
+  return isSet(account.email) && isLiveEncryptedSecret(account.passwordEnc);
 }
 
 export function isMfpAccountConnected(account: MaybeAccount): boolean {
   if (!account) {
     return false;
   }
-  return isEncryptedSecret(account.sessionTokenEnc);
+  return isLiveEncryptedSecret(account.sessionTokenEnc);
 }
 
 // ---------------------------------------------------------------------------

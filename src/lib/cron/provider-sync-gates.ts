@@ -24,13 +24,14 @@ const CRON_CONNECTION_CHECKS: Record<CronSyncProvider, (account: MaybeAccount) =
 };
 
 /**
- * Cron must gate on credential validity, not mere account-row presence.
+ * Cron must gate on the same "connected" meaning as the Settings integrations
+ * hub — live credentials, not mere account-row presence.
  *
  * Revoked integrations keep the row (empty `*Enc` columns) so the hub can
- * prompt reconnect. Malformed placeholders (e.g. demo `"demo"`) also keep a
- * row. Syncing either path throws every run — empty tokens as
- * `ProviderAuthError`, short blobs as Node's `Invalid authentication tag
- * length: 0`. Skip both here.
+ * prompt reconnect. Malformed placeholders (e.g. demo `"demo"`) and
+ * ciphertext-looking junk that is not real provider token JSON also keep a
+ * row. Syncing either path throws every run. Skip both here — no decrypt, no
+ * provider API call, no `[cron/sync]` warn/error.
  */
 export function shouldCronSyncProvider(provider: CronSyncProvider, account: MaybeAccount): boolean {
   return CRON_CONNECTION_CHECKS[provider](account);

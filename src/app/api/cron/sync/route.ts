@@ -14,7 +14,7 @@ import { getStravaAccount, syncStravaActivities } from '@/lib/integrations/strav
 import { generateAndStoreWeeklyReview, isSunday } from '@/lib/weekly-review';
 import { isCoachConfigured } from '@/lib/ai';
 import { verifyCronSecret } from '@/lib/cron/verify-cron-secret';
-import { shouldCronSyncProvider } from '@/lib/cron/provider-sync-gates';
+import { listConnectedCronProviders } from '@/lib/cron/list-connected-cron-providers';
 import { DecryptCircuitBreaker } from '@/lib/cron/decrypt-circuit-breaker';
 import { summarizeCronSyncResults, type CronAthleteSyncResult } from '@/lib/cron/sync-summary';
 import {
@@ -116,13 +116,27 @@ type ProviderAccounts = {
   mfp: Awaited<ReturnType<typeof getMfpAccount>>;
 };
 
+function connectedProviderSet(accounts: ProviderAccounts): Set<string> {
+  return new Set(
+    listConnectedCronProviders({
+      strava: accounts.strava,
+      garmin: accounts.garmin,
+      withings: accounts.withings,
+      renpho: accounts.renpho,
+      google: accounts.google,
+      myfitnesspal: accounts.mfp,
+    }),
+  );
+}
+
 function buildProviderSyncSpecs(
   athleteId: string,
   accounts: ProviderAccounts,
   result: AthleteSyncResult,
 ): ProviderSyncSpec[] {
+  const connected = connectedProviderSet(accounts);
   const specs: ProviderSyncSpec[] = [];
-  if (shouldCronSyncProvider('strava', accounts.strava)) {
+  if (connected.has('strava')) {
     specs.push({
       provider: 'Strava',
       fallback: 'Sync Strava échouée',
@@ -132,7 +146,7 @@ function buildProviderSyncSpecs(
       },
     });
   }
-  if (shouldCronSyncProvider('garmin', accounts.garmin)) {
+  if (connected.has('garmin')) {
     specs.push({
       provider: 'Garmin',
       fallback: 'Sync Garmin échouée',
@@ -147,37 +161,37 @@ function buildProviderSyncSpecs(
       },
     });
   }
-  appendOptionalProviderSpecs(athleteId, accounts, specs);
+  appendOptionalProviderSpecs(athleteId, connected, specs);
   return specs;
 }
 
 function appendOptionalProviderSpecs(
   athleteId: string,
-  accounts: ProviderAccounts,
+  connected: Set<string>,
   specs: ProviderSyncSpec[],
 ): void {
-  if (shouldCronSyncProvider('withings', accounts.withings)) {
+  if (connected.has('withings')) {
     specs.push({
       provider: 'Withings',
       fallback: 'Sync Withings échouée',
       task: () => syncWithingsHealth(athleteId),
     });
   }
-  if (shouldCronSyncProvider('renpho', accounts.renpho)) {
+  if (connected.has('renpho')) {
     specs.push({
       provider: 'Renpho',
       fallback: 'Sync Renpho échouée',
       task: () => syncRenphoHealth(athleteId),
     });
   }
-  if (shouldCronSyncProvider('google', accounts.google)) {
+  if (connected.has('google')) {
     specs.push({
       provider: 'Google',
       fallback: 'Sync Google échouée',
       task: () => syncFromGoogle(athleteId),
     });
   }
-  if (shouldCronSyncProvider('myfitnesspal', accounts.mfp)) {
+  if (connected.has('myfitnesspal')) {
     specs.push({
       provider: 'MyFitnessPal',
       fallback: 'Sync MyFitnessPal échouée',
@@ -210,10 +224,8 @@ async function backfillStreamsIfNeeded(
   accounts: ProviderAccounts,
   result: AthleteSyncResult,
 ) {
-  if (
-    !shouldCronSyncProvider('strava', accounts.strava) &&
-    !shouldCronSyncProvider('garmin', accounts.garmin)
-  ) {
+  const connected = connectedProviderSet(accounts);
+  if (!connected.has('strava') && !connected.has('garmin')) {
     return;
   }
   try {
