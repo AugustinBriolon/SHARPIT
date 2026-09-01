@@ -24,8 +24,8 @@ const COPY: Record<CredentialProvider, { title: string; description: string; sub
   garmin: {
     title: 'Connecter Garmin',
     description:
-      'Tu te connectes sur le site Garmin dans ton navigateur. Le mot de passe reste chez Garmin — Sharpit reçoit ensuite des jetons DI.',
-    submit: 'Continuer vers Garmin',
+      'Tu t’identifies sur Garmin dans Sharpit, sans quitter l’app. Le mot de passe reste chez Garmin.',
+    submit: 'Continuer',
   },
   renpho: {
     title: 'Connecter Renpho',
@@ -129,8 +129,8 @@ export function OnboardingCredentialDialog({
         <form className="min-w-0 space-y-4" onSubmit={(e) => void handleSubmit(e)}>
           {provider === 'garmin' ? (
             <p className="text-muted-foreground text-sm leading-relaxed">
-              Tu vas être redirigé vers Garmin Connect pour te connecter, puis ramené ici
-              automatiquement.
+              L’écran suivant affiche le formulaire Garmin dans Sharpit. Après connexion, tu
+              reviens ici automatiquement.
             </p>
           ) : null}
           {provider === 'renpho' ? (

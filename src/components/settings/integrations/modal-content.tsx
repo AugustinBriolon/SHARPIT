@@ -365,13 +365,10 @@ function GarminContent({
     return (
       <div className="space-y-4">
         <IntegrationNotConnectedView
-          body="Tu te connectes sur le site Garmin dans ton navigateur (téléphone OK). Sharpit reçoit un ticket via le SSO embarqué, l’échange contre des jetons DI, puis rafraîchit en arrière-plan."
+          body="Tu t’identifies sur Garmin dans Sharpit (téléphone OK). Le mot de passe reste chez Garmin — Sharpit reçoit uniquement un ticket de session."
           connectHref="/api/garmin/connect?returnTo=/settings/integrations"
           integration={integration}
         />
-        <p className="text-muted-foreground text-xs leading-relaxed">
-          Le mot de passe reste sur Garmin — jamais envoyé à Sharpit.
-        </p>
         <button
           className="text-muted-foreground text-xs underline-offset-2 hover:underline"
           type="button"

@@ -14,6 +14,7 @@ import {
 import {
   publicOriginFromRequest,
   redirectIfBindHost,
+  sanitizeIntegrationReturnTo,
   setIntegrationReturnTo,
 } from '@/lib/integrations/oauth-return';
 
@@ -54,6 +55,7 @@ export async function GET(request: NextRequest) {
     cookieStore.set(GARMIN_SSO_STATE_COOKIE, state, OAUTH_COOKIE_OPTS);
 
     const target = new URL(GARMIN_SSO_PAGE_PATH, publicOriginFromRequest(request));
+    target.searchParams.set('returnTo', sanitizeIntegrationReturnTo(returnTo));
     return NextResponse.redirect(target);
   } catch (error) {
     console.error('[api/garmin/connect] start SSO failed', {
