@@ -19,6 +19,7 @@ import {
   IntegrationStatusMessage,
   IntegrationSyncActions,
 } from '@/components/settings/integrations/modal-parts';
+import { notifyIntegrationSyncStarted } from '@/components/settings/integrations/modal-sync-start';
 import { IntegrationLogo } from '@/components/settings/integrations/logos';
 import {
   integrationConnectBody,
@@ -109,23 +110,42 @@ function EnvSetupBlock({ children }: { children: React.ReactNode }) {
 export function IntegrationModalContent({
   integration,
   onUpdated,
+  onSyncStart,
 }: {
   integration: IntegrationDefinition;
   onUpdated?: () => void;
+  /** Dismiss the modal as soon as a sync / full import is launched. */
+  onSyncStart?: () => void;
 }) {
   switch (integration.id) {
     case 'strava':
-      return <StravaContent integration={integration} onUpdated={onUpdated} />;
+      return (
+        <StravaContent integration={integration} onSyncStart={onSyncStart} onUpdated={onUpdated} />
+      );
     case 'garmin':
-      return <GarminContent integration={integration} onUpdated={onUpdated} />;
+      return (
+        <GarminContent integration={integration} onSyncStart={onSyncStart} onUpdated={onUpdated} />
+      );
     case 'withings':
-      return <WithingsContent integration={integration} onUpdated={onUpdated} />;
+      return (
+        <WithingsContent
+          integration={integration}
+          onSyncStart={onSyncStart}
+          onUpdated={onUpdated}
+        />
+      );
     case 'renpho':
-      return <RenphoContent integration={integration} onUpdated={onUpdated} />;
+      return (
+        <RenphoContent integration={integration} onSyncStart={onSyncStart} onUpdated={onUpdated} />
+      );
     case 'google':
-      return <GoogleContent integration={integration} onUpdated={onUpdated} />;
+      return (
+        <GoogleContent integration={integration} onSyncStart={onSyncStart} onUpdated={onUpdated} />
+      );
     case 'myfitnesspal':
-      return <MfpContent integration={integration} onUpdated={onUpdated} />;
+      return (
+        <MfpContent integration={integration} onSyncStart={onSyncStart} onUpdated={onUpdated} />
+      );
     default:
       return null;
   }
@@ -152,9 +172,11 @@ function IntegrationModalHeader({ integration }: { integration: IntegrationDefin
 function StravaContent({
   integration,
   onUpdated,
+  onSyncStart,
 }: {
   integration: IntegrationDefinition;
   onUpdated?: () => void;
+  onSyncStart?: () => void;
 }) {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -166,6 +188,7 @@ function StravaContent({
   const avatarUrl = integration.account?.extra?.avatarUrl as string | undefined;
 
   async function handleSync() {
+    notifyIntegrationSyncStarted({ onSyncStart });
     setSyncing(true);
     setSyncRecordChanges([]);
     try {
@@ -190,6 +213,7 @@ function StravaContent({
   }
 
   async function handleBackfill() {
+    notifyIntegrationSyncStarted({ onSyncStart });
     setBackfilling(true);
     try {
       await toast.promise(runStravaBackfill(), {
@@ -284,9 +308,11 @@ function StravaContent({
 function GarminContent({
   integration,
   onUpdated,
+  onSyncStart,
 }: {
   integration: IntegrationDefinition;
   onUpdated?: () => void;
+  onSyncStart?: () => void;
 }) {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -321,6 +347,7 @@ function GarminContent({
   }
 
   async function handleSync(full = false) {
+    notifyIntegrationSyncStarted({ onSyncStart });
     if (full) {
       setImportingAll(true);
     } else {
@@ -438,9 +465,11 @@ function GarminContent({
 function WithingsContent({
   integration,
   onUpdated,
+  onSyncStart,
 }: {
   integration: IntegrationDefinition;
   onUpdated?: () => void;
+  onSyncStart?: () => void;
 }) {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -450,6 +479,7 @@ function WithingsContent({
   const [disconnecting, setDisconnecting] = useState(false);
 
   async function handleSync(full = false) {
+    notifyIntegrationSyncStarted({ onSyncStart });
     if (full) {
       setImportingAll(true);
     } else {
@@ -574,9 +604,11 @@ function WithingsContent({
 function RenphoContent({
   integration,
   onUpdated,
+  onSyncStart,
 }: {
   integration: IntegrationDefinition;
   onUpdated?: () => void;
+  onSyncStart?: () => void;
 }) {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -613,6 +645,7 @@ function RenphoContent({
   }
 
   async function handleSync(full = false) {
+    notifyIntegrationSyncStarted({ onSyncStart });
     if (full) {
       setImportingAll(true);
     } else {
@@ -824,11 +857,13 @@ function GoogleConnectedManage({
 function GoogleContent({
   integration,
   onUpdated,
+  onSyncStart,
 }: {
   integration: IntegrationDefinition;
   onUpdated?: () => void;
+  onSyncStart?: () => void;
 }) {
-  const state = useGoogleContentState(integration, onUpdated);
+  const state = useGoogleContentState(integration, onUpdated, onSyncStart);
 
   if (!integration.configured) {
     return (
@@ -882,9 +917,11 @@ function GoogleContent({
 function MfpContent({
   integration,
   onUpdated,
+  onSyncStart,
 }: {
   integration: IntegrationDefinition;
   onUpdated?: () => void;
+  onSyncStart?: () => void;
 }) {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -893,6 +930,7 @@ function MfpContent({
   const [stage, setStage] = useState<'manage' | 'confirm'>('manage');
 
   async function handleSync() {
+    notifyIntegrationSyncStarted({ onSyncStart });
     setSyncing(true);
     try {
       await fetch('/api/myfitnesspal/sync', { method: 'POST' });

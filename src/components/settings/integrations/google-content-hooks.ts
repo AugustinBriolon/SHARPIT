@@ -8,10 +8,15 @@ import {
   selectGoogleCalendarTarget,
   syncGoogleCalendar,
 } from '@/components/settings/integrations/google-content-actions';
+import { notifyIntegrationSyncStarted } from '@/components/settings/integrations/modal-sync-start';
 import { useGoogleCalendars } from '@/hooks/use-data';
 import type { IntegrationDefinition } from '@/components/settings/integrations/types';
 
-export function useGoogleContentState(integration: IntegrationDefinition, onUpdated?: () => void) {
+export function useGoogleContentState(
+  integration: IntegrationDefinition,
+  onUpdated?: () => void,
+  onSyncStart?: () => void,
+) {
   const router = useRouter();
   const queryClient = useQueryClient();
   const calendarsQuery = useGoogleCalendars(integration.connected);
@@ -44,6 +49,7 @@ export function useGoogleContentState(integration: IntegrationDefinition, onUpda
   }
 
   async function handleSync() {
+    notifyIntegrationSyncStarted({ onSyncStart });
     setSyncing(true);
     try {
       await syncGoogleCalendar({ queryClient, router, onUpdated });
