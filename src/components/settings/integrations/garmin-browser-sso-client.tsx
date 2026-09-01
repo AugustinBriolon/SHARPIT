@@ -8,6 +8,7 @@ import { MobileBackLink } from '@/components/layout/mobile-back-link';
 import { StickyHeader } from '@/components/layout/sticky-header';
 import { IntegrationLogo } from '@/components/settings/integrations/logos';
 import { buttonVariants } from '@/components/ui/button';
+import { useIosIframeFocusZoomGuard } from '@/hooks/use-ios-iframe-focus-zoom-guard';
 import {
   buildGarminBrowserSsoUrl,
   GARMIN_SSO_MESSAGE_ORIGIN,
@@ -38,7 +39,8 @@ function errorCopy(status: string | undefined): { title: string; description: st
   if (status === 'denied') {
     return {
       title: 'Connexion refusée',
-      description: 'Garmin n’a pas renvoyé de ticket valide. Réessaie, ou utilise Chrome si Safari bloque l’iframe.',
+      description:
+        'Garmin n’a pas renvoyé de ticket valide. Réessaie, ou utilise Chrome si Safari bloque l’iframe.',
     };
   }
   return {
@@ -48,27 +50,13 @@ function errorCopy(status: string | undefined): { title: string; description: st
   };
 }
 
-export function GarminBrowserSsoClient({
-  returnTo = DEFAULT_BACK,
-}: {
-  returnTo?: string;
-}) {
+function useGarminSsoTicketExchange(
+  setPhase: (phase: Phase) => void,
+  setErrorStatus: (status: string | undefined) => void,
+) {
   const router = useRouter();
-  const [phase, setPhase] = useState<Phase>('form');
-  const [errorStatus, setErrorStatus] = useState<string | undefined>();
-  const [iframeReady, setIframeReady] = useState(false);
   const exchanging = useRef(false);
   const successTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const iframeSrc = useMemo(() => {
-    if (typeof window === 'undefined') {
-      return '';
-    }
-    return buildGarminBrowserSsoUrl(window.location.origin);
-  }, []);
-
-  const retryHref = `/api/garmin/connect?returnTo=${encodeURIComponent(returnTo)}`;
-  const backHref = returnTo;
 
   useEffect(() => {
     return () => {
@@ -122,9 +110,165 @@ export function GarminBrowserSsoClient({
 
     window.addEventListener('message', onMessage);
     return () => window.removeEventListener('message', onMessage);
-  }, [router]);
+  }, [router, setErrorStatus, setPhase]);
+}
 
-  const err = errorCopy(errorStatus);
+function GarminSsoForm({
+  iframeSrc,
+  iframeReady,
+  iframeRef,
+  onIframeLoad,
+}: {
+  iframeSrc: string;
+  iframeReady: boolean;
+  iframeRef: React.RefObject<HTMLIFrameElement | null>;
+  onIframeLoad: () => void;
+}) {
+  return (
+    <>
+      <div className="analysis-panel-alt rounded-analysis-lg overflow-hidden">
+        <p className="text-label text-muted-foreground border-analysis-border/60 border-b px-4 py-2.5">
+          Connexion sécurisée Garmin
+        </p>
+        <div className="bg-analysis-surface relative h-[min(22.5rem,58dvh)] overflow-hidden">
+          {!iframeReady ? (
+            <div
+              className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 px-4"
+              role="status"
+              aria-busy
+            >
+              <Loader2
+                className="text-muted-foreground size-5 animate-spin"
+                strokeWidth={1.75}
+                aria-hidden
+              />
+              <p className="text-muted-foreground text-sm">Chargement de Garmin…</p>
+            </div>
+          ) : null}
+          <iframe
+            ref={iframeRef}
+            src={iframeSrc}
+            title="Formulaire de connexion Garmin"
+            className={cn(
+              'bg-analysis-surface h-[28rem] w-full border-0 transition-opacity duration-200',
+              iframeReady ? 'opacity-100' : 'opacity-0',
+            )}
+            onLoad={onIframeLoad}
+          />
+        </div>
+      </div>
+      <p className="text-muted-foreground text-center text-xs leading-relaxed">
+        Sur Safari, les cookies tiers peuvent bloquer l’iframe. Préfère Chrome sur téléphone.
+      </p>
+    </>
+  );
+}
+
+function GarminSsoPhaseBody({
+  phase,
+  err,
+  retryHref,
+  backHref,
+  iframeSrc,
+  iframeReady,
+  iframeRef,
+  onIframeLoad,
+}: {
+  phase: Phase;
+  err: { title: string; description: string };
+  retryHref: string;
+  backHref: string;
+  iframeSrc: string;
+  iframeReady: boolean;
+  iframeRef: React.RefObject<HTMLIFrameElement | null>;
+  onIframeLoad: () => void;
+}) {
+  if (phase === 'connecting') {
+    return (
+      <StatusPlate
+        description="Échange du ticket de session — ne ferme pas cette page."
+        title="Connexion Garmin…"
+        icon={
+          <Loader2 className="text-primary size-5 animate-spin" strokeWidth={1.75} aria-hidden />
+        }
+      />
+    );
+  }
+  if (phase === 'success') {
+    return (
+      <StatusPlate
+        className={STATUS_SURFACE.doneSoft}
+        description="Redirection vers tes applications…"
+        title="Garmin connecté"
+        icon={
+          <span
+            className={cn(
+              'inline-flex size-8 items-center justify-center rounded-full border',
+              STATUS_SURFACE.doneBadge,
+            )}
+          >
+            <Check className="size-4" strokeWidth={2} aria-hidden />
+          </span>
+        }
+      />
+    );
+  }
+  if (phase === 'error') {
+    return (
+      <div
+        className={cn('analysis-panel rounded-analysis-lg space-y-4 px-5 py-5', RISK_TONE.bgClass)}
+      >
+        <div className="space-y-1">
+          <p className={cn('text-sm font-medium', RISK_TONE.colorClass)}>{err.title}</p>
+          <p className="text-muted-foreground text-xs leading-relaxed sm:text-[13px]">
+            {err.description}
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <a className={cn(buttonVariants(), 'w-full sm:w-auto')} href={retryHref}>
+            Réessayer
+          </a>
+          <Link
+            className={cn(buttonVariants({ variant: 'outline' }), 'w-full sm:w-auto')}
+            href={backHref}
+          >
+            Retour
+          </Link>
+        </div>
+      </div>
+    );
+  }
+  if (!iframeSrc) {
+    return null;
+  }
+  return (
+    <GarminSsoForm
+      iframeReady={iframeReady}
+      iframeRef={iframeRef}
+      iframeSrc={iframeSrc}
+      onIframeLoad={onIframeLoad}
+    />
+  );
+}
+
+export function GarminBrowserSsoClient({ returnTo = DEFAULT_BACK }: { returnTo?: string }) {
+  const [phase, setPhase] = useState<Phase>('form');
+  const [errorStatus, setErrorStatus] = useState<string | undefined>();
+  const [iframeReady, setIframeReady] = useState(false);
+  const iframeRef = useRef<HTMLIFrameElement | null>(null);
+
+  const iframeSrc = useMemo(() => {
+    if (typeof window === 'undefined') {
+      return '';
+    }
+    return buildGarminBrowserSsoUrl(window.location.origin);
+  }, []);
+
+  const retryHref = `/api/garmin/connect?returnTo=${encodeURIComponent(returnTo)}`;
+  const backHref = returnTo;
+
+  useIosIframeFocusZoomGuard(iframeRef, phase === 'form' && Boolean(iframeSrc));
+  useGarminSsoTicketExchange(setPhase, setErrorStatus);
 
   return (
     <div className="mx-auto w-full max-w-lg space-y-4">
@@ -144,98 +288,16 @@ export function GarminBrowserSsoClient({
         </div>
       </StickyHeader>
 
-      {phase === 'connecting' ? (
-        <StatusPlate
-          description="Échange du ticket de session — ne ferme pas cette page."
-          icon={<Loader2 aria-hidden className="text-primary size-5 animate-spin" strokeWidth={1.75} />}
-          title="Connexion Garmin…"
-        />
-      ) : null}
-
-      {phase === 'success' ? (
-        <StatusPlate
-          className={STATUS_SURFACE.doneSoft}
-          description="Redirection vers tes applications…"
-          icon={
-            <span
-              className={cn(
-                'inline-flex size-8 items-center justify-center rounded-full border',
-                STATUS_SURFACE.doneBadge,
-              )}
-            >
-              <Check aria-hidden className="size-4" strokeWidth={2} />
-            </span>
-          }
-          title="Garmin connecté"
-        />
-      ) : null}
-
-      {phase === 'error' ? (
-        <div
-          className={cn(
-            'analysis-panel rounded-analysis-lg space-y-4 px-5 py-5',
-            RISK_TONE.bgClass,
-          )}
-        >
-          <div className="space-y-1">
-            <p className={cn('text-sm font-medium', RISK_TONE.colorClass)}>{err.title}</p>
-            <p className="text-muted-foreground text-xs leading-relaxed sm:text-[13px]">
-              {err.description}
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <a className={cn(buttonVariants(), 'w-full sm:w-auto')} href={retryHref}>
-              Réessayer
-            </a>
-            <Link
-              className={cn(buttonVariants({ variant: 'outline' }), 'w-full sm:w-auto')}
-              href={backHref}
-            >
-              Retour
-            </Link>
-          </div>
-        </div>
-      ) : null}
-
-      {phase === 'form' ? (
-        <>
-          <div className="analysis-panel-alt rounded-analysis-lg overflow-hidden">
-            <p className="text-label text-muted-foreground border-analysis-border/60 border-b px-4 py-2.5">
-              Connexion sécurisée Garmin
-            </p>
-            <div className="bg-analysis-surface relative h-[min(22.5rem,58dvh)] overflow-hidden">
-              {!iframeReady ? (
-                <div
-                  aria-busy
-                  className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 px-4"
-                  role="status"
-                >
-                  <Loader2
-                    aria-hidden
-                    className="text-muted-foreground size-5 animate-spin"
-                    strokeWidth={1.75}
-                  />
-                  <p className="text-muted-foreground text-sm">Chargement de Garmin…</p>
-                </div>
-              ) : null}
-              {iframeSrc ? (
-                <iframe
-                  className={cn(
-                    'bg-analysis-surface h-[28rem] w-full border-0 transition-opacity duration-200',
-                    iframeReady ? 'opacity-100' : 'opacity-0',
-                  )}
-                  src={iframeSrc}
-                  title="Formulaire de connexion Garmin"
-                  onLoad={() => setIframeReady(true)}
-                />
-              ) : null}
-            </div>
-          </div>
-          <p className="text-muted-foreground text-center text-xs leading-relaxed">
-            Sur Safari, les cookies tiers peuvent bloquer l’iframe. Préfère Chrome sur téléphone.
-          </p>
-        </>
-      ) : null}
+      <GarminSsoPhaseBody
+        backHref={backHref}
+        err={errorCopy(errorStatus)}
+        iframeReady={iframeReady}
+        iframeRef={iframeRef}
+        iframeSrc={iframeSrc}
+        phase={phase}
+        retryHref={retryHref}
+        onIframeLoad={() => setIframeReady(true)}
+      />
     </div>
   );
 }
@@ -254,11 +316,11 @@ function StatusPlate({
   return (
     <div
       aria-live="polite"
+      role="status"
       className={cn(
         'analysis-panel rounded-analysis-lg flex flex-col items-center gap-3 px-5 py-10 text-center',
         className,
       )}
-      role="status"
     >
       {icon}
       <div className="space-y-1">
