@@ -87,11 +87,17 @@ function garminConnectErrorMessage(error: unknown): string {
         return 'Garmin te demande de mettre à jour ton numéro de téléphone. Connecte-toi sur connect.garmin.com pour compléter cette étape, puis réessaie ici.';
       case 'blocked_or_mfa':
         return 'Connexion Garmin refusée (MFA ou challenge). Si le MFA est activé, désactive-le temporairement pour connecter, puis réactive-le — la sync utilisera ensuite le refresh token. Si ça persiste, réessaie plus tard.';
+      case 'server_sso_rejected':
+        return "Garmin a refusé la connexion depuis le serveur SHARPIT (protection anti-bot), pas forcément un mauvais mot de passe. Connecte-toi sur connect.garmin.com pour confirmer ton compte, puis réessaie ici plus tard — ou contacte le support si ça continue.";
       case 'invalid_credentials':
+        return 'Connexion Garmin échouée. Vérifie tes identifiants.';
       case 'unknown':
       default:
-        return 'Connexion Garmin échouée. Vérifie tes identifiants.';
+        return 'Connexion Garmin échouée côté serveur. Ce n’est pas un diagnostic « mauvais mot de passe » — réessaie plus tard.';
     }
   }
   return 'Connexion Garmin échouée.';
 }
+
+/** Exported for unit tests — keep messages honest about serverless SSO limits. */
+export { garminConnectErrorMessage };

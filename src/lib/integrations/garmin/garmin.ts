@@ -64,6 +64,8 @@ export type GarminLoginFailureReason =
   | 'update_phone'
   | 'blocked_or_mfa'
   | 'rate_limited'
+  /** Server-side widget SSO rejected by Garmin (WAF/TLS) — password may still be valid. */
+  | 'server_sso_rejected'
   | 'unknown';
 
 export class GarminLoginError extends Error {
@@ -172,14 +174,16 @@ function widgetAuthErrorToLoginError(error: GarminWidgetAuthError): GarminLoginE
   switch (error.kind) {
     case 'mfa_required':
       return new GarminLoginError(error.message, 'blocked_or_mfa');
-    case 'invalid_credentials':
-      return new GarminLoginError(error.message, 'invalid_credentials');
     case 'account_locked':
       return new GarminLoginError(error.message, 'account_locked');
     case 'rate_limited':
       return new GarminLoginError(error.message, 'rate_limited');
+    case 'server_sso_rejected':
+      return new GarminLoginError(error.message, 'server_sso_rejected');
     default:
-      return new GarminLoginError(error.message, 'unknown');
+      // Never map widget failures to invalid_credentials — serverless SSO cannot
+      // distinguish wrong password from WAF rejection.
+      return new GarminLoginError(error.message, 'server_sso_rejected');
   }
 }
 
@@ -201,7 +205,7 @@ export async function loginWithCredentials(
     if (error instanceof GarminDiAuthError) {
       throw new GarminLoginError(
         error.message,
-        error.kind === 'rate_limited' ? 'rate_limited' : 'unknown',
+        error.kind === 'rate_limited' ? 'rate_limited' : 'server_sso_rejected',
       );
     }
     throw classifyGarminLoginError(error);

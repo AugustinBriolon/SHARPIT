@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { garminConnectSchema } from './route';
+import { garminConnectSchema, garminConnectErrorMessage } from './route';
+import { GarminLoginError } from '@/lib/integrations/garmin/garmin';
 
 describe('garminConnectSchema', () => {
   it('accepts real-world credentials', () => {
@@ -23,5 +24,20 @@ describe('garminConnectSchema', () => {
     expect(garminConnectSchema.safeParse({ username: '', password: 'hunter2' }).success).toBe(
       false,
     );
+  });
+});
+
+describe('garminConnectErrorMessage', () => {
+  it('does not blame the password for server_sso_rejected', () => {
+    const msg = garminConnectErrorMessage(
+      new GarminLoginError('widget blocked', 'server_sso_rejected'),
+    );
+    expect(msg.toLowerCase()).not.toContain('identifiants');
+    expect(msg.toLowerCase()).toContain('serveur');
+  });
+
+  it('does not blame the password for unknown failures', () => {
+    const msg = garminConnectErrorMessage(new GarminLoginError('boom', 'unknown'));
+    expect(msg.toLowerCase()).not.toContain('identifiants');
   });
 });
