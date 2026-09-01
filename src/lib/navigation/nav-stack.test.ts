@@ -78,6 +78,47 @@ describe('navStack', () => {
     });
   });
 
+  it('does not push activity edit routes (transient — modal-like)', async () => {
+    const { navStack } = await loadNavStack();
+    navStack.push({ href: '/training/history', label: 'Historique', ts: 1 });
+    navStack.push({ href: '/training/abc', label: 'Séance', ts: 2 });
+    navStack.push({ href: '/training/abc/edit', label: 'Édition', ts: 3 });
+    expect(navStack.all().map((e) => e.href)).toEqual([
+      '/training/history',
+      '/training/abc',
+    ]);
+  });
+
+  it('after edit → detail, Back resolves to the pre-edit page (edit omitted)', async () => {
+    const { navStack } = await loadNavStack();
+    navStack.push({ href: '/training/history', label: 'Historique', ts: 1 });
+    navStack.push({ href: '/training/abc', label: 'Séance', ts: 2 });
+    navStack.push({ href: '/training/abc/edit', label: 'Édition', ts: 3 });
+    navStack.push({ href: '/training/abc', label: 'Séance', ts: 4 });
+    expect(navStack.peekBackFrom('/training/abc')).toEqual({
+      href: '/training/history',
+      label: 'Historique',
+      ts: 1,
+    });
+  });
+
+  it('peekBackFrom skips a stale edit entry left on the stack', async () => {
+    const { navStack, NAV_STACK_STORAGE_KEY } = await loadNavStack();
+    storageMock.setItem(
+      NAV_STACK_STORAGE_KEY,
+      JSON.stringify([
+        { href: '/training/history', label: 'Historique', ts: 1 },
+        { href: '/training/abc', label: 'Séance', ts: 2 },
+        { href: '/training/abc/edit', label: 'Édition', ts: 3 },
+      ]),
+    );
+    expect(navStack.peekBackFrom('/training/abc')).toEqual({
+      href: '/training/history',
+      label: 'Historique',
+      ts: 1,
+    });
+  });
+
   it('peekBackFrom returns null when only the current href is on the stack', async () => {
     const { navStack } = await loadNavStack();
     navStack.push({ href: '/training/abc', label: 'Séance', ts: 1 });

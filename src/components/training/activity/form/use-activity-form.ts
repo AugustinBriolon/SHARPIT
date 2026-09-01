@@ -104,7 +104,8 @@ export function useActivityForm({ mode, initialData }: ActivityFormProps) {
             },
           },
         );
-        router.push(`/training/${id}`);
+        // replace: edit is transient — do not leave it under detail in browser history
+        router.replace(`/training/${id}`);
       } catch (err) {
         form.setError('root', {
           message: err instanceof Error ? err.message : 'Une erreur est survenue',
