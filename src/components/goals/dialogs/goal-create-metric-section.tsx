@@ -5,15 +5,18 @@ import {
   MetricGoalForm,
   type MetricGoalFormResult,
 } from '@/components/goals/dialogs/metric-goal-form';
+import type { PracticedSportId } from '@/lib/practiced-sports';
 
 export function GoalCreateMetricSection({
   variant,
   metricFormId,
+  practicedSports,
   onError,
   onSubmit,
 }: {
   variant: 'performance' | 'period';
   metricFormId: string;
+  practicedSports?: readonly PracticedSportId[];
   onError: (message: string | null) => void;
   onSubmit: (result: MetricGoalFormResult) => void;
 }) {
@@ -29,6 +32,7 @@ export function GoalCreateMetricSection({
       </p>
       <MetricGoalForm
         formId={metricFormId}
+        practicedSports={practicedSports}
         template={variant}
         onError={onError}
         onSubmit={onSubmit}

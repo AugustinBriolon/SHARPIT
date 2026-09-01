@@ -289,5 +289,6 @@ export function useEquipmentPersist(initial: AthleteEquipment) {
     saving,
     dirty,
     update,
+    flush: flushPersist,
   };
 }

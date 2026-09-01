@@ -1,109 +1,52 @@
 'use client';
 
-import { useState } from 'react';
-import { EquipmentItemChecklist } from '@/components/settings/equipment/item-checklist';
-import { EquipmentSportTabs } from '@/components/settings/equipment/sport-tabs';
-import {
-  EquipmentStatusLine,
-  strengthInventoryMessage,
-} from '@/components/settings/equipment/status-line';
-import { StrengthVenuePicker } from '@/components/settings/equipment/strength-venue-picker';
-import { useEquipmentPersist } from '@/components/settings/equipment/use-equipment-persist';
-import {
-  catalogItemsForSport,
-  EQUIPMENT_SPORT_LABELS,
-  type EquipmentItemId,
-  type EquipmentSport,
-  type StrengthVenue,
-} from '@/lib/equipment/catalog';
-import { equipmentSportHint } from '@/lib/equipment/format';
-import { setStrengthVenue, toggleOwnedItem } from '@/lib/equipment/parse';
+import { PracticedSportsPicker } from '@/components/practiced-sports/practiced-sports-picker';
+import { usePracticedSportsPersist } from '@/components/practiced-sports/use-practiced-sports-persist';
+import { EquipmentInventory } from '@/components/settings/equipment/inventory';
+import { EquipmentStatusLine } from '@/components/settings/equipment/status-line';
 import type { AthleteEquipment } from '@/lib/equipment/types';
+import type { AthletePracticedSports } from '@/lib/practiced-sports';
 
-function EquipmentStrengthSection({
-  equipment,
-  onSelectVenue,
+export function EquipmentPanel({
+  initial,
+  initialPracticedSports,
 }: {
-  equipment: AthleteEquipment;
-  onSelectVenue: (venue: StrengthVenue) => void;
+  initial: AthleteEquipment;
+  initialPracticedSports: AthletePracticedSports;
 }) {
-  const venueNote = strengthInventoryMessage(equipment.strengthVenue);
-  return (
-    <>
-      <StrengthVenuePicker value={equipment.strengthVenue} onSelect={onSelectVenue} />
-      {venueNote ? <p className="text-muted-foreground text-sm">{venueNote}</p> : null}
-    </>
-  );
-}
-
-function EquipmentInventorySection({
-  sport,
-  equipment,
-  items,
-  onToggleItem,
-}: {
-  sport: EquipmentSport;
-  equipment: AthleteEquipment;
-  items: ReturnType<typeof catalogItemsForSport>;
-  onToggleItem: (itemId: EquipmentItemId, enabled: boolean) => void;
-}) {
-  const hint = equipmentSportHint(equipment, sport);
-  const showHomeGearCaption =
-    sport === 'STRENGTH' &&
-    (equipment.strengthVenue === 'home' || equipment.strengthVenue === 'both');
+  const {
+    sports,
+    message: sportsMessage,
+    error: sportsError,
+    saving: sportsSaving,
+    updateSports,
+  } = usePracticedSportsPersist(initialPracticedSports);
 
   return (
-    <>
-      {showHomeGearCaption ? (
-        <p className="text-muted-foreground text-xs">Matériel maison à fort impact</p>
-      ) : null}
+    <div className="space-y-8">
+      <section aria-labelledby="practiced-sports-title" className="space-y-4">
+        <div className="space-y-1">
+          <h2 className="text-section-title" id="practiced-sports-title">
+            Sports pratiqués
+          </h2>
+          <p className="text-muted-foreground text-sm">
+            Endurance d&apos;abord — les onglets d&apos;équipement suivent ta sélection.
+          </p>
+        </div>
+        <PracticedSportsPicker
+          idPrefix="settings-sports"
+          sports={sports}
+          onSportsChange={updateSports}
+        />
+        <EquipmentStatusLine
+          dirty={false}
+          error={sportsError}
+          message={sportsMessage}
+          saving={sportsSaving}
+        />
+      </section>
 
-      {items.length > 0 ? (
-        <EquipmentItemChecklist items={items} owned={equipment.owned} onToggle={onToggleItem} />
-      ) : null}
-
-      {hint ? <p className="text-muted-foreground text-xs leading-relaxed">{hint}</p> : null}
-    </>
-  );
-}
-
-export function EquipmentPanel({ initial }: { initial: AthleteEquipment }) {
-  const { equipment, message, error, saving, dirty, update } = useEquipmentPersist(initial);
-  const [sport, setSport] = useState<EquipmentSport>('BIKE');
-
-  function onToggleItem(itemId: EquipmentItemId, enabled: boolean) {
-    update((prev) => toggleOwnedItem(prev, itemId, enabled));
-  }
-
-  function onSelectVenue(venue: StrengthVenue) {
-    update((prev) => setStrengthVenue(prev, venue === prev.strengthVenue ? null : venue));
-  }
-
-  const items = catalogItemsForSport(sport, equipment.strengthVenue);
-
-  return (
-    <div className="space-y-4">
-      <EquipmentSportTabs sport={sport} onSportChange={setSport} />
-
-      <div className="space-y-1">
-        <p className="text-label">{EQUIPMENT_SPORT_LABELS[sport]}</p>
-        <p className="text-muted-foreground text-xs leading-relaxed">
-          Coche uniquement ce qui a un impact réel sur la génération de séances.
-        </p>
-      </div>
-
-      {sport === 'STRENGTH' ? (
-        <EquipmentStrengthSection equipment={equipment} onSelectVenue={onSelectVenue} />
-      ) : null}
-
-      <EquipmentInventorySection
-        equipment={equipment}
-        items={items}
-        sport={sport}
-        onToggleItem={onToggleItem}
-      />
-
-      <EquipmentStatusLine dirty={dirty} error={error} message={message} saving={saving} />
+      <EquipmentInventory initial={initial} practicedSports={sports} />
     </div>
   );
 }

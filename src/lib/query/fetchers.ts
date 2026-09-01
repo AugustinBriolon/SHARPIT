@@ -236,6 +236,8 @@ export interface AthleteProfilePayload {
   sleepTargetMinutes: number | null;
   sleepBedtimeTargetMin: number | null;
   displayMode: DisplayMode;
+  equipment?: unknown;
+  practicedSports?: unknown;
 }
 
 export async function fetchAthleteProfile(): Promise<AthleteProfilePayload> {

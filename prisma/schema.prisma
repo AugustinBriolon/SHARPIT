@@ -251,6 +251,11 @@ model AthleteProfile {
   /// Shape: { version: 1, strengthVenue: 'gym'|'home'|'both'|'bodyweight'|null, owned: string[] }
   equipment Json?
 
+  /// Endurance-first practiced sports catalog.
+  /// Shape: { version: 1, sports: ('run'|'bike'|'swim'|'triathlon'|'strength'|'mobility'|'stretching')[] }
+  /// Null = treat as all core sports on read (existing athletes).
+  practicedSports Json?
+
   /// Longueur du bassin habituel (m) — Garmin en a besoin pour rendre une séance
   /// de natation en piscine. Surchargeable séance par séance.
   defaultPoolLengthM Int?
@@ -262,7 +267,7 @@ model AthleteProfile {
   homeLocationLat   Float?
   homeLocationLng   Float?
 
-  /// First-login wizard finished (intention + optional providers). Null = must complete onboarding.
+  /// First-login wizard finished (sports + intention + optional providers). Null = must complete onboarding.
   onboardingCompletedAt DateTime?
 
   /// Per data-class source preferences: primary + enabled providers (ADR-027).

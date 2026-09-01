@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { activityTypeLabels } from '@/lib/format';
-import { performanceSports, type GoalEndMode } from '@/lib/goals/goal-metric-config';
+import { type GoalEndMode } from '@/lib/goals/goal-metric-config';
 import {
   PerformanceMetricDistanceFields,
   PerformanceMetricEndModeField,
@@ -24,6 +24,7 @@ export function PerformanceMetricGoalForm({
   formId,
   goal,
   sport,
+  allowedSports,
   distancePreset,
   customDistanceKm,
   chronoTarget,
@@ -44,6 +45,7 @@ export function PerformanceMetricGoalForm({
   formId: string;
   goal?: GoalForEdit | null;
   sport: ActivityType;
+  allowedSports: readonly ActivityType[];
   distancePreset: string;
   customDistanceKm: string;
   chronoTarget: string;
@@ -69,7 +71,7 @@ export function PerformanceMetricGoalForm({
             <SelectValue>{activityTypeLabels[sport]}</SelectValue>
           </SelectTrigger>
           <SelectContent>
-            {performanceSports.map((t) => (
+            {allowedSports.map((t) => (
               <SelectItem key={t} value={t}>
                 {activityTypeLabels[t]}
               </SelectItem>

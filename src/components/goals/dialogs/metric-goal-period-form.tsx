@@ -19,11 +19,12 @@ import {
   type PeriodMeasure,
 } from '@/lib/goals/goal-metric-config';
 import type { GoalForEdit } from '@/components/goals/dialogs/goal-dialog';
+import type { PeriodSportOption } from '@/lib/practiced-sports';
 
 const ALL_SPORTS = 'ALL';
 const periodOptions: GoalPeriod[] = ['WEEK', 'MONTH', 'YEAR'];
 const measureOptions: PeriodMeasure[] = ['activity_count', 'duration', 'distance', 'elevation'];
-const periodSportOptions: (ActivityType | typeof ALL_SPORTS)[] = [
+const defaultPeriodSportOptions: PeriodSportOption[] = [
   ALL_SPORTS,
   ActivityType.RUN,
   ActivityType.BIKE,
@@ -69,6 +70,7 @@ export function PeriodMetricGoalForm({
   periodTarget,
   periodEndDate,
   customTitle,
+  allowedSports = defaultPeriodSportOptions,
   onPeriodChange,
   onMeasureChange,
   onPeriodSportChange,
@@ -86,6 +88,7 @@ export function PeriodMetricGoalForm({
   periodTarget: string;
   periodEndDate: string;
   customTitle: string;
+  allowedSports?: readonly PeriodSportOption[];
   onPeriodChange: (period: GoalPeriod) => void;
   onMeasureChange: (measure: PeriodMeasure) => void;
   onPeriodSportChange: (sport: string) => void;
@@ -138,7 +141,7 @@ export function PeriodMetricGoalForm({
               <SelectValue>{periodSportLabel}</SelectValue>
             </SelectTrigger>
             <SelectContent>
-              {periodSportOptions.map((t) => (
+              {allowedSports.map((t) => (
                 <SelectItem key={t} value={t}>
                   {t === ALL_SPORTS ? 'Tous sports' : activityTypeLabels[t]}
                 </SelectItem>
