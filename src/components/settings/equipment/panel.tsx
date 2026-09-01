@@ -36,6 +36,7 @@ export function EquipmentPanel({
         <PracticedSportsPicker
           idPrefix="settings-sports"
           sports={sports}
+          compact
           onSportsChange={updateSports}
         />
         <EquipmentStatusLine
