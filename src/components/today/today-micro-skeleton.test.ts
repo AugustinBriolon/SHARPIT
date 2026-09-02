@@ -109,10 +109,14 @@ describe('TodayDashboard loading gate contract', () => {
     expect(dashboardSource).toContain('onWellnessCompleted={() => void query.refetch()}');
   });
 
-  it('keeps one-decision hierarchy without primary metric strip', () => {
+  it('keeps one-decision hierarchy with tertiary signal evidence under Comprendre', () => {
     expect(mainSource).toContain('DailyBriefingPanel');
     expect(mainSource).toContain('TodayUnderstandSection');
-    expect(mainSource).not.toContain('TodaySignalStrip');
     expect(mainSource).toContain('TodayCriticalStatus');
+    // Signal strip must not sit as primary under the hero in TodayDashboardMain.
+    expect(mainSource).not.toMatch(
+      /TodayVerdictHero[\s\S]*TodaySignalStrip/,
+    );
+    expect(mainSource).toContain('metricsRow={content.hero.metricsRow}');
   });
 });

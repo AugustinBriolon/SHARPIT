@@ -30,7 +30,7 @@ export function TodayDashboardShell({ trainingDayId }: { trainingDayId?: string 
       <TodayUnderstandSection
         activities={[]}
         limitingFactorHref={null}
-        navigationTargets={content.navigationTargets}
+        metricsRow={content.hero.metricsRow}
         activitiesLoading
         loading
       />
