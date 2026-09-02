@@ -7,7 +7,7 @@ import { PlanningView } from '@/components/planning/planning-view';
 export default function TrainingPlanningPage() {
   return (
     <div className="space-y-4">
-      <MobileBackLink href="/plan" label="Plan" showOnDesktop />
+      <MobileBackLink fallbackHref="/plan" fallbackLabel="Plan" showOnDesktop />
       <StickyHeader>
         <p className="text-label">Plan</p>
         <h1 className="text-page-title mt-1">Planning</h1>

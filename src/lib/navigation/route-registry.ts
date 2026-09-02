@@ -47,7 +47,7 @@ const MATCHERS: Matcher[] = [
   },
   {
     pattern: /^\/training\/manual$/,
-    resolve: () => ({ label: 'Nouvelle activité', defaultParent: HISTORY_PARENT }),
+    resolve: () => ({ label: 'Nouvelle activité', defaultParent: ACTIVITY_PARENT }),
   },
   {
     pattern: /^\/training\/planning$/,

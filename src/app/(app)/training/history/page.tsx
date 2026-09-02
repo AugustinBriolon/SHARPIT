@@ -6,7 +6,7 @@ import { TrainingList, TrainingListFallback } from '@/components/training/hub/tr
 export default function TrainingHistoryPage() {
   return (
     <div className="space-y-4">
-      <MobileBackLink href="/activite" label="Activité" showOnDesktop />
+      <MobileBackLink fallbackHref="/activite" fallbackLabel="Activité" showOnDesktop />
       <StickyHeader>
         <h1 className="text-page-title mt-1">Historique</h1>
         <p className="text-muted-foreground mt-1 text-sm">

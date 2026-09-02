@@ -34,7 +34,7 @@ async function CalibrationPanelWithProfile() {
 export default function SettingsCalibrationPage() {
   return (
     <div className="space-y-4">
-      <MobileBackLink href="/moi" label="Moi" showOnDesktop />
+      <MobileBackLink fallbackHref="/moi" fallbackLabel="Moi" showOnDesktop />
       <StickyHeader>
         <p className="text-label">Moi</p>
         <h1 className="text-page-title mt-1">Seuils &amp; repères</h1>

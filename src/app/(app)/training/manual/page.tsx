@@ -22,7 +22,7 @@ function ActivityFormSkeleton() {
 export default function ManualTrainingPage() {
   return (
     <div className="space-y-8">
-      <MobileBackLink href="/training/history" label="Historique" showOnDesktop />
+      <MobileBackLink fallbackHref="/activite" fallbackLabel="Activité" showOnDesktop />
       <StickyHeader>
         <p className="text-primary text-xs font-medium uppercase">Training</p>
         <h1 className="text-page-title mt-1">Saisir une séance</h1>
