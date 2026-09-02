@@ -1,6 +1,5 @@
 'use client';
 
-import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { ConfidenceBars } from '@/components/ui/instruments/confidence-bars';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -66,10 +65,13 @@ export function TodayVerdictActionLine({
   loading,
   secondaryLine,
   secondaryMuted,
+  whyHref,
 }: {
   loading: boolean;
   secondaryLine: string | null;
   secondaryMuted: boolean;
+  /** Drill-down for « Pourquoi » — limiting factor when known. */
+  whyHref?: string | null;
 }) {
   if (loading) {
     return (
@@ -78,20 +80,32 @@ export function TodayVerdictActionLine({
       </div>
     );
   }
-  if (!secondaryLine) {
+  if (!secondaryLine && !whyHref) {
     return null;
   }
   return (
-    <p
-      className={cn(
-        'max-w-2xl text-sm leading-relaxed text-pretty',
-        secondaryMuted
-          ? 'text-ink-surface-foreground/70'
-          : 'text-ink-surface-foreground/80 font-medium',
-      )}
-    >
-      {secondaryLine}
-    </p>
+    <div className="flex max-w-2xl flex-wrap items-baseline gap-x-3 gap-y-1">
+      {secondaryLine ? (
+        <p
+          className={cn(
+            'text-sm leading-relaxed text-pretty',
+            secondaryMuted
+              ? 'text-ink-surface-foreground/70'
+              : 'text-ink-surface-foreground/80 font-medium',
+          )}
+        >
+          {secondaryLine}
+        </p>
+      ) : null}
+      {whyHref ? (
+        <Link
+          className="text-ink-surface-foreground/65 hover:text-ink-surface-foreground shrink-0 text-sm underline-offset-4 hover:underline"
+          href={whyHref}
+        >
+          Pourquoi
+        </Link>
+      ) : null}
+    </div>
   );
 }
 

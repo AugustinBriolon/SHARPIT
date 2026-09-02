@@ -44,6 +44,7 @@ export function TodayVerdictHero({
           loading={loading}
           secondaryLine={display.secondaryLine}
           secondaryMuted={display.secondaryMuted}
+          whyHref={loading ? null : (trust.limitingFactorHref ?? vm.navigationTargets.sleep.href)}
         />
       </div>
     </section>

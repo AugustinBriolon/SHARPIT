@@ -105,7 +105,14 @@ describe('TodayDashboard loading gate contract', () => {
 
   it('keeps placeholder SWR tree with loading props and wellness refetch', () => {
     expect(mainSource).toContain('loading={valuesLoading}');
-    expect(mainSource).toMatch(/!valuesLoading\s*&&\s*content\.statusMessage/);
+    expect(mainSource).toContain('TodayCriticalStatus');
     expect(dashboardSource).toContain('onWellnessCompleted={() => void query.refetch()}');
+  });
+
+  it('keeps one-decision hierarchy without primary metric strip', () => {
+    expect(mainSource).toContain('DailyBriefingPanel');
+    expect(mainSource).toContain('TodayUnderstandSection');
+    expect(mainSource).not.toContain('TodaySignalStrip');
+    expect(mainSource).toContain('TodayCriticalStatus');
   });
 });
