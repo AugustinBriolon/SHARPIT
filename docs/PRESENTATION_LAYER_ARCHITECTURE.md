@@ -182,6 +182,8 @@ Workflow CI :
 
 - fichier: `.github/workflows/presentation-architecture-guard.yml`
 - exécute `yarn install --immutable` puis `yarn test`
+- `paths-ignore` docs/markdown : une PR docs-only ne lance pas le suite lourde
+- `concurrency` + cache Yarn/`node_modules` : voir [`engineering/CI_AND_PREVIEWS.md`](./engineering/CI_AND_PREVIEWS.md)
 
 ### Rappel sur la traversée de frontière
 

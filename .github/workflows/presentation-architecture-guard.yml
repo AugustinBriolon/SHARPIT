@@ -2,7 +2,20 @@ name: Presentation Architecture Guard
 
 on:
   pull_request:
+    paths-ignore:
+      - 'docs/**'
+      - 'README.md'
+      - 'ARCHITECTURE.md'
+      - 'AGENTS.md'
+      - 'CLAUDE.md'
+      - 'CODE_MAP.md'
+      - 'FEATURE_EXTRACTION.md'
+      - '**/*.md'
   workflow_dispatch:
+
+concurrency:
+  group: presentation-architecture-guard-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   guard:
@@ -28,6 +41,16 @@ jobs:
       # Prisma Client generate is incompatible with Yarn PnP autoinstall and
       # recurses into yarn install (postinstall → prisma generate → yarn add → …)
       # until the runner SIGTERMs the job (exit 143). Use node-modules for this job.
+      - name: Cache node_modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            .yarn/cache
+          key: ${{ runner.os }}-node-modules-${{ hashFiles('yarn.lock', '.yarnrc.yml') }}
+          restore-keys: |
+            ${{ runner.os }}-node-modules-
+
       - name: Install (immutable)
         run: yarn install --immutable
         env:
