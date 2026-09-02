@@ -1,17 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { syncWithingsHealth } from '@/lib/integrations/withings/withings-sync';
-import { checkRateLimit, rateLimitResponseBody, rateLimiters } from '@/lib/rate-limit';
+import { checkRateLimit, rateLimitJsonResponse, rateLimiters } from '@/lib/rate-limit';
 
 export const maxDuration = 300;
 
 export async function POST(request: NextRequest) {
   try {
     const athleteId = await getCurrentAthleteId();
-    const rateLimit = await checkRateLimit(rateLimiters.providerSync, `${athleteId}:withings`);
+    const rateLimit = await checkRateLimit(rateLimiters.providerSync, `${athleteId}:withings`, { failClosed: true });
     if (!rateLimit.ok) {
-      return NextResponse.json(rateLimitResponseBody(rateLimit.retryAfterSeconds), {
-        status: 429,
+      const limited = rateLimitJsonResponse(rateLimit);
+      return NextResponse.json(limited.body, {
+        status: limited.status,
       });
     }
     const body = await request.json().catch(() => ({}));

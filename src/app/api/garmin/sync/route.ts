@@ -3,7 +3,7 @@ import { onProviderSyncCompleted } from '@/lib/athlete-state/orchestrator';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { syncGarminActivities } from '@/lib/integrations/garmin/garmin-activity-sync';
 import { syncGarminHealth } from '@/lib/integrations/garmin/garmin-sync';
-import { checkRateLimit, rateLimitResponseBody, rateLimiters } from '@/lib/rate-limit';
+import { checkRateLimit, rateLimitJsonResponse, rateLimiters } from '@/lib/rate-limit';
 import { filterRecordChangesByActivities, updateRecordsForTypes } from '@/lib/training/records';
 
 export const maxDuration = 300;
@@ -31,10 +31,11 @@ async function updateRecordChanges(
 export async function POST(request: NextRequest) {
   try {
     const athleteId = await getCurrentAthleteId();
-    const rateLimit = await checkRateLimit(rateLimiters.providerSync, `${athleteId}:garmin`);
+    const rateLimit = await checkRateLimit(rateLimiters.providerSync, `${athleteId}:garmin`, { failClosed: true });
     if (!rateLimit.ok) {
-      return NextResponse.json(rateLimitResponseBody(rateLimit.retryAfterSeconds), {
-        status: 429,
+      const limited = rateLimitJsonResponse(rateLimit);
+      return NextResponse.json(limited.body, {
+        status: limited.status,
       });
     }
     const full = await parseFullSyncFlag(request);

@@ -10,7 +10,7 @@ import {
   ensureFreeAiBudget,
   withAiBudgetWarningHeader,
 } from '@/lib/access/ai-budget';
-import { checkRateLimit, rateLimitResponseBody, rateLimiters } from '@/lib/rate-limit';
+import { checkRateLimit, rateLimitJsonResponse, rateLimiters } from '@/lib/rate-limit';
 import {
   buildCoachContext,
   formatCoachContext,
@@ -188,13 +188,12 @@ async function preparePlanGeneration(
 ) {
   const start = startOfDay(parsed.startDate ?? new Date());
 
-  const rateLimit = await checkRateLimit(rateLimiters.coachPlan, athleteId);
+  const rateLimit = await checkRateLimit(rateLimiters.coachPlan, athleteId, { failClosed: true });
   if (!rateLimit.ok) {
+    const limited = rateLimitJsonResponse(rateLimit);
     return {
       ok: false as const,
-      response: NextResponse.json(rateLimitResponseBody(rateLimit.retryAfterSeconds), {
-        status: 429,
-      }),
+      response: NextResponse.json(limited.body, { status: limited.status }),
     };
   }
 

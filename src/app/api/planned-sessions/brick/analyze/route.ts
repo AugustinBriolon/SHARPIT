@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { isCoachConfigured } from '@/lib/ai';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { analyzeBrick } from '@/lib/coach/plan/coach-analysis';
-import { checkRateLimit, rateLimitResponseBody, rateLimiters } from '@/lib/rate-limit';
+import { checkRateLimit, rateLimitJsonResponse, rateLimiters } from '@/lib/rate-limit';
 import { getBrickAnalysis, getBrickSessions, setBrickAnalysis } from '@/lib/queries';
 
 export const maxDuration = 60;
@@ -74,10 +74,11 @@ export async function POST(request: NextRequest) {
       return validation.response;
     }
 
-    const rateLimit = await checkRateLimit(rateLimiters.sessionAnalyze, athleteId);
+    const rateLimit = await checkRateLimit(rateLimiters.sessionAnalyze, athleteId, { failClosed: true });
     if (!rateLimit.ok) {
-      return NextResponse.json(rateLimitResponseBody(rateLimit.retryAfterSeconds), {
-        status: 429,
+      const limited = rateLimitJsonResponse(rateLimit);
+      return NextResponse.json(limited.body, {
+        status: limited.status,
       });
     }
 

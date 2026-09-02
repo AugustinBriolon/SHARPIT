@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { isCoachConfigured } from '@/lib/ai';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { analyzePlannedSession } from '@/lib/coach/plan/coach-analysis';
-import { checkRateLimit, rateLimitResponseBody, rateLimiters } from '@/lib/rate-limit';
+import { checkRateLimit, rateLimitJsonResponse, rateLimiters } from '@/lib/rate-limit';
 import { getPlannedSessionById, setPlannedSessionAnalysis } from '@/lib/queries';
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -29,10 +29,11 @@ export async function POST(_request: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: 'Aucune activité liée à analyser' }, { status: 400 });
     }
 
-    const rateLimit = await checkRateLimit(rateLimiters.sessionAnalyze, athleteId);
+    const rateLimit = await checkRateLimit(rateLimiters.sessionAnalyze, athleteId, { failClosed: true });
     if (!rateLimit.ok) {
-      return NextResponse.json(rateLimitResponseBody(rateLimit.retryAfterSeconds), {
-        status: 429,
+      const limited = rateLimitJsonResponse(rateLimit);
+      return NextResponse.json(limited.body, {
+        status: limited.status,
       });
     }
 

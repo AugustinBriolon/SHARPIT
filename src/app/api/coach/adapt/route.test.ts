@@ -13,6 +13,15 @@ vi.mock('@/lib/auth/current-athlete', () => ({
   getCurrentAthleteId: vi.fn().mockResolvedValue('default'),
 }));
 
+vi.mock('@/lib/rate-limit', () => ({
+  checkRateLimit: vi.fn().mockResolvedValue({ ok: true }),
+  rateLimitJsonResponse: vi.fn((result) => ({
+    body: { error: 'limited', retryAfterSeconds: result.retryAfterSeconds },
+    status: result.cause === 'unavailable' ? 503 : 429,
+  })),
+  rateLimiters: { coachAdapt: {} },
+}));
+
 vi.mock('@/lib/coach/stream-structured-generation', () => ({
   runStructuredCoachStream: vi.fn(),
 }));

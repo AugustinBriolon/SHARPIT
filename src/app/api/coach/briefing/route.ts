@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { isCoachConfigured } from '@/lib/ai';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { checkRateLimit, rateLimitResponseBody, rateLimiters } from '@/lib/rate-limit';
+import { checkRateLimit, rateLimitJsonResponse, rateLimiters } from '@/lib/rate-limit';
 import { generateAndStoreDailyBriefing, getDailyBriefing } from '@/lib/briefing/daily-briefing';
 
 export const maxDuration = 60;
@@ -43,10 +43,11 @@ export async function POST(request: NextRequest) {
     const body = await request.json().catch(() => ({}));
     const date = parseDate((body as { date?: string }).date ?? null);
     const athleteId = await getCurrentAthleteId();
-    const rateLimit = await checkRateLimit(rateLimiters.coachReview, athleteId);
+    const rateLimit = await checkRateLimit(rateLimiters.coachReview, athleteId, { failClosed: true });
     if (!rateLimit.ok) {
-      return NextResponse.json(rateLimitResponseBody(rateLimit.retryAfterSeconds), {
-        status: 429,
+      const limited = rateLimitJsonResponse(rateLimit);
+      return NextResponse.json(limited.body, {
+        status: limited.status,
       });
     }
     const briefing = await generateAndStoreDailyBriefing(athleteId, date);

@@ -123,8 +123,17 @@ Open [http://localhost:3000](http://localhost:3000).
 | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Clerk authentication public key                                                                              |
 | `CLERK_SECRET_KEY`                  | Clerk authentication secret key                                                                              |
 | `DEV_BYPASS_CLERK`                  | Dev only: set `true` to skip Clerk when the corporate proxy blocks `*.clerk.accounts.dev` (see below)        |
-| `UPSTASH_REDIS_REST_URL`            | Optional: Upstash Redis REST URL for per-athlete rate limiting. Rate limiting fails open (disabled) if unset |
-| `UPSTASH_REDIS_REST_TOKEN`          | Optional: Upstash Redis REST token, paired with the URL above                                                |
+| `UPSTASH_REDIS_REST_URL`            | Upstash Redis REST URL. Coach/sync/AI routes **fail closed** if unset; `apiGeneral` still fails open         |
+| `UPSTASH_REDIS_REST_TOKEN`          | Upstash Redis REST token, paired with the URL above                                                          |
+| `CRON_SECRET`                       | Bearer secret for `/api/cron/*` (incl. `/api/cron/smoke`). Rejects all cron calls if unset                    |
+| `SECRET_ENCRYPTION_KEY`             | Required in production to encrypt provider credentials (`src/lib/secret-box.ts`)                             |
+| `ADMIN_EMAILS`                      | Comma-separated emails allowed on `/admin` and `/api/dev/*`                                                  |
+
+Ops smoke (no secret values leaked):
+
+```bash
+curl -H "Authorization: Bearer $CRON_SECRET" https://<app>/api/cron/smoke
+```
 
 #### Corporate proxy / Wi‑Fi entreprise
 

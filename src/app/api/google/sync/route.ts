@@ -2,15 +2,16 @@ import { NextResponse } from 'next/server';
 import { GoogleOAuthError } from '@/lib/integrations/google/google';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { syncFromGoogle } from '@/lib/integrations/google/google-sync';
-import { checkRateLimit, rateLimitResponseBody, rateLimiters } from '@/lib/rate-limit';
+import { checkRateLimit, rateLimitJsonResponse, rateLimiters } from '@/lib/rate-limit';
 
 export async function POST() {
   try {
     const athleteId = await getCurrentAthleteId();
-    const rateLimit = await checkRateLimit(rateLimiters.providerSync, `${athleteId}:google`);
+    const rateLimit = await checkRateLimit(rateLimiters.providerSync, `${athleteId}:google`, { failClosed: true });
     if (!rateLimit.ok) {
-      return NextResponse.json(rateLimitResponseBody(rateLimit.retryAfterSeconds), {
-        status: 429,
+      const limited = rateLimitJsonResponse(rateLimit);
+      return NextResponse.json(limited.body, {
+        status: limited.status,
       });
     }
     const result = await syncFromGoogle(athleteId);

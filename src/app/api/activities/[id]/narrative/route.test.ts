@@ -19,7 +19,10 @@ vi.mock('@/lib/auth/current-athlete', () => ({
 
 vi.mock('@/lib/rate-limit', () => ({
   checkRateLimit: vi.fn().mockResolvedValue({ ok: true }),
-  rateLimitResponseBody: vi.fn(),
+  rateLimitJsonResponse: vi.fn((result) => ({
+    body: { error: 'limited', retryAfterSeconds: result.retryAfterSeconds },
+    status: 429,
+  })),
   rateLimiters: { activityNarrative: {} },
 }));
 

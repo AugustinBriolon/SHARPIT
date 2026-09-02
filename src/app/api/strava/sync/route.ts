@@ -1,17 +1,18 @@
 import { NextResponse } from 'next/server';
 import { onProviderSyncCompleted } from '@/lib/athlete-state/orchestrator';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { checkRateLimit, rateLimitResponseBody, rateLimiters } from '@/lib/rate-limit';
+import { checkRateLimit, rateLimitJsonResponse, rateLimiters } from '@/lib/rate-limit';
 import { filterRecordChangesByActivities, updateRecordsForTypes } from '@/lib/training/records';
 import { syncStravaActivities } from '@/lib/integrations/strava/strava-sync';
 
 export async function POST() {
   try {
     const athleteId = await getCurrentAthleteId();
-    const rateLimit = await checkRateLimit(rateLimiters.providerSync, `${athleteId}:strava`);
+    const rateLimit = await checkRateLimit(rateLimiters.providerSync, `${athleteId}:strava`, { failClosed: true });
     if (!rateLimit.ok) {
-      return NextResponse.json(rateLimitResponseBody(rateLimit.retryAfterSeconds), {
-        status: 429,
+      const limited = rateLimitJsonResponse(rateLimit);
+      return NextResponse.json(limited.body, {
+        status: limited.status,
       });
     }
     const result = await syncStravaActivities(athleteId);
