@@ -12,3 +12,5 @@ Scope: glass on **chrome only** (bottom tab bar + floating back). No glass on `/
 | `v11-chrome-back-dark.png` | Floating back (`/training/planning`) | Dark |
 
 Implementation: `src/components/chrome/chrome-glass.tsx` (`liquid-glass-react@1.1.1` backdrop + frosted CSS).
+
+Security pin + audit: [`SECURITY.md`](./SECURITY.md) (exact version, no install scripts, MIT / `fivepointseven`).
