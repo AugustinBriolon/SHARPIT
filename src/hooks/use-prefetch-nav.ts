@@ -29,6 +29,14 @@ function prefetchNavRoute(href: string, pre: PrefetchFn, trainingDayId: string):
   const routes: Record<string, () => void> = {
     '/': () =>
       pre(queryKeys.presentationToday(trainingDayId), () => fetchTodayPresentation(trainingDayId)),
+    '/plan': () => prefetchTrainingHub(pre),
+    '/activite': () => {
+      pre(queryKeys.activities, fetchActivities);
+    },
+    '/moi': () => {
+      pre(queryKeys.goals, fetchGoals);
+      prefetchProgressHub(pre, trainingDayId);
+    },
     '/training': () => prefetchTrainingHub(pre),
     '/progress': () => {
       pre(queryKeys.goals, fetchGoals);
@@ -78,7 +86,7 @@ function prefetchProgressHub(pre: PrefetchFn, trainingDayId: string) {
 
 /**
  * Warm TanStack Query cache for primary nav destinations.
- * Hrefs must match canonical routes (`/training`, `/progress`, `/today/…`, …).
+ * Hrefs must match Shell V1 hubs (`/`, `/plan`, `/activite`, `/moi`) and deep routes.
  */
 export function usePrefetchNavQuery() {
   const queryClient = useQueryClient();

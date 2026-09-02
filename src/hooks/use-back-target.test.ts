@@ -19,10 +19,10 @@ describe('resolveBackTargetWithoutStack', () => {
     });
   });
 
-  it('falls back home for Progression, which no longer hangs off Settings', () => {
+  it('falls back to Moi for Progression (Shell V1 profile hub)', () => {
     expect(resolveBackTargetWithoutStack('/progress')).toEqual({
-      href: '/',
-      label: 'Aujourd’hui',
+      href: '/moi',
+      label: 'Moi',
       fromStack: false,
     });
   });

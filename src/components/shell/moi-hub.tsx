@@ -10,11 +10,14 @@ import {
   MoonStar,
   ShieldCheck,
   SlidersHorizontal,
+  Target,
   User2,
   Wrench,
+  HeartPulse,
 } from 'lucide-react';
 import { StickyHeader } from '@/components/layout/sticky-header';
 import { InstallCard } from '@/components/pwa/install-card';
+import { ShellHubLink } from '@/components/shell/shell-hub-link';
 import { HubStatusValue } from '@/components/settings/hub-status-value';
 import {
   SettingsAppearanceStatus,
@@ -23,17 +26,11 @@ import {
 import { SettingsAdminEntry } from '@/components/settings/settings-admin-entry';
 import { SettingsHomeExtras } from '@/components/settings/settings-home-extras';
 import { SettingsSignOut } from '@/components/settings/settings-sign-out';
+import {
+  SettingsEntryRow,
+  type SettingsEntry,
+} from '@/components/settings/settings-home';
 import type { SettingsHubStatus } from '@/lib/settings/hub-status';
-import { cn } from '@/lib/utils';
-
-export type SettingsEntry = {
-  href: string;
-  title: string;
-  description: string;
-  icon: React.ComponentType<{ className?: string }>;
-  /** Omitted when the entry has no single value worth reading at a glance. */
-  statusKey?: keyof SettingsHubStatus | 'appearance' | 'expertMode';
-};
 
 type SettingsGroup = {
   id: string;
@@ -41,6 +38,28 @@ type SettingsGroup = {
   blurb: string;
   entries: SettingsEntry[];
 };
+
+/** Featured athlete model — Corps / objectifs / Confidentialité stay unburied. */
+const FEATURED: SettingsEntry[] = [
+  {
+    href: '/progress?tab=body',
+    title: 'Corps',
+    description: 'Composition, suivi physique et contraintes de santé.',
+    icon: HeartPulse,
+  },
+  {
+    href: '/progress?tab=goals',
+    title: 'Objectifs',
+    description: 'Courses, métriques prioritaires et proximité aux cibles.',
+    icon: Target,
+  },
+  {
+    href: '/settings/privacy',
+    title: 'Confidentialité',
+    description: 'Consentements, export et suppression du compte.',
+    icon: Lock,
+  },
+];
 
 const GROUPS: SettingsGroup[] = [
   {
@@ -123,19 +142,11 @@ const GROUPS: SettingsGroup[] = [
         icon: ShieldCheck,
         statusKey: 'about',
       },
-      // Confidentialité lives in Moi featured (Shell V1) — keep a settings deep
-      // link so export / delete stay one hop from account maintenance.
-      {
-        href: '/settings/privacy',
-        title: 'Confidentialité',
-        description: 'Consentements, export et suppression du compte.',
-        icon: Lock,
-      },
     ],
   },
 ];
 
-function entryStatus(statusKey: SettingsEntry['statusKey']) {
+function featuredMeta(statusKey: SettingsEntry['statusKey']) {
   if (!statusKey) {
     return null;
   }
@@ -145,71 +156,47 @@ function entryStatus(statusKey: SettingsEntry['statusKey']) {
   if (statusKey === 'expertMode') {
     return <SettingsExpertModeStatus />;
   }
-  return <HubStatusValue statusKey={statusKey} />;
-}
-
-export function SettingsEntryRow({ entry }: { entry: SettingsEntry }) {
-  const Icon = entry.icon;
-
-  return (
-    <li>
-      <Link
-        href={entry.href}
-        className={cn(
-          'chip-surface-lg group flex items-center gap-3 px-3 py-2.5',
-          'rounded-analysis-lg hover:border-primary/25 focus-visible:ring-primary/35 focus-visible:ring-2 focus-visible:outline-hidden',
-        )}
-      >
-        <div className="icon-well size-9 shrink-0" aria-hidden>
-          <Icon className="size-4" />
-        </div>
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-            <p className="text-sm font-medium">{entry.title}</p>
-            <p className="text-data text-muted-foreground text-xs tabular-nums">
-              {entryStatus(entry.statusKey)}
-            </p>
-          </div>
-          <p className="text-muted-foreground mt-0.5 text-sm leading-relaxed">
-            {entry.description}
-          </p>
-        </div>
-        <span
-          className="text-muted-foreground/70 text-data shrink-0 text-xs tracking-wider transition-transform group-hover:translate-x-0.5"
-          aria-hidden
-        >
-          →
-        </span>
-      </Link>
-    </li>
-  );
+  return <HubStatusValue statusKey={statusKey as keyof SettingsHubStatus} />;
 }
 
 /**
- * Server Component on purpose. The hub chips call `connection()` and must
- * stay in the RSC tree so PPR can resume them. Nesting those islands as
- * slots of a Client Component left the skeletons on screen forever.
- *
- * Shell V1: the athlete-facing hub is `MoiHub` at `/moi`. This component
- * remains for shared `SettingsEntryRow` / group markup and any deep callers.
+ * Moi hub — Shell V1 profile destination.
+ * Corps / objectifs / Confidentialité are first-class; the rest of settings follows.
  */
-export function SettingsHome() {
+export function MoiHub() {
   return (
     <div className="space-y-6">
       <StickyHeader>
         <p className="text-label">Moi</p>
-        <h1 className="text-page-title mt-1">Compte, données & application</h1>
+        <h1 className="text-page-title mt-1">Ton modèle, tes données</h1>
         <p className="text-muted-foreground mt-1 text-sm">
-          Rangées par rôle : ce qui te définit, ce qui contextualise le coach, puis
-          l&apos;application.
+          Corps, objectifs et confidentialité d&apos;abord — puis le reste du compte.
         </p>
       </StickyHeader>
 
+      <section aria-labelledby="moi-featured" className="space-y-3">
+        <h2 className="text-section-title" id="moi-featured">
+          Essentiel
+        </h2>
+        <ul className="space-y-2">
+          {FEATURED.map((entry) => (
+            <ShellHubLink
+              key={entry.href}
+              href={entry.href}
+              title={entry.title}
+              description={entry.description}
+              icon={entry.icon}
+              meta={featuredMeta(entry.statusKey)}
+            />
+          ))}
+        </ul>
+      </section>
+
       <div className="space-y-7">
         {GROUPS.map((group) => (
-          <section key={group.id} aria-labelledby={`settings-group-${group.id}`}>
+          <section key={group.id} aria-labelledby={`moi-group-${group.id}`}>
             <div className="mb-3">
-              <h2 className="text-section-title" id={`settings-group-${group.id}`}>
+              <h2 className="text-section-title" id={`moi-group-${group.id}`}>
                 {group.title}
               </h2>
               <p className="text-muted-foreground mt-1 text-sm leading-relaxed">{group.blurb}</p>
@@ -222,15 +209,13 @@ export function SettingsHome() {
           </section>
         ))}
 
-        {/* Renders nothing for a non-admin — same "invisible unless there's
-            something to show" pattern as InstallCard / SettingsSignOut below. */}
         <Suspense fallback={null}>
           <SettingsAdminEntry />
         </Suspense>
       </div>
 
       <section
-        aria-labelledby="settings-maintenance"
+        aria-labelledby="moi-maintenance"
         className="analysis-panel-alt rounded-analysis-lg p-4"
       >
         <div className="flex items-start gap-3">
@@ -238,7 +223,7 @@ export function SettingsHome() {
             <Wrench className="size-4" />
           </div>
           <div className="min-w-0 flex-1">
-            <h2 className="text-sm font-medium" id="settings-maintenance">
+            <h2 className="text-sm font-medium" id="moi-maintenance">
               Maintenance
             </h2>
             <p className="text-muted-foreground mt-1 text-sm leading-relaxed">
@@ -258,8 +243,6 @@ export function SettingsHome() {
         </div>
       </section>
 
-      {/* Decides visibility from the current time against the dismissal stamp,
-          so it can't prerender. It renders nothing when hidden — no fallback. */}
       <Suspense>
         <InstallCard />
       </Suspense>

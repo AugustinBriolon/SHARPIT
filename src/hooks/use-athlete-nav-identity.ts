@@ -29,6 +29,18 @@ const DEMO_NAV_IDENTITY: AthleteNavIdentity = {
   email: null,
 };
 
+/** Static Moi tab when Clerk is skipped (`NEXT_PUBLIC_DEV_BYPASS_CLERK`). */
+const BYPASS_NAV_IDENTITY: AthleteNavIdentity = {
+  isReady: true,
+  initials: 'M',
+  shortLabel: 'Moi',
+  fullLabel: 'Moi',
+  email: null,
+};
+
+const clerkBypassEnabled =
+  process.env.NEXT_PUBLIC_DEV_BYPASS_CLERK === 'true' && process.env.NODE_ENV === 'development';
+
 function identityFromUser(
   user: NonNullable<ReturnType<typeof useUser>['user']>,
 ): AthleteNavIdentity {
@@ -47,11 +59,7 @@ function identityFromUser(
   };
 }
 
-/**
- * Nav-facing identity from Clerk, with demo / empty fallbacks.
- * Keeps UserButton out of the chrome — Settings owns sign-out.
- */
-export function useAthleteNavIdentity(): AthleteNavIdentity {
+function useAthleteNavIdentityFromClerk(): AthleteNavIdentity {
   const { user, isLoaded } = useUser();
   const isDemo = useIsDemoMode();
 
@@ -63,3 +71,18 @@ export function useAthleteNavIdentity(): AthleteNavIdentity {
   }
   return identityFromUser(user);
 }
+
+function useAthleteNavIdentityBypass(): AthleteNavIdentity {
+  return BYPASS_NAV_IDENTITY;
+}
+
+/**
+ * Nav-facing identity from Clerk, with demo / empty fallbacks.
+ * Keeps UserButton out of the chrome — Settings owns sign-out.
+ *
+ * When `NEXT_PUBLIC_DEV_BYPASS_CLERK` skips `ClerkProvider`, we never call
+ * `useUser` (it would throw). The branch is a build-time constant.
+ */
+export const useAthleteNavIdentity: () => AthleteNavIdentity = clerkBypassEnabled
+  ? useAthleteNavIdentityBypass
+  : useAthleteNavIdentityFromClerk;

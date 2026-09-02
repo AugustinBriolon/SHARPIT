@@ -20,9 +20,9 @@ export default async function SettingsIntegrationsPage({ searchParams }: PagePro
 
   return (
     <div className="space-y-4">
-      <MobileBackLink href="/settings" label="Profil" showOnDesktop />
+      <MobileBackLink href="/moi" label="Moi" showOnDesktop />
       <StickyHeader>
-        <p className="text-label">Profil</p>
+        <p className="text-label">Moi</p>
         <h1 className="text-page-title mt-1">Applications connectées</h1>
         <p className="text-muted-foreground mt-1 text-sm">
           Connecte tes sources, lance les synchronisations et contrôle la fraîcheur des données.

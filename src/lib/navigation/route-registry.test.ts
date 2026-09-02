@@ -7,10 +7,14 @@ import {
 
 describe('route-registry', () => {
   describe('resolveRouteLabel', () => {
-    it('matches static routes', () => {
-      expect(resolveRouteLabel('/training')).toBe('Ma semaine');
+    it('matches Shell V1 hubs and static routes', () => {
+      expect(resolveRouteLabel('/plan')).toBe('Plan');
+      expect(resolveRouteLabel('/activite')).toBe('Activité');
+      expect(resolveRouteLabel('/moi')).toBe('Moi');
+      expect(resolveRouteLabel('/training')).toBe('Fil de la semaine');
       expect(resolveRouteLabel('/training/history')).toBe('Historique');
-      expect(resolveRouteLabel('/settings')).toBe('Profil');
+      expect(resolveRouteLabel('/settings')).toBe('Moi');
+      expect(resolveRouteLabel('/settings/privacy')).toBe('Confidentialité');
       expect(resolveRouteLabel('/coach')).toBe('Coach');
       expect(resolveRouteLabel('/')).toBe('Aujourd’hui');
     });
@@ -50,8 +54,16 @@ describe('route-registry', () => {
         label: 'Historique',
       });
       expect(resolveRouteFallback('/training/history')).toEqual({
-        href: '/training',
-        label: 'Ma semaine',
+        href: '/activite',
+        label: 'Activité',
+      });
+      expect(resolveRouteFallback('/training')).toEqual({
+        href: '/plan',
+        label: 'Plan',
+      });
+      expect(resolveRouteFallback('/training/planning')).toEqual({
+        href: '/plan',
+        label: 'Plan',
       });
     });
 
@@ -62,18 +74,22 @@ describe('route-registry', () => {
       });
     });
 
-    it('sends every /settings child back to /settings', () => {
+    it('sends every /settings child back to /moi', () => {
       expect(resolveRouteFallback('/settings/account')).toEqual({
-        href: '/settings',
-        label: 'Profil',
+        href: '/moi',
+        label: 'Moi',
       });
       expect(resolveRouteFallback('/settings/integrations')).toEqual({
-        href: '/settings',
-        label: 'Profil',
+        href: '/moi',
+        label: 'Moi',
       });
       expect(resolveRouteFallback('/settings/equipment')).toEqual({
-        href: '/settings',
-        label: 'Profil',
+        href: '/moi',
+        label: 'Moi',
+      });
+      expect(resolveRouteFallback('/settings/privacy')).toEqual({
+        href: '/moi',
+        label: 'Moi',
       });
     });
 

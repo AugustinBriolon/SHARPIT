@@ -48,8 +48,8 @@ test.describe('transient UI state resets when a route is hidden', () => {
     await filters.click();
     await expect(filters).toHaveAttribute('aria-expanded', 'true');
 
-    await page.getByRole('link', { name: 'Réglages' }).first().click();
-    await expect(page).toHaveURL(/\/settings$/);
+    await page.locator('nav[aria-label="Navigation principale"] a[href="/moi"]').first().click();
+    await expect(page).toHaveURL(/\/moi$/);
 
     await page.goBack();
     await expect(page).toHaveURL(/\/training\/history$/);
