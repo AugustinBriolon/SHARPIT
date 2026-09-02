@@ -37,6 +37,22 @@ export default function SettingsAboutPage() {
             </li>
           </ul>
         </div>
+        <div>
+          <p className="text-label">Confidentialité</p>
+          <p className="text-muted-foreground mt-1 text-sm leading-relaxed">
+            <a className="underline underline-offset-2" href="/privacy">
+              Politique de confidentialité
+            </a>
+            {' · '}
+            <a className="underline underline-offset-2" href="/terms">
+              Conditions d&apos;utilisation
+            </a>
+            {' · '}
+            <a className="underline underline-offset-2" href="/settings/privacy">
+              Gérer mes consentements
+            </a>
+          </p>
+        </div>
       </section>
     </div>
   );

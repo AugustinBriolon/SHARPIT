@@ -26,6 +26,7 @@ import {
   ensureFreeAiBudget,
   withAiBudgetWarningHeader,
 } from '@/lib/access/ai-budget';
+import { requireAiProcessingConsent } from '@/lib/privacy/consent-store';
 import { formatStrengthSessionRules } from '@/lib/planned-session/strength/strength-session-template';
 import { checkRateLimit, rateLimitJsonResponse, rateLimiters } from '@/lib/rate-limit';
 import { COACH_COPY_DASH_RULE } from '@/lib/coach/sanitize-coach-copy';
@@ -101,6 +102,11 @@ export async function POST(req: Request) {
   }
 
   const athleteId = await getCurrentAthleteId();
+
+  const aiBlocked = await requireAiProcessingConsent(athleteId);
+  if (aiBlocked) {
+    return aiBlocked;
+  }
 
   const rateLimit = await checkRateLimit(rateLimiters.coachChat, athleteId, { failClosed: true });
   if (!rateLimit.ok) {

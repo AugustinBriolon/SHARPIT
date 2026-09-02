@@ -12,6 +12,7 @@ import {
 } from '@/lib/integrations/source-prefs';
 import { persistSourcePrefsMutation } from '@/lib/integrations/source-prefs-store';
 import { updateRecordsForTypes } from '@/lib/training/records';
+import { gateProviderConnect } from '@/lib/privacy/gate-provider-connect';
 
 export const maxDuration = 300;
 
@@ -23,6 +24,11 @@ export const garminImportTokensSchema = z.object({
 /** Authenticated import of python-garminconnect ≥ 0.3 tokenstore JSON. */
 export async function POST(request: NextRequest) {
   try {
+    const consentBlock = await gateProviderConnect(request, 'garmin', 'json');
+    if (consentBlock) {
+      return consentBlock;
+    }
+
     const body = await request.json();
     const parsed = garminImportTokensSchema.safeParse(body);
     if (!parsed.success) {

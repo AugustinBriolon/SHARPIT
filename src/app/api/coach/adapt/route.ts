@@ -11,6 +11,7 @@ import {
   ensureFreeAiBudget,
   withAiBudgetWarningHeader,
 } from '@/lib/access/ai-budget';
+import { requireAiProcessingConsent } from '@/lib/privacy/consent-store';
 import { checkRateLimit, rateLimitJsonResponse, rateLimiters } from '@/lib/rate-limit';
 import { buildCoachContext, formatCoachContext } from '@/lib/coach/context/coach-context';
 import { getActiveTrainingPlan, getGoals, getPlannedSessionsForCoach } from '@/lib/queries';
@@ -267,6 +268,11 @@ export async function POST(req: Request) {
 
     const today = startOfDay(new Date());
     const athleteId = await getCurrentAthleteId();
+
+    const aiBlocked = await requireAiProcessingConsent(athleteId);
+    if (aiBlocked) {
+      return aiBlocked;
+    }
 
     const access = await checkAdaptAccess(athleteId);
     if (access.blocked) {

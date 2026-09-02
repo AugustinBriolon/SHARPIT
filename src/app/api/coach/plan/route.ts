@@ -10,6 +10,7 @@ import {
   ensureFreeAiBudget,
   withAiBudgetWarningHeader,
 } from '@/lib/access/ai-budget';
+import { requireAiProcessingConsent } from '@/lib/privacy/consent-store';
 import { checkRateLimit, rateLimitJsonResponse, rateLimiters } from '@/lib/rate-limit';
 import {
   buildCoachContext,
@@ -256,6 +257,10 @@ export async function POST(req: Request) {
   }
 
   const athleteId = await getCurrentAthleteId();
+  const aiBlocked = await requireAiProcessingConsent(athleteId);
+  if (aiBlocked) {
+    return aiBlocked;
+  }
   const prepared = await preparePlanGeneration(athleteId, parsed.data);
   if (!prepared.ok) {
     return prepared.response;

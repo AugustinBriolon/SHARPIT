@@ -7,6 +7,7 @@ import {
   getGoogleRedirectUri,
   isGoogleConfigured,
 } from '@/lib/integrations/google/google';
+import { gateProviderConnect } from '@/lib/privacy/gate-provider-connect';
 
 const OAUTH_COOKIE_OPTS = {
   httpOnly: true,
@@ -29,6 +30,11 @@ export async function GET(request: NextRequest) {
       },
       { status: 400 },
     );
+  }
+
+  const consentBlock = await gateProviderConnect(request, 'google', 'redirect');
+  if (consentBlock) {
+    return consentBlock;
   }
 
   const returnTo = request.nextUrl.searchParams.get('returnTo');

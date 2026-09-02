@@ -109,13 +109,17 @@ async function runBackgroundTasks(params: BackgroundTaskParams): Promise<void> {
   await recomputeNeuromuscularIfNeeded(athleteId, activityIds, dayId);
 
   if (activityIds.length > 0 && isCoachConfigured()) {
-    const { runActivityNarrativeForIds } =
-      await import('@/lib/activity/narrative/activity-narrative');
-    await runActivityNarrativeForIds(athleteId, activityIds);
+    const { athleteHasAiProcessingConsent } = await import('@/lib/privacy/consent-store');
+    if (await athleteHasAiProcessingConsent(athleteId)) {
+      const { runActivityNarrativeForIds } =
+        await import('@/lib/activity/narrative/activity-narrative');
+      await runActivityNarrativeForIds(athleteId, activityIds);
+    }
   }
 
-  if (regenerateBriefing && isCoachConfigured()) {
+  if (regenerateBriefing) {
     const refDate = new Date(`${dayId}T12:00:00.000Z`);
+    // Deterministic fallback when AI consent missing — Twin engines stay OK.
     await generateAndStoreDailyBriefing(athleteId, refDate);
     await regenerateAthleteSnapshotAfterBriefing(athleteId, dayId);
   }

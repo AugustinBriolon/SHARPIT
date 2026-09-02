@@ -17,6 +17,7 @@ import {
   sanitizeIntegrationReturnTo,
   setIntegrationReturnTo,
 } from '@/lib/integrations/oauth-return';
+import { gateProviderConnect } from '@/lib/privacy/gate-provider-connect';
 
 export const maxDuration = 60;
 
@@ -45,6 +46,11 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    const consentBlock = await gateProviderConnect(request, 'garmin', 'redirect');
+    if (consentBlock) {
+      return consentBlock;
+    }
+
     const athleteId = await getCurrentAthleteId();
     const returnTo = request.nextUrl.searchParams.get('returnTo');
     const dataClass = request.nextUrl.searchParams.get('dataClass');

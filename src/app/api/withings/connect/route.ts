@@ -11,6 +11,7 @@ import {
   getWithingsRedirectUri,
   isWithingsConfigured,
 } from '@/lib/integrations/withings/withings';
+import { gateProviderConnect } from '@/lib/privacy/gate-provider-connect';
 
 export async function GET(request: NextRequest) {
   const bindRedirect = redirectIfBindHost(request);
@@ -26,6 +27,11 @@ export async function GET(request: NextRequest) {
       },
       { status: 400 },
     );
+  }
+
+  const consentBlock = await gateProviderConnect(request, 'withings', 'redirect');
+  if (consentBlock) {
+    return consentBlock;
   }
 
   const returnTo = request.nextUrl.searchParams.get('returnTo');
