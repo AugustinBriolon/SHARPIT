@@ -1,12 +1,46 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { encryptSecret } from '@/lib/secret-box';
 import { shouldCronSyncProvider } from '@/lib/cron/provider-sync-gates';
+
+const ORIGINAL_KEY = process.env.SECRET_ENCRYPTION_KEY;
+
+afterEach(() => {
+  if (ORIGINAL_KEY === undefined) {
+    delete process.env.SECRET_ENCRYPTION_KEY;
+  } else {
+    process.env.SECRET_ENCRYPTION_KEY = ORIGINAL_KEY;
+  }
+});
+
+function enc(plain: string): string {
+  process.env.SECRET_ENCRYPTION_KEY = 'cron-gate-test-key';
+  return encryptSecret(plain);
+}
+
+function diGarminAccount() {
+  return {
+    oauth1TokenEnc: enc(
+      JSON.stringify({
+        oauth_token: '__DI__:GARMIN_CONNECT_MOBILE_ANDROID_DI_2025Q2',
+        oauth_token_secret: 'rt',
+      }),
+    ),
+    oauth2TokenEnc: enc(
+      JSON.stringify({
+        access_token: 'at',
+        refresh_token: 'rt',
+        expires_at: Math.floor(Date.now() / 1000) + 3600,
+      }),
+    ),
+  };
+}
 
 describe('shouldCronSyncProvider', () => {
   it('skips when the account row is missing', () => {
     expect(shouldCronSyncProvider('garmin', null)).toBe(false);
     expect(shouldCronSyncProvider('renpho', null)).toBe(false);
     expect(shouldCronSyncProvider('myfitnesspal', null)).toBe(false);
+    expect(shouldCronSyncProvider('strava', null)).toBe(false);
   });
 
   it('skips revoked empty credentials so cron does not re-throw reconnect spam', () => {
@@ -22,15 +56,40 @@ describe('shouldCronSyncProvider', () => {
       shouldCronSyncProvider('garmin', { oauth1TokenEnc: 'demo', oauth2TokenEnc: 'demo' }),
     ).toBe(false);
     expect(shouldCronSyncProvider('renpho', { email: 'a@b.c', passwordEnc: 'demo' })).toBe(false);
+    expect(shouldCronSyncProvider('myfitnesspal', { sessionTokenEnc: 'demo' })).toBe(false);
   });
 
-  it('syncs when credentials look like real encrypted secrets', () => {
-    process.env.SECRET_ENCRYPTION_KEY = 'cron-gate-test-key';
-    const enc = encryptSecret('ok');
-    expect(shouldCronSyncProvider('garmin', { oauth1TokenEnc: enc, oauth2TokenEnc: enc })).toBe(
+  it('skips ciphertext-looking blobs that are not live Garmin token JSON', () => {
+    const junk = enc('not-tokens');
+    expect(shouldCronSyncProvider('garmin', { oauth1TokenEnc: junk, oauth2TokenEnc: junk })).toBe(
+      false,
+    );
+  });
+
+  it('syncs Garmin when DI credentials match the Settings hub connected meaning', () => {
+    expect(shouldCronSyncProvider('garmin', diGarminAccount())).toBe(true);
+  });
+
+  it('syncs Renpho / MyFitnessPal when credentials look like live encrypted secrets', () => {
+    expect(shouldCronSyncProvider('renpho', { email: 'a@b.c', passwordEnc: enc('pw') })).toBe(
       true,
     );
-    expect(shouldCronSyncProvider('renpho', { email: 'a@b.c', passwordEnc: enc })).toBe(true);
-    expect(shouldCronSyncProvider('myfitnesspal', { sessionTokenEnc: enc })).toBe(true);
+    expect(shouldCronSyncProvider('myfitnesspal', { sessionTokenEnc: enc('cookie') })).toBe(true);
+  });
+
+  it('skips Google without a target calendar even when OAuth tokens look live', () => {
+    expect(
+      shouldCronSyncProvider('google', {
+        accessTokenEnc: enc('access'),
+        refreshTokenEnc: enc('refresh'),
+      }),
+    ).toBe(false);
+    expect(
+      shouldCronSyncProvider('google', {
+        accessTokenEnc: enc('access'),
+        refreshTokenEnc: enc('refresh'),
+        targetCalendarId: 'cal-1',
+      }),
+    ).toBe(true);
   });
 });
