@@ -8,6 +8,7 @@ import { useActivityMutations } from '@/hooks/use-data';
 import { useResetWhenHidden } from '@/hooks/use-reset-when-hidden';
 import { useDemoActivityPlannedSession } from '@/hooks/use-demo-session-link-overlay';
 import type { ActivityDetailHeaderActivity } from '@/components/training/activity/detail/activity-detail-header-content';
+import { navStack } from '@/lib/navigation/nav-stack';
 
 export function useActivityDetailHeaderActions(activity: ActivityDetailHeaderActivity) {
   const router = useRouter();
@@ -32,8 +33,11 @@ export function useActivityDetailHeaderActions(activity: ActivityDetailHeaderAct
     if (!confirmed) {
       return;
     }
+    const currentHref = `/training/${activity.id}`;
     remove.mutate(activity.id);
-    router.push('/training');
+    // Return to origin (Activité or Plan via stack); never freeze to Historique / Fil.
+    const previous = navStack.peekBackFrom(currentHref);
+    router.push(previous?.href ?? '/activite');
   }
 
   return {

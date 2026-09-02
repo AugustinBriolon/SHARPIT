@@ -62,20 +62,36 @@ describe('back-navigation inventory', () => {
     expect(violations).toEqual([]);
   });
 
-  it('allowlists the only static MobileBackLink href= call sites', () => {
-    const found: string[] = [];
-    for (const abs of files) {
-      const rel = toRel(abs);
-      const source = fs.readFileSync(abs, 'utf8');
-      if (!source.includes('MobileBackLink')) {
-        continue;
+    it('allowlists the only static MobileBackLink href= call sites', () => {
+      const found: string[] = [];
+      for (const abs of files) {
+        const rel = toRel(abs);
+        const source = fs.readFileSync(abs, 'utf8');
+        if (!source.includes('MobileBackLink')) {
+          continue;
+        }
+        if (STATIC_HREF_PROP.test(source)) {
+          found.push(rel);
+        }
       }
-      if (STATIC_HREF_PROP.test(source)) {
-        found.push(rel);
-      }
-    }
-    expect(found.sort()).toEqual([...STATIC_HREF_ALLOWLIST].sort());
-  });
+      expect(found.sort()).toEqual([...STATIC_HREF_ALLOWLIST].sort());
+    });
+
+    it('does not hard-push deleted activities to Fil / Historique', () => {
+      const detailActions = fs.readFileSync(
+        path.join(SRC_ROOT, 'components/training/activity/detail/use-activity-detail-header-actions.ts'),
+        'utf8',
+      );
+      const listActions = fs.readFileSync(
+        path.join(SRC_ROOT, 'components/training/activity/list/activity-list.tsx'),
+        'utf8',
+      );
+      expect(detailActions).not.toMatch(/router\.push\(\s*['"`]\/training['"`]\s*\)/);
+      expect(detailActions).not.toMatch(/router\.push\(\s*['"`]\/training\/history/);
+      expect(listActions).not.toMatch(/router\.push\(\s*['"`]\/training['"`]\s*\)/);
+      expect(detailActions).toMatch(/\/activite/);
+      expect(listActions).toMatch(/\/activite/);
+    });
 
   it('keeps legal walls free of MobileBackLink / app shell back chrome', () => {
     const legalTrees = [
