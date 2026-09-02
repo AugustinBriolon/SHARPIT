@@ -42,8 +42,8 @@ describe('shortLabelFromName', () => {
 });
 
 describe('DEMO_IDENTITY', () => {
-  it('exposes demo initials and label', () => {
+  it('exposes demo initials and keeps Shell V1 Moi tab label', () => {
     expect(DEMO_IDENTITY.initials).toBe('D');
-    expect(DEMO_IDENTITY.shortLabel).toBe('Démo');
+    expect(DEMO_IDENTITY.shortLabel).toBe('Moi');
   });
 });

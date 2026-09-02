@@ -65,6 +65,8 @@ test.describe('navigation shell', () => {
     await expect(nav.getByText('Aujourd’hui', { exact: true })).toBeVisible();
     await expect(nav.getByText('Plan', { exact: true })).toBeVisible();
     await expect(nav.getByText('Activité', { exact: true })).toBeVisible();
+    await expect(nav.getByText('Moi', { exact: true })).toBeVisible();
+    await expect(nav.getByText('Démo', { exact: true })).toHaveCount(0);
   });
 
   test('a drill-down paints exactly one header', async ({ page }) => {
