@@ -3,12 +3,14 @@ import { MEDICAL_DISCLAIMER_V0 } from '@/lib/copy/medical-disclaimer';
 import { cn } from '@/lib/utils';
 
 /**
- * Visible, always-available medical disclaimer — clinical annotation, not a banner.
- * Renders the exact V0 string with no paraphrasing title prefix.
+ * Secondary medical disclaimer — ClinicalAnnotation note, never a banner.
+ * Keep typography small so Today hero verdict + action stay above the mobile fold.
  */
 export function MedicalDisclaimerNote({ className }: { className?: string }) {
   return (
-    <ClinicalAnnotation className={cn('text-pretty', className)}>
+    <ClinicalAnnotation
+      className={cn('text-pretty text-[0.6875rem] leading-snug', className)}
+    >
       {MEDICAL_DISCLAIMER_V0}
     </ClinicalAnnotation>
   );

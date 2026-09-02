@@ -61,15 +61,19 @@ export function TodayDashboardMain({
         </p>
       ) : null}
       {!valuesLoading ? <TodayCriticalStatus content={content} isFetching={isFetching} /> : null}
-      <div className="space-y-2 lg:space-y-4">
+      <div className="space-y-1.5 lg:space-y-3">
         <TodayHeader
           dayKey={trainingDayId}
           loading={valuesLoading}
           weather={content.header.weather}
         />
-        <TodayVerdictHero loading={valuesLoading} vm={content} />
-        {/* Visible, not buried — Science Sport medical disclaimer V0 */}
-        {!valuesLoading ? <MedicalDisclaimerNote className="px-1" /> : null}
+        {/* Hero decision stays above the fold; disclaimer is a secondary note only. */}
+        <div className="space-y-1.5">
+          <TodayVerdictHero loading={valuesLoading} vm={content} />
+          {!valuesLoading ? (
+            <MedicalDisclaimerNote className="px-1 text-[0.6875rem] leading-snug" />
+          ) : null}
+        </div>
       </div>
       {!valuesLoading ? <DailyBriefingPanel dayKey={trainingDayId} /> : null}
       <TodayActionRow

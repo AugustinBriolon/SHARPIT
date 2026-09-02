@@ -67,7 +67,8 @@ const STRINGS: Record<string, string> = {
 
   'reasoning.topAction.recover.verb': 'Récupère',
   'reasoning.topAction.recover.focusDefault': 'activement',
-  'reasoning.topAction.recover.rationale': 'Tes systèmes ont besoin de repos pour rebondir.',
+  'reasoning.topAction.recover.rationale':
+    'Tes signaux du jour indiquent un besoin de repos pour rebondir.',
 
   'reasoning.topAction.raceReady.verb': 'Tu es prêt',
   'reasoning.topAction.raceReady.focus': 'à performer',
@@ -211,7 +212,7 @@ const STRINGS: Record<string, string> = {
     'Priorité à la récupération — réduire la charge',
   'reasoning.conflict.timingConflict01.description': "Fenêtres d'adaptation contradictoires",
   'reasoning.conflict.timingConflict01.resolution': "S'appuyer sur le modèle le plus récent",
-  'reasoning.conflict.signalConflict01.description': 'Signaux physiologiques contradictoires',
+  'reasoning.conflict.signalConflict01.description': 'Signaux contradictoires',
   'reasoning.conflict.signalConflict01.resolution':
     "Maintenir une intensité modérée jusqu'à résolution",
 

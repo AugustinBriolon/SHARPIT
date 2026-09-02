@@ -246,7 +246,7 @@ export function buildTodayLimitingFacts(input: {
       systemLabel(
         limitingFactor.system,
         'domain' in limitingFactor ? limitingFactor.domain : null,
-      ) ?? 'Physiologie';
+      ) ?? 'Signaux';
     const cause = limiterFromDescription(limitingFactor.description);
 
     const facts: TodayFactRow[] = [
