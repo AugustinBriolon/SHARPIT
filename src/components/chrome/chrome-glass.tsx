@@ -75,24 +75,27 @@ function GlassBackdrop({ cornerRadius, overLight }: { cornerRadius: number; over
       <LiquidGlass
         aberrationIntensity={overLight ? 1.15 : 1.5}
         blurAmount={overLight ? 0.12 : 0.08}
-        className="!m-0 size-full"
+        className="!m-0 size-full !transform-none"
         cornerRadius={cornerRadius}
         displacementScale={overLight ? 42 : 48}
         elasticity={0}
         mode="standard"
+        mouseContainer={null}
         overLight={overLight}
         padding="0"
         saturation={overLight ? 125 : 130}
         style={{
           height: '100%',
           left: 0,
+          margin: 0,
           position: 'absolute',
           top: 0,
           transform: 'none',
           width: '100%',
         }}
       >
-        <div className="size-full min-h-11" />
+        {/* Empty content — glass is backdrop only; avoid a second floating orb glyph. */}
+        <div className="size-full" />
       </LiquidGlass>
     </div>
   );

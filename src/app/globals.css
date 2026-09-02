@@ -184,10 +184,10 @@
     bars, chat composers — must anchor on `--bottom-nav-offset` so it can never
     swallow a nav tap.
   */
-  /* Floating glass tab bar needs air above safe-area so the last content card is not clipped. */
-  --bottom-nav-height: 5.25rem;
+  /* Floating glass tab bar — keep last hub cards / quiet links clear of the bar. */
+  --bottom-nav-height: 5.75rem;
   --bottom-nav-offset: calc(
-    var(--bottom-nav-height) + 0.75rem + env(safe-area-inset-bottom, 0px)
+    var(--bottom-nav-height) + 2rem + env(safe-area-inset-bottom, 0px)
   );
 
   /* Press feedback scales — ADR-028 / motionTokens.scale.press* */
