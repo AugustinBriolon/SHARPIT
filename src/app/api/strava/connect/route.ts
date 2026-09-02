@@ -7,6 +7,7 @@ import {
   setIntegrationReturnTo,
 } from '@/lib/integrations/oauth-return';
 import { buildAuthorizeUrl, isStravaConfigured } from '@/lib/integrations/strava/strava';
+import { gateProviderConnect } from '@/lib/privacy/gate-provider-connect';
 
 export async function GET(request: NextRequest) {
   const bindRedirect = redirectIfBindHost(request);
@@ -21,6 +22,11 @@ export async function GET(request: NextRequest) {
       },
       { status: 400 },
     );
+  }
+
+  const consentBlock = await gateProviderConnect(request, 'strava', 'redirect');
+  if (consentBlock) {
+    return consentBlock;
   }
 
   const returnTo = request.nextUrl.searchParams.get('returnTo');

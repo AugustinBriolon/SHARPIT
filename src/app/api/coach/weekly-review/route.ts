@@ -9,6 +9,7 @@ import {
   getLatestWeeklyReview,
   getWeeklyReview,
 } from '@/lib/weekly-review';
+import { requireAiProcessingConsent } from '@/lib/privacy/consent-store';
 
 export const maxDuration = 60;
 
@@ -68,6 +69,10 @@ export async function POST(request: NextRequest) {
     const athleteId = await requireProAthlete();
     if (athleteId instanceof NextResponse) {
       return athleteId;
+    }
+    const aiBlocked = await requireAiProcessingConsent(athleteId);
+    if (aiBlocked) {
+      return aiBlocked;
     }
     // Depuis l'app, on veut la rétro de la semaine EN COURS (current: true).
     const rateLimit = await checkRateLimit(rateLimiters.coachReview, athleteId, { failClosed: true });

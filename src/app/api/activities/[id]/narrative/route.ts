@@ -5,6 +5,7 @@ import { runActivityNarrativeAnalysis } from '@/lib/activity/narrative/activity-
 import { canGenerateNarrativeForActivity } from '@/lib/access/narrative-trial';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { checkRateLimit, rateLimitJsonResponse, rateLimiters } from '@/lib/rate-limit';
+import { requireAiProcessingConsent } from '@/lib/privacy/consent-store';
 import { prisma } from '@/lib/prisma';
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -79,6 +80,10 @@ export async function POST(request: NextRequest, context: RouteContext) {
   try {
     const { id } = await context.params;
     const athleteId = await getCurrentAthleteId();
+    const aiBlocked = await requireAiProcessingConsent(athleteId);
+    if (aiBlocked) {
+      return aiBlocked;
+    }
     const validated = await validateNarrativePost(athleteId, id, request);
     if (validated instanceof NextResponse) {
       return validated;

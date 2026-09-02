@@ -51,26 +51,26 @@ describe('getCurrentAthleteId', () => {
   it('resolves the fixed demo athlete for an anonymous visitor with the demo cookie set', async () => {
     authMock.mockResolvedValue({ userId: null });
     cookiesGetMock.mockReturnValue({ value: '1' });
-    findUniqueOrThrowMock.mockResolvedValue({ id: 'athlete_demo' });
+    findUniqueOrThrowMock.mockResolvedValue({ id: 'athlete_demo', deletedAt: null });
     const { getCurrentAthleteId } = await importFresh();
 
     await expect(getCurrentAthleteId()).resolves.toBe('athlete_demo');
     expect(findUniqueOrThrowMock).toHaveBeenCalledWith({
       where: { clerkUserId: 'demo' },
-      select: { id: true },
+      select: { id: true, deletedAt: true },
     });
   });
 
   it('prefers a real Clerk session over a stray demo cookie', async () => {
     authMock.mockResolvedValue({ userId: 'user_known' });
     cookiesGetMock.mockReturnValue({ value: '1' });
-    findUniqueMock.mockResolvedValue({ id: 'athlete_123' });
+    findUniqueMock.mockResolvedValue({ id: 'athlete_123', deletedAt: null });
     const { getCurrentAthleteId } = await importFresh();
 
     await expect(getCurrentAthleteId()).resolves.toBe('athlete_123');
     expect(findUniqueOrThrowMock).not.toHaveBeenCalledWith({
       where: { clerkUserId: 'demo' },
-      select: { id: true },
+      select: { id: true, deletedAt: true },
     });
   });
 
@@ -84,10 +84,23 @@ describe('getCurrentAthleteId', () => {
 
   it('returns the existing profile id for a known Clerk user', async () => {
     authMock.mockResolvedValue({ userId: 'user_known' });
-    findUniqueMock.mockResolvedValue({ id: 'athlete_123' });
+    findUniqueMock.mockResolvedValue({ id: 'athlete_123', deletedAt: null });
     const { getCurrentAthleteId } = await importFresh();
 
     await expect(getCurrentAthleteId()).resolves.toBe('athlete_123');
+    expect(createMock).not.toHaveBeenCalled();
+    expect(findUniqueMock).toHaveBeenCalledWith({
+      where: { clerkUserId: 'user_known' },
+      select: { id: true, deletedAt: true },
+    });
+  });
+
+  it('rejects a soft-deleted account still holding a Clerk session', async () => {
+    authMock.mockResolvedValue({ userId: 'user_deleted' });
+    findUniqueMock.mockResolvedValue({ id: 'athlete_gone', deletedAt: new Date('2026-09-01') });
+    const { getCurrentAthleteId } = await importFresh();
+
+    await expect(getCurrentAthleteId()).rejects.toThrow(/Compte désactivé/);
     expect(createMock).not.toHaveBeenCalled();
   });
 
@@ -105,14 +118,27 @@ describe('getCurrentAthleteId', () => {
     authMock.mockResolvedValue({ userId: 'user_racing' });
     findUniqueMock.mockResolvedValue(null);
     createMock.mockRejectedValue(uniqueConstraintError());
-    findUniqueOrThrowMock.mockResolvedValue({ id: 'athlete_raced' });
+    findUniqueOrThrowMock.mockResolvedValue({ id: 'athlete_raced', deletedAt: null });
     const { getCurrentAthleteId } = await importFresh();
 
     await expect(getCurrentAthleteId()).resolves.toBe('athlete_raced');
     expect(findUniqueOrThrowMock).toHaveBeenCalledWith({
       where: { clerkUserId: 'user_racing' },
-      select: { id: true },
+      select: { id: true, deletedAt: true },
     });
+  });
+
+  it('rejects a soft-deleted row found after a create race', async () => {
+    authMock.mockResolvedValue({ userId: 'user_racing_deleted' });
+    findUniqueMock.mockResolvedValue(null);
+    createMock.mockRejectedValue(uniqueConstraintError());
+    findUniqueOrThrowMock.mockResolvedValue({
+      id: 'athlete_raced_deleted',
+      deletedAt: new Date('2026-09-01'),
+    });
+    const { getCurrentAthleteId } = await importFresh();
+
+    await expect(getCurrentAthleteId()).rejects.toThrow(/Compte désactivé/);
   });
 
   it('lets a non-race creation error propagate', async () => {

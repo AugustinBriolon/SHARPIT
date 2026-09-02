@@ -13,6 +13,8 @@ import { checkRateLimit, rateLimiters, rateLimitResponseBody } from '@/lib/rate-
 const isPublicRoute = createRouteMatcher([
   '/sign-in(.*)',
   '/sign-up(.*)',
+  '/privacy',
+  '/terms',
   '/api/cron(.*)',
   '/~offline',
   '/demo',

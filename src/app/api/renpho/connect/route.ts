@@ -8,6 +8,8 @@ import {
   enableProviderForClass,
 } from '@/lib/integrations/source-prefs';
 import { persistSourcePrefsMutation } from '@/lib/integrations/source-prefs-store';
+import { gateProviderConnect } from '@/lib/privacy/gate-provider-connect';
+import { logSafeError } from '@/lib/privacy/safe-log';
 
 export const renphoConnectSchema = z.object({
   email: z.string().email().max(320),
@@ -17,6 +19,11 @@ export const renphoConnectSchema = z.object({
 
 export async function POST(request: NextRequest) {
   try {
+    const consentBlock = await gateProviderConnect(request, 'renpho', 'json');
+    if (consentBlock) {
+      return consentBlock;
+    }
+
     const athleteId = await getCurrentAthleteId();
     const body = await request.json();
     const parsed = renphoConnectSchema.safeParse(body);
@@ -45,7 +52,7 @@ export async function POST(request: NextRequest) {
       sync,
     });
   } catch (error) {
-    console.error(error);
+    logSafeError('api/renpho/connect', error);
     let message = 'Connexion Renpho échouée. Vérifie tes identifiants Renpho Health (app bleue).';
     if (error instanceof Error && error.message.includes('Renpho')) {
       const { message: renphoMessage } = error;

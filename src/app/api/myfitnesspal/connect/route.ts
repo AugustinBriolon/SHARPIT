@@ -9,6 +9,8 @@ import {
   enableProviderForClass,
 } from '@/lib/integrations/source-prefs';
 import { persistSourcePrefsMutation } from '@/lib/integrations/source-prefs-store';
+import { gateProviderConnect } from '@/lib/privacy/gate-provider-connect';
+import { logSafeError } from '@/lib/privacy/safe-log';
 
 export const mfpConnectSchema = z.object({
   sessionToken: z.string().min(1).max(8000),
@@ -23,6 +25,11 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    const consentBlock = await gateProviderConnect(request, 'myfitnesspal', 'json');
+    if (consentBlock) {
+      return consentBlock;
+    }
+
     const athleteId = await getCurrentAthleteId();
     const { displayName } = await connectMfp(athleteId, parsed.data.sessionToken);
 
@@ -37,7 +44,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true, displayName, sync });
   } catch (err) {
-    console.error('[MFP] connect failed:', err);
+    logSafeError('api/myfitnesspal/connect', err);
     if (err instanceof MfpSessionExpiredError) {
       return NextResponse.json({ error: err.message }, { status: 401 });
     }

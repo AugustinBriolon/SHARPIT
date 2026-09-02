@@ -21,6 +21,7 @@ import {
 } from '@/lib/coach/context/coach-context';
 import { COACH_COPY_DASH_RULE, sanitizeCoachCopy } from '@/lib/coach/sanitize-coach-copy';
 import { recordAiUsage } from '@/lib/ai-usage';
+import { athleteHasAiProcessingConsent } from '@/lib/privacy/consent-store';
 import { prisma } from '@/lib/prisma';
 import { getActivities, getPlannedSessions } from '@/lib/queries';
 import { startOfDay } from 'date-fns';
@@ -101,6 +102,7 @@ function utcDateOnly(d: Date): Date {
 export async function generateDailyBriefingContent(
   athleteId: string,
   refDate: Date = new Date(),
+  options: { allowLlm?: boolean } = {},
 ): Promise<{
   content: string;
   readiness: number | null;
@@ -115,6 +117,16 @@ export async function generateDailyBriefingContent(
     buildCoachContext(athleteId, refDate),
     buildBriefingDayContext(athleteId, refDate, dailyPhase),
   ]);
+
+  const allowLlm = options.allowLlm ?? (await athleteHasAiProcessingConsent(athleteId));
+  if (!allowLlm) {
+    // Deterministic Twin path — no athlete context sent to an LLM.
+    return {
+      content: sanitizeCoachCopy(buildDeterministicBriefingFallback(dayCtx, ctx)),
+      readiness: ctx.health.readinessToday,
+      phaseAtGeneration: phase,
+    };
+  }
 
   const prompt = `${formatCoachContext(ctx)}
 
@@ -157,14 +169,15 @@ export async function getDailyBriefing(athleteId: string, refDate: Date = new Da
   return presentDailyBriefing(row);
 }
 
-/** Génère le bilan du jour et le stocke (upsert sur la date). */
+/** Génère le bilan du jour et le stocke (upsert sur la date).
+ * Without AI consent (or without AI gateway), stores the deterministic fallback only. */
 export async function generateAndStoreDailyBriefing(athleteId: string, refDate: Date = new Date()) {
-  if (!isCoachConfigured()) {
-    throw new Error('Coach IA non configuré (AI_GATEWAY_API_KEY manquante).');
-  }
+  const hasAiConsent = await athleteHasAiProcessingConsent(athleteId);
+  const allowLlm = hasAiConsent && isCoachConfigured();
   const { content, readiness, phaseAtGeneration } = await generateDailyBriefingContent(
     athleteId,
     refDate,
+    { allowLlm },
   );
   const date = utcDateOnly(refDate);
   return prisma.dailyBriefing.upsert({

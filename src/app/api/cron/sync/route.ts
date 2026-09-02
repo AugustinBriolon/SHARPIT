@@ -22,6 +22,10 @@ import {
   isDecryptMalformedSoftFailure,
   isProviderAuthFailure,
 } from '@/lib/integrations/shared/connection-status';
+import {
+  athleteHasAiProcessingConsent,
+  athleteHasHealthDataConsent,
+} from '@/lib/privacy/consent-store';
 
 export const maxDuration = 300;
 
@@ -133,6 +137,7 @@ function buildProviderSyncSpecs(
   athleteId: string,
   accounts: ProviderAccounts,
   result: AthleteSyncResult,
+  options: { hasHealthConsent: boolean },
 ): ProviderSyncSpec[] {
   const connected = connectedProviderSet(accounts);
   const specs: ProviderSyncSpec[] = [];
@@ -146,7 +151,7 @@ function buildProviderSyncSpecs(
       },
     });
   }
-  if (connected.has('garmin')) {
+  if (connected.has('garmin') && options.hasHealthConsent) {
     specs.push({
       provider: 'Garmin',
       fallback: 'Sync Garmin échouée',
@@ -161,7 +166,7 @@ function buildProviderSyncSpecs(
       },
     });
   }
-  appendOptionalProviderSpecs(athleteId, connected, specs);
+  appendOptionalProviderSpecs(athleteId, connected, specs, options);
   return specs;
 }
 
@@ -169,15 +174,16 @@ function appendOptionalProviderSpecs(
   athleteId: string,
   connected: Set<string>,
   specs: ProviderSyncSpec[],
+  options: { hasHealthConsent: boolean },
 ): void {
-  if (connected.has('withings')) {
+  if (connected.has('withings') && options.hasHealthConsent) {
     specs.push({
       provider: 'Withings',
       fallback: 'Sync Withings échouée',
       task: () => syncWithingsHealth(athleteId),
     });
   }
-  if (connected.has('renpho')) {
+  if (connected.has('renpho') && options.hasHealthConsent) {
     specs.push({
       provider: 'Renpho',
       fallback: 'Sync Renpho échouée',
@@ -191,7 +197,7 @@ function appendOptionalProviderSpecs(
       task: () => syncFromGoogle(athleteId),
     });
   }
-  if (connected.has('myfitnesspal')) {
+  if (connected.has('myfitnesspal') && options.hasHealthConsent) {
     specs.push({
       provider: 'MyFitnessPal',
       fallback: 'Sync MyFitnessPal échouée',
@@ -204,8 +210,9 @@ async function syncConnectedProviders(
   athleteId: string,
   accounts: ProviderAccounts,
   result: AthleteSyncResult,
+  options: { hasHealthConsent: boolean },
 ) {
-  const specs = buildProviderSyncSpecs(athleteId, accounts, result);
+  const specs = buildProviderSyncSpecs(athleteId, accounts, result, options);
   await Promise.all(
     specs.map((spec) =>
       runProviderSync({
@@ -305,17 +312,20 @@ async function syncOneAthlete(
     return result;
   }
 
-  const [strava, garmin, renpho, withings, google, mfp] = await Promise.all([
-    getStravaAccount(athleteId),
-    getGarminAccount(athleteId),
-    getRenphoAccount(athleteId),
-    getWithingsAccount(athleteId),
-    getGoogleAccount(athleteId),
-    getMfpAccount(athleteId),
-  ]);
+  const [strava, garmin, renpho, withings, google, mfp, hasHealthConsent, hasAiConsent] =
+    await Promise.all([
+      getStravaAccount(athleteId),
+      getGarminAccount(athleteId),
+      getRenphoAccount(athleteId),
+      getWithingsAccount(athleteId),
+      getGoogleAccount(athleteId),
+      getMfpAccount(athleteId),
+      athleteHasHealthDataConsent(athleteId),
+      athleteHasAiProcessingConsent(athleteId),
+    ]);
   const accounts: ProviderAccounts = { strava, garmin, renpho, withings, google, mfp };
 
-  await syncConnectedProviders(athleteId, accounts, result);
+  await syncConnectedProviders(athleteId, accounts, result, { hasHealthConsent });
   breaker.recordAthleteProcessed({ authenticityFailure: result.decryptAuthenticity });
 
   if (breaker.isTripped()) {
@@ -325,7 +335,9 @@ async function syncOneAthlete(
 
   await backfillStreamsIfNeeded(athleteId, accounts, result);
   await refreshAthleteBriefing(athleteId, result);
-  await generateWeeklyReviewIfSunday(athleteId, result);
+  if (hasAiConsent) {
+    await generateWeeklyReviewIfSunday(athleteId, result);
+  }
 
   return result;
 }
@@ -336,7 +348,10 @@ export async function GET(request: Request) {
     return unauthorized();
   }
 
-  const athletes = await prisma.athleteProfile.findMany({ select: { id: true } });
+  const athletes = await prisma.athleteProfile.findMany({
+    where: { deletedAt: null },
+    select: { id: true },
+  });
   const breaker = new DecryptCircuitBreaker();
 
   const results = await mapWithConcurrency(athletes, ATHLETE_CONCURRENCY, (athlete) =>
