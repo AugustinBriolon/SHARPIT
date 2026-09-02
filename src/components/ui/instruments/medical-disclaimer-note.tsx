@@ -4,10 +4,11 @@ import { cn } from '@/lib/utils';
 
 /**
  * Visible, always-available medical disclaimer — clinical annotation, not a banner.
+ * Renders the exact V0 string with no paraphrasing title prefix.
  */
 export function MedicalDisclaimerNote({ className }: { className?: string }) {
   return (
-    <ClinicalAnnotation className={cn('text-pretty', className)} title="Aide à l'entraînement">
+    <ClinicalAnnotation className={cn('text-pretty', className)}>
       {MEDICAL_DISCLAIMER_V0}
     </ClinicalAnnotation>
   );
