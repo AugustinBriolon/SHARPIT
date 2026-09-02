@@ -1,7 +1,6 @@
 'use client';
 
 import { SnapshotStatusBanner } from '@/components/today/dashboard/today-dashboard-states';
-import { DailyBriefingPanel } from '@/components/today/dashboard/daily-briefing-panel';
 import { TodayHeader } from '@/components/today/dashboard/today-header';
 import { TodayUnderstandSection } from '@/components/today/dashboard/today-understand-section';
 import { TodayActionRow } from '@/components/today/rich/today-action-row';
@@ -30,7 +29,10 @@ function TodayCriticalStatus({
 }
 
 /**
- * Today V0 hierarchy: one decision above the fold, then briefing, bilan, Comprendre.
+ * Today V0 hierarchy: one decision above the fold, then action row, Comprendre.
+ *
+ * Daily briefing stays generated/API-backed but is not mounted here until it
+ * has differentiated value vs the verdict (design feedback).
  *
  * Metric chips live as tertiary visual evidence under Comprendre — never as a
  * primary equal grid under the verdict.
@@ -68,7 +70,6 @@ export function TodayDashboardMain({
         />
         <TodayVerdictHero loading={valuesLoading} vm={content} />
       </div>
-      {!valuesLoading ? <DailyBriefingPanel dayKey={trainingDayId} /> : null}
       <TodayActionRow
         loading={valuesLoading}
         trainingDayId={trainingDayId}

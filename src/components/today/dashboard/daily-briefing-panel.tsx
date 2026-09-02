@@ -18,8 +18,10 @@ const TITLE = 'Briefing du jour';
 /**
  * Surfaces the already-persisted DailyBriefing — read-only, no generation.
  *
- * Progressive disclosure: open on first visit / morning; otherwise collapsed
- * behind « Lire le briefing ». Empty and loading never invent placeholder prose.
+ * Not mounted on Today primary UI for now (value unclear vs verdict); keep the
+ * component + API so it can return when differentiated. Progressive disclosure:
+ * open on first visit / morning; otherwise collapsed behind « Lire le briefing ».
+ * Empty and loading never invent placeholder prose.
  */
 export function DailyBriefingPanel({ dayKey, className }: { dayKey: string; className?: string }) {
   const { data, isPending, isError } = useDailyBriefing(dayKey);

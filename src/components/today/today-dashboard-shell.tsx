@@ -13,8 +13,8 @@ const SHELL_PLACEHOLDER_DAY_ID = '0000-00-00';
  * Stable Today chrome for Suspense fallback and cold-start loading.
  *
  * It has to hold every section the loaded page holds, or the page grows under
- * the reader as each one arrives. Briefing stays out of the shell: it is
- * progressive (hidden while the query is pending) and must not invent copy.
+ * the reader as each one arrives. Daily briefing is not part of Today primary
+ * UI (verdict owns the fold); generation/API remain available elsewhere.
  */
 export function TodayDashboardShell({ trainingDayId }: { trainingDayId?: string }) {
   const dayId = trainingDayId ?? SHELL_PLACEHOLDER_DAY_ID;
