@@ -2,10 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { awaitRequest } from '@/lib/next/await-request';
-import {
-  getAthleteConsentRow,
-  updateAthleteConsents,
-} from '@/lib/privacy/consent-store';
+import { softWallAcceptRequiresHealth } from '@/lib/privacy/consent';
+import { getAthleteConsentRow, updateAthleteConsents } from '@/lib/privacy/consent-store';
 import { CURRENT_PRIVACY_VERSION } from '@/lib/privacy/constants';
 import { logSafeError } from '@/lib/privacy/safe-log';
 
@@ -16,15 +14,19 @@ const consentBodySchema = z.object({
   unofficialProvidersAck: z.boolean().optional(),
 });
 
+function toIso(value: Date | null | undefined): string | null {
+  return value ? value.toISOString() : null;
+}
+
 function serializeConsent(row: NonNullable<Awaited<ReturnType<typeof getAthleteConsentRow>>>) {
   return {
-    termsAcceptedAt: row.termsAcceptedAt?.toISOString() ?? null,
-    privacyAcceptedAt: row.privacyAcceptedAt?.toISOString() ?? null,
+    termsAcceptedAt: toIso(row.termsAcceptedAt),
+    privacyAcceptedAt: toIso(row.privacyAcceptedAt),
     privacyVersion: row.privacyVersion,
-    healthDataConsentAt: row.healthDataConsentAt?.toISOString() ?? null,
-    aiProcessingConsentAt: row.aiProcessingConsentAt?.toISOString() ?? null,
-    unofficialProvidersAckAt: row.unofficialProvidersAckAt?.toISOString() ?? null,
-    deletedAt: row.deletedAt?.toISOString() ?? null,
+    healthDataConsentAt: toIso(row.healthDataConsentAt),
+    aiProcessingConsentAt: toIso(row.aiProcessingConsentAt),
+    unofficialProvidersAckAt: toIso(row.unofficialProvidersAckAt),
+    deletedAt: toIso(row.deletedAt),
     currentPrivacyVersion: CURRENT_PRIVACY_VERSION,
   };
 }
@@ -62,6 +64,13 @@ export async function POST(request: NextRequest) {
       parsed.data.unofficialProvidersAck === undefined
     ) {
       return NextResponse.json({ error: 'Aucun consentement à enregistrer' }, { status: 400 });
+    }
+    const softWallCheck = softWallAcceptRequiresHealth(parsed.data);
+    if (!softWallCheck.ok) {
+      return NextResponse.json(
+        { error: softWallCheck.error, code: 'health_data_consent_required' },
+        { status: 400 },
+      );
     }
     const row = await updateAthleteConsents(athleteId, parsed.data);
     return NextResponse.json({ consents: serializeConsent(row) });

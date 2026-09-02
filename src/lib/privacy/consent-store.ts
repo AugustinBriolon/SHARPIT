@@ -2,7 +2,8 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import {
   canUseAiProcessingFromProfile,
-  needsLegalConsentFromProfile,
+  mustGrantHealthConsent,
+  needsConsentWallFromProfile,
 } from '@/lib/privacy/consent';
 import {
   AI_CONSENT_REQUIRED_MESSAGE,
@@ -43,6 +44,32 @@ export async function getAthleteConsentRow(athleteId: string): Promise<AthleteCo
   });
 }
 
+/** Santé providers linked and/or Art. 9 observation rows already in DB. */
+export async function getAthleteHealthExposure(athleteId: string): Promise<{
+  hasSanteProvidersLinked: boolean;
+  hasHealthRows: boolean;
+}> {
+  const [garmin, withings, renpho, myfitnesspal, dailyHealth, bodyComposition, dailyNutrition] =
+    await Promise.all([
+      prisma.garminAccount.findUnique({ where: { athleteId }, select: { athleteId: true } }),
+      prisma.withingsAccount.findUnique({ where: { athleteId }, select: { athleteId: true } }),
+      prisma.renphoAccount.findUnique({ where: { athleteId }, select: { athleteId: true } }),
+      prisma.myFitnessPalAccount.findUnique({ where: { athleteId }, select: { athleteId: true } }),
+      prisma.dailyHealth.findFirst({ where: { athleteId }, select: { id: true } }),
+      prisma.bodyCompositionMeasurement.findFirst({ where: { athleteId }, select: { id: true } }),
+      prisma.dailyNutrition.findFirst({ where: { athleteId }, select: { id: true } }),
+    ]);
+
+  return {
+    hasSanteProvidersLinked: Boolean(garmin || withings || renpho || myfitnesspal),
+    hasHealthRows: Boolean(dailyHealth || bodyComposition || dailyNutrition),
+  };
+}
+
+/**
+ * Soft wall: CGU + Privacy + health_data_consent required before Today.
+ * Also forces when santé providers / health rows exist without consent (A).
+ */
 export async function athleteNeedsLegalConsent(athleteId: string): Promise<boolean> {
   if (await isDemoSession()) {
     return false;
@@ -59,13 +86,25 @@ export async function athleteNeedsLegalConsent(athleteId: string): Promise<boole
     return false;
   }
 
-  return needsLegalConsentFromProfile({
-    termsAcceptedAt: profile.termsAcceptedAt,
-    privacyAcceptedAt: profile.privacyAcceptedAt,
-    privacyVersion: profile.privacyVersion,
-    currentPrivacyVersion: CURRENT_PRIVACY_VERSION,
-    isDemo: false,
-    isDevBypass: false,
+  if (
+    needsConsentWallFromProfile({
+      termsAcceptedAt: profile.termsAcceptedAt,
+      privacyAcceptedAt: profile.privacyAcceptedAt,
+      privacyVersion: profile.privacyVersion,
+      healthDataConsentAt: profile.healthDataConsentAt,
+      currentPrivacyVersion: CURRENT_PRIVACY_VERSION,
+      isDemo: false,
+      isDevBypass: false,
+    })
+  ) {
+    return true;
+  }
+
+  // Defense-in-depth for legacy exposure if wall logic drifts.
+  const exposure = await getAthleteHealthExposure(athleteId);
+  return mustGrantHealthConsent({
+    healthDataConsentAt: profile.healthDataConsentAt,
+    ...exposure,
   });
 }
 

@@ -16,5 +16,9 @@ export const PROVIDER_CONSENT_REQUIRED_MESSAGE =
 export const LEGAL_CONSENT_REQUIRED_MESSAGE =
   'Accepte les Conditions d’utilisation et la Politique de confidentialité pour continuer.';
 
+/** French copy when health (art. 9) consent is missing on the soft wall. */
+export const HEALTH_CONSENT_REQUIRED_MESSAGE =
+  'Le consentement au traitement des données de santé est requis pour utiliser SharpIt.';
+
 export const CONTROLLER_NAME = 'Augustin Briolon';
 export const CONTROLLER_EMAIL = 'augustin.briolon@gmail.com';

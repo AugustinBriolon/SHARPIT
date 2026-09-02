@@ -10,13 +10,13 @@
 
 Persist on the athlete (or equivalent athlete-scoped store). Timestamps are ISO datetimes when accepted; `null` = not accepted.
 
-| Field | Type | Meaning |
-| --- | --- | --- |
-| `terms_accepted_at` | datetime \| null | Athlete accepted CGU (`/terms`) |
-| `privacy_accepted_at` | datetime \| null | Athlete accepted privacy policy (`/privacy`) |
-| `privacy_version` | string \| null | Version id of the privacy text accepted (bump when copy changes materially) |
-| `health_data_consent_at` | datetime \| null | Explicit consent to process Art. 9 health data (sync + inferences) |
-| `ai_processing_consent_at` | datetime \| null | Explicit consent for LLM / AI processing of athlete context — **hard gate** |
+| Field                         | Type             | Meaning                                                                            |
+| ----------------------------- | ---------------- | ---------------------------------------------------------------------------------- |
+| `terms_accepted_at`           | datetime \| null | Athlete accepted CGU (`/terms`)                                                    |
+| `privacy_accepted_at`         | datetime \| null | Athlete accepted privacy policy (`/privacy`)                                       |
+| `privacy_version`             | string \| null   | Version id of the privacy text accepted (bump when copy changes materially)        |
+| `health_data_consent_at`      | datetime \| null | Explicit consent to process Art. 9 health data (sync + inferences)                 |
+| `ai_processing_consent_at`    | datetime \| null | Explicit consent for LLM / AI processing of athlete context — **hard gate**        |
 | `unofficial_providers_ack_at` | datetime \| null | Acknowledgement that unofficial integrations are as-is / unsupported by the vendor |
 
 Withdrawal: clearing a consent timestamp must immediately re-apply the corresponding gate (disconnect or block the path). Soft Eng defines UX; eng enforces server-side.
@@ -25,14 +25,15 @@ Withdrawal: clearing a consent timestamp must immediately re-apply the correspon
 
 ## 2. Gates
 
-| Action | Required fields | Failure behaviour |
-| --- | --- | --- |
-| Use app after signup / onboarding continue | `terms_accepted_at`, `privacy_accepted_at`, `privacy_version` | Block until accepted |
-| Connect provider feeding health / body / wearable / nutrition classes | `health_data_consent_at` | Block connect / sync start |
-| Connect **unofficial** provider | `unofficial_providers_ack_at` (+ health consent if health classes) | Block connect |
-| LLM briefing, Coach AI, any path that sends athlete context to an LLM | `ai_processing_consent_at` | **Hard block** — deterministic engines OK without AI consent |
-| Export personal data | Authenticated athlete | Return JSON export |
-| Delete account | Authenticated athlete | Soft-delete now; schedule **purge at J+30** |
+| Action                                                                                    | Required fields                                                                             | Failure behaviour                                                                                                          |
+| ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| Use app after signup / onboarding continue (soft wall `/consent` → Today)                 | `terms_accepted_at`, `privacy_accepted_at`, `privacy_version`, **`health_data_consent_at`** | Block until accepted. Health consent is **required** (Art. 9) — same gate as CGU/Privacy. AI remains optional on the wall. |
+| Connect provider feeding health / body / wearable / nutrition classes                     | `health_data_consent_at`                                                                    | Block connect / sync start                                                                                                 |
+| Legacy santé exposure (providers linked **or** health rows already in DB) without consent | `health_data_consent_at`                                                                    | Force soft wall until granted                                                                                              |
+| Connect **unofficial** provider                                                           | `unofficial_providers_ack_at` (+ health consent if health classes)                          | Block connect                                                                                                              |
+| LLM briefing, Coach AI, any path that sends athlete context to an LLM                     | `ai_processing_consent_at`                                                                  | **Hard block** — deterministic engines OK without AI consent                                                               |
+| Export personal data                                                                      | Authenticated athlete                                                                       | Return JSON export                                                                                                         |
+| Delete account                                                                            | Authenticated athlete                                                                       | Soft-delete now; schedule **purge at J+30**                                                                                |
 
 ### Rules of thumb
 
@@ -82,13 +83,14 @@ Exact schema is Soft Eng’s to define; must be athlete-scoped and complete enou
 
 ## 7. QA checklist
 
-- [ ] New signup cannot proceed without terms + privacy accept (version stored).
+- [ ] New signup cannot proceed without terms + privacy accept (version stored) **and** `health_data_consent_at` (soft wall before Today).
+- [ ] Athletes with santé providers linked or health rows in DB without health consent are forced back to `/consent`.
 - [ ] Provider connect for health classes blocked without `health_data_consent_at`.
 - [ ] Unofficial provider connect blocked without `unofficial_providers_ack_at`.
 - [ ] LLM / Coach AI returns gated error without `ai_processing_consent_at`; deterministic Today/inference still works.
 - [ ] Cron/background sync skips athletes lacking health consent for health classes.
 - [ ] Export returns athlete-scoped JSON; no raw credentials.
-- [ ] Delete soft-hides account; purge job removes data at J+30 (or dry-run proves schedule).
+- [ ] Delete soft-hides account **and clears provider Enc credentials immediately**; purge job removes data at J+30 (or dry-run proves schedule).
 - [ ] No credentials / body metrics in app logs for consent/connect/export/delete paths.
 - [ ] `/privacy` and `/terms` render FR drafts; no « sur invitation uniquement » / invite-only wording.
 - [ ] Privacy contact shown: `augustin.briolon@gmail.com`.

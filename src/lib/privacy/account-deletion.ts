@@ -1,7 +1,7 @@
 import { addDays } from 'date-fns';
 import { clerkClient } from '@clerk/nextjs/server';
 import { prisma } from '@/lib/prisma';
-import { purgeEligibleBefore } from '@/lib/privacy/consent';
+import { providerCredentialClearData, purgeEligibleBefore } from '@/lib/privacy/consent';
 import { PRIVACY_PURGE_DELAY_DAYS } from '@/lib/privacy/constants';
 import { logSafeError } from '@/lib/privacy/safe-log';
 
@@ -11,16 +11,51 @@ export type SoftDeleteResult = {
   purgeAfter: Date;
 };
 
-/** Immediate soft-delete. Profile is blocked from app use; hard purge after 30 days. */
+/**
+ * Immediate soft-delete. Profile is blocked from app use; hard purge after 30 days.
+ * Clears provider Enc credentials immediately so sync cannot continue during retention.
+ */
 export async function softDeleteAthlete(
   athleteId: string,
   now = new Date(),
 ): Promise<SoftDeleteResult> {
-  const updated = await prisma.athleteProfile.update({
-    where: { id: athleteId },
-    data: { deletedAt: now },
-    select: { id: true, deletedAt: true },
+  const updated = await prisma.$transaction(async (tx) => {
+    const profile = await tx.athleteProfile.update({
+      where: { id: athleteId },
+      data: { deletedAt: now },
+      select: { id: true, deletedAt: true },
+    });
+
+    await Promise.all([
+      tx.garminAccount.updateMany({
+        where: { athleteId },
+        data: providerCredentialClearData.garmin,
+      }),
+      tx.stravaAccount.updateMany({
+        where: { athleteId },
+        data: providerCredentialClearData.strava,
+      }),
+      tx.googleAccount.updateMany({
+        where: { athleteId },
+        data: providerCredentialClearData.google,
+      }),
+      tx.withingsAccount.updateMany({
+        where: { athleteId },
+        data: providerCredentialClearData.withings,
+      }),
+      tx.renphoAccount.updateMany({
+        where: { athleteId },
+        data: providerCredentialClearData.renpho,
+      }),
+      tx.myFitnessPalAccount.updateMany({
+        where: { athleteId },
+        data: providerCredentialClearData.myfitnesspal,
+      }),
+    ]);
+
+    return profile;
   });
+
   const deletedAt = updated.deletedAt ?? now;
   return {
     athleteId: updated.id,

@@ -4,12 +4,17 @@ export {
   AI_CONSENT_REQUIRED_MESSAGE,
   PROVIDER_CONSENT_REQUIRED_MESSAGE,
   LEGAL_CONSENT_REQUIRED_MESSAGE,
+  HEALTH_CONSENT_REQUIRED_MESSAGE,
   CONTROLLER_NAME,
   CONTROLLER_EMAIL,
 } from '@/lib/privacy/constants';
 
 export {
   needsLegalConsentFromProfile,
+  needsConsentWallFromProfile,
+  mustGrantHealthConsent,
+  softWallAcceptRequiresHealth,
+  providerCredentialClearData,
   canConnectProvidersFromProfile,
   canUseAiProcessingFromProfile,
   isSoftDeleted,
@@ -19,6 +24,7 @@ export {
 
 export {
   getAthleteConsentRow,
+  getAthleteHealthExposure,
   athleteNeedsLegalConsent,
   athleteHasAiProcessingConsent,
   athleteHasHealthDataConsent,

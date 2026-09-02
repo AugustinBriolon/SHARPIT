@@ -27,6 +27,137 @@ type ConsentState = {
 const HEALTH_DISCLAIMER =
   'Sharpit est un outil d’aide à l’entraînement. Ce n’est pas un dispositif médical et ça ne remplace pas un avis médical. Les signaux (récupération, fatigue, risques) sont des estimations d’entraînement, pas un diagnostic.';
 
+function DocumentsSection({ consents }: { consents: ConsentState | null }) {
+  return (
+    <section className="analysis-panel rounded-analysis-lg space-y-3 px-4 py-4">
+      <p className="text-label">Documents</p>
+      <div className="flex flex-wrap gap-3 text-sm">
+        <Link className="underline underline-offset-2" href="/privacy">
+          Politique de confidentialité
+        </Link>
+        <Link className="underline underline-offset-2" href="/terms">
+          Conditions d&apos;utilisation
+        </Link>
+      </div>
+      <p className="text-muted-foreground text-xs">
+        Version acceptée : {consents?.privacyVersion ?? '—'} · actuelle :{' '}
+        {consents?.currentPrivacyVersion ?? CURRENT_PRIVACY_VERSION}
+      </p>
+      <p className="text-muted-foreground text-xs">Contact : {CONTROLLER_EMAIL}</p>
+    </section>
+  );
+}
+
+function HealthConsentSection({
+  consents,
+  busy,
+  onPatch,
+}: {
+  consents: ConsentState | null;
+  busy: boolean;
+  onPatch: (body: Record<string, boolean>) => void;
+}) {
+  return (
+    <section className="analysis-panel rounded-analysis-lg space-y-4 px-4 py-4">
+      <div>
+        <p className="text-label">Consentements</p>
+        <h2 className="mt-1 text-base font-semibold">Données de santé (requis)</h2>
+      </div>
+      <label className="flex items-start gap-3 text-sm">
+        <Checkbox
+          checked={Boolean(consents?.healthDataConsentAt)}
+          className="mt-0.5"
+          disabled={busy}
+          onCheckedChange={(value) => onPatch({ healthDataConsent: value === true })}
+        />
+        <span>
+          Traitement des données de santé / physiologiques (art. 9) — synchronisation et inférences.
+          Requis pour utiliser Today ; un retrait te ramène à l&apos;écran de consentement.
+        </span>
+      </label>
+      <blockquote className="border-border text-muted-foreground border-l-2 pl-3 text-xs leading-relaxed">
+        {HEALTH_DISCLAIMER}
+      </blockquote>
+    </section>
+  );
+}
+
+function OptionalConsentsSection({
+  consents,
+  busy,
+  onPatch,
+}: {
+  consents: ConsentState | null;
+  busy: boolean;
+  onPatch: (body: Record<string, boolean>) => void;
+}) {
+  return (
+    <section className="analysis-panel rounded-analysis-lg space-y-4 px-4 py-4">
+      <div>
+        <p className="text-label">Consentements</p>
+        <h2 className="mt-1 text-base font-semibold">Traitements optionnels</h2>
+      </div>
+      <label className="flex items-start gap-3 text-sm">
+        <Checkbox
+          checked={Boolean(consents?.aiProcessingConsentAt)}
+          className="mt-0.5"
+          disabled={busy}
+          onCheckedChange={(value) => onPatch({ aiProcessingConsent: value === true })}
+        />
+        <span>
+          Traitement par IA (coach, bilans rédigés). Sans ce consentement, les moteurs déterministes
+          restent disponibles.
+        </span>
+      </label>
+      <label className="flex items-start gap-3 text-sm">
+        <Checkbox
+          checked={Boolean(consents?.unofficialProvidersAckAt)}
+          className="mt-0.5"
+          disabled={busy}
+          onCheckedChange={(value) => onPatch({ unofficialProvidersAck: value === true })}
+        />
+        <span>
+          J&apos;ai pris connaissance que certaines intégrations sont non officielles / « en
+          l&apos;état ».
+        </span>
+      </label>
+    </section>
+  );
+}
+
+function DataActionsSection({
+  busy,
+  pendingSignOut,
+  onExport,
+  onDelete,
+}: {
+  busy: boolean;
+  pendingSignOut: boolean;
+  onExport: () => void;
+  onDelete: () => void;
+}) {
+  return (
+    <section className="analysis-panel rounded-analysis-lg space-y-3 px-4 py-4">
+      <p className="text-label">Tes données</p>
+      <div className="flex flex-wrap gap-2">
+        <Button disabled={busy} type="button" variant="outline" onClick={onExport}>
+          Exporter JSON
+        </Button>
+        <Button disabled={busy} type="button" variant="destructive" onClick={onDelete}>
+          Supprimer mon compte
+        </Button>
+        {pendingSignOut ? (
+          <SignOutButton redirectUrl="/sign-in">
+            <Button type="button" variant="outline">
+              Se déconnecter
+            </Button>
+          </SignOutButton>
+        ) : null}
+      </div>
+    </section>
+  );
+}
+
 export function PrivacySettingsPanel({ initial }: { initial: ConsentState | null }) {
   const router = useRouter();
   const { confirm, dialog } = useConfirmDialog();
@@ -116,93 +247,23 @@ export function PrivacySettingsPanel({ initial }: { initial: ConsentState | null
   return (
     <div className="space-y-4">
       {dialog}
-      <section className="analysis-panel rounded-analysis-lg space-y-3 px-4 py-4">
-        <p className="text-label">Documents</p>
-        <div className="flex flex-wrap gap-3 text-sm">
-          <Link className="underline underline-offset-2" href="/privacy">
-            Politique de confidentialité
-          </Link>
-          <Link className="underline underline-offset-2" href="/terms">
-            Conditions d&apos;utilisation
-          </Link>
-        </div>
-        <p className="text-muted-foreground text-xs">
-          Version acceptée : {consents?.privacyVersion ?? '—'} · actuelle :{' '}
-          {consents?.currentPrivacyVersion ?? CURRENT_PRIVACY_VERSION}
-        </p>
-        <p className="text-muted-foreground text-xs">Contact : {CONTROLLER_EMAIL}</p>
-      </section>
-
-      <section className="analysis-panel rounded-analysis-lg space-y-4 px-4 py-4">
-        <div>
-          <p className="text-label">Consentements</p>
-          <h2 className="mt-1 text-base font-semibold">Traitements optionnels</h2>
-        </div>
-        <label className="flex items-start gap-3 text-sm">
-          <Checkbox
-            checked={Boolean(consents?.aiProcessingConsentAt)}
-            className="mt-0.5"
-            disabled={busy}
-            onCheckedChange={(value) =>
-              void patchConsent({ aiProcessingConsent: value === true })
-            }
-          />
-          <span>
-            Traitement par IA (coach, bilans rédigés). Sans ce consentement, les moteurs
-            déterministes restent disponibles.
-          </span>
-        </label>
-        <label className="flex items-start gap-3 text-sm">
-          <Checkbox
-            checked={Boolean(consents?.healthDataConsentAt)}
-            className="mt-0.5"
-            disabled={busy}
-            onCheckedChange={(value) => void patchConsent({ healthDataConsent: value === true })}
-          />
-          <span>Traitement des données de santé / physiologiques (art. 9).</span>
-        </label>
-        <label className="flex items-start gap-3 text-sm">
-          <Checkbox
-            checked={Boolean(consents?.unofficialProvidersAckAt)}
-            className="mt-0.5"
-            disabled={busy}
-            onCheckedChange={(value) =>
-              void patchConsent({ unofficialProvidersAck: value === true })
-            }
-          />
-          <span>
-            J&apos;ai pris connaissance que certaines intégrations sont non officielles / « en
-            l&apos;état ».
-          </span>
-        </label>
-        <blockquote className="border-border text-muted-foreground border-l-2 pl-3 text-xs leading-relaxed">
-          {HEALTH_DISCLAIMER}
-        </blockquote>
-      </section>
-
-      <section className="analysis-panel rounded-analysis-lg space-y-3 px-4 py-4">
-        <p className="text-label">Tes données</p>
-        <div className="flex flex-wrap gap-2">
-          <Button disabled={busy} type="button" variant="outline" onClick={() => void handleExport()}>
-            Exporter JSON
-          </Button>
-          <Button
-            disabled={busy}
-            type="button"
-            variant="destructive"
-            onClick={() => void handleDelete()}
-          >
-            Supprimer mon compte
-          </Button>
-          {pendingSignOut ? (
-            <SignOutButton redirectUrl="/sign-in">
-              <Button type="button" variant="outline">
-                Se déconnecter
-              </Button>
-            </SignOutButton>
-          ) : null}
-        </div>
-      </section>
+      <DocumentsSection consents={consents} />
+      <HealthConsentSection
+        busy={busy}
+        consents={consents}
+        onPatch={(body) => void patchConsent(body)}
+      />
+      <OptionalConsentsSection
+        busy={busy}
+        consents={consents}
+        onPatch={(body) => void patchConsent(body)}
+      />
+      <DataActionsSection
+        busy={busy}
+        pendingSignOut={pendingSignOut}
+        onDelete={() => void handleDelete()}
+        onExport={() => void handleExport()}
+      />
     </div>
   );
 }
