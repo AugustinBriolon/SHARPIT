@@ -47,18 +47,15 @@ concurrency:
 jobs:
   scanning:
     name: GitGuardian scan
+    if: ${{ secrets.GITGUARDIAN_API_KEY != '' }}
     runs-on: ubuntu-latest
-    env:
-      HAS_GG_KEY: ${{ secrets.GITGUARDIAN_API_KEY != '' }}
     steps:
       - name: Checkout
-        if: env.HAS_GG_KEY == 'true'
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
       - name: GitGuardian scan (ggshield)
-        if: env.HAS_GG_KEY == 'true'
         uses: GitGuardian/ggshield/actions/secret@v1.54.0
         env:
           GITHUB_PUSH_BEFORE_SHA: ${{ github.event.before }}
@@ -67,8 +64,13 @@ jobs:
           GITHUB_DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
           GITGUARDIAN_API_KEY: ${{ secrets.GITGUARDIAN_API_KEY }}
 
+  remind-missing-key:
+    name: GitGuardian scan
+    # Same check name as `scanning` so the PR status stays one coherent context.
+    if: ${{ secrets.GITGUARDIAN_API_KEY == '' }}
+    runs-on: ubuntu-latest
+    steps:
       - name: Remind to configure Action API key
-        if: env.HAS_GG_KEY != 'true'
         run: |
           echo "::warning::GITGUARDIAN_API_KEY is not set — ggshield Action skipped on this run."
           echo "Secret audit on code changes still relies on the GitGuardian GitHub App check."
