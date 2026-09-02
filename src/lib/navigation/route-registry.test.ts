@@ -24,6 +24,8 @@ describe('route-registry', () => {
       expect(resolveRouteLabel('/moi/corps')).toBe('Corps');
       expect(resolveRouteLabel('/moi/objectifs')).toBe('Objectifs');
       expect(resolveRouteLabel('/moi/performance')).toBe('Performance');
+      expect(resolveRouteLabel('/settings/calibration')).toBe('Seuils & repères');
+      expect(resolveRouteLabel('/consent')).toBe('Consentements');
     });
 
     it('ignores search / hash when matching', () => {
@@ -127,14 +129,83 @@ describe('route-registry', () => {
         href: '/moi',
         label: 'Moi',
       });
+      expect(resolveRouteFallback('/settings/calibration')).toEqual({
+        href: '/moi',
+        label: 'Moi',
+      });
+      expect(resolveRouteFallback('/settings/appearance/expert-mode')).toEqual({
+        href: '/moi',
+        label: 'Moi',
+      });
     });
 
-    it('sends /today/* drill-downs back to home', () => {
+    it('sends Plan flows back to /plan', () => {
+      expect(resolveRouteFallback('/training/planning')).toEqual({
+        href: '/plan',
+        label: 'Plan',
+      });
+      expect(resolveRouteFallback('/training/weekly-review')).toEqual({
+        href: '/plan',
+        label: 'Plan',
+      });
+      expect(resolveRouteFallback('/training')).toEqual({
+        href: '/plan',
+        label: 'Plan',
+      });
+    });
+
+    it('sends Activité flows back to /activite', () => {
+      expect(resolveRouteFallback('/training/manual')).toEqual({
+        href: '/activite',
+        label: 'Activité',
+      });
+      expect(resolveRouteFallback('/training/trips')).toEqual({
+        href: '/activite',
+        label: 'Activité',
+      });
+      expect(resolveRouteFallback('/training/history')).toEqual({
+        href: '/activite',
+        label: 'Activité',
+      });
+    });
+
+    it('sends /today/* and nutrition drill-downs back to Aujourd’hui', () => {
       expect(resolveRouteFallback('/today/recovery')).toEqual({
         href: '/',
         label: 'Aujourd’hui',
       });
       expect(resolveRouteFallback('/today/sleep')).toEqual({
+        href: '/',
+        label: 'Aujourd’hui',
+      });
+      expect(resolveRouteFallback('/today/effort')).toEqual({
+        href: '/',
+        label: 'Aujourd’hui',
+      });
+      expect(resolveRouteFallback('/today/adaptation')).toEqual({
+        href: '/',
+        label: 'Aujourd’hui',
+      });
+      expect(resolveRouteFallback('/nutrition')).toEqual({
+        href: '/',
+        label: 'Aujourd’hui',
+      });
+    });
+
+    it('labels legal walls without inventing a shell hub parent', () => {
+      expect(resolveRouteLabel('/consent')).toBe('Consentements');
+      expect(resolveRouteLabel('/privacy')).toBe('Confidentialité');
+      expect(resolveRouteLabel('/terms')).toBe('Conditions');
+      // No defaultParent → HOME only as last resort; gate fail-closes entry.
+      expect(resolveRouteFallback('/consent')).toEqual({
+        href: '/',
+        label: 'Aujourd’hui',
+      });
+      expect(resolveRouteFallback('/privacy')).toEqual({
+        href: '/',
+        label: 'Aujourd’hui',
+      });
+      expect(resolveRouteFallback('/terms')).toEqual({
         href: '/',
         label: 'Aujourd’hui',
       });

@@ -27,7 +27,20 @@ describe('resolveBackTargetWithoutStack', () => {
     });
   });
 
-  it('falls back to Moi for Corps / Objectifs / Performance / Progression', () => {
+  it('falls back to Plan for planning / bilan', () => {
+    expect(resolveBackTargetWithoutStack('/training/planning')).toEqual({
+      href: '/plan',
+      label: 'Plan',
+      fromStack: false,
+    });
+    expect(resolveBackTargetWithoutStack('/training/weekly-review')).toEqual({
+      href: '/plan',
+      label: 'Plan',
+      fromStack: false,
+    });
+  });
+
+  it('falls back to Moi for Corps / Objectifs / Performance / Progression / calibration', () => {
     expect(resolveBackTargetWithoutStack('/moi/corps')).toEqual({
       href: '/moi',
       label: 'Moi',
@@ -38,9 +51,32 @@ describe('resolveBackTargetWithoutStack', () => {
       label: 'Moi',
       fromStack: false,
     });
+    expect(resolveBackTargetWithoutStack('/moi/performance')).toEqual({
+      href: '/moi',
+      label: 'Moi',
+      fromStack: false,
+    });
     expect(resolveBackTargetWithoutStack('/progress')).toEqual({
       href: '/moi',
       label: 'Moi',
+      fromStack: false,
+    });
+    expect(resolveBackTargetWithoutStack('/settings/calibration')).toEqual({
+      href: '/moi',
+      label: 'Moi',
+      fromStack: false,
+    });
+  });
+
+  it('falls back to Aujourd’hui for Today drill-downs', () => {
+    expect(resolveBackTargetWithoutStack('/today/recovery')).toEqual({
+      href: '/',
+      label: 'Aujourd’hui',
+      fromStack: false,
+    });
+    expect(resolveBackTargetWithoutStack('/nutrition')).toEqual({
+      href: '/',
+      label: 'Aujourd’hui',
       fromStack: false,
     });
   });

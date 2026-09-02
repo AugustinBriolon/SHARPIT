@@ -11,6 +11,7 @@ import { useRouter } from 'next/navigation';
 import { ActivityChip } from '@/components/training/activity/list/activity-list-chip';
 import { ActivityRow } from '@/components/training/activity/list/activity-list-row';
 import type { ActivityListItem } from '@/components/training/activity/list/activity-list-types';
+import { navStack } from '@/lib/navigation/nav-stack';
 
 function ActivityListEmpty({ emptyLabel }: { emptyLabel?: string }) {
   const description = emptyLabel
@@ -160,7 +161,9 @@ export function DeleteActivityButton({ id }: { id: string }) {
       return;
     }
     remove.mutate(id);
-    router.push('/training');
+    // Return to origin via stack; empty stack → Activité (never Historique / Fil).
+    const previous = navStack.peekBackFrom(`/training/${id}`);
+    router.push(previous?.href ?? '/activite');
   }
 
   return (
