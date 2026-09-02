@@ -27,7 +27,7 @@ export default function SettingsCoachMemoryPage({
 }) {
   return (
     <div className="space-y-4">
-      <MobileBackLink href="/moi" label="Moi" showOnDesktop />
+      <MobileBackLink fallbackHref="/moi" fallbackLabel="Moi" showOnDesktop />
 
       {/* Identity lives in the ink band inside the manager — no page header here.
           `?focus=` is only known at request time, so the manager streams. */}

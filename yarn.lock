@@ -7488,6 +7488,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"liquid-glass-react@npm:1.1.1":
+  version: 1.1.1
+  resolution: "liquid-glass-react@npm:1.1.1"
+  peerDependencies:
+    react: ">=19"
+    react-dom: ">=19"
+  checksum: 10c0/ce0a7dd2e085fb22181c67fac8feb79fbd0733fa9b61201f6b986e958b24a42fa0e743f4c4b785cec5581d728d655167b3512baaa1f6faf29cbfac6b0e6102e9
+  languageName: node
+  linkType: hard
+
 "locate-path@npm:^3.0.0":
   version: 3.0.0
   resolution: "locate-path@npm:3.0.0"
@@ -10257,6 +10267,7 @@ __metadata:
     fake-indexeddb: "npm:^6.2.5"
     husky: "npm:^9.1.7"
     lint-staged: "npm:^17.0.8"
+    liquid-glass-react: "npm:1.1.1"
     lucide-react: "npm:^1.21.0"
     maplibre-gl: "npm:^5.24.0"
     motion: "npm:^12.43.0"

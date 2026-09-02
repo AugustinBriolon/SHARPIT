@@ -1,23 +1,13 @@
-import Link from 'next/link';
-import { ChevronLeft } from 'lucide-react';
+import { MobileBackLink } from '@/components/layout/mobile-back-link';
 import { StickyHeader } from '@/components/layout/sticky-header';
-import { floatingHeaderButtonClass } from '@/components/layout/floating-header-button';
 import { cn } from '@/lib/utils';
 
 /**
  * Drill-down header — the way back stays reachable at any scroll depth.
  *
- * Mobile pins the back button to the viewport as a floating, frosted-glass
- * control (iOS-style: no bar, no bg on the row it sits in) so it never
- * masks the title or banner beneath it; the row below only reserves the
- * gutter it needs (`max-lg:pt-16`), not a full-width band. Desktop leaves it
- * inline and sticks through the shared `StickyHeader`, which fades a blur in
- * only once the page has actually moved.
- *
- * The back button shares its chrome with `MobileBackLink` and the activity
- * detail actions trigger via `floatingHeaderButtonClass` — one definition
- * for every floating header button in the app (see DESIGN_LANGUAGE.md
- * exception note there).
+ * Mobile pins the back button via `MobileBackLink` (liquid-glass chrome +
+ * app nav stack). The link reserves its own mobile gutter (`h-16`). Desktop
+ * keeps an inline labelled back through the same component.
  */
 export function MobileDrillDownHeader({
   title,
@@ -34,18 +24,8 @@ export function MobileDrillDownHeader({
   titleBadge?: React.ReactNode;
 }) {
   return (
-    <StickyHeader className={cn('mb-3 space-y-1 max-lg:pt-16 lg:mb-4', className)}>
-      <Link
-        aria-label={backLabel}
-        className={cn(
-          floatingHeaderButtonClass('left'),
-          'lg:mb-3 lg:justify-start lg:gap-1 lg:px-0 lg:text-muted-foreground',
-        )}
-        href={backHref}
-      >
-        <ChevronLeft className="size-6 shrink-0 lg:size-4" aria-hidden />
-        <span className="hidden text-sm lg:inline">{backLabel}</span>
-      </Link>
+    <StickyHeader className={cn('mb-3 space-y-1 lg:mb-4', className)}>
+      <MobileBackLink fallbackHref={backHref} fallbackLabel={backLabel} showOnDesktop />
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
         <h1 className="text-page-title">{title}</h1>
         {titleBadge}

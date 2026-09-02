@@ -74,6 +74,13 @@ describe('route-registry', () => {
       });
     });
 
+    it('sends manual entry back to Activité (not fixed Historique)', () => {
+      expect(resolveRouteFallback('/training/manual')).toEqual({
+        href: '/activite',
+        label: 'Activité',
+      });
+    });
+
     it('sends every /settings child back to /moi', () => {
       expect(resolveRouteFallback('/settings/account')).toEqual({
         href: '/moi',

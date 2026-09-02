@@ -51,7 +51,7 @@ export function GoalsViewSkeleton({ embedded = false }: { embedded?: boolean } =
     <div className="space-y-8">
       {embedded ? null : (
         <>
-          <MobileBackLink href="/progress?tab=goals" label="Progression" showOnDesktop />
+          <MobileBackLink fallbackHref="/progress?tab=goals" fallbackLabel="Progression" showOnDesktop />
           <StickyHeader className="flex flex-wrap items-end justify-between gap-4">
             <div>
               <p className="text-label">Progression</p>

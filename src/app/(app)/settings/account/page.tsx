@@ -52,7 +52,7 @@ async function ProfilePanelWithData() {
 export default function SettingsAccountPage() {
   return (
     <div className="space-y-4">
-      <MobileBackLink href="/moi" label="Moi" showOnDesktop />
+      <MobileBackLink fallbackHref="/moi" fallbackLabel="Moi" showOnDesktop />
       <StickyHeader>
         <p className="text-label">Moi</p>
         <h1 className="text-page-title mt-1">Mon profil</h1>

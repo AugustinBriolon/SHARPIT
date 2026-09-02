@@ -11,7 +11,7 @@ import { buildHikeTripListMeta } from '@/lib/activity/hike/hike-trip-summary';
 function TripsPageHeader() {
   return (
     <>
-      <MobileBackLink href="/activite" label="Activité" showOnDesktop />
+      <MobileBackLink fallbackHref="/activite" fallbackLabel="Activité" showOnDesktop />
       <StickyHeader>
         <p className="text-label">Activité</p>
         <h1 className="text-page-title mt-1">Séjours</h1>
