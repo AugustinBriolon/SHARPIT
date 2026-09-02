@@ -38,6 +38,7 @@ yarn vitest run src/lib/ci/vercel-ignore-build.test.ts
 [`.github/workflows/gitguardian.yml`](../../.github/workflows/gitguardian.yml)
 
 - **Runs ggshield** on PRs and `main` pushes whenever non-docs paths change (includes `src/`, lockfiles, `.env*`, workflows, config) **when** `GITGUARDIAN_API_KEY` is set.
+- Feature branches are covered via `pull_request` only (avoids duplicate push+PR runs).
 - **Skipped** on pure docs / screenshot / markdown-only changes (`paths-ignore`).
 - If the Action secret is unset, the job warns and exits successfully; keep the **GitGuardian GitHub App** check ("GitGuardian Security Checks") enabled so secret audit stays on the critical path for code changes.
 - To enable path-filtered ggshield in Actions: add repository secret `GITGUARDIAN_API_KEY`.
