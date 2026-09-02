@@ -10,18 +10,7 @@ const RecordsPanel = dynamic(
   { ssr: false, loading: () => <Skeleton className="h-64 w-full" /> },
 );
 
-export const SECTIONS = [
-  { id: 'goals', label: 'Objectifs' },
-  { id: 'performance', label: 'Performance' },
-  { id: 'body', label: 'Corps & santé' },
-] as const;
-
-export type SectionId = (typeof SECTIONS)[number]['id'];
-
-export function isSectionId(value: string | null): value is SectionId {
-  return SECTIONS.some((section) => section.id === value);
-}
-
+/** Corps dedicated content — composition + suivi only. */
 export function BodySection() {
   return (
     <div className="space-y-6">
@@ -31,6 +20,7 @@ export function BodySection() {
   );
 }
 
+/** Performance dedicated content — records + calibration (not mixed with Corps/Objectifs). */
 export function PerformanceSection() {
   return (
     <div className="space-y-6">

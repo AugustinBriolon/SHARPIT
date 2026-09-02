@@ -98,9 +98,23 @@ const MATCHERS: Matcher[] = [
     resolve: () => ({ label: 'Adaptation', defaultParent: HOME_PARENT }),
   },
 
+  // `/progress` redirects to dedicated Moi surfaces; keep a label for stack leftovers.
   {
     pattern: /^\/progress$/,
     resolve: () => ({ label: 'Progression', defaultParent: MOI_PARENT }),
+  },
+
+  {
+    pattern: /^\/moi\/corps$/,
+    resolve: () => ({ label: 'Corps', defaultParent: MOI_PARENT }),
+  },
+  {
+    pattern: /^\/moi\/objectifs$/,
+    resolve: () => ({ label: 'Objectifs', defaultParent: MOI_PARENT }),
+  },
+  {
+    pattern: /^\/moi\/performance$/,
+    resolve: () => ({ label: 'Performance', defaultParent: MOI_PARENT }),
   },
 
   {

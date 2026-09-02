@@ -20,9 +20,16 @@ describe('route-registry', () => {
       expect(resolveRouteLabel('/training/abc123/edit')).toBe('Édition');
     });
 
+    it('matches Moi dedicated child surfaces', () => {
+      expect(resolveRouteLabel('/moi/corps')).toBe('Corps');
+      expect(resolveRouteLabel('/moi/objectifs')).toBe('Objectifs');
+      expect(resolveRouteLabel('/moi/performance')).toBe('Performance');
+    });
+
     it('ignores search / hash when matching', () => {
       expect(resolveRouteLabel('/training/history?tab=running')).toBe('Historique');
       expect(resolveRouteLabel('/progress?tab=performance')).toBe('Progression');
+      expect(resolveRouteLabel('/moi/performance?sport=run')).toBe('Performance');
     });
 
     it('falls back to a generic label for unknown routes', () => {
@@ -81,6 +88,25 @@ describe('route-registry', () => {
       expect(resolveRouteFallback('/training/cmrvpthya01xkmsm80lybbzqd')).toEqual({
         href: '/activite',
         label: 'Activité',
+      });
+    });
+
+    it('sends Moi children back to /moi', () => {
+      expect(resolveRouteFallback('/moi/corps')).toEqual({
+        href: '/moi',
+        label: 'Moi',
+      });
+      expect(resolveRouteFallback('/moi/objectifs')).toEqual({
+        href: '/moi',
+        label: 'Moi',
+      });
+      expect(resolveRouteFallback('/moi/performance')).toEqual({
+        href: '/moi',
+        label: 'Moi',
+      });
+      expect(resolveRouteFallback('/settings/privacy')).toEqual({
+        href: '/moi',
+        label: 'Moi',
       });
     });
 

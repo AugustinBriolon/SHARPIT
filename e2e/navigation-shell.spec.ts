@@ -79,34 +79,45 @@ test.describe('navigation shell', () => {
     await expect(headings).toHaveText('Sommeil');
   });
 
-  test('the Moi hub lists featured and settings entries before status arrives', async ({
+  test('the Moi hub lists destinations and secondary entries before status arrives', async ({
     page,
   }) => {
-    // The list is static and belongs in the shell; each status chip is its own
-    // streamed boundary. Featured + account rows must be there.
+    // Destinations are static shell; secondary Compte chip streams status.
     await page.goto('/moi');
 
-    await expect(page.locator('a[href="/progress?tab=body"]:visible').first()).toBeVisible();
-    await expect(page.locator('a[href="/progress?tab=goals"]:visible').first()).toBeVisible();
+    await expect(page.locator('a[href="/moi/corps"]:visible').first()).toBeVisible();
+    await expect(page.locator('a[href="/moi/objectifs"]:visible').first()).toBeVisible();
     await expect(page.locator('a[href="/settings/privacy"]:visible').first()).toBeVisible();
 
-    for (const href of [
-      '/settings/account',
-      '/settings/equipment',
-      '/settings/calibration',
-      '/settings/memory',
-      '/settings/integrations',
-      '/settings/appearance',
-      '/settings/about',
-    ]) {
+    await expect(page.getByRole('heading', { name: 'Destinations' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Accès' })).toHaveCount(0);
+
+    for (const href of ['/settings/account', '/settings/equipment']) {
       await expect(page.locator(`a[href="${href}"]:visible`).first()).toBeVisible();
     }
 
-    // The version is the About row's chip, so seeing it means the chips
-    // streamed in rather than staying on their skeletons. Scoped to the row by
-    // role: a bare text match also hits the hidden leftovers Activity keeps in
-    // the DOM, which is the trap this file's header warns about.
-    await expect(page.getByRole('link', { name: /À propos/ })).toContainText(/v\d+\.\d+\.\d+/);
+    // Quiet réglages — demoted, still reachable.
+    await expect(page.getByRole('link', { name: 'À propos' })).toBeVisible();
+  });
+
+  test('Moi child pages back to Moi (dedicated Corps / Objectifs / Confidentialité)', async ({
+    page,
+  }) => {
+    await page.goto('/moi');
+    await page.locator('a[href="/moi/corps"]:visible').first().click();
+    await expect(page).toHaveURL(/\/moi\/corps$/);
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Corps');
+    await expect(page.getByRole('link', { name: 'Moi' }).first()).toBeVisible();
+
+    await page.goto('/moi');
+    await page.locator('a[href="/moi/objectifs"]:visible').first().click();
+    await expect(page).toHaveURL(/\/moi\/objectifs$/);
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Objectifs');
+    await expect(page.getByRole('link', { name: 'Moi' }).first()).toBeVisible();
+
+    await page.goto('/settings/privacy');
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Confidentialité');
+    await expect(page.getByRole('link', { name: 'Moi' }).first()).toBeVisible();
   });
 
   test('the back link resolves its label from the nav stack', async ({ page }) => {

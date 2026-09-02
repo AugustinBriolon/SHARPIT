@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation';
+import { MOI_PERFORMANCE_PATH } from '@/lib/moi/paths';
 
 /**
  * Blocking, because the query is the whole page.
@@ -13,7 +14,7 @@ export const instant = false;
 /**
  * Progression is gone; its three tabs went where each of them belonged.
  *
- * Calibration and records both live under Progression now — one is the
+ * Calibration and records both live under Moi → Performance now — one is the
  * yardstick, the other the reading it scales. État was the current form, which
  * the thread already carries. Bookmarks into the old tabs keep working because
  * the query decides which of the three the reader wanted.
@@ -28,7 +29,7 @@ export default async function TrainingProgressionRedirect({
     redirect('/settings/calibration');
   }
   if (tab === 'records') {
-    redirect('/progress?tab=performance');
+    redirect(MOI_PERFORMANCE_PATH);
   }
   redirect('/training');
 }

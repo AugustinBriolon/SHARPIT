@@ -57,17 +57,17 @@ function discussContextForKind(
     goal: (_, n) => ({
       kind: 'goal',
       label: n ? `Objectif · ${n}` : 'Un objectif',
-      sourceHref: '/progress?tab=goals',
+      sourceHref: '/moi/objectifs',
     }),
     record: (_, n) => ({
       kind: 'record',
       label: n ? `Records · ${n}` : 'Tes records',
-      sourceHref: '/progress?tab=performance',
+      sourceHref: '/moi/performance',
     }),
     'physical-condition': (_, n) => ({
       kind: 'physical-condition',
       label: n ? `Contrainte physique · ${n}` : 'Une contrainte physique',
-      sourceHref: '/progress?tab=body',
+      sourceHref: '/moi/corps',
     }),
   };
   return handlers[target.kind](target as never, named);

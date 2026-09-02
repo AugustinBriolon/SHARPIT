@@ -149,7 +149,7 @@ function PlanObjectifWidget() {
         </h2>
         <Link
           className="text-muted-foreground hover:text-foreground text-xs font-medium"
-          href="/progress?tab=goals"
+          href="/moi/objectifs"
         >
           Voir tout
         </Link>
@@ -168,7 +168,7 @@ function PlanObjectifWidget() {
       {!pending && !goal ? (
         <div className="analysis-panel-alt rounded-analysis-lg space-y-2 p-4">
           <p className="text-sm">Aucun objectif actif.</p>
-          <Link className="text-primary text-sm font-medium" href="/progress?tab=goals">
+          <Link className="text-primary text-sm font-medium" href="/moi/objectifs">
             Définir un objectif
           </Link>
         </div>
