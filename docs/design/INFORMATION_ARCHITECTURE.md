@@ -43,7 +43,7 @@ This document is written in English; hub copy ships in French. Tab labels in [`s
 
 | Destination | Shipped label | Canonical hub | Replaces (ADR-022 stage) |
 | ----------- | ------------- | ------------- | ------------------------ |
-| Today       | `Today`       | `/`           | `Aujourd'hui` / Accueil  |
+| Today       | `Aujourd’hui` | `/`           | Accueil                  |
 | Plan        | `Plan`        | `/plan`       | `Ma semaine`             |
 | Activité    | `Activité`    | `/activite`   | (history half of week)   |
 | Moi         | `Moi`         | `/moi`        | `Profil` / Réglages      |

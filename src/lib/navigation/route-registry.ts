@@ -22,7 +22,7 @@ type Matcher = {
   resolve: (match: RegExpMatchArray) => RouteEntry;
 };
 
-const HOME_PARENT = { href: '/', label: 'Today' } as const;
+const HOME_PARENT = { href: '/', label: 'Aujourd’hui' } as const;
 const PLAN_PARENT = { href: '/plan', label: 'Plan' } as const;
 const ACTIVITY_PARENT = { href: '/activite', label: 'Activité' } as const;
 const HISTORY_PARENT = { href: '/training/history', label: 'Historique' } as const;
@@ -30,7 +30,7 @@ const TRIPS_PARENT = { href: '/training/trips', label: 'Séjours' } as const;
 const MOI_PARENT = { href: '/moi', label: 'Moi' } as const;
 
 const MATCHERS: Matcher[] = [
-  { pattern: /^\/$/, resolve: () => ({ label: 'Today' }) },
+  { pattern: /^\/$/, resolve: () => ({ label: 'Aujourd’hui' }) },
   { pattern: /^\/plan$/, resolve: () => ({ label: 'Plan', defaultParent: HOME_PARENT }) },
   { pattern: /^\/activite$/, resolve: () => ({ label: 'Activité', defaultParent: HOME_PARENT }) },
   { pattern: /^\/moi$/, resolve: () => ({ label: 'Moi', defaultParent: HOME_PARENT }) },

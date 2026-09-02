@@ -40,7 +40,7 @@ export function isActivityTrainingPath(pathname: string): boolean {
 
 export const todayNavItem: AppNavItem = {
   href: '/',
-  label: 'Today',
+  label: 'Aujourd’hui',
   icon: Sun,
   // Nutrition is a Today detail, not a destination — it lights this tab rather
   // than leaving the bar with nothing marked current.

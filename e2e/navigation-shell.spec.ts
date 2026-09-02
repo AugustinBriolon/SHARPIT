@@ -62,7 +62,7 @@ test.describe('navigation shell', () => {
     await expect(nav.locator('a[href="/activite"]')).toBeVisible();
     await expect(nav.locator('a[href="/moi"]')).toBeVisible();
     await expect(nav.locator('a[href="/coach"]')).toHaveCount(0);
-    await expect(nav.getByText('Today', { exact: true })).toBeVisible();
+    await expect(nav.getByText('Aujourd’hui', { exact: true })).toBeVisible();
     await expect(nav.getByText('Plan', { exact: true })).toBeVisible();
     await expect(nav.getByText('Activité', { exact: true })).toBeVisible();
   });

@@ -16,7 +16,7 @@ describe('route-registry', () => {
       expect(resolveRouteLabel('/settings')).toBe('Moi');
       expect(resolveRouteLabel('/settings/privacy')).toBe('Confidentialité');
       expect(resolveRouteLabel('/coach')).toBe('Coach');
-      expect(resolveRouteLabel('/')).toBe('Today');
+      expect(resolveRouteLabel('/')).toBe('Aujourd’hui');
     });
 
     it('matches dynamic segments', () => {
@@ -96,16 +96,16 @@ describe('route-registry', () => {
     it('sends /today/* drill-downs back to home', () => {
       expect(resolveRouteFallback('/today/recovery')).toEqual({
         href: '/',
-        label: 'Today',
+        label: 'Aujourd’hui',
       });
       expect(resolveRouteFallback('/today/sleep')).toEqual({
         href: '/',
-        label: 'Today',
+        label: 'Aujourd’hui',
       });
     });
 
     it('defaults to home when no matcher applies', () => {
-      expect(resolveRouteFallback('/unknown')).toEqual({ href: '/', label: 'Today' });
+      expect(resolveRouteFallback('/unknown')).toEqual({ href: '/', label: 'Aujourd’hui' });
     });
   });
 });

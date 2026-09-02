@@ -12,9 +12,9 @@ import {
 } from './app-navigation';
 
 describe('app-navigation Shell V1', () => {
-  it('exposes exactly four bottom tabs: Today · Plan · Activité · Moi', () => {
+  it('exposes exactly four bottom tabs: Aujourd’hui · Plan · Activité · Moi', () => {
     expect(bottomNavItems.map((item) => item.label)).toEqual([
-      'Today',
+      'Aujourd’hui',
       'Plan',
       'Activité',
       'Moi',
