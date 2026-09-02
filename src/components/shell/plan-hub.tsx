@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { StickyHeader } from '@/components/layout/sticky-header';
 import { PlanHubWidgets } from '@/components/shell/plan-hub-widgets';
 
@@ -9,6 +10,8 @@ import { PlanHubWidgets } from '@/components/shell/plan-hub-widgets';
  *
  * Soft gate: see `src/lib/plan/intensity-gate.ts` — when Today is RECOVER or
  * CAUTION, hard intensities are withheld from "prochaines".
+ *
+ * Chrome stays outside Suspense (Instant UX); widgets stream like Today.
  */
 export function PlanHub() {
   return (
@@ -21,7 +24,23 @@ export function PlanHub() {
         </p>
       </StickyHeader>
 
-      <PlanHubWidgets />
+      <Suspense fallback={<PlanHubWidgetsFallback />}>
+        <PlanHubWidgets />
+      </Suspense>
+    </div>
+  );
+}
+
+/** Prerender-safe loading shell for Plan widgets (mirrors Today Suspense fallback). */
+function PlanHubWidgetsFallback() {
+  return (
+    <div className="space-y-6" aria-busy>
+      <div className="analysis-panel-alt rounded-analysis-lg h-20 animate-pulse" />
+      <div className="space-y-2">
+        <div className="analysis-panel-alt rounded-analysis-lg h-16 animate-pulse" />
+        <div className="analysis-panel-alt rounded-analysis-lg h-16 animate-pulse" />
+      </div>
+      <div className="analysis-panel-alt rounded-analysis-lg h-24 animate-pulse" />
     </div>
   );
 }
