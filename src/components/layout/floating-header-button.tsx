@@ -21,7 +21,7 @@ import { cn } from '@/lib/utils';
  */
 export function floatingHeaderButtonClass(side: 'left' | 'right'): string {
   return cn(
-    'text-foreground/70 hover:text-foreground dark:text-foreground fixed top-3 z-40 flex size-12 items-center justify-center rounded-full transition-colors lg:static lg:size-auto lg:rounded-none lg:bg-transparent lg:hover:bg-transparent',
+    'text-foreground/70 hover:text-foreground dark:text-foreground fixed top-3 z-50 flex size-12 items-center justify-center rounded-full transition-colors lg:static lg:z-auto lg:size-auto lg:rounded-none lg:bg-transparent lg:hover:bg-transparent',
     side === 'left' ? 'left-4' : 'right-4',
   );
 }
