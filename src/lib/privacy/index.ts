@@ -10,6 +10,7 @@ export {
 
 export {
   needsLegalConsentFromProfile,
+  hasExistingHealthProcessingContext,
   canConnectProvidersFromProfile,
   canUseAiProcessingFromProfile,
   isSoftDeleted,
@@ -20,6 +21,7 @@ export {
 export {
   getAthleteConsentRow,
   athleteNeedsLegalConsent,
+  athleteHasExistingHealthContext,
   athleteHasAiProcessingConsent,
   athleteHasHealthDataConsent,
   athleteCanConnectProvider,
@@ -29,7 +31,11 @@ export {
   canConnectProviderFromConsents,
 } from '@/lib/privacy/consent-store';
 
-export { softDeleteAthlete, purgeSoftDeletedAthletes } from '@/lib/privacy/account-deletion';
+export {
+  softDeleteAthlete,
+  purgeSoftDeletedAthletes,
+  clearAthleteProviderCredentials,
+} from '@/lib/privacy/account-deletion';
 export { buildAthleteExportJson } from '@/lib/privacy/export';
 export { sanitizeLogValue, logSafeError } from '@/lib/privacy/safe-log';
 export {

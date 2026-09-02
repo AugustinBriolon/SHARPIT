@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   canConnectProvidersFromProfile,
   canUseAiProcessingFromProfile,
+  hasExistingHealthProcessingContext,
   isDueForPrivacyPurge,
   isSoftDeleted,
   needsLegalConsentFromProfile,
@@ -9,28 +10,40 @@ import {
 } from '@/lib/privacy/consent';
 
 describe('needsLegalConsentFromProfile', () => {
+  const base = {
+    termsAcceptedAt: null as Date | null,
+    privacyAcceptedAt: null as Date | null,
+    privacyVersion: null as string | null,
+    healthDataConsentAt: null as Date | null,
+    currentPrivacyVersion: 'v0-2026-09',
+    isDemo: false,
+    isDevBypass: false,
+  };
+
   it('requires consent when timestamps are missing', () => {
+    expect(needsLegalConsentFromProfile(base)).toBe(true);
+  });
+
+  it('requires health consent even when legal docs are accepted', () => {
     expect(
       needsLegalConsentFromProfile({
-        termsAcceptedAt: null,
-        privacyAcceptedAt: null,
-        privacyVersion: null,
-        currentPrivacyVersion: 'v0-2026-09',
-        isDemo: false,
-        isDevBypass: false,
+        ...base,
+        termsAcceptedAt: new Date(),
+        privacyAcceptedAt: new Date(),
+        privacyVersion: 'v0-2026-09',
+        healthDataConsentAt: null,
       }),
     ).toBe(true);
   });
 
-  it('skips when both accepted at current version', () => {
+  it('skips when legal + health accepted at current version', () => {
     expect(
       needsLegalConsentFromProfile({
+        ...base,
         termsAcceptedAt: new Date(),
         privacyAcceptedAt: new Date(),
         privacyVersion: 'v0-2026-09',
-        currentPrivacyVersion: 'v0-2026-09',
-        isDemo: false,
-        isDevBypass: false,
+        healthDataConsentAt: new Date(),
       }),
     ).toBe(false);
   });
@@ -38,35 +51,45 @@ describe('needsLegalConsentFromProfile', () => {
   it('re-prompts when privacy version changes', () => {
     expect(
       needsLegalConsentFromProfile({
+        ...base,
         termsAcceptedAt: new Date(),
         privacyAcceptedAt: new Date(),
         privacyVersion: 'v0-old',
-        currentPrivacyVersion: 'v0-2026-09',
-        isDemo: false,
-        isDevBypass: false,
+        healthDataConsentAt: new Date(),
       }),
     ).toBe(true);
   });
 
   it('skips demo and dev bypass', () => {
+    expect(needsLegalConsentFromProfile({ ...base, isDemo: true })).toBe(false);
+    expect(needsLegalConsentFromProfile({ ...base, isDevBypass: true })).toBe(false);
+  });
+});
+
+describe('hasExistingHealthProcessingContext', () => {
+  it('is true when a santé provider is linked', () => {
     expect(
-      needsLegalConsentFromProfile({
-        termsAcceptedAt: null,
-        privacyAcceptedAt: null,
-        privacyVersion: null,
-        currentPrivacyVersion: 'v0-2026-09',
-        isDemo: true,
-        isDevBypass: false,
+      hasExistingHealthProcessingContext({
+        hasHealthProviderAccount: true,
+        hasHealthObservationRows: false,
       }),
-    ).toBe(false);
+    ).toBe(true);
+  });
+
+  it('is true when health observation rows exist', () => {
     expect(
-      needsLegalConsentFromProfile({
-        termsAcceptedAt: null,
-        privacyAcceptedAt: null,
-        privacyVersion: null,
-        currentPrivacyVersion: 'v0-2026-09',
-        isDemo: false,
-        isDevBypass: true,
+      hasExistingHealthProcessingContext({
+        hasHealthProviderAccount: false,
+        hasHealthObservationRows: true,
+      }),
+    ).toBe(true);
+  });
+
+  it('is false without providers or rows', () => {
+    expect(
+      hasExistingHealthProcessingContext({
+        hasHealthProviderAccount: false,
+        hasHealthObservationRows: false,
       }),
     ).toBe(false);
   });

@@ -135,6 +135,28 @@ export function PrivacySettingsPanel({ initial }: { initial: ConsentState | null
 
       <section className="analysis-panel rounded-analysis-lg space-y-4 px-4 py-4">
         <div>
+          <p className="text-label">Données de santé (requis)</p>
+          <h2 className="mt-1 text-base font-semibold">Sync et traitements physiologiques</h2>
+        </div>
+        <label className="flex items-start gap-3 text-sm">
+          <Checkbox
+            checked={Boolean(consents?.healthDataConsentAt)}
+            className="mt-0.5"
+            disabled={busy}
+            onCheckedChange={(value) => void patchConsent({ healthDataConsent: value === true })}
+          />
+          <span>
+            Synchronisation et traitement des données de santé / physiologiques (art. 9). Sans ce
+            consentement, l&apos;accès à Today est bloqué.
+          </span>
+        </label>
+        <blockquote className="border-border text-muted-foreground border-l-2 pl-3 text-xs leading-relaxed">
+          {HEALTH_DISCLAIMER}
+        </blockquote>
+      </section>
+
+      <section className="analysis-panel rounded-analysis-lg space-y-4 px-4 py-4">
+        <div>
           <p className="text-label">Consentements</p>
           <h2 className="mt-1 text-base font-semibold">Traitements optionnels</h2>
         </div>
@@ -154,15 +176,6 @@ export function PrivacySettingsPanel({ initial }: { initial: ConsentState | null
         </label>
         <label className="flex items-start gap-3 text-sm">
           <Checkbox
-            checked={Boolean(consents?.healthDataConsentAt)}
-            className="mt-0.5"
-            disabled={busy}
-            onCheckedChange={(value) => void patchConsent({ healthDataConsent: value === true })}
-          />
-          <span>Traitement des données de santé / physiologiques (art. 9).</span>
-        </label>
-        <label className="flex items-start gap-3 text-sm">
-          <Checkbox
             checked={Boolean(consents?.unofficialProvidersAckAt)}
             className="mt-0.5"
             disabled={busy}
@@ -175,9 +188,6 @@ export function PrivacySettingsPanel({ initial }: { initial: ConsentState | null
             l&apos;état ».
           </span>
         </label>
-        <blockquote className="border-border text-muted-foreground border-l-2 pl-3 text-xs leading-relaxed">
-          {HEALTH_DISCLAIMER}
-        </blockquote>
       </section>
 
       <section className="analysis-panel rounded-analysis-lg space-y-3 px-4 py-4">
