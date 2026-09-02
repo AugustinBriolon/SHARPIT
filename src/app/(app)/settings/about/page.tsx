@@ -5,9 +5,9 @@ import { MedicalDisclaimerNote } from '@/components/ui/instruments/medical-discl
 export default function SettingsAboutPage() {
   return (
     <div className="space-y-4">
-      <MobileBackLink href="/settings" label="Profil" showOnDesktop />
+      <MobileBackLink href="/moi" label="Moi" showOnDesktop />
       <StickyHeader>
-        <p className="text-label">Profil</p>
+        <p className="text-label">Moi</p>
         <h1 className="text-page-title mt-1">À propos</h1>
         <p className="text-muted-foreground mt-1 text-sm">
           SHARPIT est un système de coaching sportif personnel centré sur la physiologie et la

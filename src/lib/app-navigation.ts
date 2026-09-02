@@ -1,12 +1,14 @@
-import { CalendarDays, CircleUser, MessagesSquare, Sun, TrendingUp } from 'lucide-react';
+import { CalendarRange, CircleUser, Footprints, MessagesSquare, Sun } from 'lucide-react';
 
 /**
- * Primary nav uses canonical hrefs only (`/`, `/training`, `/progress`, `/coach`, `/settings`).
+ * Shell V1 primary nav — four temporal destinations (auth shell only).
  *
- * The five destinations are temporal, not domain-led (ADR-022). Stage 1 of that
- * migration renames them where they stand — the hrefs still point at the routes
- * that exist today, so `Ma semaine` is still served by the training thread.
- * `Progression` now has its own surface (stage 3).
+ * Today · Plan · Activité · Moi. Coach is contextual, not a tab.
+ * Legal / onboarding / future teaser stay outside `(app)` and never wrap the tab bar.
+ *
+ * Canonical hub hrefs: `/`, `/plan`, `/activite`, `/moi`. Existing deep routes
+ * (`/training/*`, `/progress`, `/settings/*`, `/coach`) remain valid and light
+ * the matching tab where applicable.
  */
 
 export type NavIcon = typeof Sun;
@@ -18,31 +20,51 @@ export type AppNavItem = {
   match: (pathname: string) => boolean;
 };
 
+/** Week thread / planning hubs under `/training`. */
+export function isPlanTrainingPath(pathname: string): boolean {
+  if (pathname === '/training') {
+    return true;
+  }
+  return (
+    pathname.startsWith('/training/planning') ||
+    pathname.startsWith('/training/weekly-review') ||
+    pathname.startsWith('/training/sessions') ||
+    pathname.startsWith('/training/progression')
+  );
+}
+
+/** Activity-history and completed-session paths under `/training`. */
+export function isActivityTrainingPath(pathname: string): boolean {
+  return pathname.startsWith('/training') && !isPlanTrainingPath(pathname);
+}
+
 export const todayNavItem: AppNavItem = {
   href: '/',
-  label: 'Aujourd’hui',
+  label: 'Today',
   icon: Sun,
   // Nutrition is a Today detail, not a destination — it lights this tab rather
   // than leaving the bar with nothing marked current.
   match: (p) => p === '/' || p.startsWith('/today') || p.startsWith('/nutrition'),
 };
 
-export const weekNavItem: AppNavItem = {
-  href: '/training',
-  label: 'Ma semaine',
-  icon: CalendarDays,
-  match: (p) => p.startsWith('/training'),
+export const planNavItem: AppNavItem = {
+  href: '/plan',
+  label: 'Plan',
+  icon: CalendarRange,
+  match: (p) => p === '/plan' || p.startsWith('/plan/') || isPlanTrainingPath(p),
 };
 
-export const progressNavItem: AppNavItem = {
-  href: '/progress',
-  label: 'Progression',
-  icon: TrendingUp,
-  // `/biology` still matches: it redirects here, and the tab should not go dark
-  // for the frame the redirect takes.
-  match: (p) => p.startsWith('/progress') || p.startsWith('/biology'),
+export const activityNavItem: AppNavItem = {
+  href: '/activite',
+  label: 'Activité',
+  icon: Footprints,
+  match: (p) => p === '/activite' || p.startsWith('/activite/') || isActivityTrainingPath(p),
 };
 
+/**
+ * Kept for contextual Coach entry points and deep links — not a primary tab.
+ * Surfaces that open Coach should use `coachDiscussHref` / existing CTAs.
+ */
 export const coachNavItem: AppNavItem = {
   href: '/coach',
   label: 'Coach',
@@ -50,31 +72,35 @@ export const coachNavItem: AppNavItem = {
   match: (p) => p.startsWith('/coach'),
 };
 
-export const profileNavItem: AppNavItem = {
-  href: '/settings',
-  // Registry fallback for a11y / tests — live nav overwrites with the athlete's
-  // first name via `useAthleteNavIdentity()`.
-  label: 'Profil',
+export const moiNavItem: AppNavItem = {
+  href: '/moi',
+  label: 'Moi',
   icon: CircleUser,
-  match: (p) => p.startsWith('/settings'),
+  match: (p) =>
+    p === '/moi' ||
+    p.startsWith('/moi/') ||
+    p.startsWith('/settings') ||
+    p.startsWith('/progress') ||
+    p.startsWith('/biology'),
 };
 
-/** Destinations principales sidebar desktop (sans Profil). */
+/** @deprecated Use `moiNavItem` — alias kept for callers that still say "profile". */
+export const profileNavItem = moiNavItem;
+
+/** Destinations principales sidebar desktop (sans Moi — identité en bas). */
 export const sidebarPrimaryNavItems: AppNavItem[] = [
   todayNavItem,
-  weekNavItem,
-  progressNavItem,
-  coachNavItem,
+  planNavItem,
+  activityNavItem,
 ];
 
-/** Navigation sidebar desktop (ordre complet, y compris Profil). */
-export const sidebarNavItems: AppNavItem[] = [...sidebarPrimaryNavItems, profileNavItem];
+/** Navigation sidebar desktop (ordre complet, y compris Moi). */
+export const sidebarNavItems: AppNavItem[] = [...sidebarPrimaryNavItems, moiNavItem];
 
-/** Onglets bottom bar mobile. */
+/** Onglets bottom bar mobile — Shell V1 (Coach hors barre). */
 export const bottomNavItems: AppNavItem[] = [
   todayNavItem,
-  weekNavItem,
-  progressNavItem,
-  coachNavItem,
-  profileNavItem,
+  planNavItem,
+  activityNavItem,
+  moiNavItem,
 ];

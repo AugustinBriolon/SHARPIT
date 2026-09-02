@@ -22,23 +22,28 @@ type Matcher = {
   resolve: (match: RegExpMatchArray) => RouteEntry;
 };
 
-const HOME_PARENT = { href: '/', label: 'Aujourd’hui' } as const;
-const TRAINING_PARENT = { href: '/training', label: 'Ma semaine' } as const;
+const HOME_PARENT = { href: '/', label: 'Today' } as const;
+const PLAN_PARENT = { href: '/plan', label: 'Plan' } as const;
+const ACTIVITY_PARENT = { href: '/activite', label: 'Activité' } as const;
 const HISTORY_PARENT = { href: '/training/history', label: 'Historique' } as const;
 const TRIPS_PARENT = { href: '/training/trips', label: 'Séjours' } as const;
-const SETTINGS_PARENT = { href: '/settings', label: 'Profil' } as const;
+const MOI_PARENT = { href: '/moi', label: 'Moi' } as const;
 
 const MATCHERS: Matcher[] = [
-  { pattern: /^\/$/, resolve: () => ({ label: 'Aujourd’hui' }) },
+  { pattern: /^\/$/, resolve: () => ({ label: 'Today' }) },
+  { pattern: /^\/plan$/, resolve: () => ({ label: 'Plan', defaultParent: HOME_PARENT }) },
+  { pattern: /^\/activite$/, resolve: () => ({ label: 'Activité', defaultParent: HOME_PARENT }) },
+  { pattern: /^\/moi$/, resolve: () => ({ label: 'Moi', defaultParent: HOME_PARENT }) },
+  // Coach stays reachable but is not a primary tab (Shell V1).
   { pattern: /^\/coach$/, resolve: () => ({ label: 'Coach', defaultParent: HOME_PARENT }) },
 
   {
     pattern: /^\/training$/,
-    resolve: () => ({ label: 'Ma semaine', defaultParent: HOME_PARENT }),
+    resolve: () => ({ label: 'Fil de la semaine', defaultParent: PLAN_PARENT }),
   },
   {
     pattern: /^\/training\/history$/,
-    resolve: () => ({ label: 'Historique', defaultParent: TRAINING_PARENT }),
+    resolve: () => ({ label: 'Historique', defaultParent: ACTIVITY_PARENT }),
   },
   {
     pattern: /^\/training\/manual$/,
@@ -46,12 +51,16 @@ const MATCHERS: Matcher[] = [
   },
   {
     pattern: /^\/training\/planning$/,
-    resolve: () => ({ label: 'Planification', defaultParent: TRAINING_PARENT }),
+    resolve: () => ({ label: 'Planification', defaultParent: PLAN_PARENT }),
+  },
+  {
+    pattern: /^\/training\/weekly-review$/,
+    resolve: () => ({ label: 'Bilan hebdo', defaultParent: PLAN_PARENT }),
   },
   // Both trip patterns must stay above the /training/:id catch-all below.
   {
     pattern: /^\/training\/trips$/,
-    resolve: () => ({ label: 'Séjours', defaultParent: TRAINING_PARENT }),
+    resolve: () => ({ label: 'Séjours', defaultParent: ACTIVITY_PARENT }),
   },
   {
     pattern: /^\/training\/trips\/[^/]+$/,
@@ -89,7 +98,7 @@ const MATCHERS: Matcher[] = [
 
   {
     pattern: /^\/progress$/,
-    resolve: () => ({ label: 'Progression', defaultParent: HOME_PARENT }),
+    resolve: () => ({ label: 'Progression', defaultParent: MOI_PARENT }),
   },
 
   {
@@ -97,41 +106,50 @@ const MATCHERS: Matcher[] = [
     resolve: () => ({ label: 'Nutrition', defaultParent: HOME_PARENT }),
   },
 
-  { pattern: /^\/settings$/, resolve: () => ({ label: 'Profil', defaultParent: HOME_PARENT }) },
+  // `/settings` redirects to `/moi`; keep a label for any stack entry that still lands here.
+  { pattern: /^\/settings$/, resolve: () => ({ label: 'Moi', defaultParent: HOME_PARENT }) },
   {
     pattern: /^\/settings\/account$/,
-    resolve: () => ({ label: 'Compte', defaultParent: SETTINGS_PARENT }),
+    resolve: () => ({ label: 'Compte', defaultParent: MOI_PARENT }),
   },
   {
     pattern: /^\/settings\/integrations$/,
-    resolve: () => ({ label: 'Intégrations', defaultParent: SETTINGS_PARENT }),
+    resolve: () => ({ label: 'Intégrations', defaultParent: MOI_PARENT }),
   },
   {
     pattern: /^\/settings\/maintenance$/,
-    resolve: () => ({ label: 'Maintenance', defaultParent: SETTINGS_PARENT }),
+    resolve: () => ({ label: 'Maintenance', defaultParent: MOI_PARENT }),
   },
   {
     pattern: /^\/settings\/appearance$/,
-    resolve: () => ({ label: 'Apparence', defaultParent: SETTINGS_PARENT }),
+    resolve: () => ({ label: 'Apparence', defaultParent: MOI_PARENT }),
   },
   {
     pattern: /^\/settings\/appearance\/expert-mode$/,
     resolve: () => ({
       label: 'Mode Expert',
-      defaultParent: SETTINGS_PARENT,
+      defaultParent: MOI_PARENT,
     }),
   },
   {
     pattern: /^\/settings\/equipment$/,
-    resolve: () => ({ label: 'Équipement', defaultParent: SETTINGS_PARENT }),
+    resolve: () => ({ label: 'Équipement', defaultParent: MOI_PARENT }),
   },
   {
     pattern: /^\/settings\/about$/,
-    resolve: () => ({ label: 'À propos', defaultParent: SETTINGS_PARENT }),
+    resolve: () => ({ label: 'À propos', defaultParent: MOI_PARENT }),
   },
   {
     pattern: /^\/settings\/memory$/,
-    resolve: () => ({ label: 'Mémoire du coach', defaultParent: SETTINGS_PARENT }),
+    resolve: () => ({ label: 'Mémoire du coach', defaultParent: MOI_PARENT }),
+  },
+  {
+    pattern: /^\/settings\/privacy$/,
+    resolve: () => ({ label: 'Confidentialité', defaultParent: MOI_PARENT }),
+  },
+  {
+    pattern: /^\/settings\/pro$/,
+    resolve: () => ({ label: 'Pro', defaultParent: MOI_PARENT }),
   },
 ];
 

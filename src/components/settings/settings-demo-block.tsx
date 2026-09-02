@@ -21,8 +21,8 @@ export function SettingsDemoBlock({ description }: { description: string }) {
       </div>
       <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center">
         <DemoExitButton />
-        <Button nativeButton={false} render={<Link href="/settings" />} variant="outline">
-          Retour aux réglages
+        <Button nativeButton={false} render={<Link href="/moi" />} variant="outline">
+          Retour à Moi
         </Button>
       </div>
     </div>

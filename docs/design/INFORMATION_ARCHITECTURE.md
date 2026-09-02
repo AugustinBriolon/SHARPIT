@@ -24,34 +24,38 @@ This is a product-surface contract. It complements [PRODUCT.md](../product/PRODU
 
 ## Design decision
 
-Use a temporal, decision-led navigation model with five primary destinations:
+Use a temporal, decision-led navigation model. **Shell V1** (shipped in primary chrome) uses four bottom-tab / sidebar destinations:
 
 | Destination  | Athlete question                       | Primary horizon  | What belongs there                                                                            |
 | ------------ | -------------------------------------- | ---------------- | --------------------------------------------------------------------------------------------- |
 | **Today**    | What should I do now?                  | This day         | State, decision, check-in, today's session, day-specific context, and tomorrow preview.       |
-| **My week**  | How should I organise the coming days? | 7–14 days        | Weekly brief, plan, calendar, planned sessions, capacity projection, and plan adjustments.    |
-| **Progress** | Am I moving in the right direction?    | Weeks to seasons | Goals, training history, performance, records, calibration, body trends, and physical health. |
-| **Coach**    | I want to discuss this.                | Any              | Free conversations and conversations initiated with visible contextual evidence.              |
-| **Profile**  | How does SHARPIT know and support me?  | Persistent       | Account, equipment, integrations, coach memory, preferences, and maintenance.                 |
+| **Plan**     | How should I organise the coming days? | 7–14 days        | Week thread, planning, weekly brief, capacity projection, and plan adjustments.               |
+| **Activité** | What did I actually do?                | Past → present   | Activity history, trips, manual entry, completed-session detail.                              |
+| **Moi**      | How does SHARPIT know and support me?  | Persistent       | Corps, objectifs, Confidentialité (consents / export / delete), account, equipment, prefs.    |
 
-On desktop these destinations form the primary sidebar. On mobile they form the bottom navigation. `Profile` is a utility destination; it must not compete visually with the daily decision.
+**Coach is not a tab.** It remains a contextual entry (and `/coach` deep link) from Today, Plan, sessions, and related surfaces. Legal (`/consent`, `/privacy`, `/terms`), onboarding, and any future teaser stay **outside** the auth app shell — they must not wrap the tab bar.
 
-### Shipped labels
+On desktop these destinations form the primary sidebar (Moi as the identity footer). On mobile they form the bottom navigation.
 
-This document is written in English; the application ships in French. The destination names above are concepts, not strings. These are the labels to render, and the items they replace in [`src/lib/app-navigation.ts`](../../src/lib/app-navigation.ts):
+### Shipped labels (Shell V1)
 
-| Destination | Shipped label | Replaces       |
-| ----------- | ------------- | -------------- |
-| Today       | `Aujourd'hui` | `Accueil`      |
-| My week     | `Ma semaine`  | `Entraînement` |
-| Progress    | `Progression` | `Physiologie`  |
-| Coach       | `Coach`       | `Coach`        |
-| Profile     | `Profil`      | `Réglages`     |
+This document is written in English; hub copy ships in French. Tab labels in [`src/lib/app-navigation.ts`](../../src/lib/app-navigation.ts):
 
-Two label collisions must be resolved as part of the rename, not left to the implementer:
+| Destination | Shipped label | Canonical hub | Replaces (ADR-022 stage) |
+| ----------- | ------------- | ------------- | ------------------------ |
+| Today       | `Today`       | `/`           | `Aujourd'hui` / Accueil  |
+| Plan        | `Plan`        | `/plan`       | `Ma semaine`             |
+| Activité    | `Activité`    | `/activite`   | (history half of week)   |
+| Moi         | `Moi`         | `/moi`        | `Profil` / Réglages      |
 
-- **`Ma semaine`** is currently a Coach-menu entry for the Weekly Coaching Brief ([`coach-menu.tsx`](../../src/components/coaching/coach-menu.tsx), [`weekly-brief.tsx`](../../src/components/coach/weekly-brief.tsx), ADR-007). The primary destination takes the name; the Coach entry becomes `Bilan hebdo`. The brief itself does not move — it stays a Coach artefact reachable from My week.
-- **`Progression`** was a training route (`/training/progression`) that now only redirects. The word is free to reuse, but the redirect must keep working and must not be mistaken for the new destination.
+Coach keeps the label `Coach` on contextual CTAs only — not in `bottomNavItems`.
+
+Deep routes (`/training/*`, `/progress`, `/settings/*`) stay valid and light the matching tab. `/settings` redirects to `/moi`.
+
+Two label collisions from the ADR-022 rename still apply where those surfaces live:
+
+- **`Bilan hebdo`** remains the Coach-menu / Plan-hub name for the Weekly Coaching Brief.
+- **`Progression`** still names the `/progress` hub (reachable from Moi → Corps / Objectifs); `/training/progression` redirects must keep working.
 
 ### Vocabulary
 

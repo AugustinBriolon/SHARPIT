@@ -13,6 +13,8 @@ const STORAGE_STATE = 'e2e/.auth/athlete.json';
  * something that belongs in the shell, or when an extracted header stops
  * matching the one its fallback paints.
  *
+ * Shell V1: bottom tabs are Today · Plan · Activité · Moi. Coach is contextual.
+ *
  * Deliberately not asserted here: what is on screen *before* the server answers.
  * That needs a prefetched shell, so it lives in `instant-navigation.spec.ts`
  * against a production build. These run against `yarn dev` via
@@ -30,7 +32,7 @@ test.describe('navigation shell', () => {
   test.use(existsSync(STORAGE_STATE) ? { storageState: STORAGE_STATE } : {});
 
   test.beforeEach(async ({ page }) => {
-    await page.goto('/training');
+    await page.goto('/plan');
     test.skip(
       new URL(page.url()).pathname.startsWith('/sign-in'),
       'not signed in — run against `yarn dev` via `yarn test:e2e:dev`',
@@ -43,14 +45,26 @@ test.describe('navigation shell', () => {
     // several (a hidden route's nav still claiming the page).
     const current = page.locator('[aria-current="page"]:visible');
     await expect(current).toHaveCount(1);
-    await expect(current).toHaveAttribute('href', '/training');
+    await expect(current).toHaveAttribute('href', '/plan');
 
-    await page.getByRole('link', { name: 'Réglages' }).first().click();
-    await expect(page).toHaveURL(/\/settings$/);
+    await page.locator('nav[aria-label="Navigation principale"] a[href="/moi"]').first().click();
+    await expect(page).toHaveURL(/\/moi$/);
 
     const afterNav = page.locator('[aria-current="page"]:visible');
     await expect(afterNav).toHaveCount(1);
-    await expect(afterNav).toHaveAttribute('href', '/settings');
+    await expect(afterNav).toHaveAttribute('href', '/moi');
+  });
+
+  test('bottom tabs are Shell V1 destinations without Coach', async ({ page }) => {
+    const nav = page.getByRole('navigation', { name: 'Navigation principale' });
+    await expect(nav.locator('a[href="/"]')).toBeVisible();
+    await expect(nav.locator('a[href="/plan"]')).toBeVisible();
+    await expect(nav.locator('a[href="/activite"]')).toBeVisible();
+    await expect(nav.locator('a[href="/moi"]')).toBeVisible();
+    await expect(nav.locator('a[href="/coach"]')).toHaveCount(0);
+    await expect(nav.getByText('Today', { exact: true })).toBeVisible();
+    await expect(nav.getByText('Plan', { exact: true })).toBeVisible();
+    await expect(nav.getByText('Activité', { exact: true })).toBeVisible();
   });
 
   test('a drill-down paints exactly one header', async ({ page }) => {
@@ -63,11 +77,16 @@ test.describe('navigation shell', () => {
     await expect(headings).toHaveText('Sommeil');
   });
 
-  test('the settings hub lists every entry before its status arrives', async ({ page }) => {
+  test('the Moi hub lists featured and settings entries before status arrives', async ({
+    page,
+  }) => {
     // The list is static and belongs in the shell; each status chip is its own
-    // streamed boundary. All seven rows must be there, and each must resolve to
-    // real text rather than being stuck on its skeleton.
-    await page.goto('/settings');
+    // streamed boundary. Featured + account rows must be there.
+    await page.goto('/moi');
+
+    await expect(page.locator('a[href="/progress?tab=body"]:visible').first()).toBeVisible();
+    await expect(page.locator('a[href="/progress?tab=goals"]:visible').first()).toBeVisible();
+    await expect(page.locator('a[href="/settings/privacy"]:visible').first()).toBeVisible();
 
     for (const href of [
       '/settings/account',

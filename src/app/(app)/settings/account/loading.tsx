@@ -12,7 +12,7 @@ export default function SettingsAccountLoading() {
     <div className="space-y-4">
       <MobileBackLink showOnDesktop />
       <StickyHeader>
-        <p className="text-label">Profil</p>
+        <p className="text-label">Moi</p>
         <h1 className="text-page-title mt-1">Mon profil</h1>
         <p className="text-muted-foreground mt-1 text-sm">
           Identité et rythme de vie — les repères de performance sont dans Progression.

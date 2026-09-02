@@ -9,7 +9,7 @@ describe('HikeTripsListSkeleton', () => {
     const html = renderToStaticMarkup(createElement(HikeTripsListSkeleton));
 
     expect(html).toContain('Séjours');
-    expect(html).toContain('Ma semaine');
+    expect(html).toContain('Activité');
     expect(html).toContain('chip-surface-lg');
     expect(html.match(/chip-surface-lg/g)?.length).toBe(3);
   });
