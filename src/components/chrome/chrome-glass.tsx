@@ -9,11 +9,12 @@ import { cn } from '@/lib/utils';
 /**
  * Liquid Glass chrome wrapper — tab bar, floating back, etc.
  *
- * Content cards, forms, and legal walls (`/consent`, `/privacy`, `/terms`)
- * must NOT use this. Readability first (Design / Privacy).
+ * Layout is owned by a stable outer box. `liquid-glass-react@1.1.1` is painted
+ * as a non-interactive backdrop (`pointer-events-none`) so the library's
+ * transform / top-left defaults cannot displace tap targets.
  *
- * Falls back to frosted CSS when reduced-motion is set or before mount.
- * `liquid-glass-react@1.1.1` (peer React >=19) — pin; elasticity forced to 0.
+ * Content cards, forms, and legal walls (`/consent`, `/privacy`, `/terms`)
+ * must NOT use this.
  */
 
 const LiquidGlass = dynamic(() => import('liquid-glass-react'), { ssr: false });
@@ -27,33 +28,9 @@ export type ChromeGlassProps = {
   forceFallback?: boolean;
 };
 
-/** CSS frosted surface shared by fallback + reduced-motion paths. */
+/** CSS frosted surface — always under interactive chrome for contrast. */
 export const chromeGlassFallbackClass =
   'bg-background/80 supports-backdrop-filter:bg-background/70 backdrop-blur-xl border border-border/50 shadow-none';
-
-function FallbackSurface({
-  children,
-  className,
-  cornerRadius,
-  style,
-}: {
-  children: React.ReactNode;
-  className?: string;
-  cornerRadius: number;
-  style?: React.CSSProperties;
-}) {
-  return (
-    <div
-      className={cn(chromeGlassFallbackClass, className)}
-      style={{
-        borderRadius: cornerRadius >= 999 ? 9999 : cornerRadius,
-        ...style,
-      }}
-    >
-      {children}
-    </div>
-  );
-}
 
 function useChromeGlassReady(forceFallback: boolean): boolean {
   const reduce = useReducedMotion();
@@ -64,13 +41,33 @@ function useChromeGlassReady(forceFallback: boolean): boolean {
   return !forceFallback && !reduce && mounted;
 }
 
-function glassStyle(style: React.CSSProperties | undefined): React.CSSProperties {
-  return {
-    position: 'relative',
-    top: 'auto',
-    left: 'auto',
-    ...style,
-  };
+function GlassBackdrop({ cornerRadius, overLight }: { cornerRadius: number; overLight: boolean }) {
+  return (
+    <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
+      <LiquidGlass
+        aberrationIntensity={overLight ? 1 : 1.5}
+        blurAmount={0.08}
+        className="!m-0 size-full"
+        cornerRadius={cornerRadius}
+        displacementScale={overLight ? 36 : 48}
+        elasticity={0}
+        mode="standard"
+        overLight={overLight}
+        padding="0"
+        saturation={overLight ? 120 : 130}
+        style={{
+          height: '100%',
+          left: 0,
+          position: 'absolute',
+          top: 0,
+          transform: 'none',
+          width: '100%',
+        }}
+      >
+        <div className="size-full min-h-11" />
+      </LiquidGlass>
+    </div>
+  );
 }
 
 export function ChromeGlass({
@@ -78,36 +75,20 @@ export function ChromeGlass({
   className,
   cornerRadius = 24,
   forceFallback = false,
-  padding = '0',
   style,
 }: ChromeGlassProps) {
   const ready = useChromeGlassReady(forceFallback);
   const { resolved } = useThemePreference();
   const overLight = resolved === 'light';
-
-  if (!ready) {
-    return (
-      <FallbackSurface className={className} cornerRadius={cornerRadius} style={style}>
-        {children}
-      </FallbackSurface>
-    );
-  }
+  const radius = cornerRadius >= 999 ? 9999 : cornerRadius;
 
   return (
-    <LiquidGlass
-      aberrationIntensity={overLight ? 1 : 1.5}
-      blurAmount={0.08}
-      className={cn(className)}
-      cornerRadius={cornerRadius}
-      displacementScale={overLight ? 36 : 48}
-      elasticity={0}
-      mode="standard"
-      overLight={overLight}
-      padding={padding}
-      saturation={overLight ? 120 : 130}
-      style={glassStyle(style)}
+    <div
+      className={cn(chromeGlassFallbackClass, 'relative overflow-hidden', className)}
+      style={{ borderRadius: radius, ...style }}
     >
-      {children}
-    </LiquidGlass>
+      {ready ? <GlassBackdrop cornerRadius={cornerRadius} overLight={overLight} /> : null}
+      <div className="relative z-10">{children}</div>
+    </div>
   );
 }
