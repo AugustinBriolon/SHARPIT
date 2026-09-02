@@ -37,6 +37,9 @@ function hasDemoCookie(): boolean {
 
 const noopSubscribe = () => () => {};
 
+const clerkBypassEnabled =
+  process.env.NEXT_PUBLIC_DEV_BYPASS_CLERK === 'true' && process.env.NODE_ENV === 'development';
+
 /**
  * UI signal for demo-aware client components.
  * Matches server `isDemoSession()`: demo cookie AND no Clerk `userId`.
@@ -45,8 +48,16 @@ const noopSubscribe = () => () => {};
  *
  * Cookie is set/cleared via full page loads (`/demo`, `/api/demo/exit`).
  */
-export function useIsDemoMode(): boolean {
+function useIsDemoModeWithClerk(): boolean {
   const { userId, isLoaded } = useAuth();
   const cookieIsDemo = useSyncExternalStore(noopSubscribe, hasDemoCookie, () => false);
   return resolveIsDemoMode(cookieIsDemo, userId, isLoaded);
 }
+
+function useIsDemoModeBypass(): boolean {
+  return false;
+}
+
+export const useIsDemoMode: () => boolean = clerkBypassEnabled
+  ? useIsDemoModeBypass
+  : useIsDemoModeWithClerk;

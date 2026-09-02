@@ -10,12 +10,15 @@ export interface UseOfflineSnapshotResult {
   loading: boolean;
 }
 
+const clerkBypassEnabled =
+  process.env.NEXT_PUBLIC_DEV_BYPASS_CLERK === 'true' && process.env.NODE_ENV === 'development';
+
 /**
  * Reads the persisted offline Snapshot — only when `active` (the caller decides
  * when it's actually needed, e.g. offline with no live ViewModel), to avoid an
  * IndexedDB read on every normal, online render.
  */
-export function useOfflineSnapshot(active: boolean): UseOfflineSnapshotResult {
+function useOfflineSnapshotWithClerk(active: boolean): UseOfflineSnapshotResult {
   const { user, isSignedIn, isLoaded } = useUser();
   const [entry, setEntry] = useState<PersistedSnapshotEntry | null>(null);
   const [loading, setLoading] = useState(active);
@@ -42,3 +45,11 @@ export function useOfflineSnapshot(active: boolean): UseOfflineSnapshotResult {
 
   return { entry, loading };
 }
+
+function useOfflineSnapshotBypass(_active: boolean): UseOfflineSnapshotResult {
+  return { entry: null, loading: false };
+}
+
+export const useOfflineSnapshot: (active: boolean) => UseOfflineSnapshotResult = clerkBypassEnabled
+  ? useOfflineSnapshotBypass
+  : useOfflineSnapshotWithClerk;
