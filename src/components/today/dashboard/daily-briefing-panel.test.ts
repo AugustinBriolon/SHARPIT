@@ -60,7 +60,10 @@ describe('DailyBriefingPanel', () => {
     } as never);
     const html = renderPanel();
     expect(html).toContain('Lire le briefing');
-    expect(html).toContain('Briefing du jour');
+    expect(html).not.toMatch(/Lire Le briefing/);
+    // Single title surface: aria-label only while collapsed (no duplicate h2 in body).
+    expect(html).toContain('aria-label="Briefing du jour"');
+    expect(html).not.toMatch(/text-section-title[^>]*>Briefing du jour/);
     expect(html).toContain('Journée active');
   });
 });
