@@ -1,6 +1,11 @@
 {
+  "$schema": "https://openapi.vercel.sh/vercel.json",
   "installCommand": "corepack enable && HUSKY=0 yarn install --immutable",
   "buildCommand": "yarn db:migrate:deploy && yarn build",
+  "ignoreCommand": "node scripts/ci/vercel-ignore-build.mjs",
+  "github": {
+    "autoJobCancelation": true
+  },
   "crons": [
     {
       "path": "/api/cron/sync",
