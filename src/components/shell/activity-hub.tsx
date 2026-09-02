@@ -1,46 +1,42 @@
-import { Footprints, History, Map } from 'lucide-react';
+import { Suspense } from 'react';
+import { Plus } from 'lucide-react';
 import { StickyHeader } from '@/components/layout/sticky-header';
-import { ShellHubLink } from '@/components/shell/shell-hub-link';
+import { TrainingList, TrainingListFallback } from '@/components/training/hub/training-list';
+import { LinkButton } from '@/components/ui/link-button';
 
 /**
- * Activité hub — Shell V1 placeholder.
- * History, trips and manual entry stay on their existing routes.
+ * Activité hub — Shell V1.1 workflow (not an Accès link dump).
+ *
+ * Historique list + CTA Nouvelle activité. Séjours stay reachable via deep
+ * link (`/training/trips`) but are not featured here (Moi-split deferred).
+ *
+ * Chrome stays outside Suspense (Instant UX); the list streams like Plan/Today.
  */
 export function ActivityHub() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-lg:pb-10">
       <StickyHeader>
         <p className="text-label">Activité</p>
         <h1 className="text-page-title mt-1">Ce que tu as fait</h1>
         <p className="text-muted-foreground mt-1 text-sm">
-          Historique, séjours et saisie manuelle — lecture de l&apos;exécution, pas du plan.
+          Historique des séances réalisées — lecture de l&apos;exécution, pas du plan.
         </p>
       </StickyHeader>
 
-      <section aria-labelledby="activity-entries" className="space-y-3">
-        <h2 className="text-section-title" id="activity-entries">
-          Accès
+      <div>
+        <LinkButton className="gap-1.5" href="/training/manual" size="sm">
+          <Plus className="size-3.5" aria-hidden />
+          Nouvelle activité
+        </LinkButton>
+      </div>
+
+      <section aria-labelledby="activity-history" className="space-y-3">
+        <h2 className="text-section-title" id="activity-history">
+          Historique
         </h2>
-        <ul className="space-y-2">
-          <ShellHubLink
-            href="/training/history"
-            title="Historique"
-            description="Activités enregistrées, du plus récent au plus ancien."
-            icon={History}
-          />
-          <ShellHubLink
-            href="/training/trips"
-            title="Séjours"
-            description="Randonnées multi-jours et dossiers de séjour."
-            icon={Map}
-          />
-          <ShellHubLink
-            href="/training/manual"
-            title="Nouvelle activité"
-            description="Saisir une séance qui n’est pas encore synchronisée."
-            icon={Footprints}
-          />
-        </ul>
+        <Suspense fallback={<TrainingListFallback />}>
+          <TrainingList />
+        </Suspense>
       </section>
     </div>
   );

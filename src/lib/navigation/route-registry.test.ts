@@ -1,9 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  isTransientRoute,
-  resolveRouteFallback,
-  resolveRouteLabel,
-} from './route-registry';
+import { isTransientRoute, resolveRouteFallback, resolveRouteLabel } from './route-registry';
 
 describe('route-registry', () => {
   describe('resolveRouteLabel', () => {
@@ -50,8 +46,8 @@ describe('route-registry', () => {
   describe('resolveRouteFallback', () => {
     it('returns the direct parent for detail routes', () => {
       expect(resolveRouteFallback('/training/abc123')).toEqual({
-        href: '/training/history',
-        label: 'Historique',
+        href: '/activite',
+        label: 'Activité',
       });
       expect(resolveRouteFallback('/training/history')).toEqual({
         href: '/activite',
@@ -74,8 +70,15 @@ describe('route-registry', () => {
       });
     });
 
-    it('sends manual entry back to Activité (not fixed Historique)', () => {
+    it('sends manual entry / saisie back to Activité (never hard-coded Historique)', () => {
       expect(resolveRouteFallback('/training/manual')).toEqual({
+        href: '/activite',
+        label: 'Activité',
+      });
+    });
+
+    it('sends session detail back to Activité hub (history lives on the hub)', () => {
+      expect(resolveRouteFallback('/training/cmrvpthya01xkmsm80lybbzqd')).toEqual({
         href: '/activite',
         label: 'Activité',
       });

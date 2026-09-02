@@ -11,10 +11,18 @@ describe('resolveBackTargetWithoutStack', () => {
     ).toEqual({ href: '/training', label: 'Ma semaine', fromStack: false });
   });
 
-  it('falls back to the route registry for activity detail', () => {
+  it('falls back to Activité hub for activity detail (not hard-coded Historique)', () => {
     expect(resolveBackTargetWithoutStack('/training/cmrvpthya01xkmsm80lybbzqd')).toEqual({
-      href: '/training/history',
-      label: 'Historique',
+      href: '/activite',
+      label: 'Activité',
+      fromStack: false,
+    });
+  });
+
+  it('falls back to Activité for manual saisie', () => {
+    expect(resolveBackTargetWithoutStack('/training/manual')).toEqual({
+      href: '/activite',
+      label: 'Activité',
       fromStack: false,
     });
   });

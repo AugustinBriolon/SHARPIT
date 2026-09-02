@@ -110,12 +110,12 @@ test.describe('navigation shell', () => {
   test('the back link resolves its label from the nav stack', async ({ page }) => {
     // MobileBackLink renders a static href+label directly, but with no href it
     // reads the app's nav stack behind a boundary. Reaching the detail from the
-    // history list is what makes the dynamic branch resolve to "Historique".
-    await page.goto('/training/history');
+    // Activité hub list is what makes the dynamic branch resolve to "Activité".
+    await page.goto('/activite');
     await page.locator('a[href^="/training/cm"]:visible').first().click();
     await expect(page).toHaveURL(/\/training\/cm/);
 
-    await expect(page.getByRole('link', { name: 'Historique' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Activité' })).toBeVisible();
   });
 
   test('Plan hub shows widgets without Accès dump', async ({ page }) => {
@@ -128,5 +128,17 @@ test.describe('navigation shell', () => {
     await expect(page.getByRole('link', { name: 'Fil de la semaine' })).toHaveCount(0);
     await expect(page.getByRole('link', { name: 'Séjours' })).toHaveCount(0);
     await expect(page.getByRole('link', { name: 'Planification' })).toBeVisible();
+  });
+
+  test('Activité hub shows history + Nouvelle activité without Accès or Séjours', async ({
+    page,
+  }) => {
+    await page.goto('/activite');
+    await expect(page.getByRole('heading', { level: 1 })).toContainText(/Ce que tu as fait/);
+    await expect(page.getByRole('link', { name: /Nouvelle activité/ })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Historique' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Accès' })).toHaveCount(0);
+    await expect(page.getByRole('link', { name: 'Séjours' })).toHaveCount(0);
+    await expect(page.getByRole('link', { name: 'Historique' })).toHaveCount(0);
   });
 });
