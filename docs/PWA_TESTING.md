@@ -5,6 +5,22 @@
 
 Run this checklist on real hardware before shipping any change to `src/sw.ts`, `src/app/manifest.ts`, or `src/lib/pwa/**`. Automated tests (`.test.ts`) cover the pure logic behind each of these; they cannot verify the actual on-device experience.
 
+## Automation status
+
+Playwright covers the highest-value, Chromium-automatable slices of this checklist. Pure logic under `src/lib/pwa/**` stays in Vitest — these specs do not re-implement it. There is no WebKit/Safari project; real iOS Safari install / Airplane Mode / maskable crop remain manual.
+
+| Area                                                                                                                | Automation                            | Notes                                                                                                                             |
+| ------------------------------------------------------------------------------------------------------------------- | ------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| Manifest + icons + favicons + apple-splash HTTP 200 + sign-in head tags                                             | `e2e/pwa-manifest.spec.ts`            | Full `yarn test:e2e`                                                                                                              |
+| `/~offline` copy + empty-store offline surface                                                                      | `e2e/pwa-offline.spec.ts`             | Prefetch/instant asserts stay in `instant-navigation.spec.ts`                                                                     |
+| Warm offline Snapshot summary (read-only banner + « Dernière mise à jour »)                                         | `e2e/pwa-offline.spec.ts` (warm path) | Production only + `e2e/.auth/athlete.json`; skips when unsigned-in / no snapshot. `SnapshotOfflineSync` is off under `DEV_BYPASS` |
+| Sign-in / demo mobile layout (Pixel 7, no horizontal overflow)                                                      | `e2e/pwa-mobile-demo.spec.ts`         | `mobile-chrome` project; also in `yarn test:e2e:dev`                                                                              |
+| Settings InstallCard (iOS instructions, dismiss cooldown, standalone hide, `beforeinstallprompt`)                   | `e2e/pwa-install-card.spec.ts`        | Works under DEV_BYPASS; also in `yarn test:e2e:dev`                                                                               |
+| Update toast + `SKIP_WAITING` postMessage                                                                           | `e2e/pwa-update-toast.spec.ts`        | Stubs a waiting worker — no real deploy flake                                                                                     |
+| Real iOS Safari install, Airplane Mode relaunch, reconnect, foreground resume, maskable crop, auth-expiry on device | Still manual                          | Checkboxes below                                                                                                                  |
+
+**Commands:** `yarn test:e2e` (production build — manifest, offline, update toast, and the rest). `yarn test:e2e:dev` against `yarn dev` runs `activity-state`, `navigation-shell`, `pwa-install-card`, `pwa-mobile-demo`.
+
 ## Devices
 
 - [ ] iPhone with notch or Dynamic Island (safe-area insets are non-zero — the real test case `env(safe-area-inset-*)` exists for)

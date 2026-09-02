@@ -40,7 +40,7 @@
     "garmin:login": "python3 scripts/garmin-login.py",
     "garmin:import-tokens": "tsx scripts/import-garmin-tokens.ts",
     "test:e2e": "playwright test",
-    "test:e2e:dev": "PLAYWRIGHT_BASE_URL=http://localhost:3000 playwright test activity-state navigation-shell"
+    "test:e2e:dev": "PLAYWRIGHT_BASE_URL=http://localhost:3000 playwright test activity-state navigation-shell pwa-install-card pwa-mobile-demo"
   },
   "dependencies": {
     "@ai-sdk/react": "4.0.35",
