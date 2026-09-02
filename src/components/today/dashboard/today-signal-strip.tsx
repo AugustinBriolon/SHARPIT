@@ -79,7 +79,7 @@ export function TodaySignalStrip({
     },
     {
       key: 'recovery',
-      label: 'Récup',
+      label: 'Récupération',
       href: TWIN_DRILL_DOWN.recovery,
       display: formatPercent(metricsRow.recoveryScore),
       valueClass: mapStripScoreToColorClass(metricsRow.recoveryScore),
@@ -87,7 +87,7 @@ export function TodaySignalStrip({
     },
     {
       key: 'adaptation',
-      label: 'Adapt',
+      label: 'Adaptation',
       href: TWIN_DRILL_DOWN.adaptation,
       display: formatPercent(metricsRow.adaptationScore),
       valueClass: mapStripScoreToColorClass(metricsRow.adaptationScore),

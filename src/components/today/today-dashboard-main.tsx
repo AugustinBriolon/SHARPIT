@@ -32,8 +32,8 @@ function TodayCriticalStatus({
 /**
  * Today V0 hierarchy: one decision above the fold, then briefing, bilan, Comprendre.
  *
- * The four equal metric chips no longer sit under the verdict — they live as
- * tertiary links in Comprendre so the morning screen answers before it measures.
+ * Metric chips live as tertiary visual evidence under Comprendre — never as a
+ * primary equal grid under the verdict.
  */
 export function TodayDashboardMain({
   content,
@@ -80,7 +80,7 @@ export function TodayDashboardMain({
         activitiesLoading={activitiesLoading}
         limitingFactorHref={content.hero.twinTrustStrip.limitingFactorHref}
         loading={valuesLoading}
-        navigationTargets={content.navigationTargets}
+        metricsRow={content.hero.metricsRow}
       />
     </div>
   );
