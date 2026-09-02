@@ -41,7 +41,7 @@ function MobileGlassBack({
   replace: boolean;
 }) {
   return (
-    <div className="fixed top-3 left-4 z-40 lg:hidden">
+    <div className="fixed top-3 left-4 z-50 lg:hidden">
       <ChromeGlass
         className="flex size-12 items-center justify-center"
         cornerRadius={999}
