@@ -48,8 +48,10 @@ function snapshotHookLoading(
   return isPending && !isSet(snapshot);
 }
 
-export function useAthleteSnapshot(date: Date = new Date()): UseAthleteSnapshotResult {
-  const trainingDayId = format(date, 'yyyy-MM-dd');
+export function useAthleteSnapshot(date?: Date): UseAthleteSnapshotResult {
+  // Resolve "today" inside the body (not a default arg) so prerender / Cache
+  // Components do not trip on impure default evaluation at the call site.
+  const trainingDayId = format(date ?? new Date(), 'yyyy-MM-dd');
   const queryClient = useQueryClient();
 
   const query = useQuery({

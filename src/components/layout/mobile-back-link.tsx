@@ -43,7 +43,7 @@ function MobileGlassBack({
   return (
     <div className="fixed top-3 left-4 z-50 lg:hidden">
       <ChromeGlass
-        className="flex size-12 items-center justify-center"
+        className="flex size-12 min-h-[44px] min-w-[44px] items-center justify-center"
         cornerRadius={999}
         style={{ left: 'auto', position: 'relative', top: 'auto' }}
       >
@@ -52,7 +52,7 @@ function MobileGlassBack({
           href={href}
           replace={replace}
           className={cn(
-            'text-foreground/70 hover:text-foreground dark:text-foreground flex size-12 items-center justify-center rounded-full',
+            'text-foreground/70 hover:text-foreground dark:text-foreground flex size-12 min-h-[44px] min-w-[44px] items-center justify-center rounded-full',
             className,
           )}
           onClick={onClick}

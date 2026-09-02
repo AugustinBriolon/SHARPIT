@@ -30,9 +30,12 @@ export type ChromeGlassProps = {
   forceFallback?: boolean;
 };
 
-/** CSS frosted surface — always under interactive chrome for contrast. */
+/**
+ * CSS frosted surface — always under interactive chrome for contrast.
+ * Light cream canvas: stronger border + blur so glass does not read as flat white.
+ */
 export const chromeGlassFallbackClass =
-  'bg-background/80 supports-backdrop-filter:bg-background/70 backdrop-blur-xl border border-border/50 shadow-none';
+  'bg-background/72 supports-backdrop-filter:bg-background/58 backdrop-blur-2xl border border-foreground/14 dark:border-border/50 dark:bg-background/80 dark:supports-backdrop-filter:dark:bg-background/70 dark:backdrop-blur-xl shadow-none';
 
 function subscribeDarkClass(onStoreChange: () => void): () => void {
   if (typeof document === 'undefined') {
@@ -68,18 +71,18 @@ function useChromeGlassReady(forceFallback: boolean): boolean {
 
 function GlassBackdrop({ cornerRadius, overLight }: { cornerRadius: number; overLight: boolean }) {
   return (
-    <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
+    <div className="pointer-events-none absolute inset-0 overflow-hidden" aria-hidden>
       <LiquidGlass
-        aberrationIntensity={overLight ? 1 : 1.5}
-        blurAmount={0.08}
+        aberrationIntensity={overLight ? 1.15 : 1.5}
+        blurAmount={overLight ? 0.12 : 0.08}
         className="!m-0 size-full"
         cornerRadius={cornerRadius}
-        displacementScale={overLight ? 36 : 48}
+        displacementScale={overLight ? 42 : 48}
         elasticity={0}
         mode="standard"
         overLight={overLight}
         padding="0"
-        saturation={overLight ? 120 : 130}
+        saturation={overLight ? 125 : 130}
         style={{
           height: '100%',
           left: 0,
