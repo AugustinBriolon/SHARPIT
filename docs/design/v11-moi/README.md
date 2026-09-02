@@ -1,6 +1,6 @@
 # V1.1 Moi split — Design validation
 
-Mobile evidence of `/moi` after Activité hub (wave 3). Captured on Vercel preview via `/demo` cookie when available, else local.
+Mobile evidence of `/moi` after Activité hub (wave 3). Captured on Vercel preview via `/demo` cookie.
 
 | File | Theme |
 | --- | --- |
