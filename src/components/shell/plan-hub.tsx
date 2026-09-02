@@ -20,7 +20,7 @@ export function PlanHub() {
         <p className="text-label">Plan</p>
         <h1 className="text-page-title mt-1">Organiser les prochains jours</h1>
         <p className="text-muted-foreground mt-1 text-sm">
-          Objectif, prochaines séances et charge — ajuster sans perdre le fil.
+          Objectif, prochaines séances et charge : ajuster sans perdre le fil.
         </p>
       </StickyHeader>
 

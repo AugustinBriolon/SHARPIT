@@ -7,6 +7,7 @@ import { isAfter, startOfDay } from 'date-fns';
 import { useAthleteSnapshot } from '@/hooks/use-athlete-snapshot';
 import { useGoals, usePlannedSessions } from '@/hooks/use-data';
 import { selectTodayGoals } from '@/lib/today/today-goals-summary';
+import { MOI_OBJECTIFS_PATH } from '@/lib/moi/paths';
 import { gateUpcomingSessionsForVerdict } from '@/lib/plan/intensity-gate';
 import { resolvePlannedSessionDisplay } from '@/lib/planned-session/display/planned-session-display';
 import { plannedSessionHref } from '@/lib/planned-session/display/session-analysis-display';
@@ -119,7 +120,13 @@ function GoalCard({
   title: string;
 }) {
   return (
-    <div className="analysis-panel rounded-analysis-lg space-y-2 p-4">
+    <Link
+      href={MOI_OBJECTIFS_PATH}
+      className={cn(
+        'analysis-panel rounded-analysis-lg group block space-y-2 p-4',
+        'hover:border-primary/25 focus-visible:ring-primary/35 focus-visible:ring-2 focus-visible:outline-hidden',
+      )}
+    >
       <div className="flex items-start gap-3">
         <div className="icon-well size-9 shrink-0" aria-hidden>
           <Target className="size-4" />
@@ -130,9 +137,15 @@ function GoalCard({
             {[badge, detail].filter(Boolean).join(' · ') || 'En cours'}
           </p>
         </div>
+        <span
+          className="text-muted-foreground/70 text-data shrink-0 text-xs tracking-wider transition-transform group-hover:translate-x-0.5"
+          aria-hidden
+        >
+          →
+        </span>
       </div>
       {progress !== null && progress !== undefined ? <GoalProgressBar progress={progress} /> : null}
-    </div>
+    </Link>
   );
 }
 
@@ -143,17 +156,9 @@ function PlanObjectifWidget() {
 
   return (
     <section aria-labelledby="plan-objectif" className="space-y-3">
-      <div className="flex items-baseline justify-between gap-3">
-        <h2 className="text-section-title" id="plan-objectif">
-          Objectif
-        </h2>
-        <Link
-          className="text-muted-foreground hover:text-foreground text-xs font-medium"
-          href="/moi/objectifs"
-        >
-          Voir tout
-        </Link>
-      </div>
+      <h2 className="text-section-title" id="plan-objectif">
+        Objectif
+      </h2>
       {pending ? (
         <div className="analysis-panel-alt rounded-analysis-lg h-20 animate-pulse" aria-busy />
       ) : null}
@@ -166,12 +171,24 @@ function PlanObjectifWidget() {
         />
       ) : null}
       {!pending && !goal ? (
-        <div className="analysis-panel-alt rounded-analysis-lg space-y-2 p-4">
+        <Link
+          href={MOI_OBJECTIFS_PATH}
+          className={cn(
+            'analysis-panel-alt rounded-analysis-lg group block space-y-2 p-4',
+            'hover:border-primary/25 focus-visible:ring-primary/35 focus-visible:ring-2 focus-visible:outline-hidden',
+          )}
+        >
           <p className="text-sm">Aucun objectif actif.</p>
-          <Link className="text-primary text-sm font-medium" href="/moi/objectifs">
+          <p className="text-primary text-sm font-medium">
             Définir un objectif
-          </Link>
-        </div>
+            <span
+              className="text-muted-foreground/70 ml-2 inline-block text-xs tracking-wider transition-transform group-hover:translate-x-0.5"
+              aria-hidden
+            >
+              →
+            </span>
+          </p>
+        </Link>
       ) : null}
     </section>
   );
@@ -184,7 +201,7 @@ function UpcomingSessionRow({ now, session }: { now: Date; session: ClientPlanne
       <Link
         href={plannedSessionHref(session.id)}
         className={cn(
-          'analysis-panel rounded-analysis-lg flex items-center gap-3 px-3 py-2.5',
+          'chip-surface-lg rounded-analysis-lg group flex items-center gap-3 px-3 py-2.5',
           'hover:border-primary/25 focus-visible:ring-primary/35 focus-visible:ring-2 focus-visible:outline-hidden',
         )}
       >
@@ -203,6 +220,12 @@ function UpcomingSessionRow({ now, session }: { now: Date; session: ClientPlanne
             {display.intensityLabel ? ` · ${display.intensityLabel}` : null}
           </p>
         </div>
+        <span
+          className="text-muted-foreground/70 text-data shrink-0 text-xs tracking-wider transition-transform group-hover:translate-x-0.5"
+          aria-hidden
+        >
+          →
+        </span>
       </Link>
     </li>
   );
@@ -240,7 +263,7 @@ function GateNotice({
     <p className="text-muted-foreground text-xs leading-relaxed">
       Verdict Today{' '}
       <span className="text-foreground font-medium">{mapVerdictToDisplay(verdict).label}</span>
-      {' — '}
+      {' : '}
       intensités dures (tempo, seuil, VO2, compétition) non proposées.
       {withheldCount > 0 ? ` ${withheldCount} séance(s) filtrée(s).` : null}
     </p>
