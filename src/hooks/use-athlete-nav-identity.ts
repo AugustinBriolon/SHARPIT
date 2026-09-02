@@ -11,6 +11,11 @@ export type AthleteNavIdentity = {
   shortLabel: string;
   fullLabel: string;
   email: string | null;
+  /**
+   * When true, chrome uses the standard Moi icon (CircleUser) instead of an
+   * initials pastille — demo banner is enough; no « D » glyph.
+   */
+  preferStandardIcon?: boolean;
 };
 
 const LOADING_IDENTITY: AthleteNavIdentity = {
@@ -27,6 +32,7 @@ const DEMO_NAV_IDENTITY: AthleteNavIdentity = {
   shortLabel: DEMO_IDENTITY.shortLabel,
   fullLabel: DEMO_IDENTITY.shortLabel,
   email: null,
+  preferStandardIcon: DEMO_IDENTITY.preferStandardIcon,
 };
 
 /** Static Moi tab when Clerk is skipped (`NEXT_PUBLIC_DEV_BYPASS_CLERK`). */

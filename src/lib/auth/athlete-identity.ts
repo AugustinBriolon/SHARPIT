@@ -74,8 +74,11 @@ export function shortLabelFromName({ firstName, fullName }: NameParts): string {
 /**
  * Demo tenant fallback when there is no Clerk session.
  * Tab label stays Shell V1 `Moi` — the demo banner already signals demo mode.
+ * Chrome uses the standard CircleUser glyph (no « D » pastille).
  */
 export const DEMO_IDENTITY = {
-  initials: 'D',
+  initials: 'M',
   shortLabel: 'Moi',
+  /** Bottom/sidebar glyph: CircleUser instead of initials pastille. */
+  preferStandardIcon: true,
 } as const;

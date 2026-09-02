@@ -67,6 +67,8 @@ test.describe('navigation shell', () => {
     await expect(nav.getByText('Activité', { exact: true })).toBeVisible();
     await expect(nav.getByText('Moi', { exact: true })).toBeVisible();
     await expect(nav.getByText('Démo', { exact: true })).toHaveCount(0);
+    // Demo chrome: CircleUser glyph, not a « D » initials pastille (banner signals demo).
+    await expect(nav.locator('a[href="/moi"]')).not.toContainText(/^D$/);
   });
 
   test('a drill-down paints exactly one header', async ({ page }) => {

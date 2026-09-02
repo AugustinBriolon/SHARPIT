@@ -90,7 +90,7 @@ const QUIET: { href: string; title: string; icon: SettingsEntry['icon'] }[] = [
  */
 export function MoiHub() {
   return (
-    <div className="space-y-6 max-lg:pb-10">
+    <div className="space-y-6 max-lg:pb-16">
       <StickyHeader>
         <p className="text-label">Moi</p>
         <h1 className="text-page-title mt-1">Ton modèle, tes données</h1>
