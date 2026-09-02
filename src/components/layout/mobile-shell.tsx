@@ -13,6 +13,7 @@ import { springs } from '@/lib/motion/tokens';
 import { cn } from '@/lib/utils';
 import { OfflineBanner } from '@/components/pwa/offline-banner';
 import { SyncingIndicator } from '@/components/ui/syncing-indicator';
+import { ChromeGlass } from '@/components/chrome/chrome-glass';
 import { haptic } from '@/lib/haptic';
 
 function bottomNavGlyph(options: {
@@ -77,7 +78,6 @@ function BottomNavLink({
   onPrefetch: (href: string) => void;
 }) {
   const isActive = pathname !== null && item.match(pathname);
-  const Icon = item.icon;
   const reduce = useReducedMotion();
   const hint = () => onPrefetch(item.href);
   const isAthleteTab = item.href === profileNavItem.href;
@@ -146,16 +146,22 @@ export function BottomNav() {
   return (
     <nav
       aria-label="Navigation principale"
-      className="border-border/60 bg-background/95 supports-backdrop-filter:bg-background/80 fixed inset-x-0 bottom-0 z-40 border-t backdrop-blur-md"
-      style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
+      className="pointer-events-none fixed inset-x-0 bottom-0 z-40 px-2"
+      style={{ paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom, 0px))' }}
     >
-      <LayoutGroup id="bottom-nav">
-        <div className="mx-auto flex max-w-lg items-stretch justify-around p-2">
-          {bottomNavItems.map((item) => (
-            <SuspendedBottomNavLink key={item.href} item={item} onPrefetch={prefetch} />
-          ))}
-        </div>
-      </LayoutGroup>
+      <ChromeGlass
+        className="pointer-events-auto mx-auto w-full max-w-lg"
+        cornerRadius={20}
+        style={{ position: 'relative', top: 'auto', left: 'auto', width: '100%' }}
+      >
+        <LayoutGroup id="bottom-nav">
+          <div className="flex items-stretch justify-around p-2">
+            {bottomNavItems.map((item) => (
+              <SuspendedBottomNavLink key={item.href} item={item} onPrefetch={prefetch} />
+            ))}
+          </div>
+        </LayoutGroup>
+      </ChromeGlass>
     </nav>
   );
 }

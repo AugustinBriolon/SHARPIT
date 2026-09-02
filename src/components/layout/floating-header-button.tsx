@@ -11,7 +11,9 @@ import { cn } from '@/lib/utils';
  * `rounded-full` is a deliberate exception to DESIGN_LANGUAGE.md's
  * instrument `rounded-lg` button rule — this is floating nav chrome, not a
  * CTA, and every button sharing a header row must read as one circular
- * family: same 48px size, same frosted-glass opacity, same top offset.
+ * family: same 48px size, same top offset. Mobile fill/blur is owned by
+ * `ChromeGlass` (liquid-glass) when the caller wraps the control; this class
+ * keeps layout + contrast tokens for the interactive hit target.
  *
  * Icon color dims to `/70` at rest on light canvas, but stays full-strength
  * `text-foreground` (Snow White) in dark mode — at 70% it read as a dull
@@ -19,7 +21,12 @@ import { cn } from '@/lib/utils';
  */
 export function floatingHeaderButtonClass(side: 'left' | 'right'): string {
   return cn(
-    'bg-background/70 text-foreground/70 hover:text-foreground hover:bg-background/85 dark:text-foreground fixed top-3 z-40 flex size-12 items-center justify-center rounded-full backdrop-blur-xl transition-colors lg:static lg:size-auto lg:rounded-none lg:bg-transparent lg:backdrop-blur-none lg:hover:bg-transparent',
+    'text-foreground/70 hover:text-foreground dark:text-foreground fixed top-3 z-40 flex size-12 items-center justify-center rounded-full transition-colors lg:static lg:size-auto lg:rounded-none lg:bg-transparent lg:hover:bg-transparent',
     side === 'left' ? 'left-4' : 'right-4',
   );
+}
+
+/** Frosted fill for floating header buttons when liquid-glass is not wrapping them. */
+export function floatingHeaderButtonSurfaceClass(): string {
+  return 'bg-background/70 hover:bg-background/85 backdrop-blur-xl';
 }

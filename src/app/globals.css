@@ -184,7 +184,7 @@
     bars, chat composers — must anchor on `--bottom-nav-offset` so it can never
     swallow a nav tap.
   */
-  --bottom-nav-height: 4.5rem;
+  --bottom-nav-height: 5rem;
   --bottom-nav-offset: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px));
 
   /* Press feedback scales — ADR-028 / motionTokens.scale.press* */

@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ChevronLeft } from 'lucide-react';
 import { useBackTarget } from '@/hooks/use-back-target';
-import { floatingHeaderButtonClass } from '@/components/layout/floating-header-button';
+import { ChromeGlass } from '@/components/chrome/chrome-glass';
 import { cn } from '@/lib/utils';
 
 function canUseHistoryBack(): boolean {
@@ -14,70 +14,130 @@ function canUseHistoryBack(): boolean {
   }
   const entry = performance.getEntriesByType('navigation')[0] as
     PerformanceNavigationTiming | undefined;
-  // After a full reload the browser history stack is shallow — prefer Link.
   return entry?.type !== 'reload';
 }
 
 type MobileBackLinkProps = {
-  /** Force a static destination (opt-out of the dynamic stack). */
   href?: string;
-  /** Force a static label (requires href). */
   label?: string;
-  /** Override the registry default when the stack is empty. */
   fallbackHref?: string;
-  /** Override the registry default label when the stack is empty. */
   fallbackLabel?: string;
-  /**
-   * Use history.replace for the static Link (e.g. leaving a transient edit screen
-   * so the edit route does not sit under the destination in browser history).
-   */
   replace?: boolean;
   className?: string;
-  /** Affiche le lien sur desktop aussi (défaut : mobile uniquement). */
   showOnDesktop?: boolean;
 };
 
-function BackLinkChrome({
+function MobileGlassBack({
+  className,
   href,
   label,
-  className,
-  showOnDesktop,
-  replace = false,
   onClick,
+  replace,
 }: {
+  className?: string;
   href: string;
   label: React.ReactNode;
-  className?: string;
-  showOnDesktop: boolean;
-  replace?: boolean;
   onClick?: (event: React.MouseEvent<HTMLAnchorElement>) => void;
+  replace: boolean;
+}) {
+  return (
+    <div className="fixed top-3 left-4 z-40 lg:hidden">
+      <ChromeGlass
+        className="flex size-12 items-center justify-center"
+        cornerRadius={999}
+        style={{ left: 'auto', position: 'relative', top: 'auto' }}
+      >
+        <Link
+          aria-label={typeof label === 'string' ? label : undefined}
+          href={href}
+          replace={replace}
+          className={cn(
+            'text-foreground/70 hover:text-foreground dark:text-foreground flex size-12 items-center justify-center rounded-full',
+            className,
+          )}
+          onClick={onClick}
+        >
+          <ChevronLeft className="size-6 shrink-0" aria-hidden />
+        </Link>
+      </ChromeGlass>
+    </div>
+  );
+}
+
+function DesktopBack({
+  className,
+  href,
+  label,
+  onClick,
+  replace,
+  showOnDesktop,
+}: {
+  className?: string;
+  href: string;
+  label: React.ReactNode;
+  onClick?: (event: React.MouseEvent<HTMLAnchorElement>) => void;
+  replace: boolean;
+  showOnDesktop: boolean;
+}) {
+  return (
+    <Link
+      aria-label={typeof label === 'string' ? label : undefined}
+      href={href}
+      replace={replace}
+      className={cn(
+        'text-muted-foreground hover:text-foreground mb-3 hidden items-center justify-start gap-1 lg:flex',
+        !showOnDesktop && 'lg:hidden',
+        className,
+      )}
+      onClick={onClick}
+    >
+      <ChevronLeft className="size-4 shrink-0" aria-hidden />
+      <span className="text-sm">{label}</span>
+    </Link>
+  );
+}
+
+function BackLinkChrome({
+  className,
+  href,
+  label,
+  onClick,
+  replace = false,
+  showOnDesktop,
+}: {
+  className?: string;
+  href: string;
+  label: React.ReactNode;
+  onClick?: (event: React.MouseEvent<HTMLAnchorElement>) => void;
+  replace?: boolean;
+  showOnDesktop: boolean;
 }) {
   return (
     <>
-      <Link
+      <MobileGlassBack
+        className={className}
         href={href}
+        label={label}
         replace={replace}
-        aria-label={typeof label === 'string' ? label : undefined}
-        className={cn(
-          floatingHeaderButtonClass('left'),
-          'lg:mb-3 lg:justify-start lg:gap-1 lg:px-0 lg:text-muted-foreground',
-          !showOnDesktop && 'lg:hidden',
-          className,
-        )}
         onClick={onClick}
-      >
-        <ChevronLeft className="size-6 shrink-0 lg:size-4" aria-hidden />
-        <span className="hidden text-sm lg:inline">{label}</span>
-      </Link>
+      />
+      <DesktopBack
+        className={className}
+        href={href}
+        label={label}
+        replace={replace}
+        showOnDesktop={showOnDesktop}
+        onClick={onClick}
+      />
       <div className="h-16 lg:hidden" aria-hidden />
     </>
   );
 }
 
 function DynamicBackLink({
+  className,
   fallbackHref,
   fallbackLabel,
-  className,
   showOnDesktop,
 }: Omit<MobileBackLinkProps, 'href' | 'label'> & { showOnDesktop: boolean }) {
   const router = useRouter();
@@ -106,25 +166,15 @@ function DynamicBackLink({
 /**
  * Back link — dynamic by default (reads the app-managed nav stack).
  * Pages can force a static parent via `href` + `label` (e.g. edit → detail),
- * or provide a `fallbackHref` + `fallbackLabel` that only applies when the
- * stack is empty (deep-link entry). Otherwise the registry decides.
- *
- * When the destination comes from the stack (in-app exploration), we prefer
- * `router.back()` so Next can restore the previous route from the client
- * router cache instead of remounting a cold RSC fetch + loading skeleton.
- *
- * A static destination reads nothing from the URL, so it renders directly and
- * lands in the prerendered shell. The dynamic form waits behind a boundary and
- * streams its label in; the row reserves its height either way, so nothing
- * shifts.
+ * or provide a `fallbackHref` + `fallbackLabel` when the stack is empty.
  */
 export function MobileBackLink({
-  href,
-  label,
+  className,
   fallbackHref,
   fallbackLabel,
+  href,
+  label,
   replace = false,
-  className,
   showOnDesktop = false,
 }: MobileBackLinkProps) {
   if (href && label) {
