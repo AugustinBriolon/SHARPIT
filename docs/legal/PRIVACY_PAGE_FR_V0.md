@@ -1,13 +1,3 @@
-# Politique de confidentialité — Sharpit (brouillon V0)
-
-> **Statut :** brouillon FR pour la page `/privacy` (Privacy mini V0).  
-> **Langue :** français uniquement.  
-> **Responsable :** Augustin Briolon (personne physique) — contact : `augustin.briolon@gmail.com`.  
-> **Décisions verrouillées :** 2026-09-02 — voir [`PRIVACY_MINI_V0.md`](./PRIVACY_MINI_V0.md).  
-> **Ne pas écrire** que le produit est « sur invitation uniquement ». Beta / cercle restreint = diffusion bouche-à-oreille (GTM), inscription classique possible.
-
----
-
 ## Politique de confidentialité de Sharpit
 
 **Dernière mise à jour :** 2 septembre 2026
@@ -55,9 +45,9 @@ Pas d’usage commercial de revente de vos données. Pas d’entraînement de mo
 | --- | --- |
 | Compte, fonctionnement du service, sécurité | Exécution du contrat / mesures précontractuelles ; intérêt légitime pour la sécurité technique, le cas échéant |
 | Acceptation des CGU et de la présente politique | Consentement / acceptation contractuelle lors de l’inscription |
-| Synchronisation et traitement des données de santé (art. 9) et inférences associées | **Consentement explicite** (`health_data_consent`) |
-| Envoi de contexte athlète à un modèle d’IA (briefing LLM, Coach IA, etc.) | **Consentement distinct** (`ai_processing_consent`) — **porte dure** : sans ce consentement, ces chemins IA sont bloqués. Les moteurs déterministes peuvent continuer à fonctionner |
-| Intégrations non officielles | Accusé de réception explicite du caractère non officiel / « as-is » avant connexion |
+| Synchronisation et traitement des données de santé (art. 9) et inférences associées | **Consentement explicite** — requis avant toute synchronisation ou traitement de ces données |
+| Envoi de contexte athlète à un modèle d’IA (briefing, Coach IA, etc.) | **Consentement distinct** pour le traitement IA — **porte dure** : sans ce consentement, ces chemins IA sont bloqués. Les moteurs déterministes peuvent continuer à fonctionner |
+| Intégrations non officielles | Accusé de réception explicite du caractère non officiel / « en l’état » avant connexion |
 
 Vous pouvez retirer un consentement à tout moment (cela peut limiter ou interrompre la fonctionnalité concernée). Contact : [augustin.briolon@gmail.com](mailto:augustin.briolon@gmail.com).
 
@@ -71,7 +61,7 @@ Lorsque vous consentez au traitement IA :
 
 - Sharpit peut envoyer le **contexte nécessaire** (état, historique d’entraînement pertinent, etc.) à un prestataire de modèles d’IA pour générer des briefings ou réponses de coaching ;
 - ce consentement est **séparé** du consentement données de santé ;
-- **sans** `ai_processing_consent`, aucun envoi de ce type n’a lieu ;
+- **sans** ce consentement IA, aucun envoi de ce type n’a lieu ;
 - Sharpit n’utilise pas vos données pour **entraîner un modèle généraliste** dans le cadre de cette V0.
 
 ### 8. Destinataires et sous-traitants
@@ -89,7 +79,7 @@ Les services que **vous** connectez (Garmin, Renpho, MyFitnessPal, etc.) reçoiv
 ### 9. Durée de conservation
 
 - Compte actif : conservation aussi longtemps que le compte est nécessaire au service.
-- **Suppression :** à votre demande, le compte est d’abord **soft-delete** (désactivé), puis les données sont **purgées au plus tard à J+30**.
+- **Suppression :** à votre demande, le compte est d’abord **désactivé**, puis les données sont **supprimées définitivement au plus tard sous 30 jours**.
 - Journaux techniques : conservation limitée au besoin d’exploitation et de sécurité.
 
 ### 10. Vos droits
@@ -106,7 +96,7 @@ Sharpit est un outil d’aide à l’entraînement. Ce n’est pas un dispositif
 
 ### 12. Modifications
 
-Cette politique peut évoluer. En cas de changement matériel, la version acceptée (`privacy_version`) pourra être mise à jour et une nouvelle acceptation demandée.
+Cette politique peut évoluer. En cas de changement matériel, la version acceptée de cette politique pourra être mise à jour et une nouvelle acceptation demandée.
 
 ### 13. Contact
 

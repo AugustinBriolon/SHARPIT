@@ -1,13 +1,3 @@
-# Conditions générales d’utilisation — Sharpit (brouillon V0)
-
-> **Statut :** brouillon FR pour la page `/terms` (Privacy mini V0).  
-> **Langue :** français uniquement.  
-> **Éditeur / responsable :** Augustin Briolon (personne physique) — contact : `augustin.briolon@gmail.com`.  
-> **Décisions verrouillées :** 2026-09-02 — voir [`PRIVACY_MINI_V0.md`](./PRIVACY_MINI_V0.md).  
-> **Ne pas écrire** que le produit est « sur invitation uniquement ». Beta = inscription classique ; « cercle privé » = diffusion bouche-à-oreille (GTM), pas un verrou technique.
-
----
-
 ## Conditions générales d’utilisation de Sharpit
 
 **Dernière mise à jour :** 2 septembre 2026
@@ -18,7 +8,7 @@ Les présentes conditions générales d’utilisation (« CGU ») régissent l�
 
 Contact : [augustin.briolon@gmail.com](mailto:augustin.briolon@gmail.com)
 
-En créant un compte ou en utilisant Sharpit, vous acceptez les présentes CGU et la [politique de confidentialité](./PRIVACY_PAGE_FR_V0.md).
+En créant un compte ou en utilisant Sharpit, vous acceptez les présentes CGU et la [politique de confidentialité](/privacy).
 
 ### 2. Service en bêta — inscription classique
 
@@ -58,13 +48,13 @@ Vous pouvez connecter des services tiers (ex. Garmin, Renpho, MyFitnessPal, et a
 
 ### 6. Données personnelles
 
-Le traitement des données personnelles est décrit dans la **politique de confidentialité** (page `/privacy`, brouillon : [`PRIVACY_PAGE_FR_V0.md`](./PRIVACY_PAGE_FR_V0.md)).
+Le traitement des données personnelles est décrit dans la **[politique de confidentialité](/privacy)**.
 
 Points clés rappelés ici :
 
 - données physiologiques et inférences associées traitées comme données de santé (art. 9 RGPD) avec **consentement explicite** ;
-- traitement IA (LLM) soumis à un **consentement distinct** et à une **porte dure** ;
-- export JSON et suppression (soft-delete puis purge à J+30) prévus dans le produit.
+- traitement IA soumis à un **consentement distinct** et à une **porte dure** (sans ce consentement, les chemins IA sont bloqués) ;
+- export JSON et suppression (désactivation du compte, puis suppression définitive sous 30 jours) prévus dans le produit.
 
 ### 7. Propriété intellectuelle
 
@@ -80,7 +70,7 @@ Dans les limites autorisées par la loi applicable :
 
 ### 9. Suppression du compte
 
-Vous pouvez demander la suppression de votre compte. Après demande, le compte est **désactivé** (soft-delete), puis les données associées sont **purgées au plus tard à J+30**, sous réserve des obligations légales de conservation éventuelles. Contact : [augustin.briolon@gmail.com](mailto:augustin.briolon@gmail.com).
+Vous pouvez demander la suppression de votre compte. Après demande, le compte est **désactivé**, puis les données associées sont **supprimées définitivement au plus tard sous 30 jours**, sous réserve des obligations légales de conservation éventuelles. Contact : [augustin.briolon@gmail.com](mailto:augustin.briolon@gmail.com).
 
 ### 10. Modifications des CGU
 
