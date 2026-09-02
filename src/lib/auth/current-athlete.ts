@@ -21,7 +21,9 @@ export const getCurrentAthleteId = cache(async (): Promise<string> => {
   // the proxy skips auth.protect() entirely — there is no session to resolve.
   // Single-athlete dev fallback: the one existing profile row.
   if (isDevClerkBypass()) {
-    const athlete = await prisma.athleteProfile.findFirstOrThrow();
+    const athlete = await prisma.athleteProfile.findFirstOrThrow({
+      where: { deletedAt: null },
+    });
     return athlete.id;
   }
 
@@ -31,7 +33,7 @@ export const getCurrentAthleteId = cache(async (): Promise<string> => {
   if (await isDemoSession()) {
     const demoAthlete = await prisma.athleteProfile.findUniqueOrThrow({
       where: { clerkUserId: DEMO_CLERK_USER_ID },
-      select: { id: true },
+      select: { id: true, deletedAt: true },
     });
     return demoAthlete.id;
   }
@@ -43,9 +45,12 @@ export const getCurrentAthleteId = cache(async (): Promise<string> => {
 
   const existing = await prisma.athleteProfile.findUnique({
     where: { clerkUserId: userId },
-    select: { id: true },
+    select: { id: true, deletedAt: true },
   });
   if (existing) {
+    if (existing.deletedAt) {
+      throw new Error('Compte désactivé — suppression en cours');
+    }
     return existing.id;
   }
 
@@ -58,8 +63,11 @@ export const getCurrentAthleteId = cache(async (): Promise<string> => {
     if (error instanceof PrismaClientKnownRequestError && error.code === 'P2002') {
       const raced = await prisma.athleteProfile.findUniqueOrThrow({
         where: { clerkUserId: userId },
-        select: { id: true },
+        select: { id: true, deletedAt: true },
       });
+      if (raced.deletedAt) {
+        throw new Error('Compte désactivé — suppression en cours');
+      }
       return raced.id;
     }
     throw error;
