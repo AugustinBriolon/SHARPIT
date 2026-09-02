@@ -1,0 +1,166 @@
+import { prisma } from '@/lib/prisma';
+import { CURRENT_PRIVACY_VERSION, PRIVACY_PURGE_DELAY_DAYS } from '@/lib/privacy/constants';
+
+/**
+ * Athlete data export (JSON). Omits encrypted provider credentials and never
+ * includes plaintext secrets. Body metrics and health rows are included as
+ * stored — this is the athlete's own copy under GDPR art. 20.
+ */
+export async function buildAthleteExportJson(athleteId: string) {
+  const profile = await prisma.athleteProfile.findUniqueOrThrow({
+    where: { id: athleteId },
+    select: {
+      id: true,
+      clerkUserId: true,
+      tier: true,
+      heightCm: true,
+      birthDate: true,
+      ftpW: true,
+      maxHr: true,
+      lthr: true,
+      runThresholdPaceSecPerKm: true,
+      swimCssSecPer100m: true,
+      vo2maxRunning: true,
+      vo2maxCycling: true,
+      displayMode: true,
+      equipment: true,
+      practicedSports: true,
+      defaultPoolLengthM: true,
+      sleepTargetMinutes: true,
+      sleepBedtimeTargetMin: true,
+      homeLocationLabel: true,
+      homeLocationLat: true,
+      homeLocationLng: true,
+      onboardingCompletedAt: true,
+      integrationSourcePrefs: true,
+      termsAcceptedAt: true,
+      privacyAcceptedAt: true,
+      privacyVersion: true,
+      healthDataConsentAt: true,
+      aiProcessingConsentAt: true,
+      unofficialProvidersAckAt: true,
+      deletedAt: true,
+      createdAt: true,
+      updatedAt: true,
+      // Exclude free-text coach context if desired later; included for completeness.
+      context: true,
+    },
+  });
+
+  const [
+    activities,
+    dailyHealth,
+    dailyNutrition,
+    bodyComposition,
+    goals,
+    plannedSessions,
+    physicalNotes,
+    conditions,
+    conversations,
+    dailyBriefings,
+    weeklyReviews,
+    performanceRecords,
+  ] = await Promise.all([
+    prisma.activity.findMany({
+      where: { athleteId },
+      include: {
+        runMetrics: true,
+        bikeMetrics: true,
+        swimMetrics: true,
+        hikeMetrics: true,
+        strengthSets: true,
+      },
+      orderBy: { date: 'desc' },
+      take: 5000,
+    }),
+    prisma.dailyHealth.findMany({ where: { athleteId }, orderBy: { date: 'desc' }, take: 2000 }),
+    prisma.dailyNutrition.findMany({
+      where: { athleteId },
+      orderBy: { date: 'desc' },
+      take: 2000,
+    }),
+    prisma.bodyCompositionMeasurement.findMany({
+      where: { athleteId },
+      orderBy: { measuredAt: 'desc' },
+      take: 2000,
+    }),
+    prisma.goal.findMany({ where: { athleteId } }),
+    prisma.plannedSession.findMany({ where: { athleteId }, orderBy: { date: 'desc' }, take: 2000 }),
+    prisma.physicalNote.findMany({ where: { athleteId } }),
+    prisma.condition.findMany({ where: { athleteId } }),
+    prisma.conversation.findMany({
+      where: { athleteId },
+      orderBy: { updatedAt: 'desc' },
+      take: 100,
+    }),
+    prisma.dailyBriefing.findMany({
+      where: { athleteId },
+      orderBy: { date: 'desc' },
+      take: 365,
+    }),
+    prisma.weeklyReview.findMany({
+      where: { athleteId },
+      orderBy: { weekStart: 'desc' },
+      take: 104,
+    }),
+    prisma.performanceRecord.findMany({ where: { athleteId } }),
+  ]);
+
+  // Connection status only — never encrypted tokens / passwords.
+  const [garmin, strava, google, renpho, withings, mfp] = await Promise.all([
+    prisma.garminAccount.findUnique({
+      where: { athleteId },
+      select: { athleteId: true, createdAt: true, updatedAt: true },
+    }),
+    prisma.stravaAccount.findUnique({
+      where: { athleteId },
+      select: { athleteId: true, stravaAthleteId: true, createdAt: true, updatedAt: true },
+    }),
+    prisma.googleAccount.findUnique({
+      where: { athleteId },
+      select: { athleteId: true, createdAt: true, updatedAt: true },
+    }),
+    prisma.renphoAccount.findUnique({
+      where: { athleteId },
+      select: { athleteId: true, email: true, createdAt: true, updatedAt: true },
+    }),
+    prisma.withingsAccount.findUnique({
+      where: { athleteId },
+      select: { athleteId: true, createdAt: true, updatedAt: true },
+    }),
+    prisma.myFitnessPalAccount.findUnique({
+      where: { athleteId },
+      select: { athleteId: true, displayName: true, createdAt: true, updatedAt: true },
+    }),
+  ]);
+
+  return {
+    exportedAt: new Date().toISOString(),
+    privacyVersion: profile.privacyVersion ?? CURRENT_PRIVACY_VERSION,
+    retention: {
+      softDeletePurgeDays: PRIVACY_PURGE_DELAY_DAYS,
+      note: 'Après demande de suppression, les données sont purgées au plus tard sous 30 jours.',
+    },
+    profile,
+    activities,
+    dailyHealth,
+    dailyNutrition,
+    bodyComposition,
+    goals,
+    plannedSessions,
+    physicalNotes,
+    conditions,
+    conversations,
+    dailyBriefings,
+    weeklyReviews,
+    performanceRecords,
+    integrations: {
+      garmin: garmin ? { connected: true, ...garmin } : { connected: false },
+      strava: strava ? { connected: true, ...strava } : { connected: false },
+      google: google ? { connected: true, ...google } : { connected: false },
+      renpho: renpho ? { connected: true, email: renpho.email } : { connected: false },
+      withings: withings ? { connected: true, ...withings } : { connected: false },
+      myfitnesspal: mfp ? { connected: true, displayName: mfp.displayName } : { connected: false },
+    },
+  };
+}

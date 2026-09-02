@@ -270,6 +270,19 @@ model AthleteProfile {
   /// First-login wizard finished (sports + intention + optional providers). Null = must complete onboarding.
   onboardingCompletedAt DateTime?
 
+  /// Privacy mini V0 — legal + processing consents (null = not yet accepted).
+  /// Field names map to product snake_case: terms_accepted_at, privacy_accepted_at,
+  /// privacy_version, health_data_consent_at, ai_processing_consent_at,
+  /// unofficial_providers_ack_at. Soft-delete: deletedAt; purge after 30 days via cron.
+  termsAcceptedAt          DateTime?
+  privacyAcceptedAt        DateTime?
+  privacyVersion           String?
+  healthDataConsentAt      DateTime?
+  aiProcessingConsentAt    DateTime?
+  unofficialProvidersAckAt DateTime?
+  /// Soft-delete marker. Hard purge after PRIVACY_PURGE_DELAY_DAYS (see src/lib/privacy).
+  deletedAt DateTime?
+
   /// Per data-class source preferences: primary + enabled providers (ADR-027).
   /// Shape: { version: 1, classes: { activities: { primary, enabled }, ... } }
   integrationSourcePrefs Json?
@@ -313,6 +326,8 @@ model AthleteProfile {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  @@index([deletedAt])
 }
 
 model AthleteThresholdSnapshot {
