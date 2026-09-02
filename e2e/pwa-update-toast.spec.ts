@@ -6,6 +6,7 @@ import { expect, test } from '@playwright/test';
  * `{ type: 'SKIP_WAITING' }` (ADR-008 / `src/sw.ts`).
  *
  * No real deploy flake — stubs `navigator.serviceWorker` with an already-waiting worker.
+ * Deliberately does NOT fire `controllerchange` so the applying UI stays visible.
  */
 
 test.describe('PWA update toast', () => {
@@ -55,11 +56,26 @@ test.describe('PWA update toast', () => {
     await expect(page.getByRole('heading', { name: 'Hors connexion' })).toBeVisible();
 
     await expect(page.getByText('Nouvelle version disponible')).toBeVisible();
-    await page.getByRole('button', { name: 'Mettre à jour' }).click();
+    const updateButton = page.getByRole('button', { name: 'Mettre à jour' });
+    await expect(updateButton).toBeEnabled();
+    await updateButton.click();
+
+    // Immediate feedback — never a dead click while waiting for controllerchange.
+    await expect(page.getByText('Mise à jour en cours…')).toBeVisible();
+    await expect(page.getByText('Rechargement dans un instant')).toBeVisible();
 
     const messages = await page.evaluate(
       () => (window as unknown as { __swPostMessages?: unknown[] }).__swPostMessages ?? [],
     );
     expect(messages).toContainEqual({ type: 'SKIP_WAITING' });
+
+    // Double-tap must not post SKIP_WAITING again (button gone / toast is loading).
+    await page.getByText('Mise à jour en cours…').click({ force: true }).catch(() => undefined);
+    const messagesAfter = await page.evaluate(
+      () => (window as unknown as { __swPostMessages?: unknown[] }).__swPostMessages ?? [],
+    );
+    expect(messagesAfter.filter((m) => (m as { type?: string }).type === 'SKIP_WAITING')).toHaveLength(
+      1,
+    );
   });
 });

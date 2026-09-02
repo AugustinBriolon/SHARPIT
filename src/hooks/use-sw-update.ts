@@ -8,6 +8,8 @@ import {
 
 export interface UseServiceWorkerUpdateResult {
   updateAvailable: boolean;
+  /** True after the athlete confirms — waiting for the new worker to take control. */
+  isApplying: boolean;
   /** Posts SKIP_WAITING to the waiting worker and reloads once it takes control. */
   applyUpdate: () => void;
 }
@@ -22,8 +24,10 @@ export function useServiceWorkerUpdate(): UseServiceWorkerUpdateResult {
     reduceServiceWorkerUpdateState,
     'NONE' as ServiceWorkerUpdateState,
   );
+  const stateRef = useRef(state);
   const waitingWorkerRef = useRef<ServiceWorker | null>(null);
   const reloadedRef = useRef(false);
+  stateRef.current = state;
 
   useEffect(() => {
     if (!('serviceWorker' in navigator)) {
@@ -77,9 +81,17 @@ export function useServiceWorkerUpdate(): UseServiceWorkerUpdateResult {
   }, []);
 
   function applyUpdate() {
+    // Only AVAILABLE may activate — blocks double-tap while already applying.
+    if (stateRef.current !== 'AVAILABLE') {
+      return;
+    }
     dispatch({ type: 'UPDATE_REQUESTED' });
     waitingWorkerRef.current?.postMessage({ type: 'SKIP_WAITING' });
   }
 
-  return { updateAvailable: state === 'AVAILABLE', applyUpdate };
+  return {
+    updateAvailable: state === 'AVAILABLE',
+    isApplying: state === 'ACTIVATING',
+    applyUpdate,
+  };
 }
