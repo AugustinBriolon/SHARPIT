@@ -36,6 +36,11 @@ export default defineConfig({
     baseURL: BASE_URL,
     trace: 'on-first-retry',
     navigationTimeout: againstDevServer ? 60_000 : 30_000,
+    // Optional: e.g. PLAYWRIGHT_STORAGE_STATE=e2e/.auth/athlete.json or a
+    // short-lived Vercel share cookie file for protected preview smoke.
+    ...(process.env.PLAYWRIGHT_STORAGE_STATE
+      ? { storageState: process.env.PLAYWRIGHT_STORAGE_STATE }
+      : {}),
   },
   projects: [
     { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
