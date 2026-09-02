@@ -1,9 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useSyncExternalStore } from 'react';
 import dynamic from 'next/dynamic';
 import { useReducedMotion } from 'motion/react';
-import { useThemePreference } from '@/providers/theme-provider';
 import { cn } from '@/lib/utils';
 
 /**
@@ -12,6 +11,9 @@ import { cn } from '@/lib/utils';
  * Layout is owned by a stable outer box. `liquid-glass-react@1.1.1` is painted
  * as a non-interactive backdrop (`pointer-events-none`) so the library's
  * transform / top-left defaults cannot displace tap targets.
+ *
+ * Theme is read from `document.documentElement.classList` (no ThemeProvider
+ * required — skeletons / SSR tests stay safe).
  *
  * Content cards, forms, and legal walls (`/consent`, `/privacy`, `/terms`)
  * must NOT use this.
@@ -31,6 +33,29 @@ export type ChromeGlassProps = {
 /** CSS frosted surface — always under interactive chrome for contrast. */
 export const chromeGlassFallbackClass =
   'bg-background/80 supports-backdrop-filter:bg-background/70 backdrop-blur-xl border border-border/50 shadow-none';
+
+function subscribeDarkClass(onStoreChange: () => void): () => void {
+  if (typeof document === 'undefined') {
+    return () => undefined;
+  }
+  const root = document.documentElement;
+  const observer = new MutationObserver(onStoreChange);
+  observer.observe(root, { attributes: true, attributeFilter: ['class'] });
+  return () => observer.disconnect();
+}
+
+function isDarkClass(): boolean {
+  if (typeof document === 'undefined') {
+    return false;
+  }
+  return document.documentElement.classList.contains('dark');
+}
+
+/** Light canvas → overLight glass; dark canvas → deeper refraction. */
+function useOverLight(): boolean {
+  const dark = useSyncExternalStore(subscribeDarkClass, isDarkClass, () => false);
+  return !dark;
+}
 
 function useChromeGlassReady(forceFallback: boolean): boolean {
   const reduce = useReducedMotion();
@@ -78,8 +103,7 @@ export function ChromeGlass({
   style,
 }: ChromeGlassProps) {
   const ready = useChromeGlassReady(forceFallback);
-  const { resolved } = useThemePreference();
-  const overLight = resolved === 'light';
+  const overLight = useOverLight();
   const radius = cornerRadius >= 999 ? 9999 : cornerRadius;
 
   return (

@@ -118,13 +118,11 @@ test.describe('navigation shell', () => {
     await expect(page.getByRole('link', { name: 'Historique' })).toBeVisible();
   });
 
-  test('Plan hub shows widgets instead of an Accès link dump', async ({ page }) => {
+  test('Plan hub has no Accès link dump while chrome is validated', async ({ page }) => {
     await page.goto('/plan');
     await expect(page.getByRole('heading', { level: 1 })).toContainText(/Organiser/);
-    await expect(page.getByRole('heading', { name: 'Objectif' })).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'Prochaines séances' })).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'Charge / récup' })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Accès' })).toHaveCount(0);
     await expect(page.getByRole('link', { name: 'Fil de la semaine' })).toHaveCount(0);
+    await expect(page.getByRole('link', { name: 'Planification' })).toBeVisible();
   });
 });
