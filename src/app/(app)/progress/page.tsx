@@ -1,12 +1,17 @@
-import { Suspense } from 'react';
-import { ProgressHub } from '@/components/progress/progress-hub';
-import { ProgressHubSkeleton } from '@/components/progress/progress-hub-skeleton';
+import { redirect } from 'next/navigation';
+import { resolveProgressLegacyRedirect } from '@/lib/moi/paths';
 
-/** Suspense for `useSearchParams` only — hub chrome lives in the fallback. */
-export default function ProgressPage() {
-  return (
-    <Suspense fallback={<ProgressHubSkeleton />}>
-      <ProgressHub />
-    </Suspense>
-  );
+/**
+ * Blocking: legacy Progression hub is split into dedicated Moi surfaces.
+ * Bookmarks `/progress?tab=` keep working via redirect.
+ */
+export const instant = false;
+
+export default async function ProgressRedirect({
+  searchParams,
+}: {
+  searchParams: Promise<{ tab?: string; sport?: string }>;
+}) {
+  const { tab, sport } = await searchParams;
+  redirect(resolveProgressLegacyRedirect({ tab, sport }));
 }

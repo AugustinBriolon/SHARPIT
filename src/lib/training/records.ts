@@ -1151,14 +1151,14 @@ export async function getPerformanceRecordsForActivity(athleteId: string, activi
 
 export type RecordSportTab = 'run' | 'bike' | 'swim';
 
-export const RECORDS_PAGE_PATH = '/progress';
+export const RECORDS_PAGE_PATH = '/moi/performance';
 
 /** Identifiant d'ancre DOM pour une catégorie de record (ex. `swim-distance`). */
 export function recordCategoryAnchorId(category: string): string {
   return category;
 }
 
-/** Onglet sport de la page Progression pour une catégorie de record. */
+/** Onglet sport de la page Performance pour une catégorie de record. */
 export function recordSportTabFromCategory(category: string): RecordSportTab | null {
   if (category.startsWith('swim-')) {
     return 'swim';
@@ -1172,11 +1172,11 @@ export function recordSportTabFromCategory(category: string): RecordSportTab | n
   return null;
 }
 
-/** Lien vers la catégorie sur la page des records (section Performance + sport + ancre). */
+/** Lien vers la catégorie sur la page Performance (sport + ancre). */
 export function recordCategoryHref(category: string): string {
   const sport = recordSportTabFromCategory(category);
-  const sportQuery = sport ? `&sport=${sport}` : '';
-  return `${RECORDS_PAGE_PATH}?tab=performance${sportQuery}#${recordCategoryAnchorId(category)}`;
+  const sportQuery = sport ? `?sport=${sport}` : '';
+  return `${RECORDS_PAGE_PATH}${sportQuery}#${recordCategoryAnchorId(category)}`;
 }
 
 /** Recalcule uniquement les `groups` ciblés et remplace ces lignes en base. */

@@ -246,10 +246,11 @@ export function RecordsPanel() {
 
   function setSportTab(next: SportTab) {
     const params = new URLSearchParams(searchParams.toString());
-    params.set('tab', 'performance');
+    params.delete('tab');
     params.set('sport', next);
     const hash = typeof window !== 'undefined' ? window.location.hash : '';
-    router.replace(`/progress?${params.toString()}${hash}`, { scroll: false });
+    const query = params.toString();
+    router.replace(`/moi/performance${query ? `?${query}` : ''}${hash}`, { scroll: false });
   }
 
   useEffect(() => {
@@ -263,9 +264,10 @@ export function RecordsPanel() {
         return;
       }
       const params = new URLSearchParams(searchParams.toString());
-      params.set('tab', 'performance');
+      params.delete('tab');
       params.set('sport', sport);
-      router.replace(`/progress?${params.toString()}#${categoryId}`, {
+      const query = params.toString();
+      router.replace(`/moi/performance${query ? `?${query}` : ''}#${categoryId}`, {
         scroll: false,
       });
     }

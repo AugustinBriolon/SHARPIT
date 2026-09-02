@@ -51,10 +51,10 @@ export function GoalsViewSkeleton({ embedded = false }: { embedded?: boolean } =
     <div className="space-y-8">
       {embedded ? null : (
         <>
-          <MobileBackLink fallbackHref="/progress?tab=goals" fallbackLabel="Progression" showOnDesktop />
+          <MobileBackLink fallbackHref="/moi/objectifs" fallbackLabel="Objectifs" showOnDesktop />
           <StickyHeader className="flex flex-wrap items-end justify-between gap-4">
             <div>
-              <p className="text-label">Progression</p>
+              <p className="text-label">Moi</p>
               <h1 className="text-page-title mt-1">Objectifs</h1>
               <p className="text-muted-foreground mt-1 text-sm">
                 Des courses aux objectifs hebdomadaires — toute la hiérarchie.

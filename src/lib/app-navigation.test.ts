@@ -55,6 +55,8 @@ describe('app-navigation Shell V1', () => {
 
   it('lights Moi for profile hubs, settings, progress and biology', () => {
     expect(moiNavItem.match('/moi')).toBe(true);
+    expect(moiNavItem.match('/moi/corps')).toBe(true);
+    expect(moiNavItem.match('/moi/objectifs')).toBe(true);
     expect(moiNavItem.match('/settings')).toBe(true);
     expect(moiNavItem.match('/settings/privacy')).toBe(true);
     expect(moiNavItem.match('/progress')).toBe(true);

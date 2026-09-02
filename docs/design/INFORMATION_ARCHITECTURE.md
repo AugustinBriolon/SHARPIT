@@ -48,6 +48,8 @@ This document is written in English; hub copy ships in French. Tab labels in [`s
 | Activité    | `Activité`    | `/activite`   | (history half of week)   |
 | Moi         | `Moi`         | `/moi`        | `Profil` / Réglages      |
 
+Moi child surfaces (Shell V1.1 split): `/moi/corps`, `/moi/objectifs`, `/moi/performance` (quiet), `/settings/privacy` (Confidentialité). Legacy `/progress?tab=` redirects onto these.
+
 Coach keeps the label `Coach` on contextual CTAs only — not in `bottomNavItems`.
 
 Deep routes (`/training/*`, `/progress`, `/settings/*`) stay valid and light the matching tab. `/settings` redirects to `/moi`.
@@ -55,7 +57,7 @@ Deep routes (`/training/*`, `/progress`, `/settings/*`) stay valid and light the
 Two label collisions from the ADR-022 rename still apply where those surfaces live:
 
 - **`Bilan hebdo`** remains the Coach-menu / Plan-hub name for the Weekly Coaching Brief.
-- **`Progression`** still names the `/progress` hub (reachable from Moi → Corps / Objectifs); `/training/progression` redirects must keep working.
+- **`Progression`** still names longitudinal athlete development conceptually; the shipped surfaces are Moi → Corps / Objectifs / Performance. `/training/progression` redirects must keep working.
 
 ### Vocabulary
 

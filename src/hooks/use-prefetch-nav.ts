@@ -37,6 +37,16 @@ function prefetchNavRoute(href: string, pre: PrefetchFn, trainingDayId: string):
       pre(queryKeys.goals, fetchGoals);
       prefetchProgressHub(pre, trainingDayId);
     },
+    '/moi/corps': () => {
+      prefetchProgressHub(pre, trainingDayId);
+    },
+    '/moi/objectifs': () => {
+      pre(queryKeys.goals, fetchGoals);
+    },
+    '/moi/performance': () => {
+      pre(queryKeys.goals, fetchGoals);
+      prefetchProgressHub(pre, trainingDayId);
+    },
     '/training': () => prefetchTrainingHub(pre),
     '/progress': () => {
       pre(queryKeys.goals, fetchGoals);

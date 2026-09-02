@@ -4,7 +4,7 @@ import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { ProgressHub } from '@/components/progress/progress-hub';
+import { MoiSectionContent } from '@/components/shell/moi-section-content';
 import { TrainingThreadView } from '@/components/training/thread/training-thread-view';
 import type { PersistedSnapshotEntry } from '@/lib/pwa/snapshot-store-validation';
 
@@ -36,7 +36,7 @@ vi.mock('@/hooks/use-offline-snapshot', () => ({
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ replace: vi.fn() }),
-  useSearchParams: () => new URLSearchParams('tab=composition'),
+  useSearchParams: () => new URLSearchParams(),
 }));
 
 vi.mock('@/hooks/use-presentation-view-model', () => ({
@@ -65,8 +65,6 @@ vi.mock('@/hooks/use-data', () => ({
   useThresholdHistory: () => ({ data: undefined }),
 }));
 
-/* The thread reads these too, and hooks cannot be conditional — they run before
-   the offline short-circuit even when there is nothing to render. */
 vi.mock('@/hooks/use-coach-memory', () => ({
   useCoachMemory: () => ({ data: undefined }),
 }));
@@ -93,16 +91,12 @@ import {
 import { useActivities, useGoals, usePlannedSessions } from '@/hooks/use-data';
 
 describe('hub offline snapshot contracts', () => {
-  const progressSource = readFileSync(
-    resolve(process.cwd(), 'src/components/progress/progress-hub.tsx'),
+  const moiSectionSource = readFileSync(
+    resolve(process.cwd(), 'src/components/shell/moi-section-content.tsx'),
     'utf8',
   );
   const progressOfflineSource = readFileSync(
     resolve(process.cwd(), 'src/components/progress/use-progress-hub-offline.ts'),
-    'utf8',
-  );
-  const progressContentSource = readFileSync(
-    resolve(process.cwd(), 'src/components/progress/progress-hub-content.tsx'),
     'utf8',
   );
   const trainingSource = readFileSync(
@@ -122,11 +116,11 @@ describe('hub offline snapshot contracts', () => {
     'utf8',
   );
 
-  it('ProgressHub keeps chrome and gates the snapshot on cold data across sections', () => {
-    expect(progressSource).toContain('StickyHeader');
+  it('Moi dedicated sections gate the snapshot on cold data', () => {
+    expect(moiSectionSource).toContain('useProgressHubOffline');
+    expect(moiSectionSource).toContain('<OfflineSnapshotSummary entry={offlineEntry} />');
     expect(progressOfflineSource).toContain('!isSet(goalsQuery.data)');
     expect(progressOfflineSource).toContain('useOfflineSnapshot(!online && hasNoLiveContent)');
-    expect(progressContentSource).toContain('<OfflineSnapshotSummary entry={offlineEntry} />');
   });
 
   it('TrainingThreadView short-circuits the skeletons when offline and all queries cold', () => {
@@ -152,7 +146,7 @@ describe('hub offline snapshot contracts', () => {
   });
 });
 
-describe('ProgressHub offline snapshot render', () => {
+describe('MoiSectionContent offline snapshot render', () => {
   beforeEach(() => {
     vi.mocked(useOnlineStatus).mockReturnValue(false);
     vi.mocked(useOfflineSnapshot).mockReturnValue({ entry: mockOfflineEntry(), loading: false });
@@ -169,14 +163,15 @@ describe('ProgressHub offline snapshot render', () => {
     } as never);
   });
 
-  it('renders the snapshot on the default section, not only under Corps & santé', () => {
-    const html = renderToStaticMarkup(createElement(ProgressHub));
+  it('renders the snapshot on Objectifs and Corps alike when cold', () => {
+    const goalsHtml = renderToStaticMarkup(
+      createElement(MoiSectionContent, { section: 'objectifs' }),
+    );
+    const corpsHtml = renderToStaticMarkup(createElement(MoiSectionContent, { section: 'corps' }));
 
-    expect(html).toContain('Progression');
-    expect(html).toContain('Objectifs');
-    expect(html).toContain('Corps &amp; santé');
-    expect(html).toContain(OFFLINE_BANNER);
-    expect(html).not.toContain('composition-live');
+    expect(goalsHtml).toContain(OFFLINE_BANNER);
+    expect(corpsHtml).toContain(OFFLINE_BANNER);
+    expect(corpsHtml).not.toContain('composition-live');
   });
 });
 

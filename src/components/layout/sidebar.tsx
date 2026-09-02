@@ -118,6 +118,18 @@ function AthleteIdentityAvatar({
   identity: ReturnType<typeof useAthleteNavIdentity>;
   isActive: boolean;
 }) {
+  if (identity.preferStandardIcon) {
+    const Icon = profileNavItem.icon;
+    return (
+      <Icon
+        className={cn(
+          'relative size-8 shrink-0',
+          isActive ? 'text-highlight-foreground' : 'text-foreground',
+        )}
+        aria-hidden
+      />
+    );
+  }
   if (identity.isReady) {
     return (
       <AthleteNavAvatar

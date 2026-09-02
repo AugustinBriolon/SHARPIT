@@ -27,7 +27,17 @@ describe('resolveBackTargetWithoutStack', () => {
     });
   });
 
-  it('falls back to Moi for Progression (Shell V1 profile hub)', () => {
+  it('falls back to Moi for Corps / Objectifs / Performance / Progression', () => {
+    expect(resolveBackTargetWithoutStack('/moi/corps')).toEqual({
+      href: '/moi',
+      label: 'Moi',
+      fromStack: false,
+    });
+    expect(resolveBackTargetWithoutStack('/moi/objectifs')).toEqual({
+      href: '/moi',
+      label: 'Moi',
+      fromStack: false,
+    });
     expect(resolveBackTargetWithoutStack('/progress')).toEqual({
       href: '/moi',
       label: 'Moi',

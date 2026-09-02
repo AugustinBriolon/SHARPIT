@@ -27,6 +27,10 @@ function bottomNavGlyph(options: {
   if (!isAthleteTab) {
     return <Icon className="relative size-5 shrink-0" aria-hidden />;
   }
+  // Demo (and similar): standard CircleUser — banner already signals demo.
+  if (identity.preferStandardIcon) {
+    return <Icon className="relative size-5 shrink-0" aria-hidden />;
+  }
   if (identity.isReady) {
     return (
       <AthleteNavAvatar

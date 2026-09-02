@@ -42,8 +42,9 @@ describe('shortLabelFromName', () => {
 });
 
 describe('DEMO_IDENTITY', () => {
-  it('exposes demo initials and keeps Shell V1 Moi tab label', () => {
-    expect(DEMO_IDENTITY.initials).toBe('D');
+  it('keeps Shell V1 Moi tab label and standard icon (no Démo / D pastille)', () => {
     expect(DEMO_IDENTITY.shortLabel).toBe('Moi');
+    expect(DEMO_IDENTITY.preferStandardIcon).toBe(true);
+    expect(DEMO_IDENTITY.initials).toBe('M');
   });
 });

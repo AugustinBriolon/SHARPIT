@@ -83,7 +83,7 @@ export function ThresholdsHint({ analysis }: { analysis: ActivityAnalysis }) {
       depuis{' '}
       <Link
         className="text-primary underline-offset-2 hover:underline"
-        href="/progress?tab=performance"
+        href="/moi/performance"
       >
         Calibration
       </Link>{' '}

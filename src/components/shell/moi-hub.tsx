@@ -4,6 +4,7 @@ import {
   Brain,
   Dumbbell,
   Gauge,
+  HeartPulse,
   Link2,
   Lock,
   Microscope,
@@ -13,16 +14,10 @@ import {
   Target,
   User2,
   Wrench,
-  HeartPulse,
 } from 'lucide-react';
 import { StickyHeader } from '@/components/layout/sticky-header';
 import { InstallCard } from '@/components/pwa/install-card';
 import { ShellHubLink } from '@/components/shell/shell-hub-link';
-import { HubStatusValue } from '@/components/settings/hub-status-value';
-import {
-  SettingsAppearanceStatus,
-  SettingsExpertModeStatus,
-} from '@/components/settings/settings-appearance-status';
 import { SettingsAdminEntry } from '@/components/settings/settings-admin-entry';
 import { SettingsHomeExtras } from '@/components/settings/settings-home-extras';
 import { SettingsSignOut } from '@/components/settings/settings-sign-out';
@@ -30,189 +25,132 @@ import {
   SettingsEntryRow,
   type SettingsEntry,
 } from '@/components/settings/settings-home';
-import type { SettingsHubStatus } from '@/lib/settings/hub-status';
+import {
+  MOI_CORPS_PATH,
+  MOI_OBJECTIFS_PATH,
+  MOI_PRIVACY_PATH,
+} from '@/lib/moi/paths';
 
-type SettingsGroup = {
-  id: string;
-  title: string;
-  blurb: string;
-  entries: SettingsEntry[];
-};
-
-/** Featured athlete model — Corps / objectifs / Confidentialité stay unburied. */
-const FEATURED: SettingsEntry[] = [
+/** Primary destinations — one intention each, no Accès dump. */
+const DESTINATIONS: SettingsEntry[] = [
   {
-    href: '/progress?tab=body',
+    href: MOI_CORPS_PATH,
     title: 'Corps',
     description: 'Composition, suivi physique et contraintes de santé.',
     icon: HeartPulse,
   },
   {
-    href: '/progress?tab=goals',
+    href: MOI_OBJECTIFS_PATH,
     title: 'Objectifs',
     description: 'Courses, métriques prioritaires et proximité aux cibles.',
     icon: Target,
   },
   {
-    href: '/settings/privacy',
+    href: MOI_PRIVACY_PATH,
     title: 'Confidentialité',
     description: 'Consentements, export et suppression du compte.',
     icon: Lock,
   },
 ];
 
-const GROUPS: SettingsGroup[] = [
+/** Compte / équipement — secondary, still chip rows. */
+const SECONDARY: SettingsEntry[] = [
   {
-    id: 'athlete',
-    title: 'Athlète',
-    blurb: 'Identité, matériel et seuils: ce que le Twin sait de toi.',
-    entries: [
-      {
-        href: '/settings/account',
-        title: 'Compte',
-        description: 'Identité, sommeil et paramètres personnels.',
-        icon: User2,
-        statusKey: 'account',
-      },
-      {
-        href: '/settings/equipment',
-        title: 'Équipement',
-        description: 'Sports pratiqués et matériel disponible.',
-        icon: Dumbbell,
-        statusKey: 'equipment',
-      },
-      {
-        href: '/settings/calibration',
-        title: 'Seuils & repères',
-        description: 'FTP, allure seuil, FC max et historique des seuils.',
-        icon: SlidersHorizontal,
-      },
-    ],
+    href: '/settings/account',
+    title: 'Compte',
+    description: 'Identité, sommeil et paramètres personnels.',
+    icon: User2,
+    statusKey: 'account',
   },
   {
-    id: 'coach-context',
-    title: 'Contexte coach',
-    blurb: "Ce qui oriente le chat, la semaine et l'adaptation du plan.",
-    entries: [
-      {
-        href: '/settings/memory',
-        title: 'Mémoire du coach',
-        description: 'Préférences durables et contraintes datées.',
-        icon: Brain,
-        statusKey: 'memory',
-      },
-      {
-        href: '/settings/integrations',
-        title: 'Applications connectées',
-        description: 'Sources de données et synchronisations.',
-        icon: Link2,
-        statusKey: 'integrations',
-      },
-    ],
-  },
-  {
-    id: 'application',
-    title: 'Application',
-    blurb: 'Préférences produit et informations système.',
-    entries: [
-      {
-        href: '/settings/appearance',
-        title: 'Apparence',
-        description: 'Thème clair, sombre ou système.',
-        icon: MoonStar,
-        statusKey: 'appearance',
-      },
-      {
-        href: '/settings/appearance/expert-mode',
-        title: 'Mode Expert',
-        description: 'Densité de lecture: révèle ou masque la couche technique.',
-        icon: Microscope,
-        statusKey: 'expertMode',
-      },
-      {
-        href: '/settings/pro',
-        title: 'Pro',
-        description: 'Ce que le palier payant débloque.',
-        icon: Gauge,
-      },
-      {
-        href: '/settings/about',
-        title: 'À propos',
-        description: 'Version, principes et limite d’usage.',
-        icon: ShieldCheck,
-        statusKey: 'about',
-      },
-    ],
+    href: '/settings/equipment',
+    title: 'Équipement',
+    description: 'Sports pratiqués et matériel disponible.',
+    icon: Dumbbell,
+    statusKey: 'equipment',
   },
 ];
 
-function featuredMeta(statusKey: SettingsEntry['statusKey']) {
-  if (!statusKey) {
-    return null;
-  }
-  if (statusKey === 'appearance') {
-    return <SettingsAppearanceStatus />;
-  }
-  if (statusKey === 'expertMode') {
-    return <SettingsExpertModeStatus />;
-  }
-  return <HubStatusValue statusKey={statusKey as keyof SettingsHubStatus} />;
-}
+/** Quiet réglages — demoted text links, not a second Accès dump. */
+const QUIET: { href: string; title: string; icon: SettingsEntry['icon'] }[] = [
+  { href: '/settings/calibration', title: 'Seuils & repères', icon: SlidersHorizontal },
+  { href: '/settings/memory', title: 'Mémoire du coach', icon: Brain },
+  { href: '/settings/integrations', title: 'Applications connectées', icon: Link2 },
+  { href: '/settings/appearance', title: 'Apparence', icon: MoonStar },
+  { href: '/settings/appearance/expert-mode', title: 'Mode Expert', icon: Microscope },
+  { href: '/settings/pro', title: 'Pro', icon: Gauge },
+  { href: '/settings/about', title: 'À propos', icon: ShieldCheck },
+];
 
 /**
- * Moi hub — Shell V1 profile destination.
- * Corps / objectifs / Confidentialité are first-class; the rest of settings follows.
+ * Moi hub — Shell V1.1 destinations (not an Accès link dump).
+ *
+ * Corps · Objectifs · Confidentialité first. Compte / équipement secondary.
+ * Remaining settings stay quiet links. Dedicated child pages own their content.
  */
 export function MoiHub() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-lg:pb-16">
       <StickyHeader>
         <p className="text-label">Moi</p>
         <h1 className="text-page-title mt-1">Ton modèle, tes données</h1>
         <p className="text-muted-foreground mt-1 text-sm">
-          Corps, objectifs et confidentialité d&apos;abord — puis le reste du compte.
+          Corps, objectifs et confidentialité — puis le compte.
         </p>
       </StickyHeader>
 
-      <section aria-labelledby="moi-featured" className="space-y-3">
-        <h2 className="text-section-title" id="moi-featured">
-          Essentiel
+      <section aria-labelledby="moi-destinations" className="space-y-3">
+        <h2 className="text-section-title" id="moi-destinations">
+          Destinations
         </h2>
         <ul className="space-y-2">
-          {FEATURED.map((entry) => (
+          {DESTINATIONS.map((entry) => (
             <ShellHubLink
               key={entry.href}
               href={entry.href}
               title={entry.title}
               description={entry.description}
               icon={entry.icon}
-              meta={featuredMeta(entry.statusKey)}
             />
           ))}
         </ul>
       </section>
 
-      <div className="space-y-7">
-        {GROUPS.map((group) => (
-          <section key={group.id} aria-labelledby={`moi-group-${group.id}`}>
-            <div className="mb-3">
-              <h2 className="text-section-title" id={`moi-group-${group.id}`}>
-                {group.title}
-              </h2>
-              <p className="text-muted-foreground mt-1 text-sm leading-relaxed">{group.blurb}</p>
-            </div>
-            <ul className="space-y-2">
-              {group.entries.map((entry) => (
-                <SettingsEntryRow key={entry.href} entry={entry} />
-              ))}
-            </ul>
-          </section>
-        ))}
+      <section aria-labelledby="moi-secondary" className="space-y-3">
+        <div>
+          <h2 className="text-section-title" id="moi-secondary">
+            Compte &amp; équipement
+          </h2>
+          <p className="text-muted-foreground mt-1 text-sm leading-relaxed">
+            Identité et matériel — ce que le Twin utilise au quotidien.
+          </p>
+        </div>
+        <ul className="space-y-2">
+          {SECONDARY.map((entry) => (
+            <SettingsEntryRow key={entry.href} entry={entry} />
+          ))}
+        </ul>
+      </section>
 
-        <Suspense fallback={null}>
-          <SettingsAdminEntry />
-        </Suspense>
-      </div>
+      <nav aria-label="Réglages" className="flex flex-wrap gap-x-4 gap-y-2 pt-1">
+        {QUIET.map((entry) => {
+          const Icon = entry.icon;
+          return (
+            <Link
+              key={entry.href}
+              className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 text-sm"
+              href={entry.href}
+            >
+              <Icon className="size-3.5" aria-hidden />
+              {entry.title}
+            </Link>
+          );
+        })}
+      </nav>
+
+      <Suspense fallback={null}>
+        <SettingsAdminEntry />
+      </Suspense>
 
       <section
         aria-labelledby="moi-maintenance"
