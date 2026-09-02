@@ -28,26 +28,34 @@ export function RecoveryAlertsSection({
   illness?: { label: string; colorClass: string };
   dissonanceDetected?: boolean;
 }) {
-  const alerts = [
-    overreaching && {
+  const alerts: DrillDownAlert[] = [];
+
+  if (overreaching) {
+    alerts.push({
       colorClass: overreaching.colorClass,
       label: overreaching.label,
       prefix: 'Surmenage',
-    },
-    illness && {
+    });
+  }
+
+  if (illness) {
+    alerts.push({
       colorClass: illness.colorClass,
       label: illness.label,
       prefix: ATYPICAL_RECOVERY_SIGNAL_PREFIX,
       detail: ILLNESS_SYMPTOM_ADVICE_FR,
-      tone: 'risk' as const,
-    },
-    dissonanceDetected && {
+      tone: 'risk',
+    });
+  }
+
+  if (dissonanceDetected) {
+    alerts.push({
       colorClass: 'text-signal-caution',
       label:
         'tu te sens mieux que ce que disent tes marqueurs. Suis les marqueurs aujourd’hui, pas la sensation.',
       prefix: 'Sensations et mesures divergent',
-    },
-  ].filter((alert): alert is DrillDownAlert => typeof alert === 'object' && alert !== null);
+    });
+  }
 
   if (alerts.length === 0) {
     return null;
