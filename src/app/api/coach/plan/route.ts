@@ -37,6 +37,7 @@ import {
   formatTravelConstraintPromptRule,
   resolvePlanTargetUnderTravel,
 } from '@/lib/travel-context/training-constraint';
+import { COACH_COPY_DASH_RULE, sanitizeCoachCopy } from '@/lib/coach/sanitize-coach-copy';
 
 // Same long-running reasoning generation as adapt — see maxDuration comment there.
 export const maxDuration = 300;
@@ -62,6 +63,8 @@ Sécurité (impératif) :
 - Information manquante → hypothèse CONSERVATRICE. N'invente jamais de données.
 
 ${formatStrengthSessionRules()}
+
+${COACH_COPY_DASH_RULE}
 
 Sortie : le schéma fait autorité pour les noms de champs, les types et les valeurs d'énumération — jamais ce texte. N'ajoute aucun champ hors schéma. Séance STRENGTH : strengthPrescription obligatoire (noms français, blocs et volume ci-dessus) ; RUN/BIKE/SWIM : null. Séance RUN ou BIKE structurée (fractionné, blocs au seuil, progressif) : remplis endurancePrescription — étapes et groupes répétés avec leur intensité, jamais d'allure ni de watts, l'app les dérive des seuils.`;
 
@@ -371,10 +374,16 @@ async function finalizePlan(
       ),
     ).then((decisions) => decisions.map((d) => d.id));
 
-    const sessionsWithDecisionId = sessions.map((s, i) => ({ ...s, decisionId: decisionIds[i] }));
+    const sessionsWithDecisionId = sessions.map((s, i) => ({
+      ...s,
+      title: sanitizeCoachCopy(s.title),
+      description: sanitizeCoachCopy(s.description),
+      rationale: sanitizeCoachCopy(s.rationale),
+      decisionId: decisionIds[i],
+    }));
 
     return {
-      summary: output.summary,
+      summary: sanitizeCoachCopy(output.summary),
       startDate: format(start, 'yyyy-MM-dd'),
       sessions: sessionsWithDecisionId,
       gate,

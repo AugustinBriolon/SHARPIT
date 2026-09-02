@@ -1,11 +1,49 @@
 import type { Prisma } from '@prisma/client';
 import { isSet } from '@/lib/util/value';
+import { sanitizeCoachCopy } from '@/lib/coach/sanitize-coach-copy';
 import { prisma } from './prisma';
 
 const DEFAULT_TITLE = 'Nouvelle conversation';
 const TITLE_MAX = 60;
 const BOOTSTRAP_TTL_MS = 60_000;
 const bootstrapConversationIds = new Map<string, { id: string; createdAtMs: number }>();
+
+function sanitizeAssistantMessageParts(parts: unknown): unknown {
+  if (!Array.isArray(parts)) {
+    return parts;
+  }
+  return parts.map((part) => {
+    if (
+      typeof part === 'object' &&
+      part !== null &&
+      (part as { type?: string }).type === 'text' &&
+      typeof (part as { text?: unknown }).text === 'string'
+    ) {
+      return { ...part, text: sanitizeCoachCopy((part as { text: string }).text) };
+    }
+    return part;
+  });
+}
+
+/** Strip AI-slop dashes from assistant text parts before persist / after load. */
+export function sanitizeConversationMessages(messages: unknown): unknown {
+  if (!Array.isArray(messages)) {
+    return messages;
+  }
+  return messages.map((message) => {
+    if (
+      typeof message !== 'object' ||
+      message === null ||
+      (message as { role?: string }).role !== 'assistant'
+    ) {
+      return message;
+    }
+    return {
+      ...message,
+      parts: sanitizeAssistantMessageParts((message as { parts?: unknown }).parts),
+    };
+  });
+}
 
 function extractTextFromUserMessage(message: unknown): string | null {
   if (
@@ -90,7 +128,14 @@ export async function listConversations(athleteId: string) {
 }
 
 export async function getConversation(athleteId: string, id: string) {
-  return prisma.conversation.findFirst({ where: { id, athleteId } });
+  const conversation = await prisma.conversation.findFirst({ where: { id, athleteId } });
+  if (!conversation) {
+    return null;
+  }
+  return {
+    ...conversation,
+    messages: sanitizeConversationMessages(conversation.messages) as Prisma.JsonValue,
+  };
 }
 
 function createConversationInput(messages?: unknown, bootstrapKey?: string) {
@@ -127,11 +172,12 @@ export async function createConversation(
     }
   }
 
+  const cleanedMessages = input.hasMessages ? sanitizeConversationMessages(messages) : [];
   const conversation = await prisma.conversation.create({
     data: {
       athleteId,
-      title: input.hasMessages ? deriveTitle(messages) : DEFAULT_TITLE,
-      messages: (input.hasMessages ? messages : []) as Prisma.InputJsonValue,
+      title: input.hasMessages ? deriveTitle(cleanedMessages) : DEFAULT_TITLE,
+      messages: cleanedMessages as Prisma.InputJsonValue,
     },
   });
 
@@ -152,12 +198,13 @@ export async function saveConversationMessages(athleteId: string, id: string, me
     return null;
   }
 
+  const cleanedMessages = sanitizeConversationMessages(messages ?? []);
   const shouldRetitle = existing.title === DEFAULT_TITLE;
   const { count } = await prisma.conversation.updateMany({
     where: { id, athleteId },
     data: {
-      messages: (messages ?? []) as Prisma.InputJsonValue,
-      ...(shouldRetitle ? { title: deriveTitle(messages) } : {}),
+      messages: cleanedMessages as Prisma.InputJsonValue,
+      ...(shouldRetitle ? { title: deriveTitle(cleanedMessages) } : {}),
     },
   });
   if (count === 0) {

@@ -23,6 +23,7 @@ import {
   adaptRequestSchema,
   type AdaptPlan,
 } from '@/lib/validators/coach';
+import { COACH_COPY_DASH_RULE, sanitizeCoachCopy } from '@/lib/coach/sanitize-coach-copy';
 import { buildGateContext } from '@/lib/plan-gate/build-context';
 import { evaluatePlan } from '@/lib/plan-gate/evaluate-plan';
 import type { GateProposal, GateResult } from '@/lib/plan-gate/types';
@@ -142,6 +143,8 @@ Principes :
 - Pour ADD/MODIFY d'une séance RUN ou BIKE structurée : renseigne endurancePrescription (étapes et groupes répétés avec leur intensité, jamais d'allure ni de watts).
 
 ${formatStrengthSessionRules()}
+
+${COACH_COPY_DASH_RULE}
 
 FORMAT : le schéma de sortie fait autorité — noms de champs, valeurs autorisées et types viennent de lui, jamais de ce texte. N'ajoute aucun champ hors schéma et n'invente aucune valeur d'énumération.
 - Si le plan manque de renfo/mobilité préventive alors qu'un objectif sportif est actif ET que le renfo ou la mobilité figure dans les sports pratiqués, ADD des séances STRENGTH (préventif + mobilité) adaptées au sport — sauf MOBILITY_ONLY/NONE / REST_ONLY. Sinon, n'ajoute pas de STRENGTH.
@@ -422,9 +425,17 @@ async function finalizeAdapt(input: FinalizeAdaptInput): Promise<AdaptPayload> {
 
     const changesWithDecisionId = validated.data.changes.map((change) => ({
       ...change,
+      title: change.title != null ? sanitizeCoachCopy(change.title) : change.title,
+      description:
+        change.description != null ? sanitizeCoachCopy(change.description) : change.description,
+      reason: sanitizeCoachCopy(change.reason),
       decisionId: decisionIdByChange.get(change) ?? null,
     }));
 
-    return { ...validated.data, changes: changesWithDecisionId, gate };
+    return {
+      summary: sanitizeCoachCopy(validated.data.summary),
+      changes: changesWithDecisionId,
+      gate,
+    };
   }
 }

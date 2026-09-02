@@ -1,4 +1,7 @@
-import { buildBriefingDayContext, formatBriefingDayContext } from '@/lib/briefing/briefing-context';
+import {
+  buildBriefingDayContext,
+  formatBriefingDayContext,
+} from '@/lib/briefing/briefing-context';
 import {
   resolveBriefingPhase,
   resolveBriefingPhaseFromDailyPhase,
@@ -16,6 +19,7 @@ import {
   formatCoachContext,
   invalidateCoachContext,
 } from '@/lib/coach/context/coach-context';
+import { COACH_COPY_DASH_RULE, sanitizeCoachCopy } from '@/lib/coach/sanitize-coach-copy';
 import { recordAiUsage } from '@/lib/ai-usage';
 import { prisma } from '@/lib/prisma';
 import { getActivities, getPlannedSessions } from '@/lib/queries';
@@ -84,7 +88,9 @@ Structure (markdown concis, pas de titre niveau 1/2) :
 - **Séances** : selon la phase — prévu (matin), débrief réalisé + reste (après-midi), bilan du jour (soir).
 - **Point d'attention** (optionnel) : blessure, fatigue, surcharge.
 
-5 à 8 lignes max. Pas de blabla. Respecte IMPÉRATIVEMENT les douleurs/blessures. Français, tutoiement.`;
+5 à 8 lignes max. Pas de blabla. Respecte IMPÉRATIVEMENT les douleurs/blessures. Français, tutoiement.
+
+${COACH_COPY_DASH_RULE}`;
 }
 
 function utcDateOnly(d: Date): Date {
@@ -126,7 +132,8 @@ Rédige le ${dayCtx.phaseLabel} en suivant la structure imposée et les règles 
 
   const llmContent = text.trim();
   const validation = validateBriefingContent(llmContent, dayCtx, ctx);
-  const content = validation.valid ? llmContent : buildDeterministicBriefingFallback(dayCtx, ctx);
+  const raw = validation.valid ? llmContent : buildDeterministicBriefingFallback(dayCtx, ctx);
+  const content = sanitizeCoachCopy(raw);
 
   if (!validation.valid) {
     console.warn('[daily-briefing] validation failed:', validation.reason);
@@ -135,11 +142,19 @@ Rédige le ${dayCtx.phaseLabel} en suivant la structure imposée et les règles 
   return { content, readiness: ctx.health.readinessToday, phaseAtGeneration: phase };
 }
 
+function presentDailyBriefing<T extends { content: string } | null>(row: T): T {
+  if (!row) {
+    return row;
+  }
+  return { ...row, content: sanitizeCoachCopy(row.content) };
+}
+
 /** Lit le bilan stocké pour une date (null si absent). */
 export async function getDailyBriefing(athleteId: string, refDate: Date = new Date()) {
-  return prisma.dailyBriefing.findUnique({
+  const row = await prisma.dailyBriefing.findUnique({
     where: { athleteId_date: { athleteId, date: utcDateOnly(refDate) } },
   });
+  return presentDailyBriefing(row);
 }
 
 /** Génère le bilan du jour et le stocke (upsert sur la date). */

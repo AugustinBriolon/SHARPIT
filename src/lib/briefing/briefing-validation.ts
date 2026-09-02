@@ -212,7 +212,7 @@ export function buildDeterministicBriefingFallback(
   if (coachCtx.physical.length > 0) {
     const [note] = coachCtx.physical;
     lines.push(
-      `Point de vigilance : ${note.title}${isSet(note.severity) ? ` (sévérité ${note.severity}/10)` : ''} — respecte cette contrainte.`,
+      `Point de vigilance : ${note.title}${isSet(note.severity) ? ` (sévérité ${note.severity}/10)` : ''}. Respecte cette contrainte.`,
     );
   }
 

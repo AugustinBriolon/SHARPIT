@@ -1,5 +1,6 @@
 import { ActivityType } from '@prisma/client';
 import { activityNarrativeSchema, type ActivityNarrative } from '@/lib/validators/coach';
+import { sanitizeCoachCopy } from '@/lib/coach/sanitize-coach-copy';
 
 export const NARRATIVE_POLL_MS = 3_000;
 export const NARRATIVE_POLL_MAX_MS = 120_000;
@@ -13,7 +14,13 @@ export const NARRATIVE_TYPES = new Set<ActivityType>([
 
 export function parseNarrative(raw: unknown): ActivityNarrative | null {
   const parsed = activityNarrativeSchema.safeParse(raw);
-  return parsed.success ? parsed.data : null;
+  if (!parsed.success) {
+    return null;
+  }
+  return {
+    headline: sanitizeCoachCopy(parsed.data.headline),
+    narrative: sanitizeCoachCopy(parsed.data.narrative),
+  };
 }
 
 export function readNarrativeTimedOut(activityId: string): boolean {

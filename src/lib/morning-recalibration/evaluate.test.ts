@@ -123,7 +123,7 @@ describe('evaluateMorningSessionRecalibration', () => {
     expect(proposal?.changeSummary).toContain('Léger');
     expect(proposal?.changeSummary).toContain('Modéré');
     expect(proposal?.why).not.toMatch(/tempo/i);
-    expect(proposal?.toDescription).toContain('progression légère');
+    expect(proposal?.toDescription).toMatch(/progression légère/i);
     expect(proposal?.fromDescription).toBe(strengthDescription);
   });
 

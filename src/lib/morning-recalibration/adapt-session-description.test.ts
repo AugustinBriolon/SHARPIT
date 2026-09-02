@@ -34,6 +34,6 @@ describe('adaptMorningSessionDescription', () => {
       direction: 'UP',
     });
     expect(next).toContain(deroule);
-    expect(next).toMatch(/progression légère/);
+    expect(next).toMatch(/progression légère/i);
   });
 });
