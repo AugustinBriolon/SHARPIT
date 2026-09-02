@@ -36,7 +36,7 @@ test.describe('transient UI state resets when a route is hidden', () => {
   test.use(existsSync(STORAGE_STATE) ? { storageState: STORAGE_STATE } : {});
 
   test.beforeEach(async ({ page }) => {
-    await page.goto('/training/history');
+    await page.goto('/activite');
     test.skip(
       new URL(page.url()).pathname.startsWith('/sign-in'),
       "not signed in — run against `yarn dev` via `yarn test:e2e:dev`, or record a session (see this file's comment)",
@@ -52,7 +52,7 @@ test.describe('transient UI state resets when a route is hidden', () => {
     await expect(page).toHaveURL(/\/moi$/);
 
     await page.goBack();
-    await expect(page).toHaveURL(/\/training\/history$/);
+    await expect(page).toHaveURL(/\/activite$/);
     await expect(page.getByRole('button', { name: /Filtres/ })).toHaveAttribute(
       'aria-expanded',
       'false',
@@ -72,7 +72,7 @@ test.describe('transient UI state resets when a route is hidden', () => {
     // so while it is open the rest of the page is out of the accessibility tree
     // and no link is clickable. Back is the route the athlete actually takes.
     await page.goBack();
-    await expect(page).toHaveURL(/\/training\/history$/);
+    await expect(page).toHaveURL(/\/activite$/);
 
     await page.goForward();
     await expect(page).toHaveURL(/\/settings\/memory$/);

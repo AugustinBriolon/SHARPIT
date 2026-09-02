@@ -25,7 +25,6 @@ type Matcher = {
 const HOME_PARENT = { href: '/', label: 'Aujourd’hui' } as const;
 const PLAN_PARENT = { href: '/plan', label: 'Plan' } as const;
 const ACTIVITY_PARENT = { href: '/activite', label: 'Activité' } as const;
-const HISTORY_PARENT = { href: '/training/history', label: 'Historique' } as const;
 const TRIPS_PARENT = { href: '/training/trips', label: 'Séjours' } as const;
 const MOI_PARENT = { href: '/moi', label: 'Moi' } as const;
 
@@ -42,10 +41,12 @@ const MATCHERS: Matcher[] = [
     resolve: () => ({ label: 'Fil de la semaine', defaultParent: PLAN_PARENT }),
   },
   {
+    // Redirects to `/activite` — keep a label for any stack entry that still lands here.
     pattern: /^\/training\/history$/,
     resolve: () => ({ label: 'Historique', defaultParent: ACTIVITY_PARENT }),
   },
   {
+    // Saisie: back uses nav stack when present; empty stack → Activité hub (never Historique).
     pattern: /^\/training\/manual$/,
     resolve: () => ({ label: 'Nouvelle activité', defaultParent: ACTIVITY_PARENT }),
   },
@@ -75,8 +76,9 @@ const MATCHERS: Matcher[] = [
     }),
   },
   {
+    // Detail opened from Activité hub list — empty-stack fallback is the hub, not a dead Historique page.
     pattern: /^\/training\/[^/]+$/,
-    resolve: () => ({ label: 'Séance', defaultParent: HISTORY_PARENT }),
+    resolve: () => ({ label: 'Séance', defaultParent: ACTIVITY_PARENT }),
   },
 
   {

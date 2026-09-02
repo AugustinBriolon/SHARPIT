@@ -1,22 +1,11 @@
-import { Suspense } from 'react';
-import { MobileBackLink } from '@/components/layout/mobile-back-link';
-import { StickyHeader } from '@/components/layout/sticky-header';
-import { TrainingList, TrainingListFallback } from '@/components/training/hub/training-list';
+import { redirect } from 'next/navigation';
 
-export default function TrainingHistoryPage() {
-  return (
-    <div className="space-y-4">
-      <MobileBackLink fallbackHref="/activite" fallbackLabel="Activité" showOnDesktop />
-      <StickyHeader>
-        <h1 className="text-page-title mt-1">Historique</h1>
-        <p className="text-muted-foreground mt-1 text-sm">
-          Historique complet des activités enregistrées, du plus récent au plus ancien.
-        </p>
-      </StickyHeader>
-
-      <Suspense fallback={<TrainingListFallback />}>
-        <TrainingList />
-      </Suspense>
-    </div>
-  );
+/**
+ * Superseded by the Activité hub (`/activite`).
+ *
+ * History is the hub workflow (list + Nouvelle activité), not a separate Accès
+ * destination. Keep this redirect so Progress / thread deep links still resolve.
+ */
+export default function TrainingHistoryRedirect() {
+  redirect('/activite');
 }

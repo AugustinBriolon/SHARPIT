@@ -71,8 +71,11 @@ export function shortLabelFromName({ firstName, fullName }: NameParts): string {
   return 'Profil';
 }
 
-/** Demo tenant fallback when there is no Clerk session. */
+/**
+ * Demo tenant fallback when there is no Clerk session.
+ * Tab label stays Shell V1 `Moi` — the demo banner already signals demo mode.
+ */
 export const DEMO_IDENTITY = {
   initials: 'D',
-  shortLabel: 'Démo',
+  shortLabel: 'Moi',
 } as const;

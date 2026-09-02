@@ -180,7 +180,7 @@ export function ThreadTimeline({
 
       {/* Below it, because downward is where the past continues. */}
       <div className="mt-3 flex justify-end px-0.5">
-        <EdgeLink href="/training/history" label="Tout l’historique" />
+        <EdgeLink href="/activite" label="Tout l’historique" />
       </div>
     </div>
   );

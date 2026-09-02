@@ -38,9 +38,9 @@ export function PerformanceSection() {
       <CalibrationSection />
       <Link
         className="text-muted-foreground hover:text-foreground inline-block text-sm underline underline-offset-2"
-        href="/training/history"
+        href="/activite"
       >
-        Voir l'historique complet des activités
+        Voir l&apos;historique complet des activités
       </Link>
     </div>
   );
