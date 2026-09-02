@@ -47,13 +47,13 @@ function formatStrain(value: number | null): string {
  * Mobile 2×2 · desktop one row.
  */
 /**
- * The four dimensions, with the one holding the day back named.
+ * The four dimensions, with the one holding the day back tinted in place.
  *
  * Four equal chips left the athlete to rank 78 / 68 / 54 / 5,8 himself every
  * morning — the screen had the answer and declined to give it. The limiter is
- * marked in place rather than sorted to the front: a screen read daily earns
- * spatial memory, and a strip that reorders itself spends that memory to say
- * something a tag already says.
+ * marked by colour (border / fill / dot) rather than a text chip or a reorder:
+ * dense mini-cards have no room for FREIN, and a strip that reorders itself
+ * spends daily spatial memory to say something the tint already says.
  */
 export function TodaySignalStrip({
   metricsRow,
@@ -154,17 +154,13 @@ export function TodaySignalStrip({
                   </span>
                 )}
               </span>
-              {/* Named, not merely tinted: colour alone would carry the ranking. */}
-              {isLimiter ? (
-                <span className="text-signal-caution text-label shrink-0">Frein</span>
-              ) : (
-                <span
-                  className="text-muted-foreground/70 text-data shrink-0 text-xs tracking-wider transition-transform duration-150 ease-[cubic-bezier(0.2,0,0,1)] group-hover:translate-x-0.5"
-                  aria-hidden
-                >
-                  →
-                </span>
-              )}
+              {/* Limiter is colour-only (border / fill / dot); keep the drill-down cue. */}
+              <span
+                className="text-muted-foreground/70 text-data shrink-0 text-xs tracking-wider transition-transform duration-150 ease-[cubic-bezier(0.2,0,0,1)] group-hover:translate-x-0.5"
+                aria-hidden
+              >
+                →
+              </span>
             </Link>
           );
         })}
