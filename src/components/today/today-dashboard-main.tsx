@@ -6,6 +6,7 @@ import { TodayHeader } from '@/components/today/dashboard/today-header';
 import { TodayUnderstandSection } from '@/components/today/dashboard/today-understand-section';
 import { TodayActionRow } from '@/components/today/rich/today-action-row';
 import { TodayVerdictHero } from '@/components/today/rich/today-verdict-hero';
+import { MedicalDisclaimerNote } from '@/components/ui/instruments/medical-disclaimer-note';
 import type { TodayViewModel } from '@/core/presentation/today-view-model';
 import type { ClientActivity } from '@/lib/query/types';
 
@@ -67,6 +68,8 @@ export function TodayDashboardMain({
           weather={content.header.weather}
         />
         <TodayVerdictHero loading={valuesLoading} vm={content} />
+        {/* Visible, not buried — Science Sport medical disclaimer V0 */}
+        {!valuesLoading ? <MedicalDisclaimerNote className="px-1" /> : null}
       </div>
       {!valuesLoading ? <DailyBriefingPanel dayKey={trainingDayId} /> : null}
       <TodayActionRow

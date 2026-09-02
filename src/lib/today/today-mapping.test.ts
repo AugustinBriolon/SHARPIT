@@ -44,6 +44,10 @@ describe('mapVerdictToDisplay', () => {
     expect(d.colorClass).not.toContain('red');
   });
 
+  it('RACE_READY is bike/swim inclusive', () => {
+    expect(mapVerdictToDisplay('RACE_READY').label).toBe('Prêt à performer');
+  });
+
   it('TRAIN_HARD and RACE_READY share primary colour', () => {
     const h = mapVerdictToDisplay('TRAIN_HARD');
     const r = mapVerdictToDisplay('RACE_READY');
@@ -431,7 +435,7 @@ describe('mapFatigueProjection', () => {
 
   it('BUILD + STABLE + FULL → full capacity message', () => {
     const result = mapFatigueProjection('BUILD', 'STABLE', 'FULL');
-    expect(result).toContain('pleine');
+    expect(result).toContain('bonne capacité');
   });
 
   it('INSUFFICIENT_DATA → empty string', () => {

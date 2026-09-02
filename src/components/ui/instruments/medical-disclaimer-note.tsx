@@ -1,0 +1,14 @@
+import { ClinicalAnnotation } from '@/components/ui/instruments/clinical-annotation';
+import { MEDICAL_DISCLAIMER_V0 } from '@/lib/copy/medical-disclaimer';
+import { cn } from '@/lib/utils';
+
+/**
+ * Visible, always-available medical disclaimer — clinical annotation, not a banner.
+ */
+export function MedicalDisclaimerNote({ className }: { className?: string }) {
+  return (
+    <ClinicalAnnotation className={cn('text-pretty', className)} title="Aide à l'entraînement">
+      {MEDICAL_DISCLAIMER_V0}
+    </ClinicalAnnotation>
+  );
+}

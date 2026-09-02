@@ -83,7 +83,7 @@ const VERDICT_DISPLAY: Record<OverallVerdict, VerdictDisplay> = {
     accentBarClass: 'bg-primary/80',
   },
   RACE_READY: {
-    label: 'Prêt à courir',
+    label: 'Prêt à performer',
     colorClass: 'text-primary',
     bgClass: 'bg-primary/12 border-primary/30',
     dotClass: 'bg-primary',
@@ -577,7 +577,7 @@ function fatigueProjectionForBuild(
     return "La fatigue se dissipe — une séance bien dosée maintenant maximise l'adaptation.";
   }
   if (capacity === 'FULL') {
-    return "La fatigue est gérable — pleine capacité d'entraînement disponible.";
+    return "La fatigue est gérable — bonne capacité d'entraînement disponible.";
   }
   return "Fatigue gérable — capacité d'entraînement dans la plage normale.";
 }
