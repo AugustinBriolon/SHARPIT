@@ -2,7 +2,6 @@ import {
   DrillDownAlertSection,
   type DrillDownAlert,
 } from '@/components/today/drill-down/alert-section';
-import { MedicalDisclaimerNote } from '@/components/ui/instruments/medical-disclaimer-note';
 import {
   ATYPICAL_RECOVERY_SIGNAL_PREFIX,
   ILLNESS_SYMPTOM_ADVICE_FR,
@@ -16,8 +15,8 @@ import {
  * exception — the body and the feeling disagreeing — so it is stated as one, in a
  * sentence that resolves which of the two to trust.
  *
- * Illness-like patterns are framed as atypical recovery signals (not a diagnosis);
- * the medical disclaimer stays visible whenever that clinical-sounding surface appears.
+ * Illness-like patterns are framed as atypical recovery signals (not a diagnosis).
+ * The long medical disclaimer lives in Settings → À propos, not on this surface.
  */
 export function RecoveryAlertsSection({
   overreaching,
@@ -61,10 +60,5 @@ export function RecoveryAlertsSection({
     return null;
   }
 
-  return (
-    <div className="space-y-3">
-      <DrillDownAlertSection alerts={alerts} />
-      {illness ? <MedicalDisclaimerNote /> : null}
-    </div>
-  );
+  return <DrillDownAlertSection alerts={alerts} />;
 }

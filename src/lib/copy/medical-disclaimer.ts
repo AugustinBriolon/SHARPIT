@@ -1,6 +1,7 @@
 /**
- * Science Sport + Design copy V0 — medical disclaimer (visible, not buried).
+ * Science Sport + Design copy V0 — medical disclaimer.
  * Exact athlete-facing string — do not paraphrase.
+ * Surface: Settings → À propos only (not Today / alerts / wellness).
  */
 export const MEDICAL_DISCLAIMER_V0 =
   "Sharpit est un outil d'aide à l'entraînement. Ce n'est pas un dispositif médical et ça ne remplace pas un avis médical. Les signaux (récupération, fatigue, risques) sont des estimations d'entraînement, pas un diagnostic.";

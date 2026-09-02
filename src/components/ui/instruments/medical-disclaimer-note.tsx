@@ -3,8 +3,8 @@ import { MEDICAL_DISCLAIMER_V0 } from '@/lib/copy/medical-disclaimer';
 import { cn } from '@/lib/utils';
 
 /**
- * Secondary medical disclaimer — ClinicalAnnotation note, never a banner.
- * Keep typography small so Today hero verdict + action stay above the mobile fold.
+ * Medical disclaimer — ClinicalAnnotation note for Settings (À propos), not coaching UI.
+ * Do not place under Today verdict, wellness dialogs, or recovery alerts.
  */
 export function MedicalDisclaimerNote({ className }: { className?: string }) {
   return (
