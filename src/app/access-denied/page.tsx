@@ -2,12 +2,11 @@
 
 import { SignOutButton } from '@clerk/nextjs';
 import { Activity } from 'lucide-react';
-import { buttonVariants } from '@/components/ui/button';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { signupGateClosedCopy } from '@/lib/auth/signup-gate';
 import { cn } from '@/lib/utils';
 
-export function AccessDeniedView() {
+export default function AccessDeniedPage() {
   const copy = signupGateClosedCopy();
 
   return (
@@ -26,7 +25,7 @@ export function AccessDeniedView() {
 
         <div className="flex w-full flex-col gap-3">
           <a
-            className={cn(buttonVariants({ variant: 'accent', size: 'lg' }), 'w-full')}
+            className={cn(buttonVariants({ size: 'lg', variant: 'accent' }), 'w-full')}
             href="/demo"
           >
             {copy.ctaDemo}
@@ -37,7 +36,7 @@ export function AccessDeniedView() {
             </Button>
           </SignOutButton>
           <a
-            className={cn(buttonVariants({ variant: 'ghost', size: 'sm' }), 'w-full')}
+            className={cn(buttonVariants({ size: 'sm', variant: 'ghost' }), 'w-full')}
             href="/sign-in"
           >
             {copy.ctaSignIn}
