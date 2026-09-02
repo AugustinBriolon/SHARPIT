@@ -47,8 +47,7 @@ function upcomingSessions(sessions: ClientPlannedSession[], now: Date): ClientPl
       const da = a.date instanceof Date ? a.date : new Date(a.date);
       const db = b.date instanceof Date ? b.date : new Date(b.date);
       return da.getTime() - db.getTime();
-    })
-    .slice(0, UPCOMING_LIMIT * 2);
+    });
 }
 
 function resolveVerdict(snapshot: AthleteSnapshot | null): OverallVerdict | null {
@@ -216,7 +215,7 @@ function GateNotice({
       Verdict Today{' '}
       <span className="text-foreground font-medium">{mapVerdictToDisplay(verdict).label}</span>
       {' — '}
-      intensités dures (tempo, seuil, VO2, course) non proposées.
+      intensités dures (tempo, seuil, VO2, compétition) non proposées.
       {withheldCount > 0 ? ` ${withheldCount} séance(s) filtrée(s).` : null}
     </p>
   );
@@ -259,6 +258,7 @@ function UpcomingBody({
 function PlanUpcomingWidget({ verdict }: { verdict: OverallVerdict | null }) {
   const plannedQuery = usePlannedSessions();
   const now = useClientNow();
+  // Order matters (Science Sport): full horizon → intensity-gate → then limit.
   const candidates = now ? upcomingSessions(plannedQuery.data ?? [], now) : [];
   const gated = gateUpcomingSessionsForVerdict(candidates, verdict);
   const proposed = gated.proposed.slice(0, UPCOMING_LIMIT);
