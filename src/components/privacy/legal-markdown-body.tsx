@@ -52,7 +52,7 @@ const components: Components = {
   hr: () => <hr className="border-border my-8" />,
 };
 
-/** Renders Privacy Santé FR drafts with SHARPIT typography (no invite-only claims). */
+/** Renders Privacy Santé FR drafts (`docs/legal/*_PAGE_FR_V0.md`) with SHARPIT typography. */
 export function LegalMarkdownBody({ markdown }: { markdown: string }) {
   return (
     <div className="legal-markdown space-y-1">
