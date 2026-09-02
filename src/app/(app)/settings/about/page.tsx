@@ -1,5 +1,6 @@
 import { MobileBackLink } from '@/components/layout/mobile-back-link';
 import { StickyHeader } from '@/components/layout/sticky-header';
+import { MedicalDisclaimerNote } from '@/components/ui/instruments/medical-disclaimer-note';
 
 export default function SettingsAboutPage() {
   return (
@@ -53,6 +54,16 @@ export default function SettingsAboutPage() {
             </a>
           </p>
         </div>
+      </section>
+
+      <section
+        aria-labelledby="settings-about-confidentialite"
+        className="analysis-panel-alt rounded-analysis-lg space-y-2 px-4 py-4"
+      >
+        <h2 className="text-label" id="settings-about-confidentialite">
+          Confidentialité &amp; limite d&apos;usage
+        </h2>
+        <MedicalDisclaimerNote />
       </section>
     </div>
   );

@@ -119,7 +119,7 @@ const GROUPS: SettingsGroup[] = [
       {
         href: '/settings/about',
         title: 'À propos',
-        description: 'Version et principes SHARPIT.',
+        description: 'Version, principes et limite d’usage.',
         icon: ShieldCheck,
         statusKey: 'about',
       },
