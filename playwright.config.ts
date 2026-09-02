@@ -43,7 +43,13 @@ export default defineConfig({
       : {}),
   },
   projects: [
-    { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
+    {
+      name: 'chromium',
+      use: { ...devices['Desktop Chrome'] },
+      // Pixel 7 layout smoke lives on mobile-chrome only — do not schedule it
+      // twice (and then skip) on Desktop Chrome.
+      testIgnore: /pwa-mobile-demo\.spec\.ts/,
+    },
     {
       name: 'mobile-chrome',
       use: { ...devices['Pixel 7'] },

@@ -7,9 +7,7 @@ import { expectNoHorizontalOverflow } from './helpers/pwa';
  */
 
 test.describe('PWA mobile demo entry', () => {
-  test.beforeEach(({}, testInfo) => {
-    test.skip(testInfo.project.name !== 'mobile-chrome', 'mobile-chrome (Pixel 7) only');
-  });
+  // Scheduled only on `mobile-chrome` via playwright.config `testMatch`.
 
   test('/sign-in shows SharpIt and the demo CTA without horizontal overflow', async ({ page }) => {
     await page.goto('/sign-in');

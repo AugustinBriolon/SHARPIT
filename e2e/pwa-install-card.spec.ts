@@ -11,8 +11,14 @@ const DISMISS_STORAGE_KEY = 'sharpit:install-prompt-dismissed-at';
 
 /**
  * Settings InstallCard — athlete-initiated install entry (ADR-008).
+ *
+ * Chromium UA / `matchMedia(standalone)` / `beforeinstallprompt` stubs only —
+ * this does **not** claim real iOS Safari Add-to-Home-Screen. Device install
+ * remains the manual checklist in `docs/PWA_TESTING.md`.
+ *
  * Works under `DEV_BYPASS_CLERK` via `yarn test:e2e:dev`, a recorded Clerk
- * session, or the public `/demo` cookie (no Clerk credential required).
+ * session (`e2e/.auth/athlete.json`), or the public `/demo` cookie. Without a
+ * session or demo access, tests skip loudly rather than soft-pass.
  *
  * Dismiss control copy: production uses `aria-label="Ignorer"` on the icon-only X
  * (`src/components/pwa/install-card.tsx`) — assert that, do not invent "Masquer".

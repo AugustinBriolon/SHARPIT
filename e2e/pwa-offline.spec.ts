@@ -1,6 +1,6 @@
 import { existsSync } from 'node:fs';
 import { expect, test } from '@playwright/test';
-import { clearOfflineSnapshot } from './helpers/pwa';
+import { clearOfflineSnapshot, waitForOfflineSnapshot } from './helpers/pwa';
 
 const STORAGE_STATE = 'e2e/.auth/athlete.json';
 
@@ -70,30 +70,23 @@ test.describe('PWA warm offline snapshot', () => {
       'not signed in — warm offline path needs a real Clerk session (SnapshotOfflineSync is off under DEV_BYPASS)',
     );
 
-    // Wait until the live Today surface paints so SnapshotOfflineSync has had a
-    // chance to persist the canonical AthleteSnapshot for this ownerKey.
+    // Wait until the live Today surface paints, then until IndexedDB holds the
+    // warm AthleteSnapshot (SnapshotOfflineSync) — no fixed sleep.
     await expect(page.getByRole('heading', { level: 1 }).first()).toBeVisible({
       timeout: 60_000,
     });
-    // Give the client effect a beat after snapshot data lands.
-    await page.waitForTimeout(1_500);
+    const persisted = await waitForOfflineSnapshot(page, 45_000);
+    test.skip(
+      !persisted,
+      'no IndexedDB athlete-snapshot/current — SnapshotOfflineSync did not persist for this session (CI without e2e/.auth/athlete.json never covers this path)',
+    );
 
     await context.setOffline(true);
     await page.reload({ waitUntil: 'domcontentloaded' });
 
-    const readOnly = page.getByText('Lecture seule — hors ligne, données non synchronisables');
-    const lastUpdated = page.getByText(/Dernière mise à jour/);
-
-    const hasWarmSummary =
-      (await readOnly.isVisible().catch(() => false)) ||
-      (await lastUpdated.isVisible().catch(() => false));
-
-    test.skip(
-      !hasWarmSummary,
-      'no offline snapshot persisted for this session — SnapshotOfflineSync may not have run yet',
-    );
-
-    await expect(readOnly).toBeVisible();
-    await expect(lastUpdated).toBeVisible();
+    await expect(
+      page.getByText('Lecture seule — hors ligne, données non synchronisables'),
+    ).toBeVisible();
+    await expect(page.getByText(/Dernière mise à jour/)).toBeVisible();
   });
 });

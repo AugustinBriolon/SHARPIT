@@ -129,6 +129,55 @@ export async function clearOfflineSnapshot(page: Page): Promise<void> {
   );
 }
 
+/** True when SnapshotOfflineSync (or a seed) has written `athlete-snapshot`/`current`. */
+export async function hasOfflineSnapshotRecord(page: Page): Promise<boolean> {
+  return page.evaluate(
+    async ({ dbName, storeName, recordKey }) => {
+      return new Promise<boolean>((resolve) => {
+        const request = indexedDB.open(dbName);
+        request.onerror = () => resolve(false);
+        request.onsuccess = () => {
+          const db = request.result;
+          if (!db.objectStoreNames.contains(storeName)) {
+            db.close();
+            resolve(false);
+            return;
+          }
+          const tx = db.transaction(storeName, 'readonly');
+          const get = tx.objectStore(storeName).get(recordKey);
+          get.onsuccess = () => {
+            db.close();
+            resolve(get.result != null);
+          };
+          get.onerror = () => {
+            db.close();
+            resolve(false);
+          };
+        };
+      });
+    },
+    { dbName: DB_NAME, storeName: STORE_NAME, recordKey: RECORD_KEY },
+  );
+}
+
+/**
+ * Waits until IndexedDB holds a warm snapshot, or returns false on timeout.
+ * Prefer this over a fixed `waitForTimeout` before going offline.
+ */
+export async function waitForOfflineSnapshot(
+  page: Page,
+  timeoutMs = 30_000,
+): Promise<boolean> {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    if (await hasOfflineSnapshotRecord(page)) {
+      return true;
+    }
+    await page.waitForTimeout(250);
+  }
+  return hasOfflineSnapshotRecord(page);
+}
+
 export async function expectNoHorizontalOverflow(page: Page): Promise<void> {
   const overflowed = await page.evaluate(() => {
     const root = document.documentElement;
