@@ -118,7 +118,7 @@ export function TodaySignalStrip({
               href={signal.href}
               className={cn(
                 'chip-surface-lg hover:border-primary/35 group',
-                'focus-visible:ring-primary/35 inline-flex min-h-11 w-full min-w-0 items-center justify-between gap-1.5',
+                'focus-visible:ring-primary/35 inline-flex min-h-11 w-full min-w-0 items-center justify-between gap-1.5 overflow-hidden',
                 'rounded-2xl px-3 py-2 transition-[border-color,background-color,transform] duration-150 ease-out',
                 'focus-visible:ring-2 focus-visible:outline-hidden lg:min-h-9 lg:px-2.5 lg:py-1.5',
                 isLimiter && 'border-signal-caution/45 bg-signal-caution/8',
@@ -129,7 +129,7 @@ export function TodaySignalStrip({
                   : `Voir le détail — ${signal.label}`
               }
             >
-              <span className="inline-flex min-w-0 items-center gap-1.5">
+              <span className="inline-flex min-w-0 flex-1 items-center gap-1.5 overflow-hidden">
                 <span
                   className={cn(
                     'h-2 w-2 shrink-0 rounded-full',
@@ -137,13 +137,19 @@ export function TodaySignalStrip({
                   )}
                   aria-hidden
                 />
-                <span className="text-muted-foreground text-xs font-medium tracking-wide">
+                <span className="text-muted-foreground min-w-0 truncate text-xs font-medium tracking-wide">
                   {signal.label}
                 </span>
                 {loading ? (
-                  <SkeletonDataValue heightClassName="h-5" widthClassName="w-7" />
+                  <SkeletonDataValue
+                    className="shrink-0"
+                    heightClassName="h-5"
+                    widthClassName="w-7"
+                  />
                 ) : (
-                  <span className={cn('text-data text-sm tabular-nums', signal.valueClass)}>
+                  <span
+                    className={cn('text-data shrink-0 text-sm tabular-nums', signal.valueClass)}
+                  >
                     {signal.display}
                   </span>
                 )}
