@@ -16,11 +16,15 @@ export type AiConsentSnapshot = {
   aiProcessingConsentAt: Date | null;
 };
 
-/** True when the athlete must accept CGU + Privacy before using the app. */
+/**
+ * True when the athlete must complete the consent soft-wall before Today.
+ * Art. 9: health_data_consent is required with CGU/Privacy (sync + processing).
+ */
 export function needsLegalConsentFromProfile(input: {
   termsAcceptedAt: Date | null;
   privacyAcceptedAt: Date | null;
   privacyVersion: string | null;
+  healthDataConsentAt: Date | null;
   currentPrivacyVersion: string;
   isDemo: boolean;
   isDevBypass: boolean;
@@ -32,7 +36,22 @@ export function needsLegalConsentFromProfile(input: {
     return true;
   }
   // Re-prompt when the published privacy version advances.
-  return input.privacyVersion !== input.currentPrivacyVersion;
+  if (input.privacyVersion !== input.currentPrivacyVersion) {
+    return true;
+  }
+  // Soft wall: cannot reach Today without health consent (Privacy Santé V0 / art. 9).
+  return !input.healthDataConsentAt;
+}
+
+/**
+ * Existing health processing context — linked santé providers or stored health rows.
+ * Used to force the soft-wall for athletes who already hold Art. 9 data.
+ */
+export function hasExistingHealthProcessingContext(input: {
+  hasHealthProviderAccount: boolean;
+  hasHealthObservationRows: boolean;
+}): boolean {
+  return input.hasHealthProviderAccount || input.hasHealthObservationRows;
 }
 
 export function canConnectProvidersFromProfile(input: {

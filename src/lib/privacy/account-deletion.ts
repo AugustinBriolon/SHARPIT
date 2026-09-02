@@ -11,6 +11,40 @@ export type SoftDeleteResult = {
   purgeAfter: Date;
 };
 
+/**
+ * Wipe encrypted provider credentials immediately on soft-delete so sync cannot
+ * continue during the J+30 retention window. Empty strings are not live AES-GCM
+ * secrets — connection-status treats the account as disconnected.
+ */
+export async function clearAthleteProviderCredentials(athleteId: string): Promise<void> {
+  await prisma.$transaction([
+    prisma.garminAccount.updateMany({
+      where: { athleteId },
+      data: { oauth1TokenEnc: '', oauth2TokenEnc: '' },
+    }),
+    prisma.stravaAccount.updateMany({
+      where: { athleteId },
+      data: { accessTokenEnc: '', refreshTokenEnc: '' },
+    }),
+    prisma.googleAccount.updateMany({
+      where: { athleteId },
+      data: { accessTokenEnc: '', refreshTokenEnc: '' },
+    }),
+    prisma.withingsAccount.updateMany({
+      where: { athleteId },
+      data: { accessTokenEnc: '', refreshTokenEnc: '' },
+    }),
+    prisma.renphoAccount.updateMany({
+      where: { athleteId },
+      data: { passwordEnc: '' },
+    }),
+    prisma.myFitnessPalAccount.updateMany({
+      where: { athleteId },
+      data: { sessionTokenEnc: '' },
+    }),
+  ]);
+}
+
 /** Immediate soft-delete. Profile is blocked from app use; hard purge after 30 days. */
 export async function softDeleteAthlete(
   athleteId: string,
@@ -21,6 +55,7 @@ export async function softDeleteAthlete(
     data: { deletedAt: now },
     select: { id: true, deletedAt: true },
   });
+  await clearAthleteProviderCredentials(athleteId);
   const deletedAt = updated.deletedAt ?? now;
   return {
     athleteId: updated.id,

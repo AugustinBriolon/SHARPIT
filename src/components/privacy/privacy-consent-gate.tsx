@@ -4,8 +4,9 @@ import { athleteNeedsLegalConsent } from '@/lib/privacy/consent-store';
 import { prisma } from '@/lib/prisma';
 
 /**
- * Soft wall: redirects athletes missing CGU/Privacy accept into `/consent`.
+ * Soft wall: redirects athletes missing CGU/Privacy/health accept into `/consent`.
  * Soft-deleted accounts are signed out via redirect to sign-in after clear.
+ * Health consent is required (art. 9 — sync + Twin processing), same as legal docs.
  */
 export async function PrivacyConsentGate() {
   const athleteId = await getCurrentAthleteId();

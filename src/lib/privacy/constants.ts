@@ -14,7 +14,7 @@ export const PROVIDER_CONSENT_REQUIRED_MESSAGE =
 
 /** French copy when legal accept is missing. */
 export const LEGAL_CONSENT_REQUIRED_MESSAGE =
-  'Accepte les Conditions d’utilisation et la Politique de confidentialité pour continuer.';
+  'Accepte les Conditions d’utilisation, la Politique de confidentialité et le consentement données de santé pour continuer.';
 
 export const CONTROLLER_NAME = 'Augustin Briolon';
 export const CONTROLLER_EMAIL = 'augustin.briolon@gmail.com';

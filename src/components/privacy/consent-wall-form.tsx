@@ -12,12 +12,12 @@ export function ConsentWallForm() {
   const router = useRouter();
   const [terms, setTerms] = useState(false);
   const [privacy, setPrivacy] = useState(false);
-  const [ai, setAi] = useState(false);
   const [health, setHealth] = useState(false);
+  const [ai, setAi] = useState(false);
   const [unofficial, setUnofficial] = useState(false);
   const [busy, setBusy] = useState(false);
 
-  const canSubmit = terms && privacy && !busy;
+  const canSubmit = terms && privacy && health && !busy;
 
   async function handleSubmit() {
     if (!canSubmit) {
@@ -30,8 +30,8 @@ export function ConsentWallForm() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           acceptLegal: true,
+          healthDataConsent: true,
           aiProcessingConsent: ai || undefined,
-          healthDataConsent: health || undefined,
           unofficialProvidersAck: unofficial || undefined,
         }),
       });
@@ -60,8 +60,8 @@ export function ConsentWallForm() {
       <div className="space-y-1 text-center">
         <h1 className="text-section-title">Confidentialité & conditions</h1>
         <p className="text-muted-foreground text-sm text-pretty">
-          Avant d&apos;utiliser SharpIt, accepte les documents légaux (version{' '}
-          {CURRENT_PRIVACY_VERSION}).
+          Avant d&apos;utiliser SharpIt, accepte les documents légaux et le traitement des données
+          de santé (version {CURRENT_PRIVACY_VERSION}).
         </p>
       </div>
 
@@ -94,6 +94,17 @@ export function ConsentWallForm() {
             .
           </span>
         </label>
+        <label className="flex items-start gap-3 text-sm">
+          <Checkbox
+            checked={health}
+            className="mt-0.5"
+            onCheckedChange={(value) => setHealth(value === true)}
+          />
+          <span>
+            J&apos;autorise la synchronisation et le traitement de mes données de santé /
+            physiologiques (Twin, récupération, fatigue).
+          </span>
+        </label>
       </div>
 
       <div className="space-y-3">
@@ -108,14 +119,6 @@ export function ConsentWallForm() {
             J&apos;autorise le traitement par IA (coach, bilans rédigés). Les moteurs déterministes
             du Twin fonctionnent sans ce consentement.
           </span>
-        </label>
-        <label className="flex items-start gap-3 text-sm">
-          <Checkbox
-            checked={health}
-            className="mt-0.5"
-            onCheckedChange={(value) => setHealth(value === true)}
-          />
-          <span>J&apos;autorise le traitement de mes données de santé / physiologiques.</span>
         </label>
         <label className="flex items-start gap-3 text-sm">
           <Checkbox

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import {
   canUseAiProcessingFromProfile,
+  hasExistingHealthProcessingContext,
   needsLegalConsentFromProfile,
 } from '@/lib/privacy/consent';
 import {
@@ -63,9 +64,32 @@ export async function athleteNeedsLegalConsent(athleteId: string): Promise<boole
     termsAcceptedAt: profile.termsAcceptedAt,
     privacyAcceptedAt: profile.privacyAcceptedAt,
     privacyVersion: profile.privacyVersion,
+    healthDataConsentAt: profile.healthDataConsentAt,
     currentPrivacyVersion: CURRENT_PRIVACY_VERSION,
     isDemo: false,
     isDevBypass: false,
+  });
+}
+
+/**
+ * Santé providers linked or health observation rows already stored.
+ * Soft-wall always requires health consent (option B); this helper covers
+ * audits / UI copy for athletes who already hold Art. 9 data.
+ */
+export async function athleteHasExistingHealthContext(athleteId: string): Promise<boolean> {
+  const [garmin, withings, renpho, mfp, dailyHealth, body, nutrition] = await Promise.all([
+    prisma.garminAccount.findUnique({ where: { athleteId }, select: { athleteId: true } }),
+    prisma.withingsAccount.findUnique({ where: { athleteId }, select: { athleteId: true } }),
+    prisma.renphoAccount.findUnique({ where: { athleteId }, select: { athleteId: true } }),
+    prisma.myFitnessPalAccount.findUnique({ where: { athleteId }, select: { athleteId: true } }),
+    prisma.dailyHealth.findFirst({ where: { athleteId }, select: { id: true } }),
+    prisma.bodyCompositionMeasurement.findFirst({ where: { athleteId }, select: { id: true } }),
+    prisma.dailyNutrition.findFirst({ where: { athleteId }, select: { id: true } }),
+  ]);
+
+  return hasExistingHealthProcessingContext({
+    hasHealthProviderAccount: Boolean(garmin || withings || renpho || mfp),
+    hasHealthObservationRows: Boolean(dailyHealth || body || nutrition),
   });
 }
 

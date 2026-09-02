@@ -63,6 +63,17 @@ export async function POST(request: NextRequest) {
     ) {
       return NextResponse.json({ error: 'Aucun consentement à enregistrer' }, { status: 400 });
     }
+    // Soft-wall accept must stamp health consent (art. 9 — sync + processing).
+    if (parsed.data.acceptLegal && parsed.data.healthDataConsent !== true) {
+      return NextResponse.json(
+        {
+          error:
+            'Le consentement données de santé est requis pour utiliser SharpIt (sync et traitements).',
+          code: 'health_data_consent_required',
+        },
+        { status: 400 },
+      );
+    }
     const row = await updateAthleteConsents(athleteId, parsed.data);
     return NextResponse.json({ consents: serializeConsent(row) });
   } catch (error) {
