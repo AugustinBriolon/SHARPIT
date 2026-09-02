@@ -11,7 +11,7 @@ import {
   ensureFreeAiBudget,
   withAiBudgetWarningHeader,
 } from '@/lib/access/ai-budget';
-import { checkRateLimit, rateLimitResponseBody, rateLimiters } from '@/lib/rate-limit';
+import { checkRateLimit, rateLimitJsonResponse, rateLimiters } from '@/lib/rate-limit';
 import { buildCoachContext, formatCoachContext } from '@/lib/coach/context/coach-context';
 import { getActiveTrainingPlan, getGoals, getPlannedSessionsForCoach } from '@/lib/queries';
 import { resolveDefaultPlanGoalId, selectableDatedGoalIds } from '@/lib/planned-session/plan-goal';
@@ -226,12 +226,11 @@ async function loadAdaptContext(athleteId: string, today: Date, days: number) {
 type AdaptAccess = { blocked: NextResponse | null; budgetWarning: boolean };
 
 async function checkAdaptAccess(athleteId: string): Promise<AdaptAccess> {
-  const rateLimit = await checkRateLimit(rateLimiters.coachAdapt, athleteId);
+  const rateLimit = await checkRateLimit(rateLimiters.coachAdapt, athleteId, { failClosed: true });
   if (!rateLimit.ok) {
+    const limited = rateLimitJsonResponse(rateLimit);
     return {
-      blocked: NextResponse.json(rateLimitResponseBody(rateLimit.retryAfterSeconds), {
-        status: 429,
-      }),
+      blocked: NextResponse.json(limited.body, { status: limited.status }),
       budgetWarning: false,
     };
   }

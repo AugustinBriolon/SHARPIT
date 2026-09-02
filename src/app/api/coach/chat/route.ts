@@ -27,7 +27,7 @@ import {
   withAiBudgetWarningHeader,
 } from '@/lib/access/ai-budget';
 import { formatStrengthSessionRules } from '@/lib/planned-session/strength/strength-session-template';
-import { checkRateLimit, rateLimitResponseBody, rateLimiters } from '@/lib/rate-limit';
+import { checkRateLimit, rateLimitJsonResponse, rateLimiters } from '@/lib/rate-limit';
 import { COACH_COPY_DASH_RULE } from '@/lib/coach/sanitize-coach-copy';
 
 /** Horizon de pré-chargement de l'agenda, aligné sur les séances du contexte. */
@@ -102,9 +102,10 @@ export async function POST(req: Request) {
 
   const athleteId = await getCurrentAthleteId();
 
-  const rateLimit = await checkRateLimit(rateLimiters.coachChat, athleteId);
+  const rateLimit = await checkRateLimit(rateLimiters.coachChat, athleteId, { failClosed: true });
   if (!rateLimit.ok) {
-    return NextResponse.json(rateLimitResponseBody(rateLimit.retryAfterSeconds), { status: 429 });
+    const limited = rateLimitJsonResponse(rateLimit);
+    return NextResponse.json(limited.body, { status: limited.status });
   }
 
   const budget = await ensureFreeAiBudget(athleteId);

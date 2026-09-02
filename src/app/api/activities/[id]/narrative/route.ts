@@ -4,7 +4,7 @@ import { isCoachConfigured } from '@/lib/ai';
 import { runActivityNarrativeAnalysis } from '@/lib/activity/narrative/activity-narrative';
 import { canGenerateNarrativeForActivity } from '@/lib/access/narrative-trial';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { checkRateLimit, rateLimitResponseBody, rateLimiters } from '@/lib/rate-limit';
+import { checkRateLimit, rateLimitJsonResponse, rateLimiters } from '@/lib/rate-limit';
 import { prisma } from '@/lib/prisma';
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -23,11 +23,13 @@ async function checkNarrativeRateLimit(
   const rateLimit = await checkRateLimit(
     rateLimiters.activityNarrative,
     `${athleteId}:${activityId}`,
+    { failClosed: true },
   );
   if (rateLimit.ok) {
     return null;
   }
-  return NextResponse.json(rateLimitResponseBody(rateLimit.retryAfterSeconds), { status: 429 });
+  const limited = rateLimitJsonResponse(rateLimit);
+  return NextResponse.json(limited.body, { status: limited.status });
 }
 
 async function runNarrativeAndRespond(athleteId: string, id: string, force: boolean) {

@@ -4,12 +4,15 @@ import { Redis } from '@upstash/redis';
 /**
  * Sliding-window limiters keyed by athlete (and sometimes a sub-resource) —
  * generous enough that real use never approaches them, tight enough to cap
- * worst-case AI/DB cost from a single account. See ADR: abuse/cost protection.
+ * worst-case AI/DB cost from a single account.
  *
- * Fails OPEN (allows the request) when Upstash isn't configured — a missing
- * env var degrades to today's status quo (no protection), not an outage.
- * Matches this codebase's existing posture for optional integrations
- * (see `isCoachConfigured()` in src/lib/ai.ts).
+ * Default posture is fail-OPEN (allow) when Upstash isn't configured or Redis
+ * errors — used by the global `apiGeneral` flood backstop so a Redis blip
+ * doesn't take the whole app down.
+ *
+ * Sensitive routes (coach / AI, provider sync, session analyze) pass
+ * `{ failClosed: true }` and receive 503 when protection is unavailable.
+ * Production must set `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN`.
  */
 
 const redis =
@@ -22,7 +25,7 @@ const redis =
 
 if (!redis) {
   console.error(
-    '[rate-limit] UPSTASH_REDIS_REST_URL/TOKEN not configured — rate limiting is disabled.',
+    '[rate-limit] UPSTASH_REDIS_REST_URL/TOKEN not configured — sensitive routes fail closed; apiGeneral fails open.',
   );
 }
 
@@ -49,14 +52,34 @@ export const rateLimiters = {
   providerSync: limiter(1, '2 m', 'provider-sync'),
 };
 
-export type RateLimitResult = { ok: true } | { ok: false; retryAfterSeconds: number };
+export type RateLimitCause = 'limited' | 'unavailable';
 
-/** `limiter` is null when Upstash isn't configured — always allows in that case. */
+export type RateLimitResult =
+  { ok: true } | { ok: false; retryAfterSeconds: number; cause: RateLimitCause };
+
+const UNAVAILABLE_RETRY_AFTER_SECONDS = 60;
+
+export type CheckRateLimitOptions = {
+  /** When true, missing/broken Upstash rejects the request instead of allowing it. */
+  failClosed?: boolean;
+};
+
+/** `limiter` is null when Upstash isn't configured. */
 export async function checkRateLimit(
   limiter: Ratelimit | null,
   key: string,
+  options?: CheckRateLimitOptions,
 ): Promise<RateLimitResult> {
+  const failClosed = options?.failClosed === true;
+
   if (!limiter) {
+    if (failClosed) {
+      return {
+        ok: false,
+        cause: 'unavailable',
+        retryAfterSeconds: UNAVAILABLE_RETRY_AFTER_SECONDS,
+      };
+    }
     return { ok: true };
   }
 
@@ -66,17 +89,49 @@ export async function checkRateLimit(
       return { ok: true };
     }
     const retryAfterSeconds = Math.max(1, Math.ceil((result.reset - Date.now()) / 1000));
-    return { ok: false, retryAfterSeconds };
+    return { ok: false, cause: 'limited', retryAfterSeconds };
   } catch (error) {
-    // A Redis outage must not take the app down — fail open, same as unconfigured.
-    console.error('[rate-limit] check failed, allowing request:', error);
+    console.error(
+      failClosed
+        ? '[rate-limit] check failed, rejecting sensitive request:'
+        : '[rate-limit] check failed, allowing request:',
+      error,
+    );
+    if (failClosed) {
+      return {
+        ok: false,
+        cause: 'unavailable',
+        retryAfterSeconds: UNAVAILABLE_RETRY_AFTER_SECONDS,
+      };
+    }
     return { ok: true };
   }
 }
 
-export function rateLimitResponseBody(retryAfterSeconds: number) {
+export function rateLimitResponseBody(
+  retryAfterSeconds: number,
+  cause: RateLimitCause = 'limited',
+) {
+  if (cause === 'unavailable') {
+    return {
+      error: 'Protection anti-abus indisponible — réessaie dans quelques instants.',
+      retryAfterSeconds,
+    };
+  }
   return {
     error: `Trop de requêtes — réessaie dans ${retryAfterSeconds >= 60 ? `${Math.ceil(retryAfterSeconds / 60)} min` : `${retryAfterSeconds}s`}.`,
     retryAfterSeconds,
+  };
+}
+
+export function rateLimitHttpStatus(cause: RateLimitCause): 429 | 503 {
+  return cause === 'unavailable' ? 503 : 429;
+}
+
+/** Convenience for route handlers after `checkRateLimit`. */
+export function rateLimitJsonResponse(result: Extract<RateLimitResult, { ok: false }>) {
+  return {
+    body: rateLimitResponseBody(result.retryAfterSeconds, result.cause),
+    status: rateLimitHttpStatus(result.cause),
   };
 }
