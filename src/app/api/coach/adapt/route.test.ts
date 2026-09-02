@@ -75,13 +75,20 @@ vi.mock('@/lib/access/ai-budget', () => ({
   RETRY_AFTER_HEADER: 'Retry-After',
 }));
 
+vi.mock('@/lib/privacy/consent-store', () => ({
+  requireAiProcessingConsent: vi.fn().mockResolvedValue(null),
+  athleteHasAiProcessingConsent: vi.fn().mockResolvedValue(true),
+}));
+
 async function importRoute() {
   return await import('./route');
 }
 
 describe('POST /api/coach/adapt', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks();
+    const { requireAiProcessingConsent } = await import('@/lib/privacy/consent-store');
+    vi.mocked(requireAiProcessingConsent).mockResolvedValue(null);
   });
 
   beforeAll(async () => {

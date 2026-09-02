@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
+import { awaitRequest } from '@/lib/next/await-request';
 import {
   getAthleteConsentRow,
   updateAthleteConsents,
@@ -29,6 +30,8 @@ function serializeConsent(row: NonNullable<Awaited<ReturnType<typeof getAthleteC
 }
 
 export async function GET() {
+  await awaitRequest();
+
   try {
     const athleteId = await getCurrentAthleteId();
     const row = await getAthleteConsentRow(athleteId);
@@ -43,6 +46,8 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  await awaitRequest();
+
   try {
     const athleteId = await getCurrentAthleteId();
     const body = await request.json().catch(() => ({}));

@@ -30,6 +30,11 @@ vi.mock('@/lib/access/narrative-trial', () => ({
   canGenerateNarrativeForActivity: vi.fn().mockResolvedValue({ allowed: true, isPro: true }),
 }));
 
+vi.mock('@/lib/privacy/consent-store', () => ({
+  requireAiProcessingConsent: vi.fn().mockResolvedValue(null),
+  athleteHasAiProcessingConsent: vi.fn().mockResolvedValue(true),
+}));
+
 vi.mock('@/lib/prisma', () => ({
   prisma: {
     activity: {
@@ -58,6 +63,8 @@ describe('POST /api/activities/[id]/narrative — force default', () => {
     runActivityNarrativeAnalysisMock.mockResolvedValue(true);
     const { canGenerateNarrativeForActivity } = await import('@/lib/access/narrative-trial');
     vi.mocked(canGenerateNarrativeForActivity).mockResolvedValue({ allowed: true, isPro: true });
+    const { requireAiProcessingConsent } = await import('@/lib/privacy/consent-store');
+    vi.mocked(requireAiProcessingConsent).mockResolvedValue(null);
   });
 
   it('defaults force to false when the body omits it (idempotent by default)', async () => {
