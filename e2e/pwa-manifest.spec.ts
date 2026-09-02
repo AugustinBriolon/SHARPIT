@@ -87,9 +87,16 @@ test.describe('PWA manifest and install assets', () => {
   });
 
   test('sign-in head wires manifest, theme-color and iOS splash links', async ({ page }) => {
-    await page.goto('/sign-in');
+    await page.goto('/sign-in', { waitUntil: 'domcontentloaded' });
+    // Protected previews redirect to vercel.com/login. Prefer URL (stable) over a
+    // racey heading probe — do not soft-skip merely because splash links are missing
+    // (that would hide real product regressions on local yarn test:e2e).
+    const onVercelAuth =
+      /vercel\.com\/(?:login|sso)/i.test(page.url()) ||
+      page.url().includes('sso-api') ||
+      (await page.getByRole('heading', { name: 'Log in to Vercel' }).count()) > 0;
     test.skip(
-      (await page.getByRole('heading', { name: 'Log in to Vercel' }).count()) > 0,
+      onVercelAuth,
       'preview behind Vercel Authentication — run yarn test:e2e locally for hard asserts',
     );
 
