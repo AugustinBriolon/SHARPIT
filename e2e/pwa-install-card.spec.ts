@@ -1,5 +1,5 @@
 import { existsSync } from 'node:fs';
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import {
   forceMatchMediaStandalone,
   stubBeforeInstallPrompt,
@@ -11,12 +11,23 @@ const DISMISS_STORAGE_KEY = 'sharpit:install-prompt-dismissed-at';
 
 /**
  * Settings InstallCard — athlete-initiated install entry (ADR-008).
- * Works under `NEXT_PUBLIC_DEV_BYPASS_CLERK` via `yarn test:e2e:dev`.
- * Skips clearly when redirected to `/sign-in`.
+ * Works under `DEV_BYPASS_CLERK` via `yarn test:e2e:dev`, a recorded Clerk
+ * session, or the public `/demo` cookie (no Clerk credential required).
  *
  * Dismiss control copy: production uses `aria-label="Ignorer"` on the icon-only X
  * (`src/components/pwa/install-card.tsx`) — assert that, do not invent "Masquer".
  */
+
+async function openSettingsForInstallCard(page: Page): Promise<boolean> {
+  await page.goto('/settings');
+  if (!new URL(page.url()).pathname.startsWith('/sign-in')) {
+    return true;
+  }
+  // Public demo tenant — same InstallCard host without a Clerk session.
+  await page.goto('/demo');
+  await page.goto('/settings');
+  return !new URL(page.url()).pathname.startsWith('/sign-in');
+}
 
 test.describe('PWA install card', () => {
   test.use(existsSync(STORAGE_STATE) ? { storageState: STORAGE_STATE } : {});
@@ -30,10 +41,9 @@ test.describe('PWA install card', () => {
       window.localStorage.removeItem(key);
     }, DISMISS_STORAGE_KEY);
 
-    await page.goto('/settings');
     test.skip(
-      new URL(page.url()).pathname.startsWith('/sign-in'),
-      'not signed in — run against `yarn dev` via `yarn test:e2e:dev`, or record e2e/.auth/athlete.json',
+      !(await openSettingsForInstallCard(page)),
+      'not signed in — run against `yarn dev` via `yarn test:e2e:dev`, record e2e/.auth/athlete.json, or allow /demo',
     );
 
     const title = page.getByText('Installer SHARPIT');
@@ -55,10 +65,9 @@ test.describe('PWA install card', () => {
       window.localStorage.removeItem(key);
     }, DISMISS_STORAGE_KEY);
 
-    await page.goto('/settings');
     test.skip(
-      new URL(page.url()).pathname.startsWith('/sign-in'),
-      'not signed in — run against `yarn dev` via `yarn test:e2e:dev`, or record e2e/.auth/athlete.json',
+      !(await openSettingsForInstallCard(page)),
+      'not signed in — run against `yarn dev` via `yarn test:e2e:dev`, record e2e/.auth/athlete.json, or allow /demo',
     );
 
     await expect(page.getByRole('heading', { level: 1 }).first()).toBeVisible();
@@ -71,10 +80,9 @@ test.describe('PWA install card', () => {
       window.localStorage.removeItem(key);
     }, DISMISS_STORAGE_KEY);
 
-    await page.goto('/settings');
     test.skip(
-      new URL(page.url()).pathname.startsWith('/sign-in'),
-      'not signed in — run against `yarn dev` via `yarn test:e2e:dev`, or record e2e/.auth/athlete.json',
+      !(await openSettingsForInstallCard(page)),
+      'not signed in — run against `yarn dev` via `yarn test:e2e:dev`, record e2e/.auth/athlete.json, or allow /demo',
     );
 
     await stubBeforeInstallPrompt(page);

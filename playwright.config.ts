@@ -39,7 +39,14 @@ export default defineConfig({
   },
   projects: [
     { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
-    { name: 'mobile-chrome', use: { ...devices['Pixel 7'] } },
+    {
+      name: 'mobile-chrome',
+      use: { ...devices['Pixel 7'] },
+      // Pixel 7 coverage is for the mobile demo layout smoke only — keep the
+      // structural / auth specs on Desktop Chrome so config changes do not
+      // double-run or alter their existing project matrix.
+      testMatch: /pwa-mobile-demo\.spec\.ts/,
+    },
   ],
   webServer: process.env.PLAYWRIGHT_BASE_URL
     ? undefined
