@@ -26,8 +26,6 @@ function isSplashVariant(value: string): value is SplashVariant {
   return value in SPLASH_VARIANTS;
 }
 
-export const runtime = 'nodejs';
-
 export function generateStaticParams() {
   return Object.keys(SPLASH_VARIANTS).map((variant) => ({ variant }));
 }
