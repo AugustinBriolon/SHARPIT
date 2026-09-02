@@ -21,7 +21,7 @@ import type { ClientPlannedSession } from '@/lib/query/types';
 import type { AthleteSnapshot } from '@/core/athlete-state/snapshot';
 import { cn } from '@/lib/utils';
 
-const UPCOMING_LIMIT = 5;
+const UPCOMING_LIMIT = 3;
 
 /** Client "today" after mount — avoids impure `new Date()` during prerender. */
 function useClientNow(): Date | null {
@@ -32,9 +32,34 @@ function useClientNow(): Date | null {
   return now;
 }
 
+function sessionDayKey(session: ClientPlannedSession): string {
+  const d = session.date instanceof Date ? session.date : new Date(session.date);
+  return startOfDay(d).toISOString();
+}
+
+/** Drop duplicate rows (same id, or same title on the same day — demo seed bug). */
+function dedupeUpcomingSessions(sessions: ClientPlannedSession[]): ClientPlannedSession[] {
+  const seenIds = new Set<string>();
+  const seenTitleDay = new Set<string>();
+  const unique: ClientPlannedSession[] = [];
+  for (const session of sessions) {
+    if (seenIds.has(session.id)) {
+      continue;
+    }
+    seenIds.add(session.id);
+    const titleDay = `${session.title ?? ''}|${sessionDayKey(session)}`;
+    if (seenTitleDay.has(titleDay)) {
+      continue;
+    }
+    seenTitleDay.add(titleDay);
+    unique.push(session);
+  }
+  return unique;
+}
+
 function upcomingSessions(sessions: ClientPlannedSession[], now: Date): ClientPlannedSession[] {
   const today = startOfDay(now);
-  return sessions
+  const horizon = sessions
     .filter((s) => !s.completed && !s.activityId)
     .filter((s) => {
       const d = s.date instanceof Date ? s.date : new Date(s.date);
@@ -48,6 +73,7 @@ function upcomingSessions(sessions: ClientPlannedSession[], now: Date): ClientPl
       const db = b.date instanceof Date ? b.date : new Date(b.date);
       return da.getTime() - db.getTime();
     });
+  return dedupeUpcomingSessions(horizon);
 }
 
 function resolveVerdict(snapshot: AthleteSnapshot | null): OverallVerdict | null {
@@ -262,6 +288,7 @@ function PlanUpcomingWidget({ verdict }: { verdict: OverallVerdict | null }) {
   const candidates = now ? upcomingSessions(plannedQuery.data ?? [], now) : [];
   const gated = gateUpcomingSessionsForVerdict(candidates, verdict);
   const proposed = gated.proposed.slice(0, UPCOMING_LIMIT);
+  const remaining = Math.max(0, gated.proposed.length - proposed.length);
   const pending = !now || (plannedQuery.isPending && !plannedQuery.data);
 
   return (
@@ -287,6 +314,14 @@ function PlanUpcomingWidget({ verdict }: { verdict: OverallVerdict | null }) {
         proposed={proposed}
         withheldCount={gated.withheld.length}
       />
+      {remaining > 0 ? (
+        <Link
+          className="text-muted-foreground hover:text-foreground text-xs font-medium"
+          href="/training/planning"
+        >
+          Voir plus ({remaining})
+        </Link>
+      ) : null}
     </section>
   );
 }
@@ -371,7 +406,7 @@ export function PlanHubWidgets() {
     : null;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-lg:pb-10">
       <PlanObjectifWidget />
       <PlanUpcomingWidget verdict={verdict} />
       <PlanLoadRecoveryWidget

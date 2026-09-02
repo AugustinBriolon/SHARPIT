@@ -152,7 +152,10 @@ export function BottomNav() {
       <ChromeGlass
         className="pointer-events-auto mx-auto w-full max-w-lg"
         cornerRadius={20}
+        // CSS frost only — liquid-glass displacement was painting a spurious
+        // circular glyph over the Today (Sun) tab that read like a Notion « N ».
         style={{ position: 'relative', top: 'auto', left: 'auto', width: '100%' }}
+        forceFallback
       >
         <LayoutGroup id="bottom-nav">
           <div className="flex items-stretch justify-around p-2">
