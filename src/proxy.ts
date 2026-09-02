@@ -15,6 +15,8 @@ const isPublicRoute = createRouteMatcher([
   '/sign-up(.*)',
   '/api/cron(.*)',
   '/~offline',
+  // iOS fetches apple-touch-startup-image without a session cookie.
+  '/apple-splash(.*)',
   '/demo',
   '/api/demo/exit',
 ]);

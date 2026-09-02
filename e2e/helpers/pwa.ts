@@ -172,20 +172,40 @@ export async function stubIosUserAgent(page: Page): Promise<void> {
 }
 
 /**
- * Dispatches a cancelable `beforeinstallprompt` after InstallCard listeners attach.
- * Call once Settings (or any host of InstallCard) has mounted.
+ * Arms a cancelable `beforeinstallprompt` that fires as soon as InstallCard's
+ * listener attaches (and again after mount for late subscribers). Must run
+ * before navigation.
  */
 export async function stubBeforeInstallPrompt(page: Page): Promise<void> {
-  await page.evaluate(() => {
-    const event = new Event('beforeinstallprompt', { cancelable: true });
-    Object.defineProperties(event, {
-      prompt: {
-        value: async () => {},
-      },
-      userChoice: {
-        value: Promise.resolve({ outcome: 'accepted' as const }),
-      },
+  await page.addInitScript(() => {
+    function fireBeforeInstallPrompt() {
+      const event = new Event('beforeinstallprompt', { cancelable: true });
+      Object.defineProperties(event, {
+        prompt: {
+          value: async () => {},
+        },
+        userChoice: {
+          value: Promise.resolve({ outcome: 'accepted' as const }),
+        },
+      });
+      window.dispatchEvent(event);
+    }
+
+    const original = window.addEventListener.bind(window);
+    window.addEventListener = ((
+      type: string,
+      listener: EventListenerOrEventListenerObject,
+      options?: boolean | AddEventListenerOptions,
+    ) => {
+      original(type, listener, options);
+      if (type === 'beforeinstallprompt') {
+        queueMicrotask(fireBeforeInstallPrompt);
+      }
+    }) as typeof window.addEventListener;
+
+    // Late dispatch after hydration in case the effect already subscribed.
+    window.addEventListener('DOMContentLoaded', () => {
+      queueMicrotask(fireBeforeInstallPrompt);
     });
-    window.dispatchEvent(event);
   });
 }

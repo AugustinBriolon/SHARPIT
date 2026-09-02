@@ -76,6 +76,7 @@ test.describe('PWA install card', () => {
 
   test('stubbed beforeinstallprompt shows the Installer button', async ({ page }) => {
     await forceMatchMediaStandalone(page, false);
+    await stubBeforeInstallPrompt(page);
     await page.addInitScript((key) => {
       window.localStorage.removeItem(key);
     }, DISMISS_STORAGE_KEY);
@@ -85,7 +86,6 @@ test.describe('PWA install card', () => {
       'not signed in — run against `yarn dev` via `yarn test:e2e:dev`, record e2e/.auth/athlete.json, or allow /demo',
     );
 
-    await stubBeforeInstallPrompt(page);
     await expect(page.getByText('Installer SHARPIT')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Installer' })).toBeVisible();
   });

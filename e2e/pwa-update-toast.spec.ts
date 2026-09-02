@@ -31,6 +31,8 @@ test.describe('PWA update toast', () => {
         active: { state: 'activated' },
         addEventListener() {},
         removeEventListener() {},
+        update: async () => {},
+        unregister: async () => true,
       };
 
       Object.defineProperty(navigator, 'serviceWorker', {
@@ -38,8 +40,11 @@ test.describe('PWA update toast', () => {
         value: {
           controller: { state: 'activated' },
           getRegistration: async () => registration,
+          getRegistrations: async () => [registration],
+          register: async () => registration,
           addEventListener() {},
           removeEventListener() {},
+          ready: Promise.resolve(registration),
         },
       });
     });
