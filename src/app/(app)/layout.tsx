@@ -5,7 +5,6 @@ import { AppShell } from '@/components/layout/app-shell';
 import { NavStackTracker } from '@/components/layout/nav-stack-tracker';
 import { DemoBanner } from '@/components/demo/demo-banner';
 import { OnboardingGate } from '@/components/onboarding/onboarding-gate';
-import { SignupAccessGate } from '@/components/auth/signup-access-gate';
 import { DisplayModeProvider } from '@/providers/display-mode-provider';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -15,10 +14,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* Reads the URL and renders nothing — no fallback needed. */}
       <Suspense>
         <NavStackTracker />
-      </Suspense>
-      {/* Private-circle gate — blocks unauthorized first-time Clerk sessions. */}
-      <Suspense>
-        <SignupAccessGate />
       </Suspense>
       {/* First-login redirect — awaits auth/DB without blocking shell prerender. */}
       <Suspense>

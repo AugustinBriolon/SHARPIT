@@ -1,5 +1,4 @@
 import { encryptSecret, decryptSecret } from '@/lib/secret-box';
-import { isSignupGateEnabled } from '@/lib/auth/signup-gate';
 
 export type OpsSmokeReport = {
   ok: boolean;
@@ -8,7 +7,6 @@ export type OpsSmokeReport = {
     secretEncryptionKey: 'configured' | 'missing';
     encryptionRoundtrip: 'ok' | 'failed' | 'skipped';
     upstash: 'configured' | 'missing';
-    signupGate: 'enabled' | 'disabled';
   };
 };
 
@@ -32,9 +30,8 @@ function probeEncryptionRoundtrip(): OpsSmokeReport['checks']['encryptionRoundtr
  * behind `verifyCronSecret` (or local diagnostics).
  *
  * `ok` requires cron secret + encryption key configured and a successful
- * encrypt/decrypt roundtrip. Upstash and signup gate are reported but do not
- * fail the overall smoke (Upstash may be optional in some environments;
- * signup gate is a product toggle).
+ * encrypt/decrypt roundtrip. Upstash is reported but does not fail the overall
+ * smoke alone (dev may omit it; prod coach/sync fail closed separately).
  */
 export function buildOpsSmokeReport(): OpsSmokeReport {
   const cronSecret = configuredOrMissing(process.env.CRON_SECRET);
@@ -43,7 +40,6 @@ export function buildOpsSmokeReport(): OpsSmokeReport {
     process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN
       ? 'configured'
       : 'missing';
-  const signupGate = isSignupGateEnabled() ? 'enabled' : 'disabled';
   const encryptionRoundtrip =
     secretEncryptionKey === 'configured' ? probeEncryptionRoundtrip() : 'skipped';
 
@@ -57,7 +53,6 @@ export function buildOpsSmokeReport(): OpsSmokeReport {
       secretEncryptionKey,
       encryptionRoundtrip,
       upstash,
-      signupGate,
     },
   };
 }

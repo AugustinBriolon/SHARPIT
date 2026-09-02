@@ -127,23 +127,7 @@ Open [http://localhost:3000](http://localhost:3000).
 | `UPSTASH_REDIS_REST_TOKEN`          | Upstash Redis REST token, paired with the URL above                                                          |
 | `CRON_SECRET`                       | Bearer secret for `/api/cron/*` (incl. `/api/cron/smoke`). Rejects all cron calls if unset                    |
 | `SECRET_ENCRYPTION_KEY`             | Required in production to encrypt provider credentials (`src/lib/secret-box.ts`)                             |
-| `SIGNUP_GATE_ENABLED`               | `true` to enforce private-circle signup (also implied when allowlist/invite codes are set)                   |
-| `SIGNUP_ALLOWED_EMAILS`             | Comma-separated emails allowed to create new accounts                                                        |
-| `SIGNUP_INVITE_CODES`               | Comma-separated invite codes (`/sign-up` form or `/api/invite/redeem?code=`)                                 |
 | `ADMIN_EMAILS`                      | Comma-separated emails allowed on `/admin` and `/api/dev/*`                                                  |
-
-#### Private-circle signup (V0)
-
-Open signup is blocked for commercialization. Prefer **both**:
-
-1. **Clerk Dashboard** → User & Authentication → Restrictions → enable **Allowlist** and/or disable public sign-ups and send **Invitations**.
-2. **App gate** (Vercel env):
-   - `SIGNUP_GATE_ENABLED=true`
-   - `SIGNUP_ALLOWED_EMAILS=ada@example.com,bob@example.com` and/or
-   - `SIGNUP_INVITE_CODES=cercle-2026`
-   - Share `https://<app>/api/invite/redeem?code=cercle-2026` or ask athletes to enter the code on `/sign-up`.
-
-Existing signed-in athletes (already have an `AthleteProfile`) are never blocked. Public demo (`/demo`) stays available (ADR-026).
 
 Ops smoke (no secret values leaked):
 

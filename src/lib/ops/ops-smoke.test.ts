@@ -13,9 +13,6 @@ describe('buildOpsSmokeReport', () => {
     delete process.env.SECRET_ENCRYPTION_KEY;
     delete process.env.UPSTASH_REDIS_REST_URL;
     delete process.env.UPSTASH_REDIS_REST_TOKEN;
-    delete process.env.SIGNUP_GATE_ENABLED;
-    delete process.env.SIGNUP_ALLOWED_EMAILS;
-    delete process.env.SIGNUP_INVITE_CODES;
 
     const report = buildOpsSmokeReport();
 
@@ -31,8 +28,6 @@ describe('buildOpsSmokeReport', () => {
     process.env.SECRET_ENCRYPTION_KEY = 'encryption-test-key-not-a-real-secret';
     process.env.UPSTASH_REDIS_REST_URL = 'https://example.upstash.io';
     process.env.UPSTASH_REDIS_REST_TOKEN = 'upstash-token';
-    process.env.SIGNUP_GATE_ENABLED = 'true';
-    process.env.SIGNUP_ALLOWED_EMAILS = 'ada@example.com';
 
     const report = buildOpsSmokeReport();
 
@@ -40,21 +35,19 @@ describe('buildOpsSmokeReport', () => {
     expect(report.checks.secretEncryptionKey).toBe('configured');
     expect(report.checks.encryptionRoundtrip).toBe('ok');
     expect(report.checks.upstash).toBe('configured');
-    expect(report.checks.signupGate).toBe('enabled');
     expect(report.ok).toBe(true);
     expect(JSON.stringify(report)).not.toContain('cron-test-secret');
     expect(JSON.stringify(report)).not.toContain('encryption-test-key');
   });
 
-  it('marks signup gate disabled when unset', () => {
+  it('reports upstash missing without failing ok when crypto is fine', () => {
     process.env.CRON_SECRET = 'x';
     process.env.SECRET_ENCRYPTION_KEY = 'y';
-    process.env.UPSTASH_REDIS_REST_URL = 'https://example.upstash.io';
-    process.env.UPSTASH_REDIS_REST_TOKEN = 't';
-    delete process.env.SIGNUP_GATE_ENABLED;
-    delete process.env.SIGNUP_ALLOWED_EMAILS;
-    delete process.env.SIGNUP_INVITE_CODES;
+    delete process.env.UPSTASH_REDIS_REST_URL;
+    delete process.env.UPSTASH_REDIS_REST_TOKEN;
 
-    expect(buildOpsSmokeReport().checks.signupGate).toBe('disabled');
+    const report = buildOpsSmokeReport();
+    expect(report.checks.upstash).toBe('missing');
+    expect(report.ok).toBe(true);
   });
 });
