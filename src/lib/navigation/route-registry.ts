@@ -167,6 +167,18 @@ const MATCHERS: Matcher[] = [
     pattern: /^\/settings\/pro$/,
     resolve: () => ({ label: 'Pro', defaultParent: MOI_PARENT }),
   },
+  {
+    // Seuils — Moi child; must not fall through to Aujourd’hui.
+    pattern: /^\/settings\/calibration$/,
+    resolve: () => ({ label: 'Seuils & repères', defaultParent: MOI_PARENT }),
+  },
+
+  // Legal walls live outside the app shell (no tab bar / NavStackTracker).
+  // Labels only — empty-stack fallback stays HOME; PrivacyConsentGate fail-closes
+  // any attempt to enter the shell without health/legal consent.
+  { pattern: /^\/consent$/, resolve: () => ({ label: 'Consentements' }) },
+  { pattern: /^\/privacy$/, resolve: () => ({ label: 'Confidentialité' }) },
+  { pattern: /^\/terms$/, resolve: () => ({ label: 'Conditions' }) },
 ];
 
 /** Strip search + hash to run the pathname against the matchers. */

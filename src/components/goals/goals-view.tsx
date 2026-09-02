@@ -77,7 +77,7 @@ function GoalsViewContent({
     <div className="space-y-8">
       {embedded ? null : (
         <>
-          <MobileBackLink fallbackHref="/moi/objectifs" fallbackLabel="Objectifs" showOnDesktop />
+          <MobileBackLink fallbackHref="/moi" fallbackLabel="Moi" showOnDesktop />
           <StickyHeader className="flex flex-wrap items-end justify-between gap-4">
             <div>
               <p className="text-label">Moi</p>
