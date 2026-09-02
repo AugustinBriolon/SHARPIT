@@ -33,7 +33,7 @@ function easeStrengthDescription(raw: string | null): string {
       'Version allégée :',
       '1. Mobilité et activation douce.',
       '2. Travail technique au poids du corps (ou charge minimale).',
-      '3. Pas de séries lourdes — priorité qualité du mouvement.',
+      '3. Pas de séries lourdes. Priorité qualité du mouvement.',
     ].join(' ');
   }
 
@@ -54,7 +54,7 @@ function easeStrengthDescription(raw: string | null): string {
   next = next.replace(/\blourds?\b/gi, 'légers');
 
   if (!/version allégée/i.test(next)) {
-    next = `Version allégée — ${next}`;
+    next = `Version allégée. ${next}`;
   }
 
   return next.replace(/\s{2,}/g, ' ').trim();
@@ -66,7 +66,7 @@ function pushStrengthDescription(raw: string | null): string {
       'Version un cran plus exigeante :',
       '1. Mobilité courte.',
       '2. Travail principal avec progression légère de charge si la technique est propre.',
-      '3. Pas de max — qualité avant quantité.',
+      '3. Pas de max. Qualité avant quantité.',
     ].join(' ');
   }
 
@@ -74,5 +74,7 @@ function pushStrengthDescription(raw: string | null): string {
     return raw;
   }
 
-  return `${raw.replace(/\s+$/, '')} — progression légère de charge uniquement si la technique reste propre.`;
+  const trimmed = raw.replace(/\s+$/, '');
+  const note = 'Progression légère de charge uniquement si la technique reste propre.';
+  return /[.!?]$/.test(trimmed) ? `${trimmed} ${note}` : `${trimmed}. ${note}`;
 }

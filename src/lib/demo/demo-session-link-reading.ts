@@ -16,10 +16,10 @@ export const DEMO_SESSION_LINK_SESSION_ANALYSIS = {
   complianceScore: 86,
   verdict: 'EASIER',
   summary:
-    'Footing récup exécuté comme prévu en durée, avec une charge légèrement inférieure au plan — cohérent avec une séance de récupération.',
+    'Footing récup exécuté comme prévu en durée, avec une charge légèrement inférieure au plan. Cohérent avec une séance de récupération.',
   remarks: [
-    'Durée réalisée : 40 min — conforme au plan.',
-    'Charge mesurée (38 TSS) en dessous du prévu — normal pour un footing récup.',
+    'Durée réalisée : 40 min. Conforme au plan.',
+    'Charge mesurée (38 TSS) en dessous du prévu. Normal pour un footing récup.',
     'RPE 4 : intensité bien contenue, objectif récupération respecté.',
   ],
   recommendation:

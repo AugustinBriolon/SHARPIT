@@ -134,7 +134,7 @@ const NARRATIVES = {
   longRun: {
     headline: 'Sortie longue bien négociée',
     narrative:
-      "Sortie longue en solo dans le Bois de Boulogne. Allure conversationnelle sur les trois premiers quarts, léger relâchement sur la fin — cohérent avec la charge accumulée cette semaine. Bon signal d'endurance de fond.",
+      "Sortie longue en solo dans le Bois de Boulogne. Allure conversationnelle sur les trois premiers quarts, léger relâchement sur la fin. Cohérent avec la charge accumulée cette semaine. Bon signal d'endurance de fond.",
   },
   longchampBike: {
     headline: 'Sortie longue maîtrisée autour de Longchamp',
@@ -144,12 +144,12 @@ const NARRATIVES = {
   homeTrainer: {
     headline: 'Séance courte et intense sur home trainer',
     narrative:
-      "Séance Zwift sur home trainer — pas de tracé GPS, une session indoor n'en génère pas. Travail structuré en intervalles, bonne tenue de la puissance cible sur chaque bloc.",
+      "Séance Zwift sur home trainer. Pas de tracé GPS, une session indoor n'en génère pas. Travail structuré en intervalles, bonne tenue de la puissance cible sur chaque bloc.",
   },
   cssSwim: {
     headline: 'Intervalles CSS bien tenus',
     narrative:
-      "Séance de vitesse critique à la piscine Molitor. Allure homogène sur l'ensemble des répétitions, SWOLF stable — bon signe de relâchement technique malgré la fatigue accumulée en fin de séance.",
+      "Séance de vitesse critique à la piscine Molitor. Allure homogène sur l'ensemble des répétitions, SWOLF stable. Bon signe de relâchement technique malgré la fatigue accumulée en fin de séance.",
   },
   strength: {
     headline: 'Séance de force en extérieur',
@@ -508,7 +508,7 @@ function demoCoachMessages() {
     turn(
       'demo-msg-2',
       'assistant',
-      "Ta charge des trois dernières semaines progresse de façon régulière, sans pic isolé qui viendrait fragiliser la récupération — c'est le signal que je regarde en premier avant tout le reste. Le sommeil de cette semaine tire légèrement la récupération vers le bas, sans que ça remette en cause le bloc en cours. Pour Ironman Nice, on est encore dans la phase de construction : la priorité reste la régularité sur les trois disciplines plutôt que la performance sur une séance isolée.",
+      "Ta charge des trois dernières semaines progresse de façon régulière, sans pic isolé qui viendrait fragiliser la récupération. C'est le signal que je regarde en premier avant tout le reste. Le sommeil de cette semaine tire légèrement la récupération vers le bas, sans que ça remette en cause le bloc en cours. Pour Ironman Nice, on est encore dans la phase de construction : la priorité reste la régularité sur les trois disciplines plutôt que la performance sur une séance isolée.",
     ),
     turn(
       'demo-msg-3',
@@ -518,7 +518,7 @@ function demoCoachMessages() {
     turn(
       'demo-msg-4',
       'assistant',
-      "C'est cohérent avec la charge de la sortie longue — une fatigue localisée après un gros volume vélo est un signal normal, pas un signal d'alerte. Je garderais la séance prévue mais en abaissant l'intensité d'un cran : l'objectif est de maintenir la fréquence sans creuser la dette. Si la sensation est encore présente au réveil demain, dis-le-moi et on décale plutôt que de forcer.",
+      "C'est cohérent avec la charge de la sortie longue. Une fatigue localisée après un gros volume vélo est un signal normal, pas un signal d'alerte. Je garderais la séance prévue mais en abaissant l'intensité d'un cran : l'objectif est de maintenir la fréquence sans creuser la dette. Si la sensation est encore présente au réveil demain, dis-le-moi et on décale plutôt que de forcer.",
     ),
   ];
 }
@@ -732,7 +732,7 @@ async function seedDemoCondition(prisma: PrismaClient, athleteId: string, today:
       trainingCapacity: TrainingCapacityLevel.REDUCED,
       painSeverity: 2,
       comment:
-        "Légère gêne à la flexion complète, sans impact sur l'allure — course maintenue à charge modérée.",
+        "Légère gêne à la flexion complète, sans impact sur l'allure. Course maintenue à charge modérée.",
     },
   });
 }

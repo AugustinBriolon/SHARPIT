@@ -33,6 +33,7 @@ import {
   type BrickAnalysis,
   type SessionAnalysis,
 } from '@/lib/validators/coach';
+import { COACH_COPY_DASH_RULE, sanitizeCoachCopy } from '@/lib/coach/sanitize-coach-copy';
 
 /** Prefer local notes when long enough — skip Strava round-trip. */
 export const LOCAL_DESCRIPTION_MIN_CHARS = 40;
@@ -324,7 +325,9 @@ RÉÉVALUATION DU SUIVI PHYSIQUE (champ "physicalReassessments") :
 - Ne renseigne "suggestedSeverity" QUE si l'athlète a explicitement indiqué l'état de sa douleur dans ses notes/ressenti ; sinon mets null (c'est lui qui complétera).
 - Si aucune douleur active n'est concernée par cette séance, laisse "physicalReassessments" vide.
 
-Sois précis, bienveillant et concis. Réponds en français.`;
+Sois précis, bienveillant et concis. Réponds en français.
+
+${COACH_COPY_DASH_RULE}`;
 
 /** True when local athlete notes are rich enough to skip a Strava description fetch. */
 export function hasSubstantialLocalDescription(notes: string | null | undefined): boolean {
@@ -500,7 +503,7 @@ export async function analyzePlannedSession(
   );
 
   return applyStrengthScoringGuards(
-    { ...output, physicalReassessments },
+    sanitizeSessionAnalysisCopy({ ...output, physicalReassessments }),
     planned.type,
     strengthCompliance,
   );
@@ -527,7 +530,33 @@ Analyse l'enchaînement DANS SON ENSEMBLE, pas chaque sport isolément :
 - remarks : remarques factuelles et exploitables sur l'ensemble.
 - recommendation : un conseil concret pour mieux réussir les prochains bricks.
 
-Réponds en français, sois précis et concis.`;
+Réponds en français, sois précis et concis.
+
+${COACH_COPY_DASH_RULE}`;
+
+function sanitizeSessionAnalysisCopy(analysis: SessionAnalysis): SessionAnalysis {
+  return {
+    ...analysis,
+    summary: sanitizeCoachCopy(analysis.summary),
+    remarks: analysis.remarks.map(sanitizeCoachCopy),
+    recommendation: sanitizeCoachCopy(analysis.recommendation),
+    physicalReassessments: analysis.physicalReassessments?.map((item) => ({
+      ...item,
+      question: sanitizeCoachCopy(item.question),
+      comment: sanitizeCoachCopy(item.comment),
+    })),
+  };
+}
+
+function sanitizeBrickAnalysisCopy(analysis: BrickAnalysis): BrickAnalysis {
+  return {
+    ...analysis,
+    summary: sanitizeCoachCopy(analysis.summary),
+    transition: sanitizeCoachCopy(analysis.transition),
+    remarks: analysis.remarks.map(sanitizeCoachCopy),
+    recommendation: sanitizeCoachCopy(analysis.recommendation),
+  };
+}
 
 function fmtClock(d: Date): string {
   return `${d.getHours().toString().padStart(2, '0')}:${d
@@ -648,5 +677,5 @@ ${transitions.length ? transitions.join('\n') : 'Aucune donnée de transition ex
   });
   void recordAiUsage(athleteId, 'analysis', usage);
 
-  return output;
+  return output ? sanitizeBrickAnalysisCopy(output) : output;
 }

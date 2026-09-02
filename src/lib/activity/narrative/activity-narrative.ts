@@ -12,6 +12,7 @@ import { mapWithConcurrency } from '@/lib/async/map-with-concurrency';
 import { recordAiUsage } from '@/lib/ai-usage';
 import { prisma } from '@/lib/prisma';
 import { activityNarrativeSchema, type ActivityNarrative } from '@/lib/validators/coach';
+import { COACH_COPY_DASH_RULE, sanitizeCoachCopy } from '@/lib/coach/sanitize-coach-copy';
 
 /** Parallel LLM narratives after multi-activity import — keep low to avoid gateway bursts. */
 const NARRATIVE_CONCURRENCY = 3;
@@ -20,20 +21,22 @@ const NARRATIVE_SYSTEM = `Tu es un entraîneur expert en endurance pour l'applic
 
 On te fournit des FAITS structurés sur la séance ET le contexte athlète (récupération, sommeil, charge, seuils personnels, conditions physiques, environnement). Tu rédiges une analyse narrative courte en français.
 
-OBJECTIF : croiser les dimensions — pas seulement décrire la séance. Cherche des liens plausibles entre performance, récupération, charge récente, sommeil, conditions physiques et environnement.
+OBJECTIF : croiser les dimensions. Pas seulement décrire la séance. Cherche des liens plausibles entre performance, récupération, charge récente, sommeil, conditions physiques et environnement.
 
 RÈGLES :
 - Appuie-toi UNIQUEMENT sur les faits fournis. N'invente aucun chiffre.
 - Ne répète PAS mécaniquement distance, durée, TSS ou allure déjà visibles ailleurs sur la page : cite-les seulement s'ils servent de preuve à une interprétation (ex. « allure ralentie malgré FC modérée → chaleur ou fatigue cumulée »).
-- Si readiness basse : cherche une cause probable dans sommeil/dette de sommeil, charge (ACWR/TSB), HRV ou condition physique active — pas seulement la météo.
+- Si readiness basse : cherche une cause probable dans sommeil/dette de sommeil, charge (ACWR/TSB), HRV ou condition physique active. Pas seulement la météo.
 - Si une condition physique active existe (douleur, posture, sciatique…) et que la séance sollicite potentiellement cette zone, mentionne-la avec prudence et un point de vigilance concret.
 - Compare la performance aux seuils personnels (LTHR, FTP, allure seuil) quand disponibles, plutôt qu'à des moyennes génériques seules.
-- Technique : s'il existe une section « Technique », tu peux en tirer AU PLUS une remarque — et seulement si elle change vraiment l'interprétation (dérive aérobie, intensité mal placée en zones, irrégularité marquante). Sinon, ignore la section. Interdit : conseils de forme permanents, cibles de cadence « idéales », pose du pied, « tu devrais » générique.
+- Technique : s'il existe une section « Technique », tu peux en tirer AU PLUS une remarque. Et seulement si elle change vraiment l'interprétation (dérive aérobie, intensité mal placée en zones, irrégularité marquante). Sinon, ignore la section. Interdit : conseils de forme permanents, cibles de cadence « idéales », pose du pied, « tu devrais » générique.
 - Ton bienveillant, précis, sans jargon inutile.
 - headline : une phrase accrocheuse orientée interprétation (max ~100 caractères).
 - narrative : 2 à 4 phrases fluides avec au moins une connexion entre systèmes (pas une liste de stats). Intègre les chiffres clés dans le texte plutôt que sous forme de liste.
 - Si peu de données contextuelles, dis-le honnêtement et concentre-toi sur ce qui est disponible.
-- Mentionne les objectifs validés si présents.`;
+- Mentionne les objectifs validés si présents.
+
+${COACH_COPY_DASH_RULE}`;
 
 export async function setActivityNarrativeAnalysis(
   activityId: string,
@@ -136,7 +139,10 @@ export async function runActivityNarrativeAnalysis(
     return false;
   }
 
-  await setActivityNarrativeAnalysis(activityId, output);
+  await setActivityNarrativeAnalysis(activityId, {
+    headline: sanitizeCoachCopy(output.headline),
+    narrative: sanitizeCoachCopy(output.narrative),
+  });
   return true;
 }
 

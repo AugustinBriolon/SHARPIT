@@ -252,15 +252,15 @@ function isEligibleForRecalibration(input: {
 function protectWhy(strengthLike: boolean, verdict: string, capacity: string | null): string {
   const protectVerdict = verdict === 'RECOVER' || verdict === 'CAUTION';
   if (strengthLike && protectVerdict) {
-    return `Verdict du matin « ${verdict} » — alléger les charges et prioriser le contrôle du mouvement.`;
+    return `Verdict du matin « ${verdict} ». Alléger les charges et prioriser le contrôle du mouvement.`;
   }
   if (strengthLike) {
-    return 'Capacité légère uniquement — pas de travail exigeant aujourd’hui.';
+    return 'Capacité légère uniquement. Pas de travail exigeant aujourd’hui.';
   }
   if (protectVerdict) {
-    return `Verdict du matin « ${verdict} » — baisser l’intensité protège le risque blessure sans abandonner le plan.`;
+    return `Verdict du matin « ${verdict} ». Baisser l’intensité protège le risque blessure sans abandonner le plan.`;
   }
-  return 'Capacité légère uniquement — la haute intensité n’est pas cohérente aujourd’hui.';
+  return 'Capacité légère uniquement. La haute intensité n’est pas cohérente aujourd’hui.';
 }
 
 function buildRestOnlyProposal(
@@ -284,8 +284,8 @@ function buildRestOnlyProposal(
     toDuration,
     toLoad,
     why: strengthLike
-      ? 'Capacité du jour limitée au repos — garder mobilité / technique légère, pas de charges.'
-      : 'Capacité du jour limitée au repos — la séance prévue est trop exigeante.',
+      ? 'Capacité du jour limitée au repos. Garder mobilité / technique légère, pas de charges.'
+      : 'Capacité du jour limitée au repos. La séance prévue est trop exigeante.',
   });
 }
 
@@ -332,8 +332,8 @@ function buildTempoDowngrade(
     toDuration: session.durationMin,
     toLoad,
     why: strengthLike
-      ? 'Sommeil / récup / ressenti orientent vers la prudence — un cran plus léger, sans exercices lourds.'
-      : 'Sommeil / récup / ressenti orientent vers la prudence — un cran en dessous conserve l’objectif.',
+      ? 'Sommeil / récup / ressenti orientent vers la prudence. Un cran plus léger, sans exercices lourds.'
+      : 'Sommeil / récup / ressenti orientent vers la prudence. Un cran en dessous conserve l’objectif.',
   });
 }
 
@@ -355,7 +355,7 @@ function buildStrengthEnduranceDowngrade(
     toIntensity: 'RECOVERY',
     toDuration: session.durationMin,
     toLoad,
-    why: 'Prudence du matin — garder mobilité et posture, retirer le travail lesté.',
+    why: 'Prudence du matin. Garder mobilité et posture, retirer le travail lesté.',
   });
 }
 
@@ -375,8 +375,8 @@ function buildRecoveryUpgrade(
     toDuration: session.durationMin,
     toLoad,
     why: strengthLike
-      ? 'État du matin solide — tu peux viser un travail léger un cran au-dessus de la pure récupération.'
-      : 'État du matin excellent — tu peux viser un cran au-dessus de la récupération prévue.',
+      ? 'État du matin solide. Tu peux viser un travail léger un cran au-dessus de la pure récupération.'
+      : 'État du matin excellent. Tu peux viser un cran au-dessus de la récupération prévue.',
   });
 }
 
@@ -396,8 +396,8 @@ function buildEnduranceUpgrade(
     toDuration: session.durationMin,
     toLoad,
     why: strengthLike
-      ? 'Sommeil et ressenti solides — un cran en modéré reste cadré ; progression de charge seulement si la technique est propre.'
-      : 'Sommeil et ressenti solides — un tempo léger reste cadré par l’objectif long terme.',
+      ? 'Sommeil et ressenti solides. Un cran en modéré reste cadré ; progression de charge seulement si la technique est propre.'
+      : 'Sommeil et ressenti solides. Un tempo léger reste cadré par l’objectif long terme.',
   });
 }
 
@@ -420,8 +420,8 @@ function buildSmartRecoveryUpgrade(
     toDuration: session.durationMin,
     toLoad: session.load,
     why: strengthLike
-      ? 'État fiable et séance très légère — un passage en travail léger reste prudent.'
-      : 'État fiable et séance très légère — un passage en endurance reste prudent.',
+      ? 'État fiable et séance très légère. Un passage en travail léger reste prudent.'
+      : 'État fiable et séance très légère. Un passage en endurance reste prudent.',
   });
 }
 

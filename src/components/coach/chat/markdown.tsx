@@ -9,6 +9,7 @@ import {
   remarkSoftBreaks,
   splitMarkdownBlocks,
 } from '@/lib/coach/chat/markdown-render';
+import { sanitizeCoachCopy } from '@/lib/coach/sanitize-coach-copy';
 import { cn } from '@/lib/utils';
 
 const REMARK_PLUGINS = [remarkGfm, remarkSoftBreaks];
@@ -162,10 +163,10 @@ function MarkdownRenderer({
   variant?: 'default' | 'compact';
   streaming?: boolean;
 }) {
-  const blocks = useMemo(
-    () => splitMarkdownBlocks(streaming ? closeOpenMarkdown(children) : children),
-    [children, streaming],
-  );
+  const blocks = useMemo(() => {
+    const cleaned = sanitizeCoachCopy(children);
+    return splitMarkdownBlocks(streaming ? closeOpenMarkdown(cleaned) : cleaned);
+  }, [children, streaming]);
 
   return (
     <div className={cn('min-w-0 text-sm leading-relaxed break-words', RHYTHM[variant], PROSE)}>

@@ -2,12 +2,19 @@
 
 import { parseSessionAnalysis } from '@/lib/planned-session/display/session-analysis-display';
 import { activityNarrativeSchema } from '@/lib/validators/coach';
+import { sanitizeCoachCopy } from '@/lib/coach/sanitize-coach-copy';
 import { Loader2 } from 'lucide-react';
 import { CompletedSessionPlanGaps } from '@/components/planning/session/read/completed-session-story-parts';
 
 function parseActivityNarrative(raw: unknown) {
   const parsed = activityNarrativeSchema.safeParse(raw);
-  return parsed.success ? parsed.data : null;
+  if (!parsed.success) {
+    return null;
+  }
+  return {
+    headline: sanitizeCoachCopy(parsed.data.headline),
+    narrative: sanitizeCoachCopy(parsed.data.narrative),
+  };
 }
 
 function StoryLoadingRow() {

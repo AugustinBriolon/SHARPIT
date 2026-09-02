@@ -11,6 +11,7 @@ import {
 import { fr } from 'date-fns/locale';
 import { COACH_MODEL, coachGatewayOptions, isCoachConfigured } from './ai';
 import { buildCoachContext, formatCoachContext } from '@/lib/coach/context/coach-context';
+import { COACH_COPY_DASH_RULE, sanitizeCoachCopy } from '@/lib/coach/sanitize-coach-copy';
 import { recordAiUsage } from '@/lib/ai-usage';
 import { prisma } from './prisma';
 import { getActivities, getAthleteProfile, getHealthEntries, getPlannedSessions } from './queries';
@@ -35,7 +36,7 @@ const TYPE_FR: Record<string, string> = {
 function buildWeeklySystem(mode: DisplayMode): string {
   const formLine = isExpertMode(mode)
     ? '2-3 phrases : volume réalisé vs prévu, respect du plan, et état de forme global (charge, TSB). Cite des chiffres clés, acronymes inclus (TSS, TSB, ACWR).'
-    : '2-3 phrases : volume réalisé vs prévu, respect du plan, et état de forme global (charge, fraîcheur) en langage clair — jamais d\'acronymes techniques (interdits : TSS, TSB, ACWR, CTL, ATL). Dis "ta fraîcheur reste bonne" ou "ta charge a bien progressé", jamais "TSB +12" ou "ACWR 1.37".';
+    : '2-3 phrases : volume réalisé vs prévu, respect du plan, et état de forme global (charge, fraîcheur) en langage clair. Jamais d\'acronymes techniques (interdits : TSS, TSB, ACWR, CTL, ATL). Dis "ta fraîcheur reste bonne" ou "ta charge a bien progressé", jamais "TSB +12" ou "ACWR 1.37".';
 
   return `Tu es le coach d'endurance personnel de l'athlète. Tu rédiges sa RÉTROSPECTIVE HEBDOMADAIRE : un bilan de la semaine écoulée, factuel et actionnable, basé uniquement sur ses données réelles fournies plus bas.
 
@@ -52,7 +53,9 @@ Liste à puces courte (2-4 points) : ce qui a bien marché, ce qui doit être su
 ## Plan pour la semaine prochaine
 2-3 recommandations concrètes (orientation des séances, récupération, sommeil) cohérentes avec la forme actuelle et l'objectif.
 
-Règles : reste concis (12-18 lignes au total). Appuie-toi sur les chiffres réels, ne les invente pas. Dans "Bilan d'entraînement" et "Sommeil & récupération", mets en **gras** (markdown) les 2-3 chiffres ou notions les plus importants de chaque section — pas plus, sinon plus rien ne ressort à la lecture rapide. Respecte IMPÉRATIVEMENT les douleurs/blessures. Tutoie l'athlète, en français. Sois bienveillant mais honnête.`;
+Règles : reste concis (12-18 lignes au total). Appuie-toi sur les chiffres réels, ne les invente pas. Dans "Bilan d'entraînement" et "Sommeil & récupération", mets en **gras** (markdown) les 2-3 chiffres ou notions les plus importants de chaque section — pas plus, sinon plus rien ne ressort à la lecture rapide. Respecte IMPÉRATIVEMENT les douleurs/blessures. Tutoie l'athlète, en français. Sois bienveillant mais honnête.
+
+${COACH_COPY_DASH_RULE}`;
 }
 
 function utcDateOnly(d: Date): Date {
@@ -310,16 +313,24 @@ Rédige la rétrospective hebdomadaire en suivant la structure imposée. Mets l'
   });
   void recordAiUsage(athleteId, 'coach', usage);
 
-  return { content: text.trim(), stats };
+  return { content: sanitizeCoachCopy(text.trim()), stats };
+}
+
+function presentWeeklyReview<T extends { content: string } | null>(row: T): T {
+  if (!row) {
+    return row;
+  }
+  return { ...row, content: sanitizeCoachCopy(row.content) };
 }
 
 /** Lit la rétro hebdo stockée pour la semaine contenant `refDate`. */
 export async function getWeeklyReview(athleteId: string, refDate: Date = new Date()) {
-  return prisma.weeklyReview.findUnique({
+  const row = await prisma.weeklyReview.findUnique({
     where: {
       athleteId_weekStart: { athleteId, weekStart: utcDateOnly(weekStartFor(refDate)) },
     },
   });
+  return presentWeeklyReview(row);
 }
 
 /**
@@ -328,10 +339,11 @@ export async function getWeeklyReview(athleteId: string, refDate: Date = new Dat
  * dimanche) ou la semaine en cours (génération à la demande, `current: true`).
  */
 export async function getLatestWeeklyReview(athleteId: string) {
-  return prisma.weeklyReview.findFirst({
+  const row = await prisma.weeklyReview.findFirst({
     where: { athleteId },
     orderBy: { weekStart: 'desc' },
   });
+  return presentWeeklyReview(row);
 }
 
 /**
