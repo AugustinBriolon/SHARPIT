@@ -47,15 +47,32 @@ concurrency:
 jobs:
   scanning:
     name: GitGuardian scan
-    if: ${{ secrets.GITGUARDIAN_API_KEY != '' }}
     runs-on: ubuntu-latest
     steps:
+      # Do not put secrets in job-level `if:` — both arms can skip and the
+      # workflow fails with zero jobs. Detect the key inside the job instead.
+      - name: Detect GitGuardian API key
+        id: gg
+        env:
+          GITGUARDIAN_API_KEY: ${{ secrets.GITGUARDIAN_API_KEY }}
+        run: |
+          if [ -n "$GITGUARDIAN_API_KEY" ]; then
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::GITGUARDIAN_API_KEY is not set — ggshield Action skipped on this run."
+            echo "Secret audit on code changes still relies on the GitGuardian GitHub App check."
+            echo "Add GITGUARDIAN_API_KEY under repository secrets to enable path-filtered ggshield CI."
+          fi
+
       - name: Checkout
+        if: steps.gg.outputs.enabled == 'true'
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
       - name: GitGuardian scan (ggshield)
+        if: steps.gg.outputs.enabled == 'true'
         uses: GitGuardian/ggshield/actions/secret@v1.54.0
         env:
           GITHUB_PUSH_BEFORE_SHA: ${{ github.event.before }}
@@ -63,15 +80,3 @@ jobs:
           GITHUB_PULL_BASE_SHA: ${{ github.event.pull_request.base.sha }}
           GITHUB_DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
           GITGUARDIAN_API_KEY: ${{ secrets.GITGUARDIAN_API_KEY }}
-
-  remind-missing-key:
-    name: GitGuardian scan
-    # Same check name as `scanning` so the PR status stays one coherent context.
-    if: ${{ secrets.GITGUARDIAN_API_KEY == '' }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: Remind to configure Action API key
-        run: |
-          echo "::warning::GITGUARDIAN_API_KEY is not set — ggshield Action skipped on this run."
-          echo "Secret audit on code changes still relies on the GitGuardian GitHub App check."
-          echo "Add GITGUARDIAN_API_KEY under repository secrets to enable path-filtered ggshield CI."
