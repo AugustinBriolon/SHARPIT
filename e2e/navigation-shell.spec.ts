@@ -81,25 +81,35 @@ test.describe('navigation shell', () => {
     await expect(headings).toHaveText('Sommeil');
   });
 
-  test('the Moi hub lists destinations and secondary entries before status arrives', async ({
+  test('the Moi hub lists Essentiel then Compte / Équipement / Apps / Apparence / Autre', async ({
     page,
   }) => {
-    // Destinations are static shell; secondary Compte chip streams status.
+    // Essentiel is static shell; Compte chip streams status.
     await page.goto('/moi');
 
     await expect(page.locator('a[href="/moi/corps"]:visible').first()).toBeVisible();
     await expect(page.locator('a[href="/moi/objectifs"]:visible').first()).toBeVisible();
     await expect(page.locator('a[href="/settings/privacy"]:visible').first()).toBeVisible();
 
-    await expect(page.getByRole('heading', { name: 'Destinations' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Essentiel' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Compte' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Équipement' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Apps connectées' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Apparence' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Autre' })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Accès' })).toHaveCount(0);
+    await expect(page.getByRole('heading', { name: 'Destinations' })).toHaveCount(0);
 
-    for (const href of ['/settings/account', '/settings/equipment']) {
+    for (const href of [
+      '/settings/account',
+      '/settings/equipment',
+      '/settings/integrations',
+      '/settings/appearance',
+    ]) {
       await expect(page.locator(`a[href="${href}"]:visible`).first()).toBeVisible();
     }
 
-    // Quiet réglages — demoted, still reachable.
-    await expect(page.getByRole('link', { name: 'À propos' })).toBeVisible();
+    await expect(page.getByRole('link', { name: /À propos/ })).toBeVisible();
   });
 
   test('Moi child pages back to Moi (dedicated Corps / Objectifs / Confidentialité)', async ({
@@ -143,6 +153,15 @@ test.describe('navigation shell', () => {
     await expect(page.getByRole('link', { name: 'Fil de la semaine' })).toHaveCount(0);
     await expect(page.getByRole('link', { name: 'Séjours' })).toHaveCount(0);
     await expect(page.getByRole('link', { name: 'Planification' })).toBeVisible();
+
+    // Objectif widget itself is the hit target (not only a secondary "Voir tout").
+    await expect(page.locator('a[href="/moi/objectifs"]').first()).toBeVisible();
+
+    // Upcoming session rows are full-card links to the planned-session deep link.
+    const sessionLinks = page.locator('a[href*="/training/planning?planned="]');
+    if ((await sessionLinks.count()) > 0) {
+      await expect(sessionLinks.first()).toBeVisible();
+    }
   });
 
   test('Activité hub shows history + Nouvelle activité without Accès or Séjours', async ({

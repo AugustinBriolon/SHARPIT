@@ -10,7 +10,7 @@ Mobile evidence of `/moi` after Activité hub (wave 3). Captured on Vercel previ
 | `v11-moi-objectifs.png` | Dedicated Objectifs |
 | `v11-moi-confidentialite.png` | Confidentialité (`/settings/privacy`) |
 
-Surfaces: **Destinations** Corps · Objectifs · Confidentialité · secondary Compte & équipement · quiet réglages. No Accès dump. No tabbed Progression fourre-tout.
+Surfaces: **Essentiel** Corps · Objectifs · Confidentialité · then Compte · Équipement · Apps connectées · Apparence · Autre (all Destination-style row cards). No Accès dump. No tabbed Progression fourre-tout.
 
 Dedicated children: `/moi/corps`, `/moi/objectifs`, `/moi/performance` (quiet from Objectifs), `/settings/privacy`. Back stack → Moi. Demo tab keeps CircleUser + label **Moi** (banner enough).
 

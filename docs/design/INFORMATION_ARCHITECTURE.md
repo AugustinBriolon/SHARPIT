@@ -48,7 +48,7 @@ This document is written in English; hub copy ships in French. Tab labels in [`s
 | Activité    | `Activité`    | `/activite`   | (history half of week)   |
 | Moi         | `Moi`         | `/moi`        | `Profil` / Réglages      |
 
-Moi child surfaces (Shell V1.1 split): `/moi/corps`, `/moi/objectifs`, `/moi/performance` (quiet), `/settings/privacy` (Confidentialité). Legacy `/progress?tab=` redirects onto these.
+Moi child surfaces (Shell V1.1 split): `/moi/corps`, `/moi/objectifs`, `/moi/performance` (quiet), `/settings/privacy` (Confidentialité). Hub order: Essentiel (Corps · Objectifs · Confidentialité) → Compte → Équipement → Apps connectées → Apparence → Autre. Legacy `/progress?tab=` redirects onto these.
 
 Coach keeps the label `Coach` on contextual CTAs only — not in `bottomNavItems`.
 
