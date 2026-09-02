@@ -34,7 +34,7 @@ const LIMITER_LABEL: Record<string, string> = {
 
 /** Short interpretive posture — not the hero action verb. */
 const VERDICT_WHY: Partial<Record<OverallVerdict, { value: string; hint: string }>> = {
-  TRAIN_HARD: { value: 'Fenêtre haute', hint: 'les systèmes tolèrent l’intensité' },
+  TRAIN_HARD: { value: 'Fenêtre haute', hint: 'les signaux tolèrent l’intensité' },
   TRAIN_SMART: { value: 'Qualité d’abord', hint: 'volume secondaire aujourd’hui' },
   TRAIN_EASY: { value: 'Garde de la marge', hint: 'charge légère, pas de push' },
   RECOVER: { value: 'Repos prioritaire', hint: 'rebond avant nouvelle charge' },
@@ -246,7 +246,7 @@ export function buildTodayLimitingFacts(input: {
       systemLabel(
         limitingFactor.system,
         'domain' in limitingFactor ? limitingFactor.domain : null,
-      ) ?? 'Physiologie';
+      ) ?? 'Signaux';
     const cause = limiterFromDescription(limitingFactor.description);
 
     const facts: TodayFactRow[] = [

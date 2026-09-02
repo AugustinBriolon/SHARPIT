@@ -6,6 +6,7 @@ import { TodayHeader } from '@/components/today/dashboard/today-header';
 import { TodayUnderstandSection } from '@/components/today/dashboard/today-understand-section';
 import { TodayActionRow } from '@/components/today/rich/today-action-row';
 import { TodayVerdictHero } from '@/components/today/rich/today-verdict-hero';
+import { MedicalDisclaimerNote } from '@/components/ui/instruments/medical-disclaimer-note';
 import type { TodayViewModel } from '@/core/presentation/today-view-model';
 import type { ClientActivity } from '@/lib/query/types';
 
@@ -60,13 +61,19 @@ export function TodayDashboardMain({
         </p>
       ) : null}
       {!valuesLoading ? <TodayCriticalStatus content={content} isFetching={isFetching} /> : null}
-      <div className="space-y-2 lg:space-y-4">
+      <div className="space-y-1.5 lg:space-y-3">
         <TodayHeader
           dayKey={trainingDayId}
           loading={valuesLoading}
           weather={content.header.weather}
         />
-        <TodayVerdictHero loading={valuesLoading} vm={content} />
+        {/* Hero decision stays above the fold; disclaimer is a secondary note only. */}
+        <div className="space-y-1.5">
+          <TodayVerdictHero loading={valuesLoading} vm={content} />
+          {!valuesLoading ? (
+            <MedicalDisclaimerNote className="px-1 text-[0.6875rem] leading-snug" />
+          ) : null}
+        </div>
       </div>
       {!valuesLoading ? <DailyBriefingPanel dayKey={trainingDayId} /> : null}
       <TodayActionRow

@@ -13,6 +13,7 @@ import {
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/components/ui/toast';
+import { MedicalDisclaimerNote } from '@/components/ui/instruments/medical-disclaimer-note';
 import { useWellnessCheckin } from '@/hooks/use-wellness-checkin';
 import { useOfflineGuard } from '@/hooks/use-offline-guard';
 import { cn } from '@/lib/utils';
@@ -255,10 +256,11 @@ export function MorningWellnessDialog({ onCompleted }: { onCompleted?: () => voi
           ) : null}
         </div>
 
-        <div className="border-border/60 bg-muted/40 shrink-0 border-t px-5 py-4">
+        <div className="border-border/60 bg-muted/40 shrink-0 space-y-3 border-t px-5 py-4">
           <Button className="w-full" disabled={guardDisabled} type="button" onClick={handleSubmit}>
             {offline ? offlineLabel : 'Valider mon ressenti'}
           </Button>
+          <MedicalDisclaimerNote />
         </div>
       </DialogContent>
     </Dialog>

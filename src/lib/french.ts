@@ -54,7 +54,7 @@ const STRINGS: Record<string, string> = {
   'reasoning.topAction.trainHard.focus.progressiveOverload': 'avec une surcharge progressive',
   'reasoning.topAction.trainHard.focus.aerobicBase': 'sur la base aérobie',
   'reasoning.topAction.trainHard.rationale':
-    'Tes systèmes physiologiques sont prêts pour une charge élevée.',
+    'Tes signaux du jour suggèrent une bonne tolérance à une charge élevée.',
 
   'reasoning.topAction.trainSmart.verb': 'Entraîne-toi',
   'reasoning.topAction.trainSmart.focus': 'avec intelligence',
@@ -67,12 +67,13 @@ const STRINGS: Record<string, string> = {
 
   'reasoning.topAction.recover.verb': 'Récupère',
   'reasoning.topAction.recover.focusDefault': 'activement',
-  'reasoning.topAction.recover.rationale': 'Tes systèmes ont besoin de repos pour rebondir.',
+  'reasoning.topAction.recover.rationale':
+    'Tes signaux du jour indiquent un besoin de repos pour rebondir.',
 
   'reasoning.topAction.raceReady.verb': 'Tu es prêt',
   'reasoning.topAction.raceReady.focus': 'à performer',
   'reasoning.topAction.raceReady.rationale':
-    'Tous tes indicateurs pointent vers une forme optimale.',
+    'Tes signaux du jour sont favorables à une bonne performance.',
 
   'reasoning.topAction.caution.verb': 'Sois',
   'reasoning.topAction.caution.focus': "prudent aujourd'hui",
@@ -132,11 +133,11 @@ const STRINGS: Record<string, string> = {
   'reasoning.finding.crossSystemConflict.evidence.affectedModels': 'Modèles concernés : {models}',
 
   // ── Findings — optimal state ─────────────────────────────────────────────
-  'reasoning.finding.optimalState.title': 'État optimal détecté',
+  'reasoning.finding.optimalState.title': 'État très favorable détecté',
   'reasoning.finding.optimalState.evidence.readiness': 'Score de forme : {score}/100',
   'reasoning.finding.optimalState.evidence.fatigueIndex': 'Index de fatigue : {index}',
   'reasoning.finding.optimalState.evidence.highCapacity':
-    "Pleine capacité d'entraînement disponible",
+    "Bonne capacité d'entraînement disponible",
 
   // ── Findings — positive adaptation ─────────────────────────────────────
   'reasoning.finding.positiveAdaptation.title': 'Adaptation positive en cours',
@@ -192,10 +193,10 @@ const STRINGS: Record<string, string> = {
   // ── Opportunities ────────────────────────────────────────────────────────
   'reasoning.opportunity.loadIncrease.title': "Fenêtre d'augmentation de charge",
   'reasoning.opportunity.loadIncrease.rationale':
-    "Tes systèmes tolèrent une progression — c'est le bon moment pour augmenter.",
+    "Tes signaux suggèrent une marge pour progresser — c'est un bon moment pour augmenter.",
   'reasoning.opportunity.qualitySession.title': 'Séance de qualité possible',
   'reasoning.opportunity.qualitySession.rationale':
-    'La forme et la fraîcheur sont réunies pour une séance de haute qualité.',
+    'La forme et la fraîcheur semblent réunies pour une séance de haute qualité.',
   'reasoning.opportunity.deload.title': 'Semaine allégée recommandée dans {days} jour(s)',
   'reasoning.opportunity.deload.rationale': "Planifier un déload maintenant optimise l'adaptation.",
   'reasoning.opportunity.raceReadiness.title': 'Pic de forme dans {days} jour(s)',
@@ -211,7 +212,7 @@ const STRINGS: Record<string, string> = {
     'Priorité à la récupération — réduire la charge',
   'reasoning.conflict.timingConflict01.description': "Fenêtres d'adaptation contradictoires",
   'reasoning.conflict.timingConflict01.resolution': "S'appuyer sur le modèle le plus récent",
-  'reasoning.conflict.signalConflict01.description': 'Signaux physiologiques contradictoires',
+  'reasoning.conflict.signalConflict01.description': 'Signaux contradictoires',
   'reasoning.conflict.signalConflict01.resolution':
     "Maintenir une intensité modérée jusqu'à résolution",
 
@@ -279,6 +280,13 @@ const STRINGS: Record<string, string> = {
   'recovery.rationale.sleepLimiting': 'Le sommeil limite la récupération aujourd’hui.',
   'recovery.rationale.overreachingRisk': 'Risque de surmenage détecté.',
   'recovery.rationale.dissonance': 'Écart entre signaux objectifs et ressenti.',
+  // illnessRisk — training estimates only; not a diagnosis (Science Sport V0)
+  'recovery.rationale.illnessRisk.acute':
+    'Signal de récupération atypique — le profil ressemble à une baisse de résilience.',
+  'recovery.rationale.illnessRisk.mandatory':
+    'Repos recommandé aujourd’hui pour protéger la récupération.',
+  'recovery.rationale.illnessRisk.consult':
+    'En cas de symptômes, consulte un avis médical.',
 
   // ── Adaptation evidence & rationale ────────────────────────────────────────
   'adaptation.rationale.noData': 'Données insuffisantes pour lire ton adaptation.',

@@ -9,6 +9,8 @@ export type DrillDownAlert = {
   prefix: string;
   label: string;
   colorClass: string;
+  /** Optional supporting line (e.g. medical advice under a clinical-sounding signal). */
+  detail?: string;
   /** Drives the surface. Defaults to caution — risk claims the louder ground. */
   tone?: AlertTone;
 };
@@ -60,6 +62,9 @@ export function DrillDownAlertSection({ alerts }: { alerts: DrillDownAlert[] }) 
               <span aria-hidden> — </span>
               {alert.label}
             </p>
+            {alert.detail ? (
+              <p className="text-muted-foreground mt-1 pl-4 text-xs leading-relaxed">{alert.detail}</p>
+            ) : null}
           </li>
         ))}
       </ul>

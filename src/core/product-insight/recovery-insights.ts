@@ -84,7 +84,7 @@ function buildIllnessInsight(input: RecoveryInsightInput): ProductInsight {
     title: 'Risque de fragilité',
     summary: input.illnessLabel!,
     explanation:
-      'Quand le profil de récupération ressemble à une baisse de résilience globale, il vaut mieux protéger la journée.',
+      'Signal de récupération atypique — estimation d’entraînement, pas un diagnostic. En cas de symptômes, consulte un avis médical.',
     evidence: input.keyEvidence.slice(0, 2),
     confidence: input.confidence,
     importance: 'MEDIUM',
