@@ -8,9 +8,8 @@ describe('TodayUnderstandSection contract', () => {
     'utf8',
   );
 
-  it('renders visual signal strip under Comprendre, not text-only links', () => {
+  it('renders visual signal strip with secondary panels, not text-only links', () => {
     expect(source).toContain('TodaySignalStrip');
-    expect(source).toContain('Comprendre');
     expect(source).toContain('ActivityConsistencyPanel');
     expect(source).toContain('TodayNutritionCard');
     expect(source).not.toContain('buildUnderstandLinks');

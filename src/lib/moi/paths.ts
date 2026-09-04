@@ -19,15 +19,13 @@ export function resolveProgressLegacyRedirect(input: {
   tab?: string | null;
   sport?: string | null;
 }): string {
-  const tab = input.tab;
+  const { tab, sport: sportParam } = input;
   if (tab === 'body') {
     return MOI_CORPS_PATH;
   }
   if (tab === 'performance') {
     const sport =
-      input.sport === 'run' || input.sport === 'bike' || input.sport === 'swim'
-        ? input.sport
-        : null;
+      sportParam === 'run' || sportParam === 'bike' || sportParam === 'swim' ? sportParam : null;
     return sport ? `${MOI_PERFORMANCE_PATH}?sport=${sport}` : MOI_PERFORMANCE_PATH;
   }
   return MOI_OBJECTIFS_PATH;

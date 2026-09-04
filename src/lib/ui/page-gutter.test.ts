@@ -13,7 +13,7 @@ describe('PAGE_GUTTER (shell bleed contract)', () => {
 });
 
 describe('PAGE_CONTENT_MAX_CLASS', () => {
-  it('caps the reading column at 768px on every viewport', () => {
-    expect(PAGE_CONTENT_MAX_CLASS).toBe('max-w-3xl');
+  it('caps the reading column at 1024px on every viewport', () => {
+    expect(PAGE_CONTENT_MAX_CLASS).toBe('max-w-5xl');
   });
 });

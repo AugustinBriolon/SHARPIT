@@ -5,9 +5,7 @@ describe('recordCategoryHref', () => {
   it('opens Performance with sport filter and category anchor', () => {
     expect(recordCategoryHref('run-5k')).toBe('/moi/performance?sport=run#run-5k');
     expect(recordCategoryHref('bike-ftp')).toBe('/moi/performance?sport=bike#bike-ftp');
-    expect(recordCategoryHref('swim-distance')).toBe(
-      '/moi/performance?sport=swim#swim-distance',
-    );
+    expect(recordCategoryHref('swim-distance')).toBe('/moi/performance?sport=swim#swim-distance');
   });
 
   it('maps categories to sport tabs used by RecordsPanel', () => {

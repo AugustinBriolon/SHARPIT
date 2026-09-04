@@ -1,10 +1,7 @@
 import { Suspense } from 'react';
 import { MobileBackLink } from '@/components/layout/mobile-back-link';
 import { StickyHeader } from '@/components/layout/sticky-header';
-import {
-  MoiObjectifsToolbar,
-  MoiSectionContent,
-} from '@/components/shell/moi-section-content';
+import { MoiObjectifsToolbar, MoiSectionContent } from '@/components/shell/moi-section-content';
 import { Skeleton } from '@/components/ui/skeleton';
 import { MOI_HUB_PATH } from '@/lib/moi/paths';
 

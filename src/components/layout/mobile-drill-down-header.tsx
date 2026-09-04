@@ -27,11 +27,7 @@ export function MobileDrillDownHeader({
 }) {
   return (
     <StickyHeader className={cn('mb-3 space-y-1 lg:mb-4', className)}>
-      <MobileBackLink
-        fallbackHref={backHref}
-        fallbackLabel={backLabel}
-        showOnDesktop
-      />
+      <MobileBackLink fallbackHref={backHref} fallbackLabel={backLabel} showOnDesktop />
       <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
         <h1 className="text-page-title">{title}</h1>
         {titleBadge}

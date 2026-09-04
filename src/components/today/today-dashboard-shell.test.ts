@@ -28,7 +28,8 @@ describe('TodayDashboardShell', () => {
   });
 
   it('keeps the chrome that is structure rather than data', () => {
-    expect(html).toContain('Aujourd’hui');
+    expect(html).toContain('Actions du jour');
+    expect(html).toContain('Signaux de nuit');
   });
 
   it('pulses values instead of inventing them', () => {

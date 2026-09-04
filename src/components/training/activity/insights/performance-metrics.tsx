@@ -81,10 +81,7 @@ export function ThresholdsHint({ analysis }: { analysis: ActivityAnalysis }) {
     <ClinicalAnnotation title="Seuils estimés">
       Zones et IF/TSS s&apos;appuient ici sur des estimations. Pour les verrouiller, applique-les
       depuis{' '}
-      <Link
-        className="text-primary underline-offset-2 hover:underline"
-        href="/moi/performance"
-      >
+      <Link className="text-primary underline-offset-2 hover:underline" href="/moi/performance">
         Calibration
       </Link>{' '}
       ou ajuste-les dans{' '}
