@@ -36,13 +36,13 @@ Non-goals:
 
 ## Approach (hybrid C — approved)
 
-| Layer | Behaviour |
-| --- | --- |
-| Connectivity | Keep `useOnlineStatus` → `!useOffline()` from `next/offline` |
-| Awareness | Keep global `OfflineBanner` |
-| Read | Cache first; hub cold+offline → `OfflineSnapshotSummary` via `useOfflineSnapshot` |
-| Write | Disable network-required actions; Instant CRUD submits also disabled until outbox exists |
-| Helper | `useOfflineGuard()` for buttons / submits |
+| Layer        | Behaviour                                                                                |
+| ------------ | ---------------------------------------------------------------------------------------- |
+| Connectivity | Keep `useOnlineStatus` → `!useOffline()` from `next/offline`                             |
+| Awareness    | Keep global `OfflineBanner`                                                              |
+| Read         | Cache first; hub cold+offline → `OfflineSnapshotSummary` via `useOfflineSnapshot`        |
+| Write        | Disable network-required actions; Instant CRUD submits also disabled until outbox exists |
+| Helper       | `useOfflineGuard()` for buttons / submits                                                |
 
 ---
 
@@ -77,12 +77,12 @@ Optional tiny presentational helper later (`OfflineAwareButton`) — **YAGNI** u
 
 **Reuse** `OfflineSnapshotSummary` + `useOfflineSnapshot(active)` — no new Twin projection.
 
-| Hub | Trigger (`active`) | Placement |
-| --- | --- | --- |
-| Today | Already: `!online && hasNoLiveContent` | Unchanged |
-| Biology (`CorpsHub`) | `!online &&` composition/suivi query cold (no data, not merely refetching) | Replace main tab body; keep StickyHeader + tabs chrome |
-| Training (`TrainingDashboard`) | `!online &&` activities+planned+goals all without data (same gate as cold shell / `valuesLoading` with empty cache) | Replace dashboard body |
-| Coach (`CoachView`) | `!online &&` no usable conversation list cache **and** no active thread content | Show summary in main panel; keep header chrome where possible |
+| Hub                            | Trigger (`active`)                                                                                                  | Placement                                                     |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| Today                          | Already: `!online && hasNoLiveContent`                                                                              | Unchanged                                                     |
+| Biology (`CorpsHub`)           | `!online &&` composition/suivi query cold (no data, not merely refetching)                                          | Replace main tab body; keep StickyHeader + tabs chrome        |
+| Training (`TrainingDashboard`) | `!online &&` activities+planned+goals all without data (same gate as cold shell / `valuesLoading` with empty cache) | Replace dashboard body                                        |
+| Coach (`CoachView`)            | `!online &&` no usable conversation list cache **and** no active thread content                                     | Show summary in main panel; keep header chrome where possible |
 
 **Rule:** if TanStack still has data from a prior visit, **paint that data** (SWR / Instant UX). Snapshot is only for empty live content while offline — not a second UI over warm cache.
 
@@ -92,19 +92,19 @@ Optional tiny presentational helper later (`OfflineAwareButton`) — **YAGNI** u
 
 Disable or block submit when `offline` (use `useOfflineGuard`):
 
-| Surface | Actions |
-| --- | --- |
-| Coach chat | Send / lock composer; new conversation; tool approve/reject that hits network |
-| Coach plan / adapt | Generate (LLM); insert/apply already partially gated — unify on helper |
-| Integrations | “Tout synchroniser” + per-provider sync / backfill |
-| Wellness check-in | Submit |
-| Morning orientation | Force sync / refresh evidence; apply / keep recalibration |
-| Today empty | “Actualiser” refetch |
-| Settings | Profile save, calibration save/import/apply-estimates |
-| Coach memory | Create / update / delete |
-| Activity form | Create / update submit |
-| Planned session dialog | Create / update / delete / brick analyze |
-| Physical notes | Create / update / check-in |
+| Surface                | Actions                                                                       |
+| ---------------------- | ----------------------------------------------------------------------------- |
+| Coach chat             | Send / lock composer; new conversation; tool approve/reject that hits network |
+| Coach plan / adapt     | Generate (LLM); insert/apply already partially gated — unify on helper        |
+| Integrations           | “Tout synchroniser” + per-provider sync / backfill                            |
+| Wellness check-in      | Submit                                                                        |
+| Morning orientation    | Force sync / refresh evidence; apply / keep recalibration                     |
+| Today empty            | “Actualiser” refetch                                                          |
+| Settings               | Profile save, calibration save/import/apply-estimates                         |
+| Coach memory           | Create / update / delete                                                      |
+| Activity form          | Create / update submit                                                        |
+| Planned session dialog | Create / update / delete / brick analyze                                      |
+| Physical notes         | Create / update / check-in                                                    |
 
 **Explicit keep soft-fail (no new gate):**
 

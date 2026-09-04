@@ -5,7 +5,6 @@ import {
   ApprovalCardBody,
   ApprovalCardShell,
 } from '@/components/agents/approval-card/approval-card-layout';
-import { approvalCardCopy } from '@/components/agents/approval-card/copy';
 import { useApprovalCard } from '@/components/agents/approval-card/use-approval-card';
 import type { ApprovalCardProps } from './types';
 

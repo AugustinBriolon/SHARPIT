@@ -23,7 +23,10 @@ type EntryOverrides = {
   fiber?: number | null;
 };
 
-function buildNutritionalContents(energy: number, nutrients: Omit<EntryOverrides, 'meal_name' | 'description' | 'energy'>) {
+function buildNutritionalContents(
+  energy: number,
+  nutrients: Omit<EntryOverrides, 'meal_name' | 'description' | 'energy'>,
+) {
   return {
     energy: { value: energy, unit: 'calories' },
     fat: nutrients.fat ?? null,
@@ -35,9 +38,14 @@ function buildNutritionalContents(energy: number, nutrients: Omit<EntryOverrides
 }
 
 function buildEntry(overrides: EntryOverrides) {
-  const { meal_name = 'Lunch', description = 'Test food', energy = 0, ...nutrients } = overrides;
+  const {
+    meal_name: mealName = 'Lunch',
+    description = 'Test food',
+    energy = 0,
+    ...nutrients
+  } = overrides;
   return {
-    meal_name,
+    meal_name: mealName,
     food: { description },
     nutritional_contents: buildNutritionalContents(energy, nutrients),
   };

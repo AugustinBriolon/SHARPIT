@@ -17,7 +17,7 @@ type Proposal = {
 
 export function MorningOrientationProposal({
   busy,
-  direction,
+  direction: _direction,
   mode,
   offline,
   offlineLabel,

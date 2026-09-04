@@ -76,7 +76,7 @@ export function formatDistance(meters?: number | null): string {
 }
 
 export function formatDate(date: Date | string | null | undefined): string {
-  if ((date === undefined || date === null)) {
+  if (date === undefined || date === null) {
     return '—';
   }
   const value = date instanceof Date ? date : new Date(date);

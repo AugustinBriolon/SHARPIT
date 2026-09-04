@@ -38,11 +38,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { toast } from '@/components/ui/toast';
-import { useGoogleCalendars } from '@/hooks/use-data';
 import type { GoogleCalendarInfo } from '@/lib/query/fetchers';
 import {
   runGarminSync,
-  runGoogleSync,
   runRenphoSync,
   runStravaBackfill,
   runStravaSync,
@@ -418,9 +416,9 @@ function GarminContent({
                 id="garmin-token-store"
                 name="tokenStore"
                 placeholder='{"di_token":"…","di_refresh_token":"…","di_client_id":"…"}'
-                required
                 rows={5}
                 spellCheck={false}
+                required
               />
             </div>
             {error && (

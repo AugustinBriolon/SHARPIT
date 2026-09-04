@@ -132,9 +132,7 @@ export async function buildFreshGarminClient(
   // Legacy oauth1/Garth session: never attempt SSO or dead oauth1→oauth2 exchange.
   if (garminAccessTokenExpiresAtMs(tokens) - Date.now() < DI_REFRESH_MARGIN_MS) {
     await revokeGarminCredentials(athleteId);
-    throw new ProviderAuthError(
-      'Session Garmin expirée. Reconnecte Garmin dans les paramètres.',
-    );
+    throw new ProviderAuthError('Session Garmin expirée. Reconnecte Garmin dans les paramètres.');
   }
 
   return clientFromTokens(tokens);
@@ -188,7 +186,7 @@ export async function runGarminCall<T>(athleteId: string, fn: () => Promise<T>):
 }
 
 export async function connectGarmin(
-  athleteId: string,
+  _athleteId: string,
   _username: string,
   _password: string,
 ): Promise<never> {

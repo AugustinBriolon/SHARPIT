@@ -353,14 +353,14 @@ See [ADR-028](../adr/ADR-028-animation-technology-and-press-feedback.md).
 
 Never apply a single `scale()` to every interactive component. Calibrate press feedback by dimensions, surface area, interaction frequency, hierarchy, physicality, and action importance. Large surfaces compress less than small controls; high-frequency controls use minimal or no scale.
 
-| Preset | Scale | Use |
-| ------ | ----- | --- |
-| Micro control | 0.95 | Icon buttons, compact toggles |
-| Small button | 0.96 | Default compact controls (`pressable`, `chip-surface`) |
-| Large button | 0.98 | Wide CTAs |
-| Large surface | 0.988 | Clickable cards and rows (`pressable-lg`, `chip-surface-lg`) |
-| High-frequency | none | Tabs, scrubbers — color/opacity only |
-| Gesture-driven | spring | Motion `whileTap` + `springs.*`, not CSS `:active` scale |
+| Preset         | Scale  | Use                                                          |
+| -------------- | ------ | ------------------------------------------------------------ |
+| Micro control  | 0.95   | Icon buttons, compact toggles                                |
+| Small button   | 0.96   | Default compact controls (`pressable`, `chip-surface`)       |
+| Large button   | 0.98   | Wide CTAs                                                    |
+| Large surface  | 0.988  | Clickable cards and rows (`pressable-lg`, `chip-surface-lg`) |
+| High-frequency | none   | Tabs, scrubbers — color/opacity only                         |
+| Gesture-driven | spring | Motion `whileTap` + `springs.*`, not CSS `:active` scale     |
 
 Floor: never below **0.95** on `:active` scale. Deviations from a preset require a comment naming the override and why. Canonical values: `motionTokens.scale.press*` in `src/lib/motion/tokens.ts`, mirrored as `--press-scale-*` in `src/app/globals.css`.
 
@@ -368,14 +368,14 @@ Floor: never below **0.95** on `:active` scale. Deviations from a preset require
 
 Mount, unmount, and exit animations are state-bound — use Motion via shared components in `src/components/motion/`, with variants from `src/lib/motion/variants.ts` and durations from `motionTokens`. Do not add raw `AnimatePresence` with bespoke timings.
 
-| Pattern | Component | Use |
-| ------- | --------- | --- |
-| Mount + exit | `FadePresence` | Conditional panels, hub state swaps |
-| One-shot fade-in | `FadeIn` | Post-mount opacity only |
-| Expand / collapse | `MotionExpand` | Sections (grid 0fr→1fr + opacity, §9.3) |
-| List enter | `StaggerList` | Multi-item reveal on first paint — not every optimistic row |
-| Dialog / morph | `MorphPopover`, motion dialog wrappers | `dialogTransition` / `springs.gentle` |
-| Action label swap | `ActionSwap`, `ActionSwapRollText` | In-flight feedback without blocking |
+| Pattern           | Component                              | Use                                                         |
+| ----------------- | -------------------------------------- | ----------------------------------------------------------- |
+| Mount + exit      | `FadePresence`                         | Conditional panels, hub state swaps                         |
+| One-shot fade-in  | `FadeIn`                               | Post-mount opacity only                                     |
+| Expand / collapse | `MotionExpand`                         | Sections (grid 0fr→1fr + opacity, §9.3)                     |
+| List enter        | `StaggerList`                          | Multi-item reveal on first paint — not every optimistic row |
+| Dialog / morph    | `MorphPopover`, motion dialog wrappers | `dialogTransition` / `springs.gentle`                       |
+| Action label swap | `ActionSwap`, `ActionSwapRollText`     | In-flight feedback without blocking                         |
 
 Exit duration ≤ 80% of enter. `initial={false}` when replay would jar. Reduced motion: instant state change, no animation (§9.5). Reveal animations remain a separate category — [ADR-024](../adr/ADR-024-route-reveal-motion-exception.md).
 
@@ -567,7 +567,7 @@ The Today View is the highest-priority screen. Every principle is expressed most
    - Color whenever the verdict is not `INSUFFICIENT_DATA` (including recover / easy mornings)
    - `RECOVER` uses protective primary/sage — never alarm red (recovery is the right decision)
    - No metric card grid, no multi-color physio rail, no lateral % inset competing with the verdict
-2. **Signal strip** (`TodaySignalStrip`) — four compact chips with no parent panel: **2×2 on mobile**, **one row from `sm`**. Hairline + value + `→` invite drill-down without four hero buttons.
+2. **Overnight signals** (`TodaySignalStrip`) — twin instrument cards (sleep + recovery): short-tick semicircle gauge, qualitative label, quiet baseline band. Adaptation and charge belong on Plan (block trajectory), not in the morning résumé.
 3. **Session** (`TodayActionRow`) — chip-style session rows only; Frein column removed (lives on the plate).
 4. **Trajectory** — headline + naked sparklines; sparkline titles are drill-downs (no nested panels / link row).
 
@@ -604,7 +604,7 @@ Same Instrument column as Today. All four routes share one shell (`PhysioDrillDo
 3. **Why** — domain narrative bandeau (phrase + link Accueil / expand), not a second hero card.
 4. **Evidence** — one primary chart or reading block visible; surfaces use iOS-like inset radius on mobile (`rounded-[1.25rem]`), analysis panel on desktop. Secondary detail densified or expandable — not hidden forever.
 
-**Mobile shell:** tighter stack (`space-y-3`), plate-first composition; tab bar + safe-area already owned by `MobileShell`. Feels like a native instrument screen, not a browser card stack.
+**Shell:** tighter stack (`space-y-3`), plate-first composition; floating tab bar + safe-area already owned by `AppShell`. Feels like a native instrument screen, not a browser card stack.
 
 **Order (non-negotiable):** Plate → Chips → Why → Evidence.
 

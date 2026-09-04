@@ -51,7 +51,7 @@ function severityRegressionSlope(history: ConditionHistory['severityHistory14d']
 }
 
 function classifyTrend(slope: number | null): ConditionTrend | null {
-  if ((slope === undefined || slope === null)) {
+  if (slope === undefined || slope === null) {
     return null;
   }
   if (slope < -TREND_SLOPE_THRESHOLD) {

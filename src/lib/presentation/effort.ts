@@ -81,7 +81,7 @@ const DOMINANT_DIMENSION_LABEL_LOW: Record<string, string> = {
 };
 
 function mapStrainToDisplay(strainScore: number | null) {
-  if ((strainScore === undefined || strainScore === null)) {
+  if (strainScore === undefined || strainScore === null) {
     return {
       label: 'Indéterminé',
       colorClass: 'text-muted-foreground',
@@ -191,7 +191,8 @@ function resolveEffortDerivedMetrics(input: {
     performancePercent,
     verdictDisplay,
     confidencePct: Math.round(fatigue.confidence * 100),
-    confidenceTone: (CONFIDENCE_TONE[confidenceTier] ?? 'neutral') as EffortViewModel['confidenceTone'],
+    confidenceTone: (CONFIDENCE_TONE[confidenceTier] ??
+      'neutral') as EffortViewModel['confidenceTone'],
     completenessLabel: COMPLETENESS_LABEL[fatigue.dataCompleteness] ?? fatigue.dataCompleteness,
     isLowFatigue,
     dimensions,
@@ -211,8 +212,17 @@ function buildPopulatedEffortViewModel(input: {
   strainScore: number | null;
   strainDisplay: ReturnType<typeof mapStrainToDisplay>;
 }): EffortViewModel {
-  const { snapshot, fatigue, dailyStrain, trainingLoad, pmcSeries, weeklyTss, dailyLoad, strainScore, strainDisplay } =
-    input;
+  const {
+    snapshot,
+    fatigue,
+    dailyStrain,
+    trainingLoad,
+    pmcSeries,
+    weeklyTss,
+    dailyLoad,
+    strainScore,
+    strainDisplay,
+  } = input;
   const metrics = resolveEffortDerivedMetrics({ fatigue, trainingLoad, pmcSeries, weeklyTss });
   const rationale = fatigue.decision.rationale.map((r) => resolve(r));
   const keyEvidence = fatigue.recommendation.keyEvidence.map((e) => resolve(e));

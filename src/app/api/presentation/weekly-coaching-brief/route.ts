@@ -28,7 +28,9 @@ function resolveBriefGoal(
     activePlan !== null && activePlan.goalId !== null
       ? (goals.find((g) => g.id === activePlan.goalId && !g.achieved) ?? null)
       : null;
-  return planGoal ?? goals.find((g) => !g.achieved && g.targetDate && g.targetDate >= weekStart) ?? null;
+  return (
+    planGoal ?? goals.find((g) => !g.achieved && g.targetDate && g.targetDate >= weekStart) ?? null
+  );
 }
 
 async function loadSessionDecisions(athleteId: string, plannedSessions: { id: string }[]) {

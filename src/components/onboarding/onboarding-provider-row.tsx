@@ -63,13 +63,7 @@ function ProviderIdentity({
   );
 }
 
-function providerRowClassName({
-  soon,
-  isPrimary,
-}: {
-  soon: boolean;
-  isPrimary: boolean;
-}) {
+function providerRowClassName({ soon, isPrimary }: { soon: boolean; isPrimary: boolean }) {
   return cn(
     'rounded-analysis w-full border px-3 py-3 text-left',
     soon && 'border-analysis-border/60 opacity-55',

@@ -7,9 +7,6 @@ import {
   endOfWeek,
   format as formatDate,
   isAfter,
-  isBefore,
-  isSameDay,
-  isSameMonth,
   startOfDay,
   startOfMonth,
   startOfWeek,
@@ -25,7 +22,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { cn } from '@/lib/utils';
 import { CalendarDayCell } from '@/components/today/drill-down/calendar-day-cell';
 
 /** Fixed pill width — long FR weekdays (“mercredi 18 septembre”) still fit. */

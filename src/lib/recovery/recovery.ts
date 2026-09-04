@@ -127,7 +127,7 @@ const READINESS_THRESHOLDS = {
 } as const;
 
 function scoreTone(score: number | null): RecoveryTone {
-  if ((score === undefined || score === null)) {
+  if (score === undefined || score === null) {
     return 'neutral';
   }
   if (score >= READINESS_THRESHOLDS.GOOD) {
@@ -156,7 +156,7 @@ export function levelLabel(level: string | null): string {
 }
 
 function buildRecommendation(score: number | null, tone: RecoveryTone): string {
-  if ((score === undefined || score === null)) {
+  if (score === undefined || score === null) {
     return "Pas de données de readiness pour aujourd'hui. Fie-toi à ton ressenti et à ta charge.";
   }
   if (tone === 'good') {
@@ -254,7 +254,7 @@ const TSB_THRESHOLDS = {
 
 export function buildFormView(pmc: PmcPoint[]): FormView {
   const tsb = pmc.length ? pmc[pmc.length - 1].tsb : null;
-  if ((tsb === undefined || tsb === null)) {
+  if (tsb === undefined || tsb === null) {
     return { tsb: null, label: '—', tone: 'neutral', description: '' };
   }
   if (tsb > TSB_THRESHOLDS.FRESH) {
@@ -292,7 +292,7 @@ export function buildFormView(pmc: PmcPoint[]): FormView {
 // ---- Body Battery ----
 
 export function bodyBatteryTone(value: number | null): RecoveryTone {
-  if ((value === undefined || value === null)) {
+  if (value === undefined || value === null) {
     return 'neutral';
   }
   if (value >= 70) {
@@ -307,7 +307,7 @@ export function bodyBatteryTone(value: number | null): RecoveryTone {
 // ---- Stress ----
 
 export function stressTone(value: number | null): RecoveryTone {
-  if ((value === undefined || value === null)) {
+  if (value === undefined || value === null) {
     return 'neutral';
   }
   if (value <= 25) {

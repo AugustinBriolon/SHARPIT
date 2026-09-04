@@ -18,11 +18,7 @@ function renderPanel(dayKey = '2026-09-02') {
     defaultOptions: { queries: { retry: false } },
   });
   return renderToStaticMarkup(
-    createElement(
-      QueryClientProvider,
-      { client },
-      createElement(DailyBriefingPanel, { dayKey }),
-    ),
+    createElement(QueryClientProvider, { client }, createElement(DailyBriefingPanel, { dayKey })),
   );
 }
 

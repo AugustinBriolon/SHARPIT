@@ -387,12 +387,12 @@ All CRUD above §5.2 must leave this list.
 
 TanStack cache first (SWR / Instant UX). When offline **and** a hub has no usable live data, show read-only `OfflineSnapshotSummary` via `useOfflineSnapshot` — same Twin expression as Today, not client-side ViewModel reconstruction.
 
-| Hub      | Cold-offline trigger                                      |
-| -------- | --------------------------------------------------------- |
-| Today    | `!online && hasNoLiveContent` (existing)                  |
-| Biology  | `!online &&` composition/suivi query cold                 |
+| Hub      | Cold-offline trigger                                       |
+| -------- | ---------------------------------------------------------- |
+| Today    | `!online && hasNoLiveContent` (existing)                   |
+| Biology  | `!online &&` composition/suivi query cold                  |
 | Training | `!online &&` activities + planned + goals all without data |
-| Coach    | `!online &&` no conversation cache and no active thread   |
+| Coach    | `!online &&` no conversation cache and no active thread    |
 
 Warm cache from a prior visit still paints — snapshot is never overlaid on warm data.
 
@@ -408,13 +408,13 @@ Gated surfaces (v1): coach chat send/tools, plan generate/adapt, integrations sy
 
 Do **not** build an offline mutation queue until explicitly approved. Existing Instant UX choices remain outbox-compatible:
 
-| Choice                                        | Offline-ready?                                          |
-| --------------------------------------------- | ------------------------------------------------------- |
-| Optimistic apply + rollback contexts          | Yes — queue can replay same apply functions             |
-| Temp ids (`optimistic-*`)                     | Yes — map to server ids on ack                          |
-| `listOptimistic` centralized helper           | Yes — extend to persisted outbox later                  |
-| Ad-hoc component `fetch` mutations            | **No** — migrate into hooks first                       |
-| Relying only on `invalidateQueries` for truth | Weak — prefer explicit patches that can be journaled    |
+| Choice                                        | Offline-ready?                                       |
+| --------------------------------------------- | ---------------------------------------------------- |
+| Optimistic apply + rollback contexts          | Yes — queue can replay same apply functions          |
+| Temp ids (`optimistic-*`)                     | Yes — map to server ids on ack                       |
+| `listOptimistic` centralized helper           | Yes — extend to persisted outbox later               |
+| Ad-hoc component `fetch` mutations            | **No** — migrate into hooks first                    |
+| Relying only on `invalidateQueries` for truth | Weak — prefer explicit patches that can be journaled |
 
 When offline sync is later approved: outbox of `{ mutationKey, vars, apply, rollback }` drained on `online`, reconciled via existing event-driven refresh. No service-worker caching of `/api/**`; no Core / Twin / Decision Engine changes.
 

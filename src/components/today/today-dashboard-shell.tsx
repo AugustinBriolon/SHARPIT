@@ -31,6 +31,7 @@ export function TodayDashboardShell({ trainingDayId }: { trainingDayId?: string 
         activities={[]}
         limitingFactorHref={null}
         metricsRow={content.hero.metricsRow}
+        signalPreviews={content.hero.signalPreviews}
         activitiesLoading
         loading
       />

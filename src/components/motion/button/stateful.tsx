@@ -1,7 +1,6 @@
 'use client';
 
 import { forwardRef, type ReactNode } from 'react';
-import { AnimatePresence } from 'motion/react';
 import { Button, type ButtonProps } from './base';
 import { IdleStateIcon, LeadingStateIcon, TextSlot, type ButtonState } from './stateful-parts';
 

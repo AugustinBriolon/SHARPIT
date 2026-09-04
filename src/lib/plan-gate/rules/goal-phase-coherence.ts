@@ -4,7 +4,7 @@ import type { GateContext, GateProposal, PlanGateRule, RuleFinding } from '../ty
 
 const WEEK_OPTS = { weekStartsOn: 1 as const };
 
-function beyondGoalHorizonFinding(proposal: GateProposal, goalTargetDate: Date): RuleFinding {
+function beyondGoalHorizonFinding(proposal: GateProposal, _goalTargetDate: Date): RuleFinding {
   const goalRef = proposal.goalId ? `goalId=${proposal.goalId}` : 'goal.targetDate';
   return {
     ruleCode: 'BEYOND_GOAL_HORIZON',
@@ -14,7 +14,7 @@ function beyondGoalHorizonFinding(proposal: GateProposal, goalTargetDate: Date):
   };
 }
 
-function taperLoadIncreaseFinding(proposal: GateProposal, recentAvg: number): RuleFinding {
+function taperLoadIncreaseFinding(proposal: GateProposal, _recentAvg: number): RuleFinding {
   return {
     ruleCode: 'TAPER_LOAD_INCREASE',
     severity: 'WARNING',

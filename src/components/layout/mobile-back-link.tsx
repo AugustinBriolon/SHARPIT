@@ -24,10 +24,11 @@ type MobileBackLinkProps = {
   fallbackLabel?: string;
   replace?: boolean;
   className?: string;
+  /** @deprecated Chrome is unified — the glass back control is always shown. */
   showOnDesktop?: boolean;
 };
 
-function MobileGlassBack({
+function GlassBack({
   className,
   href,
   label,
@@ -41,7 +42,7 @@ function MobileGlassBack({
   replace: boolean;
 }) {
   return (
-    <div className="fixed top-3 left-4 z-50 lg:hidden">
+    <div className="fixed top-3 left-4 z-50">
       <ChromeGlass
         className="flex size-12 min-h-[44px] min-w-[44px] items-center justify-center"
         cornerRadius={999}
@@ -64,72 +65,29 @@ function MobileGlassBack({
   );
 }
 
-function DesktopBack({
-  className,
-  href,
-  label,
-  onClick,
-  replace,
-  showOnDesktop,
-}: {
-  className?: string;
-  href: string;
-  label: React.ReactNode;
-  onClick?: (event: React.MouseEvent<HTMLAnchorElement>) => void;
-  replace: boolean;
-  showOnDesktop: boolean;
-}) {
-  return (
-    <Link
-      aria-label={typeof label === 'string' ? label : undefined}
-      href={href}
-      replace={replace}
-      className={cn(
-        'text-muted-foreground hover:text-foreground mb-3 hidden items-center justify-start gap-1 lg:flex',
-        !showOnDesktop && 'lg:hidden',
-        className,
-      )}
-      onClick={onClick}
-    >
-      <ChevronLeft className="size-4 shrink-0" aria-hidden />
-      <span className="text-sm">{label}</span>
-    </Link>
-  );
-}
-
 function BackLinkChrome({
   className,
   href,
   label,
   onClick,
   replace = false,
-  showOnDesktop,
 }: {
   className?: string;
   href: string;
   label: React.ReactNode;
   onClick?: (event: React.MouseEvent<HTMLAnchorElement>) => void;
   replace?: boolean;
-  showOnDesktop: boolean;
 }) {
   return (
     <>
-      <MobileGlassBack
+      <GlassBack
         className={className}
         href={href}
         label={label}
         replace={replace}
         onClick={onClick}
       />
-      <DesktopBack
-        className={className}
-        href={href}
-        label={label}
-        replace={replace}
-        showOnDesktop={showOnDesktop}
-        onClick={onClick}
-      />
-      <div className="h-16 lg:hidden" aria-hidden />
+      <div className="h-16" aria-hidden />
     </>
   );
 }
@@ -138,8 +96,7 @@ function DynamicBackLink({
   className,
   fallbackHref,
   fallbackLabel,
-  showOnDesktop,
-}: Omit<MobileBackLinkProps, 'href' | 'label'> & { showOnDesktop: boolean }) {
+}: Omit<MobileBackLinkProps, 'href' | 'label' | 'showOnDesktop'>) {
   const router = useRouter();
   const overrideFallback =
     fallbackHref && fallbackLabel ? { href: fallbackHref, label: fallbackLabel } : undefined;
@@ -151,7 +108,6 @@ function DynamicBackLink({
       className={className}
       href={target.href}
       label={target.label}
-      showOnDesktop={showOnDesktop}
       onClick={(event) => {
         if (!preferHistoryBack) {
           return;
@@ -175,18 +131,9 @@ export function MobileBackLink({
   href,
   label,
   replace = false,
-  showOnDesktop = false,
 }: MobileBackLinkProps) {
   if (href && label) {
-    return (
-      <BackLinkChrome
-        className={className}
-        href={href}
-        label={label}
-        replace={replace}
-        showOnDesktop={showOnDesktop}
-      />
-    );
+    return <BackLinkChrome className={className} href={href} label={label} replace={replace} />;
   }
 
   return (
@@ -196,7 +143,6 @@ export function MobileBackLink({
           className={className}
           href={fallbackHref ?? '/'}
           label={fallbackLabel ?? 'Retour'}
-          showOnDesktop={showOnDesktop}
         />
       }
     >
@@ -204,7 +150,6 @@ export function MobileBackLink({
         className={className}
         fallbackHref={fallbackHref}
         fallbackLabel={fallbackLabel}
-        showOnDesktop={showOnDesktop}
       />
     </Suspense>
   );

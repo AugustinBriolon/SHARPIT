@@ -252,7 +252,7 @@ export function estimateRunThresholdPace(
   for (const ref of candidates) {
     const predictedSeconds = ref.seconds * (THRESHOLD_PROXY_METERS / ref.meters) ** RIEGEL_EXPONENT;
     const predictedPace = Math.round((predictedSeconds / THRESHOLD_PROXY_METERS) * 1000);
-    if ((bestPace === undefined || bestPace === null) || predictedPace < bestPace) {
+    if (bestPace === undefined || bestPace === null || predictedPace < bestPace) {
       bestPace = predictedPace;
     }
   }
@@ -307,7 +307,7 @@ function ftpFromBikeEfforts(bikeEfforts: BikeEffort[]): FtpEstimate | null {
   let best: FtpEstimate | null = null;
   for (const e of bikeEfforts) {
     const factor = rideFtpFactor(e.seconds);
-    if ((factor === undefined || factor === null) || e.watts <= 0) {
+    if (factor === undefined || factor === null || e.watts <= 0) {
       continue;
     }
     const watts = Math.round(e.watts * factor);

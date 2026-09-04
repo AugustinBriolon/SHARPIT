@@ -105,23 +105,25 @@ function ActivityDetailHeaderCoachSection({
   plannedAnalysisReady: boolean;
 }) {
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col items-start gap-4">
       <DiscussWithCoachButton
-        className="w-full"
+        className="w-full sm:w-auto"
         label="Discuter de cette séance"
         size="sm"
         target={{ kind: 'activity', activityId: activity.id }}
       />
-      <ActivityHeaderContextChips
-        activityId={activity.id}
-        activityTitle={activity.title}
-        activityType={activity.type}
-        feeling={activity.feeling}
-        plannedAnalysisReady={plannedAnalysisReady}
-        plannedSession={plannedSession}
-        rpe={activity.rpe}
-        weather={activity.weather}
-      />
+      <div className="w-full">
+        <ActivityHeaderContextChips
+          activityId={activity.id}
+          activityTitle={activity.title}
+          activityType={activity.type}
+          feeling={activity.feeling}
+          plannedAnalysisReady={plannedAnalysisReady}
+          plannedSession={plannedSession}
+          rpe={activity.rpe}
+          weather={activity.weather}
+        />
+      </div>
     </div>
   );
 }

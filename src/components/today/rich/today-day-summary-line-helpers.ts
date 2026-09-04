@@ -7,11 +7,7 @@ import type { TodayViewModel } from '@/core/presentation/today-view-model';
 type DaySummaryLine = TodayViewModel['actionRow']['daySummaryLines'][number];
 
 export function buildDaySummaryMeta(line: DaySummaryLine): InstrumentListChipMeta[] {
-  const rawMeta = splitInstrumentMeta(line.secondary);
-  const meta: InstrumentListChipMeta[] =
-    line.kind === 'missed'
-      ? rawMeta.map((text, i) => (i === 0 ? { text, tone: 'caution' as const } : text))
-      : rawMeta;
+  const meta: InstrumentListChipMeta[] = splitInstrumentMeta(line.secondary);
 
   if (line.morningChoiceLabel) {
     meta.push({ text: line.morningChoiceLabel, tone: 'caution' });
@@ -24,7 +20,7 @@ export function daySummaryOpenPlanned(
   line: DaySummaryLine,
   onOpenPlanned: (sessionId: string) => void,
 ): (() => void) | undefined {
-  if (line.kind !== 'planned' && line.kind !== 'missed') {
+  if (line.kind !== 'planned') {
     return undefined;
   }
   return () => onOpenPlanned(line.id);

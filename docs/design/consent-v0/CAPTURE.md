@@ -4,12 +4,12 @@ Source: production `https://sharpit.vercel.app` (SHA includes health consent #74
 
 ## Files
 
-| Path | Source | Notes |
-| --- | --- | --- |
-| `consent_soft_wall_mobile.png` | Live prod via `/demo` cookie → `/consent` | Soft-wall with required health checkbox (art. 9) |
-| `consent_soft_wall_desktop.png` | Same | Desktop viewport |
-| `settings_privacy_demo_blocked_mobile.png` | Live prod `/settings/privacy` in demo | Documents auth/demo blocker |
-| `settings_privacy_health_withdraw_fixture_mobile.png` | DOM fixture from `PrivacySettingsPanel` + prod CSS | Not a live authenticated session |
+| Path                                                  | Source                                             | Notes                                            |
+| ----------------------------------------------------- | -------------------------------------------------- | ------------------------------------------------ |
+| `consent_soft_wall_mobile.png`                        | Live prod via `/demo` cookie → `/consent`          | Soft-wall with required health checkbox (art. 9) |
+| `consent_soft_wall_desktop.png`                       | Same                                               | Desktop viewport                                 |
+| `settings_privacy_demo_blocked_mobile.png`            | Live prod `/settings/privacy` in demo              | Documents auth/demo blocker                      |
+| `settings_privacy_health_withdraw_fixture_mobile.png` | DOM fixture from `PrivacySettingsPanel` + prod CSS | Not a live authenticated session                 |
 
 ## Capture method
 

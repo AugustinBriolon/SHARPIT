@@ -212,10 +212,7 @@ function parseMetrics(lines: string[]): { metrics: CoachMetricItem[]; proseLines
   return { metrics, proseLines };
 }
 
-function classifyUntitledSection(
-  metrics: CoachMetricItem[],
-  content: string,
-): CoachMessageBlock {
+function classifyUntitledSection(metrics: CoachMetricItem[], content: string): CoachMessageBlock {
   if (metrics.length >= 2) {
     return { type: 'phase', title: 'Plan', metrics, prose: content || undefined };
   }

@@ -58,7 +58,7 @@ export function buildWeeklyDeltaPresentation(
   delta7d: number | null | undefined,
   formatDelta: (delta: number) => string | undefined,
 ): WeeklyDeltaPresentation {
-  if ((delta7d === undefined || delta7d === null)) {
+  if (delta7d === undefined || delta7d === null) {
     return { deltaDisplay: null, deltaTone: 'ok', deltaHint: null };
   }
   const { tone, measurementHint } = resolveWeeklyDeltaStatus(metricId, delta7d);
@@ -168,7 +168,7 @@ export function resolveMetricValueTone(
   delta7d: number | null | undefined,
 ): CorpsTone {
   const weeklyId = toWeeklyDeltaMetricId(metricId);
-  if ((weeklyId === undefined || weeklyId === null) || (delta7d === undefined || delta7d === null)) {
+  if (weeklyId === undefined || weeklyId === null || delta7d === undefined || delta7d === null) {
     return zoneTone;
   }
   const { tone: deltaTone } = resolveWeeklyDeltaStatus(weeklyId, delta7d);
@@ -180,7 +180,7 @@ export function corpsToneFromAgeDelta(
   metricAge: number,
   chronologicalAgeYears: number | null,
 ): CorpsTone | null {
-  if ((chronologicalAgeYears === undefined || chronologicalAgeYears === null)) {
+  if (chronologicalAgeYears === undefined || chronologicalAgeYears === null) {
     return null;
   }
   const delta = metricAge - chronologicalAgeYears;
@@ -195,7 +195,7 @@ export function corpsToneFromAgeDelta(
 
 /** Statut visuel d'une note de sévérité 0–10 (Suivi physique). */
 export function corpsToneFromPhysicalSeverity(severity: number | null | undefined): CorpsTone {
-  if ((severity === undefined || severity === null)) {
+  if (severity === undefined || severity === null) {
     return 'neutral';
   }
   if (severity >= PHYSICAL_SEVERITY_ATTENTION_MIN) {

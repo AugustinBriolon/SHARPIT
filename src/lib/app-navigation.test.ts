@@ -7,25 +7,25 @@ import {
   isPlanTrainingPath,
   moiNavItem,
   planNavItem,
-  sidebarPrimaryNavItems,
   todayNavItem,
 } from './app-navigation';
 
 describe('app-navigation Shell V1', () => {
-  it('exposes exactly four bottom tabs: Aujourd’hui · Plan · Activité · Moi', () => {
+  it('exposes five bottom tabs: Résumé · Plan · Coach · Activité · Moi', () => {
     expect(bottomNavItems.map((item) => item.label)).toEqual([
-      'Aujourd’hui',
+      'Résumé',
       'Plan',
+      'Coach',
       'Activité',
       'Moi',
     ]);
-    expect(bottomNavItems.map((item) => item.href)).toEqual(['/', '/plan', '/activite', '/moi']);
-  });
-
-  it('keeps Coach out of primary bottom and sidebar nav', () => {
-    expect(bottomNavItems).not.toContainEqual(coachNavItem);
-    expect(sidebarPrimaryNavItems.map((item) => item.href)).not.toContain('/coach');
-    expect(coachNavItem.href).toBe('/coach');
+    expect(bottomNavItems.map((item) => item.href)).toEqual([
+      '/',
+      '/plan',
+      '/coach',
+      '/activite',
+      '/moi',
+    ]);
   });
 
   it('lights Today for home, drill-downs and nutrition', () => {
@@ -64,9 +64,9 @@ describe('app-navigation Shell V1', () => {
     expect(moiNavItem.match('/coach')).toBe(false);
   });
 
-  it('does not light any primary tab for Coach (contextual only)', () => {
-    const pathname = '/coach';
-    expect(bottomNavItems.some((item) => item.match(pathname))).toBe(false);
-    expect(coachNavItem.match(pathname)).toBe(true);
+  it('lights Coach tab for /coach paths', () => {
+    expect(coachNavItem.match('/coach')).toBe(true);
+    expect(coachNavItem.match('/coach/abc')).toBe(true);
+    expect(bottomNavItems.some((item) => item.match('/coach'))).toBe(true);
   });
 });

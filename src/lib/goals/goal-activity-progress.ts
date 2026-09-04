@@ -115,7 +115,7 @@ function activityDurationSec(activity: ActivityRow): number | null {
 }
 
 function matchesSport(activity: ActivityRow, sport: ActivityType | null): boolean {
-  if ((sport === undefined || sport === null)) {
+  if (sport === undefined || sport === null) {
     return true;
   }
   if (sport === ActivityType.RUN && activity.type === ActivityType.TRIATHLON) {
@@ -160,7 +160,7 @@ export function computePerformanceBest(
     if (!candidate) {
       continue;
     }
-    if ((best === undefined || best === null) || candidate.seconds < best.seconds) {
+    if (best === undefined || best === null || candidate.seconds < best.seconds) {
       best = candidate;
     }
   }

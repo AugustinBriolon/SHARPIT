@@ -1,9 +1,6 @@
 'use client';
 
-import {
-  defaultExposureForActivityType,
-  sportSupportsOutdoorContext,
-} from '@/core/planned-session/defaults';
+import { sportSupportsOutdoorContext } from '@/core/planned-session/defaults';
 import { enduranceSportFromActivityType } from '@/lib/planned-session/endurance/endurance-prescription';
 import type { EnduranceDraftBlock } from '@/lib/planned-session/endurance/endurance-draft';
 import type { ClientPlannedSession } from '@/lib/query/types';

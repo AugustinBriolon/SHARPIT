@@ -152,11 +152,7 @@ function resolveStepEnd(input: {
     endSec = input.cursorSec + duration.seconds;
     boundary = 'time';
   } else if (duration.type === 'distance') {
-    const reached = sampleAtDistance(
-      input.samples,
-      start.index,
-      start.sample.d + duration.meters,
-    );
+    const reached = sampleAtDistance(input.samples, start.index, start.sample.d + duration.meters);
     endSec = reached ? reached.sample.t : input.lastT;
     boundary = reached ? 'distance' : 'truncated';
   } else {

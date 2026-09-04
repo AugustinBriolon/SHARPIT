@@ -1,7 +1,6 @@
 'use client';
 
 import { format } from 'date-fns';
-import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -17,7 +16,6 @@ import type { ClientPhysicalNote } from '@/lib/query/types';
 import {
   categoryLabels,
   categoryOrder,
-  COMMON_BODY_PARTS,
   sideLabels,
   sideOrder,
   statusLabels,

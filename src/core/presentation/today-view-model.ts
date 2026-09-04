@@ -121,6 +121,29 @@ export type TodayViewModel = {
       effortUnavailableCaption: string | null;
       adaptationUnavailableCaption: string | null;
     };
+    /** Compact visual evidence for the Comprendre signal strip. */
+    signalPreviews: Array<{
+      key: 'sleep' | 'recovery' | 'adaptation' | 'effort';
+      scoreDisplay: string;
+      unit: string | null;
+      subtitle: string | null;
+      visual:
+        | {
+            kind: 'gauge';
+            score: number;
+            statusLabel: string | null;
+            baselineTitle: string | null;
+            baselineDetail: string | null;
+            trend: 'up' | 'down' | 'flat' | null;
+          }
+        | {
+            kind: 'stages';
+            stages: Array<{ key: 'deep' | 'rem' | 'light' | 'awake'; fraction: number }>;
+          }
+        | { kind: 'spark'; values: (number | null)[]; stroke: string }
+        | { kind: 'spectrum'; position: number }
+        | { kind: 'none' };
+    }>;
     twinTrustStrip: {
       confidenceLabel: string | null;
       confidencePctRounded: number | null;
@@ -170,9 +193,11 @@ export type TodayViewModel = {
       activityType: ActivityType;
       primary: string;
       secondary?: string | null;
-      kind: 'done' | 'planned' | 'missed';
+      kind: 'done' | 'planned';
       href: string;
       isDone: boolean;
+      /** Key KPIs for completed session preview cards (max 3). */
+      metrics?: Array<{ label: string; value: string; unit: string }> | null;
       /** Morning choice annotation on this session (post-choice). */
       morningChoiceLabel?: string | null;
       /** Set for a brick line — render one card with each leg behind a dropdown. */

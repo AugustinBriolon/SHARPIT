@@ -24,18 +24,18 @@ This is a product-surface contract. It complements [PRODUCT.md](../product/PRODU
 
 ## Design decision
 
-Use a temporal, decision-led navigation model. **Shell V1** (shipped in primary chrome) uses four bottom-tab / sidebar destinations:
+Use a temporal, decision-led navigation model. **Shell V1** (shipped in primary chrome) uses four bottom-tab destinations:
 
-| Destination  | Athlete question                       | Primary horizon  | What belongs there                                                                            |
-| ------------ | -------------------------------------- | ---------------- | --------------------------------------------------------------------------------------------- |
-| **Today**    | What should I do now?                  | This day         | State, decision, check-in, today's session, day-specific context, and tomorrow preview.       |
-| **Plan**     | How should I organise the coming days? | 7–14 days        | Week thread, planning, weekly brief, capacity projection, and plan adjustments.               |
-| **Activité** | What did I actually do?                | Past → present   | Activity history, trips, manual entry, completed-session detail.                              |
-| **Moi**      | How does SHARPIT know and support me?  | Persistent       | Corps, objectifs, Confidentialité (consents / export / delete), account, equipment, prefs.    |
+| Destination  | Athlete question                       | Primary horizon | What belongs there                                                                         |
+| ------------ | -------------------------------------- | --------------- | ------------------------------------------------------------------------------------------ |
+| **Today**    | What should I do now?                  | This day        | State, decision, check-in, today's session, day-specific context, and tomorrow preview.    |
+| **Plan**     | How should I organise the coming days? | 7–14 days       | Week thread, planning, weekly brief, capacity projection, and plan adjustments.            |
+| **Activité** | What did I actually do?                | Past → present  | Activity history, trips, manual entry, completed-session detail.                           |
+| **Moi**      | How does SHARPIT know and support me?  | Persistent      | Corps, objectifs, Confidentialité (consents / export / delete), account, equipment, prefs. |
 
 **Coach is not a tab.** It remains a contextual entry (and `/coach` deep link) from Today, Plan, sessions, and related surfaces. Legal (`/consent`, `/privacy`, `/terms`), onboarding, and any future teaser stay **outside** the auth app shell — they must not wrap the tab bar.
 
-On desktop these destinations form the primary sidebar (Moi as the identity footer). On mobile they form the bottom navigation.
+These destinations form a single floating bottom tab bar on every viewport (iOS-style capsule, narrower than the reading column). Moi stays a tab, not an identity footer.
 
 ### Shipped labels (Shell V1)
 
@@ -108,7 +108,7 @@ An active physical-health restriction is always visible when it constrains Today
 2. Decision: execute, adapt, defer, recover, or obtain more information.
 3. Today's session: compatibility with the present state, objective, and conditions.
 4. Relevant context: weather, fuelling, health constraint, or schedule only when it changes the decision.
-5. Evidence and trajectory: compact signals with progressive links to drill-downs.
+5. Evidence: overnight signals (sleep gauge + recovery) with progressive links to drill-downs. Adaptation and charge live on My week.
 
 **Daily phases:** the same route changes emphasis without becoming a different dashboard.
 
@@ -128,10 +128,11 @@ The phase is resolved in `src/lib/daily-phase/`, from session status first, athl
 
 **Default order:**
 
-1. Weekly brief: phase, priority goal, planned versus tolerable load, and a limiting factor.
-2. Week plan: a single canonical calendar/list representation of planned and completed sessions.
-3. Projection: expected effect of the next 7–14 days and an alternative only when it is actionable.
-4. Actions: add a session, generate a plan, adapt a plan, create a macro plan, or ask the Coach.
+1. Goal band: what the week is building toward.
+2. Week plan: planned versus done, with intensity gate when readiness conflicts with owed hard work.
+3. Trajectory signals: **Adaptation** and **Charge** — block-scale context for the week (not overnight recovery; those stay on Today).
+4. Projection: expected effect of holding the week, when actionable.
+5. Actions: add a session, generate a plan, adapt a plan, or ask the Coach.
 
 The calendar is a view of My week, not a competing information architecture. Planned sessions open a shared session detail where the athlete can understand the rationale, adapt it, or start a Coach conversation with that session attached.
 

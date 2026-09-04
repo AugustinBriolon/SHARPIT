@@ -1,4 +1,3 @@
-/* eslint-disable no-console -- script CLI : sortie console attendue */
 /**
  * Génère les analyses narratives manquantes depuis le 29 juin 2026.
  *

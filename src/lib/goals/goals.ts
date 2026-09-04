@@ -10,7 +10,12 @@ export interface GoalLike {
 
 function computeLowerIsBetterProgress(goal: GoalLike): number | null {
   const { startValue, currentValue, targetValue } = goal;
-  if ((currentValue === undefined || currentValue === null) || (targetValue === undefined || targetValue === null)) {
+  if (
+    currentValue === undefined ||
+    currentValue === null ||
+    targetValue === undefined ||
+    targetValue === null
+  ) {
     return null;
   }
   if (currentValue <= targetValue) {
@@ -27,7 +32,12 @@ function computeLowerIsBetterProgress(goal: GoalLike): number | null {
 
 function computeHigherIsBetterProgress(goal: GoalLike): number | null {
   const { startValue, currentValue, targetValue } = goal;
-  if ((currentValue === undefined || currentValue === null) || (targetValue === undefined || targetValue === null)) {
+  if (
+    currentValue === undefined ||
+    currentValue === null ||
+    targetValue === undefined ||
+    targetValue === null
+  ) {
     return null;
   }
   const start = startValue ?? 0;
@@ -41,11 +51,18 @@ function computeHigherIsBetterProgress(goal: GoalLike): number | null {
 }
 
 export function computeGoalProgress(goal: GoalLike): number | null {
-  return goal.lowerIsBetter ? computeLowerIsBetterProgress(goal) : computeHigherIsBetterProgress(goal);
+  return goal.lowerIsBetter
+    ? computeLowerIsBetterProgress(goal)
+    : computeHigherIsBetterProgress(goal);
 }
 
 export function isGoalReached(goal: GoalLike): boolean {
-  if ((goal.currentValue === undefined || goal.currentValue === null) || (goal.targetValue === undefined || goal.targetValue === null)) {
+  if (
+    goal.currentValue === undefined ||
+    goal.currentValue === null ||
+    goal.targetValue === undefined ||
+    goal.targetValue === null
+  ) {
     return false;
   }
   return goal.lowerIsBetter
@@ -61,7 +78,12 @@ export function daysUntil(date: Date | null): number | null {
 }
 
 export function formatRemaining(goal: GoalLike): string | null {
-  if ((goal.currentValue === undefined || goal.currentValue === null) || (goal.targetValue === undefined || goal.targetValue === null)) {
+  if (
+    goal.currentValue === undefined ||
+    goal.currentValue === null ||
+    goal.targetValue === undefined ||
+    goal.targetValue === null
+  ) {
     return null;
   }
   const remaining = goal.targetValue - goal.currentValue;

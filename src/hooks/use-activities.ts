@@ -110,11 +110,8 @@ function optimisticActivity(payload: ActivityMutationPayload): ClientActivity {
   } as unknown as ClientActivity;
 }
 
-export function useActivityMutations() {
-  const queryClient = useQueryClient();
-  const key = queryKeys.activities;
-
-  const create = useMutation({
+function createActivityMutationOptions(queryClient: QueryClient, key: readonly string[]) {
+  return {
     mutationFn: (payload: ActivityMutationPayload) =>
       sendJson('/api/activities', 'POST', payload) as Promise<{ id: string }>,
     ...listOptimistic<ClientActivity, ActivityMutationPayload, { id: string }>({
@@ -142,9 +139,11 @@ export function useActivityMutations() {
       void queryClient.invalidateQueries({ queryKey: key });
       void queryClient.invalidateQueries({ queryKey: queryKeys.records });
     },
-  });
+  };
+}
 
-  const updateOptimistic = listOptimistic<
+function buildUpdateActivityOptimistic(queryClient: QueryClient, key: readonly string[]) {
+  return listOptimistic<
     ClientActivity,
     { id: string; data: Partial<ActivityMutationPayload> },
     { id: string }
@@ -170,25 +169,36 @@ export function useActivityMutations() {
     error: 'Impossible de mettre à jour la séance.',
     invalidateOnSettle: false,
   });
+}
 
-  const update = useMutation({
+function updateActivityMutationOptions(
+  queryClient: QueryClient,
+  key: readonly string[],
+  updateOptimistic: ReturnType<typeof buildUpdateActivityOptimistic>,
+) {
+  return {
     mutationFn: ({ id, data }: { id: string; data: Partial<ActivityMutationPayload> }) =>
       sendJson(`/api/activities/${id}`, 'PATCH', data) as Promise<{ id: string }>,
     ...updateOptimistic,
-    onMutate: async (vars) => {
+    onMutate: async (vars: { id: string; data: Partial<ActivityMutationPayload> }) => {
       if (containsFeelingUpdate(vars.data)) {
         patchTodayPostSessionLoopAfterFeeling(queryClient, vars.id);
       }
       patchActivityDetailCache(queryClient, vars.id, vars.data);
       return updateOptimistic.onMutate(vars);
     },
-    onError: (err, vars, context) => {
-      updateOptimistic.onError(err, vars, context);
+    onError: (...args: Parameters<typeof updateOptimistic.onError>) => {
+      updateOptimistic.onError(...args);
+      const [, vars] = args;
       if (containsFeelingUpdate(vars.data)) {
         invalidateTodayPresentationCaches(queryClient);
       }
     },
-    onSettled: (_data, _error, vars) => {
+    onSettled: (
+      _data: { id: string } | undefined,
+      _error: Error | null,
+      vars: { id: string; data: Partial<ActivityMutationPayload> } | undefined,
+    ) => {
       void queryClient.invalidateQueries({ queryKey: key });
       void queryClient.invalidateQueries({ queryKey: queryKeys.records });
       if (vars) {
@@ -198,7 +208,37 @@ export function useActivityMutations() {
         }
       }
     },
-  });
+  };
+}
+
+function removeActivityMutationOptions(
+  queryClient: QueryClient,
+  key: readonly string[],
+  removeOptimistic: ReturnType<typeof listOptimistic<ClientActivity, string>>,
+) {
+  return {
+    mutationFn: (id: string) => sendJson(`/api/activities/${id}`, 'DELETE'),
+    ...removeOptimistic,
+    onMutate: async (id: string) => {
+      queryClient.removeQueries({ queryKey: queryKeys.activity(id) });
+      return removeOptimistic.onMutate(id);
+    },
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: key });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.plannedSessions });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.records });
+    },
+  };
+}
+
+export function useActivityMutations() {
+  const queryClient = useQueryClient();
+  const key = queryKeys.activities;
+
+  const create = useMutation(createActivityMutationOptions(queryClient, key));
+
+  const updateOptimistic = buildUpdateActivityOptimistic(queryClient, key);
+  const update = useMutation(updateActivityMutationOptions(queryClient, key, updateOptimistic));
 
   const removeOptimistic = listOptimistic<ClientActivity, string>({
     queryClient,
@@ -208,31 +248,18 @@ export function useActivityMutations() {
     error: 'Impossible de supprimer la séance.',
     invalidateOnSettle: false,
   });
-
-  const remove = useMutation({
-    mutationFn: (id: string) => sendJson(`/api/activities/${id}`, 'DELETE'),
-    ...removeOptimistic,
-    onMutate: async (id) => {
-      queryClient.removeQueries({ queryKey: queryKeys.activity(id) });
-      return removeOptimistic.onMutate(id);
-    },
-    onSettled: () => {
-      void queryClient.invalidateQueries({ queryKey: key });
-      // Deleting a linked activity resets the planned session (completed → false).
-      void queryClient.invalidateQueries({ queryKey: queryKeys.plannedSessions });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.records });
-    },
-  });
+  const remove = useMutation(removeActivityMutationOptions(queryClient, key, removeOptimistic));
 
   return { create, update, remove };
 }
 
-export function useActivityStream(id: string) {
+export function useActivityStream(id: string, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: queryKeys.activityStream(id),
     queryFn: () => fetchActivityStream(id),
     staleTime: Infinity, // frozen historical activity data
     retry: 1,
+    enabled: options?.enabled ?? true,
   });
 }
 

@@ -1,4 +1,3 @@
-/* eslint-disable no-console -- script CLI : sortie console attendue */
 /**
  * One-off repair: drops the SESSION observations written by the first run of
  * backfill-session-observations, so it can be re-run with correct identities.

@@ -22,9 +22,6 @@ export function scheduleBackgroundTasks(params: {
   /** Planned sessions linked this turn — analyze off the critical path. */
   plannedSessionIdsToAnalyze?: string[];
 }): void {
-  const { athleteId, activityIds, regenerateBriefing, trainingDayId, plannedSessionIdsToAnalyze } =
-    params;
-
   void runBackgroundTasks(params).catch((error) => {
     console.error('[athlete-state/background]', error);
   });

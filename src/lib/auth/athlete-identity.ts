@@ -47,7 +47,10 @@ function initialsFromOptionalFullName(fullName?: string | null): string | null {
 }
 
 function resolveInitialsFromNameParts(parts: NameParts): string {
-  const fromNames = initialsFromFirstLast(parts.firstName?.trim() ?? '', parts.lastName?.trim() ?? '');
+  const fromNames = initialsFromFirstLast(
+    parts.firstName?.trim() ?? '',
+    parts.lastName?.trim() ?? '',
+  );
   return fromNames ?? initialsFromOptionalFullName(parts.fullName) ?? '?';
 }
 
@@ -56,7 +59,7 @@ export function initialsFromName(parts: NameParts): string {
   return resolveInitialsFromNameParts(parts);
 }
 
-/** Bottom-nav / sidebar primary label — first name when known. */
+/** Bottom-nav primary label — first name when known. */
 export function shortLabelFromName({ firstName, fullName }: NameParts): string {
   const first = firstName?.trim();
   if (first) {

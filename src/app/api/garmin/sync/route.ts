@@ -31,7 +31,9 @@ async function updateRecordChanges(
 export async function POST(request: NextRequest) {
   try {
     const athleteId = await getCurrentAthleteId();
-    const rateLimit = await checkRateLimit(rateLimiters.providerSync, `${athleteId}:garmin`, { failClosed: true });
+    const rateLimit = await checkRateLimit(rateLimiters.providerSync, `${athleteId}:garmin`, {
+      failClosed: true,
+    });
     if (!rateLimit.ok) {
       const limited = rateLimitJsonResponse(rateLimit);
       return NextResponse.json(limited.body, {

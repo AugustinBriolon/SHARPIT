@@ -1,5 +1,4 @@
 import type { GateContext, GateProposal, PlanGateRule, RuleFinding } from '../types';
-import { isSet } from '@/lib/util/value';
 
 function toMinutes(hhmm: string): number {
   const [h, m] = hhmm.split(':').map(Number);

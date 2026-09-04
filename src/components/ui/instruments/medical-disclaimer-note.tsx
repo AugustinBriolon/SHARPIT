@@ -8,9 +8,7 @@ import { cn } from '@/lib/utils';
  */
 export function MedicalDisclaimerNote({ className }: { className?: string }) {
   return (
-    <ClinicalAnnotation
-      className={cn('text-pretty text-[0.6875rem] leading-snug', className)}
-    >
+    <ClinicalAnnotation className={cn('text-[0.6875rem] leading-snug text-pretty', className)}>
       {MEDICAL_DISCLAIMER_V0}
     </ClinicalAnnotation>
   );

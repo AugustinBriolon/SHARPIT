@@ -143,25 +143,20 @@ test.describe('navigation shell', () => {
     await expect(page.getByRole('link', { name: 'Activité' })).toBeVisible();
   });
 
-  test('Plan hub shows widgets without Accès dump', async ({ page }) => {
+  // The IA contract for "My week": goal, the week itself, its projected effect,
+  // then the actions that change it. A hub that only lists links fails it.
+  test('Plan hub reads goal, week and projection', async ({ page }) => {
     await page.goto('/plan');
     await expect(page.getByRole('heading', { level: 1 })).toContainText(/Organiser/);
     await expect(page.getByRole('heading', { name: 'Objectif' })).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'Prochaines séances' })).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'Charge / récup' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /^Semaine du / })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Projection' })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Accès' })).toHaveCount(0);
-    await expect(page.getByRole('link', { name: 'Fil de la semaine' })).toHaveCount(0);
     await expect(page.getByRole('link', { name: 'Séjours' })).toHaveCount(0);
-    await expect(page.getByRole('link', { name: 'Planification' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Planification' }).first()).toBeVisible();
 
     // Objectif widget itself is the hit target (not only a secondary "Voir tout").
     await expect(page.locator('a[href="/moi/objectifs"]').first()).toBeVisible();
-
-    // Upcoming session rows are full-card links to the planned-session deep link.
-    const sessionLinks = page.locator('a[href*="/training/planning?planned="]');
-    if ((await sessionLinks.count()) > 0) {
-      await expect(sessionLinks.first()).toBeVisible();
-    }
   });
 
   test('Activité hub shows history + Nouvelle activité without Accès or Séjours', async ({

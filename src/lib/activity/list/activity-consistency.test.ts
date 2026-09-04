@@ -1,8 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import {
   buildActivityConsistencyStats,
+  buildConsistencyDayWindow,
   computeWeeklyActivityStreak,
+  CONSISTENCY_FUTURE_DAYS,
+  CONSISTENCY_PAST_DAYS,
   programWeekBarPct,
+  resolveConsistencyDayLayout,
 } from '@/lib/activity/list/activity-consistency';
 
 const ref = new Date('2026-07-06T12:00:00');
@@ -103,6 +107,41 @@ describe('programWeekBarPct', () => {
 
   it('leaves an empty week as a stub, not a missing column', () => {
     expect(programWeekBarPct(0, 7)).toBe(10);
+  });
+});
+
+describe('buildConsistencyDayWindow', () => {
+  it('returns past days, today, and upcoming days with activity rings', () => {
+    const days = buildConsistencyDayWindow(
+      [
+        { date: new Date('2026-07-06'), load: 40 },
+        { date: new Date('2026-07-04'), load: 20 },
+      ],
+      ref,
+    );
+
+    expect(days).toHaveLength(CONSISTENCY_PAST_DAYS + 1 + CONSISTENCY_FUTURE_DAYS);
+    expect(days.find((day) => day.isToday)?.date).toBe('2026-07-06');
+    expect(days.find((day) => day.date === '2026-07-06')?.hasActivity).toBe(true);
+    expect(days.find((day) => day.date === '2026-07-04')?.hasActivity).toBe(true);
+    expect(days.filter((day) => day.isFuture)).toHaveLength(CONSISTENCY_FUTURE_DAYS);
+    expect(days.at(-1)?.isFuture).toBe(true);
+  });
+});
+
+describe('resolveConsistencyDayLayout', () => {
+  it('grows columns and rows as the strip gets wider', () => {
+    const narrow = resolveConsistencyDayLayout(160);
+    const medium = resolveConsistencyDayLayout(260);
+    const wide = resolveConsistencyDayLayout(420);
+
+    expect(narrow.rows).toBe(1);
+    expect(narrow.columns).toBeGreaterThanOrEqual(4);
+    expect(medium.rows).toBe(2);
+    expect(wide.rows).toBe(3);
+    expect(wide.columns).toBe(7);
+    expect(wide.totalDays).toBeGreaterThan(medium.totalDays);
+    expect(wide.futureDays).toBe(CONSISTENCY_FUTURE_DAYS);
   });
 });
 

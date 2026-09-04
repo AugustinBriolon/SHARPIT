@@ -2,7 +2,7 @@
 
 import type { MouseEvent, PointerEvent, ReactNode } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
-import { EASE_OUT, SPRING_LAYOUT } from '@/lib/ease';
+import { SPRING_LAYOUT } from '@/lib/ease';
 import type { useHoverGesture } from '@/lib/hooks/use-hover-gesture';
 import type { useTapGesture } from '@/lib/hooks/use-tap-gesture';
 import { cn } from '@/lib/utils';

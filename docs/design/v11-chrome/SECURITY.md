@@ -2,15 +2,15 @@
 
 Pinned exact version (no `^` / `~`) in `package.json` + Yarn `resolutions`, locked in `yarn.lock`. Package manager: Yarn 4 (`package-lock.json` is gitignored).
 
-| Field | Value |
-| --- | --- |
-| Package | `liquid-glass-react@1.1.1` |
-| Registry integrity | `sha512-pKzaktaMAEztd93wpWcz2Z5Z9qdLJUNJdMX+n00Ca4XsnrLTQ5xJzm/+GQXZUeuFXe/PQ8ziVMZO6531PyaFJw==` |
-| License | MIT (copyright 2025 Max Rovensky) |
-| npm maintainers | `fivepointseven <fivepointseven@icloud.com>` |
-| Published | 2025-06-11 (versions 0.0.1→1.1.1 within ~24h) |
-| Runtime dependencies | **none** (peer: `react` / `react-dom` ≥19) |
-| Install scripts | **none** — scripts are build / `prepublishOnly` only (run by publisher, not on consumer install) |
+| Field                | Value                                                                                             |
+| -------------------- | ------------------------------------------------------------------------------------------------- |
+| Package              | `liquid-glass-react@1.1.1`                                                                        |
+| Registry integrity   | `sha512-pKzaktaMAEztd93wpWcz2Z5Z9qdLJUNJdMX+n00Ca4XsnrLTQ5xJzm/+GQXZUeuFXe/PQ8ziVMZO6531PyaFJw==` |
+| License              | MIT (copyright 2025 Max Rovensky)                                                                 |
+| npm maintainers      | `fivepointseven <fivepointseven@icloud.com>`                                                      |
+| Published            | 2025-06-11 (versions 0.0.1→1.1.1 within ~24h)                                                     |
+| Runtime dependencies | **none** (peer: `react` / `react-dom` ≥19)                                                        |
+| Install scripts      | **none** — scripts are build / `prepublishOnly` only (run by publisher, not on consumer install)  |
 
 ## Scripts check
 

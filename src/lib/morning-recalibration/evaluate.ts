@@ -249,7 +249,7 @@ function isEligibleForRecalibration(input: {
   );
 }
 
-function protectWhy(strengthLike: boolean, verdict: string, capacity: string | null): string {
+function protectWhy(strengthLike: boolean, verdict: string, _capacity: string | null): string {
   const protectVerdict = verdict === 'RECOVER' || verdict === 'CAUTION';
   if (strengthLike && protectVerdict) {
     return `Verdict du matin « ${verdict} ». Alléger les charges et prioriser le contrôle du mouvement.`;

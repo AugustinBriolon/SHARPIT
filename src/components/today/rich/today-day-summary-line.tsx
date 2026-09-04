@@ -1,6 +1,7 @@
 'use client';
 
 import { BrickOverviewCard } from '@/components/planning/brick/brick-overview-card';
+import { CompletedSessionPreview } from '@/components/today/rich/completed-session-preview';
 import { InstrumentListChip } from '@/components/ui/instruments/instrument-list-chip';
 import type { TodayViewModel } from '@/core/presentation/today-view-model';
 import {
@@ -25,6 +26,18 @@ export function TodayDaySummaryLine({
         legs={line.brickLegs}
         subtitle={line.secondary ?? null}
         onOpenLeg={(legId) => onOpenPlanned(legId)}
+      />
+    );
+  }
+
+  if (line.isDone) {
+    return (
+      <CompletedSessionPreview
+        activityId={line.id}
+        activityType={line.activityType}
+        href={line.href}
+        metrics={line.metrics ?? []}
+        title={line.primary}
       />
     );
   }

@@ -77,7 +77,7 @@ export function canUseAiProcessingFromProfile(input: AiConsentSnapshot): boolean
 }
 
 export function isSoftDeleted(input: { deletedAt: Date | null }): boolean {
-  return input.deletedAt != null;
+  return input.deletedAt !== null;
 }
 
 /** Hard-purge eligibility: soft-deleted at or before (now − delayDays). */

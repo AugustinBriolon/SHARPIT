@@ -168,7 +168,7 @@ export function CoachHubSkeleton() {
 
       <div className="hidden space-y-6 lg:block">
         <CoachPageHeader newDisabled />
-        <div className="flex h-[calc(100dvh-190px)] flex-col gap-3 lg:flex-row lg:gap-4">
+        <div className="flex h-[calc(100dvh-190px-var(--bottom-nav-offset))] flex-col gap-3 lg:flex-row lg:gap-4">
           <aside className="flex w-full shrink-0 flex-col gap-2 lg:h-full lg:w-[260px]">
             <Button className="hidden lg:inline-flex" type="button" variant="highlight" disabled>
               <MessageSquarePlus className="size-4" />

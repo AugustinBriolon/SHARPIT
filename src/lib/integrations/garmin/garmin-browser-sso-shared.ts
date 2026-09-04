@@ -56,8 +56,7 @@ export function parseGarminSsoPostMessage(data: unknown): string | null {
     return null;
   }
   const ticket =
-    (raw as { serviceTicket?: unknown }).serviceTicket ??
-    (raw as { ticket?: unknown }).ticket;
+    (raw as { serviceTicket?: unknown }).serviceTicket ?? (raw as { ticket?: unknown }).ticket;
   if (typeof ticket !== 'string' || !isGarminSsoTicket(ticket)) {
     return null;
   }

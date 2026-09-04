@@ -39,9 +39,7 @@ function buildHealthSignals(healthEntry: DailyHealthEntry | null) {
   };
 }
 
-function restingHrFromFeatures(
-  features: Awaited<ReturnType<typeof featureEngine.getDayFeatures>>,
-) {
+function restingHrFromFeatures(features: Awaited<ReturnType<typeof featureEngine.getDayFeatures>>) {
   if (features.recovery === 'PENDING') {
     return null;
   }

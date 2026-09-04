@@ -285,8 +285,7 @@ const STRINGS: Record<string, string> = {
     'Signal de récupération atypique — le profil ressemble à une baisse de résilience.',
   'recovery.rationale.illnessRisk.mandatory':
     'Repos recommandé aujourd’hui pour protéger la récupération.',
-  'recovery.rationale.illnessRisk.consult':
-    'En cas de symptômes, consulte un avis médical.',
+  'recovery.rationale.illnessRisk.consult': 'En cas de symptômes, consulte un avis médical.',
 
   // ── Adaptation evidence & rationale ────────────────────────────────────────
   'adaptation.rationale.noData': 'Données insuffisantes pour lire ton adaptation.',

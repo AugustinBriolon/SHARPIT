@@ -4,7 +4,6 @@ import type { MultisportLegKind } from '@/lib/multisport';
 import type { MultisportLegStream } from '@/lib/streams/streams';
 import { formatDistance, formatDuration } from '@/lib/format';
 import { cn } from '@/lib/utils';
-import { Bike, Footprints, Waves } from 'lucide-react';
 import {
   PerformanceMetrics,
   ThresholdsHint,

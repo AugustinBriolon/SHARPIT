@@ -301,11 +301,9 @@ function UnlinkedSessionRealization({
           <p className="text-muted-foreground text-xs">
             Choisis l&apos;activité qui correspond à cette séance planifiée :
           </p>
-          {isLinking ? (
-            <LinkAnalysisStatus phase="linking" />
-          ) : isAnalyzing ? (
-            <LinkAnalysisStatus phase="analyzing" />
-          ) : (
+          {isLinking ? <LinkAnalysisStatus phase="linking" /> : null}
+          {!isLinking && isAnalyzing ? <LinkAnalysisStatus phase="analyzing" /> : null}
+          {!isLinking && !isAnalyzing ? (
             <>
               <div className="max-h-56 space-y-1 overflow-y-auto">
                 <ActivityPickerList candidates={candidates} session={session} onLink={onLink} />
@@ -327,7 +325,7 @@ function UnlinkedSessionRealization({
                 </button>
               </div>
             </>
-          )}
+          ) : null}
         </div>
       )}
     </div>

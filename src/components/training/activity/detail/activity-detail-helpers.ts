@@ -1,15 +1,11 @@
 import type { HeroActivity } from './activity-hero-stats';
 import { SPORT_IDENTITY_SURFACE } from '@/lib/activity/sport-identity';
 import { activityTypeLabels, formatDate, formatDuration } from '@/lib/format';
-import {
-  formatTrainingLoad,
-  type DisplayMode,
-  type MetricAudience,
-} from '@/lib/preferences/display-mode';
+import { formatTrainingLoad, type DisplayMode } from '@/lib/preferences/display-mode';
 import { ActivityType } from '@prisma/client';
 import type { LucideIcon } from 'lucide-react';
 import { Bike, Dumbbell, Footprints, Medal, Mountain, Shapes, Waves } from 'lucide-react';
-import type { ActivityDetail, ActivitySpec, ActivityStat, ChipTone } from './types';
+import type { ActivityDetail, ActivityStat, ChipTone } from './types';
 
 export const sportIcon: Record<ActivityType, LucideIcon> = {
   RUN: Footprints,

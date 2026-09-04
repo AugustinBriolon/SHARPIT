@@ -34,7 +34,7 @@ export function RulerBarStrip({
 
 export function RulerBarLabels({
   bars,
-  activeIndex,
+  activeIndex: _activeIndex,
 }: {
   bars: readonly RulerBar[];
   activeIndex: number;

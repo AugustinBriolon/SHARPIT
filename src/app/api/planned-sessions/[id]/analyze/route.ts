@@ -29,7 +29,9 @@ export async function POST(_request: NextRequest, context: RouteContext) {
       return NextResponse.json({ error: 'Aucune activité liée à analyser' }, { status: 400 });
     }
 
-    const rateLimit = await checkRateLimit(rateLimiters.sessionAnalyze, athleteId, { failClosed: true });
+    const rateLimit = await checkRateLimit(rateLimiters.sessionAnalyze, athleteId, {
+      failClosed: true,
+    });
     if (!rateLimit.ok) {
       const limited = rateLimitJsonResponse(rateLimit);
       return NextResponse.json(limited.body, {

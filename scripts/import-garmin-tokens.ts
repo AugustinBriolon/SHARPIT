@@ -13,8 +13,7 @@ import { prisma } from '@/lib/prisma';
 import { importGarminDiTokenStore } from '@/lib/integrations/garmin/garmin-sync';
 
 async function main() {
-  const fileArg = process.argv[2];
-  const athleteArg = process.argv[3];
+  const [, , fileArg, athleteArg] = process.argv;
   if (!fileArg) {
     console.error('Usage: yarn garmin:import-tokens <garmin_tokens.json> [athleteId]');
     process.exit(1);

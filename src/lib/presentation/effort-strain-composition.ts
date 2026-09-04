@@ -59,7 +59,7 @@ function toContributor(
   signalSummary: string | null,
 ): EffortStrainContributorView {
   const meta = CONTRIBUTOR_META[key];
-  if (!contribution.available || (contribution.load === undefined || contribution.load === null)) {
+  if (!contribution.available || contribution.load === undefined || contribution.load === null) {
     return {
       key,
       label: meta.label,

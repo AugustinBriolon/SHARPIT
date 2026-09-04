@@ -103,9 +103,7 @@ export function parseSessionAccessories(raw: unknown): EquipmentItemId[] {
   return ids;
 }
 
-function exerciseNamesFromPrescription(
-  strengthPrescription: unknown,
-): string[] {
+function exerciseNamesFromPrescription(strengthPrescription: unknown): string[] {
   const prescription = parseStrengthPrescription(strengthPrescription);
   if (prescription) {
     return prescription.sets.map((set) => set.exercise);
@@ -153,7 +151,11 @@ export function resolveSessionAccessories(input: {
     return explicit.map((id) => ({ id, label: catalogLabel(id) }));
   }
 
-  const haystack = [input.title ?? '', input.description ?? '', ...exerciseNamesFromPrescription(input.strengthPrescription)]
+  const haystack = [
+    input.title ?? '',
+    input.description ?? '',
+    ...exerciseNamesFromPrescription(input.strengthPrescription),
+  ]
     .join(' · ')
     .toLowerCase();
 

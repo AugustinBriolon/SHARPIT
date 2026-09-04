@@ -9,7 +9,7 @@ export function streamingResponseFlags(props: StreamingResponseProps) {
 }
 
 export function shouldShowStreamingActions(props: StreamingResponseProps) {
-  const { complete, streaming } = streamingResponseFlags(props);
+  const { complete } = streamingResponseFlags(props);
   const canCopy = Boolean(props.copyText || props.onCopy);
   const hasSources = (props.sources ?? []).length > 0;
   return canCopy || Boolean(props.onRetry) || complete || hasSources;

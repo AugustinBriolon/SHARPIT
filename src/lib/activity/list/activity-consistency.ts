@@ -1,16 +1,19 @@
 import {
+  addDays,
   eachDayOfInterval,
   endOfWeek,
   format,
   getISOWeek,
   getISOWeekYear,
   getISODay,
+  isSameDay,
   isSameISOWeek,
   startOfDay,
   startOfWeek,
   subDays,
   subWeeks,
 } from 'date-fns';
+import { fr } from 'date-fns/locale';
 
 export type HeatmapLevel = 0 | 1 | 2 | 3 | 4;
 
@@ -50,6 +53,62 @@ const HEATMAP_DAYS = 365;
 export const HEATMAP_DAYS_MOBILE = 184;
 /** Fixed week strip length in the regularity panel (visual only). */
 export const PROGRAM_WEEK_COUNT = 8;
+/** Minimum past days when the strip is very narrow (1 row). */
+export const CONSISTENCY_PAST_DAYS = 5;
+/** Upcoming days shown after today on the regularity day strip. */
+export const CONSISTENCY_FUTURE_DAYS = 2;
+/** Target column count when the day strip is wide enough. */
+export const CONSISTENCY_DAY_COLUMNS_MAX = 7;
+/** Min width (px) assumed per day cell when sizing the grid. */
+export const CONSISTENCY_DAY_CELL_MIN_PX = 36;
+
+export type ConsistencyDayLayout = {
+  columns: number;
+  rows: number;
+  pastDays: number;
+  futureDays: number;
+  totalDays: number;
+};
+
+/** SSR / first-paint layout before the strip width is measured. */
+export const CONSISTENCY_DAY_LAYOUT_FALLBACK: ConsistencyDayLayout = {
+  columns: 7,
+  rows: 2,
+  pastDays: 11,
+  futureDays: CONSISTENCY_FUTURE_DAYS,
+  totalDays: 14,
+};
+
+/**
+ * Fit day rings into the available strip width:
+ * more space → more columns (up to 7) and more rows (up to 3).
+ */
+export function resolveConsistencyDayLayout(
+  stripWidthPx: number,
+  futureDays: number = CONSISTENCY_FUTURE_DAYS,
+): ConsistencyDayLayout {
+  const width = Number.isFinite(stripWidthPx) ? Math.max(0, stripWidthPx) : 0;
+  const columns = Math.min(
+    CONSISTENCY_DAY_COLUMNS_MAX,
+    Math.max(4, Math.floor(width / CONSISTENCY_DAY_CELL_MIN_PX) || 4),
+  );
+  let rows = 1;
+  if (width >= 340) {
+    rows = 3;
+  } else if (width >= 220) {
+    rows = 2;
+  }
+  const totalDays = columns * rows;
+  const pastDays = Math.max(CONSISTENCY_PAST_DAYS, totalDays - 1 - futureDays);
+
+  return {
+    columns,
+    rows,
+    pastDays,
+    futureDays,
+    totalDays: pastDays + 1 + futureDays,
+  };
+}
 /**
  * A full training week on the regularity strip: one session a day.
  * Heights are linear against this floor (or a higher peak in the window),
@@ -189,6 +248,53 @@ export function buildProgramWeeks(
     });
   }
   return weeks;
+}
+
+/** Last N ISO weeks — oldest → newest — kept for program week strip consumers. */
+export function lastConsistencyDotWeeks(
+  activities: ActivityForConsistency[],
+  refDate: Date = new Date(),
+  count: number = PROGRAM_WEEK_COUNT,
+): ProgramWeek[] {
+  return buildProgramWeeks(activities, refDate, count);
+}
+
+export type ConsistencyDayCell = {
+  date: string;
+  dayOfMonth: number;
+  weekdayLabel: string;
+  hasActivity: boolean;
+  isToday: boolean;
+  isFuture: boolean;
+};
+
+/**
+ * Compact day window for the regularity instrument:
+ * past days + today + upcoming days. Activity rings wrap the date number.
+ */
+export function buildConsistencyDayWindow(
+  activities: ActivityForConsistency[],
+  refDate: Date = new Date(),
+  pastDays: number = CONSISTENCY_PAST_DAYS,
+  futureDays: number = CONSISTENCY_FUTURE_DAYS,
+): ConsistencyDayCell[] {
+  const ref = startOfDay(refDate);
+  const byDay = aggregateByDay(activities);
+  const start = subDays(ref, pastDays);
+  const end = addDays(ref, futureDays);
+
+  return eachDayOfInterval({ start, end }).map((day) => {
+    const date = format(day, 'yyyy-MM-dd');
+    const stats = byDay.get(date);
+    return {
+      date,
+      dayOfMonth: day.getDate(),
+      weekdayLabel: format(day, 'EEEEE', { locale: fr }).toUpperCase(),
+      hasActivity: (stats?.count ?? 0) > 0,
+      isToday: isSameDay(day, ref),
+      isFuture: day > ref,
+    };
+  });
 }
 
 export function buildActivityConsistencyStats(

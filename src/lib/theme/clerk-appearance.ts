@@ -124,8 +124,7 @@ const authElements = {
   dividerText: 'text-auth-muted text-xs uppercase tracking-wider',
   footerActionText: 'text-auth-muted',
   formFieldAction: 'text-primary!',
-  otpCodeFieldInput:
-    'rounded-lg border border-auth-input bg-auth-input text-foreground!',
+  otpCodeFieldInput: 'rounded-lg border border-auth-input bg-auth-input text-foreground!',
   alertText: 'text-foreground!',
   alertText__danger: 'text-destructive!',
   formResendCodeLink: 'text-primary!',

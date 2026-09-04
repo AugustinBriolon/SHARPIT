@@ -114,7 +114,11 @@ describe('TodayNutritionCard', () => {
     const html = render();
 
     expect(html).toContain('300 kcal au-dessus');
+    expect(html).toContain('Objectif');
+    expect(html).toContain('Total aujourd');
     expect(html).toContain('text-foreground');
+    expect(html).toContain('icon-well');
+    expect(html).not.toContain('text-amber-500');
     expect(html).not.toContain('signal-caution');
     expect(html).not.toContain('signal-risk');
   });

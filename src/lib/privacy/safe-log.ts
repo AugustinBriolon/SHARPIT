@@ -6,37 +6,53 @@
 const SENSITIVE_KEY =
   /password|passwd|secret|token|cookie|authorization|credential|refresh|access_token|session/i;
 
+function sanitizeLogString(value: string): string {
+  if (value.length > 200) {
+    return `${value.slice(0, 40)}…[len=${value.length}]`;
+  }
+  return value;
+}
+
+function sanitizeLogError(value: Error): { name: string; message: string } {
+  return { name: value.name, message: value.message };
+}
+
+function sanitizeLogArray(value: unknown[], depth: number): unknown[] {
+  return value.slice(0, 20).map((item) => sanitizeLogValue(item, depth + 1));
+}
+
+function sanitizeLogObject(value: Record<string, unknown>, depth: number): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const [key, nested] of Object.entries(value)) {
+    out[key] = SENSITIVE_KEY.test(key) ? '[Redacted]' : sanitizeLogValue(nested, depth + 1);
+  }
+  return out;
+}
+
+function isNullish(value: unknown): value is null | undefined {
+  return value === null || value === undefined;
+}
+
 export function sanitizeLogValue(value: unknown, depth = 0): unknown {
   if (depth > 4) {
     return '[Truncated]';
   }
-  if (value == null) {
+  if (isNullish(value)) {
     return value;
   }
   if (typeof value === 'string') {
-    if (value.length > 200) {
-      return `${value.slice(0, 40)}…[len=${value.length}]`;
-    }
-    return value;
+    return sanitizeLogString(value);
   }
   if (typeof value !== 'object') {
     return value;
   }
   if (value instanceof Error) {
-    return { name: value.name, message: value.message };
+    return sanitizeLogError(value);
   }
   if (Array.isArray(value)) {
-    return value.slice(0, 20).map((item) => sanitizeLogValue(item, depth + 1));
+    return sanitizeLogArray(value, depth);
   }
-  const out: Record<string, unknown> = {};
-  for (const [key, nested] of Object.entries(value as Record<string, unknown>)) {
-    if (SENSITIVE_KEY.test(key)) {
-      out[key] = '[Redacted]';
-      continue;
-    }
-    out[key] = sanitizeLogValue(nested, depth + 1);
-  }
-  return out;
+  return sanitizeLogObject(value as Record<string, unknown>, depth);
 }
 
 /** Log an error without leaking secrets or body-metric payloads. */

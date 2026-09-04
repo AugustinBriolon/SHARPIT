@@ -118,7 +118,7 @@ export function resolveBodyRegion(
 export function inferSymptomPresentFromLegacySeverity(
   severity: number | null | undefined,
 ): boolean {
-  if ((severity === undefined || severity === null)) {
+  if (severity === undefined || severity === null) {
     return true;
   }
   return severity > 0;
@@ -127,7 +127,7 @@ export function inferSymptomPresentFromLegacySeverity(
 export function inferFunctionalImpactFromLegacySeverity(
   severity: number | null | undefined,
 ): FunctionalImpact | null {
-  if ((severity === undefined || severity === null)) {
+  if (severity === undefined || severity === null) {
     return null;
   }
   if (severity === 0) {
@@ -148,7 +148,7 @@ export function inferFunctionalImpactFromLegacySeverity(
 export function inferTrainingCapacityFromSeverity(
   severity: number | null | undefined,
 ): import('./types').TrainingCapacityLevel {
-  if ((severity === undefined || severity === null)) {
+  if (severity === undefined || severity === null) {
     return 'REDUCED';
   }
   if (severity === 0) {

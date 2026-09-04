@@ -29,9 +29,7 @@ Augustin Briolon
 
 describe('Privacy Santé FR drafts consumed by /privacy and /terms', () => {
   function loadDraft(name: string): string {
-    return stripLegalMetaHeader(
-      readFileSync(path.join(process.cwd(), 'docs/legal', name), 'utf8'),
-    );
+    return stripLegalMetaHeader(readFileSync(path.join(process.cwd(), 'docs/legal', name), 'utf8'));
   }
 
   it('privacy draft is classic signup / word-of-mouth beta, not invite-only product', () => {
@@ -46,6 +44,8 @@ describe('Privacy Santé FR drafts consumed by /privacy and /terms', () => {
     const body = loadDraft('TERMS_PAGE_FR_V0.md');
     expect(body).toContain('augustin.briolon@gmail.com');
     expect(body).toMatch(/parcours\s+\*\*classique\*\*|création de compte/i);
-    expect(body).toMatch(/n['’]est\s+\*\*pas\*\*\s+un service accessible « sur invitation uniquement »/);
+    expect(body).toMatch(
+      /n['’]est\s+\*\*pas\*\*\s+un service accessible « sur invitation uniquement »/,
+    );
   });
 });

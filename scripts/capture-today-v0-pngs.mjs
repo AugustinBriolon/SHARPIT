@@ -38,7 +38,10 @@ async function savePng(buffer, name) {
 async function dismissCriticalBanner(page) {
   const later = page.getByRole('button', { name: /Plus tard/i });
   if (await later.count()) {
-    await later.first().click({ timeout: 3000 }).catch(() => {});
+    await later
+      .first()
+      .click({ timeout: 3000 })
+      .catch(() => {});
     await page.waitForTimeout(400);
   }
 }
@@ -81,9 +84,15 @@ async function main() {
       }
     }
   });
-  await mobilePage.evaluate(() => window.scrollTo(0, 0));
+  await mobilePage.evaluate(() => {
+    // eslint-disable-next-line no-undef -- Playwright runs this in the browser
+    window.scrollTo(0, 0);
+  });
   await mobilePage.waitForTimeout(300);
-  await savePng(await mobilePage.screenshot({ type: 'png', fullPage: false }), 'today_mobile_fold.png');
+  await savePng(
+    await mobilePage.screenshot({ type: 'png', fullPage: false }),
+    'today_mobile_fold.png',
+  );
 
   // Force briefing expanded with body in view.
   await mobilePage.locator('details').evaluateAll((nodes) => {
@@ -98,6 +107,7 @@ async function main() {
   await briefingHeading.scrollIntoViewIfNeeded().catch(() => {});
   // Keep hero partially visible above briefing when possible
   await mobilePage.evaluate(() => {
+    /* eslint-disable no-undef -- Playwright runs this in the browser */
     const h2 = Array.from(document.querySelectorAll('h2')).find((n) =>
       /Briefing du jour/i.test(n.textContent || ''),
     );
@@ -133,7 +143,9 @@ async function main() {
   await desktopPage.goto(`${ORIGIN}/`, { waitUntil: 'networkidle', timeout: 90000 });
   await waitForHero(desktopPage);
   await dismissCriticalBanner(desktopPage);
-  const dSummary = desktopPage.locator('summary').filter({ hasText: /Lire le briefing|Briefing du jour/i });
+  const dSummary = desktopPage
+    .locator('summary')
+    .filter({ hasText: /Lire le briefing|Briefing du jour/i });
   if (await dSummary.count()) {
     const text = await dSummary.first().innerText();
     if (/Lire le briefing/i.test(text)) {
@@ -141,9 +153,14 @@ async function main() {
     }
   }
   await desktopPage.waitForTimeout(500);
-  await desktopPage.evaluate(() => window.scrollTo(0, 0));
+  await desktopPage.evaluate(() => {
+    window.scrollTo(0, 0);
+  });
   await desktopPage.waitForTimeout(200);
-  await savePng(await desktopPage.screenshot({ type: 'png', fullPage: false }), 'today_desktop.png');
+  await savePng(
+    await desktopPage.screenshot({ type: 'png', fullPage: false }),
+    'today_desktop.png',
+  );
 
   await desktopContext.close();
   await browser.close();

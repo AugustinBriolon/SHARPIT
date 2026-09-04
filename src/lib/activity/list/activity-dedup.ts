@@ -53,7 +53,12 @@ export function activitiesMatch(a: ActivityFingerprint, b: ActivityFingerprint):
     return false;
   }
 
-  if ((a.duration === undefined || a.duration === null) || (b.duration === undefined || b.duration === null)) {
+  if (
+    a.duration === undefined ||
+    a.duration === null ||
+    b.duration === undefined ||
+    b.duration === null
+  ) {
     return timeDiff <= 6 * 60 * 1000;
   }
 

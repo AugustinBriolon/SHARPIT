@@ -5,20 +5,8 @@ import { memo, useMemo, useState } from 'react';
 import { CartesianGrid, Line, LineChart, Tooltip, XAxis, YAxis } from 'recharts';
 import { ChartTooltipCard } from '@/components/ui/charts/chart-tooltip';
 import { ResponsiveChartFrame } from '@/components/ui/charts/responsive-chart-frame';
-import {
-  CHART_BASE_STROKE,
-  CHART_GRID_COLOR,
-  CHART_RECOVERY_STROKE,
-  CHART_RISK_STROKE,
-  CHART_TEMPO_STROKE,
-  CHART_THRESHOLD_STROKE,
-  CHART_TICK_COLOR,
-  CHART_VO2_STROKE,
-} from '@/lib/theme/chart-theme';
-import {
-  formatAltitudeMeters,
-  type NormalizedStreamChartPoint,
-} from '@/lib/streams/stream-chart-data';
+import { CHART_GRID_COLOR, CHART_TICK_COLOR } from '@/lib/theme/chart-theme';
+import { type NormalizedStreamChartPoint } from '@/lib/streams/stream-chart-data';
 import { cn } from '@/lib/utils';
 import {
   buildStreamMetricOptions,

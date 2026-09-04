@@ -90,14 +90,14 @@ The goal is not to maximize visible movement. The goal is an **immediate, propor
 
 Canonical presets live in `src/lib/motion/tokens.ts` (`motionTokens.scale.press*`) and are mirrored as CSS custom properties in `src/app/globals.css`:
 
-| Preset | Token | Scale | Typical use |
-| ------ | ----- | ----- | ----------- |
-| Micro control | `pressMicro` | 0.95 | Icon buttons, compact toggles |
-| Small button | `pressSmall` | 0.96 | Default compact controls (`pressable`, `chip-surface`) |
-| Large button | `pressLarge` | 0.98 | Wide CTAs, full-width actions |
-| Large surface | `pressSurface` | 0.988 | Clickable cards and list rows (`pressable-lg`, `chip-surface-lg`) |
-| High-frequency | `pressMinimal` | 1 (no scale) | Tabs, scrubbers, sliders — color/opacity only |
-| Gesture-driven | Motion `whileTap` + `springs.*` | spring | Drag, swipe, morph — not CSS `:active` scale |
+| Preset         | Token                           | Scale        | Typical use                                                       |
+| -------------- | ------------------------------- | ------------ | ----------------------------------------------------------------- |
+| Micro control  | `pressMicro`                    | 0.95         | Icon buttons, compact toggles                                     |
+| Small button   | `pressSmall`                    | 0.96         | Default compact controls (`pressable`, `chip-surface`)            |
+| Large button   | `pressLarge`                    | 0.98         | Wide CTAs, full-width actions                                     |
+| Large surface  | `pressSurface`                  | 0.988        | Clickable cards and list rows (`pressable-lg`, `chip-surface-lg`) |
+| High-frequency | `pressMinimal`                  | 1 (no scale) | Tabs, scrubbers, sliders — color/opacity only                     |
+| Gesture-driven | Motion `whileTap` + `springs.*` | spring       | Drag, swipe, morph — not CSS `:active` scale                      |
 
 Floor: **never below 0.95** on `:active` scale — compression below that reads as a bug, not feedback.
 
@@ -107,15 +107,15 @@ Any deviation from these presets requires an inline comment naming the preset be
 
 Enter and exit animations are **state-bound** — they require Motion (or CSS `max-height` + `opacity` for expand only). Never invent one-off durations; use `motionTokens` and `src/lib/motion/variants.ts`.
 
-| Interaction | Primitive | Variants / transition | When |
-| ----------- | --------- | --------------------- | ---- |
-| Conditional mount + exit | `FadePresence` | `fadeVariants` + `fadeTransition` | Panel swap, inline confirm, integration hub states |
-| One-shot appear after mount | `FadeIn` | `fadeVariants` | Content already in DOM; fade once client-side |
-| Expand / collapse | `MotionExpand` | `collapseVariants` | Sections, meal blocks, coach guide — §9.3 grid pattern |
-| List stagger on enter | `StaggerList` / `StaggerItem` | `staggerContainer` + `staggerItem` | Threshold cards, agent lists — not on every table row |
-| Dialog / morph surface | `MorphPopover`, motion `Dialog` wrappers | `dialogTransition` (`springs.gentle`) | Sheets, morphing popovers |
-| Label swap on action | `ActionSwap` / `ActionSwapRollText` | token durations | Button text change during background work |
-| Raw `AnimatePresence` | Last resort only | Must import variants from `@/lib/motion` | When no shared primitive fits — comment why |
+| Interaction                 | Primitive                                | Variants / transition                    | When                                                   |
+| --------------------------- | ---------------------------------------- | ---------------------------------------- | ------------------------------------------------------ |
+| Conditional mount + exit    | `FadePresence`                           | `fadeVariants` + `fadeTransition`        | Panel swap, inline confirm, integration hub states     |
+| One-shot appear after mount | `FadeIn`                                 | `fadeVariants`                           | Content already in DOM; fade once client-side          |
+| Expand / collapse           | `MotionExpand`                           | `collapseVariants`                       | Sections, meal blocks, coach guide — §9.3 grid pattern |
+| List stagger on enter       | `StaggerList` / `StaggerItem`            | `staggerContainer` + `staggerItem`       | Threshold cards, agent lists — not on every table row  |
+| Dialog / morph surface      | `MorphPopover`, motion `Dialog` wrappers | `dialogTransition` (`springs.gentle`)    | Sheets, morphing popovers                              |
+| Label swap on action        | `ActionSwap` / `ActionSwapRollText`      | token durations                          | Button text change during background work              |
+| Raw `AnimatePresence`       | Last resort only                         | Must import variants from `@/lib/motion` | When no shared primitive fits — comment why            |
 
 Rules:
 

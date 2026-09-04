@@ -61,9 +61,8 @@ describe('loginWithCredentials path order', () => {
       diClientId: 'GCM_ANDROID_DARK',
     });
 
-    const { loginWithCredentials, isDiGarminTokens, diClientIdFromGarminTokens } = await import(
-      '@/lib/integrations/garmin/garmin'
-    );
+    const { loginWithCredentials, isDiGarminTokens, diClientIdFromGarminTokens } =
+      await import('@/lib/integrations/garmin/garmin');
 
     const result = await loginWithCredentials('user@example.com', 'pw');
 
@@ -75,9 +74,7 @@ describe('loginWithCredentials path order', () => {
   });
 
   it('falls back to widget only when mobile is rate_limited', async () => {
-    const { GarminMobileAuthError } = await import(
-      '@/lib/integrations/garmin/garmin-mobile-auth'
-    );
+    const { GarminMobileAuthError } = await import('@/lib/integrations/garmin/garmin-mobile-auth');
     loginGarminMobile.mockRejectedValue(
       new GarminMobileAuthError('Mobile login rate limited (429)', 'rate_limited'),
     );
@@ -97,16 +94,13 @@ describe('loginWithCredentials path order', () => {
   });
 
   it('does not call widget when mobile rejects credentials', async () => {
-    const { GarminMobileAuthError } = await import(
-      '@/lib/integrations/garmin/garmin-mobile-auth'
-    );
+    const { GarminMobileAuthError } = await import('@/lib/integrations/garmin/garmin-mobile-auth');
     loginGarminMobile.mockRejectedValue(
       new GarminMobileAuthError('bad creds', 'invalid_credentials'),
     );
 
-    const { loginWithCredentials, GarminLoginError } = await import(
-      '@/lib/integrations/garmin/garmin'
-    );
+    const { loginWithCredentials, GarminLoginError } =
+      await import('@/lib/integrations/garmin/garmin');
 
     await expect(loginWithCredentials('user@example.com', 'pw')).rejects.toSatisfy(
       (err: unknown) => err instanceof GarminLoginError && err.reason === 'invalid_credentials',

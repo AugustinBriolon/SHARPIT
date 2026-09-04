@@ -37,6 +37,7 @@ Brand primitives live in `src/lib/brand-tokens.ts` (hex) and `src/app/globals.cs
 - Surfaces / signals: lean into Lime hue family (~120–142) for continuity — Warm Stone slight lime cast, recovery/tempo/caution green-gold, not cool sage or brown tan
 - Ink band: Forest on light / Lime on dark — empty states & hub callouts (`surface-ink`, `page-bleed-ink`, component `InkEmptyState` / `PageBleed`)
 - Page bleed: shells set `--page-gutter`; use `page-bleed` / `PageBleed` / `InkEmptyState bleed` for edge-to-edge bands
+- App chrome: one floating bottom tab bar on every viewport (`BottomNav`); reading column `max-w-3xl` centered (`PAGE_CONTENT_MAX_CLASS`). No desktop sidebar.
 - Muted surface: Warm Stone `#f0f1e8` (`analysis-panel-alt`)
 - Done / success washes: use `STATUS_SURFACE` (`src/lib/presentation/status-surface.ts`) — primary tokens, never raw `emerald-*`
 - Status tiers (same file): `ADEQUATE_TONE` (eucalyptus), `CAUTION_TONE`, `ELEVATED_TONE` (vo2), `RISK_TONE` — never raw Tailwind amber/blue/red for status
@@ -160,27 +161,27 @@ Never import Motion or GSAP when CSS delivers equivalent quality.
 
 **Enter / exit primitives** (use these; do not invent durations):
 
-| Pattern | Component |
-| ------- | --------- |
-| Mount + exit | `FadePresence` |
-| One-shot fade | `FadeIn` |
-| Expand / collapse | `MotionExpand` |
-| List stagger | `StaggerList` |
-| Dialog morph | `MorphPopover` |
-| Label swap | `ActionSwap` / `ActionSwapRollText` |
+| Pattern           | Component                           |
+| ----------------- | ----------------------------------- |
+| Mount + exit      | `FadePresence`                      |
+| One-shot fade     | `FadeIn`                            |
+| Expand / collapse | `MotionExpand`                      |
+| List stagger      | `StaggerList`                       |
+| Dialog morph      | `MorphPopover`                      |
+| Label swap        | `ActionSwap` / `ActionSwapRollText` |
 
 Variants: `fadeVariants`, `collapseVariants`, `staggerContainer` from `@/lib/motion/variants`. Exit ≤ 80% enter duration.
 
 **Press feedback presets** (`motionTokens.scale.press*`, `--press-scale-*` in globals.css):
 
-| Preset | Scale | Utility / use |
-| ------ | ----- | ------------- |
-| Micro | 0.95 | Compact icon controls |
-| Small | 0.96 | `pressable`, `chip-surface` |
-| Large button | 0.98 | Wide CTAs |
-| Surface | 0.988 | `pressable-lg`, `chip-surface-lg` |
-| Minimal | none | High-frequency controls — no scale |
-| Gesture | spring | Motion `whileTap` + `springs.*` |
+| Preset       | Scale  | Utility / use                      |
+| ------------ | ------ | ---------------------------------- |
+| Micro        | 0.95   | Compact icon controls              |
+| Small        | 0.96   | `pressable`, `chip-surface`        |
+| Large button | 0.98   | Wide CTAs                          |
+| Surface      | 0.988  | `pressable-lg`, `chip-surface-lg`  |
+| Minimal      | none   | High-frequency controls — no scale |
+| Gesture      | spring | Motion `whileTap` + `springs.*`    |
 
 Never blanket `scale(0.97)` on all interactives. Justify any deviation from a preset.
 

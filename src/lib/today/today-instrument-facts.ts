@@ -60,7 +60,7 @@ function limiterFromDescription(
   description: LimitingFactor['description'] | DecisionData['limitingFactor']['description'],
 ): string | null {
   const raw = description?.params?.limiter;
-  if ((raw === undefined || raw === null)) {
+  if (raw === undefined || raw === null) {
     return null;
   }
   return LIMITER_LABEL[String(raw)] ?? String(raw);
@@ -141,7 +141,9 @@ function resolveEvidenceDetail(
   return shortText(detailRaw, 64);
 }
 
-function evidenceItemToFact(item: NonNullable<DecisionData['supportingEvidence']>[number]): TodayFactRow | null {
+function evidenceItemToFact(
+  item: NonNullable<DecisionData['supportingEvidence']>[number],
+): TodayFactRow | null {
   const title = resolve(item.title);
   if (!title || title === item.title.code || looksLikeScoreRestatement(title)) {
     return null;

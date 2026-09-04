@@ -47,7 +47,8 @@ export function useCoachDiscussBootstrap(
   const discussIntentKey = useMemo(() => buildDiscussIntentKey(params), [params]);
 
   const discussSources = useMemo(() => {
-    const { hasDiscussIntent: _hasDiscussIntent, ...discussParams } = params;
+    const { hasDiscussIntent, ...discussParams } = params;
+    void hasDiscussIntent;
     return {
       ...discussParams,
       goals: goalsQuery.data ?? [],

@@ -132,9 +132,7 @@ function makeSnapshot(overrides?: MakeSnapshotOverrides): AthleteSnapshot {
   } as unknown as AthleteSnapshot;
 }
 
-function expectDownProposalFirmActions(
-  r: ReturnType<typeof resolveMorningOrientation>,
-): void {
+function expectDownProposalFirmActions(r: ReturnType<typeof resolveMorningOrientation>): void {
   if (!r) {
     throw new Error('expected orientation result');
   }

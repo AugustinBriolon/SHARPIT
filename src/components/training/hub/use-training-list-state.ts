@@ -7,7 +7,6 @@ import type { ClientActivity } from '@/lib/query/types';
 import { useResetWhenHidden } from '@/hooks/use-reset-when-hidden';
 import {
   applyTrainingHistoryFilters,
-  DEFAULT_TRAINING_HISTORY_FILTERS,
   parseTrainingHistoryFilters,
   serializeTrainingHistoryFilters,
   type TrainingHistoryFilters,
@@ -27,7 +26,10 @@ const TYPE_ORDER: ActivityType[] = [
 
 const FILTER_URL_DEBOUNCE_MS = 200;
 
-export function useTrainingListState(activities: ClientActivity[], records: RecordsPayload | null | undefined) {
+export function useTrainingListState(
+  activities: ClientActivity[],
+  records: RecordsPayload | null | undefined,
+) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();

@@ -29,7 +29,6 @@ export type {
 export function AgentActivity(props: AgentActivityProps) {
   const {
     items,
-    status = 'working',
     duration = 0,
     activeLabel,
     summary,

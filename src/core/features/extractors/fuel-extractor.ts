@@ -26,7 +26,7 @@ function round(value: number, decimals = 1): number {
 }
 
 function perKg(grams: number, weightKg: number | null): number | null {
-  if ((weightKg === undefined || weightKg === null) || weightKg <= 0) {
+  if (weightKg === undefined || weightKg === null || weightKg <= 0) {
     return null;
   }
   return round(grams / weightKg, 2);
@@ -52,7 +52,7 @@ function deriveConfidence(observation: NutritionObservation): number {
 
 function computeEnergyBudget(observation: NutritionObservation): number | null {
   const goal = observation.goalEnergyKcal ?? null;
-  if ((goal === undefined || goal === null)) {
+  if (goal === undefined || goal === null) {
     return null;
   }
   const exercise = observation.exerciseEnergyKcal ?? null;
@@ -64,7 +64,7 @@ function computeEnergyBalance(
   budget: number | null,
   logged: boolean,
 ): number | null {
-  if ((budget === undefined || budget === null) || !logged) {
+  if (budget === undefined || budget === null || !logged) {
     return null;
   }
   return Math.round(observation.energyKcal - budget);
@@ -75,7 +75,7 @@ function computeEnergyBudgetRatio(
   budget: number | null,
   logged: boolean,
 ): number | null {
-  if ((budget === undefined || budget === null) || budget <= 0 || !logged) {
+  if (budget === undefined || budget === null || budget <= 0 || !logged) {
     return null;
   }
   return round(observation.energyKcal / budget, 2);

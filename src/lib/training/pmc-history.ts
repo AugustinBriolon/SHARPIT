@@ -71,9 +71,7 @@ export interface CoreSessionTss {
  *
  * Either way the day falls back wholesale, which is at least one consistent scale.
  */
-function countActivitiesByDay(
-  activities: readonly ActivityForAnalytics[],
-): Map<string, number> {
+function countActivitiesByDay(activities: readonly ActivityForAnalytics[]): Map<string, number> {
   const activityCountByDay = new Map<string, number>();
   for (const activity of activities) {
     const key = toTrainingDayId(activity.date);
@@ -82,9 +80,10 @@ function countActivitiesByDay(
   return activityCountByDay;
 }
 
-function sumCoreSessionsByDay(
-  coreSessions: readonly CoreSessionTss[],
-): { coreTssByDay: Map<string, number>; coreCountByDay: Map<string, number> } {
+function sumCoreSessionsByDay(coreSessions: readonly CoreSessionTss[]): {
+  coreTssByDay: Map<string, number>;
+  coreCountByDay: Map<string, number>;
+} {
   const coreTssByDay = new Map<string, number>();
   const coreCountByDay = new Map<string, number>();
   for (const session of coreSessions) {

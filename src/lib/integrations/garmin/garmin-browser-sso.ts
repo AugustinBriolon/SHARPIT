@@ -64,38 +64,52 @@ export function createGarminSsoState(
   return `${body}.${sig}`;
 }
 
+function verifyGarminSsoStateSignature(body: string, sig: string): boolean {
+  const expected = createHmac('sha256', stateSecret()).update(body).digest('base64url');
+  const a = Buffer.from(sig);
+  const b = Buffer.from(expected);
+  return a.length === b.length && timingSafeEqual(a, b);
+}
+
+function isGarminSsoStatePayload(value: unknown): value is GarminSsoStatePayload {
+  if (!value || typeof value !== 'object') {
+    return false;
+  }
+  const payload = value as GarminSsoStatePayload;
+  return (
+    typeof payload.nonce === 'string' &&
+    typeof payload.service === 'string' &&
+    typeof payload.athleteId === 'string' &&
+    typeof payload.exp === 'number'
+  );
+}
+
+function isValidGarminSsoStatePayload(payload: GarminSsoStatePayload): boolean {
+  if (payload.exp < Math.floor(Date.now() / 1000)) {
+    return false;
+  }
+  return payload.service === GARMIN_SSO_EMBED_SERVICE;
+}
+
+function decodeGarminSsoStateBody(body: string): GarminSsoStatePayload | null {
+  try {
+    const parsed: unknown = JSON.parse(Buffer.from(body, 'base64url').toString('utf8'));
+    if (!isGarminSsoStatePayload(parsed) || !isValidGarminSsoStatePayload(parsed)) {
+      return null;
+    }
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
 export function parseGarminSsoState(raw: string | undefined | null): GarminSsoStatePayload | null {
   if (!raw || !raw.includes('.')) {
     return null;
   }
   const [body, sig] = raw.split('.', 2);
-  if (!body || !sig) {
+  if (!body || !sig || !verifyGarminSsoStateSignature(body, sig)) {
     return null;
   }
-  const expected = createHmac('sha256', stateSecret()).update(body).digest('base64url');
-  const a = Buffer.from(sig);
-  const b = Buffer.from(expected);
-  if (a.length !== b.length || !timingSafeEqual(a, b)) {
-    return null;
-  }
-  try {
-    const payload = JSON.parse(Buffer.from(body, 'base64url').toString('utf8')) as GarminSsoStatePayload;
-    if (
-      typeof payload.nonce !== 'string' ||
-      typeof payload.service !== 'string' ||
-      typeof payload.athleteId !== 'string' ||
-      typeof payload.exp !== 'number'
-    ) {
-      return null;
-    }
-    if (payload.exp < Math.floor(Date.now() / 1000)) {
-      return null;
-    }
-    if (payload.service !== GARMIN_SSO_EMBED_SERVICE) {
-      return null;
-    }
-    return payload;
-  } catch {
-    return null;
-  }
+  return decodeGarminSsoStateBody(body);
 }

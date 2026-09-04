@@ -39,7 +39,7 @@ export function ActivityTypeIndicator({ type, variant = 'label' }: ActivityTypeI
     return (
       <span
         className={cn(
-          'text-data inline-flex shrink-0 items-center rounded-[4px] px-1 py-px text-[9px] leading-none font-bold',
+          'text-data inline-flex w-fit shrink-0 items-center rounded-lg px-1 py-px text-[9px] leading-none font-bold',
           surface,
         )}
       >
@@ -51,7 +51,7 @@ export function ActivityTypeIndicator({ type, variant = 'label' }: ActivityTypeI
   return (
     <span
       className={cn(
-        'text-data inline-flex shrink-0 items-center rounded-md px-1.5 py-0.5',
+        'text-data inline-flex w-fit shrink-0 items-center rounded-md px-1.5 py-0.5',
         'text-[11px] leading-none font-bold tracking-wide',
         surface,
       )}

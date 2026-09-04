@@ -75,7 +75,8 @@ describe('TodayDashboardShell', () => {
     expect(html).toContain('surface-ink');
     expect(html).toContain('text-verdict');
     expect(html).toContain('text-label');
-    expect(html).toContain('chip-surface rounded-analysis');
+    expect(html).toContain('analysis-panel border-analysis-border/80');
+    expect(html).toContain('rounded-analysis-lg');
     expect(html).toContain('aria-busy="true"');
   });
 });
@@ -115,9 +116,8 @@ describe('TodayDashboard loading gate contract', () => {
     expect(mainSource).toContain('TodayUnderstandSection');
     expect(mainSource).toContain('TodayCriticalStatus');
     // Signal strip must not sit as primary under the hero in TodayDashboardMain.
-    expect(mainSource).not.toMatch(
-      /TodayVerdictHero[\s\S]*TodaySignalStrip/,
-    );
+    expect(mainSource).not.toMatch(/TodayVerdictHero[\s\S]*TodaySignalStrip/);
     expect(mainSource).toContain('metricsRow={content.hero.metricsRow}');
+    expect(mainSource).toContain('signalPreviews={content.hero.signalPreviews}');
   });
 });

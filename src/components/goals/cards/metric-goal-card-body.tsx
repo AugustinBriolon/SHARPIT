@@ -53,7 +53,7 @@ function MetricGoalValuesRow({
 function MetricGoalFootnotes({
   goal,
   isAutoTracked,
-  metricConfig,
+  metricConfig: _metricConfig,
   days,
 }: {
   goal: GoalItem;

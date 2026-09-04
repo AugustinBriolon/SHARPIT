@@ -238,6 +238,19 @@ const eslintConfig = [
       },
     },
   },
+  {
+    // Tests and e2e specs: long suites are intentional; keep complexity/eqeqeq elsewhere.
+    files: ['**/*.{test,spec}.{ts,tsx}', 'e2e/**/*.{ts,tsx}'],
+    rules: {
+      'max-lines-per-function': 'off',
+    },
+  },
+  {
+    files: ['scripts/**/*.{ts,tsx,js,mjs,cjs}'],
+    rules: {
+      'no-console': 'off',
+    },
+  },
 ];
 
 export default eslintConfig;

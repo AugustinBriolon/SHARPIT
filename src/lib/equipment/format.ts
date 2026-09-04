@@ -13,7 +13,7 @@ const PORTABLE_LOAD_ID = 'strength_weighted_vest';
 const PORTABLE_LOAD_RUN_NOTE = 'Lest portable disponible (côtes lestées, rucking)';
 
 function venueLabel(venue: AthleteEquipment['strengthVenue']): string | null {
-  if ((venue === undefined || venue === null)) {
+  if (venue === undefined || venue === null) {
     return null;
   }
   return STRENGTH_VENUE_OPTIONS.find((option) => option.id === venue)?.title ?? venue;
@@ -106,7 +106,10 @@ function sportSpecificEquipmentHint(
   count: number,
 ): string | null {
   const configured = SPORT_EQUIPMENT_HINTS[sport];
-  if (configured && equipment.owned.includes(configured.itemId as (typeof equipment.owned)[number])) {
+  if (
+    configured &&
+    equipment.owned.includes(configured.itemId as (typeof equipment.owned)[number])
+  ) {
     return configured.hint;
   }
   return genericEquipmentCountHint(count);

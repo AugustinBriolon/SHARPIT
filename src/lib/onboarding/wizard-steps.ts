@@ -1,16 +1,19 @@
 /**
  * Onboarding wizard step order and navigation helpers (pure — Vitest-friendly).
+ *
+ * Sports → Equipment (context from sports) → Intention → Sources → done.
  */
 
-export const ONBOARDING_STEPS = ['sports', 'intention', 'providers', 'equipment'] as const;
+export const ONBOARDING_STEPS = ['sports', 'equipment', 'intention', 'providers'] as const;
 
 export type OnboardingWizardStep = (typeof ONBOARDING_STEPS)[number] | 'bootstrap';
 
+/** Bare names — the progress rail owns the numbering (see wizard-progress.ts). */
 export const ONBOARDING_STEP_LABELS: Record<(typeof ONBOARDING_STEPS)[number], string> = {
-  sports: '1 · Sports',
-  intention: '2 · Intention',
-  providers: '3 · Sources',
-  equipment: '4 · Équipement',
+  sports: 'Sports',
+  equipment: 'Équipement',
+  intention: 'Intention',
+  providers: 'Sources',
 };
 
 export function nextOnboardingStep(
@@ -24,8 +27,11 @@ export function nextOnboardingStep(
 }
 
 export function previousOnboardingStep(
-  step: (typeof ONBOARDING_STEPS)[number],
+  step: OnboardingWizardStep,
 ): (typeof ONBOARDING_STEPS)[number] | null {
+  if (step === 'bootstrap') {
+    return null;
+  }
   const index = ONBOARDING_STEPS.indexOf(step);
   if (index <= 0) {
     return null;
@@ -33,13 +39,13 @@ export function previousOnboardingStep(
   return ONBOARDING_STEPS[index - 1]!;
 }
 
-/** Sources continue / skip both land on Equipment (optional gear step). */
-export function stepAfterProviders(): 'equipment' {
-  return 'equipment';
+/** Equipment continue / skip both land on Intention. */
+export function stepAfterEquipment(): 'intention' {
+  return 'intention';
 }
 
 /**
- * Equipment is optional — Continuer and Passer both complete onboarding.
+ * Equipment is optional — Continuer and Passer both advance.
  * Skip does not require any equipment selection.
  */
 export function equipmentStepAllowsSkip(): true {

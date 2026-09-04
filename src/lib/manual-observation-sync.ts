@@ -195,7 +195,10 @@ function buildManualSubjectiveObservation(
   activity: NonNullable<Awaited<ReturnType<typeof getActivityById>>>,
 ): RawSubjectiveObservation | null {
   const mood = mapFeelingToMood(activity.feeling);
-  if ((activity.rpe === undefined || activity.rpe === null) && (mood === undefined || mood === null)) {
+  if (
+    (activity.rpe === undefined || activity.rpe === null) &&
+    (mood === undefined || mood === null)
+  ) {
     return null;
   }
 

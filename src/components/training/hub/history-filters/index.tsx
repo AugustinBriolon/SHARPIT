@@ -4,7 +4,6 @@ import { ActivityType } from '@prisma/client';
 import { X } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { useState } from 'react';
-import { cn } from '@/lib/utils';
 import {
   countActiveTrainingHistoryFilters,
   DEFAULT_TRAINING_HISTORY_FILTERS,
@@ -38,11 +37,10 @@ export function HistoryFilters({
   useResetWhenHidden(() => setOpen(false));
   const activeCount = countActiveTrainingHistoryFilters(filters);
   const isActive = activeCount > 0;
-  const ariaControls = open
-    ? isMobile
-      ? 'history-filter-drawer'
-      : 'history-filter-menu'
-    : undefined;
+  let ariaControls: string | undefined;
+  if (open) {
+    ariaControls = isMobile ? 'history-filter-drawer' : 'history-filter-menu';
+  }
 
   return (
     <div className="flex items-center gap-2">

@@ -1,4 +1,4 @@
-import { ActivityType, GoalHorizon } from '@prisma/client';
+import { ActivityType } from '@prisma/client';
 import { useMemo, useState } from 'react';
 import type { GoalForEdit } from '@/components/goals/dialogs/goal-dialog';
 import {

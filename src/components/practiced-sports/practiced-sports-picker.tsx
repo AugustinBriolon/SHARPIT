@@ -85,6 +85,7 @@ function SportCardFieldset({
   sports,
   onToggle,
   compact,
+  columns = 2,
 }: {
   legendId: string;
   title: string;
@@ -93,6 +94,8 @@ function SportCardFieldset({
   sports: readonly PracticedSportId[];
   onToggle: (id: PracticedSportId, enabled: boolean) => void;
   compact?: boolean;
+  /** Match the column count to the group size so no cell is left empty. */
+  columns?: 2 | 3;
 }) {
   return (
     <fieldset aria-labelledby={legendId} className={cn(compact ? 'space-y-1.5' : 'space-y-2')}>
@@ -100,7 +103,7 @@ function SportCardFieldset({
         {title}
       </legend>
       <p className="text-muted-foreground text-xs leading-snug">{hint}</p>
-      <div className="grid grid-cols-2 gap-2">
+      <div className={cn('grid gap-2', columns === 3 ? 'grid-cols-3' : 'grid-cols-2')}>
         {ids.map((id) => (
           <SportSelectCard key={id} id={id} selected={sports.includes(id)} onToggle={onToggle} />
         ))}
@@ -137,6 +140,7 @@ export function PracticedSportsPicker({
         onToggle={handleToggle}
       />
       <SportCardFieldset
+        columns={3}
         compact={compact}
         hint="Muscu, mobilité, étirements — utiles en soutien, jamais obligatoires."
         ids={COMPLEMENTARY_PRACTICED_SPORTS}

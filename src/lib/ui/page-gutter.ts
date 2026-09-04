@@ -7,3 +7,6 @@ export const PAGE_GUTTER = {
   mobile: '1rem',
   desktop: '1.5rem',
 } as const;
+
+/** Centered reading column — same shell on every viewport. */
+export const PAGE_CONTENT_MAX_CLASS = 'max-w-5xl';

@@ -1,4 +1,3 @@
-/* eslint-disable no-console -- script CLI : sortie console attendue */
 /**
  * Recomputes FUEL feature sets for every day with a NUTRITION observation.
  *

@@ -75,7 +75,9 @@ export async function POST(request: NextRequest) {
       return aiBlocked;
     }
     // Depuis l'app, on veut la rétro de la semaine EN COURS (current: true).
-    const rateLimit = await checkRateLimit(rateLimiters.coachReview, athleteId, { failClosed: true });
+    const rateLimit = await checkRateLimit(rateLimiters.coachReview, athleteId, {
+      failClosed: true,
+    });
     if (!rateLimit.ok) {
       const limited = rateLimitJsonResponse(rateLimit);
       return NextResponse.json(limited.body, {

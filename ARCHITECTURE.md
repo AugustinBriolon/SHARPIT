@@ -184,7 +184,7 @@ src/components/
   training/, planning/, calendar/, sessions/, coaching/, coach/, coach-memory/
   corps/, goals/, settings/, analytics/, physical-health/
   ui/             ← reusable primitives at root; charts/, instruments/, map/ nested
-  layout/         ← StickyHeader, Shell, Sidebar — structural chrome
+  layout/         ← StickyHeader, Shell, BottomNav — structural chrome
   pwa/            ← install / offline / SW toasts
 ```
 

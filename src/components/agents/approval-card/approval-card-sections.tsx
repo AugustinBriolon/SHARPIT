@@ -5,7 +5,6 @@ import { AgentDisclosure } from '@/components/agents/agent-disclosure';
 import { QuestionOptions } from '@/components/agents/approval-card/approval-card-options';
 import {
   ApprovalCardDecisionActions,
-  ApprovalCardHeader,
   ApprovalCardQuestionNav,
 } from '@/components/agents/approval-card/approval-card-parts';
 import { approvalCardCopy } from '@/components/agents/approval-card/copy';

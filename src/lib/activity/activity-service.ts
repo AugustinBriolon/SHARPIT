@@ -42,6 +42,29 @@ function upsertMetricRelation(metrics: unknown): MetricRelation | undefined {
   return { upsert: { create: cleaned, update: cleaned } };
 }
 
+const UPDATE_METRIC_FIELDS = [
+  'runMetrics',
+  'bikeMetrics',
+  'swimMetrics',
+  'hikeMetrics',
+] as const satisfies ReadonlyArray<keyof UpdateActivityInput>;
+
+function applyMetricUpdates(
+  data: Record<string, unknown>,
+  metrics: Pick<UpdateActivityInput, 'runMetrics' | 'bikeMetrics' | 'swimMetrics' | 'hikeMetrics'>,
+) {
+  for (const field of UPDATE_METRIC_FIELDS) {
+    const value = metrics[field];
+    if (value === undefined) {
+      continue;
+    }
+    const relation = upsertMetricRelation(value);
+    if (relation) {
+      data[field] = relation;
+    }
+  }
+}
+
 export function buildActivityCreateData(input: CreateActivityInput) {
   const { runMetrics, bikeMetrics, swimMetrics, hikeMetrics, strengthSets, ...base } = input;
 
@@ -76,30 +99,7 @@ export function buildActivityUpdateData(input: UpdateActivityInput) {
     data.type = type;
   }
 
-  if (runMetrics !== undefined) {
-    const relation = upsertMetricRelation(runMetrics);
-    if (relation) {
-      data.runMetrics = relation;
-    }
-  }
-  if (bikeMetrics !== undefined) {
-    const relation = upsertMetricRelation(bikeMetrics);
-    if (relation) {
-      data.bikeMetrics = relation;
-    }
-  }
-  if (swimMetrics !== undefined) {
-    const relation = upsertMetricRelation(swimMetrics);
-    if (relation) {
-      data.swimMetrics = relation;
-    }
-  }
-  if (hikeMetrics !== undefined) {
-    const relation = upsertMetricRelation(hikeMetrics);
-    if (relation) {
-      data.hikeMetrics = relation;
-    }
-  }
+  applyMetricUpdates(data, { runMetrics, bikeMetrics, swimMetrics, hikeMetrics });
 
   if (type === ActivityType.STRENGTH && strengthSets) {
     data.strengthSets = {

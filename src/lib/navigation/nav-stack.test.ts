@@ -83,10 +83,7 @@ describe('navStack', () => {
     navStack.push({ href: '/training/history', label: 'Historique', ts: 1 });
     navStack.push({ href: '/training/abc', label: 'Séance', ts: 2 });
     navStack.push({ href: '/training/abc/edit', label: 'Édition', ts: 3 });
-    expect(navStack.all().map((e) => e.href)).toEqual([
-      '/training/history',
-      '/training/abc',
-    ]);
+    expect(navStack.all().map((e) => e.href)).toEqual(['/training/history', '/training/abc']);
   });
 
   it('after edit → detail, Back resolves to the pre-edit page (edit omitted)', async () => {

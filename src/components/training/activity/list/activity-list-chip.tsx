@@ -1,6 +1,5 @@
 'use client';
 
-import { ActivityTypeIndicator } from '@/components/ui/instruments/activity-type-indicator';
 import { InstrumentListChip } from '@/components/ui/instruments/instrument-list-chip';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -8,7 +7,6 @@ import {
   shouldShowActivityListLoad,
 } from '@/lib/activity/list/activity-list-summary';
 import { activityTypeLabels, formatDate, formatDuration } from '@/lib/format';
-import { cn } from '@/lib/utils';
 import { CheckCircle2 } from 'lucide-react';
 import {
   isSelectableHike,

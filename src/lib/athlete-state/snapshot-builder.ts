@@ -59,10 +59,7 @@ function todayStateFingerprintParts(todayState: TodayState): string[] {
     todayState.reasoning,
     todayState.decision,
   ];
-  return [
-    ...slices.map(computedAtFrom),
-    orDash(todayState.dailyStrain?.dailyTss?.toString()),
-  ];
+  return [...slices.map(computedAtFrom), orDash(todayState.dailyStrain?.dailyTss?.toString())];
 }
 
 function fingerprintParts(
@@ -145,8 +142,16 @@ function buildSnapshotCoreFields(
   phaseNarrative: AthleteSnapshot['phaseNarrative'],
 ) {
   const { athleteId, trainingDayId, todayState, freshness, briefing, phaseContext } = input;
-  const { reasoning, recovery, fatigue, adaptation, physicalHealth, environment, dailyStrain, decision } =
-    todayState;
+  const {
+    reasoning,
+    recovery,
+    fatigue,
+    adaptation,
+    physicalHealth,
+    environment,
+    dailyStrain,
+    decision,
+  } = todayState;
 
   return {
     snapshotId,

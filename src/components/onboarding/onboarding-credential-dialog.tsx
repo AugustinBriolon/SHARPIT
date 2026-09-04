@@ -40,6 +40,47 @@ const COPY: Record<CredentialProvider, { title: string; description: string; sub
   },
 };
 
+function redirectGarminConnect(dataClass: DataClassId | null) {
+  const params = new URLSearchParams({
+    returnTo: '/onboarding',
+    ...(dataClass ? { dataClass } : {}),
+  });
+  window.location.href = `/api/garmin/connect?${params.toString()}`;
+}
+
+async function postCredentialConnect(
+  provider: Exclude<CredentialProvider, 'garmin'>,
+  form: FormData,
+  dataClass: DataClassId | null,
+): Promise<Response> {
+  if (provider === 'renpho') {
+    return fetch('/api/renpho/connect', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: form.get('email'),
+        password: form.get('password'),
+        dataClass,
+      }),
+    });
+  }
+
+  return fetch('/api/myfitnesspal/connect', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ sessionToken: form.get('sessionToken'), dataClass }),
+  });
+}
+
+async function loadIntegrationSourcePrefs(): Promise<IntegrationSourcePrefs | null> {
+  const prefsRes = await fetch('/api/integrations/source-prefs');
+  if (!prefsRes.ok) {
+    return null;
+  }
+  const data = (await prefsRes.json()) as { prefs: IntegrationSourcePrefs };
+  return data.prefs;
+}
+
 export function OnboardingCredentialDialog({
   provider,
   dataClass,
@@ -72,45 +113,19 @@ export function OnboardingCredentialDialog({
     const form = new FormData(e.currentTarget);
 
     try {
-      let response: Response;
       if (activeProvider === 'garmin') {
-        const params = new URLSearchParams({
-          returnTo: '/onboarding',
-          ...(dataClass ? { dataClass } : {}),
-        });
-        window.location.href = `/api/garmin/connect?${params.toString()}`;
+        redirectGarminConnect(dataClass);
         return;
-      } else if (activeProvider === 'renpho') {
-        response = await fetch('/api/renpho/connect', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            email: form.get('email'),
-            password: form.get('password'),
-            dataClass,
-          }),
-        });
-      } else {
-        response = await fetch('/api/myfitnesspal/connect', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ sessionToken: form.get('sessionToken'), dataClass }),
-        });
       }
 
+      const response = await postCredentialConnect(activeProvider, form, dataClass);
       if (!response.ok) {
         const data = (await response.json().catch(() => null)) as { error?: string } | null;
         setError(data?.error ?? 'Connexion échouée');
         return;
       }
 
-      let nextPrefs: IntegrationSourcePrefs | null = null;
-      const prefsRes = await fetch('/api/integrations/source-prefs');
-      if (prefsRes.ok) {
-        const data = (await prefsRes.json()) as { prefs: IntegrationSourcePrefs };
-        nextPrefs = data.prefs;
-      }
-
+      const nextPrefs = await loadIntegrationSourcePrefs();
       toast.success(`${COPY[activeProvider].title.replace('Connecter ', '')} connecté`);
       onConnected(activeProvider, nextPrefs);
       onOpenChange(false);
@@ -129,8 +144,8 @@ export function OnboardingCredentialDialog({
         <form className="min-w-0 space-y-4" onSubmit={(e) => void handleSubmit(e)}>
           {provider === 'garmin' ? (
             <p className="text-muted-foreground text-sm leading-relaxed">
-              L’écran suivant affiche le formulaire Garmin dans Sharpit. Après connexion, tu
-              reviens ici automatiquement.
+              L’écran suivant affiche le formulaire Garmin dans Sharpit. Après connexion, tu reviens
+              ici automatiquement.
             </p>
           ) : null}
           {provider === 'renpho' ? (

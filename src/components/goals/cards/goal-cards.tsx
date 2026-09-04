@@ -1,22 +1,13 @@
 'use client';
 
 import { GoalHorizon, GoalKind, GoalPriority } from '@prisma/client';
-import {
-  Calendar,
-  CheckCircle2,
-  MapPin,
-  MoreHorizontal,
-  Pencil,
-  RotateCcw,
-  Trash2,
-} from 'lucide-react';
+import { CheckCircle2, MoreHorizontal, Pencil, RotateCcw, Trash2 } from 'lucide-react';
 import dynamic from 'next/dynamic';
-import Link from 'next/link';
-import { useState, type ReactNode } from 'react';
+import { useState } from 'react';
 import type { GoalForEdit } from '@/components/goals/dialogs/goal-dialog';
 import { Button } from '@/components/ui/button';
 import { DiscussWithCoachButton } from '@/components/coach/discuss-with-coach-button';
-import { Card, CardContent, CardDescription, CardFooter, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { useConfirmDialog } from '@/components/ui/confirm-dialog';
 import {
   DropdownMenu,
@@ -25,19 +16,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import {
-  computeGoalProgress,
-  daysUntil,
-  formatRemaining,
-  horizonLabels,
-  priorityDescriptions,
-  priorityLabels,
-} from '@/lib/goals/goals';
-import {
-  describeMetricGoal,
-  formatGoalDisplayValue,
-  parseGoalMetricConfig,
-} from '@/lib/goals/goal-metric-config';
+import { parseGoalMetricConfig } from '@/lib/goals/goal-metric-config';
 import { cn } from '@/lib/utils';
 import { useGoalMutations } from '@/hooks/use-data';
 
@@ -46,15 +25,8 @@ const GoalDialog = dynamic(
   { ssr: false },
 );
 
-import {
-  countdownLabel,
-  deadlineCopy,
-  formatLongDate,
-  metricGoalSubtitle,
-  RaceCardDetails,
-  taperWindowCopy,
-} from '@/components/goals/cards/goal-card-format';
-import { AchievedStatus, GoalProgressTrack } from '@/components/goals/cards/goal-cards-parts';
+import { RaceCardDetails } from '@/components/goals/cards/goal-card-format';
+import { AchievedStatus } from '@/components/goals/cards/goal-cards-parts';
 import { MetricGoalCardBody } from '@/components/goals/cards/metric-goal-card-body';
 
 export interface GoalItem {

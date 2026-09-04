@@ -108,12 +108,14 @@ function contextualizeDefinition(
   }
 
   const domainLabel = DOMAIN_LABELS[domain];
-  const copy =
-    domain === 'RECOVERY'
-      ? recoveryContextCopy(definition, domainLabel)
-      : domain === 'ENVIRONMENT'
-        ? environmentContextCopy(definition, domainLabel)
-        : { label: definition.label, rationale: definition.rationale };
+  let copy: { label: string; rationale: string };
+  if (domain === 'RECOVERY') {
+    copy = recoveryContextCopy(definition, domainLabel);
+  } else if (domain === 'ENVIRONMENT') {
+    copy = environmentContextCopy(definition, domainLabel);
+  } else {
+    copy = { label: definition.label, rationale: definition.rationale };
+  }
 
   const rationale = copy.rationale.startsWith('Facteur limitant')
     ? copy.rationale

@@ -31,7 +31,7 @@ export async function getLatestBodyWeightKg(
 }
 
 export function macroGPerKg(grams: number, weightKg: number | null): number | null {
-  if ((weightKg === undefined || weightKg === null) || weightKg <= 0) {
+  if (weightKg === undefined || weightKg === null || weightKg <= 0) {
     return null;
   }
   return Math.round((grams / weightKg) * 100) / 100;

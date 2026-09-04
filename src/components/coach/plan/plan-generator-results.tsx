@@ -10,15 +10,15 @@ import type { ClientGoal } from '@/lib/query/types';
 import { phaseLabels } from '@/lib/training/periodization';
 
 export function PlanGeneratorResults({
-  datedGoals,
-  goalId,
+  datedGoals: _datedGoals,
+  goalId: _goalId,
   offline,
   offlineLabel,
   onClose,
   onInsert,
   onToggle,
   plan,
-  planWeek,
+  planWeek: _planWeek,
   progress,
   selected,
   guardDisabled,
@@ -31,7 +31,8 @@ export function PlanGeneratorResults({
   onClose: () => void;
   onInsert: () => void;
   onToggle: (index: number) => void;
-  plan: NonNullable<ReturnType<typeof import('@/hooks/use-coach').useCoachPlan>['data']> | undefined;
+  plan:
+    NonNullable<ReturnType<typeof import('@/hooks/use-coach').useCoachPlan>['data']> | undefined;
   planWeek: { phase: keyof typeof phaseLabels; targetLoad: number; isDeload: boolean } | null;
   progress: CoachGenerationProgress | null;
   selected: Set<number>;

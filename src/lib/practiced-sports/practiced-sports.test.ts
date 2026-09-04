@@ -15,37 +15,27 @@ import {
   type PracticedSportId,
 } from './index';
 
-describe('togglePracticedSport — triathlon coupling', () => {
-  it('checking triathlon adds run, bike and swim', () => {
-    const next = togglePracticedSport([], 'triathlon', true);
-    expect(next.sort()).toEqual(['bike', 'run', 'swim', 'triathlon'].sort());
+describe('togglePracticedSport — independent selection', () => {
+  it('checking triathlon does not add run, bike or swim', () => {
+    expect(togglePracticedSport([], 'triathlon', true)).toEqual(['triathlon']);
   });
 
-  it('unchecking run removes triathlon while keeping bike and swim', () => {
+  it('unchecking run leaves triathlon alone', () => {
     const start: PracticedSportId[] = ['run', 'bike', 'swim', 'triathlon'];
     const next = togglePracticedSport(start, 'run', false);
-    expect(next.includes('triathlon')).toBe(false);
+    expect(next.includes('triathlon')).toBe(true);
     expect(next.includes('run')).toBe(false);
     expect(next.includes('bike')).toBe(true);
     expect(next.includes('swim')).toBe(true);
   });
 
-  it('unchecking bike removes triathlon', () => {
-    const start: PracticedSportId[] = ['run', 'bike', 'swim', 'triathlon'];
-    expect(togglePracticedSport(start, 'bike', false).includes('triathlon')).toBe(false);
-  });
-
-  it('unchecking swim removes triathlon', () => {
-    const start: PracticedSportId[] = ['run', 'bike', 'swim', 'triathlon'];
-    expect(togglePracticedSport(start, 'swim', false).includes('triathlon')).toBe(false);
-  });
-
-  it('checking all three individually auto-checks triathlon', () => {
+  it('checking all three legs does not auto-check triathlon', () => {
     let sports: PracticedSportId[] = [];
     sports = togglePracticedSport(sports, 'run', true);
     sports = togglePracticedSport(sports, 'bike', true);
     sports = togglePracticedSport(sports, 'swim', true);
-    expect(sports.includes('triathlon')).toBe(true);
+    expect(sports.includes('triathlon')).toBe(false);
+    expect(sports.sort()).toEqual(['bike', 'run', 'swim'].sort());
   });
 
   it('toggling complementary sports does not affect triathlon', () => {
@@ -158,7 +148,7 @@ describe('coach / twin proposal filtering', () => {
   });
 
   it('null normalize → all core, so coach allowlist is run+bike+swim', () => {
-    const sports = normalizeAthletePracticedSports(null).sports;
+    const { sports } = normalizeAthletePracticedSports(null);
     expect(sports).toEqual([...DEFAULT_CORE_PRACTICED_SPORTS]);
     expect(coachActivityTypesForPracticed(sports)).toEqual([
       ActivityType.RUN,

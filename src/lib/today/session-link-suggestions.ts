@@ -261,7 +261,7 @@ export function mergeLinkExclusions(
 
 /** Hide paired chips while a link decision is still pending (card owns the decision). */
 export function filterDaySummaryForLinkExclusions<
-  T extends { id: string; kind: 'done' | 'planned' | 'missed' },
+  T extends { id: string; kind: 'done' | 'planned' },
 >(
   lines: readonly T[],
   excluded: { activityIds: Set<string>; plannedSessionIds: Set<string> },
@@ -273,10 +273,7 @@ export function filterDaySummaryForLinkExclusions<
     if (line.kind === 'done' && excluded.activityIds.has(line.id)) {
       return false;
     }
-    if (
-      (line.kind === 'planned' || line.kind === 'missed') &&
-      excluded.plannedSessionIds.has(line.id)
-    ) {
+    if (line.kind === 'planned' && excluded.plannedSessionIds.has(line.id)) {
       return false;
     }
     return true;
@@ -285,7 +282,7 @@ export function filterDaySummaryForLinkExclusions<
 
 /** @deprecated Use filterDaySummaryForLinkExclusions with mergeLinkExclusions. */
 export function filterDaySummaryForPendingLinkSuggestions<
-  T extends { id: string; kind: 'done' | 'planned' | 'missed' },
+  T extends { id: string; kind: 'done' | 'planned' },
 >(lines: readonly T[], suggestions: readonly SessionLinkSuggestion[]): T[] {
   return filterDaySummaryForLinkExclusions(lines, idsExcludedByLinkSuggestions(suggestions));
 }

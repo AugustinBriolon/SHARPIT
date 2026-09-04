@@ -1,60 +1,61 @@
 'use client';
 
+import { Beef, Droplet, Utensils, Wheat, type LucideIcon } from 'lucide-react';
 import { formatRemainingCalories } from '@/lib/nutrition/goals-progress';
 import {
   CALORIE_RING,
+  MACRO_CSS_COLOR,
   MACRO_COLORS,
   MACRO_LABELS,
-  MACRO_SHORT,
   type MacroKind,
 } from '@/lib/nutrition/macro-colors';
 import { cn } from '@/lib/utils';
 
-function resolveMacroFillText(fill: number | null, goal: number | null) {
-  if (fill !== null) {
-    return `${fill} %`;
-  }
-  if (goal === null) {
-    return 'Sans objectif';
-  }
-  return undefined;
-}
+const MACRO_ICONS: Record<MacroKind, LucideIcon> = {
+  protein: Beef,
+  carbs: Wheat,
+  fat: Droplet,
+};
 
-function calorieValueText(pct: number, remaining: number | null): string {
-  if (remaining === null) {
-    return `${pct} %`;
-  }
-  if (remaining < 0) {
-    return `${pct} %, ${formatRemainingCalories(remaining)}`;
-  }
-  return formatRemainingCalories(remaining);
-}
+const RING_SIZE = 56;
+const RING_STROKE = 5;
+const RING_R = (RING_SIZE - RING_STROKE) / 2;
+const RING_C = 2 * Math.PI * RING_R;
 
-export function CalorieTrack({ pct, remaining }: { pct: number; remaining: number | null }) {
-  const clamped = Math.max(0, Math.min(100, pct));
+export function MacroProgressRing({ kind, pct }: { kind: MacroKind; pct: number | null }) {
+  const fill = pct !== null ? Math.max(0, Math.min(100, pct)) : 0;
+  const offset = RING_C * (1 - fill / 100);
+  const stroke = MACRO_CSS_COLOR[kind];
 
   return (
-    <div
-      aria-label="Progression calorique du jour"
-      aria-valuemax={100}
-      aria-valuemin={0}
-      aria-valuenow={clamped}
-      aria-valuetext={calorieValueText(clamped, remaining)}
-      className={cn('h-1.5 w-full overflow-hidden rounded-full', CALORIE_RING.track)}
-      role="progressbar"
-    >
-      <div
-        style={{ width: `${clamped}%` }}
-        className={cn(
-          'h-full rounded-full transition-[width] duration-300 ease-out',
-          CALORIE_RING.bar,
-        )}
+    <svg className="size-14" viewBox={`0 0 ${RING_SIZE} ${RING_SIZE}`} aria-hidden>
+      <circle
+        cx={RING_SIZE / 2}
+        cy={RING_SIZE / 2}
+        fill="none"
+        r={RING_R}
+        stroke={stroke}
+        strokeOpacity={0.18}
+        strokeWidth={RING_STROKE}
       />
-    </div>
+      <circle
+        cx={RING_SIZE / 2}
+        cy={RING_SIZE / 2}
+        fill="none"
+        r={RING_R}
+        stroke={stroke}
+        strokeDasharray={RING_C}
+        strokeDashoffset={pct === null ? RING_C * 0.92 : offset}
+        strokeLinecap="round"
+        strokeOpacity={pct === null ? 0.35 : 1}
+        strokeWidth={RING_STROKE}
+        transform={`rotate(-90 ${RING_SIZE / 2} ${RING_SIZE / 2})`}
+      />
+    </svg>
   );
 }
 
-export function MacroCell({
+export function MacroRingCell({
   kind,
   grams,
   goal,
@@ -65,85 +66,65 @@ export function MacroCell({
   goal: number | null;
   pct: number | null;
 }) {
-  const fill = pct !== null ? Math.max(0, Math.min(100, pct)) : null;
   const colors = MACRO_COLORS[kind];
-  const rounded = Math.round(grams);
   const label = MACRO_LABELS[kind];
+  const Icon = MACRO_ICONS[kind];
+  const rounded = Math.round(grams);
+  const value = goal !== null ? `${rounded}/${Math.round(goal)}g` : `${rounded}g`;
   const status = goal !== null ? `${label} ${rounded} g sur ${goal} g` : `${label} ${rounded} g`;
-  const fillText = resolveMacroFillText(fill, goal);
 
   return (
-    <div aria-label={status} className="min-w-0 flex-1 space-y-1.5">
-      <div className="flex items-baseline justify-between gap-1">
-        <span className={cn('text-label tracking-wide', colors.text)} aria-hidden>
-          {MACRO_SHORT[kind]}
-        </span>
-        <span className="sr-only">{label}</span>
-        {goal !== null ? (
-          <span className="text-muted-foreground text-data text-[0.6875rem] tabular-nums">
-            /{goal}
-          </span>
-        ) : null}
-      </div>
-      <p className="text-data text-foreground text-lg leading-none font-semibold tabular-nums">
-        {rounded}
-        <span className="text-muted-foreground ml-0.5 text-[0.6875rem] font-normal">g</span>
-      </p>
-      <div
-        aria-label={`Progression ${label}`}
-        aria-valuemax={100}
-        aria-valuemin={0}
-        aria-valuenow={fill ?? undefined}
-        aria-valuetext={fillText}
-        className={cn('h-1 w-full overflow-hidden rounded-full', colors.track)}
-        role="progressbar"
-      >
-        <div
-          className={cn('h-full rounded-full', colors.bar)}
-          style={{ width: fill !== null ? `${fill}%` : '100%', opacity: fill !== null ? 1 : 0.45 }}
-        />
-      </div>
+    <div aria-label={status} className="flex min-w-0 flex-col items-center gap-2 text-center">
+      <MacroProgressRing kind={kind} pct={pct} />
+      <span className="inline-flex items-center gap-1">
+        <Icon className={cn('size-3.5', colors.text)} strokeWidth={2.25} aria-hidden />
+        <span className="text-foreground text-xs font-medium">{label}</span>
+      </span>
+      <span className="text-muted-foreground text-data text-[11px] tabular-nums">{value}</span>
     </div>
   );
 }
 
-export function MacroStackShare({
-  protein,
-  carbs,
-  fat,
+export function NutritionCalorieHero({
+  calories,
+  calorieBudget,
+  remaining,
 }: {
-  protein: number;
-  carbs: number;
-  fat: number;
+  calories: number;
+  calorieBudget: number | null;
+  remaining: number | null;
 }) {
-  const total = protein + carbs + fat;
-  if (total <= 0) {
-    return null;
-  }
-
-  const segments: Array<{ kind: MacroKind; grams: number }> = [
-    { kind: 'protein', grams: protein },
-    { kind: 'carbs', grams: carbs },
-    { kind: 'fat', grams: fat },
-  ];
-
-  const summary = segments
-    .map(({ kind, grams }) => `${MACRO_LABELS[kind]} ${Math.round((grams / total) * 100)} %`)
-    .join(', ');
-
   return (
-    <div
-      aria-label={`Répartition macros : ${summary}`}
-      className="flex h-1.5 w-full overflow-hidden rounded-full"
-      role="img"
-    >
-      {segments.map(({ kind, grams }) => (
-        <div
-          key={kind}
-          className={MACRO_COLORS[kind].bar}
-          style={{ width: `${(grams / total) * 100}%` }}
-        />
-      ))}
+    <div className="flex items-start justify-between gap-3">
+      <div className="min-w-0">
+        <p className="text-muted-foreground text-[11px] font-medium tracking-[0.08em] uppercase">
+          Total aujourd&apos;hui
+        </p>
+        <p className="mt-1.5 flex flex-wrap items-baseline gap-x-1.5">
+          <span
+            className={cn(
+              'text-data text-[1.75rem] leading-none font-semibold tabular-nums',
+              CALORIE_RING.text,
+            )}
+          >
+            {calories.toLocaleString('fr-FR')}
+          </span>
+          <span className="text-muted-foreground text-sm">kcal</span>
+        </p>
+        {calorieBudget !== null ? (
+          <p className="text-foreground mt-1.5 text-xs font-medium tabular-nums">
+            Objectif : {calorieBudget.toLocaleString('fr-FR')} kcal
+          </p>
+        ) : null}
+        {remaining !== null && remaining < 0 ? (
+          <p className="text-foreground text-data mt-1 text-[11px] tabular-nums">
+            {formatRemainingCalories(remaining)}
+          </p>
+        ) : null}
+      </div>
+      <span className="icon-well size-8 shrink-0" aria-hidden>
+        <Utensils className="size-3.5" strokeWidth={2.25} />
+      </span>
     </div>
   );
 }

@@ -22,10 +22,91 @@ function shellPhaseFromLocalHour(hour: number): DailyPhase {
 /** Fixed reference for prerender-safe loading labels (morning phase). */
 const LOADING_SHELL_REFERENCE = new Date('2026-01-01T08:00:00');
 
+function shellNavigationTargets(): TodayViewModel['navigationTargets'] {
+  return {
+    sleep: { label: 'Sommeil', href: TWIN_DRILL_DOWN.sleep },
+    recovery: { label: 'Récupération', href: TWIN_DRILL_DOWN.recovery },
+    effort: { label: 'Effort', href: TWIN_DRILL_DOWN.effort },
+    adaptation: { label: 'Adaptation', href: TWIN_DRILL_DOWN.adaptation },
+    physical: { label: 'Santé physique', href: TWIN_DRILL_DOWN.physical },
+    planning: { label: 'Planning', href: TWIN_DRILL_DOWN.planning },
+  };
+}
+
+function shellSignalPreviews(): TodayViewModel['hero']['signalPreviews'] {
+  const placeholder = {
+    scoreDisplay: '—',
+    unit: null,
+    subtitle: null,
+    visual: { kind: 'none' as const },
+  };
+  return [
+    { key: 'sleep', ...placeholder },
+    { key: 'recovery', ...placeholder },
+    { key: 'adaptation', ...placeholder },
+    { key: 'effort', ...placeholder },
+  ];
+}
+
+function shellHeroSection(): TodayViewModel['hero'] {
+  return {
+    eyebrow: 'Ce matin',
+    headline: '',
+    subline: '',
+    posture: 'uncertain',
+    postureLabel: '',
+    focusPriority: null,
+    goalLine: null,
+    actionLine: null,
+    adaptationReminders: [],
+    verdictStyle: {
+      showVerdictColors: false,
+      bgClass: 'bg-primary/8',
+      colorClass: 'text-foreground',
+      dotClass: 'bg-primary/50',
+      accentBarClass: '',
+    },
+    metricsRow: {
+      sleepScore: null,
+      recoveryScore: null,
+      effortScore: null,
+      adaptationScore: null,
+      effortUnavailableCaption: null,
+      adaptationUnavailableCaption: null,
+    },
+    signalPreviews: shellSignalPreviews(),
+    twinTrustStrip: {
+      confidenceLabel: null,
+      confidencePctRounded: null,
+      confidenceHref: null,
+      limitingCauseText: null,
+      limitingFactorHref: null,
+    },
+  };
+}
+
+function shellActionRow(phase: DailyPhase): TodayViewModel['actionRow'] {
+  const labels = actionRowLabels(phase);
+  return {
+    showLimitingColumn: false,
+    limitingLabel: labels.limiting,
+    limitingMode: 'none',
+    limitingLines: [],
+    limitingText: null,
+    limitingHref: null,
+    limitingFacts: [],
+    actionLabel: labels.action,
+    daySummaryEmptyText: '',
+    daySummaryEmptyHref: TWIN_DRILL_DOWN.planning,
+    daySummaryLines: [],
+    sessionLinkSuggestions: [],
+    morningRecalibration: null,
+  };
+}
+
 /** Stable Today chrome for cold-start / placeholder micro-skeletons. */
 export function todayLoadingShell(now: Date = LOADING_SHELL_REFERENCE): TodayViewModel {
   const phase = shellPhaseFromLocalHour(now.getHours());
-  const labels = actionRowLabels(phase);
 
   return {
     hasContent: true,
@@ -34,68 +115,15 @@ export function todayLoadingShell(now: Date = LOADING_SHELL_REFERENCE): TodayVie
     confidencePresentation: { pct: null, label: null, tone: 'neutral' },
     effortUnavailableMessage: null,
     morningOrientation: null,
-    navigationTargets: {
-      sleep: { label: 'Sommeil', href: TWIN_DRILL_DOWN.sleep },
-      recovery: { label: 'Récupération', href: TWIN_DRILL_DOWN.recovery },
-      effort: { label: 'Effort', href: TWIN_DRILL_DOWN.effort },
-      adaptation: { label: 'Adaptation', href: TWIN_DRILL_DOWN.adaptation },
-      physical: { label: 'Santé physique', href: TWIN_DRILL_DOWN.physical },
-      planning: { label: 'Planning', href: TWIN_DRILL_DOWN.planning },
-    },
-    hero: {
-      eyebrow: 'Ce matin',
-      headline: '',
-      subline: '',
-      posture: 'uncertain',
-      postureLabel: '',
-      focusPriority: null,
-      goalLine: null,
-      actionLine: null,
-      adaptationReminders: [],
-      verdictStyle: {
-        showVerdictColors: false,
-        bgClass: 'bg-primary/8',
-        colorClass: 'text-foreground',
-        dotClass: 'bg-primary/50',
-        accentBarClass: '',
-      },
-      metricsRow: {
-        sleepScore: null,
-        recoveryScore: null,
-        effortScore: null,
-        adaptationScore: null,
-        effortUnavailableCaption: null,
-        adaptationUnavailableCaption: null,
-      },
-      twinTrustStrip: {
-        confidenceLabel: null,
-        confidencePctRounded: null,
-        confidenceHref: null,
-        limitingCauseText: null,
-        limitingFactorHref: null,
-      },
-    },
+    navigationTargets: shellNavigationTargets(),
+    hero: shellHeroSection(),
     whyBlock: {
       title: whyBlockTitle(phase),
       lines: [],
       facts: [],
       visible: false,
     },
-    actionRow: {
-      showLimitingColumn: false,
-      limitingLabel: labels.limiting,
-      limitingMode: 'none',
-      limitingLines: [],
-      limitingText: null,
-      limitingHref: null,
-      limitingFacts: [],
-      actionLabel: labels.action,
-      daySummaryEmptyText: '',
-      daySummaryEmptyHref: TWIN_DRILL_DOWN.planning,
-      daySummaryLines: [],
-      sessionLinkSuggestions: [],
-      morningRecalibration: null,
-    },
+    actionRow: shellActionRow(phase),
     insights: [],
     header: { weather: null },
     environmentContext: null,

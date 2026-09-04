@@ -89,7 +89,7 @@ export async function POST(request: NextRequest) {
     const json = (await request.json()) as unknown;
     const parsed = postBodySchema.safeParse(json);
     if (parsed.success) {
-      ticket = parsed.data.ticket;
+      ({ ticket } = parsed.data);
     }
   } catch {
     ticket = null;
@@ -101,14 +101,14 @@ export async function POST(request: NextRequest) {
   // Location to HTML the way we want for SPA navigation).
   const location = result.headers.get('Location');
   if (location) {
-    const status =
-      location.includes('garmin=connected')
-        ? 'connected'
-        : location.includes('garmin=invalid_state')
-          ? 'invalid_state'
-          : location.includes('garmin=denied')
-            ? 'denied'
-            : 'error';
+    let status: 'connected' | 'invalid_state' | 'denied' | 'error' = 'error';
+    if (location.includes('garmin=connected')) {
+      status = 'connected';
+    } else if (location.includes('garmin=invalid_state')) {
+      status = 'invalid_state';
+    } else if (location.includes('garmin=denied')) {
+      status = 'denied';
+    }
     return NextResponse.json(
       { ok: status === 'connected', status, redirectTo: location },
       { status: status === 'connected' ? 200 : 400 },

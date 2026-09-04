@@ -74,7 +74,9 @@ export async function POST(request: NextRequest) {
       return validation.response;
     }
 
-    const rateLimit = await checkRateLimit(rateLimiters.sessionAnalyze, athleteId, { failClosed: true });
+    const rateLimit = await checkRateLimit(rateLimiters.sessionAnalyze, athleteId, {
+      failClosed: true,
+    });
     if (!rateLimit.ok) {
       const limited = rateLimitJsonResponse(rateLimit);
       return NextResponse.json(limited.body, {

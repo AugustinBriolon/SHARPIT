@@ -144,7 +144,7 @@ Temporal intent is a first-class domain concept, not a UI concern. Separating pr
  * Point-in-time environmental evidence.
  * Immutable once persisted (Phase 2+).
  */
-type EnvironmentalObservation = { /* mutable in memory */ };
+type EnvironmentalObservation = {/* mutable in memory */};
 ```
 
 - Observations are created in-memory by adapters with empty `id` (filled later by `assignObservationIds`).
@@ -487,7 +487,7 @@ Decompose by **environmental dimension**:
 ```typescript
 type EnvironmentalDimension = 'WEATHER' | 'TERRAIN' | 'ALTITUDE' | 'AIR_QUALITY';
 
-type WeatherMeasurements = { /* current fields */ };
+type WeatherMeasurements = {/* current fields */};
 type TerrainContext = {
   surfaceType: 'ROAD' | 'TRAIL' | 'TRACK' | 'MIXED' | 'UNKNOWN' | null;
   elevationGainM: number | null;

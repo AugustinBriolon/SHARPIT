@@ -1,4 +1,3 @@
-/* eslint-disable no-console -- script CLI : sortie console attendue */
 /**
  * Advances the Decision Memory lifecycle: expires stale PRESENTED recommendations,
  * and evaluates outcomes for decisions whose linked session is old enough to judge.

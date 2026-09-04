@@ -42,10 +42,7 @@ export function setGarminExerciseLabelsForTests(labels: Map<string, string> | nu
   cachedLabels = labels;
 }
 
-function labelFromKey(
-  labels: Map<string, string>,
-  key: string | null | undefined,
-): string | null {
+function labelFromKey(labels: Map<string, string>, key: string | null | undefined): string | null {
   const trimmed = key?.trim();
   if (!trimmed) {
     return null;

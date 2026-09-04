@@ -4,10 +4,7 @@ import {
   endurancePrescriptionFromDraft,
   type EnduranceDraftBlock,
 } from '@/lib/planned-session/endurance/endurance-draft';
-import {
-  parseStrengthPrescription,
-  resolveStrengthFieldsForPersist,
-} from '@/lib/planned-session/strength/strength-prescription';
+import { resolveStrengthFieldsForPersist } from '@/lib/planned-session/strength/strength-prescription';
 import {
   strengthPrescriptionFromDraft,
   type StrengthPrescriptionDraftRow,
@@ -52,15 +49,6 @@ export function resolveEndurancePayload(
   return {
     endurancePrescription: prescription,
     description: formatEndurancePrescriptionSummary(prescription),
-  };
-}
-
-function parseFormNumbers(formData: FormData) {
-  const durationRaw = formData.get('durationMin');
-  const loadRaw = formData.get('load');
-  return {
-    durationMin: durationRaw ? Number(durationRaw) : null,
-    load: loadRaw ? Number(loadRaw) : null,
   };
 }
 

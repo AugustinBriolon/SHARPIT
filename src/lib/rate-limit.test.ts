@@ -1,10 +1,6 @@
 import type { Ratelimit } from '@upstash/ratelimit';
 import { describe, expect, it, vi } from 'vitest';
-import {
-  checkRateLimit,
-  rateLimitHttpStatus,
-  rateLimitResponseBody,
-} from './rate-limit';
+import { checkRateLimit, rateLimitHttpStatus, rateLimitResponseBody } from './rate-limit';
 
 function fakeLimiter(limit: Ratelimit['limit']): Ratelimit {
   return { limit } as unknown as Ratelimit;

@@ -1,6 +1,5 @@
 'use client';
 
-import { DiscussWithCoachButton } from '@/components/coach/discuss-with-coach-button';
 import { MorningOrientationActions } from '@/components/today/rich/morning-orientation-actions';
 import {
   TodayActionRowHeader,
@@ -26,12 +25,8 @@ export function TodayActionRow({
   const derived = useTodayActionRowDerived(vm, loading);
 
   return (
-    <section aria-busy={loading || undefined} className="space-y-3">
-      <TodayActionRowHeader
-        actionLabel={vm.actionRow.actionLabel}
-        loading={loading}
-        onWellnessCompleted={onWellnessCompleted}
-      />
+    <section aria-busy={loading || undefined} aria-label="Actions du jour" className="space-y-3">
+      <TodayActionRowHeader loading={loading} onWellnessCompleted={onWellnessCompleted} />
 
       {derived.orientation ? (
         <MorningOrientationActions
@@ -50,15 +45,6 @@ export function TodayActionRow({
         vm={vm}
         onWellnessCompleted={onWellnessCompleted}
       />
-
-      {loading ? null : (
-        <DiscussWithCoachButton
-          className="w-full"
-          label="Discuter de ma journée"
-          size="sm"
-          target={{ kind: 'today' }}
-        />
-      )}
     </section>
   );
 }

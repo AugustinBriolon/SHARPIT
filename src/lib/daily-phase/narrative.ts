@@ -55,7 +55,7 @@ const PHASE_HERO_EYEBROW: Partial<Record<DailyPhase, string>> = {
  * RECOVERY_WINDOW covers two distinct real situations (resolve.ts): just after a
  * completed session, or a rest day that's evolved past morning with no session at
  * all. All copy in this phase defaulted to the post-session framing ("Après la
- * séance") regardless — nonsensical on a day with zero training. This flag routes
+ * séance") regardless. Nonsensical on a day with zero training. This flag routes
  * to rest-day-specific copy instead.
  */
 function isRestDayRecoveryWindow(input: PhaseNarrativeInput): boolean {
@@ -81,12 +81,11 @@ function postureLabelForPhase(posture: TodayPosture, phase: DailyPhase): string 
   }
 }
 
-/** Rest-day equivalent of RECOVERY_WINDOW's reminders — no session to reference. */
+/** Rest-day equivalent of RECOVERY_WINDOW's reminders. No session to reference. */
 const REST_DAY_ADAPTATION_REMINDERS = [
-  'Hydrate-toi régulièrement dans la journée.',
-  'Repas équilibrés, riches en protéines pour la récupération musculaire.',
+  'Profite du repos pour bien manger et t’hydrater.',
   'Mobilité ou marche légère pour rester actif sans charger.',
-  'Sommeil : c’est là que l’adaptation se consolide.',
+  'Le sommeil consolide l’adaptation des jours précédents.',
 ];
 
 const ADAPTATION_REMINDERS: Record<
@@ -94,10 +93,9 @@ const ADAPTATION_REMINDERS: Record<
   string[]
 > = {
   RECOVERY_WINDOW: [
-    'Hydrate dans l’heure qui suit.',
-    'Repas riches en protéines et glucides dans les 2 h.',
+    'Mange dans les 2 h pour soutenir la récupération.',
     'Étirements ou marche légère si tu restes actif.',
-    'Sommeil : c’est là que l’adaptation se consolide.',
+    'Le sommeil consolide ce que la séance a lancé.',
   ],
   END_OF_DAY: [
     'Vise ta fenêtre de sommeil ce soir.',
@@ -198,10 +196,10 @@ function forwardPhaseFocusPriority(input: PhaseNarrativeInput): string | null {
     return null;
   }
   if (goalContext?.linkedToTodaySession && verdict === 'RECOVER') {
-    return `Allège la séance — elle sert ${goalContext.title}`;
+    return `Allège la séance. Elle sert ${goalContext.title}`;
   }
   if (goalContext?.linkedToTodaySession && verdict === 'CAUTION') {
-    return `Reste sous contrôle — qualité pour ${goalContext.title}`;
+    return `Reste sous contrôle. Qualité pour ${goalContext.title}`;
   }
   return actionLine;
 }
@@ -209,14 +207,31 @@ function forwardPhaseFocusPriority(input: PhaseNarrativeInput): string | null {
 function sessionCompletedFocusPriority(input: PhaseNarrativeInput): string | null {
   const { goalContext } = input;
   if (goalContext?.linkedToTodaySession) {
-    return `Récupère dans les 2 h — consolide ce que tu as fait pour ${goalContext.title}`;
+    return `Récupère dans les 2 h. Consolide ce que tu as fait pour ${goalContext.title}`;
   }
   return 'Récupère dans les 2 h avant le prochain signal';
 }
 
+function recoveryWindowFocusPriority(input: PhaseNarrativeInput): string | null {
+  if (isRestDayRecoveryWindow(input)) {
+    return 'Mobilité ou marche légère pour rester actif sans charger.';
+  }
+
+  const effortLevel = resolveEffortLevel(input);
+  const recoveryStress = isRecoveryStress(input.limitingFactorMessage);
+
+  if (recoveryStress || effortLevel === 'high') {
+    return 'Nutrition et sommeil sont tes leviers de récupération.';
+  }
+  if (effortLevel === 'moderate') {
+    return 'Le corps digère la séance. Laisse-le travailler.';
+  }
+  return 'L\u2019adaptation se joue maintenant. Repos actif.';
+}
+
 function focusPriorityForPhase(
   input: PhaseNarrativeInput,
-  adaptationReminders: string[],
+  _adaptationReminders: string[],
 ): string | null {
   const phase = phaseOf(input);
 
@@ -227,7 +242,7 @@ function focusPriorityForPhase(
     return sessionCompletedFocusPriority(input);
   }
   if (phase === 'RECOVERY_WINDOW') {
-    return adaptationReminders[0] ?? null;
+    return recoveryWindowFocusPriority(input);
   }
   return null;
 }
@@ -249,11 +264,11 @@ function resolveEffortLevel(input: PhaseNarrativeInput): TodayEffortLevel | null
   return input.evening?.effortLevel ?? inferEffortFromTss(input.totalTssToday);
 }
 
-/** RECOVERY_WINDOW on a day with zero sessions — no "après {sport}" premise to build on. */
+/** RECOVERY_WINDOW on a day with zero sessions. No "après {sport}" premise to build on. */
 function restDayRecoveryHeadline(posture: TodayPosture): string {
   return posture === 'protect'
-    ? 'Jour de repos — récupération à préserver'
-    : 'Jour de repos — fenêtre d’adaptation ouverte';
+    ? 'Jour de repos. Récupération à préserver'
+    : 'Jour de repos. Fenêtre d’adaptation ouverte';
 }
 
 function sessionCompletedHeadline(input: {
@@ -264,18 +279,18 @@ function sessionCompletedHeadline(input: {
   posture: TodayPosture;
 }): string {
   if (input.goalContext?.linkedToTodaySession) {
-    return `${input.load} — au service de ${input.goalContext.title}`;
+    return `${input.load}. Au service de ${input.goalContext.title}`;
   }
   if (input.recoveryStress || input.posture === 'protect') {
-    return `${input.load} — récupération prioritaire maintenant`;
+    return `${input.load}. Récupération prioritaire maintenant`;
   }
   if (input.effortLevel === 'high') {
-    return `${input.load} — laisse le corps digérer`;
+    return `${input.load}. Laisse le corps digérer`;
   }
   if (input.effortLevel === 'moderate') {
-    return `${input.load} — place à la récupération`;
+    return `${input.load}. Place à la récupération`;
   }
-  return `${input.load} — séance dans les jambes`;
+  return `${input.load}. Séance dans les jambes`;
 }
 
 function recoveryWindowHeadline(
@@ -285,12 +300,12 @@ function recoveryWindowHeadline(
   posture: TodayPosture,
 ): string {
   if (recoveryStress || posture === 'protect') {
-    return `${load} — récupération à consolider`;
+    return `${load}. Récupération à consolider`;
   }
   if (effortLevel === 'high') {
-    return `${load} — nutrition et sommeil d'abord`;
+    return `${load}. Nutrition et sommeil d'abord`;
   }
-  return `${load} — fenêtre d’adaptation ouverte`;
+  return `${load}. Fenêtre d’adaptation ouverte`;
 }
 
 function postTrainingHeadline(
@@ -390,7 +405,7 @@ function morningSubline(input: PhaseNarrativeInput): string {
     if (verdict === 'INSUFFICIENT_DATA' || !verdict) {
       return 'Synchronise ton état avant de décider.';
     }
-    return 'Lecture prudente — confiance partielle sur les signaux du jour.';
+    return 'Lecture prudente. Confiance partielle sur les signaux du jour.';
   }
   return 'Lis ton orientation, puis décide pour la séance.';
 }
@@ -405,9 +420,9 @@ function postTrainingSubline(
   }
   if (phase === 'SESSION_COMPLETED') {
     if (!dailyStrainAvailable) {
-      return 'Charge en cours de calcul — le débrief s’affine sous peu.';
+      return 'Charge en cours de calcul. Le débrief s’affine sous peu.';
     }
-    return 'La séance est dans les jambes — place à la récupération.';
+    return 'La séance est dans les jambes. Place à la récupération.';
   }
   if (phase === 'RECOVERY_WINDOW') {
     return 'Nutrition, hydratation et sommeil : les leviers d’adaptation.';

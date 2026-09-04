@@ -40,7 +40,7 @@ export function renphoMeasurementToBodyComposition(
   measurement: RenphoMeasurement,
   receivedAt: Date,
 ): RawBodyCompositionObservation | null {
-  if ((measurement.weight === undefined || measurement.weight === null) || measurement.weight <= 0) {
+  if (measurement.weight === undefined || measurement.weight === null || measurement.weight <= 0) {
     return null;
   }
 

@@ -3,7 +3,6 @@
 import {
   type FormEvent,
   type KeyboardEvent,
-  type TextareaHTMLAttributes,
   useCallback,
   useLayoutEffect,
   useRef,

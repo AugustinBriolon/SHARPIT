@@ -178,17 +178,15 @@
   --sidebar-ring: oklch(0.48 0.13 142);
 
   /*
-    Mobile bottom-nav contract. `--bottom-nav-height` is the bar itself
-    (BottomNav in `layout/mobile-shell.tsx`); `--bottom-nav-offset` adds the
-    home-indicator inset. Anything fixed above the bar — toasts, sticky action
-    bars, chat composers — must anchor on `--bottom-nav-offset` so it can never
-    swallow a nav tap.
+    Floating bottom-nav contract (every viewport). `--bottom-nav-height` is the
+    bar itself (BottomNav in `layout/mobile-shell.tsx`); `--bottom-nav-offset`
+    adds the home-indicator inset. Anything fixed above the bar — toasts,
+    sticky action bars, chat composers — must anchor on `--bottom-nav-offset`
+    so it can never swallow a nav tap.
   */
   /* Floating glass tab bar — keep last hub cards / quiet links clear of the bar. */
   --bottom-nav-height: 5.75rem;
-  --bottom-nav-offset: calc(
-    var(--bottom-nav-height) + 2rem + env(safe-area-inset-bottom, 0px)
-  );
+  --bottom-nav-offset: calc(var(--bottom-nav-height) + 2rem + env(safe-area-inset-bottom, 0px));
 
   /* Press feedback scales — ADR-028 / motionTokens.scale.press* */
   --press-scale-micro: 0.95;
@@ -642,8 +640,8 @@
 
 /* Force Clerk field paint under lecture-critique (beats shadcn dark:bg-input/30) */
 .dark .auth-surface :is(.cl-input, .cl-formFieldInput, input.cl-input) {
-  background-color: var(--auth-input-bg) !important;
   border-color: var(--auth-input-border) !important;
+  background-color: var(--auth-input-bg) !important;
   color: var(--auth-foreground) !important;
 }
 
@@ -652,13 +650,15 @@
   opacity: 1;
 }
 
-.dark .auth-surface :is(.cl-formFieldLabel, .cl-footerActionText, .cl-dividerText, .cl-formFieldHintText) {
+.dark
+  .auth-surface
+  :is(.cl-formFieldLabel, .cl-footerActionText, .cl-dividerText, .cl-formFieldHintText) {
   color: var(--auth-muted) !important;
 }
 
 .dark .auth-surface :is(.cl-socialButtonsBlockButton, .cl-alternativeMethodsBlockButton) {
-  background-color: var(--auth-input-bg) !important;
   border-color: var(--auth-input-border) !important;
+  background-color: var(--auth-input-bg) !important;
   color: var(--auth-foreground) !important;
 }
 

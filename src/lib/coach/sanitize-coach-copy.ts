@@ -27,14 +27,13 @@ export function sanitizeCoachCopy(input: string): string {
   text = text.replace(/(\d)[^\S\n]*[—–][^\S\n]*(\d)/g, '$1-$2');
 
   // Em / en dash as clause joiner (horizontal whitespace only — keep markdown lines).
-  text = text.replace(
-    /[^\S\n]*[—–][^\S\n]*(\p{Ll})?/gu,
-    (_match, letter: string | undefined) => (letter ? `. ${letter.toUpperCase()}` : '. '),
+  text = text.replace(/[^\S\n]*[—–][^\S\n]*(\p{Ll})?/gu, (_match, letter: string | undefined) =>
+    letter ? `. ${letter.toUpperCase()}` : '. ',
   );
 
   // Spaced ASCII hyphen between word-like tokens (not markdown list markers).
   text = text.replace(
-    /([\p{L}\p{N}»"'”)\]])[^\S\n]+-[^\S\n]+([\p{L}\p{N}«"'“(\[])/gu,
+    /([\p{L}\p{N}»"'”)\]])[^\S\n]+-[^\S\n]+([\p{L}\p{N}«"'“(\u005B])/gu,
     (_match, left: string, right: string) =>
       `${left}. ${/\p{Ll}/u.test(right) ? right.toUpperCase() : right}`,
   );

@@ -1,11 +1,9 @@
 import { type DragEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { handleResourceTreeKeyDown } from './ai-sidebar-keyboard';
 import {
   canContain,
   containsResource,
   findResource,
   flattenResources,
-  renameResource,
   resolveDropPosition,
 } from './ai-sidebar-tree';
 import { executeSidebarMove } from './ai-sidebar-tree-list';

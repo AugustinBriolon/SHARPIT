@@ -1,6 +1,6 @@
 'use client';
 
-import { differenceInCalendarDays, format } from 'date-fns';
+import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import type { ClientGoal } from '@/lib/query/types';
 import type { ThreadCoachLine } from '@/lib/training/thread/thread-coach-line';

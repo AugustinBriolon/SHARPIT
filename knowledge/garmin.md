@@ -37,11 +37,11 @@ SHARPIT is deeply coupled to Garmin Connect as its primary data ingestion source
 
 ### Daily Health Metrics
 
-| Metric                | Description                         | SHARPIT use                      | Confidence |
-| --------------------- | ----------------------------------- | -------------------------------- | ---------- |
-| `restingHr`           | Resting HR from morning measurement | RHR trend alert                  | High       |
-| `hrv`                 | HRV value (RMSSD-like, ms)          | HRV trend analysis               | Medium     |
-| `hrvStatus`           | Garmin HRV classification           | Direct alert trigger             | Medium     |
+| Metric                | Description                         | SHARPIT use                                                | Confidence |
+| --------------------- | ----------------------------------- | ---------------------------------------------------------- | ---------- |
+| `restingHr`           | Resting HR from morning measurement | RHR trend alert                                            | High       |
+| `hrv`                 | HRV value (RMSSD-like, ms)          | HRV trend analysis                                         | Medium     |
+| `hrvStatus`           | Garmin HRV classification           | Direct alert trigger                                       | Medium     |
 | `bodyBattery`         | Energy reserves 0-100               | Soft readiness corroboration + daily cardiovascular strain | Low        |
 | `stress`              | Average daily stress (0-100)        | Soft readiness corroboration + daily cardiovascular strain | Low        |
 | `stressQualification` | Stress category                     | Alert context                                              | Low        |

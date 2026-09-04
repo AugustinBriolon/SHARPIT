@@ -9,13 +9,19 @@ import {
 } from '@/lib/planned-session/brick/brick-sessions';
 import { activityTypeLabels, formatDuration } from '@/lib/format';
 import { formatPlannedDuration, intensityLabels } from '@/lib/planned-session/sessions';
+import {
+  buildCompletedSessionMetrics,
+  type CompletedSessionMetric,
+} from '@/lib/today/completed-session-metrics';
 
 export type DaySummaryLine = {
   id: string;
-  kind: 'done' | 'planned' | 'missed';
+  kind: 'done' | 'planned';
   activityType: ActivityType;
   primary: string;
   secondary?: string;
+  /** Key KPIs for completed Today session previews (max 3). */
+  metrics?: CompletedSessionMetric[];
   /** Set for single planned sessions — enables shared label atoms in the UI. */
   plannedSession?: ClientPlannedSession;
   /** Set for a brick line — the athlete sees one card with each leg behind a dropdown. */
@@ -28,28 +34,64 @@ export type TodayDaySummary = {
   isEmpty: boolean;
 };
 
-/**
- * Past planned sessions that were never realized (no activity, not completed).
- * Looked back up to `lookbackDays` from the reference date.
- */
-export function findMissedPlannedSessions(
-  plannedSessions: ClientPlannedSession[],
-  ref: Date,
-  lookbackDays = 7,
-): ClientPlannedSession[] {
-  const refDay = startOfDay(ref);
-  const cutoff = startOfDay(new Date(refDay.getTime() - lookbackDays * 86_400_000));
-  return plannedSessions
-    .filter((s) => {
-      if (s.completed || s.activityId) {
-        return false;
-      }
-      const day = startOfDay(new Date(s.date));
-      return day < refDay && day >= cutoff;
-    })
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+function filterTodayActivities(activities: ClientActivity[], refDay: Date): ClientActivity[] {
+  return activities
+    .filter((a) => isSameDay(new Date(a.date), refDay))
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 }
 
+function resolveLinkedPlannedIds(
+  activities: ClientActivity[],
+  plannedSessions: ClientPlannedSession[],
+): Set<string> {
+  return new Set(
+    [
+      ...plannedSessions.map((s) => (s.activityId ? s.id : null)),
+      ...activities.map((a) => a.plannedSession?.id ?? null),
+    ].filter((id): id is string => isSet(id)),
+  );
+}
+
+function filterTodayPlannedSessions(
+  plannedSessions: ClientPlannedSession[],
+  refDay: Date,
+  linkedPlannedIds: Set<string>,
+): ClientPlannedSession[] {
+  return plannedSessions.filter(
+    (s) =>
+      isSameDay(new Date(s.date), refDay) &&
+      !s.completed &&
+      !s.activityId &&
+      !linkedPlannedIds.has(s.id),
+  );
+}
+
+function buildDoneLines(activities: ClientActivity[]): DaySummaryLine[] {
+  return activities.map((a) => ({
+    id: a.id,
+    kind: 'done' as const,
+    activityType: a.type,
+    primary: activityLabel(a),
+    secondary: activityMeta(a),
+    metrics: buildCompletedSessionMetrics({
+      type: a.type,
+      duration: a.duration,
+      load: a.load,
+      rpe: a.rpe,
+      runMetrics: a.runMetrics,
+      bikeMetrics: a.bikeMetrics,
+      swimMetrics: a.swimMetrics,
+      hikeMetrics: a.hikeMetrics,
+      strengthSets: a.strengthSets ?? [],
+    }),
+  }));
+}
+
+/**
+ * Done today plus still to do today. Past unrealized sessions are deliberately
+ * absent: catch-up is a Plan question, and listing it here turned Today into a
+ * backlog the athlete could not act on.
+ */
 export function buildTodayDaySummary(
   date: Date,
   activities: ClientActivity[],
@@ -57,35 +99,10 @@ export function buildTodayDaySummary(
   goalTitleById?: ReadonlyMap<string, string>,
 ): TodayDaySummary {
   const refDay = startOfDay(date);
-
-  const todayActivities = activities
-    .filter((a) => isSameDay(new Date(a.date), refDay))
-    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-
-  // Prefer activity→planned reverse link when plannedSessions cache lags after Instant link.
-  const linkedPlannedIds = new Set(
-    [
-      ...plannedSessions.map((s) => (s.activityId ? s.id : null)),
-      ...activities.map((a) => a.plannedSession?.id ?? null),
-    ].filter((id): id is string => isSet(id)),
-  );
-
-  const todayPlanned = plannedSessions.filter(
-    (s) =>
-      isSameDay(new Date(s.date), refDay) &&
-      !s.completed &&
-      !s.activityId &&
-      !linkedPlannedIds.has(s.id),
-  );
-
-  const doneLines: DaySummaryLine[] = todayActivities.map((a) => ({
-    id: a.id,
-    kind: 'done' as const,
-    activityType: a.type,
-    primary: activityLabel(a),
-    secondary: activityMeta(a),
-  }));
-
+  const todayActivities = filterTodayActivities(activities, refDay);
+  const linkedPlannedIds = resolveLinkedPlannedIds(activities, plannedSessions);
+  const todayPlanned = filterTodayPlannedSessions(plannedSessions, refDay, linkedPlannedIds);
+  const doneLines = buildDoneLines(todayActivities);
   const plannedLines = buildPlannedLines(todayPlanned, goalTitleById);
   const lines = [...doneLines, ...plannedLines];
 

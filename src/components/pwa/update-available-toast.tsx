@@ -64,12 +64,12 @@ function UpdateActionButton({ onApply }: { onApply: () => void }) {
 
   return (
     <button
-      type="button"
-      disabled={pending}
       aria-busy={pending || undefined}
+      disabled={pending}
+      type="button"
       className={cn(
         'text-primary pressable mt-1 inline-flex items-center gap-1.5 text-sm font-semibold underline-offset-2',
-        'hover:underline disabled:pointer-events-none disabled:opacity-70 disabled:no-underline',
+        'hover:underline disabled:pointer-events-none disabled:no-underline disabled:opacity-70',
       )}
       onClick={() => {
         if (pending) {

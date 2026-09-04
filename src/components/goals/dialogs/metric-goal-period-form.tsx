@@ -60,110 +60,21 @@ function measureHint(measure: PeriodMeasure, period: GoalPeriod): string {
   }
 }
 
-export function PeriodMetricGoalForm({
-  uid,
-  formId,
+function PeriodMetricOptionalFields({
   goal,
-  period,
-  measure,
-  periodSport,
-  periodTarget,
   periodEndDate,
   customTitle,
-  allowedSports = defaultPeriodSportOptions,
-  onPeriodChange,
-  onMeasureChange,
-  onPeriodSportChange,
-  onPeriodTargetChange,
   onPeriodEndDateChange,
   onCustomTitleChange,
-  onSubmit,
 }: {
-  uid: string;
-  formId: string;
   goal?: GoalForEdit | null;
-  period: GoalPeriod;
-  measure: PeriodMeasure;
-  periodSport: string;
-  periodTarget: string;
   periodEndDate: string;
   customTitle: string;
-  allowedSports?: readonly PeriodSportOption[];
-  onPeriodChange: (period: GoalPeriod) => void;
-  onMeasureChange: (measure: PeriodMeasure) => void;
-  onPeriodSportChange: (sport: string) => void;
-  onPeriodTargetChange: (value: string) => void;
   onPeriodEndDateChange: (value: string) => void;
   onCustomTitleChange: (value: string) => void;
-  onSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
 }) {
-  const periodSportLabel =
-    periodSport === ALL_SPORTS ? 'Tous sports' : activityTypeLabels[periodSport as ActivityType];
-
   return (
-    <form className="space-y-4" id={formId} onSubmit={onSubmit}>
-      <div className="space-y-2">
-        <Label htmlFor={`${uid}-period`}>Récurrence</Label>
-        <Select value={period} onValueChange={(v) => v && onPeriodChange(v as GoalPeriod)}>
-          <SelectTrigger className="w-full min-w-0" id={`${uid}-period`}>
-            <SelectValue>{periodLabels[period]}</SelectValue>
-          </SelectTrigger>
-          <SelectContent>
-            {periodOptions.map((p) => (
-              <SelectItem key={p} value={p}>
-                {periodLabels[p]}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <div className="space-y-2">
-          <Label htmlFor={`${uid}-measure`}>Mesure</Label>
-          <Select value={measure} onValueChange={(v) => v && onMeasureChange(v as PeriodMeasure)}>
-            <SelectTrigger className="w-full min-w-0" id={`${uid}-measure`}>
-              <SelectValue>{measureLabels[measure]}</SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              {measureOptions.map((m) => (
-                <SelectItem key={m} value={m}>
-                  {measureLabels[m]}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor={`${uid}-period-sport`}>Sport</Label>
-          <Select value={periodSport} onValueChange={(v) => v && onPeriodSportChange(v)}>
-            <SelectTrigger className="w-full min-w-0" id={`${uid}-period-sport`}>
-              <SelectValue>{periodSportLabel}</SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              {allowedSports.map((t) => (
-                <SelectItem key={t} value={t}>
-                  {t === ALL_SPORTS ? 'Tous sports' : activityTypeLabels[t]}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="periodTarget">Cible</Label>
-        <Input
-          id="periodTarget"
-          inputMode="decimal"
-          placeholder={measurePlaceholder(measure)}
-          value={periodTarget}
-          required
-          onChange={(e) => onPeriodTargetChange(e.target.value)}
-        />
-        <p className="text-muted-foreground text-xs">{measureHint(measure, period)}</p>
-      </div>
-
+    <>
       <div className="space-y-2">
         <Label htmlFor="periodEndDate">Date de fin (optionnel)</Label>
         <Input
@@ -191,6 +102,229 @@ export function PeriodMetricGoalForm({
         <Label htmlFor="notes">Notes</Label>
         <Textarea defaultValue={goal?.notes ?? ''} id="notes" name="notes" rows={2} />
       </div>
+    </>
+  );
+}
+
+function PeriodRecurrenceField({
+  uid,
+  period,
+  onPeriodChange,
+}: {
+  uid: string;
+  period: GoalPeriod;
+  onPeriodChange: (period: GoalPeriod) => void;
+}) {
+  return (
+    <div className="space-y-2">
+      <Label htmlFor={`${uid}-period`}>Récurrence</Label>
+      <Select value={period} onValueChange={(v) => v && onPeriodChange(v as GoalPeriod)}>
+        <SelectTrigger className="w-full min-w-0" id={`${uid}-period`}>
+          <SelectValue>{periodLabels[period]}</SelectValue>
+        </SelectTrigger>
+        <SelectContent>
+          {periodOptions.map((p) => (
+            <SelectItem key={p} value={p}>
+              {periodLabels[p]}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  );
+}
+
+function PeriodMeasureField({
+  uid,
+  measure,
+  onMeasureChange,
+}: {
+  uid: string;
+  measure: PeriodMeasure;
+  onMeasureChange: (measure: PeriodMeasure) => void;
+}) {
+  return (
+    <div className="space-y-2">
+      <Label htmlFor={`${uid}-measure`}>Mesure</Label>
+      <Select value={measure} onValueChange={(v) => v && onMeasureChange(v as PeriodMeasure)}>
+        <SelectTrigger className="w-full min-w-0" id={`${uid}-measure`}>
+          <SelectValue>{measureLabels[measure]}</SelectValue>
+        </SelectTrigger>
+        <SelectContent>
+          {measureOptions.map((m) => (
+            <SelectItem key={m} value={m}>
+              {measureLabels[m]}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  );
+}
+
+function PeriodSportField({
+  uid,
+  periodSport,
+  periodSportLabel,
+  allowedSports,
+  onPeriodSportChange,
+}: {
+  uid: string;
+  periodSport: string;
+  periodSportLabel: string;
+  allowedSports: readonly PeriodSportOption[];
+  onPeriodSportChange: (sport: string) => void;
+}) {
+  return (
+    <div className="space-y-2">
+      <Label htmlFor={`${uid}-period-sport`}>Sport</Label>
+      <Select value={periodSport} onValueChange={(v) => v && onPeriodSportChange(v)}>
+        <SelectTrigger className="w-full min-w-0" id={`${uid}-period-sport`}>
+          <SelectValue>{periodSportLabel}</SelectValue>
+        </SelectTrigger>
+        <SelectContent>
+          {allowedSports.map((t) => (
+            <SelectItem key={t} value={t}>
+              {t === ALL_SPORTS ? 'Tous sports' : activityTypeLabels[t]}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  );
+}
+
+function PeriodMeasureSportFields({
+  uid,
+  measure,
+  periodSport,
+  periodSportLabel,
+  allowedSports,
+  onMeasureChange,
+  onPeriodSportChange,
+}: {
+  uid: string;
+  measure: PeriodMeasure;
+  periodSport: string;
+  periodSportLabel: string;
+  allowedSports: readonly PeriodSportOption[];
+  onMeasureChange: (measure: PeriodMeasure) => void;
+  onPeriodSportChange: (sport: string) => void;
+}) {
+  return (
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+      <PeriodMeasureField measure={measure} uid={uid} onMeasureChange={onMeasureChange} />
+      <PeriodSportField
+        allowedSports={allowedSports}
+        periodSport={periodSport}
+        periodSportLabel={periodSportLabel}
+        uid={uid}
+        onPeriodSportChange={onPeriodSportChange}
+      />
+    </div>
+  );
+}
+
+function PeriodTargetField({
+  measure,
+  period,
+  periodTarget,
+  onPeriodTargetChange,
+}: {
+  measure: PeriodMeasure;
+  period: GoalPeriod;
+  periodTarget: string;
+  onPeriodTargetChange: (value: string) => void;
+}) {
+  return (
+    <div className="space-y-2">
+      <Label htmlFor="periodTarget">Cible</Label>
+      <Input
+        id="periodTarget"
+        inputMode="decimal"
+        placeholder={measurePlaceholder(measure)}
+        value={periodTarget}
+        required
+        onChange={(e) => onPeriodTargetChange(e.target.value)}
+      />
+      <p className="text-muted-foreground text-xs">{measureHint(measure, period)}</p>
+    </div>
+  );
+}
+
+export type PeriodMetricGoalFormProps = {
+  uid: string;
+  formId: string;
+  goal?: GoalForEdit | null;
+  period: GoalPeriod;
+  measure: PeriodMeasure;
+  periodSport: string;
+  periodTarget: string;
+  periodEndDate: string;
+  customTitle: string;
+  allowedSports?: readonly PeriodSportOption[];
+  compact?: boolean;
+  onPeriodChange: (period: GoalPeriod) => void;
+  onMeasureChange: (measure: PeriodMeasure) => void;
+  onPeriodSportChange: (sport: string) => void;
+  onPeriodTargetChange: (value: string) => void;
+  onPeriodEndDateChange: (value: string) => void;
+  onCustomTitleChange: (value: string) => void;
+  onSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
+};
+
+function renderPeriodOptionalFields(props: Omit<PeriodMetricGoalFormProps, 'formId' | 'onSubmit'>) {
+  if (props.compact) {
+    return null;
+  }
+  return (
+    <PeriodMetricOptionalFields
+      customTitle={props.customTitle}
+      goal={props.goal}
+      periodEndDate={props.periodEndDate}
+      onCustomTitleChange={props.onCustomTitleChange}
+      onPeriodEndDateChange={props.onPeriodEndDateChange}
+    />
+  );
+}
+
+function PeriodMetricGoalFormFields(props: Omit<PeriodMetricGoalFormProps, 'formId' | 'onSubmit'>) {
+  const periodSportLabel =
+    props.periodSport === ALL_SPORTS
+      ? 'Tous sports'
+      : activityTypeLabels[props.periodSport as ActivityType];
+
+  return (
+    <>
+      <PeriodRecurrenceField
+        period={props.period}
+        uid={props.uid}
+        onPeriodChange={props.onPeriodChange}
+      />
+      <PeriodMeasureSportFields
+        allowedSports={props.allowedSports ?? defaultPeriodSportOptions}
+        measure={props.measure}
+        periodSport={props.periodSport}
+        periodSportLabel={periodSportLabel}
+        uid={props.uid}
+        onMeasureChange={props.onMeasureChange}
+        onPeriodSportChange={props.onPeriodSportChange}
+      />
+      <PeriodTargetField
+        measure={props.measure}
+        period={props.period}
+        periodTarget={props.periodTarget}
+        onPeriodTargetChange={props.onPeriodTargetChange}
+      />
+      {renderPeriodOptionalFields(props)}
+    </>
+  );
+}
+
+export function PeriodMetricGoalForm({ formId, onSubmit, ...fields }: PeriodMetricGoalFormProps) {
+  return (
+    <form className="space-y-4" id={formId} onSubmit={onSubmit}>
+      <PeriodMetricGoalFormFields {...fields} />
     </form>
   );
 }

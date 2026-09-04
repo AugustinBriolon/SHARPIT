@@ -26,7 +26,7 @@ function MobileSidebarPanel({
   className,
   side,
   panelRef,
-  hidden,
+  hidden: _hidden,
   setHidden,
   openMobileRef,
 }: {

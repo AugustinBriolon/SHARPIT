@@ -82,6 +82,7 @@ export function TodayDashboardMain({
         limitingFactorHref={content.hero.twinTrustStrip.limitingFactorHref}
         loading={valuesLoading}
         metricsRow={content.hero.metricsRow}
+        signalPreviews={content.hero.signalPreviews}
       />
     </div>
   );

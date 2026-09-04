@@ -77,10 +77,10 @@ export function estimateSwimCss(
 
 /** Only suggest a revision the athlete would actually feel in the water. */
 export function shouldSuggestSwimCss(current: number | null, estimate: number | null): boolean {
-  if ((estimate === undefined || estimate === null)) {
+  if (estimate === undefined || estimate === null) {
     return false;
   }
-  if ((current === undefined || current === null)) {
+  if (current === undefined || current === null) {
     return true;
   }
   return Math.abs(current - estimate) >= CSS_MATERIALITY_SEC_PER_100M;

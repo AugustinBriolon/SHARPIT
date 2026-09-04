@@ -8,7 +8,9 @@ import { syncStravaActivities } from '@/lib/integrations/strava/strava-sync';
 export async function POST() {
   try {
     const athleteId = await getCurrentAthleteId();
-    const rateLimit = await checkRateLimit(rateLimiters.providerSync, `${athleteId}:strava`, { failClosed: true });
+    const rateLimit = await checkRateLimit(rateLimiters.providerSync, `${athleteId}:strava`, {
+      failClosed: true,
+    });
     if (!rateLimit.ok) {
       const limited = rateLimitJsonResponse(rateLimit);
       return NextResponse.json(limited.body, {

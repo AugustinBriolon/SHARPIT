@@ -1,10 +1,7 @@
 import { ActivityType } from '@prisma/client';
 import type { EquipmentSport } from '@/lib/equipment/catalog';
 import { EQUIPMENT_SPORTS } from '@/lib/equipment/catalog';
-import {
-  PRACTICED_SPORT_LABELS,
-  type PracticedSportId,
-} from '@/lib/practiced-sports/catalog';
+import { PRACTICED_SPORT_LABELS, type PracticedSportId } from '@/lib/practiced-sports/catalog';
 import type { TravelDiscipline } from '@/lib/travel-context/disciplines';
 import { TRAVEL_DISCIPLINES } from '@/lib/travel-context/disciplines';
 

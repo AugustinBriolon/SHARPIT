@@ -35,10 +35,7 @@ const NATIVE_HEADERS: Record<string, string> = {
 };
 
 export type GarminMobileAuthFailureKind =
-  | 'invalid_credentials'
-  | 'mfa_required'
-  | 'rate_limited'
-  | 'unknown';
+  'invalid_credentials' | 'mfa_required' | 'rate_limited' | 'unknown';
 
 export class GarminMobileAuthError extends Error {
   constructor(
@@ -155,10 +152,18 @@ export async function refreshGarminMobileToken(refreshToken: string): Promise<Ga
     });
   } catch (error) {
     if (error instanceof GarminDiAuthError) {
-      throw new GarminMobileAuthError(error.message, error.kind === 'rate_limited' ? 'rate_limited' : 'unknown');
+      throw new GarminMobileAuthError(
+        error.message,
+        error.kind === 'rate_limited' ? 'rate_limited' : 'unknown',
+      );
     }
     throw error;
   }
 }
 
-export { DI_TOKEN_URL, DI_GRANT_TYPE, CLIENT_ID as MOBILE_CLIENT_ID, SERVICE_URL as MOBILE_SERVICE_URL };
+export {
+  DI_TOKEN_URL,
+  DI_GRANT_TYPE,
+  CLIENT_ID as MOBILE_CLIENT_ID,
+  SERVICE_URL as MOBILE_SERVICE_URL,
+};

@@ -1,30 +1,12 @@
 'use client';
 
-import { GoalHorizon, GoalKind, GoalPriority } from '@prisma/client';
+import { GoalHorizon, GoalKind } from '@prisma/client';
 import { Calendar, Timer } from 'lucide-react';
 import {
   MetricGoalForm,
   type MetricGoalFormResult,
 } from '@/components/goals/dialogs/metric-goal-form';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
-import {
-  horizonLabels,
-  horizonOrder,
-  priorityDescriptions,
-  priorityLabels,
-  priorityOrder,
-} from '@/lib/goals/goals';
 import type { GoalForEdit } from '@/components/goals/dialogs/goal-dialog';
 import { GoalLegacyMetricFields } from '@/components/goals/dialogs/goal-legacy-metric-fields';
 import { GoalRaceEditFields } from '@/components/goals/dialogs/goal-race-edit-fields';

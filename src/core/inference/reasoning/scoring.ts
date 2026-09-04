@@ -27,7 +27,6 @@ import type {
   ReasoningState,
   DataCompleteness,
 } from '@/core/digital-twin/types';
-import type { I18nItem } from '@/core/inference/shared/types';
 import { isSet } from '@/lib/util/value';
 import type { EnvironmentalImpact } from '@/core/environment';
 import { environmentalImpactIsSignificant } from '@/core/inference/environment/apply-impact';

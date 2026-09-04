@@ -248,6 +248,92 @@ async function checkAdaptAccess(athleteId: string): Promise<AdaptAccess> {
   return { blocked: null, budgetWarning: budget.warning };
 }
 
+type AdaptRequestParseResult =
+  { ok: true; days: number; focus: string | undefined } | { ok: false; response: NextResponse };
+
+async function parseAdaptRequest(req: Request): Promise<AdaptRequestParseResult> {
+  const body = await req.json().catch(() => ({}));
+  const parsed = adaptRequestSchema.safeParse(body);
+  if (!parsed.success) {
+    return {
+      ok: false,
+      response: NextResponse.json({ error: 'Paramètres invalides.' }, { status: 400 }),
+    };
+  }
+  const { days = 14, focus } = parsed.data;
+  return { ok: true, days, focus: focus ?? undefined };
+}
+
+function createAdaptProgressStream(input: {
+  athleteId: string;
+  prompt: string;
+  upcoming: UpcomingSession[];
+  defaultGoalId: string | null;
+  today: Date;
+  budgetWarning: boolean;
+}) {
+  const { athleteId, prompt, upcoming, defaultGoalId, today } = input;
+  const encoder = new TextEncoder();
+  return new ReadableStream<Uint8Array>({
+    async start(controller) {
+      let closed = false;
+      const send = (event: CoachProgressEvent<AdaptPayload, unknown>) => {
+        if (closed) {
+          return;
+        }
+        try {
+          controller.enqueue(encoder.encode(encodeCoachProgressEvent(event)));
+        } catch {
+          // Athlete navigated away mid-generation — stop writing, let it unwind.
+          closed = true;
+        }
+      };
+
+      try {
+        const { output, usage } = await runStructuredCoachStream({
+          schema: adaptPlanGenerationSchema,
+          system: SYSTEM_PROMPT,
+          prompt,
+          onReasoning: (delta) => send({ type: 'reasoning', delta }),
+          onPartial: (value) => send({ type: 'partial', value }),
+        });
+        void recordAiUsage(athleteId, 'coach', usage);
+        send({
+          type: 'result',
+          value: await finalizeAdapt({
+            athleteId,
+            output,
+            upcoming,
+            defaultGoalId,
+            today,
+          }),
+        });
+      } catch (error) {
+        console.error('[coach/adapt]', error);
+        send({ type: 'error', message: adaptErrorMessage(error) });
+      } finally {
+        closed = true;
+        controller.close();
+      }
+    },
+  });
+}
+
+function sanitizeOptionalCoachCopy(value: string | null | undefined): string | null {
+  if (value === null || value === undefined) {
+    return null;
+  }
+  return sanitizeCoachCopy(value);
+}
+
+async function ensureAdaptAccess(athleteId: string): Promise<NextResponse | AdaptAccess> {
+  const aiBlocked = await requireAiProcessingConsent(athleteId);
+  if (aiBlocked) {
+    return aiBlocked;
+  }
+  return checkAdaptAccess(athleteId);
+}
+
 export async function POST(req: Request) {
   if (!isCoachConfigured()) {
     return NextResponse.json(
@@ -259,22 +345,20 @@ export async function POST(req: Request) {
   }
 
   try {
-    const body = await req.json().catch(() => ({}));
-    const parsed = adaptRequestSchema.safeParse(body);
-    if (!parsed.success) {
-      return NextResponse.json({ error: 'Paramètres invalides.' }, { status: 400 });
+    const parsedRequest = await parseAdaptRequest(req);
+    if (!parsedRequest.ok) {
+      return parsedRequest.response;
     }
-    const { days = 14, focus } = parsed.data;
+    const { days, focus } = parsedRequest;
 
     const today = startOfDay(new Date());
     const athleteId = await getCurrentAthleteId();
 
-    const aiBlocked = await requireAiProcessingConsent(athleteId);
-    if (aiBlocked) {
-      return aiBlocked;
+    const accessResult = await ensureAdaptAccess(athleteId);
+    if (accessResult instanceof NextResponse) {
+      return accessResult;
     }
-
-    const access = await checkAdaptAccess(athleteId);
+    const access = accessResult;
     if (access.blocked) {
       return access.blocked;
     }
@@ -294,56 +378,20 @@ export async function POST(req: Request) {
     }
 
     const prompt = buildAdaptPrompt({
-      focus: focus ?? undefined,
+      focus,
       today,
       horizon,
       ctx,
       upcomingLines: buildUpcomingLines(upcoming),
     });
 
-    const encoder = new TextEncoder();
-    const stream = new ReadableStream<Uint8Array>({
-      async start(controller) {
-        let closed = false;
-        const send = (event: CoachProgressEvent<AdaptPayload, unknown>) => {
-          if (closed) {
-            return;
-          }
-          try {
-            controller.enqueue(encoder.encode(encodeCoachProgressEvent(event)));
-          } catch {
-            // Athlete navigated away mid-generation — stop writing, let it unwind.
-            closed = true;
-          }
-        };
-
-        try {
-          const { output, usage } = await runStructuredCoachStream({
-            schema: adaptPlanGenerationSchema,
-            system: SYSTEM_PROMPT,
-            prompt,
-            onReasoning: (delta) => send({ type: 'reasoning', delta }),
-            onPartial: (value) => send({ type: 'partial', value }),
-          });
-          void recordAiUsage(athleteId, 'coach', usage);
-          send({
-            type: 'result',
-            value: await finalizeAdapt({
-              athleteId,
-              output,
-              upcoming,
-              defaultGoalId,
-              today,
-            }),
-          });
-        } catch (error) {
-          console.error('[coach/adapt]', error);
-          send({ type: 'error', message: adaptErrorMessage(error) });
-        } finally {
-          closed = true;
-          controller.close();
-        }
-      },
+    const stream = createAdaptProgressStream({
+      athleteId,
+      prompt,
+      upcoming,
+      defaultGoalId,
+      today,
+      budgetWarning: access.budgetWarning,
     });
 
     return new Response(stream, {
@@ -430,9 +478,8 @@ async function finalizeAdapt(input: FinalizeAdaptInput): Promise<AdaptPayload> {
 
     const changesWithDecisionId = validated.data.changes.map((change) => ({
       ...change,
-      title: change.title != null ? sanitizeCoachCopy(change.title) : change.title,
-      description:
-        change.description != null ? sanitizeCoachCopy(change.description) : change.description,
+      title: sanitizeOptionalCoachCopy(change.title),
+      description: sanitizeOptionalCoachCopy(change.description),
       reason: sanitizeCoachCopy(change.reason),
       decisionId: decisionIdByChange.get(change) ?? null,
     }));

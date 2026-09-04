@@ -44,7 +44,9 @@ const components: Components = {
   ),
   thead: ({ children }) => <thead className="text-label">{children}</thead>,
   th: ({ children }) => (
-    <th className="border-border text-muted-foreground border-b px-2 py-2 font-medium">{children}</th>
+    <th className="border-border text-muted-foreground border-b px-2 py-2 font-medium">
+      {children}
+    </th>
   ),
   td: ({ children }) => (
     <td className="border-border text-muted-foreground border-b px-2 py-2 align-top">{children}</td>

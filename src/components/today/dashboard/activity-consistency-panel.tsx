@@ -1,15 +1,19 @@
 'use client';
 
-import { useMemo } from 'react';
 import { type ActivityForConsistency } from '@/lib/activity/list/activity-consistency';
 import { cn } from '@/lib/utils';
 import {
   ActivityConsistencyContent,
   ActivityConsistencyLoading,
   isQuietActivityHistory,
+  useActivityConsistencyLayout,
   useActivityConsistencyStats,
 } from '@/components/today/dashboard/activity-consistency-panel-parts';
 
+/**
+ * Regularity instrument — responsive day rings + weekly streak + header icon.
+ * Twin of Nutrition under Today Comprendre (outer text-label + chip body).
+ */
 export function ActivityConsistencyPanel({
   activities,
   className,
@@ -19,7 +23,8 @@ export function ActivityConsistencyPanel({
   className?: string;
   loading?: boolean;
 }) {
-  const stats = useActivityConsistencyStats(activities, loading);
+  const { stripRef, layout } = useActivityConsistencyLayout();
+  const { stats, days } = useActivityConsistencyStats(activities, loading, layout);
   const quietHistory = isQuietActivityHistory(stats, loading);
 
   return (
@@ -28,7 +33,13 @@ export function ActivityConsistencyPanel({
       {loading ? (
         <ActivityConsistencyLoading />
       ) : (
-        <ActivityConsistencyContent quietHistory={quietHistory} stats={stats} />
+        <ActivityConsistencyContent
+          days={days}
+          layout={layout}
+          quietHistory={quietHistory}
+          stats={stats}
+          stripRef={stripRef}
+        />
       )}
     </section>
   );

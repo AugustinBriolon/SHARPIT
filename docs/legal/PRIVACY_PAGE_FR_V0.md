@@ -19,12 +19,12 @@ Sharpit n’est **pas** un dispositif médical et ne remplace pas un avis médic
 
 Selon votre usage et les connecteurs que vous activez, Sharpit peut traiter :
 
-| Catégorie | Exemples |
-| --- | --- |
-| Compte | Identifiants et données de compte gérés via **Clerk** (ex. e-mail, identifiant technique) |
+| Catégorie                            | Exemples                                                                                                                                                                                                  |
+| ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Compte                               | Identifiants et données de compte gérés via **Clerk** (ex. e-mail, identifiant technique)                                                                                                                 |
 | Données physiologiques synchronisées | Données provenant de services que vous connectez (ex. **Garmin**, **Renpho**, **MyFitnessPal**) : activité, récupération / santé connectée, composition corporelle, nutrition, selon les classes activées |
-| Inférences | Estimations d’entraînement dérivées de vos données (ex. récupération, fatigue, risques) — **estimations**, pas un diagnostic |
-| Données techniques | Journaux techniques limités (fonctionnement, sécurité, diagnostic) — sans mots de passe ni jetons en clair, et sans métriques corporelles dans les logs applicatifs |
+| Inférences                           | Estimations d’entraînement dérivées de vos données (ex. récupération, fatigue, risques) — **estimations**, pas un diagnostic                                                                              |
+| Données techniques                   | Journaux techniques limités (fonctionnement, sécurité, diagnostic) — sans mots de passe ni jetons en clair, et sans métriques corporelles dans les logs applicatifs                                       |
 
 Certaines de ces données (physiologiques et inférences associées) sont traitées comme des **données de santé** au sens de l’**article 9 du RGPD**.
 
@@ -41,13 +41,13 @@ Pas d’usage commercial de revente de vos données. Pas d’entraînement de mo
 
 ### 5. Bases légales
 
-| Traitement | Base |
-| --- | --- |
-| Compte, fonctionnement du service, sécurité | Exécution du contrat / mesures précontractuelles ; intérêt légitime pour la sécurité technique, le cas échéant |
-| Acceptation des CGU et de la présente politique | Consentement / acceptation contractuelle lors de l’inscription |
-| Synchronisation et traitement des données de santé (art. 9) et inférences associées | **Consentement explicite** — requis avant toute synchronisation ou traitement de ces données |
-| Envoi de contexte athlète à un modèle d’IA (briefing, Coach IA, etc.) | **Consentement distinct** pour le traitement IA — **porte dure** : sans ce consentement, ces chemins IA sont bloqués. Les moteurs déterministes peuvent continuer à fonctionner |
-| Intégrations non officielles | Accusé de réception explicite du caractère non officiel / « en l’état » avant connexion |
+| Traitement                                                                          | Base                                                                                                                                                                            |
+| ----------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Compte, fonctionnement du service, sécurité                                         | Exécution du contrat / mesures précontractuelles ; intérêt légitime pour la sécurité technique, le cas échéant                                                                  |
+| Acceptation des CGU et de la présente politique                                     | Consentement / acceptation contractuelle lors de l’inscription                                                                                                                  |
+| Synchronisation et traitement des données de santé (art. 9) et inférences associées | **Consentement explicite** — requis avant toute synchronisation ou traitement de ces données                                                                                    |
+| Envoi de contexte athlète à un modèle d’IA (briefing, Coach IA, etc.)               | **Consentement distinct** pour le traitement IA — **porte dure** : sans ce consentement, ces chemins IA sont bloqués. Les moteurs déterministes peuvent continuer à fonctionner |
+| Intégrations non officielles                                                        | Accusé de réception explicite du caractère non officiel / « en l’état » avant connexion                                                                                         |
 
 Vous pouvez retirer un consentement à tout moment (cela peut limiter ou interrompre la fonctionnalité concernée). Contact : [augustin.briolon@gmail.com](mailto:augustin.briolon@gmail.com).
 

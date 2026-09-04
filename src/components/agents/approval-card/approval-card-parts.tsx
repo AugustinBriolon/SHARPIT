@@ -117,7 +117,7 @@ export function ProgressDots({
 }
 
 export function ApprovalCardHeader({
-  archived,
+  archived: _archived,
   controlsDisabled,
   currentAnswer,
   currentStep,
@@ -129,7 +129,7 @@ export function ApprovalCardHeader({
   questionProgressLabel,
   questionStatusLabel,
   questionsLength,
-  reduce,
+  reduce: _reduce,
   status,
   titleKey,
 }: {

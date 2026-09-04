@@ -7,8 +7,7 @@ import path from 'path';
 
 const SHARE =
   'https://sharpit-git-cursor-today-comp-f3b388-augustin-briolons-projects.vercel.app/?_vercel_share=19d7I2vL1PwSVDeOx00hfTSAcUAJazcX';
-const ORIGIN =
-  'https://sharpit-git-cursor-today-comp-f3b388-augustin-briolons-projects.vercel.app';
+const ORIGIN = 'https://sharpit-git-cursor-today-comp-f3b388-augustin-briolons-projects.vercel.app';
 
 const OUT = [
   path.resolve('/workspace/docs/design/today-v0'),
@@ -37,7 +36,10 @@ await page.getByRole('heading', { level: 1 }).waitFor({ timeout: 60000 });
 
 const later = page.getByRole('button', { name: /Plus tard/i });
 if (await later.count()) {
-  await later.first().click().catch(() => {});
+  await later
+    .first()
+    .click()
+    .catch(() => {});
 }
 
 // Collapse briefing if open so more of Comprendre fits
@@ -51,6 +53,7 @@ await page.locator('text=Comprendre').first().scrollIntoViewIfNeeded();
 await page.waitForTimeout(400);
 // Nudge so bilan bottom + Comprendre cards are in frame
 await page.evaluate(() => {
+  /* eslint-disable no-undef -- Playwright runs this in the browser */
   const h = Array.from(document.querySelectorAll('h2')).find((n) =>
     /Comprendre/i.test(n.textContent || ''),
   );
@@ -60,7 +63,10 @@ await page.evaluate(() => {
   }
 });
 await page.waitForTimeout(300);
-await save(await page.screenshot({ type: 'png', fullPage: false }), 'today_mobile_comprendre_cards.png');
+await save(
+  await page.screenshot({ type: 'png', fullPage: false }),
+  'today_mobile_comprendre_cards.png',
+);
 
 await browser.close();
 for (const dir of OUT) {

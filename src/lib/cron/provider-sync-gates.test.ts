@@ -71,9 +71,7 @@ describe('shouldCronSyncProvider', () => {
   });
 
   it('syncs Renpho / MyFitnessPal when credentials look like live encrypted secrets', () => {
-    expect(shouldCronSyncProvider('renpho', { email: 'a@b.c', passwordEnc: enc('pw') })).toBe(
-      true,
-    );
+    expect(shouldCronSyncProvider('renpho', { email: 'a@b.c', passwordEnc: enc('pw') })).toBe(true);
     expect(shouldCronSyncProvider('myfitnesspal', { sessionTokenEnc: enc('cookie') })).toBe(true);
   });
 

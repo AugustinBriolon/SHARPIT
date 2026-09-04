@@ -108,7 +108,8 @@ function buildGateContextPayload(input: {
       : [],
     busyBlocks,
     athleteProfile: { hasThresholds: hasThresholds(athleteProfile) },
-    practicedSports: normalizeAthletePracticedSports(athleteProfile?.practicedSports ?? null).sports,
+    practicedSports: normalizeAthletePracticedSports(athleteProfile?.practicedSports ?? null)
+      .sports,
     now,
   };
 }

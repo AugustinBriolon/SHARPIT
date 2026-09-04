@@ -17,8 +17,7 @@ export async function POST() {
       deletedAt: result.deletedAt.toISOString(),
       purgeAfter: result.purgeAfter.toISOString(),
       purgeDelayDays: PRIVACY_PURGE_DELAY_DAYS,
-      message:
-        'Compte désactivé. Les données seront purgées définitivement sous 30 jours.',
+      message: 'Compte désactivé. Les données seront purgées définitivement sous 30 jours.',
     });
   } catch (error) {
     logSafeError('privacy/delete POST', error);

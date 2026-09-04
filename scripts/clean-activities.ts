@@ -1,4 +1,3 @@
-/* eslint-disable no-console -- script CLI : sortie console attendue */
 /**
  * Nettoyage des activités + reset des curseurs de synchro.
  *

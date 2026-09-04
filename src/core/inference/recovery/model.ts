@@ -35,7 +35,6 @@ import type {
   RecoveryModelOutput,
   RecoveryRecommendation,
   RecoverySignals,
-  RecoveryVerdict,
 } from './types';
 
 import {

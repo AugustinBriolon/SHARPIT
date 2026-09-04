@@ -1,5 +1,5 @@
 import type { MacroKind } from '@/lib/nutrition/macro-colors';
-import { MacroCell } from '@/components/today/dashboard/today-nutrition-card-parts';
+import { MacroRingCell } from '@/components/today/dashboard/today-nutrition-card-parts';
 
 type MacroGoals = {
   protein: { goal: number | null; pct: number | null };
@@ -25,9 +25,9 @@ export function NutritionMacroGrid({
   goals: MacroGoals;
 }) {
   return (
-    <div className="border-border/50 grid grid-cols-3 gap-2.5 border-t pt-2.5">
+    <div className="border-border/50 grid grid-cols-3 gap-2 border-t pt-3.5">
       {MACRO_ROWS.map(({ kind, key, dayKey }) => (
-        <MacroCell
+        <MacroRingCell
           key={kind}
           goal={goals?.[key].goal ?? null}
           grams={day[dayKey]}

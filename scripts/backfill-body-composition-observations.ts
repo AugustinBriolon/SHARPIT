@@ -1,4 +1,3 @@
-/* eslint-disable no-console -- script CLI : sortie console attendue */
 /**
  * Backfills BODY_COMPOSITION observations from stored BodyCompositionMeasurement rows.
  *

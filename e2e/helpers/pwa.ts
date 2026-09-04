@@ -147,7 +147,7 @@ export async function hasOfflineSnapshotRecord(page: Page): Promise<boolean> {
           const get = tx.objectStore(storeName).get(recordKey);
           get.onsuccess = () => {
             db.close();
-            resolve(get.result != null);
+            resolve(get.result !== null && get.result !== undefined);
           };
           get.onerror = () => {
             db.close();
@@ -164,13 +164,13 @@ export async function hasOfflineSnapshotRecord(page: Page): Promise<boolean> {
  * Waits until IndexedDB holds a warm snapshot, or returns false on timeout.
  * Prefer this over a fixed sleep before going offline.
  */
-export async function waitForOfflineSnapshot(
-  page: Page,
-  timeoutMs = 30_000,
-): Promise<boolean> {
+export async function waitForOfflineSnapshot(page: Page, timeoutMs = 30_000): Promise<boolean> {
   try {
     await expect
-      .poll(() => hasOfflineSnapshotRecord(page), { timeout: timeoutMs, intervals: [250, 500, 1_000] })
+      .poll(() => hasOfflineSnapshotRecord(page), {
+        timeout: timeoutMs,
+        intervals: [250, 500, 1_000],
+      })
       .toBe(true);
     return true;
   } catch {

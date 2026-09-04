@@ -22,39 +22,41 @@
 
 ## File map
 
-| File | Responsibility |
-|------|----------------|
-| `prisma/schema.prisma` | enum `HIKE` + model `HikeMetrics` + relation |
-| `prisma/migrations/*_add_hike_activity/` | migration SQL |
-| `src/lib/integrations/garmin-activities.ts` | map + create/enrich hikeMetrics |
-| `src/lib/integrations/garmin-activities.test.ts` | tests mapping |
-| `src/lib/activity/hike-overnight-summary.ts` | view model pur Nuitée |
-| `src/lib/activity/hike-overnight-summary.test.ts` | tests day/overnight/endPoint |
-| `src/lib/format.ts` | label `Randonnée` |
-| `src/lib/activity/sport-identity.ts` | chroma terre/ambre HIKE |
-| `src/lib/activity/activity-detail-skeleton-layout.ts` | HIKE → `map` |
-| `src/lib/activity/activity-list-summary.ts` | métrique liste (distance) |
-| `src/lib/queries/activity-include.ts` | include + list select hikeMetrics |
-| `src/lib/validators/activity.ts` | hikeMetricsSchema + create include |
-| `src/lib/analytics.ts` | LOAD_FACTOR / volumes / CHART_COLORS |
-| `src/lib/planned-session/planning.ts` | PLANNED_LOAD_FACTOR |
-| `src/components/activity/activity-type-indicator.tsx` | code `RA` |
-| `src/components/training/hub/history-filters/*` | TYPE_ORDER + icône |
-| `src/components/training/activity/activity-hero-stats.tsx` | slots HIKE |
-| `src/components/training/activity/detail/*` | helpers, hero, overnight panel, page |
-| `src/app/(app)/training/[id]/page.tsx` | brancher le bloc |
-| Divers switches | `default` → OTHER ou cas HIKE explicite |
+| File                                                       | Responsibility                               |
+| ---------------------------------------------------------- | -------------------------------------------- |
+| `prisma/schema.prisma`                                     | enum `HIKE` + model `HikeMetrics` + relation |
+| `prisma/migrations/*_add_hike_activity/`                   | migration SQL                                |
+| `src/lib/integrations/garmin-activities.ts`                | map + create/enrich hikeMetrics              |
+| `src/lib/integrations/garmin-activities.test.ts`           | tests mapping                                |
+| `src/lib/activity/hike-overnight-summary.ts`               | view model pur Nuitée                        |
+| `src/lib/activity/hike-overnight-summary.test.ts`          | tests day/overnight/endPoint                 |
+| `src/lib/format.ts`                                        | label `Randonnée`                            |
+| `src/lib/activity/sport-identity.ts`                       | chroma terre/ambre HIKE                      |
+| `src/lib/activity/activity-detail-skeleton-layout.ts`      | HIKE → `map`                                 |
+| `src/lib/activity/activity-list-summary.ts`                | métrique liste (distance)                    |
+| `src/lib/queries/activity-include.ts`                      | include + list select hikeMetrics            |
+| `src/lib/validators/activity.ts`                           | hikeMetricsSchema + create include           |
+| `src/lib/analytics.ts`                                     | LOAD_FACTOR / volumes / CHART_COLORS         |
+| `src/lib/planned-session/planning.ts`                      | PLANNED_LOAD_FACTOR                          |
+| `src/components/activity/activity-type-indicator.tsx`      | code `RA`                                    |
+| `src/components/training/hub/history-filters/*`            | TYPE_ORDER + icône                           |
+| `src/components/training/activity/activity-hero-stats.tsx` | slots HIKE                                   |
+| `src/components/training/activity/detail/*`                | helpers, hero, overnight panel, page         |
+| `src/app/(app)/training/[id]/page.tsx`                     | brancher le bloc                             |
+| Divers switches                                            | `default` → OTHER ou cas HIKE explicite      |
 
 ---
 
 ### Task 1: Schema Prisma `HIKE` + `HikeMetrics`
 
 **Files:**
+
 - Modify: `prisma/schema.prisma`
 - Create: `prisma/migrations/20260806_add_hike_activity/migration.sql` (timestamp may vary — use `prisma migrate dev` name if preferred)
 - Test: `yarn db:generate` + `yarn typecheck` (partial OK until Task 4)
 
 **Interfaces:**
+
 - Produces: `ActivityType.HIKE`, `Prisma.HikeMetrics*`, `activity.hikeMetrics`
 
 - [ ] **Step 1: Add enum value and model**
@@ -143,11 +145,13 @@ git commit -m "feat: add HIKE activity type and HikeMetrics schema"
 ### Task 2: Garmin mapping → `HIKE` + métriques
 
 **Files:**
+
 - Modify: `src/lib/integrations/garmin-activities.ts`
 - Modify: `src/lib/integrations/garmin-activities.test.ts`
 - Test: `yarn test src/lib/integrations/garmin-activities.test.ts`
 
 **Interfaces:**
+
 - Consumes: `ActivityType.HIKE`, `HikeMetrics` create shape
 - Produces: `mapGarminType('hiking'|'walking'|'mountaineering') === HIKE`; `buildGarminActivityData` crée `hikeMetrics`
 
@@ -156,18 +160,18 @@ git commit -m "feat: add HIKE activity type and HikeMetrics schema"
 Append to `garmin-activities.test.ts`:
 
 ```ts
-  it.each([
-    ['hiking', ActivityType.HIKE],
-    ['walking', ActivityType.HIKE],
-    ['mountaineering', ActivityType.HIKE],
-    ['hike', ActivityType.HIKE],
-  ])('%s -> HIKE', (typeKey, expected) => {
-    expect(mapGarminType(typeKey)).toBe(expected);
-  });
+it.each([
+  ['hiking', ActivityType.HIKE],
+  ['walking', ActivityType.HIKE],
+  ['mountaineering', ActivityType.HIKE],
+  ['hike', ActivityType.HIKE],
+])('%s -> HIKE', (typeKey, expected) => {
+  expect(mapGarminType(typeKey)).toBe(expected);
+});
 
-  it('keeps trail_running as RUN', () => {
-    expect(mapGarminType('trail_running')).toBe(ActivityType.RUN);
-  });
+it('keeps trail_running as RUN', () => {
+  expect(mapGarminType('trail_running')).toBe(ActivityType.RUN);
+});
 ```
 
 - [ ] **Step 2: Run tests — expect FAIL**
@@ -180,16 +184,16 @@ Expected: FAIL — hiking → OTHER (actuel).
 In `mapGarminType`, **before** the final `return ActivityType.OTHER`, add (and ensure run branch does not catch `hike` via `includes('run')` — `trail_running` already handled; `hiking` does not include `run`):
 
 ```ts
-  if (
-    k === 'hiking' ||
-    k === 'walking' ||
-    k === 'mountaineering' ||
-    k === 'hike' ||
-    (k.includes('hike') && !k.includes('run')) ||
-    k.includes('mountaineering')
-  ) {
-    return ActivityType.HIKE;
-  }
+if (
+  k === 'hiking' ||
+  k === 'walking' ||
+  k === 'mountaineering' ||
+  k === 'hike' ||
+  (k.includes('hike') && !k.includes('run')) ||
+  k.includes('mountaineering')
+) {
+  return ActivityType.HIKE;
+}
 ```
 
 Place this **after** the RUN block so `trail_running` stays RUN.
@@ -223,9 +227,9 @@ In the `switch (type)`, add:
 Also update `garminEnrichmentUpdate` with a HIKE upsert analogous to RUN (create/update distance, elevation, avgHr). Remove HIKE from any early-return that only handles TRIATHLON/OTHER without metrics — currently:
 
 ```ts
-  if (type === ActivityType.TRIATHLON || type === ActivityType.OTHER) {
-    return data;
-  }
+if (type === ActivityType.TRIATHLON || type === ActivityType.OTHER) {
+  return data;
+}
 ```
 
 Keep that as-is (HIKE gets its own block **before** that return).
@@ -247,11 +251,13 @@ git commit -m "feat: map garmin hiking activities to HIKE metrics"
 ### Task 3: Helper pur `buildHikeOvernightSummary`
 
 **Files:**
+
 - Create: `src/lib/activity/hike-overnight-summary.ts`
 - Create: `src/lib/activity/hike-overnight-summary.test.ts`
 - Test: `yarn test src/lib/activity/hike-overnight-summary.test.ts`
 
 **Interfaces:**
+
 - Produces:
 
 ```ts
@@ -414,7 +420,7 @@ export function buildHikeOvernightSummary(
 }
 ```
 
-Comment at top of file: *V2: compose via `buildHikeTripSummary(activities[])` — keep this single-session.*
+Comment at top of file: _V2: compose via `buildHikeTripSummary(activities[])` — keep this single-session._
 
 - [ ] **Step 4: Run — expect PASS**
 
@@ -433,6 +439,7 @@ git commit -m "feat: add hike overnight summary view model"
 ### Task 4: Exhaustivité `ActivityType` (app layer)
 
 **Files (modify all that break typecheck):**
+
 - `src/lib/format.ts` — `HIKE: 'Randonnée'`
 - `src/lib/activity/sport-identity.ts` — famille ambre/terre (pas orange RUN, pas Lime)
 - `src/lib/activity/sport-identity.test.ts` — assert HIKE amber/stone, ≠ RUN
@@ -451,6 +458,7 @@ git commit -m "feat: add hike overnight summary view model"
 - Any other `Record<ActivityType, …>` revealed by typecheck
 
 **Interfaces:**
+
 - Consumes: `ActivityType.HIKE`
 - Produces: labels, colors, includes, filters compilent
 
@@ -497,12 +505,14 @@ git commit -m "feat: wire HIKE across labels identity filters and analytics"
 ### Task 5: Hero stats + specs détail HIKE
 
 **Files:**
+
 - Modify: `src/components/training/activity/activity-hero-stats.tsx`
 - Modify: `src/components/training/activity/detail/activity-detail-helpers.ts`
 - Modify: `src/components/training/activity/detail/activity-detail-helpers.test.ts` (si présent)
 - Test: hero via existing patterns / typecheck
 
 **Interfaces:**
+
 - Consumes: `activity.hikeMetrics`, stream stats
 - Produces: hero slots Distance · D+ · Durée · FC moy. ; specs D−, vitesse, calories
 
@@ -564,6 +574,7 @@ git commit -m "feat: add HIKE hero metrics and activity specs"
 ### Task 6: Bloc UI Nuitée + page détail
 
 **Files:**
+
 - Create: `src/components/training/activity/detail/activity-hike-overnight-panel.tsx`
 - Modify: `src/app/(app)/training/[id]/page.tsx`
 - Optional client wrapper if streams needed for endPoint — prefer server summary without path first; enhance client-side endPoint via stream hook only if cheap. **V1 minimal:** server-side summary without path (lieu observé as fallback); path endPoint can be filled by a thin client child using `useActivityStream` if map already loads.
@@ -571,6 +582,7 @@ git commit -m "feat: add HIKE hero metrics and activity specs"
 **Recommended V1:** server builds summary without path; client panel optional enhancement.
 
 **Interfaces:**
+
 - Consumes: `buildHikeOvernightSummary`, `ActivityDetail`
 - Produces: panel « Nuitée » | « Synthèse »
 
@@ -612,7 +624,8 @@ export function ActivityHikeOvernightPanel({ summary }: { summary: HikeOvernight
   }
   if (summary.locationLabel) rows.push({ label: 'Lieu', value: summary.locationLabel });
   if (summary.weather) rows.push({ label: 'Météo', value: summary.weather });
-  if (summary.load != null) rows.push({ label: 'Charge', value: `${Math.round(summary.load)} TSS` });
+  if (summary.load != null)
+    rows.push({ label: 'Charge', value: `${Math.round(summary.load)} TSS` });
   const endLabel =
     summary.endPoint != null
       ? `${summary.endPoint.lat.toFixed(4)}, ${summary.endPoint.lng.toFixed(4)}`
@@ -623,10 +636,7 @@ export function ActivityHikeOvernightPanel({ summary }: { summary: HikeOvernight
 
   return (
     <section
-      className={cn(
-        'analysis-panel space-y-3 border p-4',
-        SPORT_IDENTITY_PANEL[ActivityType.HIKE],
-      )}
+      className={cn('analysis-panel space-y-3 border p-4', SPORT_IDENTITY_PANEL[ActivityType.HIKE])}
       aria-label={title}
     >
       <h2 className="text-section-title">{title}</h2>
@@ -671,7 +681,9 @@ const hikeSummary = isHike
   : null;
 
 // After ActivityDetailHero:
-{hikeSummary ? <ActivityHikeOvernightPanel summary={hikeSummary} /> : null}
+{
+  hikeSummary ? <ActivityHikeOvernightPanel summary={hikeSummary} /> : null;
+}
 ```
 
 Ensure `getActivityById` include already has `hikeMetrics` (Task 4).
@@ -726,17 +738,17 @@ git push -u origin cursor/hike-activity-impl-1fb9
 
 ## Spec coverage checklist
 
-| Spec requirement | Task |
-|------------------|------|
-| `HIKE` + `HikeMetrics` | 1 |
-| Garmin hiking → HIKE + metrics | 2 |
-| `buildHikeOvernightSummary` pur | 3 |
-| Labels / identity / switches / includes | 4 |
-| Hero Distance·D+·Durée·FC + specs | 5 |
-| Page détail + bloc Nuitée/Synthèse + map | 5–6 |
-| Pas narrative / pas backfill / pas Core SportType | 2, 4, 6 |
-| Extension points V2 (additives, naming) | 3 comment + metrics shape |
-| Tests mapping + overnight + typecheck | 2, 3, 7 |
+| Spec requirement                                  | Task                      |
+| ------------------------------------------------- | ------------------------- |
+| `HIKE` + `HikeMetrics`                            | 1                         |
+| Garmin hiking → HIKE + metrics                    | 2                         |
+| `buildHikeOvernightSummary` pur                   | 3                         |
+| Labels / identity / switches / includes           | 4                         |
+| Hero Distance·D+·Durée·FC + specs                 | 5                         |
+| Page détail + bloc Nuitée/Synthèse + map          | 5–6                       |
+| Pas narrative / pas backfill / pas Core SportType | 2, 4, 6                   |
+| Extension points V2 (additives, naming)           | 3 comment + metrics shape |
+| Tests mapping + overnight + typecheck             | 2, 3, 7                   |
 
 ## Out of scope (do not implement)
 

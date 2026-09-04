@@ -28,7 +28,6 @@ import type {
   AdaptationSignals,
   AdaptationDecision,
   AdaptationRecommendation,
-  AdaptationVerdict,
   ScoredAdaptationDimensions,
   DimensionScore,
 } from './types';

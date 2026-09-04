@@ -202,10 +202,7 @@ function buildPopulatedRecoveryViewModel(input: {
   };
 }
 
-function loadRecoveryHealthSeries(
-  healthByDay: Map<string, DailyHealthRow>,
-  refDate: Date,
-) {
+function loadRecoveryHealthSeries(healthByDay: Map<string, DailyHealthRow>, refDate: Date) {
   return {
     sparkHrv: buildDailyWindowSeries(
       healthByDay,

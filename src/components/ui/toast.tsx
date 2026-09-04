@@ -42,14 +42,13 @@ export const toast = {
 };
 
 /**
- * Sits above the mobile bottom nav (`--bottom-nav-offset`, declared in
- * `globals.css`) so a toast can never cover a nav tap target. The nav is
- * `lg:hidden`, so the offset is released at `lg` — not at `sm`, where the bar
- * is still on screen. `pointer-events-none` keeps the full-width band inert;
- * each toast Root re-enables its own pointer events.
+ * Sits above the floating bottom nav (`--bottom-nav-offset`, declared in
+ * `globals.css`) so a toast can never cover a nav tap target. The bar is
+ * present on every viewport. `pointer-events-none` keeps the full-width band
+ * inert; each toast Root re-enables its own pointer events.
  */
 export const toastViewportClass =
-  'pointer-events-none fixed top-auto right-4 bottom-[calc(var(--bottom-nav-offset)+0.75rem)] left-auto z-[100] mx-auto w-[calc(100vw-2rem)] outline-none sm:right-6 sm:w-90 lg:bottom-6';
+  'pointer-events-none fixed top-auto right-4 bottom-[calc(var(--bottom-nav-offset)+0.75rem)] left-auto z-[100] mx-auto w-[calc(100vw-2rem)] outline-none sm:right-6 sm:w-90';
 
 /** Touch-first close target on mobile, dense on desktop — matches `Button size="icon"`. */
 export const toastCloseClass =

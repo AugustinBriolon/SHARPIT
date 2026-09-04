@@ -30,7 +30,10 @@ async function savePng(buffer, name) {
 async function dismissCriticalBanner(page) {
   const later = page.getByRole('button', { name: /Plus tard/i });
   if (await later.count()) {
-    await later.first().click({ timeout: 3000 }).catch(() => {});
+    await later
+      .first()
+      .click({ timeout: 3000 })
+      .catch(() => {});
     await page.waitForTimeout(400);
   }
 }
@@ -89,7 +92,10 @@ async function main() {
       }
     }
   });
-  await page.evaluate(() => window.scrollTo(0, 0));
+  await page.evaluate(() => {
+    // eslint-disable-next-line no-undef -- Playwright runs this in the browser
+    window.scrollTo(0, 0);
+  });
   await page.waitForTimeout(400);
 
   const disclaimer = page.getByText(/outil d['’]aide à l['’]entraînement/i).first();
@@ -116,6 +122,7 @@ async function main() {
 
   // Frame alert + full secondary disclaimer above the bottom nav.
   await page.evaluate(() => {
+    /* eslint-disable no-undef -- Playwright runs this in the browser */
     const alert = Array.from(document.querySelectorAll('*')).find((n) =>
       /Signal de récupération atypique/i.test(n.textContent || ''),
     );
@@ -125,7 +132,10 @@ async function main() {
   });
   await page.waitForTimeout(300);
 
-  await page.getByText(/En cas de symptômes/i).first().waitFor({ timeout: 10000 });
+  await page
+    .getByText(/En cas de symptômes/i)
+    .first()
+    .waitFor({ timeout: 10000 });
   const disc = page.getByText(/pas un diagnostic/i).first();
   await disc.waitFor({ timeout: 10000 });
   await disc.scrollIntoViewIfNeeded();

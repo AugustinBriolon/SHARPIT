@@ -85,24 +85,29 @@ function defaultLog(message: string, meta?: Record<string, unknown>): void {
   }
 }
 
+function readSetCookieLines(response: Response): string[] {
+  const headers = response.headers as Headers & { getSetCookie?: () => string[] };
+  if (typeof headers.getSetCookie === 'function') {
+    return headers.getSetCookie();
+  }
+  const single = response.headers.get('set-cookie');
+  return single ? [single] : [];
+}
+
 /** Minimal cookie jar for the SSO widget (Set-Cookie → Cookie across redirects). */
 export class SimpleCookieJar {
   private readonly jar = new Map<string, string>();
 
   absorb(response: Response): void {
-    const headers = response.headers as Headers & { getSetCookie?: () => string[] };
-    const lines =
-      typeof headers.getSetCookie === 'function'
-        ? headers.getSetCookie()
-        : (() => {
-            const single = response.headers.get('set-cookie');
-            return single ? [single] : [];
-          })();
-    for (const line of lines) {
-      const pair = line.split(';', 1)[0];
-      if (!pair) continue;
+    for (const line of readSetCookieLines(response)) {
+      const [pair] = line.split(';', 1);
+      if (!pair) {
+        continue;
+      }
       const eq = pair.indexOf('=');
-      if (eq <= 0) continue;
+      if (eq <= 0) {
+        continue;
+      }
       const name = pair.slice(0, eq).trim();
       const value = pair.slice(eq + 1).trim();
       if (name) {
@@ -112,7 +117,9 @@ export class SimpleCookieJar {
   }
 
   header(): string | undefined {
-    if (this.jar.size === 0) return undefined;
+    if (this.jar.size === 0) {
+      return undefined;
+    }
     return [...this.jar.entries()].map(([k, v]) => `${k}=${v}`).join('; ');
   }
 
@@ -155,9 +162,7 @@ function titleSuggestsAccountLocked(title: string): boolean {
 function titleSuggestsCredentialPage(title: string): boolean {
   const lower = title.toLowerCase();
   return (
-    lower.includes('invalid') ||
-    lower.includes('incorrect') ||
-    lower.includes('account error')
+    lower.includes('invalid') || lower.includes('incorrect') || lower.includes('account error')
   );
 }
 
@@ -177,9 +182,256 @@ function titleSuggestsInfraBlock(title: string): boolean {
 
 function looksLikeMfa(html: string, title: string): boolean {
   const lower = title.toLowerCase();
-  if (lower.includes('mfa')) return true;
+  if (lower.includes('mfa')) {
+    return true;
+  }
   const hasMfaMethod = /mfaMethod\s*[:=]\s*['"][^'"]+['"]/i.test(html);
   return lower.includes('authentication application') && hasMfaMethod;
+}
+
+type WidgetRequestInit = {
+  method: 'GET' | 'POST';
+  referer?: string;
+  body?: Record<string, string>;
+};
+
+type WidgetRequestResult = { response: Response; finalUrl: string; html: string };
+
+function buildWidgetRequestHeaders(
+  init: WidgetRequestInit,
+  cookie: string | undefined,
+  referer: string | undefined,
+): Record<string, string> {
+  const headers: Record<string, string> = {
+    'User-Agent': BROWSER_UA,
+    Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+    ...(cookie ? { Cookie: cookie } : {}),
+    ...(referer ? { Referer: referer } : {}),
+  };
+  if (init.method === 'POST') {
+    headers['Content-Type'] = 'application/x-www-form-urlencoded';
+    headers.Origin = SSO_ORIGIN;
+  }
+  return headers;
+}
+
+function shouldConvertPostRedirectToGet(status: number, method: 'GET' | 'POST'): boolean {
+  return method === 'POST' && (status === 303 || status === 302 || status === 301);
+}
+
+async function followWidgetRedirect(
+  res: Response,
+  currentUrl: string,
+  init: WidgetRequestInit,
+): Promise<{
+  nextUrl: string;
+  method: 'GET' | 'POST';
+  body?: Record<string, string>;
+  referer: string;
+}> {
+  const location = res.headers.get('location');
+  if (!location) {
+    throw new GarminWidgetAuthError(
+      `Widget ${init.method} redirect without Location (HTTP ${res.status})`,
+      'server_sso_rejected',
+    );
+  }
+  const nextUrl = new URL(location, currentUrl).toString();
+  const method = shouldConvertPostRedirectToGet(res.status, init.method) ? 'GET' : init.method;
+  return {
+    nextUrl,
+    method,
+    body: method === 'GET' ? undefined : init.body,
+    referer: currentUrl,
+  };
+}
+
+async function widgetRequestWithCookies(
+  doFetch: GarminDiOauthDeps['fetch'],
+  cookies: SimpleCookieJar,
+  url: string,
+  init: WidgetRequestInit,
+): Promise<WidgetRequestResult> {
+  const { method: initialMethod, body: initialBody, referer: initialReferer } = init;
+  let currentUrl = url;
+  let method = initialMethod;
+  let body = initialBody;
+  let referer = initialReferer;
+
+  for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
+    const res = await doFetch(currentUrl, {
+      method,
+      headers: buildWidgetRequestHeaders({ method, body }, cookies.header(), referer),
+      body: method === 'POST' && body ? new URLSearchParams(body) : undefined,
+      redirect: 'manual',
+    });
+    cookies.absorb(res);
+
+    if (isRedirectStatus(res.status)) {
+      const {
+        referer: nextReferer,
+        nextUrl,
+        method: nextMethod,
+        body: nextBody,
+      } = await followWidgetRedirect(res, currentUrl, { method, body, referer });
+      referer = nextReferer;
+      currentUrl = nextUrl;
+      method = nextMethod;
+      body = nextBody;
+      continue;
+    }
+
+    const html = await res.text();
+    return { response: res, finalUrl: currentUrl, html };
+  }
+
+  throw new GarminWidgetAuthError('Widget SSO exceeded redirect limit', 'server_sso_rejected');
+}
+
+function assertWidgetGetOk(
+  step: string,
+  result: WidgetRequestResult,
+  log: (message: string, meta?: Record<string, unknown>) => void,
+): void {
+  if (result.response.status === 429) {
+    throw new GarminWidgetAuthError(`Widget ${step} rate limited (429)`, 'rate_limited');
+  }
+  if (result.response.status === 403 || !result.response.ok) {
+    logWidgetSsoOutcome(log, step, { status: result.response.status, title: '' });
+    throw new GarminWidgetAuthError(
+      `Widget ${step} failed: HTTP ${result.response.status}`,
+      'server_sso_rejected',
+    );
+  }
+}
+
+function extractCsrfToken(
+  signinGet: WidgetRequestResult,
+  log: (message: string, meta?: Record<string, unknown>) => void,
+): string {
+  const csrfMatch = CSRF_RE.exec(signinGet.html);
+  if (csrfMatch?.[1]) {
+    return csrfMatch[1];
+  }
+  logWidgetSsoOutcome(log, 'signin-get', {
+    status: signinGet.response.status,
+    title: TITLE_RE.exec(signinGet.html)?.[1]?.trim() ?? '',
+    ticketPresent: false,
+  });
+  throw new GarminWidgetAuthError(
+    'Widget login: missing CSRF token (server-side SSO likely blocked)',
+    'server_sso_rejected',
+  );
+}
+
+function widgetDelayMs(random: () => number): number {
+  return (
+    WIDGET_DELAY_MIN_MS + Math.floor(random() * (WIDGET_DELAY_MAX_MS - WIDGET_DELAY_MIN_MS + 1))
+  );
+}
+
+function parseSigninPostPage(html: string): { title: string; ticket: string | null } {
+  const title = TITLE_RE.exec(html)?.[1]?.trim() ?? '';
+  const ticketMatch = TICKET_RE.exec(html);
+  return { title, ticket: ticketMatch?.[1] ?? null };
+}
+
+function assertSigninPostHttpStatus(status: number): void {
+  if (status === 429) {
+    throw new GarminWidgetAuthError('Widget signin POST rate limited (429)', 'rate_limited');
+  }
+  if (status === 403) {
+    throw new GarminWidgetAuthError(
+      'Widget signin POST HTTP 403 (server-side SSO blocked)',
+      'server_sso_rejected',
+    );
+  }
+}
+
+function assertSigninPostRejectedTitle(signinPost: WidgetRequestResult, title: string): void {
+  if (titleSuggestsAccountLocked(title)) {
+    throw new GarminWidgetAuthError(`Widget login: account locked (${title})`, 'account_locked');
+  }
+  if (looksLikeMfa(signinPost.html, title)) {
+    throw new GarminWidgetAuthError(
+      'Widget login: MFA required (not supported on this connect path)',
+      'mfa_required',
+    );
+  }
+  if (titleSuggestsCredentialPage(title) || titleSuggestsInfraBlock(title)) {
+    throw new GarminWidgetAuthError(
+      `Widget login: server-side SSO rejected (title='${title || '(empty)'}', HTTP ${signinPost.response.status})`,
+      'server_sso_rejected',
+    );
+  }
+}
+
+function assertSigninPostSuccessTicket(
+  signinPost: WidgetRequestResult,
+  title: string,
+  ticket: string | null,
+): string {
+  if (title.toLowerCase() !== 'success') {
+    throw new GarminWidgetAuthError(
+      `Widget login: unexpected page title '${title || '(empty)'}' (HTTP ${signinPost.response.status})`,
+      'server_sso_rejected',
+    );
+  }
+  if (!ticket) {
+    throw new GarminWidgetAuthError(
+      'Widget login: Success page without service ticket',
+      'server_sso_rejected',
+    );
+  }
+  return ticket;
+}
+
+function assertSigninPostPageContent(
+  signinPost: WidgetRequestResult,
+  title: string,
+  ticket: string | null,
+): string {
+  assertSigninPostRejectedTitle(signinPost, title);
+  return assertSigninPostSuccessTicket(signinPost, title, ticket);
+}
+
+function assertSigninPostOutcome(
+  signinPost: WidgetRequestResult,
+  title: string,
+  ticket: string | null,
+): string {
+  assertSigninPostHttpStatus(signinPost.response.status);
+  return assertSigninPostPageContent(signinPost, title, ticket);
+}
+
+async function exchangeWidgetTicketForDiTokens(
+  ticket: string,
+  doFetch: GarminDiOauthDeps['fetch'],
+  now: GarminDiOauthDeps['now'] | undefined,
+  log: (message: string, meta?: Record<string, unknown>) => void,
+): Promise<GarminDiTokens> {
+  try {
+    return await exchangeServiceTicketForDiTokens(ticket, SSO_EMBED_URL, {
+      fetch: doFetch,
+      now,
+    });
+  } catch (error) {
+    if (!(error instanceof GarminDiAuthError)) {
+      throw error;
+    }
+    logWidgetSsoOutcome(log, 'di-exchange', {
+      status: 0,
+      title: error.kind,
+      ticketPresent: true,
+    });
+    if (error.kind === 'rate_limited') {
+      throw new GarminWidgetAuthError(error.message, 'rate_limited');
+    }
+    throw new GarminWidgetAuthError(
+      `Widget DI exchange failed after ticket: ${error.message}`,
+      'server_sso_rejected',
+    );
+  }
 }
 
 /**
@@ -195,120 +447,20 @@ export async function loginGarminWidget(
   const sleep = deps.sleep ?? defaultSleep;
   const random = deps.random ?? Math.random;
   const log = deps.log ?? defaultLog;
-
   const cookies = new SimpleCookieJar();
-
-  /**
-   * Follow redirects manually so Set-Cookie on intermediate hops is kept.
-   * `redirect: 'follow'` would drop hop cookies — python requests sessions keep them.
-   */
-  const request = async (
-    url: string,
-    init: {
-      method: 'GET' | 'POST';
-      referer?: string;
-      body?: Record<string, string>;
-    },
-  ): Promise<{ response: Response; finalUrl: string; html: string }> => {
-    let currentUrl = url;
-    let method = init.method;
-    let body = init.body;
-    let referer = init.referer;
-
-    for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
-      const cookie = cookies.header();
-      const headers: Record<string, string> = {
-        'User-Agent': BROWSER_UA,
-        Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-        ...(cookie ? { Cookie: cookie } : {}),
-        ...(referer ? { Referer: referer } : {}),
-      };
-      if (method === 'POST') {
-        headers['Content-Type'] = 'application/x-www-form-urlencoded';
-        headers.Origin = SSO_ORIGIN;
-      }
-
-      const res = await doFetch(currentUrl, {
-        method,
-        headers,
-        body: method === 'POST' && body ? new URLSearchParams(body) : undefined,
-        redirect: 'manual',
-      });
-      cookies.absorb(res);
-
-      if (isRedirectStatus(res.status)) {
-        const location = res.headers.get('location');
-        if (!location) {
-          throw new GarminWidgetAuthError(
-            `Widget ${init.method} redirect without Location (HTTP ${res.status})`,
-            'server_sso_rejected',
-          );
-        }
-        const nextUrl = new URL(location, currentUrl).toString();
-        referer = currentUrl;
-        currentUrl = nextUrl;
-        // 303 / POST→redirect → GET without body (browser behaviour).
-        if (method === 'POST' && (res.status === 303 || res.status === 302 || res.status === 301)) {
-          method = 'GET';
-          body = undefined;
-        }
-        continue;
-      }
-
-      const html = await res.text();
-      return { response: res, finalUrl: currentUrl, html };
-    }
-
-    throw new GarminWidgetAuthError('Widget SSO exceeded redirect limit', 'server_sso_rejected');
-  };
+  const request = (url: string, init: WidgetRequestInit) =>
+    widgetRequestWithCookies(doFetch, cookies, url, init);
 
   const embed = await request(withQuery(SSO_EMBED_URL, EMBED_PARAMS), { method: 'GET' });
-  if (embed.response.status === 429) {
-    throw new GarminWidgetAuthError('Widget embed GET rate limited (429)', 'rate_limited');
-  }
-  if (embed.response.status === 403 || !embed.response.ok) {
-    logWidgetSsoOutcome(log, 'embed', { status: embed.response.status, title: '' });
-    throw new GarminWidgetAuthError(
-      `Widget embed GET failed: HTTP ${embed.response.status}`,
-      'server_sso_rejected',
-    );
-  }
+  assertWidgetGetOk('embed', embed, log);
 
   const signinGetUrl = withQuery(SSO_SIGNIN_URL, SIGNIN_PARAMS);
-  const signinGet = await request(signinGetUrl, {
-    method: 'GET',
-    referer: SSO_EMBED_URL,
-  });
-  if (signinGet.response.status === 429) {
-    throw new GarminWidgetAuthError('Widget signin GET rate limited (429)', 'rate_limited');
-  }
-  if (signinGet.response.status === 403 || !signinGet.response.ok) {
-    logWidgetSsoOutcome(log, 'signin-get', { status: signinGet.response.status });
-    throw new GarminWidgetAuthError(
-      `Widget signin GET failed: HTTP ${signinGet.response.status}`,
-      'server_sso_rejected',
-    );
-  }
+  const signinGet = await request(signinGetUrl, { method: 'GET', referer: SSO_EMBED_URL });
+  assertWidgetGetOk('signin-get', signinGet, log);
 
-  const csrfMatch = CSRF_RE.exec(signinGet.html);
-  if (!csrfMatch?.[1]) {
-    logWidgetSsoOutcome(log, 'signin-get', {
-      status: signinGet.response.status,
-      title: TITLE_RE.exec(signinGet.html)?.[1]?.trim() ?? '',
-      ticketPresent: false,
-    });
-    throw new GarminWidgetAuthError(
-      'Widget login: missing CSRF token (server-side SSO likely blocked)',
-      'server_sso_rejected',
-    );
-  }
+  const csrf = extractCsrfToken(signinGet, log);
+  await sleep(widgetDelayMs(random));
 
-  const delay =
-    WIDGET_DELAY_MIN_MS +
-    Math.floor(random() * (WIDGET_DELAY_MAX_MS - WIDGET_DELAY_MIN_MS + 1));
-  await sleep(delay);
-
-  // Fields aligned with python-garminconnect widget POST + rememberMe (HTML form).
   const signinPost = await request(signinGetUrl, {
     method: 'POST',
     referer: signinGet.finalUrl,
@@ -316,87 +468,18 @@ export async function loginGarminWidget(
       username,
       password,
       embed: 'true',
-      _csrf: csrfMatch[1],
+      _csrf: csrf,
       rememberMe: 'on',
     },
   });
 
-  const title = TITLE_RE.exec(signinPost.html)?.[1]?.trim() ?? '';
-  const ticketMatch = TICKET_RE.exec(signinPost.html);
-  const ticketPresent = Boolean(ticketMatch?.[1]);
-
+  const { title, ticket } = parseSigninPostPage(signinPost.html);
   logWidgetSsoOutcome(log, 'signin-post', {
     status: signinPost.response.status,
     title,
-    ticketPresent,
+    ticketPresent: Boolean(ticket),
   });
 
-  if (signinPost.response.status === 429) {
-    throw new GarminWidgetAuthError('Widget signin POST rate limited (429)', 'rate_limited');
-  }
-
-  if (signinPost.response.status === 403) {
-    throw new GarminWidgetAuthError(
-      'Widget signin POST HTTP 403 (server-side SSO blocked)',
-      'server_sso_rejected',
-    );
-  }
-
-  if (titleSuggestsAccountLocked(title)) {
-    throw new GarminWidgetAuthError(`Widget login: account locked (${title})`, 'account_locked');
-  }
-
-  if (looksLikeMfa(signinPost.html, title)) {
-    throw new GarminWidgetAuthError(
-      'Widget login: MFA required (not supported on this connect path)',
-      'mfa_required',
-    );
-  }
-
-  // From Vercel serverless, Garmin often returns an "invalid/incorrect" title even when
-  // the password is correct (WAF / TLS fingerprint). Never tell the athlete their password is wrong.
-  if (titleSuggestsCredentialPage(title) || titleSuggestsInfraBlock(title)) {
-    throw new GarminWidgetAuthError(
-      `Widget login: server-side SSO rejected (title='${title || '(empty)'}', HTTP ${signinPost.response.status})`,
-      'server_sso_rejected',
-    );
-  }
-
-  if (title.toLowerCase() !== 'success') {
-    throw new GarminWidgetAuthError(
-      `Widget login: unexpected page title '${title || '(empty)'}' (HTTP ${signinPost.response.status})`,
-      'server_sso_rejected',
-    );
-  }
-
-  if (!ticketMatch?.[1]) {
-    throw new GarminWidgetAuthError(
-      'Widget login: Success page without service ticket',
-      'server_sso_rejected',
-    );
-  }
-
-  try {
-    return await exchangeServiceTicketForDiTokens(ticketMatch[1], SSO_EMBED_URL, {
-      fetch: doFetch,
-      now: deps.now,
-    });
-  } catch (error) {
-    if (error instanceof GarminDiAuthError) {
-      logWidgetSsoOutcome(log, 'di-exchange', {
-        status: 0,
-        title: error.kind,
-        ticketPresent: true,
-      });
-      if (error.kind === 'rate_limited') {
-        throw new GarminWidgetAuthError(error.message, 'rate_limited');
-      }
-      // DI 401 after a ticket is almost never "wrong password" — ticket/DI mismatch or bot scoring.
-      throw new GarminWidgetAuthError(
-        `Widget DI exchange failed after ticket: ${error.message}`,
-        'server_sso_rejected',
-      );
-    }
-    throw error;
-  }
+  const serviceTicket = assertSigninPostOutcome(signinPost, title, ticket);
+  return exchangeWidgetTicketForDiTokens(serviceTicket, doFetch, deps.now, log);
 }

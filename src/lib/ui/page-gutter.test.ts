@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { PAGE_GUTTER } from './page-gutter';
+import { PAGE_CONTENT_MAX_CLASS, PAGE_GUTTER } from './page-gutter';
 
 describe('PAGE_GUTTER (shell bleed contract)', () => {
   it('matches MobileShell --page-gutter (px-4)', () => {
@@ -9,5 +9,11 @@ describe('PAGE_GUTTER (shell bleed contract)', () => {
 
   it('matches DesktopShell --page-gutter (p-6)', () => {
     expect(PAGE_GUTTER.desktop).toBe('1.5rem');
+  });
+});
+
+describe('PAGE_CONTENT_MAX_CLASS', () => {
+  it('caps the reading column at 768px on every viewport', () => {
+    expect(PAGE_CONTENT_MAX_CLASS).toBe('max-w-3xl');
   });
 });

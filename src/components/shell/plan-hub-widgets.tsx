@@ -1,30 +1,24 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import Link from 'next/link';
-import { CalendarRange, ClipboardList, Target } from 'lucide-react';
-import { isAfter, startOfDay } from 'date-fns';
+import { useEffect, useMemo, useState } from 'react';
 import { useAthleteSnapshot } from '@/hooks/use-athlete-snapshot';
-import { useGoals, usePlannedSessions } from '@/hooks/use-data';
-import { selectTodayGoals } from '@/lib/today/today-goals-summary';
-import { MOI_OBJECTIFS_PATH } from '@/lib/moi/paths';
-import { gateUpcomingSessionsForVerdict } from '@/lib/plan/intensity-gate';
-import { resolvePlannedSessionDisplay } from '@/lib/planned-session/display/planned-session-display';
-import { plannedSessionHref } from '@/lib/planned-session/display/session-analysis-display';
+import { useActivities, useGoals, usePlannedSessions } from '@/hooks/use-data';
+import { PlanActions } from '@/components/plan/plan-actions';
+import { PlanGoalBand, PlanGoalBandSkeleton } from '@/components/plan/plan-goal-band';
 import {
-  mapFatigueToSignal,
-  mapVerdictToDisplay,
-  type FatigueLevel,
-  type FatigueTrajectory,
-  type OverallVerdict,
-} from '@/lib/today/today-mapping';
-import type { ClientPlannedSession } from '@/lib/query/types';
+  PlanProjectionSection,
+  PlanProjectionSectionSkeleton,
+} from '@/components/plan/plan-projection-section';
+import { PlanTrajectoryStrip } from '@/components/plan/plan-trajectory-strip';
+import { PlanWeekSection, PlanWeekSectionSkeleton } from '@/components/plan/plan-week-section';
+import { selectPlanGoal } from '@/lib/plan/plan-goal';
+import { buildPlanWeek, type PlanWeek } from '@/lib/plan/plan-week';
+import { isHardSessionIntensity, shouldGateHardIntensities } from '@/lib/plan/intensity-gate';
+import { buildPlanTrajectoryPreviews } from '@/lib/today/signal-previews';
+import { mapVerdictToDisplay, type OverallVerdict } from '@/lib/today/today-mapping';
 import type { AthleteSnapshot } from '@/core/athlete-state/snapshot';
-import { cn } from '@/lib/utils';
 
-const UPCOMING_LIMIT = 3;
-
-/** Client "today" after mount — avoids impure `new Date()` during prerender. */
+/** Client "today" after mount, so prerender never depends on an impure clock. */
 function useClientNow(): Date | null {
   const [now, setNow] = useState<Date | null>(null);
   useEffect(() => {
@@ -33,428 +27,113 @@ function useClientNow(): Date | null {
   return now;
 }
 
-function sessionDayKey(session: ClientPlannedSession): string {
-  const d = session.date instanceof Date ? session.date : new Date(session.date);
-  return startOfDay(d).toISOString();
-}
-
-/** Drop duplicate rows (same id, or same title on the same day — demo seed bug). */
-function dedupeUpcomingSessions(sessions: ClientPlannedSession[]): ClientPlannedSession[] {
-  const seenIds = new Set<string>();
-  const seenTitleDay = new Set<string>();
-  const unique: ClientPlannedSession[] = [];
-  for (const session of sessions) {
-    if (seenIds.has(session.id)) {
-      continue;
-    }
-    seenIds.add(session.id);
-    const titleDay = `${session.title ?? ''}|${sessionDayKey(session)}`;
-    if (seenTitleDay.has(titleDay)) {
-      continue;
-    }
-    seenTitleDay.add(titleDay);
-    unique.push(session);
-  }
-  return unique;
-}
-
-function upcomingSessions(sessions: ClientPlannedSession[], now: Date): ClientPlannedSession[] {
-  const today = startOfDay(now);
-  const horizon = sessions
-    .filter((s) => !s.completed && !s.activityId)
-    .filter((s) => {
-      const d = s.date instanceof Date ? s.date : new Date(s.date);
-      return (
-        !Number.isNaN(d.getTime()) &&
-        (isAfter(d, today) || startOfDay(d).getTime() === today.getTime())
-      );
-    })
-    .sort((a, b) => {
-      const da = a.date instanceof Date ? a.date : new Date(a.date);
-      const db = b.date instanceof Date ? b.date : new Date(b.date);
-      return da.getTime() - db.getTime();
-    });
-  return dedupeUpcomingSessions(horizon);
-}
-
 function resolveVerdict(snapshot: AthleteSnapshot | null): OverallVerdict | null {
-  if (!snapshot) {
-    return null;
-  }
-  if (snapshot.todaysDecision) {
-    return snapshot.todaysDecision as OverallVerdict;
-  }
-  if (snapshot.decision?.overallVerdict) {
-    return snapshot.decision.overallVerdict as OverallVerdict;
-  }
-  return null;
-}
-
-function GoalProgressBar({ progress }: { progress: number }) {
-  return (
-    <div
-      aria-label={`Progression ${progress}%`}
-      aria-valuemax={100}
-      aria-valuemin={0}
-      aria-valuenow={progress}
-      className="bg-muted h-1.5 overflow-hidden rounded-full"
-      role="progressbar"
-    >
-      <div
-        className="bg-primary h-full rounded-full transition-[width]"
-        style={{ width: `${progress}%` }}
-      />
-    </div>
-  );
-}
-
-function GoalCard({
-  badge,
-  detail,
-  progress,
-  title,
-}: {
-  badge: string | null;
-  detail: string | null;
-  progress: number | null;
-  title: string;
-}) {
-  return (
-    <Link
-      href={MOI_OBJECTIFS_PATH}
-      className={cn(
-        'analysis-panel rounded-analysis-lg group block space-y-2 p-4',
-        'hover:border-primary/25 focus-visible:ring-primary/35 focus-visible:ring-2 focus-visible:outline-hidden',
-      )}
-    >
-      <div className="flex items-start gap-3">
-        <div className="icon-well size-9 shrink-0" aria-hidden>
-          <Target className="size-4" />
-        </div>
-        <div className="min-w-0 flex-1">
-          <p className="text-sm font-medium">{title}</p>
-          <p className="text-muted-foreground mt-0.5 text-sm">
-            {[badge, detail].filter(Boolean).join(' · ') || 'En cours'}
-          </p>
-        </div>
-        <span
-          className="text-muted-foreground/70 text-data shrink-0 text-xs tracking-wider transition-transform group-hover:translate-x-0.5"
-          aria-hidden
-        >
-          →
-        </span>
-      </div>
-      {progress !== null && progress !== undefined ? <GoalProgressBar progress={progress} /> : null}
-    </Link>
-  );
-}
-
-function PlanObjectifWidget() {
-  const goalsQuery = useGoals();
-  const [goal] = selectTodayGoals(goalsQuery.data ?? [], 1);
-  const pending = goalsQuery.isPending && !goalsQuery.data;
-
-  return (
-    <section aria-labelledby="plan-objectif" className="space-y-3">
-      <h2 className="text-section-title" id="plan-objectif">
-        Objectif
-      </h2>
-      {pending ? (
-        <div className="analysis-panel-alt rounded-analysis-lg h-20 animate-pulse" aria-busy />
-      ) : null}
-      {!pending && goal ? (
-        <GoalCard
-          badge={goal.badge}
-          detail={goal.detail}
-          progress={goal.progress}
-          title={goal.title}
-        />
-      ) : null}
-      {!pending && !goal ? (
-        <Link
-          href={MOI_OBJECTIFS_PATH}
-          className={cn(
-            'analysis-panel-alt rounded-analysis-lg group block space-y-2 p-4',
-            'hover:border-primary/25 focus-visible:ring-primary/35 focus-visible:ring-2 focus-visible:outline-hidden',
-          )}
-        >
-          <p className="text-sm">Aucun objectif actif.</p>
-          <p className="text-primary text-sm font-medium">
-            Définir un objectif
-            <span
-              className="text-muted-foreground/70 ml-2 inline-block text-xs tracking-wider transition-transform group-hover:translate-x-0.5"
-              aria-hidden
-            >
-              →
-            </span>
-          </p>
-        </Link>
-      ) : null}
-    </section>
-  );
-}
-
-function UpcomingSessionRow({ now, session }: { now: Date; session: ClientPlannedSession }) {
-  const display = resolvePlannedSessionDisplay(session, now);
-  return (
-    <li>
-      <Link
-        href={plannedSessionHref(session.id)}
-        className={cn(
-          'chip-surface-lg rounded-analysis-lg group flex items-center gap-3 px-3 py-2.5',
-          'hover:border-primary/25 focus-visible:ring-primary/35 focus-visible:ring-2 focus-visible:outline-hidden',
-        )}
-      >
-        <span
-          className={cn(
-            'text-data shrink-0 rounded-md px-2 py-1 text-[10px] font-medium tracking-wide uppercase',
-            display.typeColor,
-          )}
-        >
-          {display.typeLabel}
-        </span>
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-medium">{display.title}</p>
-          <p className="text-muted-foreground text-xs">
-            {display.dateStr}
-            {display.intensityLabel ? ` · ${display.intensityLabel}` : null}
-          </p>
-        </div>
-        <span
-          className="text-muted-foreground/70 text-data shrink-0 text-xs tracking-wider transition-transform group-hover:translate-x-0.5"
-          aria-hidden
-        >
-          →
-        </span>
-      </Link>
-    </li>
-  );
-}
-
-function UpcomingEmpty({
-  gateActive,
-  withheldCount,
-}: {
-  gateActive: boolean;
-  withheldCount: number;
-}) {
-  const message =
-    gateActive && withheldCount > 0
-      ? 'Aucune séance douce sur l’horizon proche — les intensités dures restent en pause.'
-      : 'Pas encore de séances planifiées sur l’horizon proche.';
-  return (
-    <div className="analysis-panel-alt rounded-analysis-lg space-y-2 p-4">
-      <p className="text-sm">{message}</p>
-      <Link className="text-primary text-sm font-medium" href="/training/planning">
-        Ouvrir la planification
-      </Link>
-    </div>
-  );
-}
-
-function GateNotice({
-  verdict,
-  withheldCount,
-}: {
-  verdict: OverallVerdict;
-  withheldCount: number;
-}) {
-  return (
-    <p className="text-muted-foreground text-xs leading-relaxed">
-      Verdict Today{' '}
-      <span className="text-foreground font-medium">{mapVerdictToDisplay(verdict).label}</span>
-      {' : '}
-      intensités dures (tempo, seuil, VO2, compétition) non proposées.
-      {withheldCount > 0 ? ` ${withheldCount} séance(s) filtrée(s).` : null}
-    </p>
-  );
-}
-
-function UpcomingBody({
-  gateActive,
-  now,
-  pending,
-  proposed,
-  withheldCount,
-}: {
-  gateActive: boolean;
-  now: Date | null;
-  pending: boolean;
-  proposed: ClientPlannedSession[];
-  withheldCount: number;
-}) {
-  if (pending || !now) {
-    return (
-      <ul className="space-y-2" aria-busy>
-        {Array.from({ length: 3 }).map((_, i) => (
-          <li key={i} className="analysis-panel-alt rounded-analysis-lg h-16 animate-pulse" />
-        ))}
-      </ul>
-    );
-  }
-  if (proposed.length > 0) {
-    return (
-      <ul className="space-y-2">
-        {proposed.map((session) => (
-          <UpcomingSessionRow key={session.id} now={now} session={session} />
-        ))}
-      </ul>
-    );
-  }
-  return <UpcomingEmpty gateActive={gateActive} withheldCount={withheldCount} />;
-}
-
-function PlanUpcomingWidget({ verdict }: { verdict: OverallVerdict | null }) {
-  const plannedQuery = usePlannedSessions();
-  const now = useClientNow();
-  // Order matters (Science Sport): full horizon → intensity-gate → then limit.
-  const candidates = now ? upcomingSessions(plannedQuery.data ?? [], now) : [];
-  const gated = gateUpcomingSessionsForVerdict(candidates, verdict);
-  const proposed = gated.proposed.slice(0, UPCOMING_LIMIT);
-  const remaining = Math.max(0, gated.proposed.length - proposed.length);
-  const pending = !now || (plannedQuery.isPending && !plannedQuery.data);
-
-  return (
-    <section aria-labelledby="plan-upcoming" className="space-y-3">
-      <div className="flex items-baseline justify-between gap-3">
-        <h2 className="text-section-title" id="plan-upcoming">
-          Prochaines séances
-        </h2>
-        <Link
-          className="text-muted-foreground hover:text-foreground text-xs font-medium"
-          href="/training/planning"
-        >
-          Planifier
-        </Link>
-      </div>
-      {gated.gateActive && verdict ? (
-        <GateNotice verdict={verdict} withheldCount={gated.withheld.length} />
-      ) : null}
-      <UpcomingBody
-        gateActive={gated.gateActive}
-        now={now}
-        pending={pending}
-        proposed={proposed}
-        withheldCount={gated.withheld.length}
-      />
-      {remaining > 0 ? (
-        <Link
-          className="text-muted-foreground hover:text-foreground text-xs font-medium"
-          href="/training/planning"
-        >
-          Voir plus ({remaining})
-        </Link>
-      ) : null}
-    </section>
-  );
-}
-
-function LoadRecoveryStats({
-  fatigueLabel,
-  readiness,
-  verdict,
-}: {
-  fatigueLabel: string | null;
-  readiness: number | null;
-  verdict: OverallVerdict | null;
-}) {
-  const verdictDisplay = verdict ? mapVerdictToDisplay(verdict) : null;
-  const readinessText = readiness !== null ? String(Math.round(readiness)) : '—';
-
-  return (
-    <div className="analysis-panel rounded-analysis-lg grid grid-cols-3 gap-3 p-4">
-      <div>
-        <p className="text-label">Récup</p>
-        <p className="text-data mt-1 text-lg font-medium tabular-nums">{readinessText}</p>
-      </div>
-      <div>
-        <p className="text-label">Fatigue</p>
-        <p className="mt-1 text-sm font-medium">{fatigueLabel ?? '—'}</p>
-      </div>
-      <div>
-        <p className="text-label">Verdict</p>
-        <p
-          className={cn(
-            'mt-1 text-sm font-medium',
-            verdictDisplay?.colorClass ?? 'text-muted-foreground',
-          )}
-        >
-          {verdictDisplay?.label ?? '—'}
-        </p>
-      </div>
-    </div>
-  );
-}
-
-function PlanLoadRecoveryWidget({
-  fatigueLabel,
-  loading,
-  readiness,
-  verdict,
-}: {
-  fatigueLabel: string | null;
-  loading: boolean;
-  readiness: number | null;
-  verdict: OverallVerdict | null;
-}) {
-  return (
-    <section aria-labelledby="plan-load-recovery" className="space-y-3">
-      <h2 className="text-section-title" id="plan-load-recovery">
-        Charge / récup
-      </h2>
-      {loading ? (
-        <div className="analysis-panel-alt rounded-analysis-lg h-24 animate-pulse" aria-busy />
-      ) : (
-        <LoadRecoveryStats fatigueLabel={fatigueLabel} readiness={readiness} verdict={verdict} />
-      )}
-    </section>
-  );
+  const verdict = snapshot?.todaysDecision ?? snapshot?.decision?.overallVerdict;
+  return (verdict as OverallVerdict | undefined) ?? null;
 }
 
 /**
- * Plan hub widgets — Objectif, prochaines (gated), charge/récup.
- * Secondary tools (planification, bilan) stay quiet links — no Accès dump.
- * Fil de la semaine / Séjours are deprioritized out of the primary Plan path.
+ * Hard sessions still owed while readiness says to back off.
+ *
+ * Marked, never hidden: the gate cannot remove work from a plan the athlete
+ * already committed to, so it names the conflict and lets him decide.
  */
+function countGatedSessions(week: PlanWeek | null, verdict: OverallVerdict | null): number {
+  if (!week || !shouldGateHardIntensities(verdict)) {
+    return 0;
+  }
+  return week.remaining.filter((entry) => isHardSessionIntensity(entry.planned?.intensity)).length;
+}
+
+/**
+ * Plan hub, the week read against the goal it serves.
+ *
+ * Questions in order: what am I building toward, what does this week ask of me
+ * and what is already done, how is the block adapting / what charge am I under,
+ * what will holding it produce, and how do I change it.
+ * See `docs/design/INFORMATION_ARCHITECTURE.md` ("My week").
+ */
+function PlanHubWidgetsContent({
+  goalsQuery,
+  weekReady,
+  week,
+  verdict,
+  goal,
+  trajectoryPreviews,
+  snapshot,
+  now,
+}: {
+  goalsQuery: ReturnType<typeof useGoals>;
+  weekReady: boolean;
+  week: PlanWeek | null;
+  verdict: OverallVerdict | null;
+  goal: ReturnType<typeof selectPlanGoal>;
+  trajectoryPreviews: ReturnType<typeof buildPlanTrajectoryPreviews>;
+  snapshot: AthleteSnapshot | null;
+  now: Date | null;
+}) {
+  return (
+    <div className="space-y-8">
+      {goalsQuery.isPending ? <PlanGoalBandSkeleton /> : <PlanGoalBand goal={goal} />}
+
+      {weekReady && week ? (
+        <PlanWeekSection
+          gatedCount={countGatedSessions(week, verdict)}
+          verdict={verdict}
+          verdictLabel={verdict ? mapVerdictToDisplay(verdict).label : null}
+          week={week}
+        />
+      ) : (
+        <PlanWeekSectionSkeleton />
+      )}
+
+      <PlanTrajectoryStrip loading={!snapshot} previews={trajectoryPreviews} />
+
+      {now ? <PlanProjectionSection now={now} /> : <PlanProjectionSectionSkeleton />}
+
+      <PlanActions />
+    </div>
+  );
+}
+
 export function PlanHubWidgets() {
-  const { loading, snapshot } = useAthleteSnapshot();
+  const now = useClientNow();
+  const goalsQuery = useGoals();
+  const activitiesQuery = useActivities();
+  const plannedQuery = usePlannedSessions();
+  const { snapshot } = useAthleteSnapshot();
+
   const verdict = resolveVerdict(snapshot);
-  const readiness = snapshot?.readiness ?? null;
-  const fatigue = snapshot?.fatigue;
-  const fatigueLabel = fatigue
-    ? mapFatigueToSignal(
-        fatigue.fatigueLevel as FatigueLevel,
-        (fatigue.trajectory ?? 'STABLE') as FatigueTrajectory,
-      ).label
-    : null;
+  const goal = useMemo(() => selectPlanGoal(goalsQuery.data ?? []), [goalsQuery.data]);
+
+  const week = useMemo(
+    () =>
+      now
+        ? buildPlanWeek({
+            activities: activitiesQuery.data ?? [],
+            plannedSessions: plannedQuery.data ?? [],
+            now,
+          })
+        : null,
+    [activitiesQuery.data, plannedQuery.data, now],
+  );
+
+  const weekReady = week !== null && !activitiesQuery.isPending && !plannedQuery.isPending;
+  const trajectoryPreviews = useMemo(
+    () => (snapshot ? buildPlanTrajectoryPreviews(snapshot) : []),
+    [snapshot],
+  );
 
   return (
-    <div className="space-y-6 max-lg:pb-10">
-      <PlanObjectifWidget />
-      <PlanUpcomingWidget verdict={verdict} />
-      <PlanLoadRecoveryWidget
-        fatigueLabel={fatigueLabel}
-        loading={loading && !snapshot}
-        readiness={readiness}
-        verdict={verdict}
-      />
-
-      <nav aria-label="Outils plan" className="flex flex-wrap gap-x-4 gap-y-2 pt-1">
-        <Link
-          className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 text-sm"
-          href="/training/planning"
-        >
-          <CalendarRange className="size-3.5" aria-hidden />
-          Planification
-        </Link>
-        <Link
-          className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 text-sm"
-          href="/training/weekly-review"
-        >
-          <ClipboardList className="size-3.5" aria-hidden />
-          Bilan hebdo
-        </Link>
-      </nav>
-    </div>
+    <PlanHubWidgetsContent
+      goal={goal}
+      goalsQuery={goalsQuery}
+      now={now}
+      snapshot={snapshot}
+      trajectoryPreviews={trajectoryPreviews}
+      verdict={verdict}
+      week={week}
+      weekReady={weekReady}
+    />
   );
 }

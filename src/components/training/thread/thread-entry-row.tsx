@@ -2,18 +2,12 @@
 
 import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { CalendarPlus, Check, ChevronRight, Feather } from 'lucide-react';
+import { CalendarPlus, Feather } from 'lucide-react';
 import Link from 'next/link';
-import { activityTypeLabels, formatDuration } from '@/lib/format';
-import { SPORT_IDENTITY_TEXT } from '@/lib/activity/sport-identity';
+import { activityTypeLabels } from '@/lib/format';
 import type { ThreadEntry } from '@/lib/training/thread/thread-model';
 import { prefetchPlannedSessionDetail } from '@/lib/query/prefetch-planned-session-detail';
 import { TWIN_DRILL_DOWN } from '@/lib/today/today-twin-navigation';
-import {
-  formatTrainingLoad,
-  trainingLoadUnit,
-  type DisplayMode,
-} from '@/lib/preferences/display-mode';
 import { ThreadEaseDialog } from '@/components/training/thread/thread-ease-dialog';
 import { ThreadShiftDialog } from '@/components/training/thread/thread-shift-dialog';
 import { usePlannedSessionActions } from '@/hooks/use-planned-session-actions';
@@ -22,11 +16,6 @@ import { useAppModal } from '@/providers/app-modal-provider';
 import { useDisplayMode } from '@/providers/display-mode-provider';
 import { cn } from '@/lib/utils';
 
-import {
-  ComparisonPill,
-  entryMeta,
-  SportDot,
-} from '@/components/training/thread/thread-entry-row-meta';
 import {
   buildThreadEntryRowShell,
   ThreadEntryRowBody,

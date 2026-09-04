@@ -7,28 +7,28 @@ import {
   ONBOARDING_STEPS,
   parseOnboardingStepParam,
   previousOnboardingStep,
-  stepAfterProviders,
+  stepAfterEquipment,
 } from './wizard-steps';
 
 describe('onboarding wizard step order', () => {
-  it('orders Sports → Intention → Sources → Equipment', () => {
-    expect(ONBOARDING_STEPS).toEqual(['sports', 'intention', 'providers', 'equipment']);
-    expect(nextOnboardingStep('sports')).toBe('intention');
+  it('orders Sports → Equipment → Intention → Sources', () => {
+    expect(ONBOARDING_STEPS).toEqual(['sports', 'equipment', 'intention', 'providers']);
+    expect(nextOnboardingStep('sports')).toBe('equipment');
+    expect(nextOnboardingStep('equipment')).toBe('intention');
     expect(nextOnboardingStep('intention')).toBe('providers');
-    expect(nextOnboardingStep('providers')).toBe('equipment');
-    expect(nextOnboardingStep('equipment')).toBe('complete');
+    expect(nextOnboardingStep('providers')).toBe('complete');
   });
 
-  it('labels four header steps including Équipement', () => {
-    expect(ONBOARDING_STEP_LABELS.sports).toBe('1 · Sports');
-    expect(ONBOARDING_STEP_LABELS.intention).toBe('2 · Intention');
-    expect(ONBOARDING_STEP_LABELS.providers).toBe('3 · Sources');
-    expect(ONBOARDING_STEP_LABELS.equipment).toBe('4 · Équipement');
+  it('labels four header steps including Équipement, numbering left to the rail', () => {
+    expect(ONBOARDING_STEP_LABELS.sports).toBe('Sports');
+    expect(ONBOARDING_STEP_LABELS.equipment).toBe('Équipement');
+    expect(ONBOARDING_STEP_LABELS.intention).toBe('Intention');
+    expect(ONBOARDING_STEP_LABELS.providers).toBe('Sources');
   });
 
-  it('sends Sources continue to Equipment, not bootstrap', () => {
-    expect(stepAfterProviders()).toBe('equipment');
-    expect(previousOnboardingStep('equipment')).toBe('providers');
+  it('sends Equipment continue to Intention, not Sources', () => {
+    expect(stepAfterEquipment()).toBe('intention');
+    expect(previousOnboardingStep('intention')).toBe('equipment');
   });
 
   it('allows skipping Equipment without selection', () => {

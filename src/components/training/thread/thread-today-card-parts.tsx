@@ -5,7 +5,6 @@ import { ArrowRight } from 'lucide-react';
 import type { ThreadEntry } from '@/lib/training/thread/thread-model';
 import { coachDiscussHref } from '@/lib/coach/chat/coach-discuss-href';
 import { ComparisonPill, SportDot } from '@/components/training/thread/thread-entry-row-meta';
-import type { DisplayMode } from '@/lib/preferences/display-mode';
 import { cn } from '@/lib/utils';
 
 export function ThreadTodayCardHeader({
@@ -45,7 +44,7 @@ export function ThreadTodayCardHeader({
 
 export function ThreadTodayCardActions({
   sessionId,
-  planned,
+  planned: _planned,
   pending,
   onShift,
   onEase,

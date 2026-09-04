@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils';
 
 function DemoCallout() {
   return (
-    <div className="bg-[var(--color-analysis-surface)] border-auth-panel rounded-analysis-lg flex flex-col items-center gap-3 border px-5 py-5 text-center">
+    <div className="border-auth-panel rounded-analysis-lg flex flex-col items-center gap-3 border bg-[var(--color-analysis-surface)] px-5 py-5 text-center">
       <p className="text-label text-auth-muted">Sans inscription</p>
       <p className="text-foreground text-sm leading-relaxed">
         Explore SharpIt avec des données réalistes, en lecture seule.

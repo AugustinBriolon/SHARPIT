@@ -92,7 +92,9 @@ function emptyAdaptationViewModel(): AdaptationViewModel {
 }
 
 function buildAdaptationDimensions(
-  dimensions: NonNullable<Awaited<ReturnType<typeof getOrBuildAthleteSnapshot>>['adaptation']>['dimensions'],
+  dimensions: NonNullable<
+    Awaited<ReturnType<typeof getOrBuildAthleteSnapshot>>['adaptation']
+  >['dimensions'],
 ): AdaptationDimensionVm[] {
   return Object.entries(dimensions).map(([key, dim]) => {
     const copy = DIMENSION_COPY[key] ?? { label: key, description: 'Signal de dimension' };

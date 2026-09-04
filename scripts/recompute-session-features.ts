@@ -1,4 +1,3 @@
-/* eslint-disable no-console -- script CLI : sortie console attendue */
 /**
  * Recomputes SESSION features for the whole history and drops the unusable ones.
  *

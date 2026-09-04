@@ -21,37 +21,37 @@ Consequences:
 
 ## 2. Responsable
 
-| Role | Value |
-| --- | --- |
-| Controller | Augustin Briolon (personne physique) |
-| Privacy contact | `augustin.briolon@gmail.com` |
+| Role            | Value                                |
+| --------------- | ------------------------------------ |
+| Controller      | Augustin Briolon (personne physique) |
+| Privacy contact | `augustin.briolon@gmail.com`         |
 
 ---
 
 ## 3. Décisions actées (2026-09-02)
 
-| Decision | Lock |
-| --- | --- |
-| AI consent | **Hard gate** (no LLM path without `ai_processing_consent`) |
-| Controller | Augustin Briolon |
-| Contact email | `augustin.briolon@gmail.com` |
-| Account deletion | Soft-delete, then **purge at J+30** |
-| Legal copy | **FR only** |
-| Access model | Classic signup (Clerk). « Cercle privé » = GTM bouche-à-oreille — **not** a technical invite lock. Wording must **not** say invite-only. |
+| Decision         | Lock                                                                                                                                     |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| AI consent       | **Hard gate** (no LLM path without `ai_processing_consent`)                                                                              |
+| Controller       | Augustin Briolon                                                                                                                         |
+| Contact email    | `augustin.briolon@gmail.com`                                                                                                             |
+| Account deletion | Soft-delete, then **purge at J+30**                                                                                                      |
+| Legal copy       | **FR only**                                                                                                                              |
+| Access model     | Classic signup (Clerk). « Cercle privé » = GTM bouche-à-oreille — **not** a technical invite lock. Wording must **not** say invite-only. |
 
 ---
 
 ## 4. Livrables P1–P7
 
-| ID | Deliverable | Notes |
-| --- | --- | --- |
-| P1 | `/privacy` | Copy source: [`PRIVACY_PAGE_FR_V0.md`](./PRIVACY_PAGE_FR_V0.md) |
-| P2 | `/terms` | Copy source: [`TERMS_PAGE_FR_V0.md`](./TERMS_PAGE_FR_V0.md) |
-| P3 | Consent gates | Signup accept privacy+terms; provider connect; AI hard gate — see eng brief |
-| P4 | Export | Athlete JSON export of personal data held by Sharpit |
-| P5 | Delete | Soft-delete → purge J+30 |
-| P6 | Health disclaimer | Science Sport validated (verbatim below) |
-| P7 | Unofficial disclaimer | Ack before connecting unofficial / as-is integrations |
+| ID  | Deliverable           | Notes                                                                       |
+| --- | --------------------- | --------------------------------------------------------------------------- |
+| P1  | `/privacy`            | Copy source: [`PRIVACY_PAGE_FR_V0.md`](./PRIVACY_PAGE_FR_V0.md)             |
+| P2  | `/terms`              | Copy source: [`TERMS_PAGE_FR_V0.md`](./TERMS_PAGE_FR_V0.md)                 |
+| P3  | Consent gates         | Signup accept privacy+terms; provider connect; AI hard gate — see eng brief |
+| P4  | Export                | Athlete JSON export of personal data held by Sharpit                        |
+| P5  | Delete                | Soft-delete → purge J+30                                                    |
+| P6  | Health disclaimer     | Science Sport validated (verbatim below)                                    |
+| P7  | Unofficial disclaimer | Ack before connecting unofficial / as-is integrations                       |
 
 **Out of scope for Privacy mini V0:** DPO appointment, DPA renegotiation, EN legal pages, invite-only gate, medical-device claims, general model training on athlete data.
 

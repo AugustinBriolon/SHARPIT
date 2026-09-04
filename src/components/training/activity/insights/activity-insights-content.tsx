@@ -73,7 +73,7 @@ type StreamPayload = NonNullable<
 >;
 
 export function ActivityInsightsContent({
-  activityId,
+  activityId: _activityId,
   type,
   coachPanel,
   data,

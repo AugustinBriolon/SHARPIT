@@ -40,7 +40,7 @@ export function isActivityTrainingPath(pathname: string): boolean {
 
 export const todayNavItem: AppNavItem = {
   href: '/',
-  label: 'Aujourd’hui',
+  label: 'Résumé',
   icon: Sun,
   // Nutrition is a Today detail, not a destination — it lights this tab rather
   // than leaving the bar with nothing marked current.
@@ -87,20 +87,11 @@ export const moiNavItem: AppNavItem = {
 /** @deprecated Use `moiNavItem` — alias kept for callers that still say "profile". */
 export const profileNavItem = moiNavItem;
 
-/** Destinations principales sidebar desktop (sans Moi — identité en bas). */
-export const sidebarPrimaryNavItems: AppNavItem[] = [
-  todayNavItem,
-  planNavItem,
-  activityNavItem,
-];
-
-/** Navigation sidebar desktop (ordre complet, y compris Moi). */
-export const sidebarNavItems: AppNavItem[] = [...sidebarPrimaryNavItems, moiNavItem];
-
-/** Onglets bottom bar mobile — Shell V1 (Coach hors barre). */
+/** Onglets barre flottante — Shell V1, tous viewports (Coach hors barre). */
 export const bottomNavItems: AppNavItem[] = [
   todayNavItem,
   planNavItem,
+  coachNavItem,
   activityNavItem,
   moiNavItem,
 ];

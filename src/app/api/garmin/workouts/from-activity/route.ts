@@ -31,8 +31,11 @@ export async function POST(request: NextRequest) {
     console.error('[garmin/workouts]', error);
     const message = error instanceof Error ? error.message : 'Envoi vers Garmin impossible';
     let status = 500;
-    if (message.includes('non connecté') || message.includes('introuvable')) {status = 404;}
-    else if (message.includes('Seules') || message.includes('Aucun')) {status = 400;}
+    if (message.includes('non connecté') || message.includes('introuvable')) {
+      status = 404;
+    } else if (message.includes('Seules') || message.includes('Aucun')) {
+      status = 400;
+    }
     return NextResponse.json({ error: message }, { status });
   }
 }

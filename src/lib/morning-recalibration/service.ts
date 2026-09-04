@@ -173,7 +173,7 @@ async function resolveExistingPresentation(
   existing: NonNullable<Awaited<ReturnType<typeof findMorningRecalibrationDecision>>>,
 ): Promise<EnsureMorningRecalibrationResult | null> {
   const mr = existing.snapshotContext.morningRecalibration;
-  const {sessionId} = existing.proposal;
+  const { sessionId } = existing.proposal;
   if (!mr || !sessionId) {
     return { presentation: null, created: false };
   }
@@ -257,7 +257,11 @@ async function createMorningRecalibrationDecision(
 
   const gateProposal = toGateProposal(proposal, session);
   const gateResult = toGateResult(gateProposal, proposal.direction);
-  const snapshotContext = buildMorningRecalibrationSnapshotContext(snapshot, proposal, session.type);
+  const snapshotContext = buildMorningRecalibrationSnapshotContext(
+    snapshot,
+    proposal,
+    session.type,
+  );
 
   const decision = await createCoachingDecision(athleteId, {
     trainingDayId,

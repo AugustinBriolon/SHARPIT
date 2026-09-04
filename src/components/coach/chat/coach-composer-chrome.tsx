@@ -23,12 +23,10 @@ export function CoachComposerShell({
     <div
       className={cn(
         'bg-background/95 supports-backdrop-filter:bg-background/80 shrink-0 px-3 pt-2',
-        // Below `lg` the composer sits inside the mobile hub, which is already
-        // anchored above the bottom nav via `--bottom-nav-offset` — that offset
-        // bakes in `env(safe-area-inset-bottom)`, so adding it again here doubled
-        // the gap above the nav on notched phones. Only `lg` (no bottom nav,
-        // composer owns its own safe area) needs the full inset.
-        'pb-3 backdrop-blur-md lg:pb-[max(0.75rem,env(safe-area-inset-bottom))]',
+        // The hub already sits above the floating tab bar via `--bottom-nav-offset`,
+        // which bakes in `env(safe-area-inset-bottom)`. Adding the inset again
+        // here doubled the gap above the nav on notched phones.
+        'pb-3 backdrop-blur-md',
         className,
       )}
     >

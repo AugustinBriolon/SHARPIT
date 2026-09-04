@@ -92,10 +92,7 @@ export function resolveConstraintForWeek(
   return best;
 }
 
-function constraintFocusLabel(
-  constraint: TravelTrainingConstraint,
-  suffix: string,
-): string {
+function constraintFocusLabel(constraint: TravelTrainingConstraint, suffix: string): string {
   const labels: Partial<Record<TravelTrainingConstraint, string>> = {
     REDUCED: `Voyage — charge réduite${suffix}`,
     MOBILITY_ONLY: `Voyage — mobilité et étirements uniquement${suffix}`,

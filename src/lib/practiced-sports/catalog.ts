@@ -44,7 +44,6 @@ export const PRACTICED_SPORT_LABELS: Record<PracticedSportId, string> = {
 };
 
 const CORE_SET = new Set<string>(CORE_PRACTICED_SPORTS);
-const TRIATHLON_LEGS: readonly PracticedSportId[] = ['run', 'bike', 'swim'];
 
 export function isPracticedSportId(value: unknown): value is PracticedSportId {
   return typeof value === 'string' && (PRACTICED_SPORTS as readonly string[]).includes(value);
@@ -59,39 +58,10 @@ function uniqueOrdered(sports: Iterable<PracticedSportId>): PracticedSportId[] {
   return PRACTICED_SPORTS.filter((id) => set.has(id));
 }
 
-function hasAllTriathlonLegs(sports: ReadonlySet<PracticedSportId>): boolean {
-  return TRIATHLON_LEGS.every((leg) => sports.has(leg));
-}
-
-function isTriathlonLeg(id: PracticedSportId): boolean {
-  return id === 'run' || id === 'bike' || id === 'swim';
-}
-
-function enableSport(next: Set<PracticedSportId>, id: PracticedSportId): void {
-  next.add(id);
-  if (id === 'triathlon') {
-    for (const leg of TRIATHLON_LEGS) {
-      next.add(leg);
-    }
-    return;
-  }
-  if (isTriathlonLeg(id) && hasAllTriathlonLegs(next)) {
-    next.add('triathlon');
-  }
-}
-
-function disableSport(next: Set<PracticedSportId>, id: PracticedSportId): void {
-  next.delete(id);
-  if (isTriathlonLeg(id)) {
-    next.delete('triathlon');
-  }
-}
-
 /**
- * Toggle one practiced sport with triathlon coupling rules:
- * - enable triathlon → also enable run+bike+swim
- * - disable any of run/bike/swim → also disable triathlon
- * - enable all three legs → auto-enable triathlon
+ * Toggle one practiced sport independently.
+ * Triathlon is a separate intent: selecting it does not force run/bike/swim,
+ * and completing the three legs does not auto-check triathlon.
  */
 export function togglePracticedSport(
   current: readonly PracticedSportId[],
@@ -100,9 +70,9 @@ export function togglePracticedSport(
 ): PracticedSportId[] {
   const next = new Set(current);
   if (enabled) {
-    enableSport(next, id);
+    next.add(id);
   } else {
-    disableSport(next, id);
+    next.delete(id);
   }
   return uniqueOrdered(next);
 }

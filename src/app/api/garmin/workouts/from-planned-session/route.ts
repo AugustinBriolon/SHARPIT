@@ -26,7 +26,9 @@ async function pushBySport(athleteId: string, input: PushInput) {
     where: { id: input.plannedSessionId, athleteId },
     select: { type: true },
   });
-  if (!session) {throw new Error('Séance planifiée introuvable');}
+  if (!session) {
+    throw new Error('Séance planifiée introuvable');
+  }
 
   return session.type === ActivityType.STRENGTH
     ? pushStrengthWorkoutFromPlannedSession(athleteId, input)

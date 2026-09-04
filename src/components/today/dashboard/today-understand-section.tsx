@@ -11,6 +11,7 @@ import type { ClientActivity } from '@/lib/query/types';
 import { cn } from '@/lib/utils';
 
 type MetricsRow = TodayViewModel['hero']['metricsRow'];
+type SignalPreviews = TodayViewModel['hero']['signalPreviews'];
 
 /**
  * Tertiary visual evidence — mini signal cards + secondary panels.
@@ -19,6 +20,7 @@ type MetricsRow = TodayViewModel['hero']['metricsRow'];
  */
 export function TodayUnderstandSection({
   metricsRow,
+  signalPreviews,
   limitingFactorHref,
   activities,
   activitiesLoading,
@@ -26,6 +28,7 @@ export function TodayUnderstandSection({
   className,
 }: {
   metricsRow: MetricsRow;
+  signalPreviews?: SignalPreviews;
   limitingFactorHref?: string | null;
   activities: ClientActivity[];
   activitiesLoading: boolean;
@@ -34,12 +37,12 @@ export function TodayUnderstandSection({
 }) {
   return (
     <section className={cn('space-y-4', className)}>
-      <div className="space-y-2 px-0.5">
-        <h2 className="text-label">Comprendre</h2>
+      <div className="px-0.5">
         <TodaySignalStrip
           limiterHref={limitingFactorHref}
           loading={loading}
           metricsRow={metricsRow}
+          signalPreviews={signalPreviews}
         />
       </div>
       <div className="grid items-stretch gap-4 lg:grid-cols-2">

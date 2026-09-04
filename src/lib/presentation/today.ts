@@ -15,9 +15,8 @@ import {
 } from '@/lib/queries';
 import { computeSharpitSleepScoreForDay, SLEEP_TARGET_MIN } from '@/lib/sleep/sleep-scoring';
 import { activityTypeLabels } from '@/lib/format';
-import { isDemoSessionLinkPlannedTitle } from '@/lib/demo/demo-session-link-markers';
 import { buildPostSessionLoop } from '@/lib/today/post-session-loop';
-import { buildTodayDaySummary, findMissedPlannedSessions } from '@/lib/today/today-day-summary';
+import { buildTodayDaySummary } from '@/lib/today/today-day-summary';
 import {
   findSessionLinkSuggestions,
   type SessionLinkSuggestion,
@@ -45,8 +44,8 @@ import {
 } from '@/lib/decision/projection';
 import { buildTodayLimitingFacts, buildTodayWhyFacts } from '@/lib/today/today-instrument-facts';
 import { TWIN_DRILL_DOWN } from '@/lib/today/today-twin-navigation';
-import { endOfDay, format as formatDate, startOfDay } from 'date-fns';
-import { fr } from 'date-fns/locale';
+import { buildSignalPreviews } from '@/lib/today/signal-previews';
+import { endOfDay, startOfDay } from 'date-fns';
 import type { ClientActivity, ClientPlannedSession } from '@/lib/query/types';
 import { getGarminAccount } from '@/lib/integrations/garmin/garmin-sync';
 import { getGoogleAccount } from '@/lib/integrations/google/google-sync';
@@ -67,10 +66,6 @@ function localDateFromTrainingDayId(trainingDayId: string): Date {
   const [y, m, d] = trainingDayId.split('-').map(Number);
   // Midday local avoids DST edge cases when subtracting days.
   return new Date(y, m - 1, d, 12, 0, 0);
-}
-
-function formatMissedDate(date: Date): string {
-  return `Manquée · ${formatDate(date, 'EEEE d', { locale: fr })}`;
 }
 
 function mapConfidenceTone(
@@ -266,11 +261,24 @@ function morningChoiceForLine(
   return sessionChoice.label;
 }
 
+function plannedIdFromLine(line: ReturnType<typeof buildTodayDaySummary>['lines'][number]) {
+  return line.plannedSession?.id ?? (line.kind === 'planned' ? line.id : null);
+}
+
+function doneLineMetrics(
+  line: ReturnType<typeof buildTodayDaySummary>['lines'][number],
+): ReturnType<typeof buildTodayDaySummary>['lines'][number]['metrics'] | null {
+  if (line.kind !== 'done') {
+    return null;
+  }
+  return line.metrics ?? null;
+}
+
 function mapDaySummaryLineForView(
   line: ReturnType<typeof buildTodayDaySummary>['lines'][number],
   sessionChoice: MorningOrientationResolved['sessionChoice'],
 ) {
-  const plannedId = line.plannedSession?.id ?? (line.kind === 'planned' ? line.id : null);
+  const plannedId = plannedIdFromLine(line);
   return {
     id: plannedId ?? line.id,
     activityType: line.activityType,
@@ -279,6 +287,7 @@ function mapDaySummaryLineForView(
     kind: line.kind,
     href: daySummaryLineHref(line),
     isDone: line.kind === 'done',
+    metrics: doneLineMetrics(line),
     morningChoiceLabel: morningChoiceForLine(plannedId, sessionChoice),
     brickLegs: line.brickLegs ?? null,
   };
@@ -414,10 +423,6 @@ function prepareTodayActionFields(input: {
       input.plannedSessions as unknown as ClientPlannedSession[],
     ),
     daySummary,
-    missedSessions: findMissedPlannedSessions(
-      input.plannedSessions as unknown as ClientPlannedSession[],
-      input.day,
-    ).filter((s) => !isDemoSessionLinkPlannedTitle(s.title)),
     labels: actionRowLabels(input.phase),
     limitingSection: buildTodayLimitingSection({
       phase: input.phase,
@@ -529,36 +534,28 @@ function buildTodayEmptyState(effectiveSnapshot: AthleteSnapshot, statusMessage:
   };
 }
 
-function prepareTodayViewModelContext(inputs: TodayPresentationInputs) {
-  const {
-    day,
-    snapshot,
-    healthEntries,
-    activities,
-    plannedSessions,
-    goals,
-    athleteProfile,
-    morningRecalibration,
-    weather,
-  } = inputs;
+function resolveEffectiveSnapshot(inputs: TodayPresentationInputs) {
+  return isDemoAthleteProfile(inputs.athleteProfile)
+    ? withDemoSnapshotFreshness(inputs.snapshot)
+    : inputs.snapshot;
+}
 
-  const effectiveSnapshot = isDemoAthleteProfile(athleteProfile)
-    ? withDemoSnapshotFreshness(snapshot)
-    : snapshot;
-  const sleepTargetMin = athleteProfile?.sleepTargetMinutes ?? SLEEP_TARGET_MIN;
-  const scores = buildTodayScores(effectiveSnapshot, healthEntries, day, sleepTargetMin);
+function prepareTodayDerivedSections(
+  inputs: TodayPresentationInputs,
+  effectiveSnapshot: AthleteSnapshot,
+) {
   const phase = effectiveSnapshot.dailyPhase?.phase ?? 'MORNING';
   const verdict = decisionVerdict(effectiveSnapshot.decision);
   const displayVerdict = mapVerdictToDisplay(verdict);
   const hero = prepareTodayHeroFields(effectiveSnapshot, displayVerdict);
   const action = prepareTodayActionFields({
-    day,
+    day: inputs.day,
     phase,
     effectiveSnapshot,
     focusPriority: hero.focusPriority,
-    activities,
-    plannedSessions,
-    goals,
+    activities: inputs.activities,
+    plannedSessions: inputs.plannedSessions,
+    goals: inputs.goals,
   });
   const status = resolveSnapshotStatusMessage({
     snapshot: effectiveSnapshot,
@@ -570,28 +567,147 @@ function prepareTodayViewModelContext(inputs: TodayPresentationInputs) {
   const morning = prepareTodayMorningFields({
     phase,
     effectiveSnapshot,
-    morningRecalibration,
+    morningRecalibration: inputs.morningRecalibration,
     heroHeadline: hero.heroHeadline,
     heroSubline: hero.heroSubline,
     heroEyebrow: hero.heroEyebrow,
-    day,
-    activities,
+    day: inputs.day,
+    activities: inputs.activities,
   });
 
-  return {
-    day,
-    weather,
+  return { phase, verdict, displayVerdict, hero, action, status, morning };
+}
+
+function prepareTodayViewModelContext(inputs: TodayPresentationInputs) {
+  const effectiveSnapshot = resolveEffectiveSnapshot(inputs);
+  const sleepTargetMin = inputs.athleteProfile?.sleepTargetMinutes ?? SLEEP_TARGET_MIN;
+  const scores = buildTodayScores(
     effectiveSnapshot,
+    inputs.healthEntries,
+    inputs.day,
+    sleepTargetMin,
+  );
+  const derived = prepareTodayDerivedSections(inputs, effectiveSnapshot);
+
+  return {
+    day: inputs.day,
+    weather: inputs.weather,
+    effectiveSnapshot,
+    healthEntries: inputs.healthEntries,
     scores,
-    phase,
-    verdict,
-    displayVerdict,
-    ...hero,
-    ...action,
-    status,
-    emptyState: buildTodayEmptyState(effectiveSnapshot, status.message),
-    ...morning,
+    phase: derived.phase,
+    verdict: derived.verdict,
+    displayVerdict: derived.displayVerdict,
+    ...derived.hero,
+    ...derived.action,
+    status: derived.status,
+    emptyState: buildTodayEmptyState(effectiveSnapshot, derived.status.message),
+    ...derived.morning,
     plateLimiter: buildPlateLimiter(effectiveSnapshot),
+  };
+}
+
+function todayNavigationTargets(): TodayViewModel['navigationTargets'] {
+  return {
+    sleep: { label: 'Sommeil', href: TWIN_DRILL_DOWN.sleep },
+    recovery: { label: 'Récupération', href: TWIN_DRILL_DOWN.recovery },
+    effort: { label: 'Effort', href: TWIN_DRILL_DOWN.effort },
+    adaptation: { label: 'Adaptation', href: TWIN_DRILL_DOWN.adaptation },
+    physical: { label: 'Santé physique', href: TWIN_DRILL_DOWN.physical },
+    planning: { label: 'Planning', href: TWIN_DRILL_DOWN.planning },
+  };
+}
+
+function mapPresentedRecalibration(
+  recalibration: MorningRecalibrationInput,
+): NonNullable<TodayViewModel['actionRow']['morningRecalibration']> {
+  return {
+    decisionId: recalibration.decisionId,
+    sessionId: recalibration.sessionId,
+    sessionType: recalibration.sessionType,
+    direction: recalibration.direction,
+    changeSummary: recalibration.changeSummary,
+    why: recalibration.why,
+    status: recalibration.status,
+    fromIntensity: recalibration.fromIntensity,
+    toIntensity: recalibration.toIntensity,
+    fromDurationMin: recalibration.fromDurationMin,
+    toDurationMin: recalibration.toDurationMin,
+    fromLoad: recalibration.fromLoad,
+    toLoad: recalibration.toLoad,
+    fromDescription: recalibration.fromDescription,
+    toDescription: recalibration.toDescription,
+  };
+}
+
+function assembleTodayHero(ctx: ReturnType<typeof prepareTodayViewModelContext>) {
+  return {
+    eyebrow: ctx.heroEyebrow,
+    headline: ctx.effectiveHeadline,
+    subline: ctx.effectiveSubline,
+    posture: ctx.posture,
+    postureLabel: ctx.postureLabel,
+    focusPriority: ctx.focusPriority,
+    goalLine: ctx.goalLine,
+    actionLine: ctx.focusPriority,
+    adaptationReminders: [],
+    verdictStyle: {
+      showVerdictColors: ctx.verdict !== 'INSUFFICIENT_DATA',
+      bgClass: ctx.displayVerdict.bgClass,
+      colorClass: ctx.displayVerdict.colorClass,
+      dotClass: ctx.displayVerdict.dotClass,
+      accentBarClass: ctx.displayVerdict.accentBarClass,
+    },
+    metricsRow: {
+      sleepScore: ctx.scores.sleepScore,
+      recoveryScore: ctx.scores.recoveryScore,
+      effortScore: ctx.scores.effortScore,
+      adaptationScore: ctx.scores.adaptationScore,
+      effortUnavailableCaption: null,
+      adaptationUnavailableCaption: ctx.scores.adaptationUnavailableCaption,
+    },
+    signalPreviews: buildSignalPreviews({
+      day: ctx.day,
+      scores: {
+        sleepScore: ctx.scores.sleepScore,
+        recoveryScore: ctx.scores.recoveryScore,
+        effortScore: ctx.scores.effortScore,
+        adaptationScore: ctx.scores.adaptationScore,
+        adaptationUnavailableCaption: ctx.scores.adaptationUnavailableCaption,
+        effortUnavailableCaption: null,
+      },
+      snapshot: ctx.effectiveSnapshot,
+      healthEntries: ctx.healthEntries,
+    }),
+    twinTrustStrip: {
+      confidenceLabel: ctx.hideHeroConfidence ? null : ctx.confidenceLabel,
+      confidencePctRounded: ctx.hideHeroConfidence ? null : ctx.confidencePctRounded,
+      confidenceHref: ctx.hideHeroConfidence ? null : ctx.confidenceHref,
+      limitingCauseText: ctx.plateLimiter.text,
+      limitingFactorHref: ctx.plateLimiter.href,
+    },
+  };
+}
+
+function assembleTodayActionRow(ctx: ReturnType<typeof prepareTodayViewModelContext>) {
+  return {
+    showLimitingColumn: false,
+    limitingLabel: ctx.labels.limiting,
+    limitingMode: ctx.limitingSection.limitingMode,
+    limitingLines: ctx.limitingSection.limitingLines,
+    limitingText: ctx.limitingSection.limitingText,
+    limitingHref: ctx.limitingSection.limitingHref,
+    limitingFacts: ctx.limitingSection.limitingFacts,
+    actionLabel: ctx.labels.action,
+    daySummaryEmptyText: 'Aucune séance prévue ni réalisée.',
+    daySummaryEmptyHref: TWIN_DRILL_DOWN.planning,
+    sessionLinkSuggestions: ctx.sessionLinkSuggestions.map(mapSessionLinkSuggestion),
+    daySummaryLines: ctx.daySummary.lines.map((line) =>
+      mapDaySummaryLineForView(line, ctx.sessionChoice),
+    ),
+    morningRecalibration: ctx.presentedRecalibration
+      ? mapPresentedRecalibration(ctx.presentedRecalibration)
+      : null,
   };
 }
 
@@ -611,47 +727,8 @@ function assembleTodayViewModel(
     },
     effortUnavailableMessage: ctx.effectiveSnapshot.effortUnavailableMessage,
     morningOrientation: ctx.morningOrientation,
-    navigationTargets: {
-      sleep: { label: 'Sommeil', href: TWIN_DRILL_DOWN.sleep },
-      recovery: { label: 'Récupération', href: TWIN_DRILL_DOWN.recovery },
-      effort: { label: 'Effort', href: TWIN_DRILL_DOWN.effort },
-      adaptation: { label: 'Adaptation', href: TWIN_DRILL_DOWN.adaptation },
-      physical: { label: 'Santé physique', href: TWIN_DRILL_DOWN.physical },
-      planning: { label: 'Planning', href: TWIN_DRILL_DOWN.planning },
-    },
-    hero: {
-      eyebrow: ctx.heroEyebrow,
-      headline: ctx.effectiveHeadline,
-      subline: ctx.effectiveSubline,
-      posture: ctx.posture,
-      postureLabel: ctx.postureLabel,
-      focusPriority: ctx.focusPriority,
-      goalLine: ctx.goalLine,
-      actionLine: ctx.focusPriority,
-      adaptationReminders: [],
-      verdictStyle: {
-        showVerdictColors: ctx.verdict !== 'INSUFFICIENT_DATA',
-        bgClass: ctx.displayVerdict.bgClass,
-        colorClass: ctx.displayVerdict.colorClass,
-        dotClass: ctx.displayVerdict.dotClass,
-        accentBarClass: ctx.displayVerdict.accentBarClass,
-      },
-      metricsRow: {
-        sleepScore: ctx.scores.sleepScore,
-        recoveryScore: ctx.scores.recoveryScore,
-        effortScore: ctx.scores.effortScore,
-        adaptationScore: ctx.scores.adaptationScore,
-        effortUnavailableCaption: null,
-        adaptationUnavailableCaption: ctx.scores.adaptationUnavailableCaption,
-      },
-      twinTrustStrip: {
-        confidenceLabel: ctx.hideHeroConfidence ? null : ctx.confidenceLabel,
-        confidencePctRounded: ctx.hideHeroConfidence ? null : ctx.confidencePctRounded,
-        confidenceHref: ctx.hideHeroConfidence ? null : ctx.confidenceHref,
-        limitingCauseText: ctx.plateLimiter.text,
-        limitingFactorHref: ctx.plateLimiter.href,
-      },
-    },
+    navigationTargets: todayNavigationTargets(),
+    hero: assembleTodayHero(ctx),
     whyBlock: {
       title: whyBlockTitle(ctx.phase),
       lines: ctx.whyFacts.map((f) =>
@@ -660,51 +737,7 @@ function assembleTodayViewModel(
       facts: ctx.whyFacts,
       visible: false,
     },
-    actionRow: {
-      showLimitingColumn: false,
-      limitingLabel: ctx.labels.limiting,
-      limitingMode: ctx.limitingSection.limitingMode,
-      limitingLines: ctx.limitingSection.limitingLines,
-      limitingText: ctx.limitingSection.limitingText,
-      limitingHref: ctx.limitingSection.limitingHref,
-      limitingFacts: ctx.limitingSection.limitingFacts,
-      actionLabel: ctx.labels.action,
-      daySummaryEmptyText: 'Aucune séance prévue ni réalisée.',
-      daySummaryEmptyHref: TWIN_DRILL_DOWN.planning,
-      sessionLinkSuggestions: ctx.sessionLinkSuggestions.map(mapSessionLinkSuggestion),
-      daySummaryLines: [
-        ...ctx.daySummary.lines.map((line) => mapDaySummaryLineForView(line, ctx.sessionChoice)),
-        ...ctx.missedSessions.map((s) => ({
-          id: s.id,
-          activityType: s.type,
-          primary: s.title?.trim() || activityTypeLabels[s.type],
-          secondary: formatMissedDate(new Date(s.date)),
-          kind: 'missed' as const,
-          href: TWIN_DRILL_DOWN.plannedSession(s.id),
-          isDone: false,
-          morningChoiceLabel: null,
-        })),
-      ],
-      morningRecalibration: ctx.presentedRecalibration
-        ? {
-            decisionId: ctx.presentedRecalibration.decisionId,
-            sessionId: ctx.presentedRecalibration.sessionId,
-            sessionType: ctx.presentedRecalibration.sessionType,
-            direction: ctx.presentedRecalibration.direction,
-            changeSummary: ctx.presentedRecalibration.changeSummary,
-            why: ctx.presentedRecalibration.why,
-            status: ctx.presentedRecalibration.status,
-            fromIntensity: ctx.presentedRecalibration.fromIntensity,
-            toIntensity: ctx.presentedRecalibration.toIntensity,
-            fromDurationMin: ctx.presentedRecalibration.fromDurationMin,
-            toDurationMin: ctx.presentedRecalibration.toDurationMin,
-            fromLoad: ctx.presentedRecalibration.fromLoad,
-            toLoad: ctx.presentedRecalibration.toLoad,
-            fromDescription: ctx.presentedRecalibration.fromDescription,
-            toDescription: ctx.presentedRecalibration.toDescription,
-          }
-        : null,
-    },
+    actionRow: assembleTodayActionRow(ctx),
     insights: [],
     header: {
       weather: ctx.weather
@@ -739,25 +772,15 @@ export type BuildTodayPresentationOptions = {
   athleteSnapshot?: Awaited<ReturnType<typeof getOrBuildAthleteSnapshot>>;
 };
 
-/**
- * Loads Today presentation inputs then projects a view-model.
- * Does not write morning recalibration — callers must ensure first when needed.
- */
-export async function buildTodayPresentationViewModel(
+async function loadTodayPresentationInputs(
   athleteId: string,
   trainingDayId: string,
-  options: BuildTodayPresentationOptions = {},
-): Promise<TodayViewModel> {
-  const day = localDateFromTrainingDayId(trainingDayId);
+  day: Date,
+  options: BuildTodayPresentationOptions,
+) {
   const dayStart = startOfDay(day);
   const dayEnd = endOfDay(day);
 
-  // `activities`/`plannedSessions` are fetched separately from the snapshot's
-  // `sessionsDoneToday`/`plannedToday` on purpose: `daySummary` below needs richer
-  // display fields (durationMin, brickGroupId, metrics) than the snapshot's minimal
-  // state-signal shape carries. `activities` also covers the 60-day trend window for
-  // effortSpark/trainingLoad, not just today. `snapshot.sessionsDoneToday`/`plannedToday`
-  // exist for consumers that only need "did/will the athlete train today" (Coach, Gate).
   const [
     snapshot,
     healthEntries,
@@ -773,17 +796,14 @@ export async function buildTodayPresentationViewModel(
       : getOrBuildAthleteSnapshot(athleteId, trainingDayId),
     getHealthEntries(athleteId, 14, day),
     getActivitiesList(athleteId, { sinceDays: 60 }),
-    getPlannedSessions(athleteId, {
-      from: new Date(dayStart.getTime() - 7 * 86_400_000),
-      to: dayEnd,
-    }),
+    getPlannedSessions(athleteId, { from: dayStart, to: dayEnd }),
     getGoals(athleteId),
     getAthleteProfile(athleteId),
     loadReconnectProviderNames(athleteId),
     loadTodayWeather(athleteId, trainingDayId),
   ]);
 
-  return buildTodayViewModelFromInputs({
+  return {
     trainingDayId,
     day,
     snapshot,
@@ -795,7 +815,21 @@ export async function buildTodayPresentationViewModel(
     morningRecalibration: options.morningRecalibration ?? null,
     reconnectNames,
     weather,
-  });
+  };
+}
+
+/**
+ * Loads Today presentation inputs then projects a view-model.
+ * Does not write morning recalibration — callers must ensure first when needed.
+ */
+export async function buildTodayPresentationViewModel(
+  athleteId: string,
+  trainingDayId: string,
+  options: BuildTodayPresentationOptions = {},
+): Promise<TodayViewModel> {
+  const day = localDateFromTrainingDayId(trainingDayId);
+  const inputs = await loadTodayPresentationInputs(athleteId, trainingDayId, day, options);
+  return buildTodayViewModelFromInputs(inputs);
 }
 
 async function loadReconnectProviderNames(athleteId: string): Promise<string[]> {

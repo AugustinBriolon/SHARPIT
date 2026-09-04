@@ -8,7 +8,9 @@ export const maxDuration = 300;
 export async function POST(request: NextRequest) {
   try {
     const athleteId = await getCurrentAthleteId();
-    const rateLimit = await checkRateLimit(rateLimiters.providerSync, `${athleteId}:withings`, { failClosed: true });
+    const rateLimit = await checkRateLimit(rateLimiters.providerSync, `${athleteId}:withings`, {
+      failClosed: true,
+    });
     if (!rateLimit.ok) {
       const limited = rateLimitJsonResponse(rateLimit);
       return NextResponse.json(limited.body, {

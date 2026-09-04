@@ -31,10 +31,7 @@ const NATIVE_HEADERS: Record<string, string> = {
 };
 
 export type GarminDiAuthFailureKind =
-  | 'invalid_credentials'
-  | 'mfa_required'
-  | 'rate_limited'
-  | 'unknown';
+  'invalid_credentials' | 'mfa_required' | 'rate_limited' | 'unknown';
 
 export class GarminDiAuthError extends Error {
   constructor(
@@ -53,10 +50,7 @@ export interface GarminDiTokens {
   diClientId: string;
 }
 
-export type GarminDiOauthFetch = (
-  input: string | URL,
-  init?: RequestInit,
-) => Promise<Response>;
+export type GarminDiOauthFetch = (input: string | URL, init?: RequestInit) => Promise<Response>;
 
 export interface GarminDiOauthDeps {
   fetch: GarminDiOauthFetch;
@@ -107,8 +101,7 @@ function parseTokenResponse(
   if (!data.access_token) {
     throw new GarminDiAuthError('DI token response returned no access_token', 'unknown');
   }
-  const diClientId =
-    extractDiClientIdFromJwt(data.access_token) ?? fallbackClientId;
+  const diClientId = extractDiClientIdFromJwt(data.access_token) ?? fallbackClientId;
   return {
     accessToken: data.access_token,
     refreshToken: data.refresh_token ?? previousRefresh ?? '',
@@ -173,6 +166,34 @@ export async function exchangeServiceTicketForDiTokens(
   );
 }
 
+function resolveDiRefreshClientId(input: {
+  diClientId: string | null;
+  accessToken?: string;
+}): string {
+  return (
+    input.diClientId ||
+    (input.accessToken ? extractDiClientIdFromJwt(input.accessToken) : null) ||
+    LEGACY_MOBILE_SSO_CLIENT_ID
+  );
+}
+
+function refreshFailureKind(status: number): GarminDiAuthFailureKind {
+  return status === 401 || status === 400 ? 'invalid_credentials' : 'unknown';
+}
+
+async function assertDiRefreshResponseOk(res: Response): Promise<void> {
+  if (res.status === 429) {
+    throw new GarminDiAuthError('DI token refresh rate limited (429)', 'rate_limited');
+  }
+  if (!res.ok) {
+    const body = await res.text().catch(() => '');
+    throw new GarminDiAuthError(
+      `DI token refresh failed: HTTP ${res.status} ${body.slice(0, 300)}`,
+      refreshFailureKind(res.status),
+    );
+  }
+}
+
 /**
  * Refresh DI access token. Never performs SSO / email+password login.
  */
@@ -185,11 +206,7 @@ export async function refreshDiAccessToken(
     throw new GarminDiAuthError('No DI refresh token available', 'unknown');
   }
 
-  const clientId =
-    input.diClientId ||
-    (input.accessToken ? extractDiClientIdFromJwt(input.accessToken) : null) ||
-    LEGACY_MOBILE_SSO_CLIENT_ID;
-
+  const clientId = resolveDiRefreshClientId(input);
   const res = await doFetch(DI_TOKEN_URL, {
     method: 'POST',
     headers: {
@@ -204,17 +221,7 @@ export async function refreshDiAccessToken(
     }),
   });
 
-  if (res.status === 429) {
-    throw new GarminDiAuthError('DI token refresh rate limited (429)', 'rate_limited');
-  }
-
-  if (!res.ok) {
-    const body = await res.text().catch(() => '');
-    throw new GarminDiAuthError(
-      `DI token refresh failed: HTTP ${res.status} ${body.slice(0, 300)}`,
-      res.status === 401 || res.status === 400 ? 'invalid_credentials' : 'unknown',
-    );
-  }
+  await assertDiRefreshResponseOk(res);
 
   const data = (await res.json().catch(() => ({}))) as {
     access_token?: string;

@@ -40,9 +40,7 @@ function mockHealthyDbWithFailedOrphans(failedOrphans: Set<string>) {
     if (sql.includes('finished_at IS NULL') && sql.includes('started_at IS NOT NULL')) {
       // isFailed(migrationName)
       const isFailed =
-        migrationName !== undefined &&
-        migrationName !== null &&
-        failedOrphans.has(migrationName);
+        migrationName !== undefined && migrationName !== null && failedOrphans.has(migrationName);
       return Promise.resolve(isFailed ? [{ migration_name: migrationName }] : []);
     }
     if (sql.includes('finished_at IS NOT NULL')) {

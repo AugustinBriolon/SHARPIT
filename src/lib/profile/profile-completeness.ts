@@ -27,12 +27,7 @@ export const PROFILE_COMPLETENESS_DESTINATIONS = {
 } as const;
 
 function hasAnyThreshold(profile: ProfileThresholds | null | undefined): boolean {
-  return !!(
-    profile?.ftpW ||
-    profile?.maxHr ||
-    profile?.lthr ||
-    profile?.runThresholdPaceSecPerKm
-  );
+  return !!(profile?.ftpW || profile?.maxHr || profile?.lthr || profile?.runThresholdPaceSecPerKm);
 }
 
 function buildCompletenessGaps(

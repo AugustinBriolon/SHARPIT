@@ -93,7 +93,7 @@ export function calibratedIntensity(
 }
 
 export function isWithinImpactNeutralZone(compositeIntensity: number | null): boolean {
-  if ((compositeIntensity === undefined || compositeIntensity === null)) {
+  if (compositeIntensity === undefined || compositeIntensity === null) {
     return true;
   }
   return compositeIntensity < ENVIRONMENTAL_NEUTRAL_ZONE.compositeCeiling;

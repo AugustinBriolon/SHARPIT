@@ -4,20 +4,14 @@ import dynamic from 'next/dynamic';
 import { memo, useEffect, useState } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SPORT_IDENTITY_HEX } from '@/lib/activity/sport-identity';
+import { cn } from '@/lib/utils';
 
 const RouteMapInner = dynamic(() => import('./route-map-inner'), {
   ssr: false,
   loading: () => <Skeleton className="h-full w-full" />,
 });
 
-/** MapLibre rejects CSS vars — always pass a concrete hex (sport identity). */
-export function RouteMap({
-  path,
-  lineColor = SPORT_IDENTITY_HEX.OTHER,
-}: {
-  path: [number, number][];
-  lineColor?: string;
-}) {
+function useDeferredMapReady() {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
@@ -48,8 +42,32 @@ export function RouteMap({
     };
   }, []);
 
+  return ready;
+}
+
+/** MapLibre rejects CSS vars — always pass a concrete hex (sport identity). */
+export function RouteMap({
+  path,
+  lineColor = SPORT_IDENTITY_HEX.OTHER,
+  className,
+  frameless = false,
+}: {
+  path: [number, number][];
+  lineColor?: string;
+  className?: string;
+  /** Drop border/radius when parent owns the chrome (e.g. masked preview card). */
+  frameless?: boolean;
+}) {
+  const ready = useDeferredMapReady();
+
   return (
-    <div className="border-border/60 relative isolate z-0 h-full w-full overflow-hidden rounded-xl border">
+    <div
+      className={cn(
+        'relative isolate z-0 h-full w-full overflow-hidden',
+        !frameless && 'border-border/60 rounded-xl border',
+        className,
+      )}
+    >
       {ready ? (
         <RouteMapInner lineColor={lineColor} path={path} />
       ) : (

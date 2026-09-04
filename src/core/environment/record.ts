@@ -106,11 +106,11 @@ export function supersedeObservationRecord(
 }
 
 export function isRecordActive(record: EnvironmentalObservationRecord): boolean {
-  return (record.supersededBy === undefined || record.supersededBy === null);
+  return record.supersededBy === undefined || record.supersededBy === null;
 }
 
 function mergeWeatherFieldValue(current: number | null | undefined, value: number): number {
-  if ((current === undefined || current === null) || current === undefined) {
+  if (current === undefined || current === null || current === undefined) {
     return value;
   }
   return (current + value) / 2;
@@ -127,7 +127,7 @@ function mergeWeatherRecordData(
     return;
   }
   for (const [key, value] of Object.entries(record.payload.data)) {
-    if ((value === undefined || value === null)) {
+    if (value === undefined || value === null) {
       continue;
     }
     merged[key] = mergeWeatherFieldValue(merged[key], value);

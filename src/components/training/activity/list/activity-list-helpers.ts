@@ -1,4 +1,3 @@
-import type { ActivityListItem } from '@/components/training/activity/list/activity-list-types';
 import { cn } from '@/lib/utils';
 
 export function buildActivityChipClassName({

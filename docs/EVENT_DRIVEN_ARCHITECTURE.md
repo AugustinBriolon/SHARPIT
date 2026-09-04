@@ -27,14 +27,14 @@ After (athlete-centric):
 
 ### 2.1 Triggers before this architecture
 
-| Trigger              | Location                | Sync          | Ingest | Features | Inference | Background        |
-| -------------------- | ----------------------- | ------------- | ------ | -------- | --------- | ----------------- |
+| Trigger                | Location                | Sync          | Ingest | Features | Inference | Background        |
+| ---------------------- | ----------------------- | ------------- | ------ | -------- | --------- | ----------------- |
 | Vercel cron ~3h (jour) | `/api/cron/sync`        | All providers | ✓      | Partial¹ | ✗         | Briefing only     |
-| Manual settings sync | `/api/*/sync`           | Per provider  | ✓      | Partial¹ | ✗²        | Narratives inline |
-| App / Today load     | `/api/today`            | ✗             | ✗      | Lazy     | ✓         | ✗                 |
-| Wellness POST        | `/api/wellness-checkin` | ✗             | ✓      | Partial¹ | Partial³  | ✗                 |
-| Activity POST        | `/api/activities`       | ✗             | ✓      | Partial¹ | ✗         | Narrative         |
-| Coach briefing POST  | `/api/coach/briefing`   | ✗             | ✗      | ✗        | ✗         | Briefing          |
+| Manual settings sync   | `/api/*/sync`           | Per provider  | ✓      | Partial¹ | ✗²        | Narratives inline |
+| App / Today load       | `/api/today`            | ✗             | ✗      | Lazy     | ✓         | ✗                 |
+| Wellness POST          | `/api/wellness-checkin` | ✗             | ✓      | Partial¹ | Partial³  | ✗                 |
+| Activity POST          | `/api/activities`       | ✗             | ✓      | Partial¹ | ✗         | Narrative         |
+| Coach briefing POST    | `/api/coach/briefing`   | ✗             | ✗      | ✗        | ✗         | Briefing          |
 
 ¹ Feature Engine subscribed when `FEATURE_ENGINE_ENABLED !== 'false'`  
 ² After migration: inference via `onProviderSyncCompleted`  

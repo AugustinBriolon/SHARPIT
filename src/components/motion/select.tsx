@@ -1,7 +1,7 @@
 'use client';
 
 import { Check, ChevronDown } from 'lucide-react';
-import { motion, type Transition, useReducedMotion, type Variants } from 'motion/react';
+import { motion, useReducedMotion, type Variants } from 'motion/react';
 import {
   createContext,
   type ReactNode,
@@ -14,7 +14,6 @@ import {
   useRef,
   useState,
 } from 'react';
-import { EASE_OUT } from '@/lib/ease';
 import { SelectContentPanel } from '@/components/motion/select-content-panel';
 import {
   SELECT_CHEVRON_TRANSITION,
@@ -23,16 +22,10 @@ import {
 } from '@/components/motion/select-motion-helpers';
 import { cn } from '@/lib/utils';
 
-const INSTANT_TRANSITION = { duration: 0 } as const;
-
 // Spring with bounce powers the unfold/separation; per-property timings in the
 // content choreograph it (see SelectContent). Mirrors bouncy-accordion's feel.
 const CHEVRON_TRANSITION = SELECT_CHEVRON_TRANSITION;
 
-const LIST_VARIANTS: Variants = {
-  hidden: {},
-  show: { transition: { staggerChildren: 0.035, delayChildren: 0.05 } },
-};
 const ITEM_VARIANTS: Variants = {
   hidden: { opacity: 0, y: -6, filter: 'blur(3px)' },
   show: { opacity: 1, y: 0, filter: 'blur(0px)' },

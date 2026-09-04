@@ -27,6 +27,27 @@ type ConsentState = {
 const HEALTH_DISCLAIMER =
   'Sharpit est un outil d’aide à l’entraînement. Ce n’est pas un dispositif médical et ça ne remplace pas un avis médical. Les signaux (récupération, fatigue, risques) sont des estimations d’entraînement, pas un diagnostic.';
 
+function PrivacyDocumentsSection({ consents }: { consents: ConsentState | null }) {
+  return (
+    <section className="analysis-panel rounded-analysis-lg space-y-3 px-4 py-4">
+      <p className="text-label">Documents</p>
+      <div className="flex flex-wrap gap-3 text-sm">
+        <Link className="underline underline-offset-2" href="/privacy">
+          Politique de confidentialité
+        </Link>
+        <Link className="underline underline-offset-2" href="/terms">
+          Conditions d&apos;utilisation
+        </Link>
+      </div>
+      <p className="text-muted-foreground text-xs">
+        Version acceptée : {consents?.privacyVersion ?? '—'} · actuelle :{' '}
+        {consents?.currentPrivacyVersion ?? CURRENT_PRIVACY_VERSION}
+      </p>
+      <p className="text-muted-foreground text-xs">Contact : {CONTROLLER_EMAIL}</p>
+    </section>
+  );
+}
+
 export function PrivacySettingsPanel({ initial }: { initial: ConsentState | null }) {
   const router = useRouter();
   const { confirm, dialog } = useConfirmDialog();
@@ -116,22 +137,7 @@ export function PrivacySettingsPanel({ initial }: { initial: ConsentState | null
   return (
     <div className="space-y-4">
       {dialog}
-      <section className="analysis-panel rounded-analysis-lg space-y-3 px-4 py-4">
-        <p className="text-label">Documents</p>
-        <div className="flex flex-wrap gap-3 text-sm">
-          <Link className="underline underline-offset-2" href="/privacy">
-            Politique de confidentialité
-          </Link>
-          <Link className="underline underline-offset-2" href="/terms">
-            Conditions d&apos;utilisation
-          </Link>
-        </div>
-        <p className="text-muted-foreground text-xs">
-          Version acceptée : {consents?.privacyVersion ?? '—'} · actuelle :{' '}
-          {consents?.currentPrivacyVersion ?? CURRENT_PRIVACY_VERSION}
-        </p>
-        <p className="text-muted-foreground text-xs">Contact : {CONTROLLER_EMAIL}</p>
-      </section>
+      <PrivacyDocumentsSection consents={consents} />
 
       <section className="analysis-panel rounded-analysis-lg space-y-4 px-4 py-4">
         <div>
@@ -165,9 +171,7 @@ export function PrivacySettingsPanel({ initial }: { initial: ConsentState | null
             checked={Boolean(consents?.aiProcessingConsentAt)}
             className="mt-0.5"
             disabled={busy}
-            onCheckedChange={(value) =>
-              void patchConsent({ aiProcessingConsent: value === true })
-            }
+            onCheckedChange={(value) => void patchConsent({ aiProcessingConsent: value === true })}
           />
           <span>
             Traitement par IA (coach, bilans rédigés). Sans ce consentement, les moteurs
@@ -193,7 +197,12 @@ export function PrivacySettingsPanel({ initial }: { initial: ConsentState | null
       <section className="analysis-panel rounded-analysis-lg space-y-3 px-4 py-4">
         <p className="text-label">Tes données</p>
         <div className="flex flex-wrap gap-2">
-          <Button disabled={busy} type="button" variant="outline" onClick={() => void handleExport()}>
+          <Button
+            disabled={busy}
+            type="button"
+            variant="outline"
+            onClick={() => void handleExport()}
+          >
             Exporter JSON
           </Button>
           <Button

@@ -2,7 +2,6 @@
 
 import { motion, type HTMLMotionProps } from 'motion/react';
 import { forwardRef, type ReactNode } from 'react';
-import { SPRING_LAYOUT } from '@/lib/ease';
 import { cn } from '@/lib/utils';
 import {
   AnimatedSidebarPanelContextProvider,

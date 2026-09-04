@@ -650,15 +650,9 @@ async function loadCoachContextSources(input: LoadCoachContextSourcesInput) {
   ] as const);
 }
 
-async function buildCoachContextUncached(
-  athleteId: string,
-  refDate: Date = new Date(),
-  options?: BuildCoachContextOptions,
-) {
-  const includeScenario = options?.includeScenario === true;
-  const today = startOfDay(refDate);
-  const trainingDayId = format(today, 'yyyy-MM-dd');
+type CoachContextSources = Awaited<ReturnType<typeof loadCoachContextSources>>;
 
+function assembleCoachContextPayload(today: Date, sources: CoachContextSources, refDate: Date) {
   const [
     activities,
     healthEntries,
@@ -674,10 +668,9 @@ async function buildCoachContextUncached(
     anchor,
     dailyStress,
     nutritionToday,
-  ] = await loadCoachContextSources({ athleteId, today, trainingDayId, includeScenario });
+  ] = sources;
 
   const { fitness, load } = buildFitnessContext(anchor, dailyStress, refDate);
-
   const availableDays = buildAvailableDays(activities, today);
   const recent = activities.slice(0, 14).map((a) => mapActivityForCoachRecent(a, today));
   const realizedSessions = pastPlanned
@@ -717,6 +710,23 @@ async function buildCoachContextUncached(
     scenarioComparison: formatScenarioComparisonForCoach(scenarioComparison),
     nutrition: nutritionToday,
   };
+}
+
+async function buildCoachContextUncached(
+  athleteId: string,
+  refDate: Date = new Date(),
+  options?: BuildCoachContextOptions,
+) {
+  const includeScenario = options?.includeScenario === true;
+  const today = startOfDay(refDate);
+  const trainingDayId = format(today, 'yyyy-MM-dd');
+  const sources = await loadCoachContextSources({
+    athleteId,
+    today,
+    trainingDayId,
+    includeScenario,
+  });
+  return assembleCoachContextPayload(today, sources, refDate);
 }
 
 export type CoachContext = Awaited<ReturnType<typeof buildCoachContext>>;

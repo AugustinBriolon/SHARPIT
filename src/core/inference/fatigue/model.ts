@@ -26,8 +26,6 @@ import type {
   FatigueRecommendation,
   DimensionResult,
   ScoredFatigueDimensions,
-  FatigueVerdict,
-  TrainingCapacity,
 } from './types';
 import type { OverreachingRisk } from '@/core/digital-twin/types';
 import { applyEnvironmentalImpactToFatigueIndex } from '@/core/inference/environment/apply-impact';

@@ -25,21 +25,123 @@ export interface PythonGarminconnectTokenStore {
   di_client_id?: string | null;
 }
 
+function parseJsonRecord(raw: string): Record<string, unknown> {
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+      return parsed as Record<string, unknown>;
+    }
+  } catch {
+    throw new GarminTokenStoreError('Tokenstore JSON invalide');
+  }
+  throw new GarminTokenStoreError(
+    'Tokenstore attendu: objet JSON { di_token, di_refresh_token, … }',
+  );
+}
+
 function asRecord(raw: unknown): Record<string, unknown> {
   if (typeof raw === 'string') {
-    try {
-      const parsed: unknown = JSON.parse(raw);
-      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
-        return parsed as Record<string, unknown>;
-      }
-    } catch {
-      throw new GarminTokenStoreError('Tokenstore JSON invalide');
-    }
+    return parseJsonRecord(raw);
   }
   if (raw && typeof raw === 'object' && !Array.isArray(raw)) {
     return raw as Record<string, unknown>;
   }
-  throw new GarminTokenStoreError('Tokenstore attendu: objet JSON { di_token, di_refresh_token, … }');
+  throw new GarminTokenStoreError(
+    'Tokenstore attendu: objet JSON { di_token, di_refresh_token, … }',
+  );
+}
+
+function readNonEmptyString(value: unknown): string | null {
+  return typeof value === 'string' && value.length > 0 ? value : null;
+}
+
+function readFiniteNumber(value: unknown): number | null {
+  return typeof value === 'number' && Number.isFinite(value) ? value : null;
+}
+
+function diClientIdFromMarker(marker: string, accessToken: string): string {
+  if (marker.startsWith('__DI__:')) {
+    return marker.slice('__DI__:'.length);
+  }
+  return extractDiClientIdFromJwt(accessToken) ?? 'GCM_ANDROID_DARK';
+}
+
+function readSharpitOauthFields(data: Record<string, unknown>): {
+  oauth1: { oauth_token?: string; oauth_token_secret?: string };
+  oauth2: { access_token?: string; refresh_token?: string; expires_at?: number };
+} | null {
+  if (!data.oauth1 || !data.oauth2 || typeof data.oauth2 !== 'object') {
+    return null;
+  }
+  return {
+    oauth1: data.oauth1 as { oauth_token?: string; oauth_token_secret?: string },
+    oauth2: data.oauth2 as {
+      access_token?: string;
+      refresh_token?: string;
+      expires_at?: number;
+    },
+  };
+}
+
+function buildSharpitShapedTokens(
+  oauth1: { oauth_token?: string; oauth_token_secret?: string },
+  oauth2: { access_token?: string; refresh_token?: string; expires_at?: number },
+  accessToken: string,
+  refreshToken: string,
+): GarminDiTokens {
+  const marker = oauth1.oauth_token ?? '';
+  const diClientId = diClientIdFromMarker(marker, accessToken) || 'GCM_ANDROID_DARK';
+  const expiresAtSeconds = readFiniteNumber(oauth2.expires_at);
+  const expiresAt = expiresAtSeconds ? expiresAtSeconds * 1000 : Date.now() + 3600_000;
+  return {
+    accessToken,
+    refreshToken: refreshToken || oauth1.oauth_token_secret || '',
+    expiresAt,
+    diClientId,
+  };
+}
+
+function mapSharpitShapedTokenStore(data: Record<string, unknown>): GarminDiTokens | null {
+  const oauth = readSharpitOauthFields(data);
+  if (!oauth) {
+    return null;
+  }
+  const accessToken = readNonEmptyString(oauth.oauth2.access_token);
+  const refreshToken = readNonEmptyString(oauth.oauth2.refresh_token);
+  if (!accessToken || !refreshToken) {
+    return null;
+  }
+  return buildSharpitShapedTokens(oauth.oauth1, oauth.oauth2, accessToken, refreshToken);
+}
+
+function assertPythonTokenField(value: unknown, fieldName: string, minLength: number): string {
+  if (typeof value !== 'string' || value.length < minLength) {
+    throw new GarminTokenStoreError(`Champ ${fieldName} manquant ou invalide`);
+  }
+  return value;
+}
+
+function resolvePythonDiClientId(data: Record<string, unknown>, accessToken: string): string {
+  const fromField = readNonEmptyString(data.di_client_id);
+  return fromField ?? extractDiClientIdFromJwt(accessToken) ?? 'GARMIN_CONNECT_MOBILE_ANDROID_DI';
+}
+
+function expiresAtFromJwt(accessToken: string): number {
+  const payload = decodeJwtPayload(accessToken);
+  const exp = readFiniteNumber(payload?.exp);
+  return exp ? exp * 1000 : Date.now() + 3600_000;
+}
+
+function mapPythonNativeTokenStore(data: Record<string, unknown>): GarminDiTokens {
+  const accessToken = assertPythonTokenField(data.di_token, 'di_token', 20);
+  const refreshToken = assertPythonTokenField(data.di_refresh_token, 'di_refresh_token', 8);
+
+  return {
+    accessToken,
+    refreshToken,
+    expiresAt: expiresAtFromJwt(accessToken),
+    diClientId: resolvePythonDiClientId(data, accessToken),
+  };
 }
 
 /**
@@ -48,63 +150,5 @@ function asRecord(raw: unknown): Record<string, unknown> {
  */
 export function mapPythonGarminconnectTokenStore(raw: unknown): GarminDiTokens {
   const data = asRecord(raw);
-
-  // Already Sharpit-shaped (manual export / round-trip).
-  if (data.oauth1 && data.oauth2 && typeof data.oauth2 === 'object') {
-    const oauth1 = data.oauth1 as { oauth_token?: string; oauth_token_secret?: string };
-    const oauth2 = data.oauth2 as {
-      access_token?: string;
-      refresh_token?: string;
-      expires_at?: number;
-    };
-    if (
-      typeof oauth2.access_token === 'string' &&
-      oauth2.access_token.length > 0 &&
-      typeof oauth2.refresh_token === 'string' &&
-      oauth2.refresh_token.length > 0
-    ) {
-      const marker = oauth1.oauth_token ?? '';
-      const diClientId = marker.startsWith('__DI__:')
-        ? marker.slice('__DI__:'.length)
-        : extractDiClientIdFromJwt(oauth2.access_token) ?? 'GCM_ANDROID_DARK';
-      const expiresAt =
-        typeof oauth2.expires_at === 'number' && Number.isFinite(oauth2.expires_at)
-          ? oauth2.expires_at * 1000
-          : Date.now() + 3600_000;
-      return {
-        accessToken: oauth2.access_token,
-        refreshToken: oauth2.refresh_token || oauth1.oauth_token_secret || '',
-        expiresAt,
-        diClientId: diClientId || 'GCM_ANDROID_DARK',
-      };
-    }
-  }
-
-  const accessToken = data.di_token;
-  const refreshToken = data.di_refresh_token;
-  if (typeof accessToken !== 'string' || accessToken.length < 20) {
-    throw new GarminTokenStoreError('Champ di_token manquant ou invalide');
-  }
-  if (typeof refreshToken !== 'string' || refreshToken.length < 8) {
-    throw new GarminTokenStoreError('Champ di_refresh_token manquant ou invalide');
-  }
-
-  const fromField =
-    typeof data.di_client_id === 'string' && data.di_client_id.length > 0
-      ? data.di_client_id
-      : null;
-  const diClientId =
-    fromField ?? extractDiClientIdFromJwt(accessToken) ?? 'GARMIN_CONNECT_MOBILE_ANDROID_DI';
-
-  const payload = decodeJwtPayload(accessToken);
-  const exp = payload?.exp;
-  const expiresAt =
-    typeof exp === 'number' && Number.isFinite(exp) ? exp * 1000 : Date.now() + 3600_000;
-
-  return {
-    accessToken,
-    refreshToken,
-    expiresAt,
-    diClientId,
-  };
+  return mapSharpitShapedTokenStore(data) ?? mapPythonNativeTokenStore(data);
 }

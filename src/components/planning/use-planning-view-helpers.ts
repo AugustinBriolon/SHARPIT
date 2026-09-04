@@ -1,4 +1,4 @@
-import type { ClientGoal, ClientPlannedSession } from '@/lib/query/types';
+import type { ClientGoal } from '@/lib/query/types';
 import { format, isSameDay } from 'date-fns';
 import { resolvePlanningWeek } from '@/lib/planned-session/planning';
 

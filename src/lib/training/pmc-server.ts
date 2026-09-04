@@ -104,7 +104,12 @@ async function loadCoreSessionTss(
     const tssScore = data?.tssScore;
     // A null score means extraction could not produce one; that day falls back to
     // the per-activity estimate rather than counting the session as zero load.
-    if ((trainingDayId === undefined || trainingDayId === null) || typeof tssScore !== 'number' || !Number.isFinite(tssScore)) {
+    if (
+      trainingDayId === undefined ||
+      trainingDayId === null ||
+      typeof tssScore !== 'number' ||
+      !Number.isFinite(tssScore)
+    ) {
       return [];
     }
     return [{ trainingDayId, tssScore }];

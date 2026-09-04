@@ -1,7 +1,4 @@
-import {
-  buildBriefingDayContext,
-  formatBriefingDayContext,
-} from '@/lib/briefing/briefing-context';
+import { buildBriefingDayContext, formatBriefingDayContext } from '@/lib/briefing/briefing-context';
 import {
   resolveBriefingPhase,
   resolveBriefingPhaseFromDailyPhase,

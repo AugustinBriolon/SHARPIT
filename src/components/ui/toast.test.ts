@@ -8,9 +8,8 @@ describe('toastViewportClass', () => {
     expect(toastViewportClass).not.toContain('bottom-4');
   });
 
-  it('releases the nav offset at lg, where the bottom nav is hidden', () => {
-    expect(toastViewportClass).toContain('lg:bottom-6');
-    // `sm` is too early — the nav is still on screen on tablets.
+  it('keeps the nav offset on every viewport — the tab bar is no longer lg:hidden', () => {
+    expect(toastViewportClass).not.toContain('lg:bottom-6');
     expect(toastViewportClass).not.toContain('sm:bottom-');
   });
 

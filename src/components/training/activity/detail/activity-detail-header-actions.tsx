@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import { ActivityType } from '@prisma/client';
 import { Link2, MoreHorizontal, Mountain, Pencil, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -19,7 +18,7 @@ import { cn } from '@/lib/utils';
 import type { ActivityDetailHeaderActivity } from '@/components/training/activity/detail/activity-detail-header';
 
 export function ActivityDetailActionsMenu({
-  activity,
+  activity: _activity,
   editHref,
   hikeTrip,
   isHike,
@@ -39,14 +38,14 @@ export function ActivityDetailActionsMenu({
         render={
           <Button
             aria-label="Actions de la séance"
-            className={cn(
-              floatingHeaderButtonClass('right'),
-              floatingHeaderButtonSurfaceClass(),
-              'lg:bg-transparent lg:backdrop-blur-none lg:text-muted-foreground lg:hover:bg-muted lg:hover:text-foreground',
-            )}
             size="icon-sm"
             type="button"
             variant="ghost"
+            className={cn(
+              floatingHeaderButtonClass('right'),
+              floatingHeaderButtonSurfaceClass(),
+              'lg:text-muted-foreground lg:hover:bg-muted lg:hover:text-foreground lg:bg-transparent lg:backdrop-blur-none',
+            )}
           />
         }
       >

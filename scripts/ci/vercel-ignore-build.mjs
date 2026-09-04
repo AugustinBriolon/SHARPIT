@@ -20,11 +20,7 @@ export function isIgnorablePath(file) {
   const normalized = file.replace(/^\.\//, '');
   if (normalized.startsWith('docs/')) return true;
   // Root agent / architecture markdown that does not ship in the app bundle
-  if (
-    /^(README|ARCHITECTURE|AGENTS|CLAUDE|CODE_MAP|FEATURE_EXTRACTION)\.md$/i.test(
-      normalized,
-    )
-  ) {
+  if (/^(README|ARCHITECTURE|AGENTS|CLAUDE|CODE_MAP|FEATURE_EXTRACTION)\.md$/i.test(normalized)) {
     return true;
   }
   return false;
@@ -88,9 +84,7 @@ async function main() {
       .filter(Boolean);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    console.log(
-      `Unable to diff ${range.start}..${range.end} (${message}) — proceeding with build`,
-    );
+    console.log(`Unable to diff ${range.start}..${range.end} (${message}) — proceeding with build`);
     process.exit(1);
   }
 

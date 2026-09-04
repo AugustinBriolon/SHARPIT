@@ -37,9 +37,8 @@ vi.mock('@/lib/integrations/garmin/garmin-sync', () => ({
 }));
 
 vi.mock('@/lib/integrations/oauth-return', () => ({
-  redirectAfterIntegrationConnect: (
-    ...args: [unknown, string, string]
-  ) => redirectAfterIntegrationConnect(...args),
+  redirectAfterIntegrationConnect: (...args: [unknown, string, string]) =>
+    redirectAfterIntegrationConnect(...args),
 }));
 
 describe('/api/garmin/sso-callback', () => {
@@ -50,9 +49,8 @@ describe('/api/garmin/sso-callback', () => {
   });
 
   it('POST exchanges ticket with embed service_url and returns redirect JSON', async () => {
-    const { createGarminSsoState, GARMIN_SSO_STATE_COOKIE } = await import(
-      '@/lib/integrations/garmin/garmin-browser-sso'
-    );
+    const { createGarminSsoState, GARMIN_SSO_STATE_COOKIE } =
+      await import('@/lib/integrations/garmin/garmin-browser-sso');
     const state = createGarminSsoState({ athleteId: 'ath-1' });
     cookieStore.get.mockReturnValue({ value: state });
 

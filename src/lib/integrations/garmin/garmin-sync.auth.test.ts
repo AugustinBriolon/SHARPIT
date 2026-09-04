@@ -64,9 +64,8 @@ describe('buildFreshGarminClient auth hardening', () => {
 
   it('refreshes near-expiry DI tokens and never calls SSO login', async () => {
     const { prisma } = await import('@/lib/prisma');
-    const { encryptGarminToken, buildFreshGarminClient } = await import(
-      '@/lib/integrations/garmin/garmin-sync'
-    );
+    const { encryptGarminToken, buildFreshGarminClient } =
+      await import('@/lib/integrations/garmin/garmin-sync');
 
     const nearExpiry = Math.floor(Date.now() / 1000) + 60; // within 5 min margin
     const stored = diTokens(nearExpiry);
@@ -90,12 +89,9 @@ describe('buildFreshGarminClient auth hardening', () => {
 
   it('revokes credentials when DI refresh fails (needs reconnect), without SSO', async () => {
     const { prisma } = await import('@/lib/prisma');
-    const { encryptGarminToken, buildFreshGarminClient } = await import(
-      '@/lib/integrations/garmin/garmin-sync'
-    );
-    const { ProviderAuthError } = await import(
-      '@/lib/integrations/shared/connection-status'
-    );
+    const { encryptGarminToken, buildFreshGarminClient } =
+      await import('@/lib/integrations/garmin/garmin-sync');
+    const { ProviderAuthError } = await import('@/lib/integrations/shared/connection-status');
 
     const nearExpiry = Math.floor(Date.now() / 1000) + 30;
     const stored = diTokens(nearExpiry);
@@ -123,12 +119,9 @@ describe('buildFreshGarminClient auth hardening', () => {
 
   it('never calls loginWithCredentials for expired legacy Garth tokens', async () => {
     const { prisma } = await import('@/lib/prisma');
-    const { encryptGarminToken, buildFreshGarminClient } = await import(
-      '@/lib/integrations/garmin/garmin-sync'
-    );
-    const { ProviderAuthError } = await import(
-      '@/lib/integrations/shared/connection-status'
-    );
+    const { encryptGarminToken, buildFreshGarminClient } =
+      await import('@/lib/integrations/garmin/garmin-sync');
+    const { ProviderAuthError } = await import('@/lib/integrations/shared/connection-status');
 
     const legacy: GarminTokens = {
       oauth1: { oauth_token: 'oa1', oauth_token_secret: 'sec' },

@@ -8,7 +8,7 @@ import { AthleteNavAvatar, AthleteNavAvatarSkeleton } from '@/components/layout/
 import { bottomNavItems, profileNavItem, type AppNavItem } from '@/lib/app-navigation';
 import { useAthleteNavIdentity } from '@/hooks/use-athlete-nav-identity';
 import { usePrefetchNavQuery } from '@/hooks/use-prefetch-nav';
-import { PAGE_GUTTER } from '@/lib/ui/page-gutter';
+import { PAGE_CONTENT_MAX_CLASS, PAGE_GUTTER } from '@/lib/ui/page-gutter';
 import { springs } from '@/lib/motion/tokens';
 import { cn } from '@/lib/utils';
 import { OfflineBanner } from '@/components/pwa/offline-banner';
@@ -95,7 +95,7 @@ function BottomNavLink({
       aria-label={isAthleteTab ? identity.fullLabel : undefined}
       href={item.href}
       className={cn(
-        'pressable relative flex min-h-11 min-w-11 flex-1 flex-col items-center justify-center gap-0.5 rounded-2xl px-1 py-1.5 text-[10px] font-medium',
+        'pressable relative flex h-12 w-17 flex-col items-center justify-center gap-0.5 rounded-2xl px-1 py-1.5 text-[10px] font-medium md:w-20',
         isActive ? 'text-highlight-foreground' : 'text-muted-foreground hover:text-foreground',
       )}
       onMouseEnter={hint}
@@ -126,9 +126,9 @@ function ActiveBottomNavLink({
 }
 
 /**
- * Same shape as the sidebar: the bar is static and prerenders, only the active
- * highlight waits on the URL. The fallback is the identical link minus the
- * highlight, so nothing moves when the boundary resolves.
+ * Same shape as the old sidebar: the bar is static and prerenders, only the
+ * active highlight waits on the URL. The fallback is the identical link minus
+ * the highlight, so nothing moves when the boundary resolves.
  */
 function SuspendedBottomNavLink({
   item,
@@ -144,6 +144,7 @@ function SuspendedBottomNavLink({
   );
 }
 
+/** Primary chrome on every viewport — floating iOS-style capsule, not mobile-only. */
 export function BottomNav() {
   const prefetch = usePrefetchNavQuery();
 
@@ -154,15 +155,12 @@ export function BottomNav() {
       style={{ paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom, 0px))' }}
     >
       <ChromeGlass
-        className="pointer-events-auto mx-auto w-full max-w-lg"
+        className="pointer-events-auto relative top-auto left-auto mx-auto w-fit rounded-2xl!"
         cornerRadius={20}
-        // CSS frost only — liquid-glass displacement was painting a spurious
-        // circular glyph over the Today (Sun) tab that read like a Notion « N ».
-        style={{ position: 'relative', top: 'auto', left: 'auto', width: '100%' }}
         forceFallback
       >
         <LayoutGroup id="bottom-nav">
-          <div className="flex items-stretch justify-around p-2">
+          <div className="flex items-center justify-around gap-0.5 p-0.5">
             {bottomNavItems.map((item) => (
               <SuspendedBottomNavLink key={item.href} item={item} onPrefetch={prefetch} />
             ))}
@@ -184,7 +182,7 @@ export function MobileShell({ children }: { children: React.ReactNode }) {
         style={{ paddingBottom: 'var(--bottom-nav-offset)' }}
       >
         <div
-          className="mx-auto max-w-lg px-4 py-4"
+          className={cn('mx-auto px-4 py-4', PAGE_CONTENT_MAX_CLASS)}
           style={{ ['--page-gutter' as string]: PAGE_GUTTER.mobile }}
         >
           {children}

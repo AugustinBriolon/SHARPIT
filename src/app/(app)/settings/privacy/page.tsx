@@ -6,7 +6,7 @@ import { SettingsDemoBlock } from '@/components/settings/settings-demo-block';
 import { Skeleton } from '@/components/ui/skeleton';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { isDemoSession } from '@/lib/demo/demo-session';
-import { CURRENT_PRIVACY_VERSION } from '@/lib/privacy/constants';
+import { serializeConsentRow } from '@/lib/privacy/consent-serialize';
 import { getAthleteConsentRow } from '@/lib/privacy/consent-store';
 
 function PrivacySkeleton() {
@@ -27,17 +27,7 @@ async function PrivacyPanelWithData() {
 
   const athleteId = await getCurrentAthleteId();
   const row = await getAthleteConsentRow(athleteId);
-  const initial = row
-    ? {
-        termsAcceptedAt: row.termsAcceptedAt?.toISOString() ?? null,
-        privacyAcceptedAt: row.privacyAcceptedAt?.toISOString() ?? null,
-        privacyVersion: row.privacyVersion,
-        healthDataConsentAt: row.healthDataConsentAt?.toISOString() ?? null,
-        aiProcessingConsentAt: row.aiProcessingConsentAt?.toISOString() ?? null,
-        unofficialProvidersAckAt: row.unofficialProvidersAckAt?.toISOString() ?? null,
-        currentPrivacyVersion: CURRENT_PRIVACY_VERSION,
-      }
-    : null;
+  const initial = row ? serializeConsentRow(row) : null;
 
   return <PrivacySettingsPanel initial={initial} />;
 }

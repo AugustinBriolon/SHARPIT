@@ -13,42 +13,43 @@ describe('ActivityConsistencyPanel', () => {
     vi.useRealTimers();
   });
 
-  it('puts the 8-week strip under the readings, full width, no fil caption', () => {
+  it('shows a day window with activity rings beside the weekly streak', () => {
     const html = renderToStaticMarkup(
       createElement(ActivityConsistencyPanel, {
         activities: [
           { date: new Date('2026-07-28T07:00:00Z'), load: 55 },
+          { date: new Date('2026-07-27T07:00:00Z'), load: 40 },
           { date: new Date('2026-07-20T07:00:00Z'), load: 42 },
         ],
       }),
     );
 
-    expect(html).toContain('faites cette semaine');
-    expect(html).toContain('semaines tenues');
+    expect(html).toContain('Régularité');
     expect(html).toContain('de suite');
-    expect(html).toContain('Séances / semaine');
-    expect(html).toContain('flex-col gap-2.5');
-    expect(html).toContain('flex-1');
-    expect(html).toContain('rounded-[3px]');
+    expect(html).toContain('semaines');
+    expect(html).toContain('icon-well');
+    expect(html).toContain('border-primary');
+    expect(html).toContain('border-[2.5px]');
     expect(html).toContain('href="/training"');
-    expect(html).toContain('min-h-11');
-    expect(html).not.toContain('fil tenu depuis');
-    expect(html).not.toContain('sur 8 semaines');
-    expect(html).toContain('text-data');
-    expect(html).toContain('text-2xl');
-    expect(html).toContain('Semaine du');
+    expect(html).toContain('text-[2.75rem]');
+    expect(html).toContain('grid-template-columns');
+    expect(html).toContain('icon-well');
+    expect(html).toContain('28');
+    expect(html).toContain('30');
+    expect(html).not.toContain('flex-col-reverse');
+    expect(html).not.toContain('Séances / semaine');
+    expect(html).not.toContain('rounded-[3px]');
   });
 
-  it('keeps an open week readable when today is still empty', () => {
+  it('announces an open current week for screen readers', () => {
     const html = renderToStaticMarkup(
       createElement(ActivityConsistencyPanel, {
         activities: [{ date: new Date('2026-07-21T07:00:00Z'), load: 40 }],
       }),
     );
 
-    expect(html).toContain('cette semaine encore ouverte');
-    expect(html).toContain('celle-ci encore ouverte');
-    expect(html).not.toContain('fil tenu depuis');
+    expect(html).toContain('Semaine courante encore ouverte');
+    expect(html).toContain('de suite');
   });
 
   it('keeps a path to training when the window is still quiet', () => {
@@ -60,6 +61,6 @@ describe('ActivityConsistencyPanel', () => {
 
     expect(html).toContain('Voir l’historique');
     expect(html).toContain('href="/training"');
-    expect(html).toContain('semaines tenues');
+    expect(html).toContain('de suite');
   });
 });

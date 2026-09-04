@@ -70,12 +70,15 @@ test.describe('PWA update toast', () => {
     expect(messages).toContainEqual({ type: 'SKIP_WAITING' });
 
     // Double-tap must not post SKIP_WAITING again (button gone / toast is loading).
-    await page.getByText('Mise à jour en cours…').click({ force: true }).catch(() => undefined);
+    await page
+      .getByText('Mise à jour en cours…')
+      .click({ force: true })
+      .catch(() => undefined);
     const messagesAfter = await page.evaluate(
       () => (window as unknown as { __swPostMessages?: unknown[] }).__swPostMessages ?? [],
     );
-    expect(messagesAfter.filter((m) => (m as { type?: string }).type === 'SKIP_WAITING')).toHaveLength(
-      1,
-    );
+    expect(
+      messagesAfter.filter((m) => (m as { type?: string }).type === 'SKIP_WAITING'),
+    ).toHaveLength(1);
   });
 });

@@ -157,7 +157,7 @@ function buildWindStressor(input: {
 }): EnvironmentalStressor {
   const wind = input.weather.windSpeedMps;
 
-  if ((wind === undefined || wind === null)) {
+  if (wind === undefined || wind === null) {
     return {
       id: 'WIND',
       intensity: unavailableMetric(

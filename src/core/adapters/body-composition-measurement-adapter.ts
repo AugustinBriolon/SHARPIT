@@ -21,7 +21,7 @@ function optionalPercent(
   min: number,
   max: number,
 ): number | undefined {
-  if ((value === undefined || value === null) || value < min || value > max) {
+  if (value === undefined || value === null || value < min || value > max) {
     return undefined;
   }
   return value;
@@ -35,7 +35,7 @@ export function bodyCompositionMeasurementToObservation(
   row: BodyCompositionMeasurement,
   receivedAt: Date = row.updatedAt,
 ): RawBodyCompositionObservation | null {
-  if ((row.weightKg === undefined || row.weightKg === null) || row.weightKg <= 0) {
+  if (row.weightKg === undefined || row.weightKg === null || row.weightKg <= 0) {
     return null;
   }
 

@@ -86,7 +86,7 @@ function computeBodyMasses(obs: BodyCompositionObservation): {
   fatMassKg: number | null;
   leanMassKg: number | null;
 } {
-  if ((obs.fatPercent === undefined || obs.fatPercent === null)) {
+  if (obs.fatPercent === undefined || obs.fatPercent === null) {
     return { fatMassKg: null, leanMassKg: null };
   }
   return {

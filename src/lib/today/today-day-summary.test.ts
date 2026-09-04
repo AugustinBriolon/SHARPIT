@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildTodayDaySummary, findMissedPlannedSessions } from './today-day-summary';
+import { buildTodayDaySummary } from './today-day-summary';
 import type { ClientActivity, ClientPlannedSession } from '@/lib/query/types';
 
 const TODAY = new Date('2026-07-03T10:00:00');
@@ -51,6 +51,31 @@ describe('buildTodayDaySummary', () => {
 
     expect(summary.lines[0].secondary).toContain('RPE 7');
     expect(summary.lines[0].secondary).toContain('45 TSS');
+  });
+
+  it('attaches structured preview metrics on done lines', () => {
+    const summary = buildTodayDaySummary(
+      TODAY,
+      [
+        activity({
+          id: 'a1',
+          duration: 1690,
+          runMetrics: { distanceM: 5200 },
+        }),
+      ],
+      [],
+    );
+
+    expect(summary.lines[0].metrics).toEqual([
+      { label: 'Distance', value: '5.20', unit: 'km' },
+      { label: 'Durée', value: '28:10', unit: 'min' },
+      { label: 'Allure', value: '5:25', unit: '/km' },
+    ]);
+  });
+
+  it('omits metrics on planned lines', () => {
+    const summary = buildTodayDaySummary(TODAY, [], [planned({ id: 'p1' })]);
+    expect(summary.lines[0].metrics).toBeUndefined();
   });
 
   it('omits RPE rather than inventing one when the session was never rated', () => {
@@ -147,31 +172,14 @@ describe('buildTodayDaySummary', () => {
     expect(summary.lines[0]?.primary).toContain('Endurance vélo');
     expect(summary.sectionLabel).not.toContain('à venir');
   });
-});
 
-describe('findMissedPlannedSessions', () => {
-  it('returns past unrealized sessions within lookback window', () => {
-    const yesterday = new Date(TODAY.getTime() - 86_400_000);
-    const twoWeeksAgo = new Date(TODAY.getTime() - 14 * 86_400_000);
-    const missed = findMissedPlannedSessions(
-      [
-        planned({ id: 'p-yesterday', date: yesterday }),
-        planned({ id: 'p-old', date: twoWeeksAgo }),
-        planned({ id: 'p-done', date: yesterday, completed: true }),
-        planned({ id: 'p-linked', date: yesterday, activityId: 'a1' }),
-      ],
-      TODAY,
+  it('never lists a past unrealized session, whatever the lookback', () => {
+    const lastWeek = Array.from({ length: 7 }, (_, i) =>
+      planned({ id: `p-${i}`, date: new Date(TODAY.getTime() - (i + 1) * 86_400_000) }),
     );
-    expect(missed).toHaveLength(1);
-    expect(missed[0]!.id).toBe('p-yesterday');
-  });
+    const summary = buildTodayDaySummary(TODAY, [], lastWeek);
 
-  it('returns empty when all past sessions are completed', () => {
-    const yesterday = new Date(TODAY.getTime() - 86_400_000);
-    const missed = findMissedPlannedSessions(
-      [planned({ id: 'p1', date: yesterday, completed: true })],
-      TODAY,
-    );
-    expect(missed).toHaveLength(0);
+    expect(summary.lines).toHaveLength(0);
+    expect(summary.isEmpty).toBe(true);
   });
 });

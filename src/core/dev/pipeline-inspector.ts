@@ -122,14 +122,14 @@ function recoveryWarnings(recovery: RecoveryFeatureSet): Warning[] {
       severity: 'WARN',
     });
   }
-  if ((recovery.sleepEfficiencyPercent === undefined || recovery.sleepEfficiencyPercent === null)) {
+  if (recovery.sleepEfficiencyPercent === undefined || recovery.sleepEfficiencyPercent === null) {
     warnings.push({
       code: 'SLEEP_DATA_MISSING',
       message: 'No sleep observation for this day. Sleep features are unavailable.',
       severity: 'INFO',
     });
   }
-  if ((recovery.hrvAbsolute === undefined || recovery.hrvAbsolute === null)) {
+  if (recovery.hrvAbsolute === undefined || recovery.hrvAbsolute === null) {
     warnings.push({
       code: 'HRV_DATA_MISSING',
       message: 'No HRV observation for this day. HRV-based recovery assessment unavailable.',
@@ -163,7 +163,7 @@ function warningsFromFeatureSet(record: FeatureSetRecord): Warning[] {
         severity: 'WARN',
       });
     }
-    if ((load.acwr === undefined || load.acwr === null)) {
+    if (load.acwr === undefined || load.acwr === null) {
       warnings.push({
         code: 'ACWR_UNAVAILABLE',
         message: 'ACWR cannot be computed (insufficient acute or chronic baseline).',
@@ -180,21 +180,21 @@ function warningsFromFeatureSet(record: FeatureSetRecord): Warning[] {
 
 function sessionMissingInputs(session: SessionFeatureSet): MissingInput[] {
   const inputs: MissingInput[] = [];
-  if ((session.mechanicalLoad === undefined || session.mechanicalLoad === null)) {
+  if (session.mechanicalLoad === undefined || session.mechanicalLoad === null) {
     inputs.push({
       field: 'powerData.normalizedPower',
       impact: 'Power-based TSS unavailable → lower confidence tier used',
       fallback: `tssMethod=${session.tssMethod}`,
     });
   }
-  if ((session.efficiencyFactor === undefined || session.efficiencyFactor === null)) {
+  if (session.efficiencyFactor === undefined || session.efficiencyFactor === null) {
     inputs.push({
       field: 'hrData.avgBpm',
       impact: 'TRIMP TSS unavailable → lower confidence tier used',
       fallback: session.tssMethod !== 'POWER_BASED' ? `tssMethod=${session.tssMethod}` : undefined,
     });
   }
-  if ((session.subjectiveRpe === undefined || session.subjectiveRpe === null)) {
+  if (session.subjectiveRpe === undefined || session.subjectiveRpe === null) {
     inputs.push({
       field: 'subjectiveRpe',
       impact: 'RPE-based TSS unavailable; rpeVsTargetZone not computable',
@@ -206,13 +206,13 @@ function sessionMissingInputs(session: SessionFeatureSet): MissingInput[] {
 
 function recoveryMissingInputs(recovery: RecoveryFeatureSet): MissingInput[] {
   const inputs: MissingInput[] = [];
-  if ((recovery.sleepEfficiencyPercent === undefined || recovery.sleepEfficiencyPercent === null)) {
+  if (recovery.sleepEfficiencyPercent === undefined || recovery.sleepEfficiencyPercent === null) {
     inputs.push({ field: 'sleep.efficiency', impact: 'Sleep quality unassessable' });
   }
-  if ((recovery.hrvAbsolute === undefined || recovery.hrvAbsolute === null)) {
+  if (recovery.hrvAbsolute === undefined || recovery.hrvAbsolute === null) {
     inputs.push({ field: 'hrv.rmssd', impact: 'Autonomic nervous system readiness unknown' });
   }
-  if ((recovery.rhrAbsolute === undefined || recovery.rhrAbsolute === null)) {
+  if (recovery.rhrAbsolute === undefined || recovery.rhrAbsolute === null) {
     inputs.push({ field: 'restingHr.bpm', impact: 'RHR trend unavailable' });
   }
   return inputs;

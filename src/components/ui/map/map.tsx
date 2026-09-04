@@ -28,7 +28,6 @@ import {
 import { cn } from '@/lib/utils';
 import {
   requestMapLocation,
-  setRouteLineData,
   startRouteRevealAnimation,
   syncControlledViewport,
   syncMapGeoJsonLayerVisibility,

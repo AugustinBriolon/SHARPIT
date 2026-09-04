@@ -35,9 +35,7 @@ const CASES = [
       row.oauth1TokenEnc = encryptSecret(
         JSON.stringify({ oauth_token: 't', oauth_token_secret: 's' }),
       );
-      row.oauth2TokenEnc = encryptSecret(
-        JSON.stringify({ access_token: 'a', refresh_token: 'r' }),
-      );
+      row.oauth2TokenEnc = encryptSecret(JSON.stringify({ access_token: 'a', refresh_token: 'r' }));
     },
   },
   {

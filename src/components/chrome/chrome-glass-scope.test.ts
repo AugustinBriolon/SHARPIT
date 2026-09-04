@@ -9,7 +9,8 @@ import path from 'node:path';
 const REPO_ROOT = process.cwd();
 const SRC_ROOT = path.join(REPO_ROOT, 'src');
 
-const LIQUID_GLASS_IMPORT = /from\s+['"]liquid-glass-react['"]|require\(\s*['"]liquid-glass-react['"]\s*\)/;
+const LIQUID_GLASS_IMPORT =
+  /from\s+['"]liquid-glass-react['"]|require\(\s*['"]liquid-glass-react['"]\s*\)/;
 const CHROME_GLASS_IMPORT = /from\s+['"]@\/components\/chrome\/chrome-glass['"]/;
 
 /** Sole module allowed to import the npm package. */
@@ -29,12 +30,20 @@ const FORBIDDEN_DIR_PREFIXES = [
   'src/components/privacy/',
 ];
 
+function isSkippableDirEntry(entry: fs.Dirent): boolean {
+  return entry.name === 'node_modules' || entry.name.startsWith('.');
+}
+
+function isTsSourceFile(entry: fs.Dirent): boolean {
+  return entry.isFile() && /\.(ts|tsx)$/.test(entry.name) && !entry.name.endsWith('.d.ts');
+}
+
 function walkTsFiles(dir: string, out: string[] = []): string[] {
   if (!fs.existsSync(dir)) {
     return out;
   }
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-    if (entry.name === 'node_modules' || entry.name.startsWith('.')) {
+    if (isSkippableDirEntry(entry)) {
       continue;
     }
     const abs = path.join(dir, entry.name);
@@ -42,7 +51,7 @@ function walkTsFiles(dir: string, out: string[] = []): string[] {
       walkTsFiles(abs, out);
       continue;
     }
-    if (/\.(ts|tsx)$/.test(entry.name) && !entry.name.endsWith('.d.ts')) {
+    if (isTsSourceFile(entry)) {
       out.push(abs);
     }
   }

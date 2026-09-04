@@ -27,7 +27,11 @@ async function loadWearableEnergySignals(
     },
     select: { stress: true, bodyBattery: true },
   });
-  if (!health || ((health.stress === undefined || health.stress === null) && (health.bodyBattery === undefined || health.bodyBattery === null))) {
+  if (
+    !health ||
+    ((health.stress === undefined || health.stress === null) &&
+      (health.bodyBattery === undefined || health.bodyBattery === null))
+  ) {
     return null;
   }
   return {

@@ -60,7 +60,10 @@ function buildShortPlanPhases(taperWeeks: number): PhaseBlock[] {
   ];
 }
 
-function splitRemainingPhases(totalWeeks: number, remaining: number): {
+function splitRemainingPhases(
+  totalWeeks: number,
+  remaining: number,
+): {
   baseWeeks: number;
   buildWeeks: number;
   peakWeeks: number;
@@ -170,10 +173,7 @@ function taperFactor(weekInTaper: number, totalTaper: number): number {
  * Génère un macro-plan périodisé déterministe jusqu'à la date de course.
  * La charge hebdo part de la CTL actuelle (×7 ≈ charge chronique hebdo).
  */
-function computeMacroWeekProgression(
-  phase: PlanPhase,
-  blockIndex: number,
-): number {
+function computeMacroWeekProgression(phase: PlanPhase, blockIndex: number): number {
   if (phase === 'BUILD') {
     return 1 + Math.min(blockIndex, 3) * 0.04;
   }
@@ -275,8 +275,11 @@ export function generateMacroPlan(params: {
 
   for (const block of phaseBlocks) {
     for (let i = 0; i < block.weeks; i++) {
-      const { week, buildWeekCounter: nextBuildWeekCounter, taperCounter: nextTaperCounter } =
-        buildMacroWeekDraft({
+      const {
+        week,
+        buildWeekCounter: nextBuildWeekCounter,
+        taperCounter: nextTaperCounter,
+      } = buildMacroWeekDraft({
         weekIndex,
         weekStart: addWeeks(startDate, weekIndex),
         block,

@@ -33,12 +33,12 @@ SharpIt is endurance-first, but onboarding and equipment treat all sports as equ
 
 ## Filtering rules
 
-| Consumer | Behaviour |
-| --- | --- |
-| Equipment tabs | Map practiced → `EquipmentSport`: triathlon expands to RUN+BIKE+SWIM; mobility **or** stretching → MOBILITY; strength → STRENGTH. |
-| Performance goals | Offer RUN/BIKE/SWIM only if the corresponding core sport (or triathlon) is practiced. |
-| Period goals | Same for RUN/BIKE/SWIM; STRENGTH only if strength practiced; keep « Tous sports »; drop OTHER when filtering is active (optional keep OTHER — prefer drop for endurance-first clarity). |
-| Race goals | Free-text format stays; no sport enum to filter. |
+| Consumer          | Behaviour                                                                                                                                                                               |
+| ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Equipment tabs    | Map practiced → `EquipmentSport`: triathlon expands to RUN+BIKE+SWIM; mobility **or** stretching → MOBILITY; strength → STRENGTH.                                                       |
+| Performance goals | Offer RUN/BIKE/SWIM only if the corresponding core sport (or triathlon) is practiced.                                                                                                   |
+| Period goals      | Same for RUN/BIKE/SWIM; STRENGTH only if strength practiced; keep « Tous sports »; drop OTHER when filtering is active (optional keep OTHER — prefer drop for endurance-first clarity). |
+| Race goals        | Free-text format stays; no sport enum to filter.                                                                                                                                        |
 
 ---
 

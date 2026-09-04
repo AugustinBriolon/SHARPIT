@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { DiscussWithCoachButton } from '@/components/coach/discuss-with-coach-button';
 import { CalendarClock } from 'lucide-react';
 import dynamic from 'next/dynamic';
-import { MorningOrientationActions } from '@/components/today/rich/morning-orientation-actions';
 import { SessionLinkSuggestionCard } from '@/components/today/rich/session-link-suggestion-card';
 import { ActivityFeelingPrompt } from '@/components/training/activity/detail/activity-feeling-prompt';
 import { TodayDaySummaryLine } from '@/components/today/rich/today-day-summary-line';
@@ -21,16 +20,22 @@ const MorningWellnessDialog = dynamic(
 
 export function TodayActionRowHeader({
   loading,
-  actionLabel,
   onWellnessCompleted,
 }: {
   loading: boolean;
-  actionLabel: string;
   onWellnessCompleted?: () => void;
 }) {
   return (
     <div className="flex min-h-8 items-center justify-between gap-2 px-0.5">
-      <h2 className="text-label text-balance">{actionLabel}</h2>
+      {loading ? (
+        <SkeletonDataValue heightClassName="h-8" widthClassName="w-40" />
+      ) : (
+        <DiscussWithCoachButton
+          label="Discuter de ma journée"
+          size="sm"
+          target={{ kind: 'today' }}
+        />
+      )}
       <div className="flex shrink-0 items-center gap-2">
         {loading ? (
           <SkeletonDataValue heightClassName="h-8" widthClassName="w-24" />
@@ -66,18 +71,17 @@ export function TodayActionRowReminders({
 
 export function TodayActionRowSkeleton() {
   return (
-    <div className="chip-surface rounded-analysis space-y-1 px-3 py-3">
-      <SkeletonDataValue heightClassName="h-5" widthClassName="w-full max-w-[240px]" />
-      <div className="flex h-3.75 items-center gap-1.5">
-        <SkeletonDataValue heightClassName="h-3.75" widthClassName="w-15" />
-        <span className="opacity-30" aria-hidden>
-          ·
-        </span>
-        <SkeletonDataValue heightClassName="h-full" widthClassName="w-10" />
-        <span className="opacity-30" aria-hidden>
-          ·
-        </span>
-        <SkeletonDataValue heightClassName="h-full" widthClassName="w-10" />
+    <div className="analysis-panel border-analysis-border/80 rounded-analysis-lg overflow-hidden border">
+      <div className="grid sm:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
+        <div className="bg-muted/40 min-h-44 sm:min-h-36" aria-hidden />
+        <div className="space-y-3 px-4 py-4 sm:px-5 sm:py-5">
+          <SkeletonDataValue heightClassName="h-4" widthClassName="w-28" />
+          <div className="grid grid-cols-3 gap-3">
+            <SkeletonDataValue heightClassName="h-10" widthClassName="w-full" />
+            <SkeletonDataValue heightClassName="h-10" widthClassName="w-full" />
+            <SkeletonDataValue heightClassName="h-10" widthClassName="w-full" />
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -174,7 +178,7 @@ export function TodayActionRowDaySummary({
   }
 
   return (
-    <ul className="space-y-2">
+    <ul className="space-y-3">
       {sessionLines.map((line, index) => (
         <li key={line.id}>
           <TodayDaySummaryLine
@@ -185,6 +189,48 @@ export function TodayActionRowDaySummary({
         </li>
       ))}
     </ul>
+  );
+}
+
+function TodayActionRowLoadedContent({
+  derived,
+  vm,
+  onWellnessCompleted,
+  openPlannedSession,
+}: {
+  derived: {
+    daySummaryEmpty: boolean;
+    sessionLinkSuggestions: TodayViewModel['actionRow']['sessionLinkSuggestions'];
+    sessionLines: TodayViewModel['actionRow']['daySummaryLines'];
+    primaryIndex: number;
+    orientation: TodayViewModel['morningOrientation'];
+    postSessionLoop: TodayViewModel['postSessionLoop'] | null;
+  };
+  vm: TodayViewModel;
+  onWellnessCompleted?: () => void;
+  openPlannedSession: (args: { sessionId: string }) => void;
+}) {
+  return (
+    <>
+      {derived.daySummaryEmpty ? (
+        <TodayActionRowEmpty
+          emptyHref={vm.actionRow.daySummaryEmptyHref}
+          emptyText={vm.actionRow.daySummaryEmptyText}
+        />
+      ) : null}
+      <TodayActionRowLinkSuggestions
+        openPlannedSession={openPlannedSession}
+        suggestions={derived.sessionLinkSuggestions}
+        onWellnessCompleted={onWellnessCompleted}
+      />
+      <TodayActionRowDaySummary
+        openPlannedSession={openPlannedSession}
+        orientation={derived.orientation}
+        primaryIndex={derived.primaryIndex}
+        sessionLines={derived.sessionLines}
+      />
+      {derived.postSessionLoop ? <TodayPostSessionLoop loop={derived.postSessionLoop} /> : null}
+    </>
   );
 }
 
@@ -208,37 +254,16 @@ export function TodayActionRowSessionLists({
   onWellnessCompleted?: () => void;
   openPlannedSession: (args: { sessionId: string }) => void;
 }) {
+  if (loading) {
+    return <TodayActionRowSkeleton />;
+  }
+
   return (
-    <>
-      {loading ? <TodayActionRowSkeleton /> : null}
-
-      {!loading && derived.daySummaryEmpty ? (
-        <TodayActionRowEmpty
-          emptyHref={vm.actionRow.daySummaryEmptyHref}
-          emptyText={vm.actionRow.daySummaryEmptyText}
-        />
-      ) : null}
-
-      {!loading ? (
-        <TodayActionRowLinkSuggestions
-          openPlannedSession={openPlannedSession}
-          suggestions={derived.sessionLinkSuggestions}
-          onWellnessCompleted={onWellnessCompleted}
-        />
-      ) : null}
-
-      {!loading ? (
-        <TodayActionRowDaySummary
-          openPlannedSession={openPlannedSession}
-          orientation={derived.orientation}
-          primaryIndex={derived.primaryIndex}
-          sessionLines={derived.sessionLines}
-        />
-      ) : null}
-
-      {!loading && derived.postSessionLoop ? (
-        <TodayPostSessionLoop loop={derived.postSessionLoop} />
-      ) : null}
-    </>
+    <TodayActionRowLoadedContent
+      derived={derived}
+      openPlannedSession={openPlannedSession}
+      vm={vm}
+      onWellnessCompleted={onWellnessCompleted}
+    />
   );
 }

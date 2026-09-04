@@ -213,6 +213,57 @@ function clientFromDiTokens(di: GarminDiTokens): {
   return { client, tokens };
 }
 
+async function loginWithMobileCredentials(
+  username: string,
+  password: string,
+): Promise<{ client: GCClient; tokens: GarminTokens; profile: ProfileInfo }> {
+  const di = await loginGarminMobile(username, password);
+  const { client, tokens } = clientFromDiTokens(di);
+  const profile = await safeProfile(client);
+  return { client, tokens, profile };
+}
+
+function isHardStopMobileError(error: GarminMobileAuthError): boolean {
+  return error.kind === 'mfa_required' || error.kind === 'invalid_credentials';
+}
+
+function translateWidgetLoginError(
+  error: unknown,
+  mobileError: GarminMobileAuthError | null,
+): never {
+  if (error instanceof GarminWidgetAuthError) {
+    if (mobileError?.kind === 'rate_limited' && error.kind === 'rate_limited') {
+      throw mobileAuthErrorToLoginError(mobileError);
+    }
+    throw widgetAuthErrorToLoginError(error);
+  }
+  if (error instanceof GarminDiAuthError) {
+    throw new GarminLoginError(
+      error.message,
+      error.kind === 'rate_limited' ? 'rate_limited' : 'server_sso_rejected',
+    );
+  }
+  if (mobileError) {
+    throw mobileAuthErrorToLoginError(mobileError);
+  }
+  throw classifyGarminLoginError(error);
+}
+
+async function loginWithWidgetFallback(
+  username: string,
+  password: string,
+  mobileError: GarminMobileAuthError | null,
+): Promise<{ client: GCClient; tokens: GarminTokens; profile: ProfileInfo }> {
+  try {
+    const di = await loginGarminWidget(username, password);
+    const { client, tokens } = clientFromDiTokens(di);
+    const profile = await safeProfile(client);
+    return { client, tokens, profile };
+  } catch (error) {
+    translateWidgetLoginError(error, mobileError);
+  }
+}
+
 /**
  * Interactive connect only. Order:
  * 1. Mobile SSO (GCM_ANDROID_DARK) — the path that worked on localhost before the
@@ -225,47 +276,14 @@ export async function loginWithCredentials(
   username: string,
   password: string,
 ): Promise<{ client: GCClient; tokens: GarminTokens; profile: ProfileInfo }> {
-  let mobileError: GarminMobileAuthError | null = null;
-
   try {
-    const di = await loginGarminMobile(username, password);
-    const { client, tokens } = clientFromDiTokens(di);
-    const profile = await safeProfile(client);
-    return { client, tokens, profile };
+    return await loginWithMobileCredentials(username, password);
   } catch (error) {
     if (error instanceof GarminMobileAuthError) {
-      // Hard stops — do not burn the widget path on clear MFA / credential rejection.
-      if (error.kind === 'mfa_required' || error.kind === 'invalid_credentials') {
+      if (isHardStopMobileError(error)) {
         throw mobileAuthErrorToLoginError(error);
       }
-      mobileError = error;
-    } else {
-      throw classifyGarminLoginError(error);
-    }
-  }
-
-  // Non-default fallback: widget fetch (often blocked without curl_cffi — honest errors).
-  try {
-    const di = await loginGarminWidget(username, password);
-    const { client, tokens } = clientFromDiTokens(di);
-    const profile = await safeProfile(client);
-    return { client, tokens, profile };
-  } catch (error) {
-    if (error instanceof GarminWidgetAuthError) {
-      // Prefer the original mobile rate_limit signal when both failed that way.
-      if (mobileError?.kind === 'rate_limited' && error.kind === 'rate_limited') {
-        throw mobileAuthErrorToLoginError(mobileError);
-      }
-      throw widgetAuthErrorToLoginError(error);
-    }
-    if (error instanceof GarminDiAuthError) {
-      throw new GarminLoginError(
-        error.message,
-        error.kind === 'rate_limited' ? 'rate_limited' : 'server_sso_rejected',
-      );
-    }
-    if (mobileError) {
-      throw mobileAuthErrorToLoginError(mobileError);
+      return loginWithWidgetFallback(username, password, error);
     }
     throw classifyGarminLoginError(error);
   }

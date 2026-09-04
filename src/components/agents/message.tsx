@@ -139,13 +139,13 @@ function MessageArticle({
     <motion.article
       animate={animate ?? messageMotionState(animateIn ?? false, reduce)}
       aria-label={props['aria-label'] ?? `${from} message`}
+      className={messageArticleClassName(from, className)}
       data-from={from}
       data-slot="message"
       exit={messageMotionExit(reduce, exit)}
       initial={messageMotionInitial(animateIn ?? false, reduce, initial)}
-      transition={messageArticleTransition(transition, reduce)}
-      className={messageArticleClassName(from, className)}
       style={messageArticleStyle(from, style)}
+      transition={messageArticleTransition(transition, reduce)}
       {...props}
     >
       {children}

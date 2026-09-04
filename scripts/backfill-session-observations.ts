@@ -1,4 +1,3 @@
-/* eslint-disable no-console -- script CLI : sortie console attendue */
 /**
  * Rebuilds SESSION observations from the stored Activity history.
  *

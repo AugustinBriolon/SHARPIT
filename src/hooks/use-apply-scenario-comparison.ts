@@ -45,7 +45,7 @@ function patchSessionsForScenario(
     load: target.load,
   });
 
-  if ((fields === undefined || fields === null)) {
+  if (fields === undefined || fields === null) {
     return prev;
   }
   if (fields === 'remove') {

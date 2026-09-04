@@ -53,17 +53,14 @@ export function DrillDownAlertSection({ alerts }: { alerts: DrillDownAlert[] }) 
 
       <ul className="mt-3 space-y-2" role="list">
         {alerts.map((alert) => (
-          <li key={`${alert.prefix}-${alert.label}`}>
-            <p
-              className={cn('annotation-clinical text-sm font-medium', alert.colorClass)}
-              role="status"
-            >
+          <li key={`${alert.prefix}-${alert.label}`} className="pl-5">
+            <p className={cn('text-sm font-medium', alert.colorClass)} role="status">
               <span className="font-semibold">{alert.prefix}</span>
               <span aria-hidden> — </span>
               {alert.label}
             </p>
             {alert.detail ? (
-              <p className="text-muted-foreground mt-1 pl-4 text-xs leading-relaxed">{alert.detail}</p>
+              <p className="text-muted-foreground mt-1 text-xs leading-relaxed">{alert.detail}</p>
             ) : null}
           </li>
         ))}

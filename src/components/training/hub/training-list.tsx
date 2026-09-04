@@ -1,6 +1,5 @@
 'use client';
 
-import { ActivityType } from '@prisma/client';
 import { format, isSameWeek, startOfWeek } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import dynamic from 'next/dynamic';
@@ -17,14 +16,13 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { SkeletonDataValue } from '@/components/ui/skeleton-data-value';
 import { InstrumentListChipSkeleton } from '@/components/ui/instruments/instrument-list-chip';
 import { useActivities, useRecords } from '@/hooks/use-data';
-import { useResetWhenHidden } from '@/hooks/use-reset-when-hidden';
 import {
   DEFAULT_TRAINING_HISTORY_FILTERS,
   formatTrainingHistoryFilterStatus,
 } from '@/lib/training/history-filters';
 import { useTrainingListState } from '@/components/training/hub/use-training-list-state';
+import { PAGE_CONTENT_MAX_CLASS } from '@/lib/ui/page-gutter';
 import { cn } from '@/lib/utils';
-import { CalendarPlus, X } from 'lucide-react';
 
 const CreateHikeTripDialog = dynamic(
   () =>
@@ -33,8 +31,6 @@ const CreateHikeTripDialog = dynamic(
     ),
   { ssr: false },
 );
-
-const FILTER_URL_DEBOUNCE_MS = 200;
 
 /** Height reserved under the list so the last chips clear the fixed confirm bar. */
 const SELECTION_BAR_SPACE = 'pb-28';
@@ -82,6 +78,46 @@ export function TrainingListFallback() {
   );
 }
 
+function hikeSelectionLabel(selectedCount: number): string {
+  if (selectedCount === 0) {
+    return 'Aucune randonnée sélectionnée';
+  }
+  const plural = selectedCount > 1 ? 's' : '';
+  return `${selectedCount} randonnée${plural} sélectionnée${plural}`;
+}
+
+function HikeSelectionConfirmBarContent({
+  selectedCount,
+  onConfirm,
+}: {
+  selectedCount: number;
+  onConfirm: () => void;
+}) {
+  return (
+    <div
+      className={cn(
+        'border-border/60 bg-background/95 supports-backdrop-filter:bg-background/80',
+        'flex flex-col gap-2 rounded-xl border p-3 backdrop-blur-md',
+        'sm:flex-row sm:items-center sm:justify-between',
+      )}
+    >
+      <p className="text-muted-foreground min-w-0 text-sm">
+        {hikeSelectionLabel(selectedCount)}
+        {selectedCount > 0 && selectedCount < 2 ? ' — il en faut au moins 2' : null}
+      </p>
+      <Button
+        className="w-full shrink-0 sm:w-auto"
+        disabled={selectedCount < 2}
+        type="button"
+        onClick={onConfirm}
+      >
+        Créer un séjour
+        {selectedCount >= 2 ? ` (${selectedCount})` : ''}
+      </Button>
+    </div>
+  );
+}
+
 function HikeSelectionConfirmBar({
   selectedCount,
   onConfirm,
@@ -98,78 +134,56 @@ function HikeSelectionConfirmBar({
     return null;
   }
 
-  // Portal to body so fixed escapes the scroll shell. Width tracks the main column
-  // (sidebar w-60 on lg) with the same horizontal gutters as AppShell content.
   return createPortal(
     <div
       aria-label="Confirmation de liaison"
+      className="pointer-events-none fixed inset-x-0 bottom-[var(--bottom-nav-offset)] z-50"
       role="region"
-      className={cn(
-        'pointer-events-none fixed z-50',
-        // Mobile: above tab bar · Desktop: bottom of viewport, inset past sidebar
-        'inset-x-0 bottom-[var(--bottom-nav-offset)]',
-        'lg:inset-x-auto lg:right-0 lg:bottom-0 lg:left-60',
-      )}
     >
-      <div
-        className={cn(
-          'pointer-events-auto mx-4 mb-3 lg:mx-6 lg:mb-6',
-          'border-border/60 bg-background/95 supports-backdrop-filter:bg-background/80',
-          'flex flex-col gap-2 rounded-xl border p-3 backdrop-blur-md',
-          'sm:flex-row sm:items-center sm:justify-between',
-        )}
-      >
-        <p className="text-muted-foreground min-w-0 text-sm">
-          {selectedCount === 0
-            ? 'Aucune randonnée sélectionnée'
-            : `${selectedCount} randonnée${selectedCount > 1 ? 's' : ''} sélectionnée${selectedCount > 1 ? 's' : ''}`}
-          {selectedCount > 0 && selectedCount < 2 ? ' — il en faut au moins 2' : null}
-        </p>
-        <Button
-          className="w-full shrink-0 sm:w-auto"
-          disabled={selectedCount < 2}
-          type="button"
-          onClick={onConfirm}
-        >
-          Créer un séjour
-          {selectedCount >= 2 ? ` (${selectedCount})` : ''}
-        </Button>
+      <div className={cn('pointer-events-auto mx-auto mb-3 px-4', PAGE_CONTENT_MAX_CLASS)}>
+        <HikeSelectionConfirmBarContent selectedCount={selectedCount} onConfirm={onConfirm} />
       </div>
     </div>,
     document.body,
   );
 }
 
-export function TrainingList() {
-  const { data, isPending } = useActivities();
-  const { data: records } = useRecords();
-  const activities = data ?? [];
+type TrainingListContentProps = {
+  activities: ClientActivity[];
+  filteredCount: number;
+  weekGroups: WeekGroup[];
+  counts: ReturnType<typeof useTrainingListState>['counts'];
+  filters: ReturnType<typeof useTrainingListState>['filters'];
+  hasLinkableHikes: boolean;
+  selectionMode: boolean;
+  recordLabelsById: ReturnType<typeof useTrainingListState>['recordLabelsById'];
+  selectedIds: ReturnType<typeof useTrainingListState>['selectedIds'];
+  selectedIdsArray: string[];
+  createDialogOpen: boolean;
+  setCreateDialogOpen: (open: boolean) => void;
+  setFilters: ReturnType<typeof useTrainingListState>['setFilters'];
+  exitSelectionMode: () => void;
+  toggleSelectionMode: () => void;
+  toggleActivitySelection: ReturnType<typeof useTrainingListState>['toggleActivitySelection'];
+};
 
-  const {
-    counts,
-    createDialogOpen,
-    exitSelectionMode,
-    filtered,
-    filters,
-    hasLinkableHikes,
-    recordLabelsById,
-    selectedIds,
-    selectedIdsArray,
-    selectionMode,
-    setCreateDialogOpen,
-    setFilters,
-    toggleActivitySelection,
-    toggleSelectionMode,
-  } = useTrainingListState(activities, records);
-
-  const weekGroups = useMemo(() => groupByWeek(filtered), [filtered]);
-
-  if (isPending) {
-    return <TrainingListFallback />;
-  }
-
+function TrainingListMain({
+  activities,
+  filteredCount,
+  weekGroups,
+  counts,
+  filters,
+  hasLinkableHikes,
+  selectionMode,
+  recordLabelsById,
+  selectedIds,
+  setFilters,
+  exitSelectionMode,
+  toggleSelectionMode,
+  toggleActivitySelection,
+}: TrainingListContentProps) {
   return (
-    <div className={cn('space-y-6', selectionMode && SELECTION_BAR_SPACE)}>
+    <>
       <TrainingListToolbar
         counts={counts}
         filters={filters}
@@ -182,7 +196,7 @@ export function TrainingList() {
       <p aria-live="polite" className="sr-only" role="status">
         {activities.length === 0
           ? 'Aucune activité enregistrée.'
-          : formatTrainingHistoryFilterStatus(filtered.length)}
+          : formatTrainingHistoryFilterStatus(filteredCount)}
       </p>
       <TrainingListEmptyStates
         activitiesCount={activities.length}
@@ -196,20 +210,90 @@ export function TrainingList() {
         weekGroups={weekGroups}
         onToggle={toggleActivitySelection}
       />
+    </>
+  );
+}
 
+function TrainingListOverlays({
+  selectionMode,
+  selectedIds,
+  selectedIdsArray,
+  createDialogOpen,
+  setCreateDialogOpen,
+  exitSelectionMode,
+}: Pick<
+  TrainingListContentProps,
+  | 'selectionMode'
+  | 'selectedIds'
+  | 'selectedIdsArray'
+  | 'createDialogOpen'
+  | 'setCreateDialogOpen'
+  | 'exitSelectionMode'
+>) {
+  return (
+    <>
       {selectionMode ? (
         <HikeSelectionConfirmBar
           selectedCount={selectedIds.size}
           onConfirm={() => setCreateDialogOpen(true)}
         />
       ) : null}
-
       <CreateHikeTripDialog
         activityIds={selectedIdsArray}
         open={createDialogOpen}
         onCreated={exitSelectionMode}
         onOpenChange={setCreateDialogOpen}
       />
+    </>
+  );
+}
+
+function TrainingListContent(props: TrainingListContentProps) {
+  return (
+    <div className={cn('space-y-6', props.selectionMode && SELECTION_BAR_SPACE)}>
+      <TrainingListMain {...props} />
+      <TrainingListOverlays
+        createDialogOpen={props.createDialogOpen}
+        exitSelectionMode={props.exitSelectionMode}
+        selectedIds={props.selectedIds}
+        selectedIdsArray={props.selectedIdsArray}
+        selectionMode={props.selectionMode}
+        setCreateDialogOpen={props.setCreateDialogOpen}
+      />
     </div>
+  );
+}
+
+export function TrainingList() {
+  const { data, isPending } = useActivities();
+  const { data: records } = useRecords();
+  const activities = data ?? [];
+
+  const listState = useTrainingListState(activities, records);
+  const weekGroups = useMemo(() => groupByWeek(listState.filtered), [listState.filtered]);
+
+  if (isPending) {
+    return <TrainingListFallback />;
+  }
+
+  return (
+    <TrainingListContent
+      activities={activities}
+      counts={listState.counts}
+      createDialogOpen={listState.createDialogOpen}
+      exitSelectionMode={listState.exitSelectionMode}
+      filteredCount={listState.filtered.length}
+      filters={listState.filters}
+      hasLinkableHikes={listState.hasLinkableHikes}
+      recordLabelsById={listState.recordLabelsById}
+      selectedIds={listState.selectedIds}
+      selectedIdsArray={listState.selectedIdsArray}
+      selectionMode={listState.selectionMode}
+      setCreateDialogOpen={listState.setCreateDialogOpen}
+      setFilters={listState.setFilters}
+      toggleActivitySelection={listState.toggleActivitySelection}
+      toggleSelectionMode={listState.toggleSelectionMode}
+      weekGroups={weekGroups}
+    />
   );
 }
