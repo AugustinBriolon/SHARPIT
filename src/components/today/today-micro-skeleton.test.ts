@@ -74,7 +74,7 @@ describe('TodayDashboardShell', () => {
     const html = renderTodayShell();
     expect(html).toContain('surface-ink');
     expect(html).toContain('text-verdict');
-    expect(html).toContain('text-label');
+    expect(html).toContain('Actions du jour');
     expect(html).toContain('analysis-panel border-analysis-border/80');
     expect(html).toContain('rounded-analysis-lg');
     expect(html).toContain('aria-busy="true"');

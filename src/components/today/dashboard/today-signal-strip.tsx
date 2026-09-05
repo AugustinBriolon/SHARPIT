@@ -5,7 +5,6 @@ import {
   OvernightScoreCard,
   type OvernightScoreCardProps,
 } from '@/components/today/dashboard/overnight-score-card';
-import { SkeletonDataValue } from '@/components/ui/skeleton-data-value';
 import { TWIN_DRILL_DOWN, twinDimensionFromHref } from '@/lib/today/today-twin-navigation';
 import { pickTodayResumeSignalPreviews, type SignalPreview } from '@/lib/today/signal-previews';
 
@@ -51,14 +50,36 @@ function gaugeOrEmpty(preview: SignalPreview | null) {
   };
 }
 
-function cardProps(
-  kind: 'sleep' | 'recovery',
-  preview: SignalPreview | null,
-  metricsRow: MetricsRow,
-  isLimiter: boolean,
-): OvernightScoreCardProps {
+function cardProps({
+  kind,
+  preview,
+  metricsRow,
+  isLimiter,
+  loading,
+}: {
+  kind: 'sleep' | 'recovery';
+  preview: SignalPreview | null;
+  metricsRow: MetricsRow;
+  isLimiter: boolean;
+  loading: boolean;
+}): OvernightScoreCardProps {
   const meta = CARD_META[kind];
   const gauge = gaugeOrEmpty(preview);
+  if (loading) {
+    return {
+      accent: meta.accent,
+      baselineDetail: null,
+      baselineTitle: null,
+      href: meta.href,
+      icon: meta.icon,
+      isLimiter: false,
+      score: null,
+      statusLabel: null,
+      subtitle: null,
+      title: meta.title,
+      trend: null,
+    };
+  }
   return {
     accent: meta.accent,
     baselineDetail: gauge.baselineDetail,
@@ -74,42 +95,36 @@ function cardProps(
   };
 }
 
-function CardSkeleton() {
-  return (
-    <div className="chip-surface-lg flex min-h-52 flex-col gap-3 rounded-2xl px-4 py-4">
-      <SkeletonDataValue heightClassName="h-8" widthClassName="w-36" />
-      <SkeletonDataValue className="mx-auto" heightClassName="h-24" widthClassName="w-44" />
-      <SkeletonDataValue className="w-full" heightClassName="h-8" widthClassName="w-full" />
-    </div>
-  );
-}
-
 function OvernightPair({
   metricsRow,
   signalPreviews,
   limiting,
+  loading,
 }: {
   metricsRow: MetricsRow;
   signalPreviews?: SignalPreviews;
   limiting: string | null;
+  loading: boolean;
 }) {
   return (
     <>
       <OvernightScoreCard
-        {...cardProps(
-          'sleep',
-          previewFor(signalPreviews, 'sleep'),
+        {...cardProps({
+          kind: 'sleep',
+          preview: previewFor(signalPreviews, 'sleep'),
           metricsRow,
-          limiting === 'sleep',
-        )}
+          isLimiter: limiting === 'sleep',
+          loading,
+        })}
       />
       <OvernightScoreCard
-        {...cardProps(
-          'recovery',
-          previewFor(signalPreviews, 'recovery'),
+        {...cardProps({
+          kind: 'recovery',
+          preview: previewFor(signalPreviews, 'recovery'),
           metricsRow,
-          limiting === 'recovery',
-        )}
+          isLimiter: limiting === 'recovery',
+          loading,
+        })}
       />
     </>
   );
@@ -117,7 +132,7 @@ function OvernightPair({
 
 /**
  * Overnight state on Today — twin tick-gauge cards (sleep + recovery).
- * Adaptation / charge live on Plan, not in the morning résumé.
+ * Same mounted chrome while loading (empty gauge); ticks fill when score arrives.
  */
 export function TodaySignalStrip({
   metricsRow,
@@ -141,18 +156,12 @@ export function TodaySignalStrip({
         aria-label="Signaux de nuit — ouvrir le détail"
         className="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:items-stretch"
       >
-        {loading ? (
-          <>
-            <CardSkeleton />
-            <CardSkeleton />
-          </>
-        ) : (
-          <OvernightPair
-            limiting={limiting}
-            metricsRow={metricsRow}
-            signalPreviews={signalPreviews}
-          />
-        )}
+        <OvernightPair
+          limiting={limiting}
+          loading={loading}
+          metricsRow={metricsRow}
+          signalPreviews={signalPreviews}
+        />
       </nav>
     </div>
   );

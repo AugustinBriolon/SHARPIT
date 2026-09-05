@@ -265,12 +265,9 @@ function plannedIdFromLine(line: ReturnType<typeof buildTodayDaySummary>['lines'
   return line.plannedSession?.id ?? (line.kind === 'planned' ? line.id : null);
 }
 
-function doneLineMetrics(
+function daySummaryLineMetrics(
   line: ReturnType<typeof buildTodayDaySummary>['lines'][number],
 ): ReturnType<typeof buildTodayDaySummary>['lines'][number]['metrics'] | null {
-  if (line.kind !== 'done') {
-    return null;
-  }
   return line.metrics ?? null;
 }
 
@@ -287,7 +284,7 @@ function mapDaySummaryLineForView(
     kind: line.kind,
     href: daySummaryLineHref(line),
     isDone: line.kind === 'done',
-    metrics: doneLineMetrics(line),
+    metrics: daySummaryLineMetrics(line),
     morningChoiceLabel: morningChoiceForLine(plannedId, sessionChoice),
     brickLegs: line.brickLegs ?? null,
   };

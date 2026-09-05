@@ -23,4 +23,12 @@ describe('TodaySignalStrip overnight résumé', () => {
     expect(source).toContain("limiting === 'recovery'");
     expect(source).toContain('isLimiter');
   });
+
+  it('keeps the same mounted chrome while loading (empty gauge, no text skeletons)', () => {
+    expect(source).toContain('loading');
+    expect(source).toContain('score: null');
+    expect(source).not.toContain('SkeletonDataValue');
+    expect(source).not.toContain('CardSkeleton');
+    expect(source).not.toContain('OvernightLoadingPair');
+  });
 });

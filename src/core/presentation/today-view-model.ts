@@ -196,7 +196,7 @@ export type TodayViewModel = {
       kind: 'done' | 'planned';
       href: string;
       isDone: boolean;
-      /** Key KPIs for completed session preview cards (max 3). */
+      /** Key KPIs for session preview cards (done + planned — max 3). */
       metrics?: Array<{ label: string; value: string; unit: string }> | null;
       /** Morning choice annotation on this session (post-choice). */
       morningChoiceLabel?: string | null;

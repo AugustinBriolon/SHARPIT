@@ -90,6 +90,8 @@ export function derivePostSessionLoop(
   vm: TodayViewModel,
   pendingLinkSuggestions: TodayViewModel['actionRow']['sessionLinkSuggestions'],
   linkExclusions: LinkExclusions,
+  /** Visible day-summary lines after link/proposal filters. */
+  sessionLines: TodayViewModel['actionRow']['daySummaryLines'] = vm.actionRow.daySummaryLines,
 ) {
   if (
     !vm.postSessionLoop?.visible ||
@@ -98,6 +100,15 @@ export function derivePostSessionLoop(
   ) {
     return null;
   }
+
+  // Completed preview already owns title + activity entry — drop the twin card.
+  const alreadyPreviewed = sessionLines.some(
+    (line) => line.isDone && line.id === vm.postSessionLoop!.activityId,
+  );
+  if (alreadyPreviewed) {
+    return null;
+  }
+
   return vm.postSessionLoop;
 }
 

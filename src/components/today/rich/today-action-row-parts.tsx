@@ -184,6 +184,7 @@ export function TodayActionRowDaySummary({
           <TodayDaySummaryLine
             isPrimary={index === primaryIndex && !orientation?.showFirmActions}
             line={line}
+            sessionCount={sessionLines.length}
             onOpenPlanned={(sessionId) => openPlannedSession({ sessionId })}
           />
         </li>

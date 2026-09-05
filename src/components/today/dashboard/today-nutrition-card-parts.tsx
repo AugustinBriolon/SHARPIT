@@ -1,6 +1,6 @@
 'use client';
 
-import { Beef, Droplet, Utensils, Wheat, type LucideIcon } from 'lucide-react';
+import { Beef, Droplet, Wheat, type LucideIcon } from 'lucide-react';
 import { formatRemainingCalories } from '@/lib/nutrition/goals-progress';
 import {
   CALORIE_RING,
@@ -38,19 +38,20 @@ export function MacroProgressRing({ kind, pct }: { kind: MacroKind; pct: number 
         strokeOpacity={0.18}
         strokeWidth={RING_STROKE}
       />
-      <circle
-        cx={RING_SIZE / 2}
-        cy={RING_SIZE / 2}
-        fill="none"
-        r={RING_R}
-        stroke={stroke}
-        strokeDasharray={RING_C}
-        strokeDashoffset={pct === null ? RING_C * 0.92 : offset}
-        strokeLinecap="round"
-        strokeOpacity={pct === null ? 0.35 : 1}
-        strokeWidth={RING_STROKE}
-        transform={`rotate(-90 ${RING_SIZE / 2} ${RING_SIZE / 2})`}
-      />
+      {fill > 0 ? (
+        <circle
+          cx={RING_SIZE / 2}
+          cy={RING_SIZE / 2}
+          fill="none"
+          r={RING_R}
+          stroke={stroke}
+          strokeDasharray={RING_C}
+          strokeDashoffset={offset}
+          strokeLinecap="round"
+          strokeWidth={RING_STROKE}
+          transform={`rotate(-90 ${RING_SIZE / 2} ${RING_SIZE / 2})`}
+        />
+      ) : null}
     </svg>
   );
 }
@@ -72,10 +73,12 @@ export function MacroRingCell({
   const rounded = Math.round(grams);
   const value = goal !== null ? `${rounded}/${Math.round(goal)}g` : `${rounded}g`;
   const status = goal !== null ? `${label} ${rounded} g sur ${goal} g` : `${label} ${rounded} g`;
+  // Zero logged grams must read empty — never inherit a ghost fill from goalsProgress.
+  const ringPct = grams <= 0 ? 0 : pct;
 
   return (
     <div aria-label={status} className="flex min-w-0 flex-col items-center gap-2 text-center">
-      <MacroProgressRing kind={kind} pct={pct} />
+      <MacroProgressRing kind={kind} pct={ringPct} />
       <span className="inline-flex items-center gap-1">
         <Icon className={cn('size-3.5', colors.text)} strokeWidth={2.25} aria-hidden />
         <span className="text-foreground text-xs font-medium">{label}</span>
@@ -95,36 +98,28 @@ export function NutritionCalorieHero({
   remaining: number | null;
 }) {
   return (
-    <div className="flex items-start justify-between gap-3">
-      <div className="min-w-0">
-        <p className="text-muted-foreground text-[11px] font-medium tracking-[0.08em] uppercase">
-          Total aujourd&apos;hui
+    <div className="min-w-0 pt-3">
+      <p className="mt-0 flex flex-wrap items-baseline gap-x-1.5">
+        <span
+          className={cn(
+            'text-data text-[1.75rem] leading-none font-semibold tabular-nums',
+            CALORIE_RING.text,
+          )}
+        >
+          {calories.toLocaleString('fr-FR')}
+        </span>
+        <span className="text-muted-foreground text-sm">kcal</span>
+      </p>
+      {calorieBudget !== null ? (
+        <p className="text-foreground mt-1.5 text-xs font-medium tabular-nums">
+          Objectif : {calorieBudget.toLocaleString('fr-FR')} kcal
         </p>
-        <p className="mt-1.5 flex flex-wrap items-baseline gap-x-1.5">
-          <span
-            className={cn(
-              'text-data text-[1.75rem] leading-none font-semibold tabular-nums',
-              CALORIE_RING.text,
-            )}
-          >
-            {calories.toLocaleString('fr-FR')}
-          </span>
-          <span className="text-muted-foreground text-sm">kcal</span>
+      ) : null}
+      {remaining !== null && remaining < 0 ? (
+        <p className="text-foreground text-data mt-1 text-[11px] tabular-nums">
+          {formatRemainingCalories(remaining)}
         </p>
-        {calorieBudget !== null ? (
-          <p className="text-foreground mt-1.5 text-xs font-medium tabular-nums">
-            Objectif : {calorieBudget.toLocaleString('fr-FR')} kcal
-          </p>
-        ) : null}
-        {remaining !== null && remaining < 0 ? (
-          <p className="text-foreground text-data mt-1 text-[11px] tabular-nums">
-            {formatRemainingCalories(remaining)}
-          </p>
-        ) : null}
-      </div>
-      <span className="icon-well size-8 shrink-0" aria-hidden>
-        <Utensils className="size-3.5" strokeWidth={2.25} />
-      </span>
+      ) : null}
     </div>
   );
 }

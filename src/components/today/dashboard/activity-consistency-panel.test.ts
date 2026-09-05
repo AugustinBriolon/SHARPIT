@@ -36,9 +36,12 @@ describe('ActivityConsistencyPanel', () => {
     expect(html).toContain('icon-well');
     expect(html).toContain('28');
     expect(html).toContain('30');
+    expect(html).not.toContain('text-label');
     expect(html).not.toContain('flex-col-reverse');
     expect(html).not.toContain('Séances / semaine');
     expect(html).not.toContain('rounded-[3px]');
+    // Title lives inside the chip with the icon — not as an outer section label.
+    expect(html.indexOf('chip-surface-lg')).toBeLessThan(html.indexOf('Régularité'));
   });
 
   it('announces an open current week for screen readers', () => {

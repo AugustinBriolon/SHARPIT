@@ -6,6 +6,7 @@ import {
   brickLegSummaries,
   groupPlannedSessions,
   type BrickLegSummary,
+  type DayPlannedItem,
 } from '@/lib/planned-session/brick/brick-sessions';
 import { activityTypeLabels, formatDuration } from '@/lib/format';
 import { formatPlannedDuration, intensityLabels } from '@/lib/planned-session/sessions';
@@ -13,6 +14,7 @@ import {
   buildCompletedSessionMetrics,
   type CompletedSessionMetric,
 } from '@/lib/today/completed-session-metrics';
+import { buildPlannedSessionMetrics } from '@/lib/today/planned-session-metrics';
 
 export type DaySummaryLine = {
   id: string;
@@ -20,7 +22,7 @@ export type DaySummaryLine = {
   activityType: ActivityType;
   primary: string;
   secondary?: string;
-  /** Key KPIs for completed Today session previews (max 3). */
+  /** Key KPIs for Today session preview cards (done + planned, max 3). */
   metrics?: CompletedSessionMetric[];
   /** Set for single planned sessions — enables shared label atoms in the UI. */
   plannedSession?: ClientPlannedSession;
@@ -121,6 +123,50 @@ export function buildTodayDaySummary(
   };
 }
 
+function buildBrickPlannedLine(
+  group: Extract<DayPlannedItem, { kind: 'brick' }>,
+  goalTitleById?: ReadonlyMap<string, string>,
+): DaySummaryLine {
+  const totalMin = group.sessions.reduce((sum, s) => sum + (s.durationMin ?? 0), 0);
+  const brickGoalId = group.sessions.find((s) => s.goalId)?.goalId;
+  const brickGoalTitle = brickGoalId ? goalTitleById?.get(brickGoalId) : undefined;
+  const duration = formatPlannedDuration(totalMin);
+  return {
+    id: group.id,
+    kind: 'planned',
+    activityType: 'TRIATHLON',
+    primary: `Brick · ${group.sessions.map((s) => activityTypeLabels[s.type]).join(' → ')}`,
+    secondary: [duration, brickGoalTitle ? `Sert ${brickGoalTitle}` : null]
+      .filter(Boolean)
+      .join(' · '),
+    // First leg backs the deep-link id; the card itself renders every leg.
+    plannedSession: group.sessions[0],
+    brickLegs: brickLegSummaries(group.sessions),
+  };
+}
+
+function buildSinglePlannedLine(
+  session: ClientPlannedSession,
+  goalTitleById?: ReadonlyMap<string, string>,
+): DaySummaryLine {
+  const goalTitle = session.goalId ? goalTitleById?.get(session.goalId) : undefined;
+  return {
+    id: session.id,
+    kind: 'planned',
+    activityType: session.type,
+    primary: plannedLabel(session),
+    secondary: plannedMeta(session, goalTitleById),
+    metrics: buildPlannedSessionMetrics({
+      type: session.type,
+      durationMin: session.durationMin,
+      intensity: session.intensity,
+      load: session.load,
+      goalTitle,
+    }),
+    plannedSession: session,
+  };
+}
+
 function buildPlannedLines(
   todayPlanned: ClientPlannedSession[],
   goalTitleById?: ReadonlyMap<string, string>,
@@ -130,33 +176,10 @@ function buildPlannedLines(
 
   for (const group of groups) {
     if (group.kind === 'brick') {
-      const totalMin = group.sessions.reduce((sum, s) => sum + (s.durationMin ?? 0), 0);
-      const brickGoalId = group.sessions.find((s) => s.goalId)?.goalId;
-      const brickGoalTitle = brickGoalId ? goalTitleById?.get(brickGoalId) : undefined;
-      const duration = formatPlannedDuration(totalMin);
-      lines.push({
-        id: group.id,
-        kind: 'planned',
-        activityType: 'TRIATHLON',
-        primary: `Brick · ${group.sessions.map((s) => activityTypeLabels[s.type]).join(' → ')}`,
-        secondary: [duration, brickGoalTitle ? `Sert ${brickGoalTitle}` : null]
-          .filter(Boolean)
-          .join(' · '),
-        // First leg backs the deep-link id; the card itself renders every leg.
-        plannedSession: group.sessions[0],
-        brickLegs: brickLegSummaries(group.sessions),
-      });
-    } else {
-      const { session } = group;
-      lines.push({
-        id: session.id,
-        kind: 'planned',
-        activityType: session.type,
-        primary: plannedLabel(session),
-        secondary: plannedMeta(session, goalTitleById),
-        plannedSession: session,
-      });
+      lines.push(buildBrickPlannedLine(group, goalTitleById));
+      continue;
     }
+    lines.push(buildSinglePlannedLine(group.session, goalTitleById));
   }
 
   return lines;

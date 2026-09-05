@@ -73,9 +73,17 @@ describe('buildTodayDaySummary', () => {
     ]);
   });
 
-  it('omits metrics on planned lines', () => {
-    const summary = buildTodayDaySummary(TODAY, [], [planned({ id: 'p1' })]);
-    expect(summary.lines[0].metrics).toBeUndefined();
+  it('attaches structured preview metrics on planned lines', () => {
+    const summary = buildTodayDaySummary(
+      TODAY,
+      [],
+      [planned({ id: 'p1', intensity: 'ENDURANCE', durationMin: 50, load: 40 })],
+    );
+    expect(summary.lines[0].metrics).toEqual([
+      { label: 'Intensité', value: 'Endurance', unit: '' },
+      { label: 'Durée', value: '50', unit: 'min' },
+      { label: 'Charge', value: '40', unit: 'TSS' },
+    ]);
   });
 
   it('omits RPE rather than inventing one when the session was never rated', () => {

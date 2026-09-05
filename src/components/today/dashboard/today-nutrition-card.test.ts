@@ -31,8 +31,10 @@ describe('TodayNutritionCard', () => {
     expect(html).toContain('Protéines');
     expect(html).toContain('Glucides');
     expect(html).toContain('Lipides');
+    expect(html).not.toContain('text-label');
     expect(html).not.toContain('Rien enregistré');
     expect(html).not.toContain('Ouvrir le journal');
+    expect(html.indexOf('chip-surface-lg')).toBeLessThan(html.indexOf('Nutrition'));
   });
 
   it('offers the connection when there is no journal behind it', () => {
@@ -65,11 +67,15 @@ describe('TodayNutritionCard', () => {
     expect(html).toContain('Lipides');
   });
 
-  it('pulses rather than claiming an empty day while still loading', () => {
+  it('keeps static chrome and empty rings while still loading', () => {
     useQuery.mockReturnValue({ data: undefined, isPending: true, isError: false });
     const html = render();
 
-    expect(html).toContain('animate-pulse');
+    expect(html).toContain('Nutrition');
+    expect(html).toContain('Total aujourd');
+    expect(html).toContain('kcal');
+    expect(html).toContain('Protéines');
+    expect(html).not.toContain('animate-pulse');
     expect(html).not.toContain('Rien enregistré');
   });
 

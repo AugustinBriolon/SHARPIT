@@ -14,19 +14,21 @@ function HeaderStatusMessage({
 }) {
   if (disconnected) {
     return (
-      <p className="text-muted-foreground text-sm leading-snug">Journal alimentaire non connecté</p>
+      <p className="text-muted-foreground pt-3 text-sm leading-snug">
+        Journal alimentaire non connecté
+      </p>
     );
   }
   if (isError) {
     return (
-      <p className="text-muted-foreground text-sm leading-snug">
+      <p className="text-muted-foreground pt-3 text-sm leading-snug">
         Journal indisponible pour le moment
       </p>
     );
   }
   if (isPending) {
     return (
-      <div className="space-y-2">
+      <div className="space-y-2 pt-3">
         <SkeletonDataValue heightClassName="h-3" widthClassName="w-28" />
         <SkeletonDataValue heightClassName="h-8" widthClassName="w-32" />
         <SkeletonDataValue heightClassName="h-3" widthClassName="w-36" />

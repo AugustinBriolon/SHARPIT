@@ -1,9 +1,11 @@
 'use client';
 
-import Link from 'next/link';
 import { Activity } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState, type RefObject } from 'react';
-import { SkeletonDataValue } from '@/components/ui/skeleton-data-value';
+import {
+  TodayInstrumentCard,
+  TodayInstrumentCardSkeleton,
+} from '@/components/today/dashboard/today-instrument-card';
 import {
   type ActivityForConsistency,
   buildActivityConsistencyStats,
@@ -75,14 +77,6 @@ function StreakHero({ weeks }: { weeks: number }) {
   );
 }
 
-function RegularityHeaderIcon() {
-  return (
-    <span className="icon-well size-8" aria-hidden>
-      <Activity className="size-3.5" strokeWidth={2.25} />
-    </span>
-  );
-}
-
 function QuietHistoryFooter() {
   return (
     <div className="border-border/50 mt-4 flex items-end justify-between gap-3 border-t pt-3">
@@ -116,35 +110,27 @@ function useConsistencyDayLayout(stripRef: RefObject<HTMLDivElement | null>) {
 
 export function ActivityConsistencyLoading() {
   const layout = CONSISTENCY_DAY_LAYOUT_FALLBACK;
+  // Fixed anchor — never `new Date()` during prerender (blocking-prerender-current-time-client).
+  const days = buildConsistencyDayWindow([], LOADING_ANCHOR, layout.pastDays, layout.futureDays);
 
   return (
-    <div
-      className={cn(
-        'chip-surface-lg mt-2 flex min-h-38 w-full flex-1 flex-col',
-        'rounded-2xl px-4 py-4',
-      )}
-    >
-      <div className="flex justify-end">
-        <div className="bg-muted size-8 animate-pulse rounded-full" />
-      </div>
-      <div className="mt-2 flex flex-1 items-center gap-2">
-        <div
-          className="grid w-full min-w-0 flex-1 gap-x-1 gap-y-2.5"
-          style={{ gridTemplateColumns: `repeat(${layout.columns}, minmax(0, 1fr))` }}
-        >
-          {Array.from({ length: layout.totalDays }, (_, index) => (
-            <div key={index} className="flex flex-col items-center gap-1">
-              <SkeletonDataValue heightClassName="h-2.5" widthClassName="w-3" />
-              <div className="bg-muted/55 size-9 animate-pulse rounded-full" />
-            </div>
-          ))}
+    <TodayInstrumentCardSkeleton className="min-h-38 flex-1" title="Régularité">
+      <div className="mt-3 flex flex-1 items-center gap-2">
+        <div className="min-w-0 flex-1">
+          <ConsistencyDayGrid columns={layout.columns} days={days} />
         </div>
-        <div className="flex shrink-0 flex-col items-end gap-1.5 pl-3">
-          <SkeletonDataValue heightClassName="h-10" widthClassName="w-12" />
-          <SkeletonDataValue heightClassName="h-6" widthClassName="w-14" />
+        <div className="flex shrink-0 flex-col items-end justify-center self-center pl-2 text-right sm:pl-3">
+          <span className="text-data text-muted-foreground text-[2.75rem] leading-none font-semibold tracking-[-0.03em] tabular-nums">
+            —
+          </span>
+          <span className="text-muted-foreground mt-1 text-[12px] leading-tight">
+            semaines
+            <br />
+            de suite
+          </span>
         </div>
       </div>
-    </div>
+    </TodayInstrumentCardSkeleton>
   );
 }
 
@@ -164,21 +150,14 @@ export function ActivityConsistencyContent({
   const activeInWindow = days.filter((day) => day.hasActivity).length;
 
   return (
-    <Link
+    <TodayInstrumentCard
+      className="min-h-38 flex-1 active:scale-[0.988]"
       href="/training"
-      title="Voir l’historique d’entraînement"
-      className={cn(
-        'chip-surface-lg hover:border-primary/35 group mt-2 flex min-h-38 w-full flex-1 flex-col',
-        'rounded-2xl px-4 py-4 transition-[border-color,background-color] duration-150 ease-out',
-        'focus-visible:ring-primary/35 focus-visible:ring-2 focus-visible:outline-hidden',
-        'active:scale-[0.988]',
-      )}
+      icon={<Activity className="size-3.5" strokeWidth={2.25} />}
+      title="Régularité"
+      titleAttr="Voir l’historique d’entraînement"
     >
-      <div className="flex justify-end">
-        <RegularityHeaderIcon />
-      </div>
-
-      <div className="mt-2 flex flex-1 items-center gap-2">
+      <div className="mt-3 flex flex-1 items-center gap-2">
         <div ref={stripRef} className="min-w-0 flex-1">
           <ConsistencyDayGrid columns={layout.columns} days={days} />
         </div>
@@ -194,7 +173,7 @@ export function ActivityConsistencyContent({
       </p>
 
       {quietHistory ? <QuietHistoryFooter /> : null}
-    </Link>
+    </TodayInstrumentCard>
   );
 }
 

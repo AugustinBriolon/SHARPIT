@@ -11,8 +11,8 @@ import {
 } from '@/components/today/dashboard/activity-consistency-panel-parts';
 
 /**
- * Regularity instrument — responsive day rings + weekly streak + header icon.
- * Twin of Nutrition under Today Comprendre (outer text-label + chip body).
+ * Regularity instrument — day rings + weekly streak.
+ * Shares TodayInstrumentCard chrome with overnight / nutrition cards.
  */
 export function ActivityConsistencyPanel({
   activities,
@@ -28,8 +28,7 @@ export function ActivityConsistencyPanel({
   const quietHistory = isQuietActivityHistory(stats, loading);
 
   return (
-    <section className={cn('flex h-full min-w-0 flex-col px-0.5', className)}>
-      <h2 className="text-label">Régularité</h2>
+    <section className={cn('flex h-full min-w-0 flex-col', className)}>
       {loading ? (
         <ActivityConsistencyLoading />
       ) : (

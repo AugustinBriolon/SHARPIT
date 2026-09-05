@@ -47,8 +47,8 @@ export function useTodayActionRowDerived(vm: TodayViewModel, loading: boolean) {
   );
 
   const postSessionLoop = useMemo(
-    () => derivePostSessionLoop(vm, pendingLinkSuggestions, linkExclusions),
-    [vm, pendingLinkSuggestions, linkExclusions],
+    () => derivePostSessionLoop(vm, pendingLinkSuggestions, linkExclusions, sessionLines),
+    [vm, pendingLinkSuggestions, linkExclusions, sessionLines],
   );
 
   const daySummaryEmpty =
