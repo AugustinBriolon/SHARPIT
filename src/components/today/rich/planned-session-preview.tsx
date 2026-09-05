@@ -13,7 +13,7 @@ function plannedDensityClass(density: 'solo' | 'compact'): string {
   if (density === 'solo') {
     return 'min-h-24 py-4 sm:flex-row sm:items-center sm:gap-4 sm:py-5';
   }
-  return 'py-3';
+  return 'py-2.5';
 }
 
 function PriorityBadge({ primary }: { primary: boolean }) {
@@ -49,6 +49,24 @@ function PlannedSecondaryLine({
   return <p className="text-muted-foreground text-xs text-pretty">{secondary}</p>;
 }
 
+function EquipmentTags({ tags }: { tags: string[] }) {
+  if (tags.length === 0) {
+    return null;
+  }
+  return (
+    <ul aria-label="Matériel" className="flex flex-wrap gap-1">
+      {tags.map((tag) => (
+        <li
+          key={tag}
+          className="chip-surface text-data inline-flex rounded-md px-1 py-px text-[10px] leading-none font-medium"
+        >
+          {tag}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 function PlannedMetricsBlock({
   density,
   metrics,
@@ -70,13 +88,14 @@ function PlannedMetricsBlock({
 }
 
 /**
- * Today planned-session preview — compact instrument row (not a map-sized split).
+ * Planned-session preview — compact instrument row (not a map-sized split).
  * `solo` loosens vertical padding when this is the only session in the section.
  */
 export function PlannedSessionPreview({
   activityType,
   title,
   metrics,
+  equipment = [],
   secondary = null,
   morningChoiceLabel,
   primary = false,
@@ -87,6 +106,8 @@ export function PlannedSessionPreview({
   activityType: ActivityType;
   title: string;
   metrics: SessionPreviewMetric[];
+  /** Compact equipment chips (2-3 names, same size). */
+  equipment?: string[];
   /** Fallback when structured KPIs are empty (legacy meta line). */
   secondary?: string | null;
   morningChoiceLabel?: string | null;
@@ -99,14 +120,17 @@ export function PlannedSessionPreview({
 
   return (
     <SessionPreviewButtonFrame className={className} onClick={onOpen}>
-      <div className={cn('flex min-w-0 flex-col gap-2.5 px-3.5', plannedDensityClass(density))}>
-        <div className="min-w-0 flex-1 space-y-1.5">
-          <div className="flex flex-wrap items-center gap-2">
+      <div className={cn('flex min-w-0 flex-col gap-2 px-3', plannedDensityClass(density))}>
+        <div className="min-w-0 flex-1 space-y-1">
+          <div className="flex flex-wrap items-center gap-1.5">
             <ActivityTypeIndicator type={activityType} />
             <PriorityBadge primary={primary} />
             <MorningChoiceBadge label={morningChoiceLabel} />
           </div>
-          <p className="text-card-title text-balance">{title}</p>
+          <p className="text-card-title line-clamp-2 leading-snug text-pretty! max-sm:text-sm">
+            {title}
+          </p>
+          <EquipmentTags tags={equipment} />
           <PlannedSecondaryLine hasMetrics={hasMetrics} secondary={secondary} />
         </div>
         <PlannedMetricsBlock density={density} metrics={metrics} />

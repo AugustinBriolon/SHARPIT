@@ -81,6 +81,7 @@ Brand primitives live in `src/lib/brand-tokens.ts` (hex) and `src/app/globals.cs
 - `--radius: 1rem` (16px cards) — instrument, not CPG pill
 - Buttons: default = ink (`bg-foreground`) Seed CTA; `accent` = leaf/Lime interactive; `highlight` = Lime Pulse badge CTA
 - Buttons stay instrument `rounded-lg`, **not** `rounded-full` / 1000px pills
+- Button chrome stays dense at every viewport (`sm` 32px, default 36px). The 44px tap target is `button-hit` on coarse pointers, not a taller visual.
 - Nav pills / bottom nav active = Lime (`bg-highlight`)
 - Badges/tags may use full pill (`rounded-4xl`) including `variant="highlight"`
 

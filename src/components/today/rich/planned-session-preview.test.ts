@@ -8,11 +8,16 @@ describe('PlannedSessionPreview density', () => {
     'utf8',
   );
 
-  it('exposes solo vs compact density without a map-sized sport band split', () => {
+  it('exposes solo and compact instrument rows without a decorative sport band', () => {
     expect(source).toContain("density?: 'solo' | 'compact'");
+    expect(source).not.toContain('SPORT_IDENTITY_PANEL');
     expect(source).not.toContain('SPORT_IDENTITY_HEX');
-    expect(source).not.toContain('SessionPreviewSportBand');
     expect(source).not.toContain('SessionPreviewGrid');
+    expect(source).not.toContain("density?: 'solo' | 'compact' | 'stack'");
+    expect(source).toContain('aria-label="Matériel"');
+    expect(source).toContain('equipment');
+    expect(source).toContain('line-clamp-2');
+    expect(source).toContain('text-pretty!');
   });
 });
 

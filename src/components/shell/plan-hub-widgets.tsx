@@ -56,7 +56,6 @@ function ThreadSlot({ model, decision }: { model: PlanHubModel; decision: WeekDe
     <PlanWeekThread
       excludePlannedId={decision?.primary.sessionId ?? null}
       gateActive={shouldGateHardIntensities(model.verdict)}
-      loadTrend={model.loadTrend}
       now={model.now}
       week={model.week}
     />

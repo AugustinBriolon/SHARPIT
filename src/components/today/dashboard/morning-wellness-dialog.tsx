@@ -475,7 +475,7 @@ function MorningWellnessTrigger({
 }) {
   return (
     <Button
-      className={cn('text-xs font-medium', className)}
+      className={className}
       disabled={guardDisabled}
       size="sm"
       type="button"

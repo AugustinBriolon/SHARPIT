@@ -60,7 +60,7 @@ describe('buildWeekDecision', () => {
       hasBrief: false,
     });
     expect(decision.kind).toBe('gated');
-    expect(decision.sentence).toBe('Tiens le volume, protège vendredi.');
+    expect(decision.sentence).toBe('Prochaine séance');
     expect(decision.reason).toBe('Sommeil');
     expect(decision.primary).toEqual({
       label: 'Adapter vendredi',
@@ -83,7 +83,7 @@ describe('buildWeekDecision', () => {
       hasBrief: false,
     });
     expect(decision.kind).toBe('in_progress');
-    expect(decision.sentence).toBe('Tiens le volume. Prochaine : Vélo endurance.');
+    expect(decision.sentence).toBe('Prochaine séance');
     expect(decision.primary.sessionId).toBe('s2');
     expect(decision.secondary?.label).toBe('La semaine');
   });

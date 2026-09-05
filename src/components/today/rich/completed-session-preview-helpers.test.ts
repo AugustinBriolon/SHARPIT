@@ -23,8 +23,12 @@ describe('completed-session-preview-helpers', () => {
   });
 
   it('stacks the Plan rail as map above metrics on every width', () => {
-    expect(completedPreviewGridClass('stack', true)).toBe('grid-cols-1');
-    expect(completedPreviewGridClass('stack', false)).toBe('grid-cols-1');
+    expect(completedPreviewGridClass('stack', true)).toContain(
+      'grid-rows-[8rem_minmax(7.5rem,1fr)]',
+    );
+    expect(completedPreviewGridClass('stack', false)).toContain(
+      'grid-rows-[8rem_minmax(7.5rem,1fr)]',
+    );
     expect(completedPreviewDetailsClass('stack', true)).not.toContain('sm:pl-2');
     expect(completedPreviewTitleClass('stack')).toContain('leading-snug');
     expect(completedPreviewTitleClass('stack')).not.toContain('truncate');

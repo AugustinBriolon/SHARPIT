@@ -162,6 +162,10 @@ function buildSinglePlannedLine(
       intensity: session.intensity,
       load: session.load,
       goalTitle,
+      title: session.title,
+      description: session.description,
+      accessories: session.accessories,
+      strengthPrescription: session.strengthPrescription,
     }),
     plannedSession: session,
   };

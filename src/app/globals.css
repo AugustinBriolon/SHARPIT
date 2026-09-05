@@ -479,6 +479,52 @@
   }
 }
 
+/**
+ * Expand the tap box to 44px on coarse pointers without inflating chrome.
+ * Visual height stays on the size token; only the hit area grows.
+ */
+@utility button-hit {
+  position: relative;
+  isolation: isolate;
+
+  @media (pointer: coarse) {
+    &::before {
+      z-index: -1;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: max(100%, 2.75rem);
+      height: 2.75rem;
+      transform: translate(-50%, -50%);
+      content: '';
+    }
+  }
+}
+
+/**
+ * Button chrome motion — color always, press scale only on fine pointers.
+ * Curve: EASE_OUT_CSS. Release 100ms, press 150ms. No box-shadow.
+ */
+@utility button-motion {
+  transition-duration: 150ms;
+  transition-property: color, background-color, border-color, opacity;
+  transition-timing-function: ease;
+}
+
+@utility button-press {
+  @media (prefers-reduced-motion: no-preference) {
+    transition-duration: 150ms, 150ms, 150ms, 150ms, 100ms;
+    transition-property: color, background-color, border-color, opacity, transform;
+    transition-timing-function: ease, ease, ease, ease, cubic-bezier(0.16, 1, 0.3, 1);
+    @media (pointer: fine) {
+      &:active:not(:disabled):not([aria-haspopup]) {
+        transform: scale(var(--press-scale-small));
+        transition-duration: 150ms, 150ms, 150ms, 150ms, 150ms;
+      }
+    }
+  }
+}
+
 @utility explore-link {
   color: var(--color-muted-foreground);
   font-weight: 500;

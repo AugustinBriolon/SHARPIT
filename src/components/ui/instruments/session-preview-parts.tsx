@@ -13,6 +13,12 @@ export type SessionPreviewMetric = {
   unit: string;
 };
 
+function metricValueClass(compact: boolean): string {
+  return compact
+    ? 'min-w-0 leading-tight text-pretty wrap-break-word text-[clamp(0.9375rem,2.8vw,1.125rem)]'
+    : 'min-w-0 leading-tight text-pretty wrap-break-word text-[clamp(1.125rem,3.6vw,1.5rem)]';
+}
+
 export function SessionPreviewMetrics({
   metrics,
   density = 'comfortable',
@@ -40,19 +46,8 @@ export function SessionPreviewMetrics({
       {metrics.map((metric) => (
         <div key={`${metric.label}-${metric.value}`} className="min-w-0">
           <dt className="text-label text-muted-foreground">{metric.label}</dt>
-          <dd
-            className={cn(
-              'text-data text-foreground mt-1 flex min-w-0 items-baseline gap-1 font-semibold tabular-nums',
-            )}
-          >
-            <span
-              className={cn(
-                'truncate leading-none',
-                compact ? 'text-[clamp(1rem,3vw,1.25rem)]' : 'text-[clamp(1.125rem,3.6vw,1.5rem)]',
-              )}
-            >
-              {metric.value}
-            </span>
+          <dd className="text-data text-foreground mt-1 flex min-w-0 items-baseline gap-1 font-semibold tabular-nums">
+            <span className={metricValueClass(compact)}>{metric.value}</span>
             {metric.unit ? (
               <span className="text-muted-foreground shrink-0 text-xs font-medium">
                 {metric.unit}

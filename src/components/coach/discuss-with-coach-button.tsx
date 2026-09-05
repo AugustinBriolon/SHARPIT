@@ -48,7 +48,7 @@ export function DiscussWithCoachButton({
         appModal?.closePlannedSession();
       }}
     >
-      <MessageCircle className="size-3.5" aria-hidden />
+      <MessageCircle aria-hidden />
       {label}
     </LinkButton>
   );

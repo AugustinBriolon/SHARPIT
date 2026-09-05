@@ -12,18 +12,14 @@ import {
   useTrainingPlan,
 } from '@/hooks/use-data';
 import { resolveCalibrationConfidence } from '@/lib/plan/plan-calibration-confidence';
-import { buildPlanLoadTrend, type PlanLoadTrend } from '@/lib/plan/plan-load-trend';
 import { buildMacroPhaseRail } from '@/lib/plan/plan-macro-rail';
 import { selectPlanGoal } from '@/lib/plan/plan-goal';
 import { buildPlanWeek, type PlanWeek } from '@/lib/plan/plan-week';
 import { isHardSessionIntensity, shouldGateHardIntensities } from '@/lib/plan/intensity-gate';
 import { getProfileCompleteness } from '@/lib/profile/profile-completeness';
-import { buildThread } from '@/lib/training/thread/build-thread';
 import { mapVerdictToDisplay, type OverallVerdict } from '@/lib/today/today-mapping';
 import type { ClientActivity, ClientPlannedSession } from '@/lib/query/types';
 import type { AthleteSnapshot } from '@/core/athlete-state/snapshot';
-
-const SEASON_DAYS = 9 * 7;
 
 function useClientNow(): Date | null {
   const [now, setNow] = useState<Date | null>(null);
@@ -63,20 +59,6 @@ function resolveWeek(
   return buildPlanWeek({ activities, plannedSessions, now });
 }
 
-function resolveLoadTrend(
-  now: Date | null,
-  pending: boolean,
-  activities: readonly ClientActivity[],
-  plannedSessions: readonly ClientPlannedSession[],
-): PlanLoadTrend | null {
-  if (!now || pending) {
-    return null;
-  }
-  return buildPlanLoadTrend(
-    buildThread({ activities, plannedSessions, pivot: now, daysBack: SEASON_DAYS }),
-  );
-}
-
 function usePlanHubQueries() {
   const goalsQuery = useGoals();
   const activitiesQuery = useActivities();
@@ -111,23 +93,7 @@ function usePlanHubDerived(now: Date | null, queries: ReturnType<typeof usePlanH
     () => resolveWeek(now, activitiesQuery.data ?? [], plannedQuery.data ?? []),
     [activitiesQuery.data, plannedQuery.data, now],
   );
-  const loadTrend = useMemo(
-    () =>
-      resolveLoadTrend(
-        now,
-        activitiesQuery.isPending || plannedQuery.isPending,
-        activitiesQuery.data ?? [],
-        plannedQuery.data ?? [],
-      ),
-    [
-      activitiesQuery.data,
-      activitiesQuery.isPending,
-      plannedQuery.data,
-      plannedQuery.isPending,
-      now,
-    ],
-  );
-  return { verdict, goal, macroRail, week, loadTrend };
+  return { verdict, goal, macroRail, week };
 }
 
 function hubCalibration(now: Date | null, queries: ReturnType<typeof usePlanHubQueries>) {
@@ -165,7 +131,6 @@ function assemblePlanHubModel(
     macroRail: derived.macroRail,
     week: derived.week,
     weekReady: derived.week !== null && !listsPending,
-    loadTrend: derived.loadTrend,
     calibration: hubCalibration(now, queries),
     gatedCount: countGatedSessions(derived.week, derived.verdict),
   };

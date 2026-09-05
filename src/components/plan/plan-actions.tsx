@@ -1,11 +1,7 @@
-import Link from 'next/link';
-import { MessageCircle } from 'lucide-react';
-import { coachDiscussHref } from '@/lib/coach/chat/coach-discuss-href';
+import { DiscussWithCoachButton } from '@/components/coach/discuss-with-coach-button';
+import { LinkButton } from '@/components/ui/link-button';
 import { MOI_CALIBRATION_PATH } from '@/lib/moi/paths';
 import type { CalibrationConfidence } from '@/lib/plan/plan-calibration-confidence';
-
-const CHIP =
-  'chip-surface hover:border-primary/25 focus-visible:ring-primary/35 rounded-analysis inline-flex min-h-10 items-center gap-2 px-3 text-sm focus-visible:ring-2 focus-visible:outline-hidden';
 
 /**
  * Footer actions on the hub: calibration when the ruler is degraded, then Coach.
@@ -18,14 +14,15 @@ export function PlanActions({
   return (
     <nav aria-label="Actions plan" className="flex flex-wrap items-center gap-2">
       {calibration ? (
-        <Link className={CHIP} href={MOI_CALIBRATION_PATH}>
+        <LinkButton href={MOI_CALIBRATION_PATH} size="sm" variant="outline">
           Seuils et repères
-        </Link>
+        </LinkButton>
       ) : null}
-      <Link className={CHIP} href={coachDiscussHref({ kind: 'planning', horizonDays: 7 })}>
-        <MessageCircle className="text-muted-foreground size-3.5" strokeWidth={1.5} aria-hidden />
-        Demander au Coach
-      </Link>
+      <DiscussWithCoachButton
+        label="Coach"
+        size="sm"
+        target={{ kind: 'planning', horizonDays: 7 }}
+      />
     </nav>
   );
 }

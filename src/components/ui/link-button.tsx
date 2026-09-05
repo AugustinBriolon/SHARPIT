@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { type VariantProps } from 'class-variance-authority';
-import { buttonVariants } from '@/components/ui/button';
+import { buttonTapScale, buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 type LinkButtonProps = React.ComponentProps<typeof Link> &
@@ -17,12 +17,7 @@ export function LinkButton({
 }: LinkButtonProps) {
   return (
     <Link
-      className={cn(
-        buttonVariants({ variant, size }),
-        !isStatic &&
-          'motion-safe:duration-150 motion-safe:ease-out motion-safe:active:not-disabled:scale-[0.96]',
-        className,
-      )}
+      className={cn(buttonVariants({ variant, size }), !isStatic && buttonTapScale, className)}
       {...props}
     />
   );

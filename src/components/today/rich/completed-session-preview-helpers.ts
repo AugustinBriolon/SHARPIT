@@ -22,7 +22,7 @@ export function completedPreviewGridClass(
   showMapSlot: boolean,
 ): string {
   if (layout === 'stack') {
-    return 'grid-cols-1';
+    return 'grid-cols-1 grid-rows-[8rem_minmax(7.5rem,1fr)]';
   }
   if (layout === 'split') {
     return 'grid-cols-[minmax(0,42%)_minmax(0,58%)] items-stretch';
@@ -40,7 +40,7 @@ export function completedPreviewDetailsClass(
     return 'relative z-10 flex flex-col justify-center gap-2 bg-card px-3 py-3';
   }
   if (layout === 'stack') {
-    return 'relative z-10 flex flex-col gap-2.5 bg-card px-4 py-3';
+    return 'relative z-10 flex min-h-30 flex-col gap-2.5 bg-card px-4 py-3';
   }
   return showMapSlot
     ? 'relative z-10 flex flex-col justify-end gap-3 bg-card px-4 pt-2 pb-4 sm:justify-center sm:px-5 sm:py-5 sm:pl-2'

@@ -88,13 +88,17 @@ function NoMapBand({
       className={cn(
         'flex flex-col justify-end gap-2',
         layout === 'split' && 'h-full min-h-28 border-r px-3 py-3',
-        layout === 'stack' && 'min-h-32 border-b px-4 py-3',
+        layout === 'stack' && 'h-32 border-b',
         layout === 'column' && 'min-h-30 border-b px-4 py-4 sm:min-h-0 sm:border-r sm:border-b-0',
         SPORT_IDENTITY_PANEL[activityType],
       )}
     >
-      <ActivityTypeIndicator type={activityType} />
-      <p className={completedPreviewTitleClass(layout)}>{title}</p>
+      {layout === 'stack' ? null : (
+        <>
+          <ActivityTypeIndicator type={activityType} />
+          <p className={completedPreviewTitleClass(layout)}>{title}</p>
+        </>
+      )}
     </div>
   );
 }
@@ -116,7 +120,7 @@ function MapBand({
       className={cn(
         'pointer-events-none relative isolate overflow-hidden',
         layout === 'split' && 'min-h-28 self-stretch',
-        layout === 'stack' && 'min-h-32',
+        layout === 'stack' && 'h-32',
         layout === 'column' && 'min-h-44 sm:min-h-full sm:self-stretch',
       )}
     >
@@ -154,7 +158,7 @@ function CompletedSessionDetailsPanel({
 }) {
   return (
     <div className={completedPreviewDetailsClass(layout, showMapSlot)}>
-      {showMapSlot ? (
+      {showMapSlot || layout === 'stack' ? (
         <div className="flex flex-wrap items-center gap-2">
           <ActivityTypeIndicator type={activityType} />
           <p className={completedPreviewTitleClass(layout)}>{title}</p>
@@ -186,13 +190,7 @@ function CompletedSessionPreviewGrid({
   layout: CompletedSessionPreviewLayout;
 }) {
   return (
-    <div
-      className={cn(
-        'grid w-full',
-        layout !== 'stack' && 'h-full',
-        completedPreviewGridClass(layout, showMapSlot),
-      )}
-    >
+    <div className={cn('grid h-full w-full', completedPreviewGridClass(layout, showMapSlot))}>
       {showMapSlot ? (
         <MapBand
           activityId={activityId}
@@ -259,6 +257,7 @@ export function CompletedSessionPreview({
     'analysis-panel border-analysis-border/80 rounded-analysis-lg block w-full overflow-hidden border',
     'hover:border-analysis-border transition-[border-color,background-color]',
     'focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none',
+    layout === 'stack' && 'h-full',
     className,
   );
 

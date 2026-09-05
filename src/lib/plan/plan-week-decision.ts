@@ -60,7 +60,7 @@ function gatedDecision(entry: ThreadEntry, reason: string | null): WeekDecision 
   const day = weekdayLabel(entryDate(entry));
   return {
     kind: 'gated',
-    sentence: `Tiens le volume, protège ${day}.`,
+    sentence: 'Prochaine séance',
     reason,
     primary: sessionAction(`Adapter ${day}`, entry.planned.id),
     secondary: weekLink('La semaine'),
@@ -73,7 +73,7 @@ function inProgressDecision(entry: ThreadEntry, reason: string | null): WeekDeci
   }
   return {
     kind: 'in_progress',
-    sentence: `Tiens le volume. Prochaine : ${entry.title}.`,
+    sentence: 'Prochaine séance',
     reason,
     primary: sessionAction('Ouvrir la séance', entry.planned.id),
     secondary: weekLink('La semaine'),

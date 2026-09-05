@@ -16,12 +16,12 @@ describe('Plan hub continuous thread', () => {
     resolve(process.cwd(), 'src/components/plan/plan-week-thread.tsx'),
     'utf8',
   );
-  const strip = readFileSync(
-    resolve(process.cwd(), 'src/components/plan/plan-week-strip.tsx'),
-    'utf8',
-  );
   const decision = readFileSync(
     resolve(process.cwd(), 'src/components/plan/plan-week-decision.tsx'),
+    'utf8',
+  );
+  const actions = readFileSync(
+    resolve(process.cwd(), 'src/components/plan/plan-actions.tsx'),
     'utf8',
   );
 
@@ -46,21 +46,55 @@ describe('Plan hub continuous thread', () => {
 
   it('rails completed previews and caps remaining on the hub', () => {
     expect(entries).toContain('snap-x snap-mandatory');
-    expect(entries).toContain('w-[min(14rem,calc(100cqi-1.5rem))]');
+    expect(entries).toContain('min-w-[min(14rem,100cqi)]');
+    expect(entries).not.toContain('pe-6');
+    expect(entries).not.toContain('hubDoneRailOverflows');
     expect(entries).toContain('layout="stack"');
     expect(entries).toContain('groupHubDoneByDay');
     expect(entries).toContain('hubDoneCardAccessibleName');
-    expect(entries).toContain('pe-6');
+    expect(entries).toContain('Historique');
+    expect(entries).toContain('LinkButton');
+    expect(entries).toContain('variant="outline"');
+    expect(entries).toContain('size="sm"');
+    expect(entries).not.toContain('HISTORY_CHIP');
+    expect(entries).not.toContain('chip-surface');
+    expect(entries).not.toContain('de plus dans l’historique');
     expect(entries).toContain('selectHubDoneEntries');
     expect(entries).toContain('selectHubRemainingEntries');
+    expect(entries).toContain('text-section-title');
+    expect(entries).toContain('HubDayCaption');
     expect(thread).not.toContain('border-l-2');
     expect(thread).not.toContain('PlanTrajectoryStrip');
+    expect(thread).not.toContain('État du bloc');
+    expect(thread).not.toContain('PlanLoadTrendSection');
+    expect(thread).toContain('text-section-title');
+    expect(thread).toContain('Projection');
   });
 
-  it('keeps the week decision typographic and the strip as one instrument', () => {
-    expect(decision).not.toContain('analysis-panel-alt');
-    expect(strip).toContain('analysis-panel');
-    expect(strip).toContain('divide-x');
-    expect(strip).toContain('grid-cols-7');
+  it('opens the next session as a compact instrument card without a week digest', () => {
+    expect(decision).toContain('density="compact"');
+    expect(decision).toContain('buildPlannedSessionPreview');
+    expect(decision).toContain('equipment={preview.equipment}');
+    expect(decision).not.toContain('density="stack"');
+    expect(decision).not.toContain('PlanWeekDigest');
+    expect(decision).not.toContain('athleteVisibleCopy');
+    expect(decision).not.toContain('PlanWeekStrip');
+    expect(decision).toContain('LinkButton');
+    expect(decision).toContain("from '@/components/ui/button'");
+    expect(decision).toContain('variant="outline"');
+    expect(decision).toContain('size="sm"');
+    expect(decision).not.toContain('ACTION_CLASS');
+    expect(decision).not.toContain('chip-surface');
+  });
+
+  it('reuses the shared outline sm button on hub actions', () => {
+    expect(actions).toContain('DiscussWithCoachButton');
+    expect(actions).toContain('label="Coach"');
+    expect(actions).not.toContain('Demander au Coach');
+    expect(actions).toContain('LinkButton');
+    expect(actions).toContain('variant="outline"');
+    expect(actions).toContain('size="sm"');
+    expect(actions).not.toContain('chip-surface');
+    expect(actions).not.toContain('const CHIP');
   });
 });
