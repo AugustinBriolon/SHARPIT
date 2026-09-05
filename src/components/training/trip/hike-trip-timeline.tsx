@@ -89,7 +89,7 @@ export function HikeTripTimelineList({
           >
             <StepBadge index={index} />
             <Link
-              href={`/training/${member.id}`}
+              href={`/activite/${member.id}`}
               title={`Voir le détail — ${member.title?.trim() || 'Randonnée'}`}
               className={cn(
                 'chip-surface-lg group focus-visible:ring-primary/35 flex min-w-0 flex-1 items-center',

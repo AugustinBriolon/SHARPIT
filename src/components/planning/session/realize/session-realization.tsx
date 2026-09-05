@@ -94,7 +94,7 @@ function LinkedActivityCard({ linked, delink }: { linked: ClientActivity; delink
       </div>
       <Link
         className="hover:bg-analysis-surface-alt/80 chip-surface flex items-center justify-between gap-2 px-3 py-2.5 transition-colors"
-        href={`/training/${linked.id}`}
+        href={`/activite/${linked.id}`}
         onClick={() => {
           dismissFromDialog?.();
           appModal?.closePlannedSession();

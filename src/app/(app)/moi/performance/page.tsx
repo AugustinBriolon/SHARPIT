@@ -15,9 +15,11 @@ function PerformanceFallback() {
 }
 
 /**
- * Dedicated Performance surface — records + calibration.
- * Not a Moi hub destination; reachable from Objectifs quiet link and legacy
- * `/progress?tab=performance` redirects. Back stack parent: Moi.
+ * Dedicated Performance surface — observed best efforts.
+ *
+ * Thresholds live at `/moi/calibration`, a Moi hub destination of their own.
+ * Not a Moi hub destination itself; reached from the Objectifs quiet link.
+ * Back stack parent: Moi.
  */
 export default function MoiPerformancePage() {
   return (
@@ -27,7 +29,7 @@ export default function MoiPerformancePage() {
         <p className="text-label">Moi</p>
         <h1 className="text-page-title mt-1">Performance</h1>
         <p className="text-muted-foreground mt-1 text-sm">
-          Records, seuils et lecture de l&apos;entraînement.
+          Records et lecture de l&apos;entraînement.
         </p>
       </StickyHeader>
       <Suspense fallback={<PerformanceFallback />}>

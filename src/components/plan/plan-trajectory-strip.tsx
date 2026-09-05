@@ -147,19 +147,23 @@ export function PlanTrajectoryStrip({
   previews,
   loading = false,
   className,
+  compact = false,
 }: {
   previews: SignalPreview[];
   loading?: boolean;
   className?: string;
+  compact?: boolean;
 }) {
   return (
     <section className={cn('space-y-2', className)}>
-      <div className="space-y-1 px-0.5">
-        <h2 className="text-label">Trajectoire</h2>
-        <p className="text-muted-foreground text-xs leading-snug">
-          Adaptation du bloc et charge du jour — le cadre de la semaine.
-        </p>
-      </div>
+      {compact ? null : (
+        <div className="space-y-1 px-0.5">
+          <h2 className="text-section-title">Comment tu te portes</h2>
+          <p className="text-muted-foreground text-xs leading-snug">
+            Adaptation du bloc et charge du jour. Le cadre de la semaine.
+          </p>
+        </div>
+      )}
       <nav
         aria-busy={loading || undefined}
         aria-label="Signaux de trajectoire — ouvrir le détail"

@@ -5,21 +5,15 @@ import { PlanHubWidgets } from '@/components/shell/plan-hub-widgets';
 /**
  * Plan hub — the athlete's week, read against the goal it serves.
  *
- * Sections follow `docs/design/INFORMATION_ARCHITECTURE.md` ("My week"):
- * goal, the week as one canonical planned-and-completed list, the projected
- * effect of holding it, then the actions that change it.
- *
- * Chrome stays outside Suspense (Instant UX); widgets stream like Today.
+ * Causal order: destination, week decision, then the thread (owed, done,
+ * block state, projection). Chrome stays outside Suspense (Instant UX).
  */
 export function PlanHub() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <StickyHeader>
         <p className="text-label">Plan</p>
-        <h1 className="text-page-title mt-1">Organiser les prochains jours</h1>
-        <p className="text-muted-foreground mt-1 text-sm">
-          Ton objectif, ce que la semaine demande, ce qui est déjà fait, et ce que ça va produire.
-        </p>
+        <h1 className="text-page-title mt-1">Ton cap, cette semaine</h1>
       </StickyHeader>
 
       <Suspense fallback={<PlanHubWidgetsFallback />}>
@@ -32,7 +26,7 @@ export function PlanHub() {
 /** Prerender-safe loading shell for Plan widgets (mirrors Today Suspense fallback). */
 function PlanHubWidgetsFallback() {
   return (
-    <div className="space-y-8" aria-busy>
+    <div className="space-y-4" aria-busy>
       <div className="surface-ink rounded-analysis-lg h-32 animate-pulse" />
       <div className="space-y-3">
         <div className="analysis-panel-alt rounded-analysis-lg h-16 animate-pulse" />
@@ -46,6 +40,7 @@ function PlanHubWidgetsFallback() {
         </div>
       </div>
       <div className="analysis-panel-alt rounded-analysis-lg h-24 animate-pulse" />
+      <div className="analysis-panel-alt rounded-analysis-lg h-20 animate-pulse" />
     </div>
   );
 }

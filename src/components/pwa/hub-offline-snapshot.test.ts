@@ -4,8 +4,8 @@ import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { PlanningView } from '@/components/planning/planning-view';
 import { MoiSectionContent } from '@/components/shell/moi-section-content';
-import { TrainingThreadView } from '@/components/training/thread/training-thread-view';
 import type { PersistedSnapshotEntry } from '@/lib/pwa/snapshot-store-validation';
 
 const OFFLINE_BANNER = 'Lecture seule — hors ligne, données non synchronisables';
@@ -99,8 +99,12 @@ describe('hub offline snapshot contracts', () => {
     resolve(process.cwd(), 'src/components/progress/use-progress-hub-offline.ts'),
     'utf8',
   );
-  const trainingSource = readFileSync(
-    resolve(process.cwd(), 'src/components/training/thread/training-thread-view.tsx'),
+  const planningOfflineSource = readFileSync(
+    resolve(process.cwd(), 'src/components/planning/use-planning-offline.ts'),
+    'utf8',
+  );
+  const planningViewSource = readFileSync(
+    resolve(process.cwd(), 'src/components/planning/planning-view.tsx'),
     'utf8',
   );
   const coachSelectionSource = readFileSync(
@@ -123,10 +127,14 @@ describe('hub offline snapshot contracts', () => {
     expect(progressOfflineSource).toContain('useOfflineSnapshot(!online && hasNoLiveContent)');
   });
 
-  it('TrainingThreadView short-circuits the skeletons when offline and all queries cold', () => {
-    expect(trainingSource).toContain('useOfflineSnapshot(!online && hasNoLiveData)');
-    expect(trainingSource).toMatch(
-      /if\s*\(\s*!online\s*&&\s*hasNoLiveData\s*&&\s*offlineEntry\s*\)/,
+  it('the week short-circuits the skeletons when offline and all queries cold', () => {
+    expect(planningOfflineSource).toContain('useOfflineSnapshot(!online && hasNoLiveContent)');
+    expect(planningOfflineSource).toContain('!isSet(plannedQuery.data)');
+    expect(planningViewSource).toContain('<OfflineSnapshotSummary entry={offlineEntry} />');
+    // The gate must return before the content mounts, or the content's query
+    // hooks still run on a path where there is nothing for them to read.
+    expect(planningViewSource).toMatch(
+      /if \(showOfflineSnapshot && offlineEntry\) \{[\s\S]*?\}\s*\n\s*return <PlanningWeekView/,
     );
   });
 
@@ -175,7 +183,7 @@ describe('MoiSectionContent offline snapshot render', () => {
   });
 });
 
-describe('TrainingThreadView offline snapshot render', () => {
+describe('week offline snapshot render', () => {
   beforeEach(() => {
     vi.mocked(useOnlineStatus).mockReturnValue(false);
     vi.mocked(useOfflineSnapshot).mockReturnValue({ entry: mockOfflineEntry(), loading: false });
@@ -185,9 +193,8 @@ describe('TrainingThreadView offline snapshot render', () => {
   });
 
   it('renders snapshot instead of the loading shell when offline and cold', () => {
-    const html = renderToStaticMarkup(createElement(TrainingThreadView));
+    const html = renderToStaticMarkup(createElement(PlanningView, { embedded: true }));
 
     expect(html).toContain(OFFLINE_BANNER);
-    expect(html).not.toContain('Réglette de charge');
   });
 });

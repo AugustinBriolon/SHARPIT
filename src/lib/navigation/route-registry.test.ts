@@ -1,36 +1,47 @@
 import { describe, expect, it } from 'vitest';
 import { isTransientRoute, resolveRouteFallback, resolveRouteLabel } from './route-registry';
 
+const HOME = { href: '/', label: 'Aujourd’hui' };
+const PLAN = { href: '/plan', label: 'Plan' };
+const ACTIVITE = { href: '/activite', label: 'Activité' };
+const MOI = { href: '/moi', label: 'Moi' };
+
 describe('route-registry', () => {
   describe('resolveRouteLabel', () => {
-    it('matches Shell V1 hubs and static routes', () => {
+    it('matches hubs and static routes', () => {
+      expect(resolveRouteLabel('/')).toBe('Aujourd’hui');
       expect(resolveRouteLabel('/plan')).toBe('Plan');
       expect(resolveRouteLabel('/activite')).toBe('Activité');
       expect(resolveRouteLabel('/moi')).toBe('Moi');
-      expect(resolveRouteLabel('/training')).toBe('Fil de la semaine');
-      expect(resolveRouteLabel('/training/history')).toBe('Historique');
-      expect(resolveRouteLabel('/settings')).toBe('Moi');
-      expect(resolveRouteLabel('/settings/privacy')).toBe('Confidentialité');
       expect(resolveRouteLabel('/coach')).toBe('Coach');
-      expect(resolveRouteLabel('/')).toBe('Aujourd’hui');
+      expect(resolveRouteLabel('/settings/privacy')).toBe('Confidentialité');
     });
 
-    it('matches dynamic segments', () => {
-      expect(resolveRouteLabel('/training/abc123')).toBe('Séance');
-      expect(resolveRouteLabel('/training/abc123/edit')).toBe('Édition');
+    it('matches Plan children', () => {
+      expect(resolveRouteLabel('/plan/semaine')).toBe('La semaine');
+      expect(resolveRouteLabel('/plan/bilan')).toBe('Bilan hebdo');
+      expect(resolveRouteLabel('/plan/charge')).toBe('Charge');
+      expect(resolveRouteLabel('/plan/adaptation')).toBe('Adaptation');
+    });
+
+    it('matches Activité children, including dynamic segments', () => {
+      expect(resolveRouteLabel('/activite/nouvelle')).toBe('Nouvelle activité');
+      expect(resolveRouteLabel('/activite/abc123')).toBe('Séance');
+      expect(resolveRouteLabel('/activite/abc123/edit')).toBe('Édition');
+      expect(resolveRouteLabel('/activite/sejours')).toBe('Séjours');
+      expect(resolveRouteLabel('/activite/sejours/trip-1')).toBe('Séjour');
     });
 
     it('matches Moi dedicated child surfaces', () => {
       expect(resolveRouteLabel('/moi/corps')).toBe('Corps');
       expect(resolveRouteLabel('/moi/objectifs')).toBe('Objectifs');
       expect(resolveRouteLabel('/moi/performance')).toBe('Performance');
-      expect(resolveRouteLabel('/settings/calibration')).toBe('Seuils & repères');
+      expect(resolveRouteLabel('/moi/calibration')).toBe('Seuils & repères');
       expect(resolveRouteLabel('/consent')).toBe('Consentements');
     });
 
     it('ignores search / hash when matching', () => {
-      expect(resolveRouteLabel('/training/history?tab=running')).toBe('Historique');
-      expect(resolveRouteLabel('/progress?tab=performance')).toBe('Progression');
+      expect(resolveRouteLabel('/plan/semaine?week=2026-07-20')).toBe('La semaine');
       expect(resolveRouteLabel('/moi/performance?sport=run')).toBe('Performance');
     });
 
@@ -41,155 +52,66 @@ describe('route-registry', () => {
 
   describe('isTransientRoute', () => {
     it('marks activity edit as transient (skipped by the nav stack)', () => {
-      expect(isTransientRoute('/training/abc123/edit')).toBe(true);
-      expect(isTransientRoute('/training/abc123/edit?x=1')).toBe(true);
+      expect(isTransientRoute('/activite/abc123/edit')).toBe(true);
+      expect(isTransientRoute('/activite/abc123/edit?x=1')).toBe(true);
     });
 
-    it('does not mark activity detail or other training routes as transient', () => {
-      expect(isTransientRoute('/training/abc123')).toBe(false);
-      expect(isTransientRoute('/training/history')).toBe(false);
-      expect(isTransientRoute('/training/manual')).toBe(false);
+    it('does not mark activity detail or entry as transient', () => {
+      expect(isTransientRoute('/activite/abc123')).toBe(false);
+      expect(isTransientRoute('/activite/nouvelle')).toBe(false);
+      expect(isTransientRoute('/activite/sejours')).toBe(false);
     });
   });
 
   describe('resolveRouteFallback', () => {
-    it('returns the direct parent for detail routes', () => {
-      expect(resolveRouteFallback('/training/abc123')).toEqual({
-        href: '/activite',
-        label: 'Activité',
-      });
-      expect(resolveRouteFallback('/training/history')).toEqual({
-        href: '/activite',
-        label: 'Activité',
-      });
-      expect(resolveRouteFallback('/training')).toEqual({
-        href: '/plan',
-        label: 'Plan',
-      });
-      expect(resolveRouteFallback('/training/planning')).toEqual({
-        href: '/plan',
-        label: 'Plan',
+    it('sends Plan flows back to /plan', () => {
+      expect(resolveRouteFallback('/plan/semaine')).toEqual(PLAN);
+      expect(resolveRouteFallback('/plan/bilan')).toEqual(PLAN);
+    });
+
+    // Charge and adaptation are block-scale readings; Back lands on Plan, not Today.
+    it('sends charge and adaptation back to /plan', () => {
+      expect(resolveRouteFallback('/plan/charge')).toEqual(PLAN);
+      expect(resolveRouteFallback('/plan/adaptation')).toEqual(PLAN);
+    });
+
+    it('sends Activité flows back to /activite', () => {
+      expect(resolveRouteFallback('/activite/nouvelle')).toEqual(ACTIVITE);
+      expect(resolveRouteFallback('/activite/abc123')).toEqual(ACTIVITE);
+      expect(resolveRouteFallback('/activite/cmrvpthya01xkmsm80lybbzqd')).toEqual(ACTIVITE);
+      expect(resolveRouteFallback('/activite/sejours')).toEqual(ACTIVITE);
+    });
+
+    it('sends a trip step back to the trips list', () => {
+      expect(resolveRouteFallback('/activite/sejours/trip-1')).toEqual({
+        href: '/activite/sejours',
+        label: 'Séjours',
       });
     });
 
     it('resolves edit page fallback back to its parent detail', () => {
-      expect(resolveRouteFallback('/training/session-42/edit')).toEqual({
-        href: '/training/session-42',
+      expect(resolveRouteFallback('/activite/session-42/edit')).toEqual({
+        href: '/activite/session-42',
         label: 'Séance',
       });
     });
 
-    it('sends manual entry / saisie back to Activité (never hard-coded Historique)', () => {
-      expect(resolveRouteFallback('/training/manual')).toEqual({
-        href: '/activite',
-        label: 'Activité',
-      });
+    it('sends Moi children and every /settings child back to /moi', () => {
+      expect(resolveRouteFallback('/moi/corps')).toEqual(MOI);
+      expect(resolveRouteFallback('/moi/objectifs')).toEqual(MOI);
+      expect(resolveRouteFallback('/moi/performance')).toEqual(MOI);
+      expect(resolveRouteFallback('/moi/calibration')).toEqual(MOI);
+      expect(resolveRouteFallback('/settings/account')).toEqual(MOI);
+      expect(resolveRouteFallback('/settings/integrations')).toEqual(MOI);
+      expect(resolveRouteFallback('/settings/equipment')).toEqual(MOI);
+      expect(resolveRouteFallback('/settings/privacy')).toEqual(MOI);
+      expect(resolveRouteFallback('/settings/appearance/expert-mode')).toEqual(MOI);
     });
 
-    it('sends session detail back to Activité hub (history lives on the hub)', () => {
-      expect(resolveRouteFallback('/training/cmrvpthya01xkmsm80lybbzqd')).toEqual({
-        href: '/activite',
-        label: 'Activité',
-      });
-    });
-
-    it('sends Moi children back to /moi', () => {
-      expect(resolveRouteFallback('/moi/corps')).toEqual({
-        href: '/moi',
-        label: 'Moi',
-      });
-      expect(resolveRouteFallback('/moi/objectifs')).toEqual({
-        href: '/moi',
-        label: 'Moi',
-      });
-      expect(resolveRouteFallback('/moi/performance')).toEqual({
-        href: '/moi',
-        label: 'Moi',
-      });
-      expect(resolveRouteFallback('/settings/privacy')).toEqual({
-        href: '/moi',
-        label: 'Moi',
-      });
-    });
-
-    it('sends every /settings child back to /moi', () => {
-      expect(resolveRouteFallback('/settings/account')).toEqual({
-        href: '/moi',
-        label: 'Moi',
-      });
-      expect(resolveRouteFallback('/settings/integrations')).toEqual({
-        href: '/moi',
-        label: 'Moi',
-      });
-      expect(resolveRouteFallback('/settings/equipment')).toEqual({
-        href: '/moi',
-        label: 'Moi',
-      });
-      expect(resolveRouteFallback('/settings/privacy')).toEqual({
-        href: '/moi',
-        label: 'Moi',
-      });
-      expect(resolveRouteFallback('/settings/calibration')).toEqual({
-        href: '/moi',
-        label: 'Moi',
-      });
-      expect(resolveRouteFallback('/settings/appearance/expert-mode')).toEqual({
-        href: '/moi',
-        label: 'Moi',
-      });
-    });
-
-    it('sends Plan flows back to /plan', () => {
-      expect(resolveRouteFallback('/training/planning')).toEqual({
-        href: '/plan',
-        label: 'Plan',
-      });
-      expect(resolveRouteFallback('/training/weekly-review')).toEqual({
-        href: '/plan',
-        label: 'Plan',
-      });
-      expect(resolveRouteFallback('/training')).toEqual({
-        href: '/plan',
-        label: 'Plan',
-      });
-    });
-
-    it('sends Activité flows back to /activite', () => {
-      expect(resolveRouteFallback('/training/manual')).toEqual({
-        href: '/activite',
-        label: 'Activité',
-      });
-      expect(resolveRouteFallback('/training/trips')).toEqual({
-        href: '/activite',
-        label: 'Activité',
-      });
-      expect(resolveRouteFallback('/training/history')).toEqual({
-        href: '/activite',
-        label: 'Activité',
-      });
-    });
-
-    it('sends /today/* and nutrition drill-downs back to Aujourd’hui', () => {
-      expect(resolveRouteFallback('/today/recovery')).toEqual({
-        href: '/',
-        label: 'Aujourd’hui',
-      });
-      expect(resolveRouteFallback('/today/sleep')).toEqual({
-        href: '/',
-        label: 'Aujourd’hui',
-      });
-      expect(resolveRouteFallback('/today/effort')).toEqual({
-        href: '/',
-        label: 'Aujourd’hui',
-      });
-      expect(resolveRouteFallback('/today/adaptation')).toEqual({
-        href: '/',
-        label: 'Aujourd’hui',
-      });
-      expect(resolveRouteFallback('/nutrition')).toEqual({
-        href: '/',
-        label: 'Aujourd’hui',
-      });
+    it('sends remaining /today drill-downs and nutrition back to Aujourd’hui', () => {
+      expect(resolveRouteFallback('/today/recovery')).toEqual(HOME);
+      expect(resolveRouteFallback('/today/sleep')).toEqual(HOME);
+      expect(resolveRouteFallback('/nutrition')).toEqual(HOME);
     });
 
     it('labels legal walls without inventing a shell hub parent', () => {
@@ -197,22 +119,36 @@ describe('route-registry', () => {
       expect(resolveRouteLabel('/privacy')).toBe('Confidentialité');
       expect(resolveRouteLabel('/terms')).toBe('Conditions');
       // No defaultParent → HOME only as last resort; gate fail-closes entry.
-      expect(resolveRouteFallback('/consent')).toEqual({
-        href: '/',
-        label: 'Aujourd’hui',
-      });
-      expect(resolveRouteFallback('/privacy')).toEqual({
-        href: '/',
-        label: 'Aujourd’hui',
-      });
-      expect(resolveRouteFallback('/terms')).toEqual({
-        href: '/',
-        label: 'Aujourd’hui',
-      });
+      expect(resolveRouteFallback('/consent')).toEqual(HOME);
+      expect(resolveRouteFallback('/privacy')).toEqual(HOME);
+      expect(resolveRouteFallback('/terms')).toEqual(HOME);
     });
 
     it('defaults to home when no matcher applies', () => {
-      expect(resolveRouteFallback('/unknown')).toEqual({ href: '/', label: 'Aujourd’hui' });
+      expect(resolveRouteFallback('/unknown')).toEqual(HOME);
+    });
+
+    // Deleted outright rather than redirected: a stale bookmark must not resolve
+    // to a label that implies the surface still exists.
+    it('has no matcher left for the removed /training and legacy stub routes', () => {
+      for (const gone of [
+        '/training',
+        '/training/planning',
+        '/training/weekly-review',
+        '/training/manual',
+        '/training/history',
+        '/training/trips',
+        '/today/effort',
+        '/today/adaptation',
+        '/settings',
+        '/settings/calibration',
+        '/settings/goals',
+        '/progress',
+        '/biology',
+      ]) {
+        expect(resolveRouteLabel(gone)).toBe('Retour');
+        expect(resolveRouteFallback(gone)).toEqual(HOME);
+      }
     });
   });
 });

@@ -17,7 +17,7 @@ export function handleSessionsCoachAction(
       handlers.onPlan();
       break;
     case 'manual':
-      handlers.router.push('/training/manual');
+      handlers.router.push('/activite/nouvelle');
       break;
     case 'generate':
       handlers.onGenerate();

@@ -89,7 +89,7 @@ export function TrainingListEmptyStates({
           description="Connecte une source ou ajoute une séance manuelle pour construire l’historique."
           title="Aucune activité enregistrée"
           action={
-            <LinkButton href="/training/manual" size="sm" variant="outline">
+            <LinkButton href="/activite/nouvelle" size="sm" variant="outline">
               <CalendarPlus className="size-3.5" aria-hidden />
               Saisir une activité
             </LinkButton>

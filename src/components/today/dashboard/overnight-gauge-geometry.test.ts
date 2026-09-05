@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   OVERNIGHT_GAUGE_REVEAL_MS,
   OVERNIGHT_TICKS,
+  overnightRevealDelayMs,
   overnightTickStroke,
 } from './overnight-gauge-geometry';
 import { readFileSync } from 'node:fs';
@@ -17,6 +18,12 @@ describe('overnight gauge geometry', () => {
   it('keeps unknown scores on the border track', () => {
     expect(overnightTickStroke(0, null)).toBe('var(--color-border)');
     expect(overnightTickStroke(0, 50)).toBe('var(--color-foreground)');
+  });
+
+  it('eases reveal delays toward the tip', () => {
+    expect(overnightRevealDelayMs(0)).toBe(0);
+    expect(overnightRevealDelayMs(OVERNIGHT_TICKS.length - 1)).toBe(OVERNIGHT_GAUGE_REVEAL_MS);
+    expect(overnightRevealDelayMs(1)).toBeLessThan(overnightRevealDelayMs(40));
   });
 });
 

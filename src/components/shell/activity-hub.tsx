@@ -8,7 +8,7 @@ import { LinkButton } from '@/components/ui/link-button';
  * Activité hub — Shell V1.1 workflow (not an Accès link dump).
  *
  * Historique list + CTA Nouvelle activité. Séjours stay reachable via deep
- * link (`/training/trips`) but are not featured here (Moi-split deferred).
+ * link (`/activite/sejours`) but are not featured here.
  *
  * Chrome stays outside Suspense (Instant UX); the list streams like Plan/Today.
  */
@@ -24,7 +24,7 @@ export function ActivityHub() {
       </StickyHeader>
 
       <div>
-        <LinkButton className="gap-1.5" href="/training/manual" size="sm">
+        <LinkButton className="gap-1.5" href="/activite/nouvelle" size="sm">
           <Plus className="size-3.5" aria-hidden />
           Nouvelle activité
         </LinkButton>

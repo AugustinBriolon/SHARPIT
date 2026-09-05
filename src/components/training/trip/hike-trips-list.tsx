@@ -82,7 +82,7 @@ export function HikeTripsList() {
             <li key={trip.id}>
               {/* No type badge: every trip is a hike, so it would carry no signal. */}
               <InstrumentListChip
-                href={`/training/trips/${trip.id}`}
+                href={`/activite/sejours/${trip.id}`}
                 meta={buildHikeTripListMeta(trip.summary)}
                 title={trip.name}
               />

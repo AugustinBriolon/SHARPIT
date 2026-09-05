@@ -18,7 +18,7 @@ function ActivityListEmpty({ emptyLabel }: { emptyLabel?: string }) {
     ? undefined
     : 'Commence par une saisie manuelle ou synchronise une source connectée.';
   const action = emptyLabel ? undefined : (
-    <LinkButton className="mt-1" href="/training/manual" size="sm">
+    <LinkButton className="mt-1" href="/activite/nouvelle" size="sm">
       Saisir une séance manuellement
     </LinkButton>
   );
@@ -162,7 +162,7 @@ export function DeleteActivityButton({ id }: { id: string }) {
     }
     remove.mutate(id);
     // Return to origin via stack; empty stack → Activité (never Historique / Fil).
-    const previous = navStack.peekBackFrom(`/training/${id}`);
+    const previous = navStack.peekBackFrom(`/activite/${id}`);
     router.push(previous?.href ?? '/activite');
   }
 

@@ -41,7 +41,7 @@ describe('describeCoachDiscussContext', () => {
 
   it('points back at the surface the context came from', () => {
     expect(describeCoachDiscussContext({ kind: 'activity', activityId: 'a-1' }).sourceHref).toBe(
-      '/training/a-1',
+      '/activite/a-1',
     );
     expect(describeCoachDiscussContext({ kind: 'record', categoryKey: 'k' }).sourceHref).toBe(
       '/moi/performance',

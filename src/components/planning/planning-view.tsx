@@ -5,6 +5,8 @@ import { PlanningPageHeader } from '@/components/planning/planning-page-header';
 import { PlanningWeekChrome } from '@/components/planning/planning-week-chrome';
 import { PlanningWeekSummary } from '@/components/planning/planning-week-summary';
 import { PlanningViewOverlays } from '@/components/planning/planning-view-overlays';
+import { OfflineSnapshotSummary } from '@/components/pwa/offline-snapshot-summary';
+import { usePlanningOffline } from '@/components/planning/use-planning-offline';
 import {
   type PlanningDialogState,
   usePlanningViewData,
@@ -43,13 +45,26 @@ function usePlanningDialogState(data: ReturnType<typeof usePlanningViewData>) {
   };
 }
 
-export function PlanningView({
-  embedded = false,
-  showCoachMenu = !embedded,
-}: {
-  embedded?: boolean;
-  showCoachMenu?: boolean;
-}) {
+type PlanningViewProps = { embedded?: boolean; showCoachMenu?: boolean };
+
+/**
+ * The week, gated on having anything to arrange.
+ *
+ * The gate is a separate component from the content on purpose: the content's
+ * hooks would otherwise still run — and still need a live query client — on the
+ * offline path where there is nothing for them to read.
+ */
+export function PlanningView({ embedded = false, showCoachMenu = !embedded }: PlanningViewProps) {
+  const { offlineEntry, showOfflineSnapshot } = usePlanningOffline();
+
+  if (showOfflineSnapshot && offlineEntry) {
+    return <OfflineSnapshotSummary entry={offlineEntry} />;
+  }
+
+  return <PlanningWeekView embedded={embedded} showCoachMenu={showCoachMenu} />;
+}
+
+function PlanningWeekView({ embedded = false, showCoachMenu = !embedded }: PlanningViewProps) {
   const router = useRouter();
   const data = usePlanningViewData(showCoachMenu);
   const dialogState = usePlanningDialogState(data);

@@ -75,7 +75,7 @@ describe('HikeTripTimelineList', () => {
     const html = renderToStaticMarkup(createElement(HikeTripTimelineList, { members: [member] }));
 
     expect(html).toContain('Refuge du Plan');
-    expect(html).toContain('/training/a1');
+    expect(html).toContain('/activite/a1');
     expect(html).toContain('>1</span>');
   });
 });

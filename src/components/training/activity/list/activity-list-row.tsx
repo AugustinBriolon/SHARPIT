@@ -239,7 +239,7 @@ export function ActivityRow({
   return (
     <Link
       className={panelClassName}
-      href={`/training/${activity.id}`}
+      href={`/activite/${activity.id}`}
       onPointerEnter={() => prefetchActivityDetail(queryClient, activity.id, activity.type)}
     >
       {content}

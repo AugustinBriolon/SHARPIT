@@ -42,7 +42,7 @@ describe('today-day-summary-line-helpers', () => {
         activityType: ActivityType.RUN,
         primary: 'Footing',
         kind: 'done',
-        href: '/training/a1',
+        href: '/activite/a1',
         isDone: true,
         metrics: [{ label: 'Durée', value: '30:00', unit: 'min' }],
       },

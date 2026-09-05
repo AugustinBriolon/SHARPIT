@@ -71,4 +71,25 @@ describe('OvernightScoreCard', () => {
     expect(html).toContain('icon-well');
     expect(html).toContain('chip-surface-lg');
   });
+
+  it('omits the trend well when trend is null', () => {
+    const html = renderToStaticMarkup(
+      createElement(OvernightScoreCard, {
+        accent: 'sleep',
+        baselineDetail: 'Sommeil profond -21 min vs moy.',
+        baselineTitle: 'Sous ta moyenne',
+        href: '/today/sleep',
+        icon: 'moon',
+        score: 64,
+        statusLabel: 'Sommeil correct',
+        subtitle: null,
+        title: 'Score sommeil',
+        trend: null,
+      }),
+    );
+
+    expect(html).toContain('Sous ta moyenne');
+    expect(html).not.toContain('bg-signal-caution/15');
+    expect(html).not.toContain('bg-highlight/40');
+  });
 });

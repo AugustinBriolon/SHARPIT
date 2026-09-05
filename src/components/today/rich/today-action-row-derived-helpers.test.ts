@@ -29,14 +29,14 @@ describe('derivePostSessionLoop', () => {
         activityId: 'act-1',
         activityTitle: 'Course',
         needsFeeling: false,
-        narrativeHref: '/training/activities/act-1',
+        narrativeHref: '/activite/act-1',
         freshnessLine: 'Twin à jour - ta séance est intégrée.',
       },
       daySummaryLines: [
         {
           id: 'act-1',
           kind: 'done',
-          href: '/training/activities/act-1',
+          href: '/activite/act-1',
           isDone: true,
           primary: 'Course',
           secondary: null,
@@ -54,7 +54,7 @@ describe('derivePostSessionLoop', () => {
       activityId: 'act-2',
       activityTitle: 'Musculation',
       needsFeeling: true,
-      narrativeHref: '/training/activities/act-2',
+      narrativeHref: '/activite/act-2',
       freshnessLine: null,
     };
     const vm = baseVm({ postSessionLoop: loop });

@@ -70,7 +70,7 @@ describe('weekCellReading / weekCellAccent', () => {
 
 describe('weekCellHref', () => {
   it('opens the planning framed on the week', () => {
-    expect(weekCellHref(cell())).toBe('/training/planning?week=2026-07-20');
+    expect(weekCellHref(cell())).toBe('/plan/semaine?week=2026-07-20');
   });
 });
 

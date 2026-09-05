@@ -5,7 +5,7 @@ import {
   OvernightScoreCard,
   type OvernightScoreCardProps,
 } from '@/components/today/dashboard/overnight-score-card';
-import { TWIN_DRILL_DOWN, twinDimensionFromHref } from '@/lib/today/today-twin-navigation';
+import { TWIN_DRILL_DOWN } from '@/lib/today/today-twin-navigation';
 import { pickTodayResumeSignalPreviews, type SignalPreview } from '@/lib/today/signal-previews';
 
 type MetricsRow = TodayViewModel['hero']['metricsRow'];
@@ -28,15 +28,6 @@ const CARD_META = {
   },
 };
 
-function previewFor(
-  previews: SignalPreviews | undefined,
-  key: 'sleep' | 'recovery',
-): SignalPreview | null {
-  return (
-    (previews ? pickTodayResumeSignalPreviews(previews) : []).find((p) => p.key === key) ?? null
-  );
-}
-
 function gaugeOrEmpty(preview: SignalPreview | null) {
   if (preview?.visual.kind === 'gauge') {
     return preview.visual;
@@ -54,13 +45,11 @@ function cardProps({
   kind,
   preview,
   metricsRow,
-  isLimiter,
   loading,
 }: {
   kind: 'sleep' | 'recovery';
   preview: SignalPreview | null;
   metricsRow: MetricsRow;
-  isLimiter: boolean;
   loading: boolean;
 }): OvernightScoreCardProps {
   const meta = CARD_META[kind];
@@ -72,7 +61,6 @@ function cardProps({
       baselineTitle: null,
       href: meta.href,
       icon: meta.icon,
-      isLimiter: false,
       score: null,
       statusLabel: null,
       subtitle: null,
@@ -86,7 +74,6 @@ function cardProps({
     baselineTitle: gauge.baselineTitle,
     href: meta.href,
     icon: meta.icon,
-    isLimiter,
     score: gauge.score ?? metricsRow[meta.scoreKey],
     statusLabel: gauge.statusLabel,
     subtitle: preview?.subtitle ?? null,
@@ -98,31 +85,31 @@ function cardProps({
 function OvernightPair({
   metricsRow,
   signalPreviews,
-  limiting,
   loading,
 }: {
   metricsRow: MetricsRow;
   signalPreviews?: SignalPreviews;
-  limiting: string | null;
   loading: boolean;
 }) {
+  const previews = signalPreviews ? pickTodayResumeSignalPreviews(signalPreviews) : [];
+  const sleep = previews.find((p) => p.key === 'sleep') ?? null;
+  const recovery = previews.find((p) => p.key === 'recovery') ?? null;
+
   return (
     <>
       <OvernightScoreCard
         {...cardProps({
           kind: 'sleep',
-          preview: previewFor(signalPreviews, 'sleep'),
+          preview: sleep,
           metricsRow,
-          isLimiter: limiting === 'sleep',
           loading,
         })}
       />
       <OvernightScoreCard
         {...cardProps({
           kind: 'recovery',
-          preview: previewFor(signalPreviews, 'recovery'),
+          preview: recovery,
           metricsRow,
-          isLimiter: limiting === 'recovery',
           loading,
         })}
       />
@@ -137,31 +124,22 @@ function OvernightPair({
 export function TodaySignalStrip({
   metricsRow,
   signalPreviews,
-  limiterHref = null,
   className,
   loading = false,
 }: {
   metricsRow: MetricsRow;
   signalPreviews?: SignalPreviews;
-  limiterHref?: string | null;
   className?: string;
   loading?: boolean;
 }) {
-  const limiting = loading ? null : twinDimensionFromHref(limiterHref);
-
   return (
     <div className={className}>
       <nav
         aria-busy={loading || undefined}
         aria-label="Signaux de nuit — ouvrir le détail"
-        className="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:items-stretch"
+        className="grid grid-cols-2 items-stretch gap-2 sm:gap-3"
       >
-        <OvernightPair
-          limiting={limiting}
-          loading={loading}
-          metricsRow={metricsRow}
-          signalPreviews={signalPreviews}
-        />
+        <OvernightPair loading={loading} metricsRow={metricsRow} signalPreviews={signalPreviews} />
       </nav>
     </div>
   );

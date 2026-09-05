@@ -162,7 +162,7 @@ function CompletedActivitiesList({
           <li key={a.id}>
             <InstrumentListChip
               activityType={a.type}
-              href={`/training/${a.id}`}
+              href={`/activite/${a.id}`}
               meta={['Réalisé']}
               title={a.title?.trim() || activityTypeLabels[a.type]}
               done

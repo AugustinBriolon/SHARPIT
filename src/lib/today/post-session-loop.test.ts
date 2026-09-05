@@ -45,7 +45,7 @@ describe('buildPostSessionLoop', () => {
       activityId: 'a1',
       activityTitle: 'Tempo',
       needsFeeling: true,
-      narrativeHref: '/training/a1',
+      narrativeHref: '/activite/a1',
       freshnessLine: 'Twin à jour — ta séance est intégrée.',
     });
   });

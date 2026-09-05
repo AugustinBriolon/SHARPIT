@@ -98,7 +98,7 @@ export function ActivityChip({
     <InstrumentListChip
       activityType={activity.type}
       className={buildActivityChipClassName({ selectionMode, selectable, selected })}
-      href={selectionMode ? undefined : `/training/${activity.id}`}
+      href={selectionMode ? undefined : `/activite/${activity.id}`}
       meta={meta}
       showArrow={false}
       title={title}

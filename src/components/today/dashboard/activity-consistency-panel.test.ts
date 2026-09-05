@@ -30,7 +30,7 @@ describe('ActivityConsistencyPanel', () => {
     expect(html).toContain('icon-well');
     expect(html).toContain('border-primary');
     expect(html).toContain('border-[2.5px]');
-    expect(html).toContain('href="/training"');
+    expect(html).toContain('href="/plan/semaine"');
     expect(html).toContain('text-[2.75rem]');
     expect(html).toContain('grid-template-columns');
     expect(html).toContain('icon-well');
@@ -63,7 +63,7 @@ describe('ActivityConsistencyPanel', () => {
     );
 
     expect(html).toContain('Voir l’historique');
-    expect(html).toContain('href="/training"');
+    expect(html).toContain('href="/plan/semaine"');
     expect(html).toContain('de suite');
   });
 });

@@ -75,3 +75,6 @@ next-env.d.ts
 /blob-report
 /playwright/.cache
 /e2e/.auth
+.superpowers
+/docs/superpowers/
+.uizze

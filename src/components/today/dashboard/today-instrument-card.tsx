@@ -1,8 +1,16 @@
-'use client';
-
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
+
+export type TodayInstrumentCardProps = {
+  title: string;
+  subtitle?: string | null;
+  icon: ReactNode;
+  href: string;
+  titleAttr?: string;
+  className?: string;
+  children?: ReactNode;
+};
 
 /**
  * Shared Today instrument chrome — title, optional subtitle, Lime icon well.
@@ -16,17 +24,7 @@ export function TodayInstrumentCard({
   titleAttr,
   className,
   children,
-  isLimiter = false,
-}: {
-  title: string;
-  subtitle?: string | null;
-  icon: ReactNode;
-  href: string;
-  titleAttr?: string;
-  className?: string;
-  children?: ReactNode;
-  isLimiter?: boolean;
-}) {
+}: TodayInstrumentCardProps) {
   return (
     <Link
       href={href}
@@ -36,7 +34,6 @@ export function TodayInstrumentCard({
         'focus-visible:ring-primary/35 flex h-full w-full min-w-0 flex-col overflow-hidden',
         'rounded-2xl px-4 pt-4 pb-3.5 transition-[border-color,background-color] duration-150 ease-out',
         'focus-visible:ring-2 focus-visible:outline-hidden',
-        isLimiter && 'border-signal-caution/45 bg-signal-caution/8',
         className,
       )}
     >

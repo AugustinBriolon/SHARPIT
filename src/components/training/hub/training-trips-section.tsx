@@ -23,12 +23,12 @@ export function TrainingTripsSection({
 
   return (
     <section className="min-w-0">
-      {renderHeader({ title: 'Séjours', href: '/training/trips', cta: 'Tous les séjours' })}
+      {renderHeader({ title: 'Séjours', href: '/activite/sejours', cta: 'Tous les séjours' })}
       <ul className="flex flex-col gap-2">
         {trips.slice(0, PREVIEW_LIMIT).map((trip) => (
           <li key={trip.id}>
             <InstrumentListChip
-              href={`/training/trips/${trip.id}`}
+              href={`/activite/sejours/${trip.id}`}
               meta={buildHikeTripListMeta(trip.summary)}
               title={trip.name}
             />

@@ -1,7 +1,6 @@
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { CompositionView } from '@/components/corps/composition/composition-view';
-import { CalibrationSection } from '@/components/progress/calibration-section';
 import { PhysicalHealthHubView } from '@/components/physical-health/physical-health-hub-view';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -20,12 +19,17 @@ export function BodySection() {
   );
 }
 
-/** Performance dedicated content — records + calibration (not mixed with Corps/Objectifs). */
+/**
+ * Performance dedicated content — observed best efforts.
+ *
+ * Thresholds are not mounted here: one editor, at `/moi/calibration`. Records are
+ * what the body produced; a threshold is the ruler it is measured against, and
+ * two entry points to one editor is what made calibration hard to find.
+ */
 export function PerformanceSection() {
   return (
     <div className="space-y-6">
       <RecordsPanel />
-      <CalibrationSection />
       <Link
         className="text-muted-foreground hover:text-foreground inline-block text-sm underline underline-offset-2"
         href="/activite"

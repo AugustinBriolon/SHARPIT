@@ -54,6 +54,17 @@ function buildTicks(): TickGeom[] {
 
 export const OVERNIGHT_TICKS = buildTicks();
 
+/** Maps tick index → delay so the cascade slows toward the tip. */
+export function overnightRevealDelayMs(
+  index: number,
+  total: number = OVERNIGHT_TICK_COUNT,
+): number {
+  const t = total <= 1 ? 1 : index / (total - 1);
+  // Cubic ease-in-out on the delay lane (not just each stroke).
+  const eased = t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2;
+  return Math.round(eased * OVERNIGHT_GAUGE_REVEAL_MS);
+}
+
 export function angleForOvernightScore(score: number): number {
   const t = Math.max(0, Math.min(100, score)) / 100;
   return OVERNIGHT_GAUGE.start + (OVERNIGHT_GAUGE.end - OVERNIGHT_GAUGE.start) * t;

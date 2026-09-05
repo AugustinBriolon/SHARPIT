@@ -65,7 +65,7 @@ export function AchievedStatus({
       {showValidatingLink && validatingActivityId ? (
         <Link
           className="text-primary font-medium hover:underline"
-          href={`/training/${validatingActivityId}`}
+          href={`/activite/${validatingActivityId}`}
         >
           Voir la séance validante →
         </Link>

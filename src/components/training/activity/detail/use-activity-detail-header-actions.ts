@@ -19,7 +19,7 @@ export function useActivityDetailHeaderActions(activity: ActivityDetailHeaderAct
 
   useResetWhenHidden(() => setLinkHikesOpen(false));
 
-  const editHref = `/training/${activity.id}/edit`;
+  const editHref = `/activite/${activity.id}/edit`;
   const isHike = activity.type === ActivityType.HIKE;
   const hikeTrip = isHike ? activity.hikeTrip : null;
 
@@ -33,7 +33,7 @@ export function useActivityDetailHeaderActions(activity: ActivityDetailHeaderAct
     if (!confirmed) {
       return;
     }
-    const currentHref = `/training/${activity.id}`;
+    const currentHref = `/activite/${activity.id}`;
     remove.mutate(activity.id);
     // Return to origin (Activité or Plan via stack); never freeze to Historique / Fil.
     const previous = navStack.peekBackFrom(currentHref);

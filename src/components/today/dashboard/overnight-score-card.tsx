@@ -10,13 +10,8 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { TodayInstrumentCard } from '@/components/today/dashboard/today-instrument-card';
-import {
-  OVERNIGHT_GAUGE_REVEAL_MS,
-  OVERNIGHT_GAUGE_STAGGER_MS,
-  OVERNIGHT_TICKS,
-  overnightTickStroke,
-  thumbForOvernightScore,
-} from '@/components/today/dashboard/overnight-gauge-geometry';
+import { OVERNIGHT_GAUGE_STAGGER_MS } from '@/components/today/dashboard/overnight-gauge-geometry';
+import { TickSemicircle } from '@/components/today/dashboard/overnight-score-gauge';
 import { useOvernightGaugeReveal } from '@/components/today/dashboard/use-overnight-gauge-reveal';
 import { cn } from '@/lib/utils';
 
@@ -32,14 +27,6 @@ const TREND_ICON = {
 /** Emil strong ease-in-out — accel then soft settle at the tip. */
 const EASE_IN_OUT = 'cubic-bezier(0.77, 0, 0.175, 1)';
 
-/** Maps tick index → delay so the cascade slows toward the tip. */
-function revealDelayMs(index: number, total: number): number {
-  const t = total <= 1 ? 1 : index / (total - 1);
-  // Cubic ease-in-out on the delay lane (not just each stroke).
-  const eased = t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2;
-  return Math.round(eased * OVERNIGHT_GAUGE_REVEAL_MS);
-}
-
 export type OvernightScoreTrend = 'up' | 'down' | 'flat';
 
 export type OvernightScoreCardProps = {
@@ -53,7 +40,6 @@ export type OvernightScoreCardProps = {
   accent: 'sleep' | 'recovery';
   icon: 'moon' | 'heart';
   href: string;
-  isLimiter?: boolean;
   className?: string;
 };
 
@@ -61,95 +47,6 @@ const HEADER_ICON: Record<'moon' | 'heart', LucideIcon> = {
   moon: Moon,
   heart: HeartPulse,
 };
-
-function clampOvernightScore(score: number | null): number | null {
-  if (score === null) {
-    return null;
-  }
-  return Math.max(0, Math.min(100, score));
-}
-
-function isTickLit(fill: boolean, target: number | null, tickScore: number): boolean {
-  return fill && target !== null && tickScore <= target;
-}
-
-function thumbRevealDelayMs(target: number | null): number {
-  if (target === null) {
-    return 0;
-  }
-  return revealDelayMs(
-    Math.round((target / 100) * (OVERNIGHT_TICKS.length - 1)),
-    OVERNIGHT_TICKS.length,
-  );
-}
-
-function TickLine({
-  tick,
-  fill,
-  target,
-}: {
-  tick: (typeof OVERNIGHT_TICKS)[number];
-  fill: boolean;
-  target: number | null;
-}) {
-  const lit = isTickLit(fill, target, tick.tickScore);
-  const delayMs = lit ? revealDelayMs(tick.index, OVERNIGHT_TICKS.length) : 0;
-
-  return (
-    <line
-      stroke={overnightTickStroke(tick.index, lit ? target : null)}
-      strokeLinecap="round"
-      strokeWidth={1.6}
-      x1={tick.x1}
-      x2={tick.x2}
-      y1={tick.y1}
-      y2={tick.y2}
-      style={{
-        transitionProperty: 'stroke',
-        transitionDuration: fill ? '70ms' : '0ms',
-        transitionTimingFunction: EASE_IN_OUT,
-        transitionDelay: `${delayMs}ms`,
-      }}
-    />
-  );
-}
-
-function ThumbDot({ fill, target }: { fill: boolean; target: number | null }) {
-  if (!fill || target === null || target <= 0.5) {
-    return null;
-  }
-  const thumb = thumbForOvernightScore(target);
-  return (
-    <circle
-      cx={thumb.x}
-      cy={thumb.y}
-      fill="var(--color-highlight)"
-      r={3.75}
-      stroke="var(--color-highlight-foreground)"
-      strokeWidth={1}
-      style={{
-        opacity: 1,
-        transitionProperty: 'opacity',
-        transitionDuration: '160ms',
-        transitionTimingFunction: EASE_IN_OUT,
-        transitionDelay: `${thumbRevealDelayMs(target)}ms`,
-      }}
-    />
-  );
-}
-
-function TickSemicircle({ score, fill }: { score: number | null; fill: boolean }) {
-  const target = clampOvernightScore(score);
-
-  return (
-    <svg className="h-auto w-full" viewBox="0 0 200 118" aria-hidden>
-      {OVERNIGHT_TICKS.map((tick) => (
-        <TickLine key={tick.index} fill={fill} target={target} tick={tick} />
-      ))}
-      <ThumbDot fill={fill} target={target} />
-    </svg>
-  );
-}
 
 function formatGaugeDisplay(displayScore: number | null): string {
   if (displayScore === null) {
@@ -175,23 +72,21 @@ function statusAccentClass(accent: 'sleep' | 'recovery'): string {
 }
 
 function GaugeStatusLabel({
-  score,
   statusLabel,
   fill,
   accent,
 }: {
-  score: number | null;
   statusLabel: string | null;
   fill: boolean;
   accent: 'sleep' | 'recovery';
 }) {
-  if (score === null || !statusLabel || !fill) {
+  if (!fill || !statusLabel) {
     return null;
   }
   return (
     <span
       className={cn(
-        'mt-2 text-center text-xs font-medium tracking-wide',
+        'mt-3 text-center text-[11px] font-medium tracking-wide sm:mt-3.5 sm:text-xs',
         statusAccentClass(accent),
       )}
     >
@@ -213,26 +108,31 @@ function GaugeReadout({
   const { fill, displayScore } = useOvernightGaugeReveal(score, delayMs);
 
   return (
-    <span className="relative mx-auto w-full max-w-52 pt-1">
-      <TickSemicircle fill={fill} score={score} />
-      <span className="pointer-events-none absolute inset-x-0 top-[46%] flex flex-col items-center">
-        <span
-          style={gaugeScoreStyle(displayScore)}
-          className={cn(
-            'text-data text-foreground text-[2.5rem] leading-none font-semibold tracking-tight tabular-nums',
-            'transition-[opacity,transform] duration-200',
-          )}
-        >
-          {formatGaugeDisplay(displayScore)}
+    <span className="mx-auto flex w-full max-w-36 flex-col items-center pt-0.5 sm:max-w-44 sm:pt-1 md:max-w-52">
+      <span className="relative block w-full pb-2.5 sm:pb-3">
+        <TickSemicircle fill={fill} score={score} />
+        <span className="pointer-events-none absolute inset-x-0 top-[44%] flex flex-col items-center">
+          <span
+            style={gaugeScoreStyle(displayScore)}
+            className={cn(
+              'text-data text-foreground leading-none font-semibold tracking-tight tabular-nums',
+              'text-[1.75rem] sm:text-[2.25rem] md:text-[2.5rem]',
+              'transition-[opacity,transform] duration-200',
+            )}
+          >
+            {formatGaugeDisplay(displayScore)}
+          </span>
+          <span className="text-muted-foreground mt-0.5 text-[10px] tracking-wide sm:mt-1 sm:text-[11px]">
+            sur 100
+          </span>
         </span>
-        <span className="text-muted-foreground mt-1 text-[11px] tracking-wide">sur 100</span>
-        <GaugeStatusLabel accent={accent} fill={fill} score={score} statusLabel={statusLabel} />
       </span>
+      <GaugeStatusLabel accent={accent} fill={fill} statusLabel={statusLabel} />
     </span>
   );
 }
 
-function trendWellClass(trend: OvernightScoreTrend | null): string {
+function trendWellClass(trend: OvernightScoreTrend): string {
   if (trend === 'down') {
     return 'bg-signal-caution/15 text-signal-caution';
   }
@@ -240,6 +140,22 @@ function trendWellClass(trend: OvernightScoreTrend | null): string {
     return 'bg-highlight/40 text-(--color-highlight-foreground)';
   }
   return 'bg-muted text-muted-foreground';
+}
+
+function BaselineTrendWell({ trend }: { trend: OvernightScoreTrend }) {
+  const TrendIcon = TREND_ICON[trend];
+  return (
+    <span
+      className={cn(
+        'flex shrink-0 items-center justify-center rounded-full',
+        'size-6 sm:size-7',
+        trendWellClass(trend),
+      )}
+      aria-hidden
+    >
+      <TrendIcon className="size-3 sm:size-3.5" strokeWidth={2.25} />
+    </span>
+  );
 }
 
 function BaselineBand({
@@ -254,25 +170,18 @@ function BaselineBand({
   if (!title && !detail) {
     return null;
   }
-  const TrendIcon = trend ? TREND_ICON[trend] : ArrowUpRight;
 
   return (
-    <span className="flex items-center gap-2.5 pt-8">
-      <span
-        className={cn(
-          'flex size-7 shrink-0 items-center justify-center rounded-full',
-          trendWellClass(trend),
-        )}
-        aria-hidden
-      >
-        <TrendIcon className="size-3.5" strokeWidth={2.25} />
-      </span>
+    <span className="flex items-start gap-2 pt-3 sm:items-center sm:gap-2.5 sm:pt-6">
+      {trend ? <BaselineTrendWell trend={trend} /> : null}
       <span className="min-w-0 flex-1">
         {title ? (
-          <span className="text-foreground block text-xs leading-tight font-medium">{title}</span>
+          <span className="text-foreground block text-[11px] leading-tight font-medium sm:text-xs">
+            {title}
+          </span>
         ) : null}
         {detail ? (
-          <span className="text-muted-foreground mt-0.5 block text-[11px] leading-snug">
+          <span className="text-muted-foreground mt-0.5 block text-[10px] leading-snug sm:text-[11px]">
             {detail}
           </span>
         ) : null}
@@ -296,7 +205,6 @@ export function OvernightScoreCard({
   accent,
   icon,
   href,
-  isLimiter = false,
   className,
 }: OvernightScoreCardProps) {
   const HeaderIcon = HEADER_ICON[icon];
@@ -306,10 +214,9 @@ export function OvernightScoreCard({
       className={className}
       href={href}
       icon={<HeaderIcon className="size-3.5" strokeWidth={2.25} />}
-      isLimiter={isLimiter}
       subtitle={subtitle}
       title={title}
-      titleAttr={isLimiter ? `Frein aujourd’hui — ${title}` : `Voir le détail — ${title}`}
+      titleAttr={`Voir le détail — ${title}`}
     >
       <GaugeReadout accent={accent} score={score} statusLabel={statusLabel} />
       <BaselineBand detail={baselineDetail} title={baselineTitle} trend={trend} />

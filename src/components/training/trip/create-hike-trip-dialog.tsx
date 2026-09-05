@@ -54,7 +54,7 @@ export function CreateHikeTripDialog({
         onSuccess: (trip) => {
           onOpenChange(false);
           onCreated?.();
-          router.push(`/training/trips/${trip.id}`);
+          router.push(`/activite/sejours/${trip.id}`);
         },
       },
     );

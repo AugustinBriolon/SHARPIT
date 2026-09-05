@@ -27,7 +27,12 @@ import { SettingsAdminEntry } from '@/components/settings/settings-admin-entry';
 import { SettingsHomeExtras } from '@/components/settings/settings-home-extras';
 import { SettingsSignOut } from '@/components/settings/settings-sign-out';
 import type { SettingsEntry } from '@/components/settings/settings-home';
-import { MOI_CORPS_PATH, MOI_OBJECTIFS_PATH, MOI_PRIVACY_PATH } from '@/lib/moi/paths';
+import {
+  MOI_CALIBRATION_PATH,
+  MOI_CORPS_PATH,
+  MOI_OBJECTIFS_PATH,
+  MOI_PRIVACY_PATH,
+} from '@/lib/moi/paths';
 
 type HubSection = {
   id: string;
@@ -62,6 +67,12 @@ const SECTIONS: HubSection[] = [
         title: 'Objectifs',
         description: 'Courses, métriques prioritaires et proximité aux cibles.',
         icon: Target,
+      },
+      {
+        href: MOI_CALIBRATION_PATH,
+        title: 'Seuils & repères',
+        description: 'FTP, allure seuil, FC max — la règle graduée de ta charge.',
+        icon: SlidersHorizontal,
       },
       {
         href: MOI_PRIVACY_PATH,
@@ -134,12 +145,6 @@ const SECTIONS: HubSection[] = [
     id: 'autre',
     title: 'Autre',
     entries: [
-      {
-        href: '/settings/calibration',
-        title: 'Seuils & repères',
-        description: 'FTP, allure seuil, FC max et historique des seuils.',
-        icon: SlidersHorizontal,
-      },
       {
         href: '/settings/memory',
         title: 'Mémoire du coach',

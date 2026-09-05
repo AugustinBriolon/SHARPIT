@@ -152,7 +152,7 @@ export function ActivityConsistencyContent({
   return (
     <TodayInstrumentCard
       className="min-h-38 flex-1 active:scale-[0.988]"
-      href="/training"
+      href="/plan/semaine"
       icon={<Activity className="size-3.5" strokeWidth={2.25} />}
       title="Régularité"
       titleAttr="Voir l’historique d’entraînement"

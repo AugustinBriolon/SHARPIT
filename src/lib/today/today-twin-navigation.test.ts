@@ -56,7 +56,7 @@ function decision(partial: Partial<DecisionData>): DecisionData {
 
 describe('today-twin-navigation', () => {
   it('builds planned-session deep links for bookmarks (in-app uses AppModal)', () => {
-    expect(TWIN_DRILL_DOWN.plannedSession('abc-123')).toBe('/training/planning?planned=abc-123');
+    expect(TWIN_DRILL_DOWN.plannedSession('abc-123')).toBe('/plan/semaine?planned=abc-123');
   });
 
   it('maps limiting factor systems to twin pages from DecisionState', () => {

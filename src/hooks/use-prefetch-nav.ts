@@ -9,6 +9,7 @@ import {
   fetchGoals,
   fetchPhysicalNotes,
   fetchPlannedSessions,
+  fetchTrainingPlan,
 } from '@/lib/query/fetchers';
 import {
   fetchAdaptationPresentation,
@@ -29,7 +30,8 @@ function prefetchNavRoute(href: string, pre: PrefetchFn, trainingDayId: string):
   const routes: Record<string, () => void> = {
     '/': () =>
       pre(queryKeys.presentationToday(trainingDayId), () => fetchTodayPresentation(trainingDayId)),
-    '/plan': () => prefetchTrainingHub(pre),
+    '/plan': () => prefetchPlanHub(pre),
+    '/plan/semaine': () => prefetchPlanHub(pre),
     '/activite': () => {
       pre(queryKeys.activities, fetchActivities);
     },
@@ -47,21 +49,11 @@ function prefetchNavRoute(href: string, pre: PrefetchFn, trainingDayId: string):
       pre(queryKeys.goals, fetchGoals);
       prefetchProgressHub(pre, trainingDayId);
     },
-    '/training': () => prefetchTrainingHub(pre),
-    '/progress': () => {
-      pre(queryKeys.goals, fetchGoals);
-      prefetchProgressHub(pre, trainingDayId);
-    },
-    '/settings': () => pre(queryKeys.goals, fetchGoals),
     '/settings/account': () => pre(queryKeys.goals, fetchGoals),
     '/coach': () => {
       pre(queryKeys.plannedSessions, fetchPlannedSessions);
       pre(queryKeys.activities, fetchActivities);
       pre(queryKeys.conversations, fetchConversations);
-    },
-    '/training/planning': () => {
-      pre(queryKeys.plannedSessions, fetchPlannedSessions);
-      pre(queryKeys.goals, fetchGoals);
     },
     '/today/recovery': () =>
       pre(['presentation', 'recovery', trainingDayId], () =>
@@ -69,9 +61,9 @@ function prefetchNavRoute(href: string, pre: PrefetchFn, trainingDayId: string):
       ),
     '/today/sleep': () =>
       pre(['presentation', 'sleep', trainingDayId], () => fetchSleepPresentation(trainingDayId)),
-    '/today/effort': () =>
+    '/plan/charge': () =>
       pre(['presentation', 'effort', trainingDayId], () => fetchEffortPresentation(trainingDayId)),
-    '/today/adaptation': () =>
+    '/plan/adaptation': () =>
       pre(['presentation', 'adaptation', trainingDayId], () =>
         fetchAdaptationPresentation(trainingDayId),
       ),
@@ -79,10 +71,11 @@ function prefetchNavRoute(href: string, pre: PrefetchFn, trainingDayId: string):
   routes[href]?.();
 }
 
-function prefetchTrainingHub(pre: PrefetchFn) {
+function prefetchPlanHub(pre: PrefetchFn) {
   pre(queryKeys.plannedSessions, fetchPlannedSessions);
   pre(queryKeys.activities, fetchActivities);
   pre(queryKeys.goals, fetchGoals);
+  pre(queryKeys.trainingPlan, fetchTrainingPlan);
 }
 
 function prefetchProgressHub(pre: PrefetchFn, trainingDayId: string) {

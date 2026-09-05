@@ -70,7 +70,7 @@ export function ActivityDetailActionsMenu({
           <DropdownMenuItem
             className="cursor-pointer gap-2"
             nativeButton={false}
-            render={<Link href={`/training/trips/${hikeTrip.id}`} />}
+            render={<Link href={`/activite/sejours/${hikeTrip.id}`} />}
           >
             <Mountain className="size-3.5" aria-hidden />
             Voir le séjour

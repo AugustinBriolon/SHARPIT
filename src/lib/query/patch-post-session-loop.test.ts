@@ -21,7 +21,7 @@ describe('patchTodayPostSessionLoopAfterFeeling', () => {
         activityId: 'a1',
         activityTitle: 'Tempo',
         needsFeeling: true,
-        narrativeHref: '/training/a1',
+        narrativeHref: '/activite/a1',
         freshnessLine: null,
       }),
     );
@@ -43,7 +43,7 @@ describe('patchTodayPostSessionLoopAfterFeeling', () => {
         activityId: 'a1',
         activityTitle: 'Tempo',
         needsFeeling: true,
-        narrativeHref: '/training/a1',
+        narrativeHref: '/activite/a1',
         freshnessLine: 'Twin à jour — ta séance est intégrée.',
       }),
     );
@@ -66,7 +66,7 @@ describe('patchTodayPostSessionLoopAfterFeeling', () => {
       activityId: 'a1',
       activityTitle: 'Tempo',
       needsFeeling: true,
-      narrativeHref: '/training/a1',
+      narrativeHref: '/activite/a1',
       freshnessLine: null,
     });
     qc.setQueryData(queryKeys.presentationToday(dayId), vm);

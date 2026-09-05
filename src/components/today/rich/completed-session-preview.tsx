@@ -10,8 +10,14 @@ import { SPORT_IDENTITY_HEX, SPORT_IDENTITY_PANEL } from '@/lib/activity/sport-i
 import { cn } from '@/lib/utils';
 import {
   activityMayHaveRoutePath,
+  completedPreviewDetailsClass,
+  completedPreviewFadeClass,
+  completedPreviewGridClass,
+  completedPreviewTitleClass,
   resolveCompletedSessionMapSlot,
   resolveUsableRoutePath,
+  selectCompletedPreviewMetrics,
+  type CompletedSessionPreviewLayout,
 } from '@/components/today/rich/completed-session-preview-helpers';
 
 export type CompletedSessionPreviewMetric = {
@@ -20,7 +26,13 @@ export type CompletedSessionPreviewMetric = {
   unit: string;
 };
 
-function PreviewMetrics({ metrics }: { metrics: CompletedSessionPreviewMetric[] }) {
+function PreviewMetrics({
+  metrics,
+  compact,
+}: {
+  metrics: CompletedSessionPreviewMetric[];
+  compact: boolean;
+}) {
   if (metrics.length === 0) {
     return null;
   }
@@ -28,7 +40,8 @@ function PreviewMetrics({ metrics }: { metrics: CompletedSessionPreviewMetric[] 
   return (
     <dl
       className={cn(
-        'grid w-full gap-3',
+        'grid w-full',
+        compact ? 'gap-1.5' : 'gap-3',
         metrics.length >= 3 && 'grid-cols-3',
         metrics.length === 2 && 'grid-cols-2',
         metrics.length === 1 && 'grid-cols-1',
@@ -37,8 +50,20 @@ function PreviewMetrics({ metrics }: { metrics: CompletedSessionPreviewMetric[] 
       {metrics.map((metric) => (
         <div key={metric.label} className="min-w-0">
           <dt className="text-label text-muted-foreground">{metric.label}</dt>
-          <dd className="text-data text-foreground mt-1 flex items-baseline gap-1 font-semibold tabular-nums">
-            <span className="text-[clamp(1.125rem,3.6vw,1.5rem)] leading-none">{metric.value}</span>
+          <dd
+            className={cn(
+              'text-data text-foreground mt-1 font-semibold tabular-nums',
+              compact ? 'flex flex-col gap-0.5' : 'flex items-baseline gap-1',
+            )}
+          >
+            <span
+              className={cn(
+                'leading-none',
+                compact ? 'text-base' : 'text-[clamp(1.125rem,3.6vw,1.5rem)]',
+              )}
+            >
+              {metric.value}
+            </span>
             {metric.unit ? (
               <span className="text-muted-foreground text-xs font-medium">{metric.unit}</span>
             ) : null}
@@ -49,16 +74,27 @@ function PreviewMetrics({ metrics }: { metrics: CompletedSessionPreviewMetric[] 
   );
 }
 
-function NoMapBand({ activityType, title }: { activityType: ActivityType; title: string }) {
+function NoMapBand({
+  activityType,
+  title,
+  layout,
+}: {
+  activityType: ActivityType;
+  title: string;
+  layout: CompletedSessionPreviewLayout;
+}) {
   return (
     <div
       className={cn(
-        'flex h-full min-h-30 flex-col justify-end gap-2 border-b px-4 py-4 sm:min-h-0 sm:border-r sm:border-b-0',
+        'flex flex-col justify-end gap-2',
+        layout === 'split' && 'h-full min-h-28 border-r px-3 py-3',
+        layout === 'stack' && 'min-h-32 border-b px-4 py-3',
+        layout === 'column' && 'min-h-30 border-b px-4 py-4 sm:min-h-0 sm:border-r sm:border-b-0',
         SPORT_IDENTITY_PANEL[activityType],
       )}
     >
       <ActivityTypeIndicator type={activityType} />
-      <p className="text-card-title text-balance">{title}</p>
+      <p className={completedPreviewTitleClass(layout)}>{title}</p>
     </div>
   );
 }
@@ -67,15 +103,22 @@ function MapBand({
   activityId,
   activityType,
   path,
+  layout,
 }: {
   activityId: string;
   activityType: ActivityType;
   path: [number, number][] | null;
+  layout: CompletedSessionPreviewLayout;
 }) {
   return (
     <div
       aria-busy={!path || undefined}
-      className="pointer-events-none relative isolate min-h-44 overflow-hidden sm:min-h-full sm:self-stretch"
+      className={cn(
+        'pointer-events-none relative isolate overflow-hidden',
+        layout === 'split' && 'min-h-28 self-stretch',
+        layout === 'stack' && 'min-h-32',
+        layout === 'column' && 'min-h-44 sm:min-h-full sm:self-stretch',
+      )}
     >
       {path ? (
         <RouteMap
@@ -88,16 +131,8 @@ function MapBand({
       ) : (
         <Skeleton className="absolute inset-0 h-full w-full rounded-none" />
       )}
-      {/*
-        Opaque veil to #fff. A CSS mask only punches transparency and would
-        reveal the page green underneath — not a white fade.
-      */}
       <div
-        className={cn(
-          'pointer-events-none absolute inset-0',
-          'bg-linear-to-b from-transparent from-30% to-white',
-          'sm:bg-linear-to-r sm:from-transparent sm:from-30% sm:to-white',
-        )}
+        className={cn('pointer-events-none absolute inset-0', completedPreviewFadeClass(layout))}
         aria-hidden
       />
     </div>
@@ -109,27 +144,26 @@ function CompletedSessionDetailsPanel({
   activityType,
   title,
   metrics,
+  layout,
 }: {
   showMapSlot: boolean;
   activityType: ActivityType;
   title: string;
   metrics: CompletedSessionPreviewMetric[];
+  layout: CompletedSessionPreviewLayout;
 }) {
   return (
-    <div
-      className={cn(
-        'relative z-10 flex flex-col justify-end gap-3 bg-[#fff] px-4 pt-2 pb-4',
-        'sm:justify-center sm:px-5 sm:py-5',
-        showMapSlot && 'sm:pl-2',
-      )}
-    >
+    <div className={completedPreviewDetailsClass(layout, showMapSlot)}>
       {showMapSlot ? (
         <div className="flex flex-wrap items-center gap-2">
           <ActivityTypeIndicator type={activityType} />
-          <p className="text-card-title min-w-0 truncate text-balance">{title}</p>
+          <p className={completedPreviewTitleClass(layout)}>{title}</p>
         </div>
       ) : null}
-      <PreviewMetrics metrics={metrics} />
+      <PreviewMetrics
+        compact={layout === 'split' || layout === 'stack'}
+        metrics={selectCompletedPreviewMetrics(metrics, layout)}
+      />
     </div>
   );
 }
@@ -141,6 +175,7 @@ function CompletedSessionPreviewGrid({
   title,
   metrics,
   usablePath,
+  layout,
 }: {
   showMapSlot: boolean;
   activityId: string;
@@ -148,23 +183,29 @@ function CompletedSessionPreviewGrid({
   title: string;
   metrics: CompletedSessionPreviewMetric[];
   usablePath: [number, number][] | null;
+  layout: CompletedSessionPreviewLayout;
 }) {
   return (
     <div
       className={cn(
         'grid w-full',
-        showMapSlot
-          ? 'sm:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)] sm:items-stretch'
-          : 'sm:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] sm:items-stretch',
+        layout !== 'stack' && 'h-full',
+        completedPreviewGridClass(layout, showMapSlot),
       )}
     >
       {showMapSlot ? (
-        <MapBand activityId={activityId} activityType={activityType} path={usablePath} />
+        <MapBand
+          activityId={activityId}
+          activityType={activityType}
+          layout={layout}
+          path={usablePath}
+        />
       ) : (
-        <NoMapBand activityType={activityType} title={title} />
+        <NoMapBand activityType={activityType} layout={layout} title={title} />
       )}
       <CompletedSessionDetailsPanel
         activityType={activityType}
+        layout={layout}
         metrics={metrics}
         showMapSlot={showMapSlot}
         title={title}
@@ -173,48 +214,60 @@ function CompletedSessionPreviewGrid({
   );
 }
 
+function useCompletedPreviewMap(activityId: string, activityType: ActivityType) {
+  const mayHavePath = activityMayHaveRoutePath(activityType);
+  const stream = useActivityStream(activityId, { enabled: mayHavePath });
+  const usablePath = resolveUsableRoutePath(stream.data?.path);
+  return {
+    usablePath,
+    showMapSlot: resolveCompletedSessionMapSlot({
+      mayHavePath,
+      isPending: stream.isPending,
+      isError: stream.isError,
+      usablePath,
+    }),
+  };
+}
+
 /**
  * Today completed-session preview — map + fade + KPIs when GPS exists,
  * sport band + KPIs otherwise. Fluid in the Today reading column.
+ * `stack` keeps map above metrics for the Plan rail. `split` is the
+ * side-by-side variant.
  */
 export function CompletedSessionPreview({
+  accessibleName,
   activityId,
   activityType,
-  title,
-  href,
-  metrics,
   className,
+  href,
+  layout = 'column',
+  metrics,
+  title,
 }: {
+  accessibleName?: string;
   activityId: string;
   activityType: ActivityType;
-  title: string;
-  href: string;
-  metrics: CompletedSessionPreviewMetric[];
   className?: string;
+  href: string;
+  layout?: CompletedSessionPreviewLayout;
+  metrics: CompletedSessionPreviewMetric[];
+  title: string;
 }) {
-  const mayHavePath = activityMayHaveRoutePath(activityType);
-  const { data, isPending, isError } = useActivityStream(activityId, { enabled: mayHavePath });
-  const usablePath = resolveUsableRoutePath(data?.path);
-  const showMapSlot = resolveCompletedSessionMapSlot({
-    mayHavePath,
-    isPending,
-    isError,
-    usablePath,
-  });
+  const { showMapSlot, usablePath } = useCompletedPreviewMap(activityId, activityType);
+  const surfaceClass = cn(
+    'analysis-panel border-analysis-border/80 rounded-analysis-lg block w-full overflow-hidden border',
+    'hover:border-analysis-border transition-[border-color,background-color]',
+    'focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none',
+    className,
+  );
 
   return (
-    <Link
-      href={href}
-      className={cn(
-        'analysis-panel border-analysis-border/80 rounded-analysis-lg block w-full overflow-hidden border',
-        'hover:border-analysis-border transition-[border-color,background-color]',
-        'focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none',
-        className,
-      )}
-    >
+    <Link aria-label={accessibleName} className={surfaceClass} href={href}>
       <CompletedSessionPreviewGrid
         activityId={activityId}
         activityType={activityType}
+        layout={layout}
         metrics={metrics}
         showMapSlot={showMapSlot}
         title={title}

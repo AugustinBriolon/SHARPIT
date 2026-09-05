@@ -30,7 +30,7 @@ export function MoiSectionContent({ section }: { section: MoiSectionId }) {
             className="text-muted-foreground hover:text-foreground inline-block text-sm underline underline-offset-2"
             href={MOI_PERFORMANCE_PATH}
           >
-            Records &amp; seuils
+            Records
           </Link>
         </nav>
       </div>

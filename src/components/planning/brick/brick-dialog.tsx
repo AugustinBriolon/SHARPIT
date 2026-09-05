@@ -112,7 +112,7 @@ function BrickLegSection({
           {session.activityId && (
             <Link
               className="text-primary mt-0.5 inline-block text-xs hover:underline"
-              href={`/training/${session.activityId}`}
+              href={`/activite/${session.activityId}`}
             >
               Voir l&apos;activité réalisée →
             </Link>

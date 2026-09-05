@@ -9,7 +9,7 @@ describe('TodayInstrumentCard', () => {
       createElement(
         TodayInstrumentCard,
         {
-          href: '/training',
+          href: '/plan/semaine',
           icon: createElement('span', { 'data-icon': 'pulse' }),
           subtitle: 'Cette semaine',
           title: 'Régularité',
@@ -22,22 +22,22 @@ describe('TodayInstrumentCard', () => {
     expect(html).toContain('Cette semaine');
     expect(html).toContain('icon-well');
     expect(html).toContain('chip-surface-lg');
-    expect(html).toContain('href="/training"');
+    expect(html).toContain('href="/plan/semaine"');
     expect(html).toContain('body');
     expect(html).not.toContain('text-label');
   });
 
-  it('marks the limiter with a caution wash', () => {
+  it('keeps a neutral chip surface without limiter wash', () => {
     const html = renderToStaticMarkup(
       createElement(TodayInstrumentCard, {
         href: '/today',
         icon: createElement('span'),
-        isLimiter: true,
         title: 'Score récupération',
       }),
     );
 
-    expect(html).toContain('bg-signal-caution/8');
-    expect(html).toContain('border-signal-caution/45');
+    expect(html).toContain('chip-surface-lg');
+    expect(html).not.toContain('bg-signal-caution/8');
+    expect(html).not.toContain('border-signal-caution/45');
   });
 });

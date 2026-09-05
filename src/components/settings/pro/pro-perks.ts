@@ -22,7 +22,7 @@ export const PRO_ONLY_PERKS: ProPerk[] = [
     description:
       'Volume, charge, sommeil et récupération de la semaine, synthétisés par le coach — avec un plan pour la semaine suivante.',
     status: 'pro',
-    href: '/training/weekly-review',
+    href: '/plan/bilan',
   },
   {
     icon: Activity,
@@ -30,7 +30,7 @@ export const PRO_ONLY_PERKS: ProPerk[] = [
     description:
       "Interprétation approfondie de chaque entraînement : ce qui a marché, ce qui a coûté cher, ce que ça change pour la suite. Gratuit à raison d'une séance par jour depuis ton inscription ; illimité et sur tes séances passées avec Pro.",
     status: 'pro',
-    href: '/training',
+    href: '/activite',
   },
 ];
 
@@ -41,7 +41,7 @@ export const INCLUDED_FOR_EVERYONE: ProPerk[] = [
     title: 'Envoi vers la montre',
     description: 'Pousse tes séances planifiées directement sur ta montre connectée.',
     status: 'included',
-    href: '/training',
+    href: '/plan/semaine',
   },
 ];
 

@@ -28,19 +28,15 @@ export function TodayActionRowHeader({
   return (
     <div className="flex min-h-8 items-center justify-between gap-2 px-0.5">
       {loading ? (
-        <SkeletonDataValue heightClassName="h-8" widthClassName="w-40" />
+        <SkeletonDataValue heightClassName="h-8" widthClassName="w-24" />
       ) : (
-        <DiscussWithCoachButton
-          label="Discuter de ma journée"
-          size="sm"
-          target={{ kind: 'today' }}
-        />
+        <DiscussWithCoachButton label="Coach" size="sm" target={{ kind: 'today' }} />
       )}
-      <div className="flex shrink-0 items-center gap-2">
+      <div className="flex shrink-0 items-center">
         {loading ? (
           <SkeletonDataValue heightClassName="h-8" widthClassName="w-24" />
         ) : (
-          <MorningWellnessDialog onCompleted={onWellnessCompleted} />
+          <MorningWellnessDialog triggerLabel="Ressenti" onCompleted={onWellnessCompleted} />
         )}
       </div>
     </div>

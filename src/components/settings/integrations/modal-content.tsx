@@ -85,7 +85,7 @@ function RecordChangesBanner({ changes }: { changes: RecordChange[] }) {
             {c.activityId ? (
               <Link
                 className="hover:text-primary font-medium hover:underline"
-                href={`/training/${c.activityId}`}
+                href={`/activite/${c.activityId}`}
               >
                 {c.label}
               </Link>

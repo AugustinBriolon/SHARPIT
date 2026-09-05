@@ -1,14 +1,15 @@
 import { CalendarRange, CircleUser, Footprints, MessagesSquare, Sun } from 'lucide-react';
 
 /**
- * Shell V1 primary nav — four temporal destinations (auth shell only).
+ * Primary nav — four temporal destinations (auth shell only).
  *
  * Today · Plan · Activité · Moi. Coach is contextual, not a tab.
  * Legal / onboarding / future teaser stay outside `(app)` and never wrap the tab bar.
  *
- * Canonical hub hrefs: `/`, `/plan`, `/activite`, `/moi`. Existing deep routes
- * (`/training/*`, `/progress`, `/settings/*`, `/coach`) remain valid and light
- * the matching tab where applicable.
+ * One prefix per intention: `/plan/*` is future and organisation, `/activite/*`
+ * is completed execution, `/moi/*` and `/settings/*` are the athlete model and
+ * the app itself. No prefix is claimed by two tabs, so no predicate has to split
+ * one between them — which the old shared training prefix did require.
  */
 
 export type NavIcon = typeof Sun;
@@ -20,22 +21,9 @@ export type AppNavItem = {
   match: (pathname: string) => boolean;
 };
 
-/** Week thread / planning hubs under `/training`. */
-export function isPlanTrainingPath(pathname: string): boolean {
-  if (pathname === '/training') {
-    return true;
-  }
-  return (
-    pathname.startsWith('/training/planning') ||
-    pathname.startsWith('/training/weekly-review') ||
-    pathname.startsWith('/training/sessions') ||
-    pathname.startsWith('/training/progression')
-  );
-}
-
-/** Activity-history and completed-session paths under `/training`. */
-export function isActivityTrainingPath(pathname: string): boolean {
-  return pathname.startsWith('/training') && !isPlanTrainingPath(pathname);
+/** True for the hub itself and any of its children. */
+function underPrefix(pathname: string, prefix: string): boolean {
+  return pathname === prefix || pathname.startsWith(`${prefix}/`);
 }
 
 export const todayNavItem: AppNavItem = {
@@ -44,21 +32,21 @@ export const todayNavItem: AppNavItem = {
   icon: Sun,
   // Nutrition is a Today detail, not a destination — it lights this tab rather
   // than leaving the bar with nothing marked current.
-  match: (p) => p === '/' || p.startsWith('/today') || p.startsWith('/nutrition'),
+  match: (p) => p === '/' || underPrefix(p, '/today') || underPrefix(p, '/nutrition'),
 };
 
 export const planNavItem: AppNavItem = {
   href: '/plan',
   label: 'Plan',
   icon: CalendarRange,
-  match: (p) => p === '/plan' || p.startsWith('/plan/') || isPlanTrainingPath(p),
+  match: (p) => underPrefix(p, '/plan'),
 };
 
 export const activityNavItem: AppNavItem = {
   href: '/activite',
   label: 'Activité',
   icon: Footprints,
-  match: (p) => p === '/activite' || p.startsWith('/activite/') || isActivityTrainingPath(p),
+  match: (p) => underPrefix(p, '/activite'),
 };
 
 /**
@@ -69,25 +57,17 @@ export const coachNavItem: AppNavItem = {
   href: '/coach',
   label: 'Coach',
   icon: MessagesSquare,
-  match: (p) => p.startsWith('/coach'),
+  match: (p) => underPrefix(p, '/coach'),
 };
 
 export const moiNavItem: AppNavItem = {
   href: '/moi',
   label: 'Moi',
   icon: CircleUser,
-  match: (p) =>
-    p === '/moi' ||
-    p.startsWith('/moi/') ||
-    p.startsWith('/settings') ||
-    p.startsWith('/progress') ||
-    p.startsWith('/biology'),
+  match: (p) => underPrefix(p, '/moi') || underPrefix(p, '/settings'),
 };
 
-/** @deprecated Use `moiNavItem` — alias kept for callers that still say "profile". */
-export const profileNavItem = moiNavItem;
-
-/** Onglets barre flottante — Shell V1, tous viewports (Coach hors barre). */
+/** Onglets barre flottante — tous viewports (Coach hors barre). */
 export const bottomNavItems: AppNavItem[] = [
   todayNavItem,
   planNavItem,

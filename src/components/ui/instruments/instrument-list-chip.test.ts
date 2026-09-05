@@ -20,7 +20,7 @@ describe('InstrumentListChip', () => {
   it('renders title, type label, and meta without dumping codes', () => {
     const html = renderToStaticMarkup(
       createElement(InstrumentListChip, {
-        href: '/training/1',
+        href: '/activite/1',
         title: 'Sortie tempo',
         activityType: ActivityType.RUN,
         meta: ['30 min', '5.01 km'],
@@ -36,7 +36,7 @@ describe('InstrumentListChip', () => {
   it('marks done sessions', () => {
     const html = renderToStaticMarkup(
       createElement(InstrumentListChip, {
-        href: '/training/1',
+        href: '/activite/1',
         title: 'Séance faite',
         activityType: ActivityType.BIKE,
         done: true,
@@ -49,7 +49,7 @@ describe('InstrumentListChip', () => {
   it('renders the Lime Pulse pastille only for the primary element', () => {
     const primaryHtml = renderToStaticMarkup(
       createElement(InstrumentListChip, {
-        href: '/training/1',
+        href: '/activite/1',
         title: 'Tempo du jour',
         primary: true,
       }),
@@ -58,7 +58,7 @@ describe('InstrumentListChip', () => {
 
     const secondaryHtml = renderToStaticMarkup(
       createElement(InstrumentListChip, {
-        href: '/training/2',
+        href: '/activite/2',
         title: 'Sortie longue',
       }),
     );
@@ -68,7 +68,7 @@ describe('InstrumentListChip', () => {
   it('keeps the muted → affordance for done sessions even when primary', () => {
     const html = renderToStaticMarkup(
       createElement(InstrumentListChip, {
-        href: '/training/1',
+        href: '/activite/1',
         title: 'Séance faite',
         done: true,
         primary: true,
@@ -93,7 +93,7 @@ describe('InstrumentListChip', () => {
   it('renders without meta when the default empty list is used', () => {
     const html = renderToStaticMarkup(
       createElement(InstrumentListChip, {
-        href: '/training/1',
+        href: '/activite/1',
         title: 'Sans meta',
         activityType: ActivityType.RUN,
       }),
@@ -105,7 +105,7 @@ describe('InstrumentListChip', () => {
   it('wraps meta so long facts stay visible instead of truncating', () => {
     const html = renderToStaticMarkup(
       createElement(InstrumentListChip, {
-        href: '/training/1',
+        href: '/activite/1',
         title: 'Séance planifiée',
         activityType: ActivityType.RUN,
         meta: ['45 min Z2 endurance aérobie', '8.2 km avec dénivelé'],

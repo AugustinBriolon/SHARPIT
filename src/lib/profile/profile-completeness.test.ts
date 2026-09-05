@@ -8,7 +8,7 @@ describe('getProfileCompleteness', () => {
     expect(result.gaps).toHaveLength(1);
     expect(result.gaps[0]).toMatchObject({
       key: 'thresholds',
-      href: '/settings/calibration',
+      href: '/moi/calibration',
     });
   });
 

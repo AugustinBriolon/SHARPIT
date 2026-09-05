@@ -10,16 +10,17 @@ import { plannedSessionHref } from '@/lib/planned-session/display/session-analys
 export const TWIN_DRILL_DOWN = {
   sleep: '/today/sleep',
   recovery: '/today/recovery',
-  effort: '/today/effort',
-  adaptation: '/today/adaptation',
+  /** Charge and adaptation are block-scale, so they read under Plan, not Today. */
+  effort: '/plan/charge',
+  adaptation: '/plan/adaptation',
   physical: '/moi/corps',
-  sessions: '/training',
-  /** The thresholds every load figure is computed against — a setting, so Settings. */
-  calibration: '/settings/calibration',
+  sessions: '/plan/semaine',
+  /** The thresholds every load figure is computed against. */
+  calibration: '/moi/calibration',
   /** Observed best efforts: what the body produced — Moi → Performance. */
   records: '/moi/performance',
-  planning: '/training/planning',
-  activity: (id: string) => `/training/${id}` as const,
+  planning: '/plan/semaine',
+  activity: (id: string) => `/activite/${id}` as const,
   /** Deep-link to Planning with dialog (bookmarks / share). Prefer `useAppModal().openPlannedSession` in-app. */
   plannedSession: plannedSessionHref,
 } as const;

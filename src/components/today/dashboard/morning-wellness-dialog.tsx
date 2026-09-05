@@ -462,23 +462,27 @@ function MorningWellnessTrigger({
   guardDisabled,
   offline,
   offlineLabel,
+  label,
+  className,
   onOpen,
 }: {
   guardDisabled: boolean;
   offline: boolean;
   offlineLabel: string;
+  label: string;
+  className?: string;
   onOpen: () => void;
 }) {
   return (
     <Button
-      className="text-xs font-medium"
+      className={cn('text-xs font-medium', className)}
       disabled={guardDisabled}
       size="sm"
       type="button"
       variant="outline"
       onClick={onOpen}
     >
-      {offline ? offlineLabel : 'Ressenti du matin'}
+      {offline ? offlineLabel : label}
     </Button>
   );
 }
@@ -602,9 +606,13 @@ function useMorningWellnessDialogActions({
 export function MorningWellnessDialog({
   onCompleted,
   debugBypassCompleted,
+  triggerClassName,
+  triggerLabel = 'Ressenti du matin',
 }: {
   onCompleted?: () => void;
   debugBypassCompleted?: boolean;
+  triggerClassName?: string;
+  triggerLabel?: string;
 }) {
   const { completed, loading, error, submit } = useWellnessCheckin();
   const { offline, guardDisabled, offlineLabel } = useOfflineGuard();
@@ -623,7 +631,9 @@ export function MorningWellnessDialog({
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <MorningWellnessTrigger
+        className={triggerClassName}
         guardDisabled={guardDisabled}
+        label={triggerLabel}
         offline={offline}
         offlineLabel={offlineLabel}
         onOpen={openDialog}

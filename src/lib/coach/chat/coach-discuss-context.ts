@@ -42,17 +42,17 @@ function discussContextForKind(
     'planned-session': (_, n) => ({
       kind: 'planned-session',
       label: n ? `Séance prévue · ${n}` : 'Une séance prévue',
-      sourceHref: '/training',
+      sourceHref: '/plan/semaine',
     }),
     activity: (t, n) => ({
       kind: 'activity',
       label: n ? `Séance réalisée · ${n}` : 'Une séance réalisée',
-      sourceHref: `/training/${t.activityId}`,
+      sourceHref: `/activite/${t.activityId}`,
     }),
     planning: (t) => ({
       kind: 'planning',
       label: `Ta semaine · ${HORIZON_LABEL[t.horizonDays] ?? `${t.horizonDays} jours`}`,
-      sourceHref: '/training/planning',
+      sourceHref: '/plan/semaine',
     }),
     goal: (_, n) => ({
       kind: 'goal',

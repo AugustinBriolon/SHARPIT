@@ -252,7 +252,7 @@ function buildWeeklyBriefEmptyViewModel(input: {
     emptyState: {
       title: 'Pas de plan structuré pour cette semaine',
       description: 'Génère un plan avec le coach pour voir ta semaine expliquée ici.',
-      action: { label: 'Remplir ma semaine', href: '/training/planning?create=1' },
+      action: { label: 'Remplir ma semaine', href: '/plan/semaine?create=1' },
     },
   };
 }

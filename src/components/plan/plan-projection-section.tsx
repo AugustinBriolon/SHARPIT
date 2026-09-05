@@ -8,14 +8,13 @@ import { useWeeklyCoachingBriefViewModel } from '@/hooks/use-data';
 import { useProjectedAthleteViewModel } from '@/hooks/use-projected-athlete-view-model';
 import type { ProjectedAthleteCardViewModel } from '@/core/presentation/projected-athlete-view-model';
 import type { WeeklyBriefLoad } from '@/core/presentation/weekly-coaching-brief-view-model';
-import { formatTrainingLoad, type DisplayMode } from '@/lib/preferences/display-mode';
+import { athleteVisibleCopy } from '@/lib/plan/athlete-visible-copy';
+import { briefHubLine } from '@/lib/plan/plan-brief-line';
+import { formatTrainingLoad, isExpertMode, type DisplayMode } from '@/lib/preferences/display-mode';
 import { useDisplayMode } from '@/providers/display-mode-provider';
 
 const WEEK_OPTS = { weekStartsOn: 1 as const };
 const PROJECTION_HORIZON = 7;
-const BRIEF_HREF = '/training/weekly-review';
-/** Two is a decision aid. A full list is a document, and it stops being read. */
-const MAX_CHANGE_DRIVERS = 2;
 const UNAVAILABLE_FALLBACK =
   'La projection demande un historique de charge et de récupération continu. Enregistre quelques séances pour qu’elle devienne fiable.';
 
@@ -50,49 +49,43 @@ function LoadCeiling({ load, mode }: { load: WeeklyBriefLoad; mode: DisplayMode 
 
 function ProjectionCaution({
   caution,
+  expert,
 }: {
   caution: NonNullable<ProjectedAthleteCardViewModel['caution']>;
+  expert: boolean;
 }) {
   return (
-    <div className="annotation-clinical space-y-1">
-      <p className="text-foreground text-xs font-medium">{caution.label}</p>
-      <p className="text-muted-foreground text-xs leading-relaxed">{caution.body}</p>
-    </div>
-  );
-}
-
-function ChangeDrivers({ drivers }: { drivers: readonly string[] }) {
-  if (drivers.length === 0) {
-    return null;
-  }
-  return (
     <div className="space-y-1.5">
-      <p className="text-label">Ce qui ferait bouger le plan</p>
-      <ul className="text-muted-foreground space-y-1 text-xs leading-relaxed">
-        {drivers.slice(0, MAX_CHANGE_DRIVERS).map((driver) => (
-          <li key={driver} className="before:text-analysis-border before:mr-2 before:content-['-']">
-            {driver}
-          </li>
-        ))}
-      </ul>
+      <p className="chip-surface text-data rounded-analysis inline-flex px-2.5 py-1 text-xs font-medium">
+        {athleteVisibleCopy(caution.label)}
+      </p>
+      {expert ? (
+        <p className="text-muted-foreground text-sm leading-relaxed">{caution.body}</p>
+      ) : null}
     </div>
   );
 }
 
 /** Section chrome stays put while the projection resolves. */
-export function PlanProjectionSectionSkeleton() {
+export function PlanProjectionSectionSkeleton({ embedded = false }: { embedded?: boolean }) {
   return (
     <section aria-labelledby="plan-projection" className="space-y-3">
-      <ProjectionHeader />
+      <ProjectionHeader embedded={embedded} />
       <div className="analysis-panel-alt rounded-analysis-lg h-24 animate-pulse" aria-busy />
     </section>
   );
 }
 
-function ProjectionUnavailable({ message }: { message: string }) {
+function ProjectionUnavailable({
+  message,
+  embedded = false,
+}: {
+  message: string;
+  embedded?: boolean;
+}) {
   return (
     <section aria-labelledby="plan-projection" className="space-y-3">
-      <ProjectionHeader />
+      <ProjectionHeader embedded={embedded} />
       <InkEmptyState
         description={message}
         icon={TrendingUp}
@@ -103,13 +96,23 @@ function ProjectionUnavailable({ message }: { message: string }) {
   );
 }
 
-function ProjectionHeader() {
+function ProjectionHeader({ embedded }: { embedded?: boolean }) {
+  if (embedded) {
+    return (
+      <span className="sr-only" id="plan-projection">
+        Projection
+      </span>
+    );
+  }
+
   return (
     <div className="flex items-baseline justify-between gap-3">
       <h2 className="text-section-title" id="plan-projection">
         Projection
       </h2>
-      <span className="text-label shrink-0">{PROJECTION_HORIZON} jours</span>
+      <Link className="explore-link shrink-0" href="/plan/semaine">
+        {PROJECTION_HORIZON} jours
+      </Link>
     </div>
   );
 }
@@ -123,16 +126,15 @@ function ProjectionReading({
   mode: DisplayMode;
   vm: ProjectedAthleteCardViewModel;
 }) {
+  const expert = isExpertMode(mode);
+  const bilan = briefHubLine(brief);
   return (
     <div className="analysis-panel rounded-analysis-lg space-y-3 px-4 py-4">
-      <p className="text-foreground text-sm leading-relaxed">{vm.synthesisSentence}</p>
-
-      {brief?.load ? <LoadCeiling load={brief.load} mode={mode} /> : null}
-      {vm.caution ? <ProjectionCaution caution={vm.caution} /> : null}
-      {brief?.whatWouldChange ? <ChangeDrivers drivers={brief.whatWouldChange} /> : null}
-
-      <Link className="explore-link" href={BRIEF_HREF}>
-        Bilan hebdo
+      <p className="text-section-title leading-snug text-pretty">{vm.synthesisSentence}</p>
+      {expert && brief?.load ? <LoadCeiling load={brief.load} mode={mode} /> : null}
+      {vm.caution ? <ProjectionCaution caution={vm.caution} expert={expert} /> : null}
+      <Link className="explore-link" href="/plan/bilan">
+        {bilan ?? 'Voir le bilan'}
       </Link>
     </div>
   );
@@ -144,7 +146,13 @@ function ProjectionReading({
  * A plan is only readable against its expected effect: the list of sessions
  * says what to do, the projection says whether doing it is a good idea.
  */
-export function PlanProjectionSection({ now }: { now: Date }) {
+export function PlanProjectionSection({
+  now,
+  embedded = false,
+}: {
+  now: Date;
+  embedded?: boolean;
+}) {
   const { mode } = useDisplayMode();
   const projection = useProjectedAthleteViewModel(PROJECTION_HORIZON);
   const brief = useWeeklyCoachingBriefViewModel(format(startOfWeek(now, WEEK_OPTS), 'yyyy-MM-dd'));
@@ -153,19 +161,24 @@ export function PlanProjectionSection({ now }: { now: Date }) {
 
   if (!vm) {
     return projection.isPending ? (
-      <PlanProjectionSectionSkeleton />
+      <PlanProjectionSectionSkeleton embedded={embedded} />
     ) : (
-      <ProjectionUnavailable message={UNAVAILABLE_FALLBACK} />
+      <ProjectionUnavailable embedded={embedded} message={UNAVAILABLE_FALLBACK} />
     );
   }
 
   if (!vm.visible) {
-    return <ProjectionUnavailable message={vm.emptyStateMessage ?? UNAVAILABLE_FALLBACK} />;
+    return (
+      <ProjectionUnavailable
+        embedded={embedded}
+        message={vm.emptyStateMessage ?? UNAVAILABLE_FALLBACK}
+      />
+    );
   }
 
   return (
     <section aria-labelledby="plan-projection" className="space-y-3">
-      <ProjectionHeader />
+      <ProjectionHeader embedded={embedded} />
       <ProjectionReading brief={brief.data} mode={mode} vm={vm} />
     </section>
   );

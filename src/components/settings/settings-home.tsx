@@ -63,7 +63,7 @@ const GROUPS: SettingsGroup[] = [
         statusKey: 'equipment',
       },
       {
-        href: '/settings/calibration',
+        href: '/moi/calibration',
         title: 'Seuils & repères',
         description: 'FTP, allure seuil, FC max et historique des seuils.',
         icon: SlidersHorizontal,

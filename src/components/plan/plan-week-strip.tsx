@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { SPORT_IDENTITY_TEXT } from '@/lib/activity/sport-identity';
@@ -12,8 +13,8 @@ function EntryMark({ entry }: { entry: ThreadEntry }) {
   return (
     <span
       className={cn(
-        'size-[7px] shrink-0 rounded-full',
-        entry.kind === 'planned' ? 'border-[1.5px] border-current' : 'bg-current',
+        'size-1.5 shrink-0 rounded-full',
+        entry.kind === 'planned' ? 'border border-current' : 'bg-current',
         SPORT_IDENTITY_TEXT[entry.type],
       )}
       aria-hidden
@@ -35,54 +36,54 @@ function dayDescription(day: PlanWeekDay): string {
 }
 
 /**
- * The week at a glance, one cell per calendar day.
- *
- * Rest days keep their cell rather than being dropped: a week is read by its
- * shape, and a plan with three empty days says something a compacted list of
- * four sessions cannot.
+ * The week as one instrument. The strip itself opens the week editor.
  */
 export function PlanWeekStrip({ days }: { days: readonly PlanWeekDay[] }) {
   return (
-    <ol className="grid grid-cols-7 gap-1.5">
-      {days.map((day) => (
-        <li
-          key={day.dayKey}
-          aria-current={day.isToday ? 'date' : undefined}
-          className={cn(
-            'rounded-analysis-sm border px-1 py-2 text-center',
-            day.isToday
-              ? 'border-primary/40 bg-analysis-surface'
-              : 'border-analysis-border/60 bg-analysis-surface-alt/40',
-          )}
-        >
-          <span className="sr-only">{dayDescription(day)}</span>
-          <span
+    <Link
+      aria-label="Voir la semaine"
+      className="analysis-panel rounded-analysis-lg focus-visible:ring-ring block overflow-hidden focus-visible:ring-2 focus-visible:outline-none"
+      href="/plan/semaine"
+    >
+      <ol className="divide-analysis-border/70 grid grid-cols-7 divide-x">
+        {days.map((day) => (
+          <li
+            key={day.dayKey}
+            aria-current={day.isToday ? 'date' : undefined}
             className={cn(
-              'text-data block text-[10px] tracking-wide uppercase',
-              day.isToday ? 'text-foreground font-semibold' : 'text-muted-foreground',
+              'flex flex-col items-center gap-1 px-0.5 py-2.5',
+              day.isToday && 'bg-highlight',
             )}
-            aria-hidden
           >
-            {format(day.date, 'EEEEE', { locale: fr })}
-          </span>
-          <span
-            className={cn(
-              'text-data block text-[11px] tabular-nums',
-              day.isToday ? 'text-foreground font-semibold' : 'text-muted-foreground/70',
-            )}
-            aria-hidden
-          >
-            {format(day.date, 'd')}
-          </span>
-          <span className="mt-1.5 flex h-3 items-center justify-center gap-0.5" aria-hidden>
-            {day.state === 'rest' ? (
-              <span className="bg-analysis-border h-px w-2.5" />
-            ) : (
-              day.entries.slice(0, 3).map((entry) => <EntryMark key={entry.id} entry={entry} />)
-            )}
-          </span>
-        </li>
-      ))}
-    </ol>
+            <span className="sr-only">{dayDescription(day)}</span>
+            <span
+              className={cn(
+                'text-label',
+                day.isToday ? 'text-foreground' : 'text-muted-foreground',
+              )}
+              aria-hidden
+            >
+              {format(day.date, 'EEEEE', { locale: fr })}
+            </span>
+            <span
+              className={cn(
+                'text-data text-sm tabular-nums',
+                day.isToday ? 'text-foreground font-semibold' : 'text-foreground/80',
+              )}
+              aria-hidden
+            >
+              {format(day.date, 'd')}
+            </span>
+            <span className="flex h-2.5 items-center justify-center gap-0.5" aria-hidden>
+              {day.state === 'rest' ? (
+                <span className="bg-analysis-border/80 h-px w-2.5" />
+              ) : (
+                day.entries.slice(0, 3).map((entry) => <EntryMark key={entry.id} entry={entry} />)
+              )}
+            </span>
+          </li>
+        ))}
+      </ol>
+    </Link>
   );
 }

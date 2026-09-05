@@ -90,7 +90,7 @@ export function useActivityForm({ mode, initialData }: ActivityFormProps) {
         if (mode === 'create') {
           const activity = await create.mutateAsync(payload);
           form.reset();
-          router.push(`/training/${activity.id}`);
+          router.push(`/activite/${activity.id}`);
           return;
         }
         const { id } = initialData!;
@@ -105,7 +105,7 @@ export function useActivityForm({ mode, initialData }: ActivityFormProps) {
           },
         );
         // replace: edit is transient — do not leave it under detail in browser history
-        router.replace(`/training/${id}`);
+        router.replace(`/activite/${id}`);
       } catch (err) {
         form.setError('root', {
           message: err instanceof Error ? err.message : 'Une erreur est survenue',

@@ -79,7 +79,6 @@ export function TodayDashboardMain({
       <TodayUnderstandSection
         activities={activities}
         activitiesLoading={activitiesLoading}
-        limitingFactorHref={content.hero.twinTrustStrip.limitingFactorHref}
         loading={valuesLoading}
         metricsRow={content.hero.metricsRow}
         signalPreviews={content.hero.signalPreviews}

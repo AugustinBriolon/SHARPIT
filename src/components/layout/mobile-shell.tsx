@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { LayoutGroup, motion, useReducedMotion } from 'motion/react';
 import { AthleteNavAvatar, AthleteNavAvatarSkeleton } from '@/components/layout/athlete-nav-avatar';
-import { bottomNavItems, profileNavItem, type AppNavItem } from '@/lib/app-navigation';
+import { bottomNavItems, moiNavItem, type AppNavItem } from '@/lib/app-navigation';
 import { useAthleteNavIdentity } from '@/hooks/use-athlete-nav-identity';
 import { usePrefetchNavQuery } from '@/hooks/use-prefetch-nav';
 import { PAGE_CONTENT_MAX_CLASS, PAGE_GUTTER } from '@/lib/ui/page-gutter';
@@ -84,7 +84,7 @@ function BottomNavLink({
   const isActive = pathname !== null && item.match(pathname);
   const reduce = useReducedMotion();
   const hint = () => onPrefetch(item.href);
-  const isAthleteTab = item.href === profileNavItem.href;
+  const isAthleteTab = item.href === moiNavItem.href;
   const identity = useAthleteNavIdentity();
   const label = isAthleteTab ? identity.shortLabel : item.label;
   const glyph = bottomNavGlyph({ item, isAthleteTab, identity, isActive });

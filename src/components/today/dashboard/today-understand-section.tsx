@@ -21,7 +21,6 @@ type SignalPreviews = TodayViewModel['hero']['signalPreviews'];
 export function TodayUnderstandSection({
   metricsRow,
   signalPreviews,
-  limitingFactorHref,
   activities,
   activitiesLoading,
   loading = false,
@@ -29,7 +28,6 @@ export function TodayUnderstandSection({
 }: {
   metricsRow: MetricsRow;
   signalPreviews?: SignalPreviews;
-  limitingFactorHref?: string | null;
   activities: ClientActivity[];
   activitiesLoading: boolean;
   loading?: boolean;
@@ -39,7 +37,6 @@ export function TodayUnderstandSection({
     <section className={cn('space-y-4', className)}>
       <div className="px-0.5">
         <TodaySignalStrip
-          limiterHref={limitingFactorHref}
           loading={loading}
           metricsRow={metricsRow}
           signalPreviews={signalPreviews}

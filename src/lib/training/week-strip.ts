@@ -83,7 +83,7 @@ export function weekCellAccent(kind: WeekCellKind): string | null {
 
 /** Each cell opens the planning framed on its week. */
 export function weekCellHref(cell: WeekCell): string {
-  return `/training/planning?week=${format(cell.weekStart, 'yyyy-MM-dd')}`;
+  return `/plan/semaine?week=${format(cell.weekStart, 'yyyy-MM-dd')}`;
 }
 
 // ---------------------------------------------------------------------------

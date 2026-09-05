@@ -62,7 +62,7 @@ export function GoalAchievementsHistory() {
                 {item.activity && (
                   <Link
                     className="text-primary focus-visible:ring-primary/35 inline-flex min-h-11 shrink-0 items-center text-xs font-medium hover:underline focus-visible:ring-2 focus-visible:outline-hidden lg:min-h-9"
-                    href={`/training/${item.activity.id}`}
+                    href={`/activite/${item.activity.id}`}
                   >
                     Voir la séance
                   </Link>

@@ -13,15 +13,16 @@ describe('TodaySignalStrip overnight résumé', () => {
     expect(source).toContain('Score sommeil');
     expect(source).toContain('Score récupération');
     expect(source).toContain('pickTodayResumeSignalPreviews');
-    expect(source).toContain('sm:grid-cols-2');
+    expect(source).toContain('grid-cols-2');
+    expect(source).not.toContain('grid-cols-1');
     expect(source).not.toContain("label: 'Adaptation'");
     expect(source).not.toContain('Sparkline');
   });
 
-  it('marks the limiter via OvernightScoreCard isLimiter', () => {
-    expect(source).toContain("limiting === 'sleep'");
-    expect(source).toContain("limiting === 'recovery'");
-    expect(source).toContain('isLimiter');
+  it('does not paint a limiter wash on overnight cards', () => {
+    expect(source).not.toContain('isLimiter');
+    expect(source).not.toContain('limiterHref');
+    expect(source).not.toContain('twinDimensionFromHref');
   });
 
   it('keeps the same mounted chrome while loading (empty gauge, no text skeletons)', () => {

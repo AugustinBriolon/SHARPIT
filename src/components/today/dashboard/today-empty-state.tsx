@@ -32,13 +32,13 @@ const ACTIONS: EmptyStateAction[] = [
     description: 'Garmin, Withings, Renpho — la montre alimente sommeil, VFC et charge.',
   },
   {
-    href: '/training/planning',
+    href: '/plan/semaine',
     icon: CalendarPlus,
     title: 'Planifier une séance',
     description: 'Un objectif et quelques séances suffisent à lancer les projections.',
   },
   {
-    href: '/training/manual',
+    href: '/activite/nouvelle',
     icon: PencilLine,
     title: 'Ajouter une activité',
     description: 'Saisis une sortie à la main si elle n’a pas été enregistrée.',

@@ -3,6 +3,16 @@
 import { useEffect, useState } from 'react';
 import { useReducedMotion } from 'motion/react';
 
+function resolveDisplayScore(score: number | null, fill: boolean, reduce: boolean): number | null {
+  if (score === null) {
+    return null;
+  }
+  if (fill || reduce) {
+    return score;
+  }
+  return null;
+}
+
 /**
  * Arms the overnight gauge fill after the loading shell remounts with a score.
  *
@@ -58,8 +68,9 @@ export function useOvernightGaugeReveal(
     };
   }, [score, reduce, delayMs]);
 
-  // Reduced motion / filled: show the real score. Empty track: em dash via null.
-  const displayScore = score === null ? null : fill || reduce ? score : null;
-
-  return { fill: fill || (reduce && score !== null), displayScore };
+  const armed = fill || (reduce && score !== null);
+  return {
+    fill: armed,
+    displayScore: resolveDisplayScore(score, fill, reduce),
+  };
 }

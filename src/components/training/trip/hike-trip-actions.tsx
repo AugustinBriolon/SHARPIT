@@ -54,7 +54,7 @@ export function HikeTripActionsMenu({ tripId, tripName }: { tripId: string; trip
       return;
     }
     remove.mutate(tripId, {
-      onSuccess: () => router.push('/training/trips'),
+      onSuccess: () => router.push('/activite/sejours'),
     });
   }
 

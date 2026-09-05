@@ -25,7 +25,7 @@ type Matcher = {
 const HOME_PARENT = { href: '/', label: 'Aujourd’hui' } as const;
 const PLAN_PARENT = { href: '/plan', label: 'Plan' } as const;
 const ACTIVITY_PARENT = { href: '/activite', label: 'Activité' } as const;
-const TRIPS_PARENT = { href: '/training/trips', label: 'Séjours' } as const;
+const TRIPS_PARENT = { href: '/activite/sejours', label: 'Séjours' } as const;
 const MOI_PARENT = { href: '/moi', label: 'Moi' } as const;
 
 const MATCHERS: Matcher[] = [
@@ -37,47 +37,48 @@ const MATCHERS: Matcher[] = [
   { pattern: /^\/coach$/, resolve: () => ({ label: 'Coach', defaultParent: HOME_PARENT }) },
 
   {
-    pattern: /^\/training$/,
-    resolve: () => ({ label: 'Fil de la semaine', defaultParent: PLAN_PARENT }),
+    pattern: /^\/plan\/semaine$/,
+    resolve: () => ({ label: 'La semaine', defaultParent: PLAN_PARENT }),
   },
   {
-    // Redirects to `/activite` — keep a label for any stack entry that still lands here.
-    pattern: /^\/training\/history$/,
-    resolve: () => ({ label: 'Historique', defaultParent: ACTIVITY_PARENT }),
-  },
-  {
-    // Saisie: back uses nav stack when present; empty stack → Activité hub (never Historique).
-    pattern: /^\/training\/manual$/,
-    resolve: () => ({ label: 'Nouvelle activité', defaultParent: ACTIVITY_PARENT }),
-  },
-  {
-    pattern: /^\/training\/planning$/,
-    resolve: () => ({ label: 'Planification', defaultParent: PLAN_PARENT }),
-  },
-  {
-    pattern: /^\/training\/weekly-review$/,
+    pattern: /^\/plan\/bilan$/,
     resolve: () => ({ label: 'Bilan hebdo', defaultParent: PLAN_PARENT }),
   },
-  // Both trip patterns must stay above the /training/:id catch-all below.
+  // Charge and adaptation are block-scale readings, so Back lands on Plan.
   {
-    pattern: /^\/training\/trips$/,
+    pattern: /^\/plan\/charge$/,
+    resolve: () => ({ label: 'Charge', defaultParent: PLAN_PARENT }),
+  },
+  {
+    pattern: /^\/plan\/adaptation$/,
+    resolve: () => ({ label: 'Adaptation', defaultParent: PLAN_PARENT }),
+  },
+
+  {
+    // Saisie: back uses nav stack when present; empty stack → Activité hub.
+    pattern: /^\/activite\/nouvelle$/,
+    resolve: () => ({ label: 'Nouvelle activité', defaultParent: ACTIVITY_PARENT }),
+  },
+  // Both trip patterns must stay above the /activite/:id catch-all below.
+  {
+    pattern: /^\/activite\/sejours$/,
     resolve: () => ({ label: 'Séjours', defaultParent: ACTIVITY_PARENT }),
   },
   {
-    pattern: /^\/training\/trips\/[^/]+$/,
+    pattern: /^\/activite\/sejours\/[^/]+$/,
     resolve: () => ({ label: 'Séjour', defaultParent: TRIPS_PARENT }),
   },
   {
-    pattern: /^\/training\/([^/]+)\/edit$/,
+    pattern: /^\/activite\/([^/]+)\/edit$/,
     resolve: (m) => ({
       label: 'Édition',
-      defaultParent: { href: `/training/${m[1]}`, label: 'Séance' },
+      defaultParent: { href: `/activite/${m[1]}`, label: 'Séance' },
       transient: true,
     }),
   },
   {
-    // Detail opened from Activité hub list — empty-stack fallback is the hub, not a dead Historique page.
-    pattern: /^\/training\/[^/]+$/,
+    // Detail opened from the Activité hub list — empty-stack fallback is the hub.
+    pattern: /^\/activite\/[^/]+$/,
     resolve: () => ({ label: 'Séance', defaultParent: ACTIVITY_PARENT }),
   },
 
@@ -86,22 +87,8 @@ const MATCHERS: Matcher[] = [
     resolve: () => ({ label: 'Récupération', defaultParent: HOME_PARENT }),
   },
   {
-    pattern: /^\/today\/effort$/,
-    resolve: () => ({ label: 'Effort', defaultParent: HOME_PARENT }),
-  },
-  {
     pattern: /^\/today\/sleep$/,
     resolve: () => ({ label: 'Sommeil', defaultParent: HOME_PARENT }),
-  },
-  {
-    pattern: /^\/today\/adaptation$/,
-    resolve: () => ({ label: 'Adaptation', defaultParent: HOME_PARENT }),
-  },
-
-  // `/progress` redirects to dedicated Moi surfaces; keep a label for stack leftovers.
-  {
-    pattern: /^\/progress$/,
-    resolve: () => ({ label: 'Progression', defaultParent: MOI_PARENT }),
   },
 
   {
@@ -116,14 +103,16 @@ const MATCHERS: Matcher[] = [
     pattern: /^\/moi\/performance$/,
     resolve: () => ({ label: 'Performance', defaultParent: MOI_PARENT }),
   },
+  {
+    pattern: /^\/moi\/calibration$/,
+    resolve: () => ({ label: 'Seuils & repères', defaultParent: MOI_PARENT }),
+  },
 
   {
     pattern: /^\/nutrition$/,
     resolve: () => ({ label: 'Nutrition', defaultParent: HOME_PARENT }),
   },
 
-  // `/settings` redirects to `/moi`; keep a label for any stack entry that still lands here.
-  { pattern: /^\/settings$/, resolve: () => ({ label: 'Moi', defaultParent: HOME_PARENT }) },
   {
     pattern: /^\/settings\/account$/,
     resolve: () => ({ label: 'Compte', defaultParent: MOI_PARENT }),
@@ -167,12 +156,6 @@ const MATCHERS: Matcher[] = [
     pattern: /^\/settings\/pro$/,
     resolve: () => ({ label: 'Pro', defaultParent: MOI_PARENT }),
   },
-  {
-    // Seuils — Moi child; must not fall through to Aujourd’hui.
-    pattern: /^\/settings\/calibration$/,
-    resolve: () => ({ label: 'Seuils & repères', defaultParent: MOI_PARENT }),
-  },
-
   // Legal walls live outside the app shell (no tab bar / NavStackTracker).
   // Labels only — empty-stack fallback stays HOME; PrivacyConsentGate fail-closes
   // any attempt to enter the shell without health/legal consent.
