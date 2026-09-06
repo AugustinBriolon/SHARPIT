@@ -5,6 +5,7 @@ import {
   hubDoneCardAccessibleName,
   selectHubDoneEntries,
   selectHubRemainingEntries,
+  selectPlanHubStreamPrefetchIds,
 } from '@/lib/plan/plan-week-previews';
 import type { ThreadEntry } from '@/lib/training/thread/thread-model';
 
@@ -94,5 +95,20 @@ describe('selectHubRemainingEntries', () => {
       featured: [],
       overflow: 0,
     });
+  });
+});
+
+describe('selectPlanHubStreamPrefetchIds', () => {
+  it('warms the newest outdoor streams the rail can show', () => {
+    expect(
+      selectPlanHubStreamPrefetchIds([
+        { id: 'strength', type: ActivityType.STRENGTH, date: '2026-09-06' },
+        { id: 'old-run', type: ActivityType.RUN, date: '2026-09-01' },
+        { id: 'bike', type: ActivityType.BIKE, date: '2026-09-05' },
+        { id: 'run', type: ActivityType.RUN, date: '2026-09-06' },
+        { id: 'swim', type: ActivityType.SWIM, date: '2026-09-04' },
+        { id: 'hike', type: ActivityType.HIKE, date: '2026-09-03' },
+      ]),
+    ).toEqual(['run', 'bike', 'swim', 'hike']);
   });
 });

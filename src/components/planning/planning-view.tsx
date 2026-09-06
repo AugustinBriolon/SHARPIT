@@ -1,5 +1,14 @@
 'use client';
 
+import { useResetWhenHidden } from '@/hooks/use-reset-when-hidden';
+import { useState } from 'react';
+import type { SessionsCoachAction } from '@/components/coaching/coach-menu';
+import { handleSessionsCoachAction } from '@/components/planning/planning-coach-actions';
+import { getPlannedDialogPresentation } from '@/components/planning/planning-dialog-presentation';
+import {
+  type PlanningDialogState,
+  usePlanningViewData,
+} from '@/components/planning/use-planning-view-data';
 import { PlanningDaysPanel } from '@/components/planning/planning-days-panel';
 import { PlanningPageHeader } from '@/components/planning/planning-page-header';
 import { PlanningWeekChrome } from '@/components/planning/planning-week-chrome';
@@ -7,16 +16,6 @@ import { PlanningWeekSummary } from '@/components/planning/planning-week-summary
 import { PlanningViewOverlays } from '@/components/planning/planning-view-overlays';
 import { OfflineSnapshotSummary } from '@/components/pwa/offline-snapshot-summary';
 import { usePlanningOffline } from '@/components/planning/use-planning-offline';
-import {
-  type PlanningDialogState,
-  usePlanningViewData,
-} from '@/components/planning/use-planning-view-data';
-import type { SessionsCoachAction } from '@/components/coaching/coach-menu';
-import { handleSessionsCoachAction } from '@/components/planning/planning-coach-actions';
-import { getPlannedDialogPresentation } from '@/components/planning/planning-dialog-presentation';
-import { useRouter } from 'next/navigation';
-import { useState } from 'react';
-import { useResetWhenHidden } from '@/hooks/use-reset-when-hidden';
 
 function usePlanningDialogState(data: ReturnType<typeof usePlanningViewData>) {
   const [dialog, setDialog] = useState<PlanningDialogState>(null);
@@ -65,25 +64,18 @@ export function PlanningView({ embedded = false, showCoachMenu = !embedded }: Pl
 }
 
 function PlanningWeekView({ embedded = false, showCoachMenu = !embedded }: PlanningViewProps) {
-  const router = useRouter();
   const data = usePlanningViewData(showCoachMenu);
   const dialogState = usePlanningDialogState(data);
   const [generatorOpen, setGeneratorOpen] = useState(false);
   const [adapterOpen, setAdapterOpen] = useState(false);
-  const [macroPlanOpen, setMacroPlanOpen] = useState(false);
-  const [weeklyBriefOpen, setWeeklyBriefOpen] = useState(false);
   const [scenarioComparisonOpen, setScenarioComparisonOpen] = useState(false);
 
   useResetWhenHidden(() => setScenarioComparisonOpen(false));
 
   function handleCoachAction(action: SessionsCoachAction) {
     handleSessionsCoachAction(action, {
-      router,
-      onPlan: () => dialogState.setDialog({ mode: 'create', date: new Date() }),
       onGenerate: () => setGeneratorOpen(true),
       onAdapt: () => setAdapterOpen(true),
-      onMacro: () => setMacroPlanOpen(true),
-      onWeekBrief: () => setWeeklyBriefOpen(true),
     });
   }
 
@@ -130,20 +122,16 @@ function PlanningWeekView({ embedded = false, showCoachMenu = !embedded }: Plann
         goals={data.goals}
         isCreateDialog={dialogState.isCreateDialog}
         isLoading={data.isLoading}
-        macroPlanOpen={macroPlanOpen}
         scenarioComparisonOpen={scenarioComparisonOpen}
         scenarioComparisonViewModel={data.scenarioComparisonQuery.data}
         showPlannedDialog={dialogState.showPlannedDialog}
-        weeklyBriefOpen={weeklyBriefOpen}
         scenarioComparisonLoading={
           data.scenarioComparisonQuery.isPending || data.scenarioComparisonQuery.isPlaceholderData
         }
         onCloseAdapter={() => setAdapterOpen(false)}
         onCloseGenerator={() => setGeneratorOpen(false)}
-        onCloseMacroPlan={() => setMacroPlanOpen(false)}
         onClosePlannedDialog={dialogState.closePlannedDialog}
         onCloseScenarioComparison={() => setScenarioComparisonOpen(false)}
-        onCloseWeeklyBrief={() => setWeeklyBriefOpen(false)}
       />
     </div>
   );

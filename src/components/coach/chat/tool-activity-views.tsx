@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import type { ActivityType } from '@prisma/client';
 import { Check, Loader2, X } from 'lucide-react';
 import { activityTypeLabels } from '@/lib/format';
@@ -8,10 +9,15 @@ import {
   failureLabelForPart,
   humanizeToolErrorMessage,
 } from '@/lib/coach/chat/coach-tool-display';
+import { coachBeuiCopy } from '@/components/coach/beui/coach-beui-copy';
 import {
-  describeToolInput,
-  type SessionInput,
-} from '@/components/coach/chat/tool-activity-describe';
+  buildApprovalPreview,
+  resolveApproveLabel,
+  resolveRejectLabel,
+  type ApprovalPreview,
+  type ApprovalToolInput,
+} from '@/components/coach/beui/coach-tool-approval-helpers';
+import { ApprovalSessionPreview } from '@/components/coach/beui/coach-tool-approval-props';
 import type { KnownSession } from '@/components/coach/chat/tool-activity';
 import { cn } from '@/lib/utils';
 
@@ -31,6 +37,85 @@ type ToolPart = {
   approval?: { id: string; isAutomatic?: boolean; approved?: boolean; reason?: string };
 };
 
+function asApprovalInput(input: unknown): ApprovalToolInput {
+  if (!input || typeof input !== 'object') {
+    return {};
+  }
+  return input as ApprovalToolInput;
+}
+
+function buildApprovalMetaLine(
+  preview: ApprovalPreview,
+  isDelete: boolean,
+  proposal: string,
+): string {
+  return [preview.date, isDelete ? undefined : proposal].filter(Boolean).join(' · ');
+}
+
+function ApprovalRequestHeader({ headline, metaLine }: { headline: string; metaLine: string }) {
+  return (
+    <div className="min-w-0 space-y-0.5">
+      <p className="text-foreground text-sm leading-snug font-medium text-pretty">{headline}</p>
+      {metaLine ? (
+        <p className="text-data text-muted-foreground text-xs tabular-nums">{metaLine}</p>
+      ) : null}
+    </div>
+  );
+}
+
+function ApprovalDeleteConsequence({ show, date }: { show: boolean; date?: string }) {
+  if (!show) {
+    return null;
+  }
+  return (
+    <p className="text-signal-risk text-xs leading-relaxed">
+      {coachBeuiCopy.deleteConsequence(date)}
+    </p>
+  );
+}
+
+function ApprovalRequestActions({
+  approveLabel,
+  rejectLabel,
+  disabled,
+  isDelete,
+  onApprove,
+  onReject,
+}: {
+  approveLabel: string;
+  rejectLabel: string;
+  disabled?: boolean;
+  isDelete: boolean;
+  onApprove: () => void;
+  onReject: () => void;
+}) {
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <button
+        disabled={disabled}
+        type="button"
+        className={cn(
+          'rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors disabled:opacity-50',
+          isDelete
+            ? 'text-signal-risk hover:bg-signal-risk/5'
+            : 'border-border text-foreground hover:bg-muted/40 border',
+        )}
+        onClick={onApprove}
+      >
+        {approveLabel}
+      </button>
+      <button
+        className="text-muted-foreground hover:bg-muted/40 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors disabled:opacity-50"
+        disabled={disabled}
+        type="button"
+        onClick={onReject}
+      >
+        {rejectLabel}
+      </button>
+    </div>
+  );
+}
+
 export function ToolActivityApprovalRequest({
   part,
   meta,
@@ -44,60 +129,39 @@ export function ToolActivityApprovalRequest({
   onApproval?: (id: string, approved: boolean) => void;
   disabled?: boolean;
 }) {
-  const Icon = meta.icon;
-  const { headline, lines } = describeToolInput(
-    part.type,
-    (part.input ?? {}) as SessionInput,
-    knownSessions,
-  );
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const preview = buildApprovalPreview(part.type, asApprovalInput(part.input), knownSessions);
   const isDelete = part.type === 'tool-deletePlannedSession';
+  const metaLine = buildApprovalMetaLine(preview, isDelete, meta.proposal);
+  const approveLabel = resolveApproveLabel(isDelete, confirmDelete, coachBeuiCopy);
+  const rejectLabel = resolveRejectLabel(isDelete, coachBeuiCopy);
+
+  const handleApprove = () => {
+    if (isDelete && !confirmDelete) {
+      setConfirmDelete(true);
+      return;
+    }
+    onApproval?.(part.approval!.id, true);
+  };
+
+  const handleReject = () => {
+    setConfirmDelete(false);
+    onApproval?.(part.approval!.id, false);
+  };
 
   return (
-    <div className="border-analysis-border bg-background rounded-analysis overflow-hidden border transition-[color,background-color,border-color] duration-200">
-      <div className="space-y-2 px-3 pt-3 pb-2">
-        <div className="flex items-center gap-2">
-          <span className="bg-primary/10 text-primary inline-flex size-6 items-center justify-center rounded-full">
-            <Icon className="size-3.5" aria-hidden />
-          </span>
-          <p className="text-muted-foreground text-xs font-medium">{meta.proposal}</p>
-        </div>
-        <p className="text-foreground text-sm leading-snug font-medium">{headline}</p>
-        {lines.length > 0 ? (
-          <div className="bg-muted/40 rounded-lg px-2.5 py-2">
-            {lines.map((line, i) => (
-              <p key={i} className="text-muted-foreground text-xs leading-relaxed">
-                {line}
-              </p>
-            ))}
-          </div>
-        ) : null}
-      </div>
-      <div className="border-border/40 flex border-t">
-        <button
-          className="text-muted-foreground hover:bg-muted/50 flex flex-1 items-center justify-center gap-1.5 py-2.5 text-xs font-medium transition-colors disabled:opacity-50"
-          disabled={disabled}
-          type="button"
-          onClick={() => onApproval?.(part.approval!.id, false)}
-        >
-          <X className="size-3.5" aria-hidden />
-          Refuser
-        </button>
-        <span className="border-border/40 border-l" />
-        <button
-          disabled={disabled}
-          type="button"
-          className={cn(
-            'flex flex-1 items-center justify-center gap-1.5 py-2.5 text-xs font-medium transition-colors disabled:opacity-50',
-            isDelete
-              ? 'text-destructive hover:bg-destructive/5'
-              : 'text-primary hover:bg-primary/5',
-          )}
-          onClick={() => onApproval?.(part.approval!.id, true)}
-        >
-          <Check className="size-3.5" aria-hidden />
-          {isDelete ? 'Supprimer' : 'Valider'}
-        </button>
-      </div>
+    <div className="analysis-panel rounded-analysis space-y-2 p-3">
+      <ApprovalRequestHeader headline={preview.headline} metaLine={metaLine} />
+      {!isDelete ? <ApprovalSessionPreview preview={preview} /> : null}
+      <ApprovalDeleteConsequence date={preview.date} show={isDelete && confirmDelete} />
+      <ApprovalRequestActions
+        approveLabel={approveLabel}
+        disabled={disabled}
+        isDelete={isDelete}
+        rejectLabel={rejectLabel}
+        onApprove={handleApprove}
+        onReject={handleReject}
+      />
     </div>
   );
 }

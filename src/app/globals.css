@@ -566,7 +566,7 @@
 @utility analysis-panel {
   border: 1px solid var(--color-analysis-border);
   border-radius: var(--radius-analysis);
-  background-color: white;
+  background-color: var(--color-analysis-surface);
 }
 
 @utility analysis-panel-alt {

@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { ActivityType } from '@prisma/client';
 
-import { SPORT_IDENTITY_SURFACE, SPORT_IDENTITY_TEXT, sportIdentityHex } from './sport-identity';
+import {
+  SPORT_IDENTITY_PANEL,
+  SPORT_IDENTITY_SURFACE,
+  SPORT_IDENTITY_TEXT,
+  sportIdentityHex,
+} from './sport-identity';
 
 const SPORTS = [
   ActivityType.RUN,
@@ -47,5 +52,11 @@ describe('sport identity', () => {
   it('sportIdentityHex returns amber for HIKE, not RUN orange', () => {
     expect(sportIdentityHex(ActivityType.HIKE)).toBe('#b45309');
     expect(sportIdentityHex(ActivityType.HIKE)).not.toBe(sportIdentityHex(ActivityType.RUN));
+  });
+
+  it('gives sport panels a dark-mode tint, not a light-only wash', () => {
+    for (const type of SPORTS) {
+      expect(SPORT_IDENTITY_PANEL[type]).toContain('dark:');
+    }
   });
 });

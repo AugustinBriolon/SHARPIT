@@ -45,7 +45,7 @@ export function PlanningWeekChrome({
         <div className="min-w-0 flex-1 text-center sm:min-w-44 sm:flex-none">
           <p className="text-sm font-medium text-balance">
             {format(weekStart, 'd MMM', { locale: fr })}
-            {' — '}
+            {' - '}
             {format(weekEnd, 'd MMM', { locale: fr })}
           </p>
           {isCurrentWeek ? (
@@ -88,7 +88,7 @@ export function PlanningWeekChrome({
         ) : null}
         {showCoachMenu ? (
           <div className="ml-auto shrink-0">
-            <SessionsCoachMenu onAction={onCoachAction} />
+            <SessionsCoachMenu tone="secondary" onAction={onCoachAction} />
           </div>
         ) : null}
       </div>

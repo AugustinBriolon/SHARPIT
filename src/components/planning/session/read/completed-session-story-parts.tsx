@@ -66,8 +66,7 @@ export function CompletedSessionPlanGaps({
   }
 
   return (
-    <div className="space-y-2 px-3 py-2.5">
-      <p className="text-label">Écarts au plan</p>
+    <div className="space-y-2">
       {hasRemarks ? (
         <ul className="space-y-1">
           {analysis.remarks.map((remark) => (
@@ -81,10 +80,9 @@ export function CompletedSessionPlanGaps({
         </ul>
       ) : null}
       {hasRecommendation ? (
-        <div className="border-analysis-border/50 bg-background/70 space-y-1 rounded-md border px-2.5 py-2">
-          <p className="text-label">Orientation</p>
-          <p className="text-foreground/85 text-xs leading-relaxed">{analysis.recommendation}</p>
-        </div>
+        <p className="text-foreground/85 text-xs leading-relaxed text-pretty">
+          {analysis.recommendation}
+        </p>
       ) : null}
     </div>
   );

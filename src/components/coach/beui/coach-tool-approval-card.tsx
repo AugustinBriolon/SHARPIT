@@ -6,7 +6,10 @@ import { useState } from 'react';
 import { ApprovalCard } from '@/components/agents/approval-card';
 import type { ApprovalCardStatus } from '@/components/agents/approval-card/types';
 import { coachBeuiCopy } from '@/components/coach/beui/coach-beui-copy';
-import { describeApproval } from '@/components/coach/beui/coach-tool-approval-helpers';
+import {
+  buildApprovalPreview,
+  type ApprovalToolInput,
+} from '@/components/coach/beui/coach-tool-approval-helpers';
 import { createApprovalHandlers } from '@/components/coach/beui/coach-tool-approval-handlers';
 import { buildApprovalCardProps } from '@/components/coach/beui/coach-tool-approval-props';
 
@@ -18,6 +21,13 @@ const PROPOSAL: Record<string, string> = {
   'tool-setTravelContext': 'Enregistrer un contexte voyage',
   'tool-setTrainingConstraint': 'Enregistrer une contrainte',
 };
+
+function asApprovalInput(input: unknown): ApprovalToolInput {
+  if (!input || typeof input !== 'object') {
+    return {};
+  }
+  return input as ApprovalToolInput;
+}
 
 export function CoachToolApprovalCard({
   part,
@@ -39,7 +49,7 @@ export function CoachToolApprovalCard({
   }
 
   const isDelete = part.type === 'tool-deletePlannedSession';
-  const { headline, date } = describeApproval(part.type, part.input ?? {}, knownSessions);
+  const preview = buildApprovalPreview(part.type, asApprovalInput(part.input), knownSessions);
   const { handleApprove, handleReject } = createApprovalHandlers({
     approvalId,
     isDelete,
@@ -52,12 +62,13 @@ export function CoachToolApprovalCard({
   const cardProps = buildApprovalCardProps({
     confirmDelete,
     copy: coachBeuiCopy,
-    date,
+    date: preview.date,
     disabled,
     handleApprove,
     handleReject,
-    headline,
+    headline: preview.headline,
     isDelete,
+    preview,
     proposal: PROPOSAL[part.type] ?? coachBeuiCopy.approvalRequired,
     resolvedStatus,
   });

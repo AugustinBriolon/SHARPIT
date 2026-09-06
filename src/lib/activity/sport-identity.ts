@@ -66,13 +66,13 @@ export const SPORT_IDENTITY_HEX: Record<ActivityType, string> = {
 
 /** Analysis-panel tint for hero metric cards on activity detail. */
 export const SPORT_IDENTITY_PANEL: Record<ActivityType, string> = {
-  RUN: 'border-orange-500/30 bg-orange-500/5',
-  BIKE: 'border-emerald-500/30 bg-emerald-500/5',
-  SWIM: 'border-sky-500/30 bg-sky-500/5',
-  STRENGTH: 'border-rose-500/30 bg-rose-500/5',
-  TRIATHLON: 'border-teal-500/30 bg-teal-500/5',
-  HIKE: 'border-amber-800/30 bg-amber-800/5',
-  OTHER: 'border-analysis-border',
+  RUN: 'border-orange-500/30 bg-orange-500/5 dark:border-orange-400/40 dark:bg-orange-400/15',
+  BIKE: 'border-emerald-500/30 bg-emerald-500/5 dark:border-emerald-400/40 dark:bg-emerald-400/15',
+  SWIM: 'border-sky-500/30 bg-sky-500/5 dark:border-sky-400/40 dark:bg-sky-400/15',
+  STRENGTH: 'border-rose-500/30 bg-rose-500/5 dark:border-rose-400/40 dark:bg-rose-400/15',
+  TRIATHLON: 'border-teal-500/30 bg-teal-500/5 dark:border-teal-400/40 dark:bg-teal-400/15',
+  HIKE: 'border-amber-800/30 bg-amber-800/5 dark:border-amber-500/40 dark:bg-amber-500/15',
+  OTHER: 'border-analysis-border dark:bg-analysis-surface-alt',
 };
 
 export function sportIdentitySurface(type: ActivityType): string {

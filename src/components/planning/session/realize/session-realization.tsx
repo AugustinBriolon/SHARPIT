@@ -87,34 +87,25 @@ function LinkedActivityCard({ linked, delink }: { linked: ClientActivity; delink
   const appModal = useAppModalOptional();
 
   return (
-    <div className="border-analysis-border/60 bg-analysis-surface-alt/50 overflow-hidden rounded-lg border">
-      <div className="border-analysis-border/50 flex items-center justify-between gap-2 border-b px-3 py-2">
-        <p className="text-label">Activité liée</p>
-        {delink}
-      </div>
+    <div className="flex items-center justify-between gap-2">
       <Link
-        className="hover:bg-analysis-surface-alt/80 chip-surface flex items-center justify-between gap-2 px-3 py-2.5 transition-colors"
+        className="hover:text-foreground text-muted-foreground flex min-w-0 items-center gap-2 text-sm transition-colors"
         href={`/activite/${linked.id}`}
         onClick={() => {
           dismissFromDialog?.();
           appModal?.closePlannedSession();
         }}
       >
-        <div className="flex min-w-0 items-start gap-1.5">
-          <ActivityTypeIndicator type={linked.type} />
-          <div className="min-w-0">
-            <p className="truncate text-sm font-medium">
-              {linked.title ?? activityTypeLabels[linked.type]}
-            </p>
-            <p className="text-muted-foreground text-xs">
-              {formatDate(linked.date)} · {formatDuration(linked.duration)}
-            </p>
-          </div>
-        </div>
-        <span className="text-data text-muted-foreground shrink-0 text-xs">
-          {activityMetric(linked)}
+        <ActivityTypeIndicator type={linked.type} />
+        <span className="text-foreground truncate font-medium">
+          {linked.title ?? activityTypeLabels[linked.type]}
+        </span>
+        <span className="text-data shrink-0 text-xs tabular-nums">
+          {formatDate(linked.date)} · {formatDuration(linked.duration)}
+          {activityMetric(linked) ? ` · ${activityMetric(linked)}` : ''}
         </span>
       </Link>
+      {delink}
     </div>
   );
 }
@@ -284,18 +275,17 @@ function UnlinkedSessionRealization({
   onToggleShowAll: () => void;
 }) {
   return (
-    <div className="border-analysis-border/60 bg-analysis-surface-alt/30 space-y-3 rounded-lg border border-dashed p-2.5 sm:p-3">
+    <div className="space-y-2">
       {!pickerOpen ? (
-        <div className="space-y-2">
-          <p className="text-sm font-medium">Séance planifiée non rapprochée</p>
-          <p className="text-muted-foreground text-xs leading-relaxed text-pretty">
-            Associe-la à l&apos;activité réalisée pour comparer le plan au fait réel et lancer
-            l&apos;analyse de conformité.
-          </p>
-          <Button size="sm" type="button" variant="outline" onClick={onPickerOpen}>
-            <Link2 className="size-4" /> Associer une activité
-          </Button>
-        </div>
+        <Button
+          className="text-muted-foreground hover:text-foreground h-auto min-h-9 font-normal"
+          size="sm"
+          type="button"
+          variant="ghost"
+          onClick={onPickerOpen}
+        >
+          <Link2 className="size-3.5" aria-hidden /> Relier à l&apos;activité faite
+        </Button>
       ) : (
         <div className="space-y-2">
           <p className="text-muted-foreground text-xs">
@@ -369,12 +359,13 @@ export function SessionRealization({
 
   const delink = (
     <button
+      aria-label="Délier l'activité"
       className="text-muted-foreground hover:text-destructive flex shrink-0 items-center gap-1 text-xs"
       disabled={link.isPending}
       type="button"
       onClick={() => link.mutate({ id: session.id, activityId: null })}
     >
-      <Unlink className="size-3" /> Délier
+      <Unlink className="size-3" aria-hidden /> Délier
     </button>
   );
 

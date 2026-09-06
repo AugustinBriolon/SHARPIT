@@ -71,6 +71,11 @@ async function computeRetryAfterSeconds(athleteId: string, since: Date): Promise
 
 /** Read-only check — never spends anything itself, the AiUsageEvent rows recordAiUsage already writes are the ledger. */
 export async function ensureFreeAiBudget(athleteId: string): Promise<AiBudgetStatus> {
+  // Local next dev: no Free token ceiling — same posture as rate-limit bypass.
+  if (process.env.NODE_ENV === 'development') {
+    return { allowed: true, isPro: true, warning: false, retryAfterSeconds: null };
+  }
+
   const profile = await prisma.athleteProfile.findUnique({
     where: { id: athleteId },
     select: { tier: true },

@@ -11,7 +11,10 @@ import { Redis } from '@upstash/redis';
  * doesn't take the whole app down.
  *
  * Sensitive routes (coach / AI, provider sync, session analyze) pass
- * `{ failClosed: true }` and receive 503 when protection is unavailable.
+ * `{ failClosed: true }` and receive 503 when protection is unavailable —
+ * except in local `development`, where limits are skipped entirely so coaches
+ * and syncs stay usable without Upstash.
+ *
  * Production must set `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN`.
  */
 
@@ -23,7 +26,7 @@ const redis =
       })
     : null;
 
-if (!redis) {
+if (!redis && process.env.NODE_ENV !== 'development') {
   console.error(
     '[rate-limit] UPSTASH_REDIS_REST_URL/TOKEN not configured — sensitive routes fail closed; apiGeneral fails open.',
   );
@@ -64,47 +67,71 @@ export type CheckRateLimitOptions = {
   failClosed?: boolean;
 };
 
+/** Local `next dev` never enforces quotas — Upstash optional. */
+export function isRateLimitBypassed(): boolean {
+  return process.env.NODE_ENV === 'development';
+}
+
+function unavailableRateLimitResult(): Extract<RateLimitResult, { ok: false }> {
+  return {
+    ok: false,
+    cause: 'unavailable',
+    retryAfterSeconds: UNAVAILABLE_RETRY_AFTER_SECONDS,
+  };
+}
+
+function resolveMissingLimiter(failClosed: boolean): RateLimitResult {
+  return failClosed ? unavailableRateLimitResult() : { ok: true };
+}
+
+function resolveLimitResult(result: { success: boolean; reset: number }): RateLimitResult {
+  if (result.success) {
+    return { ok: true };
+  }
+
+  const retryAfterSeconds = Math.max(1, Math.ceil((result.reset - Date.now()) / 1000));
+  return { ok: false, cause: 'limited', retryAfterSeconds };
+}
+
+function resolveLimitError(failClosed: boolean, error: unknown): RateLimitResult {
+  console.error(
+    failClosed
+      ? '[rate-limit] check failed, rejecting sensitive request:'
+      : '[rate-limit] check failed, allowing request:',
+    error,
+  );
+  return failClosed ? unavailableRateLimitResult() : { ok: true };
+}
+
+function formatRetryHint(retryAfterSeconds: number): string {
+  if (retryAfterSeconds >= 60) {
+    const minutes = Math.ceil(retryAfterSeconds / 60);
+    return minutes === 1 ? 'dans 1 minute' : `dans ${minutes} minutes`;
+  }
+  return `dans ${retryAfterSeconds} secondes`;
+}
+
 /** `limiter` is null when Upstash isn't configured. */
 export async function checkRateLimit(
   limiter: Ratelimit | null,
   key: string,
   options?: CheckRateLimitOptions,
 ): Promise<RateLimitResult> {
+  if (isRateLimitBypassed()) {
+    return { ok: true };
+  }
+
   const failClosed = options?.failClosed === true;
 
   if (!limiter) {
-    if (failClosed) {
-      return {
-        ok: false,
-        cause: 'unavailable',
-        retryAfterSeconds: UNAVAILABLE_RETRY_AFTER_SECONDS,
-      };
-    }
-    return { ok: true };
+    return resolveMissingLimiter(failClosed);
   }
 
   try {
     const result = await limiter.limit(key);
-    if (result.success) {
-      return { ok: true };
-    }
-    const retryAfterSeconds = Math.max(1, Math.ceil((result.reset - Date.now()) / 1000));
-    return { ok: false, cause: 'limited', retryAfterSeconds };
+    return resolveLimitResult(result);
   } catch (error) {
-    console.error(
-      failClosed
-        ? '[rate-limit] check failed, rejecting sensitive request:'
-        : '[rate-limit] check failed, allowing request:',
-      error,
-    );
-    if (failClosed) {
-      return {
-        ok: false,
-        cause: 'unavailable',
-        retryAfterSeconds: UNAVAILABLE_RETRY_AFTER_SECONDS,
-      };
-    }
-    return { ok: true };
+    return resolveLimitError(failClosed, error);
   }
 }
 
@@ -114,12 +141,13 @@ export function rateLimitResponseBody(
 ) {
   if (cause === 'unavailable') {
     return {
-      error: 'Protection anti-abus indisponible — réessaie dans quelques instants.',
+      error:
+        'Le coach est temporairement indisponible. Réessaie dans une minute — si ça continue, le service de protection n’est pas joignable.',
       retryAfterSeconds,
     };
   }
   return {
-    error: `Trop de requêtes — réessaie dans ${retryAfterSeconds >= 60 ? `${Math.ceil(retryAfterSeconds / 60)} min` : `${retryAfterSeconds}s`}.`,
+    error: `Tu as envoyé trop de messages d’affilée. Réessaie ${formatRetryHint(retryAfterSeconds)}.`,
     retryAfterSeconds,
   };
 }

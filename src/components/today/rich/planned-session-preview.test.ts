@@ -19,6 +19,12 @@ describe('PlannedSessionPreview density', () => {
     expect(source).toContain('line-clamp-2');
     expect(source).toContain('text-pretty!');
   });
+
+  it('paints Prioritaire with highlight ink, not theme foreground', () => {
+    expect(source).toContain('bg-highlight text-highlight-foreground');
+    expect(source).toContain('Prioritaire');
+    expect(source).not.toContain('bg-highlight text-foreground');
+  });
 });
 
 describe('TodayDaySummaryLine planned density wiring', () => {

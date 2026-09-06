@@ -1,0 +1,374 @@
+'use client';
+
+import { format, isToday } from 'date-fns';
+import { fr } from 'date-fns/locale';
+import { Layers, Plus } from 'lucide-react';
+import { firstOpenPlannedSessionId } from '@/components/planning/planning-day-row-helpers';
+import { CompletedSessionPreview } from '@/components/today/rich/completed-session-preview';
+import { PlannedSessionPreview } from '@/components/today/rich/planned-session-preview';
+import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
+import { groupPlannedSessions } from '@/lib/planned-session/brick/brick-sessions';
+import { activityTypeLabels } from '@/lib/format';
+import { planningDayKey } from '@/lib/planning/planning-day-selection';
+import type { ClientActivity, ClientPlannedSession } from '@/lib/query/types';
+import { buildCompletedSessionMetrics } from '@/lib/today/completed-session-metrics';
+import { buildPlannedSessionPreview } from '@/lib/today/planned-session-metrics';
+import { TWIN_DRILL_DOWN } from '@/lib/today/today-twin-navigation';
+import { cn } from '@/lib/utils';
+
+function PlannedDayPreview({
+  session,
+  primary,
+  onEdit,
+  onPrefetch,
+}: {
+  session: ClientPlannedSession;
+  primary: boolean;
+  onEdit: (session: ClientPlannedSession) => void;
+  onPrefetch: (session: ClientPlannedSession) => void;
+}) {
+  const preview = buildPlannedSessionPreview({
+    type: session.type,
+    durationMin: session.durationMin,
+    intensity: session.intensity,
+    load: session.load,
+    title: session.title,
+    description: session.description,
+    accessories: session.accessories,
+    strengthPrescription: session.strengthPrescription,
+  });
+  const title = session.title?.trim() || activityTypeLabels[session.type];
+
+  return (
+    <PlannedSessionPreview
+      activityType={session.type}
+      density="compact"
+      equipment={preview.equipment}
+      metrics={preview.metrics}
+      primary={primary && !session.completed}
+      secondary={session.description}
+      title={title}
+      onOpen={() => {
+        onPrefetch(session);
+        onEdit(session);
+      }}
+    />
+  );
+}
+
+function DoneActivityPreview({ activity }: { activity: ClientActivity }) {
+  const title = activity.title?.trim() || activityTypeLabels[activity.type];
+
+  return (
+    <CompletedSessionPreview
+      accessibleName={`${title}, réalisé`}
+      activityId={activity.id}
+      activityType={activity.type}
+      href={TWIN_DRILL_DOWN.activity(activity.id)}
+      layout="column"
+      title={title}
+      metrics={buildCompletedSessionMetrics({
+        type: activity.type,
+        duration: activity.duration,
+        load: activity.load,
+        rpe: activity.rpe,
+        runMetrics: activity.runMetrics,
+        bikeMetrics: activity.bikeMetrics,
+        swimMetrics: activity.swimMetrics,
+        hikeMetrics: activity.hikeMetrics,
+        strengthSets: activity.strengthSets ?? [],
+      })}
+    />
+  );
+}
+
+function LinkedDonePreview({
+  session,
+  activity,
+}: {
+  session: ClientPlannedSession;
+  activity: ClientActivity;
+}) {
+  const title = session.title?.trim() || activity.title?.trim() || activityTypeLabels[session.type];
+
+  return (
+    <CompletedSessionPreview
+      accessibleName={`${title}, réalisé`}
+      activityId={activity.id}
+      activityType={activity.type}
+      href={TWIN_DRILL_DOWN.activity(activity.id)}
+      layout="column"
+      title={title}
+      metrics={buildCompletedSessionMetrics({
+        type: activity.type,
+        duration: activity.duration,
+        load: activity.load,
+        rpe: activity.rpe,
+        runMetrics: activity.runMetrics,
+        bikeMetrics: activity.bikeMetrics,
+        swimMetrics: activity.swimMetrics,
+        hikeMetrics: activity.hikeMetrics,
+        strengthSets: activity.strengthSets ?? [],
+      })}
+    />
+  );
+}
+
+function SessionItem({
+  session,
+  activityById,
+  primary,
+  onEdit,
+  onPrefetch,
+}: {
+  session: ClientPlannedSession;
+  activityById: ReadonlyMap<string, ClientActivity>;
+  primary: boolean;
+  onEdit: (session: ClientPlannedSession) => void;
+  onPrefetch: (session: ClientPlannedSession) => void;
+}) {
+  if (session.completed && session.activityId) {
+    const linked = activityById.get(session.activityId);
+    if (linked) {
+      return <LinkedDonePreview activity={linked} session={session} />;
+    }
+  }
+
+  return (
+    <PlannedDayPreview
+      primary={primary}
+      session={session}
+      onEdit={onEdit}
+      onPrefetch={onPrefetch}
+    />
+  );
+}
+
+function PlannedGroups({
+  planned,
+  activityById,
+  onEdit,
+  onPrefetch,
+}: {
+  planned: ClientPlannedSession[];
+  activityById: ReadonlyMap<string, ClientActivity>;
+  onEdit: (session: ClientPlannedSession) => void;
+  onPrefetch: (session: ClientPlannedSession) => void;
+}) {
+  const groups = groupPlannedSessions(planned);
+  if (groups.length === 0) {
+    return null;
+  }
+  const primarySessionId = firstOpenPlannedSessionId(groups);
+
+  return (
+    <ul className="space-y-2.5">
+      {groups.map((item) => {
+        if (item.kind === 'single') {
+          return (
+            <li key={item.session.id}>
+              <SessionItem
+                activityById={activityById}
+                primary={item.session.id === primarySessionId}
+                session={item.session}
+                onEdit={onEdit}
+                onPrefetch={onPrefetch}
+              />
+            </li>
+          );
+        }
+
+        return (
+          <li key={item.id} className="space-y-2">
+            <p className="text-muted-foreground flex items-center gap-1.5 text-xs font-medium">
+              <Layers className="size-3.5" aria-hidden />
+              Brick
+            </p>
+            <ul className="border-analysis-border/70 space-y-2 border-l pl-3">
+              {item.sessions.map((session) => (
+                <li key={session.id}>
+                  <SessionItem
+                    activityById={activityById}
+                    primary={session.id === primarySessionId}
+                    session={session}
+                    onEdit={onEdit}
+                    onPrefetch={onPrefetch}
+                  />
+                </li>
+              ))}
+            </ul>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
+function UnlinkedDoneList({ activities }: { activities: ClientActivity[] }) {
+  if (activities.length === 0) {
+    return null;
+  }
+
+  return (
+    <ul className="space-y-2.5">
+      {activities.map((activity) => (
+        <li key={activity.id}>
+          <DoneActivityPreview activity={activity} />
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function QuietRest({ date, onAdd }: { date: Date; onAdd: () => void }) {
+  const label = format(date, 'EEEE d MMMM', { locale: fr });
+
+  return (
+    <button
+      aria-label={`Planifier une séance le ${label}`}
+      className="text-muted-foreground hover:text-foreground pressable min-h-9 text-left text-sm"
+      type="button"
+      onClick={onAdd}
+    >
+      Repos
+    </button>
+  );
+}
+
+function planningWeekDaySectionClass(today: boolean, riskDay: boolean): string {
+  return cn(
+    'flex scroll-mt-24 gap-3 sm:gap-4',
+    today && 'rounded-analysis bg-primary/4 -mx-2 px-2 py-2 sm:-mx-3 sm:px-3',
+    riskDay && !today && 'rounded-analysis bg-signal-caution/6 -mx-2 px-2 py-2 sm:-mx-3 sm:px-3',
+    riskDay && today && 'rounded-analysis bg-signal-caution/10 -mx-2 px-2 py-2 sm:-mx-3 sm:px-3',
+  );
+}
+
+function planningWeekDayNumberClass(today: boolean, riskDay: boolean): string {
+  return cn(
+    'mt-0.5 font-mono text-lg font-semibold tabular-nums',
+    today && 'text-primary',
+    riskDay && !today && 'text-signal-caution',
+  );
+}
+
+function PlanningWeekDayContent({
+  activityById,
+  activities,
+  date,
+  empty,
+  loading,
+  planned,
+  onAdd,
+  onEdit,
+  onPrefetch,
+}: {
+  activityById: ReadonlyMap<string, ClientActivity>;
+  activities: ClientActivity[];
+  date: Date;
+  empty: boolean;
+  loading: boolean;
+  planned: ClientPlannedSession[];
+  onAdd: () => void;
+  onEdit: (session: ClientPlannedSession) => void;
+  onPrefetch: (session: ClientPlannedSession) => void;
+}) {
+  if (loading) {
+    return (
+      <div className="space-y-2 py-0.5">
+        <Skeleton className="rounded-analysis h-14 w-full border-0" />
+        <Skeleton className="rounded-analysis h-14 w-4/5 border-0" />
+      </div>
+    );
+  }
+
+  if (empty) {
+    return <QuietRest date={date} onAdd={onAdd} />;
+  }
+
+  return (
+    <>
+      <PlannedGroups
+        activityById={activityById}
+        planned={planned}
+        onEdit={onEdit}
+        onPrefetch={onPrefetch}
+      />
+      <UnlinkedDoneList activities={activities} />
+    </>
+  );
+}
+
+/**
+ * One day in the week overview — date rail + sessions in the same scroll.
+ * Empty days stay quiet so the week remains scannable.
+ */
+export function PlanningWeekDay({
+  activityById,
+  activities,
+  date,
+  loading,
+  planned,
+  riskDay,
+  onAdd,
+  onEdit,
+  onPrefetch,
+}: {
+  activityById: ReadonlyMap<string, ClientActivity>;
+  activities: ClientActivity[];
+  date: Date;
+  loading: boolean;
+  planned: ClientPlannedSession[];
+  riskDay: boolean;
+  onAdd: () => void;
+  onEdit: (session: ClientPlannedSession) => void;
+  onPrefetch: (session: ClientPlannedSession) => void;
+}) {
+  const empty = !loading && planned.length === 0 && activities.length === 0;
+  const today = isToday(date);
+  const dayId = planningDayKey(date);
+  const headingId = `planning-day-${dayId}`;
+  const addLabel = format(date, 'EEEE d MMMM', { locale: fr });
+
+  return (
+    <section
+      aria-labelledby={headingId}
+      className={planningWeekDaySectionClass(today, riskDay)}
+      id={dayId}
+    >
+      <div className="w-11 shrink-0 text-center sm:w-12">
+        <p className="text-label" id={headingId}>
+          {format(date, 'EEE', { locale: fr })}
+        </p>
+        <p className={planningWeekDayNumberClass(today, riskDay)}>{format(date, 'd')}</p>
+        {riskDay ? <p className="text-label text-signal-caution mt-0.5">Vigilance</p> : null}
+      </div>
+
+      <div className="min-w-0 flex-1 space-y-2.5">
+        <PlanningWeekDayContent
+          activities={activities}
+          activityById={activityById}
+          date={date}
+          empty={empty}
+          loading={loading}
+          planned={planned}
+          onAdd={onAdd}
+          onEdit={onEdit}
+          onPrefetch={onPrefetch}
+        />
+      </div>
+
+      <Button
+        aria-label={`Ajouter une séance le ${addLabel}`}
+        className="shrink-0 self-start"
+        disabled={loading}
+        size="icon"
+        variant="ghost"
+        onClick={onAdd}
+      >
+        <Plus className="size-4" aria-hidden />
+      </Button>
+    </section>
+  );
+}

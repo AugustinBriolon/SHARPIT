@@ -1,5 +1,6 @@
 'use client';
 
+import { useRef } from 'react';
 import { format, startOfWeek } from 'date-fns';
 import { PlanActions } from '@/components/plan/plan-actions';
 import {
@@ -49,15 +50,33 @@ function DecisionSlot({ model, decision }: { model: PlanHubModel; decision: Week
 }
 
 function ThreadSlot({ model, decision }: { model: PlanHubModel; decision: WeekDecision | null }) {
-  if (!model.weekReady || !model.week || !model.now) {
+  const retained = useRef<{
+    excludePlannedId: string | null;
+    gateActive: boolean;
+    now: Date;
+    week: NonNullable<PlanHubModel['week']>;
+  } | null>(null);
+
+  if (model.weekReady && model.week && model.now) {
+    retained.current = {
+      excludePlannedId: decision?.primary.sessionId ?? null,
+      gateActive: shouldGateHardIntensities(model.verdict),
+      now: model.now,
+      week: model.week,
+    };
+  }
+
+  if (!retained.current) {
     return null;
   }
+
+  const thread = retained.current;
   return (
     <PlanWeekThread
-      excludePlannedId={decision?.primary.sessionId ?? null}
-      gateActive={shouldGateHardIntensities(model.verdict)}
-      now={model.now}
-      week={model.week}
+      excludePlannedId={thread.excludePlannedId}
+      gateActive={thread.gateActive}
+      now={thread.now}
+      week={thread.week}
     />
   );
 }
@@ -67,7 +86,7 @@ export function PlanHubWidgets() {
   const decision = useHubWeekDecision(model);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-8">
       <DestinationSlot model={model} />
       <DecisionSlot decision={decision} model={model} />
       <ThreadSlot decision={decision} model={model} />

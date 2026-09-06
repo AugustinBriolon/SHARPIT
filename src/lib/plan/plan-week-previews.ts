@@ -1,3 +1,4 @@
+import { ActivityType } from '@prisma/client';
 import type { ThreadEntry } from '@/lib/training/thread/thread-model';
 
 /** Four map cards is a rail. A week of six is still a gallery. */
@@ -44,6 +45,17 @@ export function groupHubDoneByDay(
 
 export function hubDoneCardAccessibleName(dayLabel: string, title: string): string {
   return `${dayLabel} · ${title}`;
+}
+
+/** Warm GPS streams for the cards the hub will actually mount. */
+export function selectPlanHubStreamPrefetchIds(
+  activities: readonly { id: string; type: ActivityType; date: Date | string }[],
+): string[] {
+  return [...activities]
+    .filter((activity) => activity.type !== ActivityType.STRENGTH)
+    .sort((left, right) => +new Date(right.date) - +new Date(left.date))
+    .slice(0, HUB_DONE_PREVIEW_LIMIT)
+    .map((activity) => activity.id);
 }
 
 export function selectHubRemainingEntries(

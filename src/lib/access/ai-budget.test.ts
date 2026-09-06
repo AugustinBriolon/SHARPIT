@@ -15,17 +15,39 @@ vi.mock('@/lib/prisma', () => ({
 }));
 
 async function importModule() {
+  vi.stubEnv('NODE_ENV', 'production');
+  vi.resetModules();
   return await import('./ai-budget');
 }
 
 describe('ensureFreeAiBudget', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.unstubAllEnvs();
+  });
+
+  it('bypasses the Free budget entirely in local development', async () => {
+    vi.stubEnv('NODE_ENV', 'development');
+    vi.resetModules();
+    const { ensureFreeAiBudget } = await import('./ai-budget');
+
+    const status = await ensureFreeAiBudget('athlete-1');
+
+    expect(status).toEqual({
+      allowed: true,
+      isPro: true,
+      warning: false,
+      retryAfterSeconds: null,
+    });
+    expect(findUniqueMock).not.toHaveBeenCalled();
+    expect(aggregateMock).not.toHaveBeenCalled();
   });
 
   it('is always allowed for Pro athletes, without checking usage', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.resetModules();
     findUniqueMock.mockResolvedValue({ tier: 'PRO' });
-    const { ensureFreeAiBudget } = await importModule();
+    const { ensureFreeAiBudget } = await import('./ai-budget');
 
     const status = await ensureFreeAiBudget('athlete-1');
 

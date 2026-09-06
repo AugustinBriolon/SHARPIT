@@ -14,11 +14,13 @@ export const coachBeuiCopy = {
   pendingApprovalOne: 'Proposition en attente',
   pendingApprovalMany: 'Propositions en attente',
   approvalsRegionLabel: 'Propositions à valider',
-  retryLater: 'Réessayer plus tard',
+  retryLater: 'Réessayer',
+  errorTitle: 'Le coach n’a pas pu répondre',
   genericError: 'Une erreur est survenue. Réessaie dans un instant.',
   approve: 'Valider',
   reject: 'Refuser',
-  delete: 'Supprimer',
+  keepSession: 'Garder',
+  delete: 'Confirmer',
   approvalRequired: 'Validation requise',
   deleteConsequence: (date?: string) =>
     date

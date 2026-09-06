@@ -6,6 +6,7 @@ import {
   completedPreviewFadeClass,
   completedPreviewGridClass,
   completedPreviewTitleClass,
+  resolveCompletedSessionMapSlot,
   selectCompletedPreviewMetrics,
   hasUsableRoutePath,
 } from './completed-session-preview-helpers';
@@ -50,6 +51,27 @@ describe('completed-session-preview-helpers', () => {
     expect(completedPreviewFadeClass('stack')).toContain('to-card');
     expect(completedPreviewFadeClass('stack')).not.toContain('to-white');
     expect(completedPreviewFadeClass('column')).toContain('to-card');
+  });
+
+  it('does not reopen a map slot when the stream is already known empty', () => {
+    expect(
+      resolveCompletedSessionMapSlot({
+        mayHavePath: true,
+        isPending: true,
+        isError: false,
+        usablePath: null,
+        rememberedHasPath: false,
+      }),
+    ).toBe(false);
+    expect(
+      resolveCompletedSessionMapSlot({
+        mayHavePath: true,
+        isPending: true,
+        isError: false,
+        usablePath: null,
+        rememberedHasPath: true,
+      }),
+    ).toBe(true);
   });
 
   it('requires at least two path points', () => {

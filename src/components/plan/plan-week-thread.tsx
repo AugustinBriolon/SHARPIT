@@ -1,5 +1,8 @@
+import { ClipboardList } from 'lucide-react';
+import { PlanSectionHeading } from '@/components/plan/plan-section-heading';
 import { PlanDoneList, PlanRemainingList } from '@/components/plan/plan-week-entries';
 import { PlanProjectionSection } from '@/components/plan/plan-projection-section';
+import { LinkButton } from '@/components/ui/link-button';
 import { selectHubDoneEntries, selectHubRemainingEntries } from '@/lib/plan/plan-week-previews';
 import type { PlanWeek } from '@/lib/plan/plan-week';
 
@@ -18,7 +21,7 @@ export function PlanWeekThread({
   const done = selectHubDoneEntries(week.done).featured.length > 0;
 
   return (
-    <div className="space-y-5">
+    <>
       {remaining ? (
         <PlanRemainingList
           entries={week.remaining}
@@ -28,9 +31,17 @@ export function PlanWeekThread({
       ) : null}
       {done ? <PlanDoneList entries={week.done} /> : null}
       <section className="space-y-2">
-        <h3 className="text-section-title">Projection</h3>
+        <PlanSectionHeading
+          title="Projection"
+          action={
+            <LinkButton href="/plan/bilan" size="sm" variant="outline">
+              <ClipboardList aria-hidden />
+              Voir le bilan
+            </LinkButton>
+          }
+        />
         <PlanProjectionSection now={now} embedded />
       </section>
-    </div>
+    </>
   );
 }

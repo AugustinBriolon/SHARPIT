@@ -56,4 +56,9 @@ export interface ApprovalCardProps {
   disabled?: boolean;
   result?: ReactNode;
   className?: string;
+  /**
+   * `instrument` = quiet coach decision row (default).
+   * `agent` = legacy chrome with status icon + pending badge.
+   */
+  chrome?: 'instrument' | 'agent';
 }

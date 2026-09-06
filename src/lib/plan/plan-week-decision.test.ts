@@ -68,7 +68,7 @@ describe('buildWeekDecision', () => {
       sessionId: 's1',
     });
     expect(decision.secondary).toEqual({
-      label: 'La semaine',
+      label: 'Planning',
       href: '/plan/semaine',
       sessionId: null,
     });
@@ -85,7 +85,7 @@ describe('buildWeekDecision', () => {
     expect(decision.kind).toBe('in_progress');
     expect(decision.sentence).toBe('Prochaine séance');
     expect(decision.primary.sessionId).toBe('s2');
-    expect(decision.secondary?.label).toBe('La semaine');
+    expect(decision.secondary?.label).toBe('Planning');
   });
 
   it('routes a finished week to the brief when one exists', () => {
@@ -99,7 +99,7 @@ describe('buildWeekDecision', () => {
       kind: 'complete',
       sentence: 'La semaine est tenue. Lis ce qu’elle a produit.',
       primary: { label: 'Voir le bilan', href: '/plan/bilan', sessionId: null },
-      secondary: { label: 'La semaine', href: '/plan/semaine', sessionId: null },
+      secondary: { label: 'Planning', href: '/plan/semaine', sessionId: null },
     });
   });
 
@@ -111,7 +111,7 @@ describe('buildWeekDecision', () => {
       hasBrief: false,
     });
     expect(decision.primary).toEqual({
-      label: 'La semaine',
+      label: 'Planning',
       href: '/plan/semaine',
       sessionId: null,
     });

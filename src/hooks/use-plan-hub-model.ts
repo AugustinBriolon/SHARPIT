@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useAthleteSnapshot } from '@/hooks/use-athlete-snapshot';
 import {
   useActivities,
@@ -11,6 +12,10 @@ import {
   useThresholdPreview,
   useTrainingPlan,
 } from '@/hooks/use-data';
+import { fetchActivityStream } from '@/lib/query/fetchers';
+import { queryKeys } from '@/lib/query/keys';
+import { readPlanHubNow, rememberPlanHubNow } from '@/lib/plan/plan-hub-clock';
+import { selectPlanHubStreamPrefetchIds } from '@/lib/plan/plan-week-previews';
 import { resolveCalibrationConfidence } from '@/lib/plan/plan-calibration-confidence';
 import { buildMacroPhaseRail } from '@/lib/plan/plan-macro-rail';
 import { selectPlanGoal } from '@/lib/plan/plan-goal';
@@ -22,9 +27,14 @@ import type { ClientActivity, ClientPlannedSession } from '@/lib/query/types';
 import type { AthleteSnapshot } from '@/core/athlete-state/snapshot';
 
 function useClientNow(): Date | null {
-  const [now, setNow] = useState<Date | null>(null);
+  const [now, setNow] = useState<Date | null>(readPlanHubNow);
   useEffect(() => {
-    setNow(new Date());
+    const next = new Date();
+    const previous = readPlanHubNow();
+    if (previous && previous.toDateString() === next.toDateString()) {
+      return;
+    }
+    setNow(rememberPlanHubNow(next));
   }, []);
   return now;
 }
@@ -59,6 +69,22 @@ function resolveWeek(
   return buildPlanWeek({ activities, plannedSessions, now });
 }
 
+function useWarmPlanHubStreams(activities: readonly ClientActivity[] | undefined) {
+  const queryClient = useQueryClient();
+  useEffect(() => {
+    if (!activities?.length) {
+      return;
+    }
+    for (const activityId of selectPlanHubStreamPrefetchIds(activities)) {
+      void queryClient.prefetchQuery({
+        queryKey: queryKeys.activityStream(activityId),
+        queryFn: () => fetchActivityStream(activityId),
+        staleTime: Infinity,
+      });
+    }
+  }, [activities, queryClient]);
+}
+
 function usePlanHubQueries() {
   const goalsQuery = useGoals();
   const activitiesQuery = useActivities();
@@ -68,6 +94,7 @@ function usePlanHubQueries() {
   const previewQuery = useThresholdPreview();
   const historyQuery = useThresholdHistory();
   const { snapshot } = useAthleteSnapshot();
+  useWarmPlanHubStreams(activitiesQuery.data);
 
   return {
     goalsQuery,

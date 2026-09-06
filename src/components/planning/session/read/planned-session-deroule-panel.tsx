@@ -1,5 +1,6 @@
 'use client';
 
+import type { ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { ExerciseMediaAttribution } from '@/components/sessions/exercise-visual';
 import { EnduranceStepList } from '@/components/planning/session/read/endurance-step-list';
@@ -104,7 +105,7 @@ function WatchStatusLine({
   );
 }
 
-function DerouleWatchActions({
+function buildWatchPushButtons({
   isRealized,
   hasStrengthPlan,
   hasEndurancePlan,
@@ -118,35 +119,86 @@ function DerouleWatchActions({
   prescription: StrengthPrescription | null;
   garminPush: ReturnType<typeof useGarminWorkoutPush>;
   watchStaleness: ReturnType<typeof useGarminPushStaleness>;
-}) {
-  const pushButtons =
-    !isRealized && (hasStrengthPlan || hasEndurancePlan)
-      ? [
-          hasStrengthPlan ? (
-            <WatchPushButton
-              key="strength"
-              canPush={Boolean(prescription)}
-              garminPush={garminPush}
-              watchStaleness={watchStaleness}
-            />
-          ) : null,
-          hasEndurancePlan ? (
-            <WatchPushButton
-              key="endurance"
-              canPush={true}
-              garminPush={garminPush}
-              watchStaleness={watchStaleness}
-            />
-          ) : null,
-        ].filter(Boolean)
-      : [];
+}): ReactNode[] {
+  if (isRealized || (!hasStrengthPlan && !hasEndurancePlan)) {
+    return [];
+  }
 
+  const buttons: ReactNode[] = [];
+
+  if (hasStrengthPlan) {
+    buttons.push(
+      <WatchPushButton
+        key="strength"
+        canPush={Boolean(prescription)}
+        garminPush={garminPush}
+        watchStaleness={watchStaleness}
+      />,
+    );
+  }
+
+  if (hasEndurancePlan) {
+    buttons.push(
+      <WatchPushButton
+        key="endurance"
+        canPush={true}
+        garminPush={garminPush}
+        watchStaleness={watchStaleness}
+      />,
+    );
+  }
+
+  return buttons;
+}
+
+function DerouleWatchActionsHero({ pushButtons }: { pushButtons: ReactNode[] }) {
+  if (pushButtons.length === 0) {
+    return null;
+  }
+
+  return <div className="flex flex-wrap gap-2">{pushButtons}</div>;
+}
+
+function DerouleWatchActionsInline({ pushButtons }: { pushButtons: ReactNode[] }) {
   return (
     <div className="flex items-center justify-between gap-2">
       <p className="text-foreground/85 text-sm font-medium">Déroulé</p>
       {pushButtons.length > 0 ? <div className="flex gap-2">{pushButtons}</div> : null}
     </div>
   );
+}
+
+function DerouleWatchActions({
+  isRealized,
+  hasStrengthPlan,
+  hasEndurancePlan,
+  prescription,
+  garminPush,
+  watchStaleness,
+  hero,
+}: {
+  isRealized: boolean;
+  hasStrengthPlan: boolean;
+  hasEndurancePlan: boolean;
+  prescription: StrengthPrescription | null;
+  garminPush: ReturnType<typeof useGarminWorkoutPush>;
+  watchStaleness: ReturnType<typeof useGarminPushStaleness>;
+  hero: boolean;
+}) {
+  const pushButtons = buildWatchPushButtons({
+    garminPush,
+    hasEndurancePlan,
+    hasStrengthPlan,
+    isRealized,
+    prescription,
+    watchStaleness,
+  });
+
+  if (hero) {
+    return <DerouleWatchActionsHero pushButtons={pushButtons} />;
+  }
+
+  return <DerouleWatchActionsInline pushButtons={pushButtons} />;
 }
 
 function DerouleWatchChrome({
@@ -156,6 +208,7 @@ function DerouleWatchChrome({
   prescription,
   garminPush,
   watchStaleness,
+  hero,
 }: {
   isRealized: boolean;
   hasStrengthPlan: boolean;
@@ -163,6 +216,7 @@ function DerouleWatchChrome({
   prescription: StrengthPrescription | null;
   garminPush: ReturnType<typeof useGarminWorkoutPush>;
   watchStaleness: ReturnType<typeof useGarminPushStaleness>;
+  hero: boolean;
 }) {
   const { alreadyOnWatch, watchPush } = garminPush;
 
@@ -172,6 +226,7 @@ function DerouleWatchChrome({
         garminPush={garminPush}
         hasEndurancePlan={hasEndurancePlan}
         hasStrengthPlan={hasStrengthPlan}
+        hero={hero || isRealized}
         isRealized={isRealized}
         prescription={prescription}
         watchStaleness={watchStaleness}
@@ -188,10 +243,12 @@ function StrengthDerouleContent({
   hasStrengthPlan,
   strengthIntent,
   orderedSets,
+  hero,
 }: {
   hasStrengthPlan: boolean;
   strengthIntent: string | null;
   orderedSets: StrengthPrescription['sets'];
+  hero: boolean;
 }) {
   if (!hasStrengthPlan) {
     return null;
@@ -200,9 +257,17 @@ function StrengthDerouleContent({
   return (
     <>
       {strengthIntent ? (
-        <p className="text-muted-foreground text-sm leading-relaxed">{strengthIntent}</p>
+        <p
+          className={
+            hero
+              ? 'text-foreground text-base leading-relaxed text-pretty'
+              : 'text-muted-foreground text-sm leading-relaxed'
+          }
+        >
+          {strengthIntent}
+        </p>
       ) : null}
-      <ul className="space-y-1.5">
+      <ul className={hero ? 'space-y-2.5' : 'space-y-1.5'}>
         {orderedSets.map((set, i) => (
           <StrengthSetListItem key={`${set.order}-${set.exercise}`} index={i} set={set} />
         ))}
@@ -227,7 +292,7 @@ function EnduranceDerouleContent({
       <EnduranceStepList steps={endurancePreview.steps} />
       {endurancePreview.derived ? (
         <p className="text-muted-foreground/80 text-xs leading-snug">
-          Sans étapes détaillées — un bloc unique dérivé de la durée et de l&apos;intensité.
+          Sans étapes détaillées - un bloc unique dérivé de la durée et de l&apos;intensité.
         </p>
       ) : null}
       {endurancePreview.warnings.length > 0 ? (
@@ -242,21 +307,29 @@ function EnduranceDerouleContent({
 function FreeTextDerouleContent({
   hasStructuredDeroule,
   freeTextDeroule,
+  hero,
 }: {
   hasStructuredDeroule: boolean;
   freeTextDeroule: string | null;
+  hero: boolean;
 }) {
   if (hasStructuredDeroule) {
     return null;
   }
   if (freeTextDeroule) {
     return (
-      <p className="text-muted-foreground text-sm leading-relaxed whitespace-pre-wrap">
+      <p
+        className={
+          hero
+            ? 'text-foreground text-base leading-relaxed text-pretty whitespace-pre-wrap'
+            : 'text-muted-foreground text-sm leading-relaxed whitespace-pre-wrap'
+        }
+      >
         {freeTextDeroule}
       </p>
     );
   }
-  return <p className="text-muted-foreground/70 text-sm italic">Aucun déroulé renseigné.</p>;
+  return <p className="text-muted-foreground/70 text-sm">Aucun déroulé renseigné.</p>;
 }
 
 export function PlannedSessionDeroulePanel({
@@ -272,6 +345,7 @@ export function PlannedSessionDeroulePanel({
   orderedSets,
   hasExerciseMedia,
   endurancePreview,
+  hero = false,
 }: {
   garminPush: ReturnType<typeof useGarminWorkoutPush>;
   watchStaleness: ReturnType<typeof useGarminPushStaleness>;
@@ -285,19 +359,23 @@ export function PlannedSessionDeroulePanel({
   orderedSets: StrengthPrescription['sets'];
   hasExerciseMedia: boolean;
   endurancePreview: ReturnType<typeof useEndurancePreview>;
+  /** BEFORE_SESSION: protocol reading weight; parent owns the section title. */
+  hero?: boolean;
 }) {
   return (
-    <div className="border-analysis-border/60 space-y-3 rounded-lg border p-3">
+    <div className={hero ? 'space-y-4' : 'space-y-3'}>
       <DerouleWatchChrome
         garminPush={garminPush}
         hasEndurancePlan={hasEndurancePlan}
         hasStrengthPlan={hasStrengthPlan}
+        hero={hero}
         isRealized={isRealized}
         prescription={prescription}
         watchStaleness={watchStaleness}
       />
       <StrengthDerouleContent
         hasStrengthPlan={hasStrengthPlan}
+        hero={hero}
         orderedSets={orderedSets}
         strengthIntent={strengthIntent}
       />
@@ -308,10 +386,11 @@ export function PlannedSessionDeroulePanel({
       <FreeTextDerouleContent
         freeTextDeroule={freeTextDeroule}
         hasStructuredDeroule={hasStructuredDeroule}
+        hero={hero}
       />
       {hasStrengthPlan && hasExerciseMedia ? (
         <ExerciseMediaAttribution>
-          Les visuels sont indicatifs — respecte la consigne du coach en cas d’écart.
+          Les visuels sont indicatifs - respecte la consigne du coach en cas d’écart.
         </ExerciseMediaAttribution>
       ) : null}
     </div>

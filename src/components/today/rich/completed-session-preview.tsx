@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import Link from 'next/link';
 import type { ActivityType } from '@prisma/client';
 import { MemoizedRouteMap as RouteMap } from '@/components/training/activity/insights/route-map';
@@ -7,6 +8,7 @@ import { ActivityTypeIndicator } from '@/components/ui/instruments/activity-type
 import { Skeleton } from '@/components/ui/skeleton';
 import { useActivityStream } from '@/hooks/use-data';
 import { SPORT_IDENTITY_HEX, SPORT_IDENTITY_PANEL } from '@/lib/activity/sport-identity';
+import { readRememberedHubRoute, rememberHubRoute } from '@/lib/plan/plan-hub-preview-paths';
 import { cn } from '@/lib/utils';
 import {
   activityMayHaveRoutePath,
@@ -215,7 +217,15 @@ function CompletedSessionPreviewGrid({
 function useCompletedPreviewMap(activityId: string, activityType: ActivityType) {
   const mayHavePath = activityMayHaveRoutePath(activityType);
   const stream = useActivityStream(activityId, { enabled: mayHavePath });
-  const usablePath = resolveUsableRoutePath(stream.data?.path);
+  const remembered = readRememberedHubRoute(activityId);
+  const usablePath = resolveUsableRoutePath(stream.data?.path) ?? remembered.path;
+
+  useEffect(() => {
+    if (mayHavePath && stream.isFetched) {
+      rememberHubRoute(activityId, resolveUsableRoutePath(stream.data?.path));
+    }
+  }, [activityId, mayHavePath, stream.data?.path, stream.isFetched]);
+
   return {
     usablePath,
     showMapSlot: resolveCompletedSessionMapSlot({
@@ -223,6 +233,7 @@ function useCompletedPreviewMap(activityId: string, activityType: ActivityType) 
       isPending: stream.isPending,
       isError: stream.isError,
       usablePath,
+      rememberedHasPath: remembered.known ? remembered.hasPath : null,
     }),
   };
 }

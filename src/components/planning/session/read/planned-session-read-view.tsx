@@ -1,7 +1,9 @@
 'use client';
 
-import { DiscussWithCoachButton } from '@/components/coach/discuss-with-coach-button';
+import Link from 'next/link';
 import type { ReactNode } from 'react';
+import { ClipboardList, Target } from 'lucide-react';
+import { DiscussWithCoachButton } from '@/components/coach/discuss-with-coach-button';
 import { MorningProposalCompare } from '../edit/morning-proposal-compare';
 import { SessionAccessoriesSection } from '../accessories/session-accessories-section';
 import { SessionRealization } from '../realize/session-realization';
@@ -9,30 +11,23 @@ import type { PlannedSessionViewModel } from '@/core/presentation/planned-sessio
 import type { ClientGoal, ClientPlannedSession } from '@/lib/query/types';
 import { intensityLabels } from '@/lib/planned-session/sessions';
 import type { MorningProposalCompareInput } from '@/lib/today/morning-proposal-compare';
-import { ClipboardList } from 'lucide-react';
 import { CollapsibleSection } from '@/components/ui/collapsible-section';
-import { cn } from '@/lib/utils';
+import { PlanSectionHeading } from '@/components/plan/plan-section-heading';
 import { usePlannedSessionReadData } from '@/components/planning/session/read/use-planned-session-read-data';
 import { PlannedSessionReadHeader } from '@/components/planning/session/read/planned-session-read-header';
 import { PlannedSessionDeroulePanel } from '@/components/planning/session/read/planned-session-deroule-panel';
 import { PlannedSessionReadSecondaryDetails } from '@/components/planning/session/read/planned-session-read-secondary';
+import { MOI_OBJECTIFS_PATH } from '@/lib/moi/paths';
 
-type KeyChip = { label: string; value: string; valueClassName?: string };
-
-function KeyChipsRow({ chips }: { chips: KeyChip[] }) {
+function GoalLink({ title }: { title: string }) {
   return (
-    <div
-      className={cn('grid gap-2', chips.length >= 4 ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-3')}
+    <Link
+      className="text-muted-foreground hover:text-foreground inline-flex min-h-9 items-center gap-1.5 text-sm"
+      href={MOI_OBJECTIFS_PATH}
     >
-      {chips.map((chip) => (
-        <div key={chip.label} className="chip-surface rounded-analysis px-3 py-2.5">
-          <p className="text-label truncate">{chip.label}</p>
-          <p className={cn('text-data mt-0.5 text-sm font-semibold', chip.valueClassName)}>
-            {chip.value}
-          </p>
-        </div>
-      ))}
-    </div>
+      <Target className="size-3.5 shrink-0 opacity-70" aria-hidden />
+      <span className="text-pretty">Sert {title}</span>
+    </Link>
   );
 }
 
@@ -73,9 +68,31 @@ function PrescribedPlanCollapsible({
   );
 }
 
+function BeforeSessionActions({
+  session,
+  omitLinkedActivityNavigation,
+}: {
+  session: ClientPlannedSession;
+  omitLinkedActivityNavigation?: boolean;
+}) {
+  return (
+    <footer className="border-analysis-border/40 space-y-3 border-t pt-4">
+      <SessionRealization
+        omitLinkedActivityNavigation={omitLinkedActivityNavigation}
+        session={session}
+      />
+      <DiscussWithCoachButton
+        className="w-full sm:w-auto"
+        size="sm"
+        target={{ kind: 'planned-session', sessionId: session.id }}
+        variant="outline"
+      />
+    </footer>
+  );
+}
+
 /**
- * Glanceable read layout for the planned-session modal.
- * Realized sessions lead with the unified coach story; plan details fold below.
+ * BEFORE_SESSION prepares; SESSION_COMPLETED reads — two compositions, not one template.
  */
 export function PlannedSessionReadView({
   session,
@@ -105,6 +122,7 @@ export function PlannedSessionReadView({
       hasExerciseMedia={readData.hasExerciseMedia}
       hasStrengthPlan={readData.hasStrengthPlan}
       hasStructuredDeroule={readData.hasStructuredDeroule}
+      hero={!readData.isRealized}
       isRealized={readData.isRealized}
       orderedSets={readData.orderedSets}
       prescription={readData.prescription}
@@ -116,6 +134,7 @@ export function PlannedSessionReadView({
   const header = (
     <PlannedSessionReadHeader
       dateLabel={readData.dateLabel}
+      intentLine={readData.intentLine}
       isRealized={readData.isRealized}
       session={session}
       onEdit={onEdit}
@@ -127,7 +146,7 @@ export function PlannedSessionReadView({
       context={context}
       contextSummary={readData.contextSummary}
       hasRationale={readData.hasRationale}
-      rationaleOpenByDefault={readData.rationaleOpenByDefault}
+      rationaleOpenByDefault={false}
       sessionId={session.id}
       showContextPanel={readData.showContextPanel}
       showContextSkeleton={readData.showContextSkeleton}
@@ -137,7 +156,7 @@ export function PlannedSessionReadView({
 
   if (readData.isRealized) {
     return (
-      <div className="min-w-0 space-y-4">
+      <div className="min-w-0 space-y-6">
         {header}
         <SessionRealization
           omitLinkedActivityNavigation={omitLinkedActivityNavigation}
@@ -154,34 +173,36 @@ export function PlannedSessionReadView({
   }
 
   return (
-    <div className="min-w-0 space-y-4">
-      {header}
+    <div className="min-w-0 space-y-6">
+      <div className="space-y-2">
+        {header}
+        {readData.goal ? <GoalLink title={readData.goal.title} /> : null}
+      </div>
+
       {morningProposal ? (
         <MorningProposalCompare proposal={morningProposal} />
       ) : (
-        <KeyChipsRow chips={readData.chips} />
+        <section aria-labelledby="session-deroule" className="space-y-4">
+          <PlanSectionHeading heading="h3" id="session-deroule" title="Déroulé" />
+          {deroulePanel}
+        </section>
       )}
-      {deroulePanel}
-      <SessionAccessoriesSection
-        accessories={session.accessories}
-        description={session.description}
-        strengthPrescription={session.strengthPrescription}
-        title={session.title}
-        type={session.type}
-      />
-      {secondaryDetails}
-      <div className="border-analysis-border/60 space-y-2 border-t pt-3">
-        <DiscussWithCoachButton
-          className="w-full sm:w-auto"
-          size="lg"
-          target={{ kind: 'planned-session', sessionId: session.id }}
-          variant="default"
+
+      <div className="space-y-3">
+        <SessionAccessoriesSection
+          accessories={session.accessories}
+          description={session.description}
+          strengthPrescription={session.strengthPrescription}
+          title={session.title}
+          type={session.type}
         />
-        <SessionRealization
-          omitLinkedActivityNavigation={omitLinkedActivityNavigation}
-          session={session}
-        />
+        {secondaryDetails}
       </div>
+
+      <BeforeSessionActions
+        omitLinkedActivityNavigation={omitLinkedActivityNavigation}
+        session={session}
+      />
     </div>
   );
 }

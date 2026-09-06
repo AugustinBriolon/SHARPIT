@@ -1,19 +1,42 @@
 import type { Ratelimit } from '@upstash/ratelimit';
-import { describe, expect, it, vi } from 'vitest';
-import { checkRateLimit, rateLimitHttpStatus, rateLimitResponseBody } from './rate-limit';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import {
+  checkRateLimit,
+  isRateLimitBypassed,
+  rateLimitHttpStatus,
+  rateLimitResponseBody,
+} from './rate-limit';
 
 function fakeLimiter(limit: Ratelimit['limit']): Ratelimit {
   return { limit } as unknown as Ratelimit;
 }
 
+afterEach(() => {
+  vi.unstubAllEnvs();
+});
+
+describe('isRateLimitBypassed', () => {
+  it('is true in local development', () => {
+    vi.stubEnv('NODE_ENV', 'development');
+    expect(isRateLimitBypassed()).toBe(true);
+  });
+
+  it('is false in production', () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    expect(isRateLimitBypassed()).toBe(false);
+  });
+});
+
 describe('checkRateLimit', () => {
   it('allows the request when under the limit', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
     const limiter = fakeLimiter(vi.fn().mockResolvedValue({ success: true, reset: 0 }));
 
     await expect(checkRateLimit(limiter, 'athlete-1')).resolves.toEqual({ ok: true });
   });
 
   it('blocks the request when over the limit, with a positive retryAfterSeconds', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
     const reset = Date.now() + 45_000;
     const limiter = fakeLimiter(vi.fn().mockResolvedValue({ success: false, reset }));
 
@@ -28,16 +51,19 @@ describe('checkRateLimit', () => {
   });
 
   it('fails open when no limiter is configured (default)', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
     await expect(checkRateLimit(null, 'athlete-1')).resolves.toEqual({ ok: true });
   });
 
   it('fails open when the limiter throws (e.g. Redis outage, default)', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
     const limiter = fakeLimiter(vi.fn().mockRejectedValue(new Error('ECONNREFUSED')));
 
     await expect(checkRateLimit(limiter, 'athlete-1')).resolves.toEqual({ ok: true });
   });
 
-  it('fails closed when Upstash is missing and failClosed is set', async () => {
+  it('fails closed when Upstash is missing and failClosed is set (production)', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
     await expect(checkRateLimit(null, 'athlete-1', { failClosed: true })).resolves.toEqual({
       ok: false,
       cause: 'unavailable',
@@ -45,7 +71,8 @@ describe('checkRateLimit', () => {
     });
   });
 
-  it('fails closed when the limiter throws and failClosed is set', async () => {
+  it('fails closed when the limiter throws and failClosed is set (production)', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
     const limiter = fakeLimiter(vi.fn().mockRejectedValue(new Error('ECONNREFUSED')));
 
     await expect(checkRateLimit(limiter, 'athlete-1', { failClosed: true })).resolves.toEqual({
@@ -54,26 +81,40 @@ describe('checkRateLimit', () => {
       retryAfterSeconds: 60,
     });
   });
+
+  it('bypasses all limits in local development, even failClosed', async () => {
+    vi.stubEnv('NODE_ENV', 'development');
+    const limiter = fakeLimiter(vi.fn().mockResolvedValue({ success: false, reset: Date.now() }));
+
+    await expect(checkRateLimit(null, 'athlete-1', { failClosed: true })).resolves.toEqual({
+      ok: true,
+    });
+    await expect(checkRateLimit(limiter, 'athlete-1', { failClosed: true })).resolves.toEqual({
+      ok: true,
+    });
+    expect(limiter.limit).not.toHaveBeenCalled();
+  });
 });
 
 describe('rateLimitResponseBody', () => {
-  it('reports seconds under a minute', () => {
+  it('reports seconds under a minute in plain athlete copy', () => {
     expect(rateLimitResponseBody(30)).toEqual({
-      error: 'Trop de requêtes — réessaie dans 30s.',
+      error: 'Tu as envoyé trop de messages d’affilée. Réessaie dans 30 secondes.',
       retryAfterSeconds: 30,
     });
   });
 
   it('reports minutes at or above 60 seconds', () => {
     expect(rateLimitResponseBody(120)).toEqual({
-      error: 'Trop de requêtes — réessaie dans 2 min.',
+      error: 'Tu as envoyé trop de messages d’affilée. Réessaie dans 2 minutes.',
       retryAfterSeconds: 120,
     });
   });
 
-  it('explains unavailable protection without leaking infra details', () => {
+  it('explains temporary unavailability without jargon', () => {
     expect(rateLimitResponseBody(60, 'unavailable')).toEqual({
-      error: 'Protection anti-abus indisponible — réessaie dans quelques instants.',
+      error:
+        'Le coach est temporairement indisponible. Réessaie dans une minute — si ça continue, le service de protection n’est pas joignable.',
       retryAfterSeconds: 60,
     });
   });

@@ -35,7 +35,7 @@ function firstGated(remaining: readonly ThreadEntry[]): ThreadEntry | null {
   return remaining.find((entry) => isHardSessionIntensity(entry.planned?.intensity)) ?? null;
 }
 
-function weekLink(label: string): WeekDecisionAction {
+function weekLink(label = 'Planning'): WeekDecisionAction {
   return { label, href: WEEK_HREF, sessionId: null };
 }
 
@@ -63,7 +63,7 @@ function gatedDecision(entry: ThreadEntry, reason: string | null): WeekDecision 
     sentence: 'Prochaine séance',
     reason,
     primary: sessionAction(`Adapter ${day}`, entry.planned.id),
-    secondary: weekLink('La semaine'),
+    secondary: weekLink(),
   };
 }
 
@@ -76,7 +76,7 @@ function inProgressDecision(entry: ThreadEntry, reason: string | null): WeekDeci
     sentence: 'Prochaine séance',
     reason,
     primary: sessionAction('Ouvrir la séance', entry.planned.id),
-    secondary: weekLink('La semaine'),
+    secondary: weekLink(),
   };
 }
 
@@ -87,14 +87,14 @@ function completeDecision(hasBrief: boolean, reason: string | null): WeekDecisio
       sentence: COMPLETE_SENTENCE,
       reason,
       primary: { label: 'Voir le bilan', href: BILAN_HREF, sessionId: null },
-      secondary: weekLink('La semaine'),
+      secondary: weekLink(),
     };
   }
   return {
     kind: 'complete',
     sentence: COMPLETE_SENTENCE,
     reason,
-    primary: weekLink('La semaine'),
+    primary: weekLink(),
     secondary: null,
   };
 }

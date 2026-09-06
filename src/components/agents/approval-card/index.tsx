@@ -18,12 +18,18 @@ export type {
 } from './types';
 
 export function ApprovalCard(props: ApprovalCardProps) {
-  const { status = 'pending', className } = props;
+  const { status = 'pending', className, chrome = 'instrument' } = props;
   const reduce = useReducedMotion() ?? false;
   const state = useApprovalCard(props);
 
   return (
-    <ApprovalCardShell className={className} reduce={reduce} state={state} status={status}>
+    <ApprovalCardShell
+      chrome={chrome}
+      className={className}
+      reduce={reduce}
+      state={state}
+      status={status}
+    >
       <ApprovalCardBody props={props} reduce={reduce} state={state} />
     </ApprovalCardShell>
   );

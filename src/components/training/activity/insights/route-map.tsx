@@ -5,21 +5,42 @@ import { memo, useEffect, useState } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SPORT_IDENTITY_HEX } from '@/lib/activity/sport-identity';
 import { cn } from '@/lib/utils';
+import {
+  isRouteMapInnerReady,
+  markRouteMapInnerReady,
+  shouldDeferRouteMapMount,
+} from '@/components/training/activity/insights/route-map-ready';
 
-const RouteMapInner = dynamic(() => import('./route-map-inner'), {
-  ssr: false,
-  loading: () => <Skeleton className="h-full w-full" />,
-});
+const RouteMapInner = dynamic(
+  () =>
+    import('./route-map-inner').then((mod) => {
+      markRouteMapInnerReady();
+      return mod;
+    }),
+  {
+    ssr: false,
+    loading: () =>
+      shouldDeferRouteMapMount(isRouteMapInnerReady()) ? (
+        <Skeleton className="h-full w-full" />
+      ) : null,
+  },
+);
 
 function useDeferredMapReady() {
-  const [ready, setReady] = useState(false);
+  const [ready, setReady] = useState(isRouteMapInnerReady);
 
   useEffect(() => {
+    if (isRouteMapInnerReady()) {
+      setReady(true);
+      return;
+    }
+
     let timeoutId: ReturnType<typeof setTimeout> | null = null;
     let idleId: number | null = null;
     let cancelled = false;
 
     const enable = () => {
+      markRouteMapInnerReady();
       if (!cancelled) {
         setReady(true);
       }

@@ -80,6 +80,90 @@ export function NextStepButtonContent({
   return <ArrowRight className="size-4" />;
 }
 
+function ApprovalCardHeaderStatusArea({
+  answered,
+  currentStep,
+  hidePendingBadge,
+  interactive,
+  questionMode,
+  questionProgressLabel,
+  questionStatusLabel,
+  questionsLength,
+  status,
+}: {
+  answered: boolean;
+  currentStep: number;
+  hidePendingBadge: boolean;
+  interactive: boolean;
+  questionMode: boolean;
+  questionProgressLabel: string;
+  questionStatusLabel: string;
+  questionsLength: number;
+  status: ApprovalCardStatus;
+}) {
+  if (questionMode && interactive) {
+    return (
+      <div className="flex shrink-0 items-center gap-2">
+        <span
+          className={cn(
+            'text-label rounded-full border px-2 py-0.5',
+            answered
+              ? 'border-border text-muted-foreground'
+              : 'text-signal-caution border-signal-caution/30',
+          )}
+        >
+          {questionStatusLabel}
+        </span>
+        <span
+          aria-label={questionProgressLabel}
+          className="text-muted-foreground text-instrument text-xs"
+        >
+          {currentStep + 1}/{questionsLength}
+        </span>
+      </div>
+    );
+  }
+  if (hidePendingBadge) {
+    return null;
+  }
+  return (
+    <span
+      role="status"
+      className={cn(
+        'text-label shrink-0 rounded-full border px-2 py-0.5 transition-colors',
+        getApprovalStatusBadgeClass(status),
+      )}
+    >
+      {getApprovalStatusLabel(status)}
+    </span>
+  );
+}
+
+function ApprovalCardDismissButton({
+  controlsDisabled,
+  dismissAriaLabel,
+  onDismiss,
+}: {
+  controlsDisabled: boolean;
+  dismissAriaLabel: string;
+  onDismiss?: () => void;
+}) {
+  if (!onDismiss) {
+    return null;
+  }
+  return (
+    <button
+      aria-label={dismissAriaLabel}
+      className="text-muted-foreground hover:text-foreground focus-visible:ring-ring grid min-h-11 min-w-11 shrink-0 place-items-center rounded-full transition-colors outline-none focus-visible:ring-2"
+      disabled={controlsDisabled}
+      type="button"
+      onClick={onDismiss}
+    >
+      <X className="size-4" />
+    </button>
+  );
+}
+
 export function ProgressDots({
   current,
   ids,
@@ -118,6 +202,7 @@ export function ProgressDots({
 
 export function ApprovalCardHeader({
   archived: _archived,
+  chrome = 'instrument',
   controlsDisabled,
   currentAnswer,
   currentStep,
@@ -134,6 +219,7 @@ export function ApprovalCardHeader({
   titleKey,
 }: {
   archived: boolean;
+  chrome?: ApprovalCardProps['chrome'];
   controlsDisabled: boolean;
   currentAnswer: { selected: string[]; custom?: string };
   currentStep: number;
@@ -149,55 +235,36 @@ export function ApprovalCardHeader({
   status: ApprovalCardStatus;
   titleKey: string;
 }) {
-  const statusLabel = getApprovalStatusLabel(status);
   const answered = isAnswered(currentAnswer);
+  const isInstrument = chrome === 'instrument';
+  const hidePendingBadge = isInstrument && status === 'pending' && !questionMode;
 
   return (
     <div className="flex min-w-0 items-start gap-3">
-      <h3 className="text-card-title text-foreground min-w-0 flex-1">
+      <h3
+        className={cn(
+          'text-foreground min-w-0 flex-1 text-pretty',
+          isInstrument ? 'text-sm leading-snug font-medium' : 'text-card-title',
+        )}
+      >
         <ActionSwapRollText value={titleKey}>{displayTitle}</ActionSwapRollText>
       </h3>
-      {questionMode && interactive ? (
-        <div className="flex shrink-0 items-center gap-2">
-          <span
-            className={cn(
-              'text-label rounded-full border px-2 py-0.5',
-              answered
-                ? 'border-border text-muted-foreground'
-                : 'text-signal-caution border-signal-caution/30',
-            )}
-          >
-            {questionStatusLabel}
-          </span>
-          <span
-            aria-label={questionProgressLabel}
-            className="text-muted-foreground text-instrument text-xs"
-          >
-            {currentStep + 1}/{questionsLength}
-          </span>
-        </div>
-      ) : (
-        <span
-          role="status"
-          className={cn(
-            'text-label shrink-0 rounded-full border px-2 py-0.5 transition-colors',
-            getApprovalStatusBadgeClass(status),
-          )}
-        >
-          {statusLabel}
-        </span>
-      )}
-      {onDismiss ? (
-        <button
-          aria-label={dismissAriaLabel}
-          className="text-muted-foreground hover:text-foreground focus-visible:ring-ring grid min-h-11 min-w-11 shrink-0 place-items-center rounded-full transition-colors outline-none focus-visible:ring-2"
-          disabled={controlsDisabled}
-          type="button"
-          onClick={onDismiss}
-        >
-          <X className="size-4" />
-        </button>
-      ) : null}
+      <ApprovalCardHeaderStatusArea
+        answered={answered}
+        currentStep={currentStep}
+        hidePendingBadge={hidePendingBadge}
+        interactive={interactive}
+        questionMode={questionMode}
+        questionProgressLabel={questionProgressLabel}
+        questionsLength={questionsLength}
+        questionStatusLabel={questionStatusLabel}
+        status={status}
+      />
+      <ApprovalCardDismissButton
+        controlsDisabled={controlsDisabled}
+        dismissAriaLabel={dismissAriaLabel}
+        onDismiss={onDismiss}
+      />
     </div>
   );
 }
@@ -295,9 +362,122 @@ export function ApprovalCardQuestionNav({
   );
 }
 
+function getApprovalDecisionButtonSize(chrome?: ApprovalCardProps['chrome']) {
+  return chrome === 'instrument' ? 'sm' : 'md';
+}
+
+function getApprovalApproveVariant(
+  chrome?: ApprovalCardProps['chrome'],
+  approveTone?: ApprovalCardProps['approveTone'],
+) {
+  if (chrome === 'instrument') {
+    return approveTone === 'destructive' ? 'ghost' : 'outline';
+  }
+  return 'primary';
+}
+
+function getApprovalApproveClassName(
+  chrome?: ApprovalCardProps['chrome'],
+  approveTone?: ApprovalCardProps['approveTone'],
+) {
+  const isInstrument = chrome === 'instrument';
+  const isDestructive = approveTone === 'destructive';
+  return cn(
+    !isInstrument && 'min-h-11 rounded-full',
+    !isInstrument && isDestructive && 'bg-signal-risk hover:bg-signal-risk/90 text-white',
+    isInstrument && isDestructive && 'text-signal-risk hover:text-signal-risk',
+  );
+}
+
+function getApprovalSecondaryButtonClassName(chrome?: ApprovalCardProps['chrome']) {
+  return cn(chrome !== 'instrument' && 'min-h-11 rounded-full');
+}
+
+function getApprovalRejectButtonClassName(chrome?: ApprovalCardProps['chrome']) {
+  return cn(
+    'text-muted-foreground',
+    chrome !== 'instrument' && 'hover:text-signal-risk min-h-11 rounded-full',
+  );
+}
+
+function ApprovalCardApproveButton({
+  approveLabel,
+  approveTone,
+  chrome,
+  controlsDisabled,
+  onApprove,
+}: {
+  approveLabel: ApprovalCardProps['approveLabel'];
+  approveTone: ApprovalCardProps['approveTone'];
+  chrome?: ApprovalCardProps['chrome'];
+  controlsDisabled: boolean;
+  onApprove?: () => void;
+}) {
+  return (
+    <Button
+      className={getApprovalApproveClassName(chrome, approveTone)}
+      disabled={controlsDisabled}
+      size={getApprovalDecisionButtonSize(chrome)}
+      variant={getApprovalApproveVariant(chrome, approveTone)}
+      onClick={onApprove}
+    >
+      {approveLabel}
+    </Button>
+  );
+}
+
+function ApprovalCardRequestChangesButton({
+  chrome,
+  controlsDisabled,
+  onRequestChanges,
+  requestChangesLabel,
+}: {
+  chrome?: ApprovalCardProps['chrome'];
+  controlsDisabled: boolean;
+  onRequestChanges: () => void;
+  requestChangesLabel: ApprovalCardProps['requestChangesLabel'];
+}) {
+  return (
+    <Button
+      className={getApprovalSecondaryButtonClassName(chrome)}
+      disabled={controlsDisabled}
+      size={getApprovalDecisionButtonSize(chrome)}
+      variant="secondary"
+      onClick={onRequestChanges}
+    >
+      {requestChangesLabel}
+    </Button>
+  );
+}
+
+function ApprovalCardRejectButton({
+  chrome,
+  controlsDisabled,
+  onReject,
+  rejectLabel,
+}: {
+  chrome?: ApprovalCardProps['chrome'];
+  controlsDisabled: boolean;
+  onReject: () => void;
+  rejectLabel: ApprovalCardProps['rejectLabel'];
+}) {
+  return (
+    <Button
+      className={getApprovalRejectButtonClassName(chrome)}
+      disabled={controlsDisabled}
+      size={getApprovalDecisionButtonSize(chrome)}
+      variant="ghost"
+      onClick={onReject}
+    >
+      {rejectLabel}
+    </Button>
+  );
+}
+
 export function ApprovalCardDecisionActions({
   approveLabel,
   approveTone,
+  chrome = 'instrument',
   consequence,
   controlsDisabled,
   onApprove,
@@ -308,6 +488,7 @@ export function ApprovalCardDecisionActions({
 }: {
   approveLabel: ApprovalCardProps['approveLabel'];
   approveTone: ApprovalCardProps['approveTone'];
+  chrome?: ApprovalCardProps['chrome'];
   consequence?: ApprovalCardProps['consequence'];
   controlsDisabled: boolean;
   onApprove?: () => void;
@@ -316,44 +497,36 @@ export function ApprovalCardDecisionActions({
   rejectLabel: ApprovalCardProps['rejectLabel'];
   requestChangesLabel: ApprovalCardProps['requestChangesLabel'];
 }) {
+  const isInstrument = chrome === 'instrument';
+
   return (
     <>
       {consequence ? (
         <p className="text-signal-risk mt-3 text-xs leading-relaxed">{consequence}</p>
       ) : null}
-      <div className="mt-4 flex flex-wrap items-center gap-2">
-        <Button
-          disabled={controlsDisabled}
-          size="md"
-          className={cn(
-            'min-h-11 rounded-full',
-            approveTone === 'destructive' && 'bg-signal-risk hover:bg-signal-risk/90 text-white',
-          )}
-          onClick={onApprove}
-        >
-          {approveLabel}
-        </Button>
+      <div className={cn('flex flex-wrap items-center gap-2', isInstrument ? 'mt-3' : 'mt-4')}>
+        <ApprovalCardApproveButton
+          approveLabel={approveLabel}
+          approveTone={approveTone}
+          chrome={chrome}
+          controlsDisabled={controlsDisabled}
+          onApprove={onApprove}
+        />
         {onRequestChanges ? (
-          <Button
-            className="min-h-11 rounded-full"
-            disabled={controlsDisabled}
-            size="md"
-            variant="secondary"
-            onClick={onRequestChanges}
-          >
-            {requestChangesLabel}
-          </Button>
+          <ApprovalCardRequestChangesButton
+            chrome={chrome}
+            controlsDisabled={controlsDisabled}
+            requestChangesLabel={requestChangesLabel}
+            onRequestChanges={onRequestChanges}
+          />
         ) : null}
         {onReject ? (
-          <Button
-            className="text-muted-foreground hover:text-signal-risk min-h-11 rounded-full"
-            disabled={controlsDisabled}
-            size="md"
-            variant="ghost"
-            onClick={onReject}
-          >
-            {rejectLabel}
-          </Button>
+          <ApprovalCardRejectButton
+            chrome={chrome}
+            controlsDisabled={controlsDisabled}
+            rejectLabel={rejectLabel}
+            onReject={onReject}
+          />
         ) : null}
       </div>
       <p className="text-muted-foreground sr-only">{approvalCardCopy.keyboardHint}</p>

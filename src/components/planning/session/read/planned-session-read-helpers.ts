@@ -21,28 +21,51 @@ export function buildPlannedSessionDateLabel(session: ClientPlannedSession): str
   return formatDate(new Date(session.date)) + (session.startTime ? ` · ${session.startTime}` : '');
 }
 
+/**
+ * Single prose intent line for BEFORE_SESSION — not an equal metric inventory.
+ * Example: "105 min · Endurance · charge 75"
+ */
+export function buildPlannedSessionIntentLine({
+  session,
+  mode,
+}: {
+  session: ClientPlannedSession;
+  mode: DisplayMode;
+}): string | null {
+  const parts: string[] = [];
+  if (session.durationMin) {
+    parts.push(`${session.durationMin} min`);
+  }
+  if (session.intensity) {
+    parts.push(intensityLabels[session.intensity]);
+  }
+  if (session.load) {
+    parts.push(formatTrainingLoad(session.load, mode));
+  }
+  return parts.length > 0 ? parts.join(' · ') : null;
+}
+
+/**
+ * @deprecated Prefer buildPlannedSessionIntentLine for athlete-facing BEFORE composition.
+ * Kept for transitional call sites / tests.
+ */
 export function buildPlannedSessionChips({
   session,
-  goalTitle,
   mode,
 }: {
   session: ClientPlannedSession;
   goalTitle?: string;
   mode: DisplayMode;
 }): PlannedSessionKeyChip[] {
-  const chips: PlannedSessionKeyChip[] = [
-    { label: 'Durée', value: session.durationMin ? `${session.durationMin} min` : '—' },
+  return [
+    { label: 'Durée', value: session.durationMin ? `${session.durationMin} min` : '-' },
     {
       label: 'Charge',
-      value: session.load ? formatTrainingLoad(session.load, mode) : '—',
+      value: session.load ? formatTrainingLoad(session.load, mode) : '-',
       valueClassName: 'text-primary',
     },
-    { label: 'Intensité', value: session.intensity ? intensityLabels[session.intensity] : '—' },
+    { label: 'Intensité', value: session.intensity ? intensityLabels[session.intensity] : '-' },
   ];
-  if (goalTitle) {
-    chips.push({ label: 'Objectif', value: goalTitle });
-  }
-  return chips;
 }
 
 function buildLocationValue(

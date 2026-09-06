@@ -35,7 +35,7 @@ describe('Plan hub continuous thread', () => {
     expect(widgets).toContain('PlanDestinationPlate');
     expect(widgets).toContain('PlanWeekDecision');
     expect(widgets).toContain('PlanWeekThread');
-    expect(widgets).toContain('space-y-4');
+    expect(widgets).toContain('space-y-8');
     expect(widgets).toContain('excludePlannedId');
     expect(widgets).not.toContain('PlanWeekSection');
     expect(widgets).not.toContain('PlanGoalBand');
@@ -56,19 +56,29 @@ describe('Plan hub continuous thread', () => {
     expect(entries).toContain('LinkButton');
     expect(entries).toContain('variant="outline"');
     expect(entries).toContain('size="sm"');
+    expect(entries).toContain('PlanSectionHeading');
     expect(entries).not.toContain('HISTORY_CHIP');
     expect(entries).not.toContain('chip-surface');
     expect(entries).not.toContain('de plus dans l’historique');
     expect(entries).toContain('selectHubDoneEntries');
     expect(entries).toContain('selectHubRemainingEntries');
-    expect(entries).toContain('text-section-title');
     expect(entries).toContain('HubDayCaption');
     expect(thread).not.toContain('border-l-2');
     expect(thread).not.toContain('PlanTrajectoryStrip');
     expect(thread).not.toContain('État du bloc');
     expect(thread).not.toContain('PlanLoadTrendSection');
-    expect(thread).toContain('text-section-title');
+    expect(thread).toContain('PlanSectionHeading');
     expect(thread).toContain('Projection');
+    expect(thread).toContain('Voir le bilan');
+    expect(thread).toContain('/plan/bilan');
+    expect(thread).toContain('LinkButton');
+    expect(thread).toContain('ClipboardList');
+    expect(
+      readFileSync(
+        resolve(process.cwd(), 'src/components/plan/plan-projection-section.tsx'),
+        'utf8',
+      ),
+    ).not.toContain('href="/plan/bilan"');
   });
 
   it('opens the next session as a compact instrument card without a week digest', () => {
@@ -83,8 +93,31 @@ describe('Plan hub continuous thread', () => {
     expect(decision).toContain("from '@/components/ui/button'");
     expect(decision).toContain('variant="outline"');
     expect(decision).toContain('size="sm"');
+    expect(decision).toContain('decision.secondary');
+    expect(decision).toContain('headingAction');
+    expect(decision).toContain('CalendarDays');
+    expect(decision).toContain('PlanSectionHeading');
     expect(decision).not.toContain('ACTION_CLASS');
     expect(decision).not.toContain('chip-surface');
+  });
+
+  it('aligns hub section actions with the title row', () => {
+    const heading = readFileSync(
+      resolve(process.cwd(), 'src/components/plan/plan-section-heading.tsx'),
+      'utf8',
+    );
+    expect(heading).toContain('justify-between');
+    expect(heading).toContain('text-section-title');
+  });
+
+  it('keeps the active macro phase readable on the inverted ink band', () => {
+    const plate = readFileSync(
+      resolve(process.cwd(), 'src/components/plan/plan-destination-plate.tsx'),
+      'utf8',
+    );
+    expect(plate).toContain('dark:border-ink-surface-foreground');
+    expect(plate).toContain('dark:text-ink-surface-foreground');
+    expect(plate).not.toContain('text-highlight mt-2');
   });
 
   it('reuses the shared outline sm button on hub actions', () => {
@@ -96,5 +129,28 @@ describe('Plan hub continuous thread', () => {
     expect(actions).toContain('size="sm"');
     expect(actions).not.toContain('chip-surface');
     expect(actions).not.toContain('const CHIP');
+  });
+
+  it('keeps realized map cards cached across Plan visits', () => {
+    const model = readFileSync(resolve(process.cwd(), 'src/hooks/use-plan-hub-model.ts'), 'utf8');
+    const prefetch = readFileSync(resolve(process.cwd(), 'src/hooks/use-prefetch-nav.ts'), 'utf8');
+    const map = readFileSync(
+      resolve(process.cwd(), 'src/components/training/activity/insights/route-map.tsx'),
+      'utf8',
+    );
+    expect(model).toContain('readPlanHubNow');
+    expect(model).toContain('useWarmPlanHubStreams');
+    expect(prefetch).toContain('selectPlanHubStreamPrefetchIds');
+    expect(prefetch).toContain('activityStream');
+    expect(map).toContain('shouldDeferRouteMapMount');
+    expect(
+      readFileSync(
+        resolve(process.cwd(), 'src/components/today/rich/completed-session-preview.tsx'),
+        'utf8',
+      ),
+    ).toContain('readRememberedHubRoute');
+    expect(
+      readFileSync(resolve(process.cwd(), 'src/components/shell/plan-hub-widgets.tsx'), 'utf8'),
+    ).toContain('retained.current');
   });
 });

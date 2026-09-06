@@ -19,7 +19,7 @@ function plannedDensityClass(density: 'solo' | 'compact'): string {
 function PriorityBadge({ primary }: { primary: boolean }) {
   if (primary) {
     return (
-      <span className="bg-highlight text-foreground text-data rounded-full px-2 py-0.5 text-[10px] font-bold tracking-wide uppercase">
+      <span className="bg-highlight text-highlight-foreground text-data rounded-full px-2 py-0.5 text-[10px] font-bold tracking-wide uppercase">
         Prioritaire
       </span>
     );

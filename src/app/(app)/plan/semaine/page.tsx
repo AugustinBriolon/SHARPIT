@@ -11,9 +11,6 @@ export default function PlanSemainePage() {
       <StickyHeader>
         <p className="text-label">Plan</p>
         <h1 className="text-page-title mt-1">La semaine</h1>
-        <p className="text-muted-foreground mt-1 text-sm">
-          Organisation du cycle, prochaines séances et ajustements du plan.
-        </p>
       </StickyHeader>
 
       {/* Suspense for `useSearchParams` (?planned= deep-link) — header above is static. */}

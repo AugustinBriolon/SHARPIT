@@ -5,11 +5,10 @@ import { describe, expect, it } from 'vitest';
 import { PlanningEmbeddedSkeleton } from '@/components/planning/planning-embedded-skeleton';
 
 describe('PlanningEmbeddedSkeleton', () => {
-  it('renders week summary pulses and seven day rows', () => {
+  it('renders week chrome pulses and seven overview day rows', () => {
     const html = renderToStaticMarkup(createElement(PlanningEmbeddedSkeleton));
 
-    expect(html).toContain('analysis-panel');
     expect(html).toContain('aria-busy');
-    expect(html.match(/h-12 w-full/g)?.length).toBe(7);
+    expect(html.match(/h-14 w-full/g)?.length).toBe(7);
   });
 });

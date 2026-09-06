@@ -9,7 +9,6 @@ import { useProjectedAthleteViewModel } from '@/hooks/use-projected-athlete-view
 import type { ProjectedAthleteCardViewModel } from '@/core/presentation/projected-athlete-view-model';
 import type { WeeklyBriefLoad } from '@/core/presentation/weekly-coaching-brief-view-model';
 import { athleteVisibleCopy } from '@/lib/plan/athlete-visible-copy';
-import { briefHubLine } from '@/lib/plan/plan-brief-line';
 import { formatTrainingLoad, isExpertMode, type DisplayMode } from '@/lib/preferences/display-mode';
 import { useDisplayMode } from '@/providers/display-mode-provider';
 
@@ -127,15 +126,11 @@ function ProjectionReading({
   vm: ProjectedAthleteCardViewModel;
 }) {
   const expert = isExpertMode(mode);
-  const bilan = briefHubLine(brief);
   return (
     <div className="analysis-panel rounded-analysis-lg space-y-3 px-4 py-4">
       <p className="text-section-title leading-snug text-pretty">{vm.synthesisSentence}</p>
       {expert && brief?.load ? <LoadCeiling load={brief.load} mode={mode} /> : null}
       {vm.caution ? <ProjectionCaution caution={vm.caution} expert={expert} /> : null}
-      <Link className="explore-link" href="/plan/bilan">
-        {bilan ?? 'Voir le bilan'}
-      </Link>
     </div>
   );
 }

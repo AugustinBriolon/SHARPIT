@@ -8,10 +8,10 @@ import type { PlannedSessionViewModel } from '@/core/presentation/planned-sessio
 import type { ClientGoal, ClientPlannedSession } from '@/lib/query/types';
 import { useDisplayMode } from '@/providers/display-mode-provider';
 import {
-  buildPlannedSessionChips,
   buildPlannedSessionContextMeta,
   buildPlannedSessionDateLabel,
   buildPlannedSessionDerouleFlags,
+  buildPlannedSessionIntentLine,
   buildPlannedSessionPrescription,
   buildPlannedSessionRationaleFlags,
 } from '@/components/planning/session/read/planned-session-read-helpers';
@@ -41,7 +41,7 @@ export function usePlannedSessionReadData({
   const isRealized = Boolean(session.activityId ?? session.activity);
   const goal = goals.find((g) => g.id === session.goalId);
   const dateLabel = buildPlannedSessionDateLabel(session);
-  const chips = buildPlannedSessionChips({ session, goalTitle: goal?.title, mode });
+  const intentLine = buildPlannedSessionIntentLine({ session, mode });
   const contextMeta = buildPlannedSessionContextMeta({
     session,
     context,
@@ -72,7 +72,7 @@ export function usePlannedSessionReadData({
     dateLabel,
     ...contextMeta,
     ...rationaleFlags,
-    chips,
+    intentLine,
     ...prescriptionData,
     ...derouleFlags,
     endurancePreview,

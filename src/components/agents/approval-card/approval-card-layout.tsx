@@ -15,6 +15,43 @@ import type { ApprovalCardStatus } from './types';
 import type { ApprovalCardProps } from './types';
 import { cn } from '@/lib/utils';
 
+type ApprovalCardState = ReturnType<typeof import('./use-approval-card').useApprovalCard>;
+
+function getApprovalCardKeyboardProps(state: ApprovalCardState) {
+  if (!state.interactive || state.questionMode) {
+    return {};
+  }
+  return { 'aria-keyshortcuts': 'Enter Escape' as const, tabIndex: 0 as const };
+}
+
+function ApprovalCardLeadingIcon({
+  reduce,
+  state,
+  status,
+}: {
+  reduce: boolean;
+  state: ApprovalCardState;
+  status: ApprovalCardStatus;
+}) {
+  return (
+    <span
+      aria-hidden="true"
+      className={cn(
+        'text-muted-foreground grid size-5 shrink-0 place-items-center',
+        getApprovalStatusIconClass(status),
+      )}
+    >
+      <StatusIcon
+        busy={state.busy}
+        interactive={state.interactive}
+        questionMode={state.questionMode}
+        reduceMotion={reduce}
+        status={status}
+      />
+    </span>
+  );
+}
+
 export function ApprovalCardBody({
   props,
   reduce,
@@ -25,11 +62,13 @@ export function ApprovalCardBody({
   state: ReturnType<typeof import('./use-approval-card').useApprovalCard>;
 }) {
   const content = resolveApprovalCardContentProps(props);
+  const chrome = content.chrome ?? 'instrument';
 
   return (
     <div className="min-w-0 flex-1">
       <ApprovalCardHeader
         archived={state.archived}
+        chrome={chrome}
         controlsDisabled={state.controlsDisabled}
         currentAnswer={state.currentAnswer}
         currentStep={state.currentStep}
@@ -75,6 +114,7 @@ export function ApprovalCardBody({
         approveLabel={content.approveLabel}
         approveTone={content.approveTone}
         archived={state.archived}
+        chrome={chrome}
         consequence={content.consequence}
         controlsDisabled={state.controlsDisabled}
         interactive={state.interactive}
@@ -92,51 +132,44 @@ export function ApprovalCardBody({
 }
 
 export function ApprovalCardShell({
+  chrome = 'instrument',
   className,
   reduce,
   state,
   status,
   children,
 }: {
+  chrome?: ApprovalCardProps['chrome'];
   className?: string;
   reduce: boolean;
-  state: ReturnType<typeof import('./use-approval-card').useApprovalCard>;
+  state: ApprovalCardState;
   status: ApprovalCardStatus;
   children: React.ReactNode;
 }) {
+  const isInstrument = chrome === 'instrument';
+  const keyboardProps = getApprovalCardKeyboardProps(state);
+
   return (
     <div
       ref={state.cardRef}
       aria-busy={state.busy}
-      aria-keyshortcuts={state.interactive && !state.questionMode ? 'Enter Escape' : undefined}
       data-state={status}
-      tabIndex={state.interactive && !state.questionMode ? 0 : undefined}
       className={cn(
-        'analysis-panel rounded-analysis focus-visible:ring-ring w-full overflow-hidden p-4 text-sm outline-none focus-visible:ring-2',
+        'analysis-panel rounded-analysis focus-visible:ring-ring w-full overflow-hidden text-sm outline-none focus-visible:ring-2',
+        isInstrument ? 'p-3' : 'p-4',
         state.archived && 'opacity-95',
         className,
       )}
+      {...keyboardProps}
     >
       <p aria-live="polite" className="sr-only">
         {state.liveMessage}
       </p>
 
-      <div className="flex items-start gap-3">
-        <span
-          aria-hidden="true"
-          className={cn(
-            'text-muted-foreground grid size-5 shrink-0 place-items-center',
-            getApprovalStatusIconClass(status),
-          )}
-        >
-          <StatusIcon
-            busy={state.busy}
-            interactive={state.interactive}
-            questionMode={state.questionMode}
-            reduceMotion={reduce}
-            status={status}
-          />
-        </span>
+      <div className={cn('flex items-start', !isInstrument && 'gap-3')}>
+        {isInstrument ? null : (
+          <ApprovalCardLeadingIcon reduce={reduce} state={state} status={status} />
+        )}
         {children}
       </div>
     </div>

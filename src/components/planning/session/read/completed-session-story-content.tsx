@@ -3,8 +3,9 @@
 import { parseSessionAnalysis } from '@/lib/planned-session/display/session-analysis-display';
 import { activityNarrativeSchema } from '@/lib/validators/coach';
 import { sanitizeCoachCopy } from '@/lib/coach/sanitize-coach-copy';
-import { Loader2 } from 'lucide-react';
+import { GitCompare, Loader2 } from 'lucide-react';
 import { CompletedSessionPlanGaps } from '@/components/planning/session/read/completed-session-story-parts';
+import { CollapsibleSection } from '@/components/ui/collapsible-section';
 
 function parseActivityNarrative(raw: unknown) {
   const parsed = activityNarrativeSchema.safeParse(raw);
@@ -26,34 +27,14 @@ function StoryLoadingRow() {
   );
 }
 
-/**
- * Demoted on purpose: with the note leading now, the coach headline is
- * supporting context, not "the single most important signal on any screen"
- * — it no longer gets the text-verdict treatment that implies.
- */
 function StoryHeadline({ headline }: { headline: string }) {
-  return <h3 className="text-foreground text-sm leading-snug font-semibold">{headline}</h3>;
+  return (
+    <p className="text-foreground text-sm leading-snug font-semibold text-pretty">{headline}</p>
+  );
 }
 
 function StoryBody({ body }: { body: string }) {
-  return <p className="text-foreground/90 text-sm leading-relaxed">{body}</p>;
-}
-
-/**
- * The athlete's own words on the session — the primary thing they came to
- * read. Gets the text-verdict treatment ("the single most important signal
- * on any screen") that the coach headline gave up above: real heading
- * typeface (Syne) at 20-24.8px, not just bigger body text.
- */
-export function CompletedSessionNote({ notes }: { notes: string }) {
-  return (
-    <div className="min-w-0 space-y-1">
-      <p className="text-label">Ta note</p>
-      <p className="text-verdict text-foreground leading-snug wrap-break-word whitespace-pre-wrap">
-        {notes}
-      </p>
-    </div>
-  );
+  return <p className="text-foreground/90 text-sm leading-relaxed text-pretty">{body}</p>;
 }
 
 function resolvePrimaryBody({
@@ -122,7 +103,7 @@ function hasPlanGaps(analysis: ReturnType<typeof parseSessionAnalysis>): boolean
   return analysis.remarks.length > 0 || Boolean(analysis.recommendation?.trim());
 }
 
-/** Compliance detail — secondary to the note and the coach narrative, kept in its own quiet box. */
+/** Plan gaps as a quiet disclosure — not a nested card stack. */
 export function CompletedSessionDetails({
   analysis,
 }: {
@@ -132,9 +113,34 @@ export function CompletedSessionDetails({
     return null;
   }
 
+  const remarkCount = analysis.remarks.length;
+  const summary =
+    remarkCount > 0
+      ? `${remarkCount} point${remarkCount > 1 ? 's' : ''}`
+      : analysis.recommendation
+        ? 'Orientation'
+        : null;
+
   return (
-    <div className="border-analysis-border/60 min-w-0 overflow-hidden rounded-md border">
+    <CollapsibleSection
+      defaultOpen={false}
+      icon={GitCompare}
+      label="Écarts au plan"
+      summary={summary}
+    >
       <CompletedSessionPlanGaps analysis={analysis} />
+    </CollapsibleSection>
+  );
+}
+
+/** @deprecated Prefer CompletedSessionAthleteCapture for editable notes. */
+export function CompletedSessionNote({ notes }: { notes: string }) {
+  return (
+    <div className="min-w-0 space-y-1">
+      <p className="text-label">Ta note</p>
+      <p className="text-verdict text-foreground leading-snug wrap-break-word whitespace-pre-wrap">
+        {notes}
+      </p>
     </div>
   );
 }

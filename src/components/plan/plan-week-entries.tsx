@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { History } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { PlanSectionHeading } from '@/components/plan/plan-section-heading';
 import { CompletedSessionPreview } from '@/components/today/rich/completed-session-preview';
 import { PlannedSessionPreview } from '@/components/today/rich/planned-session-preview';
 import { LinkButton } from '@/components/ui/link-button';
@@ -28,10 +29,6 @@ function entryDate(entry: ThreadEntry): Date {
 
 function hubDayLabel(entry: ThreadEntry): string {
   return format(entryDate(entry), 'EEEE d', { locale: fr });
-}
-
-function HubSectionTitle({ children }: { children: string }) {
-  return <h3 className="text-section-title">{children}</h3>;
 }
 
 function HubDayCaption({ label }: { label: string }) {
@@ -125,7 +122,7 @@ export function PlanRemainingList({
 
   return (
     <div className="space-y-2">
-      <HubSectionTitle>À faire</HubSectionTitle>
+      <PlanSectionHeading title="À faire" />
       <ul className="space-y-3">
         {featured.map((entry) => (
           <PlannedHubPreview
@@ -153,7 +150,20 @@ export function PlanDoneList({ entries }: { entries: readonly ThreadEntry[] }) {
 
   return (
     <div className="space-y-2">
-      <HubSectionTitle>Réalisé</HubSectionTitle>
+      <PlanSectionHeading
+        title="Réalisé"
+        action={
+          <LinkButton
+            aria-label={overflow > 0 ? `Historique, ${overflow} de plus` : 'Historique'}
+            href="/activite"
+            size="sm"
+            variant="outline"
+          >
+            <History aria-hidden />
+            Historique
+          </LinkButton>
+        }
+      />
       <ul className="@container flex snap-x snap-mandatory gap-3 overflow-x-auto pb-1">
         {groups.map((group) => {
           const dayLabel = hubDayLabel(group.entries[0]!);
@@ -169,15 +179,6 @@ export function PlanDoneList({ entries }: { entries: readonly ThreadEntry[] }) {
           );
         })}
       </ul>
-      <LinkButton
-        aria-label={overflow > 0 ? `Historique, ${overflow} de plus` : 'Historique'}
-        href="/activite"
-        size="sm"
-        variant="outline"
-      >
-        <History aria-hidden />
-        Historique
-      </LinkButton>
     </div>
   );
 }

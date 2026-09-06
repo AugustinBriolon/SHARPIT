@@ -3,13 +3,14 @@
 import type { ClientPlannedSession } from '@/lib/query/types';
 import {
   CompletedSessionDetails,
-  CompletedSessionNote,
   CompletedSessionStoryContent,
   parseActivityNarrative,
   parseSessionAnalysis,
 } from '@/components/planning/session/read/completed-session-story-content';
 import { ComplianceBadge } from '@/components/planning/session/read/completed-session-story-parts';
 import { CompletedSessionStoryActions } from '@/components/planning/session/read/completed-session-story-actions';
+import { CompletedSessionAthleteCapture } from '@/components/planning/session/read/completed-session-athlete-capture';
+import { PlanSectionHeading } from '@/components/plan/plan-section-heading';
 
 function readActivityNarrative(activity: ClientPlannedSession['activity']) {
   if (!activity) {
@@ -21,24 +22,17 @@ function readActivityNarrative(activity: ClientPlannedSession['activity']) {
   return parseActivityNarrative(activity.narrativeAnalysis);
 }
 
-function readActivityNotes(activity: ClientPlannedSession['activity']) {
-  return activity?.notes?.trim() || null;
-}
-
 function parseSessionStory(session: ClientPlannedSession) {
   const { activity, analysis: analysisRaw } = session;
   const analysis = parseSessionAnalysis(analysisRaw);
   const narrative = readActivityNarrative(activity);
-  const notes = readActivityNotes(activity);
-  const hasStory = Boolean(narrative || analysis || notes);
-  return { analysis, narrative, notes, hasStory };
+  const notes = activity?.notes?.trim() || null;
+  const hasStory = Boolean(narrative || analysis || notes || activity);
+  return { analysis, narrative, notes, hasStory, activity };
 }
 
 /**
- * One coach reading for a completed planned session.
- * The athlete's own note is the primary reason to open this card — it leads,
- * sized up. The coach narrative and compliance detail are supporting context
- * underneath, not competing for the same attention.
+ * SESSION_COMPLETED: capture first (hero), then coach lecture, then plan gaps.
  */
 export function CompletedSessionStory({
   session,
@@ -49,41 +43,39 @@ export function CompletedSessionStory({
   isAnalyzing?: boolean;
   onReanalyze?: () => void;
 }) {
-  const { analysis, narrative, notes, hasStory } = parseSessionStory(session);
-  if (!hasStory && !isAnalyzing && !onReanalyze && !session.activity) {
+  const { analysis, narrative, notes, hasStory, activity } = parseSessionStory(session);
+  if (!hasStory && !isAnalyzing && !onReanalyze) {
     return null;
   }
 
   return (
-    <section
-      aria-label="Lecture de la séance"
-      className="bg-analysis-surface-alt rounded-analysis-lg min-w-0 space-y-3 px-4 py-4 sm:px-5"
-    >
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-label inline-flex items-center gap-2">
-          <span className="bg-primary size-2 shrink-0 rounded-full" aria-hidden />
-          Lecture de la séance
-        </p>
-        <ComplianceBadge analysis={analysis} isAnalyzing={isAnalyzing} />
-      </div>
+    <div className="min-w-0 space-y-6">
+      {activity ? <CompletedSessionAthleteCapture activity={activity} /> : null}
 
-      {notes ? <CompletedSessionNote notes={notes} /> : null}
+      <section aria-labelledby="session-lecture" className="min-w-0 space-y-3">
+        <PlanSectionHeading
+          action={<ComplianceBadge analysis={analysis} isAnalyzing={isAnalyzing} />}
+          heading="h3"
+          id="session-lecture"
+          title="Lecture"
+        />
 
-      <CompletedSessionStoryContent
-        analysis={analysis}
-        isAnalyzing={isAnalyzing}
-        narrative={narrative}
-        notes={notes}
-      />
+        <CompletedSessionStoryContent
+          analysis={analysis}
+          isAnalyzing={isAnalyzing}
+          narrative={narrative}
+          notes={notes}
+        />
 
-      <CompletedSessionDetails analysis={analysis} />
+        <CompletedSessionDetails analysis={analysis} />
 
-      <CompletedSessionStoryActions
-        analysis={analysis}
-        isAnalyzing={isAnalyzing}
-        sessionId={session.id}
-        onReanalyze={onReanalyze}
-      />
-    </section>
+        <CompletedSessionStoryActions
+          analysis={analysis}
+          isAnalyzing={isAnalyzing}
+          sessionId={session.id}
+          onReanalyze={onReanalyze}
+        />
+      </section>
+    </div>
   );
 }

@@ -19,7 +19,7 @@ There was also no minimal ops probe to surface missing `CRON_SECRET` / `SECRET_E
 
 ## Decision
 
-1. **Rate limit fail-closed** on sensitive limiters (coach*, providerSync, sessionAnalyze, activityNarrative) via `checkRateLimit(..., { failClosed: true })` → HTTP 503 with clear FR copy when Upstash is missing/broken. `apiGeneral` stays fail-open.
+1. **Rate limit fail-closed** on sensitive limiters (coach*, providerSync, sessionAnalyze, activityNarrative) via `checkRateLimit(..., { failClosed: true })` → HTTP 503 with clear FR athlete copy when Upstash is missing/broken. `apiGeneral` stays fail-open. **Local `NODE_ENV=development` bypasses all rate checks** so coach/sync work without Upstash.
 
 2. **Ops smoke** at `GET /api/cron/smoke` (Bearer `CRON_SECRET`) reports configured/missing/ok for cron secret, encryption key (+ roundtrip), and Upstash — never echoes secret values.
 
@@ -48,4 +48,5 @@ There was also no minimal ops probe to surface missing `CRON_SECRET` / `SECRET_E
 ## Consequences
 
 - Production must keep Upstash env vars set (already present in Vercel) or coach/sync return 503.
+- Local `next dev` (`NODE_ENV=development`) never enforces rate limits — Upstash optional for day-to-day coach work.
 - Ops can hit `/api/cron/smoke` with `Authorization: Bearer $CRON_SECRET` after deploys.

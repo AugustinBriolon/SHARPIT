@@ -82,7 +82,17 @@ export function resolveCompletedSessionMapSlot(input: {
   isPending: boolean;
   isError: boolean;
   usablePath: [number, number][] | null;
+  rememberedHasPath?: boolean | null;
 }): boolean {
-  const { mayHavePath, isPending, isError, usablePath } = input;
-  return mayHavePath && (isPending || Boolean(usablePath)) && !isError;
+  const { mayHavePath, isPending, isError, usablePath, rememberedHasPath = null } = input;
+  if (!mayHavePath || isError) {
+    return false;
+  }
+  if (usablePath || rememberedHasPath === true) {
+    return true;
+  }
+  if (rememberedHasPath === false) {
+    return false;
+  }
+  return isPending;
 }

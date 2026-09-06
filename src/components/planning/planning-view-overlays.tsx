@@ -13,19 +13,15 @@ export function PlanningViewOverlays({
   generatorOpen,
   isCreateDialog,
   isLoading,
-  macroPlanOpen,
   scenarioComparisonOpen,
   scenarioComparisonLoading,
   scenarioComparisonViewModel,
   anchorTrainingDayId,
   showPlannedDialog,
-  weeklyBriefOpen,
   onCloseAdapter,
   onCloseGenerator,
-  onCloseMacroPlan,
   onClosePlannedDialog,
   onCloseScenarioComparison,
-  onCloseWeeklyBrief,
 }: {
   adapterOpen: boolean;
   createDefaultDate: Date;
@@ -34,19 +30,15 @@ export function PlanningViewOverlays({
   generatorOpen: boolean;
   isCreateDialog: boolean;
   isLoading: boolean;
-  macroPlanOpen: boolean;
   scenarioComparisonOpen: boolean;
   scenarioComparisonLoading: boolean;
   scenarioComparisonViewModel: ScenarioComparisonViewModel | undefined;
   anchorTrainingDayId?: string;
   showPlannedDialog: boolean;
-  weeklyBriefOpen: boolean;
   onCloseAdapter: () => void;
   onCloseGenerator: () => void;
-  onCloseMacroPlan: () => void;
   onClosePlannedDialog: () => void;
   onCloseScenarioComparison: () => void;
-  onCloseWeeklyBrief: () => void;
 }) {
   return (
     <>
@@ -63,17 +55,12 @@ export function PlanningViewOverlays({
         adapterOpen={adapterOpen}
         anchorTrainingDayId={anchorTrainingDayId}
         generatorOpen={generatorOpen}
-        goals={goals}
-        macroPlanOpen={macroPlanOpen}
         scenarioComparisonLoading={scenarioComparisonLoading}
         scenarioComparisonOpen={scenarioComparisonOpen}
         scenarioComparisonViewModel={scenarioComparisonViewModel}
-        weeklyBriefOpen={weeklyBriefOpen}
         onCloseAdapter={onCloseAdapter}
         onCloseGenerator={onCloseGenerator}
-        onCloseMacroPlan={onCloseMacroPlan}
         onCloseScenarioComparison={onCloseScenarioComparison}
-        onCloseWeeklyBrief={onCloseWeeklyBrief}
       />
     </>
   );

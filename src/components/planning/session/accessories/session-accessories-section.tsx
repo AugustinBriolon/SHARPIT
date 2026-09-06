@@ -10,12 +10,15 @@ export function SessionAccessoriesSection({
   description,
   accessories,
   strengthPrescription,
+  bare = false,
 }: {
   type: ActivityType;
   title?: string | null;
   description?: string | null;
   accessories?: unknown;
   strengthPrescription?: unknown;
+  /** When true, omit the section title (parent already labels the disclosure). */
+  bare?: boolean;
 }) {
   const items = resolveSessionAccessories({
     type,
@@ -30,16 +33,18 @@ export function SessionAccessoriesSection({
   }
 
   return (
-    <div className="border-analysis-border/60 space-y-2 rounded-lg border p-3">
-      <p className="text-foreground/85 inline-flex items-center gap-1.5 text-sm font-medium">
-        <Wrench className="text-muted-foreground size-3.5" />
-        Accessoires nécessaires
-      </p>
+    <div className="space-y-2">
+      {bare ? null : (
+        <p className="text-muted-foreground inline-flex items-center gap-1.5 text-sm font-medium">
+          <Wrench className="size-3.5" aria-hidden />
+          Accessoires
+        </p>
+      )}
       <ul className="flex flex-wrap gap-1.5">
         {items.map((item) => (
           <li
             key={item.id}
-            className="border-analysis-border/60 bg-analysis-surface-alt/50 text-foreground/90 rounded-full border px-2.5 py-1 text-xs"
+            className="text-foreground/90 border-analysis-border/50 rounded-md border px-2 py-1 text-xs"
           >
             {item.label}
           </li>

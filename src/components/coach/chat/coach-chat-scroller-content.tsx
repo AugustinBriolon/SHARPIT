@@ -53,11 +53,12 @@ export function CoachChatScrollerContent({
 
       {chat.error ? (
         <div
-          className="bg-destructive/10 text-destructive space-y-2 rounded-md p-3 text-sm"
+          className="border-destructive/25 bg-destructive/8 text-destructive space-y-2 rounded-lg border p-3 text-sm"
           role="alert"
         >
-          <p>{chat.errorMessage}</p>
-          <Button type="button" variant="outline" onClick={chat.clearChatError}>
+          <p className="font-medium text-pretty">{coachBeuiCopy.errorTitle}</p>
+          <p className="text-destructive/90 text-pretty">{chat.errorMessage}</p>
+          <Button size="sm" type="button" variant="outline" onClick={chat.clearChatError}>
             {coachBeuiCopy.retryLater}
           </Button>
         </div>

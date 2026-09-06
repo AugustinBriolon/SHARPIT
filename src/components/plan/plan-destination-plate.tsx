@@ -40,7 +40,7 @@ function MacroRail({ rail }: { rail: MacroPhaseRail }) {
           className={cn(
             'border-t-2 pt-1.5 text-[10px] leading-tight',
             run.current
-              ? 'border-highlight text-ink-surface-foreground font-semibold'
+              ? 'border-highlight text-ink-surface-foreground dark:border-ink-surface-foreground font-semibold'
               : 'border-ink-surface-foreground/25 text-ink-surface-foreground/55',
           )}
         >
@@ -77,7 +77,10 @@ function DestinationGoal({ goal }: { goal: PlanGoalView }) {
           className="text-ink-surface-foreground text-lg leading-snug font-medium"
           id="plan-destination"
         >
-          <Link className="hover:text-highlight" href={MOI_OBJECTIFS_PATH}>
+          <Link
+            className="hover:text-highlight dark:hover:text-ink-surface-foreground/80"
+            href={MOI_OBJECTIFS_PATH}
+          >
             {goal.title}
           </Link>
         </h2>
@@ -96,7 +99,7 @@ function DestinationRail({ rail }: { rail: MacroPhaseRail }) {
   return (
     <>
       <MacroRail rail={rail} />
-      <p className="text-highlight mt-2 flex items-start justify-between gap-3 text-[11px] leading-snug">
+      <p className="text-highlight dark:text-ink-surface-foreground mt-2 flex items-start justify-between gap-3 text-[11px] leading-snug">
         <span>{caption.week}</span>
         {caption.aside ? <span className="text-right">{caption.aside}</span> : null}
       </p>

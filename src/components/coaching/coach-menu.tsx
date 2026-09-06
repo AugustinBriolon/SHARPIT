@@ -6,34 +6,35 @@ import {
   DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import {
-  CalendarRange,
-  ChevronDown,
-  LandPlot,
-  NotebookText,
-  PenLine,
-  Plus,
-  SlidersHorizontal,
-} from 'lucide-react';
+import { CalendarRange, ChevronDown, NotebookText, SlidersHorizontal } from 'lucide-react';
 
-export type SessionsCoachAction = 'plan' | 'manual' | 'generate' | 'adapt' | 'macro' | 'week-brief';
+/** Week-chrome tools only — create/manual/bilan/macro live on day + / hub Plan. */
+export type SessionsCoachAction = 'generate' | 'adapt';
 
 export function SessionsCoachMenu({
   onAction,
+  tone = 'primary',
 }: {
   onAction: (action: SessionsCoachAction) => void;
+  /** Calendar view uses secondary so Coach does not compete with the week strip. */
+  tone?: 'primary' | 'secondary';
 }) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
         render={
-          <Button className="shrink-0 gap-1.5 font-semibold" size="default" variant="default">
+          <Button
+            className="shrink-0 gap-1.5 font-semibold"
+            size={tone === 'secondary' ? 'sm' : 'default'}
+            variant={tone === 'secondary' ? 'outline' : 'default'}
+          >
             <NotebookText className="size-4" />
-            <span className="hidden lg:inline">Coach</span>
+            <span className={tone === 'secondary' ? 'hidden sm:inline' : 'hidden lg:inline'}>
+              {tone === 'secondary' ? 'Actions' : 'Coach'}
+            </span>
             <ChevronDown className="size-3.5 opacity-70 transition-transform duration-150 ease-out group-aria-expanded/button:rotate-180" />
           </Button>
         }
@@ -43,45 +44,7 @@ export function SessionsCoachMenu({
         className="analysis-panel-alt border-foreground/18 rounded-analysis-lg w-72 border p-1.5 ring-0"
       >
         <DropdownMenuGroup>
-          <DropdownMenuLabel>Actions</DropdownMenuLabel>
-          <DropdownMenuItem
-            className="cursor-pointer gap-2.5 py-2"
-            onClick={() => onAction('plan')}
-          >
-            <Plus className="text-foreground/70 size-4" />
-            <div className="min-w-0">
-              <p className="font-medium">Planifier une séance</p>
-              <p className="text-muted-foreground text-xs">Ajouter au planning ou au calendrier</p>
-            </div>
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            className="cursor-pointer gap-2.5 py-2"
-            onClick={() => onAction('manual')}
-          >
-            <PenLine className="text-foreground/70 size-4" />
-            <div className="min-w-0">
-              <p className="font-medium">Saisir une séance</p>
-              <p className="text-muted-foreground text-xs">
-                Enregistrement manuel d&apos;une activité
-              </p>
-            </div>
-          </DropdownMenuItem>
-        </DropdownMenuGroup>
-        <DropdownMenuSeparator className="bg-foreground/12" />
-        <DropdownMenuGroup>
           <DropdownMenuLabel>Aide du coach</DropdownMenuLabel>
-          <DropdownMenuItem
-            className="cursor-pointer gap-2.5 py-2"
-            onClick={() => onAction('week-brief')}
-          >
-            <NotebookText className="text-foreground/70 size-4" />
-            <div className="min-w-0">
-              <p className="font-medium">Bilan hebdo</p>
-              <p className="text-muted-foreground text-xs">
-                Objectif, charge et séances clés expliqués
-              </p>
-            </div>
-          </DropdownMenuItem>
           <DropdownMenuItem
             className="cursor-pointer gap-2.5 py-2"
             onClick={() => onAction('generate')}
@@ -100,16 +63,6 @@ export function SessionsCoachMenu({
             <div className="min-w-0">
               <p className="font-medium">Ajuster l&apos;existant</p>
               <p className="text-muted-foreground text-xs">Modifier ce qui est déjà planifié</p>
-            </div>
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            className="cursor-pointer gap-2.5 py-2"
-            onClick={() => onAction('macro')}
-          >
-            <LandPlot className="text-foreground/70 size-4" />
-            <div className="min-w-0">
-              <p className="font-medium">Plan jusqu&apos;à la course</p>
-              <p className="text-muted-foreground text-xs">Phases et charge cible</p>
             </div>
           </DropdownMenuItem>
         </DropdownMenuGroup>

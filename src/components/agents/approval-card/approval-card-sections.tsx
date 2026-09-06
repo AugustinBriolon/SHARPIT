@@ -145,6 +145,7 @@ export function ApprovalCardStaticContent({
 
 export function ApprovalCardFooter({
   archived,
+  chrome = 'instrument',
   interactive,
   questionMode,
   result,
@@ -160,6 +161,7 @@ export function ApprovalCardFooter({
   requestChangesLabel,
 }: {
   archived: boolean;
+  chrome?: ApprovalCardProps['chrome'];
   interactive: boolean;
   questionMode: boolean;
   result?: ApprovalCardProps['result'];
@@ -180,6 +182,7 @@ export function ApprovalCardFooter({
         <ApprovalCardDecisionActions
           approveLabel={approveLabel}
           approveTone={approveTone}
+          chrome={chrome}
           consequence={consequence}
           controlsDisabled={controlsDisabled}
           rejectLabel={rejectLabel}

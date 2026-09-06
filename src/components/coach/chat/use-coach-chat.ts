@@ -13,6 +13,7 @@ import {
   collectPendingApprovals,
   mapCoachMessages,
 } from '@/components/coach/beui/coach-message-mapper';
+import { humanizeCoachTransportError } from '@/components/coach/chat/humanize-coach-transport-error';
 import { submitCoachChatMessage } from '@/components/coach/chat/coach-chat-submit';
 import { invalidateCompletedCoachTools } from '@/components/coach/chat/coach-chat-tool-invalidation';
 import { useOfflineGuard } from '@/hooks/use-offline-guard';
@@ -47,13 +48,6 @@ function coachInputPlaceholder(guardDisabled: boolean, hasPendingApprovals: bool
     return coachBeuiCopy.composerPlaceholderPendingApproval;
   }
   return coachBeuiCopy.composerPlaceholder;
-}
-
-function coachErrorMessage(error: Error | undefined): string {
-  if (error?.message && !error.message.toLowerCase().includes('api key')) {
-    return error.message;
-  }
-  return coachBeuiCopy.genericError;
 }
 
 function findLastAssistantRowKey(mappedRows: ReturnType<typeof mapCoachMessages>): string | null {
@@ -388,6 +382,8 @@ export function useCoachChat({
 
   const clearChatError = useCallback(() => {
     blockAutoSend.current = false;
+    setBudgetBlockedUntil(null);
+    setBudgetWarning(false);
     clearError();
   }, [clearError]);
 
@@ -418,7 +414,7 @@ export function useCoachChat({
     handleApproval,
     clearChatError,
     inputPlaceholder: coachInputPlaceholder(guardDisabled, pendingApprovals.length > 0),
-    errorMessage: coachErrorMessage(error),
+    errorMessage: humanizeCoachTransportError(error),
     writeDraft: (next: string) => writeCoachInputDraft(conversationId, next),
   };
 }

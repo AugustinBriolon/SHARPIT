@@ -4,6 +4,7 @@ import type { ApprovalCardProps } from './types';
 const DEFAULTS = {
   approveLabel: approvalCardCopy.approve,
   approveTone: 'default' as const,
+  chrome: 'instrument' as const,
   dismissAriaLabel: approvalCardCopy.dismiss,
   questions: [] as NonNullable<ApprovalCardProps['questions']>,
   rejectLabel: approvalCardCopy.reject,
