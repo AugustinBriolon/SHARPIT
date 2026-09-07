@@ -1,6 +1,6 @@
 'use client';
 
-import { Message, MessageBubble, MessageBubbleContent } from '@/components/agents/message';
+import { Message } from '@/components/agents/message';
 import { coachBeuiCopy } from '@/components/coach/beui/coach-beui-copy';
 import { CoachBeuiLoadingStatus } from '@/components/coach/beui/coach-beui-loading';
 import { showSubmittedPlaceholder } from '@/components/coach/beui/coach-message-mapper';
@@ -13,19 +13,9 @@ import type { useCoachChat } from './use-coach-chat';
 
 type CoachChatState = ReturnType<typeof useCoachChat>;
 
-export function CoachChatScrollerContent({
-  chat,
-  header,
-}: {
-  chat: CoachChatState;
-  header?: React.ReactNode;
-}) {
+export function CoachChatScrollerContent({ chat }: { chat: CoachChatState }) {
   return (
     <>
-      {header ? (
-        <div className="bg-background fixed top-0 right-0 left-0 z-10 px-3 py-2">{header}</div>
-      ) : null}
-
       {chat.messages.length === 0 ? (
         <CoachChatEmptyState
           disabled={chat.inputLocked}
@@ -41,11 +31,9 @@ export function CoachChatScrollerContent({
 
       {showSubmittedPlaceholder(chat.status, chat.messages) ? (
         <Message from="assistant">
-          <MessageBubble variant="ghost">
-            <MessageBubbleContent className={coachBeuiTheme.typingBubble}>
-              <CoachBeuiLoadingStatus />
-            </MessageBubbleContent>
-          </MessageBubble>
+          <div className={coachBeuiTheme.typingBubble}>
+            <CoachBeuiLoadingStatus />
+          </div>
         </Message>
       ) : null}
 
@@ -53,7 +41,7 @@ export function CoachChatScrollerContent({
 
       {chat.error ? (
         <div
-          className="border-destructive/25 bg-destructive/8 text-destructive space-y-2 rounded-lg border p-3 text-sm"
+          className="border-destructive/25 bg-destructive/8 text-destructive max-w-2xl space-y-2 rounded-lg border p-3 text-sm"
           role="alert"
         >
           <p className="font-medium text-pretty">{coachBeuiCopy.errorTitle}</p>

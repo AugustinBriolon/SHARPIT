@@ -141,7 +141,7 @@ describe('hub offline snapshot contracts', () => {
   it('CoachView shows snapshot in main panel when offline without live threads', () => {
     expect(coachSelectionSource).toContain('!isSet(conversationsQuery.data)');
     expect(coachSelectionSource).toContain('useOfflineSnapshot(!online && hasNoLiveContent)');
-    expect(coachLayoutSource).toContain('<CoachPageHeader />');
+    expect(coachLayoutSource).toContain('CoachImmersiveHeader');
   });
 
   it('TodayDashboard offline path is unchanged', () => {

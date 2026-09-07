@@ -1,4 +1,5 @@
-import { createElement } from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { createElement, type ReactNode } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 
@@ -10,51 +11,52 @@ import {
   CoachMobileSelectLoadingRow,
 } from '@/components/coach/coach-hub-skeleton';
 
+function renderWithQuery(node: ReactNode): string {
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+  return renderToStaticMarkup(createElement(QueryClientProvider, { client }, node));
+}
+
 describe('coach hub micro-skeleton', () => {
-  it('renders mobile fixed shell and desktop sticky hub', () => {
-    const html = renderToStaticMarkup(createElement(CoachHubSkeleton));
-    expect(html).toContain('lg:hidden');
-    expect(html).toContain('hidden space-y-6 lg:block');
-    expect(html).toContain('Fil &amp; conversations');
-    expect(html).toContain('Mémoire &amp; contexte');
-    expect(html).not.toContain('Comment se présente ma forme');
+  it('renders immersive fixed shell above the floating tab bar', () => {
+    const html = renderWithQuery(createElement(CoachHubSkeleton));
+    expect(html).toContain('fixed inset-x-0 top-0');
+    expect(html).toContain('--bottom-nav-offset');
+    expect(html).toContain('safe-area-top');
+    expect(html).not.toContain('Fil &amp; conversations');
+    expect(html).not.toContain('Mémoire &amp; contexte');
   });
 
-  it('mobile select loading only skeletons the label, keeps chevron and trash', () => {
+  it('deprecated mobile select loading is a no-op after immersive redesign', () => {
     const html = renderToStaticMarkup(createElement(CoachMobileSelectLoadingRow));
-    expect(html).toContain('aria-busy');
-    expect(html).toContain('Supprimer la conversation');
-    expect(html).not.toContain('size-8 shrink-0 rounded-md');
+    expect(html).toBe('');
   });
 
-  it('desktop list skeleton only value rows', () => {
+  it('deprecated desktop list skeleton is a no-op after immersive redesign', () => {
     const html = renderToStaticMarkup(createElement(CoachConversationListSkeleton));
-    expect(html).toContain('aria-busy');
-    expect(html).not.toContain('Chargement');
+    expect(html).toBe('');
   });
 
-  it('panel shell uses the rounded composer card with beUI prompt send', () => {
-    const html = renderToStaticMarkup(createElement(CoachChatEmptyChrome));
+  it('panel shell uses the rounded prompt bar with beUI composer chrome', () => {
+    const html = renderWithQuery(createElement(CoachChatEmptyChrome));
     expect(html).toContain('Demande conseil à ton coach');
-    expect(html).toContain('rounded-[1.75rem]');
-    expect(html).toContain('size-8 rounded-full');
-    expect(html).not.toContain('aria-busy');
+    expect(html).toContain('rounded-full');
+    expect(html).toContain('data-coach-promptbar');
     expect(html).not.toContain('Comment se présente ma forme');
   });
 
   it('thread skeleton keeps real composer chrome and coach bubble surface', () => {
-    const html = renderToStaticMarkup(createElement(CoachChatPanelSkeleton));
+    const html = renderWithQuery(createElement(CoachChatPanelSkeleton));
     expect(html).toContain('aria-busy');
     expect(html).toContain('Demande conseil à ton coach');
-    expect(html).toContain('rounded-[1.75rem]');
-    expect(html).toContain('bg-analysis-surface-alt');
-    expect(html).toContain('rounded-[18px_18px_18px_4px]');
+    expect(html).toContain('rounded-full');
+    expect(html).toContain('rounded-[18px_18px_4px_18px]');
+    expect(html).toContain('max-w-2xl');
   });
 
   it('thread skeleton can show a pending context tag while discuss resolves', () => {
-    const html = renderToStaticMarkup(
-      createElement(CoachChatPanelSkeleton, { contextPending: true }),
-    );
+    const html = renderWithQuery(createElement(CoachChatPanelSkeleton, { contextPending: true }));
     expect(html).toContain('animate-pulse');
     expect(html).toContain('rounded-full');
   });

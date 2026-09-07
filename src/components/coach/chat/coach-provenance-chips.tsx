@@ -1,15 +1,18 @@
 'use client';
 
 import { useMemo } from 'react';
+import { motion, useReducedMotion } from 'motion/react';
 import { buildCoachProvenanceChips } from '@/lib/coach/chat/coach-provenance';
 import { trainingDayIdForNow } from '@/lib/training/training-day';
 import { useTodayPresentationViewModel } from '@/hooks/use-presentation-view-model';
+import { cn } from '@/lib/utils';
 
 /**
- * Hairline provenance pills under the latest coach reply — which signals the
- * advice is grounded on (Bande ink §6). Silent when signals are unavailable.
+ * Streaming Text « sources » row — hairline provenance under the latest reply.
+ * Silent when signals are unavailable (Bande ink §6).
  */
 export function CoachProvenanceChips() {
+  const reduce = useReducedMotion() ?? false;
   const trainingDayId = trainingDayIdForNow();
   const { data } = useTodayPresentationViewModel(trainingDayId);
   const metricsRow = data?.hero.metricsRow;
@@ -28,15 +31,29 @@ export function CoachProvenanceChips() {
   }
 
   return (
-    <div className="flex flex-wrap gap-1.5 pt-1">
-      {chips.map((chip) => (
-        <span
+    <div className="flex flex-wrap items-center gap-1.5 pt-1.5">
+      <span className="text-muted-foreground/80 text-[11px] font-medium tracking-wide">
+        Sources
+      </span>
+      {chips.map((chip, index) => (
+        <motion.span
           key={chip.key}
-          className="border-analysis-border text-muted-foreground inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs"
+          animate={{ opacity: 1, transform: 'translateY(0px)' }}
+          initial={reduce ? false : { opacity: 0, transform: 'translateY(4px)' }}
+          className={cn(
+            'bg-muted/60 text-muted-foreground ring-border/50',
+            'inline-flex max-w-full items-center gap-1.5 rounded-full px-2.5 py-1',
+            'text-[11px] font-medium ring-1 ring-inset',
+          )}
+          transition={{
+            duration: reduce ? 0 : 0.18,
+            delay: reduce ? 0 : Math.min(index * 0.04, 0.16),
+            ease: [0.23, 1, 0.32, 1],
+          }}
         >
-          <span className={`size-1.5 shrink-0 rounded-full ${chip.dotClass}`} aria-hidden />
-          {chip.label}
-        </span>
+          <span className={cn('size-1.5 shrink-0 rounded-full', chip.dotClass)} aria-hidden />
+          <span className="truncate">{chip.label}</span>
+        </motion.span>
       ))}
     </div>
   );

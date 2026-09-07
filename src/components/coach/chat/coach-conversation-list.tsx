@@ -1,15 +1,14 @@
 'use client';
 
 import { MessageSquarePlus } from 'lucide-react';
-import { useState } from 'react';
 import { CoachConversationListBody } from '@/components/coach/chat/coach-conversation-list-body';
 import {
   conversationListIsDraft,
   conversationListSelected,
   conversationListSelectedId,
 } from '@/components/coach/chat/coach-conversation-list-helpers';
-import { Button } from '@/components/ui/button';
 import type { ClientConversationSummary } from '@/lib/query/fetchers';
+import { cn } from '@/lib/utils';
 
 export function CoachConversationList({
   activeId,
@@ -17,6 +16,7 @@ export function CoachConversationList({
   conversations,
   loading,
   newDisabled = false,
+  variant = 'panel',
   onDelete,
   onNewConversation,
   onRename,
@@ -28,6 +28,8 @@ export function CoachConversationList({
   loading: boolean;
   onNewConversation?: () => void;
   newDisabled?: boolean;
+  /** `sheet` = history drawer (no nested analysis panel). */
+  variant?: 'panel' | 'sheet';
   onSelect: (id: string) => void;
   onDelete: (id: string) => void;
   onRename?: (id: string, title: string) => void;
@@ -35,24 +37,31 @@ export function CoachConversationList({
   const isDraft = conversationListIsDraft(activeDraft, loading, activeId, conversations);
   const selectedId = conversationListSelectedId(isDraft, activeId, conversations);
   const selected = conversationListSelected(isDraft, conversations, selectedId);
-  const [mobileRenaming, setMobileRenaming] = useState(false);
+  const isSheet = variant === 'sheet';
 
   return (
     <aside
       aria-busy={loading || undefined}
-      className="analysis-panel rounded-analysis-lg flex w-full shrink-0 flex-col gap-2 lg:h-full lg:w-65 lg:border-transparent lg:bg-transparent"
+      className={cn(
+        'flex w-full shrink-0 flex-col gap-2',
+        !isSheet && 'analysis-panel rounded-analysis-lg',
+      )}
     >
       {onNewConversation ? (
-        <Button
-          className="hidden lg:inline-flex"
+        <button
           disabled={newDisabled}
           type="button"
-          variant="highlight"
+          className={cn(
+            'bg-foreground text-background inline-flex w-full items-center justify-center gap-2',
+            'rounded-full px-3 py-2.5 text-[13px] font-medium',
+            'transition-[opacity,transform] duration-150 ease-out',
+            'enabled:active:scale-[0.98] disabled:opacity-40',
+          )}
           onClick={onNewConversation}
         >
-          <MessageSquarePlus className="size-4" aria-hidden />
+          <MessageSquarePlus className="size-4" strokeWidth={1.8} aria-hidden />
           Nouvelle conversation
-        </Button>
+        </button>
       ) : null}
 
       <CoachConversationListBody
@@ -60,14 +69,15 @@ export function CoachConversationList({
         conversations={conversations}
         isDraft={isDraft}
         loading={loading}
-        mobileRenaming={mobileRenaming}
+        mobileRenaming={false}
         selected={selected}
         selectedId={selectedId}
-        onCancelRename={() => setMobileRenaming(false)}
+        variant={variant}
+        onCancelRename={() => undefined}
         onDelete={onDelete}
         onRename={onRename}
         onSelect={onSelect}
-        onStartRename={() => setMobileRenaming(true)}
+        onStartRename={() => undefined}
       />
     </aside>
   );

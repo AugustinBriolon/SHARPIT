@@ -7,7 +7,7 @@ import { CoachConversationList } from '@/components/coach/chat/coach-conversatio
 const noop = () => undefined;
 
 describe('CoachConversationList', () => {
-  it('shows draft label on mobile while the desktop list skeletons', () => {
+  it('shows new-conversation when handler is provided', () => {
     const html = renderToStaticMarkup(
       createElement(CoachConversationList, {
         activeDraft: true,
@@ -15,33 +15,17 @@ describe('CoachConversationList', () => {
         conversations: [],
         loading: true,
         onDelete: noop,
+        onNewConversation: noop,
         onSelect: noop,
       }),
     );
 
     expect(html).toContain('Nouvelle conversation');
-    expect(html).toContain('hidden space-y-1 p-2 lg:block');
-    expect(html).not.toContain('flex items-center gap-1.5 p-2 lg:hidden" aria-busy');
-  });
-
-  it('shows desktop list skeleton while loading even on a draft landing', () => {
-    const html = renderToStaticMarkup(
-      createElement(CoachConversationList, {
-        activeDraft: true,
-        activeId: 'draft-1',
-        conversations: [],
-        loading: true,
-        onDelete: noop,
-        onSelect: noop,
-      }),
-    );
-
-    expect(html).toContain('Nouvelle conversation');
-    expect(html).toContain('hidden space-y-1 p-2 lg:block');
+    expect(html).toContain('aria-busy');
     expect(html).toContain('animate-pulse');
   });
 
-  it('skeletons the mobile picker only when restoring a saved thread', () => {
+  it('omits new-conversation when no handler is provided', () => {
     const html = renderToStaticMarkup(
       createElement(CoachConversationList, {
         activeId: 'saved-1',
@@ -56,7 +40,32 @@ describe('CoachConversationList', () => {
     expect(html).not.toContain('Nouvelle conversation');
   });
 
-  it('keeps draft label when other conversations exist on mobile', () => {
+  it('sheet variant drops the nested analysis panel', () => {
+    const html = renderToStaticMarkup(
+      createElement(CoachConversationList, {
+        activeId: 'saved-1',
+        conversations: [
+          {
+            id: 'saved-1',
+            title: 'Footing du mardi',
+            createdAt: new Date('2026-07-01'),
+            updatedAt: new Date('2026-07-02'),
+          },
+        ],
+        loading: false,
+        variant: 'sheet',
+        onDelete: noop,
+        onNewConversation: noop,
+        onSelect: noop,
+      }),
+    );
+
+    expect(html).toContain('Footing du mardi');
+    expect(html).toContain('Nouvelle conversation');
+    expect(html).not.toContain('analysis-panel');
+  });
+
+  it('lists conversations when idle', () => {
     const html = renderToStaticMarkup(
       createElement(CoachConversationList, {
         activeDraft: true,
@@ -71,11 +80,12 @@ describe('CoachConversationList', () => {
         ],
         loading: false,
         onDelete: noop,
+        onNewConversation: noop,
         onSelect: noop,
       }),
     );
 
     expect(html).toContain('Nouvelle conversation');
-    expect(html).toContain('value="__draft__"');
+    expect(html).toContain('Footing du mardi');
   });
 });

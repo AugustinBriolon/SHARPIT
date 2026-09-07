@@ -137,7 +137,7 @@ export function ApprovalCardStaticContent({
         </p>
       ) : null}
       {!questionMode && children ? (
-        <div className={cn('mt-3', archived && 'opacity-90')}>{children}</div>
+        <div className={cn('mt-2', archived && 'opacity-90')}>{children}</div>
       ) : null}
     </>
   );

@@ -15,20 +15,18 @@ export function CoachChatPanelShell({
 }) {
   return (
     <div className={coachBeuiTheme.panel}>
-      <section
-        className={cn(
-          'h-full [scrollbar-gutter:stable] overflow-y-auto overscroll-contain',
-          coachBeuiTheme.scrollerViewport,
-        )}
-        aria-hidden
-      >
-        <div className={coachBeuiTheme.scrollerContent}>
-          {header ? (
-            <div className="bg-background fixed top-0 right-0 left-0 z-10 px-3 py-2">{header}</div>
-          ) : null}
-        </div>
-      </section>
-      <CoachComposerChrome disabled={composerDisabled} />
+      <div className={cn(coachBeuiTheme.column, 'flex h-full min-h-0 flex-col')} aria-hidden>
+        {header ? <div className="shrink-0 px-3 py-1.5 sm:px-4 sm:py-2">{header}</div> : null}
+        <section
+          className={cn(
+            '[scrollbar-gutter:stable] overflow-y-auto overscroll-contain',
+            coachBeuiTheme.scrollerViewport,
+          )}
+        >
+          <div className={coachBeuiTheme.scrollerContent} />
+        </section>
+        <CoachComposerChrome disabled={composerDisabled} />
+      </div>
     </div>
   );
 }

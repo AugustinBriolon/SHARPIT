@@ -4,6 +4,7 @@ import { memo, useMemo } from 'react';
 import type { Components } from 'react-markdown';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { coachBeuiTheme } from '@/components/coach/beui/coach-beui-theme';
 import {
   closeOpenMarkdown,
   remarkSoftBreaks,
@@ -98,21 +99,13 @@ const markdownComponents: Components = {
     </code>
   ),
   table: ({ children }) => (
-    <div className="border-analysis-border rounded-analysis min-w-0 overflow-x-auto border">
-      <table className="w-full min-w-[18rem] border-collapse text-xs">{children}</table>
+    <div className={coachBeuiTheme.instrumentBlock}>
+      <table className={coachBeuiTheme.instrumentTable}>{children}</table>
     </div>
   ),
-  thead: ({ children }) => <thead className="bg-analysis-surface">{children}</thead>,
-  th: ({ children }) => (
-    <th className="border-analysis-border/70 text-muted-foreground border-b px-2.5 py-2 text-left text-[0.6875rem] font-semibold tracking-[0.08em] break-words uppercase">
-      {children}
-    </th>
-  ),
-  td: ({ children }) => (
-    <td className="border-analysis-border/50 border-t px-2.5 py-2 align-top break-words tabular-nums">
-      {children}
-    </td>
-  ),
+  thead: ({ children }) => <thead>{children}</thead>,
+  th: ({ children }) => <th className={coachBeuiTheme.instrumentTh}>{children}</th>,
+  td: ({ children }) => <td className={coachBeuiTheme.instrumentTd}>{children}</td>,
 };
 
 const RHYTHM = {

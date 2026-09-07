@@ -1,70 +1,62 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { PromptInput } from '@/components/agents/prompt-input';
+import { CoachPromptBar } from '@/components/coach/chat/coach-prompt-bar';
 import { coachBeuiCopy } from '@/components/coach/beui/coach-beui-copy';
-import { coachBeuiTheme } from '@/components/coach/beui/coach-beui-theme';
 import { cn } from '@/lib/utils';
 
 /**
  * Shared footer shell for the coach composer — live chat and skeletons must
- * share this so loading never flashes the old side-by-side layout.
+ * share this so loading never flashes a different layout.
  */
 export function CoachComposerShell({
-  contextSlot,
   children,
   className,
 }: {
-  contextSlot?: ReactNode;
   children: ReactNode;
   className?: string;
 }) {
   return (
     <div
       className={cn(
-        'bg-background/95 supports-backdrop-filter:bg-background/80 shrink-0 px-3 pt-2',
+        'bg-background/95 supports-backdrop-filter:bg-background/80 shrink-0 px-3 pt-1.5 sm:px-4 sm:pt-2',
         // The hub already sits above the floating tab bar via `--bottom-nav-offset`,
         // which bakes in `env(safe-area-inset-bottom)`. Adding the inset again
         // here doubled the gap above the nav on notched phones.
-        'pb-3 backdrop-blur-md',
+        'pb-2.5 backdrop-blur-md sm:pb-3',
         className,
       )}
     >
-      {contextSlot}
-      <div
-        className={cn(
-          'chip-surface-lg border-border/70 rounded-[1.75rem] border p-2.5 shadow-sm',
-          'focus-within:border-ring/50 focus-within:ring-ring/25 transition-[box-shadow,border-color] focus-within:ring-2',
-        )}
-      >
-        {children}
-      </div>
+      {children}
     </div>
   );
 }
 
-/** Disabled composer matching live beUI PromptInput chrome — skeletons only. */
+/** Disabled composer matching live Prompt Bar chrome — skeletons only. */
 export function CoachComposerChrome({
   disabled = true,
   placeholder = coachBeuiCopy.composerPlaceholder,
   value = '',
-  contextSlot,
+  attachedContext = null,
 }: {
   disabled?: boolean;
   placeholder?: string;
   value?: string;
+  attachedContext?: import('@/lib/coach/chat/coach-discuss-context').CoachDiscussContext | null;
+  /** @deprecated chips live inside CoachPromptBar */
   contextSlot?: ReactNode;
 }) {
   return (
-    <CoachComposerShell contextSlot={contextSlot}>
-      <PromptInput
-        aria-label={coachBeuiCopy.composerAriaLabel}
-        className={coachBeuiTheme.promptInput}
+    <CoachComposerShell>
+      <CoachPromptBar
+        ariaLabel={coachBeuiCopy.composerAriaLabel}
+        attachedContext={attachedContext}
         disabled={disabled}
-        minRows={1}
         placeholder={placeholder}
-        readOnly={disabled}
         value={value}
+        onDetachContext={attachedContext ? () => undefined : undefined}
+        onSubmit={() => undefined}
+        onValueChange={() => undefined}
       />
     </CoachComposerShell>
   );

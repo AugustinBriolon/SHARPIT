@@ -73,5 +73,5 @@ export function CoachToolApprovalCard({
     resolvedStatus,
   });
 
-  return <ApprovalCard {...cardProps} />;
+  return <ApprovalCard {...cardProps} className="p-2.5" />;
 }

@@ -15,6 +15,7 @@ type CoachChatPaneProps = {
   header?: ReactNode;
   onAutoReplyStarted: () => void;
   onDetachContext: () => void;
+  onAttachContext: (context: CoachDiscussContext) => void;
   onConversationCreated: (id: string) => void;
 };
 
@@ -27,6 +28,7 @@ function CoachChatPane({
   header,
   onAutoReplyStarted,
   onDetachContext,
+  onAttachContext,
   onConversationCreated,
 }: CoachChatPaneProps) {
   return (
@@ -38,6 +40,7 @@ function CoachChatPane({
       header={header}
       initialMessages={initialMessages}
       isEphemeral={isEphemeral}
+      onAttachContext={onAttachContext}
       onAutoReplyStarted={onAutoReplyStarted}
       onConversationCreated={onConversationCreated}
       onDetachContext={onDetachContext}
@@ -59,6 +62,7 @@ type RenderCoachChatOptions = {
   header?: ReactNode;
   onAutoReplyStarted: () => void;
   onDetachContext: () => void;
+  onAttachContext: (context: CoachDiscussContext) => void;
   onConversationCreated: (id: string) => void;
 };
 
@@ -89,6 +93,7 @@ function renderActiveCoachChat(options: RenderCoachChatOptions & { selectedId: s
     header,
     onAutoReplyStarted,
     onDetachContext,
+    onAttachContext,
     onConversationCreated,
   } = options;
 
@@ -101,6 +106,7 @@ function renderActiveCoachChat(options: RenderCoachChatOptions & { selectedId: s
         latchedContext={latchedContext}
         selectedId={selectedId}
         isEphemeral
+        onAttachContext={onAttachContext}
         onAutoReplyStarted={onAutoReplyStarted}
         onConversationCreated={onConversationCreated}
         onDetachContext={onDetachContext}
@@ -120,6 +126,7 @@ function renderActiveCoachChat(options: RenderCoachChatOptions & { selectedId: s
       isEphemeral={false}
       latchedContext={latchedContext}
       selectedId={selectedId}
+      onAttachContext={onAttachContext}
       onAutoReplyStarted={onAutoReplyStarted}
       onConversationCreated={onConversationCreated}
       onDetachContext={onDetachContext}

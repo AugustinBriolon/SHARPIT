@@ -90,7 +90,7 @@ export function MobileSelectLoadingRow() {
 
 export function DesktopListLoadingRows({ rows = 4 }: { rows?: number }) {
   return (
-    <ul className="hidden space-y-1 p-2 lg:block" aria-busy>
+    <ul className="space-y-1 p-2" aria-busy>
       {Array.from({ length: rows }, (_, i) => (
         <li key={i} className="flex items-center">
           <div className="rounded-analysis min-w-0 flex-1 border border-transparent px-3 py-2.5">
@@ -151,37 +151,92 @@ export function ConversationOverflowMenu({
 export function DesktopConversationList({
   activeId,
   conversations,
+  variant = 'panel',
   onDelete,
   onRename,
   onSelect,
 }: {
   activeId: string | null;
   conversations: ClientConversationSummary[];
+  variant?: 'panel' | 'sheet';
   onDelete: (id: string) => void;
   onRename?: (id: string, title: string) => void;
   onSelect: (id: string) => void;
 }) {
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
+  const rowRefs = useRef<(HTMLLIElement | null)[]>([]);
+  const [rowBox, setRowBox] = useState<{ top: number; height: number } | null>(null);
+  const isSheet = variant === 'sheet';
+  const highlightId = hoveredId ?? activeId;
+
+  useEffect(() => {
+    if (!highlightId) {
+      setRowBox(null);
+      return;
+    }
+    const index = conversations.findIndex((c) => c.id === highlightId);
+    const target = rowRefs.current[index];
+    if (target) {
+      setRowBox({ top: target.offsetTop, height: target.offsetHeight });
+    }
+  }, [highlightId, conversations, editingId]);
 
   return (
-    <div className="hidden max-h-[60vh] flex-1 overflow-y-auto overscroll-x-contain p-2 lg:block lg:max-h-none">
-      <ul aria-label="Conversations" className="space-y-1">
-        {conversations.map((c) => {
+    <div
+      className={cn(
+        'relative max-h-[min(60vh,28rem)] flex-1 overflow-y-auto overscroll-x-contain',
+        isSheet ? 'px-0.5 py-1' : 'p-2',
+      )}
+      onMouseLeave={() => setHoveredId(null)}
+    >
+      {/* Beautiful UI Sidebar Nav — single gliding highlight */}
+      {isSheet && rowBox ? (
+        <span
+          className="bg-muted pointer-events-none absolute inset-x-0.5 rounded-[10px]"
+          style={{
+            top: rowBox.top,
+            height: rowBox.height,
+            opacity: highlightId ? 1 : 0,
+            transition:
+              'top 220ms cubic-bezier(0.23,1,0.32,1), height 220ms cubic-bezier(0.23,1,0.32,1), opacity 150ms ease',
+          }}
+          aria-hidden
+        />
+      ) : null}
+
+      <ul aria-label="Conversations" className="relative space-y-0.5">
+        {conversations.map((c, index) => {
           const isActive = c.id === activeId;
           const isEditing = editingId === c.id;
 
           return (
-            <li key={c.id} className="cv-auto group relative flex items-center">
+            <li
+              key={c.id}
+              ref={(el) => {
+                rowRefs.current[index] = el;
+              }}
+              className="cv-auto group relative flex items-center"
+            >
               <button
                 aria-current={isActive ? 'page' : undefined}
                 type="button"
                 className={cn(
-                  'rounded-analysis pressable min-w-0 flex-1 border px-3 py-2.5 text-left text-sm',
-                  isActive
-                    ? 'chip-surface'
-                    : 'text-foreground/80 hover:bg-highlight/40 hover:text-foreground border-transparent',
+                  'relative z-10 min-w-0 flex-1 px-3 py-2.5 text-left text-sm outline-none',
+                  isSheet
+                    ? cn(
+                        'rounded-[10px] border border-transparent',
+                        isActive ? 'text-foreground font-medium' : 'text-foreground/85',
+                      )
+                    : cn(
+                        'rounded-analysis pressable border',
+                        isActive
+                          ? 'chip-surface'
+                          : 'text-foreground/80 hover:bg-highlight/40 hover:text-foreground border-transparent',
+                      ),
                 )}
                 onClick={() => onSelect(c.id)}
+                onMouseEnter={() => setHoveredId(c.id)}
                 onDoubleClick={() => {
                   if (onRename) {
                     setEditingId(c.id);
@@ -205,7 +260,7 @@ export function DesktopConversationList({
                 </span>
               </button>
               {!isEditing ? (
-                <div className="absolute top-1/2 right-2 -translate-y-1/2 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100">
+                <div className="absolute top-1/2 right-2 z-20 -translate-y-1/2 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100">
                   <ConversationOverflowMenu
                     conversationId={c.id}
                     label={conversationLabel(c)}

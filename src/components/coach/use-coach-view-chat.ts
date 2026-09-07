@@ -18,6 +18,7 @@ type UseCoachViewChatOptions = {
   activeConversationData: { messages: unknown[] } | null | undefined;
   onAutoReplyStarted: () => void;
   onDetachContext: () => void;
+  onAttachContext: (context: CoachDiscussContext) => void;
   onConversationCreated: (id: string) => void;
 };
 

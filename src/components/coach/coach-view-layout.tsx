@@ -1,11 +1,16 @@
 'use client';
 
-import { MessageSquarePlus } from 'lucide-react';
-import type { ReactNode } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import { CoachChatPanelShell } from '@/components/coach/chat/coach-chat-panel-shell';
-import { CoachConversationList } from '@/components/coach/chat/coach-conversation-list';
-import { CoachPageHeader } from '@/components/coach/coach-hub-skeleton';
-import { Button } from '@/components/ui/button';
+import {
+  CoachHistoryDrawer,
+  CoachImmersiveHeader,
+} from '@/components/coach/chat/coach-immersive-chrome';
+import {
+  conversationListIsDraft,
+  conversationListSelected,
+  conversationListSelectedId,
+} from '@/components/coach/chat/coach-conversation-list-helpers';
 import type { ClientConversationSummary } from '@/lib/query/fetchers';
 
 type CoachViewLayoutProps = {
@@ -25,152 +30,49 @@ type CoachViewLayoutProps = {
   dialog: ReactNode;
 };
 
-function CoachConversationListPanel({
-  conversations,
-  conversationsLoading,
-  selectedId,
-  isEphemeral,
-  newDisabled,
-  onDelete,
-  onNewConversation,
-  onRename,
-  onSelect,
-}: Pick<
+type ThreadTitleInput = Pick<
   CoachViewLayoutProps,
-  | 'conversations'
-  | 'conversationsLoading'
-  | 'selectedId'
-  | 'isEphemeral'
-  | 'newDisabled'
-  | 'onDelete'
-  | 'onNewConversation'
-  | 'onRename'
-  | 'onSelect'
->) {
+  'conversations' | 'conversationsLoading' | 'selectedId' | 'isEphemeral'
+>;
+
+function resolveThreadTitle(input: ThreadTitleInput): string {
+  const isDraft = conversationListIsDraft(
+    input.isEphemeral,
+    input.conversationsLoading,
+    input.selectedId,
+    input.conversations,
+  );
+  if (isDraft) {
+    return 'Nouvelle conversation';
+  }
+  const id = conversationListSelectedId(isDraft, input.selectedId, input.conversations);
   return (
-    <CoachConversationList
-      activeDraft={isEphemeral}
-      activeId={selectedId}
-      conversations={conversations}
-      loading={conversationsLoading}
-      newDisabled={newDisabled}
-      onDelete={onDelete}
-      onNewConversation={onNewConversation}
-      onRename={onRename}
-      onSelect={onSelect}
-    />
+    conversationListSelected(isDraft, input.conversations, id)?.title?.trim() || 'Conversation'
   );
 }
 
-function CoachMobileHeader({
-  newDisabled,
-  onNewConversation,
-  conversationList,
-}: {
-  newDisabled: boolean;
-  onNewConversation: () => void;
-  conversationList: ReactNode;
-}) {
-  return (
-    <div className="flex flex-col gap-2 py-2">
-      <div className="flex items-center justify-between gap-3">
-        <h1 className="text-page-title truncate">Fil & conversations</h1>
-        <Button
-          aria-label="Nouvelle conversation"
-          className="size-11"
-          disabled={newDisabled}
-          size="icon"
-          variant="highlight"
-          onClick={onNewConversation}
-        >
-          <MessageSquarePlus className="size-4.5" aria-hidden />
-        </Button>
-      </div>
-      {conversationList}
-    </div>
-  );
-}
-
-function CoachMobileLayout({
+function CoachImmersiveFrame({
   mountLiveChat,
-  isMobile,
   renderChat,
-  mobileHeader,
-}: Pick<CoachViewLayoutProps, 'mountLiveChat' | 'isMobile' | 'renderChat'> & {
-  mobileHeader: ReactNode;
+  header,
+}: {
+  mountLiveChat: boolean;
+  renderChat: (header?: ReactNode) => ReactNode;
+  header: ReactNode;
 }) {
   return (
     <div
-      className="bg-background safe-area-top fixed inset-x-0 top-0 z-30 flex flex-col lg:hidden"
+      className="bg-background safe-area-top fixed inset-x-0 top-0 z-30 flex flex-col"
       style={{ bottom: 'var(--bottom-nav-offset)' }}
     >
-      {mountLiveChat && isMobile ? (
-        renderChat(mobileHeader)
-      ) : (
-        <CoachChatPanelShell header={mobileHeader} />
-      )}
+      {mountLiveChat ? renderChat(header) : <CoachChatPanelShell header={header} />}
     </div>
   );
 }
 
-function CoachDesktopLayout({
-  mountLiveChat,
-  isMobile,
-  renderChat,
-  conversationList,
-}: Pick<CoachViewLayoutProps, 'mountLiveChat' | 'isMobile' | 'renderChat'> & {
-  conversationList: ReactNode;
-}) {
-  return (
-    <div className="hidden space-y-6 lg:block">
-      <CoachPageHeader />
-      <div className="flex h-[calc(100dvh-190px-var(--bottom-nav-offset))] flex-col gap-3 lg:flex-row lg:gap-4">
-        {conversationList}
-        {mountLiveChat && !isMobile ? renderChat() : <CoachChatPanelShell />}
-      </div>
-    </div>
-  );
-}
-
-function CoachViewLayoutFrame({
-  mountLiveChat,
-  isMobile,
-  renderChat,
-  conversationList,
-  newDisabled,
-  onNewConversation,
-  dialog,
-}: Pick<
-  CoachViewLayoutProps,
-  'mountLiveChat' | 'isMobile' | 'renderChat' | 'newDisabled' | 'onNewConversation' | 'dialog'
-> & {
-  conversationList: ReactNode;
-}) {
-  const mobileHeader = (
-    <CoachMobileHeader
-      conversationList={conversationList}
-      newDisabled={newDisabled}
-      onNewConversation={onNewConversation}
-    />
-  );
-
-  return (
-    <>
-      <CoachMobileLayout
-        isMobile={isMobile}
-        mobileHeader={mobileHeader}
-        mountLiveChat={mountLiveChat}
-        renderChat={renderChat}
-      />
-      <CoachDesktopLayout
-        conversationList={conversationList}
-        isMobile={isMobile}
-        mountLiveChat={mountLiveChat}
-        renderChat={renderChat}
-      />
-      {dialog}
-    </>
-  );
+function useCoachHistoryOpen() {
+  const [historyOpen, setHistoryOpen] = useState(false);
+  return { historyOpen, setHistoryOpen };
 }
 
 export function CoachViewLayout({
@@ -180,7 +82,7 @@ export function CoachViewLayout({
   isEphemeral,
   newDisabled,
   viewportReady: _viewportReady,
-  isMobile,
+  isMobile: _isMobile,
   mountLiveChat,
   renderChat,
   onDelete,
@@ -189,31 +91,37 @@ export function CoachViewLayout({
   onSelect,
   dialog,
 }: CoachViewLayoutProps) {
-  const conversationList = (
-    <CoachConversationListPanel
-      conversations={conversations}
-      conversationsLoading={conversationsLoading}
-      isEphemeral={isEphemeral}
+  const { historyOpen, setHistoryOpen } = useCoachHistoryOpen();
+  const title = useMemo(
+    () => resolveThreadTitle({ conversations, conversationsLoading, selectedId, isEphemeral }),
+    [conversations, conversationsLoading, selectedId, isEphemeral],
+  );
+  const header = (
+    <CoachImmersiveHeader
       newDisabled={newDisabled}
-      selectedId={selectedId}
-      onDelete={onDelete}
+      title={title}
       onNewConversation={onNewConversation}
-      onRename={onRename}
-      onSelect={onSelect}
+      onOpenHistory={() => setHistoryOpen(true)}
     />
   );
 
   return (
-    <div>
-      <CoachViewLayoutFrame
-        conversationList={conversationList}
-        dialog={dialog}
-        isMobile={isMobile}
-        mountLiveChat={mountLiveChat}
+    <>
+      <CoachImmersiveFrame header={header} mountLiveChat={mountLiveChat} renderChat={renderChat} />
+      <CoachHistoryDrawer
+        conversations={conversations}
+        conversationsLoading={conversationsLoading}
+        isEphemeral={isEphemeral}
         newDisabled={newDisabled}
-        renderChat={renderChat}
+        open={historyOpen}
+        selectedId={selectedId}
+        onDelete={onDelete}
         onNewConversation={onNewConversation}
+        onOpenChange={setHistoryOpen}
+        onRename={onRename}
+        onSelect={onSelect}
       />
-    </div>
+      {dialog}
+    </>
   );
 }

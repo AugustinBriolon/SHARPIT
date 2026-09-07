@@ -13,14 +13,14 @@ export function ApprovalSessionPreview({ preview }: { preview: ApprovalPreview }
   }
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-1.5">
       {preview.intentLine ? (
         <p className="text-data text-foreground/85 text-xs font-medium tabular-nums">
           {preview.intentLine}
         </p>
       ) : null}
       {preview.derouleLines.length > 0 ? (
-        <ol className="text-muted-foreground space-y-1 text-xs leading-snug">
+        <ol className="text-muted-foreground space-y-0.5 text-xs leading-snug">
           {preview.derouleLines.map((line, index) => (
             <li key={`${index}-${line}`} className="text-pretty">
               {line}

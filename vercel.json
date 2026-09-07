@@ -3,6 +3,12 @@
   "installCommand": "corepack enable && HUSKY=0 yarn install --immutable",
   "buildCommand": "yarn db:migrate:deploy && yarn build",
   "ignoreCommand": "node scripts/ci/vercel-ignore-build.mjs",
+  "git": {
+    "deploymentEnabled": {
+      "*": false,
+      "main": true
+    }
+  },
   "github": {
     "autoJobCancelation": true
   },

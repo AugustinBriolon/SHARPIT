@@ -92,6 +92,12 @@ export function useCoachDiscussBootstrap(
     setContextLatchEpoch((n) => n + 1);
   }
 
+  function attachLatchedContext(context: CoachDiscussContext) {
+    latchedContextRef.current = context;
+    latchedDiscussIntentKey.current = `manual:${context.kind}:${context.sourceHref}:${context.label}`;
+    setContextLatchEpoch((n) => n + 1);
+  }
+
   useEffect(() => {
     if (!discussIntentKey || !params.hasDiscussIntent) {
       return;
@@ -142,5 +148,6 @@ export function useCoachDiscussBootstrap(
   return {
     latchedContext: latchedContextRef.current,
     detachLatchedContext,
+    attachLatchedContext,
   };
 }

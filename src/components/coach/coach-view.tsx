@@ -42,7 +42,7 @@ export function CoachView() {
     [selection.setActiveId, selection.setEphemeralIds],
   );
 
-  const { latchedContext, detachLatchedContext } = useCoachDiscussBootstrap(
+  const { latchedContext, detachLatchedContext, attachLatchedContext } = useCoachDiscussBootstrap(
     discussParams,
     handleDiscussReady,
   );
@@ -93,10 +93,11 @@ export function CoachView() {
       : undefined,
     onAutoReplyStarted: () => selection.setAutoReplyId(null),
     onDetachContext: detachLatchedContext,
+    onAttachContext: attachLatchedContext,
     onConversationCreated: selection.handleConversationCreated,
   });
 
-  const mountLiveChat = viewportReady || (!isMobile && selection.isEphemeral);
+  const mountLiveChat = viewportReady;
 
   return (
     <CoachViewLayout

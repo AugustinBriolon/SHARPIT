@@ -10,7 +10,9 @@ import { toolPartsToAgentActivity } from '@/components/coach/beui/coach-tool-act
 import { CoachMessage } from '@/components/coach/chat/coach-message';
 import { CoachProvenanceChips } from '@/components/coach/chat/coach-provenance-chips';
 import { CoachReasoning } from '@/components/coach/chat/coach-reasoning';
+import { ToolActivityList } from '@/components/coach/chat/tool-activity-list';
 import type { CoachMappedRow } from '@/components/coach/beui/coach-message-mapper';
+import type { ToolPartLite } from '@/lib/coach/chat/coach-tool-parts';
 import { cn } from '@/lib/utils';
 
 function AssistantAnswerBody({ live, text }: { live: boolean; text: string }) {
@@ -45,6 +47,45 @@ function CoachUserMessageRow({ row }: { row: Extract<CoachMappedRow, { kind: 'us
   );
 }
 
+/**
+ * Beautiful UI Tool Chips / Task Rows:
+ * - working → live task rows (AgentActivity expanded)
+ * - complete → compact chip row (no accordion summary)
+ */
+function CoachAssistantTools({
+  toolParts,
+  streamIdle,
+}: {
+  toolParts: ToolPartLite[];
+  streamIdle: boolean;
+}) {
+  if (toolParts.length === 0) {
+    return null;
+  }
+
+  const activity = toolPartsToAgentActivity(toolParts, streamIdle);
+
+  if (activity.status === 'working') {
+    return (
+      <AgentActivity
+        activeLabel={coachBeuiCopy.agentToolsWorking}
+        className={coachBeuiTheme.agentActivity}
+        items={activity.items}
+        renderWorkingStatus={({ label }) => <CoachBeuiLoadingStatus label={String(label)} />}
+        status="working"
+        summary={coachBeuiCopy.agentToolsComplete(activity.items.length)}
+        defaultOpen
+      />
+    );
+  }
+
+  return (
+    <div className={cn(coachBeuiTheme.agentActivity, 'pt-0.5')}>
+      <ToolActivityList parts={toolParts} streamIdle={streamIdle} />
+    </div>
+  );
+}
+
 function CoachAssistantMessageRow({
   row,
   streamIdle,
@@ -54,37 +95,26 @@ function CoachAssistantMessageRow({
   streamIdle: boolean;
   lastAssistantRowKey: string | null;
 }) {
-  const activity = toolPartsToAgentActivity(row.toolParts, streamIdle);
-
   return (
     <Message
       key={row.key}
+      animateIn={row.live}
       className={cn(!row.live && row.key !== lastAssistantRowKey && 'cv-auto')}
       from="assistant"
+      transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
     >
-      <MessageBubble variant="ghost">
-        <MessageBubbleContent className={coachBeuiTheme.assistantBubble}>
-          <CoachReasoning
-            hasAnswerText={row.text.length > 0}
-            streaming={row.live}
-            text={row.reasoning}
-          />
+      <div className={coachBeuiTheme.assistantColumn}>
+        <CoachReasoning
+          hasAnswerText={row.text.length > 0}
+          streaming={row.live}
+          text={row.reasoning}
+        />
+        <div className={coachBeuiTheme.assistantProse}>
           <AssistantAnswerBody live={row.live} text={row.text} />
-          {activity.items.length > 0 ? (
-            <AgentActivity
-              activeLabel={coachBeuiCopy.agentToolsWorking}
-              className={coachBeuiTheme.agentActivity}
-              defaultOpen={false}
-              items={activity.items}
-              renderWorkingStatus={({ label }) => <CoachBeuiLoadingStatus label={String(label)} />}
-              status={activity.status}
-              summary={coachBeuiCopy.agentToolsComplete(activity.items.length)}
-              collapseOnComplete
-            />
-          ) : null}
-          {streamIdle && row.showProvenance ? <CoachProvenanceChips /> : null}
-        </MessageBubbleContent>
-      </MessageBubble>
+        </div>
+        <CoachAssistantTools streamIdle={streamIdle} toolParts={row.toolParts} />
+        {streamIdle && row.showProvenance ? <CoachProvenanceChips /> : null}
+      </div>
     </Message>
   );
 }

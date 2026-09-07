@@ -9,25 +9,27 @@
 !.yarn/plugins
 !.yarn/releases
 !.yarn/versions
-.vscode
 # Yarn is the package manager (see package.json#packageManager) — ignore other lockfiles
 /package-lock.json
 /pnpm-lock.yaml
 
 # testing
 /coverage
+/test-results
+/playwright-report
+/blob-report
+/playwright/.cache
+/e2e/.auth
 
-# next.js
+# next.js / production output
 /.next/
 /out/
-
-# production
 /build
 
 # misc
 .DS_Store
 *.pem
-/.vscode/
+.vscode/
 
 # debug
 npm-debug.log*
@@ -35,46 +37,36 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
+# env files (commit only .env.example)
 .env*
 !.env.example
 
 # vercel
 .vercel
 
-# typescript
+# typescript (generated)
 *.tsbuildinfo
 next-env.d.ts
 
-# serwist (généré au build depuis src/sw.ts)
+# serwist (generated from src/sw.ts at build)
 /public/sw.js
 /public/sw.js.map
 
-# clerk configuration (can include secrets)
+# clerk (can include secrets)
 /.clerk/
 
-# Claude Code agent memory and settings
+# local agent / critique tooling (not part of the app)
+/.agents/
 /.claude/
-/.agents
-.codex
-.codex/
+/.codex/
 /.hallmark/
-.impeccable
+/.impeccable/
+/.superpowers/
+/.uizze/
 
-# Local one-off TypeScript scripts (not part of the app)
+# local one-off TypeScript scripts
 /scripts/tmp-*.ts
 /scripts/tmp-*.mts
 
 # Local Garmin DI mint (python-garminconnect) — never commit
-/garmin_tokens.json
-**/garmin_tokens.json
-
-# Playwright
-/test-results
-/playwright-report
-/blob-report
-/playwright/.cache
-/e2e/.auth
-.superpowers
-/docs/superpowers/
-.uizze
+garmin_tokens.json

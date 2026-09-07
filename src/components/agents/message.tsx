@@ -55,19 +55,20 @@ export interface MessageTypingProps extends ComponentPropsWithRef<'span'> {
   label?: string;
 }
 
-// A sent row should rise from the live edge without changing measured layout.
+// Sent rows rise from the live edge without changing measured layout.
 const MESSAGE_POP_UP = {
   type: 'spring',
-  stiffness: 480,
-  damping: 32,
-  mass: 0.62,
+  stiffness: 300,
+  damping: 30,
+  mass: 1,
+  bounce: 0,
 } as const;
 
 function messageMotionState(animateIn: boolean, reduce: boolean) {
   if (animateIn && !reduce) {
     return {
       opacity: 1,
-      transform: 'translateY(0px) scale(1)',
+      transform: 'translateY(0px)',
     };
   }
   return { opacity: 1 };
@@ -82,7 +83,7 @@ function messageMotionExit(reduce: boolean, exit: MessageProps['exit']) {
   }
   return {
     opacity: 0,
-    transform: 'translateY(-3px) scale(0.99)',
+    transform: 'translateY(-3px)',
   };
 }
 
@@ -97,7 +98,7 @@ function messageMotionInitial(
   if (animateIn && !reduce) {
     return {
       opacity: 0,
-      transform: 'translateY(8px) scale(0.95)',
+      transform: 'translateY(8px)',
     };
   }
   return false;

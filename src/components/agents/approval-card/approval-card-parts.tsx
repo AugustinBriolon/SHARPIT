@@ -502,9 +502,9 @@ export function ApprovalCardDecisionActions({
   return (
     <>
       {consequence ? (
-        <p className="text-signal-risk mt-3 text-xs leading-relaxed">{consequence}</p>
+        <p className="text-signal-risk mt-2 text-xs leading-relaxed">{consequence}</p>
       ) : null}
-      <div className={cn('flex flex-wrap items-center gap-2', isInstrument ? 'mt-3' : 'mt-4')}>
+      <div className={cn('flex flex-wrap items-center gap-2', isInstrument ? 'mt-2' : 'mt-4')}>
         <ApprovalCardApproveButton
           approveLabel={approveLabel}
           approveTone={approveTone}

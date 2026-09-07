@@ -37,8 +37,10 @@ export function DemoCoachTranscript({
               <p className={coachBeuiTheme.userBubble}>{message.text}</p>
             </div>
           ) : (
-            <div key={message.id} className={coachBeuiTheme.assistantBubble}>
-              <CoachMessage>{message.text}</CoachMessage>
+            <div key={message.id} className={coachBeuiTheme.assistantColumn}>
+              <div className={coachBeuiTheme.assistantProse}>
+                <CoachMessage>{message.text}</CoachMessage>
+              </div>
             </div>
           ),
         )}
