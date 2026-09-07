@@ -2,18 +2,21 @@
 
 import { useRef } from 'react';
 import { format, startOfWeek } from 'date-fns';
-import { PlanActions } from '@/components/plan/plan-actions';
+import { PlanActions } from '@/components/plan/hub/plan-actions';
 import {
   PlanDestinationPlate,
   PlanDestinationPlateSkeleton,
-} from '@/components/plan/plan-destination-plate';
-import { PlanWeekDecision, PlanWeekDecisionSkeleton } from '@/components/plan/plan-week-decision';
-import { PlanWeekThread } from '@/components/plan/plan-week-thread';
+} from '@/components/plan/hub/plan-destination-plate';
+import {
+  PlanWeekDecision,
+  PlanWeekDecisionSkeleton,
+} from '@/components/plan/week/plan-week-decision';
+import { PlanWeekThread } from '@/components/plan/week/plan-week-thread';
 import { usePlanHubModel } from '@/hooks/use-plan-hub-model';
 import { useProjectedAthleteViewModel } from '@/hooks/use-projected-athlete-view-model';
 import { useWeeklyCoachingBriefViewModel } from '@/hooks/use-data';
-import { shouldGateHardIntensities } from '@/lib/plan/intensity-gate';
-import { buildWeekDecision, type WeekDecision } from '@/lib/plan/plan-week-decision';
+import { shouldGateHardIntensities } from '@/lib/plan/trajectory/intensity-gate';
+import { buildWeekDecision, type WeekDecision } from '@/lib/plan/week/plan-week-decision';
 
 const WEEK_OPTS = { weekStartsOn: 1 as const };
 

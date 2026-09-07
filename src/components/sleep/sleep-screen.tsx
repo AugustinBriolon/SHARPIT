@@ -2,7 +2,7 @@
 
 import { format } from 'date-fns';
 import { Moon } from 'lucide-react';
-import { MobileDrillDownHeader } from '@/components/layout/mobile-drill-down-header';
+import { MobileDrillDownHeader } from '@/components/layout/header/mobile-drill-down-header';
 import { SleepPageView } from '@/components/sleep/sleep-page-view';
 import { InkEmptyState } from '@/components/ui/ink-empty-state';
 import { useTodaySelectedDate } from '@/hooks/use-today-selected-date';

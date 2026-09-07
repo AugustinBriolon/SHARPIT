@@ -1,8 +1,8 @@
 import { Suspense } from 'react';
-import { MobileBackLink } from '@/components/layout/mobile-back-link';
-import { StickyHeader } from '@/components/layout/sticky-header';
-import { PlanningEmbeddedSkeleton } from '@/components/planning/planning-embedded-skeleton';
-import { PlanningView } from '@/components/planning/planning-view';
+import { MobileBackLink } from '@/components/layout/header/mobile-back-link';
+import { StickyHeader } from '@/components/layout/header/sticky-header';
+import { PlanningEmbeddedSkeleton } from '@/components/planning/view/planning-embedded-skeleton';
+import { PlanningView } from '@/components/planning/view/planning-view';
 
 export default function PlanSemainePage() {
   return (

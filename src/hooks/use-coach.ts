@@ -15,7 +15,7 @@ import {
   type ClientWeeklyReview,
 } from '@/lib/query/fetchers';
 import { queryKeys } from '@/lib/query/keys';
-import { consumeCoachProgressStream } from '@/lib/coach/chat/coach-progress-stream';
+import { consumeCoachProgressStream } from '@/lib/coach/chat/transcript/coach-progress-stream';
 import { AI_BUDGET_WARNING_HEADER, aiBudgetWarningMessage } from '@/lib/access/ai-budget-shared';
 import { toast } from '@/components/ui/toast';
 import type { CoachMemoryResponse } from '@/hooks/use-coach-memory';

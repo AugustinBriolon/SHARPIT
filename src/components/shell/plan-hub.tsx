@@ -1,5 +1,5 @@
 import { Suspense } from 'react';
-import { StickyHeader } from '@/components/layout/sticky-header';
+import { StickyHeader } from '@/components/layout/header/sticky-header';
 import { PlanHubWidgets } from '@/components/shell/plan-hub-widgets';
 
 /**

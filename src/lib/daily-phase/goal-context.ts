@@ -3,7 +3,7 @@ import { isSet } from '@/lib/util/value';
 import { format } from 'date-fns';
 import { daysUntil } from '@/lib/goals/goals';
 import { isGoalExpired } from '@/lib/goals/goal-metric-config';
-import { selectTodayGoals } from '@/lib/today/today-goals-summary';
+import { selectTodayGoals } from '@/lib/today/dashboard/today-goals-summary';
 import type { ClientGoal } from '@/lib/query/types';
 
 export type TodayGoalContext = {

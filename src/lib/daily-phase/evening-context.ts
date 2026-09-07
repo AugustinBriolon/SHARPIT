@@ -4,7 +4,7 @@ import { addDays, format, startOfDay } from 'date-fns';
 import { parsePlannedStart } from '@/lib/daily-phase/day-context';
 import { activityTypeLabels } from '@/lib/format';
 import { formatClock, formatDuration } from '@/lib/sleep/sleep';
-import type { TodayEffortLevel } from '@/lib/today/today-narrative-context';
+import type { TodayEffortLevel } from '@/lib/today/navigation/today-narrative-context';
 import { dayLoadLabel } from '@/lib/daily-phase/day-load';
 
 export type PlannedSessionEveningRef = {

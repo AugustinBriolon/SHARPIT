@@ -132,7 +132,7 @@ From `ARCHITECTURE.md`'s own appendix, still present:
 | `src/components/planning/session/planned-session-dialog.tsx` | 945   |
 | `src/components/settings/integrations/modal-content.tsx`     | 859   |
 | `src/components/planning/planning-view.tsx`                  | 651   |
-| `src/components/coach/chat/coach-chat.tsx`                   | 623   |
+| `src/components/coach/chat/shell/coach-chat.tsx`             | 623   |
 
 `today-dashboard.tsx` at 135 lines shows the standard is achievable where it was applied. Note `map.tsx` is a genuine outlier — a MapLibre wrapper is legitimately dense — but 2 045 lines in one file is a review blind spot regardless.
 

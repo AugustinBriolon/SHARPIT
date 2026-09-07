@@ -18,7 +18,7 @@ import { listTravelContexts } from '@/lib/travel-context/service';
 import { toUtcDateOnly } from '@/lib/travel-context/calendar-date';
 import { travelTrainingConstraintLabel } from '@/lib/travel-context/training-constraint';
 import { travelDisciplineLabels } from '@/lib/travel-context/disciplines';
-import { buildTopActionLine } from '@/lib/today/today-rich-view';
+import { buildTopActionLine } from '@/lib/today/rich/today-rich-view';
 import { decisionVerdict } from '@/lib/decision/projection';
 import { resolve, resolveCode } from '@/lib/french';
 import { computeTrainingLoad } from '@/lib/training/training-load';

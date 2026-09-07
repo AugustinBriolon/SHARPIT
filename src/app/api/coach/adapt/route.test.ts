@@ -1,6 +1,6 @@
 import { describe, expect, it, vi, beforeEach, beforeAll } from 'vitest';
 import { decisionState, physicalHealthData } from '@/lib/plan-gate/test-fixtures';
-import { consumeCoachProgressStream } from '@/lib/coach/chat/coach-progress-stream';
+import { consumeCoachProgressStream } from '@/lib/coach/chat/transcript/coach-progress-stream';
 import type { AdaptPayload } from './route';
 
 vi.mock('@/lib/ai', () => ({

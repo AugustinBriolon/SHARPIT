@@ -1,8 +1,8 @@
 'use client';
 
 import { MapPinned } from 'lucide-react';
-import { MobileBackLink } from '@/components/layout/mobile-back-link';
-import { StickyHeader } from '@/components/layout/sticky-header';
+import { MobileBackLink } from '@/components/layout/header/mobile-back-link';
+import { StickyHeader } from '@/components/layout/header/sticky-header';
 import { InstrumentListChip } from '@/components/ui/instruments/instrument-list-chip';
 import { InkEmptyState } from '@/components/ui/ink-empty-state';
 import { useHikeTrips } from '@/hooks/use-data';

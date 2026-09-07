@@ -1,7 +1,7 @@
 import { Suspense } from 'react';
-import { MobileBackLink } from '@/components/layout/mobile-back-link';
-import { CoachMemoryManager } from '@/components/coach-memory/coach-memory-manager';
-import { CoachMemoryShell } from '@/components/coach-memory/coach-memory-shell';
+import { MobileBackLink } from '@/components/layout/header/mobile-back-link';
+import { CoachMemoryManager } from '@/components/coach-memory/manager/coach-memory-manager';
+import { CoachMemoryShell } from '@/components/coach-memory/shell/coach-memory-shell';
 import { SettingsDemoBlock } from '@/components/settings/settings-demo-block';
 import { isDemoSession } from '@/lib/demo/demo-session';
 

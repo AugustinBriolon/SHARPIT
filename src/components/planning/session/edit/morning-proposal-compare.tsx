@@ -3,7 +3,7 @@
 import {
   buildMorningProposalCompareRows,
   type MorningProposalCompareInput,
-} from '@/lib/today/morning-proposal-compare';
+} from '@/lib/today/rich/morning-proposal-compare';
 import { cn } from '@/lib/utils';
 
 function DerouleCompare({

@@ -1,5 +1,5 @@
 import { cache } from 'react';
-import { listCoachMemoryEntries } from '@/lib/coach-memory/service';
+import { listCoachMemoryEntries } from '@/lib/coach-memory/core/service';
 import { getGarminAccount } from '@/lib/integrations/garmin/garmin-sync';
 import { getGoogleAccount, isGoogleConnected } from '@/lib/integrations/google/google-sync';
 import { getMfpAccount } from '@/lib/integrations/myfitnesspal/myfitnesspal-sync';

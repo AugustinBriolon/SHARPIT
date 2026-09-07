@@ -1,5 +1,5 @@
 import { Suspense } from 'react';
-import { MobileDrillDownHeader } from '@/components/layout/mobile-drill-down-header';
+import { MobileDrillDownHeader } from '@/components/layout/header/mobile-drill-down-header';
 import { EffortScreen } from '@/components/effort/effort-screen';
 
 /**

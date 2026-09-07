@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { ChevronRight } from 'lucide-react';
-import { Markdown } from '@/components/coach/chat/markdown';
+import { Markdown } from '@/components/coach/chat/transcript/markdown';
 import {
   markBriefingSeen,
   shouldOpenBriefingByDefault,

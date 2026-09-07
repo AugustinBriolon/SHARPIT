@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { markOnboardingComplete } from '@/lib/onboarding/status';
+import { markOnboardingComplete } from '@/lib/onboarding/status/status';
 
 export async function POST() {
   try {

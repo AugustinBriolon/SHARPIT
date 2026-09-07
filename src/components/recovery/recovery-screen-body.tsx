@@ -1,6 +1,6 @@
 'use client';
 
-import { MobileDrillDownHeader } from '@/components/layout/mobile-drill-down-header';
+import { MobileDrillDownHeader } from '@/components/layout/header/mobile-drill-down-header';
 import { RecoveryPageView } from '@/components/recovery/recovery-page-view';
 import type { RecoveryViewModel } from '@/core/presentation/recovery-view-model';
 

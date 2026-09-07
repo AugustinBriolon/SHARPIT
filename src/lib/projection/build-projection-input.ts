@@ -13,7 +13,7 @@ import { physicalHealthEngine } from '@/lib/engines/physical-health-engine';
 import { recoveryEngine } from '@/lib/engines/recovery-engine';
 import { aggregatePlanningMaps, slicePlannedSessions } from '@/lib/projection/planning-maps';
 import { getPlannedSessions } from '@/lib/queries';
-import { loadTodayState } from '@/lib/today/today-state-server';
+import { loadTodayState } from '@/lib/today/navigation/today-state-server';
 import { addTrainingDays, trainingDayIdForNow } from '@/lib/training/training-day';
 import { addDays, startOfDay } from 'date-fns';
 

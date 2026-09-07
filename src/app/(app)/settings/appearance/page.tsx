@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
-import { MobileBackLink } from '@/components/layout/mobile-back-link';
-import { StickyHeader } from '@/components/layout/sticky-header';
+import { MobileBackLink } from '@/components/layout/header/mobile-back-link';
+import { StickyHeader } from '@/components/layout/header/sticky-header';
 import { AppearanceThemePicker } from '@/components/settings/appearance';
 import { SettingsDemoBlock } from '@/components/settings/settings-demo-block';
 import { Skeleton } from '@/components/ui/skeleton';

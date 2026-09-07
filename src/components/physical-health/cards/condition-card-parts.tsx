@@ -3,7 +3,7 @@
 import { TrendingDown, TrendingUp, Minus } from 'lucide-react';
 import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
-import { DiscussWithCoachButton } from '@/components/coach/discuss-with-coach-button';
+import { DiscussWithCoachButton } from '@/components/coach/discuss/discuss-with-coach-button';
 import { CardContent } from '@/components/ui/card';
 import {
   Dialog,

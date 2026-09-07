@@ -156,5 +156,5 @@ Revisit this decision if:
 - `src/lib/planned-session/endurance/endurance-prescription.ts` — schema the producers must satisfy
 - `src/lib/planned-session/endurance/endurance-session.ts` — derived fallback this decision makes the exception rather than the rule
 - `src/lib/planned-session/strength/strength-prescription.ts` — `resolveStrengthFieldsForPersist`, the prose-derivation precedent
-- `src/lib/coach/chat/coach-tools.ts` — coach tool surface to extend
+- `src/lib/coach/chat/tools/coach-tools.ts` — coach tool surface to extend
 - `src/lib/coach/plan/bike-work-blocks.ts` — the scraper this decision retires

@@ -25,7 +25,7 @@ import {
   type ReadinessCategory,
   type RecommendedIntensity,
   type SubjectiveWellness,
-} from '@/lib/today/today-mapping';
+} from '@/lib/today/dashboard/today-mapping';
 import { buildRecoveryPageInsights } from '@/lib/product-insight/recovery-page-insights';
 import { buildGlobalDecisionContext } from '@/lib/decision/global-decision-context';
 import { EMPTY_GLOBAL_DECISION } from '@/core/presentation/global-decision-context';

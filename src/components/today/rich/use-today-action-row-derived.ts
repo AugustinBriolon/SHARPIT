@@ -3,7 +3,7 @@ import type { TodayViewModel } from '@/core/presentation/today-view-model';
 import {
   getDismissedSessionLinkIdsSnapshot,
   subscribeSessionLinkDismissals,
-} from '@/lib/today/session-link-dismissals';
+} from '@/lib/today/rich/session-link-dismissals';
 import {
   getDemoSessionLinksSnapshot,
   subscribeDemoSessionLinks,

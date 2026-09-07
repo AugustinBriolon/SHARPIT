@@ -18,8 +18,8 @@ const LIQUID_GLASS_ALLOWED = new Set(['src/components/chrome/chrome-glass.tsx'])
 
 /** Call sites allowed to wrap chrome with `ChromeGlass`. */
 const CHROME_GLASS_ALLOWED = new Set([
-  'src/components/layout/mobile-shell.tsx',
-  'src/components/layout/mobile-back-link.tsx',
+  'src/components/layout/shell/mobile-shell.tsx',
+  'src/components/layout/header/mobile-back-link.tsx',
 ]);
 
 const FORBIDDEN_DIR_PREFIXES = [

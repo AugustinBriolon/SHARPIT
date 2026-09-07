@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
-import { MobileBackLink } from '@/components/layout/mobile-back-link';
-import { StickyHeader } from '@/components/layout/sticky-header';
+import { MobileBackLink } from '@/components/layout/header/mobile-back-link';
+import { StickyHeader } from '@/components/layout/header/sticky-header';
 import { ActivityForm } from '@/components/training/activity/form/activity-form';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { getActivityById } from '@/lib/queries';

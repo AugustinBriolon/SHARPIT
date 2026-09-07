@@ -11,7 +11,7 @@ import {
   useTrainingPlan,
 } from '@/hooks/use-data';
 import type { ClientGoal, ClientPlannedSession } from '@/lib/query/types';
-import type { MorningProposalCompareInput } from '@/lib/today/morning-proposal-compare';
+import type { MorningProposalCompareInput } from '@/lib/today/rich/morning-proposal-compare';
 import { useQueryClient } from '@tanstack/react-query';
 import { usePlannedSessionLinkableGoals } from '@/components/planning/session/edit/use-planned-session-linkable-goals';
 import { useConfirmDialog } from '@/components/ui/confirm-dialog';

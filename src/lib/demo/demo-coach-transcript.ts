@@ -1,4 +1,4 @@
-import type { DemoTranscriptMessage } from '@/components/coach/demo-coach-transcript';
+import type { DemoTranscriptMessage } from '@/components/coach/view/demo-coach-transcript';
 
 function isTextPart(part: unknown): part is { type: 'text'; text: string } {
   return (

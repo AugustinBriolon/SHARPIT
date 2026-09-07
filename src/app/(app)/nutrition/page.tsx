@@ -1,5 +1,5 @@
 import { Suspense } from 'react';
-import { MobileDrillDownHeader } from '@/components/layout/mobile-drill-down-header';
+import { MobileDrillDownHeader } from '@/components/layout/header/mobile-drill-down-header';
 import { NutritionScreen } from '@/components/nutrition/nutrition-screen';
 
 export default function NutritionPage() {

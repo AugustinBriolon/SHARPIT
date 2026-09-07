@@ -3,7 +3,7 @@
 import { MarkerCardGrid, type MarkerSpec } from '@/components/today/drill-down/marker-card-grid';
 import type { MarkerHistoryPoint } from '@/components/today/drill-down/marker-history-chart';
 import { GLOSSARY } from '@/lib/glossary';
-import { observedRange } from '@/lib/today/marker-series';
+import { observedRange } from '@/lib/today/dashboard/marker-series';
 
 /** `date` arrives already formatted for reading ("21 août"), not as a day key. */
 type Series = { date: string; value: number | null }[];

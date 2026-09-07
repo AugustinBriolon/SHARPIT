@@ -7,7 +7,7 @@ import type {
 } from '@/core/presentation/types';
 import type { DimensionResult } from '@/core/athlete-state/today-state';
 import type { EffortStrainCompositionView } from '@/lib/presentation/effort-strain-composition';
-import type { FatigueType, TrainingCapacity } from '@/lib/today/today-mapping';
+import type { FatigueType, TrainingCapacity } from '@/lib/today/dashboard/today-mapping';
 
 export type EffortViewModel = {
   strainScore: number | null;

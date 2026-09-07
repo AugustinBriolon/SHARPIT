@@ -1,8 +1,8 @@
 import { MessageCircleOff } from 'lucide-react';
 import { Suspense } from 'react';
-import { CoachView } from '@/components/coach/coach-view';
-import { CoachHubSkeleton } from '@/components/coach/coach-hub-skeleton';
-import { DemoCoachTranscript } from '@/components/coach/demo-coach-transcript';
+import { CoachView } from '@/components/coach/view/coach-view';
+import { CoachHubSkeleton } from '@/components/coach/view/coach-hub-skeleton';
+import { DemoCoachTranscript } from '@/components/coach/view/demo-coach-transcript';
 import { DemoExitButton } from '@/components/demo/demo-exit';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { isDemoSession } from '@/lib/demo/demo-session';

@@ -1,5 +1,5 @@
 import type { TodayViewModel } from '@/core/presentation/today-view-model';
-import { sessionChoiceLabel } from '@/lib/today/morning-orientation';
+import { sessionChoiceLabel } from '@/lib/today/rich/morning-orientation';
 
 function primaryPlannedSessionId(vm: TodayViewModel): string | undefined {
   return vm.actionRow.daySummaryLines.find((l) => l.kind === 'planned')?.id;

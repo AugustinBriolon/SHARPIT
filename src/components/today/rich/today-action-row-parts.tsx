@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { DiscussWithCoachButton } from '@/components/coach/discuss-with-coach-button';
+import { DiscussWithCoachButton } from '@/components/coach/discuss/discuss-with-coach-button';
 import { CalendarClock } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { SessionLinkSuggestionCard } from '@/components/today/rich/session-link-suggestion-card';

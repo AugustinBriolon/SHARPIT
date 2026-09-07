@@ -12,7 +12,7 @@ import {
   getSnapshotByFingerprint,
   saveAthleteSnapshot,
 } from '@/infrastructure/athlete-state/snapshot-repository';
-import { loadTodayState } from '@/lib/today/today-state-server';
+import { loadTodayState } from '@/lib/today/navigation/today-state-server';
 import type { TodayState } from '@/hooks/use-today';
 import { enrichGoalsWithProgress } from '@/lib/goals/goal-achievements';
 import {

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { createTravelMemoryEntry, listCoachMemoryEntries } from '@/lib/coach-memory/service';
+import { createTravelMemoryEntry, listCoachMemoryEntries } from '@/lib/coach-memory/core/service';
 import { applyTravelContextToUpcomingSessions } from '@/lib/travel-context/service';
 import { refreshAndPersistPlannedSessionContext } from '@/lib/planned-session/resolve-context';
 

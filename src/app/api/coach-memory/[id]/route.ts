@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { deleteCoachMemoryEntry, updateTravelMemoryEntry } from '@/lib/coach-memory/service';
-import { travelContextToMemoryEntry } from '@/lib/coach-memory/present';
+import { deleteCoachMemoryEntry, updateTravelMemoryEntry } from '@/lib/coach-memory/core/service';
+import { travelContextToMemoryEntry } from '@/lib/coach-memory/summary/present';
 
 const travelDisciplineSchema = z.enum(['RUN', 'BIKE', 'SWIM', 'STRENGTH', 'MOBILITY']);
 

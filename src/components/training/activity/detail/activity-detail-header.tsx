@@ -1,6 +1,6 @@
 'use client';
 
-import { StickyHeader } from '@/components/layout/sticky-header';
+import { StickyHeader } from '@/components/layout/header/sticky-header';
 import { LinkHikeActivitiesSheet } from '@/components/training/trip/link-hike-activities-sheet';
 import {
   ActivityDetailHeaderContent,

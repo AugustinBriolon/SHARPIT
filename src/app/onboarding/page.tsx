@@ -1,8 +1,8 @@
 import { Suspense } from 'react';
 import { redirect } from 'next/navigation';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { athleteNeedsOnboarding } from '@/lib/onboarding/status';
-import { OnboardingWizard } from '@/components/onboarding/onboarding-wizard';
+import { athleteNeedsOnboarding } from '@/lib/onboarding/status/status';
+import { OnboardingWizard } from '@/components/onboarding/wizard/onboarding-wizard';
 import {
   loadConnectedIntegrationIds,
   loadResolvedSourcePrefs,

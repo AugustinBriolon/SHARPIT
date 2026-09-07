@@ -1,10 +1,10 @@
 import { Suspense } from 'react';
 import { AthleteStateInitializer } from '@/components/athlete-state/athlete-state-initializer';
 import { AppErrorBoundary } from '@/components/error/app-error-boundary';
-import { AppShell } from '@/components/layout/app-shell';
-import { NavStackTracker } from '@/components/layout/nav-stack-tracker';
+import { AppShell } from '@/components/layout/shell/app-shell';
+import { NavStackTracker } from '@/components/layout/nav/nav-stack-tracker';
 import { DemoBanner } from '@/components/demo/demo-banner';
-import { OnboardingGate } from '@/components/onboarding/onboarding-gate';
+import { OnboardingGate } from '@/components/onboarding/gate/onboarding-gate';
 import { PrivacyConsentGate } from '@/components/privacy/privacy-consent-gate';
 import { DisplayModeProvider } from '@/providers/display-mode-provider';
 

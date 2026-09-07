@@ -1,4 +1,4 @@
-import { StickyHeader } from '@/components/layout/sticky-header';
+import { StickyHeader } from '@/components/layout/header/sticky-header';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   SkeletonAnalysisPanelAlt,

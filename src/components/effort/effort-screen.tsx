@@ -2,7 +2,7 @@
 
 import { format } from 'date-fns';
 import { Activity } from 'lucide-react';
-import { MobileDrillDownHeader } from '@/components/layout/mobile-drill-down-header';
+import { MobileDrillDownHeader } from '@/components/layout/header/mobile-drill-down-header';
 import { EffortPageView } from '@/components/effort/effort-page-view';
 import { ExpertModeBadge } from '@/components/display-mode';
 import { InkEmptyState } from '@/components/ui/ink-empty-state';

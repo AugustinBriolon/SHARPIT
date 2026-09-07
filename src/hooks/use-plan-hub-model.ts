@@ -14,15 +14,18 @@ import {
 } from '@/hooks/use-data';
 import { fetchActivityStream } from '@/lib/query/fetchers';
 import { queryKeys } from '@/lib/query/keys';
-import { readPlanHubNow, rememberPlanHubNow } from '@/lib/plan/plan-hub-clock';
-import { selectPlanHubStreamPrefetchIds } from '@/lib/plan/plan-week-previews';
-import { resolveCalibrationConfidence } from '@/lib/plan/plan-calibration-confidence';
-import { buildMacroPhaseRail } from '@/lib/plan/plan-macro-rail';
-import { selectPlanGoal } from '@/lib/plan/plan-goal';
-import { buildPlanWeek, type PlanWeek } from '@/lib/plan/plan-week';
-import { isHardSessionIntensity, shouldGateHardIntensities } from '@/lib/plan/intensity-gate';
+import { readPlanHubNow, rememberPlanHubNow } from '@/lib/plan/hub/plan-hub-clock';
+import { selectPlanHubStreamPrefetchIds } from '@/lib/plan/week/plan-week-previews';
+import { resolveCalibrationConfidence } from '@/lib/plan/trajectory/plan-calibration-confidence';
+import { buildMacroPhaseRail } from '@/lib/plan/trajectory/plan-macro-rail';
+import { selectPlanGoal } from '@/lib/plan/trajectory/plan-goal';
+import { buildPlanWeek, type PlanWeek } from '@/lib/plan/week/plan-week';
+import {
+  isHardSessionIntensity,
+  shouldGateHardIntensities,
+} from '@/lib/plan/trajectory/intensity-gate';
 import { getProfileCompleteness } from '@/lib/profile/profile-completeness';
-import { mapVerdictToDisplay, type OverallVerdict } from '@/lib/today/today-mapping';
+import { mapVerdictToDisplay, type OverallVerdict } from '@/lib/today/dashboard/today-mapping';
 import type { ClientActivity, ClientPlannedSession } from '@/lib/query/types';
 import type { AthleteSnapshot } from '@/core/athlete-state/snapshot';
 

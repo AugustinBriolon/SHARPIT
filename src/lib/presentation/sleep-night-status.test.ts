@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { resolveSleepNightStatus, sleepAdequacySignalForNight } from '@/lib/presentation/sleep';
 import { mapSleepScoreToAdequacy } from '@/lib/sleep/sleep-scoring';
-import { mapSleepAdequacySignalToDisplay } from '@/lib/today/today-mapping';
+import { mapSleepAdequacySignalToDisplay } from '@/lib/today/dashboard/today-mapping';
 
 describe('resolveSleepNightStatus', () => {
   it('is present when tonight has sleep minutes', () => {

@@ -6,8 +6,8 @@ import {
   type EveningSleepHints,
   type TomorrowSessionHint,
 } from '@/lib/daily-phase/evening-context';
-import type { OverallVerdict } from '@/lib/today/today-mapping';
-import type { TodayEffortLevel } from '@/lib/today/today-narrative-context';
+import type { OverallVerdict } from '@/lib/today/dashboard/today-mapping';
+import type { TodayEffortLevel } from '@/lib/today/navigation/today-narrative-context';
 import type { DailyPhase, DailyPhaseResolution, DailyPhaseWhyFocus } from '@/lib/daily-phase/types';
 import { isForwardAdvicePhase, isPostTrainingPhase } from '@/lib/daily-phase/resolve';
 import { dayLoadLabel } from '@/lib/daily-phase/day-load';

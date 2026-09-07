@@ -1,4 +1,4 @@
-import type { TodayEffortLevel } from '@/lib/today/today-narrative-context';
+import type { TodayEffortLevel } from '@/lib/today/navigation/today-narrative-context';
 
 /**
  * How the day weighed, not what was done in it.

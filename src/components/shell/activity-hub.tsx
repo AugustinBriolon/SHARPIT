@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
 import { Plus } from 'lucide-react';
-import { StickyHeader } from '@/components/layout/sticky-header';
+import { StickyHeader } from '@/components/layout/header/sticky-header';
 import { TrainingList, TrainingListFallback } from '@/components/training/hub/training-list';
 import { LinkButton } from '@/components/ui/link-button';
 

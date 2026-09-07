@@ -36,7 +36,7 @@ import {
   COACH_PROGRESS_HEADERS,
   encodeCoachProgressEvent,
   type CoachProgressEvent,
-} from '@/lib/coach/chat/coach-progress-stream';
+} from '@/lib/coach/chat/transcript/coach-progress-stream';
 
 type AdaptChange = AdaptPlan['changes'][number];
 type UpcomingSession = Awaited<ReturnType<typeof getPlannedSessionsForCoach>>[number];

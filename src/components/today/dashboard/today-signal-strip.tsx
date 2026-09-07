@@ -5,8 +5,11 @@ import {
   OvernightScoreCard,
   type OvernightScoreCardProps,
 } from '@/components/today/dashboard/overnight-score-card';
-import { TWIN_DRILL_DOWN } from '@/lib/today/today-twin-navigation';
-import { pickTodayResumeSignalPreviews, type SignalPreview } from '@/lib/today/signal-previews';
+import { TWIN_DRILL_DOWN } from '@/lib/today/navigation/today-twin-navigation';
+import {
+  pickTodayResumeSignalPreviews,
+  type SignalPreview,
+} from '@/lib/today/dashboard/signal-previews';
 
 type MetricsRow = TodayViewModel['hero']['metricsRow'];
 type SignalPreviews = TodayViewModel['hero']['signalPreviews'];

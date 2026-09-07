@@ -12,7 +12,7 @@ import {
   fetchPlannedSessions,
   fetchTrainingPlan,
 } from '@/lib/query/fetchers';
-import { selectPlanHubStreamPrefetchIds } from '@/lib/plan/plan-week-previews';
+import { selectPlanHubStreamPrefetchIds } from '@/lib/plan/week/plan-week-previews';
 import type { ClientActivity } from '@/lib/query/types';
 import {
   fetchAdaptationPresentation,

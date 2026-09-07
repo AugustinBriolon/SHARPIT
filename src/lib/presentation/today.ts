@@ -1,7 +1,7 @@
 import type { AthleteSnapshot } from '@/core/athlete-state/snapshot';
 import { isSet } from '@/lib/util/value';
 import type { DailyPhase } from '@/lib/daily-phase/types';
-import type { MorningOrientationResolved } from '@/lib/today/morning-orientation';
+import type { MorningOrientationResolved } from '@/lib/today/rich/morning-orientation';
 import { snapshotHasDisplayableContent } from '@/core/athlete-state/snapshot';
 import type { TodayViewModel } from '@/core/presentation/today-view-model';
 import { getOrBuildAthleteSnapshot } from '@/lib/athlete-state/snapshot-service';
@@ -15,36 +15,39 @@ import {
 } from '@/lib/queries';
 import { computeSharpitSleepScoreForDay, SLEEP_TARGET_MIN } from '@/lib/sleep/sleep-scoring';
 import { activityTypeLabels } from '@/lib/format';
-import { buildPostSessionLoop } from '@/lib/today/post-session-loop';
-import { buildTodayDaySummary } from '@/lib/today/today-day-summary';
+import { buildPostSessionLoop } from '@/lib/today/rich/post-session-loop';
+import { buildTodayDaySummary } from '@/lib/today/dashboard/today-day-summary';
 import {
   findSessionLinkSuggestions,
   type SessionLinkSuggestion,
-} from '@/lib/today/session-link-suggestions';
+} from '@/lib/today/rich/session-link-suggestions';
 import {
   mapConfidenceToTier,
   mapVerdictToDisplay,
   resolveVisibleConfidenceLabel,
-} from '@/lib/today/today-mapping';
+} from '@/lib/today/dashboard/today-mapping';
 import {
   actionRowLabels,
   buildTopActionLine,
   shouldShowForwardTrainingCopy,
   whyBlockTitle,
-} from '@/lib/today/today-rich-view';
+} from '@/lib/today/rich/today-rich-view';
 import {
   resolveMorningOrientation,
   type MorningRecalibrationInput,
-} from '@/lib/today/morning-orientation';
+} from '@/lib/today/rich/morning-orientation';
 import {
   decisionTopAction,
   decisionVerdict,
   resolveConfidenceHrefFromDecision,
   resolveLimitingFactorHrefFromDecision,
 } from '@/lib/decision/projection';
-import { buildTodayLimitingFacts, buildTodayWhyFacts } from '@/lib/today/today-instrument-facts';
-import { TWIN_DRILL_DOWN } from '@/lib/today/today-twin-navigation';
-import { buildSignalPreviews } from '@/lib/today/signal-previews';
+import {
+  buildTodayLimitingFacts,
+  buildTodayWhyFacts,
+} from '@/lib/today/dashboard/today-instrument-facts';
+import { TWIN_DRILL_DOWN } from '@/lib/today/navigation/today-twin-navigation';
+import { buildSignalPreviews } from '@/lib/today/dashboard/signal-previews';
 import { endOfDay, startOfDay } from 'date-fns';
 import type { ClientActivity, ClientPlannedSession } from '@/lib/query/types';
 import { getGarminAccount } from '@/lib/integrations/garmin/garmin-sync';
@@ -58,8 +61,8 @@ import {
   reconnectProviderNames,
 } from '@/lib/integrations/shared/connection-status';
 import { reconnectSnoozeKey } from '@/lib/integrations/shared/reconnect-banner-state';
-import type { TodayWeather } from '@/lib/today/today-weather';
-import { loadTodayWeather } from '@/lib/today/today-weather';
+import type { TodayWeather } from '@/lib/today/dashboard/today-weather';
+import { loadTodayWeather } from '@/lib/today/dashboard/today-weather';
 import { isDemoAthleteProfile, withDemoSnapshotFreshness } from '@/lib/demo/demo-presentation';
 
 function localDateFromTrainingDayId(trainingDayId: string): Date {

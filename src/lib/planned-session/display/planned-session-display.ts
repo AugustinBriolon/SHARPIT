@@ -3,7 +3,7 @@ import {
   ACTIVITY_COLOR,
   ACTIVITY_LABEL,
   INTENSITY_LABEL,
-} from '@/lib/today/today-dashboard-labels';
+} from '@/lib/today/dashboard/today-dashboard-labels';
 import type { ClientPlannedSession } from '@/lib/query/types';
 
 const DEFAULT_TYPE_COLOR = 'bg-muted text-muted-foreground';

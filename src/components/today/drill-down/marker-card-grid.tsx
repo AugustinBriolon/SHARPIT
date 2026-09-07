@@ -13,7 +13,7 @@ import {
   type MarkerDetail,
 } from '@/components/today/drill-down/marker-detail-dialog';
 import type { MarkerHistoryPoint } from '@/components/today/drill-down/marker-history-chart';
-import { deltaVsTrailingWeek } from '@/lib/today/marker-series';
+import { deltaVsTrailingWeek } from '@/lib/today/dashboard/marker-series';
 import { cn } from '@/lib/utils';
 
 export type MarkerSpec = {

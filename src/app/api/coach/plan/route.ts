@@ -21,7 +21,7 @@ import {
   COACH_PROGRESS_HEADERS,
   encodeCoachProgressEvent,
   type CoachProgressEvent,
-} from '@/lib/coach/chat/coach-progress-stream';
+} from '@/lib/coach/chat/transcript/coach-progress-stream';
 import { runStructuredCoachStream } from '@/lib/coach/stream-structured-generation';
 import { buildBusySummary } from '@/lib/coach/plan/calendar-availability';
 import { getGoalById } from '@/lib/queries';

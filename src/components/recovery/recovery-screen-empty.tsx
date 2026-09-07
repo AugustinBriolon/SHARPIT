@@ -1,7 +1,7 @@
 'use client';
 
 import { HeartPulse } from 'lucide-react';
-import { MobileDrillDownHeader } from '@/components/layout/mobile-drill-down-header';
+import { MobileDrillDownHeader } from '@/components/layout/header/mobile-drill-down-header';
 import { InkEmptyState } from '@/components/ui/ink-empty-state';
 
 export function RecoveryScreenEmpty({

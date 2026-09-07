@@ -13,7 +13,7 @@ import {
 import {
   floatingHeaderButtonClass,
   floatingHeaderButtonSurfaceClass,
-} from '@/components/layout/floating-header-button';
+} from '@/components/layout/header/floating-header-button';
 import { cn } from '@/lib/utils';
 import type { ActivityDetailHeaderActivity } from '@/components/training/activity/detail/activity-detail-header';
 

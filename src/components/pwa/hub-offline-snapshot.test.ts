@@ -4,7 +4,7 @@ import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { PlanningView } from '@/components/planning/planning-view';
+import { PlanningView } from '@/components/planning/view/planning-view';
 import { MoiSectionContent } from '@/components/shell/moi-section-content';
 import type { PersistedSnapshotEntry } from '@/lib/pwa/snapshot-store-validation';
 
@@ -100,19 +100,19 @@ describe('hub offline snapshot contracts', () => {
     'utf8',
   );
   const planningOfflineSource = readFileSync(
-    resolve(process.cwd(), 'src/components/planning/use-planning-offline.ts'),
+    resolve(process.cwd(), 'src/components/planning/view/use-planning-offline.ts'),
     'utf8',
   );
   const planningViewSource = readFileSync(
-    resolve(process.cwd(), 'src/components/planning/planning-view.tsx'),
+    resolve(process.cwd(), 'src/components/planning/view/planning-view.tsx'),
     'utf8',
   );
   const coachSelectionSource = readFileSync(
-    resolve(process.cwd(), 'src/components/coach/use-coach-conversation-selection.ts'),
+    resolve(process.cwd(), 'src/components/coach/discuss/use-coach-conversation-selection.ts'),
     'utf8',
   );
   const coachLayoutSource = readFileSync(
-    resolve(process.cwd(), 'src/components/coach/coach-view-layout.tsx'),
+    resolve(process.cwd(), 'src/components/coach/view/coach-view-layout.tsx'),
     'utf8',
   );
   const todaySource = readFileSync(

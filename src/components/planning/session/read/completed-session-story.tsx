@@ -10,7 +10,7 @@ import {
 import { ComplianceBadge } from '@/components/planning/session/read/completed-session-story-parts';
 import { CompletedSessionStoryActions } from '@/components/planning/session/read/completed-session-story-actions';
 import { CompletedSessionAthleteCapture } from '@/components/planning/session/read/completed-session-athlete-capture';
-import { PlanSectionHeading } from '@/components/plan/plan-section-heading';
+import { PlanSectionHeading } from '@/components/plan/hub/plan-section-heading';
 
 function readActivityNarrative(activity: ClientPlannedSession['activity']) {
   if (!activity) {

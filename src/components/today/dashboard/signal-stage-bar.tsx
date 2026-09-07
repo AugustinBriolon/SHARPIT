@@ -1,4 +1,4 @@
-import type { SleepStageKey } from '@/lib/today/signal-previews';
+import type { SleepStageKey } from '@/lib/today/dashboard/signal-previews';
 import { cn } from '@/lib/utils';
 
 const STAGE_COLOR: Record<SleepStageKey, string> = {

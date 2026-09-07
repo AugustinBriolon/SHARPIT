@@ -21,7 +21,7 @@ vi.mock('@/components/ui/confirm-dialog', () => ({
   }),
 }));
 
-vi.mock('@/components/coach/discuss-with-coach-button', () => ({
+vi.mock('@/components/coach/discuss/discuss-with-coach-button', () => ({
   DiscussWithCoachButton: ({ label }: { label: string }) =>
     createElement('a', { href: '/coach' }, label),
 }));

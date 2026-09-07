@@ -22,7 +22,7 @@ import { cn } from '@/lib/utils';
 import { differenceInCalendarDays, format, formatDistanceToNowStrict } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Bike, Footprints, Waves } from 'lucide-react';
-import { DiscussWithCoachButton } from '@/components/coach/discuss-with-coach-button';
+import { DiscussWithCoachButton } from '@/components/coach/discuss/discuss-with-coach-button';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';

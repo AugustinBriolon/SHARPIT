@@ -8,7 +8,7 @@ import {
   mapConfidenceToTier,
   mapFatigueTypeToLabel,
   type FatigueType,
-} from '@/lib/today/today-mapping';
+} from '@/lib/today/dashboard/today-mapping';
 import { buildEffortPageInsights } from '@/lib/product-insight/effort-page-insights';
 import { buildGlobalDecisionContext } from '@/lib/decision/global-decision-context';
 import { EMPTY_GLOBAL_DECISION } from '@/core/presentation/global-decision-context';

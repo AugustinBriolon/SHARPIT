@@ -1,7 +1,7 @@
 import { MessageCircle } from 'lucide-react';
 import type { ProjectionHorizonDays } from '@/core/projection/types';
 import { LinkButton } from '@/components/ui/link-button';
-import { coachDiscussHref } from '@/lib/coach/chat/coach-discuss-href';
+import { coachDiscussHref } from '@/lib/coach/chat/discuss/coach-discuss-href';
 import { cn } from '@/lib/utils';
 
 export function DiscussCoachLink({

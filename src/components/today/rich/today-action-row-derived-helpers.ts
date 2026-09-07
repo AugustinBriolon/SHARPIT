@@ -3,10 +3,10 @@ import {
   filterDaySummaryForLinkExclusions,
   idsExcludedByLinkSuggestions,
   mergeLinkExclusions,
-} from '@/lib/today/session-link-suggestions';
+} from '@/lib/today/rich/session-link-suggestions';
 
 type LinkExclusions = { activityIds: Set<string>; plannedSessionIds: Set<string> };
-import { filterDismissedSessionLinkSuggestions } from '@/lib/today/session-link-dismissals';
+import { filterDismissedSessionLinkSuggestions } from '@/lib/today/rich/session-link-dismissals';
 import {
   filterDemoLinkedSessionSuggestions,
   readDemoSessionLinks,

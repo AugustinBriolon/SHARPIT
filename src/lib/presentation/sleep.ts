@@ -23,7 +23,7 @@ import {
   mapConfidenceToTier,
   type ReadinessCategory,
   type SleepAdequacySignal,
-} from '@/lib/today/today-mapping';
+} from '@/lib/today/dashboard/today-mapping';
 import { buildSleepPageInsights } from '@/lib/product-insight/sleep-page-insights';
 import { buildGlobalDecisionContext } from '@/lib/decision/global-decision-context';
 import { EMPTY_GLOBAL_DECISION } from '@/core/presentation/global-decision-context';

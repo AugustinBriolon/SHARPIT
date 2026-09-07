@@ -3,7 +3,7 @@
 import { format } from 'date-fns';
 import Link from 'next/link';
 import { Apple } from 'lucide-react';
-import { MobileDrillDownHeader } from '@/components/layout/mobile-drill-down-header';
+import { MobileDrillDownHeader } from '@/components/layout/header/mobile-drill-down-header';
 import { NutritionPageView } from '@/components/nutrition/nutrition-page-view';
 import { useTodaySelectedDate } from '@/hooks/use-today-selected-date';
 import {

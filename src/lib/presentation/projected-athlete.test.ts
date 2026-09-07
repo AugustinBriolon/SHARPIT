@@ -6,7 +6,7 @@ import {
   buildProjectionCaution,
   buildProjectionTrajectory,
 } from '@/lib/presentation/projected-athlete';
-import { buildPlanningDiscussPrompt } from '@/lib/coach/chat/coach-session-thread';
+import { buildPlanningDiscussPrompt } from '@/lib/coach/chat/conversations/coach-session-thread';
 
 function buildProjectionDay(overrides?: {
   tsbEnd?: number;

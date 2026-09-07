@@ -1,6 +1,9 @@
 import { buildEffortInsightBundle } from '@/core/product-insight/effort-insights';
-import { mapFatigueCapacityLabel, mapFatigueTypeToLabel } from '@/lib/today/today-mapping';
-import type { FatigueType, TrainingCapacity } from '@/lib/today/today-mapping';
+import {
+  mapFatigueCapacityLabel,
+  mapFatigueTypeToLabel,
+} from '@/lib/today/dashboard/today-mapping';
+import type { FatigueType, TrainingCapacity } from '@/lib/today/dashboard/today-mapping';
 
 export function buildEffortPageInsights(params: {
   strainScore: number | null;

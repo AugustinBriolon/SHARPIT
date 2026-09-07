@@ -3,7 +3,7 @@
 import { addDays, format, formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Loader2, RefreshCw } from 'lucide-react';
-import { Markdown } from '@/components/coach/chat/markdown';
+import { Markdown } from '@/components/coach/chat/transcript/markdown';
 import { Button } from '@/components/ui/button';
 import { InkEmptyState } from '@/components/ui/ink-empty-state';
 import { Skeleton } from '@/components/ui/skeleton';

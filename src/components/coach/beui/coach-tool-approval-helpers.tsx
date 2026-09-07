@@ -1,5 +1,5 @@
 import type { ActivityType, SessionIntensity } from '@prisma/client';
-import type { KnownSession } from '@/components/coach/chat/tool-activity';
+import type { KnownSession } from '@/components/coach/chat/tools/tool-activity';
 import type { coachBeuiCopy } from '@/components/coach/beui/coach-beui-copy';
 import { activityTypeLabels } from '@/lib/format';
 import { intensityLabels } from '@/lib/planned-session/sessions';

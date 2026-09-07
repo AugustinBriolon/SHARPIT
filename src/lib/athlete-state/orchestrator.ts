@@ -12,7 +12,7 @@ import {
 import { regenerateAthleteSnapshotAfterInference } from '@/lib/athlete-state/snapshot-service';
 import { syncProviders, type ProviderSyncResult } from '@/lib/athlete-state/sync-providers';
 import { getLatestAthleteSnapshot } from '@/infrastructure/athlete-state/snapshot-repository';
-import { loadTodayState } from '@/lib/today/today-state-server';
+import { loadTodayState } from '@/lib/today/navigation/today-state-server';
 import { prisma } from '@/lib/prisma';
 import { updateRecordsForTypesSafe } from '@/lib/training/records';
 

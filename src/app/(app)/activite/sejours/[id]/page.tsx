@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
-import { MobileBackLink } from '@/components/layout/mobile-back-link';
+import { MobileBackLink } from '@/components/layout/header/mobile-back-link';
 import {
   HikeTripActionsMenu,
   HikeTripAddStepControl,

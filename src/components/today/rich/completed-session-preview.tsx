@@ -8,7 +8,7 @@ import { ActivityTypeIndicator } from '@/components/ui/instruments/activity-type
 import { Skeleton } from '@/components/ui/skeleton';
 import { useActivityStream } from '@/hooks/use-data';
 import { SPORT_IDENTITY_HEX, SPORT_IDENTITY_PANEL } from '@/lib/activity/sport-identity';
-import { readRememberedHubRoute, rememberHubRoute } from '@/lib/plan/plan-hub-preview-paths';
+import { readRememberedHubRoute, rememberHubRoute } from '@/lib/plan/hub/plan-hub-preview-paths';
 import { cn } from '@/lib/utils';
 import {
   activityMayHaveRoutePath,

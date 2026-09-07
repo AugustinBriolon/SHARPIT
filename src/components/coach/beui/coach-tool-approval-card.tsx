@@ -1,7 +1,7 @@
 'use client';
 
-import type { ToolPartLite } from '@/lib/coach/chat/coach-tool-parts';
-import type { KnownSession } from '@/components/coach/chat/tool-activity';
+import type { ToolPartLite } from '@/lib/coach/chat/tools/coach-tool-parts';
+import type { KnownSession } from '@/components/coach/chat/tools/tool-activity';
 import { useState } from 'react';
 import { ApprovalCard } from '@/components/agents/approval-card';
 import type { ApprovalCardStatus } from '@/components/agents/approval-card/types';

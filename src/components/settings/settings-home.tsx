@@ -13,7 +13,7 @@ import {
   User2,
   Wrench,
 } from 'lucide-react';
-import { StickyHeader } from '@/components/layout/sticky-header';
+import { StickyHeader } from '@/components/layout/header/sticky-header';
 import { InstallCard } from '@/components/pwa/install-card';
 import { HubStatusValue } from '@/components/settings/hub-status-value';
 import {

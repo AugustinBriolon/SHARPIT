@@ -60,15 +60,15 @@
 
 **Interfaces:**
 
-- Consumes: `CoachHubSkeleton` from `@/components/coach/coach-hub-skeleton`; `SessionsHubSkeleton` from `@/components/sessions/sessions-hub`
+- Consumes: `CoachHubSkeleton` from `@/components/coach/view/coach-hub-skeleton`; `SessionsHubSkeleton` from `@/components/sessions/sessions-hub`
 - Produces: non-empty Suspense fallbacks on `/coach` and `/training/sessions`
 
 - [ ] **Step 1: Wire coach page fallback**
 
 ```tsx
 import { Suspense } from 'react';
-import { CoachView } from '@/components/coach/coach-view';
-import { CoachHubSkeleton } from '@/components/coach/coach-hub-skeleton';
+import { CoachView } from '@/components/coach/view/coach-view';
+import { CoachHubSkeleton } from '@/components/coach/view/coach-hub-skeleton';
 
 export default function CoachPage() {
   return (

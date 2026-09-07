@@ -1,5 +1,5 @@
-import { MobileBackLink } from '@/components/layout/mobile-back-link';
-import { StickyHeader } from '@/components/layout/sticky-header';
+import { MobileBackLink } from '@/components/layout/header/mobile-back-link';
+import { StickyHeader } from '@/components/layout/header/sticky-header';
 import { MedicalDisclaimerNote } from '@/components/ui/instruments/medical-disclaimer-note';
 
 export default function SettingsAboutPage() {

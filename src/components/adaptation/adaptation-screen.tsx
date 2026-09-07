@@ -2,7 +2,7 @@
 
 import { format } from 'date-fns';
 import { TrendingUp } from 'lucide-react';
-import { MobileDrillDownHeader } from '@/components/layout/mobile-drill-down-header';
+import { MobileDrillDownHeader } from '@/components/layout/header/mobile-drill-down-header';
 import { AdaptationPageView } from '@/components/adaptation/adaptation-page-view';
 import { InkEmptyState } from '@/components/ui/ink-empty-state';
 import { useTodaySelectedDate } from '@/hooks/use-today-selected-date';

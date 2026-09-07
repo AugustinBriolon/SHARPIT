@@ -20,7 +20,7 @@ import {
   type PlannedSessionCacheSeed,
 } from '@/lib/query/seed-planned-session-cache';
 import type { ClientPlannedSession } from '@/lib/query/types';
-import type { MorningProposalCompareInput } from '@/lib/today/morning-proposal-compare';
+import type { MorningProposalCompareInput } from '@/lib/today/rich/morning-proposal-compare';
 import { EMPTY_GOALS } from '@/components/planning/session/session-defaults';
 
 const PlannedSessionDialog = dynamic(

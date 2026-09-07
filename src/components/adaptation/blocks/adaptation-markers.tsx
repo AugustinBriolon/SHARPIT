@@ -1,7 +1,7 @@
 'use client';
 
 import { MarkerCardGrid, type MarkerSpec } from '@/components/today/drill-down/marker-card-grid';
-import { TWIN_DRILL_DOWN } from '@/lib/today/today-twin-navigation';
+import { TWIN_DRILL_DOWN } from '@/lib/today/navigation/today-twin-navigation';
 
 /** Adaptation has no daily series behind it, so these cards state and explain only. */
 const EXPLANATION = {

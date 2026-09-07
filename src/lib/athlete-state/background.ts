@@ -80,7 +80,7 @@ async function recomputeNeuromuscularIfNeeded(
       return;
     }
 
-    const { loadTodayState } = await import('@/lib/today/today-state-server');
+    const { loadTodayState } = await import('@/lib/today/navigation/today-state-server');
     const todayState = await loadTodayState({
       athleteId,
       trainingDayId: dayId,

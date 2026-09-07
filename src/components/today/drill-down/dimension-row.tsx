@@ -4,7 +4,7 @@ import {
   mapScoreToBarColorClassProtective,
   mapScoreToColorClass,
   mapScoreToColorClassProtective,
-} from '@/lib/today/today-mapping';
+} from '@/lib/today/dashboard/today-mapping';
 import { SkeletonDataValue, SkeletonInstrumentBar } from '@/components/ui/skeleton-data-value';
 import { cn } from '@/lib/utils';
 

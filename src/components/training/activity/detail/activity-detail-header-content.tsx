@@ -1,9 +1,9 @@
 'use client';
 
 import { ExpertModeBadge } from '@/components/display-mode';
-import { DiscussWithCoachButton } from '@/components/coach/discuss-with-coach-button';
+import { DiscussWithCoachButton } from '@/components/coach/discuss/discuss-with-coach-button';
 import { ActivityDetailActionsMenu } from '@/components/training/activity/detail/activity-detail-header-actions';
-import { MobileBackLink } from '@/components/layout/mobile-back-link';
+import { MobileBackLink } from '@/components/layout/header/mobile-back-link';
 import { ActivityHeaderContextChips } from '@/components/training/activity/detail/activity-header-context-chips';
 import { activityTypeLabels } from '@/lib/format';
 import {

@@ -13,7 +13,7 @@ import {
 } from '@/components/today/drill-down/metric-drill-down-page';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { EffortStrainCompositionView } from '@/lib/presentation/effort-strain-composition';
-import type { FatigueType, TrainingCapacity } from '@/lib/today/today-mapping';
+import type { FatigueType, TrainingCapacity } from '@/lib/today/dashboard/today-mapping';
 import type { DimensionResult } from '@/hooks/use-today';
 import dynamic from 'next/dynamic';
 import { ExpertOnly } from '@/components/display-mode';

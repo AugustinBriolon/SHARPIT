@@ -1,6 +1,6 @@
 'use client';
 
-import { DiscussWithCoachButton } from '@/components/coach/discuss-with-coach-button';
+import { DiscussWithCoachButton } from '@/components/coach/discuss/discuss-with-coach-button';
 import { Button } from '@/components/ui/button';
 import { Loader2, RefreshCw } from 'lucide-react';
 import { guardedActionLabel, useOfflineGuard } from '@/hooks/use-offline-guard';

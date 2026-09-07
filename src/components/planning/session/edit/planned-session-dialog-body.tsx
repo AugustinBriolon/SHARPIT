@@ -5,7 +5,7 @@ import { PlannedSessionReadView } from '@/components/planning/session/read/plann
 import { PlannedSessionEditForm } from '@/components/planning/session/edit/planned-session-edit-form';
 import type { usePlannedSessionDialog } from '@/components/planning/session/edit/use-planned-session-dialog';
 import type { ClientGoal, ClientPlannedSession } from '@/lib/query/types';
-import type { MorningProposalCompareInput } from '@/lib/today/morning-proposal-compare';
+import type { MorningProposalCompareInput } from '@/lib/today/rich/morning-proposal-compare';
 import { Layers } from 'lucide-react';
 import type { CreateMode } from '@/components/planning/session/edit/planned-session-dialog-helpers';
 import { cn } from '@/lib/utils';
