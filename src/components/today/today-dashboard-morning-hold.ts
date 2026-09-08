@@ -2,7 +2,11 @@ import type { TodayViewModel } from '@/core/presentation/today-view-model';
 import { sessionChoiceLabel } from '@/lib/today/rich/morning-orientation';
 
 function primaryPlannedSessionId(vm: TodayViewModel): string | undefined {
-  return vm.actionRow.daySummaryLines.find((l) => l.kind === 'planned')?.id;
+  const line = vm.actionRow.daySummaryLines.find((l) => l.kind === 'planned');
+  if (!line) {
+    return undefined;
+  }
+  return line.brickLegs?.[0]?.id ?? line.id;
 }
 
 function holdSessionId(
@@ -16,6 +20,16 @@ function holdSessionId(
   );
 }
 
+function lineMatchesHoldSession(
+  line: TodayViewModel['actionRow']['daySummaryLines'][number],
+  sessionId: string,
+): boolean {
+  if (line.id === sessionId) {
+    return true;
+  }
+  return Boolean(line.brickLegs?.some((leg) => leg.id === sessionId));
+}
+
 function applyHoldChoiceLabel(
   vm: TodayViewModel,
   sessionId: string | undefined,
@@ -24,7 +38,7 @@ function applyHoldChoiceLabel(
   return {
     ...vm.actionRow,
     daySummaryLines: vm.actionRow.daySummaryLines.map((line) => {
-      if (!sessionId || line.id !== sessionId) {
+      if (!sessionId || !lineMatchesHoldSession(line, sessionId)) {
         return line;
       }
       return { ...line, morningChoiceLabel: label };

@@ -1,9 +1,9 @@
 'use client';
 
 import { ActivityType } from '@prisma/client';
-import { InstrumentMetricGrid } from '@/components/ui/instruments/instrument-metric-chip';
 import { useActivityStream } from '@/hooks/use-data';
 import { buildHeroStatSlots } from '@/components/training/activity/detail/activity-hero-stats-helpers';
+import { WeightedInstruments } from '@/components/training/activity/reading/weighted-instruments';
 
 export interface HeroActivity {
   type: ActivityType;
@@ -45,7 +45,7 @@ export function ActivityHeroStats({
   }
 
   return (
-    <InstrumentMetricGrid
+    <WeightedInstruments
       items={items.map(({ label, value }) => ({ label, value }))}
       loading={isPending && items.some((slot) => slot.value === null)}
     />

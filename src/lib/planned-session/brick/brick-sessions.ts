@@ -17,6 +17,14 @@ export type BrickLegSummary = {
   activityId: string | null;
 };
 
+/** Sibling realized activity in the same brick (not the current one). */
+export type BrickSiblingActivityLink = {
+  activityId: string;
+  type: ActivityType;
+  title: string;
+  brickOrder: number;
+};
+
 export function brickLegSummaries(sessions: readonly ClientPlannedSession[]): BrickLegSummary[] {
   return sessions.map((s) => ({
     id: s.id,
@@ -27,6 +35,28 @@ export function brickLegSummaries(sessions: readonly ClientPlannedSession[]): Br
     completed: Boolean(s.completed && s.activityId),
     activityId: s.activityId,
   }));
+}
+
+/**
+ * Other realized legs in the same brick, ordered by brickOrder.
+ * Uses planned-session links already stored (brickGroupId + activityId) — no new schema.
+ */
+export function resolveBrickSiblingActivityLinks(
+  legs: readonly Pick<
+    ClientPlannedSession,
+    'id' | 'type' | 'title' | 'brickOrder' | 'activityId' | 'completed'
+  >[],
+  currentActivityId: string,
+): BrickSiblingActivityLink[] {
+  return legs
+    .filter((leg) => leg.activityId && leg.activityId !== currentActivityId)
+    .map((leg) => ({
+      activityId: leg.activityId!,
+      type: leg.type,
+      title: leg.title?.trim() || activityTypeLabels[leg.type],
+      brickOrder: leg.brickOrder ?? 0,
+    }))
+    .sort((a, b) => a.brickOrder - b.brickOrder);
 }
 
 /** Regroupe les jambes d'un même brick, en conservant l'ordre d'apparition. */

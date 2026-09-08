@@ -5,6 +5,7 @@ import { DiscussWithCoachButton } from '@/components/coach/discuss/discuss-with-
 import { ActivityDetailActionsMenu } from '@/components/training/activity/detail/activity-detail-header-actions';
 import { MobileBackLink } from '@/components/layout/header/mobile-back-link';
 import { ActivityHeaderContextChips } from '@/components/training/activity/detail/activity-header-context-chips';
+import { SessionPlate } from '@/components/training/activity/reading/session-plate';
 import { activityTypeLabels } from '@/lib/format';
 import {
   formatActivityDetailLoad,
@@ -76,53 +77,20 @@ function ActivityDetailIdentityBlock({
 
   return (
     <div className="flex items-start gap-3">
-      <span className="icon-well size-9 shrink-0 sm:size-10" aria-hidden>
+      <span className="activity-log-stamp icon-well size-10 shrink-0 sm:size-11" aria-hidden>
         <Icon className="size-4 sm:size-5" />
       </span>
       <div className="min-w-0 flex-1 space-y-1">
         <p className="text-muted-foreground text-xs tracking-wide">
           {formatActivityDetailMeta(activity)}
         </p>
-        <h1 className="text-page-title line-clamp-2 leading-snug wrap-break-word">{title}</h1>
+        <h1 className="text-page-title leading-snug wrap-break-word">{title}</h1>
         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
           {summary ? (
             <p className="text-data text-muted-foreground text-sm tabular-nums">{summary}</p>
           ) : null}
           <ExpertModeBadge />
         </div>
-      </div>
-    </div>
-  );
-}
-
-function ActivityDetailHeaderCoachSection({
-  activity,
-  plannedSession,
-  plannedAnalysisReady,
-}: {
-  activity: ActivityDetailHeaderActivity;
-  plannedSession: PlannedSessionSummary | null;
-  plannedAnalysisReady: boolean;
-}) {
-  return (
-    <div className="flex flex-col items-start gap-4">
-      <DiscussWithCoachButton
-        className="w-full sm:w-auto"
-        label="Discuter de cette séance"
-        size="sm"
-        target={{ kind: 'activity', activityId: activity.id }}
-      />
-      <div className="w-full">
-        <ActivityHeaderContextChips
-          activityId={activity.id}
-          activityTitle={activity.title}
-          activityType={activity.type}
-          feeling={activity.feeling}
-          plannedAnalysisReady={plannedAnalysisReady}
-          plannedSession={plannedSession}
-          rpe={activity.rpe}
-          weather={activity.weather}
-        />
       </div>
     </div>
   );
@@ -151,23 +119,38 @@ export function ActivityDetailHeaderContent({
   const plannedAnalysisReady = Boolean(plannedSession?.analysis && plannedSession.analyzedAt);
 
   return (
-    <div className="space-y-2.5">
-      <ActivityDetailHeaderToolbar
-        activity={activity}
-        editHref={editHref}
-        hikeTrip={hikeTrip}
-        isHike={isHike}
-        onDelete={onDelete}
-        onLinkHikes={onLinkHikes}
-      />
-
-      <ActivityDetailIdentityBlock activity={activity} summary={summary} title={title} />
-
-      <ActivityDetailHeaderCoachSection
-        activity={activity}
-        plannedAnalysisReady={plannedAnalysisReady}
-        plannedSession={plannedSession}
-      />
-    </div>
+    <SessionPlate
+      identity={<ActivityDetailIdentityBlock activity={activity} summary={summary} title={title} />}
+      actions={
+        <div className="flex flex-col items-stretch gap-3 sm:items-start">
+          <DiscussWithCoachButton
+            className="w-full sm:w-auto"
+            label="Discuter de cette séance"
+            size="sm"
+            target={{ kind: 'activity', activityId: activity.id }}
+          />
+          <ActivityHeaderContextChips
+            activityId={activity.id}
+            activityTitle={activity.title}
+            activityType={activity.type}
+            feeling={activity.feeling}
+            plannedAnalysisReady={plannedAnalysisReady}
+            plannedSession={plannedSession}
+            rpe={activity.rpe}
+            weather={activity.weather}
+          />
+        </div>
+      }
+      toolbar={
+        <ActivityDetailHeaderToolbar
+          activity={activity}
+          editHref={editHref}
+          hikeTrip={hikeTrip}
+          isHike={isHike}
+          onDelete={onDelete}
+          onLinkHikes={onLinkHikes}
+        />
+      }
+    />
   );
 }

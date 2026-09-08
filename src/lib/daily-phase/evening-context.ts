@@ -1,7 +1,10 @@
 import { ActivityType } from '@prisma/client';
 import { isSet } from '@/lib/util/value';
 import { addDays, format, startOfDay } from 'date-fns';
-import { parsePlannedStart } from '@/lib/daily-phase/day-context';
+import {
+  parsePlannedStart,
+  comparePlannedSessionsBySchedule,
+} from '@/lib/planned-session/planned-session-dates';
 import { activityTypeLabels } from '@/lib/format';
 import { formatClock, formatDuration } from '@/lib/sleep/sleep';
 import type { TodayEffortLevel } from '@/lib/today/navigation/today-narrative-context';
@@ -139,11 +142,7 @@ export function pickTomorrowSessionHint(
     .filter(
       (s) => format(new Date(s.date), 'yyyy-MM-dd') === tomorrowId && !s.completed && !s.activityId,
     )
-    .sort((a, b) => {
-      const ta = parsePlannedStart(tomorrowDay, a.startTime)?.getTime() ?? Number.MAX_SAFE_INTEGER;
-      const tb = parsePlannedStart(tomorrowDay, b.startTime)?.getTime() ?? Number.MAX_SAFE_INTEGER;
-      return ta - tb;
-    });
+    .sort(comparePlannedSessionsBySchedule);
 
   if (!tomorrow) {
     return null;

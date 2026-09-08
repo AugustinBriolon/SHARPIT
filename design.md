@@ -99,6 +99,7 @@ No stacked metric cards in the hero. No physio rail competing with the verdict.
 Same causal column as Today (plate → chips → evidence → trajectory). No fitness-dashboard inventories.
 
 - **`/training`** — plate (objectif `J-n` ou prochaine séance) · chips séances/activités · régularité en expand
+- **`/activite/[id]`** — **post-flight logbook** dialect (`.activity-reading`): Session plate · weighted instruments always visible (3 primary + quieter secondary, no disclosure) · evidence · curves · rhythm splits · specs annex flat (`filterByAudience` for essential vs expert). Expert: Performance + zones inline via `ExpertOnly`, no accordion. Surfaces via luminosity, not hairline grids or left accent bars. Seed `b31627f2` / Logbook post-vol.
 - **`/biology?tab=composition`** — plate poids · chips fat/muscle/visceral · why insights · métriques en chips + expand · 1 chart poids, autres tendances en expand
 - **Physio drill-downs** (`/today/sleep|recovery|adaptation|effort`) — shared shell: plate (dimension verdict + mono score chip) · signal chips · why bandeau · evidence (1 primary chart). No PhysioRail / inset % in the hero.
 

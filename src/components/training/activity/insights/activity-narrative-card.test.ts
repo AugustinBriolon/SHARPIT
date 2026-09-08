@@ -6,7 +6,7 @@ import { ActivityType } from '@prisma/client';
 import { ActivityNarrativeCard } from './activity-narrative-card';
 
 describe('ActivityNarrativeCard', () => {
-  it('renders the coach reading on the neutral bande-ink surface with a primary dot', () => {
+  it('renders the coach reading on the logbook coach surface', () => {
     const html = renderToStaticMarkup(
       createElement(ActivityNarrativeCard, {
         activityType: ActivityType.SWIM,
@@ -18,10 +18,9 @@ describe('ActivityNarrativeCard', () => {
       }),
     );
 
-    expect(html).toContain('Lecture du coach');
-    expect(html).toContain('bg-analysis-surface-alt');
-    expect(html).toContain('bg-primary');
+    expect(html).toContain('activity-log-coach');
     expect(html).toContain('Bonne densité');
+    expect(html).not.toContain('Lecture du coach');
     expect(html).not.toContain('bg-sky-500/5');
   });
 });

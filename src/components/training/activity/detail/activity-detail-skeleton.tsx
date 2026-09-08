@@ -10,26 +10,19 @@ import {
 import type { ActivityDetailSkeletonLayout } from '@/lib/activity/detail/activity-detail-skeleton-layout';
 import { cn } from '@/lib/utils';
 
-/** KPI strip — mirrors InstrumentMetricGrid chrome (hero Distance / Temps / …). */
-export function ActivityMetricStripSkeleton({ count = 4 }: { count?: number }) {
+/** KPI strip — mirrors WeightedInstruments primary row (3 fields). */
+export function ActivityMetricStripSkeleton({ count = 3 }: { count?: number }) {
   return (
     <div
       className={cn(
-        'flex gap-2.5 overflow-x-auto overflow-y-visible overscroll-x-contain',
-        'snap-x snap-mandatory scroll-px-0.5',
-        '[scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden',
-        'sm:grid sm:snap-none sm:gap-3 sm:overflow-visible',
-        count >= 4 && 'sm:grid-cols-4',
-        count === 3 && 'sm:grid-cols-3',
-        count === 2 && 'sm:grid-cols-2',
-        count === 1 && 'sm:grid-cols-1',
+        'grid gap-3',
+        count >= 3 && 'grid-cols-2 sm:grid-cols-3',
+        count === 2 && 'grid-cols-2',
+        count === 1 && 'grid-cols-1',
       )}
     >
       {Array.from({ length: count }).map((_, i) => (
-        <div
-          key={i}
-          className="chip-surface relative min-w-[9.75rem] shrink-0 snap-start overflow-visible rounded-2xl px-3.5 py-3.5 sm:min-w-0 sm:shrink sm:px-4 sm:py-4"
-        >
+        <div key={i} className="activity-log-field activity-log-field-primary min-w-0">
           <Skeleton className="h-3 w-16 rounded-full border-0" />
           <Skeleton className="mt-2.5 h-8 w-20 rounded-lg border-0" />
         </div>
@@ -43,21 +36,21 @@ export function ActivityPerformanceSkeleton({ count = 4 }: { count?: number }) {
   const compact = count >= 6;
 
   return (
-    <section className="analysis-panel rounded-analysis-lg px-5 pt-5 pb-2 sm:px-6">
-      <div className="flex flex-wrap items-end justify-between gap-2">
-        <p className="text-label">Performance</p>
+    <section className="activity-log-coach space-y-1 px-5 py-5 sm:px-6 sm:py-6">
+      <div className="flex flex-wrap items-end justify-between gap-2 pb-2">
+        <p className="text-section-title">Performance</p>
         <Skeleton className="h-3 w-28 rounded-full border-0" />
       </div>
 
-      <div className="border-analysis-border/70 divide-analysis-border/60 mt-4 border-t">
+      <div className="space-y-0.5">
         {Array.from({ length: count }).map((_, i) => (
           <div
             key={i}
             className={cn(
-              'grid items-start gap-x-4 border-b last:border-b-0',
+              'grid items-start gap-x-4',
               compact
-                ? 'grid-cols-[minmax(0,1fr)_auto] gap-y-1 py-3 last:pb-2'
-                : 'grid-cols-[minmax(0,1fr)_auto] gap-y-1.5 py-3.5 last:pb-2 sm:grid-cols-[minmax(0,11rem)_1fr_auto]',
+                ? 'grid-cols-[minmax(0,1fr)_auto] gap-y-1 py-2.5'
+                : 'grid-cols-[minmax(0,1fr)_auto] gap-y-1.5 py-3 sm:grid-cols-[minmax(0,11rem)_1fr_auto]',
             )}
           >
             <div className="min-w-0">
@@ -77,12 +70,8 @@ export function ActivityPerformanceSkeleton({ count = 4 }: { count?: number }) {
 
 function CoachReadingSkeleton({ className }: { className?: string }) {
   return (
-    <SkeletonAnalysisPanelAlt className={cn('flex-1', className)}>
-      <div className="flex items-center gap-2">
-        <Skeleton className="size-2 shrink-0 rounded-full" />
-        <p className="text-label">Lecture du coach</p>
-      </div>
-      <SkeletonTitle className="mt-4" size="md" />
+    <SkeletonAnalysisPanelAlt className={cn('activity-log-coach flex-1', className)}>
+      <SkeletonTitle size="md" />
       <SkeletonText className="mt-3" widths={['100%', '92%', '70%']} />
     </SkeletonAnalysisPanelAlt>
   );
@@ -118,19 +107,19 @@ function MapOnlyCompositionSkeleton() {
 
 function FullCompositionSkeleton() {
   return (
-    <div className="grid gap-4 lg:grid-cols-2 lg:items-stretch">
-      <div className="order-1 flex min-h-0 flex-col gap-4 lg:order-2">
+    <div className="activity-log-evidence grid gap-4 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:items-stretch">
+      <div className="order-1 flex min-h-0 flex-col gap-4">
         <CoachReadingSkeleton />
         <ZonesSkeleton />
       </div>
-      <Skeleton className="order-2 h-80 w-full rounded-xl sm:h-96 lg:order-1 lg:min-h-full" />
+      <Skeleton className="activity-log-map order-2 h-80 w-full rounded-xl sm:h-96 lg:min-h-full" />
     </div>
   );
 }
 
 /**
  * Coach ± map composition skeleton.
- * Mobile: coach first when both. Desktop: map left, coach right.
+ * Mobile: coach first when both. Desktop: coach left (thesis), map right (evidence).
  */
 function resolveCompositionSkeletonVariant(withCoach: boolean, withMap: boolean) {
   if (!withCoach && !withMap) {
@@ -193,19 +182,17 @@ export function ActivityInsightsBodySkeleton({
       </section>
 
       {withSplits ? (
-        <section className="space-y-3">
-          <p className="text-label px-0.5">Splits</p>
-          <div className="chip-surface rounded-analysis-lg overflow-hidden">
+        <section className="activity-log-rhythm space-y-3 px-3 py-4">
+          <p className="text-section-title px-0.5">Splits</p>
+          <div className="space-y-2">
             {Array.from({ length: 5 }).map((_, i) => (
-              <div
-                key={i}
-                className="border-analysis-border/60 flex items-center gap-4 border-b px-4 py-3 last:border-b-0"
-              >
-                <Skeleton className="h-4 w-10 rounded-full border-0" />
-                <Skeleton className="h-4 w-14 rounded-full border-0" />
-                <Skeleton className="h-4 w-16 rounded-full border-0" />
-                <Skeleton className="h-4 w-10 rounded-full border-0" />
-                <Skeleton className="ml-auto h-4 w-12 rounded-full border-0" />
+              <div key={i} className="grid grid-cols-[3.25rem_1fr_auto] items-center gap-3 py-2">
+                <Skeleton className="h-3 w-8 rounded-full border-0" />
+                <div className="min-w-0 space-y-1.5">
+                  <Skeleton className="h-3 w-16 rounded-full border-0" />
+                  <Skeleton className="h-1.5 w-full rounded-full border-0" />
+                </div>
+                <Skeleton className="h-6 w-12 rounded-full border-0" />
               </div>
             ))}
           </div>
@@ -218,16 +205,13 @@ export function ActivityInsightsBodySkeleton({
 /** Strength exercises list placeholder. */
 export function ActivityStrengthListSkeleton({ rows = 5 }: { rows?: number }) {
   return (
-    <SkeletonCard className="space-y-2 px-4 py-4 sm:px-5">
+    <div className="activity-log-rhythm space-y-2 px-3 py-4 sm:px-4">
       <div className="mb-3 flex items-center justify-between gap-3">
         <SkeletonEyebrow className="mb-0 w-24" />
         <Skeleton className="h-8 w-28 rounded-lg border-0" />
       </div>
       {Array.from({ length: rows }).map((_, i) => (
-        <div
-          key={i}
-          className="border-analysis-border rounded-analysis flex items-center gap-3 border px-3 py-3"
-        >
+        <div key={i} className="activity-log-field flex items-center gap-3 px-3 py-3">
           <Skeleton className="size-12 shrink-0 rounded-lg border-0" />
           <div className="min-w-0 flex-1 space-y-2">
             <Skeleton className="h-4 w-[min(100%,12rem)] rounded-full border-0" />
@@ -236,7 +220,7 @@ export function ActivityStrengthListSkeleton({ rows = 5 }: { rows?: number }) {
           <Skeleton className="h-4 w-16 rounded-full border-0" />
         </div>
       ))}
-    </SkeletonCard>
+    </div>
   );
 }
 
@@ -273,15 +257,9 @@ function ActivityDetailMetaSkeleton() {
 
 function ActivityDetailFooterSkeleton() {
   return (
-    <div className="grid gap-4 lg:grid-cols-3">
-      <SkeletonCard className="min-h-28 px-5 py-5 lg:col-span-2">
-        <SkeletonEyebrow className="w-32" />
-        <SkeletonText className="mt-4" widths={['55%', '48%', '40%']} />
-      </SkeletonCard>
-      <SkeletonCard className="min-h-28 px-5 py-5">
-        <SkeletonEyebrow className="w-16" />
-        <SkeletonText className="mt-4" widths={['100%', '72%']} />
-      </SkeletonCard>
+    <div className="activity-log-annex space-y-3">
+      <Skeleton className="h-6 w-40 rounded-lg border-0" />
+      <SkeletonText widths={['55%', '48%', '40%']} />
     </div>
   );
 }
@@ -300,7 +278,7 @@ export function ActivityDetailSkeleton({
       <>
         <ActivityDetailHeaderSkeleton />
         <div className="relative z-0 space-y-4 sm:space-y-5">
-          <ActivityMetricStripSkeleton count={4} />
+          <ActivityMetricStripSkeleton count={3} />
           <ActivityStrengthListSkeleton />
         </div>
         <ActivityDetailFooterSkeleton />

@@ -5,21 +5,26 @@ import { History } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { PlanSectionHeading } from '@/components/plan/hub/plan-section-heading';
+import { BrickOverviewCard } from '@/components/planning/brick/brick-overview-card';
 import { CompletedSessionPreview } from '@/components/today/rich/completed-session-preview';
 import { PlannedSessionPreview } from '@/components/today/rich/planned-session-preview';
 import { LinkButton } from '@/components/ui/link-button';
 import { isHardSessionIntensity } from '@/lib/plan/trajectory/intensity-gate';
 import {
   groupHubDoneByDay,
+  groupHubRemainingItems,
   hubDoneCardAccessibleName,
   selectHubDoneEntries,
   selectHubRemainingEntries,
 } from '@/lib/plan/week/plan-week-previews';
+import { brickLegSummaries } from '@/lib/planned-session/brick/brick-sessions';
+import { formatPlannedDuration } from '@/lib/planned-session/sessions';
 import { buildCompletedSessionMetrics } from '@/lib/today/rich/completed-session-metrics';
 import { buildPlannedSessionPreview } from '@/lib/today/rich/planned-session-metrics';
 import { TWIN_DRILL_DOWN } from '@/lib/today/navigation/today-twin-navigation';
 import type { ThreadEntry } from '@/lib/training/thread/thread-model';
 import { useAppModal } from '@/providers/app-modal-provider';
+import type { ClientPlannedSession } from '@/lib/query/types';
 
 const HUB_DONE_CARD_CLASS = 'flex min-w-[min(14rem,100cqi)] flex-1';
 
@@ -106,6 +111,37 @@ function DoneHubPreview({ entry, dayLabel }: { entry: ThreadEntry; dayLabel: str
   );
 }
 
+function PlannedHubBrickPreview({
+  entries,
+  gateActive,
+}: {
+  entries: ThreadEntry[];
+  gateActive: boolean;
+}) {
+  const { openPlannedSession } = useAppModal();
+  const plannedLegs = entries
+    .map((entry) => entry.planned)
+    .filter((session): session is ClientPlannedSession => Boolean(session));
+  if (plannedLegs.length === 0) {
+    return null;
+  }
+  const totalMin = plannedLegs.reduce((sum, session) => sum + (session.durationMin ?? 0), 0);
+  const gated =
+    gateActive && plannedLegs.some((session) => isHardSessionIntensity(session.intensity));
+
+  return (
+    <li className="space-y-1.5">
+      <EntryDayLabel entry={entries[0]!} />
+      <BrickOverviewCard
+        badge={gated ? 'Intensité en pause' : null}
+        legs={brickLegSummaries(plannedLegs)}
+        subtitle={totalMin > 0 ? formatPlannedDuration(totalMin) : null}
+        onOpenLeg={(legId) => openPlannedSession({ sessionId: legId })}
+      />
+    </li>
+  );
+}
+
 export function PlanRemainingList({
   entries,
   gateActive,
@@ -116,7 +152,8 @@ export function PlanRemainingList({
   excludePlannedId?: string | null;
 }) {
   const { featured, overflow } = selectHubRemainingEntries(entries, excludePlannedId);
-  if (featured.length === 0) {
+  const items = groupHubRemainingItems(featured);
+  if (items.length === 0) {
     return null;
   }
 
@@ -124,13 +161,17 @@ export function PlanRemainingList({
     <div className="space-y-2">
       <PlanSectionHeading title="À faire" />
       <ul className="space-y-3">
-        {featured.map((entry) => (
-          <PlannedHubPreview
-            key={entry.id}
-            entry={entry}
-            gated={gateActive && isHardSessionIntensity(entry.planned?.intensity)}
-          />
-        ))}
+        {items.map((item) =>
+          item.kind === 'brick' ? (
+            <PlannedHubBrickPreview key={item.id} entries={item.entries} gateActive={gateActive} />
+          ) : (
+            <PlannedHubPreview
+              key={item.entry.id}
+              entry={item.entry}
+              gated={gateActive && isHardSessionIntensity(item.entry.planned?.intensity)}
+            />
+          ),
+        )}
       </ul>
       {overflow > 0 ? (
         <Link className="explore-link" href="/plan/semaine">

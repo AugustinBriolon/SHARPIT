@@ -261,7 +261,11 @@ export function mergeLinkExclusions(
 
 /** Hide paired chips while a link decision is still pending (card owns the decision). */
 export function filterDaySummaryForLinkExclusions<
-  T extends { id: string; kind: 'done' | 'planned' },
+  T extends {
+    id: string;
+    kind: 'done' | 'planned';
+    brickLegs?: ReadonlyArray<{ id: string }> | null;
+  },
 >(
   lines: readonly T[],
   excluded: { activityIds: Set<string>; plannedSessionIds: Set<string> },
@@ -273,8 +277,14 @@ export function filterDaySummaryForLinkExclusions<
     if (line.kind === 'done' && excluded.activityIds.has(line.id)) {
       return false;
     }
-    if (line.kind === 'planned' && excluded.plannedSessionIds.has(line.id)) {
-      return false;
+    if (line.kind === 'planned') {
+      // A brick is one unit — never drop it because one leg is pending link.
+      if (line.brickLegs && line.brickLegs.length > 0) {
+        return true;
+      }
+      if (excluded.plannedSessionIds.has(line.id)) {
+        return false;
+      }
     }
     return true;
   });

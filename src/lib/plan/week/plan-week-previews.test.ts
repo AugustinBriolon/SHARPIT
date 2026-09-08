@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   groupHubDoneByDay,
   hubDoneCardAccessibleName,
+  resolveDecisionSessionBlock,
   selectHubDoneEntries,
   selectHubRemainingEntries,
   selectPlanHubStreamPrefetchIds,
@@ -82,6 +83,47 @@ describe('selectHubRemainingEntries', () => {
     });
   });
 
+  it('counts a brick as one remaining unit and keeps every leg', () => {
+    const remaining = [
+      {
+        ...doneEntry('bike'),
+        kind: 'planned' as const,
+        activity: null,
+        planned: {
+          id: 'bike',
+          brickGroupId: 'brick-1',
+          brickOrder: 0,
+        } as ThreadEntry['planned'],
+      },
+      {
+        ...doneEntry('run'),
+        kind: 'planned' as const,
+        activity: null,
+        planned: {
+          id: 'run',
+          brickGroupId: 'brick-1',
+          brickOrder: 1,
+        } as ThreadEntry['planned'],
+      },
+      {
+        ...doneEntry('solo'),
+        kind: 'planned' as const,
+        activity: null,
+        planned: { id: 'solo' } as ThreadEntry['planned'],
+      },
+      {
+        ...doneEntry('extra'),
+        kind: 'planned' as const,
+        activity: null,
+        planned: { id: 'extra' } as ThreadEntry['planned'],
+      },
+    ];
+    expect(selectHubRemainingEntries(remaining)).toEqual({
+      featured: [remaining[0], remaining[1], remaining[2]],
+      overflow: 1,
+    });
+  });
+
   it('omits the remaining list when the decision already owns the only session', () => {
     const remaining = [
       {
@@ -94,6 +136,88 @@ describe('selectHubRemainingEntries', () => {
     expect(selectHubRemainingEntries(remaining, 'a')).toEqual({
       featured: [],
       overflow: 0,
+    });
+  });
+
+  it('drops every brick leg when the decision owns one of them', () => {
+    const remaining = [
+      {
+        ...doneEntry('bike'),
+        kind: 'planned' as const,
+        activity: null,
+        planned: {
+          id: 'bike',
+          brickGroupId: 'brick-1',
+          brickOrder: 0,
+        } as ThreadEntry['planned'],
+      },
+      {
+        ...doneEntry('run'),
+        kind: 'planned' as const,
+        activity: null,
+        planned: {
+          id: 'run',
+          brickGroupId: 'brick-1',
+          brickOrder: 1,
+        } as ThreadEntry['planned'],
+      },
+      {
+        ...doneEntry('solo'),
+        kind: 'planned' as const,
+        activity: null,
+        planned: { id: 'solo' } as ThreadEntry['planned'],
+      },
+    ];
+    expect(selectHubRemainingEntries(remaining, 'bike')).toEqual({
+      featured: [remaining[2]],
+      overflow: 0,
+    });
+  });
+});
+
+describe('resolveDecisionSessionBlock', () => {
+  it('returns a single planned entry when the next session is alone', () => {
+    const remaining = [
+      {
+        ...doneEntry('solo'),
+        kind: 'planned' as const,
+        activity: null,
+        planned: { id: 'solo' } as ThreadEntry['planned'],
+      },
+    ];
+    expect(resolveDecisionSessionBlock(remaining, 'solo')).toEqual({
+      kind: 'single',
+      entry: remaining[0],
+    });
+  });
+
+  it('returns every brick leg when the next session belongs to a brick', () => {
+    const remaining = [
+      {
+        ...doneEntry('bike'),
+        kind: 'planned' as const,
+        activity: null,
+        planned: {
+          id: 'bike',
+          brickGroupId: 'brick-1',
+          brickOrder: 0,
+        } as ThreadEntry['planned'],
+      },
+      {
+        ...doneEntry('run'),
+        kind: 'planned' as const,
+        activity: null,
+        planned: {
+          id: 'run',
+          brickGroupId: 'brick-1',
+          brickOrder: 1,
+        } as ThreadEntry['planned'],
+      },
+    ];
+    expect(resolveDecisionSessionBlock(remaining, 'bike')).toEqual({
+      kind: 'brick',
+      id: 'brick-1',
+      entries: [remaining[0], remaining[1]],
     });
   });
 });

@@ -112,6 +112,7 @@ export function ActivityInsightsContent({
         <ActivityStreamChart has={has} samples={normalizedSamples} type={type} />
       )}
 
+      {/* Rhythm evidence — always visible; expert performance sits above the chart. */}
       <ActivityInsightsSplits analysis={analysis} />
     </div>
   );

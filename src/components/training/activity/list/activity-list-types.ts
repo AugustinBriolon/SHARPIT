@@ -8,11 +8,12 @@ export type ActivityListItem = {
   title: string | null;
   duration: number | null;
   load: number | null;
+  rpe?: number | null;
   weather: string | null;
   runMetrics: { distanceM: number | null } | null;
-  bikeMetrics: { tss: number | null } | null;
+  bikeMetrics: { tss: number | null; avgPower?: number | null } | null;
   swimMetrics: { distanceM: number | null } | null;
-  hikeMetrics: { distanceM: number | null } | null;
+  hikeMetrics: { distanceM: number | null; elevationM?: number | null } | null;
   strengthSets: { exercise: string }[];
   plannedSession: PlannedSessionSummary | null;
   hikeTripId?: string | null;

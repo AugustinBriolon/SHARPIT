@@ -8,6 +8,7 @@ import {
   type BrickLegSummary,
   type DayPlannedItem,
 } from '@/lib/planned-session/brick/brick-sessions';
+import { comparePlannedSessionsBySchedule } from '@/lib/planned-session/planned-session-dates';
 import { activityTypeLabels, formatDuration } from '@/lib/format';
 import { formatPlannedDuration, intensityLabels } from '@/lib/planned-session/sessions';
 import {
@@ -59,13 +60,15 @@ function filterTodayPlannedSessions(
   refDay: Date,
   linkedPlannedIds: Set<string>,
 ): ClientPlannedSession[] {
-  return plannedSessions.filter(
-    (s) =>
-      isSameDay(new Date(s.date), refDay) &&
-      !s.completed &&
-      !s.activityId &&
-      !linkedPlannedIds.has(s.id),
-  );
+  return plannedSessions
+    .filter(
+      (s) =>
+        isSameDay(new Date(s.date), refDay) &&
+        !s.completed &&
+        !s.activityId &&
+        !linkedPlannedIds.has(s.id),
+    )
+    .sort(comparePlannedSessionsBySchedule);
 }
 
 function buildDoneLines(activities: ClientActivity[]): DaySummaryLine[] {

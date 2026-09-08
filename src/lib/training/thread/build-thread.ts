@@ -3,6 +3,7 @@ import { isSet } from '@/lib/util/value';
 import type { ClientActivity, ClientPlannedSession } from '@/lib/query/types';
 import { activityTypeLabels } from '@/lib/format';
 import { dayKeyFromDate } from '@/lib/date/day-key';
+import { parsePlannedStart } from '@/lib/planned-session/planned-session-dates';
 import type { ThreadDay, ThreadEntry, ThreadWeek } from './thread-model';
 
 /**
@@ -95,6 +96,20 @@ function loadOf(entry: ThreadEntry): { done: number; planned: number } {
   return { done, planned };
 }
 
+/** Soonest first within a day: activity clock time, else planned startTime. */
+function entryScheduleTime(entry: ThreadEntry): number {
+  if (entry.activity) {
+    return new Date(entry.activity.date).getTime();
+  }
+  if (entry.planned) {
+    return (
+      parsePlannedStart(new Date(entry.planned.date), entry.planned.startTime)?.getTime() ??
+      Number.MAX_SAFE_INTEGER
+    );
+  }
+  return Number.MAX_SAFE_INTEGER;
+}
+
 function buildThreadWeek(input: {
   weekKey: string;
   entries: ThreadEntry[];
@@ -116,10 +131,11 @@ function buildThreadWeek(input: {
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([dayKey, dayEntries]) => {
       const [year, month, day] = dayKey.split('-').map(Number);
+      const date = new Date(year!, (month ?? 1) - 1, day ?? 1);
       return {
         dayKey,
-        date: new Date(year!, (month ?? 1) - 1, day ?? 1),
-        entries: dayEntries,
+        date,
+        entries: [...dayEntries].sort((a, b) => entryScheduleTime(a) - entryScheduleTime(b)),
       };
     });
 

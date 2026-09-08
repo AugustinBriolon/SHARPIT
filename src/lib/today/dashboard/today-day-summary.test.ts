@@ -181,13 +181,17 @@ describe('buildTodayDaySummary', () => {
     expect(summary.sectionLabel).not.toContain('à venir');
   });
 
-  it('never lists a past unrealized session, whatever the lookback', () => {
-    const lastWeek = Array.from({ length: 7 }, (_, i) =>
-      planned({ id: `p-${i}`, date: new Date(TODAY.getTime() - (i + 1) * 86_400_000) }),
+  it('orders same-day planned sessions by startTime, soonest first', () => {
+    const summary = buildTodayDaySummary(
+      TODAY,
+      [],
+      [
+        planned({ id: 'evening', title: 'Soir', startTime: '18:00' }),
+        planned({ id: 'morning', title: 'Matin', startTime: '07:30' }),
+        planned({ id: 'untimed', title: 'Sans heure', startTime: null }),
+      ],
     );
-    const summary = buildTodayDaySummary(TODAY, [], lastWeek);
 
-    expect(summary.lines).toHaveLength(0);
-    expect(summary.isEmpty).toBe(true);
+    expect(summary.lines.map((line) => line.id)).toEqual(['morning', 'evening', 'untimed']);
   });
 });

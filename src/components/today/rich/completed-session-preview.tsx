@@ -214,23 +214,27 @@ function CompletedSessionPreviewGrid({
   );
 }
 
-function useCompletedPreviewMap(activityId: string, activityType: ActivityType) {
+function useCompletedPreviewMap(
+  activityId: string,
+  activityType: ActivityType,
+  mapEnabled: boolean,
+) {
   const mayHavePath = activityMayHaveRoutePath(activityType);
-  const stream = useActivityStream(activityId, { enabled: mayHavePath });
+  const stream = useActivityStream(activityId, { enabled: mapEnabled && mayHavePath });
   const remembered = readRememberedHubRoute(activityId);
   const usablePath = resolveUsableRoutePath(stream.data?.path) ?? remembered.path;
 
   useEffect(() => {
-    if (mayHavePath && stream.isFetched) {
+    if (mapEnabled && mayHavePath && stream.isFetched) {
       rememberHubRoute(activityId, resolveUsableRoutePath(stream.data?.path));
     }
-  }, [activityId, mayHavePath, stream.data?.path, stream.isFetched]);
+  }, [activityId, mapEnabled, mayHavePath, stream.data?.path, stream.isFetched]);
 
   return {
     usablePath,
     showMapSlot: resolveCompletedSessionMapSlot({
       mayHavePath,
-      isPending: stream.isPending,
+      isPending: mapEnabled && stream.isPending,
       isError: stream.isError,
       usablePath,
       rememberedHasPath: remembered.known ? remembered.hasPath : null,
@@ -243,6 +247,8 @@ function useCompletedPreviewMap(activityId: string, activityType: ActivityType) 
  * sport band + KPIs otherwise. Fluid in the Today reading column.
  * `stack` keeps map above metrics for the Plan rail. `split` is the
  * side-by-side variant.
+ *
+ * Pass `mapEnabled={false}` to skip the stream fetch (virtualized / offscreen lists).
  */
 export function CompletedSessionPreview({
   accessibleName,
@@ -251,6 +257,7 @@ export function CompletedSessionPreview({
   className,
   href,
   layout = 'column',
+  mapEnabled = true,
   metrics,
   title,
 }: {
@@ -260,10 +267,12 @@ export function CompletedSessionPreview({
   className?: string;
   href: string;
   layout?: CompletedSessionPreviewLayout;
+  /** When false, skips GPS stream fetch and uses remembered / sport-band fallback. */
+  mapEnabled?: boolean;
   metrics: CompletedSessionPreviewMetric[];
   title: string;
 }) {
-  const { showMapSlot, usablePath } = useCompletedPreviewMap(activityId, activityType);
+  const { showMapSlot, usablePath } = useCompletedPreviewMap(activityId, activityType, mapEnabled);
   const surfaceClass = cn(
     'analysis-panel border-analysis-border/80 rounded-analysis-lg block w-full overflow-hidden border',
     'hover:border-analysis-border transition-[border-color,background-color]',

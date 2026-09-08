@@ -1,7 +1,5 @@
 'use client';
 
-import { format, isSameWeek, startOfWeek } from 'date-fns';
-import { fr } from 'date-fns/locale';
 import dynamic from 'next/dynamic';
 import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -10,11 +8,11 @@ import {
   TrainingListToolbar,
   TrainingListWeekGroups,
 } from '@/components/training/hub/training-list-parts';
+import { groupActivitiesByWeek } from '@/components/training/hub/training-list-logbook';
 import type { ClientActivity } from '@/lib/query/types';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SkeletonDataValue } from '@/components/ui/skeleton-data-value';
-import { InstrumentListChipSkeleton } from '@/components/ui/instruments/instrument-list-chip';
 import { useActivities, useRecords } from '@/hooks/use-data';
 import {
   DEFAULT_TRAINING_HISTORY_FILTERS,
@@ -35,42 +33,24 @@ const CreateHikeTripDialog = dynamic(
 /** Height reserved under the list so the last chips clear the fixed confirm bar. */
 const SELECTION_BAR_SPACE = 'pb-28';
 
-type WeekGroup = { key: string; label: string; activities: ClientActivity[] };
-
-/** Group activities into ISO weeks (most recent first), each with a human label. */
-function groupByWeek(activities: ClientActivity[]): WeekGroup[] {
-  const today = new Date();
-  const groups = new Map<string, WeekGroup>();
-
-  for (const activity of activities) {
-    const date = new Date(activity.date);
-    const weekStart = startOfWeek(date, { locale: fr });
-    const key = format(weekStart, 'yyyy-MM-dd');
-    let group = groups.get(key);
-    if (!group) {
-      const label = isSameWeek(date, today, { locale: fr })
-        ? 'Cette semaine'
-        : `Semaine du ${format(weekStart, 'd MMMM', { locale: fr })}`;
-      group = { key, label, activities: [] };
-      groups.set(key, group);
-    }
-    group.activities.push(activity);
-  }
-
-  return [...groups.values()].sort((a, b) => b.key.localeCompare(a.key));
-}
+type WeekGroup = ReturnType<typeof groupActivitiesByWeek>[number];
 
 export function TrainingListFallback() {
   return (
     <div className="space-y-6">
       <Skeleton className="h-11 w-full rounded-xl lg:h-9 lg:max-w-xl lg:rounded-full" />
-      <section>
-        <div className="mb-2 px-0.5">
-          <SkeletonDataValue heightClassName="h-3" widthClassName="w-24" />
+      <section className="space-y-2">
+        <div className="flex items-end justify-between px-0.5">
+          <SkeletonDataValue heightClassName="h-3" widthClassName="w-28" />
+          <SkeletonDataValue heightClassName="h-3" widthClassName="w-16" />
         </div>
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-          {Array.from({ length: 6 }, (_, i) => (
-            <InstrumentListChipSkeleton key={i} titleWidth="w-[min(100%,14rem)]" />
+        <div className="space-y-2.5">
+          {Array.from({ length: 3 }, (_, i) => (
+            <div
+              key={i}
+              className="analysis-panel rounded-analysis-lg h-28 w-full animate-pulse border"
+              aria-hidden
+            />
           ))}
         </div>
       </section>
@@ -270,7 +250,7 @@ export function TrainingList() {
   const activities = data ?? [];
 
   const listState = useTrainingListState(activities, records);
-  const weekGroups = useMemo(() => groupByWeek(listState.filtered), [listState.filtered]);
+  const weekGroups = useMemo(() => groupActivitiesByWeek(listState.filtered), [listState.filtered]);
 
   if (isPending) {
     return <TrainingListFallback />;

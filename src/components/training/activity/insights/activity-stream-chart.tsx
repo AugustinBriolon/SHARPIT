@@ -3,6 +3,7 @@
 import { ActivityType } from '@prisma/client';
 import { memo, useMemo, useState } from 'react';
 import { CartesianGrid, Line, LineChart, Tooltip, XAxis, YAxis } from 'recharts';
+import { useReducedMotion } from 'motion/react';
 import { ChartTooltipCard } from '@/components/ui/charts/chart-tooltip';
 import { ResponsiveChartFrame } from '@/components/ui/charts/responsive-chart-frame';
 import { CHART_GRID_COLOR, CHART_TICK_COLOR } from '@/lib/theme/chart-theme';
@@ -74,6 +75,7 @@ function ActivityStreamChartComponent({
   };
   type: ActivityType;
 }) {
+  const reduceMotion = useReducedMotion() ?? false;
   const useDistance = has.distance;
   const metrics = useMemo(() => buildStreamMetricOptions(has, type), [has, type]);
   const defaultSelected = useMemo(
@@ -117,9 +119,9 @@ function ActivityStreamChartComponent({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="activity-log-curves space-y-4">
       <div className="px-1 sm:px-2">
-        <h2 className="text-label">Comparer les courbes</h2>
+        <h2 className="text-section-title">Comparer les courbes</h2>
         <p className="text-muted-foreground mt-1 text-sm text-pretty">
           Active 1 ou 2 séries pour garder des axes lisibles.
         </p>
@@ -142,6 +144,7 @@ function ActivityStreamChartComponent({
               className={cn(
                 'pressable min-h-11 rounded-lg border px-3 py-2 text-left sm:min-h-0',
                 'focus-visible:ring-primary/35 focus-visible:ring-2 focus-visible:outline-hidden',
+                'transition-transform duration-150 ease-out active:scale-[0.97]',
                 selected
                   ? 'border-primary/35 bg-analysis-surface-alt text-foreground'
                   : 'border-analysis-border bg-background text-muted-foreground',
@@ -222,9 +225,11 @@ function ActivityStreamChartComponent({
             {selectedMetrics.map((metric) => (
               <Line
                 key={metric.key}
+                animationDuration={reduceMotion ? 0 : 700}
+                animationEasing="ease-out"
                 dataKey={metric.key}
                 dot={false}
-                isAnimationActive={false}
+                isAnimationActive={!reduceMotion}
                 stroke={metric.color}
                 strokeWidth={2}
                 type="monotone"

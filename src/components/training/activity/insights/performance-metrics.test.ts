@@ -66,11 +66,11 @@ describe('PerformanceMetrics', () => {
     );
 
     expect(html).toContain('Performance');
-    expect(html).toContain('analysis-panel');
+    expect(html).toContain('activity-log-coach');
     expect(html).toContain('grid-cols-[minmax(0,11rem)_1fr_auto]');
     expect(html).toContain('NP');
     expect(html).toContain('245 W');
-    expect(html).not.toContain('rounded-analysis-lg px-5 py-4');
+    expect(html).not.toContain('border-b last:border-b-0');
   });
 
   it('switches to a compact dense layout when many metrics exist', () => {
@@ -86,7 +86,7 @@ describe('PerformanceMetrics', () => {
       }),
     );
 
-    expect(html).toContain('grid-cols-[minmax(0,1fr)_auto] gap-y-1 py-3');
+    expect(html).toContain('grid-cols-[minmax(0,1fr)_auto] gap-y-1 py-2.5');
     expect(html).toContain('Variabilité allure');
     expect(html).toContain('Découplage');
     expect(html).toContain('text-base');

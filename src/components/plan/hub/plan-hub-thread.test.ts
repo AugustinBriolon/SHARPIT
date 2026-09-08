@@ -85,6 +85,8 @@ describe('Plan hub continuous thread', () => {
     expect(decision).toContain('density="compact"');
     expect(decision).toContain('buildPlannedSessionPreview');
     expect(decision).toContain('equipment={preview.equipment}');
+    expect(decision).toContain('BrickOverviewCard');
+    expect(decision).toContain('resolveDecisionSessionBlock');
     expect(decision).not.toContain('density="stack"');
     expect(decision).not.toContain('PlanWeekDigest');
     expect(decision).not.toContain('athleteVisibleCopy');

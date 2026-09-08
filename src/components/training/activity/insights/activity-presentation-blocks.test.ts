@@ -2,13 +2,13 @@ import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import type { ActivityDetail } from '../detail/types';
-import { SplitsTable } from './splits-table';
+import { RhythmSplits } from '../reading/rhythm-splits';
 import { ActivitySpecsNotes } from '../detail/activity-specs-notes';
 
-describe('SplitsTable', () => {
-  it('renders as a technical split table with its own headed surface', () => {
+describe('RhythmSplits', () => {
+  it('renders relative pace bars instead of a dense spreadsheet', () => {
     const html = renderToStaticMarkup(
-      createElement(SplitsTable, {
+      createElement(RhythmSplits, {
         title: 'Splits au kilomètre',
         splits: [
           {
@@ -25,14 +25,14 @@ describe('SplitsTable', () => {
       }),
     );
 
-    expect(html).toContain('Lecture séquentielle split par split');
-    expect(html).toContain('analysis-panel');
+    expect(html).toContain('Rythme relatif');
+    expect(html).toContain('activity-log-rhythm');
     expect(html).toContain('Splits au kilomètre');
   });
 });
 
 describe('ActivitySpecsNotes', () => {
-  it('keeps characteristics light and notes on a separate surface', () => {
+  it('shows characteristics flat (no disclosure) and notes on a log surface', () => {
     const activity = { notes: 'Vent de face au retour' } as unknown as ActivityDetail;
 
     const html = renderToStaticMarkup(
@@ -46,8 +46,11 @@ describe('ActivitySpecsNotes', () => {
     );
 
     expect(html).toContain('Caractéristiques');
-    expect(html).toContain('analysis-panel-alt');
+    expect(html).toContain('activity-log-annex');
+    expect(html).toContain('activity-log-notes');
     expect(html).toContain('Vent de face au retour');
+    expect(html).toContain('Garmin');
+    expect(html).not.toContain('aria-expanded');
     expect(html).not.toContain('data-slot="card"');
   });
 });

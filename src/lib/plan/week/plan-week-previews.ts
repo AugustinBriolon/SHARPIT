@@ -58,6 +58,30 @@ export function selectPlanHubStreamPrefetchIds(
     .map((activity) => activity.id);
 }
 
+/**
+ * When the week decision owns one planned session, drop it from « À faire ».
+ * If that session is a brick leg, drop every leg of the same brick — otherwise
+ * the hub shows a broken one-leg brick under the featured decision card.
+ */
+export function resolveExcludedPlannedIds(
+  remaining: readonly ThreadEntry[],
+  excludePlannedId?: string | null,
+): Set<string> {
+  if (!excludePlannedId) {
+    return new Set();
+  }
+  const seed = remaining.find((entry) => entry.planned?.id === excludePlannedId);
+  const brickId = seed?.planned?.brickGroupId ?? null;
+  if (!brickId) {
+    return new Set([excludePlannedId]);
+  }
+  return new Set(
+    remaining
+      .filter((entry) => entry.planned?.brickGroupId === brickId)
+      .map((entry) => entry.planned!.id),
+  );
+}
+
 export function selectHubRemainingEntries(
   remaining: readonly ThreadEntry[],
   excludePlannedId?: string | null,
@@ -65,12 +89,88 @@ export function selectHubRemainingEntries(
   featured: ThreadEntry[];
   overflow: number;
 } {
-  const owed = remaining.filter((entry) => entry.planned && entry.planned.id !== excludePlannedId);
-  if (owed.length <= HUB_REMAINING_PREVIEW_LIMIT) {
-    return { featured: [...owed], overflow: 0 };
+  const excluded = resolveExcludedPlannedIds(remaining, excludePlannedId);
+  const owed = remaining.filter((entry) => entry.planned && !excluded.has(entry.planned.id));
+  const units: ThreadEntry[][] = [];
+  const seenBricks = new Set<string>();
+
+  for (const entry of owed) {
+    const brickId = entry.planned?.brickGroupId ?? null;
+    if (!brickId) {
+      units.push([entry]);
+      continue;
+    }
+    if (seenBricks.has(brickId)) {
+      continue;
+    }
+    seenBricks.add(brickId);
+    units.push(
+      owed
+        .filter((candidate) => candidate.planned?.brickGroupId === brickId)
+        .sort((a, b) => (a.planned?.brickOrder ?? 0) - (b.planned?.brickOrder ?? 0)),
+    );
   }
+
+  if (units.length <= HUB_REMAINING_PREVIEW_LIMIT) {
+    return { featured: units.flat(), overflow: 0 };
+  }
+
+  const featuredUnits = units.slice(0, HUB_REMAINING_PREVIEW_LIMIT);
   return {
-    featured: owed.slice(0, HUB_REMAINING_PREVIEW_LIMIT),
-    overflow: owed.length - HUB_REMAINING_PREVIEW_LIMIT,
+    featured: featuredUnits.flat(),
+    overflow: units.length - featuredUnits.length,
   };
+}
+
+export type HubRemainingItem =
+  { kind: 'single'; entry: ThreadEntry } | { kind: 'brick'; id: string; entries: ThreadEntry[] };
+
+/**
+ * What « Prochaine séance » should open — a single card or the full brick block.
+ */
+export function resolveDecisionSessionBlock(
+  remaining: readonly ThreadEntry[],
+  sessionId: string | null,
+): HubRemainingItem | null {
+  if (!sessionId) {
+    return null;
+  }
+  const entry = remaining.find((candidate) => candidate.planned?.id === sessionId) ?? null;
+  if (!entry?.planned) {
+    return null;
+  }
+  const brickId = entry.planned.brickGroupId ?? null;
+  if (!brickId) {
+    return { kind: 'single', entry };
+  }
+  const entries = remaining
+    .filter((candidate) => candidate.planned?.brickGroupId === brickId)
+    .sort((a, b) => (a.planned?.brickOrder ?? 0) - (b.planned?.brickOrder ?? 0));
+  return { kind: 'brick', id: brickId, entries };
+}
+
+/** Display grouping for hub remaining — one brick card per brickGroupId. */
+export function groupHubRemainingItems(featured: readonly ThreadEntry[]): HubRemainingItem[] {
+  const result: HubRemainingItem[] = [];
+  const bricks = new Map<string, Extract<HubRemainingItem, { kind: 'brick' }>>();
+
+  for (const entry of featured) {
+    const brickId = entry.planned?.brickGroupId ?? null;
+    if (!brickId) {
+      result.push({ kind: 'single', entry });
+      continue;
+    }
+    let group = bricks.get(brickId);
+    if (!group) {
+      group = { kind: 'brick', id: brickId, entries: [] };
+      bricks.set(brickId, group);
+      result.push(group);
+    }
+    group.entries.push(entry);
+  }
+
+  for (const group of bricks.values()) {
+    group.entries.sort((a, b) => (a.planned?.brickOrder ?? 0) - (b.planned?.brickOrder ?? 0));
+  }
+  return result;
 }

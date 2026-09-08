@@ -280,7 +280,9 @@ function mapDaySummaryLineForView(
 ) {
   const plannedId = plannedIdFromLine(line);
   return {
-    id: plannedId ?? line.id,
+    // Keep brickGroupId for brick lines — remapping to the first leg made link
+    // exclusions and morning proposals swallow the whole brick (Course vanished).
+    id: line.id,
     activityType: line.activityType,
     primary: line.primary,
     secondary: line.secondary ?? null,

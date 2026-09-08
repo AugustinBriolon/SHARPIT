@@ -7,15 +7,12 @@ import { DemoSignupNudge } from '@/components/demo/demo-signup-nudge';
 import { InkEmptyState } from '@/components/ui/ink-empty-state';
 import { LinkButton } from '@/components/ui/link-button';
 import { useActivityNarrativeSection } from '@/components/training/activity/insights/use-activity-narrative-section';
+import { useDisplayMode } from '@/providers/display-mode-provider';
 
 function NarrativeLoadingSection() {
   return (
-    <section className="bg-analysis-surface-alt rounded-analysis-lg flex h-full flex-col px-5 py-5 sm:px-6 sm:py-6">
-      <p className="text-label inline-flex items-center gap-2">
-        <span className="bg-primary size-2 shrink-0 rounded-full" aria-hidden />
-        Lecture du coach
-      </p>
-      <div className="mt-4 flex items-start gap-3">
+    <section className="activity-log-coach flex h-full flex-col px-5 py-5 sm:px-6 sm:py-6">
+      <div className="flex items-start gap-3">
         <Loader2 className="text-primary mt-0.5 size-4 shrink-0 animate-spin" />
         <div className="space-y-1">
           <p className="font-medium">Synthèse en cours</p>
@@ -38,11 +35,7 @@ function NarrativeGenerateSection({
   showFreeTierHint: boolean;
 }) {
   return (
-    <section className="bg-analysis-surface-alt rounded-analysis-lg flex h-full flex-col space-y-3 px-5 py-5 sm:px-6 sm:py-6">
-      <p className="text-label inline-flex items-center gap-2">
-        <span className="bg-primary size-2 shrink-0 rounded-full" aria-hidden />
-        Lecture du coach
-      </p>
+    <section className="activity-log-coach flex h-full flex-col space-y-3 px-5 py-5 sm:px-6 sm:py-6">
       <p className="text-muted-foreground text-sm leading-relaxed">
         La synthèse n’est pas encore disponible. Tu peux la relancer.
       </p>
@@ -78,6 +71,7 @@ interface ActivityNarrativeSectionProps {
   activityId: string;
   activityType: import('@prisma/client').ActivityType;
   activityDate: Date | string;
+  activityTitle?: string | null;
   narrativeAnalysis: unknown;
   narrativeAnalyzedAt: Date | string | null;
   coachEnabled: boolean;
@@ -120,6 +114,7 @@ function resolveNarrativeView(
 }
 
 export function ActivityNarrativeSection(props: ActivityNarrativeSectionProps) {
+  const { mode } = useDisplayMode();
   const state = useActivityNarrativeSection({
     activityId: props.activityId,
     activityType: props.activityType,
@@ -141,8 +136,10 @@ export function ActivityNarrativeSection(props: ActivityNarrativeSectionProps) {
     return (
       <div className="space-y-3">
         <ActivityNarrativeCard
+          activityTitle={props.activityTitle}
           activityType={state.activityType}
           analysis={analysis}
+          mode={mode}
           narrativeAnalyzedAt={state.narrativeAnalyzedAt}
         />
         {state.isDemo ? (

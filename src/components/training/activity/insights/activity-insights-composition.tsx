@@ -8,6 +8,10 @@ import { ActivityInsightsZoneSection } from '@/components/training/activity/insi
 import type { ZoneBucket } from '@/lib/activity/detail/activity-analysis';
 import { cn } from '@/lib/utils';
 
+/**
+ * Evidence stage: coach reading leads; map is the spatial proof beside/below.
+ * Mobile: coach first. Desktop: coach left (thesis), map right (evidence).
+ */
 export function ActivityInsightsComposition({
   activityId,
   type,
@@ -36,9 +40,16 @@ export function ActivityInsightsComposition({
   }
 
   return (
-    <div className={cn('grid gap-4', hasPath && coachPanel && 'lg:grid-cols-2 lg:items-stretch')}>
+    <div
+      className={cn(
+        'activity-log-evidence grid gap-4',
+        hasPath &&
+          coachPanel &&
+          'lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)] lg:items-stretch',
+      )}
+    >
       {coachPanel ? (
-        <div className="order-1 flex min-h-0 flex-col gap-4 lg:order-2">
+        <div className="order-1 flex min-h-0 flex-col gap-4">
           {coachPanel}
           <ExpertOnly>
             <ActivityInsightsZoneSection
@@ -53,7 +64,7 @@ export function ActivityInsightsComposition({
       ) : null}
 
       {hasPath && path ? (
-        <div className="order-2 h-80 w-full overflow-hidden rounded-xl sm:h-96 lg:order-1 lg:min-h-full">
+        <div className="activity-log-map order-2 h-80 w-full overflow-hidden sm:h-96 lg:min-h-full lg:self-stretch">
           <RouteMap key={`${activityId}-${type}`} lineColor={routeColor} path={path} />
         </div>
       ) : null}

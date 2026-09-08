@@ -804,3 +804,63 @@
     opacity: 1;
   }
 }
+
+/*
+  Activity reading — post-flight logbook dialect (surface /activite/[id]).
+  Seed key: b31627f2 · assigned index 6 · form: Logbook post-vol.
+*/
+.activity-reading {
+  --activity-log-field-bg: color-mix(in oklch, var(--analysis-surface) 88%, var(--background));
+  --activity-log-stamp-ring: color-mix(in oklch, var(--primary) 35%, transparent);
+}
+
+.activity-reading .activity-log-plate-body {
+  padding-block: 0.25rem 0.5rem;
+}
+
+.activity-reading .activity-log-thesis {
+  max-width: 65ch;
+}
+
+.activity-reading .activity-log-stamp {
+  box-shadow: inset 0 0 0 1.5px var(--activity-log-stamp-ring);
+}
+
+.activity-reading .activity-log-field {
+  padding: 0.85rem 0.95rem;
+  border-radius: 0.75rem;
+  background: var(--activity-log-field-bg);
+}
+
+.activity-reading .activity-log-field-primary {
+  background: color-mix(in oklch, var(--primary) 6%, var(--activity-log-field-bg));
+}
+
+.activity-reading .activity-log-coach {
+  border-radius: 1rem;
+  background: var(--analysis-surface-alt);
+}
+
+.activity-reading .activity-log-map {
+  overflow: hidden;
+  border-radius: 1rem;
+}
+
+.activity-reading .activity-log-rule-row {
+  padding-block: 0.55rem;
+}
+
+.activity-reading .activity-log-notes {
+  border-radius: 1rem;
+  background: var(--analysis-surface-alt);
+}
+
+.activity-reading .activity-log-rhythm {
+  padding: 1rem 0.85rem 0.35rem;
+  border-radius: 1rem;
+  background: var(--analysis-surface);
+}
+
+.dark .activity-reading {
+  --activity-log-field-bg: color-mix(in oklch, var(--analysis-surface) 70%, var(--background));
+}

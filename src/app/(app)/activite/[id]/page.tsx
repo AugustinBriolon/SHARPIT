@@ -21,7 +21,9 @@ import { activityDetailExpectsMap } from '@/lib/activity/detail/activity-detail-
 import { buildHikeOvernightSummary } from '@/lib/activity/hike/hike-overnight-summary';
 import { canGenerateNarrativeForActivity } from '@/lib/access/narrative-trial';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { getActivityById, getMultisportLegsForActivity } from '@/lib/queries';
+import { getActivityById, getBrickSessions, getMultisportLegsForActivity } from '@/lib/queries';
+import { resolveBrickSiblingActivityLinks } from '@/lib/planned-session/brick/brick-sessions';
+import { ActivityBrickSiblingNav } from '@/components/training/activity/detail/activity-brick-sibling-nav';
 import { getGoalAchievementsForActivity } from '@/lib/goals/goal-achievements';
 import { isCoachConfigured } from '@/lib/ai';
 import { getPerformanceRecordsForActivity } from '@/lib/training/records';
@@ -74,6 +76,7 @@ function buildCoachNarrativePanel(
     <ActivityNarrativeSection
       activityDate={activity.date}
       activityId={activity.id}
+      activityTitle={activity.title}
       activityType={activity.type}
       canGenerate={access.allowed}
       coachEnabled={coachEnabled}
@@ -127,6 +130,7 @@ function ActivityDetailContent({
   strengthStats,
   coachPanel,
   specs,
+  brickSiblings,
 }: {
   activity: ActivityDetail;
   isStrength: boolean;
@@ -139,6 +143,7 @@ function ActivityDetailContent({
   strengthStats: ReturnType<typeof buildStrengthStats>;
   coachPanel: ReturnType<typeof buildCoachNarrativePanel>;
   specs: ReturnType<typeof buildActivitySpecs>;
+  brickSiblings: ReturnType<typeof resolveBrickSiblingActivityLinks>;
 }) {
   return (
     <>
@@ -162,7 +167,7 @@ function ActivityDetailContent({
         }}
       />
 
-      <div className="relative z-0 space-y-4 sm:space-y-5">
+      <div className="relative z-0 space-y-5 sm:space-y-6">
         <ActivityMetaRow activity={activity} records={performanceRecords} />
 
         {isHike && activity.hikeTrip ? <HikeTripMemberLink hikeTrip={activity.hikeTrip} /> : null}
@@ -174,6 +179,8 @@ function ActivityDetailContent({
           multisportLegs={multisportLegs}
           strengthStats={strengthStats}
         />
+
+        <ActivityBrickSiblingNav siblings={brickSiblings} />
 
         {isStrength ? (
           <ActivityStrengthExercises
@@ -203,7 +210,6 @@ function ActivityDetailContent({
 
 async function ActivityDetailBody({ id }: { id: string }) {
   const athleteId = await getCurrentAthleteId();
-  // Start independent fetches immediately — do not wait for activity first.
   const activityPromise = getActivityById(athleteId, id);
   const goalValidationsPromise = getGoalAchievementsForActivity(id);
   const performanceRecordsPromise = getPerformanceRecordsForActivity(athleteId, id);
@@ -218,21 +224,25 @@ async function ActivityDetailBody({ id }: { id: string }) {
   const isHike = activity.type === ActivityType.HIKE;
   const hikeSummary = buildHikeSummaryForActivity(activity);
 
-  // Legs and narrative access depend on activity; goals/records already started above.
-  const [multisportLegs, goalValidations, performanceRecords, narrativeAccess] = await Promise.all([
-    isTriathlon ? getMultisportLegsForActivity(athleteId, activity) : Promise.resolve(null),
-    goalValidationsPromise,
-    performanceRecordsPromise,
-    canGenerateNarrativeForActivity(athleteId, activity.date),
-  ]);
+  const brickGroupId = activity.plannedSession?.brickGroupId ?? null;
+  const [multisportLegs, goalValidations, performanceRecords, narrativeAccess, brickLegs] =
+    await Promise.all([
+      isTriathlon ? getMultisportLegsForActivity(athleteId, activity) : Promise.resolve(null),
+      goalValidationsPromise,
+      performanceRecordsPromise,
+      canGenerateNarrativeForActivity(athleteId, activity.date),
+      brickGroupId ? getBrickSessions(athleteId, brickGroupId) : Promise.resolve([]),
+    ]);
   const coachEnabled = isCoachConfigured();
   const specs = buildActivitySpecs(activity);
   const strengthStats = buildStrengthStats(activity);
   const coachPanel = buildCoachNarrativePanel(activity, coachEnabled, narrativeAccess);
+  const brickSiblings = resolveBrickSiblingActivityLinks(brickLegs, activity.id);
 
   return (
     <ActivityDetailContent
       activity={activity}
+      brickSiblings={brickSiblings}
       coachPanel={coachPanel}
       goalValidations={goalValidations}
       hikeSummary={hikeSummary}
@@ -250,11 +260,16 @@ async function ActivityDetailBody({ id }: { id: string }) {
 export default async function ActivityDetailPage({ params }: PageProps) {
   const { id } = await params;
 
-  // No weather / narrative enrich on browse — that belongs to ingest (sync / create / link).
-  // Opening an old activity must stay Instant; coach synthesis is on-demand via the UI.
-
   return (
-    <div className="relative z-0 space-y-4 sm:space-y-6">
+    <div className="activity-reading relative z-0 space-y-5 sm:space-y-7">
+      {/*
+        THESIS: Post-session reading as a flight log — mission header, weighted instruments, then evidence; refuses equal metric-card inventory.
+        OWN-WORLD: Form-paper rules, stamp icon well, field boxes, sage accent for active proof; hairline log borders.
+        STORY: Athlete understands what the sortie meant, then interrogates map, curves, and rhythm splits.
+        FIRST VIEWPORT: Sticky chrome · plate (meta, title, discuss/chips) · three primary instruments.
+        FORM: Logbook post-vol · grounded list index 6 · seed b31627f2 · Operate.
+        FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, and DESIGN.md
+      */}
       <Suspense fallback={<ActivityDetailRouteSkeleton activityId={id} />}>
         <ActivityDetailBody id={id} />
       </Suspense>

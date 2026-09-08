@@ -2,13 +2,17 @@
 
 import { format, isToday } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { Layers, Plus } from 'lucide-react';
+import { Plus } from 'lucide-react';
+import { BrickOverviewCard } from '@/components/planning/brick/brick-overview-card';
 import { firstOpenPlannedSessionId } from '@/components/planning/week/planning-day-row-helpers';
 import { CompletedSessionPreview } from '@/components/today/rich/completed-session-preview';
 import { PlannedSessionPreview } from '@/components/today/rich/planned-session-preview';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { groupPlannedSessions } from '@/lib/planned-session/brick/brick-sessions';
+import {
+  brickLegSummaries,
+  groupPlannedSessions,
+} from '@/lib/planned-session/brick/brick-sessions';
 import { activityTypeLabels } from '@/lib/format';
 import { planningDayKey } from '@/lib/planning/planning-day-selection';
 import type { ClientActivity, ClientPlannedSession } from '@/lib/query/types';
@@ -180,24 +184,19 @@ function PlannedGroups({
         }
 
         return (
-          <li key={item.id} className="space-y-2">
-            <p className="text-muted-foreground flex items-center gap-1.5 text-xs font-medium">
-              <Layers className="size-3.5" aria-hidden />
-              Brick
-            </p>
-            <ul className="border-analysis-border/70 space-y-2 border-l pl-3">
-              {item.sessions.map((session) => (
-                <li key={session.id}>
-                  <SessionItem
-                    activityById={activityById}
-                    primary={session.id === primarySessionId}
-                    session={session}
-                    onEdit={onEdit}
-                    onPrefetch={onPrefetch}
-                  />
-                </li>
-              ))}
-            </ul>
+          <li key={item.id}>
+            <BrickOverviewCard
+              legs={brickLegSummaries(item.sessions)}
+              primary={item.sessions.some((session) => session.id === primarySessionId)}
+              onOpenLeg={(legId) => {
+                const session = item.sessions.find((candidate) => candidate.id === legId);
+                if (!session) {
+                  return;
+                }
+                onPrefetch(session);
+                onEdit(session);
+              }}
+            />
           </li>
         );
       })}

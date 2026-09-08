@@ -13,10 +13,10 @@ function PerformanceMetricRow({ row, compact }: { row: PerformanceRow; compact: 
   return (
     <div
       className={cn(
-        'grid items-start gap-x-4 border-b last:border-b-0',
+        'grid items-start gap-x-4',
         compact
-          ? 'grid-cols-[minmax(0,1fr)_auto] gap-y-1 py-3 last:pb-2'
-          : 'grid-cols-[minmax(0,1fr)_auto] gap-y-1.5 py-3.5 last:pb-2 sm:grid-cols-[minmax(0,11rem)_1fr_auto]',
+          ? 'grid-cols-[minmax(0,1fr)_auto] gap-y-1 py-2.5'
+          : 'grid-cols-[minmax(0,1fr)_auto] gap-y-1.5 py-3 sm:grid-cols-[minmax(0,11rem)_1fr_auto]',
       )}
     >
       <div className="min-w-0">
@@ -54,15 +54,15 @@ export function PerformanceMetrics({ analysis }: { analysis: ActivityAnalysis })
   const { thresholds } = analysis;
 
   return (
-    <section className="analysis-panel rounded-analysis-lg px-5 pt-5 pb-2 sm:px-6">
-      <div className="flex flex-wrap items-end justify-between gap-2">
-        <h2 className="text-label">Performance</h2>
+    <section className="activity-log-coach space-y-1 px-5 py-5 sm:px-6 sm:py-6">
+      <div className="flex flex-wrap items-end justify-between gap-2 pb-2">
+        <h2 className="text-section-title">Performance</h2>
         <p className="text-muted-foreground text-xs">
           Seuils {thresholds.source === 'profile' ? 'profil athlète' : 'estimés'}
         </p>
       </div>
 
-      <div className="border-analysis-border/70 divide-analysis-border/60 mt-4 border-t">
+      <div className="space-y-0.5">
         {rows.map((row) => (
           <PerformanceMetricRow key={row.label} compact={compact} row={row} />
         ))}

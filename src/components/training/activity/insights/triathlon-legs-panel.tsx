@@ -1,6 +1,5 @@
 import { Bike, Footprints, Timer, Waves } from 'lucide-react';
 import { ActivityType } from '@prisma/client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatDistance, formatDuration, formatPace, formatSwimPace } from '@/lib/format';
 import {
   legDisplayDurationSec,
@@ -67,7 +66,7 @@ function SportLegRow({ leg }: { leg: MultisportLeg }) {
   return (
     <div
       className={cn(
-        'rounded-analysis relative flex gap-4 px-3 py-3',
+        'activity-log-field relative flex gap-4 px-3 py-3',
         SPORT_IDENTITY_PANEL[sportType],
       )}
     >
@@ -126,18 +125,16 @@ export function TriathlonLegsPanel({ legs }: { legs: MultisportLeg[] }) {
   const transitionTotal = totalTransitionSec(legs);
 
   return (
-    <Card>
-      <CardHeader className="pb-3">
-        <div className="flex flex-wrap items-end justify-between gap-3">
-          <CardTitle className="text-label">Détail multisport</CardTitle>
-          {transitionTotal > 0 && (
-            <span className="text-muted-foreground font-mono text-xs tabular-nums">
-              Transitions actives : {formatDuration(transitionTotal)}
-            </span>
-          )}
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-0">
+    <section className="activity-log-rhythm space-y-3 px-3 py-4 sm:px-4">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <h2 className="text-section-title">Parcours multisport</h2>
+        {transitionTotal > 0 && (
+          <span className="text-muted-foreground font-mono text-xs tabular-nums">
+            Transitions actives : {formatDuration(transitionTotal)}
+          </span>
+        )}
+      </div>
+      <div className="space-y-2">
         {legs.map((leg, index) => {
           const isLast = index === legs.length - 1;
           const isTransition = leg.kind === 'transition';
@@ -154,7 +151,7 @@ export function TriathlonLegsPanel({ legs }: { legs: MultisportLeg[] }) {
             </div>
           );
         })}
-      </CardContent>
-    </Card>
+      </div>
+    </section>
   );
 }

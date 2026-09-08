@@ -1,7 +1,8 @@
 'use client';
 
+import { Plus } from 'lucide-react';
 import type { ClientActivity } from '@/lib/query/types';
-import { ActivityList } from '@/components/training/activity/list/activity-list';
+import { ActivityHistoryVirtualList } from '@/components/training/hub/activity-history-virtual-list';
 import { HistoryFilters } from '@/components/training/hub/history-filters';
 import { Button } from '@/components/ui/button';
 import { InkEmptyState } from '@/components/ui/ink-empty-state';
@@ -14,7 +15,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Button as UiButton } from '@/components/ui/button';
 
 type WeekGroup = { key: string; label: string; activities: ClientActivity[] };
 
@@ -36,7 +36,7 @@ export function TrainingListToolbar({
   onExitSelectionMode: () => void;
 }) {
   return (
-    <div className="flex flex-wrap items-center gap-2">
+    <div className="border-analysis-border/40 flex flex-wrap items-center gap-2 border-b pb-3">
       <div className="min-w-0 flex-1">
         <HistoryFilters counts={counts} filters={filters} onApply={onApplyFilters} />
       </div>
@@ -46,28 +46,34 @@ export function TrainingListToolbar({
           Annuler
         </Button>
       ) : (
-        hasLinkableHikes && (
-          <DropdownMenu>
-            <DropdownMenuTrigger
-              render={
-                <Button
-                  aria-label="Actions de l'historique"
-                  size="icon-sm"
-                  type="button"
-                  variant="outline"
-                />
-              }
-            >
-              <MoreHorizontal className="size-4" aria-hidden />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="min-w-52">
-              <DropdownMenuItem className="cursor-pointer gap-2" onClick={onToggleSelectionMode}>
-                <Link2 className="size-3.5" aria-hidden />
-                Lier des randonnées
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )
+        <>
+          <LinkButton className="gap-1.5" href="/activite/nouvelle" size="sm">
+            <Plus className="size-3.5" aria-hidden />
+            Nouvelle activité
+          </LinkButton>
+          {hasLinkableHikes ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                render={
+                  <Button
+                    aria-label="Actions de l'historique"
+                    size="icon-sm"
+                    type="button"
+                    variant="outline"
+                  />
+                }
+              >
+                <MoreHorizontal className="size-4" aria-hidden />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="min-w-52">
+                <DropdownMenuItem className="cursor-pointer gap-2" onClick={onToggleSelectionMode}>
+                  <Link2 className="size-3.5" aria-hidden />
+                  Lier des randonnées
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : null}
+        </>
       )}
     </div>
   );
@@ -94,6 +100,7 @@ export function TrainingListEmptyStates({
               Saisir une activité
             </LinkButton>
           }
+          bleed
         />
       ) : null}
       {weekGroupsCount === 0 && activitiesCount > 0 ? (
@@ -101,11 +108,12 @@ export function TrainingListEmptyStates({
           description="Élargis ou réinitialise les filtres pour revoir l’historique."
           title="Aucun résultat pour ces filtres"
           action={
-            <UiButton size="sm" type="button" variant="outline" onClick={onClearFilters}>
+            <Button size="sm" type="button" variant="outline" onClick={onClearFilters}>
               <FilterX className="size-3.5" aria-hidden />
               Effacer les filtres
-            </UiButton>
+            </Button>
           }
+          bleed
         />
       ) : null}
     </>
@@ -129,18 +137,13 @@ export function TrainingListWeekGroups({
     return null;
   }
 
-  return weekGroups.map((group) => (
-    <section key={group.key} className="cv-auto">
-      <p className="text-label mb-2 px-0.5">{group.label}</p>
-      <ActivityList
-        activities={group.activities}
-        chipListClassName="sm:grid sm:grid-cols-2 sm:gap-2 sm:space-y-0"
-        recordLabelsById={recordLabelsById}
-        selectedIds={selectedIds}
-        selectionMode={selectionMode}
-        variant="chip"
-        onToggle={onToggle}
-      />
-    </section>
-  ));
+  return (
+    <ActivityHistoryVirtualList
+      recordLabelsById={recordLabelsById}
+      selectedIds={selectedIds}
+      selectionMode={selectionMode}
+      weekGroups={weekGroups}
+      onToggle={onToggle}
+    />
+  );
 }

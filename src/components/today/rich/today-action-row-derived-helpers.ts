@@ -79,11 +79,27 @@ function morningProposalSessionId(
   return orientation.confirmEase?.sessionId ?? orientation.confirmIncrease?.sessionId ?? null;
 }
 
+function lineOwnsPlannedSession(
+  line: TodayViewModel['actionRow']['daySummaryLines'][number],
+  sessionId: string,
+): boolean {
+  if (line.id === sessionId) {
+    return true;
+  }
+  return Boolean(line.brickLegs?.some((leg) => leg.id === sessionId));
+}
+
 function filterProposalSessionLines(vm: TodayViewModel, proposalSessionId: string | null) {
   if (!proposalSessionId) {
     return vm.actionRow.daySummaryLines;
   }
-  return vm.actionRow.daySummaryLines.filter((line) => line.id !== proposalSessionId);
+  return vm.actionRow.daySummaryLines.filter((line) => {
+    if (line.brickLegs && line.brickLegs.length > 0) {
+      // Keep the brick card — morning proposal adapts one leg, not the whole block.
+      return true;
+    }
+    return !lineOwnsPlannedSession(line, proposalSessionId);
+  });
 }
 
 export function derivePostSessionLoop(

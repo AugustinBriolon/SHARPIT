@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { Dumbbell, Watch } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   ExerciseIndex,
   ExerciseMediaAttribution,
@@ -17,6 +16,7 @@ import {
   formatStrengthSetDetail,
   sendActivityStrengthToGarmin,
 } from '@/components/training/activity/detail/activity-strength-exercises-helpers';
+import { cn } from '@/lib/utils';
 
 /** Narrow client payload — id + strength sets only. */
 export type ActivityStrengthExercisesActivity = Pick<ActivityDetail, 'id' | 'strengthSets'>;
@@ -32,7 +32,9 @@ function StrengthSetRow({
   const media = resolveStrengthSetMedia(set);
 
   return (
-    <div className="border-analysis-border rounded-analysis flex items-start gap-3 border px-3 py-3 sm:items-center sm:px-4">
+    <div
+      className={cn('activity-log-field flex items-start gap-3 px-3 py-3 sm:items-center sm:px-4')}
+    >
       {media ? (
         <ExerciseVisual label={set.exercise} media={media} />
       ) : (
@@ -49,7 +51,9 @@ function StrengthSetRow({
           ) : null}
         </span>
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 sm:justify-end">
-          <span className="font-mono text-sm tabular-nums">{formatStrengthSetDetail(set)}</span>
+          <span className="text-data text-sm font-semibold tabular-nums">
+            {formatStrengthSetDetail(set)}
+          </span>
           <span className="text-muted-foreground flex items-center gap-2 text-xs">
             {volume > 0 && <span className="font-mono">{Math.round(volume)} kg</span>}
             {set.rpe !== null && (
@@ -89,15 +93,15 @@ export function ActivityStrengthExercises({
   }
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between gap-3 space-y-0">
-        <CardTitle className="text-muted-foreground flex items-center gap-2 text-base font-medium">
-          <Dumbbell className="text-muted-foreground size-4" />
+    <section className="activity-log-rhythm space-y-3 px-3 py-4 sm:px-4">
+      <div className="flex flex-row items-center justify-between gap-3">
+        <h2 className="text-section-title flex items-center gap-2">
+          <Dumbbell className="text-muted-foreground size-4" aria-hidden />
           Exercices
-        </CardTitle>
+        </h2>
         {sets.length > 0 ? (
           <Button
-            className="h-8 shrink-0 gap-1 px-2.5 text-xs lg:h-7"
+            className="h-8 shrink-0 gap-1 px-2.5 text-xs transition-transform duration-150 active:scale-[0.97] lg:h-7"
             disabled={pushing}
             size="xs"
             type="button"
@@ -109,15 +113,15 @@ export function ActivityStrengthExercises({
             <span className="sm:hidden">{pushing ? 'Envoi…' : 'Montre'}</span>
           </Button>
         ) : null}
-      </CardHeader>
-      <CardContent className="space-y-2">
+      </div>
+      <div className="space-y-2">
         {sets.length > 0 ? (
           <>
             {sets.map((set, i) => (
               <StrengthSetRow key={set.id} index={i} set={set} />
             ))}
             <ExerciseMediaAttribution>
-              « Envoyer à la montre » crée un workout Garmin (bibliothèque + calendrier) —
+              « Envoyer à la montre » crée un workout Garmin (bibliothèque + calendrier) -
               synchroniser la montre ensuite.
             </ExerciseMediaAttribution>
           </>
@@ -126,7 +130,7 @@ export function ActivityStrengthExercises({
             Aucun exercice enregistré pour cette séance.
           </p>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </section>
   );
 }

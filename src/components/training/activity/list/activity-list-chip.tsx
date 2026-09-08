@@ -1,13 +1,12 @@
 'use client';
 
-import { InstrumentListChip } from '@/components/ui/instruments/instrument-list-chip';
 import { Checkbox } from '@/components/ui/checkbox';
-import {
-  getActivityListMetric,
-  shouldShowActivityListLoad,
-} from '@/lib/activity/list/activity-list-summary';
-import { activityTypeLabels, formatDate, formatDuration } from '@/lib/format';
-import { CheckCircle2 } from 'lucide-react';
+import { CompletedSessionPreview } from '@/components/today/rich/completed-session-preview';
+import { ActivityTypeIndicator } from '@/components/ui/instruments/activity-type-indicator';
+import { buildCompletedSessionMetrics } from '@/lib/today/rich/completed-session-metrics';
+import { TWIN_DRILL_DOWN } from '@/lib/today/navigation/today-twin-navigation';
+import { activityTypeLabels } from '@/lib/format';
+import { cn } from '@/lib/utils';
 import {
   isSelectableHike,
   type ActivityListItem,
@@ -17,102 +16,130 @@ import {
   handleActivitySelectionClick,
 } from '@/components/training/activity/list/activity-list-helpers';
 
-function buildActivityChipMeta(activity: ActivityListItem): string[] {
-  const metric = getActivityListMetric(activity);
-  const loadValue = shouldShowActivityListLoad(activity)
-    ? Math.round(activity.load as number)
-    : null;
-  return [
-    formatDate(new Date(activity.date)),
-    formatDuration(activity.duration),
-    metric,
-    loadValue !== null ? String(loadValue) : undefined,
-  ].filter((part): part is string => Boolean(part));
+type ActivityChipSource = ActivityListItem & {
+  rpe?: number | null;
+  bikeMetrics?: { tss: number | null; avgPower?: number | null } | null;
+  hikeMetrics?: { distanceM: number | null; elevationM?: number | null } | null;
+};
+
+function metricsFromActivity(activity: ActivityChipSource) {
+  return buildCompletedSessionMetrics({
+    type: activity.type,
+    duration: activity.duration,
+    load: activity.load,
+    rpe: activity.rpe ?? null,
+    runMetrics: activity.runMetrics,
+    bikeMetrics: activity.bikeMetrics
+      ? {
+          tss: activity.bikeMetrics.tss,
+          avgPower: activity.bikeMetrics.avgPower ?? null,
+        }
+      : null,
+    swimMetrics: activity.swimMetrics,
+    hikeMetrics: activity.hikeMetrics
+      ? {
+          distanceM: activity.hikeMetrics.distanceM,
+          elevationM: activity.hikeMetrics.elevationM ?? null,
+        }
+      : null,
+    strengthSets: activity.strengthSets ?? [],
+  });
 }
 
-function ActivityChipTrailing({
-  selectionMode,
+function SelectionModeChip({
+  activity,
   selectable,
   selected,
-  recordLabel,
-  activityId,
   onToggle,
 }: {
-  selectionMode: boolean;
+  activity: ActivityChipSource;
   selectable: boolean;
   selected: boolean;
-  recordLabel: string | null;
-  activityId: string;
   onToggle?: (activityId: string) => void;
 }) {
-  if (selectionMode && selectable) {
-    return (
-      <Checkbox
-        aria-label={selected ? 'Désélectionner' : 'Sélectionner'}
-        checked={selected}
-        onCheckedChange={() => onToggle?.(activityId)}
-        onClick={(event) => event.stopPropagation()}
-      />
-    );
-  }
-  if (!selectionMode && recordLabel) {
-    return (
-      <span className="border-analysis-border text-muted-foreground rounded-full border px-2 py-0.5 text-xs whitespace-nowrap">
-        {recordLabel}
-      </span>
-    );
-  }
-  if (!selectionMode) {
-    return <CheckCircle2 className="text-primary size-3.5" aria-hidden />;
-  }
-  return null;
+  const title = activity.title ?? activityTypeLabels[activity.type];
+
+  return (
+    <button
+      type="button"
+      className={cn(
+        'analysis-panel rounded-analysis flex w-full min-w-0 items-center gap-3 px-3 py-3 text-left',
+        'pressable-lg focus-visible:ring-primary/35 focus-visible:ring-2 focus-visible:outline-hidden',
+        buildActivityChipClassName({ selectionMode: true, selectable, selected }),
+      )}
+      onClick={() =>
+        handleActivitySelectionClick({
+          selectionMode: true,
+          selectable,
+          activityId: activity.id,
+          onToggle,
+        })
+      }
+    >
+      <ActivityTypeIndicator type={activity.type} />
+      <span className="text-foreground min-w-0 flex-1 truncate text-sm font-medium">{title}</span>
+      {selectable ? (
+        <Checkbox
+          aria-label={selected ? 'Désélectionner' : 'Sélectionner'}
+          checked={selected}
+          onCheckedChange={() => onToggle?.(activity.id)}
+          onClick={(event) => event.stopPropagation()}
+        />
+      ) : null}
+    </button>
+  );
 }
 
+/**
+ * History row — shared `CompletedSessionPreview` (same card as Plan / Today done).
+ * Selection mode keeps a compact toggle surface for hike-trip linking.
+ */
 export function ActivityChip({
   activity,
   recordLabel = null,
   selectionMode = false,
   selected = false,
+  mapEnabled = true,
   onToggle,
 }: {
-  activity: ActivityListItem;
+  activity: ActivityChipSource;
   recordLabel?: string | null;
   selectionMode?: boolean;
   selected?: boolean;
+  /** Gate GPS stream fetch — virtualized lists keep this true only for mounted rows. */
+  mapEnabled?: boolean;
   onToggle?: (activityId: string) => void;
 }) {
-  const title = activity.title ?? activityTypeLabels[activity.type];
-  const meta = buildActivityChipMeta(activity);
-  const selectable = isSelectableHike(activity);
-
-  function handleClick() {
-    handleActivitySelectionClick({
-      selectionMode,
-      selectable,
-      activityId: activity.id,
-      onToggle,
-    });
+  if (selectionMode) {
+    return (
+      <SelectionModeChip
+        activity={activity}
+        selectable={isSelectableHike(activity)}
+        selected={selected}
+        onToggle={onToggle}
+      />
+    );
   }
 
+  const title = activity.title ?? activityTypeLabels[activity.type];
+
   return (
-    <InstrumentListChip
-      activityType={activity.type}
-      className={buildActivityChipClassName({ selectionMode, selectable, selected })}
-      href={selectionMode ? undefined : `/activite/${activity.id}`}
-      meta={meta}
-      showArrow={false}
-      title={title}
-      trailing={
-        <ActivityChipTrailing
-          activityId={activity.id}
-          recordLabel={recordLabel}
-          selectable={selectable}
-          selected={selected}
-          selectionMode={selectionMode}
-          onToggle={onToggle}
-        />
-      }
-      onClick={selectionMode ? handleClick : undefined}
-    />
+    <div className="relative">
+      <CompletedSessionPreview
+        accessibleName={`${title}, réalisé`}
+        activityId={activity.id}
+        activityType={activity.type}
+        href={TWIN_DRILL_DOWN.activity(activity.id)}
+        layout="column"
+        mapEnabled={mapEnabled}
+        metrics={metricsFromActivity(activity)}
+        title={title}
+      />
+      {recordLabel ? (
+        <span className="border-analysis-border bg-background text-muted-foreground absolute top-2 right-2 rounded-full border px-2 py-0.5 text-[11px] whitespace-nowrap">
+          {recordLabel}
+        </span>
+      ) : null}
+    </div>
   );
 }

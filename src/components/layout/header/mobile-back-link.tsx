@@ -42,9 +42,9 @@ function GlassBack({
   replace: boolean;
 }) {
   return (
-    <div className="fixed top-3 left-4 z-50">
+    <div className="fixed top-3 left-[max(1rem,env(safe-area-inset-left))] z-50 lg:static lg:inset-auto lg:top-auto lg:left-auto lg:z-auto">
       <ChromeGlass
-        className="flex size-12 min-h-[44px] min-w-[44px] items-center justify-center"
+        className="flex size-12 min-h-[44px] min-w-[44px] items-center justify-center lg:size-auto lg:min-h-0 lg:min-w-0 lg:border-0 lg:bg-transparent lg:shadow-none lg:backdrop-blur-none"
         cornerRadius={999}
         style={{ left: 'auto', position: 'relative', top: 'auto' }}
       >
@@ -54,11 +54,12 @@ function GlassBack({
           replace={replace}
           className={cn(
             'text-foreground/70 hover:text-foreground dark:text-foreground flex size-12 min-h-[44px] min-w-[44px] items-center justify-center rounded-full',
+            'lg:-ml-1.5 lg:size-9 lg:min-h-9 lg:min-w-9 lg:justify-center lg:rounded-md lg:px-0',
             className,
           )}
           onClick={onClick}
         >
-          <ChevronLeft className="size-6 shrink-0" aria-hidden />
+          <ChevronLeft className="size-6 shrink-0 lg:size-5" aria-hidden />
         </Link>
       </ChromeGlass>
     </div>
@@ -87,7 +88,7 @@ function BackLinkChrome({
         replace={replace}
         onClick={onClick}
       />
-      <div className="h-16" aria-hidden />
+      <div className="h-16 lg:hidden" aria-hidden />
     </>
   );
 }

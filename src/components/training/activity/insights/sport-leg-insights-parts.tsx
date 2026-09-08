@@ -10,7 +10,7 @@ import {
 } from '@/components/training/activity/insights/performance-metrics';
 import { ExpertOnly } from '@/components/display-mode';
 import { ActivityInsightsZoneSection } from '@/components/training/activity/insights/activity-insights-zone-section';
-import { SplitsTable } from '@/components/training/activity/insights/splits-table';
+import { RhythmSplits } from '@/components/training/activity/reading/rhythm-splits';
 import type { ZoneBucket } from '@/lib/activity/detail/activity-analysis';
 import { sportHeader } from '@/components/training/activity/insights/sport-leg-insights-shared';
 
@@ -77,7 +77,7 @@ export function SportLegSplits({
 }) {
   if (entry.leg.kind === 'run' && runSplits.length > 0) {
     return (
-      <SplitsTable
+      <RhythmSplits
         refPaceSecPerKm={analysis?.run?.avgPaceSecPerKm}
         splits={runSplits}
         title="Splits course au kilomètre"
@@ -85,7 +85,7 @@ export function SportLegSplits({
     );
   }
   if (entry.leg.kind === 'bike' && bikeSplits.length > 0) {
-    return <SplitsTable mode="bike" splits={bikeSplits} title="Splits vélo tous les 5 km" />;
+    return <RhythmSplits mode="bike" splits={bikeSplits} title="Splits vélo tous les 5 km" />;
   }
   return null;
 }

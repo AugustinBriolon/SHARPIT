@@ -1,5 +1,5 @@
 import type { ActivityAnalysis } from '@/lib/activity/detail/activity-analysis';
-import { SplitsTable } from '@/components/training/activity/insights/splits-table';
+import { RhythmSplits } from '@/components/training/activity/reading/rhythm-splits';
 
 export function RunSplitsSection({ analysis }: { analysis: ActivityAnalysis | null | undefined }) {
   const splits = analysis?.run?.splits ?? [];
@@ -7,7 +7,7 @@ export function RunSplitsSection({ analysis }: { analysis: ActivityAnalysis | nu
     return null;
   }
   return (
-    <SplitsTable
+    <RhythmSplits
       refPaceSecPerKm={analysis?.run?.avgPaceSecPerKm}
       splits={splits}
       title="Splits au kilomètre"
@@ -20,5 +20,5 @@ export function BikeSplitsSection({ analysis }: { analysis: ActivityAnalysis | n
   if (!splits.length) {
     return null;
   }
-  return <SplitsTable mode="bike" splits={splits} title="Splits tous les 5 km" />;
+  return <RhythmSplits mode="bike" splits={splits} title="Splits tous les 5 km" />;
 }

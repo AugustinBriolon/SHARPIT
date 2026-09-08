@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
+  comparePlannedSessionsBySchedule,
   filterUpcomingPlannedSessions,
   formatPlannedSessionRelativeDay,
   isUpcomingPlannedSession,
+  parsePlannedStart,
   selectUpcomingPlannedPreview,
 } from './planned-session-dates';
 import type { ClientPlannedSession } from '@/lib/query/types';
@@ -22,6 +24,24 @@ function session(
     ...partial,
   } as ClientPlannedSession;
 }
+
+describe('comparePlannedSessionsBySchedule', () => {
+  it('orders same-day sessions by startTime, untimed last', () => {
+    const ordered = [
+      session({ id: 'eve', date: FRIDAY_MORNING, startTime: '18:00' }),
+      session({ id: 'am', date: FRIDAY_MORNING, startTime: '07:30' }),
+      session({ id: 'open', date: FRIDAY_MORNING, startTime: null }),
+    ].sort(comparePlannedSessionsBySchedule);
+
+    expect(ordered.map((s) => s.id)).toEqual(['am', 'eve', 'open']);
+  });
+
+  it('parses HH:mm onto the training day', () => {
+    const start = parsePlannedStart(FRIDAY_MORNING, '7:30');
+    expect(start?.getHours()).toBe(7);
+    expect(start?.getMinutes()).toBe(30);
+  });
+});
 
 describe('isUpcomingPlannedSession', () => {
   it('includes today when not completed', () => {

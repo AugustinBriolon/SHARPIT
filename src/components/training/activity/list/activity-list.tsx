@@ -5,7 +5,6 @@ import { useConfirmDialog } from '@/components/ui/confirm-dialog';
 import { LinkButton } from '@/components/ui/link-button';
 import { InkEmptyState } from '@/components/ui/ink-empty-state';
 import { useActivityMutations } from '@/hooks/use-data';
-import { cn } from '@/lib/utils';
 import { Dumbbell } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { ActivityChip } from '@/components/training/activity/list/activity-list-chip';
@@ -36,21 +35,19 @@ function ActivityListEmpty({ emptyLabel }: { emptyLabel?: string }) {
 
 function ActivityChipList({
   activities,
-  chipListClassName,
   recordLabelsById,
   selectionMode,
   selectedIds,
   onToggle,
 }: {
   activities: ActivityListItem[];
-  chipListClassName?: string;
   recordLabelsById?: Map<string, string>;
   selectionMode: boolean;
   selectedIds?: Set<string>;
   onToggle?: (activityId: string) => void;
 }) {
   return (
-    <ul className={cn('space-y-2', chipListClassName)}>
+    <ul className="space-y-2.5">
       {activities.map((activity) => (
         <li key={activity.id} className="cv-auto min-w-0">
           <ActivityChip
@@ -101,7 +98,6 @@ export function ActivityList({
   emptyLabel,
   compact = false,
   variant = 'panel',
-  chipListClassName,
   recordLabelsById,
   selectionMode = false,
   selectedIds,
@@ -111,7 +107,6 @@ export function ActivityList({
   emptyLabel?: string;
   compact?: boolean;
   variant?: 'panel' | 'chip';
-  chipListClassName?: string;
   recordLabelsById?: Map<string, string>;
   selectionMode?: boolean;
   selectedIds?: Set<string>;
@@ -125,7 +120,6 @@ export function ActivityList({
     return (
       <ActivityChipList
         activities={activities}
-        chipListClassName={chipListClassName}
         recordLabelsById={recordLabelsById}
         selectedIds={selectedIds}
         selectionMode={selectionMode}
@@ -161,7 +155,6 @@ export function DeleteActivityButton({ id }: { id: string }) {
       return;
     }
     remove.mutate(id);
-    // Return to origin via stack; empty stack → Activité (never Historique / Fil).
     const previous = navStack.peekBackFrom(`/activite/${id}`);
     router.push(previous?.href ?? '/activite');
   }

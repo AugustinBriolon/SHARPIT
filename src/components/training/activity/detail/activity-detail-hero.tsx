@@ -1,9 +1,6 @@
 import { ActivityHeroStats } from './activity-hero-stats';
 import { TriathlonHeroCards } from './triathlon-hero-cards';
-import {
-  InstrumentMetricChip,
-  InstrumentMetricGridShell,
-} from '@/components/ui/instruments/instrument-metric-chip';
+import { WeightedInstruments } from '@/components/training/activity/reading/weighted-instruments';
 import type { MultisportLeg } from '@/lib/multisport';
 import { toHeroActivity } from './activity-detail-helpers';
 import type { ActivityDetail, ActivityStat } from './types';
@@ -23,11 +20,10 @@ export function ActivityDetailHero({
 }) {
   if (isStrength && strengthStats.length > 0) {
     return (
-      <InstrumentMetricGridShell count={strengthStats.length}>
-        {strengthStats.map((stat) => (
-          <InstrumentMetricChip key={stat.label} label={stat.label} value={stat.value} />
-        ))}
-      </InstrumentMetricGridShell>
+      <WeightedInstruments
+        items={strengthStats.map((stat) => ({ label: stat.label, value: stat.value }))}
+        primaryCount={Math.min(3, strengthStats.length)}
+      />
     );
   }
 

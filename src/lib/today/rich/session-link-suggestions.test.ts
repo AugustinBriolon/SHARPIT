@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   findSessionLinkSuggestions,
+  filterDaySummaryForLinkExclusions,
   filterDaySummaryForPendingLinkSuggestions,
   idsExcludedByLinkSuggestions,
 } from './session-link-suggestions';
@@ -102,6 +103,43 @@ describe('filterDaySummaryForPendingLinkSuggestions', () => {
       [],
     );
     expect(lines).toHaveLength(2);
+  });
+
+  it('keeps a brick card when one leg is pending a link suggestion', () => {
+    const lines = filterDaySummaryForLinkExclusions(
+      [
+        {
+          id: 'brick-1',
+          kind: 'planned' as const,
+          brickLegs: [{ id: 'bike' }, { id: 'run' }],
+        },
+        { id: 'solo', kind: 'planned' as const },
+      ],
+      {
+        activityIds: new Set(['zwift']),
+        plannedSessionIds: new Set(['bike']),
+      },
+    );
+    expect(lines.map((line) => line.id)).toEqual(['brick-1', 'solo']);
+  });
+
+  it('still hides a solo planned chip when its id is pending link', () => {
+    const lines = filterDaySummaryForLinkExclusions(
+      [
+        {
+          id: 'bike',
+          kind: 'planned' as const,
+          brickLegs: [{ id: 'bike' }, { id: 'run' }],
+        },
+        { id: 'solo', kind: 'planned' as const },
+      ],
+      {
+        activityIds: new Set(),
+        plannedSessionIds: new Set(['bike', 'solo']),
+      },
+    );
+    // Brick kept even if line.id was wrongly remapped to the linked leg.
+    expect(lines.map((line) => line.id)).toEqual(['bike']);
   });
 
   it('pairs demo link markers deterministically, not the next-best run', () => {

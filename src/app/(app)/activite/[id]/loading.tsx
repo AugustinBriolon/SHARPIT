@@ -6,7 +6,7 @@ import { ActivityDetailSkeleton } from '@/components/training/activity/detail/ac
 import { ActivityDetailInstantShell } from '@/components/training/activity/detail/activity-detail-instant-shell';
 
 function parseActivityIdFromPathname(pathname: string): string | null {
-  const match = pathname.match(/^\/training\/([^/]+)(?:\/|$)/);
+  const match = pathname.match(/^\/activite\/([^/]+)(?:\/|$)/);
   const segment = match?.[1];
   if (!segment || segment === 'edit') {
     return null;
@@ -28,7 +28,7 @@ export default function ActivityDetailLoading() {
         <div
           aria-busy="true"
           aria-label="Chargement"
-          className="relative z-0 space-y-4 sm:space-y-6"
+          className="activity-reading relative z-0 space-y-5 sm:space-y-7"
         >
           <ActivityDetailSkeleton layout="map" />
         </div>

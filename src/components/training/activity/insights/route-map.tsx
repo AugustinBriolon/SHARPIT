@@ -83,6 +83,8 @@ export function RouteMap({
 
   return (
     <div
+      aria-label="Parcours GPS de la séance"
+      role="img"
       className={cn(
         'relative isolate z-0 h-full w-full overflow-hidden',
         !frameless && 'border-border/60 rounded-xl border',

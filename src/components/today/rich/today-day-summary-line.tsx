@@ -10,14 +10,17 @@ type DaySummaryLine = TodayViewModel['actionRow']['daySummaryLines'][number];
 
 function BrickDaySummaryLine({
   line,
+  isPrimary,
   onOpenPlanned,
 }: {
   line: DaySummaryLine;
+  isPrimary: boolean;
   onOpenPlanned: (sessionId: string) => void;
 }) {
   return (
     <BrickOverviewCard
       legs={line.brickLegs!}
+      primary={isPrimary}
       subtitle={line.secondary ?? null}
       onOpenLeg={(legId) => onOpenPlanned(legId)}
     />
@@ -79,7 +82,7 @@ export function TodayDaySummaryLine({
   onOpenPlanned: (sessionId: string) => void;
 }) {
   if (hasBrickLegs(line)) {
-    return <BrickDaySummaryLine line={line} onOpenPlanned={onOpenPlanned} />;
+    return <BrickDaySummaryLine isPrimary={isPrimary} line={line} onOpenPlanned={onOpenPlanned} />;
   }
 
   if (line.isDone) {
