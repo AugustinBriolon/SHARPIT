@@ -55,4 +55,21 @@ describe('beginPlannedSessionReanalysis', () => {
     expect(restored?.analysis).toEqual(analysis);
     expect(restored?.analyzedAt).toEqual(analyzedAt);
   });
+
+  it('snapshots analysis from activity detail when the list cache is cold', () => {
+    const queryClient = new QueryClient();
+    queryClient.setQueryData(queryKeys.activity('act-1'), {
+      id: 'act-1',
+      plannedSession: { id: 'ps-1', analysis, analyzedAt },
+    });
+
+    const previous = beginPlannedSessionReanalysis(queryClient, 'ps-1');
+    expect(previous).toEqual({ analysis, analyzedAt });
+
+    rollbackPlannedSessionReanalysis(queryClient, 'ps-1', previous);
+    const detail = queryClient.getQueryData<{
+      plannedSession: { analysis: unknown };
+    }>(queryKeys.activity('act-1'));
+    expect(detail?.plannedSession?.analysis).toEqual(analysis);
+  });
 });

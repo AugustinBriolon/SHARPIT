@@ -1,7 +1,7 @@
 import type { QueryClient } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/query/keys';
 import { patchPlannedSessionAnalysisInCaches } from '@/lib/query/patch-planned-session-analysis-cache';
-import type { ClientPlannedSession } from '@/lib/query/types';
+import type { ClientActivity, ClientActivityDetail, ClientPlannedSession } from '@/lib/query/types';
 
 export type PlannedSessionAnalysisSnapshot = {
   analysis: ClientPlannedSession['analysis'];
@@ -13,14 +13,38 @@ function readSessionAnalysis(
   sessionId: string,
 ): PlannedSessionAnalysisSnapshot | null {
   const sessions = queryClient.getQueryData<ClientPlannedSession[]>(queryKeys.plannedSessions);
-  const session = sessions?.find((item) => item.id === sessionId);
-  if (!session) {
-    return null;
+  const fromList = sessions?.find((item) => item.id === sessionId);
+  if (fromList) {
+    return {
+      analysis: fromList.analysis ?? null,
+      analyzedAt: fromList.analyzedAt ?? null,
+    };
   }
-  return {
-    analysis: session.analysis ?? null,
-    analyzedAt: session.analyzedAt ?? null,
-  };
+
+  const activities = queryClient.getQueryData<ClientActivity[]>(queryKeys.activities);
+  const fromActivity = activities?.find(
+    (activity) => activity.plannedSession?.id === sessionId,
+  )?.plannedSession;
+  if (fromActivity) {
+    return {
+      analysis: fromActivity.analysis ?? null,
+      analyzedAt: fromActivity.analyzedAt ?? null,
+    };
+  }
+
+  for (const [, detail] of queryClient.getQueriesData<ClientActivityDetail>({
+    queryKey: ['activity'],
+  })) {
+    if (detail?.plannedSession?.id !== sessionId) {
+      continue;
+    }
+    return {
+      analysis: detail.plannedSession.analysis ?? null,
+      analyzedAt: detail.plannedSession.analyzedAt ?? null,
+    };
+  }
+
+  return null;
 }
 
 /**

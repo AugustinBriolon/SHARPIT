@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { isCurrentUserAdmin } from '@/lib/auth/admin';
 import { setAthleteTier } from '@/lib/admin/queries';
 import { setAthleteTierSchema } from '@/lib/validators/admin';
-import { accessTierSetCookieValue } from '@/lib/access/tier-cookie';
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -22,9 +21,9 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
   try {
     const { id } = await context.params;
     const updated = await setAthleteTier(id, parsed.data.tier);
-    const response = NextResponse.json(updated);
-    response.headers.append('Set-Cookie', accessTierSetCookieValue(updated.tier));
-    return response;
+    // Do not Set-Cookie here — this route mutates another athlete's tier; the
+    // access-tier cookie mirrors the signed-in user's own profile only.
+    return NextResponse.json(updated);
   } catch (error) {
     console.error('[admin/athletes/tier]', error);
     return NextResponse.json({ error: 'Mise à jour du palier impossible' }, { status: 500 });

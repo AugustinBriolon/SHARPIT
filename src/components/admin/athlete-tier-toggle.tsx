@@ -6,7 +6,6 @@ import type { AccessTier } from '@prisma/client';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from '@/components/ui/toast';
-import { syncAccessTierCookie } from '@/lib/access/tier-cookie';
 
 const TIER_LABEL: Record<AccessTier, string> = {
   FREE: 'Gratuit',
@@ -30,7 +29,6 @@ export function AthleteTierToggle({ athleteId, tier }: { athleteId: string; tier
           throw new Error();
         }
         toast.success(`Palier changé pour ${TIER_LABEL[nextTier]}`);
-        syncAccessTierCookie(nextTier);
         router.refresh();
       } catch {
         toast.error('Changement de palier impossible');
