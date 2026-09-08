@@ -104,6 +104,11 @@ export function integrationsStatusLabel(facts: SettingsHubIntegrationsFacts): st
   return facts.connectedCount === 1 ? '1 connectée' : `${facts.connectedCount} connectées`;
 }
 
+/** Actionable reconnect chips must not share inert meta styling. */
+export function isIntegrationsAttentionLabel(label: string): boolean {
+  return label.includes('à reconnecter');
+}
+
 export function themeStatusLabel(preference: 'light' | 'dark' | 'system'): string {
   switch (preference) {
     case 'light':

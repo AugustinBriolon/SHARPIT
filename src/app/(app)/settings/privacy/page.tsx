@@ -35,9 +35,9 @@ async function PrivacyPanelWithData() {
 export default function SettingsPrivacyPage() {
   return (
     <div className="space-y-4">
-      <MobileBackLink fallbackHref="/moi" fallbackLabel="Moi" showOnDesktop />
+      <MobileBackLink fallbackHref="/moi" fallbackLabel="Réglages" showOnDesktop />
       <StickyHeader>
-        <p className="text-label">Moi</p>
+        <p className="text-label">Réglages</p>
         <h1 className="text-page-title mt-1">Confidentialité</h1>
         <p className="text-muted-foreground mt-1 text-sm">
           Consentements, export et suppression — contact{' '}

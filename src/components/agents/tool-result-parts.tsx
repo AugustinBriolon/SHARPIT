@@ -4,7 +4,6 @@ import {
   Ban,
   Braces,
   Check,
-  ChevronDown,
   CircleCheck,
   CircleX,
   Copy,
@@ -19,6 +18,7 @@ import { ActionSwapRollText } from '@/components/motion/action-swap-roll';
 import { SPRING_PRESS, SPRING_SWAP } from '@/lib/ease';
 import { motionTokens } from '@/lib/motion/tokens';
 import { cn } from '@/lib/utils';
+import { NavArrowDown } from '@/components/icons/nav-arrows';
 import {
   getStatusClass,
   getStatusLabel,
@@ -148,7 +148,7 @@ export function ToolResultTrigger({
         className="text-muted-foreground/50 group-hover:text-muted-foreground shrink-0 transition-colors"
         transition={reduce ? { duration: 0 } : SPRING_SWAP}
       >
-        <ChevronDown className="size-3.5" />
+        <NavArrowDown className="size-3.5" />
       </motion.span>
     </button>
   );

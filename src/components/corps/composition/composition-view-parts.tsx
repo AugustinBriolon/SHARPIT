@@ -57,7 +57,7 @@ export function MetricChip({
       className={cn(
         'chip-surface flex min-h-11 min-w-0 flex-col gap-1 rounded-2xl px-3 py-2.5 text-left lg:min-h-9',
         onExplain && !loading
-          ? 'hover:border-primary/35 transition-[border-color,background-color]'
+          ? 'pressable hover:border-primary/35 transition-[border-color,background-color,transform] duration-150 ease-out'
           : 'cursor-default',
       )}
       onClick={onExplain}

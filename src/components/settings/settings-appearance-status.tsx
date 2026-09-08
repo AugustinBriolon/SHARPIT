@@ -14,17 +14,23 @@ const DENSITY_LABELS: Record<string, string> = {
   expert: 'Expert',
 };
 
-/** Read at a glance from the hub — the Apparence row owns the theme only. */
+/** Read at a glance from the hub — Apparence owns theme only. */
 export function SettingsAppearanceStatus() {
   const { preference } = useThemePreference();
-  return <>{THEME_LABELS[preference] ?? preference}</>;
+  const theme = THEME_LABELS[preference] ?? preference;
+  return <span className="text-muted-foreground">{theme}</span>;
 }
 
-/** Read at a glance from the hub — the Mode Expert row owns the density. */
-export function SettingsExpertModeStatus() {
+/** Density / Mode Expert — Personnalisation hub meta. */
+export function SettingsPersonalizationStatus() {
   const { mode, isResolved } = useDisplayMode();
   if (!isResolved) {
-    return <>…</>;
+    return <span className="text-muted-foreground">…</span>;
   }
-  return <>{DENSITY_LABELS[mode] ?? mode}</>;
+  return <span className="text-muted-foreground">{DENSITY_LABELS[mode] ?? mode}</span>;
+}
+
+/** @deprecated Prefer SettingsPersonalizationStatus — Mode Expert is on Personnalisation. */
+export function SettingsExpertModeStatus() {
+  return <SettingsPersonalizationStatus />;
 }

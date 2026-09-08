@@ -18,7 +18,12 @@ export function ActivityFeelingChip({
 
   return (
     <>
-      <ActivityMetaChip icon={Smile} label="Ressenti" value={feeling} onClick={editor.openDialog} />
+      <ActivityMetaChip
+        icon={Smile}
+        label="Ressenti"
+        value={rpe !== null ? `${feeling} · RPE ${rpe}` : feeling}
+        onClick={editor.openDialog}
+      />
       <ActivityFeelingDialog
         activityId={activityId}
         feeling={editor.editFeeling}

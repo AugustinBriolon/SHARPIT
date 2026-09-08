@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { format } from 'date-fns';
 import {
   isPresentationValuesLoading,
@@ -12,10 +13,10 @@ import { useClientMorningHold } from '@/components/today/rich/morning-orientatio
 import { withClientMorningHold } from '@/components/today/today-dashboard-morning-hold';
 import { resolveTodayDashboardView } from '@/components/today/today-dashboard-view';
 import { TodayDashboardResolvedView } from '@/components/today/today-dashboard-resolved-view';
+import { TodayDashboardShell } from '@/components/today/today-dashboard-shell';
 import { useActivities } from '@/hooks/use-activities';
 
-export function TodayDashboard() {
-  const trainingDayId = format(new Date(), 'yyyy-MM-dd');
+function TodayDashboardLoaded({ trainingDayId }: { trainingDayId: string }) {
   const query = useTodayPresentationViewModel(trainingDayId);
   const morningHold = useClientMorningHold(trainingDayId);
   const online = useOnlineStatus();
@@ -53,4 +54,22 @@ export function TodayDashboard() {
       }}
     />
   );
+}
+
+/**
+ * Today root — defer `new Date()` to an effect so Next prerender / Suspense
+ * never freezes wall-clock time (stuck loading shell).
+ */
+export function TodayDashboard() {
+  const [trainingDayId, setTrainingDayId] = useState<string | null>(null);
+
+  useEffect(() => {
+    setTrainingDayId(format(new Date(), 'yyyy-MM-dd'));
+  }, []);
+
+  if (!trainingDayId) {
+    return <TodayDashboardShell />;
+  }
+
+  return <TodayDashboardLoaded trainingDayId={trainingDayId} />;
 }

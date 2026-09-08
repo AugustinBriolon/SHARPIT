@@ -53,7 +53,8 @@ export function CoachChatPanelSkeleton({
 
 function ImmersiveHeaderSkeleton() {
   return (
-    <div className="border-border/50 flex items-center gap-1 border-b py-1.5">
+    <div className="border-border/50 flex items-center gap-1 border-b px-2 py-1.5 sm:px-3">
+      <Skeleton className="size-10 shrink-0 rounded-full lg:hidden" />
       <Skeleton className="h-4 w-40 max-w-[50%] rounded-full" />
       <div className="ml-auto flex gap-1">
         <span
@@ -76,10 +77,7 @@ function ImmersiveHeaderSkeleton() {
 /** Route / Suspense — immersive chrome only. */
 export function CoachHubSkeleton() {
   return (
-    <div
-      className="bg-background safe-area-top fixed inset-x-0 top-0 z-30 flex flex-col"
-      style={{ bottom: 'var(--bottom-nav-offset)' }}
-    >
+    <div className="bg-background safe-area-top fixed inset-x-0 top-0 bottom-0 z-30 flex flex-col lg:bottom-(--bottom-nav-offset)">
       <CoachChatEmptyChrome header={<ImmersiveHeaderSkeleton />} />
     </div>
   );

@@ -5,11 +5,39 @@ import { History, MessageSquarePlus, X } from 'lucide-react';
 import { Drawer } from '@base-ui/react/drawer';
 import { CoachConversationList } from '@/components/coach/chat/conversations/coach-conversation-list';
 import { Dialog, DialogClose, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import { NavArrowLeft } from '@/components/icons/nav-arrows';
+import { useRouter } from 'next/navigation';
 import type { ClientConversationSummary } from '@/lib/query/fetchers';
 import { cn } from '@/lib/utils';
 
+function CoachHeaderBackButton() {
+  const router = useRouter();
+
+  return (
+    <button
+      aria-label="Retour"
+      type="button"
+      className={cn(
+        'border-foreground/20 bg-background/70 text-foreground',
+        'inline-flex size-10 shrink-0 items-center justify-center rounded-full border',
+        'backdrop-blur-md transition-[background-color,transform] duration-150 ease-out',
+        'active:scale-[0.94] lg:hidden',
+      )}
+      onClick={() => {
+        if (typeof window !== 'undefined' && window.history.length > 1) {
+          router.back();
+          return;
+        }
+        router.push('/');
+      }}
+    >
+      <NavArrowLeft className="size-5 translate-x-px" aria-hidden />
+    </button>
+  );
+}
+
 /**
- * Minimal Chat header — thread title + history + new (Beautiful UI Chat chrome).
+ * Minimal Chat header — back + thread title + history + new.
  */
 export function CoachImmersiveHeader({
   title,
@@ -23,7 +51,8 @@ export function CoachImmersiveHeader({
   onNewConversation: () => void;
 }) {
   return (
-    <div className="border-border/50 flex items-center gap-1 border-b py-1.5">
+    <div className="border-border/50 flex items-center gap-1 border-b px-2 py-1.5 sm:px-3">
+      <CoachHeaderBackButton />
       <h1 className="text-foreground min-w-0 flex-1 truncate px-0.5 text-[15px] font-medium tracking-tight">
         {title}
       </h1>

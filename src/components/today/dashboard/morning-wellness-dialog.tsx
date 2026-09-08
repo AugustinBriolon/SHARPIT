@@ -1,8 +1,8 @@
 'use client';
 
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { useCallback, useId, useState } from 'react';
+import { useCallback, useId, useState, type ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
+import { NavArrowLeft, NavArrowRight } from '@/components/icons/nav-arrows';
 import {
   Dialog,
   DialogContent,
@@ -260,13 +260,13 @@ function NotesStep({ value, onChange }: { value: string; onChange: (v: string) =
   const hintId = useId();
 
   return (
-    <div className="flex flex-col items-center gap-6">
+    <div className="flex w-full flex-col items-center gap-5">
       <div className="text-center">
         <p className="text-section-title" id={labelId}>
-          Note libre
+          Note
         </p>
         <p className="text-muted-foreground mt-1 text-sm" id={hintId}>
-          Un contexte utile pour interpréter ta journée.
+          Optionnel — un détail pour le coach si besoin.
         </p>
       </div>
       <Textarea
@@ -325,7 +325,7 @@ function StepFooterPrimaryAction({
       onClick={onNext}
     >
       {nextLabel}
-      <ChevronRight className="size-3.5" aria-hidden />
+      <NavArrowRight className="size-3.5" aria-hidden />
     </Button>
   );
 }
@@ -352,7 +352,7 @@ function StepFooterBackButton({ disabled, onBack }: { disabled: boolean; onBack:
       variant="ghost"
       onClick={onBack}
     >
-      <ChevronLeft className="size-3.5" aria-hidden />
+      <NavArrowLeft className="size-3.5" aria-hidden />
       Retour
     </Button>
   );
@@ -464,6 +464,8 @@ function MorningWellnessTrigger({
   offlineLabel,
   label,
   className,
+  children,
+  ariaLabel,
   onOpen,
 }: {
   guardDisabled: boolean;
@@ -471,10 +473,13 @@ function MorningWellnessTrigger({
   offlineLabel: string;
   label: string;
   className?: string;
+  children?: ReactNode;
+  ariaLabel?: string;
   onOpen: () => void;
 }) {
   return (
     <Button
+      aria-label={offline ? offlineLabel : ariaLabel}
       className={className}
       disabled={guardDisabled}
       size="sm"
@@ -482,7 +487,7 @@ function MorningWellnessTrigger({
       variant="outline"
       onClick={onOpen}
     >
-      {offline ? offlineLabel : label}
+      {offline ? offlineLabel : (children ?? label)}
     </Button>
   );
 }
@@ -558,6 +563,10 @@ function MorningWellnessDialogPanel({
   );
 }
 
+export type MorningWellnessCompleted = {
+  moodLabel: string;
+};
+
 function useMorningWellnessDialogActions({
   form,
   submit,
@@ -567,7 +576,7 @@ function useMorningWellnessDialogActions({
   form: ReturnType<typeof useWellnessForm>;
   submit: ReturnType<typeof useWellnessCheckin>['submit'];
   guardDisabled: boolean;
-  onCompleted?: () => void;
+  onCompleted?: (result: MorningWellnessCompleted) => void;
 }) {
   const [open, setOpen] = useState(false);
 
@@ -583,16 +592,19 @@ function useMorningWellnessDialogActions({
       return;
     }
     try {
+      const moodLabel =
+        MOOD_OPTIONS.find((option) => option.value === form.mood)?.label ?? 'Ressenti saisi';
+      const notes = form.notes.trim() || null;
       await submit({
         mood: form.mood!,
         energyLevel: form.energyLevel!,
         perceivedSoreness: mapSorenessUiToDomain(form.perceivedSoreness!),
         stressLevel: form.stressLevel!,
-        notes: form.notes.trim() || null,
+        notes,
       });
       setOpen(false);
       form.reset();
-      onCompleted?.();
+      onCompleted?.({ moodLabel });
     } catch {
       toast.error("Une erreur est survenue lors de l'enregistrement de ton ressenti.", {
         description: 'Réessaie plus tard.',
@@ -608,11 +620,15 @@ export function MorningWellnessDialog({
   debugBypassCompleted,
   triggerClassName,
   triggerLabel = 'Ressenti du matin',
+  triggerChildren,
+  triggerAriaLabel,
 }: {
-  onCompleted?: () => void;
+  onCompleted?: (result: MorningWellnessCompleted) => void;
   debugBypassCompleted?: boolean;
   triggerClassName?: string;
   triggerLabel?: string;
+  triggerChildren?: ReactNode;
+  triggerAriaLabel?: string;
 }) {
   const { completed, loading, error, submit } = useWellnessCheckin();
   const { offline, guardDisabled, offlineLabel } = useOfflineGuard();
@@ -631,13 +647,16 @@ export function MorningWellnessDialog({
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <MorningWellnessTrigger
+        ariaLabel={triggerAriaLabel}
         className={triggerClassName}
         guardDisabled={guardDisabled}
         label={triggerLabel}
         offline={offline}
         offlineLabel={offlineLabel}
         onOpen={openDialog}
-      />
+      >
+        {triggerChildren}
+      </MorningWellnessTrigger>
       <MorningWellnessDialogPanel
         error={error}
         form={form}

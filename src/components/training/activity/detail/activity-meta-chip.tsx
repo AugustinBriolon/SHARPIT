@@ -6,7 +6,7 @@ import { chipDot, chipIconTone, chipLinkSurface } from './activity-detail-helper
 import type { ChipTone } from './types';
 
 const DEFAULT_LINK_SURFACE =
-  'border-primary/30 bg-muted/20 hover:border-primary/50 hover:bg-muted/50';
+  'border-analysis-border/80 bg-analysis-surface-alt/50 hover:border-primary/35 hover:bg-analysis-surface-alt';
 
 function ActivityMetaChipBody({
   showDot,
@@ -23,11 +23,15 @@ function ActivityMetaChipBody({
 }) {
   return (
     <>
-      {showDot ? <span className={cn('size-2 shrink-0 rounded-full', chipDot[tone!])} /> : iconEl}
-      <span className="text-muted-foreground shrink-0 font-medium tracking-wider uppercase">
-        {label}
+      {showDot ? <span className={cn('size-1.5 shrink-0 rounded-full', chipDot[tone!])} /> : iconEl}
+      <span className="min-w-0">
+        <span className="text-muted-foreground block text-[10px] leading-none font-medium tracking-wide">
+          {label}
+        </span>
+        <span className="text-foreground mt-0.5 block text-xs leading-snug font-semibold wrap-break-word">
+          {value}
+        </span>
       </span>
-      <span className="text-foreground min-w-0 font-medium wrap-break-word">{value}</span>
     </>
   );
 }
@@ -62,6 +66,10 @@ function ActivityMetaChipShell({
   return <span className={chipClass}>{children}</span>;
 }
 
+/**
+ * Instrument chip — quiet label over bold value, wrap-safe radius.
+ * Reading this as: product density for athlete scan, not marketing pills.
+ */
 export function ActivityMetaChip({
   href,
   onClick,
@@ -86,10 +94,12 @@ export function ActivityMetaChip({
   const iconEl = <Icon className={cn('size-3.5 shrink-0', resolvedIconClass)} />;
 
   const linkSurface = tone ? chipLinkSurface[tone] : DEFAULT_LINK_SURFACE;
-  /** Same shell for static + interactive — Conformité must match Ressenti / Météo height. */
   const chipClass = cn(
-    'inline-flex max-w-full shrink-0 min-h-11 items-center gap-2 rounded-full border px-3 py-2 text-xs lg:min-h-9 lg:py-1.5',
-    href || onClick ? cn('pressable', linkSurface) : 'border-analysis-border bg-analysis-surface',
+    'inline-flex max-w-full shrink-0 items-center gap-2 rounded-xl border px-2.5 py-2 text-left',
+    'min-h-11 lg:min-h-9 lg:py-1.5',
+    href || onClick
+      ? cn('pressable', linkSurface)
+      : 'border-analysis-border/70 bg-analysis-surface',
   );
 
   const content = (

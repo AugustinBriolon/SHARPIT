@@ -124,7 +124,7 @@ export function CompositionMetricExplainer({
               Renseigne ta date de naissance dans{' '}
               <Link
                 className="text-foreground font-medium hover:underline"
-                href="/settings/account"
+                href="/settings/account#identite"
               >
                 Profil
               </Link>{' '}

@@ -3,10 +3,10 @@
 import { Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ChevronLeft } from 'lucide-react';
 import { useBackTarget } from '@/hooks/use-back-target';
 import { ChromeGlass } from '@/components/chrome/chrome-glass';
 import { cn } from '@/lib/utils';
+import { NavArrowLeft } from '@/components/icons/nav-arrows';
 
 function canUseHistoryBack(): boolean {
   if (typeof performance === 'undefined') {
@@ -28,6 +28,10 @@ type MobileBackLinkProps = {
   showOnDesktop?: boolean;
 };
 
+/**
+ * Floating back control — single frosted ring (forceFallback avoids LiquidGlass
+ * double-circle). Chevron nudged optically so the path centers in the circle.
+ */
 function GlassBack({
   className,
   href,
@@ -42,24 +46,27 @@ function GlassBack({
   replace: boolean;
 }) {
   return (
-    <div className="fixed top-3 left-[max(1rem,env(safe-area-inset-left))] z-50 lg:static lg:inset-auto lg:top-auto lg:left-auto lg:z-auto">
+    <div className="fixed top-3 left-[max(1rem,env(safe-area-inset-left))] z-50 w-fit lg:static lg:inset-auto lg:top-auto lg:left-auto lg:z-auto">
       <ChromeGlass
-        className="flex size-12 min-h-[44px] min-w-[44px] items-center justify-center lg:size-auto lg:min-h-0 lg:min-w-0 lg:border-0 lg:bg-transparent lg:shadow-none lg:backdrop-blur-none"
+        className="flex size-11 min-h-11 min-w-11 items-center justify-center lg:inline-flex lg:size-auto lg:min-h-0 lg:min-w-0 lg:justify-start lg:border-0 lg:bg-transparent lg:shadow-none lg:backdrop-blur-none"
         cornerRadius={999}
         style={{ left: 'auto', position: 'relative', top: 'auto' }}
+        forceFallback
       >
         <Link
           aria-label={typeof label === 'string' ? label : undefined}
           href={href}
           replace={replace}
           className={cn(
-            'text-foreground/70 hover:text-foreground dark:text-foreground flex size-12 min-h-[44px] min-w-[44px] items-center justify-center rounded-full',
-            'lg:-ml-1.5 lg:size-9 lg:min-h-9 lg:min-w-9 lg:justify-center lg:rounded-md lg:px-0',
+            'text-foreground/80 hover:text-foreground dark:text-foreground',
+            'flex size-11 min-h-11 min-w-11 items-center justify-center',
+            'lg:-ml-1.5 lg:size-9 lg:min-h-9 lg:min-w-9 lg:justify-start lg:px-0',
             className,
           )}
           onClick={onClick}
         >
-          <ChevronLeft className="size-6 shrink-0 lg:size-5" aria-hidden />
+          {/* Optical center: left chevron path sits left of geometric center. */}
+          <NavArrowLeft className="size-5 translate-x-px lg:size-4.5" aria-hidden />
         </Link>
       </ChromeGlass>
     </div>
@@ -88,7 +95,7 @@ function BackLinkChrome({
         replace={replace}
         onClick={onClick}
       />
-      <div className="h-16 lg:hidden" aria-hidden />
+      <div className="h-14 lg:hidden" aria-hidden />
     </>
   );
 }

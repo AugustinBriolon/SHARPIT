@@ -21,11 +21,11 @@ function ObjectifsFallback() {
 export default function MoiObjectifsPage() {
   return (
     <div className="space-y-4 max-lg:pb-10">
-      <MobileBackLink fallbackHref={MOI_HUB_PATH} fallbackLabel="Moi" showOnDesktop />
+      <MobileBackLink fallbackHref={MOI_HUB_PATH} fallbackLabel="Réglages" showOnDesktop />
       <StickyHeader>
         <div className="flex min-h-11 items-start justify-between gap-4 lg:min-h-9">
           <div>
-            <p className="text-label">Moi</p>
+            <p className="text-label">Réglages</p>
             <h1 className="text-page-title mt-1">Objectifs</h1>
             <p className="text-muted-foreground mt-1 text-sm">
               Courses, métriques prioritaires et proximité aux cibles.

@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { coachDiscussHref } from '@/lib/coach/chat/discuss/coach-discuss-href';
-import { describeCoachDiscussContext } from '@/lib/coach/chat/discuss/coach-discuss-context';
+import {
+  describeCoachDiscussContext,
+  enrichDiscussContextWithActivityStatus,
+} from '@/lib/coach/chat/discuss/coach-discuss-context';
 
 describe('coachDiscussHref', () => {
   it('builds a link for every athlete surface the IA names', () => {
@@ -45,6 +48,21 @@ describe('describeCoachDiscussContext', () => {
     );
     expect(describeCoachDiscussContext({ kind: 'record', categoryKey: 'k' }).sourceHref).toBe(
       '/moi/performance',
+    );
+  });
+
+  it('enriches today and planning chips with non-active activity status', () => {
+    const today = describeCoachDiscussContext({ kind: 'today' });
+    expect(enrichDiscussContextWithActivityStatus(today, 'active').label).toBe('Ton état du jour');
+    expect(enrichDiscussContextWithActivityStatus(today, 'paused').label).toBe(
+      'Ton état du jour · En pause',
+    );
+    expect(enrichDiscussContextWithActivityStatus(today, 'sick').label).toBe(
+      'Ton état du jour · Malade',
+    );
+    const planning = describeCoachDiscussContext({ kind: 'planning', horizonDays: 7 });
+    expect(enrichDiscussContextWithActivityStatus(planning, 'injured').label).toBe(
+      'Ta semaine · les 7 prochains jours · Blessé',
     );
   });
 });

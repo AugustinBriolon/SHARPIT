@@ -2,7 +2,7 @@
 
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { Check, ChevronRight, Layers, Pencil } from 'lucide-react';
+import { Check, Layers, Pencil } from 'lucide-react';
 import Link from 'next/link';
 import { BrickAnalysisPanel } from '@/components/planning/brick/brick-analysis-panel';
 import { SessionRealization } from '@/components/planning/session/realize/session-realization';
@@ -11,6 +11,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import type { ClientPlannedSession } from '@/lib/query/types';
 import { activityTypeLabels } from '@/lib/format';
 import { intensityAccent } from '@/lib/planned-session/sessions';
+import { NavArrowRight } from '@/components/icons/nav-arrows';
 
 export { BrickChipHeader } from '@/components/planning/brick/brick-chip-header';
 
@@ -131,7 +132,7 @@ function BrickLegSection({
 
       {showConnector && (
         <div className="text-primary/50 ml-3 flex items-center gap-1 pl-5 text-xs">
-          <ChevronRight className="size-3.5" />
+          <NavArrowRight className="size-3.5" />
           Transition
         </div>
       )}

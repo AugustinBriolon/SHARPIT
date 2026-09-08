@@ -4,6 +4,7 @@ import {
   equipmentStatusLabel,
   goalsStatusLabel,
   integrationsStatusLabel,
+  isIntegrationsAttentionLabel,
   memoryStatusLabel,
   themeStatusLabel,
 } from '@/lib/settings/hub-status';
@@ -69,6 +70,9 @@ describe('settings hub status labels', () => {
     expect(
       integrationsStatusLabel({ connectedCount: 1, reconnectNames: ['Garmin', 'Strava'] }),
     ).toBe('2 à reconnecter');
+    expect(isIntegrationsAttentionLabel('2 à reconnecter')).toBe(true);
+    expect(isIntegrationsAttentionLabel('Garmin à reconnecter')).toBe(true);
+    expect(isIntegrationsAttentionLabel('3 connectées')).toBe(false);
   });
 
   it('maps theme preference', () => {

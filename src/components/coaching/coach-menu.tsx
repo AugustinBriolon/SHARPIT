@@ -1,5 +1,6 @@
 'use client';
 
+import { NavArrowDown } from '@/components/icons/nav-arrows';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -9,7 +10,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
-import { CalendarRange, ChevronDown, NotebookText, SlidersHorizontal } from 'lucide-react';
+import { CalendarRange, NotebookText, SlidersHorizontal } from 'lucide-react';
 
 /** Week-chrome tools only — create/manual/bilan/macro live on day + / hub Plan. */
 export type SessionsCoachAction = 'generate' | 'adapt';
@@ -35,7 +36,7 @@ export function SessionsCoachMenu({
             <span className={tone === 'secondary' ? 'hidden sm:inline' : 'hidden lg:inline'}>
               {tone === 'secondary' ? 'Actions' : 'Coach'}
             </span>
-            <ChevronDown className="size-3.5 opacity-70 transition-transform duration-150 ease-out group-aria-expanded/button:rotate-180" />
+            <NavArrowDown className="size-3.5 opacity-70 transition-transform duration-150 ease-out group-aria-expanded/button:rotate-180" />
           </Button>
         }
       />

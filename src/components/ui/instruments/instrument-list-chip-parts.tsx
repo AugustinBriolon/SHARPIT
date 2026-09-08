@@ -1,8 +1,7 @@
-'use client';
-
 import type { ReactNode } from 'react';
 import type { ActivityType } from '@prisma/client';
 import { CheckCircle2 } from 'lucide-react';
+import { NavArrowRight } from '@/components/icons/nav-arrows';
 import { ActivityTypeIndicator } from '@/components/ui/instruments/activity-type-indicator';
 import { cn } from '@/lib/utils';
 import type { InstrumentListChipMeta } from '@/components/ui/instruments/instrument-list-chip';
@@ -72,19 +71,14 @@ export function InstrumentListChipTrailing({
       {trailing}
       {primary && !done ? (
         <span
-          className="bg-highlight text-highlight-foreground text-data inline-flex size-7 items-center justify-center rounded-full text-xs transition-transform duration-150 group-hover:translate-x-0.5"
+          className="bg-highlight text-highlight-foreground inline-flex size-7 items-center justify-center rounded-full transition-transform duration-150 group-hover:translate-x-0.5"
           aria-hidden
         >
-          →
+          <NavArrowRight className="size-3.5" />
         </span>
       ) : null}
       {showArrow && !(primary && !done) ? (
-        <span
-          className="text-muted-foreground/70 text-data text-xs tracking-wider transition-transform duration-150 group-hover:translate-x-0.5"
-          aria-hidden
-        >
-          →
-        </span>
+        <NavArrowRight className="text-muted-foreground/70 size-3.5 transition-transform duration-150 group-hover:translate-x-0.5" />
       ) : null}
     </span>
   );

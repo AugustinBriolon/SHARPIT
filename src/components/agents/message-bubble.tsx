@@ -1,8 +1,8 @@
 'use client';
 // beui.dev/components/agents/chat-app
 
-import { ChevronDown } from 'lucide-react';
 import { type HTMLMotionProps, motion, useReducedMotion } from 'motion/react';
+import { NavArrowDown } from '@/components/icons/nav-arrows';
 import {
   cloneElement,
   type ComponentPropsWithRef,
@@ -329,7 +329,7 @@ function MessageBubbleCollapseTrigger({
         aria-hidden="true"
         transition={reduce ? { duration: 0 } : SPRING_SWAP}
       >
-        <ChevronDown className="size-3.5" />
+        <NavArrowDown className="size-3.5" />
       </motion.span>
     </button>
   );

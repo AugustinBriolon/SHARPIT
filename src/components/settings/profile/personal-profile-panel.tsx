@@ -106,9 +106,12 @@ function PersonalProfileFeedback({
 export function PersonalProfilePanel({
   initial,
   loadError = null,
+  bare = false,
 }: {
   initial: ProfileData | null;
   loadError?: string | null;
+  /** Skip nested settings chrome when folded inside Corps identity disclosure. */
+  bare?: boolean;
 }) {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -170,21 +173,29 @@ export function PersonalProfilePanel({
     }
   }
 
+  const fields = (
+    <PersonalProfileFields
+      bedtimeErrorId={bedtimeErrorId}
+      fieldErrors={fieldErrors}
+      heightErrorId={heightErrorId}
+      sleepErrorId={sleepErrorId}
+      state={state}
+      onBirthDateChange={(value) => updateField('birthDate', value)}
+      onHeightChange={(value) => updateField('heightCm', value)}
+      onSleepBedtimeChange={(value) => updateField('sleepBedtime', value)}
+      onSleepHoursChange={(value) => updateField('sleepHours', value)}
+    />
+  );
+
   return (
     <form className="space-y-3" noValidate onSubmit={handleSubmit}>
-      <ProfileFormSection title="Identité & rythme de vie" compact>
-        <PersonalProfileFields
-          bedtimeErrorId={bedtimeErrorId}
-          fieldErrors={fieldErrors}
-          heightErrorId={heightErrorId}
-          sleepErrorId={sleepErrorId}
-          state={state}
-          onBirthDateChange={(value) => updateField('birthDate', value)}
-          onHeightChange={(value) => updateField('heightCm', value)}
-          onSleepBedtimeChange={(value) => updateField('sleepBedtime', value)}
-          onSleepHoursChange={(value) => updateField('sleepHours', value)}
-        />
-      </ProfileFormSection>
+      {bare ? (
+        <div className="space-y-2.5">{fields}</div>
+      ) : (
+        <ProfileFormSection title="Identité & rythme de vie" compact>
+          {fields}
+        </ProfileFormSection>
+      )}
       <PersonalProfileFeedback
         dirty={dirty}
         error={error}

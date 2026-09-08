@@ -24,9 +24,9 @@ function PerformanceFallback() {
 export default function MoiPerformancePage() {
   return (
     <div className="space-y-4 max-lg:pb-10">
-      <MobileBackLink fallbackHref={MOI_HUB_PATH} fallbackLabel="Moi" showOnDesktop />
+      <MobileBackLink fallbackHref={MOI_HUB_PATH} fallbackLabel="Réglages" showOnDesktop />
       <StickyHeader>
-        <p className="text-label">Moi</p>
+        <p className="text-label">Réglages</p>
         <h1 className="text-page-title mt-1">Performance</h1>
         <p className="text-muted-foreground mt-1 text-sm">
           Records et lecture de l&apos;entraînement.

@@ -1,8 +1,8 @@
 'use client';
 
-import { ChevronDown } from 'lucide-react';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
+import { NavArrowDown } from '@/components/icons/nav-arrows';
 
 const READ_MAX_COLLAPSED_CLASS = 'max-h-40';
 const READ_MAX_COLLAPSED_PX = 160;
@@ -35,7 +35,7 @@ function ContextReadExpandButton({
       onClick={onToggle}
     >
       {expanded ? 'Réduire' : 'Voir plus'}
-      <ChevronDown
+      <NavArrowDown
         className={cn(
           'size-3.5 transition-transform duration-150 ease-out motion-reduce:transition-none',
           expanded && 'rotate-180',

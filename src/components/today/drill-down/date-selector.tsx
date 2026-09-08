@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { NavArrowLeft, NavArrowRight } from '@/components/icons/nav-arrows';
 import {
   addMonths,
   endOfMonth,
@@ -13,7 +14,7 @@ import {
   subMonths,
 } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { CalendarDays, ChevronLeft, ChevronRight } from 'lucide-react';
+import { CalendarDays } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -93,7 +94,7 @@ export function TodayDateSelector({
           variant="ghost"
           onClick={onPreviousDay}
         >
-          <ChevronLeft className="size-4" aria-hidden />
+          <NavArrowLeft className="size-4" aria-hidden />
         </Button>
 
         <Button
@@ -120,7 +121,7 @@ export function TodayDateSelector({
           variant="ghost"
           onClick={onNextDay}
         >
-          <ChevronRight className="size-4" aria-hidden />
+          <NavArrowRight className="size-4" aria-hidden />
         </Button>
       </div>
 
@@ -143,7 +144,7 @@ export function TodayDateSelector({
                 variant="ghost"
                 onClick={() => setVisibleMonth((current) => subMonths(current, 1))}
               >
-                <ChevronLeft className="size-4" aria-hidden />
+                <NavArrowLeft className="size-4" aria-hidden />
               </Button>
 
               <p aria-live="polite" className="text-sm font-semibold capitalize">
@@ -159,7 +160,7 @@ export function TodayDateSelector({
                 variant="ghost"
                 onClick={() => setVisibleMonth((current) => addMonths(current, 1))}
               >
-                <ChevronRight className="size-4" aria-hidden />
+                <NavArrowRight className="size-4" aria-hidden />
               </Button>
             </div>
 

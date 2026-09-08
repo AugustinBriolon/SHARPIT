@@ -2,10 +2,10 @@
 
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { ChevronDown } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import type { ClientThresholdSnapshot } from '@/lib/query/types';
+import { NavArrowDown } from '@/components/icons/nav-arrows';
 import {
   dedupeThresholdHistory,
   describeThresholdChanges,
@@ -65,7 +65,7 @@ export function ThresholdHistoryPanel({ history }: { history: ClientThresholdSna
             variant="ghost"
             onClick={() => setExpanded((open) => !open)}
           >
-            <ChevronDown
+            <NavArrowDown
               className={cn('size-3.5 transition-transform', expanded && 'rotate-180')}
               aria-hidden
             />

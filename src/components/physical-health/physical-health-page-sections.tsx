@@ -1,11 +1,14 @@
 'use client';
 
-import { CorpsDivider, CorpsEmptyState, CorpsStatCard } from '@/components/corps/corps-ui';
+import { CorpsStatCard } from '@/components/corps/corps-ui';
+import { CORPS_TONE_DOT } from '@/lib/ui/metric-tone';
+import { cn } from '@/lib/utils';
 import { HeartPulse } from 'lucide-react';
 import Link from 'next/link';
 import { Skeleton } from '@/components/ui/skeleton';
 import type { PhysicalHealthConditionCard } from '@/core/presentation/physical-health-view-model';
 import { PhysicalHealthConditionCardView } from '@/components/physical-health/cards/condition-card';
+import { CorpsEmptyState, CorpsDivider } from '@/components/corps/corps-ui';
 
 function ConditionCardSkeleton() {
   return (
@@ -46,7 +49,7 @@ export function PhysicalHealthActiveSection({
   return (
     <section className="space-y-3">
       <h3 className="text-section-title text-base">Conditions actives</h3>
-      <div className="grid gap-3 md:grid-cols-2">
+      <div className={cn('grid gap-3', embedded ? 'grid-cols-1' : 'md:grid-cols-2')}>
         {conditions.map((c) => (
           <PhysicalHealthConditionCardView
             key={c.conditionId}
@@ -121,11 +124,40 @@ export function PhysicalHealthEmptySection({
   );
 }
 
-export function PhysicalHealthStatsGrid({
+type AggregateDisplay = ReturnType<
+  typeof import('@/components/physical-health/physical-health-page-helpers').aggregateDisplayValues
+>;
+
+function SuiviSignalChip({
+  label,
+  value,
+  sub,
+  tone,
   loading,
-  aggregate,
-  display,
 }: {
+  label: string;
+  value: string;
+  sub?: string;
+  tone: keyof typeof CORPS_TONE_DOT;
+  loading: boolean;
+}) {
+  if (!loading) {
+    return (
+      <div className="chip-surface flex min-h-11 min-w-0 flex-col gap-1 rounded-2xl px-3 py-2.5">
+        <span className="flex items-center gap-1.5">
+          <span className={cn('h-2 w-2 shrink-0 rounded-full', CORPS_TONE_DOT[tone])} aria-hidden />
+          <span className="text-muted-foreground text-xs font-medium tracking-wide">{label}</span>
+        </span>
+        <span className="text-data text-foreground text-[15px] tabular-nums">{value}</span>
+        {sub ? <span className="text-muted-foreground text-xs leading-snug">{sub}</span> : null}
+      </div>
+    );
+  }
+
+  return <CorpsStatCard label={label} tone={tone} value="" loading />;
+}
+
+type StatsGridProps = {
   loading: boolean;
   aggregate: {
     activeCount: number;
@@ -133,10 +165,14 @@ export function PhysicalHealthStatsGrid({
     decisionLabel: string;
     confidencePct: number;
   };
-  display: ReturnType<
-    typeof import('@/components/physical-health/physical-health-page-helpers').aggregateDisplayValues
-  >;
-}) {
+  display: AggregateDisplay;
+};
+
+function PhysicalHealthStatsGridFull({ loading, aggregate, display }: StatsGridProps) {
+  const capacitySublabel = loading ? undefined : aggregate.aggregateTrainingCapacityLabel;
+  const verdictSublabel = loading ? undefined : aggregate.decisionLabel;
+  const confidenceValue = loading ? '' : `${aggregate.confidencePct}%`;
+
   return (
     <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
       <CorpsStatCard
@@ -148,14 +184,14 @@ export function PhysicalHealthStatsGrid({
       <CorpsStatCard
         label="Capacité"
         loading={loading}
-        sublabel={loading ? undefined : aggregate.aggregateTrainingCapacityLabel}
+        sublabel={capacitySublabel}
         tone={display.capacityTone}
         value={display.capacityValue}
       />
       <CorpsStatCard
         label="Verdict modèle"
         loading={loading}
-        sublabel={loading ? undefined : aggregate.decisionLabel}
+        sublabel={verdictSublabel}
         tone={display.verdictTone}
         value={display.verdictValue}
       />
@@ -163,8 +199,56 @@ export function PhysicalHealthStatsGrid({
         label="Confiance"
         loading={loading}
         tone={display.confidenceTone}
-        value={loading ? '' : `${aggregate.confidencePct}%`}
+        value={confidenceValue}
       />
     </div>
   );
+}
+
+function PhysicalHealthStatsGridEmbedded({ loading, aggregate, display }: StatsGridProps) {
+  const capacitySub = loading ? undefined : aggregate.aggregateTrainingCapacityLabel;
+  const verdictSub = loading ? undefined : aggregate.decisionLabel;
+  const confidenceValue = loading ? '…' : `${aggregate.confidencePct}%`;
+
+  return (
+    <nav aria-label="Signaux de suivi" className="grid grid-cols-2 gap-2 lg:grid-cols-4">
+      <SuiviSignalChip
+        label="Actives"
+        loading={loading}
+        tone={display.activesTone}
+        value={String(aggregate.activeCount)}
+      />
+      <SuiviSignalChip
+        label="Capacité"
+        loading={loading}
+        sub={capacitySub}
+        tone={display.capacityTone}
+        value={display.capacityValue}
+      />
+      <SuiviSignalChip
+        label="Verdict"
+        loading={loading}
+        sub={verdictSub}
+        tone={display.verdictTone}
+        value={display.verdictValue}
+      />
+      <SuiviSignalChip
+        label="Confiance"
+        loading={loading}
+        tone={display.confidenceTone}
+        value={confidenceValue}
+      />
+    </nav>
+  );
+}
+
+/** Instrument chips — same dialect as composition signals, not a 4-card dashboard. */
+export function PhysicalHealthStatsGrid({
+  loading,
+  aggregate,
+  display,
+  embedded = false,
+}: StatsGridProps & { embedded?: boolean }) {
+  const Grid = embedded ? PhysicalHealthStatsGridEmbedded : PhysicalHealthStatsGridFull;
+  return <Grid aggregate={aggregate} display={display} loading={loading} />;
 }

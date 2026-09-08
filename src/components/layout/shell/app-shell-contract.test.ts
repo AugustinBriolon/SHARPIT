@@ -13,9 +13,11 @@ describe('AppShell chrome contract', () => {
     expect(APP_SHELL).not.toContain('<Sidebar');
   });
 
-  it('mounts the floating bottom nav on every viewport', () => {
+  it('hides the floating bottom nav only for coach on mobile', () => {
     expect(APP_SHELL).toContain('<BottomNav');
-    expect(APP_SHELL).not.toMatch(/lg:hidden[\s\S]*<BottomNav/);
+    expect(APP_SHELL).toContain('coachMobileImmersive');
+    expect(APP_SHELL).toContain('hideBottomNav');
+    expect(APP_SHELL).toContain('{hideBottomNav ? null : <BottomNav />}');
   });
 
   it('centers a max-w-3xl reading column instead of a full-bleed desktop pane', () => {
@@ -23,8 +25,8 @@ describe('AppShell chrome contract', () => {
     expect(APP_SHELL).not.toContain('lg:max-w-none');
   });
 
-  it('reserves bottom-nav offset on every viewport', () => {
+  it('reserves bottom-nav offset except on coach mobile immersive', () => {
     expect(APP_SHELL).toContain('pb-(--bottom-nav-offset)');
-    expect(APP_SHELL).not.toContain('max-lg:pb-');
+    expect(APP_SHELL).toContain("hideBottomNav ? 'pb-0'");
   });
 });

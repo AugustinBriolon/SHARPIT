@@ -41,10 +41,14 @@ export function DiscussWithCoachButton({
 
   return (
     <LinkButton
-      className={cn('self-start', className)}
       href={coachDiscussHref(target)}
       size={size}
       variant={variant}
+      className={cn(
+        // Wrap-safe: long labels on narrow mobile must not keep pill radius + nowrap.
+        'h-auto min-h-8 self-start rounded-xl text-left whitespace-normal',
+        className,
+      )}
       onClick={() => {
         onBeforeNavigate?.();
         dismissFromDialog?.();

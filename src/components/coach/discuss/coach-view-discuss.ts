@@ -1,5 +1,9 @@
 import type { CoachDiscussContext } from '@/lib/coach/chat/discuss/coach-discuss-context';
-import { describeCoachDiscussContext } from '@/lib/coach/chat/discuss/coach-discuss-context';
+import {
+  describeCoachDiscussContext,
+  enrichDiscussContextWithActivityStatus,
+} from '@/lib/coach/chat/discuss/coach-discuss-context';
+import { ACTIVITY_STATUS_DEFAULT, readActivityStatusStore } from '@/lib/health/activity-status';
 import type { ProjectionHorizonDays } from '@/core/projection/types';
 import type { RecordCategory } from '@/lib/training/records';
 
@@ -170,8 +174,14 @@ function buildActivityContext(sources: DiscussDataSources): CoachDiscussContext 
 }
 
 export function buildDiscussContext(sources: DiscussDataSources): CoachDiscussContext | null {
+  const activityStatus =
+    typeof window !== 'undefined' ? readActivityStatusStore().status : ACTIVITY_STATUS_DEFAULT;
+
   if (sources.discussToday) {
-    return describeCoachDiscussContext({ kind: 'today' });
+    return enrichDiscussContextWithActivityStatus(
+      describeCoachDiscussContext({ kind: 'today' }),
+      activityStatus,
+    );
   }
   const goal = buildGoalContext(sources);
   if (goal) {
@@ -186,10 +196,13 @@ export function buildDiscussContext(sources: DiscussDataSources): CoachDiscussCo
     return record;
   }
   if (sources.discussPlanningHorizon) {
-    return describeCoachDiscussContext({
-      kind: 'planning',
-      horizonDays: sources.discussPlanningHorizon,
-    });
+    return enrichDiscussContextWithActivityStatus(
+      describeCoachDiscussContext({
+        kind: 'planning',
+        horizonDays: sources.discussPlanningHorizon,
+      }),
+      activityStatus,
+    );
   }
   const session = buildSessionContext(sources);
   if (session) {

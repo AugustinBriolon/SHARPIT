@@ -25,6 +25,14 @@ function paceFmt(secPerKm: number): string {
   return `${m}'${s.toString().padStart(2, '0')}`;
 }
 
+/** Stream pace is stored as sec/km; swim coaching reads /100m. */
+function swimPaceFmt(secPerKm: number): string {
+  const secPer100 = secPerKm / 10;
+  const m = Math.floor(secPer100 / 60);
+  const s = Math.round(secPer100 % 60);
+  return `${m}'${s.toString().padStart(2, '0')}`;
+}
+
 function pushSpeedMetric(
   metrics: StreamMetricOption[],
   hasSpeed: boolean,
@@ -41,6 +49,18 @@ function pushSpeedMetric(
       color: CHART_VO2_STROKE,
       unit: '/km',
       formatter: paceFmt,
+      reversed: true,
+    });
+    return;
+  }
+  if (type === ActivityType.SWIM) {
+    metrics.push({
+      key: 'pace',
+      label: 'Allure',
+      shortLabel: 'Allure',
+      color: CHART_VO2_STROKE,
+      unit: '/100m',
+      formatter: swimPaceFmt,
       reversed: true,
     });
     return;

@@ -30,7 +30,7 @@ export function PhysicalHealthPageHeader({
     return (
       <CorpsSectionHeader
         action={headerAction}
-        description="État inféré à partir de tes observations — symptômes et capacité fonctionnelle sont distincts."
+        description="État inféré à partir de tes observations. Symptômes et capacité fonctionnelle sont distincts."
         label="Progression"
         title="Santé physique"
       />
@@ -38,10 +38,13 @@ export function PhysicalHealthPageHeader({
   }
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-2">
-      <p className="text-muted-foreground text-sm leading-relaxed">
-        Conditions actives, capacité d&apos;entraînement et évolution inférées.
-      </p>
+    <div className="flex flex-wrap items-start justify-between gap-3">
+      <div className="min-w-0 space-y-1">
+        <h2 className="text-section-title">Suivi</h2>
+        <p className="text-muted-foreground max-w-xl text-sm leading-relaxed">
+          Capacité d&apos;entraînement et conditions actives.
+        </p>
+      </div>
       {headerAction}
     </div>
   );

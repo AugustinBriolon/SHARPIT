@@ -41,7 +41,7 @@ export function pickDefaultStreamMetricKeys(
   const priorities: Record<ActivityType, MetricKey[]> = {
     [ActivityType.BIKE]: ['hr', 'watts', 'speed', 'alt', 'cadence', 'pace'],
     [ActivityType.RUN]: ['hr', 'pace', 'alt', 'cadence', 'speed', 'watts'],
-    [ActivityType.SWIM]: ['hr', 'speed', 'cadence', 'alt', 'watts', 'pace'],
+    [ActivityType.SWIM]: ['hr', 'pace', 'cadence', 'alt', 'watts', 'speed'],
     [ActivityType.STRENGTH]: ['hr', 'watts', 'cadence', 'speed', 'alt', 'pace'],
     [ActivityType.TRIATHLON]: ['hr', 'watts', 'pace', 'speed', 'alt', 'cadence'],
     [ActivityType.HIKE]: ['hr', 'alt', 'speed', 'pace', 'cadence', 'watts'],

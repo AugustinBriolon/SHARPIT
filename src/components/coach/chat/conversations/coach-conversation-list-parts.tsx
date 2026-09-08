@@ -2,9 +2,10 @@
 
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { ChevronDownIcon, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
+import { MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { NavArrowDown } from '@/components/icons/nav-arrows';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -78,10 +79,7 @@ export function MobileSelectLoadingRow() {
           )}
         >
           <SkeletonDataValue heightClassName="h-3.5" widthClassName="w-36 max-w-[70%]" />
-          <ChevronDownIcon
-            className="text-muted-foreground size-4 shrink-0 opacity-50"
-            aria-hidden
-          />
+          <NavArrowDown className="text-muted-foreground size-4 shrink-0 opacity-50" aria-hidden />
         </div>
       </div>
     </div>

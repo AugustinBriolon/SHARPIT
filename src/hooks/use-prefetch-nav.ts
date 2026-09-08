@@ -6,6 +6,7 @@ import { useCallback } from 'react';
 import {
   fetchActivities,
   fetchActivityStream,
+  fetchAthleteProfile,
   fetchConversations,
   fetchGoals,
   fetchPhysicalNotes,
@@ -48,6 +49,7 @@ function prefetchNavRoute(
       prefetchProgressHub(pre, trainingDayId);
     },
     '/moi/corps': () => {
+      pre(queryKeys.athleteProfile, fetchAthleteProfile);
       prefetchProgressHub(pre, trainingDayId);
     },
     '/moi/objectifs': () => {
@@ -57,7 +59,6 @@ function prefetchNavRoute(
       pre(queryKeys.goals, fetchGoals);
       prefetchProgressHub(pre, trainingDayId);
     },
-    '/settings/account': () => pre(queryKeys.goals, fetchGoals),
     '/coach': () => {
       pre(queryKeys.plannedSessions, fetchPlannedSessions);
       pre(queryKeys.activities, fetchActivities);

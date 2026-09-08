@@ -85,8 +85,11 @@ export function ThresholdsHint({ analysis }: { analysis: ActivityAnalysis }) {
         Calibration
       </Link>{' '}
       ou ajuste-les dans{' '}
-      <a className="text-primary underline-offset-2 hover:underline" href="/settings/account">
-        Compte
+      <a
+        className="text-primary underline-offset-2 hover:underline"
+        href="/settings/account#identite"
+      >
+        Profil
       </a>
       .
       {thresholds.lthr ? (

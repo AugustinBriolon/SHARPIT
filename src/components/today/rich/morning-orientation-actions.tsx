@@ -7,6 +7,12 @@ import {
 } from '@/components/today/rich/morning-orientation-hold';
 import { MorningOrientationReadyActions } from '@/components/today/rich/morning-orientation-ready-actions';
 import type { TodayViewModel } from '@/core/presentation/today-view-model';
+import {
+  activityStatusOption,
+  getActivityStatusServerSnapshot,
+  getActivityStatusSnapshot,
+  subscribeActivityStatus,
+} from '@/lib/health/activity-status';
 
 export {
   morningHoldStorageKey,
@@ -24,6 +30,26 @@ export function useClientMorningHold(trainingDayId: string): boolean {
 
 type MorningOrientation = NonNullable<TodayViewModel['morningOrientation']>;
 
+function ActivityStatusOrientationNote() {
+  const status = useSyncExternalStore(
+    subscribeActivityStatus,
+    getActivityStatusSnapshot,
+    getActivityStatusServerSnapshot,
+  );
+  if (status === 'active') {
+    return null;
+  }
+  const option = activityStatusOption(status);
+  return (
+    <p
+      className="border-border bg-muted/40 text-muted-foreground rounded-lg border px-3 py-2 text-xs text-pretty"
+      role="status"
+    >
+      Mode {option.label} : {option.planningImpact}
+    </p>
+  );
+}
+
 export function MorningOrientationActions({
   trainingDayId,
   orientation,
@@ -38,10 +64,13 @@ export function MorningOrientationActions({
   }
 
   return (
-    <MorningOrientationReadyActions
-      orientation={orientation}
-      trainingDayId={trainingDayId}
-      onRefreshed={onRefreshed}
-    />
+    <div className="space-y-2">
+      <ActivityStatusOrientationNote />
+      <MorningOrientationReadyActions
+        orientation={orientation}
+        trainingDayId={trainingDayId}
+        onRefreshed={onRefreshed}
+      />
+    </div>
   );
 }

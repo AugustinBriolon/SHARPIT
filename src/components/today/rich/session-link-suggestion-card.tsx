@@ -3,8 +3,8 @@
 import { ActivityTypeIndicator } from '@/components/ui/instruments/activity-type-indicator';
 import { useDisplayMode } from '@/providers/display-mode-provider';
 import { cn } from '@/lib/utils';
-import { ChevronRight } from 'lucide-react';
 import { useEffect, useId, useRef } from 'react';
+import { NavArrowRight } from '@/components/icons/nav-arrows';
 import {
   SessionLinkSuggestionDetails,
   sessionLinkShowExpertHint,
@@ -92,7 +92,7 @@ export function SessionLinkSuggestionCard({
               </p>
             </span>
           </span>
-          <ChevronRight
+          <NavArrowRight
             className="text-muted-foreground/70 size-4 shrink-0 transition-transform group-open:rotate-90"
             aria-hidden
           />

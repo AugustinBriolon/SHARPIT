@@ -5,6 +5,15 @@ import { OfflineBanner } from '@/components/pwa/offline-banner';
 import { SyncingIndicator } from '@/components/ui/syncing-indicator';
 import { PAGE_CONTENT_MAX_CLASS } from '@/lib/ui/page-gutter';
 import { cn } from '@/lib/utils';
+import { usePathname } from 'next/navigation';
+import { useIsMobile } from '@/hooks/use-viewport';
+
+function isCoachPath(pathname: string | null): boolean {
+  if (!pathname) {
+    return false;
+  }
+  return pathname === '/coach' || pathname.startsWith('/coach/');
+}
 
 /**
  * Single page tree for every viewport — one floating bottom tab bar, one
@@ -14,6 +23,9 @@ import { cn } from '@/lib/utils';
  *
  * `--page-gutter` must stay in sync with `PAGE_GUTTER` in `src/lib/ui/page-gutter.ts`
  * (1rem mobile / 1.5rem desktop).
+ *
+ * Coach on mobile: hide the floating tab bar to reclaim vertical space.
+ * Desktop keeps the tab bar.
  */
 export function AppShell({
   children,
@@ -23,6 +35,11 @@ export function AppShell({
   /** Server-rendered slot (AppShell is a Client Component and can't await cookies() itself). */
   demoBanner?: React.ReactNode;
 }) {
+  const pathname = usePathname();
+  const isMobile = useIsMobile();
+  const coachMobileImmersive = isCoachPath(pathname) && isMobile;
+  const hideBottomNav = coachMobileImmersive;
+
   return (
     <div className="bg-background flex h-dvh flex-col overflow-hidden">
       <a
@@ -42,20 +59,22 @@ export function AppShell({
           tabIndex={-1}
           className={cn(
             'min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain',
-            'no-scrollbar pb-(--bottom-nav-offset)',
+            'no-scrollbar',
+            hideBottomNav ? 'pb-0' : 'pb-(--bottom-nav-offset)',
           )}
         >
           <div
             className={cn(
               'mx-auto px-4 py-4 [--page-gutter:1rem] lg:p-6 lg:[--page-gutter:1.5rem]',
               PAGE_CONTENT_MAX_CLASS,
+              coachMobileImmersive && 'max-w-none p-0',
             )}
           >
             {children}
           </div>
         </main>
 
-        <BottomNav />
+        {hideBottomNav ? null : <BottomNav />}
       </div>
     </div>
   );

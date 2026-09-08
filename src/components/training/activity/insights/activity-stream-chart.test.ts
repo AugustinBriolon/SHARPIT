@@ -47,9 +47,21 @@ describe('pickDefaultStreamMetricKeys', () => {
       },
       ActivityType.RUN,
     );
+    const swimMetrics = buildStreamMetricOptions(
+      {
+        altitude: false,
+        hr: true,
+        watts: false,
+        cadence: true,
+        speed: true,
+      },
+      ActivityType.SWIM,
+    );
 
     expect(pickDefaultStreamMetricKeys(bikeMetrics, ActivityType.BIKE)).toEqual(['hr', 'watts']);
     expect(pickDefaultStreamMetricKeys(runMetrics, ActivityType.RUN)).toEqual(['hr', 'pace']);
+    expect(pickDefaultStreamMetricKeys(swimMetrics, ActivityType.SWIM)).toEqual(['hr', 'pace']);
+    expect(swimMetrics.map((metric) => metric.key)).toEqual(['hr', 'pace', 'cadence']);
   });
 });
 

@@ -8,6 +8,9 @@ import {
 import { cn } from '@/lib/utils';
 import { Loader2 } from 'lucide-react';
 
+const CHIP_SHELL =
+  'text-data inline-flex max-w-full min-h-7 items-center gap-1.5 rounded-xl border px-2.5 py-1 text-xs transition-[color,background-color,border-color] duration-150 ease-out';
+
 export function ComplianceBadge({
   analysis,
   isAnalyzing,
@@ -19,9 +22,10 @@ export function ComplianceBadge({
     return (
       <span
         aria-label={`Conformité au plan : ${analysis.complianceScore} sur 100, ${SESSION_VERDICT_LABELS[analysis.verdict]}`}
+        role="status"
         className={cn(
-          'text-data inline-flex items-baseline gap-1 rounded-full border px-2.5 py-0.5 text-xs font-semibold tabular-nums',
-          'border-analysis-border/70 bg-background/70',
+          CHIP_SHELL,
+          'border-analysis-border/70 bg-background/70 font-semibold tabular-nums',
         )}
       >
         <span className={sessionScoreColor(analysis.complianceScore)}>
@@ -42,13 +46,15 @@ export function ComplianceBadge({
 
   return (
     <span
-      title="Analyse de conformité"
-      className={cn(
-        'text-data inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium',
-        'border-analysis-border/70 bg-background/70 text-muted-foreground',
-      )}
+      aria-busy="true"
+      aria-live="polite"
+      className={cn(CHIP_SHELL, 'border-analysis-border/70 bg-background/70 text-muted-foreground')}
+      role="status"
     >
-      <Loader2 className="text-primary size-3.5 shrink-0 animate-spin" aria-hidden />
+      <Loader2
+        className="text-primary size-3.5 shrink-0 animate-spin motion-reduce:animate-none"
+        aria-hidden
+      />
       Analyse…
     </span>
   );

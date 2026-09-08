@@ -1,11 +1,12 @@
 'use client';
 
-import { Check, ChevronRight, Layers } from 'lucide-react';
+import { Check, Layers } from 'lucide-react';
 import { ActivityTypeIndicator } from '@/components/ui/instruments/activity-type-indicator';
 import { activityTypeLabels } from '@/lib/format';
 import { formatPlannedDuration, intensityLabels } from '@/lib/planned-session/sessions';
 import type { BrickLegSummary } from '@/lib/planned-session/brick/brick-sessions';
 import { cn } from '@/lib/utils';
+import { NavArrowRight } from '@/components/icons/nav-arrows';
 
 /**
  * One brick, one surface — legs always visible (no disclosure).
@@ -95,7 +96,7 @@ export function BrickOverviewCard({
                   ) : null}
                 </span>
               </span>
-              <ChevronRight className="text-muted-foreground/50 size-4 shrink-0" aria-hidden />
+              <NavArrowRight className="text-muted-foreground/50 size-4 shrink-0" aria-hidden />
             </button>
           </li>
         ))}

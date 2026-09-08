@@ -19,9 +19,9 @@ export function SessionPlate({
   className?: string;
 }) {
   return (
-    <header className={cn('activity-log-plate space-y-4', className)}>
+    <header className={cn('activity-log-plate space-y-3', className)}>
       {toolbar}
-      <div className="activity-log-plate-body space-y-3">
+      <div className="activity-log-plate-body space-y-2.5">
         {identity}
         {thesis ? <div className="activity-log-thesis">{thesis}</div> : null}
         {actions ? <div className="activity-log-actions">{actions}</div> : null}

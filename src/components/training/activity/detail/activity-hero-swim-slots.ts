@@ -44,5 +44,6 @@ export function buildSwimHeroSlots(
   stream: StreamStats | null,
 ): HeroStatSlot[] {
   const m = activity.swimMetrics;
-  return [swimDistanceSlot(m), swimDurationSlot(activity), swimPaceSlot(m), swimHrSlot(stream)];
+  // Distance, allure, FC — then duration (temps d'exécution is secondary in swim).
+  return [swimDistanceSlot(m), swimPaceSlot(m), swimHrSlot(stream), swimDurationSlot(activity)];
 }

@@ -130,8 +130,8 @@ export async function ProShowcase() {
       />
 
       <p className="text-muted-foreground text-xs leading-relaxed">
-        Le mode Expert (densité de lecture, dans Apparence) reste gratuit et indépendant du palier
-        Pro — c&apos;est une préférence d&apos;affichage, pas une fonctionnalité réservée.
+        Le mode Expert (densité de lecture, dans Personnalisation) reste gratuit et indépendant du
+        palier Pro — c&apos;est une préférence d&apos;affichage, pas une fonctionnalité réservée.
       </p>
     </div>
   );

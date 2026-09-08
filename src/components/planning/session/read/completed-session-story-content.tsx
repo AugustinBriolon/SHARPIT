@@ -3,7 +3,7 @@
 import { parseSessionAnalysis } from '@/lib/planned-session/display/session-analysis-display';
 import { activityNarrativeSchema } from '@/lib/validators/coach';
 import { sanitizeCoachCopy } from '@/lib/coach/sanitize-coach-copy';
-import { GitCompare, Loader2 } from 'lucide-react';
+import { GitCompare } from 'lucide-react';
 import { CompletedSessionPlanGaps } from '@/components/planning/session/read/completed-session-story-parts';
 import { CollapsibleSection } from '@/components/ui/collapsible-section';
 
@@ -16,15 +16,6 @@ function parseActivityNarrative(raw: unknown) {
     headline: sanitizeCoachCopy(parsed.data.headline),
     narrative: sanitizeCoachCopy(parsed.data.narrative),
   };
-}
-
-function StoryLoadingRow() {
-  return (
-    <div className="text-muted-foreground flex items-center gap-2 text-sm">
-      <Loader2 className="text-primary size-4 shrink-0 animate-spin" />
-      Lecture en cours…
-    </div>
-  );
 }
 
 function StoryHeadline({ headline }: { headline: string }) {
@@ -79,20 +70,15 @@ export function CompletedSessionStoryContent({
   narrative,
   analysis,
   isAnalyzing,
-  notes,
 }: {
   narrative: ReturnType<typeof parseActivityNarrative>;
   analysis: ReturnType<typeof parseSessionAnalysis>;
   isAnalyzing: boolean;
-  notes: string | null;
+  notes?: string | null;
 }) {
-  const showLoading = isAnalyzing && !narrative && !analysis && !notes;
-
+  // Loading chrome lives only on ComplianceBadge — avoid a second spinner here.
   return (
-    <>
-      {showLoading ? <StoryLoadingRow /> : null}
-      <StoryNarrativeBlock analysis={analysis} isAnalyzing={isAnalyzing} narrative={narrative} />
-    </>
+    <StoryNarrativeBlock analysis={analysis} isAnalyzing={isAnalyzing} narrative={narrative} />
   );
 }
 

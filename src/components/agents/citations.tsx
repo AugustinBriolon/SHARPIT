@@ -1,12 +1,13 @@
 'use client';
 
-import { BookOpenText, ChevronDown, ExternalLink, Globe2 } from 'lucide-react';
+import { BookOpenText, ExternalLink, Globe2 } from 'lucide-react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { type ReactNode, useCallback, useId, useState } from 'react';
 import { AgentDisclosure } from '@/components/agents/agent-disclosure';
 import { EASE_OUT, SPRING_LAYOUT, SPRING_SWAP } from '@/lib/ease';
 import { useFavicon } from '@/lib/hooks/use-favicon';
 import { cn } from '@/lib/utils';
+import { NavArrowDown } from '@/components/icons/nav-arrows';
 
 export interface CitationItem {
   id: string;
@@ -229,7 +230,7 @@ export function Citations({
           className="text-muted-foreground/60"
           transition={reduce ? { duration: 0 } : SPRING_SWAP}
         >
-          <ChevronDown className="size-3.5" />
+          <NavArrowDown className="size-3.5" />
         </motion.span>
       </button>
 

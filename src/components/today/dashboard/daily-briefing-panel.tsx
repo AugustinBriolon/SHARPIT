@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { ChevronRight } from 'lucide-react';
 import { Markdown } from '@/components/coach/chat/transcript/markdown';
+import { NavArrowRight } from '@/components/icons/nav-arrows';
 import {
   markBriefingSeen,
   shouldOpenBriefingByDefault,
@@ -62,7 +62,7 @@ export function DailyBriefingPanel({ dayKey, className }: { dayKey: string; clas
       >
         <summary className="hover:text-foreground flex cursor-pointer list-none items-center justify-between gap-2 py-2.5 text-sm normal-case [&::-webkit-details-marker]:hidden">
           <span className="text-foreground/85 font-medium normal-case">{label}</span>
-          <ChevronRight className="text-muted-foreground/70 size-3.5 shrink-0 transition-transform group-open:rotate-90" />
+          <NavArrowRight className="text-muted-foreground/70 size-3.5 shrink-0 transition-transform group-open:rotate-90" />
         </summary>
         <div className="pt-1 pb-3">
           <Markdown variant="compact">{data.content}</Markdown>

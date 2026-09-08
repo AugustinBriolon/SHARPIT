@@ -37,9 +37,9 @@ async function CalibrationPanelWithProfile() {
 export default function MoiCalibrationPage() {
   return (
     <div className="space-y-4">
-      <MobileBackLink fallbackHref="/moi" fallbackLabel="Moi" showOnDesktop />
+      <MobileBackLink fallbackHref="/moi" fallbackLabel="Réglages" showOnDesktop />
       <StickyHeader>
-        <p className="text-label">Moi</p>
+        <p className="text-label">Réglages</p>
         <h1 className="text-page-title mt-1">Seuils &amp; repères</h1>
         <p className="text-muted-foreground mt-1 text-sm">
           FTP, allure seuil, FC max — le yardstick contre lequel la charge est lue.

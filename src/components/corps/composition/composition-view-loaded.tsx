@@ -10,13 +10,18 @@ import {
   CompositionHeroSection,
   CompositionMobileSections,
 } from '@/components/corps/composition/composition-view-sections';
-import type { useCompositionView } from '@/components/corps/composition/use-composition-view';
+import { CorpsWhyBandeau } from '@/components/corps/corps-why-bandeau';
+import { StaggerItem, StaggerList } from '@/components/motion/stagger-list';
 import { CorpsDisclaimer } from '@/components/corps/corps-ui';
+import type { useCompositionView } from '@/components/corps/composition/use-composition-view';
 
 type CompositionViewState = ReturnType<typeof useCompositionView> & {
   vm: NonNullable<ReturnType<typeof useCompositionView>['vm']>;
 };
 
+/**
+ * Composition instrument — Plate → Chips → Why → Evidence (DESIGN_LANGUAGE § Composition).
+ */
 export function CompositionViewLoaded({
   activeExplainer,
   allDetailCards,
@@ -33,26 +38,32 @@ export function CompositionViewLoaded({
   vm,
 }: CompositionViewState) {
   return (
-    <div className="space-y-4 lg:space-y-5">
-      <CompositionHeroSection heroHints={heroHints} valuesLoading={valuesLoading} vm={vm} />
+    <div className="space-y-3 lg:space-y-4">
+      <CompositionHeroSection valuesLoading={valuesLoading} vm={vm} />
 
-      <nav aria-label="Signaux de composition" className="grid grid-cols-2 gap-2 lg:grid-cols-4">
+      <StaggerList
+        aria-label="Signaux de composition"
+        className="grid grid-cols-2 gap-2 lg:grid-cols-4"
+      >
         {heroMiniMetrics.map(({ key, label, metric, value, delta }) => (
-          <MetricChip
-            key={key}
-            delta={valuesLoading ? undefined : delta}
-            label={label}
-            loading={valuesLoading}
-            tone={metric.tone}
-            value={value}
-            onExplain={
-              !valuesLoading && metric.guideId
-                ? () => setExplainMetricId(metric.guideId!)
-                : undefined
-            }
-          />
+          <StaggerItem key={key}>
+            <MetricChip
+              delta={valuesLoading ? undefined : delta}
+              label={label}
+              loading={valuesLoading}
+              tone={metric.tone}
+              value={value}
+              onExplain={
+                !valuesLoading && metric.guideId
+                  ? () => setExplainMetricId(metric.guideId!)
+                  : undefined
+              }
+            />
+          </StaggerItem>
         ))}
-      </nav>
+      </StaggerList>
+
+      {!valuesLoading ? <CorpsWhyBandeau hints={heroHints} /> : null}
 
       <CompositionMobileSections
         chartData={chartData}
@@ -66,8 +77,8 @@ export function CompositionViewLoaded({
         vm={vm}
       />
 
-      <div className="hidden lg:grid lg:grid-cols-[1.6fr_1fr] lg:items-stretch lg:gap-4">
-        <section className="chip-surface rounded-analysis-lg space-y-3 p-5">
+      <div className="hidden lg:grid lg:grid-cols-[1.65fr_1fr] lg:items-stretch lg:gap-3">
+        <section className="chip-surface rounded-analysis-lg space-y-3 p-4 sm:p-5">
           <CompositionTrendChart
             chartData={chartData}
             chartEmptyInWindow={chartEmptyInWindow}

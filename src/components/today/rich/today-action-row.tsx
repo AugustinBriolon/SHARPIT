@@ -26,7 +26,7 @@ export function TodayActionRow({
 
   return (
     <section aria-busy={loading || undefined} aria-label="Actions du jour" className="space-y-3">
-      <TodayActionRowHeader loading={loading} onWellnessCompleted={onWellnessCompleted} />
+      <TodayActionRowHeader loading={loading} />
 
       {derived.orientation ? (
         <MorningOrientationActions

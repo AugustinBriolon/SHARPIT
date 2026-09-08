@@ -164,10 +164,11 @@ function buildBikeMetrics(activity: CompletedSessionMetricSource): CompletedSess
 
 function buildSwimMetrics(activity: CompletedSessionMetricSource): CompletedSessionMetric[] {
   const metrics: CompletedSessionMetric[] = [];
+  // Distance + allure first — duration is secondary for swim coaching reads.
   pushMetric(metrics, distanceMetric(activity.swimMetrics?.distanceM));
-  pushMetric(metrics, durationMetric(activity.duration));
   pushMetric(metrics, swimPaceMetric(activity.duration, activity.swimMetrics?.distanceM));
   pushMetric(metrics, loadMetric(activity.load));
+  pushMetric(metrics, durationMetric(activity.duration));
   return metrics;
 }
 

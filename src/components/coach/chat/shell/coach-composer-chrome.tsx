@@ -20,10 +20,9 @@ export function CoachComposerShell({
     <div
       className={cn(
         'bg-background/95 supports-backdrop-filter:bg-background/80 shrink-0 px-3 pt-1.5 sm:px-4 sm:pt-2',
-        // The hub already sits above the floating tab bar via `--bottom-nav-offset`,
-        // which bakes in `env(safe-area-inset-bottom)`. Adding the inset again
-        // here doubled the gap above the nav on notched phones.
-        'pb-2.5 backdrop-blur-md sm:pb-3',
+        // Immersive coach fills the viewport (no floating tab bar). Keep a light
+        // bottom pad plus the device safe-area so the prompt clears the home indicator.
+        'pb-[max(0.625rem,env(safe-area-inset-bottom))] backdrop-blur-md sm:pb-[max(0.75rem,env(safe-area-inset-bottom))]',
         className,
       )}
     >

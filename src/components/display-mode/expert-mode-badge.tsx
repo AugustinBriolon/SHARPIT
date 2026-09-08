@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { Microscope } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useDisplayMode } from '@/providers/display-mode-provider';
+import { MOI_PERSONALIZATION_DENSITY_HASH, MOI_PERSONALIZATION_PATH } from '@/lib/moi/paths';
 import { cn } from '@/lib/utils';
 
 /**
@@ -20,7 +21,7 @@ export function ExpertModeBadge({ className }: { className?: string }) {
 
   return (
     <Badge
-      render={<Link href="/settings/appearance/expert-mode" />}
+      render={<Link href={`${MOI_PERSONALIZATION_PATH}${MOI_PERSONALIZATION_DENSITY_HASH}`} />}
       variant="outline"
       className={cn(
         'border-primary/30 text-primary focus-visible:ring-ring shrink-0 focus-visible:ring-2 focus-visible:outline-hidden',

@@ -9,12 +9,14 @@ const RecordsPanel = dynamic(
   { ssr: false, loading: () => <Skeleton className="h-64 w-full" /> },
 );
 
-/** Corps dedicated content — composition + suivi only. */
+/** Corps dedicated content — composition then suivi (identité folds below on the page). */
 export function BodySection() {
   return (
     <div className="space-y-6">
       <CompositionView embedded />
-      <PhysicalHealthHubView />
+      <div className="border-analysis-border/40 border-t pt-6">
+        <PhysicalHealthHubView />
+      </div>
     </div>
   );
 }

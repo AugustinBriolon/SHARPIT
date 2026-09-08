@@ -77,8 +77,8 @@ function ActivityDetailIdentityBlock({
 
   return (
     <div className="flex items-start gap-3">
-      <span className="activity-log-stamp icon-well size-10 shrink-0 sm:size-11" aria-hidden>
-        <Icon className="size-4 sm:size-5" />
+      <span className="activity-log-stamp icon-well size-9 shrink-0 sm:size-10" aria-hidden>
+        <Icon className="size-4 sm:size-[1.125rem]" />
       </span>
       <div className="min-w-0 flex-1 space-y-1">
         <p className="text-muted-foreground text-xs tracking-wide">

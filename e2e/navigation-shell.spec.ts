@@ -81,55 +81,68 @@ test.describe('navigation shell', () => {
     await expect(headings).toHaveText('Sommeil');
   });
 
-  test('the Moi hub lists Essentiel then Compte / Équipement / Apps / Apparence / Autre', async ({
-    page,
-  }) => {
-    // Essentiel is static shell; Compte chip streams status.
+  test('the Paramètres hub uses Bevel-like groups under Modèle', async ({ page }) => {
     await page.goto('/moi');
 
+    await expect(page.getByRole('heading', { level: 1, name: 'Paramètres' })).toBeVisible();
     await expect(page.locator('a[href="/moi/corps"]:visible').first()).toBeVisible();
     await expect(page.locator('a[href="/moi/objectifs"]:visible').first()).toBeVisible();
     await expect(page.locator('a[href="/settings/privacy"]:visible').first()).toBeVisible();
 
-    await expect(page.getByRole('heading', { name: 'Essentiel' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Modèle' })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Compte' })).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'Équipement' })).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'Apps connectées' })).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'Apparence' })).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'Autre' })).toBeVisible();
-    await expect(page.getByRole('heading', { name: 'Accès' })).toHaveCount(0);
-    await expect(page.getByRole('heading', { name: 'Destinations' })).toHaveCount(0);
+    await expect(page.getByRole('heading', { name: 'Préférences' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Données' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Ressources' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Support' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Mentions légales' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Modèle et paramètres' })).toHaveCount(0);
+    await expect(page.getByRole('heading', { name: 'Essentiel' })).toHaveCount(0);
+    await expect(page.getByRole('heading', { name: 'Aide' })).toHaveCount(0);
+    await expect(page.getByRole('heading', { name: 'App' })).toHaveCount(0);
 
     for (const href of [
       '/settings/account',
       '/settings/equipment',
       '/settings/integrations',
       '/settings/appearance',
+      '/settings/personalization',
+      '/settings/memory',
+      '/settings/maintenance',
+      '/settings/feedback#demande',
+      '/privacy',
+      '/terms',
     ]) {
       await expect(page.locator(`a[href="${href}"]:visible`).first()).toBeVisible();
     }
 
-    await expect(page.getByRole('link', { name: /À propos/ })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Profil' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Personnalisation' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Sources de données' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'À propos' })).toBeVisible();
+    await expect(page.getByText('Routage des sources')).toBeVisible();
+    await expect(page.getByText('À venir').first()).toBeVisible();
+    await expect(page.locator('a[href="/settings/appearance/expert-mode"]:visible')).toHaveCount(0);
   });
 
-  test('Moi child pages back to Moi (dedicated Corps / Objectifs / Confidentialité)', async ({
+  test('Paramètres child pages back to hub (Corps / Objectifs / Confidentialité)', async ({
     page,
   }) => {
     await page.goto('/moi');
     await page.locator('a[href="/moi/corps"]:visible').first().click();
     await expect(page).toHaveURL(/\/moi\/corps$/);
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Corps');
-    await expect(page.getByRole('link', { name: 'Moi' }).first()).toBeVisible();
+    await expect(page.getByRole('link', { name: /Réglages|Paramètres/ }).first()).toBeVisible();
 
     await page.goto('/moi');
     await page.locator('a[href="/moi/objectifs"]:visible').first().click();
     await expect(page).toHaveURL(/\/moi\/objectifs$/);
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Objectifs');
-    await expect(page.getByRole('link', { name: 'Moi' }).first()).toBeVisible();
+    await expect(page.getByRole('link', { name: /Réglages|Paramètres/ }).first()).toBeVisible();
 
     await page.goto('/settings/privacy');
     await expect(page.getByRole('heading', { level: 1 })).toHaveText('Confidentialité');
-    await expect(page.getByRole('link', { name: 'Moi' }).first()).toBeVisible();
+    await expect(page.getByRole('link', { name: /Réglages|Paramètres/ }).first()).toBeVisible();
   });
 
   test('the back link resolves its label from the nav stack', async ({ page }) => {

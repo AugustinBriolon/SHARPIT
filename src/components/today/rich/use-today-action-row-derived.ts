@@ -9,6 +9,14 @@ import {
   subscribeDemoSessionLinks,
 } from '@/lib/demo/demo-session-link-state';
 import {
+  activityStatusReminderFact,
+  emptyActivityStatusStore,
+  getActivityStatusStoreServerSnapshot,
+  getActivityStatusStoreSnapshot,
+  subscribeActivityStatus,
+  type ActivityStatusStore,
+} from '@/lib/health/activity-status';
+import {
   deriveLinkContext,
   derivePostSessionLoop,
   deriveReminders,
@@ -28,6 +36,18 @@ export function useTodayActionRowDerived(vm: TodayViewModel, loading: boolean) {
     getDemoSessionLinksSnapshot,
     () => '',
   );
+  const activityStatusSnapshot = useSyncExternalStore(
+    subscribeActivityStatus,
+    getActivityStatusStoreSnapshot,
+    getActivityStatusStoreServerSnapshot,
+  );
+  const activityStore = useMemo((): ActivityStatusStore => {
+    try {
+      return JSON.parse(activityStatusSnapshot) as ActivityStatusStore;
+    } catch {
+      return emptyActivityStatusStore();
+    }
+  }, [activityStatusSnapshot]);
 
   const dismissedLinkIds = useMemo(
     () => parseDismissedLinkIds(dismissedSnapshot),
@@ -54,7 +74,13 @@ export function useTodayActionRowDerived(vm: TodayViewModel, loading: boolean) {
   const daySummaryEmpty =
     !loading && sessionLines.length === 0 && sessionLinkSuggestions.length === 0;
 
-  const reminders = useMemo(() => deriveReminders(vm, loading), [vm, loading]);
+  const reminders = useMemo(() => {
+    const base = deriveReminders(vm, loading);
+    const modeFact = loading
+      ? null
+      : activityStatusReminderFact(activityStore.status, activityStore.retention);
+    return modeFact ? [modeFact, ...base] : base;
+  }, [vm, loading, activityStore]);
 
   return {
     orientation,

@@ -1,11 +1,13 @@
 'use client';
 
 import { TravelContextBanner } from '@/components/planning/overlays/travel-context-banner';
+import { ActivityStatusPlanningBanner } from '@/components/planning/overlays/activity-status-planning-banner';
 import { SessionsCoachMenu, type SessionsCoachAction } from '@/components/coaching/coach-menu';
 import { Button } from '@/components/ui/button';
 import { addWeeks, format, subWeeks } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { ChevronLeft, ChevronRight, GitCompare } from 'lucide-react';
+import { GitCompare } from 'lucide-react';
+import { NavArrowLeft, NavArrowRight } from '@/components/icons/nav-arrows';
 
 export function PlanningWeekChrome({
   hasActionableAlternative,
@@ -40,7 +42,7 @@ export function PlanningWeekChrome({
           variant="ghost"
           onClick={() => onWeekChange(subWeeks(weekStart, 1))}
         >
-          <ChevronLeft className="size-4" aria-hidden />
+          <NavArrowLeft className="size-4" aria-hidden />
         </Button>
         <div className="min-w-0 flex-1 text-center sm:min-w-44 sm:flex-none">
           <p className="text-sm font-medium text-balance">
@@ -62,17 +64,20 @@ export function PlanningWeekChrome({
           variant="ghost"
           onClick={() => onWeekChange(addWeeks(weekStart, 1))}
         >
-          <ChevronRight className="size-4" aria-hidden />
+          <NavArrowRight className="size-4" aria-hidden />
         </Button>
       </div>
 
       <div className="flex [scrollbar-width:none] items-center gap-2 overflow-x-auto pb-0.5 [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
         {!isLoading ? (
-          <TravelContextBanner
-            className="max-w-[9.5rem] sm:max-w-56"
-            rangeEnd={weekEnd}
-            rangeStart={weekStart}
-          />
+          <>
+            <ActivityStatusPlanningBanner className="max-w-[9.5rem] sm:max-w-56" />
+            <TravelContextBanner
+              className="max-w-[9.5rem] sm:max-w-56"
+              rangeEnd={weekEnd}
+              rangeStart={weekStart}
+            />
+          </>
         ) : null}
         {hasActionableAlternative ? (
           <Button

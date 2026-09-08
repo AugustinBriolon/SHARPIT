@@ -1,18 +1,11 @@
 import type { ReactNode } from 'react';
-import {
-  ArrowLeft,
-  ArrowRight,
-  Check,
-  ClipboardCheck,
-  ListChecks,
-  LoaderCircle,
-  X,
-} from 'lucide-react';
+import { Check, ClipboardCheck, ListChecks, LoaderCircle, X } from 'lucide-react';
 import { motion } from 'motion/react';
 import { ActionSwapRollText } from '@/components/motion/action-swap-roll';
 import { Button } from '@/components/motion/button';
 import { SPRING_SWAP } from '@/lib/ease';
 import { cn } from '@/lib/utils';
+import { NavArrowLeft, NavArrowRight } from '@/components/icons/nav-arrows';
 import {
   getApprovalStatusBadgeClass,
   getApprovalStatusIconClass,
@@ -73,11 +66,11 @@ export function NextStepButtonContent({
     return (
       <>
         {submitLabel}
-        <ArrowRight className="size-3.5" />
+        <NavArrowRight className="size-3.5" />
       </>
     );
   }
-  return <ArrowRight className="size-4" />;
+  return <NavArrowRight className="size-4" />;
 }
 
 function ApprovalCardHeaderStatusArea({
@@ -341,7 +334,7 @@ export function ApprovalCardQuestionNav({
         variant="ghost"
         onClick={onBack}
       >
-        <ArrowLeft className="size-4" />
+        <NavArrowLeft className="size-4" />
       </Button>
       <ProgressDots
         current={currentStep}

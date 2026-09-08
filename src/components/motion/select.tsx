@@ -1,7 +1,8 @@
 'use client';
 
-import { Check, ChevronDown } from 'lucide-react';
+import { Check } from 'lucide-react';
 import { motion, useReducedMotion, type Variants } from 'motion/react';
+import { NavArrowDown } from '@/components/icons/nav-arrows';
 import {
   createContext,
   type ReactNode,
@@ -235,7 +236,7 @@ export function SelectTrigger({ className, children }: SelectTriggerProps) {
         transition={ctx.reduce ? { duration: 0 } : CHEVRON_TRANSITION}
         aria-hidden
       >
-        <ChevronDown className="h-4 w-4" />
+        <NavArrowDown className="h-4 w-4" />
       </motion.span>
     </motion.button>
   );

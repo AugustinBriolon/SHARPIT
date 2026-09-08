@@ -67,19 +67,20 @@ describe('buildCompletedSessionMetrics', () => {
     ]);
   });
 
-  it('builds swim distance, duration, and pace per 100m', () => {
+  it('builds swim distance, pace, then load (duration is secondary)', () => {
     const metrics = buildCompletedSessionMetrics(
       source({
         type: 'SWIM',
         duration: 1800,
         swimMetrics: { distanceM: 1500 },
+        load: 40,
       }),
     );
 
     expect(metrics).toEqual([
       { label: 'Distance', value: '1.50', unit: 'km' },
-      { label: 'Durée', value: '30:00', unit: 'min' },
       { label: 'Allure', value: '2:00', unit: '/100m' },
+      { label: 'Charge', value: '40', unit: 'TSS' },
     ]);
   });
 

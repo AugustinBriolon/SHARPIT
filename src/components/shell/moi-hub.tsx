@@ -1,275 +1,275 @@
 import { Suspense, type ReactNode } from 'react';
-import Link from 'next/link';
 import {
+  BookOpen,
   Brain,
+  Bug,
   Dumbbell,
+  FileText,
   Gauge,
   HeartPulse,
   Link2,
   Lock,
-  Microscope,
+  MessageSquarePlus,
   MoonStar,
+  Route,
+  Scale,
   ShieldCheck,
   SlidersHorizontal,
+  Sparkles,
   Target,
   User2,
   Wrench,
 } from 'lucide-react';
 import { StickyHeader } from '@/components/layout/header/sticky-header';
 import { InstallCard } from '@/components/pwa/install-card';
-import { ShellHubLink } from '@/components/shell/shell-hub-link';
+import { ShellHubGroup, ShellHubRow, ShellHubSolo } from '@/components/shell/shell-hub-link';
 import { HubStatusValue } from '@/components/settings/hub-status-value';
 import {
   SettingsAppearanceStatus,
-  SettingsExpertModeStatus,
+  SettingsPersonalizationStatus,
 } from '@/components/settings/settings-appearance-status';
 import { SettingsAdminEntry } from '@/components/settings/settings-admin-entry';
-import { SettingsHomeExtras } from '@/components/settings/settings-home-extras';
-import { SettingsSignOut } from '@/components/settings/settings-sign-out';
 import type { SettingsEntry } from '@/components/settings/settings-home';
+import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
+import { hasProAccess } from '@/lib/access/tier';
 import {
   MOI_CALIBRATION_PATH,
   MOI_CORPS_PATH,
+  MOI_FEEDBACK_PATH,
+  MOI_HELP_PATH,
   MOI_OBJECTIFS_PATH,
+  MOI_PERSONALIZATION_PATH,
   MOI_PRIVACY_PATH,
+  MOI_PRO_PATH,
+  MOI_WHATS_NEW_PATH,
 } from '@/lib/moi/paths';
+import { getAthleteProfile } from '@/lib/queries';
+
+type HubEntry =
+  | (Pick<SettingsEntry, 'href' | 'title' | 'icon'> & {
+      meta?: ReactNode;
+      comingSoon?: false;
+    })
+  | {
+      title: string;
+      icon: SettingsEntry['icon'];
+      comingSoon: true;
+      meta?: ReactNode;
+      href?: never;
+    };
 
 type HubSection = {
   id: string;
   title: string;
-  blurb?: string;
-  entries: Array<
-    SettingsEntry & {
-      meta?: ReactNode;
-    }
-  >;
+  entries: HubEntry[];
 };
 
-/**
- * Moi hub IA — order Augustin expects:
- * Essentiel → Compte → Équipement → Apps connectées → Apparence → Autre.
- * Every page entry uses the Destination card row (ShellHubLink), not text links.
- */
-const SECTIONS: HubSection[] = [
+const MODELE_SECTION: HubSection = {
+  id: 'modele',
+  title: 'Modèle',
+  entries: [
+    { href: MOI_CORPS_PATH, title: 'Corps', icon: HeartPulse },
+    { href: MOI_OBJECTIFS_PATH, title: 'Objectifs', icon: Target },
+    { href: MOI_CALIBRATION_PATH, title: 'Seuils & repères', icon: SlidersHorizontal },
+    {
+      href: '/settings/equipment',
+      title: 'Équipement',
+      icon: Dumbbell,
+      meta: <HubStatusValue statusKey="equipment" />,
+    },
+    {
+      href: '/settings/memory',
+      title: 'Mémoire du coach',
+      icon: Brain,
+      meta: <HubStatusValue statusKey="memory" />,
+    },
+  ],
+};
+
+const COMPTE_BASE: HubEntry[] = [
   {
-    id: 'essentiel',
-    title: 'Essentiel',
-    blurb: 'Le modèle athlète : corps, cibles et données personnelles.',
-    entries: [
-      {
-        href: MOI_CORPS_PATH,
-        title: 'Corps',
-        description: 'Composition, suivi physique et contraintes de santé.',
-        icon: HeartPulse,
-      },
-      {
-        href: MOI_OBJECTIFS_PATH,
-        title: 'Objectifs',
-        description: 'Courses, métriques prioritaires et proximité aux cibles.',
-        icon: Target,
-      },
-      {
-        href: MOI_CALIBRATION_PATH,
-        title: 'Seuils & repères',
-        description: 'FTP, allure seuil, FC max — la règle graduée de ta charge.',
-        icon: SlidersHorizontal,
-      },
-      {
-        href: MOI_PRIVACY_PATH,
-        title: 'Confidentialité',
-        description: 'Consentements, export et suppression du compte.',
-        icon: Lock,
-      },
-    ],
+    href: '/settings/account',
+    title: 'Profil',
+    icon: User2,
+    meta: <HubStatusValue statusKey="account" />,
   },
+  { href: MOI_PRIVACY_PATH, title: 'Confidentialité', icon: Lock },
+];
+
+const PRO_ENTRY: HubEntry = {
+  href: MOI_PRO_PATH,
+  title: 'Pro',
+  icon: Gauge,
+};
+
+const AFTER_COMPTE: HubSection[] = [
   {
-    id: 'compte',
-    title: 'Compte',
-    entries: [
-      {
-        href: '/settings/account',
-        title: 'Compte',
-        description: 'Identité, sommeil et paramètres personnels.',
-        icon: User2,
-        meta: <HubStatusValue statusKey="account" />,
-      },
-    ],
-  },
-  {
-    id: 'equipment',
-    title: 'Équipement',
-    entries: [
-      {
-        href: '/settings/equipment',
-        title: 'Équipement',
-        description: 'Sports pratiqués et matériel disponible.',
-        icon: Dumbbell,
-        meta: <HubStatusValue statusKey="equipment" />,
-      },
-    ],
-  },
-  {
-    id: 'apps',
-    title: 'Apps connectées',
-    entries: [
-      {
-        href: '/settings/integrations',
-        title: 'Applications connectées',
-        description: 'Sources de données et synchronisations.',
-        icon: Link2,
-        meta: <HubStatusValue statusKey="integrations" />,
-      },
-    ],
-  },
-  {
-    id: 'apparence',
-    title: 'Apparence',
+    id: 'preferences',
+    title: 'Préférences',
     entries: [
       {
         href: '/settings/appearance',
         title: 'Apparence',
-        description: 'Thème clair, sombre ou système.',
         icon: MoonStar,
         meta: <SettingsAppearanceStatus />,
       },
       {
-        href: '/settings/appearance/expert-mode',
-        title: 'Mode Expert',
-        description: 'Densité de lecture : révèle ou masque la couche technique.',
-        icon: Microscope,
-        meta: <SettingsExpertModeStatus />,
+        href: MOI_PERSONALIZATION_PATH,
+        title: 'Personnalisation',
+        icon: SlidersHorizontal,
+        meta: <SettingsPersonalizationStatus />,
       },
     ],
   },
   {
-    id: 'autre',
-    title: 'Autre',
+    id: 'donnees',
+    title: 'Données',
     entries: [
       {
-        href: '/settings/memory',
-        title: 'Mémoire du coach',
-        description: 'Préférences durables et contraintes datées.',
-        icon: Brain,
-        meta: <HubStatusValue statusKey="memory" />,
+        href: '/settings/integrations',
+        title: 'Sources de données',
+        icon: Link2,
+        meta: <HubStatusValue statusKey="integrations" />,
       },
       {
-        href: '/settings/pro',
-        title: 'Pro',
-        description: 'Ce que le palier payant débloque.',
-        icon: Gauge,
+        comingSoon: true,
+        title: 'Routage des sources',
+        icon: Route,
       },
+    ],
+  },
+  {
+    id: 'ressources',
+    title: 'Ressources',
+    entries: [
+      { href: MOI_WHATS_NEW_PATH, title: 'Nouveautés', icon: Sparkles },
+      { href: MOI_HELP_PATH, title: 'Base de connaissances', icon: BookOpen },
       {
         href: '/settings/about',
         title: 'À propos',
-        description: 'Version, principes et limite d’usage.',
         icon: ShieldCheck,
         meta: <HubStatusValue statusKey="about" />,
       },
     ],
   },
+  {
+    id: 'support',
+    title: 'Support',
+    entries: [
+      {
+        href: `${MOI_FEEDBACK_PATH}#demande`,
+        title: 'Demander une fonctionnalité',
+        icon: MessageSquarePlus,
+      },
+      { href: `${MOI_FEEDBACK_PATH}#bug`, title: 'Signaler un bug', icon: Bug },
+      { href: '/settings/maintenance', title: 'Maintenance', icon: Wrench },
+    ],
+  },
+  {
+    id: 'legal',
+    title: 'Mentions légales',
+    entries: [
+      { href: '/privacy', title: 'Politique de confidentialité', icon: Scale },
+      { href: '/terms', title: 'Conditions d’utilisation', icon: FileText },
+    ],
+  },
 ];
 
 /**
- * Moi hub — Shell V1.1 destinations (not an Accès link dump).
- *
- * Grouped IA: Essentiel · Compte · Équipement · Apps · Apparence · Autre.
- * Dedicated child pages own their content.
+ * Paramètres hub — Bevel-shaped grouped lists (Modèle kept first).
  */
 export function MoiHub() {
   return (
-    <div className="space-y-6 max-lg:pb-16">
+    <div className="space-y-5 max-lg:pb-16">
       <StickyHeader>
-        <p className="text-label">Moi</p>
-        <h1 className="text-page-title mt-1">Ton modèle, tes données</h1>
-        <p className="text-muted-foreground mt-1 text-sm">
-          Corps, objectifs et confidentialité, puis le compte et le reste.
-        </p>
+        <h1 className="text-page-title">Paramètres</h1>
       </StickyHeader>
 
-      <div className="space-y-7">
-        <MoiHubSections />
+      <div className="space-y-5">
+        <Suspense fallback={<MoiHubStaticFallback />}>
+          <MoiHubSections />
+        </Suspense>
         <Suspense fallback={null}>
           <SettingsAdminEntry />
         </Suspense>
       </div>
 
-      <MoiMaintenancePanel />
-
       <Suspense>
         <InstallCard />
-      </Suspense>
-
-      <Suspense>
-        <SettingsSignOut />
       </Suspense>
     </div>
   );
 }
 
-function MoiHubSections() {
+function MoiHubStaticFallback() {
   return (
     <>
-      {SECTIONS.map((section) => (
-        <section
-          key={section.id}
-          aria-labelledby={`moi-section-${section.id}`}
-          className="space-y-3"
-        >
-          <div>
-            <h2 className="text-section-title" id={`moi-section-${section.id}`}>
-              {section.title}
-            </h2>
-            {section.blurb ? (
-              <p className="text-muted-foreground mt-1 text-sm leading-relaxed">{section.blurb}</p>
-            ) : null}
-          </div>
-          <ul className="space-y-2">
-            {section.entries.map((entry) => (
-              <ShellHubLink
-                key={entry.href}
-                description={entry.description}
-                href={entry.href}
-                icon={entry.icon}
-                meta={entry.meta}
-                title={entry.title}
-              />
-            ))}
-          </ul>
-        </section>
+      <HubSectionBlock section={MODELE_SECTION} />
+      <HubSectionBlock
+        section={{
+          id: 'compte',
+          title: 'Compte',
+          entries: COMPTE_BASE,
+        }}
+      />
+      {AFTER_COMPTE.map((section) => (
+        <HubSectionBlock key={section.id} section={section} />
       ))}
     </>
   );
 }
 
-function MoiMaintenancePanel() {
+async function MoiHubSections() {
+  const athleteId = await getCurrentAthleteId();
+  const profile = await getAthleteProfile(athleteId);
+  const isPro = hasProAccess(profile?.tier ?? 'FREE');
+
+  const compteEntries: HubEntry[] = isPro ? [...COMPTE_BASE, PRO_ENTRY] : COMPTE_BASE;
+
   return (
-    <section
-      aria-labelledby="moi-maintenance"
-      className="analysis-panel-alt rounded-analysis-lg p-4"
-    >
-      <div className="flex items-start gap-3">
-        <div className="icon-well size-9" aria-hidden>
-          <Wrench className="size-4" />
-        </div>
-        <div className="min-w-0 flex-1">
-          <h2 className="text-sm font-medium" id="moi-maintenance">
-            Maintenance
-          </h2>
-          <p className="text-muted-foreground mt-1 text-sm leading-relaxed">
-            Outils locaux (cache et rechargement), aussi via{' '}
-            <Link
-              className="text-foreground underline-offset-2 hover:underline"
-              href="/settings/maintenance"
-            >
-              la page Maintenance
-            </Link>
-            .
-          </p>
-        </div>
-      </div>
-      <div className="mt-4">
-        <SettingsHomeExtras />
-      </div>
-    </section>
+    <>
+      {!isPro ? (
+        <ShellHubSolo aria-label="Offre Pro">
+          <ShellHubRow href={MOI_PRO_PATH} icon={Gauge} title="SHARPIT Pro" />
+        </ShellHubSolo>
+      ) : null}
+      <HubSectionBlock section={MODELE_SECTION} />
+      <HubSectionBlock
+        section={{
+          id: 'compte',
+          title: 'Compte',
+          entries: compteEntries,
+        }}
+      />
+      {AFTER_COMPTE.map((section) => (
+        <HubSectionBlock key={section.id} section={section} />
+      ))}
+    </>
+  );
+}
+
+function HubSectionBlock({ section }: { section: HubSection }) {
+  return (
+    <ShellHubGroup id={section.id} title={section.title}>
+      {section.entries.map((entry) =>
+        entry.comingSoon ? (
+          <ShellHubRow
+            key={entry.title}
+            icon={entry.icon}
+            meta={entry.meta}
+            title={entry.title}
+            comingSoon
+          />
+        ) : (
+          <ShellHubRow
+            key={entry.href}
+            href={entry.href}
+            icon={entry.icon}
+            meta={entry.meta}
+            title={entry.title}
+          />
+        ),
+      )}
+    </ShellHubGroup>
   );
 }

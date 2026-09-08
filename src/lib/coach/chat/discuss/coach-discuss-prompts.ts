@@ -236,11 +236,16 @@ export function buildTodayDiscussPrompt(input: {
   limitingFactor?: string | null;
   confidenceLabel?: string | null;
   sessionTitle?: string | null;
+  activityStatusLabel?: string | null;
+  activityStatusImpact?: string | null;
 }): string {
   const bits = [
     input.limitingFactor ? `frein : ${input.limitingFactor}` : null,
     input.confidenceLabel ? `confiance : ${input.confidenceLabel}` : null,
     input.sessionTitle ? `séance du jour : ${input.sessionTitle}` : null,
+    input.activityStatusLabel && input.activityStatusLabel !== 'Actif'
+      ? `mode : ${input.activityStatusLabel}${input.activityStatusImpact ? ` — ${input.activityStatusImpact}` : ''}`
+      : null,
   ].filter(Boolean);
 
   const detail = bits.length > 0 ? `\n\nDétail :\n- ${bits.join('\n- ')}` : '';

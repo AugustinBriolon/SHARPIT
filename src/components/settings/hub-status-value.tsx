@@ -1,7 +1,8 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import type { SettingsHubStatus } from '@/lib/settings/hub-status';
+import { isIntegrationsAttentionLabel, type SettingsHubStatus } from '@/lib/settings/hub-status';
+import { cn } from '@/lib/utils';
 
 async function fetchHubStatus(): Promise<SettingsHubStatus> {
   const res = await fetch('/api/presentation/settings-hub');
@@ -22,5 +23,10 @@ export function HubStatusValue({ statusKey }: { statusKey: keyof SettingsHubStat
     return <span className="bg-muted inline-block h-3 w-16 animate-pulse rounded-full" />;
   }
 
-  return <>{data[statusKey]}</>;
+  const label = data[statusKey];
+  const attention = statusKey === 'integrations' && isIntegrationsAttentionLabel(label);
+
+  return (
+    <span className={cn(attention ? 'text-signal-caution' : 'text-muted-foreground')}>{label}</span>
+  );
 }

@@ -45,6 +45,7 @@ export function PhysicalHealthPageView({
       <PhysicalHealthStatsGrid
         aggregate={viewModel.aggregate}
         display={display}
+        embedded={embedded}
         loading={loading}
       />
 

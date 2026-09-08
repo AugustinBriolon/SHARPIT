@@ -1,11 +1,11 @@
 'use client';
 
-import { ChevronRight } from 'lucide-react';
 import { motion } from 'motion/react';
 import type { ReactNode } from 'react';
 import { SPRING_LAYOUT, SPRING_PRESS } from '@/lib/ease';
 import { motionTokens } from '@/lib/motion/tokens';
 import { cn } from '@/lib/utils';
+import { NavArrowRight } from '@/components/icons/nav-arrows';
 import {
   createSidebarMenuSelect,
   useAnimatedSidebar,
@@ -195,7 +195,7 @@ function MenuButtonChevron({
         x: panel.collapsed ? 4 : 0,
       }}
     >
-      <ChevronRight className="size-3.5" />
+      <NavArrowRight className="size-3.5" />
     </motion.span>
   );
 }

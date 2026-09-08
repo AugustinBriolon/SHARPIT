@@ -1,7 +1,7 @@
 'use client';
 
-import { ChevronLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { NavArrowLeft } from '@/components/icons/nav-arrows';
 import {
   ONBOARDING_STEP_COUNT,
   onboardingProgressLabel,
@@ -49,7 +49,7 @@ export function OnboardingProgress({
             variant="ghost"
             onClick={onBack}
           >
-            <ChevronLeft className="size-4 shrink-0" aria-hidden />
+            <NavArrowLeft className="size-4 shrink-0" aria-hidden />
             <span className="truncate text-sm font-medium">{previousLabel}</span>
           </Button>
         ) : (

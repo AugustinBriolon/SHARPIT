@@ -1,6 +1,7 @@
 'use client';
 
 import { activityTypeLabels } from '@/lib/format';
+import { NavArrowRight } from '@/components/icons/nav-arrows';
 import {
   countDimensionSelections,
   DISTANCE_PRESETS_KM,
@@ -13,7 +14,7 @@ import {
 } from '@/lib/training/history-filters';
 import { cn } from '@/lib/utils';
 import { ActivityType } from '@prisma/client';
-import { Calendar, Check, ChevronRight, Ruler, Timer, Zap } from 'lucide-react';
+import { Calendar, Check, Ruler, Timer, Zap } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
 const TYPE_ORDER: ActivityType[] = [
@@ -239,7 +240,7 @@ export function DesktopFilterMenu({
               <dim.Icon className="size-3.5 shrink-0" aria-hidden />
               <span className="flex-1 text-left text-xs font-medium">{dim.label}</span>
               <DimBadge count={dim.badgeCount} />
-              <ChevronRight className="size-3 opacity-30" aria-hidden />
+              <NavArrowRight className="size-3 opacity-30" aria-hidden />
             </button>
           );
         })}

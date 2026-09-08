@@ -1,11 +1,11 @@
 'use client';
 
 import Link from 'next/link';
-import { ArrowRight } from 'lucide-react';
 import { ActivityTypeIndicator } from '@/components/ui/instruments/activity-type-indicator';
 import { activityTypeLabels } from '@/lib/format';
 import type { BrickSiblingActivityLink } from '@/lib/planned-session/brick/brick-sessions';
 import { TWIN_DRILL_DOWN } from '@/lib/today/navigation/today-twin-navigation';
+import { NavArrowRight } from '@/components/icons/nav-arrows';
 
 /**
  * After a brick leg is realized, jump to the other completed leg(s)
@@ -35,7 +35,7 @@ export function ActivityBrickSiblingNav({ siblings }: { siblings: BrickSiblingAc
                   {activityTypeLabels[sibling.type]} · autre jambe
                 </span>
               </span>
-              <ArrowRight className="text-muted-foreground size-4 shrink-0" aria-hidden />
+              <NavArrowRight className="text-muted-foreground size-4 shrink-0" aria-hidden />
             </Link>
           </li>
         ))}

@@ -1,4 +1,5 @@
 import type { CoachDiscussTarget } from '@/lib/coach/chat/discuss/coach-discuss-href';
+import { activityStatusLabel, type ActivityStatusId } from '@/lib/health/activity-status';
 
 /**
  * Plain-language description of the context attached to a coach conversation.
@@ -78,4 +79,21 @@ export function describeCoachDiscussContext(
   name?: string | null,
 ): CoachDiscussContext {
   return discussContextForKind(target, name?.trim() || null);
+}
+
+/** Append athlete activity mode to discuss chips (client presentation layer). */
+export function enrichDiscussContextWithActivityStatus(
+  context: CoachDiscussContext,
+  status: ActivityStatusId | null | undefined,
+): CoachDiscussContext {
+  if (!status || status === 'active') {
+    return context;
+  }
+  if (context.kind !== 'today' && context.kind !== 'planning') {
+    return context;
+  }
+  return {
+    ...context,
+    label: `${context.label} · ${activityStatusLabel(status)}`,
+  };
 }

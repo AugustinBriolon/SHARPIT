@@ -104,7 +104,11 @@ function NoteEditor({ activityId, notes }: { activityId: string; notes: string |
 
   if (notes?.trim()) {
     return (
-      <button className="pressable w-full space-y-1 text-left" type="button" onClick={startEdit}>
+      <button
+        className="pressable border-analysis-border/50 bg-analysis-surface-alt/40 rounded-analysis w-full space-y-1 border px-3 py-3 text-left"
+        type="button"
+        onClick={startEdit}
+      >
         <p className="text-label">Ta note</p>
         <p className="text-verdict text-foreground text-base leading-snug wrap-break-word whitespace-pre-wrap">
           {notes}
@@ -115,12 +119,12 @@ function NoteEditor({ activityId, notes }: { activityId: string; notes: string |
 
   return (
     <button
-      className="text-muted-foreground pressable inline-flex min-h-10 items-center gap-1.5 text-sm"
+      className="pressable border-analysis-border/60 rounded-analysis inline-flex min-h-11 w-full items-center gap-2 border border-dashed px-3 py-3 text-left text-sm"
       type="button"
       onClick={startEdit}
     >
-      <NotebookPen className="size-3.5 shrink-0 opacity-70" aria-hidden />
-      Ajouter une note
+      <NotebookPen className="text-muted-foreground size-4 shrink-0" aria-hidden />
+      <span className="text-foreground font-medium">Ajouter une note</span>
     </button>
   );
 }
@@ -137,7 +141,7 @@ export function CompletedSessionAthleteCapture({ activity }: { activity: ClientA
   });
 
   return (
-    <section aria-label="Ton ressenti" className="space-y-4">
+    <section aria-label="Ton ressenti" className="space-y-3">
       <FeelingHero
         feeling={feeling || null}
         rpe={activity.rpe ?? null}

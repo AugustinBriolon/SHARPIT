@@ -1,11 +1,12 @@
 'use client';
 // beui.dev/components/agents/chat-app
 
-import { Check, ChevronDown, Copy, FileCode2, LoaderCircle } from 'lucide-react';
+import { Check, Copy, FileCode2, LoaderCircle } from 'lucide-react';
 import { motion, useReducedMotion } from 'motion/react';
 import { useId, useLayoutEffect, useRef } from 'react';
 import { AgentCodeLine } from '@/components/agents/agent-code';
 import { AgentDisclosure } from '@/components/agents/agent-disclosure';
+import { NavArrowDown } from '@/components/icons/nav-arrows';
 import {
   fileDiffCounts,
   useFileDiffCopy,
@@ -105,7 +106,7 @@ function FileDiffTrigger({
         className="text-muted-foreground/45 group-hover:text-muted-foreground shrink-0 transition-colors"
         transition={reduce ? { duration: 0 } : SPRING_SWAP}
       >
-        <ChevronDown className="size-3.5" />
+        <NavArrowDown className="size-3.5" />
       </motion.span>
     </button>
   );

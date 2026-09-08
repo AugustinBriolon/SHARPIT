@@ -12,6 +12,7 @@ import {
   conversationListSelectedId,
 } from '@/components/coach/chat/conversations/coach-conversation-list-helpers';
 import type { ClientConversationSummary } from '@/lib/query/fetchers';
+import { cn } from '@/lib/utils';
 
 type CoachViewLayoutProps = {
   conversations: ClientConversationSummary[];
@@ -55,15 +56,19 @@ function CoachImmersiveFrame({
   mountLiveChat,
   renderChat,
   header,
+  mobileFullBleed,
 }: {
   mountLiveChat: boolean;
   renderChat: (header?: ReactNode) => ReactNode;
   header: ReactNode;
+  mobileFullBleed: boolean;
 }) {
   return (
     <div
-      className="bg-background safe-area-top fixed inset-x-0 top-0 z-30 flex flex-col"
-      style={{ bottom: 'var(--bottom-nav-offset)' }}
+      className={cn(
+        'bg-background safe-area-top fixed inset-x-0 top-0 z-30 flex flex-col',
+        mobileFullBleed ? 'bottom-0' : 'bottom-(--bottom-nav-offset)',
+      )}
     >
       {mountLiveChat ? renderChat(header) : <CoachChatPanelShell header={header} />}
     </div>
@@ -82,7 +87,7 @@ export function CoachViewLayout({
   isEphemeral,
   newDisabled,
   viewportReady: _viewportReady,
-  isMobile: _isMobile,
+  isMobile,
   mountLiveChat,
   renderChat,
   onDelete,
@@ -107,7 +112,12 @@ export function CoachViewLayout({
 
   return (
     <>
-      <CoachImmersiveFrame header={header} mountLiveChat={mountLiveChat} renderChat={renderChat} />
+      <CoachImmersiveFrame
+        header={header}
+        mobileFullBleed={isMobile}
+        mountLiveChat={mountLiveChat}
+        renderChat={renderChat}
+      />
       <CoachHistoryDrawer
         conversations={conversations}
         conversationsLoading={conversationsLoading}

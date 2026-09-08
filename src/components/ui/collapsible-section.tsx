@@ -1,7 +1,7 @@
 'use client';
 
-import { ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { NavArrowRight } from '@/components/icons/nav-arrows';
 
 /**
  * A section the reader opens when they want it.
@@ -38,7 +38,7 @@ export function CollapsibleSection({
         </span>
         <span className="text-muted-foreground/70 inline-flex min-w-0 items-center gap-1.5">
           {summary ? <span className="text-data truncate text-xs">{summary}</span> : null}
-          <ChevronRight className="size-3.5 shrink-0 transition-transform group-open:rotate-90" />
+          <NavArrowRight className="size-3.5 shrink-0 transition-transform group-open:rotate-90" />
         </span>
       </summary>
       <div className="pt-1 pb-3">{children}</div>

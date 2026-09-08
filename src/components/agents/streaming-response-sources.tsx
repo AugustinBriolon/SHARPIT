@@ -1,10 +1,10 @@
 'use client';
 
-import { ChevronDown } from 'lucide-react';
 import { motion, useReducedMotion } from 'motion/react';
 import { type CitationItem, CitationList, CitationStack } from '@/components/agents/citations';
 import { AgentDisclosure } from '@/components/agents/agent-disclosure';
 import { SPRING_SWAP } from '@/lib/ease';
+import { NavArrowDown } from '@/components/icons/nav-arrows';
 
 export function StreamingSourcesToggle({
   currentSourcesOpen,
@@ -37,7 +37,7 @@ export function StreamingSourcesToggle({
         className="text-muted-foreground/50 group-hover:text-muted-foreground"
         transition={reduce ? { duration: 0 } : SPRING_SWAP}
       >
-        <ChevronDown className="size-3" />
+        <NavArrowDown className="size-3" />
       </motion.span>
     </button>
   );

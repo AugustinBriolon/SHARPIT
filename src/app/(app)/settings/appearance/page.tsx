@@ -5,6 +5,8 @@ import { AppearanceThemePicker } from '@/components/settings/appearance';
 import { SettingsDemoBlock } from '@/components/settings/settings-demo-block';
 import { Skeleton } from '@/components/ui/skeleton';
 import { isDemoSession } from '@/lib/demo/demo-session';
+import { MOI_HUB_PATH, MOI_PERSONALIZATION_PATH } from '@/lib/moi/paths';
+import Link from 'next/link';
 
 function ThemePickerSkeleton() {
   return <Skeleton className="h-24 w-full rounded-xl" aria-busy />;
@@ -29,18 +31,20 @@ async function ThemeSection() {
 
 export default function SettingsAppearancePage() {
   return (
-    <div className="space-y-4">
-      <MobileBackLink fallbackHref="/moi" fallbackLabel="Moi" showOnDesktop />
+    <div className="space-y-6">
+      <MobileBackLink fallbackHref={MOI_HUB_PATH} fallbackLabel="Réglages" showOnDesktop />
       <StickyHeader>
-        <p className="text-label">Moi</p>
+        <p className="text-label">Réglages</p>
         <h1 className="text-page-title mt-1">Apparence</h1>
         <p className="text-muted-foreground mt-1 text-sm">
-          Choisis comment SHARPIT s&apos;affiche. Le mode Système suit la préférence de ton appareil
-          en temps réel.
+          Thème clair, sombre ou système. La densité de lecture est dans{' '}
+          <Link className="underline underline-offset-2" href={MOI_PERSONALIZATION_PATH}>
+            Personnalisation
+          </Link>
+          .
         </p>
       </StickyHeader>
 
-      {/* Header above is static and prerenders; only the demo check waits. */}
       <Suspense fallback={<ThemePickerSkeleton />}>
         <ThemeSection />
       </Suspense>

@@ -84,27 +84,10 @@ function HeroWeightDelta({ valuesLoading, vm }: { valuesLoading: boolean; vm: Co
   );
 }
 
-function HeroHintsBlock({ heroHints }: { heroHints: { label: string; text: string }[] }) {
-  if (heroHints.length === 0) {
-    return null;
-  }
-  return (
-    <div className="border-ink-surface-foreground/20 bg-ink-surface-foreground/6 text-ink-surface-foreground/70 rounded-analysis mt-6 w-fit space-y-1 border px-3 py-3 text-xs leading-relaxed">
-      {heroHints.map(({ label, text }) => (
-        <p key={label}>
-          <span className="text-ink-surface-foreground/90 font-medium">{label}</span> — {text}
-        </p>
-      ))}
-    </div>
-  );
-}
-
 export function CompositionHeroSection({
-  heroHints,
   valuesLoading,
   vm,
 }: {
-  heroHints: { label: string; text: string }[];
   valuesLoading: boolean;
   vm: CompositionVm;
 }) {
@@ -116,7 +99,6 @@ export function CompositionHeroSection({
       <HeroMeasuredAtRow valuesLoading={valuesLoading} vm={vm} />
       <HeroWeightValue valuesLoading={valuesLoading} vm={vm} />
       <HeroWeightDelta valuesLoading={valuesLoading} vm={vm} />
-      <HeroHintsBlock heroHints={heroHints} />
     </section>
   );
 }

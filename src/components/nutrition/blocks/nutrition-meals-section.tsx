@@ -1,11 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { ChevronDown } from 'lucide-react';
 import { MotionExpand } from '@/components/motion';
 import { ColoredMacroPills } from '@/components/nutrition/nutrition-macro-display';
 import type { NutritionMealSummary } from '@/core/presentation/nutrition-view-model';
 import { cn } from '@/lib/utils';
+import { NavArrowDown } from '@/components/icons/nav-arrows';
 
 function MealCard({ meal }: { meal: NutritionMealSummary }) {
   const [open, setOpen] = useState(false);
@@ -30,7 +30,7 @@ function MealCard({ meal }: { meal: NutritionMealSummary }) {
         <div className="flex shrink-0 items-center gap-2">
           <span className="text-data text-sm font-semibold tabular-nums">{meal.calories} kcal</span>
           {hasEntries ? (
-            <ChevronDown
+            <NavArrowDown
               className={cn(
                 'text-muted-foreground size-4 transition-transform duration-200',
                 open && 'rotate-180',

@@ -2,6 +2,7 @@
 
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { NavArrowDown } from '@/components/icons/nav-arrows';
 import {
   Select,
   SelectContent,
@@ -9,7 +10,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { ChevronDownIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { ClientConversationSummary } from '@/lib/query/fetchers';
 
@@ -27,7 +27,7 @@ function MobileDraftConversationRow() {
   return (
     <div aria-label="Conversation active" className={mobileSelectTriggerClassName}>
       <span className="truncate">Nouvelle conversation</span>
-      <ChevronDownIcon className="text-muted-foreground size-4 shrink-0 opacity-50" aria-hidden />
+      <NavArrowDown className="text-muted-foreground size-4 shrink-0 opacity-50" aria-hidden />
     </div>
   );
 }

@@ -6,17 +6,16 @@ import {
   SkeletonText,
   SkeletonTitle,
 } from '@/components/ui/skeleton-patterns';
+import { MOI_HUB_PATH } from '@/lib/moi/paths';
 
 export default function SettingsAccountLoading() {
   return (
     <div className="space-y-4">
-      <MobileBackLink showOnDesktop />
+      <MobileBackLink fallbackHref={MOI_HUB_PATH} fallbackLabel="Réglages" showOnDesktop />
       <StickyHeader>
-        <p className="text-label">Moi</p>
-        <h1 className="text-page-title mt-1">Mon profil</h1>
-        <p className="text-muted-foreground mt-1 text-sm">
-          Identité et rythme de vie — les repères de performance sont dans Progression.
-        </p>
+        <p className="text-label">Réglages</p>
+        <h1 className="text-page-title mt-1">Profil</h1>
+        <p className="text-muted-foreground mt-1 text-sm">Identité, rythme de vie et connexion.</p>
       </StickyHeader>
 
       <SkeletonCard className="space-y-3">

@@ -1,10 +1,10 @@
 'use client';
 
-import { ChevronDown } from 'lucide-react';
 import { motion } from 'motion/react';
 import { ThinkingShimmer } from '@/components/agents/loading-states/thinking-shimmer';
 import { SPRING_SWAP } from '@/lib/ease';
 import type { AgentActivityProps } from './types';
+import { NavArrowDown } from '@/components/icons/nav-arrows';
 
 export function AgentActivityHeader({
   completedSummary,
@@ -67,7 +67,7 @@ export function AgentActivityHeader({
         className="text-muted-foreground/70 group-hover:text-foreground inline-flex shrink-0"
         transition={reduce ? { duration: 0 } : SPRING_SWAP}
       >
-        <ChevronDown className="size-3.5" />
+        <NavArrowDown className="size-3.5" />
       </motion.span>
     </button>
   );

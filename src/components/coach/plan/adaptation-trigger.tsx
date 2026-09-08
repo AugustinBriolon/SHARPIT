@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { ChevronDown, ChevronUp } from 'lucide-react';
 import { useSessionRationalePresentation } from '@/hooks/use-data';
+import { NavArrowUp, NavArrowDown } from '@/components/icons/nav-arrows';
 import {
   classifyAdaptTrigger,
   type AdaptTriggerCategory,
@@ -100,9 +100,9 @@ export function AdaptationTrigger({
       >
         Changement lié à : {TRIGGER_LABEL[category]}
         {expanded ? (
-          <ChevronUp className="size-3" aria-hidden />
+          <NavArrowUp className="size-3" aria-hidden />
         ) : (
-          <ChevronDown className="size-3" aria-hidden />
+          <NavArrowDown className="size-3" aria-hidden />
         )}
       </div>
 

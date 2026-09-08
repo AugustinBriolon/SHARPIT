@@ -2,29 +2,15 @@
 
 import Link from 'next/link';
 import { DiscussWithCoachButton } from '@/components/coach/discuss/discuss-with-coach-button';
-import { CalendarClock } from 'lucide-react';
-import dynamic from 'next/dynamic';
+import { ActivityStatusButton } from '@/components/shell/activity-status-button';
+import { BookOpen, CalendarClock } from 'lucide-react';
 import { SessionLinkSuggestionCard } from '@/components/today/rich/session-link-suggestion-card';
 import { ActivityFeelingPrompt } from '@/components/training/activity/detail/activity-feeling-prompt';
 import { TodayDaySummaryLine } from '@/components/today/rich/today-day-summary-line';
 import { SkeletonDataValue } from '@/components/ui/skeleton-data-value';
 import type { TodayViewModel } from '@/core/presentation/today-view-model';
 
-const MorningWellnessDialog = dynamic(
-  () =>
-    import('@/components/today/dashboard/morning-wellness-dialog').then(
-      (mod) => mod.MorningWellnessDialog,
-    ),
-  { ssr: false },
-);
-
-export function TodayActionRowHeader({
-  loading,
-  onWellnessCompleted,
-}: {
-  loading: boolean;
-  onWellnessCompleted?: () => void;
-}) {
+export function TodayActionRowHeader({ loading }: { loading: boolean }) {
   return (
     <div className="flex min-h-8 items-center justify-between gap-2 px-0.5">
       {loading ? (
@@ -32,11 +18,20 @@ export function TodayActionRowHeader({
       ) : (
         <DiscussWithCoachButton label="Coach" size="sm" target={{ kind: 'today' }} />
       )}
-      <div className="flex shrink-0 items-center">
+      <div className="flex shrink-0 items-center gap-2">
         {loading ? (
-          <SkeletonDataValue heightClassName="h-8" widthClassName="w-24" />
+          <SkeletonDataValue heightClassName="h-8" widthClassName="w-36" />
         ) : (
-          <MorningWellnessDialog triggerLabel="Ressenti" onCompleted={onWellnessCompleted} />
+          <>
+            <ActivityStatusButton />
+            <Link
+              className="border-primary/35 bg-primary/10 text-primary hover:bg-primary/15 inline-flex h-8 items-center gap-1.5 rounded-lg border px-2.5 text-[0.8rem] font-medium transition-colors duration-150 ease-out active:scale-[0.97]"
+              href="/journal"
+            >
+              <BookOpen className="size-3.5 shrink-0" strokeWidth={1.8} aria-hidden />
+              Journal
+            </Link>
+          </>
         )}
       </div>
     </div>
