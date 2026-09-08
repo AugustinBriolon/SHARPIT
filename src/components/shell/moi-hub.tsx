@@ -1,4 +1,5 @@
 import { Suspense, type ReactNode } from 'react';
+import { cookies } from 'next/headers';
 import {
   BookOpen,
   Brain,
@@ -22,6 +23,7 @@ import {
 } from 'lucide-react';
 import { StickyHeader } from '@/components/layout/header/sticky-header';
 import { InstallCard } from '@/components/pwa/install-card';
+import { AccessTierCookieSync } from '@/components/shell/access-tier-cookie-sync';
 import { ShellHubGroup, ShellHubRow, ShellHubSolo } from '@/components/shell/shell-hub-link';
 import { HubStatusValue } from '@/components/settings/hub-status-value';
 import {
@@ -32,10 +34,10 @@ import { SettingsAdminEntry } from '@/components/settings/settings-admin-entry';
 import type { SettingsEntry } from '@/components/settings/settings-home';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { hasProAccess } from '@/lib/access/tier';
+import { isAccessTier, ACCESS_TIER_COOKIE } from '@/lib/access/tier-cookie';
 import {
   MOI_CALIBRATION_PATH,
   MOI_CORPS_PATH,
-  MOI_FEEDBACK_PATH,
   MOI_HELP_PATH,
   MOI_OBJECTIFS_PATH,
   MOI_PERSONALIZATION_PATH,
@@ -43,6 +45,7 @@ import {
   MOI_PRO_PATH,
   MOI_WHATS_NEW_PATH,
 } from '@/lib/moi/paths';
+import { FEEDBACK_BUG_MAILTO, FEEDBACK_FEATURE_MAILTO } from '@/lib/moi/feedback-mailto';
 import { getAthleteProfile } from '@/lib/queries';
 
 type HubEntry =
@@ -157,11 +160,11 @@ const AFTER_COMPTE: HubSection[] = [
     title: 'Support',
     entries: [
       {
-        href: `${MOI_FEEDBACK_PATH}#demande`,
+        href: FEEDBACK_FEATURE_MAILTO,
         title: 'Demander une fonctionnalité',
         icon: MessageSquarePlus,
       },
-      { href: `${MOI_FEEDBACK_PATH}#bug`, title: 'Signaler un bug', icon: Bug },
+      { href: FEEDBACK_BUG_MAILTO, title: 'Signaler un bug', icon: Bug },
       { href: '/settings/maintenance', title: 'Maintenance', icon: Wrench },
     ],
   },
@@ -177,8 +180,12 @@ const AFTER_COMPTE: HubSection[] = [
 
 /**
  * Paramètres hub — Bevel-shaped grouped lists (Modèle kept first).
+ * Pro chrome reads the access-tier cookie first so Suspense cannot flash the
+ * Pro solo / Compte Pro row on every visit.
  */
-export function MoiHub() {
+export async function MoiHub() {
+  const cachedIsPro = await readCachedIsPro();
+
   return (
     <div className="space-y-5 max-lg:pb-16">
       <StickyHeader>
@@ -186,7 +193,7 @@ export function MoiHub() {
       </StickyHeader>
 
       <div className="space-y-5">
-        <Suspense fallback={<MoiHubStaticFallback />}>
+        <Suspense fallback={<MoiHubBody isPro={cachedIsPro} />}>
           <MoiHubSections />
         </Suspense>
         <Suspense fallback={null}>
@@ -201,29 +208,27 @@ export function MoiHub() {
   );
 }
 
-function MoiHubStaticFallback() {
-  return (
-    <>
-      <HubSectionBlock section={MODELE_SECTION} />
-      <HubSectionBlock
-        section={{
-          id: 'compte',
-          title: 'Compte',
-          entries: COMPTE_BASE,
-        }}
-      />
-      {AFTER_COMPTE.map((section) => (
-        <HubSectionBlock key={section.id} section={section} />
-      ))}
-    </>
-  );
+async function readCachedIsPro(): Promise<boolean> {
+  const store = await cookies();
+  const raw = store.get(ACCESS_TIER_COOKIE)?.value;
+  return isAccessTier(raw) ? hasProAccess(raw) : false;
 }
 
 async function MoiHubSections() {
   const athleteId = await getCurrentAthleteId();
   const profile = await getAthleteProfile(athleteId);
-  const isPro = hasProAccess(profile?.tier ?? 'FREE');
+  const tier = profile?.tier ?? 'FREE';
+  const isPro = hasProAccess(tier);
 
+  return (
+    <>
+      <AccessTierCookieSync tier={tier} />
+      <MoiHubBody isPro={isPro} />
+    </>
+  );
+}
+
+function MoiHubBody({ isPro }: { isPro: boolean }) {
   const compteEntries: HubEntry[] = isPro ? [...COMPTE_BASE, PRO_ENTRY] : COMPTE_BASE;
 
   return (

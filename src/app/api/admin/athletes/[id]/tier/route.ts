@@ -21,6 +21,8 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
   try {
     const { id } = await context.params;
     const updated = await setAthleteTier(id, parsed.data.tier);
+    // Do not Set-Cookie here — this route mutates another athlete's tier; the
+    // access-tier cookie mirrors the signed-in user's own profile only.
     return NextResponse.json(updated);
   } catch (error) {
     console.error('[admin/athletes/tier]', error);

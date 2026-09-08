@@ -625,17 +625,21 @@ export function ActivityStatusButton({ className }: { className?: string }) {
           <Drawer.Backdrop
             className={cn(
               'bg-foreground/40 fixed inset-0 z-60',
-              'transition-opacity duration-250 ease-out',
-              'data-closed:opacity-0 data-closed:duration-150',
+              'transition-opacity duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]',
+              'data-ending-style:opacity-0 data-starting-style:opacity-0',
+              'motion-reduce:transition-none',
             )}
           />
           <Drawer.Viewport className="fixed inset-0 z-61 flex flex-col justify-end">
             <Drawer.Popup
               className={cn(
-                'bg-background flex max-h-[min(92dvh,36rem)] flex-col rounded-t-2xl',
-                'transition-transform duration-250 ease-[cubic-bezier(0.32,0.72,0,1)]',
-                'starting:translate-y-full',
-                'data-closed:translate-y-full data-closed:duration-150 data-closed:ease-out',
+                'bg-background flex max-h-[min(92dvh,36rem)] flex-col rounded-t-2xl outline-none',
+                // Base UI + Tailwind v4: animate `transform` (not `translate-*`).
+                '[transform:translate3d(0,var(--drawer-swipe-movement-y,0px),0)]',
+                'transition-[transform,opacity] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]',
+                'data-starting-style:[transform:translate3d(0,100%,0)]',
+                'data-ending-style:[transform:translate3d(0,100%,0)]',
+                'motion-reduce:transition-none',
               )}
             >
               <div className="flex justify-center pt-3 pb-1" aria-hidden>

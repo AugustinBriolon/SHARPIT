@@ -236,6 +236,8 @@ export interface AthleteProfilePayload {
   sleepTargetMinutes: number | null;
   sleepBedtimeTargetMin: number | null;
   displayMode: DisplayMode;
+  /** Mirrored in `sharpit.access-tier` cookie for Instant Pro chrome. */
+  tier?: 'FREE' | 'PRO';
   equipment?: unknown;
   practicedSports?: unknown;
 }
