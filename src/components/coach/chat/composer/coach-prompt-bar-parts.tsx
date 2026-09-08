@@ -495,7 +495,7 @@ export function PromptBarInputShell({
   return (
     <div
       className={cn(
-        'border-border/70 bg-card relative isolate flex flex-col overflow-hidden rounded-full border',
+        'border-border/70 bg-card relative isolate flex flex-col rounded-full border',
         'gap-1 p-1 transition-[border-color] duration-150',
         'focus-within:border-foreground/20',
         disabled && 'opacity-60',

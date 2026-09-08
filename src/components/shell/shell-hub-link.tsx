@@ -58,25 +58,42 @@ export function ShellHubRow(props: ShellHubRowProps) {
     );
   }
 
+  const isExternal = /^(mailto:|https?:|tel:)/i.test(props.href);
+  const inner = (
+    <span
+      className={cn(
+        'flex min-w-0 flex-1 items-center gap-3',
+        'transition-transform duration-150 ease-out',
+        'motion-safe:group-active:scale-[var(--press-scale-surface)]',
+      )}
+    >
+      {body}
+    </span>
+  );
+
   return (
     <li>
-      <Link
-        href={props.href}
-        className={cn(
-          rowClass,
-          'group hover:bg-muted/35 focus-visible:ring-primary/30 focus-visible:ring-2 focus-visible:ring-inset',
-        )}
-      >
-        <span
+      {isExternal ? (
+        <a
+          href={props.href}
           className={cn(
-            'flex min-w-0 flex-1 items-center gap-3',
-            'transition-transform duration-150 ease-out',
-            'motion-safe:group-active:scale-[var(--press-scale-surface)]',
+            rowClass,
+            'group hover:bg-muted/35 focus-visible:ring-primary/30 focus-visible:ring-2 focus-visible:ring-inset',
           )}
         >
-          {body}
-        </span>
-      </Link>
+          {inner}
+        </a>
+      ) : (
+        <Link
+          href={props.href}
+          className={cn(
+            rowClass,
+            'group hover:bg-muted/35 focus-visible:ring-primary/30 focus-visible:ring-2 focus-visible:ring-inset',
+          )}
+        >
+          {inner}
+        </Link>
+      )}
     </li>
   );
 }
@@ -133,7 +150,7 @@ export function ShellHubSolo({
 
 /**
  * @deprecated Prefer {@link ShellHubRow} inside {@link ShellHubGroup}.
- * Kept for Feedback mailto rows and any legacy single-chip links.
+ * Kept for legacy single-chip links.
  */
 export function ShellHubLink(
   props: {

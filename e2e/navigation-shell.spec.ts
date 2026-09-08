@@ -109,12 +109,20 @@ test.describe('navigation shell', () => {
       '/settings/personalization',
       '/settings/memory',
       '/settings/maintenance',
-      '/settings/feedback#demande',
       '/privacy',
       '/terms',
     ]) {
       await expect(page.locator(`a[href="${href}"]:visible`).first()).toBeVisible();
     }
+
+    await expect(page.getByRole('link', { name: 'Demander une fonctionnalité' })).toHaveAttribute(
+      'href',
+      /mailto:augustin\.briolon@gmail\.com/,
+    );
+    await expect(page.getByRole('link', { name: 'Signaler un bug' })).toHaveAttribute(
+      'href',
+      /mailto:augustin\.briolon@gmail\.com/,
+    );
 
     await expect(page.getByRole('link', { name: 'Profil' })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Personnalisation' })).toBeVisible();

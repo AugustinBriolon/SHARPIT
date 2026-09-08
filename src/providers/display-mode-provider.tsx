@@ -1,11 +1,12 @@
 'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { createContext, useCallback, useContext, useMemo, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, type ReactNode } from 'react';
 import { useAthleteProfile } from '@/hooks/use-data';
 import type { AthleteProfilePayload } from '@/lib/query/fetchers';
 import { queryKeys } from '@/lib/query/keys';
 import { sendJson } from '@/lib/query/send-json';
+import { syncAccessTierCookie } from '@/lib/access/tier-cookie';
 import {
   DEFAULT_DISPLAY_MODE,
   isExpertMode,
@@ -34,6 +35,14 @@ export function DisplayModeProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
 
   const mode = toDisplayMode(profile.data?.displayMode);
+
+  useEffect(() => {
+    const tier = profile.data?.tier;
+    if (!tier) {
+      return;
+    }
+    syncAccessTierCookie(tier);
+  }, [profile.data?.tier]);
 
   const save = useMutation({
     mutationFn: (next: DisplayMode) =>

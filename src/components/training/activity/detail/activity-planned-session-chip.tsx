@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { CalendarCheck, Loader2 } from 'lucide-react';
 import { ActivityMetaChip } from '@/components/training/activity/detail/activity-meta-chip';
+import { useActivities, usePlannedSessions } from '@/hooks/use-data';
 import { useAppModal } from '@/providers/app-modal-provider';
 import {
   plannedSessionChipLabel,
@@ -103,6 +104,34 @@ function usePlannedAnalysisLive(planned: PlannedSessionSummary, enabled: boolean
   return live ?? planned;
 }
 
+/** Prefer React Query analysis (cleared during recalculate) over RSC seed props. */
+function useCachedPlannedSessionOverlay(planned: PlannedSessionSummary): PlannedSessionSummary {
+  const { data: sessions } = usePlannedSessions();
+  const { data: activities } = useActivities();
+
+  const fromSessions = sessions?.find((session) => session.id === planned.id);
+  if (fromSessions) {
+    return {
+      ...planned,
+      analysis: fromSessions.analysis,
+      analyzedAt: fromSessions.analyzedAt,
+    };
+  }
+
+  const fromActivity = activities?.find(
+    (activity) => activity.plannedSession?.id === planned.id,
+  )?.plannedSession;
+  if (fromActivity) {
+    return {
+      ...planned,
+      analysis: fromActivity.analysis,
+      analyzedAt: fromActivity.analyzedAt,
+    };
+  }
+
+  return planned;
+}
+
 /**
  * Opens the planned-session modal in place (no /planning redirect).
  * Hides the "linked activity" navigation — caller is already on that activity.
@@ -119,10 +148,15 @@ export function ActivityPlannedSessionChip({
 }) {
   const queryClient = useQueryClient();
   const { openPlannedSession } = useAppModal();
-  const stillPending = isAnalyzing && !parseSessionAnalysis(planned.analysis);
-  const livePlanned = usePlannedAnalysisLive(planned, stillPending);
+  const cachedPlanned = useCachedPlannedSessionOverlay(planned);
+  const hasCachedAnalysis = Boolean(parseSessionAnalysis(cachedPlanned.analysis));
+  const seedHadAnalysis = Boolean(parseSessionAnalysis(planned.analysis));
+  // Recalculate clears RQ while RSC seed still holds the previous score.
+  const reanalysisPending = !hasCachedAnalysis && seedHadAnalysis;
+  const showingLoading = !hasCachedAnalysis && (isAnalyzing || reanalysisPending);
+  const livePlanned = usePlannedAnalysisLive(cachedPlanned, showingLoading);
   const analysisReady = Boolean(parseSessionAnalysis(livePlanned.analysis));
-  const showingAnalysis = stillPending && !analysisReady;
+  const showingAnalysis = showingLoading && !analysisReady;
 
   function prefetch() {
     prefetchPlannedSessionDetail(queryClient, planned.id);

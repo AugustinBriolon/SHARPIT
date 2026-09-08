@@ -18,6 +18,8 @@ export type PlannedSessionCacheSeed = {
   analysis?: ClientPlannedSession['analysis'];
   analyzedAt?: Date | string | null;
   activityId?: string | null;
+  /** When true, `analysis` / `analyzedAt` (including null) overwrite existing values. */
+  clearAnalysis?: boolean;
 };
 
 function toDate(value: Date | string | null | undefined): Date | null {
@@ -49,6 +51,13 @@ function mergeSeed(
   const seededAnalyzedAt = toDate(seed.analyzedAt);
   const activityId = coalesceField(seed.activityId, base.activityId);
 
+  const analysis = seed.clearAnalysis
+    ? (seed.analysis ?? null)
+    : coalesceField(seed.analysis, base.analysis);
+  const analyzedAt = seed.clearAnalysis
+    ? seededAnalyzedAt
+    : coalesceField(seededAnalyzedAt, base.analyzedAt ?? null);
+
   return {
     ...base,
     id: seed.id,
@@ -58,8 +67,8 @@ function mergeSeed(
     date: seededDate ?? base.date ?? new Date(),
     durationMin: coalesceField(seed.durationMin, base.durationMin),
     intensity: coalesceField(seed.intensity, base.intensity),
-    analysis: coalesceField(seed.analysis, base.analysis),
-    analyzedAt: coalesceField(seededAnalyzedAt, base.analyzedAt ?? null),
+    analysis,
+    analyzedAt,
     activityId,
     // Opening from a completed activity means the session is already linked.
     completed: Boolean(activityId ?? base.activity ?? base.completed),

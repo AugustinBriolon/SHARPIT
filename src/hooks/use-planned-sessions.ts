@@ -23,6 +23,11 @@ import {
   applyPlannedSessionLinkOptimistic,
   resolvePreviousLinkedActivityId,
 } from '@/lib/query/planned-session-link-optimistic';
+import {
+  beginPlannedSessionReanalysis,
+  rollbackPlannedSessionReanalysis,
+} from '@/lib/query/begin-planned-session-reanalysis';
+import { patchPlannedSessionAnalysisInCaches } from '@/lib/query/patch-planned-session-analysis-cache';
 import type { BrickAnalysis } from '@/lib/validators/coach';
 import type { TodayViewModel } from '@/core/presentation/today-view-model';
 import type { ActivityType, SessionIntensity } from '@prisma/client';
@@ -386,20 +391,31 @@ export function usePlannedSessionMutations() {
       }
       return sendJson(`/api/planned-sessions/${id}/analyze`, 'POST');
     },
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: key });
+      const previous = beginPlannedSessionReanalysis(queryClient, id);
+      return { previous };
+    },
     onSuccess: (data, id) => {
+      const hydrated = hydratePlannedSession(data as ClientPlannedSession);
+      patchPlannedSessionAnalysisInCaches(queryClient, id, {
+        analysis: hydrated.analysis ?? null,
+        analyzedAt: hydrated.analyzedAt ?? null,
+      });
       if (!isBrowserDemoMode()) {
         invalidate();
         return;
       }
-      const hydrated = hydratePlannedSession(data as ClientPlannedSession);
       queryClient.setQueryData<ClientPlannedSession[]>(key, (prev) =>
         prev ? prev.map((session) => (session.id === id ? hydrated : session)) : prev,
       );
     },
-    onError: (err: unknown) =>
+    onError: (err: unknown, id, context) => {
+      rollbackPlannedSessionReanalysis(queryClient, id, context?.previous ?? null);
       toast.error("L'analyse a échoué.", {
         description: err instanceof Error ? err.message : undefined,
-      }),
+      });
+    },
   });
 
   const link = useMutation({

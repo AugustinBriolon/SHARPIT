@@ -25,5 +25,4 @@ export const MOI_PERSONALIZATION_DENSITY_HASH = '#densite' as const;
 export const MOI_SOURCE_ROUTING_PATH = '/settings/source-routing' as const;
 export const MOI_WHATS_NEW_PATH = '/settings/whats-new' as const;
 export const MOI_HELP_PATH = '/settings/help' as const;
-export const MOI_FEEDBACK_PATH = '/settings/feedback' as const;
 export const MOI_PRO_PATH = '/settings/pro' as const;

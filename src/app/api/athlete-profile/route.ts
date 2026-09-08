@@ -7,6 +7,12 @@ import { invalidateCoachContext } from '@/lib/coach/context/coach-context';
 import { normalizeAthleteEquipment } from '@/lib/equipment/parse';
 import { sanitizePracticedSportsForPersist } from '@/lib/practiced-sports';
 import { DEFAULT_DISPLAY_MODE } from '@/lib/preferences/display-mode';
+import { accessTierSetCookieValue } from '@/lib/access/tier-cookie';
+
+function withAccessTierCookie(response: NextResponse, tier: 'FREE' | 'PRO') {
+  response.headers.append('Set-Cookie', accessTierSetCookieValue(tier));
+  return response;
+}
 
 function profileUpdateError(error: unknown) {
   console.error('[athlete-profile PATCH]', error);
@@ -66,7 +72,13 @@ export async function GET() {
     const athleteId = await getCurrentAthleteId();
     const profile = await getAthleteProfile(athleteId);
     // An athlete with no profile row still has a reading density — the default one.
-    return NextResponse.json(profile ?? { id: athleteId, displayMode: DEFAULT_DISPLAY_MODE });
+    const payload = profile ?? {
+      id: athleteId,
+      displayMode: DEFAULT_DISPLAY_MODE,
+      tier: 'FREE' as const,
+    };
+    const response = NextResponse.json(payload);
+    return withAccessTierCookie(response, payload.tier ?? 'FREE');
   } catch (error) {
     console.error(error);
     return NextResponse.json({ error: 'Impossible de charger le profil athlète' }, { status: 500 });
@@ -103,7 +115,8 @@ export async function PATCH(request: NextRequest) {
     });
     // Any profile field can affect coach prompts / twin — clear the 30s cache.
     invalidateCoachContext();
-    return NextResponse.json(profile);
+    const response = NextResponse.json(profile);
+    return withAccessTierCookie(response, profile.tier ?? 'FREE');
   } catch (error) {
     return profileUpdateError(error);
   }
