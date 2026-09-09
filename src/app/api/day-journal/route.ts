@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { getDayJournalEntry, upsertDayJournalEntryDb } from '@/lib/health/day-journal-service';
+import { awaitRequest } from '@/lib/next/await-request';
 import { prisma } from '@/lib/prisma';
 
 const factorStateSchema = z.enum(['unset', 'no', 'yes']);
@@ -15,6 +16,9 @@ const putSchema = z.object({
 });
 
 export async function GET(request: NextRequest) {
+  // Outside try: Cache Components prerender interrupt must not be swallowed.
+  await awaitRequest();
+
   try {
     const athleteId = await getCurrentAthleteId();
     const trainingDayId = request.nextUrl.searchParams.get('day');
@@ -30,6 +34,8 @@ export async function GET(request: NextRequest) {
 }
 
 export async function PUT(request: NextRequest) {
+  await awaitRequest();
+
   try {
     const athleteId = await getCurrentAthleteId();
     const body = await request.json();

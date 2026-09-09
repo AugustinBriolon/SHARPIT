@@ -5,6 +5,7 @@ import {
   getActivityStatusStoreDb,
   setActivityStatusDb,
 } from '@/lib/health/activity-status-service';
+import { awaitRequest } from '@/lib/next/await-request';
 import { prisma } from '@/lib/prisma';
 
 const putSchema = z.object({
@@ -22,6 +23,9 @@ const putSchema = z.object({
 });
 
 export async function GET() {
+  // Outside try: Cache Components prerender interrupt must not be swallowed.
+  await awaitRequest();
+
   try {
     const athleteId = await getCurrentAthleteId();
     const store = await getActivityStatusStoreDb(prisma, athleteId);
@@ -36,6 +40,8 @@ export async function GET() {
 }
 
 export async function PUT(request: NextRequest) {
+  await awaitRequest();
+
   try {
     const athleteId = await getCurrentAthleteId();
     const body = await request.json();

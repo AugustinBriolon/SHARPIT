@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { buildJournalDaySignals } from '@/lib/health/journal-day-signals';
+import { awaitRequest } from '@/lib/next/await-request';
 import { prisma } from '@/lib/prisma';
 
 export async function GET(request: NextRequest) {
+  // Outside try: Cache Components prerender interrupt must not be swallowed.
+  await awaitRequest();
+
   try {
     const athleteId = await getCurrentAthleteId();
     const trainingDayId = request.nextUrl.searchParams.get('day');

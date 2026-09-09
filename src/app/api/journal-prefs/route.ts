@@ -6,9 +6,13 @@ import {
   parseJournalPrefs,
   sanitizeJournalPrefsForPersist,
 } from '@/lib/health/journal-prefs';
+import { awaitRequest } from '@/lib/next/await-request';
 import { prisma } from '@/lib/prisma';
 
 export async function GET() {
+  // Outside try: Cache Components prerender interrupt must not be swallowed.
+  await awaitRequest();
+
   try {
     const athleteId = await getCurrentAthleteId();
     const profile = await prisma.athleteProfile.findUnique({
@@ -29,6 +33,8 @@ export async function GET() {
 }
 
 export async function PUT(request: NextRequest) {
+  await awaitRequest();
+
   try {
     const athleteId = await getCurrentAthleteId();
     const body = (await request.json()) as { prefs?: unknown };
