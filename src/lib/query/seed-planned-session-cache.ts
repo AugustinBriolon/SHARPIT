@@ -42,6 +42,23 @@ function coalesceField<T>(
   return seedValue ?? baseValue ?? null;
 }
 
+function resolveAnalysisFields(
+  seed: PlannedSessionCacheSeed,
+  base: ClientPlannedSession,
+  seededAnalyzedAt: Date | null,
+): Pick<ClientPlannedSession, 'analysis' | 'analyzedAt'> {
+  if (seed.clearAnalysis) {
+    return {
+      analysis: seed.analysis ?? null,
+      analyzedAt: seededAnalyzedAt,
+    };
+  }
+  return {
+    analysis: coalesceField(seed.analysis, base.analysis),
+    analyzedAt: coalesceField(seededAnalyzedAt, base.analyzedAt ?? null),
+  };
+}
+
 function mergeSeed(
   existing: ClientPlannedSession | undefined,
   seed: PlannedSessionCacheSeed,
@@ -50,13 +67,7 @@ function mergeSeed(
   const seededDate = toDate(seed.date);
   const seededAnalyzedAt = toDate(seed.analyzedAt);
   const activityId = coalesceField(seed.activityId, base.activityId);
-
-  const analysis = seed.clearAnalysis
-    ? (seed.analysis ?? null)
-    : coalesceField(seed.analysis, base.analysis);
-  const analyzedAt = seed.clearAnalysis
-    ? seededAnalyzedAt
-    : coalesceField(seededAnalyzedAt, base.analyzedAt ?? null);
+  const { analysis, analyzedAt } = resolveAnalysisFields(seed, base, seededAnalyzedAt);
 
   return {
     ...base,

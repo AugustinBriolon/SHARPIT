@@ -26,6 +26,29 @@ function seedCaches(queryClient: QueryClient) {
   });
 }
 
+function readClearedCaches(queryClient: QueryClient) {
+  const cleared = queryClient.getQueryData<ClientPlannedSession[]>(queryKeys.plannedSessions)?.[0];
+  const activity = queryClient.getQueryData<ClientActivity[]>(queryKeys.activities)?.[0];
+  const detail = queryClient.getQueryData<{
+    plannedSession: { analysis: unknown; analyzedAt: unknown };
+  }>(queryKeys.activity('act-1'));
+  return { cleared, activity, detail };
+}
+
+function expectCachesCleared(queryClient: QueryClient) {
+  const { cleared, activity, detail } = readClearedCaches(queryClient);
+  expect(cleared?.analysis).toBeNull();
+  expect(cleared?.analyzedAt).toBeNull();
+  expect(activity?.plannedSession?.analysis).toBeNull();
+  expect(detail?.plannedSession?.analysis).toBeNull();
+}
+
+function expectCachesRestored(queryClient: QueryClient) {
+  const restored = queryClient.getQueryData<ClientPlannedSession[]>(queryKeys.plannedSessions)?.[0];
+  expect(restored?.analysis).toEqual(analysis);
+  expect(restored?.analyzedAt).toEqual(analyzedAt);
+}
+
 describe('beginPlannedSessionReanalysis', () => {
   it('clears analysis so chips can show loading, and rolls back on failure', () => {
     const queryClient = new QueryClient();
@@ -33,27 +56,10 @@ describe('beginPlannedSessionReanalysis', () => {
 
     const previous = beginPlannedSessionReanalysis(queryClient, 'ps-1');
     expect(previous).toEqual({ analysis, analyzedAt });
-
-    const cleared = queryClient.getQueryData<ClientPlannedSession[]>(
-      queryKeys.plannedSessions,
-    )?.[0];
-    const activity = queryClient.getQueryData<ClientActivity[]>(queryKeys.activities)?.[0];
-    const detail = queryClient.getQueryData<{
-      plannedSession: { analysis: unknown; analyzedAt: unknown };
-    }>(queryKeys.activity('act-1'));
-
-    expect(cleared?.analysis).toBeNull();
-    expect(cleared?.analyzedAt).toBeNull();
-    expect(activity?.plannedSession?.analysis).toBeNull();
-    expect(detail?.plannedSession?.analysis).toBeNull();
+    expectCachesCleared(queryClient);
 
     rollbackPlannedSessionReanalysis(queryClient, 'ps-1', previous);
-
-    const restored = queryClient.getQueryData<ClientPlannedSession[]>(
-      queryKeys.plannedSessions,
-    )?.[0];
-    expect(restored?.analysis).toEqual(analysis);
-    expect(restored?.analyzedAt).toEqual(analyzedAt);
+    expectCachesRestored(queryClient);
   });
 
   it('snapshots analysis from activity detail when the list cache is cold', () => {

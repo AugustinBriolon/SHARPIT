@@ -1,4 +1,4 @@
-import { useMemo, useSyncExternalStore } from 'react';
+import { useEffect, useMemo, useSyncExternalStore } from 'react';
 import type { TodayViewModel } from '@/core/presentation/today-view-model';
 import {
   getDismissedSessionLinkIdsSnapshot,
@@ -13,6 +13,7 @@ import {
   emptyActivityStatusStore,
   getActivityStatusStoreServerSnapshot,
   getActivityStatusStoreSnapshot,
+  hydrateActivityStatusFromServer,
   subscribeActivityStatus,
   type ActivityStatusStore,
 } from '@/lib/health/activity-status';
@@ -26,6 +27,10 @@ import {
 } from '@/components/today/rich/today-action-row-derived-helpers';
 
 export function useTodayActionRowDerived(vm: TodayViewModel, loading: boolean) {
+  useEffect(() => {
+    void hydrateActivityStatusFromServer();
+  }, []);
+
   const dismissedSnapshot = useSyncExternalStore(
     subscribeSessionLinkDismissals,
     getDismissedSessionLinkIdsSnapshot,

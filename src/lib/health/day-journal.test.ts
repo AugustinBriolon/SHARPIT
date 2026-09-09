@@ -20,11 +20,39 @@ describe('day-journal', () => {
 
     const entry = {
       ...emptyDayJournalEntry('2026-09-08'),
-      factors: { sick: 'yes' as const },
+      factors: { late_meal: 'yes' as const },
       caffeineMg: 80,
     };
     const next = upsertDayJournalEntry(empty, entry);
-    expect(next.byDay['2026-09-08']?.factors.sick).toBe('yes');
+    expect(next.byDay['2026-09-08']?.factors.late_meal).toBe('yes');
     expect(next.byDay['2026-09-08']?.caffeineMg).toBe(80);
+  });
+
+  it('accepts new journal factor ids and custom ids, ignores unknown ones', () => {
+    const parsed = parseDayJournalStore({
+      version: 1,
+      byDay: {
+        '2026-09-08': {
+          trainingDayId: '2026-09-08',
+          factors: {
+            alcohol: 'yes',
+            creatine: 'no',
+            menstruation: 'yes',
+            custom_abc123def456: 'yes',
+            not_a_factor: 'yes',
+          },
+          moodLabel: null,
+          hydrationMl: null,
+          caffeineMg: null,
+          updatedAt: '2026-09-08T12:00:00.000Z',
+        },
+      },
+    });
+    expect(parsed.byDay['2026-09-08']?.factors).toEqual({
+      alcohol: 'yes',
+      creatine: 'no',
+      menstruation: 'yes',
+      custom_abc123def456: 'yes',
+    });
   });
 });

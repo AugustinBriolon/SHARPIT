@@ -33,7 +33,12 @@ function createPrismaClient() {
 
 /** Bust dev HMR cache when schema delegates are missing (e.g. after prisma generate). */
 function isPrismaClientCurrent(client: PrismaClient): boolean {
-  return 'condition' in client && 'environmentalObservationRecord' in client;
+  return (
+    'condition' in client &&
+    'environmentalObservationRecord' in client &&
+    'athleteDayJournal' in client &&
+    'athleteActivityStatus' in client
+  );
 }
 
 function getPrismaClient(): PrismaClient {

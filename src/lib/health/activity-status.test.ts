@@ -4,8 +4,6 @@ import {
   ACTIVITY_STATUS_IDS,
   activityStatusLabel,
   activityStatusReminderFact,
-  emptyActivityStatusStore,
-  getActivityStatusStoreServerSnapshot,
   isActivityStatus,
   parseActivityStatusStore,
   resolveActivityStatusStore,
@@ -70,12 +68,5 @@ describe('activity-status', () => {
       value: 'Malade',
       hint: 'Repos avant la charge — reprendre seulement quand le corps suit. Jusqu’au 15 sept. 2026.',
     });
-  });
-
-  it('uses a stable empty store for prerender/server snapshots', () => {
-    expect(emptyActivityStatusStore().updatedAt).toBe('1970-01-01T00:00:00.000Z');
-    expect(getActivityStatusStoreServerSnapshot()).toContain(
-      '"updatedAt":"1970-01-01T00:00:00.000Z"',
-    );
   });
 });

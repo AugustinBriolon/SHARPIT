@@ -1,6 +1,6 @@
 /**
- * Local day-journal entries — subjective context for coaching reads.
- * Persistence is athlete-device local until a Core observation path exists.
+ * Day-journal entries — subjective context for coaching reads.
+ * Source of truth: DB (`AthleteDayJournal`). localStorage is an optimistic cache.
  */
 
 import {
@@ -9,12 +9,15 @@ import {
   isDayContextFactorId,
   isPriorNightFactor,
 } from '@/lib/health/day-context-factors';
+import { isCustomTrackableId } from '@/lib/health/journal-trackables';
 
 export type DayJournalFactorState = 'unset' | 'no' | 'yes';
 
+export type DayJournalFactorKey = DayContextFactorId | string;
+
 export type DayJournalEntry = {
   trainingDayId: string;
-  factors: Partial<Record<DayContextFactorId, DayJournalFactorState>>;
+  factors: Partial<Record<DayJournalFactorKey, DayJournalFactorState>>;
   moodLabel: string | null;
   hydrationMl: number | null;
   caffeineMg: number | null;
@@ -57,19 +60,23 @@ export function parseDayJournalStore(raw: unknown): DayJournalStore {
   return { version: 1, byDay };
 }
 
-function isDayJournalFactorState(value: unknown): value is DayJournalFactorState {
-  return value === 'unset' || value === 'no' || value === 'yes';
+function isDayJournalFactorState(state: unknown): state is DayJournalFactorState {
+  return state === 'unset' || state === 'no' || state === 'yes';
+}
+
+function isValidDayJournalFactorKey(key: string): boolean {
+  return isDayContextFactorId(key) || isCustomTrackableId(key);
 }
 
 function parseDayJournalFactors(
   raw: unknown,
-): Partial<Record<DayContextFactorId, DayJournalFactorState>> {
-  const factors: Partial<Record<DayContextFactorId, DayJournalFactorState>> = {};
+): Partial<Record<DayJournalFactorKey, DayJournalFactorState>> {
   if (!raw || typeof raw !== 'object') {
-    return factors;
+    return {};
   }
+  const factors: Partial<Record<DayJournalFactorKey, DayJournalFactorState>> = {};
   for (const [key, state] of Object.entries(raw as Record<string, unknown>)) {
-    if (!isDayContextFactorId(key) || !isDayJournalFactorState(state)) {
+    if (!isValidDayJournalFactorKey(key) || !isDayJournalFactorState(state)) {
       continue;
     }
     factors[key] = state;
@@ -77,19 +84,15 @@ function parseDayJournalFactors(
   return factors;
 }
 
-function parseOptionalString(value: unknown): string | null {
-  return typeof value === 'string' ? value : null;
+function parseOptionalString(raw: unknown): string | null {
+  return typeof raw === 'string' ? raw : null;
 }
 
-function parseOptionalNumber(value: unknown): number | null {
-  return typeof value === 'number' ? value : null;
+function parseOptionalNumber(raw: unknown): number | null {
+  return typeof raw === 'number' ? raw : null;
 }
 
-function parseDayJournalUpdatedAt(value: unknown): string {
-  return typeof value === 'string' ? value : new Date().toISOString();
-}
-
-function parseDayJournalEntry(dayId: string, raw: unknown): DayJournalEntry | null {
+export function parseDayJournalEntry(dayId: string, raw: unknown): DayJournalEntry | null {
   if (!raw || typeof raw !== 'object') {
     return null;
   }
@@ -100,7 +103,7 @@ function parseDayJournalEntry(dayId: string, raw: unknown): DayJournalEntry | nu
     moodLabel: parseOptionalString(record.moodLabel),
     hydrationMl: parseOptionalNumber(record.hydrationMl),
     caffeineMg: parseOptionalNumber(record.caffeineMg),
-    updatedAt: parseDayJournalUpdatedAt(record.updatedAt),
+    updatedAt: typeof record.updatedAt === 'string' ? record.updatedAt : new Date().toISOString(),
   };
 }
 
@@ -151,6 +154,114 @@ export function upsertDayJournalEntry(
   };
 }
 
+export async function fetchDayJournalEntryFromServer(
+  trainingDayId: string,
+): Promise<DayJournalEntry | null> {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+  try {
+    const res = await fetch(`/api/day-journal?day=${encodeURIComponent(trainingDayId)}`);
+    if (!res.ok) {
+      return null;
+    }
+    const data = (await res.json()) as { entry?: unknown };
+    const parsed = parseDayJournalEntry(trainingDayId, data.entry);
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+export async function persistDayJournalEntryToServer(
+  entry: DayJournalEntry,
+  signal?: AbortSignal,
+): Promise<DayJournalEntry | null> {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+  try {
+    const res = await fetch('/api/day-journal', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        trainingDayId: entry.trainingDayId,
+        factors: entry.factors,
+        moodLabel: entry.moodLabel,
+        hydrationMl: entry.hydrationMl,
+        caffeineMg: entry.caffeineMg,
+      }),
+      signal,
+    });
+    if (!res.ok) {
+      return null;
+    }
+    const data = (await res.json()) as { entry?: unknown };
+    return parseDayJournalEntry(entry.trainingDayId, data.entry);
+  } catch (error) {
+    if (error instanceof DOMException && error.name === 'AbortError') {
+      return null;
+    }
+    return null;
+  }
+}
+
+function isDayJournalEntryEmpty(entry: DayJournalEntry): boolean {
+  return (
+    !entry.moodLabel &&
+    entry.hydrationMl === null &&
+    entry.caffeineMg === null &&
+    Object.keys(entry.factors).length === 0
+  );
+}
+
+function hasDayJournalData(entry: DayJournalEntry): boolean {
+  return (
+    Boolean(entry.moodLabel) ||
+    entry.hydrationMl !== null ||
+    entry.caffeineMg !== null ||
+    Object.keys(entry.factors).length > 0
+  );
+}
+
+async function migrateLocalDayJournalIfNeeded(
+  local: DayJournalEntry,
+  remote: DayJournalEntry,
+): Promise<DayJournalEntry> {
+  if (!isDayJournalEntryEmpty(remote) || !hasDayJournalData(local)) {
+    return remote;
+  }
+  const pushed = await persistDayJournalEntryToServer(local);
+  return pushed ?? local;
+}
+
+/**
+ * Load journal for a day: show local cache immediately, prefer DB when available.
+ * If DB is empty and local has content, push local once (one-shot migration).
+ */
+export async function loadDayJournalEntry(trainingDayId: string): Promise<DayJournalEntry> {
+  const local = readDayJournalStore().byDay[trainingDayId] ?? emptyDayJournalEntry(trainingDayId);
+  const remote = await fetchDayJournalEntryFromServer(trainingDayId);
+  if (!remote) {
+    return local;
+  }
+  return migrateLocalDayJournalIfNeeded(local, remote);
+}
+
+export async function saveDayJournalEntry(entry: DayJournalEntry): Promise<DayJournalEntry> {
+  const withStamp: DayJournalEntry = {
+    ...entry,
+    updatedAt: new Date().toISOString(),
+  };
+  writeDayJournalStore(upsertDayJournalEntry(readDayJournalStore(), withStamp));
+  const remote = await persistDayJournalEntryToServer(withStamp);
+  if (remote) {
+    writeDayJournalStore(upsertDayJournalEntry(readDayJournalStore(), remote));
+    return remote;
+  }
+  return withStamp;
+}
+
 export function cycleFactorState(
   current: DayJournalFactorState | undefined,
 ): DayJournalFactorState {
@@ -171,6 +282,3 @@ export const JOURNAL_TOGGLE_FACTOR_IDS: readonly DayContextFactorId[] =
 
 export const JOURNAL_PRIOR_NIGHT_FACTOR_IDS: readonly DayContextFactorId[] =
   JOURNAL_TOGGLE_FACTOR_IDS.filter((id) => isPriorNightFactor(id));
-
-export const JOURNAL_DAYTIME_FACTOR_IDS: readonly DayContextFactorId[] =
-  JOURNAL_TOGGLE_FACTOR_IDS.filter((id) => !isPriorNightFactor(id));

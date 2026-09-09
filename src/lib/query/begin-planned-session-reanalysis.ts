@@ -8,43 +8,59 @@ export type PlannedSessionAnalysisSnapshot = {
   analyzedAt: ClientPlannedSession['analyzedAt'];
 };
 
-function readSessionAnalysis(
+function snapshotFromPlannedSession(
+  session: Pick<ClientPlannedSession, 'analysis' | 'analyzedAt'>,
+): PlannedSessionAnalysisSnapshot {
+  return {
+    analysis: session.analysis ?? null,
+    analyzedAt: session.analyzedAt ?? null,
+  };
+}
+
+function readFromPlannedSessionsList(
   queryClient: QueryClient,
   sessionId: string,
 ): PlannedSessionAnalysisSnapshot | null {
   const sessions = queryClient.getQueryData<ClientPlannedSession[]>(queryKeys.plannedSessions);
-  const fromList = sessions?.find((item) => item.id === sessionId);
-  if (fromList) {
-    return {
-      analysis: fromList.analysis ?? null,
-      analyzedAt: fromList.analyzedAt ?? null,
-    };
-  }
+  const match = sessions?.find((item) => item.id === sessionId);
+  return match ? snapshotFromPlannedSession(match) : null;
+}
 
+function readFromActivitiesList(
+  queryClient: QueryClient,
+  sessionId: string,
+): PlannedSessionAnalysisSnapshot | null {
   const activities = queryClient.getQueryData<ClientActivity[]>(queryKeys.activities);
-  const fromActivity = activities?.find(
+  const plannedSession = activities?.find(
     (activity) => activity.plannedSession?.id === sessionId,
   )?.plannedSession;
-  if (fromActivity) {
-    return {
-      analysis: fromActivity.analysis ?? null,
-      analyzedAt: fromActivity.analyzedAt ?? null,
-    };
-  }
+  return plannedSession ? snapshotFromPlannedSession(plannedSession) : null;
+}
 
+function readFromActivityDetails(
+  queryClient: QueryClient,
+  sessionId: string,
+): PlannedSessionAnalysisSnapshot | null {
   for (const [, detail] of queryClient.getQueriesData<ClientActivityDetail>({
     queryKey: ['activity'],
   })) {
     if (detail?.plannedSession?.id !== sessionId) {
       continue;
     }
-    return {
-      analysis: detail.plannedSession.analysis ?? null,
-      analyzedAt: detail.plannedSession.analyzedAt ?? null,
-    };
+    return snapshotFromPlannedSession(detail.plannedSession);
   }
-
   return null;
+}
+
+function readSessionAnalysis(
+  queryClient: QueryClient,
+  sessionId: string,
+): PlannedSessionAnalysisSnapshot | null {
+  return (
+    readFromPlannedSessionsList(queryClient, sessionId) ??
+    readFromActivitiesList(queryClient, sessionId) ??
+    readFromActivityDetails(queryClient, sessionId)
+  );
 }
 
 /**

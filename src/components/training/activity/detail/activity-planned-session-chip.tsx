@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { CalendarCheck, Loader2 } from 'lucide-react';
 import { ActivityMetaChip } from '@/components/training/activity/detail/activity-meta-chip';
-import { useActivities, usePlannedSessions } from '@/hooks/use-data';
 import { useAppModal } from '@/providers/app-modal-provider';
 import {
   plannedSessionChipLabel,
@@ -19,51 +18,6 @@ import type { PlannedSessionSummary } from './types';
 
 const POLL_MS = 3_000;
 const POLL_MAX_MS = 120_000;
-
-type PlannedAnalysisPollContext = {
-  sessionId: string;
-  seed: PlannedSessionSummary;
-  queryClient: ReturnType<typeof useQueryClient>;
-  setLive: (value: PlannedSessionSummary) => void;
-  isCancelled: () => boolean;
-};
-
-function applyPlannedAnalysisUpdate(
-  updated: Awaited<ReturnType<typeof fetchPlannedSessionById>>,
-  ctx: PlannedAnalysisPollContext,
-): boolean {
-  if (!updated.analyzedAt || !updated.analysis) {
-    return false;
-  }
-  patchPlannedSessionAnalysisInCaches(ctx.queryClient, ctx.sessionId, {
-    analysis: updated.analysis,
-    analyzedAt: updated.analyzedAt,
-  });
-  ctx.setLive({
-    ...ctx.seed,
-    analysis: updated.analysis,
-    analyzedAt: updated.analyzedAt,
-  });
-  return true;
-}
-
-async function pollPlannedAnalysis(ctx: PlannedAnalysisPollContext): Promise<void> {
-  const startedAt = Date.now();
-  while (!ctx.isCancelled() && Date.now() - startedAt < POLL_MAX_MS) {
-    await new Promise((resolve) => setTimeout(resolve, POLL_MS));
-    if (ctx.isCancelled()) {
-      return;
-    }
-    try {
-      const updated = await fetchPlannedSessionById(ctx.sessionId);
-      if (applyPlannedAnalysisUpdate(updated, ctx)) {
-        return;
-      }
-    } catch {
-      // best-effort
-    }
-  }
-}
 
 /**
  * Polls until planned-session analysis lands, then patches React Query caches
@@ -81,20 +35,47 @@ function usePlannedAnalysisLive(planned: PlannedSessionSummary, enabled: boolean
     }
 
     let cancelled = false;
+    const startedAt = Date.now();
     const seed = planned;
 
-    void pollPlannedAnalysis({
-      sessionId,
-      seed,
-      queryClient,
-      setLive: (value) => {
-        if (!cancelled) {
-          setLive(value);
-        }
-      },
-      isCancelled: () => cancelled,
-    });
+    async function applyAnalysisUpdate(
+      analysis: NonNullable<PlannedSessionSummary['analysis']>,
+      analyzedAt: NonNullable<PlannedSessionSummary['analyzedAt']>,
+    ): Promise<void> {
+      patchPlannedSessionAnalysisInCaches(queryClient, sessionId, { analysis, analyzedAt });
+      if (cancelled) {
+        return;
+      }
+      setLive({ ...seed, analysis, analyzedAt });
+    }
 
+    async function pollOnce(): Promise<boolean> {
+      try {
+        const updated = await fetchPlannedSessionById(sessionId);
+        if (!updated.analyzedAt || !updated.analysis) {
+          return false;
+        }
+        await applyAnalysisUpdate(updated.analysis, updated.analyzedAt);
+        return true;
+      } catch {
+        return false;
+      }
+    }
+
+    async function tick() {
+      while (!cancelled && Date.now() - startedAt < POLL_MAX_MS) {
+        await new Promise((resolve) => setTimeout(resolve, POLL_MS));
+        if (cancelled) {
+          return;
+        }
+        const done = await pollOnce();
+        if (done) {
+          return;
+        }
+      }
+    }
+
+    void tick();
     return () => {
       cancelled = true;
     };
@@ -102,34 +83,6 @@ function usePlannedAnalysisLive(planned: PlannedSessionSummary, enabled: boolean
   }, [enabled, queryClient, sessionId]);
 
   return live ?? planned;
-}
-
-/** Prefer React Query analysis (cleared during recalculate) over RSC seed props. */
-function useCachedPlannedSessionOverlay(planned: PlannedSessionSummary): PlannedSessionSummary {
-  const { data: sessions } = usePlannedSessions();
-  const { data: activities } = useActivities();
-
-  const fromSessions = sessions?.find((session) => session.id === planned.id);
-  if (fromSessions) {
-    return {
-      ...planned,
-      analysis: fromSessions.analysis,
-      analyzedAt: fromSessions.analyzedAt,
-    };
-  }
-
-  const fromActivity = activities?.find(
-    (activity) => activity.plannedSession?.id === planned.id,
-  )?.plannedSession;
-  if (fromActivity) {
-    return {
-      ...planned,
-      analysis: fromActivity.analysis,
-      analyzedAt: fromActivity.analyzedAt,
-    };
-  }
-
-  return planned;
 }
 
 /**
@@ -148,15 +101,10 @@ export function ActivityPlannedSessionChip({
 }) {
   const queryClient = useQueryClient();
   const { openPlannedSession } = useAppModal();
-  const cachedPlanned = useCachedPlannedSessionOverlay(planned);
-  const hasCachedAnalysis = Boolean(parseSessionAnalysis(cachedPlanned.analysis));
-  const seedHadAnalysis = Boolean(parseSessionAnalysis(planned.analysis));
-  // Recalculate clears RQ while RSC seed still holds the previous score.
-  const reanalysisPending = !hasCachedAnalysis && seedHadAnalysis;
-  const showingLoading = !hasCachedAnalysis && (isAnalyzing || reanalysisPending);
-  const livePlanned = usePlannedAnalysisLive(cachedPlanned, showingLoading);
+  const stillPending = isAnalyzing && !parseSessionAnalysis(planned.analysis);
+  const livePlanned = usePlannedAnalysisLive(planned, stillPending);
   const analysisReady = Boolean(parseSessionAnalysis(livePlanned.analysis));
-  const showingAnalysis = showingLoading && !analysisReady;
+  const showingAnalysis = stillPending && !analysisReady;
 
   function prefetch() {
     prefetchPlannedSessionDetail(queryClient, planned.id);

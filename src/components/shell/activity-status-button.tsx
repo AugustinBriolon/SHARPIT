@@ -15,6 +15,7 @@ import {
   formatUntilDateFr,
   getActivityStatusStoreServerSnapshot,
   getActivityStatusStoreSnapshot,
+  hydrateActivityStatusFromServer,
   setActivityStatus,
   subscribeActivityStatus,
   todayIsoDate,
@@ -59,30 +60,29 @@ type TravelContextResponse = {
   contexts?: TravelContextItem[];
 };
 
-function firstNonEmptyTravelList(data: TravelContextResponse): TravelContextItem[] | null {
-  if (data.contexts && data.contexts.length > 0) {
-    return data.contexts;
+function firstNonEmptyList(...lists: (TravelContextItem[] | undefined)[]): TravelContextItem[] {
+  for (const list of lists) {
+    if (list && list.length > 0) {
+      return list;
+    }
   }
-  if (data.activeList && data.activeList.length > 0) {
-    return data.activeList;
-  }
-  return null;
+  return [];
 }
 
-function travelPoolRaw(data: TravelContextResponse | undefined): TravelContextItem[] {
+function rawTravelList(data: TravelContextResponse | undefined): TravelContextItem[] {
   if (!data) {
     return [];
   }
-  const list = firstNonEmptyTravelList(data);
-  if (list) {
-    return list;
+  const fromLists = firstNonEmptyList(data.contexts, data.activeList);
+  if (fromLists.length > 0) {
+    return fromLists;
   }
   return data.active ? [data.active] : [];
 }
 
 function travelPool(data: TravelContextResponse | undefined): TravelContextItem[] {
   const today = todayIsoDate();
-  return travelPoolRaw(data).filter((travel) => travel.endDate.slice(0, 10) >= today);
+  return rawTravelList(data).filter((travel) => travel.endDate.slice(0, 10) >= today);
 }
 
 function travelTitle(travel: TravelContextItem): string {
@@ -97,269 +97,115 @@ function parseStoreSnapshot(raw: string): ActivityStatusStore {
   }
 }
 
-function retentionValueLabel(retention: ActivityStatusRetention): string {
-  if (retention.kind === 'until_date') {
-    return `Jusqu’au ${formatUntilDateFr(retention.untilDate)}`;
+function retentionValueLabel(kind: ActivityStatusRetention['kind'], untilDate: string): string {
+  if (kind === 'until_date') {
+    return `Jusqu’au ${formatUntilDateFr(untilDate)}`;
   }
   return 'Jusqu’à modification';
 }
 
-function currentRetention(store: ActivityStatusStore): ActivityStatusRetention {
-  if (store.status === 'active') {
-    return { kind: 'until_modified' };
-  }
-  return store.retention;
-}
-
-function resolveTravelRetention(
-  travel: TravelContextItem | null | undefined,
-  fallback: ActivityStatusRetention,
+function buildRetention(
+  kind: ActivityStatusRetention['kind'],
+  untilDate: string,
 ): ActivityStatusRetention {
-  if (!travel?.endDate) {
-    return fallback;
+  if (kind === 'until_date') {
+    return { kind: 'until_date', untilDate };
   }
-  return { kind: 'until_date', untilDate: travel.endDate.slice(0, 10) };
+  return { kind: 'until_modified' };
 }
 
-type StatusController = {
-  store: ActivityStatusStore;
-  retention: ActivityStatusRetention;
-  untilDate: string;
-  travels: TravelContextItem[];
-  linkedTravel: TravelContextItem | null;
-  travelsPending: boolean;
-  onPickStatus: (next: ActivityStatusId) => void;
-  onPickTravel: (id: string) => void;
-  pickUntilModified: () => void;
-  pickUntilDate: () => void;
-  onUntilDateChange: (value: string) => void;
+function syncDraftFromStore(
+  store: ActivityStatusStore,
+  setters: {
+    setDraftStatus: (status: ActivityStatusId) => void;
+    setRetentionKind: (kind: ActivityStatusRetention['kind']) => void;
+    setUntilDate: (date: string) => void;
+    setTravelId: (id: string | null) => void;
+    setRetentionOpen: (open: boolean) => void;
+    setTravelOpen: (open: boolean) => void;
+  },
+): void {
+  setters.setDraftStatus(store.status);
+  setters.setRetentionKind(store.retention.kind);
+  setters.setUntilDate(
+    store.retention.kind === 'until_date' ? store.retention.untilDate : todayIsoDate(),
+  );
+  setters.setTravelId(store.travelId);
+  setters.setRetentionOpen(false);
+  setters.setTravelOpen(false);
+}
+
+type StatusOptionListProps = {
+  draftStatus: ActivityStatusId;
+  onPickStatus: (id: ActivityStatusId) => void;
 };
 
-function useActivityStatusController(open: boolean): StatusController {
-  const storeSnapshot = useSyncExternalStore(
-    subscribeActivityStatus,
-    getActivityStatusStoreSnapshot,
-    getActivityStatusStoreServerSnapshot,
-  );
-  const store = useMemo(() => parseStoreSnapshot(storeSnapshot), [storeSnapshot]);
-
-  const retention = currentRetention(store);
-  const untilDate = retention.kind === 'until_date' ? retention.untilDate : '';
-
-  const travelsQuery = useQuery({
-    queryKey: queryKeys.travelContext,
-    queryFn: async (): Promise<TravelContextResponse> => {
-      const res = await fetch('/api/travel-context');
-      if (!res.ok) {
-        throw new Error('travel context fetch failed');
-      }
-      return res.json();
-    },
-    enabled: open && store.status === 'paused',
-    staleTime: 60_000,
-  });
-  const travels = open && store.status === 'paused' ? travelPool(travelsQuery.data) : [];
-  const linkedTravel = travels.find((entry) => entry.id === store.travelId) ?? null;
-
-  function persistNonActive(
-    status: Exclude<ActivityStatusId, 'active'>,
-    next: {
-      retention?: ActivityStatusRetention;
-      travelId?: string | null;
-    } = {},
-  ) {
-    const nextRetention = next.retention ?? currentRetention(store);
-    setActivityStatus({
-      status,
-      retention: nextRetention.kind === 'until_date' ? nextRetention : { kind: 'until_modified' },
-      travelId:
-        status === 'paused' ? (next.travelId !== undefined ? next.travelId : store.travelId) : null,
-    });
-  }
-
-  function onPickStatus(next: ActivityStatusId) {
-    if (next === 'active') {
-      setActivityStatus({ status: 'active' });
-      return;
-    }
-    const nextRetention =
-      store.status === 'active' ? { kind: 'until_modified' as const } : currentRetention(store);
-    persistNonActive(next, {
-      retention: nextRetention,
-      travelId: next === 'paused' ? store.travelId : null,
-    });
-  }
-
-  function onPickTravel(id: string) {
-    if (store.status !== 'paused') {
-      return;
-    }
-    const nextId = id.length > 0 ? id : null;
-    const travel = nextId ? travels.find((entry) => entry.id === nextId) : null;
-    const nextRetention = resolveTravelRetention(travel, currentRetention(store));
-    persistNonActive('paused', { travelId: nextId, retention: nextRetention });
-  }
-
-  function pickUntilModified() {
-    if (store.status === 'active') {
-      return;
-    }
-    persistNonActive(store.status, { retention: { kind: 'until_modified' } });
-  }
-
-  function pickUntilDate() {
-    if (store.status === 'active') {
-      return;
-    }
-    const date = untilDate || todayIsoDate();
-    persistNonActive(store.status, {
-      retention: { kind: 'until_date', untilDate: date },
-    });
-  }
-
-  function onUntilDateChange(value: string) {
-    if (store.status === 'active' || !value) {
-      return;
-    }
-    persistNonActive(store.status, {
-      retention: { kind: 'until_date', untilDate: value },
-    });
-  }
-
-  return {
-    store,
-    retention,
-    untilDate,
-    travels,
-    linkedTravel,
-    travelsPending: travelsQuery.isPending,
-    onPickStatus,
-    onPickTravel,
-    pickUntilModified,
-    pickUntilDate,
-    onUntilDateChange,
-  };
-}
-
-function ActivityStatusOption({
-  option,
-  selected,
-  onPick,
-}: {
-  option: (typeof ACTIVITY_STATUS_OPTIONS)[number];
-  selected: boolean;
-  onPick: (id: ActivityStatusId) => void;
-}) {
-  const OptionIcon = STATUS_ICON[option.id];
-  return (
-    <button
-      aria-checked={selected}
-      role="radio"
-      type="button"
-      className={cn(
-        'flex w-full items-center gap-3 rounded-xl px-2.5 py-2.5 text-left',
-        'transition-colors duration-150 ease-out',
-        selected ? 'bg-muted/70' : 'hover:bg-muted/40',
-      )}
-      onClick={() => onPick(option.id)}
-    >
-      <span
-        className={cn(
-          'inline-flex size-9 shrink-0 items-center justify-center rounded-xl',
-          STATUS_ICON_WELL[option.id],
-        )}
-      >
-        <OptionIcon className="size-4" strokeWidth={1.8} aria-hidden />
-      </span>
-      <span className="min-w-0 flex-1">
-        <span className="text-foreground block text-sm font-medium">{option.label}</span>
-        <span className="text-muted-foreground mt-0.5 block text-xs text-pretty">
-          {option.hint}
-        </span>
-      </span>
-      {selected ? (
-        <Check className="text-foreground size-4 shrink-0" strokeWidth={2.25} aria-hidden />
-      ) : (
-        <span className="size-4 shrink-0" aria-hidden />
-      )}
-    </button>
-  );
-}
-
-function ActivityStatusOptionList({
-  currentStatus,
-  onPickStatus,
-}: {
-  currentStatus: ActivityStatusId;
-  onPickStatus: (id: ActivityStatusId) => void;
-}) {
+function StatusOptionList({ draftStatus, onPickStatus }: StatusOptionListProps) {
   return (
     <div aria-label="Choisir un statut" className="space-y-0.5" role="radiogroup">
-      {ACTIVITY_STATUS_OPTIONS.map((option) => (
-        <ActivityStatusOption
-          key={option.id}
-          option={option}
-          selected={currentStatus === option.id}
-          onPick={onPickStatus}
-        />
-      ))}
+      {ACTIVITY_STATUS_OPTIONS.map((option) => {
+        const selected = draftStatus === option.id;
+        const OptionIcon = STATUS_ICON[option.id];
+        return (
+          <button
+            key={option.id}
+            aria-checked={selected}
+            role="radio"
+            type="button"
+            className={cn(
+              'flex w-full items-center gap-3 rounded-xl px-2.5 py-2.5 text-left',
+              'transition-colors duration-150 ease-out',
+              selected ? 'bg-muted/70' : 'hover:bg-muted/40',
+            )}
+            onClick={() => onPickStatus(option.id)}
+          >
+            <span
+              className={cn(
+                'inline-flex size-9 shrink-0 items-center justify-center rounded-xl',
+                STATUS_ICON_WELL[option.id],
+              )}
+            >
+              <OptionIcon className="size-4" strokeWidth={1.8} aria-hidden />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="text-foreground block text-sm font-medium">{option.label}</span>
+              <span className="text-muted-foreground mt-0.5 block text-xs text-pretty">
+                {option.hint}
+              </span>
+            </span>
+            {selected ? (
+              <Check className="text-foreground size-4 shrink-0" strokeWidth={2.25} aria-hidden />
+            ) : (
+              <span className="size-4 shrink-0" aria-hidden />
+            )}
+          </button>
+        );
+      })}
     </div>
   );
 }
 
-function RetentionUntilDatePanel({
-  untilDate,
-  onPickUntilDate,
-  onUntilDateChange,
-}: {
+type RetentionSectionProps = {
+  retentionRegionId: string;
+  retentionOpen: boolean;
+  retentionKind: ActivityStatusRetention['kind'];
   untilDate: string;
+  onToggle: () => void;
+  onPickUntilModified: () => void;
   onPickUntilDate: () => void;
-  onUntilDateChange: (value: string) => void;
-}) {
-  return (
-    <div className="bg-muted/60 rounded-lg px-2.5 py-2">
-      <button
-        className="flex w-full items-center justify-between text-left text-sm"
-        type="button"
-        onClick={onPickUntilDate}
-      >
-        <span>Jusqu’à une date</span>
-        <Check className="size-3.5" strokeWidth={2.25} aria-hidden />
-      </button>
-      <input
-        aria-label="Date de fin du statut"
-        className="border-border bg-background text-foreground mt-2 h-9 w-full rounded-lg border px-2 text-sm"
-        min={todayIsoDate()}
-        type="date"
-        value={untilDate || todayIsoDate()}
-        onChange={(event) => onUntilDateChange(event.target.value)}
-      />
-    </div>
-  );
-}
+  onUntilDateChange: (date: string) => void;
+};
 
-function RetentionPicker({
-  retention,
-  untilDate,
-  retentionOpen,
+function RetentionSection({
   retentionRegionId,
+  retentionOpen,
+  retentionKind,
+  untilDate,
   onToggle,
   onPickUntilModified,
   onPickUntilDate,
   onUntilDateChange,
-}: {
-  retention: ActivityStatusRetention;
-  untilDate: string;
-  retentionOpen: boolean;
-  retentionRegionId: string;
-  onToggle: () => void;
-  onPickUntilModified: () => void;
-  onPickUntilDate: () => void;
-  onUntilDateChange: (value: string) => void;
-}) {
-  const untilModifiedSelected = retention.kind === 'until_modified';
-  const untilDateSelected = retention.kind === 'until_date';
-
+}: RetentionSectionProps) {
   return (
     <>
       <button
@@ -376,7 +222,7 @@ function RetentionPicker({
         <History className="size-4 shrink-0 opacity-70" strokeWidth={1.75} aria-hidden />
         <span className="min-w-0 flex-1 text-sm">Conserver le statut</span>
         <span className="max-w-40 truncate text-sm opacity-80">
-          {retentionValueLabel(retention)}
+          {retentionValueLabel(retentionKind, untilDate)}
         </span>
         <NavArrowRight
           className={cn(
@@ -399,55 +245,67 @@ function RetentionPicker({
             className={cn(
               'flex w-full items-center justify-between rounded-lg px-2.5 py-2 text-left text-sm',
               'hover:bg-muted/50 transition-colors duration-150 ease-out',
-              untilModifiedSelected && 'bg-muted/60',
+              retentionKind === 'until_modified' && 'bg-muted/60',
             )}
             onClick={onPickUntilModified}
           >
             <span>Jusqu’à modification</span>
-            {untilModifiedSelected ? (
+            {retentionKind === 'until_modified' ? (
               <Check className="size-3.5" strokeWidth={2.25} aria-hidden />
             ) : null}
           </button>
-          {untilDateSelected ? (
-            <RetentionUntilDatePanel
-              untilDate={untilDate}
-              onPickUntilDate={onPickUntilDate}
-              onUntilDateChange={onUntilDateChange}
-            />
-          ) : (
-            <div className="rounded-lg px-2.5 py-2">
-              <button
-                className="flex w-full items-center justify-between text-left text-sm"
-                type="button"
-                onClick={onPickUntilDate}
-              >
-                <span>Jusqu’à une date</span>
-              </button>
-            </div>
-          )}
+          <div
+            className={cn(
+              'rounded-lg px-2.5 py-2',
+              retentionKind === 'until_date' && 'bg-muted/60',
+            )}
+          >
+            <button
+              className="flex w-full items-center justify-between text-left text-sm"
+              type="button"
+              onClick={onPickUntilDate}
+            >
+              <span>Jusqu’à une date</span>
+              {retentionKind === 'until_date' ? (
+                <Check className="size-3.5" strokeWidth={2.25} aria-hidden />
+              ) : null}
+            </button>
+            {retentionKind === 'until_date' ? (
+              <input
+                aria-label="Date de fin du statut"
+                className="border-border bg-background text-foreground mt-2 h-9 w-full rounded-lg border px-2 text-sm"
+                min={todayIsoDate()}
+                type="date"
+                value={untilDate}
+                onChange={(event) => onUntilDateChange(event.target.value)}
+              />
+            ) : null}
+          </div>
         </div>
       ) : null}
     </>
   );
 }
 
-function TravelLinkPicker({
-  travelOpen,
-  linkedTravel,
-  travels,
-  travelsPending,
-  travelId,
-  onToggle,
-  onPickTravel,
-}: {
+type TravelLinkSectionProps = {
   travelOpen: boolean;
+  travelId: string | null;
   linkedTravel: TravelContextItem | null;
   travels: TravelContextItem[];
   travelsPending: boolean;
-  travelId: string | null | undefined;
   onToggle: () => void;
   onPickTravel: (id: string) => void;
-}) {
+};
+
+function TravelLinkSection({
+  travelOpen,
+  travelId,
+  linkedTravel,
+  travels,
+  travelsPending,
+  onToggle,
+  onPickTravel,
+}: TravelLinkSectionProps) {
   return (
     <>
       <button
@@ -499,106 +357,108 @@ function TravelLinkPicker({
   );
 }
 
-function ActivityStatusDrawerBody({
-  controller,
-  retentionOpen,
-  travelOpen,
-  retentionRegionId,
-  onToggleRetention,
-  onToggleTravel,
-  onPickStatusWithPanels,
-  onPickUntilModifiedWithClose,
-}: {
-  controller: StatusController;
-  retentionOpen: boolean;
-  travelOpen: boolean;
-  retentionRegionId: string;
-  onToggleRetention: () => void;
-  onToggleTravel: () => void;
-  onPickStatusWithPanels: (id: ActivityStatusId) => void;
-  onPickUntilModifiedWithClose: () => void;
-}) {
-  const showTravel = controller.store.status === 'paused';
-
-  return (
-    <div className="flex-1 overflow-y-auto px-2 py-2 pb-[max(1rem,env(safe-area-inset-bottom))]">
-      <ActivityStatusOptionList
-        currentStatus={controller.store.status}
-        onPickStatus={onPickStatusWithPanels}
-      />
-
-      <div className="border-foreground/8 mt-2 border-t px-1 pt-1">
-        <RetentionPicker
-          retention={controller.retention}
-          retentionOpen={retentionOpen}
-          retentionRegionId={retentionRegionId}
-          untilDate={controller.untilDate}
-          onPickUntilDate={controller.pickUntilDate}
-          onPickUntilModified={onPickUntilModifiedWithClose}
-          onToggle={onToggleRetention}
-          onUntilDateChange={controller.onUntilDateChange}
-        />
-
-        {showTravel ? (
-          <TravelLinkPicker
-            linkedTravel={controller.linkedTravel}
-            travelId={controller.store.travelId}
-            travelOpen={travelOpen}
-            travels={controller.travels}
-            travelsPending={controller.travelsPending}
-            onPickTravel={controller.onPickTravel}
-            onToggle={onToggleTravel}
-          />
-        ) : null}
-      </div>
-    </div>
-  );
-}
-
 /**
  * Athlete activity mode — Today (`/`) only.
- * Each change persists immediately (no commit button). Drawer stays open.
+ * Status pick stays open; commit via muted « Mettre à jour ».
+ * Retention is a quiet row that discloses calendar options on tap.
  */
 export function ActivityStatusButton({ className }: { className?: string }) {
+  const storeSnapshot = useSyncExternalStore(
+    subscribeActivityStatus,
+    getActivityStatusStoreSnapshot,
+    getActivityStatusStoreServerSnapshot,
+  );
+  const store = useMemo(() => parseStoreSnapshot(storeSnapshot), [storeSnapshot]);
   const [open, setOpen] = useState(false);
+  const [draftStatus, setDraftStatus] = useState<ActivityStatusId>(store.status);
+  const [retentionKind, setRetentionKind] = useState<ActivityStatusRetention['kind']>(
+    store.retention.kind,
+  );
+  const [untilDate, setUntilDate] = useState(
+    store.retention.kind === 'until_date' ? store.retention.untilDate : todayIsoDate(),
+  );
+  const [travelId, setTravelId] = useState<string | null>(store.travelId);
   const [retentionOpen, setRetentionOpen] = useState(false);
   const [travelOpen, setTravelOpen] = useState(false);
   const retentionRegionId = useId();
-  const controller = useActivityStatusController(open);
+
+  const travelsQuery = useQuery({
+    queryKey: queryKeys.travelContext,
+    queryFn: async (): Promise<TravelContextResponse> => {
+      const res = await fetch('/api/travel-context');
+      if (!res.ok) {
+        throw new Error('travel context fetch failed');
+      }
+      return res.json();
+    },
+    enabled: open && draftStatus === 'paused',
+    staleTime: 60_000,
+  });
+  const travels = travelPool(travelsQuery.data);
+  const linkedTravel = travels.find((entry) => entry.id === travelId) ?? null;
+
+  useEffect(() => {
+    void hydrateActivityStatusFromServer();
+  }, []);
 
   useEffect(() => {
     if (!open) {
       return;
     }
-    setRetentionOpen(false);
-    setTravelOpen(false);
-  }, [open]);
+    syncDraftFromStore(store, {
+      setDraftStatus,
+      setRetentionKind,
+      setUntilDate,
+      setTravelId,
+      setRetentionOpen,
+      setTravelOpen,
+    });
+  }, [open, store]);
 
-  const Icon = STATUS_ICON[controller.store.status];
+  const Icon = STATUS_ICON[store.status];
 
-  function onPickStatusWithPanels(next: ActivityStatusId) {
-    controller.onPickStatus(next);
-    if (next !== 'paused') {
+  function applyDraft() {
+    if (draftStatus === 'active') {
+      setActivityStatus({ status: 'active' });
+      setOpen(false);
+      return;
+    }
+    setActivityStatus({
+      status: draftStatus,
+      retention: buildRetention(retentionKind, untilDate),
+      travelId: draftStatus === 'paused' ? travelId : null,
+    });
+    setOpen(false);
+  }
+
+  function onPickStatus(next: ActivityStatusId) {
+    setDraftStatus(next);
+    if (next === 'active' || next !== 'paused') {
+      setTravelId(null);
       setTravelOpen(false);
     }
   }
 
-  function onToggleRetention() {
+  function onPickTravel(id: string) {
+    const nextId = id.length > 0 ? id : null;
+    setTravelId(nextId);
+    if (!nextId) {
+      return;
+    }
+    const travel = travels.find((entry) => entry.id === nextId);
+    if (travel?.endDate) {
+      setRetentionKind('until_date');
+      setUntilDate(travel.endDate.slice(0, 10));
+    }
+  }
+
+  function toggleRetention() {
     setRetentionOpen((prev) => !prev);
     setTravelOpen(false);
   }
 
-  function onToggleTravel() {
+  function toggleTravel() {
     setTravelOpen((prev) => !prev);
-    setRetentionOpen(false);
-  }
-
-  function onPickUntilModifiedWithClose() {
-    if (controller.store.status === 'active') {
-      setRetentionOpen(false);
-      return;
-    }
-    controller.pickUntilModified();
     setRetentionOpen(false);
   }
 
@@ -611,13 +471,13 @@ export function ActivityStatusButton({ className }: { className?: string }) {
         className={cn(
           'inline-flex h-8 max-w-44 items-center gap-1.5 rounded-lg border px-2.5 text-[0.8rem] font-medium',
           'transition-colors duration-150 ease-out',
-          STATUS_TRIGGER_CLASS[controller.store.status],
+          STATUS_TRIGGER_CLASS[store.status],
           className,
         )}
         onClick={() => setOpen(true)}
       >
         <Icon className="size-3.5 shrink-0" strokeWidth={1.8} aria-hidden />
-        <span className="truncate">{activityStatusLabel(controller.store.status)}</span>
+        <span className="truncate">{activityStatusLabel(store.status)}</span>
       </button>
 
       <Drawer.Root open={open} onOpenChange={setOpen}>
@@ -625,21 +485,17 @@ export function ActivityStatusButton({ className }: { className?: string }) {
           <Drawer.Backdrop
             className={cn(
               'bg-foreground/40 fixed inset-0 z-60',
-              'transition-opacity duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]',
-              'data-ending-style:opacity-0 data-starting-style:opacity-0',
-              'motion-reduce:transition-none',
+              'transition-opacity duration-250 ease-out',
+              'data-closed:opacity-0 data-closed:duration-150',
             )}
           />
           <Drawer.Viewport className="fixed inset-0 z-61 flex flex-col justify-end">
             <Drawer.Popup
               className={cn(
-                'bg-background flex max-h-[min(92dvh,36rem)] flex-col rounded-t-2xl outline-none',
-                // Base UI + Tailwind v4: animate `transform` (not `translate-*`).
-                '[transform:translate3d(0,var(--drawer-swipe-movement-y,0px),0)]',
-                'transition-[transform,opacity] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)]',
-                'data-starting-style:[transform:translate3d(0,100%,0)]',
-                'data-ending-style:[transform:translate3d(0,100%,0)]',
-                'motion-reduce:transition-none',
+                'bg-background flex max-h-[min(92dvh,36rem)] flex-col rounded-t-2xl',
+                'transition-transform duration-250 ease-[cubic-bezier(0.32,0.72,0,1)]',
+                'starting:translate-y-full',
+                'data-closed:translate-y-full data-closed:duration-150 data-closed:ease-out',
               )}
             >
               <div className="flex justify-center pt-3 pb-1" aria-hidden>
@@ -661,16 +517,51 @@ export function ActivityStatusButton({ className }: { className?: string }) {
                 />
               </div>
 
-              <ActivityStatusDrawerBody
-                controller={controller}
-                retentionOpen={retentionOpen}
-                retentionRegionId={retentionRegionId}
-                travelOpen={travelOpen}
-                onPickStatusWithPanels={onPickStatusWithPanels}
-                onPickUntilModifiedWithClose={onPickUntilModifiedWithClose}
-                onToggleRetention={onToggleRetention}
-                onToggleTravel={onToggleTravel}
-              />
+              <div className="flex-1 overflow-y-auto px-2 py-2">
+                <StatusOptionList draftStatus={draftStatus} onPickStatus={onPickStatus} />
+
+                <div className="border-foreground/8 mt-2 border-t px-1 pt-1">
+                  <RetentionSection
+                    retentionKind={retentionKind}
+                    retentionOpen={retentionOpen}
+                    retentionRegionId={retentionRegionId}
+                    untilDate={untilDate}
+                    onPickUntilDate={() => setRetentionKind('until_date')}
+                    onToggle={toggleRetention}
+                    onUntilDateChange={setUntilDate}
+                    onPickUntilModified={() => {
+                      setRetentionKind('until_modified');
+                      setRetentionOpen(false);
+                    }}
+                  />
+
+                  {draftStatus === 'paused' ? (
+                    <TravelLinkSection
+                      linkedTravel={linkedTravel}
+                      travelId={travelId}
+                      travelOpen={travelOpen}
+                      travels={travels}
+                      travelsPending={travelsQuery.isPending}
+                      onPickTravel={onPickTravel}
+                      onToggle={toggleTravel}
+                    />
+                  ) : null}
+                </div>
+              </div>
+
+              <div className="px-4 pt-1 pb-[max(1rem,env(safe-area-inset-bottom))]">
+                <button
+                  type="button"
+                  className={cn(
+                    'bg-muted/80 text-foreground hover:bg-muted',
+                    'inline-flex h-11 w-full items-center justify-center rounded-full text-sm font-medium',
+                    'transition-colors duration-150 ease-out active:scale-[0.98]',
+                  )}
+                  onClick={applyDraft}
+                >
+                  Mettre à jour
+                </button>
+              </div>
             </Drawer.Popup>
           </Drawer.Viewport>
         </Drawer.Portal>

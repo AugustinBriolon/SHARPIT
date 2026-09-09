@@ -1,6 +1,5 @@
 'use client';
 
-import { Suspense, type ReactNode } from 'react';
 import { BottomNav } from './mobile-shell';
 import { OfflineBanner } from '@/components/pwa/offline-banner';
 import { SyncingIndicator } from '@/components/ui/syncing-indicator';
@@ -16,22 +15,31 @@ function isCoachPath(pathname: string | null): boolean {
   return pathname === '/coach' || pathname.startsWith('/coach/');
 }
 
-type AppShellFrameProps = {
-  children: ReactNode;
-  demoBanner?: ReactNode;
-  hideBottomNav: boolean;
-  coachMobileImmersive: boolean;
-};
-
 /**
- * Presentational chrome — no URL hooks, so it can prerender as a Suspense fallback.
+ * Single page tree for every viewport — one floating bottom tab bar, one
+ * centered reading column. Do not mount `{children}` in two shells — that
+ * doubles page instances and makes warm React Query navigations look like
+ * cold reloads on PWA.
+ *
+ * `--page-gutter` must stay in sync with `PAGE_GUTTER` in `src/lib/ui/page-gutter.ts`
+ * (1rem mobile / 1.5rem desktop).
+ *
+ * Coach on mobile: hide the floating tab bar to reclaim vertical space.
+ * Desktop keeps the tab bar.
  */
-function AppShellFrame({
+export function AppShell({
   children,
   demoBanner,
-  hideBottomNav,
-  coachMobileImmersive,
-}: AppShellFrameProps) {
+}: {
+  children: React.ReactNode;
+  /** Server-rendered slot (AppShell is a Client Component and can't await cookies() itself). */
+  demoBanner?: React.ReactNode;
+}) {
+  const pathname = usePathname();
+  const isMobile = useIsMobile();
+  const coachMobileImmersive = isCoachPath(pathname) && isMobile;
+  const hideBottomNav = coachMobileImmersive;
+
   return (
     <div className="bg-background flex h-dvh flex-col overflow-hidden">
       <a
@@ -69,64 +77,5 @@ function AppShellFrame({
         {hideBottomNav ? null : <BottomNav />}
       </div>
     </div>
-  );
-}
-
-/**
- * Pathname + viewport decide Coach immersive chrome (hide floating tab bar on mobile).
- * Must live under Suspense for Cache Components prerender.
- */
-function AppShellPathAware({
-  children,
-  demoBanner,
-}: {
-  children: ReactNode;
-  demoBanner?: ReactNode;
-}) {
-  const pathname = usePathname();
-  const isMobile = useIsMobile();
-  const coachMobileImmersive = isCoachPath(pathname) && isMobile;
-
-  return (
-    <AppShellFrame
-      coachMobileImmersive={coachMobileImmersive}
-      demoBanner={demoBanner}
-      hideBottomNav={coachMobileImmersive}
-    >
-      {children}
-    </AppShellFrame>
-  );
-}
-
-/**
- * Single page tree for every viewport — one floating bottom tab bar, one
- * centered reading column. Do not mount `{children}` in two shells — that
- * doubles page instances and makes warm React Query navigations look like
- * cold reloads on PWA.
- *
- * `--page-gutter` must stay in sync with `PAGE_GUTTER` in `src/lib/ui/page-gutter.ts`
- * (1rem mobile / 1.5rem desktop).
- *
- * Coach on mobile: hide the floating tab bar to reclaim vertical space.
- * Desktop keeps the tab bar.
- */
-export function AppShell({
-  children,
-  demoBanner,
-}: {
-  children: React.ReactNode;
-  /** Server-rendered slot (AppShell is a Client Component and can't await cookies() itself). */
-  demoBanner?: React.ReactNode;
-}) {
-  return (
-    <Suspense
-      fallback={
-        <AppShellFrame coachMobileImmersive={false} demoBanner={demoBanner} hideBottomNav={false}>
-          {children}
-        </AppShellFrame>
-      }
-    >
-      <AppShellPathAware demoBanner={demoBanner}>{children}</AppShellPathAware>
-    </Suspense>
   );
 }

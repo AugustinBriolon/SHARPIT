@@ -1,11 +1,10 @@
 /**
  * Athlete activity status — longer-lived mode, independent of the day journal.
- * Local persistence until a Core observation path exists.
+ *
+ * Source of truth: DB (`AthleteActivityStatus` + history). localStorage is an
+ * optimistic cache for Instant UX until the network round-trip completes.
  *
  * Presentation impact (not Core): Today reminders, planning chrome, coach discuss labels.
- *
- * Retention: keep until the athlete changes it, or until an end date (then back to Actif).
- * Pause may optionally link to a travel / déplacement.
  */
 
 export const ACTIVITY_STATUS_IDS = ['active', 'paused', 'injured', 'sick'] as const;
@@ -136,16 +135,15 @@ export function todayIsoDate(now: Date = new Date()): string {
   return formatter.format(now);
 }
 
-/** Stable timestamp — never call `new Date()` in empty/server snapshots (Next prerender). */
-const EMPTY_STORE_UPDATED_AT = '1970-01-01T00:00:00.000Z';
-
-export function emptyActivityStatusStore(): ActivityStatusStore {
+export function emptyActivityStatusStore(
+  updatedAt = '1970-01-01T00:00:00.000Z',
+): ActivityStatusStore {
   return {
     version: 2,
     status: ACTIVITY_STATUS_DEFAULT,
     retention: { kind: 'until_modified' },
     travelId: null,
-    updatedAt: EMPTY_STORE_UPDATED_AT,
+    updatedAt,
   };
 }
 
@@ -174,7 +172,7 @@ function migrateLegacyStatus(rawStatus: string): ActivityStatusId {
   return ACTIVITY_STATUS_DEFAULT;
 }
 
-type ActivityStatusRawRecord = {
+type RawActivityStatusRecord = {
   version?: unknown;
   status?: unknown;
   retention?: unknown;
@@ -182,73 +180,57 @@ type ActivityStatusRawRecord = {
   updatedAt?: unknown;
 };
 
-function parseActivityStatusUpdatedAt(value: unknown): string {
-  return typeof value === 'string' ? value : EMPTY_STORE_UPDATED_AT;
+function parseUpdatedAt(raw: unknown): string {
+  return typeof raw === 'string' ? raw : new Date().toISOString();
 }
 
-function buildActivityStatusStore(
-  status: ActivityStatusId,
-  retention: ActivityStatusRetention,
-  travelId: string | null,
-  updatedAt: string,
-): ActivityStatusStore {
-  return {
-    version: 2,
-    status,
-    retention,
-    travelId,
-    updatedAt,
-  };
-}
-
-function parseActivityStatusStoreV2(record: ActivityStatusRawRecord): ActivityStatusStore | null {
+function parseV2ActivityStatusStore(record: RawActivityStatusRecord): ActivityStatusStore | null {
   if (record.version !== 2 || typeof record.status !== 'string') {
     return null;
   }
   const status = migrateLegacyStatus(record.status);
-  const retention: ActivityStatusRetention =
-    status === 'active' ? { kind: 'until_modified' } : normalizeRetention(record.retention);
-  const travelId =
-    status === 'paused' && typeof record.travelId === 'string' ? record.travelId : null;
-  return buildActivityStatusStore(
+  return {
+    version: 2,
     status,
-    retention,
-    travelId,
-    parseActivityStatusUpdatedAt(record.updatedAt),
-  );
+    retention:
+      status === 'active' ? { kind: 'until_modified' } : normalizeRetention(record.retention),
+    travelId: status === 'paused' && typeof record.travelId === 'string' ? record.travelId : null,
+    updatedAt: parseUpdatedAt(record.updatedAt),
+  };
 }
 
-function parseActivityStatusStoreV1(record: ActivityStatusRawRecord): ActivityStatusStore | null {
+function parseV1ActivityStatusStore(record: RawActivityStatusRecord): ActivityStatusStore | null {
   if (record.version !== 1 || typeof record.status !== 'string') {
     return null;
   }
   const status = migrateLegacyStatus(record.status);
-  return buildActivityStatusStore(
+  return {
+    version: 2,
     status,
-    { kind: 'until_modified' },
-    null,
-    parseActivityStatusUpdatedAt(record.updatedAt),
-  );
+    retention: { kind: 'until_modified' },
+    travelId: null,
+    updatedAt: parseUpdatedAt(record.updatedAt),
+  };
 }
 
 export function parseActivityStatusStore(raw: unknown): ActivityStatusStore {
   if (!raw || typeof raw !== 'object') {
     return emptyActivityStatusStore();
   }
-  const record = raw as ActivityStatusRawRecord;
+  const record = raw as RawActivityStatusRecord;
   return (
-    parseActivityStatusStoreV2(record) ??
-    parseActivityStatusStoreV1(record) ??
+    parseV2ActivityStatusStore(record) ??
+    parseV1ActivityStatusStore(record) ??
     emptyActivityStatusStore()
   );
 }
 
-/** If until_date is past, resolve back to Actif. Pass `today` from the client. */
+/** If until_date is past, resolve back to Actif. */
 export function resolveActivityStatusStore(
   store: ActivityStatusStore,
-  today?: string,
+  today: string = todayIsoDate(),
 ): ActivityStatusStore {
-  if (store.status === 'active' || !today) {
+  if (store.status === 'active') {
     return store;
   }
   if (store.retention.kind === 'until_date' && store.retention.untilDate < today) {
@@ -260,30 +242,30 @@ export function resolveActivityStatusStore(
   return store;
 }
 
-type ActivityStatusStorageSources = {
-  rawV2: string | null;
-  rawV1: string | null;
-  payload: unknown;
-};
-
-function readActivityStatusStorageSources(): ActivityStatusStorageSources {
+function readRawActivityStatusJson(): unknown {
   const rawV2 = window.localStorage.getItem(ACTIVITY_STATUS_STORAGE_KEY);
-  const rawV1 = window.localStorage.getItem(ACTIVITY_STATUS_STORAGE_KEY_V1);
   if (rawV2) {
-    return { rawV2, rawV1, payload: JSON.parse(rawV2) as unknown };
+    return JSON.parse(rawV2) as unknown;
   }
+  const rawV1 = window.localStorage.getItem(ACTIVITY_STATUS_STORAGE_KEY_V1);
   if (rawV1) {
-    return { rawV2, rawV1, payload: JSON.parse(rawV1) as unknown };
+    return JSON.parse(rawV1) as unknown;
   }
-  return { rawV2, rawV1, payload: null };
+  return null;
 }
 
-function shouldPersistResolvedActivityStatus(
+function shouldPersistResolvedStore(
   resolved: ActivityStatusStore,
   parsed: ActivityStatusStore,
   hadV1Only: boolean,
 ): boolean {
-  return resolved.status !== parsed.status || resolved.version !== parsed.version || hadV1Only;
+  if (resolved.status !== parsed.status) {
+    return true;
+  }
+  if (resolved.version !== parsed.version) {
+    return true;
+  }
+  return hadV1Only;
 }
 
 export function readActivityStatusStore(): ActivityStatusStore {
@@ -291,10 +273,12 @@ export function readActivityStatusStore(): ActivityStatusStore {
     return emptyActivityStatusStore();
   }
   try {
-    const { rawV2, rawV1, payload } = readActivityStatusStorageSources();
-    const parsed = parseActivityStatusStore(payload);
-    const resolved = resolveActivityStatusStore(parsed, todayIsoDate());
-    if (shouldPersistResolvedActivityStatus(resolved, parsed, Boolean(rawV1 && !rawV2))) {
+    const rawV2 = window.localStorage.getItem(ACTIVITY_STATUS_STORAGE_KEY);
+    const rawV1 = window.localStorage.getItem(ACTIVITY_STATUS_STORAGE_KEY_V1);
+    const parsed = parseActivityStatusStore(readRawActivityStatusJson());
+    const resolved = resolveActivityStatusStore(parsed);
+    const hadV1Only = Boolean(rawV1 && !rawV2);
+    if (shouldPersistResolvedStore(resolved, parsed, hadV1Only)) {
       writeActivityStatusStore(resolved);
     }
     return resolved;
@@ -330,7 +314,50 @@ export function setActivityStatus(
     updatedAt: new Date().toISOString(),
   };
   writeActivityStatusStore(next);
+  void persistActivityStatusToServer({
+    status,
+    retention: status === 'active' ? undefined : retention,
+    travelId,
+  });
   return next;
+}
+
+async function persistActivityStatusToServer(payload: ActivityStatusWriteInput): Promise<void> {
+  if (typeof window === 'undefined') {
+    return;
+  }
+  try {
+    const res = await fetch('/api/activity-status', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      return;
+    }
+    const data = (await res.json()) as { store?: unknown };
+    const parsed = parseActivityStatusStore(data.store);
+    writeActivityStatusStore(parsed);
+  } catch {
+    // Keep optimistic local cache; next hydrate will reconcile.
+  }
+}
+
+/** Pull canonical status from DB into the local cache (Today / planning chrome). */
+export async function hydrateActivityStatusFromServer(): Promise<void> {
+  if (typeof window === 'undefined') {
+    return;
+  }
+  try {
+    const res = await fetch('/api/activity-status');
+    if (!res.ok) {
+      return;
+    }
+    const data = (await res.json()) as { store?: unknown };
+    writeActivityStatusStore(parseActivityStatusStore(data.store));
+  } catch {
+    // Keep local cache.
+  }
 }
 
 export function subscribeActivityStatus(listener: () => void): () => void {
