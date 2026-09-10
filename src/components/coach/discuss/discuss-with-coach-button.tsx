@@ -14,9 +14,14 @@ import { cn } from '@/lib/utils';
 
 type ButtonVariant = VariantProps<typeof buttonVariants>;
 
+/** Canonical athlete-facing label for every contextual Coach entry. */
+export const COACH_DISCUSS_LABEL = 'Discuter avec le coach';
+
+/** Canonical icon for every contextual Coach entry (MessageCircle). */
+export const CoachDiscussIcon = MessageCircle;
+
 type DiscussWithCoachButtonProps = {
   target: CoachDiscussTarget;
-  label?: string;
   className?: string;
   size?: ButtonVariant['size'];
   variant?: ButtonVariant['variant'];
@@ -25,12 +30,12 @@ type DiscussWithCoachButtonProps = {
 };
 
 /**
- * Shared entry point to start a coach chat with attached discuss context.
+ * Shared entry point to start a coach chat with attached discuss context chip.
+ * Does not prefill the composer — the athlete writes; context is the chip only.
  * Closes any open planned-session modal before navigating to Coach.
  */
 export function DiscussWithCoachButton({
   target,
-  label = 'Discuter avec le coach',
   className,
   size = 'default',
   variant = 'outline',
@@ -45,8 +50,9 @@ export function DiscussWithCoachButton({
       size={size}
       variant={variant}
       className={cn(
-        // Wrap-safe: long labels on narrow mobile must not keep pill radius + nowrap.
-        'h-auto min-h-8 self-start rounded-xl text-left whitespace-normal',
+        // Instrument radius from buttonVariants (rounded-lg) — never pill.
+        // Wrap-safe on narrow mobile: allow multi-line label without nowrap fight.
+        'h-auto min-h-8 self-start text-left whitespace-normal',
         className,
       )}
       onClick={() => {
@@ -55,8 +61,8 @@ export function DiscussWithCoachButton({
         appModal?.closePlannedSession();
       }}
     >
-      <MessageCircle aria-hidden />
-      {label}
+      <CoachDiscussIcon aria-hidden />
+      {COACH_DISCUSS_LABEL}
     </LinkButton>
   );
 }

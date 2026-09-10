@@ -22,8 +22,9 @@ vi.mock('@/components/ui/confirm-dialog', () => ({
 }));
 
 vi.mock('@/components/coach/discuss/discuss-with-coach-button', () => ({
-  DiscussWithCoachButton: ({ label }: { label: string }) =>
-    createElement('a', { href: '/coach' }, label),
+  COACH_DISCUSS_LABEL: 'Discuter avec le coach',
+  CoachDiscussIcon: () => null,
+  DiscussWithCoachButton: () => createElement('a', { href: '/coach' }, 'Discuter avec le coach'),
 }));
 
 const { RaceCard, MetricGoalCard } = await import('./goal-cards');

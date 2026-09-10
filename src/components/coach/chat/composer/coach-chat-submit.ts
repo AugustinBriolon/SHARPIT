@@ -5,7 +5,13 @@ import {
 } from '@/lib/coach/chat/tools/coach-tool-parts';
 import { clearCoachInputDraft } from '@/lib/coach/chat/composer/coach-input-draft';
 import { createClientId } from '@/lib/client-id';
-import type { CoachDiscussContext } from '@/lib/coach/chat/discuss/coach-discuss-context';
+import {
+  coachDiscussMetadata,
+  type CoachDiscussContext,
+  type CoachDiscussMetadata,
+} from '@/lib/coach/chat/discuss/coach-discuss-context';
+
+type SendCoachMessage = (args: { text: string; metadata?: CoachDiscussMetadata }) => void;
 
 type SubmitContext = {
   value: string;
@@ -23,10 +29,12 @@ async function submitEphemeralCoachMessage(
     onConversationCreated?: (id: string) => void;
   },
 ): Promise<void> {
+  const metadata = coachDiscussMetadata(options.attachedContext);
   const userMessage: UIMessage = {
     id: createClientId(),
     role: 'user',
     parts: [{ type: 'text', text: options.value }],
+    ...(metadata ? { metadata } : {}),
   };
   try {
     const conversation = await options.createConversation.mutateAsync({
@@ -45,10 +53,13 @@ async function submitEphemeralCoachMessage(
 
 function submitPersistedCoachMessage(
   options: SubmitContext & {
-    sendMessage: (args: { text: string }) => void;
+    sendMessage: SendCoachMessage;
   },
 ): void {
-  options.sendMessage({ text: options.value });
+  options.sendMessage({
+    text: options.value,
+    metadata: coachDiscussMetadata(options.attachedContext),
+  });
   clearCoachInputDraft(options.conversationId);
   options.setInput('');
   if (options.attachedContext) {
@@ -90,7 +101,7 @@ export type CoachChatSubmitOptions = {
   createConversation: {
     mutateAsync: (args: { messages: UIMessage[] }) => Promise<{ id: string }>;
   };
-  sendMessage: (args: { text: string }) => void;
+  sendMessage: SendCoachMessage;
   setInput: (value: string) => void;
   onDetachContext?: () => void;
   onConversationCreated?: (id: string) => void;

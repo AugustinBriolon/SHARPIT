@@ -114,6 +114,18 @@ const MATCHERS: Matcher[] = [
   },
 
   {
+    pattern: /^\/journal$/,
+    resolve: () => ({ label: 'Journal', defaultParent: HOME_PARENT }),
+  },
+  {
+    pattern: /^\/journal\/analyses$/,
+    resolve: () => ({
+      label: 'Analyses',
+      defaultParent: { href: '/journal', label: 'Journal' },
+    }),
+  },
+
+  {
     pattern: /^\/settings\/account$/,
     resolve: () => ({ label: 'Compte', defaultParent: MOI_PARENT }),
   },

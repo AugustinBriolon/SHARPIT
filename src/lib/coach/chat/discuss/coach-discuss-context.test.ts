@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { coachDiscussHref } from '@/lib/coach/chat/discuss/coach-discuss-href';
 import {
+  coachDiscussMetadata,
   describeCoachDiscussContext,
   enrichDiscussContextWithActivityStatus,
 } from '@/lib/coach/chat/discuss/coach-discuss-context';
@@ -64,5 +65,47 @@ describe('describeCoachDiscussContext', () => {
     expect(enrichDiscussContextWithActivityStatus(planning, 'injured').label).toBe(
       'Ta semaine · les 7 prochains jours · Blessé',
     );
+  });
+});
+
+describe('coachDiscussMetadata', () => {
+  it.each([
+    [{ kind: 'today' }, { discussKind: 'today' }],
+    [
+      { kind: 'planned-session', sessionId: 's-1' },
+      { discussKind: 'planned-session', sessionId: 's-1' },
+    ],
+    [
+      { kind: 'activity', activityId: 'a-1' },
+      { discussKind: 'activity', activityId: 'a-1' },
+    ],
+    [
+      { kind: 'planning', horizonDays: 14 },
+      { discussKind: 'planning', horizonDays: 14 },
+    ],
+    [
+      { kind: 'goal', goalId: 'g-1' },
+      { discussKind: 'goal', goalId: 'g-1' },
+    ],
+    [
+      { kind: 'record', categoryKey: 'run-pace' },
+      { discussKind: 'record', categoryKey: 'run-pace' },
+    ],
+    [
+      { kind: 'physical-condition', noteId: 'n-1' },
+      { discussKind: 'physical-condition', noteId: 'n-1' },
+    ],
+    [{ kind: 'journal-analyses' }, { discussKind: 'journal-analyses' }],
+  ] as const)('carries the target of %o', (target, expected) => {
+    expect(coachDiscussMetadata(describeCoachDiscussContext(target, 'Nom'))).toEqual(expected);
+  });
+
+  it('keeps the target when a chip label is enriched', () => {
+    const planning = enrichDiscussContextWithActivityStatus(
+      describeCoachDiscussContext({ kind: 'planning', horizonDays: 7 }),
+      'injured',
+    );
+
+    expect(coachDiscussMetadata(planning)).toEqual({ discussKind: 'planning', horizonDays: 7 });
   });
 });

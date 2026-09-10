@@ -137,33 +137,24 @@ export const getActivityById = cache(async (athleteId: string, id: string) => {
   });
 });
 
+/** One activity in the Coach prompt shape (same select as `getActivitiesForCoach`). */
+export async function getActivityForCoach(athleteId: string, id: string) {
+  return prisma.activity.findFirst({
+    where: { id, athleteId },
+    select: activityCoachSelect,
+  });
+}
+
 /** Multisport legs — persisted or fetched from Garmin when missing.
  *
  * Persist is intentionally non-blocking: this helper is called from RSC pages
  * where `after()` is not always available. Prefer `after()` when in a request
  * context; otherwise fire-and-forget so the legs return immediately.
  */
-export async function getMultisportLegsForActivity(
+async function fetchAndPersistMultisportLegs(
   athleteId: string,
-  activity: {
-    id: string;
-    type: ActivityType;
-    garminId: string | null;
-    multisportLegs: unknown;
-  },
+  activity: { id: string; garminId: string },
 ): Promise<MultisportLeg[] | null> {
-  if (activity.type !== ActivityType.TRIATHLON) {
-    return null;
-  }
-
-  if (isMultisportLegArray(activity.multisportLegs)) {
-    return activity.multisportLegs;
-  }
-
-  if (!activity.garminId) {
-    return null;
-  }
-
   const { getGarminAccount, buildFreshGarminClient } =
     await import('@/lib/integrations/garmin/garmin-sync');
   const { fetchGarminMultisportLegs } = await import('@/lib/integrations/garmin/garmin-multisport');
@@ -194,16 +185,38 @@ export async function getMultisportLegsForActivity(
       });
 
   try {
-    // Prefer after() when in a request context (Route Handlers / supported RSC).
     after(() => {
       void persist();
     });
   } catch {
-    // after() only works in request context — do not block returning legs.
     void persist();
   }
 
   return legs;
+}
+
+export async function getMultisportLegsForActivity(
+  athleteId: string,
+  activity: {
+    id: string;
+    type: ActivityType;
+    garminId: string | null;
+    multisportLegs: unknown;
+  },
+): Promise<MultisportLeg[] | null> {
+  if (activity.type !== ActivityType.TRIATHLON) {
+    return null;
+  }
+  if (isMultisportLegArray(activity.multisportLegs)) {
+    return activity.multisportLegs;
+  }
+  if (!activity.garminId) {
+    return null;
+  }
+  return fetchAndPersistMultisportLegs(athleteId, {
+    id: activity.id,
+    garminId: activity.garminId,
+  });
 }
 
 export async function createActivity(athleteId: string, data: Prisma.ActivityUncheckedCreateInput) {

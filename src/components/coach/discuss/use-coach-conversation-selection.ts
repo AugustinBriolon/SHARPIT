@@ -1,7 +1,7 @@
 'use client';
 
 import { useSearchParams } from 'next/navigation';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from 'react';
 import { useConversation, useConversations } from '@/hooks/use-coach';
 import { useOfflineSnapshot } from '@/hooks/use-offline-snapshot';
 import { isSet } from '@/lib/util/value';
@@ -37,6 +37,7 @@ export function useCoachDiscussParams() {
   const discussActivityId = searchParams.get('discussActivity');
   const discussPlanningHorizon = parseDiscussPlanningHorizon(searchParams.get('discussPlanning'));
   const discussToday = searchParams.get('discussToday') === '1';
+  const discussJournalAnalyses = searchParams.get('discussJournalAnalyses') === '1';
   const discussGoalId = searchParams.get('discussGoal');
   const discussRecordKey = searchParams.get('discussRecord');
   const discussConditionId = searchParams.get('discussCondition');
@@ -45,6 +46,7 @@ export function useCoachDiscussParams() {
     discussActivityId ||
     discussPlanningHorizon ||
     discussToday ||
+    discussJournalAnalyses ||
     discussGoalId ||
     discussConditionId ||
     discussRecordKey,
@@ -54,6 +56,7 @@ export function useCoachDiscussParams() {
     discussActivityId,
     discussPlanningHorizon,
     discussToday,
+    discussJournalAnalyses,
     discussGoalId,
     discussRecordKey,
     discussConditionId,
@@ -61,7 +64,16 @@ export function useCoachDiscussParams() {
   };
 }
 
-export function useCoachConversationSelection(hasDiscussIntent: boolean, online: boolean) {
+type ConversationSelectionState = {
+  activeId: string | null;
+  setActiveId: Dispatch<SetStateAction<string | null>>;
+  ephemeralIds: Set<string>;
+  setEphemeralIds: Dispatch<SetStateAction<Set<string>>>;
+  autoReplyId: string | null;
+  setAutoReplyId: Dispatch<SetStateAction<string | null>>;
+};
+
+function useConversationSelectionState(hasDiscussIntent: boolean): ConversationSelectionState {
   const initialDraftIdRef = useRef<string | null | undefined>(undefined);
   const [activeId, setActiveId] = useState<string | null>(() =>
     getInitialDraftId(hasDiscussIntent, initialDraftIdRef),
@@ -71,39 +83,65 @@ export function useCoachConversationSelection(hasDiscussIntent: boolean, online:
     return id ? new Set([id]) : new Set();
   });
   const [autoReplyId, setAutoReplyId] = useState<string | null>(null);
+  return {
+    activeId,
+    setActiveId,
+    ephemeralIds,
+    setEphemeralIds,
+    autoReplyId,
+    setAutoReplyId,
+  };
+}
 
-  const conversationsQuery = useConversations();
-  const selectedId = activeId;
+type RecoverEphemeralInput = {
+  selectedId: string | null;
+  isEphemeral: boolean;
+  activeConversation: ReturnType<typeof useConversation>;
+  setEphemeralIds: ConversationSelectionState['setEphemeralIds'];
+  setActiveId: ConversationSelectionState['setActiveId'];
+};
+
+function useRecoverEphemeralWhenConversationMissing(input: RecoverEphemeralInput) {
+  useEffect(() => {
+    if (!input.selectedId || input.isEphemeral) {
+      return;
+    }
+    if (input.activeConversation.isPending || input.activeConversation.isLoading) {
+      return;
+    }
+    if (input.activeConversation.data) {
+      return;
+    }
+    const id = createEphemeralId();
+    input.setEphemeralIds((prev) => new Set(prev).add(id));
+    input.setActiveId(id);
+  }, [
+    input.selectedId,
+    input.isEphemeral,
+    input.activeConversation.isPending,
+    input.activeConversation.isLoading,
+    input.activeConversation.data,
+    input.setEphemeralIds,
+    input.setActiveId,
+  ]);
+}
+
+function useSelectedConversation(selectedId: string | null, ephemeralIds: Set<string>) {
   const isEphemeral = selectedId !== null && ephemeralIds.has(selectedId);
   const activeConversation = useConversation(isEphemeral ? null : selectedId);
   const activeHasMessages =
     !isEphemeral &&
     Array.isArray(activeConversation.data?.messages) &&
     activeConversation.data.messages.length > 0;
-  const hasNoLiveContent = !isSet(conversationsQuery.data) && !activeHasMessages;
-  const { entry: offlineEntry } = useOfflineSnapshot(!online && hasNoLiveContent);
+  return { isEphemeral, activeConversation, activeHasMessages };
+}
 
-  useEffect(() => {
-    if (!selectedId || isEphemeral) {
-      return;
-    }
-    if (activeConversation.isPending || activeConversation.isLoading) {
-      return;
-    }
-    if (activeConversation.data) {
-      return;
-    }
-    const id = createEphemeralId();
-    setEphemeralIds((prev) => new Set(prev).add(id));
-    setActiveId(id);
-  }, [
-    selectedId,
-    isEphemeral,
-    activeConversation.isPending,
-    activeConversation.isLoading,
-    activeConversation.data,
-  ]);
-
+function createConversationSelectionHandlers(
+  selectedId: string | null,
+  setActiveId: ConversationSelectionState['setActiveId'],
+  setEphemeralIds: ConversationSelectionState['setEphemeralIds'],
+  setAutoReplyId: ConversationSelectionState['setAutoReplyId'],
+) {
   function openNewConversation(detachLatchedContext: () => void) {
     const id = createEphemeralId();
     setEphemeralIds((prev) => new Set(prev).add(id));
@@ -124,6 +162,37 @@ export function useCoachConversationSelection(hasDiscussIntent: boolean, online:
     setActiveId(id);
     setAutoReplyId(id);
   }
+
+  return { openNewConversation, handleConversationCreated };
+}
+
+export function useCoachConversationSelection(hasDiscussIntent: boolean, online: boolean) {
+  const { activeId, setActiveId, ephemeralIds, setEphemeralIds, autoReplyId, setAutoReplyId } =
+    useConversationSelectionState(hasDiscussIntent);
+
+  const conversationsQuery = useConversations();
+  const selectedId = activeId;
+  const { isEphemeral, activeConversation, activeHasMessages } = useSelectedConversation(
+    selectedId,
+    ephemeralIds,
+  );
+  const hasNoLiveContent = !isSet(conversationsQuery.data) && !activeHasMessages;
+  const { entry: offlineEntry } = useOfflineSnapshot(!online && hasNoLiveContent);
+
+  useRecoverEphemeralWhenConversationMissing({
+    selectedId,
+    isEphemeral,
+    activeConversation,
+    setEphemeralIds,
+    setActiveId,
+  });
+
+  const { openNewConversation, handleConversationCreated } = createConversationSelectionHandlers(
+    selectedId,
+    setActiveId,
+    setEphemeralIds,
+    setAutoReplyId,
+  );
 
   return {
     conversationsQuery,

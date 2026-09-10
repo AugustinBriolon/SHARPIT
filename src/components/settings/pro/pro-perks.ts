@@ -32,6 +32,14 @@ export const PRO_ONLY_PERKS: ProPerk[] = [
     status: 'pro',
     href: '/activite',
   },
+  {
+    icon: MessagesSquare,
+    title: 'Lecture coach · journal',
+    description:
+      'Sur tes analyses journal, le coach priorise les associations nettes et propose 1–2 expériences concrètes sur 7 jours — sans affirmer de causalité.',
+    status: 'pro',
+    href: '/journal/analyses',
+  },
 ];
 
 /** Déjà là, gratuit, pour tout le monde — pas encore une raison de payer. */

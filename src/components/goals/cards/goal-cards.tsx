@@ -74,6 +74,53 @@ function toEdit(goal: GoalItem): GoalForEdit {
   };
 }
 
+function GoalActionsMenuItems({
+  achieved,
+  onToggleAchieved,
+  updatePending,
+  onEdit,
+  onDelete,
+  deletePending,
+}: {
+  achieved: boolean;
+  onToggleAchieved: () => void;
+  updatePending: boolean;
+  onEdit: () => void;
+  onDelete: () => void;
+  deletePending: boolean;
+}) {
+  return (
+    <>
+      <DropdownMenuItem
+        className="cursor-pointer gap-2"
+        disabled={updatePending}
+        onClick={onToggleAchieved}
+      >
+        {achieved ? (
+          <RotateCcw className="size-3.5" aria-hidden />
+        ) : (
+          <CheckCircle2 className="size-3.5" aria-hidden />
+        )}
+        {achieved ? 'Rouvrir' : 'Marquer atteint'}
+      </DropdownMenuItem>
+      <DropdownMenuItem className="cursor-pointer gap-2" onClick={onEdit}>
+        <Pencil className="size-3.5" aria-hidden />
+        Modifier
+      </DropdownMenuItem>
+      <DropdownMenuSeparator />
+      <DropdownMenuItem
+        className="cursor-pointer gap-2"
+        disabled={deletePending}
+        variant="destructive"
+        onClick={onDelete}
+      >
+        <Trash2 className="size-3.5" aria-hidden />
+        Supprimer
+      </DropdownMenuItem>
+    </>
+  );
+}
+
 function GoalActionsMenu({
   achieved,
   onToggleAchieved,
@@ -101,32 +148,14 @@ function GoalActionsMenu({
         <MoreHorizontal className="size-4" aria-hidden />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="min-w-44">
-        <DropdownMenuItem
-          className="cursor-pointer gap-2"
-          disabled={updatePending}
-          onClick={onToggleAchieved}
-        >
-          {achieved ? (
-            <RotateCcw className="size-3.5" aria-hidden />
-          ) : (
-            <CheckCircle2 className="size-3.5" aria-hidden />
-          )}
-          {achieved ? 'Rouvrir' : 'Marquer atteint'}
-        </DropdownMenuItem>
-        <DropdownMenuItem className="cursor-pointer gap-2" onClick={onEdit}>
-          <Pencil className="size-3.5" aria-hidden />
-          Modifier
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem
-          className="cursor-pointer gap-2"
-          disabled={deletePending}
-          variant="destructive"
-          onClick={onDelete}
-        >
-          <Trash2 className="size-3.5" aria-hidden />
-          Supprimer
-        </DropdownMenuItem>
+        <GoalActionsMenuItems
+          achieved={achieved}
+          deletePending={deletePending}
+          updatePending={updatePending}
+          onDelete={onDelete}
+          onEdit={onEdit}
+          onToggleAchieved={onToggleAchieved}
+        />
       </DropdownMenuContent>
     </DropdownMenu>
   );
@@ -151,12 +180,7 @@ function GoalCardFooter({
 }) {
   return (
     <CardFooter className="justify-between gap-2">
-      <DiscussWithCoachButton
-        label="Discuter"
-        size="sm"
-        target={{ kind: 'goal', goalId }}
-        variant="ghost"
-      />
+      <DiscussWithCoachButton size="sm" target={{ kind: 'goal', goalId }} variant="ghost" />
       <GoalActionsMenu
         achieved={achieved}
         deletePending={deletePending}
@@ -202,6 +226,34 @@ function useGoalCardControls(goal: GoalItem) {
   };
 }
 
+function RaceCardBody({ goal }: { goal: GoalItem }) {
+  const metricConfig = parseGoalMetricConfig(goal.metricKey);
+
+  return (
+    <CardContent className="space-y-4">
+      <RaceCardDetails goal={goal} />
+      {goal.targetPerformance ? (
+        <div className="bg-primary/5 rounded-analysis px-3 py-2">
+          <p className="text-label text-primary">Objectif visé</p>
+          <p className="text-sm font-medium">{goal.targetPerformance}</p>
+        </div>
+      ) : null}
+      {goal.achieved ? (
+        <AchievedStatus
+          lastAchievedAt={goal.lastAchievedAt}
+          showValidatingLink={metricConfig?.template === 'performance'}
+          validatingActivityId={goal.validatingActivityId}
+        />
+      ) : null}
+      {goal.notes ? (
+        <p className="text-muted-foreground line-clamp-3 text-sm whitespace-pre-wrap">
+          {goal.notes}
+        </p>
+      ) : null}
+    </CardContent>
+  );
+}
+
 export function RaceCard({ goal }: { goal: GoalItem }) {
   const {
     editing,
@@ -212,35 +264,11 @@ export function RaceCard({ goal }: { goal: GoalItem }) {
     updatePending,
     deletePending,
   } = useGoalCardControls(goal);
-  const metricConfig = parseGoalMetricConfig(goal.metricKey);
 
   return (
     <>
       <Card>
-        <CardContent className="space-y-4">
-          <RaceCardDetails goal={goal} />
-
-          {goal.targetPerformance ? (
-            <div className="bg-primary/5 rounded-analysis px-3 py-2">
-              <p className="text-label text-primary">Objectif visé</p>
-              <p className="text-sm font-medium">{goal.targetPerformance}</p>
-            </div>
-          ) : null}
-
-          {goal.achieved ? (
-            <AchievedStatus
-              lastAchievedAt={goal.lastAchievedAt}
-              showValidatingLink={metricConfig?.template === 'performance'}
-              validatingActivityId={goal.validatingActivityId}
-            />
-          ) : null}
-
-          {goal.notes ? (
-            <p className="text-muted-foreground line-clamp-3 text-sm whitespace-pre-wrap">
-              {goal.notes}
-            </p>
-          ) : null}
-        </CardContent>
+        <RaceCardBody goal={goal} />
         <GoalCardFooter
           achieved={goal.achieved}
           deletePending={deletePending}

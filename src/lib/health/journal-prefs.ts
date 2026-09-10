@@ -12,6 +12,7 @@ import {
   journalTrackableById,
 } from '@/lib/health/journal-trackables';
 import { isJournalAutoItemId, type JournalAutoItemId } from '@/lib/health/journal-auto-ids';
+import { canEnableAnotherTrackable, enforceJournalPrefsLimits } from '@/lib/health/journal-limits';
 
 export type JournalCustomItem = {
   id: string;
@@ -313,8 +314,8 @@ export function parseJournalPrefs(raw: unknown): JournalPrefs {
   };
 }
 
-export function sanitizeJournalPrefsForPersist(raw: unknown): JournalPrefs {
-  return parseJournalPrefs(raw);
+export function sanitizeJournalPrefsForPersist(raw: unknown, isPro = false): JournalPrefs {
+  return enforceJournalPrefsLimits(parseJournalPrefs(raw), isPro);
 }
 
 export function isTrackableEnabled(prefs: JournalPrefs, id: JournalBuiltinTrackableId): boolean {
@@ -325,16 +326,30 @@ export function setTrackableEnabled(
   prefs: JournalPrefs,
   id: JournalBuiltinTrackableId,
   enabled: boolean,
+  isPro = false,
 ): JournalPrefs {
+  if (enabled && !prefs.enabled[id] && !canEnableAnotherTrackable(prefs, isPro)) {
+    return prefs;
+  }
   return {
     ...prefs,
     enabled: { ...prefs.enabled, [id]: enabled },
   };
 }
 
-export function addCustomTrackable(prefs: JournalPrefs, label: string): JournalPrefs {
+export function addCustomTrackable(
+  prefs: JournalPrefs,
+  label: string,
+  isPro = false,
+): JournalPrefs {
+  if (!isPro) {
+    return prefs;
+  }
   const trimmed = label.trim();
   if (trimmed.length < 1 || trimmed.length > 48) {
+    return prefs;
+  }
+  if (!canEnableAnotherTrackable(prefs, isPro)) {
     return prefs;
   }
   const id = createCustomTrackableId();
@@ -348,7 +363,18 @@ export function setCustomTrackableEnabled(
   prefs: JournalPrefs,
   id: string,
   enabled: boolean,
+  isPro = false,
 ): JournalPrefs {
+  if (!isPro) {
+    return prefs;
+  }
+  const current = prefs.customItems.find((item) => item.id === id);
+  if (!current) {
+    return prefs;
+  }
+  if (enabled && !current.enabled && !canEnableAnotherTrackable(prefs, isPro)) {
+    return prefs;
+  }
   return {
     ...prefs,
     customItems: prefs.customItems.map((item) => (item.id === id ? { ...item, enabled } : item)),
@@ -439,16 +465,21 @@ export function writeJournalPrefsCache(
   storage.setItem(JOURNAL_PREFS_STORAGE_KEY, JSON.stringify(prefs));
 }
 
-export async function fetchJournalPrefs(): Promise<JournalPrefs> {
+export async function fetchJournalPrefs(): Promise<{ prefs: JournalPrefs; isPro: boolean }> {
   const response = await fetch('/api/journal-prefs');
   if (!response.ok) {
     throw new Error('Impossible de charger les préférences journal');
   }
-  const data = (await response.json()) as { prefs?: unknown };
-  return parseJournalPrefs(data.prefs);
+  const data = (await response.json()) as { prefs?: unknown; isPro?: unknown };
+  return {
+    prefs: parseJournalPrefs(data.prefs),
+    isPro: data.isPro === true,
+  };
 }
 
-export async function putJournalPrefs(prefs: JournalPrefs): Promise<JournalPrefs> {
+export async function putJournalPrefs(
+  prefs: JournalPrefs,
+): Promise<{ prefs: JournalPrefs; isPro: boolean }> {
   const response = await fetch('/api/journal-prefs', {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
@@ -457,8 +488,11 @@ export async function putJournalPrefs(prefs: JournalPrefs): Promise<JournalPrefs
   if (!response.ok) {
     throw new Error('Impossible d’enregistrer les préférences journal');
   }
-  const data = (await response.json()) as { prefs?: unknown };
-  return parseJournalPrefs(data.prefs);
+  const data = (await response.json()) as { prefs?: unknown; isPro?: unknown };
+  return {
+    prefs: parseJournalPrefs(data.prefs),
+    isPro: data.isPro === true,
+  };
 }
 
 export { journalTrackableById, isCustomTrackableId };

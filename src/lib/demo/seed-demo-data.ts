@@ -1,5 +1,6 @@
 import {
   ActivityType,
+  AccessTier,
   BodyCompositionSource,
   BodySide,
   ConditionScope,
@@ -13,6 +14,7 @@ import {
   type PrismaClient,
 } from '@prisma/client';
 import { ensureDemoSessionLinkStory } from '@/lib/demo/demo-session-link-seed';
+import { seedDemoJournalAnalyses } from '@/lib/demo/demo-journal-seed';
 import { isSet } from '@/lib/util/value';
 import { finalizeDemoSeed, purgeDemoDerivedState } from '@/lib/demo/finalize-demo-seed';
 import { addDays, startOfDay, subDays } from 'date-fns';
@@ -235,76 +237,84 @@ const WEEK_PATTERN: Array<{
   },
 ];
 
+const DEMO_RUN_METRICS = {
+  runMetrics: {
+    create: {
+      distanceM: 10500,
+      elevationM: 85,
+      paceSecPerKm: 314,
+      avgHr: 142,
+      cadence: 176,
+      shoes: 'Nike Vaporfly',
+    },
+  },
+};
+
+const DEMO_BIKE_METRICS = {
+  bikeMetrics: {
+    create: {
+      ftpPercent: 65,
+      normalizedPower: 198,
+      intensityFactor: 0.65,
+      tss: 72,
+      avgCadence: 88,
+      avgPower: 185,
+      elevationM: 320,
+      calories: 980,
+      bikeName: 'Canyon',
+    },
+  },
+};
+
+const DEMO_SWIM_METRICS = {
+  swimMetrics: {
+    create: {
+      distanceM: 2200,
+      sets: 12,
+      cssSecPer100m: 98,
+      avgPaceSecPer100m: 102,
+      swolf: 42,
+      drills: 'Catch-up, sculling',
+    },
+  },
+};
+
+const DEMO_STRENGTH_SETS = {
+  strengthSets: {
+    create: [
+      { exercise: 'Squat', sets: 4, reps: 6, weightKg: 120, rpe: 8, restSec: 180, order: 0 },
+      {
+        exercise: 'Romanian Deadlift',
+        sets: 3,
+        reps: 8,
+        weightKg: 100,
+        rpe: 7,
+        restSec: 120,
+        order: 1,
+      },
+      {
+        exercise: 'Bulgarian Split Squat',
+        sets: 3,
+        reps: 10,
+        weightKg: 24,
+        rpe: 7,
+        restSec: 90,
+        order: 2,
+      },
+    ],
+  },
+};
+
 function metricsFor(type: ActivityType) {
   switch (type) {
     case ActivityType.RUN:
-      return {
-        runMetrics: {
-          create: {
-            distanceM: 10500,
-            elevationM: 85,
-            paceSecPerKm: 314,
-            avgHr: 142,
-            cadence: 176,
-            shoes: 'Nike Vaporfly',
-          },
-        },
-      };
+      return DEMO_RUN_METRICS;
     case ActivityType.BIKE:
-      return {
-        bikeMetrics: {
-          create: {
-            ftpPercent: 65,
-            normalizedPower: 198,
-            intensityFactor: 0.65,
-            tss: 72,
-            avgCadence: 88,
-            avgPower: 185,
-            elevationM: 320,
-            calories: 980,
-            bikeName: 'Canyon',
-          },
-        },
-      };
+      return DEMO_BIKE_METRICS;
     case ActivityType.SWIM:
-      return {
-        swimMetrics: {
-          create: {
-            distanceM: 2200,
-            sets: 12,
-            cssSecPer100m: 98,
-            avgPaceSecPer100m: 102,
-            swolf: 42,
-            drills: 'Catch-up, sculling',
-          },
-        },
-      };
+      return DEMO_SWIM_METRICS;
     case ActivityType.STRENGTH:
-      return {
-        strengthSets: {
-          create: [
-            { exercise: 'Squat', sets: 4, reps: 6, weightKg: 120, rpe: 8, restSec: 180, order: 0 },
-            {
-              exercise: 'Romanian Deadlift',
-              sets: 3,
-              reps: 8,
-              weightKg: 100,
-              rpe: 7,
-              restSec: 120,
-              order: 1,
-            },
-            {
-              exercise: 'Bulgarian Split Squat',
-              sets: 3,
-              reps: 10,
-              weightKg: 24,
-              rpe: 7,
-              restSec: 90,
-              order: 2,
-            },
-          ],
-        },
-      };
+      return DEMO_STRENGTH_SETS;
     default:
       return {};
   }
@@ -482,6 +492,7 @@ async function purgeDemoAthleteRecords(prisma: PrismaClient, athleteId: string):
   await prisma.bodyCompositionMeasurement.deleteMany({ where: { athleteId } });
   await prisma.condition.deleteMany({ where: { athleteId } });
   await prisma.conversation.deleteMany({ where: { athleteId } });
+  await prisma.athleteDayJournal.deleteMany({ where: { athleteId } });
   await purgeDemoDerivedState(prisma, athleteId);
 }
 
@@ -750,8 +761,9 @@ export async function seedDemoAthlete(prisma: PrismaClient): Promise<void> {
       runThresholdPaceSecPerKm: 258,
       swimCssSecPer100m: 96,
       displayMode: 'essential',
+      tier: AccessTier.PRO,
     },
-    update: {},
+    update: { tier: AccessTier.PRO },
   });
   const athleteId = athlete.id;
 
@@ -763,6 +775,7 @@ export async function seedDemoAthlete(prisma: PrismaClient): Promise<void> {
   await seedDemoPrimaryGoal(prisma, athleteId, today);
   await seedDemoPastActivities(prisma, athleteId, today);
   await seedDemoRecoveryTrend(prisma, athleteId, today);
+  await seedDemoJournalAnalyses(prisma, athleteId, today);
   await seedDemoNutritionWindow(prisma, athleteId, today);
   await seedDemoUpcomingPlanned(prisma, athleteId, today);
   await seedDemoBodyComposition(prisma, athleteId, today);
@@ -775,24 +788,33 @@ export async function seedDemoAthlete(prisma: PrismaClient): Promise<void> {
 
 async function demoSeedNeedsRefresh(prisma: PrismaClient, athleteId: string): Promise<boolean> {
   const today = startOfDay(new Date());
-  const [garmin, renpho, latestHealth, goalCount, conversationCount] = await Promise.all([
-    prisma.garminAccount.findUnique({ where: { athleteId }, select: { athleteId: true } }),
-    prisma.renphoAccount.findUnique({ where: { athleteId }, select: { athleteId: true } }),
-    prisma.dailyHealth.findFirst({
-      where: { athleteId },
-      orderBy: { date: 'desc' },
-      select: { date: true },
-    }),
-    prisma.goal.count({ where: { athleteId } }),
-    prisma.conversation.count({ where: { athleteId } }),
-  ]);
+  const [garmin, renpho, latestHealth, goalCount, conversationCount, journalCount] =
+    await Promise.all([
+      prisma.garminAccount.findUnique({ where: { athleteId }, select: { athleteId: true } }),
+      prisma.renphoAccount.findUnique({ where: { athleteId }, select: { athleteId: true } }),
+      prisma.dailyHealth.findFirst({
+        where: { athleteId },
+        orderBy: { date: 'desc' },
+        select: { date: true },
+      }),
+      prisma.goal.count({ where: { athleteId } }),
+      prisma.conversation.count({ where: { athleteId } }),
+      prisma.athleteDayJournal.count({ where: { athleteId } }),
+    ]);
 
   const healthStale =
     latestHealth === undefined ||
     latestHealth === null ||
     startOfDay(latestHealth.date).getTime() !== today.getTime();
 
-  return !garmin || !renpho || healthStale || goalCount !== 1 || conversationCount === 0;
+  return (
+    !garmin ||
+    !renpho ||
+    healthStale ||
+    goalCount !== 1 ||
+    conversationCount === 0 ||
+    journalCount < 7
+  );
 }
 
 /** Reseed when the demo tenant is missing, stale, or polluted (e.g. onboarding test goals). */

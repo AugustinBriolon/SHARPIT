@@ -159,7 +159,6 @@ function RecordCategoryLeaderboard({ category }: { category: RecordCategory }) {
         </div>
         {best ? (
           <DiscussWithCoachButton
-            label="Discuter"
             size="sm"
             target={{ kind: 'record', categoryKey: category.key }}
             variant="ghost"
@@ -237,8 +236,7 @@ function GpsAnalysisSection({
   );
 }
 
-export function RecordsPanel() {
-  const { data, isPending } = useRecords();
+function useRecordsSportTab() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const sportParam = searchParams.get('sport');
@@ -277,6 +275,10 @@ export function RecordsPanel() {
     return () => window.removeEventListener('hashchange', syncSportFromHash);
   }, [router, searchParams, tab]);
 
+  return { tab, setSportTab };
+}
+
+function useRecordsHashScroll(tab: SportTab, isPending: boolean, data: unknown) {
   useEffect(() => {
     if (isPending || !data) {
       return;
@@ -291,6 +293,93 @@ export function RecordsPanel() {
     });
     return () => cancelAnimationFrame(frame);
   }, [tab, isPending, data]);
+}
+
+function SportTabSwitcher({
+  tab,
+  onTabChange,
+}: {
+  tab: SportTab;
+  onTabChange: (next: SportTab) => void;
+}) {
+  const activeTab = TABS.find((item) => item.id === tab) ?? TABS[0];
+
+  return (
+    <div className="space-y-3">
+      <div
+        aria-label="Sport filtré"
+        className="bg-muted/45 inline-flex max-w-full overflow-x-auto rounded-full p-1"
+        role="tablist"
+      >
+        {TABS.map(({ id, label, icon: Icon }) => (
+          <button
+            key={id}
+            aria-selected={tab === id}
+            className={sportSwitcherClass(tab === id)}
+            role="tab"
+            type="button"
+            onClick={() => onTabChange(id)}
+          >
+            <Icon className="size-3.5" aria-hidden />
+            {label}
+          </button>
+        ))}
+      </div>
+
+      <div className="space-y-1">
+        <p className="text-label">{activeTab.label}</p>
+        <p className="text-muted-foreground text-xs leading-relaxed">
+          Classements observés sur tes données réelles, par catégorie.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function categoriesForTab(
+  tab: SportTab,
+  prs: { run: RecordCategory[]; bike: RecordCategory[]; swim: RecordCategory[] },
+): RecordCategory[] {
+  if (tab === 'bike') {
+    return prs.bike;
+  }
+  if (tab === 'swim') {
+    return prs.swim;
+  }
+  return prs.run;
+}
+
+function RecordsPanelContent({
+  data,
+  tab,
+  setSportTab,
+}: {
+  data: NonNullable<ReturnType<typeof useRecords>['data']>;
+  tab: SportTab;
+  setSportTab: (next: SportTab) => void;
+}) {
+  const activeCategories = categoriesForTab(tab, data.prs);
+
+  return (
+    <section className="space-y-4" id="records">
+      <RecordsSectionHeader
+        streamsAnalyzed={data.streamsAnalyzed}
+        totalActivities={data.totalActivities}
+      />
+      <SportTabSwitcher tab={tab} onTabChange={setSportTab} />
+      <div className="max-w-[1400px]" role="tabpanel">
+        <PrGrid categories={activeCategories} />
+      </div>
+      <GpsAnalysisSection powerCurve={data.powerCurve} />
+    </section>
+  );
+}
+
+export function RecordsPanel() {
+  const { data, isPending } = useRecords();
+  const { tab, setSportTab } = useRecordsSportTab();
+
+  useRecordsHashScroll(tab, isPending, data);
 
   if (isPending) {
     return <RecordsSkeleton />;
@@ -300,58 +389,7 @@ export function RecordsPanel() {
     return null;
   }
 
-  const activeTab = TABS.find((item) => item.id === tab) ?? TABS[0];
-  let activeCategories = data.prs.run;
-  if (tab === 'bike') {
-    activeCategories = data.prs.bike;
-  }
-  if (tab === 'swim') {
-    activeCategories = data.prs.swim;
-  }
-
-  return (
-    <section className="space-y-4" id="records">
-      <RecordsSectionHeader
-        streamsAnalyzed={data.streamsAnalyzed}
-        totalActivities={data.totalActivities}
-      />
-
-      <div className="space-y-3">
-        <div
-          aria-label="Sport filtré"
-          className="bg-muted/45 inline-flex max-w-full overflow-x-auto rounded-full p-1"
-          role="tablist"
-        >
-          {TABS.map(({ id, label, icon: Icon }) => (
-            <button
-              key={id}
-              aria-selected={tab === id}
-              className={sportSwitcherClass(tab === id)}
-              role="tab"
-              type="button"
-              onClick={() => setSportTab(id)}
-            >
-              <Icon className="size-3.5" aria-hidden />
-              {label}
-            </button>
-          ))}
-        </div>
-
-        <div className="space-y-1">
-          <p className="text-label">{activeTab.label}</p>
-          <p className="text-muted-foreground text-xs leading-relaxed">
-            Classements observés sur tes données réelles, par catégorie.
-          </p>
-        </div>
-      </div>
-
-      <div className="max-w-[1400px]" role="tabpanel">
-        <PrGrid categories={activeCategories} />
-      </div>
-
-      <GpsAnalysisSection powerCurve={data.powerCurve} />
-    </section>
-  );
+  return <RecordsPanelContent data={data} setSportTab={setSportTab} tab={tab} />;
 }
 
 function RecordsSkeleton() {

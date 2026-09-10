@@ -11,6 +11,8 @@ import { activityStatusLabel, type ActivityStatusId } from '@/lib/health/activit
  */
 export type CoachDiscussContext = {
   kind: CoachDiscussTarget['kind'];
+  /** What the conversation is about — travels to the server as message metadata. */
+  target: CoachDiscussTarget;
   /** What is attached, in the athlete's words. */
   label: string;
   /** Surface the context came from, so it can be reviewed or changed. */
@@ -24,51 +26,53 @@ const HORIZON_LABEL: Record<number, string> = {
   14: 'les 14 prochains jours',
 };
 
+/** Planning window in plain French — shared by the chip and the coach prompt. */
+export function planningHorizonLabel(horizonDays: number): string {
+  return HORIZON_LABEL[horizonDays] ?? `${horizonDays} jours`;
+}
+
+type DiscussChipCopy = Pick<CoachDiscussContext, 'label' | 'sourceHref'>;
+
 /**
  * `name` is the resolved human name of the target — a session title, a goal,
  * a record family. Callers pass what they already loaded; when it is missing
  * the label degrades to the kind alone rather than inventing one.
  */
-function discussContextForKind(
-  target: CoachDiscussTarget,
-  named: string | null,
-): CoachDiscussContext {
+function discussChipCopy(target: CoachDiscussTarget, named: string | null): DiscussChipCopy {
   const handlers: {
     [K in CoachDiscussTarget['kind']]: (
       t: Extract<CoachDiscussTarget, { kind: K }>,
       n: string | null,
-    ) => CoachDiscussContext;
+    ) => DiscussChipCopy;
   } = {
-    today: () => ({ kind: 'today', label: 'Ton état du jour', sourceHref: '/' }),
+    today: () => ({ label: 'Ton état du jour', sourceHref: '/' }),
     'planned-session': (_, n) => ({
-      kind: 'planned-session',
       label: n ? `Séance prévue · ${n}` : 'Une séance prévue',
       sourceHref: '/plan/semaine',
     }),
     activity: (t, n) => ({
-      kind: 'activity',
       label: n ? `Séance réalisée · ${n}` : 'Une séance réalisée',
       sourceHref: `/activite/${t.activityId}`,
     }),
     planning: (t) => ({
-      kind: 'planning',
-      label: `Ta semaine · ${HORIZON_LABEL[t.horizonDays] ?? `${t.horizonDays} jours`}`,
+      label: `Ta semaine · ${planningHorizonLabel(t.horizonDays)}`,
       sourceHref: '/plan/semaine',
     }),
     goal: (_, n) => ({
-      kind: 'goal',
       label: n ? `Objectif · ${n}` : 'Un objectif',
       sourceHref: '/moi/objectifs',
     }),
     record: (_, n) => ({
-      kind: 'record',
       label: n ? `Records · ${n}` : 'Tes records',
       sourceHref: '/moi/performance',
     }),
     'physical-condition': (_, n) => ({
-      kind: 'physical-condition',
       label: n ? `Contrainte physique · ${n}` : 'Une contrainte physique',
       sourceHref: '/moi/corps',
+    }),
+    'journal-analyses': () => ({
+      label: 'Analyses journal',
+      sourceHref: '/journal/analyses',
     }),
   };
   return handlers[target.kind](target as never, named);
@@ -78,7 +82,7 @@ export function describeCoachDiscussContext(
   target: CoachDiscussTarget,
   name?: string | null,
 ): CoachDiscussContext {
-  return discussContextForKind(target, name?.trim() || null);
+  return { kind: target.kind, target, ...discussChipCopy(target, name?.trim() || null) };
 }
 
 /** Append athlete activity mode to discuss chips (client presentation layer). */
@@ -96,4 +100,27 @@ export function enrichDiscussContextWithActivityStatus(
     ...context,
     label: `${context.label} · ${activityStatusLabel(status)}`,
   };
+}
+
+/**
+ * Travels with the athlete's message so the server knows which surface — and
+ * which session, goal, record… — the conversation is about. Mirrors
+ * `CoachDiscussTarget` with `discussKind` as the discriminant. Client-supplied,
+ * so the server shape-checks it, scopes every lookup to the signed-in athlete,
+ * and re-checks any entitlement tied to a kind before acting on it.
+ */
+export type CoachDiscussMetadata = CoachDiscussTarget extends infer T
+  ? T extends { kind: infer K }
+    ? { discussKind: K } & Omit<T, 'kind'>
+    : never
+  : never;
+
+export function coachDiscussMetadata(
+  context: CoachDiscussContext | null | undefined,
+): CoachDiscussMetadata | undefined {
+  if (!context) {
+    return undefined;
+  }
+  const { kind, ...targetFields } = context.target;
+  return { discussKind: kind, ...targetFields } as CoachDiscussMetadata;
 }

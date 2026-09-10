@@ -1,9 +1,18 @@
-import { MessageCircle } from 'lucide-react';
 import type { ProjectionHorizonDays } from '@/core/projection/types';
+import {
+  COACH_DISCUSS_LABEL,
+  CoachDiscussIcon,
+  DiscussWithCoachButton,
+} from '@/components/coach/discuss/discuss-with-coach-button';
 import { LinkButton } from '@/components/ui/link-button';
 import { coachDiscussHref } from '@/lib/coach/chat/discuss/coach-discuss-href';
 import { cn } from '@/lib/utils';
 
+/**
+ * Activity / planning toolbar entry that resolves a discuss target, then uses
+ * the same Coach CTA contract as DiscussWithCoachButton (label + icon).
+ * Compact = icon-only with the canonical aria-label.
+ */
 export function DiscussCoachLink({
   activityId,
   plannedSessionId,
@@ -16,34 +25,37 @@ export function DiscussCoachLink({
   /** Icon-only toolbar control for mobile activity headers. */
   compact?: boolean;
 }) {
-  let href = '/coach';
+  let target: Parameters<typeof DiscussWithCoachButton>[0]['target'] | null = null;
   if (planningHorizon) {
-    href = coachDiscussHref({ kind: 'planning', horizonDays: planningHorizon });
+    target = { kind: 'planning', horizonDays: planningHorizon };
   } else if (plannedSessionId) {
-    href = coachDiscussHref({ kind: 'planned-session', sessionId: plannedSessionId });
+    target = { kind: 'planned-session', sessionId: plannedSessionId };
   } else if (activityId) {
-    href = coachDiscussHref({ kind: 'activity', activityId });
+    target = { kind: 'activity', activityId };
+  }
+
+  if (!target) {
+    return (
+      <LinkButton className="shrink-0 gap-1.5" href="/coach" size="sm" variant="outline">
+        <CoachDiscussIcon aria-hidden />
+        {COACH_DISCUSS_LABEL}
+      </LinkButton>
+    );
   }
 
   if (compact) {
     return (
       <LinkButton
-        aria-label="Discuter avec le coach"
+        aria-label={COACH_DISCUSS_LABEL}
         className={cn('text-muted-foreground size-8 shrink-0 px-0')}
-        href={href}
+        href={coachDiscussHref(target)}
         size="icon-sm"
         variant="ghost"
       >
-        <MessageCircle className="size-4" aria-hidden />
+        <CoachDiscussIcon className="size-4" aria-hidden />
       </LinkButton>
     );
   }
 
-  return (
-    <LinkButton className="shrink-0 gap-1.5 px-3" href={href} size="sm" variant="highlight">
-      <MessageCircle className="size-3.5" aria-hidden />
-      <span className="sr-only">Coach</span>
-      <span className="hidden sm:inline">Discuter avec le coach</span>
-    </LinkButton>
-  );
+  return <DiscussWithCoachButton size="sm" target={target} />;
 }

@@ -16,7 +16,7 @@ export function TodayActionRowHeader({ loading }: { loading: boolean }) {
       {loading ? (
         <SkeletonDataValue heightClassName="h-8" widthClassName="w-24" />
       ) : (
-        <DiscussWithCoachButton label="Coach" size="sm" target={{ kind: 'today' }} />
+        <DiscussWithCoachButton size="sm" target={{ kind: 'today' }} />
       )}
       <div className="flex shrink-0 items-center gap-2">
         {loading ? (

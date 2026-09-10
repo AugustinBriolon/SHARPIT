@@ -177,7 +177,6 @@ export function ConditionCardActions({
         ) : null}
         {condition.legacyPhysicalNoteId && condition.isActive ? (
           <DiscussWithCoachButton
-            label="Discuter"
             size="sm"
             target={{
               kind: 'physical-condition',
@@ -191,9 +190,52 @@ export function ConditionCardActions({
   );
 }
 
+function ConditionDetailDialogBody({ condition }: { condition: PhysicalHealthConditionCard }) {
+  const tone = corpsToneFromPhysicalSeverity(condition.severity);
+
+  return (
+    <div className="space-y-4 pt-2">
+      <div className="flex items-baseline gap-3">
+        <span className={cn('text-data text-3xl font-semibold', CORPS_TONE_TEXT[tone])}>
+          {condition.severity.toFixed(1)}
+        </span>
+        <span className="text-muted-foreground text-sm">sévérité inférée</span>
+      </div>
+
+      <ConditionMetaChips condition={condition} />
+      <span className="bg-muted/60 inline-flex items-center rounded-full px-2.5 py-1 text-xs">
+        {condition.observationCount} observation{condition.observationCount > 1 ? 's' : ''}
+      </span>
+
+      <div className="space-y-1.5">
+        <p className="text-label text-muted-foreground">Évolution de la sévérité</p>
+        <SeveritySparkline points={condition.sparkline} />
+      </div>
+
+      {condition.timelinePreview.length > 0 ? (
+        <div className="space-y-1.5">
+          <p className="text-label text-muted-foreground">Observations récentes</p>
+          <ul className="space-y-1">
+            {condition.timelinePreview.map((event, i) => (
+              <li key={i} className="text-muted-foreground text-xs">
+                <span className="text-foreground/80 font-medium">{event.at}</span> — {event.label}
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
+      {condition.estimatedRecoveryDays !== null && condition.isActive ? (
+        <p className="text-muted-foreground text-xs">
+          Retour au baseline estimé : ~{condition.estimatedRecoveryDays} jours
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
 function ConditionDetailDialog({ condition }: { condition: PhysicalHealthConditionCard }) {
   const [open, setOpen] = useState(false);
-  const tone = corpsToneFromPhysicalSeverity(condition.severity);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -208,45 +250,7 @@ function ConditionDetailDialog({ condition }: { condition: PhysicalHealthConditi
             {condition.sideLabel ? ` · ${condition.sideLabel}` : ''} · {condition.typeLabel}
           </p>
         </DialogHeader>
-
-        <div className="space-y-4 pt-2">
-          <div className="flex items-baseline gap-3">
-            <span className={cn('text-data text-3xl font-semibold', CORPS_TONE_TEXT[tone])}>
-              {condition.severity.toFixed(1)}
-            </span>
-            <span className="text-muted-foreground text-sm">sévérité inférée</span>
-          </div>
-
-          <ConditionMetaChips condition={condition} />
-          <span className="bg-muted/60 inline-flex items-center rounded-full px-2.5 py-1 text-xs">
-            {condition.observationCount} observation{condition.observationCount > 1 ? 's' : ''}
-          </span>
-
-          <div className="space-y-1.5">
-            <p className="text-label text-muted-foreground">Évolution de la sévérité</p>
-            <SeveritySparkline points={condition.sparkline} />
-          </div>
-
-          {condition.timelinePreview.length > 0 ? (
-            <div className="space-y-1.5">
-              <p className="text-label text-muted-foreground">Observations récentes</p>
-              <ul className="space-y-1">
-                {condition.timelinePreview.map((event, i) => (
-                  <li key={i} className="text-muted-foreground text-xs">
-                    <span className="text-foreground/80 font-medium">{event.at}</span> —{' '}
-                    {event.label}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ) : null}
-
-          {condition.estimatedRecoveryDays !== null && condition.isActive ? (
-            <p className="text-muted-foreground text-xs">
-              Retour au baseline estimé : ~{condition.estimatedRecoveryDays} jours
-            </p>
-          ) : null}
-        </div>
+        <ConditionDetailDialogBody condition={condition} />
       </DialogContent>
     </Dialog>
   );

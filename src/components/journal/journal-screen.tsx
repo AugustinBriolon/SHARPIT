@@ -10,7 +10,17 @@ import {
 } from 'react';
 import dynamic from 'next/dynamic';
 import { useQuery } from '@tanstack/react-query';
-import { Coffee, Droplets, Pencil, Smile, Check, Sparkles } from 'lucide-react';
+import {
+  ChartLine,
+  Coffee,
+  Droplets,
+  Minus,
+  Pencil,
+  Plus,
+  Smile,
+  Check,
+  Sparkles,
+} from 'lucide-react';
 import {
   JournalAutoChecklistSection,
   JournalNutritionSection,
@@ -19,6 +29,7 @@ import { JournalPrefsDrawer, useJournalPrefs } from '@/components/journal/journa
 import { SignalSegment } from '@/components/journal/signal-segment';
 import { MobileDrillDownHeader } from '@/components/layout/header/mobile-drill-down-header';
 import { Button } from '@/components/ui/button';
+import { LinkButton } from '@/components/ui/link-button';
 import { DAY_CONTEXT_FACTORS } from '@/lib/health/day-context-factors';
 import {
   emptyDayJournalEntry,
@@ -306,10 +317,12 @@ function MetricStepper({
         variant="outline"
         onClick={onDecrement}
       >
-        −
+        <Minus className="size-3" aria-hidden />
+        <span className="sr-only">Diminuer</span>
       </Button>
       <Button size="xs" type="button" variant="outline" onClick={onIncrement}>
-        +
+        <Plus className="size-3" aria-hidden />
+        <span className="sr-only">Augmenter</span>
       </Button>
     </div>
   );
@@ -507,13 +520,42 @@ function JournalLoadedContent({
   );
 }
 
-export function JournalScreen() {
-  const trainingDayId = useClientTrainingDayId();
-  const { entry, persist } = useDayJournal(trainingDayId);
-  const { prefs, setPrefs } = useJournalPrefs();
+function JournalScreenToolbar({
+  isPro,
+  prefs,
+  onIsProChange,
+  onPrefsChange,
+}: {
+  isPro: boolean;
+  prefs: JournalPrefs;
+  onIsProChange: (value: boolean) => void;
+  onPrefsChange: (prefs: JournalPrefs) => void;
+}) {
+  return (
+    <div className="flex flex-wrap items-start justify-between gap-3">
+      <p className="text-muted-foreground min-w-0 flex-1 text-sm text-pretty">
+        Contexte du jour pour le coach. Active seulement les éléments que tu veux suivre.
+      </p>
+      <div className="flex shrink-0 flex-wrap items-center gap-2">
+        <LinkButton href="/journal/analyses" size="sm" variant="outline">
+          <ChartLine className="size-3.5" aria-hidden />
+          Analyses
+        </LinkButton>
+        <JournalPrefsDrawer
+          isPro={isPro}
+          prefs={prefs}
+          onIsProChange={onIsProChange}
+          onPrefsChange={onPrefsChange}
+        />
+      </div>
+    </div>
+  );
+}
+
+function useJournalDaySignals(trainingDayId: string | null, prefs: JournalPrefs) {
   const needsSignals = showAutoChecklist(prefs) || showNutritionPanel(prefs);
 
-  const signalsQuery = useQuery({
+  return useQuery({
     queryKey: queryKeys.journalDaySignals(trainingDayId ?? 'pending'),
     queryFn: async (): Promise<JournalDaySignals> => {
       const res = await fetch(`/api/journal/day-signals?day=${encodeURIComponent(trainingDayId!)}`);
@@ -525,20 +567,24 @@ export function JournalScreen() {
     enabled: Boolean(trainingDayId) && needsSignals,
     staleTime: 60_000,
   });
+}
 
+export function JournalScreen() {
+  const trainingDayId = useClientTrainingDayId();
+  const { entry, persist } = useDayJournal(trainingDayId);
+  const { prefs, setPrefs, isPro, setIsPro } = useJournalPrefs();
+  const signalsQuery = useJournalDaySignals(trainingDayId, prefs);
   const isReady = Boolean(entry && trainingDayId);
 
   return (
     <div className="space-y-6">
       <MobileDrillDownHeader backHref="/" backLabel="Aujourd’hui" title="Journal" />
-
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <p className="text-muted-foreground min-w-0 flex-1 text-sm text-pretty">
-          Contexte du jour pour le coach. Active seulement les éléments que tu veux suivre.
-        </p>
-        <JournalPrefsDrawer prefs={prefs} onPrefsChange={setPrefs} />
-      </div>
-
+      <JournalScreenToolbar
+        isPro={isPro}
+        prefs={prefs}
+        onIsProChange={setIsPro}
+        onPrefsChange={setPrefs}
+      />
       {!isReady ? (
         <JournalLoadingSkeleton heightClass="h-40" />
       ) : (

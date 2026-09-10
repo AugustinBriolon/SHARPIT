@@ -30,6 +30,7 @@ import { requireAiProcessingConsent } from '@/lib/privacy/consent-store';
 import { formatStrengthSessionRules } from '@/lib/planned-session/strength/strength-session-template';
 import { checkRateLimit, rateLimitJsonResponse, rateLimiters } from '@/lib/rate-limit';
 import { COACH_COPY_DASH_RULE } from '@/lib/coach/sanitize-coach-copy';
+import { resolveCoachDiscussServerContext } from '@/lib/coach/chat/discuss/coach-discuss-server-context';
 
 /** Horizon de pré-chargement de l'agenda, aligné sur les séances du contexte. */
 const AGENDA_PREFETCH_DAYS = 14;
@@ -91,57 +92,73 @@ ${COACH_COPY_DASH_RULE}
 - Le contexte système suffit dans la grande majorité des cas : réponds sans outil plutôt que d'aller rechercher ce que tu as déjà. Maximum 3 appels utiles par réponse.
 - Ne répète jamais le même paragraphe, la même analyse ou la même proposition. Après avoir proposé des créations/modifications, ARRÊTE et attends la validation.`;
 
-export async function POST(req: Request) {
-  if (!isCoachConfigured()) {
-    return NextResponse.json(
-      {
-        error: 'Coach IA non configuré. Ajoute une clé AI_GATEWAY_API_KEY dans .env.',
-      },
-      { status: 503 },
-    );
-  }
+type BudgetWarning = Awaited<ReturnType<typeof ensureFreeAiBudget>>['warning'];
 
-  const athleteId = await getCurrentAthleteId();
-
+/** Consent, rate limit and free AI budget — in that order, before any model work. */
+async function guardCoachChat(
+  athleteId: string,
+): Promise<{ blocked: Response } | { budgetWarning: BudgetWarning }> {
   const aiBlocked = await requireAiProcessingConsent(athleteId);
   if (aiBlocked) {
-    return aiBlocked;
+    return { blocked: aiBlocked };
   }
 
   const rateLimit = await checkRateLimit(rateLimiters.coachChat, athleteId, { failClosed: true });
   if (!rateLimit.ok) {
     const limited = rateLimitJsonResponse(rateLimit);
-    return NextResponse.json(limited.body, { status: limited.status });
+    return { blocked: NextResponse.json(limited.body, { status: limited.status }) };
   }
 
   const budget = await ensureFreeAiBudget(athleteId);
   if (!budget.allowed) {
-    return NextResponse.json(aiBudgetResponseBody(budget.retryAfterSeconds!), {
-      status: 402,
-      headers: { [RETRY_AFTER_HEADER]: String(budget.retryAfterSeconds) },
-    });
+    return {
+      blocked: NextResponse.json(aiBudgetResponseBody(budget.retryAfterSeconds!), {
+        status: 402,
+        headers: { [RETRY_AFTER_HEADER]: String(budget.retryAfterSeconds) },
+      }),
+    };
   }
+  return { budgetWarning: budget.warning };
+}
 
+function formatAgendaBlock(busySummary: string | null): string {
+  return busySummary
+    ? `\n\n## Agenda — créneaux occupés (${AGENDA_PREFETCH_DAYS} prochains jours)\nPlace chaque séance sur un créneau LIBRE, entre 06:00 et 21:00. Tiens compte de la durée disponible : si le trou est plus court que la séance idéale, raccourcis-la ou déplace-la, et explique-le.\n${busySummary}`
+    : `\n\n## Agenda\nAucun agenda connecté : propose des heures réalistes (06:00–21:00) ou laisse l'heure vide.`;
+}
+
+async function buildCoachSystemPrompt(
+  athleteId: string,
+  loadDiscussBlock: () => Promise<string | null>,
+) {
   // The agenda ships with the context rather than behind a tool: a scheduling
   // turn otherwise spent a whole extra step fetching it, resending the entire
   // prefix afterwards. One cheap read here replaces that round trip.
-  const [{ messages }, ctx, busySummary] = await Promise.all([
-    req.json() as Promise<{ messages: UIMessage[] }>,
+  const [ctx, busySummary, discussBlock] = await Promise.all([
     buildCoachContext(athleteId),
     buildBusySummary(athleteId, new Date(), AGENDA_PREFETCH_DAYS),
+    loadDiscussBlock(),
   ]);
+  const discussSection = discussBlock ? `\n\n${discussBlock}` : '';
+  return {
+    practicedSports: ctx.practicedSports,
+    system: `${SYSTEM_PROMPT}\n\n---\n${formatCoachContext(ctx)}${formatAgendaBlock(busySummary)}${discussSection}`,
+  };
+}
 
-  const agendaBlock = busySummary
-    ? `\n\n## Agenda — créneaux occupés (${AGENDA_PREFETCH_DAYS} prochains jours)\nPlace chaque séance sur un créneau LIBRE, entre 06:00 et 21:00. Tiens compte de la durée disponible : si le trou est plus court que la séance idéale, raccourcis-la ou déplace-la, et explique-le.\n${busySummary}`
-    : `\n\n## Agenda\nAucun agenda connecté : propose des heures réalistes (06:00–21:00) ou laisse l'heure vide.`;
-
-  const system = `${SYSTEM_PROMPT}\n\n---\n${formatCoachContext(ctx)}${agendaBlock}`;
-
+async function streamCoachReply(input: {
+  athleteId: string;
+  system: string;
+  messages: UIMessage[];
+  practicedSports: Awaited<ReturnType<typeof buildCoachContext>>['practicedSports'];
+  budgetWarning: BudgetWarning;
+}): Promise<Response> {
+  const { athleteId } = input;
   const result = streamText({
     model: COACH_MODEL,
-    system,
-    messages: await convertToModelMessages(messages),
-    tools: createCoachTools(athleteId, { practicedSports: ctx.practicedSports }),
+    system: input.system,
+    messages: await convertToModelMessages(input.messages),
+    tools: createCoachTools(athleteId, { practicedSports: input.practicedSports }),
     // Les actions qui modifient le calendrier nécessitent la validation de l'athlète.
     // listPlannedSessions (lecture seule) s'exécute automatiquement.
     toolApproval: {
@@ -167,6 +184,41 @@ export async function POST(req: Request) {
 
   return createUIMessageStreamResponse({
     stream: toUIMessageStream({ stream: result.stream }),
-    headers: withAiBudgetWarningHeader({}, budget.warning),
+    headers: withAiBudgetWarningHeader({}, input.budgetWarning),
+  });
+}
+
+export async function POST(req: Request) {
+  if (!isCoachConfigured()) {
+    return NextResponse.json(
+      {
+        error: 'Coach IA non configuré. Ajoute une clé AI_GATEWAY_API_KEY dans .env.',
+      },
+      { status: 503 },
+    );
+  }
+
+  const athleteId = await getCurrentAthleteId();
+  const guard = await guardCoachChat(athleteId);
+  if ('blocked' in guard) {
+    return guard.blocked;
+  }
+
+  const { messages } = (await req.json()) as { messages: UIMessage[] };
+
+  // Discuss metadata is client-supplied: entitlements are settled here, before
+  // any kind-specific data is read or any model call is made.
+  const discuss = await resolveCoachDiscussServerContext(athleteId, messages);
+  if (discuss.status === 'forbidden') {
+    return NextResponse.json({ error: discuss.error }, { status: 403 });
+  }
+
+  const { system, practicedSports } = await buildCoachSystemPrompt(athleteId, discuss.loadBlock);
+  return streamCoachReply({
+    athleteId,
+    system,
+    messages,
+    practicedSports,
+    budgetWarning: guard.budgetWarning,
   });
 }

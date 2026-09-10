@@ -96,6 +96,36 @@ function ActivityDetailIdentityBlock({
   );
 }
 
+function ActivityDetailHeaderActions({
+  activity,
+  plannedSession,
+  plannedAnalysisReady,
+}: {
+  activity: ActivityDetailHeaderActivity;
+  plannedSession: PlannedSessionSummary | null;
+  plannedAnalysisReady: boolean;
+}) {
+  return (
+    <div className="flex flex-col items-stretch gap-3 sm:items-start">
+      <DiscussWithCoachButton
+        className="w-full sm:w-auto"
+        size="sm"
+        target={{ kind: 'activity', activityId: activity.id }}
+      />
+      <ActivityHeaderContextChips
+        activityId={activity.id}
+        activityTitle={activity.title}
+        activityType={activity.type}
+        feeling={activity.feeling}
+        plannedAnalysisReady={plannedAnalysisReady}
+        plannedSession={plannedSession}
+        rpe={activity.rpe}
+        weather={activity.weather}
+      />
+    </div>
+  );
+}
+
 export function ActivityDetailHeaderContent({
   activity,
   plannedSession,
@@ -122,24 +152,11 @@ export function ActivityDetailHeaderContent({
     <SessionPlate
       identity={<ActivityDetailIdentityBlock activity={activity} summary={summary} title={title} />}
       actions={
-        <div className="flex flex-col items-stretch gap-3 sm:items-start">
-          <DiscussWithCoachButton
-            className="w-full sm:w-auto"
-            label="Discuter de cette séance"
-            size="sm"
-            target={{ kind: 'activity', activityId: activity.id }}
-          />
-          <ActivityHeaderContextChips
-            activityId={activity.id}
-            activityTitle={activity.title}
-            activityType={activity.type}
-            feeling={activity.feeling}
-            plannedAnalysisReady={plannedAnalysisReady}
-            plannedSession={plannedSession}
-            rpe={activity.rpe}
-            weather={activity.weather}
-          />
-        </div>
+        <ActivityDetailHeaderActions
+          activity={activity}
+          plannedAnalysisReady={plannedAnalysisReady}
+          plannedSession={plannedSession}
+        />
       }
       toolbar={
         <ActivityDetailHeaderToolbar

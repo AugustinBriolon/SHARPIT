@@ -72,6 +72,53 @@ export type ActivityStatusWriteInput = {
   travelId?: string | null;
 };
 
+/** Draft shape used by the activity-status drawer before commit. */
+export type ActivityStatusDraft = {
+  status: ActivityStatusId;
+  retentionKind: ActivityStatusRetentionKind;
+  untilDate: string;
+  travelId: string | null;
+};
+
+export function activityStatusWriteFromDraft(draft: ActivityStatusDraft): ActivityStatusWriteInput {
+  if (draft.status === 'active') {
+    return { status: 'active' };
+  }
+  const retention: ActivityStatusRetention =
+    draft.retentionKind === 'until_date'
+      ? { kind: 'until_date', untilDate: draft.untilDate }
+      : { kind: 'until_modified' };
+  return {
+    status: draft.status,
+    retention,
+    travelId: draft.status === 'paused' ? draft.travelId : null,
+  };
+}
+
+export function activityStatusDraftMatchesStore(
+  store: ActivityStatusStore,
+  draft: ActivityStatusDraft,
+): boolean {
+  if (store.status !== draft.status) {
+    return false;
+  }
+  if (draft.status === 'active') {
+    return true;
+  }
+  if (store.retention.kind !== draft.retentionKind) {
+    return false;
+  }
+  if (
+    draft.retentionKind === 'until_date' &&
+    store.retention.kind === 'until_date' &&
+    store.retention.untilDate !== draft.untilDate
+  ) {
+    return false;
+  }
+  const expectedTravel = draft.status === 'paused' ? draft.travelId : null;
+  return store.travelId === expectedTravel;
+}
+
 const STATUS_SET = new Set<string>(ACTIVITY_STATUS_IDS);
 const listeners = new Set<() => void>();
 

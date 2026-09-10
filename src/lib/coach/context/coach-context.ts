@@ -169,7 +169,7 @@ function relativeActivityDay(activityDate: Date, today: Date): string | null {
   return null;
 }
 
-type CoachActivity = Awaited<ReturnType<typeof getActivitiesForCoach>>[number];
+export type CoachActivity = Awaited<ReturnType<typeof getActivitiesForCoach>>[number];
 
 function appendRunDetailParts(a: CoachActivity, parts: string[]): void {
   if (!a.runMetrics) {
@@ -343,7 +343,7 @@ const TREND_LABELS: Record<string, string> = {
   STABLE: 'stable',
 };
 
-function legacyPhysicalTrend(
+export function legacyPhysicalTrend(
   checkins: Awaited<ReturnType<typeof getActivePhysicalNotes>>[number]['checkins'],
 ): string | null {
   if (checkins.length < 2) {
@@ -652,6 +652,41 @@ async function loadCoachContextSources(input: LoadCoachContextSourcesInput) {
 
 type CoachContextSources = Awaited<ReturnType<typeof loadCoachContextSources>>;
 
+function assembleCoachActivitySections(
+  today: Date,
+  activities: CoachContextSources[0],
+  planned: CoachContextSources[3],
+  pastPlanned: CoachContextSources[4],
+) {
+  return {
+    availableDays: buildAvailableDays(activities, today),
+    recent: activities.slice(0, 14).map((a) => mapActivityForCoachRecent(a, today)),
+    realizedSessions: pastPlanned.filter((p) => p.completed && p.analysis).map(mapRealizedSession),
+    upcomingPlanned: planned.map(mapUpcomingPlanned),
+  };
+}
+
+function assembleCoachProfileSections(
+  today: Date,
+  profile: CoachContextSources[5],
+  healthEntries: CoachContextSources[1],
+  goals: CoachContextSources[2],
+) {
+  const health = buildHealthFromEntries(healthEntries);
+  const { primaryRace, races, metricGoals } = buildGoalsContext(goals, today);
+  return {
+    today: format(today, 'EEEE d MMMM yyyy', { locale: fr }),
+    note: profile?.context?.trim() || null,
+    equipment: normalizeAthleteEquipment(profile?.equipment ?? null),
+    practicedSports: normalizeAthletePracticedSports(profile?.practicedSports ?? null).sports,
+    profile: buildCoachProfile(profile),
+    health,
+    primaryRace,
+    races,
+    metricGoals,
+  };
+}
+
 function assembleCoachContextPayload(today: Date, sources: CoachContextSources, refDate: Date) {
   const [
     activities,
@@ -671,35 +706,18 @@ function assembleCoachContextPayload(today: Date, sources: CoachContextSources, 
   ] = sources;
 
   const { fitness, load } = buildFitnessContext(anchor, dailyStress, refDate);
-  const availableDays = buildAvailableDays(activities, today);
-  const recent = activities.slice(0, 14).map((a) => mapActivityForCoachRecent(a, today));
-  const realizedSessions = pastPlanned
-    .filter((p) => p.completed && p.analysis)
-    .map(mapRealizedSession);
-  const health = buildHealthFromEntries(healthEntries);
-  const { primaryRace, races, metricGoals } = buildGoalsContext(goals, today);
-  const upcomingPlanned = planned.map(mapUpcomingPlanned);
+  const activitySections = assembleCoachActivitySections(today, activities, planned, pastPlanned);
+  const profileSections = assembleCoachProfileSections(today, profile, healthEntries, goals);
   const environment = buildCoachEnvironment(profile, athleteSnapshot, homeWeather);
   const physical = buildPhysicalContext(athleteSnapshot, physicalNotes);
   const { travel, constraints } = buildTravelMemory(travelContexts, refDate);
   const { fatigue, adaptation, decision } = buildCoachIntelligence(athleteSnapshot);
 
   return {
-    today: format(today, 'EEEE d MMMM yyyy', { locale: fr }),
-    note: profile?.context?.trim() || null,
-    equipment: normalizeAthleteEquipment(profile?.equipment ?? null),
-    practicedSports: normalizeAthletePracticedSports(profile?.practicedSports ?? null).sports,
-    profile: buildCoachProfile(profile),
+    ...profileSections,
     fitness,
     load,
-    availableDays,
-    health,
-    primaryRace,
-    races,
-    metricGoals,
-    recent,
-    realizedSessions,
-    upcomingPlanned,
+    ...activitySections,
     travel,
     constraints,
     physical,
@@ -1068,7 +1086,7 @@ function formatPrimaryRaceLine(primaryRace: NonNullable<CoachContext['primaryRac
   return `Course principale : ${primaryRace.title}${primaryRace.location ? ` (${primaryRace.location})` : ''} dans ${primaryRace.daysToGo} jours (~${Math.round(primaryRace.daysToGo / 7)} semaines)${extras.length ? ` — ${extras.join(', ')}` : ''}.`;
 }
 
-function formatMetricGoalLine(goal: CoachContext['metricGoals'][number]): string {
+export function formatMetricGoalLine(goal: CoachContext['metricGoals'][number]): string {
   if (goal.target === undefined || goal.target === null) {
     return `Objectif métrique : ${goal.title}.`;
   }
@@ -1106,6 +1124,11 @@ function formatRecentActivityLine(a: CoachContext['recent'][number]): string {
     .filter(Boolean)
     .join(' · ');
   return `- ${a.date}${a.relativeDay ? ` (${a.relativeDay})` : ''} · ${a.type} ${a.title} (${a.duration})${extra ? ` — ${extra}` : ''}`;
+}
+
+/** One activity in the « Séances récentes » line format. */
+export function formatCoachActivityLine(activity: CoachActivity, today: Date): string {
+  return formatRecentActivityLine(mapActivityForCoachRecent(activity, today));
 }
 
 function formatRecentActivitiesSection(recent: CoachContext['recent']): string[] {

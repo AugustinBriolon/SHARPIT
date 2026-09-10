@@ -48,11 +48,7 @@ export function PlanActions({
             Seuils et repères
           </LinkButton>
         ) : null}
-        <DiscussWithCoachButton
-          label="Coach"
-          size="sm"
-          target={{ kind: 'planning', horizonDays: 7 }}
-        />
+        <DiscussWithCoachButton size="sm" target={{ kind: 'planning', horizonDays: 7 }} />
       </nav>
       {briefOpen ? <WeeklyBrief onClose={() => setBriefOpen(false)} /> : null}
       {macroOpen ? (

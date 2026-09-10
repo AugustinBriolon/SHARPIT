@@ -20,9 +20,10 @@ describe('buttonVariants (Seed ink CTA)', () => {
     expect(classes).toContain('bg-primary');
   });
 
-  it('exposes highlight Lime Pulse variant', () => {
-    const classes = buttonVariants({ variant: 'highlight' });
-    expect(classes).toContain('bg-highlight');
+  it('uses rounded-full for all button sizes', () => {
+    expect(buttonVariants({ size: 'default' })).toContain('rounded-full');
+    expect(buttonVariants({ size: 'sm' })).toContain('rounded-full');
+    expect(buttonVariants({ variant: 'highlight' })).toContain('rounded-full');
   });
 
   it('keeps instrument visual height at every viewport', () => {

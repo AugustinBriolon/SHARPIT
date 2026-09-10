@@ -21,15 +21,19 @@ import {
 
 function useJournalPrefsPatch(
   prefs: JournalPrefs,
+  isPro: boolean,
   onPrefsChange: (next: JournalPrefs) => void,
+  onIsProChange: (next: boolean) => void,
 ): {
   patch: PrefsPatcher;
   createCustomTrackable: (label: string) => boolean;
 } {
   const queryClient = useQueryClient();
   const prefsRef = useRef(prefs);
+  const isProRef = useRef(isPro);
   const writeGeneration = useRef(0);
   prefsRef.current = prefs;
+  isProRef.current = isPro;
 
   function patch(updater: (prev: JournalPrefs) => JournalPrefs) {
     const next = updater(prefsRef.current);
@@ -41,9 +45,10 @@ function useJournalPrefsPatch(
       if (generation !== writeGeneration.current) {
         return;
       }
-      prefsRef.current = remote;
-      writeJournalPrefsCache(remote);
-      onPrefsChange(remote);
+      prefsRef.current = remote.prefs;
+      writeJournalPrefsCache(remote.prefs);
+      onPrefsChange(remote.prefs);
+      onIsProChange(remote.isPro);
       void queryClient.invalidateQueries({ queryKey: ['journal-day-signals'] });
       void queryClient.invalidateQueries({ queryKey: queryKeys.journalPrefs });
     });
@@ -51,7 +56,7 @@ function useJournalPrefsPatch(
 
   function createCustomTrackable(label: string): boolean {
     const before = prefsRef.current;
-    const next = addCustomTrackable(before, label);
+    const next = addCustomTrackable(before, label, isProRef.current);
     if (next === before) {
       return false;
     }
@@ -84,15 +89,24 @@ function useJournalPrefsRows(filter: JournalFilterId, prefs: JournalPrefs) {
 
 export function JournalPrefsDrawer({
   prefs,
+  isPro,
   onPrefsChange,
+  onIsProChange,
 }: {
   prefs: JournalPrefs;
+  isPro: boolean;
   onPrefsChange: (next: JournalPrefs) => void;
+  onIsProChange: (next: boolean) => void;
 }) {
   const [open, setOpen] = useState(false);
   const [filter, setFilter] = useState<JournalFilterId>('all');
   const [draftLabel, setDraftLabel] = useState('');
-  const { patch, createCustomTrackable } = useJournalPrefsPatch(prefs, onPrefsChange);
+  const { patch, createCustomTrackable } = useJournalPrefsPatch(
+    prefs,
+    isPro,
+    onPrefsChange,
+    onIsProChange,
+  );
   const { builtinRows, customRows } = useJournalPrefsRows(filter, prefs);
 
   function onCreateCustom() {
@@ -111,6 +125,7 @@ export function JournalPrefsDrawer({
         customRows={customRows}
         draftLabel={draftLabel}
         filter={filter}
+        isPro={isPro}
         open={open}
         patch={patch}
         prefs={prefs}
@@ -126,9 +141,12 @@ export function JournalPrefsDrawer({
 export function useJournalPrefs(): {
   prefs: JournalPrefs;
   setPrefs: (next: JournalPrefs) => void;
+  isPro: boolean;
+  setIsPro: (next: boolean) => void;
   ready: boolean;
 } {
   const [prefs, setPrefs] = useState<JournalPrefs>(defaultJournalPrefs);
+  const [isPro, setIsPro] = useState(false);
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
@@ -140,13 +158,14 @@ export function useJournalPrefs(): {
       if (cancelled) {
         return;
       }
-      writeJournalPrefsCache(remote);
-      setPrefs(remote);
+      writeJournalPrefsCache(remote.prefs);
+      setPrefs(remote.prefs);
+      setIsPro(remote.isPro);
     });
     return () => {
       cancelled = true;
     };
   }, []);
 
-  return { prefs, setPrefs, ready };
+  return { prefs, setPrefs, isPro, setIsPro, ready };
 }

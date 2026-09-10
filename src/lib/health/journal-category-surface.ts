@@ -38,52 +38,21 @@ export const JOURNAL_CATEGORY_HEADER: Record<JournalCategoryTone, string> = {
 type FilterChipTone = { idle: string; active: string };
 
 const MUTED_IDLE = 'bg-muted text-muted-foreground hover:text-foreground';
+const MUTED_ACTIVE = 'bg-foreground text-background';
 
+/** Filter tabs stay neutral — no category color washes. */
 export const JOURNAL_FILTER_CHIP: Record<JournalFilterId, FilterChipTone> = {
-  all: {
-    idle: MUTED_IDLE,
-    active: 'bg-foreground text-background',
-  },
-  automatique: {
-    idle: 'bg-primary/10 text-primary hover:bg-primary/15',
-    active: 'bg-primary text-primary-foreground',
-  },
-  sante: {
-    idle: 'bg-rose-500/10 text-rose-800 hover:bg-rose-500/15 dark:text-rose-200',
-    active: 'bg-rose-600 text-white dark:bg-rose-500',
-  },
-  medicament: {
-    idle: 'bg-orange-500/10 text-orange-800 hover:bg-orange-500/15 dark:text-orange-200',
-    active: 'bg-orange-600 text-white dark:bg-orange-500',
-  },
-  nutrition: {
-    idle: 'bg-amber-500/10 text-amber-900 hover:bg-amber-500/15 dark:text-amber-100',
-    active: 'bg-amber-600 text-white dark:bg-amber-500',
-  },
-  complement: {
-    idle: 'bg-emerald-500/10 text-emerald-800 hover:bg-emerald-500/15 dark:text-emerald-200',
-    active: 'bg-emerald-600 text-white dark:bg-emerald-500',
-  },
-  sommeil: {
-    idle: 'bg-sky-500/10 text-sky-900 hover:bg-sky-500/15 dark:text-sky-200',
-    active: 'bg-sky-600 text-white dark:bg-sky-500',
-  },
-  style_vie: {
-    idle: 'bg-teal-500/10 text-teal-800 hover:bg-teal-500/15 dark:text-teal-200',
-    active: 'bg-teal-600 text-white dark:bg-teal-500',
-  },
-  comportement: {
-    idle: 'bg-amber-800/10 text-amber-950 hover:bg-amber-800/15 dark:text-amber-100',
-    active: 'bg-amber-900 text-white dark:bg-amber-600',
-  },
-  bien_etre: {
-    idle: 'bg-lime-500/10 text-lime-900 hover:bg-lime-500/15 dark:text-lime-100',
-    active: 'bg-lime-600 text-white dark:bg-lime-500 dark:text-lime-950',
-  },
-  personnalise: {
-    idle: MUTED_IDLE,
-    active: 'bg-foreground text-background',
-  },
+  all: { idle: MUTED_IDLE, active: MUTED_ACTIVE },
+  automatique: { idle: MUTED_IDLE, active: MUTED_ACTIVE },
+  sante: { idle: MUTED_IDLE, active: MUTED_ACTIVE },
+  medicament: { idle: MUTED_IDLE, active: MUTED_ACTIVE },
+  nutrition: { idle: MUTED_IDLE, active: MUTED_ACTIVE },
+  complement: { idle: MUTED_IDLE, active: MUTED_ACTIVE },
+  sommeil: { idle: MUTED_IDLE, active: MUTED_ACTIVE },
+  style_vie: { idle: MUTED_IDLE, active: MUTED_ACTIVE },
+  comportement: { idle: MUTED_IDLE, active: MUTED_ACTIVE },
+  bien_etre: { idle: MUTED_IDLE, active: MUTED_ACTIVE },
+  personnalise: { idle: MUTED_IDLE, active: MUTED_ACTIVE },
 };
 
 /** Day-metric wells keep a readable cue even when catalog category is bien_etre. */

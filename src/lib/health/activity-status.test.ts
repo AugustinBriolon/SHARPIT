@@ -2,8 +2,10 @@ import { describe, expect, it } from 'vitest';
 import {
   ACTIVITY_STATUS_DEFAULT,
   ACTIVITY_STATUS_IDS,
+  activityStatusDraftMatchesStore,
   activityStatusLabel,
   activityStatusReminderFact,
+  activityStatusWriteFromDraft,
   isActivityStatus,
   parseActivityStatusStore,
   resolveActivityStatusStore,
@@ -67,6 +69,44 @@ describe('activity-status', () => {
       label: 'Mode',
       value: 'Malade',
       hint: 'Repos avant la charge — reprendre seulement quand le corps suit. Jusqu’au 15 sept. 2026.',
+    });
+  });
+
+  it('builds write payload from draft and matches store without false dirty', () => {
+    const store = {
+      version: 2 as const,
+      status: 'injured' as const,
+      retention: { kind: 'until_date' as const, untilDate: '2026-09-20' },
+      travelId: null,
+      updatedAt: '2026-09-10T00:00:00.000Z',
+    };
+    const matching = {
+      status: 'injured' as const,
+      retentionKind: 'until_date' as const,
+      untilDate: '2026-09-20',
+      travelId: null,
+    };
+    expect(activityStatusDraftMatchesStore(store, matching)).toBe(true);
+    expect(activityStatusWriteFromDraft(matching)).toEqual({
+      status: 'injured',
+      retention: { kind: 'until_date', untilDate: '2026-09-20' },
+      travelId: null,
+    });
+    expect(
+      activityStatusDraftMatchesStore(store, {
+        ...matching,
+        untilDate: '2026-09-21',
+      }),
+    ).toBe(false);
+    expect(
+      activityStatusWriteFromDraft({
+        status: 'active',
+        retentionKind: 'until_modified',
+        untilDate: '2026-09-20',
+        travelId: null,
+      }),
+    ).toEqual({
+      status: 'active',
     });
   });
 });

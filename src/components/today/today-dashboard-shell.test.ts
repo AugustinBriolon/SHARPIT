@@ -15,6 +15,11 @@ vi.mock('@/hooks/use-is-demo-mode', () => ({
   useIsDemoMode: () => false,
 }));
 
+/* The journal habit strip fetches on its own; the shell renders no QueryClient. */
+vi.mock('@/components/today/rich/use-today-journal-habit-bridge', () => ({
+  useTodayJournalHabitBridge: () => ({ data: undefined }),
+}));
+
 /**
  * The shell has to hold every section the loaded page holds. Anything missing
  * here appears out of nowhere when its data lands and pushes the rest down.

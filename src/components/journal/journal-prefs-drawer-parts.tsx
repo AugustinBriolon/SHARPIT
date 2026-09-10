@@ -2,7 +2,7 @@
 
 import type { ReactNode } from 'react';
 import { Drawer } from '@base-ui/react/drawer';
-import { Plus, SlidersHorizontal, Trash2, X } from 'lucide-react';
+import { Plus, SlidersHorizontal, Sparkles, Trash2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
@@ -13,6 +13,7 @@ import {
   type JournalCustomItem,
   type JournalPrefs,
 } from '@/lib/health/journal-prefs';
+import { canEnableAnotherTrackable } from '@/lib/health/journal-limits';
 import { JOURNAL_CATEGORY_ICON, JOURNAL_FILTER_CHIP } from '@/lib/health/journal-category-surface';
 import {
   CUSTOM_FACTOR_ICON,
@@ -23,6 +24,7 @@ import {
   type JournalFilterId,
 } from '@/lib/health/journal-trackables';
 import { cn } from '@/lib/utils';
+import { LinkButton } from '@/components/ui/link-button';
 
 export type PrefsPatcher = (updater: (prev: JournalPrefs) => JournalPrefs) => void;
 
@@ -33,7 +35,7 @@ export function JournalPrefsOpenButton({ open, onOpen }: { open: boolean; onOpen
       aria-haspopup="dialog"
       type="button"
       className={cn(
-        'border-border bg-background text-foreground hover:bg-muted inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-lg border px-2.5',
+        'border-border bg-background text-foreground hover:bg-muted inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-full border px-2.5',
         'text-[0.8rem] font-medium transition-colors',
       )}
       onClick={onOpen}
@@ -95,10 +97,14 @@ function JournalPrefsFilterTabs({
 function BuiltinTrackableRow({
   item,
   checked,
+  isPro,
+  enableBlocked,
   patch,
 }: {
   item: JournalBuiltinTrackable;
   checked: boolean;
+  isPro: boolean;
+  enableBlocked: boolean;
   patch: PrefsPatcher;
 }) {
   const Icon = item.icon;
@@ -115,15 +121,28 @@ function BuiltinTrackableRow({
       <span className="min-w-0 flex-1 text-sm font-medium">{item.label}</span>
       <Switch
         checked={checked}
+        disabled={!checked && enableBlocked}
         onCheckedChange={(value) =>
-          patch((prev) => setTrackableEnabled(prev, item.id as JournalBuiltinTrackableId, value))
+          patch((prev) =>
+            setTrackableEnabled(prev, item.id as JournalBuiltinTrackableId, value, isPro),
+          )
         }
       />
     </li>
   );
 }
 
-function CustomTrackableRow({ item, patch }: { item: JournalCustomItem; patch: PrefsPatcher }) {
+function CustomTrackableRow({
+  item,
+  isPro,
+  enableBlocked,
+  patch,
+}: {
+  item: JournalCustomItem;
+  isPro: boolean;
+  enableBlocked: boolean;
+  patch: PrefsPatcher;
+}) {
   const Icon = CUSTOM_FACTOR_ICON;
   return (
     <li className="flex items-center gap-3 px-4 py-3">
@@ -146,8 +165,9 @@ function CustomTrackableRow({ item, patch }: { item: JournalCustomItem; patch: P
       </button>
       <Switch
         checked={item.enabled}
+        disabled={!item.enabled && enableBlocked}
         onCheckedChange={(value) =>
-          patch((prev) => setCustomTrackableEnabled(prev, item.id, value))
+          patch((prev) => setCustomTrackableEnabled(prev, item.id, value, isPro))
         }
       />
     </li>
@@ -158,14 +178,18 @@ function JournalPrefsTrackableList({
   prefs,
   builtinRows,
   customRows,
+  isPro,
   patch,
 }: {
   prefs: JournalPrefs;
   builtinRows: readonly JournalBuiltinTrackable[];
   customRows: readonly JournalCustomItem[];
+  isPro: boolean;
   patch: PrefsPatcher;
 }) {
   const isEmpty = builtinRows.length === 0 && customRows.length === 0;
+  const enableBlocked = !canEnableAnotherTrackable(prefs, isPro);
+
   return (
     <div className="min-h-0 flex-1 overflow-y-auto">
       <ul className="divide-border divide-y">
@@ -173,12 +197,20 @@ function JournalPrefsTrackableList({
           <BuiltinTrackableRow
             key={item.id}
             checked={prefs.enabled[item.id]}
+            enableBlocked={enableBlocked}
+            isPro={isPro}
             item={item}
             patch={patch}
           />
         ))}
         {customRows.map((item) => (
-          <CustomTrackableRow key={item.id} item={item} patch={patch} />
+          <CustomTrackableRow
+            key={item.id}
+            enableBlocked={enableBlocked}
+            isPro={isPro}
+            item={item}
+            patch={patch}
+          />
         ))}
       </ul>
       {isEmpty ? (
@@ -190,20 +222,37 @@ function JournalPrefsTrackableList({
   );
 }
 
-function JournalPrefsCreateFooter({
+function JournalPrefsProUpsellFooter() {
+  return (
+    <div className="border-border shrink-0 space-y-2 border-t px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+      <p className="text-muted-foreground text-xs text-pretty">
+        Les éléments personnalisés sont réservés à Pro.
+      </p>
+      <LinkButton href="/settings/pro" size="sm" variant="outline">
+        <Sparkles className="size-3.5" aria-hidden />
+        Voir Pro
+      </LinkButton>
+    </div>
+  );
+}
+
+function JournalPrefsCustomCreateForm({
   draftLabel,
+  enableBlocked,
   onDraftLabelChange,
   onCreateCustom,
 }: {
   draftLabel: string;
+  enableBlocked: boolean;
   onDraftLabelChange: (value: string) => void;
   onCreateCustom: () => void;
 }) {
   return (
-    <div className="border-border flex gap-2 border-t px-4 py-3">
+    <div className="border-border flex shrink-0 gap-2 border-t px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
       <Input
         aria-label="Nouvel élément personnalisé"
         className="h-9"
+        disabled={enableBlocked}
         maxLength={48}
         placeholder="Créer un élément…"
         value={draftLabel}
@@ -217,7 +266,7 @@ function JournalPrefsCreateFooter({
       />
       <Button
         className="shrink-0 cursor-pointer"
-        disabled={draftLabel.trim().length < 1}
+        disabled={enableBlocked || draftLabel.trim().length < 1}
         size="sm"
         type="button"
         onClick={onCreateCustom}
@@ -226,6 +275,33 @@ function JournalPrefsCreateFooter({
         Ajouter
       </Button>
     </div>
+  );
+}
+
+function JournalPrefsCreateFooter({
+  draftLabel,
+  isPro,
+  enableBlocked,
+  onDraftLabelChange,
+  onCreateCustom,
+}: {
+  draftLabel: string;
+  isPro: boolean;
+  enableBlocked: boolean;
+  onDraftLabelChange: (value: string) => void;
+  onCreateCustom: () => void;
+}) {
+  if (!isPro) {
+    return <JournalPrefsProUpsellFooter />;
+  }
+
+  return (
+    <JournalPrefsCustomCreateForm
+      draftLabel={draftLabel}
+      enableBlocked={enableBlocked}
+      onCreateCustom={onCreateCustom}
+      onDraftLabelChange={onDraftLabelChange}
+    />
   );
 }
 
@@ -265,46 +341,68 @@ function JournalPrefsDrawerShell({
   );
 }
 
-export function JournalPrefsDrawerPanel({
-  open,
-  onOpenChange,
-  filter,
-  onFilterChange,
-  prefs,
-  builtinRows,
-  customRows,
-  draftLabel,
-  onDraftLabelChange,
-  onCreateCustom,
-  patch,
-}: {
+type JournalPrefsDrawerPanelProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   filter: JournalFilterId;
   onFilterChange: (id: JournalFilterId) => void;
   prefs: JournalPrefs;
+  isPro: boolean;
   builtinRows: readonly JournalBuiltinTrackable[];
   customRows: readonly JournalCustomItem[];
   draftLabel: string;
   onDraftLabelChange: (value: string) => void;
   onCreateCustom: () => void;
   patch: PrefsPatcher;
-}) {
+};
+
+function JournalPrefsDrawerInner({
+  filter,
+  onFilterChange,
+  prefs,
+  isPro,
+  builtinRows,
+  customRows,
+  draftLabel,
+  onDraftLabelChange,
+  onCreateCustom,
+  patch,
+}: Omit<JournalPrefsDrawerPanelProps, 'open' | 'onOpenChange'>) {
+  const showCreate = filter === 'all' || filter === 'personnalise';
+  const enableBlocked = !canEnableAnotherTrackable(prefs, isPro);
+
   return (
-    <JournalPrefsDrawerShell open={open} onOpenChange={onOpenChange}>
+    <>
       <JournalPrefsDrawerHeader />
       <JournalPrefsFilterTabs filter={filter} onFilterChange={onFilterChange} />
       <JournalPrefsTrackableList
         builtinRows={builtinRows}
         customRows={customRows}
+        isPro={isPro}
         patch={patch}
         prefs={prefs}
       />
-      <JournalPrefsCreateFooter
-        draftLabel={draftLabel}
-        onCreateCustom={onCreateCustom}
-        onDraftLabelChange={onDraftLabelChange}
-      />
+      {showCreate ? (
+        <JournalPrefsCreateFooter
+          draftLabel={draftLabel}
+          enableBlocked={enableBlocked}
+          isPro={isPro}
+          onCreateCustom={onCreateCustom}
+          onDraftLabelChange={onDraftLabelChange}
+        />
+      ) : null}
+    </>
+  );
+}
+
+export function JournalPrefsDrawerPanel({
+  open,
+  onOpenChange,
+  ...innerProps
+}: JournalPrefsDrawerPanelProps) {
+  return (
+    <JournalPrefsDrawerShell open={open} onOpenChange={onOpenChange}>
+      <JournalPrefsDrawerInner {...innerProps} />
     </JournalPrefsDrawerShell>
   );
 }

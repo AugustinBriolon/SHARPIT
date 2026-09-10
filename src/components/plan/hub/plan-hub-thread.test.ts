@@ -124,8 +124,8 @@ describe('Plan hub continuous thread', () => {
 
   it('reuses the shared outline sm button on hub actions', () => {
     expect(actions).toContain('DiscussWithCoachButton');
-    expect(actions).toContain('label="Coach"');
     expect(actions).not.toContain('Demander au Coach');
+    expect(actions).not.toContain('label="Coach"');
     expect(actions).toContain('LinkButton');
     expect(actions).toContain('variant="outline"');
     expect(actions).toContain('size="sm"');

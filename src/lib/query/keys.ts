@@ -17,6 +17,7 @@ export const queryKeys = {
   activityStatus: ['activity-status'] as const,
   journalPrefs: ['journal-prefs'] as const,
   journalDaySignals: (trainingDayId: string) => ['journal-day-signals', trainingDayId] as const,
+  journalHabitBridge: ['journal-habit-bridge'] as const,
   googleEvents: (from: string, to: string) => ['google-events', from, to] as const,
   googleCalendars: ['google-calendars'] as const,
   conversations: ['conversations'] as const,

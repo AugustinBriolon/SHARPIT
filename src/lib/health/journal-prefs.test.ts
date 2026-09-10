@@ -47,9 +47,9 @@ describe('journal-prefs', () => {
 
   it('toggles trackables and adds custom items', () => {
     let prefs = defaultJournalPrefs();
-    prefs = setTrackableEnabled(prefs, 'creatine', true);
+    prefs = setTrackableEnabled(prefs, 'creatine', true, true);
     expect(prefs.enabled.creatine).toBe(true);
-    prefs = addCustomTrackable(prefs, 'Étirements');
+    prefs = addCustomTrackable(prefs, 'Étirements', true);
     expect(prefs.customItems).toHaveLength(1);
     expect(prefs.customItems[0]?.label).toBe('Étirements');
     expect(prefs.customItems[0]?.enabled).toBe(true);

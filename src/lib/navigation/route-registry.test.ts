@@ -32,12 +32,13 @@ describe('route-registry', () => {
       expect(resolveRouteLabel('/activite/sejours/trip-1')).toBe('Séjour');
     });
 
-    it('matches Moi dedicated child surfaces', () => {
-      expect(resolveRouteLabel('/moi/corps')).toBe('Corps');
-      expect(resolveRouteLabel('/moi/objectifs')).toBe('Objectifs');
-      expect(resolveRouteLabel('/moi/performance')).toBe('Performance');
-      expect(resolveRouteLabel('/moi/calibration')).toBe('Seuils & repères');
-      expect(resolveRouteLabel('/consent')).toBe('Consentements');
+    it('matches Journal surfaces', () => {
+      expect(resolveRouteLabel('/journal')).toBe('Journal');
+      expect(resolveRouteLabel('/journal/analyses')).toBe('Analyses');
+      expect(resolveRouteFallback('/journal/analyses')).toEqual({
+        href: '/journal',
+        label: 'Journal',
+      });
     });
 
     it('ignores search / hash when matching', () => {

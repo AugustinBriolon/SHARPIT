@@ -1,10 +1,11 @@
 /**
  * Canonical coach discuss deep-links.
- * CoachView bootstraps a new conversation and prefills the matching prompt.
+ * CoachView bootstraps a new conversation and attaches the matching context chip.
+ * The composer stays empty — the athlete writes; context is the chip only (IA contract).
  *
  * Every athlete surface named in the Information Architecture can start a
  * contextual conversation: Today, a planned session, an activity, the week,
- * a goal, a record, and an active physical constraint (ADR-022).
+ * a goal, a record, an active physical constraint, and journal analyses.
  */
 
 export type CoachDiscussTarget =
@@ -14,23 +15,26 @@ export type CoachDiscussTarget =
   | { kind: 'planning'; horizonDays: 1 | 3 | 7 | 14 }
   | { kind: 'goal'; goalId: string }
   | { kind: 'record'; categoryKey: string }
-  | { kind: 'physical-condition'; noteId: string };
+  | { kind: 'physical-condition'; noteId: string }
+  | { kind: 'journal-analyses' };
+
+type HrefBuilders = {
+  [K in CoachDiscussTarget['kind']]: (target: Extract<CoachDiscussTarget, { kind: K }>) => string;
+};
+
+const HREF_BUILDERS: HrefBuilders = {
+  today: () => '/coach?discussToday=1',
+  'planned-session': (t) => `/coach?discuss=${encodeURIComponent(t.sessionId)}`,
+  activity: (t) => `/coach?discussActivity=${encodeURIComponent(t.activityId)}`,
+  planning: (t) => `/coach?discussPlanning=${t.horizonDays}`,
+  goal: (t) => `/coach?discussGoal=${encodeURIComponent(t.goalId)}`,
+  record: (t) => `/coach?discussRecord=${encodeURIComponent(t.categoryKey)}`,
+  'physical-condition': (t) => `/coach?discussCondition=${encodeURIComponent(t.noteId)}`,
+  'journal-analyses': () => '/coach?discussJournalAnalyses=1',
+};
 
 export function coachDiscussHref(target: CoachDiscussTarget): string {
-  switch (target.kind) {
-    case 'today':
-      return '/coach?discussToday=1';
-    case 'planned-session':
-      return `/coach?discuss=${encodeURIComponent(target.sessionId)}`;
-    case 'activity':
-      return `/coach?discussActivity=${encodeURIComponent(target.activityId)}`;
-    case 'planning':
-      return `/coach?discussPlanning=${target.horizonDays}`;
-    case 'goal':
-      return `/coach?discussGoal=${encodeURIComponent(target.goalId)}`;
-    case 'record':
-      return `/coach?discussRecord=${encodeURIComponent(target.categoryKey)}`;
-    case 'physical-condition':
-      return `/coach?discussCondition=${encodeURIComponent(target.noteId)}`;
-  }
+  // Correlated union: TS cannot tie the looked-up builder to this target's kind.
+  const build = HREF_BUILDERS[target.kind] as (t: CoachDiscussTarget) => string;
+  return build(target);
 }
