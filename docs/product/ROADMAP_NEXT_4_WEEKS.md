@@ -34,11 +34,11 @@ Everything else waits unless it unblocks these.
 
 August audit Phase 2 — cheap correctness before push:
 
-| #   | Work                                                                 | Effort |
-| --- | -------------------------------------------------------------------- | ------ |
-| 2.1 | Presentation query keys → `src/lib/query/keys.ts` (ban inline drift) | S      |
-| 2.2 | Move `ensureMorningRecalibration` off `GET /api/presentation/today`  | M      |
-| 2.3 | E2E smoke: cold Today → verdict → wellness → revised verdict         | M      |
+| #   | Work                                                                 | Effort | Status                                          |
+| --- | -------------------------------------------------------------------- | ------ | ----------------------------------------------- |
+| 2.1 | Presentation query keys → `src/lib/query/keys.ts` (ban inline drift) | S      | Done 2026-09-10                                 |
+| 2.2 | Move `ensureMorningRecalibration` off `GET /api/presentation/today`  | M      | Done 2026-09-10                                 |
+| 2.3 | E2E smoke: cold Today → verdict → wellness → revised verdict         | M      | Done 2026-09-10 (`e2e/morning-journey.spec.ts`) |
 
 **Exit gate:** Today read path has no write side-effect; morning journey has one E2E.
 
