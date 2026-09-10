@@ -1067,7 +1067,7 @@ Evening behaviors: early bed, avoid hard effort, hydration, stress management. P
 **Current friction:**
 
 - Narrative header adapts to evening phase but no dedicated evening review surface.
-- Daily briefing generated in cron but **not displayed anywhere**.
+- Daily briefing is now on Today morning; evening still lacks a dedicated “protect sleep tonight” decision surface.
 - Evolution charts show data, not evening-oriented decision ("protect sleep tonight").
 
 ---
@@ -1163,7 +1163,7 @@ Next week orientation: hold, build, recover, adjust plan. Entry point to Plan Ad
 
 **Current friction:**
 
-- Weekly review generated on Sunday cron but **no UI surfaces it**.
+- Weekly LLM review is at `/plan/bilan`; discovery from Sunday evening / Monday morning is still weak.
 - Consistency panel on Today is partial substitute, not weekly narrative.
 - Plan Adapter buried in Séances hub, disconnected from weekly reflection moment.
 
@@ -1338,37 +1338,48 @@ Off-season structure: volume caps, strength emphasis, health markers, optional g
 
 ## Friction map — current product
 
+> **Last verified:** 2026-09-10 against code on `main` (post journal–coach discuss + Daily Briefing remount).  
+> Prior audit: [`docs/audits/PRODUCT_AUDIT_AND_ROADMAP_2026-08.md`](../audits/PRODUCT_AUDIT_AND_ROADMAP_2026-08.md).  
+> Frozen next four weeks: [`docs/product/ROADMAP_NEXT_4_WEEKS.md`](./ROADMAP_NEXT_4_WEEKS.md).
+
 Grouped by severity to the daily journey.
+
+### Resolved — do not re-plan as Critical
+
+| Friction (was Critical / High)           | Resolution                                                                                                            |
+| ---------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| Inference not triggered post-sync        | `cron/sync` calls `refreshAthleteState({ skipSync: true })` after sync                                                |
+| `INSUFFICIENT_DATA` blocks entire Today  | Degrades to empty / status banner / offline snapshot path — never a blank wall                                        |
+| Daily briefing generated but never shown | `DailyBriefingPanel` mounted under the verdict on Today (progressive `<details>`; open morning / first visit)         |
+| Weekly review generated but not shown    | LLM narrative at `/plan/bilan` (`WeeklyReviewGate`); deterministic Weekly Coaching Brief remains available from Coach |
+| No adaptation drill-down                 | `/today/adaptation` exists                                                                                            |
+| Cron sync only 3×/day                    | Cadence is **6×/day** UTC (06:30, 09, 12, 15, 18, 21) plus `planned-forecast` at 19:00                                |
 
 ### Critical — breaks the morning contract
 
-| Friction                                  | Affected moments | Impact                                                |
-| ----------------------------------------- | ---------------- | ----------------------------------------------------- |
-| Inference not triggered post-sync         | 0, 7, 10, 1, 2   | Twin stale when athlete opens app; undermines trust   |
-| `INSUFFICIENT_DATA` blocks entire Today   | 1, 2             | Athlete gets nothing when partial guidance would help |
-| Daily briefing generated but never shown  | 2, 12            | Intelligence exists, experience does not              |
-| No morning push notification with verdict | 1                | Athlete must remember to open SHARPIT                 |
+| Friction                                  | Affected moments | Impact                                |
+| ----------------------------------------- | ---------------- | ------------------------------------- |
+| No morning push notification with verdict | 1                | Athlete must remember to open SHARPIT |
 
 ### High — weakens decision moments
 
-| Friction                                   | Affected moments | Impact                                                                                                                                                                                                                                                                                                                                                                                      |
-| ------------------------------------------ | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Wellness check-in hard to discover         | 3, 13            | Subjective dimension underfed                                                                                                                                                                                                                                                                                                                                                               |
-| No post-session surface on Today           | 8, 9             | Athlete must hunt activity detail                                                                                                                                                                                                                                                                                                                                                           |
-| Planned session compatibility not explicit | 4, 5             | Verdict and plan not fully bridged                                                                                                                                                                                                                                                                                                                                                          |
-| Weekly review generated but not shown      | Weekly           | No closure rhythm — **partially addressed**: the deterministic Weekly Coaching Brief (ADR-007) now gives a weekly reflection entry point (plan phase, load, key sessions, limiting factor, learning feedback), reachable from the same Coach menu as Plan Adapter. The cron-generated LLM `WeeklyReview` narrative itself remains unsurfaced — a separate artifact, not shown by this work. |
-| Injury notes disconnected from verdict     | Injury           | Twin constraint not felt in daily decision                                                                                                                                                                                                                                                                                                                                                  |
+| Friction                                   | Affected moments | Impact                                     |
+| ------------------------------------------ | ---------------- | ------------------------------------------ |
+| Wellness check-in hard to discover         | 3, 13            | Subjective dimension underfed              |
+| No post-session surface on Today           | 8, 9             | Athlete must hunt activity detail          |
+| Planned session compatibility not explicit | 4, 5             | Verdict and plan not fully bridged         |
+| Injury notes disconnected from verdict     | Injury           | Twin constraint not felt in daily decision |
 
 ### Medium — erodes delight and coherence
 
 | Friction                                  | Affected moments             | Impact                                                                                                             |
 | ----------------------------------------- | ---------------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| Three metric rings compete with verdict   | 2                            | Cognitive load                                                                                                     |
-| No adaptation drill-down                  | 2                            | Incomplete Twin exposure                                                                                           |
+| Three metric rings compete with verdict   | 2                            | Cognitive load — partially mitigated by Comprendre hierarchy                                                       |
 | Plan Adapter hidden in Séances, not Coach | Weekly, 4                    | Adaptation hard to find — unchanged by ADR-007; the new "Ma semaine" entry sits in the same menu, not a relocation |
 | Goals strip links generic                 | 4                            | Weak goal-session connection                                                                                       |
 | No race week / taper / off-season modes   | Race week, taper, off-season | Same voice when context radically differs                                                                          |
 | Cron sync UTC vs. local wake              | 7, 0                         | Data may lag behind morning                                                                                        |
+| Body view model wired but unused          | Corps                        | Presentation path exists without a clear surface decision                                                          |
 
 ### Low — polish and completeness
 
@@ -1388,10 +1399,10 @@ Ranked by effect on the athlete's lived experience — not engineering effort.
 
 **Moments served:** 0, 1, 2, 7, 10
 
-1. **Close the sync → inference loop** — Twin updates when data arrives, not when app opens.
-2. **Surface the daily briefing** — the three-paragraph narrative USER_JOURNEYS describes; already generated.
-3. **Graceful Today degradation** — partial state when data incomplete; never a blank wall.
-4. **Morning verdict delivery** — notification or widget: one sentence before open.
+1. ~~Close the sync → inference loop~~ — done (cron refresh).
+2. ~~Surface the daily briefing~~ — done (Today panel under verdict).
+3. ~~Graceful Today degradation~~ — done.
+4. **Morning verdict delivery** — notification or widget: one sentence before open. **← remaining Critical**
 
 _Why first:_ If the athlete does not trust the morning, nothing else matters. This is the PRODUCT_EXECUTION seven-questions test in practice.
 
@@ -1409,7 +1420,7 @@ _Why second:_ Morning tells them what to do; this tells them whether they did it
 
 **Moments served:** Weekly, race week, taper, recovery week, off-season
 
-8. **Surface weekly review** — Sunday arc narrative + link to plan adaptation.
+8. ~~Surface weekly review~~ — done at `/plan/bilan` (+ deterministic brief).
 9. **Goal-aware session and week framing** — J-*, taper, off-season voice in narrative.
 10. **Plan Adapter at moment of reflection** — weekly review → proposed changes.
 
@@ -1428,9 +1439,11 @@ _Why fourth:_ Critical for affected athletes; smaller population daily.
 
 **Moments served:** 11, all
 
-13. Adaptation drill-down.
+13. Adaptation drill-down polish.
 14. Afternoon stale-verdict refresh.
 15. Unified session story (narrative + compliance + goals).
+16. Decide Body view model: surface or delete.
+17. Engineering hygiene from August audit Phase 2 (presentation query keys, GET write, E2E morning).
 
 ---
 
@@ -1452,10 +1465,11 @@ If the sentence cannot be completed, the work waits.
 | `PRODUCT_EXECUTION.md`      | How we build in the post-Kernel era                           |
 | `design/DESIGN_LANGUAGE.md` | How moments feel visually                                     |
 | `USER_JOURNEYS.md`          | Aspirational behavioral detail (some moments not yet shipped) |
+| `ROADMAP_NEXT_4_WEEKS.md`   | Frozen near-term execution slice                              |
 | **This document**           | The map of athlete life — what to improve and in what order   |
 
 When `USER_JOURNEYS.md` and this document diverge on current state, **this document's friction map reflects reality**. When they diverge on intent, **the manifesto decides**.
 
 ---
 
-_Last updated: July 2026_
+_Last updated: September 2026_

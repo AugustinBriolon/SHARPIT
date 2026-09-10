@@ -3,7 +3,7 @@
 **Type**: Product + engineering audit, with prioritized roadmap
 **Date**: 2026-08-19
 **Method**: Code-grounded. Every claim below was verified against the source tree at `7e98986`, not inherited from existing documentation.
-**Status**: Proposal — the roadmap is a recommendation, not law. The audit findings are factual.
+**Status**: Historical audit (2026-08-19). Friction map and near-term sequencing were refreshed 2026-09-10 in [`docs/product/PRODUCT.md`](../product/PRODUCT.md) and [`docs/product/ROADMAP_NEXT_4_WEEKS.md`](../product/ROADMAP_NEXT_4_WEEKS.md). Engineering findings below remain useful; Phase 1.1/1.2 product gaps are largely closed since then.
 
 ---
 
