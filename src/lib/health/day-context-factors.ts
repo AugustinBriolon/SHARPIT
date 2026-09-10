@@ -42,6 +42,12 @@ export const DAY_CONTEXT_FACTOR_IDS = [
   'allergies',
   'cold_congestion',
   'cramps',
+  'abdominal_cramps',
+  'contraception',
+  'sexual_activity',
+  'pregnant',
+  'medication',
+  'antibiotic',
   'massage',
   'mobility',
   'meditation',
@@ -50,6 +56,14 @@ export const DAY_CONTEXT_FACTOR_IDS = [
   'meal_out',
   'skipped_meal',
   'night_work',
+  'shared_bed',
+  'earplugs',
+  'sleep_mask',
+  'pet_in_room',
+  'melatonin',
+  'ice_bath',
+  'chiropractor',
+  'yoga',
 ] as const;
 
 export type DayContextFactorId = (typeof DAY_CONTEXT_FACTOR_IDS)[number];
@@ -66,12 +80,13 @@ export type DayContextFactorGroup =
   | 'lifestyle'
   | 'nutrition'
   | 'health'
-  | 'behaviour';
+  | 'behaviour'
+  | 'medication'
+  | 'sleep';
 
 export type DayContextFactor = {
   id: DayContextFactorId;
   label: string;
-  /** Short hint shown under the chip group. */
   hint: string;
   window: DayContextFactorWindow;
   group: DayContextFactorGroup;
@@ -116,7 +131,7 @@ export const DAY_CONTEXT_FACTORS: readonly DayContextFactor[] = [
   day('electrolytes', 'Électrolytes', 'Complément / boisson électrolytes', 'supplements'),
   day('collagen', 'Collagène', 'Complément pris aujourd’hui', 'supplements'),
   day('protein_powder', 'Protéine en poudre', 'Shake / protéine prise', 'supplements'),
-  day('hydration_quality', 'Bonne hydratation', 'Ressenti d’hydratation suffisante', 'supplements'),
+  day('hydration_quality', 'Bonne hydratation', 'Ressenti d’hydratation suffisante', 'sleep'),
   day('menstruation', 'Menstruation', 'Jour de règles', 'cycle'),
   day('tobacco', 'Tabac', 'Consommation de tabac', 'health'),
   day('fever', 'Fièvre', 'Température élevée', 'health'),
@@ -125,11 +140,20 @@ export const DAY_CONTEXT_FACTORS: readonly DayContextFactor[] = [
   day('allergies', 'Allergies', 'Symptômes allergiques', 'health'),
   day('cold_congestion', 'Rhume / congestion', 'Voies respiratoires encombrées', 'health'),
   day('cramps', 'Crampes', 'Crampes musculaires', 'health'),
+  day('abdominal_cramps', 'Crampes abdominales', 'Crampes / douleurs abdominales', 'health'),
+  day('pregnant', 'Enceinte', 'Grossesse', 'health'),
+  day('sexual_activity', 'Activité sexuelle', 'Activité sexuelle sur la journée', 'health'),
+  day('medication', 'Médicament', 'Prise de médicament', 'medication'),
+  day('antibiotic', 'Antibiotique', 'Prise d’antibiotique', 'medication'),
+  day('contraception', 'Contraception', 'Contraception prise / utilisée', 'medication'),
+  day('cbd', 'CBD', 'Prise de CBD', 'medication'),
   day('sauna', 'Sauna', 'Session sauna', 'lifestyle'),
   day('intermittent_fasting', 'Jeûne intermittent', 'Fenêtre de jeûne respectée', 'lifestyle'),
   day('cold_shower', 'Douche froide', 'Exposition au froid', 'lifestyle'),
+  day('ice_bath', 'Bain de glace', 'Immersion froide', 'lifestyle'),
   day('cupping', 'Cupping', 'Ventouses / cupping', 'lifestyle'),
-  day('cbd', 'CBD', 'Prise de CBD', 'lifestyle'),
+  day('chiropractor', 'Chiropracteur', 'Séance chiropractie', 'lifestyle'),
+  day('yoga', 'Yoga', 'Séance de yoga', 'lifestyle'),
   day('sun_exposure', 'Exposition au soleil', 'Temps significatif outdoors / soleil', 'lifestyle'),
   day('massage', 'Massage', 'Massage / thérapie manuelle', 'lifestyle'),
   day('mobility', 'Étirements / mobilité', 'Session mobilité', 'lifestyle'),
@@ -145,6 +169,11 @@ export const DAY_CONTEXT_FACTORS: readonly DayContextFactor[] = [
   day('meal_out', 'Repas hors domicile', 'Repas à l’extérieur', 'behaviour'),
   day('skipped_meal', 'Repas sauté', 'Au moins un repas sauté', 'behaviour'),
   day('night_work', 'Travail de nuit', 'Horaires de nuit / décalage', 'behaviour'),
+  day('shared_bed', 'Lit partagé', 'Sommeil à deux / lit partagé', 'sleep'),
+  day('earplugs', 'Bouchons d’oreille', 'Bouchons pour dormir', 'sleep'),
+  day('sleep_mask', 'Masque de sommeil', 'Masque occultant', 'sleep'),
+  day('pet_in_room', 'Animal dans la chambre', 'Animal dans la chambre la nuit', 'sleep'),
+  day('melatonin', 'Mélatonine', 'Prise de mélatonine', 'sleep'),
 ] as const;
 
 const FACTOR_SET = new Set<string>(DAY_CONTEXT_FACTOR_IDS);
@@ -182,7 +211,6 @@ function formatFactorForAlgo(factor: DayContextFactor): string {
   return factor.label;
 }
 
-/** Encode selected factors into a notes suffix the coach / algo can read. */
 export function formatDayContextFactorsNote(
   selected: readonly DayContextFactorId[],
 ): string | null {

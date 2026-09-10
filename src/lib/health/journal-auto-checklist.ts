@@ -80,6 +80,151 @@ function unavailable(id: JournalAutoItemId): JournalAutoChecklistItem {
   };
 }
 
+function buildMinThresholdItem(
+  id: JournalAutoItemId,
+  value: number | null | undefined,
+  threshold: number,
+  formatDetail: (value: number, threshold: number) => string,
+): JournalAutoChecklistItem {
+  if (value === null || value === undefined) {
+    return unavailable(id);
+  }
+  const done = value >= threshold;
+  return {
+    id,
+    label: JOURNAL_AUTO_ITEM_LABELS[id],
+    status: done ? 'done' : 'missed',
+    detail: formatDetail(value, threshold),
+  };
+}
+
+function buildMaxThresholdItem(
+  id: JournalAutoItemId,
+  value: number | null | undefined,
+  threshold: number,
+  formatDetail: (value: number, threshold: number) => string,
+): JournalAutoChecklistItem {
+  if (value === null || value === undefined) {
+    return unavailable(id);
+  }
+  const done = value <= threshold;
+  return {
+    id,
+    label: JOURNAL_AUTO_ITEM_LABELS[id],
+    status: done ? 'done' : 'missed',
+    detail: formatDetail(value, threshold),
+  };
+}
+
+function buildActivityMinItem(
+  id: JournalAutoItemId,
+  minutes: number,
+  threshold: number,
+): JournalAutoChecklistItem {
+  const done = minutes >= threshold;
+  return {
+    id,
+    label: JOURNAL_AUTO_ITEM_LABELS[id],
+    status: done ? 'done' : 'missed',
+    detail: `${formatMinutes(minutes)} / ≥ ${threshold} min`,
+  };
+}
+
+function buildStepsItem(
+  health: JournalAutoHealthInput | null,
+  thresholds: JournalThresholds,
+): JournalAutoChecklistItem {
+  return buildMinThresholdItem(
+    'steps_10k',
+    health?.totalSteps,
+    thresholds.steps,
+    (value, threshold) => `${value.toLocaleString('fr-FR')} / ${threshold.toLocaleString('fr-FR')}`,
+  );
+}
+
+function buildStressItem(
+  health: JournalAutoHealthInput | null,
+  thresholds: JournalThresholds,
+): JournalAutoChecklistItem {
+  return buildMaxThresholdItem(
+    'stress_ok',
+    health?.stress,
+    thresholds.stressMax,
+    (value, threshold) => `${value} / ≤ ${threshold}`,
+  );
+}
+
+function buildNapItem(health: JournalAutoHealthInput | null): JournalAutoChecklistItem {
+  const nap = health?.napMinutes ?? null;
+  if (nap === null || nap === undefined) {
+    return unavailable('nap');
+  }
+  const done = nap > 0;
+  return {
+    id: 'nap',
+    label: JOURNAL_AUTO_ITEM_LABELS.nap,
+    status: done ? 'done' : 'missed',
+    detail: done ? formatMinutes(nap) : 'Aucune sieste',
+  };
+}
+
+function buildSleepItem(
+  health: JournalAutoHealthInput | null,
+  thresholds: JournalThresholds,
+): JournalAutoChecklistItem {
+  return buildMinThresholdItem(
+    'sleep_target',
+    health?.sleepMinutes,
+    thresholds.sleepMinMinutes,
+    (value, threshold) => `${formatMinutes(value)} / ≥ ${threshold} min`,
+  );
+}
+
+function buildBodyBatteryItem(
+  health: JournalAutoHealthInput | null,
+  thresholds: JournalThresholds,
+): JournalAutoChecklistItem {
+  return buildMinThresholdItem(
+    'body_battery_ok',
+    health?.bodyBattery,
+    thresholds.bodyBatteryMin,
+    (value, threshold) => `${value} / ≥ ${threshold}`,
+  );
+}
+
+function buildHydrationItem(
+  health: JournalAutoHealthInput | null,
+  thresholds: JournalThresholds,
+): JournalAutoChecklistItem {
+  return buildMinThresholdItem(
+    'hydration_sync',
+    health?.waterMl,
+    thresholds.hydrationMlMin,
+    (value, threshold) =>
+      `${value.toLocaleString('fr-FR')} ml / ≥ ${threshold.toLocaleString('fr-FR')} ml`,
+  );
+}
+
+function createAutoChecklistBuilders(
+  health: JournalAutoHealthInput | null,
+  cardioMin: number,
+  strengthMin: number,
+  thresholds: JournalThresholds,
+): Record<JournalAutoItemId, () => JournalAutoChecklistItem> {
+  return {
+    steps_10k: () => buildStepsItem(health, thresholds),
+    stress_ok: () => buildStressItem(health, thresholds),
+    nap: () => buildNapItem(health),
+    cardio_20: () => buildActivityMinItem('cardio_20', cardioMin, thresholds.cardioMinMinutes),
+    strength_20: () =>
+      buildActivityMinItem('strength_20', strengthMin, thresholds.strengthMinMinutes),
+    sleep_target: () => buildSleepItem(health, thresholds),
+    body_battery_ok: () => buildBodyBatteryItem(health, thresholds),
+    hydration_sync: () => buildHydrationItem(health, thresholds),
+    outdoor_minutes: () => unavailable('outdoor_minutes'),
+  };
+}
+
 export function buildJournalAutoChecklist(input: {
   health: JournalAutoHealthInput | null;
   activities: readonly JournalAutoActivityInput[];
@@ -89,107 +234,6 @@ export function buildJournalAutoChecklist(input: {
   const { health, activities, thresholds, enabledIds } = input;
   const cardioMin = sumCardioMinutes(activities);
   const strengthMin = sumStrengthMinutes(activities);
-
-  const builders: Record<JournalAutoItemId, () => JournalAutoChecklistItem> = {
-    steps_10k: () => {
-      const steps = health?.totalSteps ?? null;
-      if (steps === null || steps === undefined) {
-        return unavailable('steps_10k');
-      }
-      const done = steps >= thresholds.steps;
-      return {
-        id: 'steps_10k',
-        label: JOURNAL_AUTO_ITEM_LABELS.steps_10k,
-        status: done ? 'done' : 'missed',
-        detail: `${steps.toLocaleString('fr-FR')} / ${thresholds.steps.toLocaleString('fr-FR')}`,
-      };
-    },
-    stress_ok: () => {
-      const stress = health?.stress ?? null;
-      if (stress === null || stress === undefined) {
-        return unavailable('stress_ok');
-      }
-      const done = stress <= thresholds.stressMax;
-      return {
-        id: 'stress_ok',
-        label: JOURNAL_AUTO_ITEM_LABELS.stress_ok,
-        status: done ? 'done' : 'missed',
-        detail: `${stress} / ≤ ${thresholds.stressMax}`,
-      };
-    },
-    nap: () => {
-      const nap = health?.napMinutes ?? null;
-      if (nap === null || nap === undefined) {
-        return unavailable('nap');
-      }
-      const done = nap > 0;
-      return {
-        id: 'nap',
-        label: JOURNAL_AUTO_ITEM_LABELS.nap,
-        status: done ? 'done' : 'missed',
-        detail: done ? formatMinutes(nap) : 'Aucune sieste',
-      };
-    },
-    sun: () => unavailable('sun'),
-    cardio_20: () => {
-      const done = cardioMin >= thresholds.cardioMinMinutes;
-      return {
-        id: 'cardio_20',
-        label: JOURNAL_AUTO_ITEM_LABELS.cardio_20,
-        status: done ? 'done' : 'missed',
-        detail: `${formatMinutes(cardioMin)} / ≥ ${thresholds.cardioMinMinutes} min`,
-      };
-    },
-    strength_20: () => {
-      const done = strengthMin >= thresholds.strengthMinMinutes;
-      return {
-        id: 'strength_20',
-        label: JOURNAL_AUTO_ITEM_LABELS.strength_20,
-        status: done ? 'done' : 'missed',
-        detail: `${formatMinutes(strengthMin)} / ≥ ${thresholds.strengthMinMinutes} min`,
-      };
-    },
-    sleep_target: () => {
-      const sleep = health?.sleepMinutes ?? null;
-      if (sleep === null || sleep === undefined) {
-        return unavailable('sleep_target');
-      }
-      const done = sleep >= thresholds.sleepMinMinutes;
-      return {
-        id: 'sleep_target',
-        label: JOURNAL_AUTO_ITEM_LABELS.sleep_target,
-        status: done ? 'done' : 'missed',
-        detail: `${formatMinutes(sleep)} / ≥ ${thresholds.sleepMinMinutes} min`,
-      };
-    },
-    body_battery_ok: () => {
-      const battery = health?.bodyBattery ?? null;
-      if (battery === null || battery === undefined) {
-        return unavailable('body_battery_ok');
-      }
-      const done = battery >= thresholds.bodyBatteryMin;
-      return {
-        id: 'body_battery_ok',
-        label: JOURNAL_AUTO_ITEM_LABELS.body_battery_ok,
-        status: done ? 'done' : 'missed',
-        detail: `${battery} / ≥ ${thresholds.bodyBatteryMin}`,
-      };
-    },
-    hydration_sync: () => {
-      const water = health?.waterMl ?? null;
-      if (water === null || water === undefined) {
-        return unavailable('hydration_sync');
-      }
-      const done = water >= thresholds.hydrationMlMin;
-      return {
-        id: 'hydration_sync',
-        label: JOURNAL_AUTO_ITEM_LABELS.hydration_sync,
-        status: done ? 'done' : 'missed',
-        detail: `${water.toLocaleString('fr-FR')} ml / ≥ ${thresholds.hydrationMlMin.toLocaleString('fr-FR')} ml`,
-      };
-    },
-    outdoor_minutes: () => unavailable('outdoor_minutes'),
-  };
-
+  const builders = createAutoChecklistBuilders(health, cardioMin, strengthMin, thresholds);
   return enabledIds.map((id) => builders[id]());
 }

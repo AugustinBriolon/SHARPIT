@@ -23,7 +23,7 @@ describe('journal-auto-checklist', () => {
     ).toBe(20);
   });
 
-  it('marks steps/stress/nap done or missed and sun unavailable', () => {
+  it('marks steps/stress/nap done or missed and outdoor unavailable', () => {
     const items = buildJournalAutoChecklist({
       health: {
         totalSteps: 12_000,
@@ -42,7 +42,6 @@ describe('journal-auto-checklist', () => {
         'steps_10k',
         'stress_ok',
         'nap',
-        'sun',
         'cardio_20',
         'strength_20',
         'sleep_target',
@@ -55,7 +54,6 @@ describe('journal-auto-checklist', () => {
       ['steps_10k', 'done'],
       ['stress_ok', 'done'],
       ['nap', 'done'],
-      ['sun', 'unavailable'],
       ['cardio_20', 'done'],
       ['strength_20', 'done'],
       ['sleep_target', 'done'],

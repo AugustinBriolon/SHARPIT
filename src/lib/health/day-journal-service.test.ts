@@ -22,6 +22,19 @@ describe('day-journal-service', () => {
       updatedAt: '2026-09-09T10:00:00.000Z',
     });
   });
+
+  it('coalesces null caffeine to 0 mg', () => {
+    expect(
+      rowToDayJournalEntry({
+        trainingDayId: '2026-09-09',
+        factors: {},
+        moodLabel: null,
+        hydrationMl: null,
+        caffeineMg: null,
+        updatedAt: new Date('2026-09-09T10:00:00.000Z'),
+      }).caffeineMg,
+    ).toBe(0);
+  });
 });
 
 describe('activity-status-service', () => {

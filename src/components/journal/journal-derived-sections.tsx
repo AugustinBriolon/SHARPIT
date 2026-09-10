@@ -2,13 +2,17 @@
 
 import { Check, Minus, CircleDashed } from 'lucide-react';
 import type { JournalAutoChecklistItem } from '@/lib/health/journal-auto-checklist';
+import {
+  JOURNAL_CATEGORY_HEADER,
+  JOURNAL_CATEGORY_ICON,
+} from '@/lib/health/journal-category-surface';
 import type { JournalNutritionSummary } from '@/lib/health/journal-day-signals';
 import { cn } from '@/lib/utils';
 
 function StatusIcon({ status }: { status: JournalAutoChecklistItem['status'] }) {
   if (status === 'done') {
     return (
-      <span className="inline-flex size-7 items-center justify-center rounded-lg bg-emerald-500/15 text-emerald-700 dark:text-emerald-300">
+      <span className="bg-primary/15 text-primary inline-flex size-7 items-center justify-center rounded-lg">
         <Check className="size-3.5" strokeWidth={2.25} aria-hidden />
       </span>
     );
@@ -37,7 +41,12 @@ export function JournalAutoChecklistSection({ items }: { items: JournalAutoCheck
       aria-labelledby="journal-auto-checklist"
       className="analysis-panel border-analysis-border/80 rounded-analysis overflow-hidden border"
     >
-      <div className="border-analysis-border/60 border-b px-3 py-2.5">
+      <div
+        className={cn(
+          'border-analysis-border/60 border-b px-3 py-2.5',
+          JOURNAL_CATEGORY_HEADER.automatique,
+        )}
+      >
         <h2 className="text-label" id="journal-auto-checklist">
           Checklist auto
         </h2>
@@ -69,6 +78,42 @@ export function JournalAutoChecklistSection({ items }: { items: JournalAutoCheck
   );
 }
 
+function NutritionDietChips({ dietLabels }: { dietLabels: string[] }) {
+  if (dietLabels.length === 0) {
+    return null;
+  }
+  return (
+    <div className="border-analysis-border/50 flex flex-wrap gap-1.5 border-b px-3 py-2.5">
+      {dietLabels.map((label) => (
+        <span
+          key={label}
+          className={cn(
+            'rounded-md px-2 py-0.5 text-[11px] font-medium',
+            JOURNAL_CATEGORY_ICON.nutrition,
+          )}
+        >
+          {label}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+function NutritionMacros({ nutrition }: { nutrition: NonNullable<JournalNutritionSummary> }) {
+  return (
+    <div className="grid grid-cols-2 gap-px sm:grid-cols-4">
+      <MacroCell label="Calories" unit="kcal" value={`${Math.round(nutrition.calories)}`} />
+      <MacroCell label="Protéines" unit="g" value={`${Math.round(nutrition.protein)}`} />
+      <MacroCell label="Glucides" unit="g" value={`${Math.round(nutrition.carbohydrates)}`} />
+      <MacroCell label="Lipides" unit="g" value={`${Math.round(nutrition.fat)}`} />
+      {nutrition.sugar !== null ? (
+        <MacroCell label="Sucres" unit="g" value={`${Math.round(nutrition.sugar)}`} />
+      ) : null}
+      <MacroCell label="Repas" unit="" value={`${nutrition.mealCount}`} />
+    </div>
+  );
+}
+
 export function JournalNutritionSection({
   nutrition,
   dietLabels,
@@ -81,7 +126,12 @@ export function JournalNutritionSection({
       aria-labelledby="journal-nutrition"
       className="analysis-panel border-analysis-border/80 rounded-analysis overflow-hidden border"
     >
-      <div className="border-analysis-border/60 border-b px-3 py-2.5">
+      <div
+        className={cn(
+          'border-analysis-border/60 border-b px-3 py-2.5',
+          JOURNAL_CATEGORY_HEADER.nutrition,
+        )}
+      >
         <h2 className="text-label" id="journal-nutrition">
           Nutrition
         </h2>
@@ -89,31 +139,11 @@ export function JournalNutritionSection({
           Lecture de ton journal alimentaire synchronisé.
         </p>
       </div>
-      {dietLabels.length > 0 ? (
-        <div className="border-analysis-border/50 flex flex-wrap gap-1.5 border-b px-3 py-2.5">
-          {dietLabels.map((label) => (
-            <span
-              key={label}
-              className="bg-muted text-muted-foreground rounded-md px-2 py-0.5 text-[11px] font-medium"
-            >
-              {label}
-            </span>
-          ))}
-        </div>
-      ) : null}
+      <NutritionDietChips dietLabels={dietLabels} />
       {!nutrition ? (
         <p className="text-muted-foreground px-3 py-4 text-sm">Aucun log nutrition pour ce jour.</p>
       ) : (
-        <div className="grid grid-cols-2 gap-px sm:grid-cols-4">
-          <MacroCell label="Calories" unit="kcal" value={`${Math.round(nutrition.calories)}`} />
-          <MacroCell label="Protéines" unit="g" value={`${Math.round(nutrition.protein)}`} />
-          <MacroCell label="Glucides" unit="g" value={`${Math.round(nutrition.carbohydrates)}`} />
-          <MacroCell label="Lipides" unit="g" value={`${Math.round(nutrition.fat)}`} />
-          {nutrition.sugar !== null ? (
-            <MacroCell label="Sucres" unit="g" value={`${Math.round(nutrition.sugar)}`} />
-          ) : null}
-          <MacroCell label="Repas" unit="" value={`${nutrition.mealCount}`} />
-        </div>
+        <NutritionMacros nutrition={nutrition} />
       )}
     </section>
   );

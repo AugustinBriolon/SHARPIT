@@ -43,7 +43,7 @@ export function rowToDayJournalEntry(row: {
     factors: parseFactors(row.factors),
     moodLabel: row.moodLabel,
     hydrationMl: row.hydrationMl,
-    caffeineMg: row.caffeineMg,
+    caffeineMg: row.caffeineMg ?? 0,
     updatedAt: row.updatedAt.toISOString(),
   };
 }

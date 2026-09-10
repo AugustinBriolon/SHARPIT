@@ -54,5 +54,10 @@ describe('day-journal', () => {
       menstruation: 'yes',
       custom_abc123def456: 'yes',
     });
+    expect(parsed.byDay['2026-09-08']?.caffeineMg).toBe(0);
+  });
+
+  it('defaults empty entry caffeine to 0 mg', () => {
+    expect(emptyDayJournalEntry('2026-09-10').caffeineMg).toBe(0);
   });
 });

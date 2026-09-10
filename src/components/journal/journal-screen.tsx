@@ -36,6 +36,11 @@ import {
 } from '@/lib/health/day-journal-persist';
 import type { JournalDaySignals } from '@/lib/health/journal-day-signals';
 import {
+  JOURNAL_CATEGORY_HEADER,
+  JOURNAL_METRIC_ICON,
+  journalCategoryIcon,
+} from '@/lib/health/journal-category-surface';
+import {
   enabledFactorIds,
   showAutoChecklist,
   showDayBasics,
@@ -84,8 +89,8 @@ function JournalMetricRow({
     <div className="border-analysis-border/60 flex items-center gap-3 border-b px-3 py-3 last:border-b-0">
       <span
         className={cn(
-          'bg-muted text-muted-foreground inline-flex size-9 shrink-0 items-center justify-center rounded-xl',
-          iconClassName,
+          'inline-flex size-9 shrink-0 items-center justify-center rounded-xl',
+          iconClassName ?? 'bg-muted text-muted-foreground',
         )}
       >
         <Icon className="size-4" aria-hidden />
@@ -96,6 +101,50 @@ function JournalMetricRow({
       </div>
       {action}
     </div>
+  );
+}
+
+function FactorListRow({
+  id,
+  entry,
+  prefs,
+  onChange,
+}: {
+  id: DayJournalFactorKey;
+  entry: DayJournalEntry;
+  prefs: JournalPrefs;
+  onChange: (id: DayJournalFactorKey, next: DayJournalFactorState) => void;
+}) {
+  const state = entry.factors[id] ?? 'unset';
+  const trackable = journalTrackableById(id);
+  const Icon = trackable?.icon ?? Sparkles;
+  const iconTone = journalCategoryIcon(
+    trackable?.category ?? (id.startsWith('custom_') ? 'personnalise' : undefined),
+  );
+  const label = factorLabel(id, prefs);
+
+  return (
+    <li className="flex items-center justify-between gap-3 px-3 py-3">
+      <div className="flex min-w-0 flex-1 items-start gap-3 pr-1">
+        <span
+          className={cn(
+            'mt-0.5 inline-flex size-8 shrink-0 items-center justify-center rounded-lg',
+            iconTone,
+          )}
+        >
+          <Icon className="size-3.5" strokeWidth={1.8} aria-hidden />
+        </span>
+        <div className="min-w-0">
+          <p className="truncate text-sm font-medium">{label}</p>
+          <p className="text-muted-foreground mt-0.5 line-clamp-2 text-xs text-pretty">
+            {factorHint(id)}
+          </p>
+        </div>
+      </div>
+      <div className="shrink-0 self-center">
+        <SignalSegment label={label} state={state} onChange={(next) => onChange(id, next)} />
+      </div>
+    </li>
   );
 }
 
@@ -131,31 +180,9 @@ function FactorListSection({
         {hint ? <p className="text-muted-foreground mt-0.5 text-xs text-pretty">{hint}</p> : null}
       </div>
       <ul className="divide-analysis-border/60 divide-y">
-        {ids.map((id) => {
-          const state = entry.factors[id] ?? 'unset';
-          const trackable = journalTrackableById(id);
-          const Icon = trackable?.icon ?? Sparkles;
-          return (
-            <li key={id} className="flex items-center justify-between gap-3 px-3 py-3">
-              <div className="flex min-w-0 items-start gap-3">
-                <span className="bg-muted text-muted-foreground mt-0.5 inline-flex size-8 shrink-0 items-center justify-center rounded-lg">
-                  <Icon className="size-3.5" strokeWidth={1.8} aria-hidden />
-                </span>
-                <div className="min-w-0">
-                  <p className="text-sm font-medium">{factorLabel(id, prefs)}</p>
-                  <p className="text-muted-foreground mt-0.5 text-xs text-pretty">
-                    {factorHint(id)}
-                  </p>
-                </div>
-              </div>
-              <SignalSegment
-                label={factorLabel(id, prefs)}
-                state={state}
-                onChange={(next) => onChange(id, next)}
-              />
-            </li>
-          );
-        })}
+        {ids.map((id) => (
+          <FactorListRow key={id} entry={entry} id={id} prefs={prefs} onChange={onChange} />
+        ))}
       </ul>
     </section>
   );
@@ -264,19 +291,100 @@ function JournalLoadingSkeleton({ heightClass }: { heightClass: string }) {
 function MetricStepper({
   onDecrement,
   onIncrement,
+  decrementDisabled = false,
 }: {
   onDecrement: () => void;
   onIncrement: () => void;
+  decrementDisabled?: boolean;
 }) {
   return (
     <div className="flex gap-1">
-      <Button size="xs" type="button" variant="outline" onClick={onDecrement}>
+      <Button
+        disabled={decrementDisabled}
+        size="xs"
+        type="button"
+        variant="outline"
+        onClick={onDecrement}
+      >
         −
       </Button>
       <Button size="xs" type="button" variant="outline" onClick={onIncrement}>
         +
       </Button>
     </div>
+  );
+}
+
+function CaffeineMetricRow({
+  entry,
+  persist,
+}: {
+  entry: DayJournalEntry;
+  persist: (next: DayJournalEntry) => void;
+}) {
+  const caffeineMg = entry.caffeineMg ?? 0;
+  return (
+    <JournalMetricRow
+      icon={Coffee}
+      iconClassName={JOURNAL_METRIC_ICON.caffeine}
+      label="Caféine"
+      value={`${caffeineMg} mg`}
+      action={
+        <MetricStepper
+          decrementDisabled={caffeineMg <= 0}
+          onDecrement={() => persist({ ...entry, caffeineMg: Math.max(0, caffeineMg - 40) })}
+          onIncrement={() => persist({ ...entry, caffeineMg: caffeineMg + 40 })}
+        />
+      }
+    />
+  );
+}
+
+function MoodMetricRow({
+  entry,
+  persist,
+}: {
+  entry: DayJournalEntry;
+  persist: (next: DayJournalEntry) => void;
+}) {
+  return (
+    <JournalMetricRow
+      icon={Smile}
+      iconClassName={JOURNAL_METRIC_ICON.mood}
+      label="Humeur"
+      value={entry.moodLabel ?? 'Non renseignée'}
+      action={
+        <MoodAction
+          moodLabel={entry.moodLabel}
+          onMoodChange={(label) => persist({ ...entry, moodLabel: label })}
+        />
+      }
+    />
+  );
+}
+
+function HydrationMetricRow({
+  entry,
+  persist,
+}: {
+  entry: DayJournalEntry;
+  persist: (next: DayJournalEntry) => void;
+}) {
+  const hydrationMl = entry.hydrationMl ?? 0;
+  return (
+    <JournalMetricRow
+      icon={Droplets}
+      iconClassName={JOURNAL_METRIC_ICON.hydration}
+      label="Hydratation"
+      value={entry.hydrationMl !== null ? `${entry.hydrationMl} ml` : '— ml'}
+      action={
+        <MetricStepper
+          decrementDisabled={hydrationMl <= 0}
+          onDecrement={() => persist({ ...entry, hydrationMl: Math.max(0, hydrationMl - 250) })}
+          onIncrement={() => persist({ ...entry, hydrationMl: hydrationMl + 250 })}
+        />
+      }
+    />
   );
 }
 
@@ -299,73 +407,21 @@ function JournalDayMetricsSection({
       className="analysis-panel border-analysis-border/80 rounded-analysis overflow-hidden border"
     >
       <h2
-        className="text-label border-analysis-border/60 border-b px-3 py-2.5"
         id="journal-day-metrics"
+        className={cn(
+          'text-label border-analysis-border/60 border-b px-3 py-2.5',
+          JOURNAL_CATEGORY_HEADER.bien_etre,
+        )}
       >
         Journée
       </h2>
       <div>
         {prefs.enabled.metric_caffeine ? (
-          <JournalMetricRow
-            icon={Coffee}
-            iconClassName="text-amber-700 dark:text-amber-300"
-            label="Caféine"
-            value={entry.caffeineMg !== null ? `${entry.caffeineMg} mg` : '— mg'}
-            action={
-              <MetricStepper
-                onDecrement={() =>
-                  persist({
-                    ...entry,
-                    caffeineMg: Math.max(0, (entry.caffeineMg ?? 0) - 40),
-                  })
-                }
-                onIncrement={() =>
-                  persist({
-                    ...entry,
-                    caffeineMg: (entry.caffeineMg ?? 0) + 40,
-                  })
-                }
-              />
-            }
-          />
+          <CaffeineMetricRow entry={entry} persist={persist} />
         ) : null}
-        {prefs.enabled.metric_mood ? (
-          <JournalMetricRow
-            icon={Smile}
-            iconClassName="text-primary"
-            label="Humeur"
-            value={entry.moodLabel ?? 'Non renseignée'}
-            action={
-              <MoodAction
-                moodLabel={entry.moodLabel}
-                onMoodChange={(label) => persist({ ...entry, moodLabel: label })}
-              />
-            }
-          />
-        ) : null}
+        {prefs.enabled.metric_mood ? <MoodMetricRow entry={entry} persist={persist} /> : null}
         {prefs.enabled.metric_hydration ? (
-          <JournalMetricRow
-            icon={Droplets}
-            iconClassName="text-sky-700 dark:text-sky-300"
-            label="Hydratation"
-            value={entry.hydrationMl !== null ? `${entry.hydrationMl} ml` : '— ml'}
-            action={
-              <MetricStepper
-                onDecrement={() =>
-                  persist({
-                    ...entry,
-                    hydrationMl: Math.max(0, (entry.hydrationMl ?? 0) - 250),
-                  })
-                }
-                onIncrement={() =>
-                  persist({
-                    ...entry,
-                    hydrationMl: (entry.hydrationMl ?? 0) + 250,
-                  })
-                }
-              />
-            }
-          />
+          <HydrationMetricRow entry={entry} persist={persist} />
         ) : null}
       </div>
     </section>

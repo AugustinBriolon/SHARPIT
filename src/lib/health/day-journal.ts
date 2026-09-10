@@ -37,7 +37,7 @@ export function emptyDayJournalEntry(trainingDayId: string): DayJournalEntry {
     factors: {},
     moodLabel: null,
     hydrationMl: null,
-    caffeineMg: null,
+    caffeineMg: 0,
     updatedAt: new Date().toISOString(),
   };
 }
@@ -102,7 +102,7 @@ export function parseDayJournalEntry(dayId: string, raw: unknown): DayJournalEnt
     factors: parseDayJournalFactors(record.factors),
     moodLabel: parseOptionalString(record.moodLabel),
     hydrationMl: parseOptionalNumber(record.hydrationMl),
-    caffeineMg: parseOptionalNumber(record.caffeineMg),
+    caffeineMg: parseOptionalNumber(record.caffeineMg) ?? 0,
     updatedAt: typeof record.updatedAt === 'string' ? record.updatedAt : new Date().toISOString(),
   };
 }
@@ -210,7 +210,7 @@ function isDayJournalEntryEmpty(entry: DayJournalEntry): boolean {
   return (
     !entry.moodLabel &&
     entry.hydrationMl === null &&
-    entry.caffeineMg === null &&
+    (entry.caffeineMg === null || entry.caffeineMg === 0) &&
     Object.keys(entry.factors).length === 0
   );
 }
@@ -219,7 +219,7 @@ function hasDayJournalData(entry: DayJournalEntry): boolean {
   return (
     Boolean(entry.moodLabel) ||
     entry.hydrationMl !== null ||
-    entry.caffeineMg !== null ||
+    (entry.caffeineMg !== null && entry.caffeineMg > 0) ||
     Object.keys(entry.factors).length > 0
   );
 }
