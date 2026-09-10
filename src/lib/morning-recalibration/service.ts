@@ -200,6 +200,44 @@ async function resolveExistingPresentation(
   };
 }
 
+/**
+ * Read-only projection of today's morning recalibration proposal.
+ * Never creates or expires decisions — safe for GET presentation routes.
+ * Creation stays on ensureMorningRecalibration (refresh, wellness, POST).
+ */
+export async function getMorningRecalibrationPresentation(
+  athleteId: string,
+  trainingDayId: string,
+): Promise<MorningRecalibrationPresentation | null> {
+  const existing = await findMorningRecalibrationDecision(athleteId, trainingDayId);
+  if (!existing) {
+    return null;
+  }
+
+  const mr = existing.snapshotContext.morningRecalibration;
+  const { sessionId } = existing.proposal;
+  if (!mr || !sessionId) {
+    return null;
+  }
+
+  const sessionType = await loadExistingSessionType(athleteId, sessionId);
+  if (existing.status === 'PRESENTED' && isStaleSportProposal(mr, sessionType)) {
+    return null;
+  }
+
+  if (!isSettledMorningRecalibrationStatus(existing.status)) {
+    return null;
+  }
+
+  return toPresentation({
+    decisionId: existing.id,
+    sessionId,
+    sessionType: sessionType ?? existing.proposal.type,
+    mr,
+    status: existing.status,
+  });
+}
+
 function buildMorningRecalibrationSnapshotContext(
   snapshot: Awaited<ReturnType<typeof getOrBuildAthleteSnapshot>>,
   proposal: MorningRecalibrationProposal,

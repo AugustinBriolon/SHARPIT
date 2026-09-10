@@ -1,9 +1,12 @@
 import { NextResponse } from 'next/server';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { ensureMorningRecalibration } from '@/lib/morning-recalibration/service';
+import {
+  ensureMorningRecalibration,
+  getMorningRecalibrationPresentation,
+} from '@/lib/morning-recalibration/service';
 import { todayTrainingDayId } from '@/lib/health/wellness-checkin';
 
-/** Evaluate / return today's morning session recalibration proposal (idempotent). */
+/** Evaluate / return today's morning session recalibration proposal (idempotent write). */
 export async function POST(request: Request) {
   try {
     const body = (await request.json().catch(() => ({}))) as { trainingDayId?: string };
@@ -17,6 +20,7 @@ export async function POST(request: Request) {
   }
 }
 
+/** Read-only — never creates a decision. Use POST to ensure/evaluate. */
 export async function GET(request: Request) {
   // Read search params before try so Cache Components prerender interrupts propagate.
   const { searchParams } = new URL(request.url);
@@ -24,7 +28,7 @@ export async function GET(request: Request) {
 
   try {
     const athleteId = await getCurrentAthleteId();
-    const { presentation: proposal } = await ensureMorningRecalibration(athleteId, trainingDayId);
+    const proposal = await getMorningRecalibrationPresentation(athleteId, trainingDayId);
     return NextResponse.json({ proposal });
   } catch (error) {
     console.error('[morning-recalibration]', error);
