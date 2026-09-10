@@ -65,15 +65,17 @@ function prefetchNavRoute(
       pre(queryKeys.conversations, fetchConversations);
     },
     '/today/recovery': () =>
-      pre(['presentation', 'recovery', trainingDayId], () =>
+      pre(queryKeys.presentationRecovery(trainingDayId), () =>
         fetchRecoveryPresentation(trainingDayId),
       ),
     '/today/sleep': () =>
-      pre(['presentation', 'sleep', trainingDayId], () => fetchSleepPresentation(trainingDayId)),
+      pre(queryKeys.presentationSleep(trainingDayId), () => fetchSleepPresentation(trainingDayId)),
     '/plan/charge': () =>
-      pre(['presentation', 'effort', trainingDayId], () => fetchEffortPresentation(trainingDayId)),
+      pre(queryKeys.presentationEffort(trainingDayId), () =>
+        fetchEffortPresentation(trainingDayId),
+      ),
     '/plan/adaptation': () =>
-      pre(['presentation', 'adaptation', trainingDayId], () =>
+      pre(queryKeys.presentationAdaptation(trainingDayId), () =>
         fetchAdaptationPresentation(trainingDayId),
       ),
   };
@@ -103,9 +105,11 @@ function prefetchPlanHub(queryClient: QueryClient, pre: PrefetchFn) {
 }
 
 function prefetchProgressHub(pre: PrefetchFn, trainingDayId: string) {
-  pre(['presentation', 'recovery', trainingDayId], () => fetchRecoveryPresentation(trainingDayId));
-  pre(['presentation', 'body', 'all'], () => fetchBodyPresentation(null));
-  pre(['presentation', 'physical-health', trainingDayId], () =>
+  pre(queryKeys.presentationRecovery(trainingDayId), () =>
+    fetchRecoveryPresentation(trainingDayId),
+  );
+  pre(queryKeys.presentationBody, () => fetchBodyPresentation(null));
+  pre(queryKeys.presentationPhysicalHealth(trainingDayId), () =>
     fetchPhysicalHealthPresentation(trainingDayId),
   );
   pre(queryKeys.physicalNotes, fetchPhysicalNotes);

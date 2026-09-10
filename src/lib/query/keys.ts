@@ -31,7 +31,29 @@ export const queryKeys = {
   athleteProfile: ['athlete-profile'] as const,
   athleteSnapshot: (trainingDayId: string) => ['athlete-snapshot', trainingDayId] as const,
   today: (trainingDayId: string) => ['today', trainingDayId] as const,
+  /** Prefix — invalidate / patch every presentation query. */
+  presentationRoot: ['presentation'] as const,
   presentationToday: (trainingDayId: string) => ['presentation', 'today', trainingDayId] as const,
+  /** Prefix — all Today presentation day keys. */
+  presentationTodayAll: ['presentation', 'today'] as const,
+  presentationRecovery: (trainingDayId: string) =>
+    ['presentation', 'recovery', trainingDayId] as const,
+  presentationSleep: (trainingDayId: string) => ['presentation', 'sleep', trainingDayId] as const,
+  presentationEffort: (trainingDayId: string) => ['presentation', 'effort', trainingDayId] as const,
+  presentationAdaptation: (trainingDayId: string) =>
+    ['presentation', 'adaptation', trainingDayId] as const,
+  presentationPhysicalHealth: (trainingDayId: string) =>
+    ['presentation', 'physical-health', trainingDayId] as const,
+  presentationBody: ['presentation', 'body', 'all'] as const,
+  presentationNutrition: (trainingDayId: string) =>
+    ['presentation', 'nutrition', trainingDayId] as const,
+  presentationSettingsHub: ['presentation', 'settings-hub'] as const,
+  presentationScenarioComparison: (horizonDays: number, anchorTrainingDayId?: string) =>
+    ['presentation', 'scenario-comparison', horizonDays, anchorTrainingDayId ?? 'now'] as const,
+  presentationScenarioComparisonAll: ['presentation', 'scenario-comparison'] as const,
+  presentationProjectedAthlete: (horizonDays: number, anchorTrainingDayId?: string) =>
+    ['presentation', 'projected-athlete', horizonDays, anchorTrainingDayId ?? 'now'] as const,
+  presentationProjectedAthleteAll: ['presentation', 'projected-athlete'] as const,
   wellnessCheckin: (trainingDayId: string) => ['wellness-checkin', trainingDayId] as const,
   plannedSessionPresentation: (sessionId: string) =>
     ['presentation', 'planned-session', sessionId] as const,

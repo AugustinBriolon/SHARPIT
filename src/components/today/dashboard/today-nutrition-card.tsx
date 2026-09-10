@@ -9,13 +9,14 @@ import {
 import { resolveNutritionLinkTitle } from '@/components/today/dashboard/today-nutrition-card-helpers';
 import { useTodayNutritionDay } from '@/components/today/dashboard/nutrition-day-resolver';
 import { fetchNutritionPresentation } from '@/lib/query/presentation-fetchers';
+import { queryKeys } from '@/lib/query/keys';
 
 export { TodayNutritionCardSkeleton };
 
 export function TodayNutritionCard() {
   const trainingDayId = format(new Date(), 'yyyy-MM-dd');
   const query = useQuery({
-    queryKey: ['presentation', 'nutrition', trainingDayId],
+    queryKey: queryKeys.presentationNutrition(trainingDayId),
     queryFn: () => fetchNutritionPresentation(trainingDayId),
     staleTime: 60_000,
   });

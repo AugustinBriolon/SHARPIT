@@ -2,6 +2,7 @@
 
 import type { QueryClient } from '@tanstack/react-query';
 import type { TodayViewModel } from '@/core/presentation/today-view-model';
+import { queryKeys } from '@/lib/query/keys';
 
 /**
  * After ressenti is saved, hide the Today CTA immediately (Instant UX).
@@ -11,24 +12,27 @@ export function patchTodayPostSessionLoopAfterFeeling(
   queryClient: QueryClient,
   activityId: string,
 ): void {
-  queryClient.setQueriesData<TodayViewModel>({ queryKey: ['presentation', 'today'] }, (prev) => {
-    if (!prev?.postSessionLoop || prev.postSessionLoop.activityId !== activityId) {
-      return prev;
-    }
-    if (!prev.postSessionLoop.needsFeeling) {
-      return prev;
-    }
+  queryClient.setQueriesData<TodayViewModel>(
+    { queryKey: queryKeys.presentationTodayAll },
+    (prev) => {
+      if (!prev?.postSessionLoop || prev.postSessionLoop.activityId !== activityId) {
+        return prev;
+      }
+      if (!prev.postSessionLoop.needsFeeling) {
+        return prev;
+      }
 
-    const nextLoop = { ...prev.postSessionLoop, needsFeeling: false };
-    if (!nextLoop.freshnessLine) {
-      return { ...prev, postSessionLoop: null };
-    }
-    return { ...prev, postSessionLoop: nextLoop };
-  });
+      const nextLoop = { ...prev.postSessionLoop, needsFeeling: false };
+      if (!nextLoop.freshnessLine) {
+        return { ...prev, postSessionLoop: null };
+      }
+      return { ...prev, postSessionLoop: nextLoop };
+    },
+  );
 }
 
 export function invalidateTodayPresentationCaches(queryClient: QueryClient): void {
-  void queryClient.invalidateQueries({ queryKey: ['presentation', 'today'] });
+  void queryClient.invalidateQueries({ queryKey: queryKeys.presentationTodayAll });
   void queryClient.invalidateQueries({ queryKey: ['athlete-snapshot'] });
   void queryClient.invalidateQueries({ queryKey: ['today'] });
 }

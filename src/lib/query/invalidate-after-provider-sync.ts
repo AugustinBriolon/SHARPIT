@@ -57,7 +57,7 @@ async function invalidateProviderSyncCaches(
     queryClient.invalidateQueries({ queryKey: queryKeys.records }),
     queryClient.invalidateQueries({ queryKey: queryKeys.plannedSessions }),
     queryClient.invalidateQueries({ queryKey: ['health'] }),
-    queryClient.invalidateQueries({ queryKey: ['presentation'] }),
+    queryClient.invalidateQueries({ queryKey: queryKeys.presentationRoot }),
     queryClient.invalidateQueries({ queryKey: ['athlete-snapshot'] }),
     queryClient.invalidateQueries({ queryKey: ['today'] }),
     queryClient.invalidateQueries({ queryKey: queryKeys.athleteSnapshot(trainingDayId) }),

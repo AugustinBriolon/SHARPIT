@@ -83,8 +83,12 @@ export function useApplyScenarioComparison() {
     }),
     onSettled: (_data, _error, vars) => {
       void queryClient.invalidateQueries({ queryKey: key });
-      void queryClient.invalidateQueries({ queryKey: ['presentation', 'scenario-comparison'] });
-      void queryClient.invalidateQueries({ queryKey: ['presentation', 'projected-athlete'] });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.presentationScenarioComparisonAll,
+      });
+      void queryClient.invalidateQueries({
+        queryKey: queryKeys.presentationProjectedAthleteAll,
+      });
       if (vars?.targetSessionId) {
         void queryClient.invalidateQueries({
           queryKey: queryKeys.plannedSessionPresentation(vars.targetSessionId),

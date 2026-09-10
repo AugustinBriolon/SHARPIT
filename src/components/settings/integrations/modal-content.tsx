@@ -932,7 +932,7 @@ function MfpContent({
     setSyncing(true);
     try {
       await fetch('/api/myfitnesspal/sync', { method: 'POST' });
-      await queryClient.invalidateQueries({ queryKey: ['presentation'] });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.presentationRoot });
       onUpdated?.();
       router.refresh();
     } finally {
@@ -944,7 +944,7 @@ function MfpContent({
     setDisconnecting(true);
     try {
       await fetch('/api/myfitnesspal/disconnect', { method: 'POST' });
-      await queryClient.invalidateQueries({ queryKey: ['presentation'] });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.presentationRoot });
       onUpdated?.();
       router.refresh();
     } finally {
@@ -972,7 +972,7 @@ function MfpContent({
         setConnectError(data.error ?? 'Connexion échouée');
         return;
       }
-      await queryClient.invalidateQueries({ queryKey: ['presentation'] });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.presentationRoot });
       onUpdated?.();
       router.refresh();
     } catch {

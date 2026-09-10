@@ -2,6 +2,7 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { isIntegrationsAttentionLabel, type SettingsHubStatus } from '@/lib/settings/hub-status';
+import { queryKeys } from '@/lib/query/keys';
 import { cn } from '@/lib/utils';
 
 async function fetchHubStatus(): Promise<SettingsHubStatus> {
@@ -14,7 +15,7 @@ async function fetchHubStatus(): Promise<SettingsHubStatus> {
 
 export function HubStatusValue({ statusKey }: { statusKey: keyof SettingsHubStatus }) {
   const { data, isLoading } = useQuery({
-    queryKey: ['presentation', 'settings-hub'],
+    queryKey: queryKeys.presentationSettingsHub,
     queryFn: fetchHubStatus,
     staleTime: 30_000,
   });

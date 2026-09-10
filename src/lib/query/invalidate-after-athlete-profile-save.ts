@@ -18,7 +18,7 @@ export async function invalidateAfterAthleteProfileSave(
     queryClient.invalidateQueries({ queryKey: queryKeys.thresholdPreview }),
     queryClient.invalidateQueries({ queryKey: queryKeys.thresholdHistory }),
     queryClient.invalidateQueries({ queryKey: ['activity-stream'] }),
-    queryClient.invalidateQueries({ queryKey: ['presentation'] }),
+    queryClient.invalidateQueries({ queryKey: queryKeys.presentationRoot }),
     queryClient.invalidateQueries({ queryKey: ['athlete-snapshot'] }),
     queryClient.invalidateQueries({ queryKey: ['today'] }),
     queryClient.invalidateQueries({ queryKey: queryKeys.athleteSnapshot(trainingDayId) }),

@@ -122,7 +122,7 @@ function patchTodayPresentationLines(
   qc: QueryClient,
   fn: (lines: DaySummaryLine[]) => DaySummaryLine[],
 ) {
-  qc.setQueriesData<TodayViewModel>({ queryKey: ['presentation', 'today'] }, (prev) => {
+  qc.setQueriesData<TodayViewModel>({ queryKey: queryKeys.presentationTodayAll }, (prev) => {
     if (!prev) {
       return prev;
     }
@@ -180,7 +180,7 @@ type LinkSuccessContext = {
 };
 
 function invalidateNonDemoTodayQueries(queryClient: QueryClient): void {
-  void queryClient.invalidateQueries({ queryKey: ['presentation', 'today'] });
+  void queryClient.invalidateQueries({ queryKey: queryKeys.presentationTodayAll });
   void queryClient.invalidateQueries({ queryKey: ['athlete-snapshot'] });
   void queryClient.invalidateQueries({ queryKey: ['today'] });
 }
@@ -379,7 +379,7 @@ export function usePlannedSessionMutations() {
     },
     onSettled: () => {
       removeListOpts.onSettled?.();
-      void queryClient.invalidateQueries({ queryKey: ['presentation', 'today'] });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.presentationTodayAll });
       void queryClient.invalidateQueries({ queryKey: ['today'] });
     },
   });

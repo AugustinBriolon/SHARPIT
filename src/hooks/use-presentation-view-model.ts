@@ -32,7 +32,7 @@ export function isPresentationValuesLoading(
 
 export function useRecoveryViewModel(trainingDayId: string) {
   return useQuery<RecoveryViewModel>({
-    queryKey: ['presentation', 'recovery', trainingDayId],
+    queryKey: queryKeys.presentationRecovery(trainingDayId),
     queryFn: () => fetchRecoveryPresentation(trainingDayId),
     staleTime: 5 * 60_000,
     placeholderData: keepPreviousData,
@@ -41,7 +41,7 @@ export function useRecoveryViewModel(trainingDayId: string) {
 
 export function useSleepViewModel(trainingDayId: string) {
   return useQuery<SleepViewModel>({
-    queryKey: ['presentation', 'sleep', trainingDayId],
+    queryKey: queryKeys.presentationSleep(trainingDayId),
     queryFn: () => fetchSleepPresentation(trainingDayId),
     staleTime: 5 * 60_000,
     placeholderData: keepPreviousData,
@@ -50,7 +50,7 @@ export function useSleepViewModel(trainingDayId: string) {
 
 export function useEffortViewModel(trainingDayId: string) {
   return useQuery<EffortViewModel>({
-    queryKey: ['presentation', 'effort', trainingDayId],
+    queryKey: queryKeys.presentationEffort(trainingDayId),
     queryFn: () => fetchEffortPresentation(trainingDayId),
     staleTime: 5 * 60_000,
     placeholderData: keepPreviousData,
@@ -59,7 +59,7 @@ export function useEffortViewModel(trainingDayId: string) {
 
 export function useAdaptationViewModel(trainingDayId: string) {
   return useQuery<AdaptationViewModel>({
-    queryKey: ['presentation', 'adaptation', trainingDayId],
+    queryKey: queryKeys.presentationAdaptation(trainingDayId),
     queryFn: () => fetchAdaptationPresentation(trainingDayId),
     staleTime: 5 * 60_000,
     placeholderData: keepPreviousData,
@@ -93,7 +93,7 @@ export function useTodayPresentationViewModel(trainingDayId: string) {
 
 export function usePhysicalHealthViewModel(trainingDayId: string) {
   return useQuery<PhysicalHealthViewModel>({
-    queryKey: ['presentation', 'physical-health', trainingDayId],
+    queryKey: queryKeys.presentationPhysicalHealth(trainingDayId),
     queryFn: () => fetchPhysicalHealthPresentation(trainingDayId),
     staleTime: 5 * 60_000,
     placeholderData: keepPreviousData,
@@ -103,7 +103,7 @@ export function usePhysicalHealthViewModel(trainingDayId: string) {
 export function useBodyPresentationViewModel() {
   return useQuery<BodyViewModel>({
     // Always full history — chart windows are filtered client-side in CompositionView.
-    queryKey: ['presentation', 'body', 'all'],
+    queryKey: queryKeys.presentationBody,
     queryFn: () => fetchBodyPresentation(null),
     staleTime: 5 * 60_000,
     placeholderData: keepPreviousData,
@@ -112,7 +112,7 @@ export function useBodyPresentationViewModel() {
 
 export function useNutritionViewModel(trainingDayId: string) {
   return useQuery<NutritionViewModel>({
-    queryKey: ['presentation', 'nutrition', trainingDayId],
+    queryKey: queryKeys.presentationNutrition(trainingDayId),
     queryFn: () => fetchNutritionPresentation(trainingDayId),
     staleTime: 60_000,
     placeholderData: keepPreviousData,
