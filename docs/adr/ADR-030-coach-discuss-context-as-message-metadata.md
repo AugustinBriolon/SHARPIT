@@ -1,9 +1,10 @@
 # ADR-030: Coach discuss context travels as message metadata; entitlements re-checked server-side
 
-**Status:** Proposed  
+**Status:** Accepted  
 **Date:** 2026-09-10  
 **Author:** Augustin Briolon (with Claude Code)  
-**Supersedes:** N/A
+**Supersedes:** N/A  
+**Follow-up:** [ADR-031](./ADR-031-coach-discuss-server-context-registry.md) — per-kind server registry
 
 ---
 
@@ -107,8 +108,7 @@ Use **user-message metadata** as the channel for the discuss context, and **re-c
 
 - FREE athletes can still talk about their journal in an ordinary conversation; the gate protects the findings, not the topic.
 - One extra profile read on each turn of a `journal-analyses` conversation, and one findings load per Pro turn (no caching yet).
-- The other 7 kinds now send metadata that the server ignores — their chips remain cosmetic until follow-up work consumes them.
-- `POST /api/coach/chat` grows to 86 lines (pre-existing `max-lines-per-function` warning, was 79).
+- `POST /api/coach/chat` stays thin; kind wiring lives in the ADR-031 registry.
 
 ### Scientific debt created
 
@@ -118,6 +118,6 @@ Use **user-message metadata** as the channel for the discuss context, and **re-c
 
 ## Review Criteria
 
-- When a second discuss kind starts injecting server-side context: extract a per-kind registry instead of adding branches to the route.
+- ~~When a second discuss kind starts injecting server-side context: extract a per-kind registry~~ — done in ADR-031.
 - If the findings load shows up in coach chat latency (p95) or DB load: cache the reading per athlete/day.
 - When real billing replaces the manual `AthleteProfile.tier` toggle: confirm `hasProAccess` remains the only gate call.
