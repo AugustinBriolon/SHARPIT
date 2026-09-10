@@ -1,48 +1,66 @@
 import { Suspense } from 'react';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { hasProAccess } from '@/lib/access/tier';
-import { JournalAnalysesScreen } from '@/components/journal/journal-analyses-screen';
+import { JournalAnalysesScreen } from '@/components/journal/analyses/journal-analyses-screen';
 import { MobileDrillDownHeader } from '@/components/layout/header/mobile-drill-down-header';
 import { Skeleton } from '@/components/ui/skeleton';
+import { hasProAccess } from '@/lib/access/tier';
+import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
+import { buildJournalAnalysesViewModel } from '@/lib/health/journal-analyses-view-model';
 import { loadJournalHabitFindings } from '@/lib/health/journal-habit-analysis-load';
+import { loadJournalHabitExperiments } from '@/lib/health/journal-habit-experiment-load';
+import { testedFactorIds, toHabitExperimentView } from '@/lib/health/journal-habit-experiment-view';
+import { buildJournalHabitReading } from '@/lib/health/journal-habit-reading';
 import { JOURNAL_ANALYSIS_MIN_DAYS, isJournalAnalysisReady } from '@/lib/health/journal-limits';
-import { getAthleteProfile } from '@/lib/queries';
 import { prisma } from '@/lib/prisma';
+import { getAthleteProfile } from '@/lib/queries';
+import { trainingDayIdForNow } from '@/lib/training/training-day';
 
-function JournalAnalysesFallback() {
+function JournalAnalysesSkeleton() {
   return (
-    <div className="space-y-8" aria-busy>
-      <MobileDrillDownHeader backHref="/journal" backLabel="Journal" title="Analyses" />
-      <Skeleton className="rounded-analysis-lg h-40 w-full border-0" />
-      <Skeleton className="rounded-analysis-lg h-56 w-full border-0" />
+    <div className="space-y-6" aria-busy>
+      <Skeleton className="rounded-analysis-lg h-44 w-full border-0" />
+      <Skeleton className="rounded-analysis h-72 w-full border-0" />
     </div>
   );
 }
 
-async function JournalAnalysesContent() {
+/** Athlete-scoped reads live under Suspense so the shell prerenders (Cache Components). */
+async function JournalAnalysesWithData() {
   const athleteId = await getCurrentAthleteId();
-  const [profile, { daysWithSignal, findings }] = await Promise.all([
+  const [profile, { daysWithSignal, daysInSpan, findings }, experiments] = await Promise.all([
     getAthleteProfile(athleteId).catch(() => null),
     loadJournalHabitFindings(prisma, athleteId),
+    loadJournalHabitExperiments(prisma, athleteId, trainingDayIdForNow()),
   ]);
-  const ready = isJournalAnalysisReady(daysWithSignal);
-  const isPro = hasProAccess(profile?.tier ?? 'FREE');
+  const reading = isJournalAnalysisReady(daysWithSignal)
+    ? buildJournalHabitReading(findings, daysWithSignal)
+    : null;
+  const viewModel = reading
+    ? buildJournalAnalysesViewModel({
+        findings,
+        reading,
+        daysInSpan,
+        testedFactorIds: testedFactorIds(experiments),
+      })
+    : null;
 
   return (
     <JournalAnalysesScreen
+      analysis={reading && viewModel ? { reading, viewModel } : null}
       daysWithSignal={daysWithSignal}
-      findings={ready ? findings : []}
-      isPro={isPro}
+      experiments={experiments.map(toHabitExperimentView)}
+      isPro={hasProAccess(profile?.tier ?? 'FREE')}
       minDays={JOURNAL_ANALYSIS_MIN_DAYS}
-      ready={ready}
     />
   );
 }
 
 export default function JournalAnalysesPage() {
   return (
-    <Suspense fallback={<JournalAnalysesFallback />}>
-      <JournalAnalysesContent />
-    </Suspense>
+    <div className="space-y-8">
+      <MobileDrillDownHeader backHref="/journal" backLabel="Journal" title="Analyses" />
+      <Suspense fallback={<JournalAnalysesSkeleton />}>
+        <JournalAnalysesWithData />
+      </Suspense>
+    </div>
   );
 }

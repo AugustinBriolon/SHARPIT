@@ -311,6 +311,7 @@ model AthleteProfile {
   plannedSessions             PlannedSession[]
   travelContexts              AthleteTravelContext[]
   dayJournals                 AthleteDayJournal[]
+  journalHabitExperiments     JournalHabitExperiment[]
   activityStatus              AthleteActivityStatus?
   activityStatusHistory       AthleteActivityStatusHistory[]
   brickAnalyses               BrickAnalysis[]
@@ -1465,6 +1466,31 @@ model AthleteDayJournal {
 
   @@unique([athleteId, trainingDayId])
   @@index([athleteId, trainingDayId])
+}
+
+enum JournalHabitExperimentIntent {
+  /// « Supprimer » : a held day records the factor as 'no'.
+  REMOVE
+  /// « Ajouter » : a held day records the factor as 'yes'.
+  ADD
+}
+
+/// 7-day journal habit experiment (ADR-032). Only intent + window are stored:
+/// progress, review date and verdict are derived at read time from the journal
+/// and DailyHealth, with the same method as habit associations.
+model JournalHabitExperiment {
+  id          String                       @id @default(cuid())
+  athleteId   String
+  athlete     AthleteProfile               @relation(fields: [athleteId], references: [id], onDelete: Cascade)
+  /// Built-in or custom_* journal factor id, validated server-side.
+  factorId    String
+  intent      JournalHabitExperimentIntent
+  /// First training day of the window (YYYY-MM-DD, same key as AthleteDayJournal).
+  startDayId  String
+  cancelledAt DateTime?
+  createdAt   DateTime                     @default(now())
+
+  @@index([athleteId, startDayId])
 }
 
 /// Current longer-lived activity mode (Actif / En pause / Blessé / Malade).

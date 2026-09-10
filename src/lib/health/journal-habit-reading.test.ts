@@ -8,6 +8,8 @@ function finding(
 ): JournalHabitFinding {
   return {
     kind: 'effect',
+    yesValues: [],
+    noValues: [],
     outcome: 'sleepMinutes',
     nYes: 5,
     nNo: 5,
@@ -85,5 +87,27 @@ describe('buildJournalHabitReading', () => {
     expect(reading.weakCount).toBe(1);
     expect(reading.priority?.factorId).toBe('alcohol');
     expect(reading.headline.toLowerCase()).toMatch(/piste|fragile|confirmer/);
+  });
+
+  it('names the lever and its size in the verdict, with counts in the summary', () => {
+    const reading = buildJournalHabitReading(
+      [
+        finding({ factorId: 'alcohol', polarity: 'minus', confidence: 'high' }),
+        {
+          ...finding({ factorId: 'alcohol', polarity: 'minus', confidence: 'high' }),
+          outcome: 'recoveryScore',
+          medianYes: 41,
+          medianNo: 58,
+          absDelta: 17,
+        },
+        finding({ factorId: 'late_meal', polarity: 'minus', confidence: 'medium' }),
+      ],
+      48,
+    );
+
+    expect(reading.verdict).toBe(
+      'Ton levier le plus net : « Alcool », 1 h 30 de sommeil et 17 points de récupération en moins.',
+    );
+    expect(reading.summary).toBe('48 jours analysés · 1 association nette · 1 à confirmer');
   });
 });

@@ -1,23 +1,21 @@
 'use client';
 
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Check, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { MobileBackLink } from '@/components/layout/header/mobile-back-link';
 import { StickyHeader } from '@/components/layout/header/sticky-header';
-import { IntegrationLogo } from '@/components/settings/integrations/logos';
-import { buttonVariants } from '@/components/ui/button';
-import { useIosIframeFocusZoomGuard } from '@/hooks/use-ios-iframe-focus-zoom-guard';
 import {
-  buildGarminBrowserSsoUrl,
-  GARMIN_SSO_MESSAGE_ORIGIN,
-  parseGarminSsoPostMessage,
-} from '@/lib/integrations/garmin/garmin-browser-sso-shared';
-import { RISK_TONE, STATUS_SURFACE } from '@/lib/presentation/status-surface';
+  createGarminSsoMessageHandler,
+  GarminSsoConnectingPlate,
+  GarminSsoErrorPanel,
+  GarminSsoSuccessPlate,
+  type GarminSsoPhase,
+} from '@/components/settings/integrations/garmin-browser-sso-parts';
+import { IntegrationLogo } from '@/components/settings/integrations/logos';
+import { useIosIframeFocusZoomGuard } from '@/hooks/use-ios-iframe-focus-zoom-guard';
+import { buildGarminBrowserSsoUrl } from '@/lib/integrations/garmin/garmin-browser-sso-shared';
 import { cn } from '@/lib/utils';
-
-type Phase = 'form' | 'connecting' | 'success' | 'error';
 
 const SUCCESS_HOLD_MS = 900;
 const DEFAULT_BACK = '/settings/integrations';
@@ -51,7 +49,7 @@ function errorCopy(status: string | undefined): { title: string; description: st
 }
 
 function useGarminSsoTicketExchange(
-  setPhase: (phase: Phase) => void,
+  setPhase: (phase: GarminSsoPhase) => void,
   setErrorStatus: (status: string | undefined) => void,
 ) {
   const router = useRouter();
@@ -67,46 +65,17 @@ function useGarminSsoTicketExchange(
   }, []);
 
   useEffect(() => {
-    function onMessage(event: MessageEvent) {
-      if (event.origin !== GARMIN_SSO_MESSAGE_ORIGIN) {
-        return;
-      }
-      const ticket = parseGarminSsoPostMessage(event.data);
-      if (!ticket || exchanging.current) {
-        return;
-      }
-      exchanging.current = true;
-      setPhase('connecting');
-      setErrorStatus(undefined);
-
-      void (async () => {
-        try {
-          const response = await fetch('/api/garmin/sso-callback', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ticket }),
-          });
-          const data = (await response.json().catch(() => null)) as {
-            redirectTo?: string;
-            status?: string;
-          } | null;
-          if (!response.ok || !data?.redirectTo) {
-            setPhase('error');
-            setErrorStatus(data?.status);
-            exchanging.current = false;
-            return;
-          }
-          setPhase('success');
-          successTimer.current = setTimeout(() => {
-            router.replace(data.redirectTo!);
-          }, SUCCESS_HOLD_MS);
-        } catch {
-          setPhase('error');
-          setErrorStatus('error');
-          exchanging.current = false;
-        }
-      })();
-    }
+    const onMessage = createGarminSsoMessageHandler({
+      exchanging,
+      setPhase,
+      setErrorStatus,
+      onSuccess: (redirectTo) => {
+        setPhase('success');
+        successTimer.current = setTimeout(() => {
+          router.replace(redirectTo);
+        }, SUCCESS_HOLD_MS);
+      },
+    });
 
     window.addEventListener('message', onMessage);
     return () => window.removeEventListener('message', onMessage);
@@ -174,7 +143,7 @@ function GarminSsoPhaseBody({
   iframeRef,
   onIframeLoad,
 }: {
-  phase: Phase;
+  phase: GarminSsoPhase;
   err: { title: string; description: string };
   retryHref: string;
   backHref: string;
@@ -184,59 +153,13 @@ function GarminSsoPhaseBody({
   onIframeLoad: () => void;
 }) {
   if (phase === 'connecting') {
-    return (
-      <StatusPlate
-        description="Échange du ticket de session — ne ferme pas cette page."
-        title="Connexion Garmin…"
-        icon={
-          <Loader2 className="text-primary size-5 animate-spin" strokeWidth={1.75} aria-hidden />
-        }
-      />
-    );
+    return <GarminSsoConnectingPlate />;
   }
   if (phase === 'success') {
-    return (
-      <StatusPlate
-        className={STATUS_SURFACE.doneSoft}
-        description="Redirection vers tes applications…"
-        title="Garmin connecté"
-        icon={
-          <span
-            className={cn(
-              'inline-flex size-8 items-center justify-center rounded-full border',
-              STATUS_SURFACE.doneBadge,
-            )}
-          >
-            <Check className="size-4" strokeWidth={2} aria-hidden />
-          </span>
-        }
-      />
-    );
+    return <GarminSsoSuccessPlate />;
   }
   if (phase === 'error') {
-    return (
-      <div
-        className={cn('analysis-panel rounded-analysis-lg space-y-4 px-5 py-5', RISK_TONE.bgClass)}
-      >
-        <div className="space-y-1">
-          <p className={cn('text-sm font-medium', RISK_TONE.colorClass)}>{err.title}</p>
-          <p className="text-muted-foreground text-xs leading-relaxed sm:text-[13px]">
-            {err.description}
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <a className={cn(buttonVariants(), 'w-full sm:w-auto')} href={retryHref}>
-            Réessayer
-          </a>
-          <Link
-            className={cn(buttonVariants({ variant: 'outline' }), 'w-full sm:w-auto')}
-            href={backHref}
-          >
-            Retour
-          </Link>
-        </div>
-      </div>
-    );
+    return <GarminSsoErrorPanel backHref={backHref} err={err} retryHref={retryHref} />;
   }
   if (!iframeSrc) {
     return null;
@@ -252,7 +175,7 @@ function GarminSsoPhaseBody({
 }
 
 export function GarminBrowserSsoClient({ returnTo = DEFAULT_BACK }: { returnTo?: string }) {
-  const [phase, setPhase] = useState<Phase>('form');
+  const [phase, setPhase] = useState<GarminSsoPhase>('form');
   const [errorStatus, setErrorStatus] = useState<string | undefined>();
   const [iframeReady, setIframeReady] = useState(false);
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
@@ -298,35 +221,6 @@ export function GarminBrowserSsoClient({ returnTo = DEFAULT_BACK }: { returnTo?:
         retryHref={retryHref}
         onIframeLoad={() => setIframeReady(true)}
       />
-    </div>
-  );
-}
-
-function StatusPlate({
-  title,
-  description,
-  icon,
-  className,
-}: {
-  title: string;
-  description: string;
-  icon: React.ReactNode;
-  className?: string;
-}) {
-  return (
-    <div
-      aria-live="polite"
-      role="status"
-      className={cn(
-        'analysis-panel rounded-analysis-lg flex flex-col items-center gap-3 px-5 py-10 text-center',
-        className,
-      )}
-    >
-      {icon}
-      <div className="space-y-1">
-        <p className="text-section-title text-foreground">{title}</p>
-        <p className="text-muted-foreground text-sm leading-relaxed">{description}</p>
-      </div>
     </div>
   );
 }

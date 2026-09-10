@@ -193,6 +193,8 @@ describe('journal-habit-analysis', () => {
     const redundant: JournalHabitFinding[] = [
       {
         kind: 'effect',
+        yesValues: [],
+        noValues: [],
         factorId: 'device_in_bed',
         outcome: 'recoveryScore',
         nYes: 5,
@@ -206,6 +208,8 @@ describe('journal-habit-analysis', () => {
       },
       {
         kind: 'effect',
+        yesValues: [],
+        noValues: [],
         factorId: 'device_in_bed',
         outcome: 'bodyBattery',
         nYes: 5,
@@ -225,6 +229,8 @@ describe('journal-habit-analysis', () => {
     const findings: JournalHabitFinding[] = [
       {
         kind: 'effect',
+        yesValues: [],
+        noValues: [],
         factorId: 'device_in_bed',
         outcome: 'sleepMinutes',
         nYes: 5,
@@ -238,6 +244,8 @@ describe('journal-habit-analysis', () => {
       },
       {
         kind: 'effect',
+        yesValues: [],
+        noValues: [],
         factorId: 'device_in_bed',
         outcome: 'recoveryScore',
         nYes: 5,
@@ -251,6 +259,8 @@ describe('journal-habit-analysis', () => {
       },
       {
         kind: 'effect',
+        yesValues: [],
+        noValues: [],
         factorId: 'yoga',
         outcome: 'recoveryScore',
         nYes: 5,
@@ -272,5 +282,22 @@ describe('journal-habit-analysis', () => {
     expect(compiled.some((item) => item.factorId === 'yoga' && item.polarity === 'plus')).toBe(
       true,
     );
+  });
+
+  it('keeps the per-day values behind each median', () => {
+    const days = [
+      day('2026-09-01', 'yes', 360),
+      day('2026-09-02', 'yes', 350),
+      day('2026-09-03', 'yes', 370),
+      day('2026-09-04', 'no', 480),
+      day('2026-09-05', 'no', 470),
+      day('2026-09-06', 'no', 490),
+    ];
+
+    const effect = compareFactorOutcome(days, 'device_in_bed', 'sleepMinutes');
+
+    expect(effect?.yesValues).toEqual([360, 350, 370]);
+    expect(effect?.noValues).toEqual([480, 470, 490]);
+    expect(effect?.medianYes).toBe(360);
   });
 });

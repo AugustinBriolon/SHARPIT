@@ -9,6 +9,7 @@ function reading(overrides: Partial<JournalHabitReading> = {}): JournalHabitRead
     weakCount: 1,
     empty: false,
     headline: '1 association nette · pistes à confirmer',
+    verdict: 'Ton levier le plus net : « Écran au lit », 1 h 20 de sommeil en moins.',
     summary: '14 jours analysés · 1 nette · 1 à confirmer',
     priority: {
       factorId: 'device_in_bed',

@@ -27,7 +27,8 @@ const SIGNAL_OPTIONS = [
     label: 'Oui',
     Icon: Check,
     pill: 'bg-primary shadow-primary/30 shadow-sm',
-    activeIcon: 'text-white',
+    // primary-foreground tracks light/dark primary (lime → ink in dark)
+    activeIcon: 'text-primary-foreground',
   },
 ] as const;
 

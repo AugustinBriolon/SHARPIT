@@ -35,6 +35,7 @@
 | [ADR-029](./ADR-029-rate-limit-fail-closed-and-ops-smoke.md)      | Sensitive rate-limit fail-closed + ops smoke                                      | Accepted |
 | [ADR-030](./ADR-030-coach-discuss-context-as-message-metadata.md) | Coach discuss context as message metadata; entitlements re-checked server-side    | Accepted |
 | [ADR-031](./ADR-031-coach-discuss-server-context-registry.md)     | Coach discuss server context via per-kind registry                                | Accepted |
+| [ADR-032](./ADR-032-journal-habit-experiments-derived-at-read.md) | Journal habit experiments — intent stored, verdict derived at read time           | Proposed |
 
 **Template:** [ADR-template.md](./ADR-template.md)
 

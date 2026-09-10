@@ -111,9 +111,11 @@ describe('TodayDashboard loading gate contract', () => {
   });
 
   it('keeps one-decision hierarchy with tertiary signal evidence under Comprendre', () => {
-    // Progressive briefing under the verdict — not in the shell, not above the hero.
-    expect(mainSource).toContain('DailyBriefingPanel');
+    // Verdict → action row → Comprendre → quiet journal footnote.
+    expect(mainSource).not.toContain('DailyBriefingPanel');
+    expect(mainSource).toContain('TodayActionRow');
     expect(mainSource).toContain('TodayUnderstandSection');
+    expect(mainSource).toContain('TodayJournalHabitBridgeFooter');
     expect(mainSource).toContain('TodayCriticalStatus');
     // Signal strip must not sit as primary under the hero in TodayDashboardMain.
     expect(mainSource).not.toMatch(/TodayVerdictHero[\s\S]*TodaySignalStrip/);

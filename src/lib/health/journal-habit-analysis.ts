@@ -38,6 +38,10 @@ export type FactorOutcomeEffect = {
   medianYes: number;
   /** Median outcome when habit = no. */
   medianNo: number;
+  /** Every measured outcome value on days with the habit — the distribution behind medianYes. */
+  yesValues: number[];
+  /** Every measured outcome value on days without the habit. */
+  noValues: number[];
   absDelta: number;
   /** Habit present associated with better (plus) or worse (minus) outcome. */
   polarity: ObservationPolarity;
@@ -53,6 +57,8 @@ export type JournalHabitFinding = {
   nNo: number;
   medianYes: number;
   medianNo: number;
+  yesValues: number[];
+  noValues: number[];
   absDelta: number;
   polarity: ObservationPolarity;
   confidence: 'high' | 'medium';
@@ -68,7 +74,11 @@ export type CompiledJournalHabitFinding = {
   effects: JournalHabitFinding[];
 };
 
-const OUTCOMES: JournalOutcomeKey[] = ['sleepMinutes', 'recoveryScore', 'bodyBattery'];
+export const OUTCOMES: readonly JournalOutcomeKey[] = [
+  'sleepMinutes',
+  'recoveryScore',
+  'bodyBattery',
+];
 
 /** Minimum |median_yes − median_no| to treat as a meaningful gap. */
 export const MIN_ABS_DELTA: Record<JournalOutcomeKey, number> = {
@@ -240,6 +250,8 @@ export function compareFactorOutcome(
     nNo: noValues.length,
     medianYes,
     medianNo,
+    yesValues,
+    noValues,
     absDelta,
     polarity,
     confidence,
@@ -333,6 +345,8 @@ export function buildJournalHabitFindings(
         nNo: effect.nNo,
         medianYes: effect.medianYes,
         medianNo: effect.medianNo,
+        yesValues: effect.yesValues,
+        noValues: effect.noValues,
         absDelta: effect.absDelta,
         polarity: effect.polarity,
         confidence: effect.confidence,

@@ -37,7 +37,8 @@ function isPrismaClientCurrent(client: PrismaClient): boolean {
     'condition' in client &&
     'environmentalObservationRecord' in client &&
     'athleteDayJournal' in client &&
-    'athleteActivityStatus' in client
+    'athleteActivityStatus' in client &&
+    'journalHabitExperiment' in client
   );
 }
 

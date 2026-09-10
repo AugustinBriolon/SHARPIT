@@ -1,26 +1,38 @@
 import { describe, expect, it } from 'vitest';
 
-import { toastCloseClass, toastViewportClass } from '@/components/ui/toast';
+import { toastCloseClass, toastRootClass, toastViewportClass } from '@/components/ui/toast';
 
 describe('toastViewportClass', () => {
-  it('anchors above the mobile bottom nav so toasts never cover a nav tap', () => {
-    expect(toastViewportClass).toContain('bottom-[calc(var(--bottom-nav-offset)+0.75rem)]');
-    expect(toastViewportClass).not.toContain('bottom-4');
+  it('anchors under the top safe-area — clear of the floating tab bar', () => {
+    expect(toastViewportClass).toContain('top-[max(0.75rem,env(safe-area-inset-top,0px))]');
+    expect(toastViewportClass).not.toContain('bottom-[');
+    expect(toastViewportClass).not.toContain('bottom-nav-offset');
   });
 
-  it('keeps the nav offset on every viewport — the tab bar is no longer lg:hidden', () => {
-    expect(toastViewportClass).not.toContain('lg:bottom-6');
-    expect(toastViewportClass).not.toContain('sm:bottom-');
+  it('keeps a thin centered capsule on every viewport', () => {
+    expect(toastViewportClass).toContain('inset-x-0');
+    expect(toastViewportClass).toContain('mx-auto');
+    expect(toastViewportClass).toContain('w-[min(18rem,calc(100vw-2rem))]');
+    expect(toastViewportClass).not.toContain('right-4');
   });
 
-  it('keeps the full-width band inert so it cannot swallow taps', () => {
+  it('keeps the band inert so it cannot swallow taps', () => {
     expect(toastViewportClass).toContain('pointer-events-none');
   });
 });
 
+describe('toastRootClass', () => {
+  it('enters and exits from the top edge', () => {
+    expect(toastRootClass).toContain('origin-top');
+    expect(toastRootClass).toContain('data-starting-style:[transform:translateY(-120%)]');
+    expect(toastRootClass).toContain(
+      '[&[data-ending-style]:not([data-limited]):not([data-swipe-direction])]:[transform:translateY(-120%)]',
+    );
+  });
+});
+
 describe('toastCloseClass', () => {
-  it('keeps the close target touch-first on mobile and dense on desktop', () => {
-    expect(toastCloseClass).toContain('size-9');
-    expect(toastCloseClass).toContain('lg:size-7');
+  it('keeps a compact close target for the slim toast chrome', () => {
+    expect(toastCloseClass).toContain('size-7');
   });
 });

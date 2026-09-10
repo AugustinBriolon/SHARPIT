@@ -6,6 +6,8 @@ import {
 } from '@/lib/health/journal-habit-analysis';
 import {
   formatCompiledJournalHabitFinding,
+  formatOutcomeValue,
+  joinFrench,
   journalFactorDisplayLabel,
 } from '@/lib/health/journal-habit-finding-copy';
 
@@ -22,6 +24,8 @@ export type JournalHabitReading = {
   weakCount: number;
   empty: boolean;
   headline: string;
+  /** The plate's one-sentence verdict: names the lever and its size. */
+  verdict: string;
   summary: string;
   priority: (CompiledJournalHabitFinding & { title: string; detail: string }) | null;
   highlights: JournalHabitReadingHighlight[];
@@ -57,7 +61,7 @@ function buildHeadline(netCount: number, weakCount: number): string {
 function buildSummary(daysWithSignal: number, netCount: number, weakCount: number): string {
   const parts = [`${daysWithSignal} jours analysés`];
   if (netCount > 0) {
-    parts.push(`${netCount} nette${netCount > 1 ? 's' : ''}`);
+    parts.push(`${netCount} association${netCount > 1 ? 's nettes' : ' nette'}`);
   }
   if (weakCount > 0) {
     parts.push(`${weakCount} à confirmer`);
@@ -89,6 +93,31 @@ function buildHighlights(
   }));
 }
 
+const OUTCOME_ORDER = ['sleepMinutes', 'recoveryScore', 'bodyBattery'] as const;
+
+function effectAmount(effect: JournalHabitFinding): string {
+  const magnitude = Math.round(effect.absDelta);
+  if (effect.outcome === 'sleepMinutes') {
+    return magnitude >= 60
+      ? `${formatOutcomeValue('sleepMinutes', magnitude)} de sommeil`
+      : `${magnitude} minutes de sommeil`;
+  }
+  return `${magnitude} points de ${effect.outcome === 'recoveryScore' ? 'récupération' : 'Body Battery'}`;
+}
+
+function buildVerdict(priority: CompiledJournalHabitFinding | null, headline: string): string {
+  if (!priority) {
+    return headline;
+  }
+  const amounts = [...priority.effects]
+    .sort((a, b) => OUTCOME_ORDER.indexOf(a.outcome) - OUTCOME_ORDER.indexOf(b.outcome))
+    .map(effectAmount);
+  const lead =
+    priority.confidence === 'high' ? 'Ton levier le plus net' : 'Ta piste la plus avancée';
+  const direction = priority.polarity === 'minus' ? 'en moins' : 'en plus';
+  return `${lead} : « ${journalFactorDisplayLabel(priority.factorId)} », ${joinFrench(amounts)} ${direction}.`;
+}
+
 /**
  * Deterministic athlete-facing reading of habit↔physiology associations.
  * Presentation only — no causation claim, no Core engine.
@@ -104,13 +133,15 @@ export function buildJournalHabitReading(
   const empty = netCount === 0 && weakCount === 0;
   const priorityFinding = pickPriority(compiled);
   const priorityCopy = priorityFinding ? formatCompiledJournalHabitFinding(priorityFinding) : null;
+  const headline = buildHeadline(netCount, weakCount);
 
   return {
     daysWithSignal,
     netCount,
     weakCount,
     empty,
-    headline: buildHeadline(netCount, weakCount),
+    headline,
+    verdict: buildVerdict(priorityFinding, headline),
     summary: buildSummary(daysWithSignal, netCount, weakCount),
     priority:
       priorityFinding && priorityCopy

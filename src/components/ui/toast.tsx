@@ -42,33 +42,39 @@ export const toast = {
 };
 
 /**
- * Sits above the floating bottom nav (`--bottom-nav-offset`, declared in
- * `globals.css`) so a toast can never cover a nav tap target. The bar is
- * present on every viewport. `pointer-events-none` keeps the full-width band
- * inert; each toast Root re-enables its own pointer events.
+ * Top-center, clear of the floating tab bar. Thin capsule — status chrome,
+ * not a second sheet. `pointer-events-none` keeps the band inert; each Root
+ * re-enables its own pointer events.
  */
 export const toastViewportClass =
-  'pointer-events-none fixed top-auto right-4 bottom-[calc(var(--bottom-nav-offset)+0.75rem)] left-auto z-[100] mx-auto w-[calc(100vw-2rem)] outline-none sm:right-6 sm:w-90';
+  'pointer-events-none fixed inset-x-0 top-[max(0.75rem,env(safe-area-inset-top,0px))] z-[100] mx-auto flex w-[min(18rem,calc(100vw-2rem))] flex-col outline-none sm:w-[min(20rem,calc(100vw-2.5rem))]';
 
-/** Touch-first close target on mobile, dense on desktop — matches `Button size="icon"`. */
+/**
+ * Enter/exit from above; stack grows downward. Swipe up to dismiss matches
+ * the edge the toast arrived from (Base UI custom-position top pattern).
+ */
+export const toastRootClass =
+  'group/toast toast-motion pointer-events-auto absolute inset-x-0 top-0 z-[calc(1000-var(--toast-index))] w-full origin-top select-none [--gap:0.5rem] [--height:var(--toast-frontmost-height,var(--toast-height))] [--peek:0.5rem] [--scale:calc(max(0,1-(var(--toast-index)*0.08)))] [--shrink:calc(1-var(--scale))] [--offset-y:calc(var(--toast-offset-y)+calc(var(--toast-index)*var(--gap))+var(--toast-swipe-movement-y))] [transform:translateX(var(--toast-swipe-movement-x))_translateY(calc(var(--toast-swipe-movement-y)+(var(--toast-index)*var(--peek))+(var(--shrink)*var(--height))))_scale(var(--scale))] data-ending-style:opacity-0 data-expanded:[transform:translateX(var(--toast-swipe-movement-x))_translateY(calc(var(--offset-y)))] data-limited:opacity-0 data-starting-style:[transform:translateY(-120%)] data-ending-style:data-[swipe-direction=up]:[transform:translateY(calc(var(--toast-swipe-movement-y)-140%))] data-expanded:data-ending-style:data-[swipe-direction=up]:[transform:translateY(calc(var(--toast-swipe-movement-y)-140%))] data-ending-style:data-[swipe-direction=down]:[transform:translateY(calc(var(--toast-swipe-movement-y)+140%))] data-expanded:data-ending-style:data-[swipe-direction=down]:[transform:translateY(calc(var(--toast-swipe-movement-y)+140%))] data-ending-style:data-[swipe-direction=left]:[transform:translateX(calc(var(--toast-swipe-movement-x)-140%))_translateY(var(--offset-y))] data-expanded:data-ending-style:data-[swipe-direction=left]:[transform:translateX(calc(var(--toast-swipe-movement-x)-140%))_translateY(var(--offset-y))] data-ending-style:data-[swipe-direction=right]:[transform:translateX(calc(var(--toast-swipe-movement-x)+140%))_translateY(var(--offset-y))] data-expanded:data-ending-style:data-[swipe-direction=right]:[transform:translateX(calc(var(--toast-swipe-movement-x)+140%))_translateY(var(--offset-y))] [&[data-ending-style]:not([data-limited]):not([data-swipe-direction])]:[transform:translateY(-120%)]';
+
 export const toastCloseClass =
-  'text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:outline-ring flex size-9 shrink-0 items-center justify-center rounded-md transition-colors focus-visible:outline-2 focus-visible:-outline-offset-1 lg:size-7';
+  'text-muted-foreground/80 hover:bg-muted hover:text-foreground focus-visible:outline-ring flex size-7 shrink-0 items-center justify-center rounded-md transition-colors focus-visible:outline-2 focus-visible:-outline-offset-1';
 
 function ToastIcon({ type }: { type: string | undefined }) {
+  const iconClass = 'size-3.5 shrink-0';
   switch (type) {
     case 'success':
-      return <CircleCheckIcon className="text-primary size-5 shrink-0" aria-hidden />;
+      return <CircleCheckIcon className={cn(iconClass, 'text-primary')} aria-hidden />;
     case 'error':
-      return <CircleXIcon className="text-destructive size-5 shrink-0" aria-hidden />;
+      return <CircleXIcon className={cn(iconClass, 'text-destructive')} aria-hidden />;
     case 'loading':
       return (
         <LoaderIcon
-          className="text-muted-foreground size-5 shrink-0 animate-spin motion-reduce:animate-none"
+          className={cn(iconClass, 'text-muted-foreground animate-spin motion-reduce:animate-none')}
           aria-hidden
         />
       );
     case 'info':
-      return <InfoIcon className="text-muted-foreground size-5 shrink-0" aria-hidden />;
+      return <InfoIcon className={cn(iconClass, 'text-muted-foreground')} aria-hidden />;
     default:
       return null;
   }
@@ -83,38 +89,34 @@ function ToastList() {
   const { toasts } = ToastPrimitive.useToastManager();
 
   return toasts.map((item) => (
-    <ToastPrimitive.Root
-      key={item.id}
-      className="group/toast toast-motion pointer-events-auto absolute right-0 bottom-0 left-auto z-[calc(1000-var(--toast-index))] mr-0 w-full origin-bottom [transform:translateX(var(--toast-swipe-movement-x))_translateY(calc(var(--toast-swipe-movement-y)-(var(--toast-index)*var(--peek))-(var(--shrink)*var(--height))))_scale(var(--scale))] select-none [--gap:0.75rem] [--height:var(--toast-frontmost-height,var(--toast-height))] [--offset-y:calc(var(--toast-offset-y)*-1+calc(var(--toast-index)*var(--gap)*-1)+var(--toast-swipe-movement-y))] [--peek:0.75rem] [--scale:calc(max(0,1-(var(--toast-index)*0.1)))] [--shrink:calc(1-var(--scale))] data-ending-style:opacity-0 data-expanded:[transform:translateX(var(--toast-swipe-movement-x))_translateY(calc(var(--offset-y)))] data-limited:opacity-0 data-starting-style:[transform:translateY(150%)] data-ending-style:data-[swipe-direction=down]:[transform:translateY(calc(var(--toast-swipe-movement-y)+150%))] data-expanded:data-ending-style:data-[swipe-direction=down]:[transform:translateY(calc(var(--toast-swipe-movement-y)+150%))] data-ending-style:data-[swipe-direction=left]:[transform:translateX(calc(var(--toast-swipe-movement-x)-150%))_translateY(var(--offset-y))] data-expanded:data-ending-style:data-[swipe-direction=left]:[transform:translateX(calc(var(--toast-swipe-movement-x)-150%))_translateY(var(--offset-y))] data-ending-style:data-[swipe-direction=right]:[transform:translateX(calc(var(--toast-swipe-movement-x)+150%))_translateY(var(--offset-y))] data-expanded:data-ending-style:data-[swipe-direction=right]:[transform:translateX(calc(var(--toast-swipe-movement-x)+150%))_translateY(var(--offset-y))] data-ending-style:data-[swipe-direction=up]:[transform:translateY(calc(var(--toast-swipe-movement-y)-150%))] data-expanded:data-ending-style:data-[swipe-direction=up]:[transform:translateY(calc(var(--toast-swipe-movement-y)-150%))] [&[data-ending-style]:not([data-limited]):not([data-swipe-direction])]:[transform:translateY(150%)]"
-      toast={item}
-    >
+    <ToastPrimitive.Root key={item.id} className={toastRootClass} swipeDirection="up" toast={item}>
       <span
         className="absolute top-full left-0 w-full"
         style={{ height: 'calc(var(--gap) + 1px)' }}
         aria-hidden
       />
-      <div className="bg-popover text-popover-foreground ring-foreground/10 h-(--height) overflow-hidden rounded-xl border shadow-none ring-1 group-data-expanded/toast:h-[var(--toast-height)]">
-        <ToastPrimitive.Content className="flex h-full items-center gap-3 overflow-hidden p-3 transition-opacity duration-250 ease-[cubic-bezier(0.22,1,0.36,1)] data-behind:opacity-0 data-expanded:opacity-100 motion-reduce:transition-none">
+      <div className="bg-popover/92 text-popover-foreground ring-foreground/8 dark:bg-popover/88 h-(--height) overflow-hidden rounded-lg border-0 shadow-none ring-1 backdrop-blur-md group-data-expanded/toast:h-[var(--toast-height)]">
+        <ToastPrimitive.Content className="flex h-full items-center gap-2 overflow-hidden px-2.5 py-2 transition-opacity duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] data-behind:opacity-0 data-expanded:opacity-100 motion-reduce:transition-none">
           <ToastIcon type={item.type} />
-          <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+          <div className="flex min-w-0 flex-1 flex-col gap-0">
             {item.title && (
-              <ToastPrimitive.Title className="font-heading text-sm leading-snug font-medium wrap-break-word" />
+              <ToastPrimitive.Title className="text-[0.8rem] leading-snug font-medium wrap-break-word" />
             )}
             {item.description && (
-              <ToastPrimitive.Description className="text-muted-foreground text-sm leading-snug wrap-break-word" />
+              <ToastPrimitive.Description className="text-muted-foreground text-[0.7rem] leading-snug wrap-break-word" />
             )}
           </div>
           {item.actionProps ? (
             <ToastPrimitive.Action
               className={cn(
-                'border-analysis-border/70 text-foreground hover:border-primary/40 shrink-0',
-                'inline-flex min-h-9 items-center rounded-full border px-3 text-xs font-medium',
+                'border-analysis-border/60 text-foreground hover:border-primary/40 shrink-0',
+                'inline-flex min-h-7 items-center rounded-full border px-2.5 text-[0.7rem] font-medium',
                 'focus-visible:ring-primary/35 transition-colors focus-visible:ring-2 focus-visible:outline-hidden',
               )}
             />
           ) : null}
           <ToastPrimitive.Close aria-label="Fermer" className={toastCloseClass}>
-            <XIcon className="size-4" aria-hidden />
+            <XIcon className="size-3.5" aria-hidden />
           </ToastPrimitive.Close>
         </ToastPrimitive.Content>
       </div>
@@ -124,7 +126,7 @@ function ToastList() {
 
 export function Toaster() {
   return (
-    <ToastPrimitive.Provider toastManager={toastManager}>
+    <ToastPrimitive.Provider limit={3} timeout={4000} toastManager={toastManager}>
       <ToastPrimitive.Portal>
         <ToastPrimitive.Viewport className={toastViewportClass}>
           <ToastList />

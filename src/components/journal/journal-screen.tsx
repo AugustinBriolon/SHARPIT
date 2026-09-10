@@ -532,11 +532,11 @@ function JournalScreenToolbar({
   onPrefsChange: (prefs: JournalPrefs) => void;
 }) {
   return (
-    <div className="flex flex-wrap items-start justify-between gap-3">
-      <p className="text-muted-foreground min-w-0 flex-1 text-sm text-pretty">
+    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+      <p className="text-muted-foreground min-w-0 text-sm text-pretty sm:max-w-md lg:max-w-lg">
         Contexte du jour pour le coach. Active seulement les éléments que tu veux suivre.
       </p>
-      <div className="flex shrink-0 flex-wrap items-center gap-2">
+      <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:shrink-0 sm:justify-end">
         <LinkButton href="/journal/analyses" size="sm" variant="outline">
           <ChartLine className="size-3.5" aria-hidden />
           Analyses
@@ -577,7 +577,7 @@ export function JournalScreen() {
   const isReady = Boolean(entry && trainingDayId);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-5">
       <MobileDrillDownHeader backHref="/" backLabel="Aujourd’hui" title="Journal" />
       <JournalScreenToolbar
         isPro={isPro}

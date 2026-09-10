@@ -6,9 +6,7 @@ import {
   TodayActionRowReminders,
   TodayActionRowSessionLists,
 } from '@/components/today/rich/today-action-row-parts';
-import { TodayJournalHabitBridgeStrip } from '@/components/today/rich/today-journal-habit-bridge-strip';
 import { useTodayActionRowDerived } from '@/components/today/rich/use-today-action-row-derived';
-import { useTodayJournalHabitBridge } from '@/components/today/rich/use-today-journal-habit-bridge';
 import type { TodayViewModel } from '@/core/presentation/today-view-model';
 import { useAppModal } from '@/providers/app-modal-provider';
 
@@ -25,8 +23,6 @@ export function TodayActionRow({
 }) {
   const { openPlannedSession } = useAppModal();
   const derived = useTodayActionRowDerived(vm, loading);
-  const habitBridgeQuery = useTodayJournalHabitBridge(!loading);
-  const habitBridge = habitBridgeQuery.data?.bridge ?? null;
 
   return (
     <section aria-busy={loading || undefined} aria-label="Actions du jour" className="space-y-3">
@@ -39,8 +35,6 @@ export function TodayActionRow({
           onRefreshed={onWellnessCompleted}
         />
       ) : null}
-
-      {habitBridge ? <TodayJournalHabitBridgeStrip bridge={habitBridge} /> : null}
 
       <TodayActionRowReminders reminders={derived.reminders} />
 

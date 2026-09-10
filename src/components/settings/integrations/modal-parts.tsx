@@ -139,6 +139,65 @@ function IntegrationFullImportButton({
   );
 }
 
+type IntegrationConfirmStageProps = {
+  confirmTitle: string;
+  confirmDescription?: string;
+  confirmingLabel: string;
+  confirmLabel: string;
+  cancelLabel: string;
+  disconnecting: boolean;
+  onCancelConfirm: () => void;
+  onConfirmDisconnect: () => void | Promise<void>;
+  offset: number;
+  duration: number;
+};
+
+function IntegrationConfirmCopy({
+  confirmTitle,
+  confirmDescription,
+}: Pick<IntegrationConfirmStageProps, 'confirmTitle' | 'confirmDescription'>) {
+  return (
+    <div className="space-y-2">
+      <p className="text-foreground text-sm font-medium">{confirmTitle}</p>
+      {confirmDescription ? (
+        <p className="text-muted-foreground text-sm leading-relaxed">{confirmDescription}</p>
+      ) : null}
+    </div>
+  );
+}
+
+function IntegrationConfirmActions({
+  cancelLabel,
+  confirmLabel,
+  confirmingLabel,
+  disconnecting,
+  onCancelConfirm,
+  onConfirmDisconnect,
+}: Pick<
+  IntegrationConfirmStageProps,
+  | 'cancelLabel'
+  | 'confirmLabel'
+  | 'confirmingLabel'
+  | 'disconnecting'
+  | 'onCancelConfirm'
+  | 'onConfirmDisconnect'
+>) {
+  return (
+    <div className="flex flex-wrap gap-2 pt-1">
+      <Button disabled={disconnecting} variant="outline" onClick={onCancelConfirm}>
+        {cancelLabel}
+      </Button>
+      <Button
+        disabled={disconnecting}
+        variant="destructive"
+        onClick={() => void onConfirmDisconnect()}
+      >
+        {disconnecting ? confirmingLabel : confirmLabel}
+      </Button>
+    </div>
+  );
+}
+
 function IntegrationConfirmStage({
   confirmTitle,
   confirmDescription,
@@ -150,18 +209,7 @@ function IntegrationConfirmStage({
   onConfirmDisconnect,
   offset,
   duration,
-}: {
-  confirmTitle: string;
-  confirmDescription?: string;
-  confirmingLabel: string;
-  confirmLabel: string;
-  cancelLabel: string;
-  disconnecting: boolean;
-  onCancelConfirm: () => void;
-  onConfirmDisconnect: () => void | Promise<void>;
-  offset: number;
-  duration: number;
-}) {
+}: IntegrationConfirmStageProps) {
   return (
     <motion.div
       key="confirm"
@@ -171,24 +219,15 @@ function IntegrationConfirmStage({
       initial={{ opacity: 0, x: offset }}
       transition={{ duration, ease: motionTokens.easing.smooth }}
     >
-      <div className="space-y-2">
-        <p className="text-foreground text-sm font-medium">{confirmTitle}</p>
-        {confirmDescription ? (
-          <p className="text-muted-foreground text-sm leading-relaxed">{confirmDescription}</p>
-        ) : null}
-      </div>
-      <div className="flex flex-wrap gap-2 pt-1">
-        <Button disabled={disconnecting} variant="outline" onClick={onCancelConfirm}>
-          {cancelLabel}
-        </Button>
-        <Button
-          disabled={disconnecting}
-          variant="destructive"
-          onClick={() => void onConfirmDisconnect()}
-        >
-          {disconnecting ? confirmingLabel : confirmLabel}
-        </Button>
-      </div>
+      <IntegrationConfirmCopy confirmDescription={confirmDescription} confirmTitle={confirmTitle} />
+      <IntegrationConfirmActions
+        cancelLabel={cancelLabel}
+        confirmingLabel={confirmingLabel}
+        confirmLabel={confirmLabel}
+        disconnecting={disconnecting}
+        onCancelConfirm={onCancelConfirm}
+        onConfirmDisconnect={onConfirmDisconnect}
+      />
     </motion.div>
   );
 }
@@ -269,6 +308,32 @@ function IntegrationSyncButton({
   );
 }
 
+type IntegrationSyncActionsProps = {
+  syncing: boolean;
+  onSync: () => void;
+  onDisconnect: () => void;
+  syncLabel?: string;
+  syncingLabel?: string;
+  syncDisabled?: boolean;
+  disconnectDisabled?: boolean;
+  importingAll?: boolean;
+  onFullImport?: () => void;
+  fullImportLabel?: string;
+  fullImportingLabel?: string;
+  children?: ReactNode;
+};
+
+function IntegrationDisconnectButton({
+  disconnectDisabled,
+  onDisconnect,
+}: Pick<IntegrationSyncActionsProps, 'disconnectDisabled' | 'onDisconnect'>) {
+  return (
+    <Button disabled={disconnectDisabled} variant="outline" onClick={onDisconnect}>
+      Déconnecter
+    </Button>
+  );
+}
+
 export function IntegrationSyncActions({
   syncing,
   onSync,
@@ -282,20 +347,7 @@ export function IntegrationSyncActions({
   fullImportLabel = 'Tout l’historique',
   fullImportingLabel = 'Import…',
   children,
-}: {
-  syncing: boolean;
-  onSync: () => void;
-  onDisconnect: () => void;
-  syncLabel?: string;
-  syncingLabel?: string;
-  syncDisabled?: boolean;
-  disconnectDisabled?: boolean;
-  importingAll?: boolean;
-  onFullImport?: () => void;
-  fullImportLabel?: string;
-  fullImportingLabel?: string;
-  children?: ReactNode;
-}) {
+}: IntegrationSyncActionsProps) {
   const { offline, guardDisabled, offlineLabel } = useOfflineGuard();
   const busy = Boolean(syncing || importingAll);
 
@@ -325,10 +377,47 @@ export function IntegrationSyncActions({
         />
       ) : null}
       {children}
-      <Button disabled={disconnectDisabled} variant="outline" onClick={onDisconnect}>
-        Déconnecter
-      </Button>
+      <IntegrationDisconnectButton
+        disconnectDisabled={disconnectDisabled}
+        onDisconnect={onDisconnect}
+      />
     </div>
+  );
+}
+
+type IntegrationManageStageProps = {
+  stage: 'manage' | 'confirm';
+  confirmTitle: string;
+  confirmDescription?: string;
+  confirmingLabel?: string;
+  confirmLabel?: string;
+  cancelLabel?: string;
+  onCancelConfirm: () => void;
+  onConfirmDisconnect: () => void | Promise<void>;
+  disconnecting?: boolean;
+  children: ReactNode;
+};
+
+function IntegrationManageMotionPanel({
+  children,
+  offset,
+  duration,
+}: {
+  children: ReactNode;
+  offset: number;
+  duration: number;
+}) {
+  return (
+    <motion.div
+      key="manage"
+      animate={{ opacity: 1, x: 0 }}
+      className="space-y-4"
+      exit={{ opacity: 0, x: -offset }}
+      initial={{ opacity: 0, x: -offset }}
+      transition={{ duration, ease: motionTokens.easing.smooth }}
+    >
+      {children}
+    </motion.div>
   );
 }
 
@@ -346,18 +435,7 @@ export function IntegrationManageStage({
   onConfirmDisconnect,
   disconnecting = false,
   children,
-}: {
-  stage: 'manage' | 'confirm';
-  confirmTitle: string;
-  confirmDescription?: string;
-  confirmingLabel?: string;
-  confirmLabel?: string;
-  cancelLabel?: string;
-  onCancelConfirm: () => void;
-  onConfirmDisconnect: () => void | Promise<void>;
-  disconnecting?: boolean;
-  children: ReactNode;
-}) {
+}: IntegrationManageStageProps) {
   const reduceMotion = useReducedMotion();
   const offset = reduceMotion ? 0 : motionTokens.distance.md;
   const duration = reduceMotion ? 0 : motionTokens.duration.normal;
@@ -366,16 +444,9 @@ export function IntegrationManageStage({
     <div className="relative overflow-hidden">
       <AnimatePresence initial={false} mode="wait">
         {stage === 'manage' ? (
-          <motion.div
-            key="manage"
-            animate={{ opacity: 1, x: 0 }}
-            className="space-y-4"
-            exit={{ opacity: 0, x: -offset }}
-            initial={{ opacity: 0, x: -offset }}
-            transition={{ duration, ease: motionTokens.easing.smooth }}
-          >
+          <IntegrationManageMotionPanel duration={duration} offset={offset}>
             {children}
-          </motion.div>
+          </IntegrationManageMotionPanel>
         ) : (
           <IntegrationConfirmStage
             cancelLabel={cancelLabel}

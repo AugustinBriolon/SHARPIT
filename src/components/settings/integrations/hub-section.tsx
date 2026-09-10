@@ -1,32 +1,11 @@
 import { IntegrationsHub } from '@/components/settings/integrations/hub';
-import type { IntegrationsPayload } from '@/components/settings/integrations/types';
 import {
-  buildGarminPayloadSection,
-  buildGooglePayloadSection,
-  buildMfpPayloadSection,
-  buildRenphoPayloadSection,
-  buildStravaPayloadSection,
-  buildWithingsPayloadSection,
-} from '@/components/settings/integrations/hub-payload-helpers';
+  assembleIntegrationsPayload,
+  loadIntegrationAccounts,
+  type IntegrationsSearchParams,
+} from '@/components/settings/integrations/hub-section-load';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { getGarminAccount } from '@/lib/integrations/garmin/garmin-sync';
-import { isGoogleConfigured } from '@/lib/integrations/google/google';
-import { getGoogleAccount, isGoogleConnected } from '@/lib/integrations/google/google-sync';
-import { getMfpAccount } from '@/lib/integrations/myfitnesspal/myfitnesspal-sync';
-import { isMfpConfigured } from '@/lib/integrations/myfitnesspal/myfitnesspal';
-
-import { getRenphoAccount } from '@/lib/integrations/renpho/renpho-sync';
 import { loadResolvedSourcePrefs } from '@/lib/integrations/source-prefs-store';
-import { isStravaConfigured } from '@/lib/integrations/strava/strava';
-import { getStravaAccount } from '@/lib/integrations/strava/strava-sync';
-import { isWithingsConfigured } from '@/lib/integrations/withings/withings';
-import { getWithingsAccount } from '@/lib/integrations/withings/withings-sync';
-import {
-  isGarminAccountConnected,
-  isMfpAccountConnected,
-  isOAuthAccountConnected,
-  isRenphoAccountConnected,
-} from '@/lib/integrations/shared/connection-status';
 
 const statusMessages: Record<string, string> = {
   connected: 'Compte Strava connecté.',
@@ -59,85 +38,15 @@ const garminStatusMessages: Record<string, string> = {
   error: 'Une erreur est survenue lors de la connexion à Garmin.',
 };
 
-type IntegrationsSearchParams = {
-  strava?: string;
-  google?: string;
-  googleDetail?: string;
-  withings?: string;
-  withingsDetail?: string;
-  garmin?: string;
-};
-
-async function buildIntegrationsPayload(
-  params: IntegrationsSearchParams,
-): Promise<IntegrationsPayload> {
+async function buildIntegrationsPayload(params: IntegrationsSearchParams) {
   const athleteId = await getCurrentAthleteId();
-  const [
-    stravaAccount,
-    configured,
-    garminAccount,
-    renphoAccount,
-    withingsAccount,
-    googleAccount,
-    mfpAccount,
-    googleConfigured,
-    withingsConfigured,
-    mfpConfigured,
-  ] = await Promise.all([
-    getStravaAccount(athleteId),
-    Promise.resolve(isStravaConfigured()),
-    getGarminAccount(athleteId),
-    getRenphoAccount(athleteId),
-    getWithingsAccount(athleteId),
-    getGoogleAccount(athleteId).catch(() => null),
-    getMfpAccount(athleteId).catch(() => null),
-    Promise.resolve(isGoogleConfigured()),
-    Promise.resolve(isWithingsConfigured()),
-    Promise.resolve(isMfpConfigured()),
-  ]);
-
-  const { strava, google, googleDetail, withings, withingsDetail, garmin } = params;
-
-  return {
-    strava: buildStravaPayloadSection({
-      account: stravaAccount,
-      configured,
-      needsReconnect: Boolean(stravaAccount) && !isOAuthAccountConnected(stravaAccount),
-      status: strava,
-      statusMessages,
-    }),
-    garmin: buildGarminPayloadSection({
-      account: garminAccount,
-      needsReconnect: Boolean(garminAccount) && !isGarminAccountConnected(garminAccount),
-      status: garmin,
-      statusMessages: garminStatusMessages,
-    }),
-    withings: buildWithingsPayloadSection({
-      account: withingsAccount,
-      configured: withingsConfigured,
-      needsReconnect: Boolean(withingsAccount) && !isOAuthAccountConnected(withingsAccount),
-      status: withings,
-      detail: withingsDetail,
-      statusMessages: withingsStatusMessages,
-    }),
-    renpho: buildRenphoPayloadSection(
-      renphoAccount,
-      Boolean(renphoAccount) && !isRenphoAccountConnected(renphoAccount),
-    ),
-    google: buildGooglePayloadSection({
-      account: googleAccount,
-      configured: googleConfigured,
-      needsReconnect: Boolean(googleAccount) && !isGoogleConnected(googleAccount),
-      status: google,
-      detail: googleDetail,
-      statusMessages: googleStatusMessages,
-    }),
-    myfitnesspal: buildMfpPayloadSection(
-      mfpAccount,
-      mfpConfigured,
-      Boolean(mfpAccount) && !isMfpAccountConnected(mfpAccount),
-    ),
-  };
+  const accounts = await loadIntegrationAccounts(athleteId);
+  return assembleIntegrationsPayload(accounts, params, {
+    strava: statusMessages,
+    google: googleStatusMessages,
+    withings: withingsStatusMessages,
+    garmin: garminStatusMessages,
+  });
 }
 
 export async function IntegrationsHubSection({

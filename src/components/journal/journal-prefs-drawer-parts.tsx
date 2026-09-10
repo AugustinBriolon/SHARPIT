@@ -174,7 +174,7 @@ function CustomTrackableRow({
   );
 }
 
-function JournalPrefsTrackableList({
+function JournalPrefsTrackableRows({
   prefs,
   builtinRows,
   customRows,
@@ -187,32 +187,64 @@ function JournalPrefsTrackableList({
   isPro: boolean;
   patch: PrefsPatcher;
 }) {
-  const isEmpty = builtinRows.length === 0 && customRows.length === 0;
   const enableBlocked = !canEnableAnotherTrackable(prefs, isPro);
+  return (
+    <ul className="divide-border divide-y">
+      {builtinRows.map((item) => (
+        <BuiltinTrackableRow
+          key={item.id}
+          checked={prefs.enabled[item.id]}
+          enableBlocked={enableBlocked}
+          isPro={isPro}
+          item={item}
+          patch={patch}
+        />
+      ))}
+      {customRows.map((item) => (
+        <CustomTrackableRow
+          key={item.id}
+          enableBlocked={enableBlocked}
+          isPro={isPro}
+          item={item}
+          patch={patch}
+        />
+      ))}
+    </ul>
+  );
+}
+
+function JournalPrefsTrackableList({
+  prefs,
+  builtinRows,
+  customRows,
+  isPro,
+  patch,
+  padBottomForSafeArea,
+}: {
+  prefs: JournalPrefs;
+  builtinRows: readonly JournalBuiltinTrackable[];
+  customRows: readonly JournalCustomItem[];
+  isPro: boolean;
+  patch: PrefsPatcher;
+  /** When the create/upsell footer is hidden, reserve home-indicator space on the list. */
+  padBottomForSafeArea: boolean;
+}) {
+  const isEmpty = builtinRows.length === 0 && customRows.length === 0;
 
   return (
-    <div className="min-h-0 flex-1 overflow-y-auto">
-      <ul className="divide-border divide-y">
-        {builtinRows.map((item) => (
-          <BuiltinTrackableRow
-            key={item.id}
-            checked={prefs.enabled[item.id]}
-            enableBlocked={enableBlocked}
-            isPro={isPro}
-            item={item}
-            patch={patch}
-          />
-        ))}
-        {customRows.map((item) => (
-          <CustomTrackableRow
-            key={item.id}
-            enableBlocked={enableBlocked}
-            isPro={isPro}
-            item={item}
-            patch={patch}
-          />
-        ))}
-      </ul>
+    <div
+      className={cn(
+        'min-h-0 flex-1 overflow-y-auto',
+        padBottomForSafeArea ? 'pb-[max(1.25rem,env(safe-area-inset-bottom))]' : 'pb-2',
+      )}
+    >
+      <JournalPrefsTrackableRows
+        builtinRows={builtinRows}
+        customRows={customRows}
+        isPro={isPro}
+        patch={patch}
+        prefs={prefs}
+      />
       {isEmpty ? (
         <p className="text-muted-foreground px-4 py-8 text-center text-sm">
           Aucun élément dans ce filtre.
@@ -379,6 +411,7 @@ function JournalPrefsDrawerInner({
         builtinRows={builtinRows}
         customRows={customRows}
         isPro={isPro}
+        padBottomForSafeArea={!showCreate}
         patch={patch}
         prefs={prefs}
       />

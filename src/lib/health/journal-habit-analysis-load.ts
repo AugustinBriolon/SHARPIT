@@ -14,11 +14,12 @@ import {
 import { dayHasJournalSignal } from '@/lib/health/journal-limits';
 import { toUtcDateOnly } from '@/lib/travel-context/calendar-date';
 
-function trainingDayIdFromDate(date: Date): string {
+export function trainingDayIdFromDate(date: Date): string {
   return toUtcDateOnly(date).toISOString().slice(0, 10);
 }
 
-function parseFactors(raw: unknown): Record<string, RecordedFactor | null> {
+/** Recorded yes/no states from a journal `factors` JSON bag; unset is dropped. */
+export function parseRecordedFactors(raw: unknown): Record<string, RecordedFactor | null> {
   if (!raw || typeof raw !== 'object') {
     return {};
   }
@@ -41,7 +42,7 @@ const JOURNAL_ROW_SELECT = {
   updatedAt: true,
 } as const;
 
-const HEALTH_ROW_SELECT = {
+export const HEALTH_ROW_SELECT = {
   date: true,
   sleepMinutes: true,
   recoveryScore: true,
@@ -87,7 +88,7 @@ function toAnalysisDay(
   }
   return {
     trainingDayId: row.trainingDayId,
-    factors: parseFactors(entry.factors),
+    factors: parseRecordedFactors(entry.factors),
     ...healthOutcomes(healthByDay.get(row.trainingDayId)),
   };
 }
@@ -113,13 +114,26 @@ export async function loadJournalAnalysisSeries(
   return days.sort((a, b) => a.trainingDayId.localeCompare(b.trainingDayId));
 }
 
+const DAY_MS = 86_400_000;
+
+/** Calendar days from the first to the last signalled day, inclusive. */
+export function countDaysInSpan(series: readonly JournalAnalysisDay[]): number {
+  const first = series[0]?.trainingDayId;
+  const last = series[series.length - 1]?.trainingDayId;
+  if (!first || !last) {
+    return 0;
+  }
+  return Math.round((Date.parse(last) - Date.parse(first)) / DAY_MS) + 1;
+}
+
 export async function loadJournalHabitFindings(
   prisma: PrismaClient,
   athleteId: string,
-): Promise<{ daysWithSignal: number; findings: JournalHabitFinding[] }> {
+): Promise<{ daysWithSignal: number; daysInSpan: number; findings: JournalHabitFinding[] }> {
   const series = await loadJournalAnalysisSeries(prisma, athleteId);
   return {
     daysWithSignal: series.length,
+    daysInSpan: countDaysInSpan(series),
     findings: buildJournalHabitFindings(series),
   };
 }

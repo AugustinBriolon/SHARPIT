@@ -1,10 +1,10 @@
 'use client';
 
-import { DailyBriefingPanel } from '@/components/today/dashboard/daily-briefing-panel';
 import { SnapshotStatusBanner } from '@/components/today/dashboard/today-dashboard-states';
 import { TodayHeader } from '@/components/today/dashboard/today-header';
 import { TodayUnderstandSection } from '@/components/today/dashboard/today-understand-section';
 import { TodayActionRow } from '@/components/today/rich/today-action-row';
+import { TodayJournalHabitBridgeFooter } from '@/components/today/rich/today-journal-habit-bridge-footer';
 import { TodayVerdictHero } from '@/components/today/rich/today-verdict-hero';
 import type { TodayViewModel } from '@/core/presentation/today-view-model';
 import type { ClientActivity } from '@/lib/query/types';
@@ -30,9 +30,8 @@ function TodayCriticalStatus({
 }
 
 /**
- * Today hierarchy: one decision above the fold (verdict), then progressive
- * daily briefing (details; open by default morning / first visit), then action
- * row, then Comprendre.
+ * Today hierarchy: one decision above the fold (verdict), then action row,
+ * then Comprendre, then a quiet journal footnote at the bottom.
  *
  * Metric chips live as tertiary visual evidence under Comprendre — never as a
  * primary equal grid under the verdict.
@@ -70,7 +69,6 @@ export function TodayDashboardMain({
         />
         <TodayVerdictHero loading={valuesLoading} vm={content} />
       </div>
-      {!valuesLoading ? <DailyBriefingPanel dayKey={trainingDayId} /> : null}
       <TodayActionRow
         loading={valuesLoading}
         trainingDayId={trainingDayId}
@@ -84,6 +82,7 @@ export function TodayDashboardMain({
         metricsRow={content.hero.metricsRow}
         signalPreviews={content.hero.signalPreviews}
       />
+      {!valuesLoading ? <TodayJournalHabitBridgeFooter enabled /> : null}
     </div>
   );
 }

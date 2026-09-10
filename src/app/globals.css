@@ -6,6 +6,8 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
+  /* Two-column analysis pages (Journal analyses: 1fr + 300px aside). */
+  --breakpoint-wide: 73.75rem;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-ibm-plex-sans), ui-sans-serif, system-ui, sans-serif;
@@ -180,9 +182,9 @@
   /*
     Floating bottom-nav contract (every viewport). `--bottom-nav-height` is the
     bar itself (BottomNav in `layout/mobile-shell.tsx`); `--bottom-nav-offset`
-    adds the home-indicator inset. Anything fixed above the bar — toasts,
-    sticky action bars, chat composers — must anchor on `--bottom-nav-offset`
-    so it can never swallow a nav tap.
+    adds the home-indicator inset. Sticky action bars and chat composers must
+    anchor on `--bottom-nav-offset` so they never swallow a nav tap. Toasts live
+    at the top edge instead — they must not compete with the floating capsule.
   */
   /* Floating glass tab bar — keep last hub cards / quiet links clear of the bar. */
   --bottom-nav-height: 5.75rem;
@@ -353,11 +355,12 @@
 }
 
 /** Toast stack motion — compositor only. Kept out of the Root className so the
-    detector does not treat `--toast-height` as an animated layout property. */
+    detector does not treat `--toast-height` as an animated layout property.
+    Occasional UI → snappy ease-out under 400ms (enter/exit from top edge). */
 @utility toast-motion {
   transition:
-    transform 0.5s cubic-bezier(0.22, 1, 0.36, 1),
-    opacity 0.5s;
+    transform 0.32s cubic-bezier(0.23, 1, 0.32, 1),
+    opacity 0.28s cubic-bezier(0.23, 1, 0.32, 1);
   @media (prefers-reduced-motion: reduce) {
     transition: none;
   }
