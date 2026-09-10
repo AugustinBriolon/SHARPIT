@@ -111,8 +111,8 @@ describe('TodayDashboard loading gate contract', () => {
   });
 
   it('keeps one-decision hierarchy with tertiary signal evidence under Comprendre', () => {
-    // Briefing panel kept in codebase/API but not mounted on Today primary UI.
-    expect(mainSource).not.toContain('DailyBriefingPanel');
+    // Progressive briefing under the verdict — not in the shell, not above the hero.
+    expect(mainSource).toContain('DailyBriefingPanel');
     expect(mainSource).toContain('TodayUnderstandSection');
     expect(mainSource).toContain('TodayCriticalStatus');
     // Signal strip must not sit as primary under the hero in TodayDashboardMain.
