@@ -1,7 +1,7 @@
 import type { TodayViewModel } from '@/core/presentation/today-view-model';
 import type { DailyPhase } from '@/lib/daily-phase/types';
 import { TWIN_DRILL_DOWN } from '@/lib/today/navigation/today-twin-navigation';
-import { actionRowLabels, whyBlockTitle } from '@/lib/today/rich/today-rich-view';
+import { actionRowLabels } from '@/lib/today/rich/today-rich-view';
 
 function shellPhaseFromLocalHour(hour: number): DailyPhase {
   if (hour >= 22) {
@@ -120,12 +120,6 @@ export function todayLoadingShell(now: Date = LOADING_SHELL_REFERENCE): TodayVie
     morningOrientation: null,
     navigationTargets: shellNavigationTargets(),
     hero: shellHeroSection(),
-    whyBlock: {
-      title: whyBlockTitle(phase),
-      lines: [],
-      facts: [],
-      visible: false,
-    },
     actionRow: shellActionRow(phase),
     insights: [],
     header: { weather: null },

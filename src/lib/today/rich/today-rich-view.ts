@@ -63,21 +63,6 @@ export function trajectoryEyebrow(phase: DailyPhase): string {
   }
 }
 
-export function whyBlockTitle(phase: DailyPhase): string {
-  switch (phase) {
-    case 'SESSION_COMPLETED':
-      return 'Ce que la séance a produit';
-    case 'RECOVERY_WINDOW':
-      return 'Lecture du moment';
-    case 'END_OF_DAY':
-      return 'Lecture du moment';
-    case 'BEFORE_SESSION':
-      return 'Contexte avant séance';
-    default:
-      return 'Lecture du moment';
-  }
-}
-
 export function shouldShowForwardTrainingCopy(phase: DailyPhase): boolean {
   return isForwardAdvicePhase(phase);
 }

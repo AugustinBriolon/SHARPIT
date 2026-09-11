@@ -1,11 +1,10 @@
 /**
  * Habit → coaching signal (presentation only).
  *
- * Turns journal association / running experiment into a Today why fact and an
- * optional rearrange CTA. Never mutates Core or the calendar.
+ * Turns journal association / running experiment into an optional rearrange
+ * CTA on Today. Never mutates Core or the calendar.
  */
 
-import type { TodayFactRow } from '@/lib/today/dashboard/today-instrument-facts';
 import type { TodayJournalHabitCallout } from '@/lib/health/journal-habit-today-bridge';
 import {
   buildAdaptDeepLink,
@@ -36,7 +35,6 @@ export type HabitRearrangeProposalView = {
 };
 
 export type HabitCoachingSignal = {
-  whyFact: TodayFactRow | null;
   /** Association bridge or experiment — for rearrange gating. */
   callout: TodayJournalHabitCallout | null;
 };
@@ -71,38 +69,10 @@ function pickUpcoming(
   });
 }
 
-/**
- * One glanceable why fact — habit is a coaching signal, not a restated verdict.
- */
-export function habitWhyFactFromCallout(
-  callout: TodayJournalHabitCallout | null,
-): TodayFactRow | null {
-  if (!callout) {
-    return null;
-  }
-  if (callout.kind === 'experiment') {
-    const { experiment } = callout;
-    return {
-      label: 'Test',
-      value: experiment.meaning,
-      hint: `${experiment.progressLabel} · ${experiment.heldLabel}`,
-    };
-  }
-  const { bridge } = callout;
-  return {
-    label: 'Journal',
-    value: bridge.meaning,
-    hint: bridge.confidenceNote,
-  };
-}
-
 export function buildHabitCoachingSignal(
   callout: TodayJournalHabitCallout | null,
 ): HabitCoachingSignal {
-  return {
-    whyFact: habitWhyFactFromCallout(callout),
-    callout,
-  };
+  return { callout };
 }
 
 function associationRearrangeCopy(

@@ -64,7 +64,6 @@ describe('today hub loading gate', () => {
     const shell = todayLoadingShell(new Date('2026-07-21T08:00:00'));
     expect(shell.hero.eyebrow).toBe('Ce matin');
     expect(shell.hero.headline).toBe('');
-    expect(shell.whyBlock.visible).toBe(false);
     expect(shell.actionRow.actionLabel.length).toBeGreaterThan(0);
   });
 });
@@ -110,12 +109,11 @@ describe('TodayDashboard loading gate contract', () => {
     expect(dashboardSource).toContain('onWellnessCompleted={() => void query.refetch()}');
   });
 
-  it('keeps one-decision hierarchy with why; without goal anchor or briefing', () => {
-    // Verdict → why (habits/journal) → action row → Comprendre → journal.
-    // Goal anchor + daily briefing unmounted; WhyBlock kept for #93.
+  it('keeps one-decision hierarchy without why block, goal anchor or briefing', () => {
+    // Verdict → action row → Comprendre → journal.
     expect(mainSource).not.toContain('TodayGoalAnchor');
     expect(mainSource).not.toContain('DailyBriefingPanel');
-    expect(mainSource).toContain('TodayWhyBlock');
+    expect(mainSource).not.toContain('TodayWhyBlock');
     expect(mainSource).toContain('TodayActionRow');
     expect(mainSource).toContain('TodayUnderstandSection');
     expect(mainSource).toContain('TodayJournalHabitBridgeFooter');

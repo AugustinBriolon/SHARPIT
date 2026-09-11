@@ -3,7 +3,6 @@ import type { TodayJournalHabitCallout } from '@/lib/health/journal-habit-today-
 import {
   buildHabitCoachingSignal,
   buildHabitRearrangeProposal,
-  habitWhyFactFromCallout,
   mergeRearrangeProposals,
 } from '@/lib/today/rich/habit-coaching-signal';
 
@@ -54,33 +53,10 @@ const demandingUpcoming = [
   },
 ];
 
-describe('habitWhyFactFromCallout', () => {
-  it('returns null without callout', () => {
-    expect(habitWhyFactFromCallout(null)).toBeNull();
-  });
-
-  it('maps association to a Journal why fact', () => {
-    expect(habitWhyFactFromCallout(associationCallout)).toEqual({
-      label: 'Journal',
-      value: associationCallout.bridge.meaning,
-      hint: 'Association nette',
-    });
-  });
-
-  it('maps running experiment to a Test why fact', () => {
-    expect(habitWhyFactFromCallout(experimentCallout)).toEqual({
-      label: 'Test',
-      value: 'Sans « Écran au lit »',
-      hint: 'J3 / 7 · 3 jours tenus',
-    });
-  });
-});
-
 describe('buildHabitCoachingSignal', () => {
-  it('pairs why fact with callout', () => {
+  it('carries the callout for rearrange gating', () => {
     const signal = buildHabitCoachingSignal(associationCallout);
     expect(signal.callout).toBe(associationCallout);
-    expect(signal.whyFact?.label).toBe('Journal');
   });
 });
 

@@ -50,13 +50,8 @@ import {
   resolveConfidenceHrefFromDecision,
   resolveLimitingFactorHrefFromDecision,
 } from '@/lib/decision/projection';
-import {
-  buildTodayLimitingFacts,
-  buildTodayWhyFacts,
-} from '@/lib/today/dashboard/today-instrument-facts';
-import { resolveTodayGoalContext } from '@/lib/daily-phase/goal-context';
+import { buildTodayLimitingFacts } from '@/lib/today/dashboard/today-instrument-facts';
 import { buildTodayGoalAnchor } from '@/lib/today/rich/today-goal-anchor';
-import { assembleTodayWhyBlock } from '@/lib/today/rich/today-why-block-assemble';
 import { TWIN_DRILL_DOWN } from '@/lib/today/navigation/today-twin-navigation';
 import { buildSignalPreviews } from '@/lib/today/dashboard/signal-previews';
 import { endOfDay, startOfDay } from 'date-fns';
@@ -430,12 +425,6 @@ function prepareTodayActionFields(input: {
   const adaptationHints = pickAdaptationReminders(input.phase, 3, isRestDay);
 
   return {
-    whyFacts: buildTodayWhyFacts({
-      verdict: decisionVerdict(input.effectiveSnapshot.decision),
-      consistency: input.effectiveSnapshot.decision?.physiologicalConsistency ?? null,
-      decision: input.effectiveSnapshot.decision,
-      whyFocus: input.effectiveSnapshot.dailyPhase?.whyFocus ?? 'readiness',
-    }),
     sessionLinkSuggestions: findSessionLinkSuggestions(
       input.day,
       input.activities as unknown as ClientActivity[],
@@ -685,11 +674,6 @@ function prepareTodayViewModelContext(inputs: TodayPresentationInputs) {
     sleepTargetMin,
   );
   const derived = prepareTodayDerivedSections(inputs, effectiveSnapshot);
-  const goalContext = resolveTodayGoalContext(
-    inputs.goals as never,
-    inputs.plannedSessions as never,
-    inputs.trainingDayId,
-  );
   const goalAnchor = buildTodayGoalAnchor({
     goals: inputs.goals as never,
     plannedSessions: inputs.plannedSessions as never,
@@ -712,7 +696,6 @@ function prepareTodayViewModelContext(inputs: TodayPresentationInputs) {
     emptyState: buildTodayEmptyState(effectiveSnapshot, derived.status.message),
     ...derived.morning,
     plateLimiter: buildPlateLimiter(effectiveSnapshot),
-    goalContext,
     goalAnchor,
     habitCoaching: inputs.habitCoaching ?? null,
   };
@@ -858,12 +841,6 @@ function assembleTodayViewModel(
     morningOrientation: ctx.morningOrientation,
     navigationTargets: todayNavigationTargets(),
     hero: assembleTodayHero(ctx),
-    whyBlock: assembleTodayWhyBlock({
-      phase: ctx.phase,
-      whyFacts: ctx.whyFacts,
-      goalContext: ctx.goalContext,
-      habitFact: ctx.habitCoaching?.whyFact ?? null,
-    }),
     actionRow: assembleTodayActionRow(ctx),
     insights: [],
     header: {

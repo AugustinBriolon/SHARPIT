@@ -19,7 +19,7 @@ import {
   type HabitCoachingSignal,
 } from '@/lib/today/rich/habit-coaching-signal';
 
-const EMPTY_SIGNAL: HabitCoachingSignal = { whyFact: null, callout: null };
+const EMPTY_SIGNAL: HabitCoachingSignal = { callout: null };
 
 /**
  * Best-effort habit signal for Today. Failures stay silent — Today must still
