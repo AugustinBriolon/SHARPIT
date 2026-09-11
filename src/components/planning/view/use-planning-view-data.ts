@@ -31,20 +31,28 @@ function parseCalendarDateParam(value: string | null): Date | null {
   return Number.isNaN(parsed.getTime()) ? null : parsed;
 }
 
+function readPlanningUrlState(searchParams: URLSearchParams, showCoachMenu: boolean) {
+  const adaptFromUrl = showCoachMenu && searchParams.has('adapt');
+  return {
+    plannedIdFromUrl: searchParams.get('planned'),
+    createFromUrl: showCoachMenu && searchParams.has('create'),
+    adaptFromUrl,
+    adaptFocusFromUrl: adaptFromUrl ? (searchParams.get('focus') ?? undefined) : undefined,
+    weekFromUrl: parseCalendarDateParam(searchParams.get('week')),
+  };
+}
+
 export function usePlanningViewData(showCoachMenu: boolean) {
   const searchParams = useSearchParams();
   const queryClient = useQueryClient();
-  const plannedIdFromUrl = searchParams.get('planned');
-  const createFromUrl = showCoachMenu && searchParams.has('create');
-  const adaptFromUrl = showCoachMenu && searchParams.has('adapt');
-  const adaptFocusFromUrl = adaptFromUrl ? (searchParams.get('focus') ?? undefined) : undefined;
+  const { plannedIdFromUrl, createFromUrl, adaptFromUrl, adaptFocusFromUrl, weekFromUrl } =
+    readPlanningUrlState(searchParams, showCoachMenu);
 
   const activitiesQuery = useActivities();
   const plannedQuery = usePlannedSessions();
   const goalsQuery = useGoals();
   const planQuery = useTrainingPlan();
 
-  const weekFromUrl = parseCalendarDateParam(searchParams.get('week'));
   const [weekStart, setWeekStart] = useState(() =>
     startOfWeek(weekFromUrl ?? new Date(), WEEK_OPTS),
   );
@@ -94,7 +102,7 @@ export function usePlanningViewData(showCoachMenu: boolean) {
   }
 
   return {
-    anchorTrainingDayId: intelligence.anchorTrainingDayId,
+    ...intelligence,
     adaptFocusFromUrl,
     adaptFromUrl,
     completed: week.planned.filter((p) => p.completed).length,
@@ -103,14 +111,10 @@ export function usePlanningViewData(showCoachMenu: boolean) {
     deepLinkSession,
     goalTitleById,
     goals,
-    hasActionableAlternative: intelligence.hasActionableAlternative,
     isCurrentWeek: week.index === 0,
     isLoading,
     nextRace,
     planWeek,
-    projectionQuery: intelligence.projectionQuery,
-    scenarioComparisonQuery: intelligence.scenarioComparisonQuery,
-    showPlanningIntelligence: intelligence.showPlanningIntelligence,
     total: week.planned.length,
     week,
     weekEnd: endOfWeek(week.start, WEEK_OPTS),

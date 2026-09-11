@@ -22,6 +22,7 @@ const POST_FEEDBACK_PHASES = new Set<DailyPhase>([
   'END_OF_DAY',
 ]);
 const MORNING_PHASES = new Set<DailyPhase>(['MORNING', 'BEFORE_SESSION']);
+const HARD_FEELING = /tr[eè]s\s+dur|épuis|epuis|cassé|casse|overreach|trop\s+dur/i;
 
 export type FeedbackRearrangeUpcomingSession = {
   id: string;
@@ -57,7 +58,8 @@ export type FeedbackRearrangeProposalView = {
   trigger: 'POST_SESSION' | 'MORNING_MISMATCH';
 };
 
-const HARD_FEELING = /tr[eè]s\s+dur|épuis|epuis|cassé|casse|overreach|trop\s+dur/i;
+type ProposalCopy = { headline: string; why: string; focus: string };
+type ProposalTrigger = FeedbackRearrangeProposalView['trigger'];
 
 export function buildAdaptDeepLink(focus: string): string {
   const params = new URLSearchParams({ adapt: '1', focus });
@@ -91,19 +93,16 @@ function isEasyOrUnknown(intensity: SessionIntensity | null): boolean {
 }
 
 function confidenceUsable(confidence: number | null): boolean {
-  if (confidence === null || confidence === undefined) {
-    return true;
-  }
-  return confidence >= 0.6;
+  return confidence === null || confidence === undefined || confidence >= 0.6;
 }
 
 function pickUpcoming(
   sessions: FeedbackRearrangeUpcomingSession[],
-  fromExclusiveStart: Date,
+  fromStart: Date,
   horizonDays: number,
 ): FeedbackRearrangeUpcomingSession[] {
-  const fromMs = fromExclusiveStart.getTime();
-  const toMs = addLocalDays(fromExclusiveStart, horizonDays).getTime();
+  const fromMs = fromStart.getTime();
+  const toMs = addLocalDays(fromStart, horizonDays).getTime();
   return sessions.filter((session) => {
     if (session.completed) {
       return false;
@@ -123,11 +122,7 @@ function hardEffortLogged(effort: FeedbackRearrangeLatestEffort | null | undefin
   return Boolean(effort.feeling && HARD_FEELING.test(effort.feeling));
 }
 
-function protectMismatchCopy(upcomingHardCount: number): {
-  headline: string;
-  why: string;
-  focus: string;
-} {
+function protectMismatchCopy(upcomingHardCount: number): ProposalCopy {
   return {
     headline: 'Réarranger les séances à venir ?',
     why: `Ton Twin oriente vers la prudence, alors que ${upcomingHardCount} séance${upcomingHardCount > 1 ? 's' : ''} exigeante${upcomingHardCount > 1 ? 's' : ''} restent planifiées.`,
@@ -136,7 +131,7 @@ function protectMismatchCopy(upcomingHardCount: number): {
   };
 }
 
-function pushMismatchCopy(): { headline: string; why: string; focus: string } {
+function pushMismatchCopy(): ProposalCopy {
   return {
     headline: 'Le plan est trop sage pour ton Twin',
     why: 'Tu as de la marge pour progresser, mais les séances à venir restent surtout faciles.',
@@ -145,7 +140,7 @@ function pushMismatchCopy(): { headline: string; why: string; focus: string } {
   };
 }
 
-function hardEffortCopy(): { headline: string; why: string; focus: string } {
+function hardEffortCopy(): ProposalCopy {
   return {
     headline: 'Séance dure intégrée — ajuster la suite ?',
     why: 'L’effort d’aujourd’hui est exigeant. Le Twin est à jour : vérifie que les prochaines séances laissent de la place pour absorber.',
@@ -155,8 +150,8 @@ function hardEffortCopy(): { headline: string; why: string; focus: string } {
 }
 
 function buildProposal(
-  trigger: FeedbackRearrangeProposalView['trigger'],
-  copy: { headline: string; why: string; focus: string },
+  trigger: ProposalTrigger,
+  copy: ProposalCopy,
 ): FeedbackRearrangeProposalView {
   return {
     visible: true,
@@ -169,49 +164,74 @@ function buildProposal(
   };
 }
 
+function resolvePhaseTrigger(phase: DailyPhase): ProposalTrigger | null {
+  if (POST_FEEDBACK_PHASES.has(phase)) {
+    return 'POST_SESSION';
+  }
+  if (MORNING_PHASES.has(phase)) {
+    return 'MORNING_MISMATCH';
+  }
+  return null;
+}
+
+function upcomingWindowStart(day: Date, trigger: ProposalTrigger): Date {
+  const dayStart = startOfLocalDay(day);
+  // Morning: tomorrow+ (today owned by morning recalibration). Post: remaining today+.
+  return trigger === 'MORNING_MISMATCH' ? addLocalDays(dayStart, 1) : dayStart;
+}
+
+function matchRearrangeProposal(
+  input: FeedbackRearrangeProposalInput,
+  trigger: ProposalTrigger,
+  upcoming: FeedbackRearrangeUpcomingSession[],
+): FeedbackRearrangeProposalView | null {
+  const demandingCount = upcoming.filter((s) => isDemandingSession(s.intensity)).length;
+  if (PROTECT_VERDICTS.has(input.verdict) && demandingCount > 0) {
+    return buildProposal(trigger, protectMismatchCopy(demandingCount));
+  }
+
+  const onlyEasy = upcoming.every((s) => isEasyOrUnknown(s.intensity));
+  if (PUSH_VERDICTS.has(input.verdict) && onlyEasy) {
+    return buildProposal(trigger, pushMismatchCopy());
+  }
+
+  const hardCount = upcoming.filter((s) => isHardSession(s.intensity)).length;
+  const postHardEffort =
+    trigger === 'POST_SESSION' && hardEffortLogged(input.latestEffort) && hardCount > 0;
+  if (postHardEffort) {
+    return buildProposal('POST_SESSION', hardEffortCopy());
+  }
+
+  return null;
+}
+
+function canEvaluateProposal(input: FeedbackRearrangeProposalInput): boolean {
+  return (
+    input.overallFresh &&
+    confidenceUsable(input.confidence) &&
+    input.verdict !== 'INSUFFICIENT_DATA'
+  );
+}
+
 /**
  * Pure detector: actionable Twin + upcoming plan tension → rearrange CTA.
  */
 export function buildFeedbackRearrangeProposal(
   input: FeedbackRearrangeProposalInput,
 ): FeedbackRearrangeProposalView | null {
-  if (!input.overallFresh || !confidenceUsable(input.confidence)) {
-    return null;
-  }
-  if (input.verdict === 'INSUFFICIENT_DATA') {
+  if (!canEvaluateProposal(input)) {
     return null;
   }
 
-  const dayStart = startOfLocalDay(input.day);
-  const isPostFeedback = POST_FEEDBACK_PHASES.has(input.phase);
-  const isMorning = MORNING_PHASES.has(input.phase);
-  if (!isPostFeedback && !isMorning) {
+  const trigger = resolvePhaseTrigger(input.phase);
+  if (!trigger) {
     return null;
   }
 
-  // Morning: tomorrow+ (today owned by morning recalibration). Post: remaining today+.
-  const windowStart = isMorning ? addLocalDays(dayStart, 1) : dayStart;
-  const upcoming = pickUpcoming(input.upcoming, windowStart, 14);
+  const upcoming = pickUpcoming(input.upcoming, upcomingWindowStart(input.day, trigger), 14);
   if (upcoming.length === 0) {
     return null;
   }
 
-  const hardUpcoming = upcoming.filter((s) => isHardSession(s.intensity));
-  const demandingUpcoming = upcoming.filter((s) => isDemandingSession(s.intensity));
-  const onlyEasy = upcoming.every((s) => isEasyOrUnknown(s.intensity));
-  const trigger = isPostFeedback ? 'POST_SESSION' : 'MORNING_MISMATCH';
-
-  if (PROTECT_VERDICTS.has(input.verdict) && demandingUpcoming.length > 0) {
-    return buildProposal(trigger, protectMismatchCopy(demandingUpcoming.length));
-  }
-
-  if (PUSH_VERDICTS.has(input.verdict) && onlyEasy) {
-    return buildProposal(trigger, pushMismatchCopy());
-  }
-
-  if (isPostFeedback && hardEffortLogged(input.latestEffort) && hardUpcoming.length > 0) {
-    return buildProposal('POST_SESSION', hardEffortCopy());
-  }
-
-  return null;
+  return matchRearrangeProposal(input, trigger, upcoming);
 }

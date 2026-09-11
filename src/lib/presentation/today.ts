@@ -504,11 +504,45 @@ function latestEffortForRearrange(
       return time >= dayStart && time < dayEnd;
     })
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-  const latest = today[0];
+  const [latest] = today;
   if (!latest) {
     return null;
   }
   return { rpe: latest.rpe, feeling: latest.feeling };
+}
+
+function mapUpcomingForRearrange(plannedSessions: TodayPresentationInputs['plannedSessions']) {
+  const planned = plannedSessions as unknown as Array<{
+    id: string;
+    date: Date | string;
+    intensity: SessionIntensity | null;
+    completed: boolean;
+  }>;
+  return planned.map((session) => ({
+    id: session.id,
+    date: session.date,
+    intensity: session.intensity,
+    completed: session.completed,
+  }));
+}
+
+function buildTodayRearrangeProposal(input: {
+  phase: DailyPhase;
+  effectiveSnapshot: AthleteSnapshot;
+  day: Date;
+  activities: ReturnType<typeof mapPostSessionActivities>;
+  plannedSessions: TodayPresentationInputs['plannedSessions'];
+  verdict: ReturnType<typeof decisionVerdict>;
+}) {
+  return buildFeedbackRearrangeProposal({
+    phase: input.phase,
+    overallFresh: input.effectiveSnapshot.freshness.overallFresh,
+    verdict: input.verdict,
+    confidence: input.effectiveSnapshot.confidence ?? null,
+    day: input.day,
+    upcoming: mapUpcomingForRearrange(input.plannedSessions),
+    latestEffort: latestEffortForRearrange(input.activities, input.day),
+  });
 }
 
 function prepareTodayMorningFields(input: {
@@ -529,12 +563,6 @@ function prepareTodayMorningFields(input: {
     recalibration: input.morningRecalibration,
   });
   const postSessionActivities = mapPostSessionActivities(input.activities);
-  const planned = input.plannedSessions as unknown as Array<{
-    id: string;
-    date: Date | string;
-    intensity: SessionIntensity | null;
-    completed: boolean;
-  }>;
 
   return {
     morningOrientation,
@@ -547,19 +575,13 @@ function prepareTodayMorningFields(input: {
       day: input.day,
       activities: postSessionActivities,
     }),
-    rearrangeProposal: buildFeedbackRearrangeProposal({
+    rearrangeProposal: buildTodayRearrangeProposal({
       phase: input.phase,
-      overallFresh: input.effectiveSnapshot.freshness.overallFresh,
-      verdict: input.verdict,
-      confidence: input.effectiveSnapshot.confidence ?? null,
+      effectiveSnapshot: input.effectiveSnapshot,
       day: input.day,
-      upcoming: planned.map((session) => ({
-        id: session.id,
-        date: session.date,
-        intensity: session.intensity,
-        completed: session.completed,
-      })),
-      latestEffort: latestEffortForRearrange(postSessionActivities, input.day),
+      activities: postSessionActivities,
+      plannedSessions: input.plannedSessions,
+      verdict: input.verdict,
     }),
   };
 }
