@@ -110,10 +110,11 @@ describe('TodayDashboard loading gate contract', () => {
     expect(dashboardSource).toContain('onWellnessCompleted={() => void query.refetch()}');
   });
 
-  it('keeps one-decision hierarchy with goal, briefing, why under the plate', () => {
-    // Verdict → goal anchor → briefing → why → action row → Comprendre → journal.
-    expect(mainSource).toContain('TodayGoalAnchor');
-    expect(mainSource).toContain('DailyBriefingPanel');
+  it('keeps one-decision hierarchy with why; without goal anchor or briefing', () => {
+    // Verdict → why (habits/journal) → action row → Comprendre → journal.
+    // Goal anchor + daily briefing unmounted; WhyBlock kept for #93.
+    expect(mainSource).not.toContain('TodayGoalAnchor');
+    expect(mainSource).not.toContain('DailyBriefingPanel');
     expect(mainSource).toContain('TodayWhyBlock');
     expect(mainSource).toContain('TodayActionRow');
     expect(mainSource).toContain('TodayUnderstandSection');
@@ -167,7 +168,7 @@ describe('TodayVerdictHero decision plate', () => {
   });
 });
 
-describe('Today goal and why wiring', () => {
+describe('Today goal deep-link wiring', () => {
   const mainSource = readFileSync(
     resolve(process.cwd(), 'src/components/today/today-dashboard-main.tsx'),
     'utf8',
@@ -177,9 +178,9 @@ describe('Today goal and why wiring', () => {
     'utf8',
   );
 
-  it('keeps goal anchor outside the plate and deep-links objectifs cards', () => {
-    expect(mainSource).toContain('content.hero.goalHref');
-    expect(mainSource).toContain('content.hero.goalLinkedToSession');
+  it('does not mount goal anchor on Today; objectifs cards keep deep-link ids', () => {
+    expect(mainSource).not.toContain('content.hero.goalHref');
+    expect(mainSource).not.toContain('content.hero.goalLinkedToSession');
     expect(goalCardsSource).toContain('goalDomId(goal.id)');
   });
 });
