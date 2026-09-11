@@ -49,6 +49,9 @@ export const queryKeys = {
   presentationNutrition: (trainingDayId: string) =>
     ['presentation', 'nutrition', trainingDayId] as const,
   presentationSettingsHub: ['presentation', 'settings-hub'] as const,
+  /** Under the presentation root so provider syncs refresh the date selector dots. */
+  presentationDataDays: (domain: string, from: string, to: string) =>
+    ['presentation', 'data-days', domain, from, to] as const,
   presentationScenarioComparison: (horizonDays: number, anchorTrainingDayId?: string) =>
     ['presentation', 'scenario-comparison', horizonDays, anchorTrainingDayId ?? 'now'] as const,
   presentationScenarioComparisonAll: ['presentation', 'scenario-comparison'] as const,

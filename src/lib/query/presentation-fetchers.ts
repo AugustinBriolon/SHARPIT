@@ -9,6 +9,7 @@ import type { SleepViewModel } from '@/core/presentation/sleep-view-model';
 import type { BodyViewModel } from '@/core/presentation/body-view-model';
 import type { PhysicalHealthViewModel } from '@/core/presentation/physical-health-view-model';
 import type { NutritionViewModel } from '@/core/presentation/nutrition-view-model';
+import type { DataDaysDomain } from '@/lib/presentation/data-days';
 
 async function fetchJson<T>(url: string): Promise<T> {
   const res = await fetch(url);
@@ -139,4 +140,14 @@ export async function fetchScenarioComparisonPresentation(
     viewModel: import('@/core/presentation/scenario-comparison-view-model').ScenarioComparisonViewModel;
   }>(`/api/presentation/scenario-comparison?${params.toString()}`);
   return viewModel;
+}
+
+export async function fetchDataDays(
+  domain: DataDaysDomain,
+  from: string,
+  to: string,
+): Promise<string[]> {
+  const params = new URLSearchParams({ domain, from, to });
+  const { days } = await fetchJson<{ days: string[] }>(`/api/presentation/data-days?${params}`);
+  return days;
 }

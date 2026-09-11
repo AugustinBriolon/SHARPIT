@@ -374,6 +374,26 @@ export async function getHealthEntries(athleteId: string, days = 90, refDate: Da
   });
 }
 
+/** Start instants only — callers map them to training days. */
+export async function getActivityDatesInRange(athleteId: string, from: Date, to: Date) {
+  const rows = await prisma.activity.findMany({
+    where: { athleteId, date: { gte: startOfDay(from), lte: endOfDay(to) } },
+    select: { date: true },
+  });
+  return rows.map((row) => row.date);
+}
+
+/** `from` / `to` are `YYYY-MM-DD` — nutrition days are stored at UTC midnight. */
+export async function getNutritionCaloriesInRange(athleteId: string, from: string, to: string) {
+  return prisma.dailyNutrition.findMany({
+    where: {
+      athleteId,
+      date: { gte: new Date(`${from}T00:00:00.000Z`), lte: new Date(`${to}T00:00:00.000Z`) },
+    },
+    select: { date: true, calories: true },
+  });
+}
+
 export async function getBodyCompositionMeasurements(athleteId: string, days?: number) {
   const { loadResolvedSourcePrefs } = await import('@/lib/integrations/source-prefs-store');
   const prefs = await loadResolvedSourcePrefs(athleteId);
