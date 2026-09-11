@@ -12,7 +12,7 @@ describe('assembleTodayWhyBlock', () => {
     expect(block.facts).toEqual([]);
   });
 
-  it('surfaces session→goal and drops posture restatement', () => {
+  it('does not inject session→goal; still surfaces other signals', () => {
     const block = assembleTodayWhyBlock({
       phase: 'BEFORE_SESSION',
       whyFacts: [
@@ -31,12 +31,8 @@ describe('assembleTodayWhyBlock', () => {
 
     expect(block.visible).toBe(true);
     expect(block.title).toBe('Contexte avant séance');
-    expect(block.facts[0]).toEqual({
-      label: 'Séance',
-      value: 'Sert Semi Lyon',
-      hint: 'J-12',
-    });
-    expect(block.facts.map((f) => f.label)).toEqual(['Séance', 'Signaux']);
+    expect(block.facts.map((f) => f.label)).toEqual(['Signaux']);
+    expect(block.facts.some((f) => f.label === 'Séance')).toBe(false);
   });
 
   it('shows non-goal evidence when signals diverge without session link', () => {
@@ -60,7 +56,7 @@ describe('assembleTodayWhyBlock', () => {
     expect(block.facts).toEqual([{ label: 'Signaux', value: 'Partiels' }]);
   });
 
-  it('surfaces habit journal fact after session→goal and before other signals', () => {
+  it('surfaces habit journal fact before other signals (no session→goal)', () => {
     const block = assembleTodayWhyBlock({
       phase: 'MORNING',
       whyFacts: [{ label: 'Signaux', value: 'Divergents' }],
@@ -80,6 +76,6 @@ describe('assembleTodayWhyBlock', () => {
     });
 
     expect(block.visible).toBe(true);
-    expect(block.facts.map((f) => f.label)).toEqual(['Séance', 'Journal', 'Signaux']);
+    expect(block.facts.map((f) => f.label)).toEqual(['Journal', 'Signaux']);
   });
 });
