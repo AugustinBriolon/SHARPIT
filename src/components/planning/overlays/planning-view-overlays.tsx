@@ -7,6 +7,7 @@ import type { ScenarioComparisonViewModel } from '@/core/presentation/scenario-c
 
 export function PlanningViewOverlays({
   adapterOpen,
+  adapterFocus,
   createDefaultDate,
   editSession,
   goals,
@@ -24,6 +25,7 @@ export function PlanningViewOverlays({
   onCloseScenarioComparison,
 }: {
   adapterOpen: boolean;
+  adapterFocus?: string;
   createDefaultDate: Date;
   editSession: ClientPlannedSession | null;
   goals: ClientGoal[];
@@ -52,6 +54,7 @@ export function PlanningViewOverlays({
         onClose={onClosePlannedDialog}
       />
       <PlanningCoachOverlays
+        adapterFocus={adapterFocus}
         adapterOpen={adapterOpen}
         anchorTrainingDayId={anchorTrainingDayId}
         generatorOpen={generatorOpen}

@@ -281,8 +281,9 @@ export function PlanAdapter({
             Ajuster mon planning
           </DialogTitle>
           <DialogDescription>
-            Le coach analyse ce que tu as réellement fait et propose des modifications sur tes
-            séances déjà planifiées (14 prochains jours), sans tout recréer.
+            {initialFocus
+              ? 'Proposition préparée depuis ton Twin après feedback. Vérifie le contexte, lance les propositions, puis valide ce que tu gardes — rien n’est appliqué sans toi.'
+              : 'Le coach analyse ce que tu as réellement fait et propose des modifications sur tes séances déjà planifiées (14 prochains jours), sans tout recréer.'}
           </DialogDescription>
         </DialogHeader>
 

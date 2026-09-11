@@ -76,6 +76,8 @@ export function useTodayActionRowDerived(vm: TodayViewModel, loading: boolean) {
     [vm, pendingLinkSuggestions, linkExclusions, sessionLines],
   );
 
+  const rearrangeProposal = loading ? null : (vm.rearrangeProposal ?? null);
+
   const daySummaryEmpty =
     !loading && sessionLines.length === 0 && sessionLinkSuggestions.length === 0;
 
@@ -93,6 +95,7 @@ export function useTodayActionRowDerived(vm: TodayViewModel, loading: boolean) {
     sessionLines,
     primaryIndex,
     postSessionLoop,
+    rearrangeProposal,
     daySummaryEmpty,
     reminders,
   };

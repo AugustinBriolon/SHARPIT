@@ -16,6 +16,7 @@ import {
 import { computeSharpitSleepScoreForDay, SLEEP_TARGET_MIN } from '@/lib/sleep/sleep-scoring';
 import { activityTypeLabels } from '@/lib/format';
 import { buildPostSessionLoop } from '@/lib/today/rich/post-session-loop';
+import { buildFeedbackRearrangeProposal } from '@/lib/today/rich/feedback-rearrange-proposal';
 import { buildTodayDaySummary } from '@/lib/today/dashboard/today-day-summary';
 import {
   findSessionLinkSuggestions,
@@ -50,6 +51,7 @@ import { TWIN_DRILL_DOWN } from '@/lib/today/navigation/today-twin-navigation';
 import { buildSignalPreviews } from '@/lib/today/dashboard/signal-previews';
 import { endOfDay, startOfDay } from 'date-fns';
 import type { ClientActivity, ClientPlannedSession } from '@/lib/query/types';
+import type { SessionIntensity } from '@prisma/client';
 import { getGarminAccount } from '@/lib/integrations/garmin/garmin-sync';
 import { getGoogleAccount } from '@/lib/integrations/google/google-sync';
 import { getRenphoAccount } from '@/lib/integrations/renpho/renpho-sync';
@@ -490,6 +492,25 @@ function morningPresentationFromOrientation(
   };
 }
 
+function latestEffortForRearrange(
+  activities: ReturnType<typeof mapPostSessionActivities>,
+  day: Date,
+): { rpe: number | null; feeling: string | null } | null {
+  const dayStart = new Date(day.getFullYear(), day.getMonth(), day.getDate()).getTime();
+  const dayEnd = dayStart + 86_400_000;
+  const today = activities
+    .filter((activity) => {
+      const time = new Date(activity.date).getTime();
+      return time >= dayStart && time < dayEnd;
+    })
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  const latest = today[0];
+  if (!latest) {
+    return null;
+  }
+  return { rpe: latest.rpe, feeling: latest.feeling };
+}
+
 function prepareTodayMorningFields(input: {
   phase: DailyPhase;
   effectiveSnapshot: AthleteSnapshot;
@@ -499,12 +520,21 @@ function prepareTodayMorningFields(input: {
   heroEyebrow: string;
   day: Date;
   activities: TodayPresentationInputs['activities'];
+  plannedSessions: TodayPresentationInputs['plannedSessions'];
+  verdict: ReturnType<typeof decisionVerdict>;
 }) {
   const morningOrientation = resolveMorningOrientation({
     phase: input.phase,
     snapshot: input.effectiveSnapshot,
     recalibration: input.morningRecalibration,
   });
+  const postSessionActivities = mapPostSessionActivities(input.activities);
+  const planned = input.plannedSessions as unknown as Array<{
+    id: string;
+    date: Date | string;
+    intensity: SessionIntensity | null;
+    completed: boolean;
+  }>;
 
   return {
     morningOrientation,
@@ -515,7 +545,21 @@ function prepareTodayMorningFields(input: {
       phase: input.phase,
       overallFresh: input.effectiveSnapshot.freshness.overallFresh,
       day: input.day,
-      activities: mapPostSessionActivities(input.activities),
+      activities: postSessionActivities,
+    }),
+    rearrangeProposal: buildFeedbackRearrangeProposal({
+      phase: input.phase,
+      overallFresh: input.effectiveSnapshot.freshness.overallFresh,
+      verdict: input.verdict,
+      confidence: input.effectiveSnapshot.confidence ?? null,
+      day: input.day,
+      upcoming: planned.map((session) => ({
+        id: session.id,
+        date: session.date,
+        intensity: session.intensity,
+        completed: session.completed,
+      })),
+      latestEffort: latestEffortForRearrange(postSessionActivities, input.day),
     }),
   };
 }
@@ -575,6 +619,8 @@ function prepareTodayDerivedSections(
     heroEyebrow: hero.heroEyebrow,
     day: inputs.day,
     activities: inputs.activities,
+    plannedSessions: inputs.plannedSessions,
+    verdict,
   });
 
   return { phase, verdict, displayVerdict, hero, action, status, morning };
@@ -754,6 +800,7 @@ function assembleTodayViewModel(
     environmentContext: null,
     nutrition: null,
     postSessionLoop: ctx.postSessionLoop,
+    rearrangeProposal: ctx.rearrangeProposal,
     hierarchy: { rootId: 'today', order: ['hero', 'why', 'actionRow'] },
     sections: [],
   };

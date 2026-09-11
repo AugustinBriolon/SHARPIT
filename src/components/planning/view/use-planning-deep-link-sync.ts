@@ -47,20 +47,40 @@ export function usePlanningDeepLinkSync({
     setWeekStart((current) => (isSameDay(current, sessionWeek) ? current : sessionWeek));
   }, [deepLinkSession, setWeekStart]);
 
-  function closePlannedDialogUrlParams() {
+  function replaceUrlParams(mutate: (params: URLSearchParams) => boolean) {
     const params = new URLSearchParams(searchParams.toString());
-    const hadPlanned = params.has('planned');
-    const hadCreate = showCoachMenu && params.has('create');
-    if (!hadPlanned && !hadCreate) {
+    if (!mutate(params)) {
       return;
-    }
-    params.delete('planned');
-    if (hadCreate) {
-      params.delete('create');
     }
     const query = params.toString();
     router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
   }
 
-  return { deepLinkSession, closePlannedDialogUrlParams };
+  function closePlannedDialogUrlParams() {
+    replaceUrlParams((params) => {
+      const hadPlanned = params.has('planned');
+      const hadCreate = showCoachMenu && params.has('create');
+      if (!hadPlanned && !hadCreate) {
+        return false;
+      }
+      params.delete('planned');
+      if (hadCreate) {
+        params.delete('create');
+      }
+      return true;
+    });
+  }
+
+  function closeAdaptUrlParams() {
+    replaceUrlParams((params) => {
+      if (!params.has('adapt') && !params.has('focus')) {
+        return false;
+      }
+      params.delete('adapt');
+      params.delete('focus');
+      return true;
+    });
+  }
+
+  return { deepLinkSession, closePlannedDialogUrlParams, closeAdaptUrlParams };
 }

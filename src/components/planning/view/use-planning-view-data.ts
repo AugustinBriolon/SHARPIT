@@ -36,6 +36,8 @@ export function usePlanningViewData(showCoachMenu: boolean) {
   const queryClient = useQueryClient();
   const plannedIdFromUrl = searchParams.get('planned');
   const createFromUrl = showCoachMenu && searchParams.has('create');
+  const adaptFromUrl = showCoachMenu && searchParams.has('adapt');
+  const adaptFocusFromUrl = adaptFromUrl ? (searchParams.get('focus') ?? undefined) : undefined;
 
   const activitiesQuery = useActivities();
   const plannedQuery = usePlannedSessions();
@@ -78,13 +80,14 @@ export function usePlanningViewData(showCoachMenu: boolean) {
   const isLoading = isAnyInitialQueryLoad([activitiesQuery, plannedQuery, goalsQuery]);
   const intelligence = usePlanningIntelligence(week.index, week.start, isLoading);
 
-  const { deepLinkSession, closePlannedDialogUrlParams } = usePlanningDeepLinkSync({
-    showCoachMenu,
-    planned,
-    plannedQueryPending: plannedQuery.isPending,
-    plannedIdFromUrl,
-    setWeekStart,
-  });
+  const { deepLinkSession, closePlannedDialogUrlParams, closeAdaptUrlParams } =
+    usePlanningDeepLinkSync({
+      showCoachMenu,
+      planned,
+      plannedQueryPending: plannedQuery.isPending,
+      plannedIdFromUrl,
+      setWeekStart,
+    });
 
   function openPlannedSession(session: ClientPlannedSession) {
     prefetchPlannedSessionDetail(queryClient, session.id);
@@ -92,6 +95,8 @@ export function usePlanningViewData(showCoachMenu: boolean) {
 
   return {
     anchorTrainingDayId: intelligence.anchorTrainingDayId,
+    adaptFocusFromUrl,
+    adaptFromUrl,
     completed: week.planned.filter((p) => p.completed).length,
     createFromUrl,
     days,
@@ -110,6 +115,7 @@ export function usePlanningViewData(showCoachMenu: boolean) {
     week,
     weekEnd: endOfWeek(week.start, WEEK_OPTS),
     weekStart,
+    closeAdaptUrlParams,
     closePlannedDialogUrlParams,
     openPlannedSession,
     prefetchPlannedSession: openPlannedSession,

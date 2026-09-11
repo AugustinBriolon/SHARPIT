@@ -125,6 +125,26 @@ export function TodayPostSessionLoop({
   );
 }
 
+export function TodayRearrangeProposal({
+  proposal,
+}: {
+  proposal: NonNullable<TodayViewModel['rearrangeProposal']>;
+}) {
+  return (
+    <div className="border-analysis-border/80 bg-background/50 rounded-analysis space-y-2 border px-3 py-3">
+      <p className="text-sm font-medium text-pretty">{proposal.headline}</p>
+      <p className="text-muted-foreground text-xs text-pretty">{proposal.why}</p>
+      <Link
+        className="text-primary inline-flex min-h-11 items-center text-xs font-medium hover:underline sm:min-h-0"
+        href={proposal.href}
+      >
+        {proposal.ctaLabel}
+        <span aria-hidden> →</span>
+      </Link>
+    </div>
+  );
+}
+
 export function TodayActionRowLinkSuggestions({
   suggestions,
   onWellnessCompleted,
@@ -197,6 +217,7 @@ function TodayActionRowLoadedContent({
     primaryIndex: number;
     orientation: TodayViewModel['morningOrientation'];
     postSessionLoop: TodayViewModel['postSessionLoop'] | null;
+    rearrangeProposal: TodayViewModel['rearrangeProposal'] | null;
   };
   vm: TodayViewModel;
   onWellnessCompleted?: () => void;
@@ -222,6 +243,9 @@ function TodayActionRowLoadedContent({
         sessionLines={derived.sessionLines}
       />
       {derived.postSessionLoop ? <TodayPostSessionLoop loop={derived.postSessionLoop} /> : null}
+      {derived.rearrangeProposal ? (
+        <TodayRearrangeProposal proposal={derived.rearrangeProposal} />
+      ) : null}
     </>
   );
 }
@@ -241,6 +265,7 @@ export function TodayActionRowSessionLists({
     primaryIndex: number;
     orientation: TodayViewModel['morningOrientation'];
     postSessionLoop: TodayViewModel['postSessionLoop'] | null;
+    rearrangeProposal: TodayViewModel['rearrangeProposal'] | null;
   };
   vm: TodayViewModel;
   onWellnessCompleted?: () => void;

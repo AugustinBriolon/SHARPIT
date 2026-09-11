@@ -266,6 +266,20 @@ export type TodayViewModel = {
     freshnessLine: string | null;
   } | null;
 
+  /**
+   * Feedback → rearrange CTA (presentation only). Deep-links to PlanAdapter;
+   * never applies calendar mutations without athlete confirmation.
+   */
+  rearrangeProposal: {
+    visible: true;
+    headline: string;
+    why: string;
+    ctaLabel: string;
+    href: string;
+    focus: string;
+    trigger: 'POST_SESSION' | 'MORNING_MISMATCH';
+  } | null;
+
   hierarchy: PresentationHierarchy;
   sections: PresentationSection[];
 };

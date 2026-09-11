@@ -1,7 +1,7 @@
 'use client';
 
 import { useResetWhenHidden } from '@/hooks/use-reset-when-hidden';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { SessionsCoachAction } from '@/components/coaching/coach-menu';
 import { handleSessionsCoachAction } from '@/components/planning/coach/planning-coach-actions';
 import { getPlannedDialogPresentation } from '@/components/planning/overlays/planning-dialog-presentation';
@@ -72,11 +72,22 @@ function PlanningWeekView({ embedded = false, showCoachMenu = !embedded }: Plann
 
   useResetWhenHidden(() => setScenarioComparisonOpen(false));
 
+  useEffect(() => {
+    if (data.adaptFromUrl) {
+      setAdapterOpen(true);
+    }
+  }, [data.adaptFromUrl]);
+
   function handleCoachAction(action: SessionsCoachAction) {
     handleSessionsCoachAction(action, {
       onGenerate: () => setGeneratorOpen(true),
       onAdapt: () => setAdapterOpen(true),
     });
+  }
+
+  function handleCloseAdapter() {
+    setAdapterOpen(false);
+    data.closeAdaptUrlParams();
   }
 
   return (
@@ -114,6 +125,7 @@ function PlanningWeekView({ embedded = false, showCoachMenu = !embedded }: Plann
       />
 
       <PlanningViewOverlays
+        adapterFocus={data.adaptFocusFromUrl}
         adapterOpen={adapterOpen}
         anchorTrainingDayId={data.anchorTrainingDayId}
         createDefaultDate={dialogState.createDefaultDate}
@@ -128,7 +140,7 @@ function PlanningWeekView({ embedded = false, showCoachMenu = !embedded }: Plann
         scenarioComparisonLoading={
           data.scenarioComparisonQuery.isPending || data.scenarioComparisonQuery.isPlaceholderData
         }
-        onCloseAdapter={() => setAdapterOpen(false)}
+        onCloseAdapter={handleCloseAdapter}
         onCloseGenerator={() => setGeneratorOpen(false)}
         onClosePlannedDialog={dialogState.closePlannedDialog}
         onCloseScenarioComparison={() => setScenarioComparisonOpen(false)}
