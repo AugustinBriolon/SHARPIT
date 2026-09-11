@@ -181,12 +181,20 @@ Components live in `src/components/[domain]/`. A component belongs to the domain
 src/components/
   today/          ← Morning Experience + drill-downs (dashboard/, drill-down/, rich/)
   sleep/, recovery/, effort/, adaptation/, nutrition/
-  training/, planning/, calendar/, sessions/, coaching/, coach/, coach-memory/
-  corps/, goals/, settings/, analytics/, physical-health/
+  plan/           ← Plan hub (destination, week decision, CTAs coach) — not the week grid
+  planning/       ← week grid, planned-session edit/read/realize, scenario, brick
+  training/       ← activity list/detail/form (+ weekly-review under training/)
+  journal/        ← day journal / habits UI (lib still partly under lib/health/)
+  coach/, coach-memory/, coaching/  ← chat UI; coaching/ holds shared week chrome (e.g. coach-menu)
+  agents/         ← chat kit consumed by coach/ (trim dead template modules; do not grow casually)
+  shell/          ← tab hubs (Plan / Activité / Moi content) — distinct from layout chrome
+  corps/, goals/, settings/, physical-health/, onboarding/
   ui/             ← reusable primitives at root; charts/, instruments/, map/ nested
-  layout/         ← StickyHeader, Shell, BottomNav — structural chrome
-  pwa/            ← install / offline / SW toasts
+  layout/         ← StickyHeader, AppShell, BottomNav — structural chrome
+  motion/, pwa/   ← motion primitives; install / offline / SW toasts
 ```
+
+**Intention → folder (avoid new synonyms):** athlete Plan hub → `plan/`; week/session CRUD UI → `planning/`; session domain logic → `lib/planned-session/`; AI fill/adapt → `lib/coach/plan/` + `components/coach/plan/`; safety gate → `lib/plan-gate/`. Do not add another top-level `plan*` / `coach*` stem without updating this map.
 
 **Domain folder nesting (locality rule):** keep the root of a domain folder thin. Soft cap ≈ 8–10 files at depth 1; when a folder grows past that, nest by concept rather than dumping siblings.
 
@@ -195,8 +203,8 @@ src/components/
 | Physio drill-down page (`recovery`, `effort`, `sleep`, `adaptation`, `nutrition`) | `*-screen.tsx`, `*-page-view.tsx`, plus any types or widgets other domains import | `blocks/` — hero, why, stats, charts, section panels |
 | Activity surface (`training/activity`)                                            | nothing at root — import from named seams                                         | `list/`, `form/`, `insights/`, `detail/`             |
 | Planned session (`planning/session`)                                              | `session-defaults.ts` (shared constants)                                          | `edit/`, `read/`, `realize/`, `accessories/`         |
-| Interactive hub (`physical-health`, `goals`)                                      | screen / page-view / hub                                                          | `cards/` and `dialogs/`                              |
-| COACHING shared (`coaching/`)                                                     | widgets shared by sessions + calendar + planning                                  | e.g. `coach-menu.tsx`                                |
+| Interactive hub (`physical-health`, `goals`, `plan`)                              | screen / page-view / hub                                                          | `cards/` and `dialogs/` (or `hub/`, `week/`)         |
+| COACHING shared (`coaching/`)                                                     | widgets shared by planning week chrome + plan actions                             | e.g. `coach-menu.tsx`                                |
 | Shared widgets used outside the page                                              | stay at the domain root (they are part of the module interface)                   | —                                                    |
 
 **`ui/` nesting:** keep chrome primitives at the root (`button`, `dialog`, `input`, …). Nest specialized concerns:
