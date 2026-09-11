@@ -131,14 +131,14 @@ All use GET `/api/presentation/*`, typically stale 5m.
 
 ### 4.4 Coach & memory
 
-| Query / Hook       | Endpoint                 | Current                  | Action                                                                                                       |
-| ------------------ | ------------------------ | ------------------------ | ------------------------------------------------------------------------------------------------------------ |
-| `useCoachMemory`   | GET `/api/coach-memory`  | stale 30s                | **Raise to 2–5m** + optimistic mutations (see §5).                                                           |
-| `useCoachContext`  | GET `/api/coach/context` | default                  | Explicit stale 5m; already patched on save.                                                                  |
-| `useConversations` | GET conversations        | stale 2m                 | Prefetch `/coach`; patch list on create/rename/delete. Chrome stable; list row micro-skeletons on cold load. |
-| `useConversation`  | GET conversation `:id`   | stale 1m · enabled by id | Hydrate from create; chat panel micro-skeleton (bubbles + composer) while fetching.                          |
-| `useDailyBriefing` | GET briefing             | default                  | Background generation; show prior if any.                                                                    |
-| `useWeeklyReview`  | GET weekly-review        | default                  | Same as briefing.                                                                                            |
+| Query / Hook       | Endpoint                   | Current                  | Action                                                                                                       |
+| ------------------ | -------------------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------ |
+| `useCoachMemory`   | GET `/api/coach-memory`    | stale 30s                | **Raise to 2–5m** + optimistic mutations (see §5).                                                           |
+| `useCoachContext`  | GET `/api/coach/context`   | default                  | Explicit stale 5m; already patched on save.                                                                  |
+| `useConversations` | GET conversations          | stale 2m                 | Prefetch `/coach`; patch list on create/rename/delete. Chrome stable; list row micro-skeletons on cold load. |
+| `useConversation`  | GET conversation `:id`     | stale 1m · enabled by id | Hydrate from create; chat panel micro-skeleton (bubbles + composer) while fetching.                          |
+| Daily briefing     | POST `/api/coach/briefing` | background only          | **Pas de hook client** — génération snapshot / cron ; pas d’UI Today (`DailyBriefingPanel` retiré).          |
+| `useWeeklyReview`  | GET weekly-review          | default                  | Background generation; show prior if any.                                                                    |
 
 ### 4.5 Background / non-navigation GETs
 
