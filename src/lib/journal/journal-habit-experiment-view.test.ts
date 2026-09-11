@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import type { EvaluatedExperiment } from '@/lib/health/journal-habit-experiment';
+import type { EvaluatedExperiment } from '@/lib/journal/journal-habit-experiment';
 import {
   splitExperimentViews,
   testedFactorIds,
   toHabitExperimentView,
-} from '@/lib/health/journal-habit-experiment-view';
+} from '@/lib/journal/journal-habit-experiment-view';
 
 function experiment(overrides: Partial<EvaluatedExperiment> = {}): EvaluatedExperiment {
   return {

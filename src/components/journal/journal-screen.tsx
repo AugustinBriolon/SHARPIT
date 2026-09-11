@@ -30,7 +30,7 @@ import { SignalSegment } from '@/components/journal/signal-segment';
 import { MobileDrillDownHeader } from '@/components/layout/header/mobile-drill-down-header';
 import { Button } from '@/components/ui/button';
 import { LinkButton } from '@/components/ui/link-button';
-import { DAY_CONTEXT_FACTORS } from '@/lib/health/day-context-factors';
+import { DAY_CONTEXT_FACTORS } from '@/lib/journal/day-context-factors';
 import {
   emptyDayJournalEntry,
   loadDayJournalEntry,
@@ -40,25 +40,25 @@ import {
   type DayJournalFactorState,
   upsertDayJournalEntry,
   writeDayJournalStore,
-} from '@/lib/health/day-journal';
+} from '@/lib/journal/day-journal';
 import {
   flushDayJournalPersist,
   scheduleDayJournalPersist,
-} from '@/lib/health/day-journal-persist';
-import type { JournalDaySignals } from '@/lib/health/journal-day-signals';
+} from '@/lib/journal/day-journal-persist';
+import type { JournalDaySignals } from '@/lib/journal/journal-day-signals';
 import {
   JOURNAL_CATEGORY_HEADER,
   JOURNAL_METRIC_ICON,
   journalCategoryIcon,
-} from '@/lib/health/journal-category-surface';
+} from '@/lib/journal/journal-category-surface';
 import {
   enabledFactorIds,
   showAutoChecklist,
   showDayBasics,
   showNutritionPanel,
   type JournalPrefs,
-} from '@/lib/health/journal-prefs';
-import { journalTrackableById } from '@/lib/health/journal-trackables';
+} from '@/lib/journal/journal-prefs';
+import { journalTrackableById } from '@/lib/journal/journal-trackables';
 import { queryKeys } from '@/lib/query/keys';
 import { trainingDayIdForNow } from '@/lib/training/training-day';
 import { cn } from '@/lib/utils';

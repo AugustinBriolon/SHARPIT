@@ -1,6 +1,6 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import type { ObservationPolarity } from '@/lib/health/journal-habit-analysis';
-import type { AxisPosition, AxisTick } from '@/lib/health/journal-habit-axis';
+import type { ObservationPolarity } from '@/lib/journal/journal-habit-analysis';
+import type { AxisPosition, AxisTick } from '@/lib/journal/journal-habit-axis';
 import { cn } from '@/lib/utils';
 import { DUMBBELL_TRACK_BOX } from './dumbbell-grid';
 

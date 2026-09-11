@@ -5,7 +5,7 @@
  * CTA on Today. Never mutates Core or the calendar.
  */
 
-import type { TodayJournalHabitCallout } from '@/lib/health/journal-habit-today-bridge';
+import type { TodayJournalHabitCallout } from '@/lib/journal/journal-habit-today-bridge';
 import {
   buildAdaptDeepLink,
   type FeedbackRearrangeUpcomingSession,

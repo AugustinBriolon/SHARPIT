@@ -14,7 +14,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/components/ui/toast';
 import { useWellnessCheckin } from '@/hooks/use-wellness-checkin';
 import { useOfflineGuard } from '@/hooks/use-offline-guard';
-import { mapSorenessUiToDomain, type WellnessUiScore } from '@/lib/health/morning-wellness-scale';
+import { mapSorenessUiToDomain, type WellnessUiScore } from '@/lib/journal/morning-wellness-scale';
 import { cn } from '@/lib/utils';
 
 type ScaleOption = { value: WellnessUiScore; label: string };

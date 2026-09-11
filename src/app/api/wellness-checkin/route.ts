@@ -4,7 +4,7 @@ import {
   hasMorningWellnessCheckin,
   submitMorningWellnessCheckin,
   todayTrainingDayId,
-} from '@/lib/health/wellness-checkin';
+} from '@/lib/journal/wellness-checkin';
 import { wellnessCheckinSchema } from '@/lib/validators/wellness-checkin';
 
 export async function GET(request: NextRequest) {

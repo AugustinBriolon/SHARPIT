@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import type { TodayJournalHabitBridge } from '@/lib/health/journal-habit-today-bridge';
+import type { TodayJournalHabitBridge } from '@/lib/journal/journal-habit-today-bridge';
 import { queryKeys } from '@/lib/query/keys';
 
 type HabitBridgeResponse = {

@@ -4,7 +4,7 @@ import { useId } from 'react';
 import { motion, useReducedMotion } from 'motion/react';
 import { Check, Minus, X } from 'lucide-react';
 import { SPRING_LAYOUT } from '@/lib/ease';
-import type { DayJournalFactorState } from '@/lib/health/day-journal';
+import type { DayJournalFactorState } from '@/lib/journal/day-journal';
 import { cn } from '@/lib/utils';
 
 const SIGNAL_OPTIONS = [

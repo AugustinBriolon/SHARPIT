@@ -10,7 +10,7 @@ import {
   shiftTrainingDayId,
   type JournalAnalysisDay,
   type JournalHabitFinding,
-} from '@/lib/health/journal-habit-analysis';
+} from '@/lib/journal/journal-habit-analysis';
 
 function day(
   id: string,

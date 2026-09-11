@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { loadJournalHabitFindings } from '@/lib/health/journal-habit-analysis-load';
-import { buildTodayJournalHabitBridge } from '@/lib/health/journal-habit-today-bridge';
+import { loadJournalHabitFindings } from '@/lib/journal/journal-habit-analysis-load';
+import { buildTodayJournalHabitBridge } from '@/lib/journal/journal-habit-today-bridge';
 import { awaitRequest } from '@/lib/next/await-request';
 import { prisma } from '@/lib/prisma';
 

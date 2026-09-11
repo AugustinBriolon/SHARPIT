@@ -6,13 +6,13 @@
  */
 
 import type { PrismaClient } from '@prisma/client';
-import { confidenceLabel } from '@/lib/health/journal-habit-finding-copy';
-import { loadJournalHabitFindings } from '@/lib/health/journal-habit-analysis-load';
+import { confidenceLabel } from '@/lib/journal/journal-habit-finding-copy';
+import { loadJournalHabitFindings } from '@/lib/journal/journal-habit-analysis-load';
 import {
   buildJournalHabitReading,
   type JournalHabitReading,
-} from '@/lib/health/journal-habit-reading';
-import { JOURNAL_ANALYSIS_MIN_DAYS, isJournalAnalysisReady } from '@/lib/health/journal-limits';
+} from '@/lib/journal/journal-habit-reading';
+import { JOURNAL_ANALYSIS_MIN_DAYS, isJournalAnalysisReady } from '@/lib/journal/journal-limits';
 
 export const JOURNAL_ANALYSES_PRO_REQUIRED_ERROR =
   'La lecture coach du journal est réservée à Pro.';

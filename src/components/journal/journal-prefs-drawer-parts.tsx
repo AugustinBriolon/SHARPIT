@@ -12,9 +12,9 @@ import {
   setTrackableEnabled,
   type JournalCustomItem,
   type JournalPrefs,
-} from '@/lib/health/journal-prefs';
-import { canEnableAnotherTrackable } from '@/lib/health/journal-limits';
-import { JOURNAL_CATEGORY_ICON, JOURNAL_FILTER_CHIP } from '@/lib/health/journal-category-surface';
+} from '@/lib/journal/journal-prefs';
+import { canEnableAnotherTrackable } from '@/lib/journal/journal-limits';
+import { JOURNAL_CATEGORY_ICON, JOURNAL_FILTER_CHIP } from '@/lib/journal/journal-category-surface';
 import {
   CUSTOM_FACTOR_ICON,
   JOURNAL_FILTER_IDS,
@@ -22,7 +22,7 @@ import {
   type JournalBuiltinTrackable,
   type JournalBuiltinTrackableId,
   type JournalFilterId,
-} from '@/lib/health/journal-trackables';
+} from '@/lib/journal/journal-trackables';
 import { cn } from '@/lib/utils';
 import { LinkButton } from '@/components/ui/link-button';
 

@@ -2,8 +2,8 @@
 
 import { ChevronDown } from 'lucide-react';
 import { useId, useState, type ReactNode } from 'react';
-import type { AxisTick } from '@/lib/health/journal-habit-axis';
-import type { DumbbellRowModel } from '@/lib/health/journal-analyses-view-model';
+import type { AxisTick } from '@/lib/journal/journal-habit-axis';
+import type { DumbbellRowModel } from '@/lib/journal/journal-analyses-view-model';
 import { cn } from '@/lib/utils';
 import { DistributionStrips } from './distribution-strips';
 import {

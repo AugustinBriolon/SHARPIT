@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { mapSorenessUiToDomain, WELLNESS_UI_SCALE } from '@/lib/health/morning-wellness-scale';
+import { mapSorenessUiToDomain, WELLNESS_UI_SCALE } from '@/lib/journal/morning-wellness-scale';
 
 describe('morning wellness UI scale', () => {
   it('exposes a continuous 1–5 range', () => {

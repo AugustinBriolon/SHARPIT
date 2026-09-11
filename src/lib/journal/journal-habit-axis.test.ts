@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { JOURNAL_HABIT_AXES, axisPosition, axisTicks } from '@/lib/health/journal-habit-axis';
+import { JOURNAL_HABIT_AXES, axisPosition, axisTicks } from '@/lib/journal/journal-habit-axis';
 
 describe('journal habit axes', () => {
   it('labels sleep ticks in hours and spans the edges of the track', () => {

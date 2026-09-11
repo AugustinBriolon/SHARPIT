@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import type { JournalHabitFinding } from '@/lib/health/journal-habit-analysis';
-import { JOURNAL_ANALYSIS_MIN_DAYS } from '@/lib/health/journal-limits';
-import type { HabitExperimentView } from '@/lib/health/journal-habit-experiment-view';
+import type { JournalHabitFinding } from '@/lib/journal/journal-habit-analysis';
+import { JOURNAL_ANALYSIS_MIN_DAYS } from '@/lib/journal/journal-limits';
+import type { HabitExperimentView } from '@/lib/journal/journal-habit-experiment-view';
 import {
   buildTodayJournalHabitBridge,
   formatTodayHabitExperimentBridge,
@@ -9,8 +9,8 @@ import {
   JOURNAL_ANALYSES_HREF,
   resolveTodayJournalHabitCallout,
   todayJournalHabitBridgeFromReading,
-} from '@/lib/health/journal-habit-today-bridge';
-import { buildJournalHabitReading } from '@/lib/health/journal-habit-reading';
+} from '@/lib/journal/journal-habit-today-bridge';
+import { buildJournalHabitReading } from '@/lib/journal/journal-habit-reading';
 
 function runningExperiment(overrides: Partial<HabitExperimentView> = {}): HabitExperimentView {
   return {

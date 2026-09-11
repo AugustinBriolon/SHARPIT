@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { TodayJournalHabitCallout } from '@/lib/health/journal-habit-today-bridge';
+import type { TodayJournalHabitCallout } from '@/lib/journal/journal-habit-today-bridge';
 import {
   buildHabitCoachingSignal,
   buildHabitRearrangeProposal,

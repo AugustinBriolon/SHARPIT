@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { EvaluatedExperiment } from '@/lib/health/journal-habit-experiment';
+import type { EvaluatedExperiment } from '@/lib/journal/journal-habit-experiment';
 
 vi.mock('@/lib/next/await-request', () => ({ awaitRequest: vi.fn() }));
 vi.mock('@/lib/auth/current-athlete', () => ({
@@ -18,8 +18,8 @@ vi.mock('@/lib/prisma', () => ({
     },
   },
 }));
-vi.mock('@/lib/health/journal-habit-experiment-load', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@/lib/health/journal-habit-experiment-load')>()),
+vi.mock('@/lib/journal/journal-habit-experiment-load', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/lib/journal/journal-habit-experiment-load')>()),
   loadJournalHabitExperiments: vi.fn().mockResolvedValue([]),
 }));
 
@@ -46,7 +46,7 @@ function jsonRequest(url: string, method: string, body: unknown) {
 
 async function givenExperiments(list: EvaluatedExperiment[]) {
   const { loadJournalHabitExperiments } =
-    await import('@/lib/health/journal-habit-experiment-load');
+    await import('@/lib/journal/journal-habit-experiment-load');
   vi.mocked(loadJournalHabitExperiments).mockResolvedValue(list);
 }
 
@@ -97,7 +97,7 @@ describe('/api/journal/habit-experiments', () => {
       id: 'exp-running',
     } as Awaited<ReturnType<typeof prisma.journalHabitExperiment.findFirst>>);
     const { POST } = await import('./route');
-    const { ONE_TEST_AT_A_TIME_MESSAGE } = await import('@/lib/health/journal-habit-experiment');
+    const { ONE_TEST_AT_A_TIME_MESSAGE } = await import('@/lib/journal/journal-habit-experiment');
 
     const response = await POST(
       jsonRequest('http://localhost/api/journal/habit-experiments', 'POST', {

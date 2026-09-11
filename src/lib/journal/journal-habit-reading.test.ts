@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import type { JournalHabitFinding } from '@/lib/health/journal-habit-analysis';
-import { buildJournalHabitReading } from '@/lib/health/journal-habit-reading';
+import type { JournalHabitFinding } from '@/lib/journal/journal-habit-analysis';
+import { buildJournalHabitReading } from '@/lib/journal/journal-habit-reading';
 
 function finding(
   overrides: Partial<JournalHabitFinding> &

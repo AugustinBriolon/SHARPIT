@@ -6,7 +6,7 @@ import {
   formatLagLabel,
   formatMediansLine,
   formatSignedDelta,
-} from '@/lib/health/journal-habit-finding-copy';
+} from '@/lib/journal/journal-habit-finding-copy';
 
 describe('journal-habit-finding-copy', () => {
   it('formats an association (not causation) with median and confidence', () => {

@@ -7,9 +7,9 @@
 
 import { AccessTier, type PrismaClient } from '@prisma/client';
 import { demoDateFromTrainingDayId, demoTrainingDayIdDaysAgo } from '@/lib/demo/demo-calendar';
-import { defaultJournalPrefs, type JournalPrefs } from '@/lib/health/journal-prefs';
-import type { JournalBuiltinTrackableId } from '@/lib/health/journal-trackables';
-import { JOURNAL_BUILTIN_TRACKABLE_IDS } from '@/lib/health/journal-trackables';
+import { defaultJournalPrefs, type JournalPrefs } from '@/lib/journal/journal-prefs';
+import type { JournalBuiltinTrackableId } from '@/lib/journal/journal-trackables';
+import { JOURNAL_BUILTIN_TRACKABLE_IDS } from '@/lib/journal/journal-trackables';
 
 export const DEMO_JOURNAL_DAYS = 14;
 

@@ -5,14 +5,14 @@ import type { ReactNode } from 'react';
 import { InkEmptyState } from '@/components/ui/ink-empty-state';
 import { LinkButton } from '@/components/ui/link-button';
 import { useJournalHabitExperiments } from '@/hooks/use-journal-habit-experiments';
-import type { JournalAnalysesViewModel } from '@/lib/health/journal-analyses-view-model';
-import type { ObservationPolarity } from '@/lib/health/journal-habit-analysis';
-import { experimentIntentForPolarity } from '@/lib/health/journal-habit-experiment';
+import type { JournalAnalysesViewModel } from '@/lib/journal/journal-analyses-view-model';
+import type { ObservationPolarity } from '@/lib/journal/journal-habit-analysis';
+import { experimentIntentForPolarity } from '@/lib/journal/journal-habit-experiment';
 import {
   splitExperimentViews,
   type HabitExperimentView,
-} from '@/lib/health/journal-habit-experiment-view';
-import type { JournalHabitReading } from '@/lib/health/journal-habit-reading';
+} from '@/lib/journal/journal-habit-experiment-view';
+import type { JournalHabitReading } from '@/lib/journal/journal-habit-reading';
 import { AssociationPanel } from './association-panel';
 import { CoachReadingCta } from './coach-reading-cta';
 import { RunningExperimentBanner } from './experiments-panel';

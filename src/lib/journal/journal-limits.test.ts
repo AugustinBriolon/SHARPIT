@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { emptyDayJournalEntry } from '@/lib/health/day-journal';
-import { defaultJournalPrefs, setTrackableEnabled } from '@/lib/health/journal-prefs';
+import { emptyDayJournalEntry } from '@/lib/journal/day-journal';
+import { defaultJournalPrefs, setTrackableEnabled } from '@/lib/journal/journal-prefs';
 import {
   JOURNAL_ANALYSIS_MIN_DAYS,
   JOURNAL_ENABLED_LIMIT_FREE,
@@ -9,7 +9,7 @@ import {
   dayHasJournalSignal,
   enforceJournalPrefsLimits,
   isJournalAnalysisReady,
-} from '@/lib/health/journal-limits';
+} from '@/lib/journal/journal-limits';
 
 describe('journal-limits', () => {
   it('counts enabled trackables and enforces free custom strip + cap', () => {

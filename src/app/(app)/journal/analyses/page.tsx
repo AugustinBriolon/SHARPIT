@@ -4,12 +4,15 @@ import { MobileDrillDownHeader } from '@/components/layout/header/mobile-drill-d
 import { Skeleton } from '@/components/ui/skeleton';
 import { hasProAccess } from '@/lib/access/tier';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { buildJournalAnalysesViewModel } from '@/lib/health/journal-analyses-view-model';
-import { loadJournalHabitFindings } from '@/lib/health/journal-habit-analysis-load';
-import { loadJournalHabitExperiments } from '@/lib/health/journal-habit-experiment-load';
-import { testedFactorIds, toHabitExperimentView } from '@/lib/health/journal-habit-experiment-view';
-import { buildJournalHabitReading } from '@/lib/health/journal-habit-reading';
-import { JOURNAL_ANALYSIS_MIN_DAYS, isJournalAnalysisReady } from '@/lib/health/journal-limits';
+import { buildJournalAnalysesViewModel } from '@/lib/journal/journal-analyses-view-model';
+import { loadJournalHabitFindings } from '@/lib/journal/journal-habit-analysis-load';
+import { loadJournalHabitExperiments } from '@/lib/journal/journal-habit-experiment-load';
+import {
+  testedFactorIds,
+  toHabitExperimentView,
+} from '@/lib/journal/journal-habit-experiment-view';
+import { buildJournalHabitReading } from '@/lib/journal/journal-habit-reading';
+import { JOURNAL_ANALYSIS_MIN_DAYS, isJournalAnalysisReady } from '@/lib/journal/journal-limits';
 import { prisma } from '@/lib/prisma';
 import { getAthleteProfile } from '@/lib/queries';
 import { trainingDayIdForNow } from '@/lib/training/training-day';

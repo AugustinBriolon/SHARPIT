@@ -73,7 +73,7 @@ vi.mock('@/lib/queries', () => ({
 
 vi.mock('@/lib/prisma', () => ({ prisma: {} }));
 
-vi.mock('@/lib/health/journal-habit-analysis-load', () => ({
+vi.mock('@/lib/journal/journal-habit-analysis-load', () => ({
   loadJournalHabitFindings: vi.fn().mockResolvedValue({ daysWithSignal: 3, findings: [] }),
 }));
 
@@ -120,7 +120,7 @@ describe('POST /api/coach/chat · journal analyses gate', () => {
   it('refuses a FREE athlete before loading any journal finding', async () => {
     await givenTier('FREE');
     const { streamText } = await import('ai');
-    const { loadJournalHabitFindings } = await import('@/lib/health/journal-habit-analysis-load');
+    const { loadJournalHabitFindings } = await import('@/lib/journal/journal-habit-analysis-load');
 
     const { POST } = await importRoute();
     const response = await POST(chatRequest({ discussKind: 'journal-analyses' }));

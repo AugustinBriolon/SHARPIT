@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { countDaysInSpan } from '@/lib/health/journal-habit-analysis-load';
-import type { JournalAnalysisDay } from '@/lib/health/journal-habit-analysis';
+import { countDaysInSpan } from '@/lib/journal/journal-habit-analysis-load';
+import type { JournalAnalysisDay } from '@/lib/journal/journal-habit-analysis';
 
 function day(trainingDayId: string): JournalAnalysisDay {
   return { trainingDayId, factors: {}, sleepMinutes: null, recoveryScore: null, bodyBattery: null };
