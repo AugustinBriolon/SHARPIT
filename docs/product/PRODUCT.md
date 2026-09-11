@@ -1346,16 +1346,16 @@ Grouped by severity to the daily journey.
 
 ### Resolved — do not re-plan as Critical
 
-| Friction (was Critical / High)           | Resolution                                                                                                            |
-| ---------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| Inference not triggered post-sync        | `cron/sync` calls `refreshAthleteState({ skipSync: true })` after sync                                                |
-| `INSUFFICIENT_DATA` blocks entire Today  | Degrades to empty / status banner / offline snapshot path — never a blank wall                                        |
-| Feedback updates Twin but not the plan   | Presentation rearrange proposal → PlanAdapter deep-link (`?adapt=1`); athlete approves (#90); habit path can propose too (#93) |
+| Friction (was Critical / High)           | Resolution                                                                                                                                          |
+| ---------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Inference not triggered post-sync        | `cron/sync` calls `refreshAthleteState({ skipSync: true })` after sync                                                                              |
+| `INSUFFICIENT_DATA` blocks entire Today  | Degrades to empty / status banner / offline snapshot path — never a blank wall                                                                      |
+| Feedback updates Twin but not the plan   | Presentation rearrange proposal → PlanAdapter deep-link (`?adapt=1`); athlete approves (#90); habit path can propose too (#93)                      |
 | Goal / why invisible on Today            | `TodayWhyBlock` ships (habit/journal facts retained after #94); goal anchor + Daily Briefing panel intentionally unmounted from Today summary (#94) |
-| Plan coaching felt like four equal doors | Single intention **Coacher mon objectif** with ranked gestures (#92)                                                  |
-| Weekly review generated but not shown    | LLM narrative at `/plan/bilan` (`WeeklyReviewGate`); deterministic Weekly Coaching Brief remains available from Coach |
-| No adaptation drill-down                 | `/today/adaptation` / Plan Adaptation reading exists                                                                  |
-| Cron sync only 3×/day                    | Cadence is **6×/day** UTC (06:30, 09, 12, 15, 18, 21) plus `planned-forecast` at 19:00                                |
+| Plan coaching felt like four equal doors | Single intention **Coacher mon objectif** with ranked gestures (#92)                                                                                |
+| Weekly review generated but not shown    | LLM narrative at `/plan/bilan` (`WeeklyReviewGate`); deterministic Weekly Coaching Brief remains available from Coach                               |
+| No adaptation drill-down                 | `/today/adaptation` / Plan Adaptation reading exists                                                                                                |
+| Cron sync only 3×/day                    | Cadence is **6×/day** UTC (06:30, 09, 12, 15, 18, 21) plus `planned-forecast` at 19:00                                                              |
 
 ### Critical — breaks the morning contract
 

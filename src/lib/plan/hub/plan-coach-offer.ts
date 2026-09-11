@@ -3,6 +3,11 @@
  *
  * Twin « Adaptation » (/plan/adaptation) is a reading of body response to the
  * block. It is never a plan-mutation CTA. Mutation uses « Ajuster le planning ».
+ *
+ * Anti-pattern: do not navigate to another route solely to open a dialog the
+ * current surface can host. On the Plan hub, open Macro / Generator / Adapter
+ * in place. Query deep-links (`generate` / `adapt`) are for cross-destination
+ * entry only (Today, weekly brief empty state → /plan/semaine).
  */
 
 export const PLAN_COACH_INTENTION = 'Coacher mon objectif';
@@ -22,30 +27,44 @@ export type PlanCoachAccent = PlanCoachStepId | null;
 
 export type PlanCoachStep = {
   readonly id: PlanCoachStepId;
+  readonly band: string;
   readonly title: string;
   readonly role: string;
-  /** Deep-link when the step navigates; null for in-place dialog (cadre). */
-  readonly href: string | null;
+  /**
+   * Cross-destination deep-link only. Null when the gesture has no semaine URL
+   * (cadre opens MacroPlanDialog in place). Never use from the Plan hub CTA —
+   * open the dialog on the current surface.
+   */
+  readonly deepLink: string | null;
 };
+
+/** Week planning route — Remplir opens PlanGenerator (`generate=1`). */
+export const PLAN_COACH_GENERATE_HREF = '/plan/semaine?generate=1';
+
+/** Week planning route — Ajuster opens PlanAdapter (`adapt=1`). */
+export const PLAN_COACH_ADAPT_HREF = '/plan/semaine?adapt=1';
 
 export const PLAN_COACH_STEPS: readonly PlanCoachStep[] = [
   {
     id: 'cadre',
-    title: 'Cadre jusqu’à la course',
+    band: 'Cadre',
+    title: 'Plan macro',
     role: 'Phases et charge cible jusqu’à l’objectif · pas les séances',
-    href: null,
+    deepLink: null,
   },
   {
     id: 'remplir',
+    band: 'Séances',
     title: 'Remplir ma semaine',
     role: 'Proposer les prochaines séances concrètes',
-    href: '/plan/semaine?create=1',
+    deepLink: PLAN_COACH_GENERATE_HREF,
   },
   {
     id: 'ajuster',
+    band: 'Ajuster',
     title: 'Ajuster le planning',
     role: 'Réarranger ce qui est déjà prévu',
-    href: '/plan/semaine?adapt=1',
+    deepLink: PLAN_COACH_ADAPT_HREF,
   },
 ] as const;
 

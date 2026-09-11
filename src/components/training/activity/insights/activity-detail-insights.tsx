@@ -3,16 +3,22 @@
 import type { ActivityType } from '@prisma/client';
 import dynamic from 'next/dynamic';
 import type { ReactNode } from 'react';
-import { Skeleton } from '@/components/ui/skeleton';
+import { ActivityInsightsLoading } from '@/components/training/activity/insights/activity-insights-parts';
 
 const ActivityInsights = dynamic(
   () => import('./activity-insights').then((mod) => mod.ActivityInsights),
-  { ssr: false, loading: () => <Skeleton className="h-64 w-full" /> },
+  {
+    ssr: false,
+    loading: () => <ActivityInsightsLoading withCoach withMap />,
+  },
 );
 
 const TriathlonActivityInsights = dynamic(
   () => import('./triathlon-activity-insights').then((mod) => mod.TriathlonActivityInsights),
-  { ssr: false, loading: () => <Skeleton className="h-64 w-full" /> },
+  {
+    ssr: false,
+    loading: () => <ActivityInsightsLoading withCoach={false} withMap={false} />,
+  },
 );
 
 /**

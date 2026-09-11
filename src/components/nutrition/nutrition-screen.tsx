@@ -41,13 +41,25 @@ function isNutritionDisconnected(
   return !valuesLoading && viewModel !== undefined && viewModel !== null && !viewModel.connected;
 }
 
-function nutritionViewDefaults(viewModel: ReturnType<typeof useNutritionViewModel>['data'] | null) {
-  return {
-    averages: viewModel?.averages ?? null,
-    emptyState: viewModel?.emptyState,
-    history: viewModel?.history ?? [],
-    selectedDay: viewModel?.selectedDay ?? null,
-  };
+type NutritionViewData = NonNullable<ReturnType<typeof useNutritionViewModel>['data']>;
+
+const EMPTY_VIEW_DEFAULTS: Pick<
+  NutritionViewData,
+  'coachReading' | 'diet' | 'emptyState' | 'history' | 'selectedDay'
+> = {
+  coachReading: null,
+  diet: { ids: [], labels: [] },
+  emptyState: undefined,
+  history: [],
+  selectedDay: null,
+};
+
+function nutritionViewDefaults(viewModel: NutritionViewData | null) {
+  if (!viewModel) {
+    return EMPTY_VIEW_DEFAULTS;
+  }
+  const { coachReading, diet, emptyState, history, selectedDay } = viewModel;
+  return { coachReading, diet, emptyState, history, selectedDay };
 }
 
 export function NutritionScreen() {
@@ -69,8 +81,9 @@ export function NutritionScreen() {
     <div className="space-y-4">
       <MobileDrillDownHeader title="Nutrition" />
       <NutritionPageView
-        averages={defaults.averages}
+        coachReading={defaults.coachReading}
         date={date}
+        diet={defaults.diet}
         emptyState={defaults.emptyState}
         history={defaults.history}
         isToday={isToday}

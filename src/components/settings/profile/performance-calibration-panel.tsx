@@ -13,7 +13,7 @@ export function PerformanceCalibrationPanel({ initial }: { initial: ProfileData 
 
   return (
     <CalibrationEditor
-      applyPending={calibration.applyEstimates.isPending}
+      applyPending={false}
       canSave={initial !== null}
       dirty={calibration.dirty}
       error={calibration.error}

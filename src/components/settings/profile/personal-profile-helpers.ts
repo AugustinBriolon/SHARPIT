@@ -6,10 +6,11 @@ import { birthDateToInput } from '@/lib/profile/athlete-profile-utils';
 import type { QueryClient } from '@tanstack/react-query';
 import type { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
 
-export type PersonalFieldKey = 'heightCm' | 'sleepHours' | 'sleepBedtime';
+export type PersonalFieldKey = 'heightCm' | 'targetWeightKg' | 'sleepHours' | 'sleepBedtime';
 
 export type PersonalProfileFormState = {
   heightCm: string;
+  targetWeightKg: string;
   birthDate: string;
   sleepHours: string;
   sleepBedtime: string;
@@ -23,14 +24,20 @@ function sleepHoursFromProfile(resolvedInitial: ProfileData | null | undefined):
   return String(minutes / 60);
 }
 
+function numberToInput(value: number | null | undefined): string {
+  return value === null || value === undefined ? '' : String(value);
+}
+
 export function personalProfileBaseline(
   resolvedInitial: ProfileData | null | undefined,
 ): PersonalProfileFormState {
+  const profile = resolvedInitial ?? null;
   return {
-    heightCm: resolvedInitial?.heightCm?.toString() ?? '',
-    birthDate: birthDateToInput(resolvedInitial?.birthDate ?? null),
-    sleepHours: sleepHoursFromProfile(resolvedInitial),
-    sleepBedtime: clockToInput(resolvedInitial?.sleepBedtimeTargetMin ?? null),
+    heightCm: numberToInput(profile?.heightCm),
+    targetWeightKg: numberToInput(profile?.targetWeightKg),
+    birthDate: birthDateToInput(profile?.birthDate ?? null),
+    sleepHours: sleepHoursFromProfile(profile),
+    sleepBedtime: clockToInput(profile?.sleepBedtimeTargetMin ?? null),
   };
 }
 
@@ -40,6 +47,7 @@ export function isPersonalProfileDirty(
 ) {
   return (
     state.heightCm !== baseline.heightCm ||
+    state.targetWeightKg !== baseline.targetWeightKg ||
     state.birthDate !== baseline.birthDate ||
     state.sleepHours !== baseline.sleepHours ||
     state.sleepBedtime !== baseline.sleepBedtime
@@ -53,6 +61,17 @@ function validateHeight(heightCm: string): string | undefined {
   const h = Number(heightCm);
   if (!Number.isFinite(h) || h < 100 || h > 250) {
     return 'Taille invalide (entre 100 et 250 cm).';
+  }
+  return undefined;
+}
+
+function validateTargetWeight(targetWeightKg: string): string | undefined {
+  if (!targetWeightKg.trim()) {
+    return undefined;
+  }
+  const kg = Number(targetWeightKg);
+  if (!Number.isFinite(kg) || kg < 30 || kg > 250) {
+    return 'Objectif de poids invalide (entre 30 et 250 kg).';
   }
   return undefined;
 }
@@ -86,6 +105,10 @@ export function validatePersonalProfileFields(
   if (heightError) {
     next.heightCm = heightError;
   }
+  const targetWeightError = validateTargetWeight(state.targetWeightKg);
+  if (targetWeightError) {
+    next.targetWeightKg = targetWeightError;
+  }
   const sleepError = validateSleepHours(state.sleepHours);
   if (sleepError) {
     next.sleepHours = sleepError;
@@ -100,7 +123,9 @@ export function validatePersonalProfileFields(
 export function firstPersonalProfileFieldError(
   errors: Partial<Record<PersonalFieldKey, string>>,
 ): PersonalFieldKey | undefined {
-  return (['heightCm', 'sleepHours', 'sleepBedtime'] as const).find((key) => errors[key]);
+  return (['heightCm', 'targetWeightKg', 'sleepHours', 'sleepBedtime'] as const).find(
+    (key) => errors[key],
+  );
 }
 
 function parseSleepTargetMinutes(sleepHours: string): number | null {
@@ -117,6 +142,13 @@ function parseProfileHeightCm(heightCm: string): number | null {
   return Number(heightCm);
 }
 
+function parseProfileTargetWeightKg(targetWeightKg: string): number | null {
+  if (!targetWeightKg.trim()) {
+    return null;
+  }
+  return Math.round(Number(targetWeightKg) * 10) / 10;
+}
+
 function parseProfileBirthDate(birthDate: string): string | null {
   return birthDate.trim() || null;
 }
@@ -125,6 +157,7 @@ function resolvedProfileSnapshot(resolvedInitial: ProfileData | null | undefined
   if (!resolvedInitial) {
     return {
       heightCm: null,
+      targetWeightKg: null,
       birthDate: null,
       sleepTargetMinutes: null,
       sleepBedtimeTargetMin: null,
@@ -132,6 +165,7 @@ function resolvedProfileSnapshot(resolvedInitial: ProfileData | null | undefined
   }
   return {
     heightCm: resolvedInitial.heightCm,
+    targetWeightKg: resolvedInitial.targetWeightKg,
     birthDate: resolvedInitial.birthDate,
     sleepTargetMinutes: resolvedInitial.sleepTargetMinutes,
     sleepBedtimeTargetMin: resolvedInitial.sleepBedtimeTargetMin,
@@ -141,6 +175,7 @@ function resolvedProfileSnapshot(resolvedInitial: ProfileData | null | undefined
 function personalProfileDraft(state: PersonalProfileFormState) {
   return {
     heightCm: parseProfileHeightCm(state.heightCm),
+    targetWeightKg: parseProfileTargetWeightKg(state.targetWeightKg),
     birthDate: parseProfileBirthDate(state.birthDate),
     sleepTargetMinutes: parseSleepTargetMinutes(state.sleepHours),
     sleepBedtimeTargetMin: parseClockInput(state.sleepBedtime),

@@ -13,6 +13,7 @@ describe('mapAthleteProfileToFormData', () => {
   it('maps identity + sleep fields for the account form', () => {
     const mapped = mapAthleteProfileToFormData({
       heightCm: 185,
+      targetWeightKg: 72.5,
       birthDate: new Date(Date.UTC(2001, 7, 30)),
       ftpW: null,
       maxHr: null,
@@ -26,6 +27,7 @@ describe('mapAthleteProfileToFormData', () => {
     });
     expect(mapped).toMatchObject({
       heightCm: 185,
+      targetWeightKg: 72.5,
       birthDate: '2001-08-30',
       sleepTargetMinutes: 480,
       sleepBedtimeTargetMin: 1380,
@@ -43,6 +45,7 @@ describe('shouldHydrateProfileForm', () => {
     expect(
       shouldHydrateProfileForm({
         heightCm: 185,
+        targetWeightKg: null,
         birthDate: '2001-08-30',
         ftpW: null,
         maxHr: null,

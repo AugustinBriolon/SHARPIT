@@ -15,6 +15,7 @@ export function googleSyncErrorDescription(err: unknown): string | undefined {
   return err.message;
 }
 
+/** Persist selected calendar — caller owns Instant UI (optimistic id + rollback). */
 export async function selectGoogleCalendarTarget(options: {
   nextCalendarId: string;
   calendars: GoogleCalendarInfo[];
@@ -22,7 +23,7 @@ export async function selectGoogleCalendarTarget(options: {
   onUpdated?: () => void;
 }): Promise<void> {
   const calendar = options.calendars.find((c) => c.id === options.nextCalendarId);
-  await fetch('/api/google/select-calendar', {
+  const response = await fetch('/api/google/select-calendar', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -30,6 +31,9 @@ export async function selectGoogleCalendarTarget(options: {
       calendarName: calendar?.summary ?? null,
     }),
   });
+  if (!response.ok) {
+    throw new Error('Impossible de changer le calendrier cible.');
+  }
   options.router.refresh();
   options.onUpdated?.();
 }

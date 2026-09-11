@@ -38,6 +38,7 @@
 | [ADR-032](./ADR-032-journal-habit-experiments-derived-at-read.md)   | Journal habit experiments — intent stored, verdict derived at read time           | Proposed |
 | [ADR-033](./ADR-033-drill-down-date-strip-and-data-availability.md) | Drill-down date strip with per-day data availability                              | Accepted |
 | [ADR-034](./ADR-034-plan-coach-path-taxonomy.md)                    | Taxonomie des chemins Plan / Coach (noms figés, pas de mega-rename)               | Accepted |
+| [ADR-035](./ADR-035-nutrition-coach-reading-not-an-engine.md)       | Nutrition day analysis is a coach reading, not a Nutrition Engine                 | Accepted |
 
 **Template:** [ADR-template.md](./ADR-template.md)
 

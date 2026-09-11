@@ -10,7 +10,7 @@ import {
   startOfDay,
   subDays,
 } from 'date-fns';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { useCallback, useMemo } from 'react';
 import { useIsDemoMode } from '@/hooks/use-is-demo-mode';
 
@@ -41,8 +41,38 @@ export function parseSelectedDate(
   return normalized;
 }
 
+/** URL for `next`, clamped to the navigable window; today drops the param. */
+export function selectedDateUrl({
+  pathname,
+  search,
+  next,
+  today,
+  minDate,
+}: {
+  pathname: string;
+  search: string;
+  next: Date;
+  today: Date;
+  minDate: Date | undefined;
+}): string {
+  let normalized = startOfDay(next);
+  if (isAfter(normalized, today)) {
+    normalized = today;
+  }
+  if (minDate && isBefore(normalized, minDate)) {
+    normalized = minDate;
+  }
+  const params = new URLSearchParams(search);
+  if (format(normalized, 'yyyy-MM-dd') === format(today, 'yyyy-MM-dd')) {
+    params.delete('date');
+  } else {
+    params.set('date', format(normalized, 'yyyy-MM-dd'));
+  }
+  const query = params.toString();
+  return query ? `${pathname}?${query}` : pathname;
+}
+
 export function useTodaySelectedDate() {
-  const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const isDemo = useIsDemoMode();
@@ -64,23 +94,15 @@ export function useTodaySelectedDate() {
 
   const setDate = useCallback(
     (next: Date) => {
-      let normalized = startOfDay(next);
-      if (isAfter(normalized, today)) {
-        normalized = today;
-      }
-      if (minDate && isBefore(normalized, minDate)) {
-        normalized = minDate;
-      }
-      const params = new URLSearchParams(searchParams.toString());
-      if (format(normalized, 'yyyy-MM-dd') === format(today, 'yyyy-MM-dd')) {
-        params.delete('date');
-      } else {
-        params.set('date', format(normalized, 'yyyy-MM-dd'));
-      }
-      const query = params.toString();
-      router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+      // Native history syncs useSearchParams without an RSC round-trip, so the screen
+      // switches day on tap and shows its loading state while the day's data arrives.
+      window.history.replaceState(
+        null,
+        '',
+        selectedDateUrl({ pathname, search: searchParams.toString(), next, today, minDate }),
+      );
     },
-    [minDate, pathname, router, searchParams, today],
+    [minDate, pathname, searchParams, today],
   );
 
   const goToPreviousDay = useCallback(() => {

@@ -18,6 +18,43 @@ import { useDisplayMode } from '@/providers/display-mode-provider';
 
 const WEEK_OPTS = { weekStartsOn: 1 as const };
 
+type WeeklyBriefVm = NonNullable<ReturnType<typeof useWeeklyCoachingBriefViewModel>['data']>;
+
+function weeklyBriefViewFlags(isPending: boolean, vm: WeeklyBriefVm | undefined) {
+  const showSkeleton = isPending && vm === undefined;
+  const showEmptyState = !showSkeleton && (vm === undefined || Boolean(vm.emptyState));
+  const showContent = !showSkeleton && vm !== undefined && !vm.emptyState;
+  return { showSkeleton, showEmptyState, showContent };
+}
+
+function weeklyBriefDescription(showSkeleton: boolean, vm: WeeklyBriefVm | undefined) {
+  if (vm) {
+    return `${vm.weekStartLabel} - ${vm.weekEndLabel}`;
+  }
+  return showSkeleton ? 'Chargement…' : 'Cette semaine';
+}
+
+function WeeklyBriefSkeleton() {
+  return (
+    <div className="space-y-3">
+      <Skeleton className="h-4 w-3/4" />
+      <Skeleton className="h-4 w-1/2" />
+      <Skeleton className="h-20 w-full" />
+    </div>
+  );
+}
+
+function WeeklyBriefEmpty({ vm }: { vm: WeeklyBriefVm | undefined }) {
+  return (
+    <InkEmptyState
+      description={vm?.emptyState?.description ?? 'Pas encore de bilan pour cette semaine.'}
+      icon={NotebookText}
+      title={vm?.emptyState?.title ?? 'Aucun bilan'}
+      compact
+    />
+  );
+}
+
 function WeeklyBriefDialogBody({
   showSkeleton,
   showEmptyState,
@@ -28,29 +65,16 @@ function WeeklyBriefDialogBody({
   showSkeleton: boolean;
   showEmptyState: boolean;
   showContent: boolean;
-  vm: NonNullable<ReturnType<typeof useWeeklyCoachingBriefViewModel>['data']> | undefined;
+  vm: WeeklyBriefVm | undefined;
   mode: ReturnType<typeof useDisplayMode>['mode'];
 }) {
-  if (showSkeleton || !vm) {
-    return (
-      <div className="space-y-3">
-        <Skeleton className="h-4 w-3/4" />
-        <Skeleton className="h-4 w-1/2" />
-        <Skeleton className="h-20 w-full" />
-      </div>
-    );
+  if (showSkeleton) {
+    return <WeeklyBriefSkeleton />;
   }
-  if (showEmptyState && vm.emptyState) {
-    return (
-      <InkEmptyState
-        description={vm.emptyState.description ?? undefined}
-        icon={NotebookText}
-        title={vm.emptyState.title}
-        compact
-      />
-    );
+  if (showEmptyState) {
+    return <WeeklyBriefEmpty vm={vm} />;
   }
-  if (showContent) {
+  if (showContent && vm) {
     return <WeeklyBriefContent mode={mode} vm={vm} />;
   }
   return null;
@@ -59,10 +83,8 @@ function WeeklyBriefDialogBody({
 export function WeeklyBrief({ onClose }: { onClose: () => void }) {
   const { mode } = useDisplayMode();
   const weekStart = format(startOfWeek(new Date(), WEEK_OPTS), 'yyyy-MM-dd');
-  const { data: vm, isLoading } = useWeeklyCoachingBriefViewModel(weekStart);
-  const showSkeleton = isLoading || !vm;
-  const showEmptyState = !showSkeleton && Boolean(vm?.emptyState);
-  const showContent = !showSkeleton && Boolean(vm) && !vm.emptyState;
+  const { data: vm, isPending } = useWeeklyCoachingBriefViewModel(weekStart);
+  const flags = weeklyBriefViewFlags(isPending, vm);
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
@@ -72,18 +94,10 @@ export function WeeklyBrief({ onClose }: { onClose: () => void }) {
             <NotebookText className="text-primary size-4" />
             Bilan hebdo
           </DialogTitle>
-          <DialogDescription>
-            {vm ? `${vm.weekStartLabel} - ${vm.weekEndLabel}` : 'Chargement…'}
-          </DialogDescription>
+          <DialogDescription>{weeklyBriefDescription(flags.showSkeleton, vm)}</DialogDescription>
         </DialogHeader>
 
-        <WeeklyBriefDialogBody
-          mode={mode}
-          showContent={showContent}
-          showEmptyState={showEmptyState}
-          showSkeleton={showSkeleton}
-          vm={vm}
-        />
+        <WeeklyBriefDialogBody mode={mode} vm={vm} {...flags} />
       </DialogContent>
     </Dialog>
   );

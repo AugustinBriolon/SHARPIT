@@ -142,13 +142,14 @@ All use GET `/api/presentation/*`, typically stale 5m.
 
 ### 4.5 Background / non-navigation GETs
 
-| Call site               | Endpoint                  | Class      | Notes                                                           |
-| ----------------------- | ------------------------- | ---------- | --------------------------------------------------------------- |
-| Geocoding home / search | GET geocoding             | Background | Typeahead — never block form open.                              |
-| Weather preview         | POST weather-preview      | Background | Preview only; not a persistence mutation.                       |
-| Travel context read     | GET `/api/travel-context` | Background | Prefer React Query key `travelContext` instead of ad-hoc fetch. |
-| Narrative poll          | GET activity by id        | Background | Soft polling until narrative ready.                             |
-| Dev / cron / inspect    | various                   | N/A        | Out of Instant UX product surface.                              |
+| Call site               | Endpoint                   | Class      | Notes                                                               |
+| ----------------------- | -------------------------- | ---------- | ------------------------------------------------------------------- |
+| Geocoding home / search | GET geocoding              | Background | Typeahead — never block form open.                                  |
+| Weather preview         | POST weather-preview       | Background | Preview only; not a persistence mutation.                           |
+| Travel context read     | GET `/api/travel-context`  | Background | Prefer React Query key `travelContext` instead of ad-hoc fetch.     |
+| Narrative poll          | GET activity by id         | Background | Soft polling until narrative ready.                                 |
+| Nutrition reading poll  | GET presentation/nutrition | Background | 4 s poll only while `coachReading` is pending/refreshing (ADR-035). |
+| Dev / cron / inspect    | various                    | N/A        | Out of Instant UX product surface.                                  |
 
 ### 4.6 Query strategy rules (target)
 
@@ -162,6 +163,8 @@ All use GET `/api/presentation/*`, typically stale 5m.
    With Cache Components ([ADR-010](adr/ADR-010-cache-components-and-instant-navigation.md)) the Suspense fallback **is** the prerendered shell for that boundary — it must **not** be empty if the boundary wraps the page's visible chrome or value region. **Page chrome stays outside the boundary** when possible (headers, back links, drill-down title); only the streaming view suspends. When chrome cannot be static (e.g. it depends on the same suspending tree), export a presentational shell component and reuse it as both the fallback and the page's cold-mount skeleton so prerender and client navigation paint the same layout.
 
 7. **PWA must not wipe the query cache.** Reconnect must never hard-reload the page (that destroys TanStack Query memory and re-shows cold skeletons). Serwist runs in configurator mode and injects no client entry, so no reload path exists ([ADR-009](adr/ADR-009-turbopack-build-and-serwist-configurator.md)). `AppShell` mounts page `{children}` once (not in both mobile and desktop shells). Registration stays manual via `SwRegister`.
+
+8. **Client-only URL state never goes through the router.** When a search param is read only by client hooks (e.g. the drill-down `?date=` in `useTodaySelectedDate`), write it with `window.history.replaceState`. Next syncs `useSearchParams` from native history, so the selected day switches on tap and the screen shows its value micro-skeletons while the day's query loads. `router.replace` would wait for an RSC round-trip before the UI moves.
 
 ---
 
@@ -192,19 +195,19 @@ Classes:
 
 ### 5.2 Not Instant yet — migrate
 
-| Mutation                       | Method            | Endpoint               | Target class                   | Current UX                                         | Migration                                                                                                                       |
-| ------------------------------ | ----------------- | ---------------------- | ------------------------------ | -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| Activity create / update       | POST/PATCH        | `/api/activities`      | SAFE                           | Form waits on fetch; invalidate activities+records | Move to hook + `listOptimistic` / entity patch; close dialog Instant                                                            |
-| Activity delete                | DELETE            | `/api/activities/:id`  | SAFE_WITH_ROLLBACK             | Ad-hoc fetch in `activity-list`                    | Hook + optimistic remove + rollback                                                                                             |
-| Coach memory travel CRUD       | POST/PATCH/DELETE | `/api/coach-memory*`   | SAFE / SAFE_WITH_ROLLBACK      | Wait + cascade invalidate memory/travel/sessions   | `listOptimistic` on `entries`; patch travel banner; **background** invalidate planned sessions only if `applyToPlannedSessions` |
-| Travel context delete (banner) | DELETE            | coach-memory `:id`     | SAFE_WITH_ROLLBACK             | Ad-hoc fetch + invalidate                          | Reuse coach-memory remove mutation                                                                                              |
-| Athlete profile PATCH          | PATCH             | `/api/athlete-profile` | SAFE                           | Waits + broad invalidate                           | Optimistic patch profile cache; targeted invalidate streams/history                                                             |
-| Apply threshold estimates      | POST              | apply-estimates        | SAFE_WITH_ROLLBACK / BLOCKING* | Button spinner                                     | Prefer optimistic profile numbers from preview; rollback on reject. *Block only if preview missing.                             |
-| Google calendar visibility     | POST              | calendar-visibility    | SAFE                           | Await + invalidate events                          | Optimistic calendar flags; BG refetch events                                                                                    |
-| Google select calendar         | POST              | select-calendar        | SAFE                           | Await                                              | Optimistic selected id                                                                                                          |
-| Training plan archive          | DELETE            | training-plans `:id`   | SAFE_WITH_ROLLBACK             | Invalidate only                                    | Optimistic clear/archive flag                                                                                                   |
-| Planned session link           | POST              | `:id/link`             | SAFE (partial)                 | Invalidate + chain analyze                         | Optimistic `activityId` patch; analyze remains BACKGROUND                                                                       |
-| Session analyze                | POST              | `:id/analyze`          | BACKGROUND                     | Spinner / poll                                     | Keep Background; never block navigation                                                                                         |
+| Mutation                       | Method            | Endpoint               | Target class                   | Current UX                                                       | Migration                                                                                                                       |
+| ------------------------------ | ----------------- | ---------------------- | ------------------------------ | ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| Activity create / update       | POST/PATCH        | `/api/activities`      | SAFE                           | Create Instant leave + detail on success; update Instant replace | `listOptimistic` create; update entity patch                                                                                    |
+| Activity delete                | DELETE            | `/api/activities/:id`  | SAFE_WITH_ROLLBACK             | Ad-hoc fetch in `activity-list`                                  | Hook + optimistic remove + rollback                                                                                             |
+| Coach memory travel CRUD       | POST/PATCH/DELETE | `/api/coach-memory*`   | SAFE / SAFE_WITH_ROLLBACK      | Wait + cascade invalidate memory/travel/sessions                 | `listOptimistic` on `entries`; patch travel banner; **background** invalidate planned sessions only if `applyToPlannedSessions` |
+| Travel context delete (banner) | DELETE            | coach-memory `:id`     | SAFE_WITH_ROLLBACK             | Ad-hoc fetch + invalidate                                        | Reuse coach-memory remove mutation                                                                                              |
+| Athlete profile PATCH          | PATCH             | `/api/athlete-profile` | SAFE                           | Waits + broad invalidate                                         | Optimistic patch profile cache; targeted invalidate streams/history                                                             |
+| Apply threshold estimates      | POST              | apply-estimates        | SAFE_WITH_ROLLBACK / BLOCKING* | Button spinner                                                   | Prefer optimistic profile numbers from preview; rollback on reject. *Block only if preview missing.                             |
+| Google calendar visibility     | POST              | calendar-visibility    | SAFE                           | Await + invalidate events                                        | Optimistic calendar flags; BG refetch events                                                                                    |
+| Google select calendar         | POST              | select-calendar        | SAFE                           | Optimistic id + fire-and-forget                                  | Instant select; rollback + toast on error                                                                                       |
+| Training plan archive          | DELETE            | training-plans `:id`   | SAFE_WITH_ROLLBACK             | Invalidate only                                                  | Optimistic clear/archive flag                                                                                                   |
+| Planned session link           | POST              | `:id/link`             | SAFE (partial)                 | Invalidate + chain analyze                                       | Optimistic `activityId` patch; analyze remains BACKGROUND                                                                       |
+| Session analyze                | POST              | `:id/analyze`          | BACKGROUND                     | Spinner / poll                                                   | Keep Background; never block navigation                                                                                         |
 
 \* Threshold apply: Instant if preview payload already in cache; otherwise short Blocking on preview fetch only.
 
@@ -445,7 +448,7 @@ Status legend: ✅ done in Instant UX vertical · ⏳ remaining polish
 
 **Done when:** every row in §4 and §5 has a final class, and no SAFE mutation shows a blocking spinner as primary feedback.
 
-Remaining polish (non-blocking): Google select-calendar optimistic; training-plan archive optimistic; threshold-apply Instant from preview cache; further dialogs still using `mutateAsync` outside goals/sessions/activities.
+Landed polish: Google select-calendar Instant (optimistic id + rollback), activity create Instant leave (`mutate` → list, replace detail on success), training-plan archive Instant, threshold-apply from preview, Instant dialog closes (physical / coach memory / feeling / macro archive), analysis fire-and-forget (session / brick).
 ---
 
 ## 14. Success criteria

@@ -80,6 +80,23 @@ function useAdaptDeepLinkOpen(adaptFromUrl: boolean, closeAdaptUrlParams: () => 
   return { adapterOpen, setAdapterOpen, handleCloseAdapter };
 }
 
+function useGenerateDeepLinkOpen(generateFromUrl: boolean, closeGenerateUrlParams: () => void) {
+  const [generatorOpen, setGeneratorOpen] = useState(false);
+
+  useEffect(() => {
+    if (generateFromUrl) {
+      setGeneratorOpen(true);
+    }
+  }, [generateFromUrl]);
+
+  function handleCloseGenerator() {
+    setGeneratorOpen(false);
+    closeGenerateUrlParams();
+  }
+
+  return { generatorOpen, setGeneratorOpen, handleCloseGenerator };
+}
+
 function PlanningWeekOverlays({
   data,
   dialogState,
@@ -124,11 +141,12 @@ function PlanningWeekOverlays({
   );
 }
 
-function PlanningWeekView({ embedded = false, showCoachMenu = !embedded }: PlanningViewProps) {
-  const data = usePlanningViewData(showCoachMenu);
-  const dialogState = usePlanningDialogState(data);
-  const [generatorOpen, setGeneratorOpen] = useState(false);
+function usePlanningWeekOverlayState(data: ReturnType<typeof usePlanningViewData>) {
   const [scenarioComparisonOpen, setScenarioComparisonOpen] = useState(false);
+  const { generatorOpen, setGeneratorOpen, handleCloseGenerator } = useGenerateDeepLinkOpen(
+    data.generateFromUrl,
+    data.closeGenerateUrlParams,
+  );
   const { adapterOpen, setAdapterOpen, handleCloseAdapter } = useAdaptDeepLinkOpen(
     data.adaptFromUrl,
     data.closeAdaptUrlParams,
@@ -143,12 +161,30 @@ function PlanningWeekView({ embedded = false, showCoachMenu = !embedded }: Plann
     });
   }
 
-  return (
-    <div className="space-y-5">
-      {!embedded ? (
-        <PlanningPageHeader isLoading={data.isLoading} nextRace={data.nextRace} />
-      ) : null}
+  return {
+    adapterOpen,
+    generatorOpen,
+    handleCloseAdapter,
+    handleCloseGenerator,
+    handleCoachAction,
+    scenarioComparisonOpen,
+    setScenarioComparisonOpen,
+  };
+}
 
+function PlanningWeekMainPanels({
+  data,
+  dialogState,
+  overlayState,
+  showCoachMenu,
+}: {
+  data: ReturnType<typeof usePlanningViewData>;
+  dialogState: ReturnType<typeof usePlanningDialogState>;
+  overlayState: ReturnType<typeof usePlanningWeekOverlayState>;
+  showCoachMenu: boolean;
+}) {
+  return (
+    <>
       <PlanningWeekChrome
         hasActionableAlternative={data.hasActionableAlternative}
         isCurrentWeek={data.isCurrentWeek}
@@ -157,8 +193,8 @@ function PlanningWeekView({ embedded = false, showCoachMenu = !embedded }: Plann
         weekEnd={data.weekEnd}
         weekIndex={data.week.index}
         weekStart={data.weekStart}
-        onCoachAction={handleCoachAction}
-        onCompareScenarios={() => setScenarioComparisonOpen(true)}
+        onCoachAction={overlayState.handleCoachAction}
+        onCompareScenarios={() => overlayState.setScenarioComparisonOpen(true)}
         onWeekChange={data.setWeekStart}
       />
 
@@ -176,17 +212,62 @@ function PlanningWeekView({ embedded = false, showCoachMenu = !embedded }: Plann
         onAddDay={(date) => dialogState.setDialog({ mode: 'create', date })}
         onEditSession={dialogState.openPlannedSession}
       />
+    </>
+  );
+}
 
-      <PlanningWeekOverlays
-        adapterOpen={adapterOpen}
+function PlanningWeekLayout({
+  data,
+  dialogState,
+  embedded,
+  overlayState,
+  showCoachMenu,
+}: {
+  data: ReturnType<typeof usePlanningViewData>;
+  dialogState: ReturnType<typeof usePlanningDialogState>;
+  embedded: boolean;
+  overlayState: ReturnType<typeof usePlanningWeekOverlayState>;
+  showCoachMenu: boolean;
+}) {
+  return (
+    <div className="space-y-5">
+      {!embedded ? (
+        <PlanningPageHeader isLoading={data.goalsLoading} nextRace={data.nextRace} />
+      ) : null}
+
+      <PlanningWeekMainPanels
         data={data}
         dialogState={dialogState}
-        generatorOpen={generatorOpen}
-        scenarioComparisonOpen={scenarioComparisonOpen}
-        onCloseAdapter={handleCloseAdapter}
-        onCloseGenerator={() => setGeneratorOpen(false)}
-        onCloseScenarioComparison={() => setScenarioComparisonOpen(false)}
+        overlayState={overlayState}
+        showCoachMenu={showCoachMenu}
+      />
+
+      <PlanningWeekOverlays
+        adapterOpen={overlayState.adapterOpen}
+        data={data}
+        dialogState={dialogState}
+        generatorOpen={overlayState.generatorOpen}
+        scenarioComparisonOpen={overlayState.scenarioComparisonOpen}
+        onCloseAdapter={overlayState.handleCloseAdapter}
+        onCloseGenerator={overlayState.handleCloseGenerator}
+        onCloseScenarioComparison={() => overlayState.setScenarioComparisonOpen(false)}
       />
     </div>
+  );
+}
+
+function PlanningWeekView({ embedded = false, showCoachMenu = !embedded }: PlanningViewProps) {
+  const data = usePlanningViewData(showCoachMenu);
+  const dialogState = usePlanningDialogState(data);
+  const overlayState = usePlanningWeekOverlayState(data);
+
+  return (
+    <PlanningWeekLayout
+      data={data}
+      dialogState={dialogState}
+      embedded={embedded}
+      overlayState={overlayState}
+      showCoachMenu={showCoachMenu}
+    />
   );
 }

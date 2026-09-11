@@ -1,9 +1,11 @@
 'use client';
 
 import { NutritionGoalsPanel } from '@/components/nutrition/nutrition-goals-panel';
+import { subDays } from 'date-fns';
+import { NutritionCoachReading } from '@/components/nutrition/blocks/nutrition-coach-reading';
+import { NutritionDietTags } from '@/components/nutrition/blocks/nutrition-diet-tags';
 import { NutritionHero } from '@/components/nutrition/blocks/nutrition-hero';
 import { NutritionMealsSection } from '@/components/nutrition/blocks/nutrition-meals-section';
-import { NutritionTrendSection } from '@/components/nutrition/blocks/nutrition-trend-section';
 import { NutritionMacroBreakdownSection } from '@/components/nutrition/blocks/nutrition-macro-breakdown-section';
 import { MetricDrillDownPage } from '@/components/today/drill-down/metric-drill-down-page';
 import type { NutritionViewModel } from '@/core/presentation/nutrition-view-model';
@@ -11,14 +13,12 @@ import type { NutritionViewModel } from '@/core/presentation/nutrition-view-mode
 function pickSelectedDayFields(selectedDay: NutritionViewModel['selectedDay']) {
   if (!selectedDay) {
     return {
-      selectedDate: '',
       fuelDensity: null,
       goalsProgress: null,
       meals: [],
     };
   }
   return {
-    selectedDate: selectedDay.date,
     fuelDensity: selectedDay.fuelDensity ?? null,
     goalsProgress: selectedDay.goalsProgress ?? null,
     meals: selectedDay.meals ?? [],
@@ -30,15 +30,11 @@ function NutritionPageSections({
   loading,
   selectedDay,
   history,
-  averages,
-  onDateChange,
 }: {
   date: Date;
   loading: boolean;
   selectedDay: NutritionViewModel['selectedDay'];
   history: NutritionViewModel['history'];
-  averages: NutritionViewModel['averages'];
-  onDateChange: (date: Date) => void;
 }) {
   const dayDefaults = pickSelectedDayFields(selectedDay);
 
@@ -50,13 +46,6 @@ function NutritionPageSections({
         progress={dayDefaults.goalsProgress}
       />
       <NutritionMealsSection loading={loading} meals={dayDefaults.meals} />
-      <NutritionTrendSection
-        averages={averages}
-        history={history}
-        loading={loading}
-        selectedDate={dayDefaults.selectedDate}
-        onDateSelect={onDateChange}
-      />
       <NutritionMacroBreakdownSection date={date} history={history} loading={loading} />
     </>
   );
@@ -73,7 +62,8 @@ export function NutritionPageView({
   loading = false,
   selectedDay,
   history,
-  averages,
+  diet,
+  coachReading,
   emptyState,
 }: {
   date: Date;
@@ -86,7 +76,8 @@ export function NutritionPageView({
   loading?: boolean;
   selectedDay: NutritionViewModel['selectedDay'];
   history: NutritionViewModel['history'];
-  averages: NutritionViewModel['averages'];
+  diet: NutritionViewModel['diet'];
+  coachReading: NutritionViewModel['coachReading'];
   emptyState?: NutritionViewModel['emptyState'];
 }) {
   return (
@@ -103,13 +94,17 @@ export function NutritionPageView({
         onNextDay={onNextDay}
         onPreviousDay={onPreviousDay}
       />
+      <NutritionDietTags labels={diet.labels} />
+      <NutritionCoachReading
+        loading={loading}
+        reading={coachReading}
+        onShowPreviousDay={() => onDateChange(subDays(maxDate, 1))}
+      />
       <NutritionPageSections
-        averages={averages}
         date={date}
         history={history}
         loading={loading}
         selectedDay={selectedDay}
-        onDateChange={onDateChange}
       />
     </MetricDrillDownPage>
   );

@@ -24,11 +24,22 @@ describe('Plan hub continuous thread', () => {
     resolve(process.cwd(), 'src/components/plan/hub/plan-actions.tsx'),
     'utf8',
   );
+  const coachMenu = readFileSync(
+    resolve(process.cwd(), 'src/components/plan/hub/plan-coach-menu-dropdown.tsx'),
+    'utf8',
+  );
 
   it('keeps the first-viewport title and drops the inventory subtitle', () => {
     expect(hub).toContain('Ton cap, cette semaine');
     expect(hub).not.toContain('Où tu en es');
     expect(hub).not.toContain('Ton objectif, la phase du plan');
+  });
+
+  it('hosts coaching gestures in the header overflow, not a body block', () => {
+    expect(hub).toContain('PlanCoachMenu');
+    expect(hub).toContain('StickyHeader');
+    expect(widgets).not.toContain('PlanActions');
+    expect(widgets).not.toContain('PlanCoachMenu');
   });
 
   it('composes destination, decision, and thread in one column', () => {
@@ -134,21 +145,22 @@ describe('Plan hub continuous thread', () => {
     expect(plate).not.toContain('text-highlight mt-2');
   });
 
-  it('reuses the shared outline sm button on hub actions', () => {
-    expect(actions).toContain('DiscussWithCoachButton');
-    expect(actions).toContain('PLAN_COACH_INTENTION');
-    expect(actions).toContain('PLAN_COACH_STEPS');
-    expect(actions).toContain('resolvePlanCoachAccent');
-    expect(actions).toContain('IntentionBlurb');
-    expect(actions).not.toContain('Bilan hebdo');
-    expect(actions).not.toContain('Remplir / ajuster');
-    expect(actions).not.toContain('Demander au Coach');
-    expect(actions).not.toContain('label="Coach"');
-    expect(actions).toContain('LinkButton');
-    expect(actions).toContain('variant="outline"');
-    expect(actions).toContain('size="sm"');
+  it('opens coaching gestures from an equal-weight header menu', () => {
+    expect(actions).toContain('PlanCoachMenu');
+    expect(coachMenu).toContain('MoreHorizontal');
+    expect(actions).toContain('PlanGenerator');
+    expect(actions).toContain('PlanAdapter');
+    expect(actions).toContain('MacroPlanDialog');
+    expect(coachMenu).toContain('Discuter');
+    expect(actions).not.toContain('COACH_DISCUSS_LABEL');
+    expect(coachMenu).toContain('min-w-44');
+    expect(coachMenu).not.toContain('DropdownMenuLabel');
+    expect(actions).not.toContain('PLAN_COACH_STEPS');
+    expect(actions).not.toContain('resolvePlanCoachAccent');
+    expect(actions).not.toContain('bg-foreground text-background');
+    expect(actions).not.toContain('IntentionBlurb');
     expect(actions).not.toContain('chip-surface');
-    expect(actions).not.toContain('const CHIP');
+    expect(actions).not.toContain('analysis-panel-alt border-foreground/18');
   });
 
   it('keeps realized map cards cached across Plan visits', () => {

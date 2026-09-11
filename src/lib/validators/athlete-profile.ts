@@ -55,6 +55,12 @@ const nullableHeightCm = patchField(
   z.union([z.null(), z.number().int().min(100).max(250)]),
 );
 
+/** Body-weight target, in kilograms — optional, one decimal is enough. */
+const nullableTargetWeightKg = patchField(
+  toNumber,
+  z.union([z.null(), z.number().min(30).max(250)]),
+);
+
 const nullableBirthDate = patchField(
   (v) => {
     if (typeof v === 'string') {
@@ -88,6 +94,7 @@ export const athletePracticedSportsSchema = z.object({
 export const athleteProfileSchema = z
   .object({
     heightCm: nullableHeightCm,
+    targetWeightKg: nullableTargetWeightKg,
     birthDate: nullableBirthDate,
     ftpW: nullableInt,
     maxHr: nullableInt,

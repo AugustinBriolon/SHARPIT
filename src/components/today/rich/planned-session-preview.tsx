@@ -11,7 +11,7 @@ import { cn } from '@/lib/utils';
 
 function plannedDensityClass(density: 'solo' | 'compact'): string {
   if (density === 'solo') {
-    return 'min-h-24 py-4 sm:flex-row sm:items-center sm:gap-4 sm:py-5';
+    return 'min-h-22 py-4 sm:flex-row sm:items-start sm:gap-4 sm:py-5';
   }
   return 'py-2.5';
 }

@@ -66,6 +66,45 @@ function FeelingScaleOption({
   );
 }
 
+function createFeelingScaleKeyDownHandler(value: string, onChange: (feeling: string) => void) {
+  return (event: React.KeyboardEvent) => {
+    if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
+      event.preventDefault();
+      onChange(moveFeelingSelection(value, 1));
+    } else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
+      event.preventDefault();
+      onChange(moveFeelingSelection(value, -1));
+    } else if (event.key === 'Home') {
+      event.preventDefault();
+      onChange(ACTIVITY_FEELING_SCALE[0]!.value);
+    } else if (event.key === 'End') {
+      event.preventDefault();
+      onChange(ACTIVITY_FEELING_SCALE.at(-1)!.value);
+    }
+  };
+}
+
+function FeelingScaleLabels({
+  labelId,
+  hintId,
+  hint,
+}: {
+  labelId: string;
+  hintId: string;
+  hint: string;
+}) {
+  return (
+    <div>
+      <p className="text-foreground text-sm font-medium" id={labelId}>
+        Ressenti global
+      </p>
+      <p className="text-muted-foreground text-xs" id={hintId}>
+        {hint}
+      </p>
+    </div>
+  );
+}
+
 function FeelingScalePicker({
   value,
   onChange,
@@ -80,6 +119,7 @@ function FeelingScalePicker({
   const labelId = useId();
   const hintId = useId();
   const selected = ACTIVITY_FEELING_SCALE.find((option) => option.value === value);
+  const hint = selected?.hint ?? 'Comment as-tu vécu cette séance dans l’ensemble ?';
 
   return (
     <div
@@ -87,30 +127,9 @@ function FeelingScalePicker({
       aria-labelledby={labelId}
       className="space-y-2.5"
       role="radiogroup"
-      onKeyDown={(event) => {
-        if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
-          event.preventDefault();
-          onChange(moveFeelingSelection(value, 1));
-        } else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
-          event.preventDefault();
-          onChange(moveFeelingSelection(value, -1));
-        } else if (event.key === 'Home') {
-          event.preventDefault();
-          onChange(ACTIVITY_FEELING_SCALE[0]!.value);
-        } else if (event.key === 'End') {
-          event.preventDefault();
-          onChange(ACTIVITY_FEELING_SCALE.at(-1)!.value);
-        }
-      }}
+      onKeyDown={createFeelingScaleKeyDownHandler(value, onChange)}
     >
-      <div>
-        <p className="text-foreground text-sm font-medium" id={labelId}>
-          Ressenti global
-        </p>
-        <p className="text-muted-foreground text-xs" id={hintId}>
-          {selected?.hint ?? 'Comment as-tu vécu cette séance dans l’ensemble ?'}
-        </p>
-      </div>
+      <FeelingScaleLabels hint={hint} hintId={hintId} labelId={labelId} />
       <div className="grid grid-cols-5 gap-1.5">
         {ACTIVITY_FEELING_SCALE.map((option) => (
           <FeelingScaleOption
@@ -131,12 +150,10 @@ function FeelingScalePicker({
 }
 
 function FeelingDialogFooter({
-  isPending,
   feeling,
   onClose,
   onSave,
 }: {
-  isPending: boolean;
   feeling: string;
   onClose: () => void;
   onSave: () => void;
@@ -148,12 +165,12 @@ function FeelingDialogFooter({
       </Button>
       <Button
         className="h-8 w-fit px-3 text-xs"
-        disabled={isPending || !feeling}
+        disabled={!feeling}
         type="button"
         variant="highlight"
         onClick={onSave}
       >
-        {isPending ? 'Enregistrement…' : 'Enregistrer'}
+        Enregistrer
       </Button>
     </div>
   );
@@ -187,29 +204,54 @@ function FeelingRpeField({
   );
 }
 
+type ActivityFeelingDialogProps = {
+  activityId: string;
+  open: boolean;
+  rpe: number;
+  feeling: string;
+  feelingError: string | null;
+  onOpenChange: (open: boolean) => void;
+  onRpeChange: (rpe: number) => void;
+  onFeelingChange: (feeling: string) => void;
+  onSave: () => void;
+};
+
+function ActivityFeelingDialogBody({
+  activityId,
+  rpe,
+  feeling,
+  feelingError,
+  feelingErrorId,
+  onRpeChange,
+  onFeelingChange,
+}: Pick<
+  ActivityFeelingDialogProps,
+  'activityId' | 'rpe' | 'feeling' | 'feelingError' | 'onRpeChange' | 'onFeelingChange'
+> & { feelingErrorId: string }) {
+  return (
+    <div className="min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain px-5 py-4">
+      <FeelingScalePicker
+        feelingError={feelingError}
+        feelingErrorId={feelingErrorId}
+        value={feeling}
+        onChange={onFeelingChange}
+      />
+      <FeelingRpeField activityId={activityId} rpe={rpe} onRpeChange={onRpeChange} />
+    </div>
+  );
+}
+
 export function ActivityFeelingDialog({
   activityId,
   open,
   rpe,
   feeling,
   feelingError,
-  isPending,
   onOpenChange,
   onRpeChange,
   onFeelingChange,
   onSave,
-}: {
-  activityId: string;
-  open: boolean;
-  rpe: number;
-  feeling: string;
-  feelingError: string | null;
-  isPending: boolean;
-  onOpenChange: (open: boolean) => void;
-  onRpeChange: (rpe: number) => void;
-  onFeelingChange: (feeling: string) => void;
-  onSave: () => void;
-}) {
+}: ActivityFeelingDialogProps) {
   const feelingErrorId = useId();
 
   return (
@@ -221,20 +263,17 @@ export function ActivityFeelingDialog({
             Ton vécu nourrit la charge perçue (Foster) et la lecture de récupération.
           </DialogDescription>
         </DialogHeader>
-
-        <div className="min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain px-5 py-4">
-          <FeelingScalePicker
-            feelingError={feelingError}
-            feelingErrorId={feelingErrorId}
-            value={feeling}
-            onChange={onFeelingChange}
-          />
-          <FeelingRpeField activityId={activityId} rpe={rpe} onRpeChange={onRpeChange} />
-        </div>
-
+        <ActivityFeelingDialogBody
+          activityId={activityId}
+          feeling={feeling}
+          feelingError={feelingError}
+          feelingErrorId={feelingErrorId}
+          rpe={rpe}
+          onFeelingChange={onFeelingChange}
+          onRpeChange={onRpeChange}
+        />
         <FeelingDialogFooter
           feeling={feeling}
-          isPending={isPending}
           onClose={() => onOpenChange(false)}
           onSave={onSave}
         />

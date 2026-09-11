@@ -31,6 +31,14 @@ function clearAdaptParams(params: URLSearchParams): boolean {
   return true;
 }
 
+function clearGenerateParams(params: URLSearchParams): boolean {
+  if (!params.has('generate')) {
+    return false;
+  }
+  params.delete('generate');
+  return true;
+}
+
 function useDeepLinkSessionEffects(
   plannedIdFromUrl: string | null,
   deepLinkSession: ClientPlannedSession | null,
@@ -91,6 +99,7 @@ export function usePlanningDeepLinkSync({
     deepLinkSession,
     closePlannedDialogUrlParams: () =>
       replaceUrlParams((params) => clearPlannedDialogParams(params, showCoachMenu)),
+    closeGenerateUrlParams: () => replaceUrlParams(clearGenerateParams),
     closeAdaptUrlParams: () => replaceUrlParams(clearAdaptParams),
   };
 }
