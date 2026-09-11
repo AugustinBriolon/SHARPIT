@@ -96,7 +96,7 @@ function MacroPlanCreateForm({
               Génération…
             </>
           ) : (
-            'Générer le macro-plan'
+            'Générer le cadre'
           )}
         </Button>
       </div>
@@ -147,8 +147,9 @@ function ActivePlanView({
       </div>
 
       <p className="text-muted-foreground text-xs">
-        Utilise « Remplir ma semaine » sur le planning pour ajouter les séances concrètes selon la
-        charge cible de chaque semaine. Les phases s&apos;affichent sur le calendrier.
+        Ensuite : « Remplir ma semaine » sur le planning pour ajouter les séances selon la charge
+        cible de chaque semaine. Les phases s&apos;affichent sur le calendrier. « Ajuster le
+        planning » sert à réarranger l&apos;existant — pas la lecture Twin Adaptation.
       </p>
 
       <div className="flex justify-end">
@@ -208,12 +209,12 @@ export function MacroPlanDialog({ goals, onClose }: MacroPlanDialogProps) {
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <CalendarRange className="text-primary size-4" />
-            Macro-plan jusqu&apos;à la course
+            Cadre jusqu&apos;à la course
           </DialogTitle>
           <DialogDescription>
-            Structure ton entraînement sur plusieurs semaines (phases et charge cible par semaine),
-            calibré sur ta forme actuelle jusqu&apos;à la date de ton objectif. Ensuite, utilise «
-            Remplir ma semaine » pour détailler les séances.
+            Structure ton entraînement sur plusieurs semaines (phases et charge cible), calibré sur
+            ta forme jusqu&apos;à la date de ton objectif. Ce cadre ne crée pas les séances :
+            ensuite, « Remplir ma semaine », puis « Ajuster le planning » si besoin.
           </DialogDescription>
         </DialogHeader>
 

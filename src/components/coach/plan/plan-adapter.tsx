@@ -285,7 +285,7 @@ export function PlanAdapter({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <ListRestart className="text-primary size-4" />
-            Ajuster mon planning
+            Ajuster le planning
           </DialogTitle>
           <DialogDescription>{planAdapterDescription(Boolean(initialFocus))}</DialogDescription>
         </DialogHeader>

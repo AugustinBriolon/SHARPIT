@@ -15,6 +15,7 @@ import { CalendarRange, NotebookText, SlidersHorizontal } from 'lucide-react';
 /** Week-chrome tools only — create/manual/bilan/macro live on day + / hub Plan. */
 export type SessionsCoachAction = 'generate' | 'adapt';
 
+/** Semaine entry for Remplir / Ajuster — intention « Coacher mon objectif ». */
 export function SessionsCoachMenu({
   onAction,
   tone = 'primary',
@@ -34,7 +35,7 @@ export function SessionsCoachMenu({
           >
             <NotebookText className="size-4" />
             <span className={tone === 'secondary' ? 'hidden sm:inline' : 'hidden lg:inline'}>
-              {tone === 'secondary' ? 'Actions' : 'Coach'}
+              Coacher
             </span>
             <NavArrowDown className="size-3.5 opacity-70 transition-transform duration-150 ease-out group-aria-expanded/button:rotate-180" />
           </Button>
@@ -45,7 +46,7 @@ export function SessionsCoachMenu({
         className="analysis-panel-alt border-foreground/18 rounded-analysis-lg w-72 border p-1.5 ring-0"
       >
         <DropdownMenuGroup>
-          <DropdownMenuLabel>Aide du coach</DropdownMenuLabel>
+          <DropdownMenuLabel>Coacher mon objectif</DropdownMenuLabel>
           <DropdownMenuItem
             className="cursor-pointer gap-2.5 py-2"
             onClick={() => onAction('generate')}
@@ -53,7 +54,9 @@ export function SessionsCoachMenu({
             <CalendarRange className="text-foreground/70 size-4" />
             <div className="min-w-0">
               <p className="font-medium">Remplir ma semaine</p>
-              <p className="text-muted-foreground text-xs">Nouvelles séances à ajouter</p>
+              <p className="text-muted-foreground text-xs">
+                Proposer les prochaines séances concrètes
+              </p>
             </div>
           </DropdownMenuItem>
           <DropdownMenuItem
@@ -62,8 +65,8 @@ export function SessionsCoachMenu({
           >
             <SlidersHorizontal className="text-foreground/70 size-4" />
             <div className="min-w-0">
-              <p className="font-medium">Ajuster l&apos;existant</p>
-              <p className="text-muted-foreground text-xs">Modifier ce qui est déjà planifié</p>
+              <p className="font-medium">Ajuster le planning</p>
+              <p className="text-muted-foreground text-xs">Réarranger ce qui est déjà prévu</p>
             </div>
           </DropdownMenuItem>
         </DropdownMenuGroup>

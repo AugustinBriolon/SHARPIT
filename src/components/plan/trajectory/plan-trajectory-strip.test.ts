@@ -12,5 +12,7 @@ describe('PlanTrajectoryStrip', () => {
     expect(strip).toContain('Adaptation');
     expect(strip).toContain('Charge');
     expect(strip).toContain('SignalSpectrum');
+    expect(strip).toContain('lecture Twin');
+    expect(strip).toContain('Pas un ajustement');
   });
 });
