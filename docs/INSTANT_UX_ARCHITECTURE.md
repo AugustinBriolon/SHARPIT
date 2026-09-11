@@ -163,6 +163,8 @@ All use GET `/api/presentation/*`, typically stale 5m.
 
 7. **PWA must not wipe the query cache.** Reconnect must never hard-reload the page (that destroys TanStack Query memory and re-shows cold skeletons). Serwist runs in configurator mode and injects no client entry, so no reload path exists ([ADR-009](adr/ADR-009-turbopack-build-and-serwist-configurator.md)). `AppShell` mounts page `{children}` once (not in both mobile and desktop shells). Registration stays manual via `SwRegister`.
 
+8. **Client-only URL state never goes through the router.** When a search param is read only by client hooks (e.g. the drill-down `?date=` in `useTodaySelectedDate`), write it with `window.history.replaceState`. Next syncs `useSearchParams` from native history, so the selected day switches on tap and the screen shows its value micro-skeletons while the day's query loads. `router.replace` would wait for an RSC round-trip before the UI moves.
+
 ---
 
 ## 5. Mutation audit (POST / PATCH / DELETE)
