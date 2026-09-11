@@ -613,6 +613,18 @@ Same Instrument column as Today. All four routes share one shell (`PhysioDrillDo
 
 **Order (non-negotiable):** Plate → Chips → Why → Evidence.
 
+### Nutrition drill-down (`/nutrition`)
+
+Same plate as the physio drill-downs. Under it, in this order:
+
+1. **Diet tag:** « Régime » label, the declared diet chips (`DietChipList` — the same chips as the journal), and a quiet « Modifier » link to `/journal?personnaliser=nutrition`. Hidden when no diet is declared.
+2. **Lecture du coach** ([ADR-035](../adr/ADR-035-nutrition-coach-reading-not-an-engine.md)): an analysis panel with the verdict (one line, `text-lg` semibold, tone colour), 2–3 finding rows (job label over one or two sentences), then one « À faire » action on a muted inset. The tone maps to `primary` (on track), `signal-caution` (watch) and `signal-vo2` (off track). It never uses `signal-risk`: a meal is not a clinical risk, and the reading must not shame. States:
+   - **Generating:** value micro-skeleton with « Le coach lit ta journée… ».
+   - **Refreshing:** the previous reading plus « Mise à jour… ».
+   - **Today:** one quiet line, « La lecture du coach arrive une fois la journée terminée », with a ghost « Voir la lecture d'hier » button.
+   - **Unavailable:** one muted line, never an error colour.
+3. Objectives, meals, then the macro trend.
+
 ### Future Profile Screen
 
 The profile screen will surface the athlete's physiological history. The design principles require:

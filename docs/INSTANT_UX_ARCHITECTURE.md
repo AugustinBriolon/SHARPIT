@@ -142,13 +142,14 @@ All use GET `/api/presentation/*`, typically stale 5m.
 
 ### 4.5 Background / non-navigation GETs
 
-| Call site               | Endpoint                  | Class      | Notes                                                           |
-| ----------------------- | ------------------------- | ---------- | --------------------------------------------------------------- |
-| Geocoding home / search | GET geocoding             | Background | Typeahead — never block form open.                              |
-| Weather preview         | POST weather-preview      | Background | Preview only; not a persistence mutation.                       |
-| Travel context read     | GET `/api/travel-context` | Background | Prefer React Query key `travelContext` instead of ad-hoc fetch. |
-| Narrative poll          | GET activity by id        | Background | Soft polling until narrative ready.                             |
-| Dev / cron / inspect    | various                   | N/A        | Out of Instant UX product surface.                              |
+| Call site               | Endpoint                   | Class      | Notes                                                               |
+| ----------------------- | -------------------------- | ---------- | ------------------------------------------------------------------- |
+| Geocoding home / search | GET geocoding              | Background | Typeahead — never block form open.                                  |
+| Weather preview         | POST weather-preview       | Background | Preview only; not a persistence mutation.                           |
+| Travel context read     | GET `/api/travel-context`  | Background | Prefer React Query key `travelContext` instead of ad-hoc fetch.     |
+| Narrative poll          | GET activity by id         | Background | Soft polling until narrative ready.                                 |
+| Nutrition reading poll  | GET presentation/nutrition | Background | 4 s poll only while `coachReading` is pending/refreshing (ADR-035). |
+| Dev / cron / inspect    | various                    | N/A        | Out of Instant UX product surface.                                  |
 
 ### 4.6 Query strategy rules (target)
 
