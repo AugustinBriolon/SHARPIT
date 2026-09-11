@@ -152,7 +152,8 @@ src/lib/
   training/               ← nest pmc/, records/, load/, periodization/, thread/
                             (+ flat re-exports temporary)
   ai/                     ← coach model config + usage (re-export lib/ai-usage)
-  observation/            ← manual observation sync
+  observation/            ← manual observation sync (≠ core/observation)
+  physical-health/        ← physical helpers (re-export plat lib/physical)
   product-insight/        ← page insight projections over core/product-insight
   decision-memory/        ← coaching decision aggregate helpers
   activity/               ← narrative/, list/, detail/, weather/, hike/, location/,
@@ -199,8 +200,7 @@ src/components/
   journal/        ← journal / habitudes (UI) ; lib = `lib/journal/`
   sleep/, recovery/, effort/, adaptation/, nutrition/, physical-health/
   training/       ← activité
-  coach/          ← chat + tools produit + kit/ (primitives chat, ex-agents)
-  agents/         ← re-exports temporaires vers coach/kit (ne pas ajouter de code ici)
+  coach/          ← chat + tools produit + kit/ (primitives chat ; agents/ purgé P3)
   coach-memory/   ← mémoire UI
   planning/       ← séances + `coach-menu.tsx` + `session/exercise-visual.tsx` (P1)
   shell/          ← hubs contenu tabs (Plan / Moi / Activité) — pas de rename hubs/

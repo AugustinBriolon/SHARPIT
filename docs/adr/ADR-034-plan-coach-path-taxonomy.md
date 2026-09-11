@@ -36,7 +36,7 @@ Adopter les définitions suivantes comme **noms figés** (carte vivante : [`docs
 | -------------------------- | ----------------------------------------- | -------------------------------------------------- |
 | `components/coach/`        | Chat + tools UI produit                   | **coach**                                          |
 | `components/coach/kit/`    | Kit primitives chat **montées** par coach | **coach-kit** (**fait P2**)                        |
-| `components/agents/`       | Re-exports temporaires → `coach/kit`      | ne plus ajouter de code ici                        |
+| `components/agents/`       | (ex-re-exports → `coach/kit`)             | **supprimé P3** — ne pas recréer                   |
 | `components/coaching/`     | Widgets partagés (ex. `coach-menu`)       | **fait P1** → `components/planning/coach-menu.tsx` |
 | `components/coach-memory/` | UI mémoire coach                          | **coach-memory**                                   |
 | `lib/coach/`               | Chat, context, tools, plan gen            | **coach**                                          |

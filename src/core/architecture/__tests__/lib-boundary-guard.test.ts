@@ -17,39 +17,94 @@ type Violation = {
 };
 
 /**
- * Grandfather allowlist — existing inversions documented by architecture review.
- * Do not add entries without an ADR or an intentional exception comment in INTENT_MAP.
- * Prefer deleting from this list over growing it.
+ * Grandfather allowlist — file → pinned `@/components/*` specifiers only.
+ * A file on this list cannot add a new components import without updating the pin.
+ * Do not add entries without an ADR or INTENT_MAP note. Prefer deleting over growing.
  */
-const ALLOWED_LIB_TO_COMPONENTS: ReadonlySet<string> = new Set([
-  'src/lib/demo/demo-session-link-overlay.ts',
-  'src/lib/demo/demo-coach-transcript.ts',
-  'src/lib/activity/detail/activity-detail-cache.ts',
-  'src/lib/activity/planned-session/activity-planned-session-display.ts',
-  'src/lib/planned-session/strength/strength-prescription.test.ts',
-  'src/lib/integrations/withings/withings-ecg-display.ts',
-  'src/lib/health/composition-metric-guides.ts',
-  'src/lib/coach/chat/conversations/coach-chat-known-sessions.ts',
-  'src/lib/query/optimistic.ts',
-  'src/lib/today/rich/planned-session-metrics.ts',
+const ALLOWED_LIB_TO_COMPONENTS: ReadonlyMap<string, ReadonlySet<string>> = new Map([
+  [
+    'src/lib/demo/demo-session-link-overlay.ts',
+    new Set(['@/components/training/activity/detail/types']),
+  ],
+  [
+    'src/lib/demo/demo-coach-transcript.ts',
+    new Set(['@/components/coach/view/demo-coach-transcript']),
+  ],
+  [
+    'src/lib/activity/detail/activity-detail-cache.ts',
+    new Set([
+      '@/components/training/activity/detail/activity-detail-header-content',
+      '@/components/training/activity/detail/types',
+    ]),
+  ],
+  [
+    'src/lib/activity/planned-session/activity-planned-session-display.ts',
+    new Set(['@/components/training/activity/detail/types']),
+  ],
+  [
+    'src/lib/planned-session/strength/strength-prescription.test.ts',
+    new Set(['@/components/planning/session/edit/strength-prescription-editor']),
+  ],
+  [
+    'src/lib/integrations/withings/withings-ecg-display.ts',
+    new Set(['@/components/corps/corps-ui']),
+  ],
+  ['src/lib/health/composition-metric-guides.ts', new Set(['@/components/corps/corps-ui'])],
+  [
+    'src/lib/coach/chat/conversations/coach-chat-known-sessions.ts',
+    new Set(['@/components/coach/chat/tools/tool-activity']),
+  ],
+  ['src/lib/query/optimistic.ts', new Set(['@/components/ui/toast'])],
+  ['src/lib/query/optimistic.test.ts', new Set(['@/components/ui/toast'])],
+  [
+    'src/lib/today/rich/planned-session-metrics.ts',
+    new Set(['@/components/ui/instruments/session-preview-parts']),
+  ],
 ]);
 
 /**
- * Grandfather allowlist for value/type imports of `@/core/inference` from `src/lib`
- * outside `src/lib/engines/`. Engines are the intended seam; everything else is legacy.
+ * Grandfather allowlist — file → pinned `@/core/inference/*` specifiers only.
+ * Engines (`src/lib/engines/`) are the intended seam; everything else is legacy.
  */
-const ALLOWED_LIB_TO_INFERENCE: ReadonlySet<string> = new Set([
-  'src/lib/projection/build-projection-input.ts',
-  'src/lib/projection/planning-maps.ts',
-  'src/lib/planned-session/resolve-context.ts',
-  'src/lib/streams/ensure-streams-for-neuromuscular.ts',
-  'src/lib/sleep/sleep-scoring.ts',
-  'src/lib/sleep/sleep-scoring.test.ts',
-  'src/lib/presentation/environment/environment.test.ts',
-  'src/lib/presentation/environment/environment.ts',
-  'src/lib/presentation/physical-health/physical-health.ts',
-  'src/lib/scenario/compare-scenarios.ts',
-  'src/lib/today/navigation/today-state-server.ts',
+const ALLOWED_LIB_TO_INFERENCE: ReadonlyMap<string, ReadonlySet<string>> = new Map([
+  ['src/lib/projection/build-projection-input.ts', new Set(['@/core/inference/environment/types'])],
+  ['src/lib/projection/planning-maps.ts', new Set(['@/core/inference/environment/types'])],
+  [
+    'src/lib/planned-session/resolve-context.ts',
+    new Set(['@/core/inference/environment/snapshot']),
+  ],
+  [
+    'src/lib/streams/ensure-streams-for-neuromuscular.ts',
+    new Set(['@/core/inference/adaptation/constants']),
+  ],
+  ['src/lib/sleep/sleep-scoring.ts', new Set(['@/core/inference/recovery/scoring'])],
+  ['src/lib/sleep/sleep-scoring.test.ts', new Set(['@/core/inference/recovery/scoring'])],
+  [
+    'src/lib/presentation/environment/environment.test.ts',
+    new Set(['@/core/inference/environment/types']),
+  ],
+  [
+    'src/lib/presentation/environment/environment.ts',
+    new Set(['@/core/inference/environment/types']),
+  ],
+  [
+    'src/lib/presentation/physical-health/physical-health.ts',
+    new Set(['@/core/inference/physical-health/scoring']),
+  ],
+  ['src/lib/scenario/compare-scenarios.ts', new Set(['@/core/inference/environment/types'])],
+  [
+    'src/lib/today/navigation/today-state-server.ts',
+    new Set([
+      '@/core/inference/adaptation-orchestrator',
+      '@/core/inference/fatigue-orchestrator',
+      '@/core/inference/orchestrator',
+      '@/core/inference/reasoning-orchestrator',
+      '@/core/inference/physical-health-orchestrator',
+      '@/core/inference/environment-orchestrator',
+      '@/core/inference/environment/types',
+      '@/core/inference/environment/snapshot',
+    ]),
+  ],
 ]);
 
 function isSkippableDir(name: string): boolean {
@@ -105,6 +160,22 @@ function specifierFromDynamicImport(node: Ts.CallExpression): string | null {
   return arg0 && ts.isStringLiteral(arg0) ? arg0.text : null;
 }
 
+/** `vi.mock('…')` / `vi.doMock('…')` — string module id only (P3 hole close). */
+function specifierFromViMock(node: Ts.CallExpression): string | null {
+  if (!ts.isPropertyAccessExpression(node.expression)) {
+    return null;
+  }
+  const { expression: obj, name } = node.expression;
+  if (!ts.isIdentifier(obj) || obj.text !== 'vi') {
+    return null;
+  }
+  if (name.text !== 'mock' && name.text !== 'doMock') {
+    return null;
+  }
+  const [arg0] = node.arguments;
+  return arg0 && ts.isStringLiteral(arg0) ? arg0.text : null;
+}
+
 function collectImportSpecifiers(filePath: string): string[] {
   const text = fs.readFileSync(filePath, 'utf8');
   const scriptKind = filePath.endsWith('.tsx') ? ts.ScriptKind.TSX : ts.ScriptKind.TS;
@@ -118,7 +189,7 @@ function collectImportSpecifiers(filePath: string): string[] {
     } else if (ts.isExportDeclaration(node)) {
       spec = specifierFromExport(node);
     } else if (ts.isCallExpression(node)) {
-      spec = specifierFromDynamicImport(node);
+      spec = specifierFromDynamicImport(node) ?? specifierFromViMock(node);
     }
     if (spec) {
       specs.push(spec);
@@ -130,8 +201,17 @@ function collectImportSpecifiers(filePath: string): string[] {
   return specs;
 }
 
-describe('Lib boundary guard (P2)', () => {
-  it('blocks new lib → components imports outside the allowlist', () => {
+function isAllowed(
+  allowlist: ReadonlyMap<string, ReadonlySet<string>>,
+  file: string,
+  specifier: string,
+): boolean {
+  const pinned = allowlist.get(file);
+  return pinned?.has(specifier) === true;
+}
+
+describe('Lib boundary guard (P2+P3)', () => {
+  it('blocks new lib → components imports outside the pinned allowlist', () => {
     const violations: Violation[] = [];
 
     for (const filePath of collectTsFiles(LIB_ROOT)) {
@@ -140,7 +220,7 @@ describe('Lib boundary guard (P2)', () => {
         if (!matchesPrefix(specifier, '@/components')) {
           continue;
         }
-        if (ALLOWED_LIB_TO_COMPONENTS.has(rel)) {
+        if (isAllowed(ALLOWED_LIB_TO_COMPONENTS, rel, specifier)) {
           continue;
         }
         violations.push({ file: rel, kind: 'components', specifier });
@@ -155,7 +235,7 @@ describe('Lib boundary guard (P2)', () => {
     expect(violations).toHaveLength(0);
   });
 
-  it('blocks new lib → core/inference imports outside engines + allowlist', () => {
+  it('blocks new lib → core/inference imports outside engines + pinned allowlist', () => {
     const violations: Violation[] = [];
 
     for (const filePath of collectTsFiles(LIB_ROOT)) {
@@ -167,7 +247,7 @@ describe('Lib boundary guard (P2)', () => {
         if (!matchesPrefix(specifier, '@/core/inference')) {
           continue;
         }
-        if (ALLOWED_LIB_TO_INFERENCE.has(rel)) {
+        if (isAllowed(ALLOWED_LIB_TO_INFERENCE, rel, specifier)) {
           continue;
         }
         violations.push({ file: rel, kind: 'inference', specifier });
