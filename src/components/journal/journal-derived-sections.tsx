@@ -7,6 +7,7 @@ import {
   JOURNAL_CATEGORY_ICON,
 } from '@/lib/journal/journal-category-surface';
 import type { JournalNutritionSummary } from '@/lib/journal/journal-day-signals';
+import { DietChipList } from '@/components/nutrition/diet-chip-list';
 import { cn } from '@/lib/utils';
 
 function StatusIcon({ status }: { status: JournalAutoChecklistItem['status'] }) {
@@ -83,19 +84,7 @@ function NutritionDietChips({ dietLabels }: { dietLabels: string[] }) {
     return null;
   }
   return (
-    <div className="border-analysis-border/50 flex flex-wrap gap-1.5 border-b px-3 py-2.5">
-      {dietLabels.map((label) => (
-        <span
-          key={label}
-          className={cn(
-            'rounded-md px-2 py-0.5 text-[11px] font-medium',
-            JOURNAL_CATEGORY_ICON.nutrition,
-          )}
-        >
-          {label}
-        </span>
-      ))}
-    </div>
+    <DietChipList className="border-analysis-border/50 border-b px-3 py-2.5" labels={dietLabels} />
   );
 }
 
