@@ -31,7 +31,6 @@ import {
   actionRowLabels,
   buildTopActionLine,
   shouldShowForwardTrainingCopy,
-  whyBlockTitle,
 } from '@/lib/today/rich/today-rich-view';
 import {
   resolveMorningOrientation,
@@ -47,6 +46,9 @@ import {
   buildTodayLimitingFacts,
   buildTodayWhyFacts,
 } from '@/lib/today/dashboard/today-instrument-facts';
+import { resolveTodayGoalContext } from '@/lib/daily-phase/goal-context';
+import { buildTodayGoalAnchor } from '@/lib/today/rich/today-goal-anchor';
+import { assembleTodayWhyBlock } from '@/lib/today/rich/today-why-block-assemble';
 import { TWIN_DRILL_DOWN } from '@/lib/today/navigation/today-twin-navigation';
 import { buildSignalPreviews } from '@/lib/today/dashboard/signal-previews';
 import { endOfDay, startOfDay } from 'date-fns';
@@ -658,6 +660,17 @@ function prepareTodayViewModelContext(inputs: TodayPresentationInputs) {
     sleepTargetMin,
   );
   const derived = prepareTodayDerivedSections(inputs, effectiveSnapshot);
+  const goalContext = resolveTodayGoalContext(
+    inputs.goals as never,
+    inputs.plannedSessions as never,
+    inputs.trainingDayId,
+  );
+  const goalAnchor = buildTodayGoalAnchor({
+    goals: inputs.goals as never,
+    plannedSessions: inputs.plannedSessions as never,
+    trainingDayId: inputs.trainingDayId,
+    narrativeGoalLine: derived.hero.goalLine,
+  });
 
   return {
     day: inputs.day,
@@ -674,6 +687,8 @@ function prepareTodayViewModelContext(inputs: TodayPresentationInputs) {
     emptyState: buildTodayEmptyState(effectiveSnapshot, derived.status.message),
     ...derived.morning,
     plateLimiter: buildPlateLimiter(effectiveSnapshot),
+    goalContext,
+    goalAnchor,
   };
 }
 
@@ -710,6 +725,24 @@ function mapPresentedRecalibration(
   };
 }
 
+function assembleTodayHeroGoalFields(ctx: ReturnType<typeof prepareTodayViewModelContext>) {
+  const anchor = ctx.goalAnchor;
+  if (!anchor) {
+    return {
+      goalLine: ctx.goalLine,
+      goalHref: null,
+      goalId: null,
+      goalLinkedToSession: false,
+    };
+  }
+  return {
+    goalLine: anchor.label,
+    goalHref: anchor.href,
+    goalId: anchor.goalId,
+    goalLinkedToSession: anchor.linkedToSession,
+  };
+}
+
 function assembleTodayHero(ctx: ReturnType<typeof prepareTodayViewModelContext>) {
   return {
     eyebrow: ctx.heroEyebrow,
@@ -718,7 +751,7 @@ function assembleTodayHero(ctx: ReturnType<typeof prepareTodayViewModelContext>)
     posture: ctx.posture,
     postureLabel: ctx.postureLabel,
     focusPriority: ctx.focusPriority,
-    goalLine: ctx.goalLine,
+    ...assembleTodayHeroGoalFields(ctx),
     actionLine: ctx.focusPriority,
     adaptationReminders: [],
     verdictStyle: {
@@ -799,14 +832,11 @@ function assembleTodayViewModel(
     morningOrientation: ctx.morningOrientation,
     navigationTargets: todayNavigationTargets(),
     hero: assembleTodayHero(ctx),
-    whyBlock: {
-      title: whyBlockTitle(ctx.phase),
-      lines: ctx.whyFacts.map((f) =>
-        f.hint ? `${f.label} · ${f.value} (${f.hint})` : `${f.label} · ${f.value}`,
-      ),
-      facts: ctx.whyFacts,
-      visible: false,
-    },
+    whyBlock: assembleTodayWhyBlock({
+      phase: ctx.phase,
+      whyFacts: ctx.whyFacts,
+      goalContext: ctx.goalContext,
+    }),
     actionRow: assembleTodayActionRow(ctx),
     insights: [],
     header: {

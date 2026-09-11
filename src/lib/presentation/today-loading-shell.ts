@@ -57,6 +57,9 @@ function shellHeroSection(): TodayViewModel['hero'] {
     postureLabel: '',
     focusPriority: null,
     goalLine: null,
+    goalHref: null,
+    goalId: null,
+    goalLinkedToSession: false,
     actionLine: null,
     adaptationReminders: [],
     verdictStyle: {

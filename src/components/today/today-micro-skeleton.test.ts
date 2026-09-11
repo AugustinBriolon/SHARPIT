@@ -110,9 +110,11 @@ describe('TodayDashboard loading gate contract', () => {
     expect(dashboardSource).toContain('onWellnessCompleted={() => void query.refetch()}');
   });
 
-  it('keeps one-decision hierarchy with tertiary signal evidence under Comprendre', () => {
-    // Verdict → action row → Comprendre → quiet journal footnote.
-    expect(mainSource).not.toContain('DailyBriefingPanel');
+  it('keeps one-decision hierarchy with goal, briefing, why under the plate', () => {
+    // Verdict → goal anchor → briefing → why → action row → Comprendre → journal.
+    expect(mainSource).toContain('TodayGoalAnchor');
+    expect(mainSource).toContain('DailyBriefingPanel');
+    expect(mainSource).toContain('TodayWhyBlock');
     expect(mainSource).toContain('TodayActionRow');
     expect(mainSource).toContain('TodayUnderstandSection');
     expect(mainSource).toContain('TodayJournalHabitBridgeFooter');
@@ -162,5 +164,22 @@ describe('TodayVerdictHero decision plate', () => {
   it('reveals once via FadeIn with prefers-reduced-motion-safe press on the frein', () => {
     expect(heroSource).toContain('FadeIn');
     expect(partsSource).toContain('motion-safe:active:scale-[var(--press-scale-small)]');
+  });
+});
+
+describe('Today goal and why wiring', () => {
+  const mainSource = readFileSync(
+    resolve(process.cwd(), 'src/components/today/today-dashboard-main.tsx'),
+    'utf8',
+  );
+  const goalCardsSource = readFileSync(
+    resolve(process.cwd(), 'src/components/goals/cards/goal-cards.tsx'),
+    'utf8',
+  );
+
+  it('keeps goal anchor outside the plate and deep-links objectifs cards', () => {
+    expect(mainSource).toContain('content.hero.goalHref');
+    expect(mainSource).toContain('content.hero.goalLinkedToSession');
+    expect(goalCardsSource).toContain('goalDomId(goal.id)');
   });
 });
