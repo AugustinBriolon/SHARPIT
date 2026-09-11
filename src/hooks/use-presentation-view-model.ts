@@ -22,6 +22,7 @@ import {
 } from '@/lib/query/presentation-fetchers';
 import { queryKeys } from '@/lib/query/keys';
 import { peekShellAthleteRefreshInFlight } from '@/lib/athlete-state/shell-refresh-seed';
+import { nutritionReadingPollInterval } from '@/lib/nutrition/analysis/nutrition-reading-poll';
 
 /** Cold start or date-change placeholder — skeleton values, never prior-day figures. */
 export function isPresentationValuesLoading(
@@ -116,5 +117,6 @@ export function useNutritionViewModel(trainingDayId: string) {
     queryFn: () => fetchNutritionPresentation(trainingDayId),
     staleTime: 60_000,
     placeholderData: keepPreviousData,
+    refetchInterval: (query) => nutritionReadingPollInterval(query.state.data?.coachReading),
   });
 }

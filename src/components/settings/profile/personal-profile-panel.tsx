@@ -119,6 +119,7 @@ export function PersonalProfilePanel({
   const { offline, guardDisabled, offlineLabel } = useOfflineGuard();
   const resolvedInitial = initial ?? mapAthleteProfileToFormData(remoteProfile.data);
   const heightErrorId = useId();
+  const targetWeightErrorId = useId();
   const sleepErrorId = useId();
   const bedtimeErrorId = useId();
   const [saving, setSaving] = useState(false);
@@ -180,10 +181,12 @@ export function PersonalProfilePanel({
       heightErrorId={heightErrorId}
       sleepErrorId={sleepErrorId}
       state={state}
+      targetWeightErrorId={targetWeightErrorId}
       onBirthDateChange={(value) => updateField('birthDate', value)}
       onHeightChange={(value) => updateField('heightCm', value)}
       onSleepBedtimeChange={(value) => updateField('sleepBedtime', value)}
       onSleepHoursChange={(value) => updateField('sleepHours', value)}
+      onTargetWeightChange={(value) => updateField('targetWeightKg', value)}
     />
   );
 

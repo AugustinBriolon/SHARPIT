@@ -56,8 +56,44 @@ export type NutritionDaySummary = {
   fuelDensity: NutritionFuelDensity | null;
 };
 
+/** Diet declared in the journal preferences (single source: AthleteProfile.journalPrefs). */
+export type NutritionDietView = {
+  ids: string[];
+  labels: string[];
+};
+
+export type NutritionCoachReadingTone = 'on_track' | 'watch' | 'off_track';
+
+export type NutritionCoachReadingJob = 'fuel' | 'quality' | 'diet' | 'weight';
+
+/**
+ * Coach reading of the selected day (docs/product/NUTRITION_DAY_ANALYSIS.md).
+ * `null` when no reading applies: nothing logged, or coach AI unavailable.
+ */
+export type NutritionCoachReadingView =
+  | { state: 'pending' }
+  | { state: 'awaiting_day_end' }
+  | { state: 'unavailable' }
+  | {
+      state: 'ready';
+      status: 'FINAL' | 'PROVISIONAL';
+      /** A newer reading is being generated; this one stays visible meanwhile. */
+      refreshing: boolean;
+      generatedAt: string;
+      verdict: { headline: string; tone: NutritionCoachReadingTone };
+      findings: { job: NutritionCoachReadingJob; text: string }[];
+      action: { text: string };
+      flaggedEntries: {
+        meal: string;
+        entry: string;
+        reason: 'diet_conflict' | 'ultra_processed';
+      }[];
+    };
+
 export type NutritionViewModel = {
   connected: boolean;
+  diet: NutritionDietView;
+  coachReading: NutritionCoachReadingView | null;
   selectedDay: NutritionDaySummary | null;
   /** Alias for Today card — always the live calendar day. */
   today: NutritionDaySummary | null;

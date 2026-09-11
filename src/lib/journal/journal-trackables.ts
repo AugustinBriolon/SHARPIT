@@ -77,6 +77,15 @@ export const JOURNAL_FILTER_IDS = [
 
 export type JournalFilterId = (typeof JOURNAL_FILTER_IDS)[number];
 
+/** Query param other surfaces use to open the personalize drawer on one filter. */
+export const JOURNAL_PREFS_DEEP_LINK_PARAM = 'personnaliser';
+
+/** `?personnaliser=nutrition` → 'nutrition'; anything else → null. */
+export function journalPrefsDeepLinkFilter(search: string): JournalFilterId | null {
+  const value = new URLSearchParams(search).get(JOURNAL_PREFS_DEEP_LINK_PARAM);
+  return JOURNAL_FILTER_IDS.find((id) => id === value) ?? null;
+}
+
 export const JOURNAL_FILTER_LABELS: Record<JournalFilterId, string> = {
   all: 'Tous',
   automatique: 'Automatique',

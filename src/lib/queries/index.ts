@@ -585,6 +585,7 @@ export async function upsertAthleteProfile(
   athleteId: string,
   data: {
     heightCm?: number | null;
+    targetWeightKg?: number | null;
     birthDate?: Date | null;
     ftpW?: number | null;
     maxHr?: number | null;

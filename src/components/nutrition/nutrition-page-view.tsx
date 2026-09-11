@@ -1,6 +1,9 @@
 'use client';
 
 import { NutritionGoalsPanel } from '@/components/nutrition/nutrition-goals-panel';
+import { subDays } from 'date-fns';
+import { NutritionCoachReading } from '@/components/nutrition/blocks/nutrition-coach-reading';
+import { NutritionDietTags } from '@/components/nutrition/blocks/nutrition-diet-tags';
 import { NutritionHero } from '@/components/nutrition/blocks/nutrition-hero';
 import { NutritionMealsSection } from '@/components/nutrition/blocks/nutrition-meals-section';
 import { NutritionMacroBreakdownSection } from '@/components/nutrition/blocks/nutrition-macro-breakdown-section';
@@ -59,6 +62,8 @@ export function NutritionPageView({
   loading = false,
   selectedDay,
   history,
+  diet,
+  coachReading,
   emptyState,
 }: {
   date: Date;
@@ -71,6 +76,8 @@ export function NutritionPageView({
   loading?: boolean;
   selectedDay: NutritionViewModel['selectedDay'];
   history: NutritionViewModel['history'];
+  diet: NutritionViewModel['diet'];
+  coachReading: NutritionViewModel['coachReading'];
   emptyState?: NutritionViewModel['emptyState'];
 }) {
   return (
@@ -86,6 +93,12 @@ export function NutritionPageView({
         onDateChange={onDateChange}
         onNextDay={onNextDay}
         onPreviousDay={onPreviousDay}
+      />
+      <NutritionDietTags labels={diet.labels} />
+      <NutritionCoachReading
+        loading={loading}
+        reading={coachReading}
+        onShowPreviousDay={() => onDateChange(subDays(maxDate, 1))}
       />
       <NutritionPageSections
         date={date}

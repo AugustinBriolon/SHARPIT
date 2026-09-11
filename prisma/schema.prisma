@@ -231,6 +231,8 @@ model AthleteProfile {
   /// Palier d'accès (paiement géré hors Prisma pour l'instant — bascule manuelle via /admin).
   tier                     AccessTier @default(FREE)
   heightCm                 Int? // taille (cm) — comparaisons composition (IMC, etc.)
+  /// Optional body-weight target (kg) — read by the nutrition day analysis, never by Core.
+  targetWeightKg           Float?
   birthDate                DateTime?  @db.Date // date de naissance — âge calculé dynamiquement
   ftpW                     Int? // FTP vélo (W)
   maxHr                    Int? // FC max (bpm)
@@ -296,6 +298,7 @@ model AthleteProfile {
   // Tenant back-relations — multi-tenant conversion (ADR-025). Root data:
   activities                  Activity[]
   dailyNutrition              DailyNutrition[]
+  nutritionDayAnalyses        NutritionDayAnalysis[]
   hikeTrips                   HikeTrip[]
   dailyHealth                 DailyHealth[]
   bodyCompositionMeasurements BodyCompositionMeasurement[]
@@ -462,6 +465,38 @@ model MyFitnessPalAccount {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+/// Coach reading of one logged nutrition day (docs/product/NUTRITION_DAY_ANALYSIS.md, ADR-035).
+/// Advisory only — never read by Core, the snapshot or the Decision Engine.
+model NutritionDayAnalysis {
+  id        String                  @id @default(cuid())
+  athleteId String
+  athlete   AthleteProfile          @relation(fields: [athleteId], references: [id], onDelete: Cascade)
+  /// Training day, stored at UTC midnight like DailyNutrition.date.
+  date      DateTime
+  status    NutritionAnalysisStatus @default(FINAL)
+
+  /// Hash of the facts the stored analysis was generated from. A different current hash means stale.
+  inputHash   String?
+  facts       Json?
+  analysis    Json?
+  model       String?
+  generatedAt DateTime?
+
+  /// Last generation claim — dedupes concurrent requests and throttles retries after a failure.
+  attemptHash String?
+  attemptedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([athleteId, date])
+}
+
+enum NutritionAnalysisStatus {
+  PROVISIONAL
+  FINAL
 }
 
 model DailyNutrition {

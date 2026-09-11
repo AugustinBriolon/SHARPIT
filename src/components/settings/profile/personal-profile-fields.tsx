@@ -45,6 +45,42 @@ function HeightField({
   );
 }
 
+function TargetWeightField({
+  state,
+  fieldErrors,
+  targetWeightErrorId,
+  onChange,
+}: FieldProps & { targetWeightErrorId: string }) {
+  return (
+    <div className="space-y-1.5">
+      <Label htmlFor="targetWeightKg">Objectif de poids (kg)</Label>
+      <Input
+        aria-describedby={fieldErrors.targetWeightKg ? targetWeightErrorId : 'targetWeightKg-hint'}
+        aria-invalid={fieldErrors.targetWeightKg ? true : undefined}
+        className={NUMERIC_INPUT_CLASS}
+        id="targetWeightKg"
+        inputMode="decimal"
+        max={250}
+        min={30}
+        placeholder="72"
+        step={0.1}
+        type="number"
+        value={state.targetWeightKg}
+        onChange={(e) => onChange(e.target.value)}
+      />
+      {fieldErrors.targetWeightKg ? (
+        <p className="text-destructive text-xs" id={targetWeightErrorId}>
+          {fieldErrors.targetWeightKg}
+        </p>
+      ) : (
+        <p className="text-muted-foreground text-xs" id="targetWeightKg-hint">
+          Optionnel. Le coach en tient compte dans la lecture nutrition.
+        </p>
+      )}
+    </div>
+  );
+}
+
 function BirthDateField({ state, onChange }: FieldProps) {
   const age = athleteAgeYears(state.birthDate || null);
   return (
@@ -130,9 +166,11 @@ type PersonalProfileFieldsProps = {
   state: PersonalProfileFormState;
   fieldErrors: Partial<Record<PersonalFieldKey, string>>;
   heightErrorId: string;
+  targetWeightErrorId: string;
   sleepErrorId: string;
   bedtimeErrorId: string;
   onHeightChange: (value: string) => void;
+  onTargetWeightChange: (value: string) => void;
   onBirthDateChange: (value: string) => void;
   onSleepHoursChange: (value: string) => void;
   onSleepBedtimeChange: (value: string) => void;
@@ -142,9 +180,11 @@ export function PersonalProfileFields({
   state,
   fieldErrors,
   heightErrorId,
+  targetWeightErrorId,
   sleepErrorId,
   bedtimeErrorId,
   onHeightChange,
+  onTargetWeightChange,
   onBirthDateChange,
   onSleepHoursChange,
   onSleepBedtimeChange,
@@ -156,6 +196,12 @@ export function PersonalProfileFields({
         heightErrorId={heightErrorId}
         state={state}
         onChange={onHeightChange}
+      />
+      <TargetWeightField
+        fieldErrors={fieldErrors}
+        state={state}
+        targetWeightErrorId={targetWeightErrorId}
+        onChange={onTargetWeightChange}
       />
       <BirthDateField fieldErrors={fieldErrors} state={state} onChange={onBirthDateChange} />
       <SleepHoursField

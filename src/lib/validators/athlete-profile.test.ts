@@ -36,6 +36,14 @@ describe('athleteProfileSchema', () => {
     expect(() => athleteProfileSchema.parse({ defaultPoolLengthM: 5 })).toThrow();
   });
 
+  it('carries an optional weight target and rejects an implausible one', () => {
+    expect(athleteProfileSchema.parse({ targetWeightKg: '71.5' })).toEqual({
+      targetWeightKg: 71.5,
+    });
+    expect(athleteProfileSchema.parse({ targetWeightKg: '' })).toEqual({ targetWeightKg: null });
+    expect(() => athleteProfileSchema.parse({ targetWeightKg: 12 })).toThrow();
+  });
+
   it('carries a birth date without dragging the rest along', () => {
     const parsed = athleteProfileSchema.parse({ birthDate: '1990-04-12' });
 

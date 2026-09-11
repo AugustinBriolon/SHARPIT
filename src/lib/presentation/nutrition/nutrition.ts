@@ -3,9 +3,7 @@ import { isSet } from '@/lib/util/value';
 import type { FuelFeatureSet } from '@/core/features/types';
 import type {
   NutritionDaySummary,
-  NutritionFoodEntry,
   NutritionGoalsProgress,
-  NutritionMealSummary,
   NutritionFuelDensity,
   NutritionViewModel,
 } from '@/core/presentation/nutrition-view-model';
@@ -17,17 +15,9 @@ import {
 import { getLatestBodyWeightKg, macroGPerKg } from '@/lib/nutrition/body-weight-for-fuel';
 import { buildGoalsProgress } from '@/lib/nutrition/goals-progress';
 import { fuelFeatureSetToDensity } from '@/lib/nutrition/fuel-density-display';
-import { formatMealLabel, mealSortIndex } from '@/lib/nutrition/meal-display';
+import { normalizeStoredMeals } from '@/lib/nutrition/meal-display';
+import { loadDeclaredDiet } from '@/lib/nutrition/analysis/nutrition-analysis-inputs';
 import { prisma } from '@/lib/prisma';
-
-type StoredMeal = Partial<NutritionMealSummary> & {
-  name: string;
-  calories: number;
-  protein: number;
-  carbs: number;
-  fat: number;
-  entries?: NutritionFoodEntry[];
-};
 
 type NutritionRow = {
   date: Date;
@@ -45,24 +35,6 @@ type NutritionRow = {
   goalFat: number | null;
   exerciseCalories: number | null;
 };
-
-function normalizeMeals(raw: unknown): NutritionMealSummary[] {
-  if (!Array.isArray(raw)) {
-    return [];
-  }
-
-  return (raw as StoredMeal[])
-    .map((meal) => ({
-      name: meal.name,
-      label: formatMealLabel(meal.name),
-      calories: meal.calories,
-      protein: meal.protein,
-      carbs: meal.carbs,
-      fat: meal.fat,
-      entries: meal.entries ?? [],
-    }))
-    .sort((a, b) => mealSortIndex(a.name) - mealSortIndex(b.name));
-}
 
 function goalsFromRow(row: NutritionRow): NutritionGoalsProgress | null {
   return buildGoalsProgress({
@@ -88,7 +60,7 @@ function mapRow(r: NutritionRow): NutritionDaySummary {
     fiber: r.fiber,
     sugar: r.sugar,
     complete: r.complete,
-    meals: normalizeMeals(r.meals),
+    meals: normalizeStoredMeals(r.meals),
     goalsProgress: goalsFromRow(r),
     fuelDensity: null,
   };
@@ -99,7 +71,7 @@ async function fallbackFuelDensity(
   trainingDayId: string,
   row: NutritionRow,
 ): Promise<NutritionFuelDensity | null> {
-  const meals = normalizeMeals(row.meals);
+  const meals = normalizeStoredMeals(row.meals);
   const entryCount = meals.reduce((sum, meal) => sum + meal.entries.length, 0);
   if (entryCount === 0 || row.protein <= 0) {
     return null;
@@ -237,8 +209,17 @@ async function buildConnectedNutritionViewModel(
   const today = await enrichDayIfPresent(athleteId, todayBase, todayRow);
 
   const emptyState = buildNutritionEmptyState(selectedDay, selectedDayId, todayId);
+  const diet = await loadDeclaredDiet(athleteId);
 
-  return { connected: true, selectedDay, today, history, emptyState };
+  return {
+    connected: true,
+    diet,
+    coachReading: null,
+    selectedDay,
+    today,
+    history,
+    emptyState,
+  };
 }
 
 export async function buildNutritionViewModel(
@@ -251,6 +232,8 @@ export async function buildNutritionViewModel(
   if (!connected) {
     return {
       connected: false,
+      diet: { ids: [], labels: [] },
+      coachReading: null,
       selectedDay: null,
       today: null,
       history: [],

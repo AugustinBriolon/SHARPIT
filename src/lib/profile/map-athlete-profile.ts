@@ -4,6 +4,7 @@ import { isSet } from '@/lib/util/value';
 /** Shape consumed by settings / progression profile forms. */
 export type AthleteProfileFormData = {
   heightCm: number | null;
+  targetWeightKg: number | null;
   birthDate: string | null;
   ftpW: number | null;
   maxHr: number | null;
@@ -20,6 +21,7 @@ export type AthleteProfileFormData = {
 
 type ProfileRow = {
   heightCm?: number | null;
+  targetWeightKg?: number | null;
   birthDate?: Date | string | null;
   ftpW?: number | null;
   maxHr?: number | null;
@@ -57,6 +59,7 @@ export function mapAthleteProfileToFormData(
   }
   return {
     heightCm: asNull(profile.heightCm),
+    targetWeightKg: asNull(profile.targetWeightKg),
     birthDate: birthDateToInput(profile.birthDate),
     ftpW: asNull(profile.ftpW),
     maxHr: asNull(profile.maxHr),

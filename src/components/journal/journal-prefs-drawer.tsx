@@ -11,7 +11,12 @@ import {
   writeJournalPrefsCache,
   type JournalPrefs,
 } from '@/lib/journal/journal-prefs';
-import { JOURNAL_BUILTIN_TRACKABLES, type JournalFilterId } from '@/lib/journal/journal-trackables';
+import {
+  JOURNAL_BUILTIN_TRACKABLES,
+  JOURNAL_PREFS_DEEP_LINK_PARAM,
+  journalPrefsDeepLinkFilter,
+  type JournalFilterId,
+} from '@/lib/journal/journal-trackables';
 import { queryKeys } from '@/lib/query/keys';
 import {
   JournalPrefsDrawerPanel,
@@ -87,6 +92,27 @@ function useJournalPrefsRows(filter: JournalFilterId, prefs: JournalPrefs) {
   return { builtinRows, customRows };
 }
 
+/**
+ * Opens the drawer when another surface deep-links into it (the nutrition diet
+ * tag), then drops the param so a reload does not reopen it. Read from
+ * `window.location` on mount: the journal page has no Suspense boundary for
+ * `useSearchParams`, and the drawer is closed in the server render anyway.
+ */
+function useJournalPrefsDeepLink(open: (filter: JournalFilterId) => void) {
+  const openRef = useRef(open);
+  openRef.current = open;
+  useEffect(() => {
+    const filter = journalPrefsDeepLinkFilter(window.location.search);
+    if (!filter) {
+      return;
+    }
+    openRef.current(filter);
+    const url = new URL(window.location.href);
+    url.searchParams.delete(JOURNAL_PREFS_DEEP_LINK_PARAM);
+    window.history.replaceState(null, '', `${url.pathname}${url.search}`);
+  }, []);
+}
+
 export function JournalPrefsDrawer({
   prefs,
   isPro,
@@ -108,6 +134,10 @@ export function JournalPrefsDrawer({
     onIsProChange,
   );
   const { builtinRows, customRows } = useJournalPrefsRows(filter, prefs);
+  useJournalPrefsDeepLink((deepLinkFilter) => {
+    setFilter(deepLinkFilter);
+    setOpen(true);
+  });
 
   function onCreateCustom() {
     if (!createCustomTrackable(draftLabel)) {
