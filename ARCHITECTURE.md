@@ -142,21 +142,28 @@ src/lib/
                             google/, myfitnesspal/; shared/ for cross-provider helpers
   engines/                ← lazy singletons wrapping core inference for the app
   query/                  ← TanStack client cache (≠ queries/ = Prisma server helpers)
-  queries/                ← Prisma server helpers (mental alias: db-queries)
+  queries/                ← Prisma server helpers (alias transition: db-queries/)
+  db-queries/             ← re-export of queries/ (naming anti-collision)
   validators/             ← Zod schemas
   presentation/           ← ViewModel builders nested by surface (today/, recovery/,
                             sleep/, effort/, …); flat re-exports temporary (P1)
   journal/                ← day-journal, habits, wellness (canon ; ≠ health/)
   health/                 ← activity-status, body-composition, health-status
+  training/               ← nest pmc/, records/, load/, periodization/, thread/
+                            (+ flat re-exports temporary)
+  ai/                     ← coach model config + usage (re-export lib/ai-usage)
+  observation/            ← manual observation sync
   product-insight/        ← page insight projections over core/product-insight
   decision-memory/        ← coaching decision aggregate helpers
-  activity/               ← narrative/, list/, detail/, weather/, hike/, location/
+  activity/               ← narrative/, list/, detail/, weather/, hike/, location/,
+                            multisport
   planned-session/        ← accessories/, strength/, endurance/, linking/, forecast/,
                             display/, brick/
-  coach/                  ← chat/, plan/, context/
+  coach/                  ← chat/, plan/, context/, conversations, weekly-review
+  plan/                   ← hub lib + planning-day-selection (ex-lib/planning)
   plan-gate/rules/        ← existing nested template
   [domain folders]        ← today, effort, travel-context, …
-  [flat utils]            ← format, analytics, periodization, recovery helpers, …
+  [flat utils]            ← format, ease, french, rate-limit, prisma, utils, …
 ```
 
 **Rule:** integration adapters → `integrations/<provider>/`; engine singletons → `engines/`; React Query → `query/`; pure Twin/inference → `core/`. Do not add files to a subdirectory without that clear classification.
@@ -192,21 +199,25 @@ src/components/
   journal/        ← journal / habitudes (UI) ; lib = `lib/journal/`
   sleep/, recovery/, effort/, adaptation/, nutrition/, physical-health/
   training/       ← activité
-  coach/          ← chat + tools produit
-  agents/         ← kit chat slim (uniquement modules montés par coach)
+  coach/          ← chat + tools produit + kit/ (primitives chat, ex-agents)
+  agents/         ← re-exports temporaires vers coach/kit (ne pas ajouter de code ici)
   coach-memory/   ← mémoire UI
   planning/       ← séances + `coach-menu.tsx` + `session/exercise-visual.tsx` (P1)
-  shell/          ← hubs contenu tabs (Plan / Moi / Activité)
+  shell/          ← hubs contenu tabs (Plan / Moi / Activité) — pas de rename hubs/
   corps/, goals/, settings/, profile/, analytics/
   ui/             ← reusable primitives at root; charts/, instruments/, map/ nested
-  layout/         ← StickyHeader, AppShell, BottomNav — chrome structurel
+  layout/         ← StickyHeader, AppShell, BottomNav — **seul** chrome structurel
   chrome/         ← glass / overlays légers
   pwa/            ← install / offline / SW toasts
 ```
 
 Il n’y a **pas** de `components/calendar/`, `components/sessions/`, ni `components/coaching/` (micros fusionnés dans `planning/` en P1).
 
+**Chrome vocabulary (P2) :** `layout/` = structure ; `shell/` = hubs de contenu des tabs ; `chrome/` = glass. Pas de synonyme supplémentaire.
+
 **Briefing :** `lib/briefing/` + `/api/coach/briefing` = background/API only. Pas d’UI `DailyBriefingPanel` sur Today.
+
+**Archive :** `docs/archive/` / `docs/audits/` = process / audits — **pas** la loi produit (voir AGENTS.md).
 
 **Domain folder nesting (locality rule):** keep the root of a domain folder thin. Soft cap ≈ 8–10 files at depth 1; when a folder grows past that, nest by concept rather than dumping siblings.
 

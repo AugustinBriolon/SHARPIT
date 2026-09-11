@@ -7,7 +7,7 @@ import {
   predictRunRaces,
   type RunPrediction,
 } from './performance-predictor';
-import type { PowerCurvePoint, RecordEntry, RunBestCategory } from './records';
+import type { PowerCurvePoint, RecordEntry, RunBestCategory } from '../records/records';
 
 function entry(value: number): RecordEntry {
   return {

@@ -1,4 +1,4 @@
-import type { ApprovalCardStatus } from '@/components/agents/approval-card/types';
+import type { ApprovalCardStatus } from '@/components/coach/kit/approval-card/types';
 
 export function createApprovalHandlers({
   approvalId,

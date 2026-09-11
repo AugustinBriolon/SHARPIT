@@ -3,8 +3,8 @@ import {
   getApprovalStatusBadgeClass,
   getApprovalStatusIconClass,
   getApprovalStatusLabel,
-} from '@/components/agents/approval-card/approval-card-status';
-import { approvalCardCopy } from '@/components/agents/approval-card/copy';
+} from '@/components/coach/kit/approval-card/approval-card-status';
+import { approvalCardCopy } from '@/components/coach/kit/approval-card/copy';
 
 describe('getApprovalStatusLabel', () => {
   it('returns French labels for terminal states', () => {

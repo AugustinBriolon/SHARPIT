@@ -1,8 +1,8 @@
 'use client';
 
-import { AgentActivity } from '@/components/agents/agent-activity';
-import { Message, MessageBubble, MessageBubbleContent } from '@/components/agents/message';
-import { StreamingResponse } from '@/components/agents/streaming-response';
+import { AgentActivity } from '@/components/coach/kit/agent-activity';
+import { Message, MessageBubble, MessageBubbleContent } from '@/components/coach/kit/message';
+import { StreamingResponse } from '@/components/coach/kit/streaming-response';
 import { coachBeuiCopy } from '@/components/coach/beui/coach-beui-copy';
 import { CoachBeuiLoadingStatus } from '@/components/coach/beui/coach-beui-loading';
 import { coachBeuiTheme } from '@/components/coach/beui/coach-beui-theme';

@@ -1,4 +1,4 @@
-import type { AgentActivityItem, AgentActivityStatus } from '@/components/agents/agent-activity';
+import type { AgentActivityItem, AgentActivityStatus } from '@/components/coach/kit/agent-activity';
 import {
   failureLabelForPart,
   isToolFailure,

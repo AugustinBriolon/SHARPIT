@@ -10,7 +10,7 @@ import {
 } from 'react';
 import { Plus, X } from 'lucide-react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
-import { PromptSubmitIcon } from '@/components/agents/prompt-input-submit-icon';
+import { PromptSubmitIcon } from '@/components/coach/kit/prompt-input-submit-icon';
 import type { CoachDiscussContext } from '@/lib/coach/chat/discuss/coach-discuss-context';
 import { cn } from '@/lib/utils';
 import { handlePromptBarKeyDown } from '@/components/coach/chat/composer/coach-prompt-bar-keyboard';

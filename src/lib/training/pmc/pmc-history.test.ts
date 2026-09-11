@@ -1,6 +1,6 @@
 import { ActivityType } from '@prisma/client';
 import { describe, expect, it } from 'vitest';
-import type { ActivityForAnalytics } from './activity-load';
+import type { ActivityForAnalytics } from '../load/activity-load';
 import { slicePmcWindow, toTrainingDayId } from './pmc';
 import {
   aggregateDailyTss,
