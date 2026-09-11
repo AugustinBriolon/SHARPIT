@@ -6,11 +6,10 @@
  */
 
 import { AccessTier, type PrismaClient } from '@prisma/client';
-import { subDays } from 'date-fns';
+import { demoDateFromTrainingDayId, demoTrainingDayIdDaysAgo } from '@/lib/demo/demo-calendar';
 import { defaultJournalPrefs, type JournalPrefs } from '@/lib/health/journal-prefs';
 import type { JournalBuiltinTrackableId } from '@/lib/health/journal-trackables';
 import { JOURNAL_BUILTIN_TRACKABLE_IDS } from '@/lib/health/journal-trackables';
-import { toUtcDateOnly } from '@/lib/travel-context/calendar-date';
 
 export const DEMO_JOURNAL_DAYS = 14;
 
@@ -43,10 +42,6 @@ export type DemoJournalNightOutcomes = {
   stress: number;
   moodLabel: string;
 };
-
-function trainingDayIdFromDate(date: Date): string {
-  return toUtcDateOnly(date).toISOString().slice(0, 10);
-}
 
 /** Intermittent night habits — enough contrast for Analyses unlock (≥7 days). */
 export function demoJournalDayHabits(daysAgo: number): DemoJournalDayHabits {
@@ -173,12 +168,11 @@ async function upsertDemoJournalHealthDay(input: {
 async function seedOneDemoJournalDay(input: {
   prisma: PrismaClient;
   athleteId: string;
-  today: Date;
   daysAgo: number;
 }): Promise<void> {
-  const { prisma, athleteId, today, daysAgo } = input;
-  const date = subDays(today, daysAgo);
-  const trainingDayId = trainingDayIdFromDate(date);
+  const { prisma, athleteId, daysAgo } = input;
+  const trainingDayId = demoTrainingDayIdDaysAgo(daysAgo);
+  const date = demoDateFromTrainingDayId(trainingDayId);
   const { lateMeal, deviceInBed, roughNight } = demoJournalDayHabits(daysAgo);
   const outcomes = demoJournalNightOutcomes(daysAgo, roughNight);
 
@@ -203,7 +197,7 @@ async function seedOneDemoJournalDay(input: {
 export async function seedDemoJournalAnalyses(
   prisma: PrismaClient,
   athleteId: string,
-  today: Date,
+  _today: Date,
 ): Promise<void> {
   await prisma.athleteProfile.update({
     where: { id: athleteId },
@@ -216,6 +210,6 @@ export async function seedDemoJournalAnalyses(
   await prisma.athleteDayJournal.deleteMany({ where: { athleteId } });
 
   for (let daysAgo = DEMO_JOURNAL_DAYS - 1; daysAgo >= 0; daysAgo -= 1) {
-    await seedOneDemoJournalDay({ prisma, athleteId, today, daysAgo });
+    await seedOneDemoJournalDay({ prisma, athleteId, daysAgo });
   }
 }

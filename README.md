@@ -66,7 +66,7 @@ Read these **six documents** in order (~4–6 hours):
 | 4   | [`docs/models/README.md`](./docs/models/README.md)                   | Inference model index                      |
 | 5   | [`docs/design/DESIGN_LANGUAGE.md`](./docs/design/DESIGN_LANGUAGE.md) | Visual and interaction law                 |
 
-**Supporting:** [`knowledge/README.md`](./knowledge/README.md) · [`docs/engineering/`](./docs/engineering/) · [`docs/audits/`](./docs/audits/) · [`docs/archive/`](./docs/archive/)
+**Supporting:** [`knowledge/README.md`](./knowledge/README.md) · [`docs/README.md`](./docs/README.md) · [`docs/engineering/`](./docs/engineering/) · [`docs/audits/`](./docs/audits/) · [`docs/archive/`](./docs/archive/)
 
 Moved documents leave a redirect stub at their old path.
 
@@ -271,4 +271,5 @@ duration and intensity, and reported as derived rather than prescribed.
 - [`docs/design/INFORMATION_ARCHITECTURE.md`](./docs/design/INFORMATION_ARCHITECTURE.md) — athlete-facing navigation and surface hierarchy
 - [`docs/adr/ADR-016`](./docs/adr/ADR-016-endurance-prescription-relative-targets.md) · [`ADR-017`](./docs/adr/ADR-017-endurance-prescription-authoring.md) · [`ADR-020`](./docs/adr/ADR-020-readable-easy-bands.md) · [`ADR-021`](./docs/adr/ADR-021-swim-css-from-session-pace.md) — watch workouts
 - [`knowledge/README.md`](./knowledge/README.md) — scientific reference corpus
-- [`docs/DOCUMENTATION_MIGRATION_PLAN.md`](./docs/DOCUMENTATION_MIGRATION_PLAN.md) — consolidation map (July 2026)
+- [`docs/archive/`](./docs/archive/) — superseded docs, sprint reports, design captures (not law)
+- [`docs/audits/`](./docs/audits/) — point-in-time audits

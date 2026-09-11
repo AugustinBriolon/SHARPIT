@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import type { PlanPhase } from '@prisma/client';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Target } from 'lucide-react';
@@ -7,6 +8,15 @@ import type { MacroPhaseRail } from '@/lib/plan/trajectory/plan-macro-rail';
 import type { PlanGoalView } from '@/lib/plan/trajectory/plan-goal';
 import { MOI_OBJECTIFS_PATH } from '@/lib/moi/paths';
 import { cn } from '@/lib/utils';
+
+/** Compact rail labels — full names overflow on 5-column mobile grids. */
+const PHASE_RAIL_SHORT: Record<PlanPhase, string> = {
+  BASE: 'Base',
+  BUILD: 'Dév.',
+  PEAK: 'Spéc.',
+  TAPER: 'Affût.',
+  RACE: 'Course',
+};
 
 function GoalProgressRail({ progress }: { progress: number }) {
   return (
@@ -31,20 +41,24 @@ function GoalProgressRail({ progress }: { progress: number }) {
 function MacroRail({ rail }: { rail: MacroPhaseRail }) {
   return (
     <ol
-      className="mt-5 grid gap-2"
+      className="mt-5 grid gap-x-1.5 gap-y-2"
       style={{ gridTemplateColumns: `repeat(${rail.runs.length}, minmax(0, 1fr))` }}
     >
       {rail.runs.map((run, index) => (
         <li
           key={`${run.phase}-${index}`}
+          aria-current={run.current ? 'step' : undefined}
+          aria-label={run.label}
+          title={run.label}
           className={cn(
-            'border-t-2 pt-1.5 text-[10px] leading-tight',
+            'min-w-0 overflow-hidden border-t-2 pt-1.5 text-[10px] leading-tight',
             run.current
               ? 'border-highlight text-ink-surface-foreground dark:border-ink-surface-foreground font-semibold'
               : 'border-ink-surface-foreground/25 text-ink-surface-foreground/55',
           )}
         >
-          {run.label}
+          <span className="block truncate sm:hidden">{PHASE_RAIL_SHORT[run.phase]}</span>
+          <span className="hidden truncate sm:block">{run.label}</span>
         </li>
       ))}
     </ol>
@@ -99,9 +113,11 @@ function DestinationRail({ rail }: { rail: MacroPhaseRail }) {
   return (
     <>
       <MacroRail rail={rail} />
-      <p className="text-highlight dark:text-ink-surface-foreground mt-2 flex items-start justify-between gap-3 text-[11px] leading-snug">
-        <span>{caption.week}</span>
-        {caption.aside ? <span className="text-right">{caption.aside}</span> : null}
+      <p className="text-highlight dark:text-ink-surface-foreground mt-2 flex flex-col gap-1 text-[11px] leading-snug sm:flex-row sm:items-start sm:justify-between sm:gap-3">
+        <span className="shrink-0">{caption.week}</span>
+        {caption.aside ? (
+          <span className="min-w-0 text-pretty sm:text-right">{caption.aside}</span>
+        ) : null}
       </p>
     </>
   );

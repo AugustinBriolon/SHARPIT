@@ -115,7 +115,7 @@ See `confidence-scoring.md` for the implementation framework.
 
 SHARPIT must be able to update its models without requiring a full system rewrite. Protocol for model replacement:
 
-1. **Propose the new model in an ADR** (in `knowledge/decisions/`). Document what it replaces, why, and the transition strategy.
+1. **Propose the new model in an ADR** (in [`docs/adr/`](../docs/adr/)). Document what it replaces, why, and the transition strategy.
 2. **Run both models in parallel** during a validation period if the new model produces different outputs.
 3. **Audit downstream effects**: changing a model may change alerts, recommendations, and AI coach behavior. These must be reviewed before deployment.
 4. **Update the domain document**, the ADR, and the `architecture-links.md` file.

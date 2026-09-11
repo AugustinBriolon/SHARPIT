@@ -66,3 +66,4 @@ Obsolete implementation docs preserved in [`docs/archive/`](../docs/archive/):
 
 - `product-constitution.md` → superseded by Product Part I
 - `decision-engine.md`, `recommendation-engine.md` → superseded by Reasoning Engine
+- ADRs → [`docs/adr/`](../docs/adr/) (`knowledge/decisions/` is retired)

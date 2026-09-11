@@ -815,7 +815,8 @@ async function loadTodayPresentationInputs(
     goals,
     athleteProfile,
     morningRecalibration: options.morningRecalibration ?? null,
-    reconnectNames,
+    // Demo stubs have empty credentials on purpose — never show reconnect.
+    reconnectNames: isDemoAthleteProfile(athleteProfile) ? [] : reconnectNames,
     weather,
   };
 }

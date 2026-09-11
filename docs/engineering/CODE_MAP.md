@@ -116,11 +116,11 @@ Entries follow the pattern: concept → file → function → knowledge base ref
 
 Legacy `src/lib/alerts.ts` was removed. Athlete-facing alerts and daily recommendations now flow through the Decision Engine and Athlete Snapshot / Today presentation — not a standalone alert aggregator.
 
-| Concept                 | File                                            | Function / type        | Knowledge ref                               |
-| ----------------------- | ----------------------------------------------- | ---------------------- | ------------------------------------------- |
-| Verdict arbitration     | `src/core/decision/arbitration.ts`              | limiting-factor select | `recommendation-engine.md#alert-generation` |
-| Overall verdict         | `src/core/decision/`                            | `OverallVerdict`       | `recommendation-engine.md`                  |
-| Rich Today presentation | `src/lib/today/today-rich-view.ts` + components | `buildTopActionLine()` | `docs/RICH_TODAY.md`                        |
+| Concept                 | File                                            | Function / type        | Knowledge ref                                                |
+| ----------------------- | ----------------------------------------------- | ---------------------- | ------------------------------------------------------------ |
+| Verdict arbitration     | `src/core/decision/arbitration.ts`              | limiting-factor select | `recommendation-engine.md#alert-generation`                  |
+| Overall verdict         | `src/core/decision/`                            | `OverallVerdict`       | `recommendation-engine.md`                                   |
+| Rich Today presentation | `src/lib/today/today-rich-view.ts` + components | `buildTopActionLine()` | `docs/archive/product-layer-2026/RICH_TODAY.md` (historical) |
 
 ---
 

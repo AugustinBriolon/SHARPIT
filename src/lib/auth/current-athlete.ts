@@ -1,9 +1,10 @@
 import { cache } from 'react';
 import { auth } from '@clerk/nextjs/server';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
+import { DEMO_CLERK_USER_ID, isDemoSession } from '@/lib/demo/demo-session';
+import { ensureDemoSeedFresh } from '@/lib/demo/seed-demo-data';
 import { prisma } from '@/lib/prisma';
 import { isDevClerkBypass } from '@/lib/dev/dev-auth';
-import { DEMO_CLERK_USER_ID, isDemoSession } from '@/lib/demo/demo-session';
 
 const DEACTIVATED_ACCOUNT_ERROR = 'Compte désactivé — suppression en cours';
 
@@ -22,6 +23,8 @@ async function resolveDevBypassAthleteId(): Promise<string> {
 }
 
 async function resolveDemoAthleteId(): Promise<string> {
+  // Cookie arrives before background seed — block here so first paint has data.
+  await ensureDemoSeedFresh(prisma);
   const demoAthlete = await prisma.athleteProfile.findUniqueOrThrow({
     where: { clerkUserId: DEMO_CLERK_USER_ID },
     select: { id: true, deletedAt: true },

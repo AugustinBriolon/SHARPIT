@@ -1,17 +1,7 @@
-# V1.1 Moi split — Design validation
+# Moved
 
-Mobile evidence of `/moi` after Activité hub (wave 3). Captured on Vercel preview via `/demo` cookie.
+Design experiment / capture folder — **not design law**.
 
-| File                          | Theme / surface                       |
-| ----------------------------- | ------------------------------------- |
-| `v11-moi-hub-light.png`       | Hub light                             |
-| `v11-moi-hub-dark.png`        | Hub dark                              |
-| `v11-moi-corps.png`           | Dedicated Corps                       |
-| `v11-moi-objectifs.png`       | Dedicated Objectifs                   |
-| `v11-moi-confidentialite.png` | Confidentialité (`/settings/privacy`) |
+**Archived:** [`docs/archive/design-experiments-2026/v11-moi/`](../../archive/design-experiments-2026/v11-moi/)
 
-Surfaces: hub title **Paramètres** (grouped inset plates). **SHARPIT Pro** (si gratuit, en tête) → **Modèle** → **Compte** → **Préférences** → **Données** → **Ressources** → **Support** → **Mentions légales**.
-
-Dedicated children: `/moi/corps`, `/moi/objectifs`, `/moi/performance` (quiet), `/moi/calibration`, `/settings/account` (Profil), `/settings/privacy`, `/settings/personalization`. Back stack → Paramètres / Réglages.
-
-Deferred (next brief): full app-wide back-navigation audit beyond Moi-related backs.
+**Canonical design:** [`../DESIGN_LANGUAGE.md`](../DESIGN_LANGUAGE.md) · [`../DESIGN_SYSTEM_PROMPT.md`](../DESIGN_SYSTEM_PROMPT.md) · [`../INFORMATION_ARCHITECTURE.md`](../INFORMATION_ARCHITECTURE.md)

@@ -1,5 +1,6 @@
 'use client';
 
+/* eslint-disable max-lines-per-function -- MapLibre composite primitives; one-token theming only */
 import MapLibreGL, { type PopupOptions, type MarkerOptions } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import type * as GeoJSON from 'geojson';
@@ -770,7 +771,7 @@ const positionClasses = {
 
 function ControlGroup({ children }: { children: React.ReactNode }) {
   return (
-    <div className="border-border bg-background [&>button:not(:last-child)]:border-border flex flex-col overflow-hidden rounded-md border shadow-none [&>button:not(:last-child)]:border-b">
+    <div className="border-border bg-card [&>button:not(:last-child)]:border-border flex flex-col overflow-hidden rounded-md border shadow-none [&>button:not(:last-child)]:border-b">
       {children}
     </div>
   );

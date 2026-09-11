@@ -195,6 +195,7 @@ function forwardPhaseFocusPriority(input: PhaseNarrativeInput): string | null {
   if (!actionLine) {
     return null;
   }
+  // Race title lives only in the action line (Today verdict plate no longer shows a goal chip).
   if (goalContext?.linkedToTodaySession && verdict === 'RECOVER') {
     return `Allège la séance. Elle sert ${goalContext.title}`;
   }

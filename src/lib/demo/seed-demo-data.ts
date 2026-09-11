@@ -9,15 +9,20 @@ import {
   GoalHorizon,
   GoalKind,
   GoalPriority,
-  SessionIntensity,
   TrainingCapacityLevel,
   type PrismaClient,
 } from '@prisma/client';
 import { ensureDemoSessionLinkStory } from '@/lib/demo/demo-session-link-seed';
+import { DEMO_SESSION_LINK_PLANNED_TITLE } from '@/lib/demo/demo-session-link-markers';
 import { seedDemoJournalAnalyses } from '@/lib/demo/demo-journal-seed';
+import {
+  demoAnchorTrainingDayId,
+  demoDateFromTrainingDayId,
+  isDemoHealthDateCurrent,
+} from '@/lib/demo/demo-calendar';
 import { isSet } from '@/lib/util/value';
 import { finalizeDemoSeed, purgeDemoDerivedState } from '@/lib/demo/finalize-demo-seed';
-import { addDays, startOfDay, subDays } from 'date-fns';
+import { addDays, subDays } from 'date-fns';
 
 export const DEMO_CLERK_USER_ID = 'demo';
 
@@ -455,7 +460,8 @@ function sleepFieldsForDemo(daysAgo: number, recoveryScore: number) {
 
 async function seedDemoIntegrationStubs(prisma: PrismaClient, athleteId: string): Promise<void> {
   // Row presence drives source-prefs legacy defaults (Garmin health + Renpho body).
-  // Empty credentials = needsReconnect in the hub; cron skips via is*Connected.
+  // Demo deliberately leaves credentials empty — Today/settings must not treat
+  // that as "needs reconnect" (see isDemoAthleteProfile short-circuit).
   await prisma.garminAccount.upsert({
     where: { athleteId },
     create: {
@@ -638,70 +644,6 @@ async function seedDemoNutritionWindow(prisma: PrismaClient, athleteId: string, 
   }
 }
 
-const UPCOMING_PLANNED_PATTERN: Array<{
-  type: ActivityType;
-  title: string;
-  durationMin: number;
-  intensity: SessionIntensity;
-} | null> = [
-  null,
-  {
-    type: ActivityType.RUN,
-    title: 'Sortie course — club',
-    durationMin: 50,
-    intensity: SessionIntensity.ENDURANCE,
-  },
-  {
-    type: ActivityType.BIKE,
-    title: 'Home trainer — Zwift',
-    durationMin: 60,
-    intensity: SessionIntensity.THRESHOLD,
-  },
-  {
-    type: ActivityType.SWIM,
-    title: 'CSS — Piscine Molitor',
-    durationMin: 45,
-    intensity: SessionIntensity.THRESHOLD,
-  },
-  {
-    type: ActivityType.STRENGTH,
-    title: 'Muscu en extérieur — Parc Monceau',
-    durationMin: 50,
-    intensity: SessionIntensity.TEMPO,
-  },
-  {
-    type: ActivityType.BIKE,
-    title: 'Sortie vélo — Longchamp',
-    durationMin: 150,
-    intensity: SessionIntensity.ENDURANCE,
-  },
-  {
-    type: ActivityType.RUN,
-    title: 'Sortie longue — Bois de Boulogne',
-    durationMin: 80,
-    intensity: SessionIntensity.ENDURANCE,
-  },
-];
-
-async function seedDemoUpcomingPlanned(prisma: PrismaClient, athleteId: string, today: Date) {
-  for (let dayInWeek = 0; dayInWeek < 7; dayInWeek++) {
-    const planned = UPCOMING_PLANNED_PATTERN[dayInWeek];
-    if (!planned) {
-      continue;
-    }
-    await prisma.plannedSession.create({
-      data: {
-        athleteId,
-        type: planned.type,
-        date: addDays(today, dayInWeek),
-        title: planned.title,
-        durationMin: planned.durationMin,
-        intensity: planned.intensity,
-      },
-    });
-  }
-}
-
 async function seedDemoBodyComposition(prisma: PrismaClient, athleteId: string, today: Date) {
   for (const [index, point] of BODY_COMPOSITION_TREND.entries()) {
     await prisma.bodyCompositionMeasurement.create({
@@ -769,7 +711,7 @@ export async function seedDemoAthlete(prisma: PrismaClient): Promise<void> {
 
   await purgeDemoAthleteRecords(prisma, athleteId);
 
-  const today = startOfDay(new Date());
+  const today = demoDateFromTrainingDayId(demoAnchorTrainingDayId());
 
   await seedDemoIntegrationStubs(prisma, athleteId);
   await seedDemoPrimaryGoal(prisma, athleteId, today);
@@ -777,7 +719,8 @@ export async function seedDemoAthlete(prisma: PrismaClient): Promise<void> {
   await seedDemoRecoveryTrend(prisma, athleteId, today);
   await seedDemoJournalAnalyses(prisma, athleteId, today);
   await seedDemoNutritionWindow(prisma, athleteId, today);
-  await seedDemoUpcomingPlanned(prisma, athleteId, today);
+  // No bulk upcoming planned — without a written week, prod hubs stay without
+  // « À faire ». Session-link still seeds one planned for the Today chip only.
   await seedDemoBodyComposition(prisma, athleteId, today);
   await seedDemoCondition(prisma, athleteId, today);
   await seedDemoCoachConversation(prisma, athleteId);
@@ -787,7 +730,6 @@ export async function seedDemoAthlete(prisma: PrismaClient): Promise<void> {
 }
 
 async function demoSeedNeedsRefresh(prisma: PrismaClient, athleteId: string): Promise<boolean> {
-  const today = startOfDay(new Date());
   const [garmin, renpho, latestHealth, goalCount, conversationCount, journalCount] =
     await Promise.all([
       prisma.garminAccount.findUnique({ where: { athleteId }, select: { athleteId: true } }),
@@ -805,7 +747,7 @@ async function demoSeedNeedsRefresh(prisma: PrismaClient, athleteId: string): Pr
   const healthStale =
     latestHealth === undefined ||
     latestHealth === null ||
-    startOfDay(latestHealth.date).getTime() !== today.getTime();
+    !isDemoHealthDateCurrent(latestHealth.date);
 
   return (
     !garmin ||
@@ -817,8 +759,52 @@ async function demoSeedNeedsRefresh(prisma: PrismaClient, athleteId: string): Pr
   );
 }
 
-/** Reseed when the demo tenant is missing, stale, or polluted (e.g. onboarding test goals). */
-export async function ensureDemoSeedFresh(prisma: PrismaClient): Promise<boolean> {
+let demoSeedInflight: Promise<boolean> | null = null;
+
+function readinessCategoryFromSnapshotPayload(payload: unknown): string | null {
+  if (!payload || typeof payload !== 'object' || !('recovery' in payload)) {
+    return null;
+  }
+  return (
+    (payload as { recovery?: { readinessCategory?: string } }).recovery?.readinessCategory ?? null
+  );
+}
+
+function isRecoveryStillCalibrating(readiness: string | null): boolean {
+  return (
+    readiness === null || readiness === 'BASELINE_PENDING' || readiness === 'INSUFFICIENT_DATA'
+  );
+}
+
+async function warmDemoSnapshotIfNeeded(prisma: PrismaClient, athleteId: string): Promise<void> {
+  await ensureDemoSessionLinkStory(prisma, athleteId);
+  // Drop leftover « À faire » rows from older demo seeds (bulk upcoming planned).
+  await prisma.plannedSession.deleteMany({
+    where: {
+      athleteId,
+      completed: false,
+      activityId: null,
+      title: { not: DEMO_SESSION_LINK_PLANNED_TITLE },
+    },
+  });
+  // Keep today's snapshot warm — force finalize when recovery is still calibrating
+  // or observations are missing (first-land race with /demo after()).
+  const anyObservation = await prisma.observation.findFirst({
+    where: { athleteId },
+    select: { id: true },
+  });
+  const trainingDayId = demoAnchorTrainingDayId();
+  const snapshotRow = await prisma.athleteSnapshotRecord.findUnique({
+    where: { athleteId_trainingDayId: { athleteId, trainingDayId } },
+    select: { payload: true },
+  });
+  const readiness = readinessCategoryFromSnapshotPayload(snapshotRow?.payload);
+  if (!anyObservation || isRecoveryStillCalibrating(readiness)) {
+    await finalizeDemoSeed(prisma, athleteId);
+  }
+}
+
+async function runEnsureDemoSeedFresh(prisma: PrismaClient): Promise<boolean> {
   const athlete = await prisma.athleteProfile.findUnique({
     where: { clerkUserId: DEMO_CLERK_USER_ID },
     select: { id: true },
@@ -833,6 +819,19 @@ export async function ensureDemoSeedFresh(prisma: PrismaClient): Promise<boolean
     return true;
   }
 
-  await ensureDemoSessionLinkStory(prisma, athlete.id);
+  await warmDemoSnapshotIfNeeded(prisma, athlete.id);
   return false;
+}
+
+/** Reseed when the demo tenant is missing, stale, or polluted (e.g. onboarding test goals). */
+export async function ensureDemoSeedFresh(prisma: PrismaClient): Promise<boolean> {
+  if (demoSeedInflight) {
+    return demoSeedInflight;
+  }
+
+  demoSeedInflight = runEnsureDemoSeedFresh(prisma).finally(() => {
+    demoSeedInflight = null;
+  });
+
+  return demoSeedInflight;
 }

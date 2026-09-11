@@ -1,54 +1,27 @@
 'use client';
 
 import { Check } from 'lucide-react';
-import { motion, useReducedMotion, type Variants } from 'motion/react';
+import { motion, type Variants } from 'motion/react';
 import { NavArrowDown } from '@/components/icons/nav-arrows';
-import {
-  createContext,
-  type ReactNode,
-  useCallback,
-  useContext,
-  useEffect,
-  useId,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import { createContext, type ReactNode, useContext, useLayoutEffect } from 'react';
 import { SelectContentPanel } from '@/components/motion/select-content-panel';
 import {
   SELECT_CHEVRON_TRANSITION,
   selectTriggerAnimate,
   selectTriggerRadiusTransition,
 } from '@/components/motion/select-motion-helpers';
+import {
+  useSelectRootState,
+  type SelectContextValue,
+} from '@/components/motion/use-select-root-state';
 import { cn } from '@/lib/utils';
 
-// Spring with bounce powers the unfold/separation; per-property timings in the
-// content choreograph it (see SelectContent). Mirrors bouncy-accordion's feel.
 const CHEVRON_TRANSITION = SELECT_CHEVRON_TRANSITION;
 
 const ITEM_VARIANTS: Variants = {
   hidden: { opacity: 0, y: -6, filter: 'blur(3px)' },
   show: { opacity: 1, y: 0, filter: 'blur(0px)' },
 };
-
-type Placement = 'bottom' | 'top';
-
-interface SelectContextValue {
-  value: string | undefined;
-  open: boolean;
-  setOpen: (open: boolean) => void;
-  select: (value: string) => void;
-  register: (value: string, label: string) => void;
-  unregister: (value: string) => void;
-  labelFor: (value: string | undefined) => string | undefined;
-  reduce: boolean;
-  triggerId: string;
-  listId: string;
-  disabled: boolean;
-  placement: Placement;
-  setPlacement: (p: Placement) => void;
-}
 
 const SelectContext = createContext<SelectContextValue | null>(null);
 
@@ -87,110 +60,22 @@ export function Select({
   value,
   defaultValue,
   onValueChange,
-  open: openProp,
+  open,
   defaultOpen = false,
   onOpenChange,
   disabled = false,
   className,
   children,
 }: SelectProps) {
-  const reduce = useReducedMotion() ?? false;
-  const baseId = useId();
-  const rootRef = useRef<HTMLDivElement>(null);
-  const [internalOpen, setInternalOpen] = useState(defaultOpen);
-  const [internal, setInternal] = useState(defaultValue);
-  const [labels, setLabels] = useState<Map<string, string>>(new Map());
-  const [placement, setPlacement] = useState<Placement>('bottom');
-
-  const controlled = value !== undefined;
-  const current = controlled ? value : internal;
-  const openControlled = openProp !== undefined;
-  const open = openControlled ? openProp : internalOpen;
-
-  const setOpen = useCallback(
-    (next: boolean) => {
-      if (!openControlled) {
-        setInternalOpen(next);
-      }
-      onOpenChange?.(next);
-    },
-    [onOpenChange, openControlled],
-  );
-
-  const select = useCallback(
-    (next: string) => {
-      if (!controlled) {
-        setInternal(next);
-      }
-      onValueChange?.(next);
-      setOpen(false);
-    },
-    [controlled, onValueChange, setOpen],
-  );
-
-  const register = useCallback((v: string, label: string) => {
-    setLabels((m) => (m.get(v) === label ? m : new Map(m).set(v, label)));
-  }, []);
-  const unregister = useCallback((v: string) => {
-    setLabels((m) => {
-      if (!m.has(v)) {
-        return m;
-      }
-      const next = new Map(m);
-      next.delete(v);
-      return next;
-    });
-  }, []);
-
-  // close on outside pointer / escape
-  useEffect(() => {
-    if (!open) {
-      return;
-    }
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false);
-    const onPointer = (e: PointerEvent) => {
-      if (rootRef.current && !rootRef.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
-    };
-    window.addEventListener('keydown', onKey);
-    window.addEventListener('pointerdown', onPointer);
-    return () => {
-      window.removeEventListener('keydown', onKey);
-      window.removeEventListener('pointerdown', onPointer);
-    };
-  }, [open, setOpen]);
-
-  const ctx = useMemo<SelectContextValue>(
-    () => ({
-      value: current,
-      open,
-      setOpen,
-      select,
-      register,
-      unregister,
-      labelFor: (v) => (v === undefined ? undefined : labels.get(v)),
-      reduce,
-      triggerId: `${baseId}-trigger`,
-      listId: `${baseId}-list`,
-      disabled,
-      placement,
-      setPlacement,
-    }),
-    [
-      current,
-      open,
-      setOpen,
-      select,
-      register,
-      unregister,
-      labels,
-      reduce,
-      baseId,
-      disabled,
-      placement,
-    ],
-  );
+  const { ctx, rootRef } = useSelectRootState({
+    value,
+    defaultValue,
+    onValueChange,
+    open,
+    defaultOpen,
+    onOpenChange,
+    disabled,
+  });
 
   return (
     <SelectContext.Provider value={ctx}>
@@ -222,7 +107,7 @@ export function SelectTrigger({ className, children }: SelectTriggerProps) {
       transition={selectTriggerRadiusTransition(isTop, ctx.open, ctx.reduce)}
       type="button"
       className={cn(
-        'border-border bg-background text-foreground relative z-10 flex w-full items-center justify-between gap-2 rounded-xl border px-3 py-2 text-sm transition-colors outline-none',
+        'border-border bg-card text-foreground relative z-10 flex w-full items-center justify-between gap-2 rounded-xl border px-3 py-2 text-sm transition-colors outline-none',
         'focus-visible:ring-foreground/20 hover:border-(--color-border-strong) focus-visible:ring-2',
         'disabled:pointer-events-none disabled:opacity-50',
         className,

@@ -1,10 +1,7 @@
-# V1.1 Plan hub — Design / Science Sport validation
+# Moved
 
-Mobile PNGs of `/plan` widgets after chrome sign-off.
+Design experiment / capture folder — **not design law**.
 
-| File                             | Theme |
-| -------------------------------- | ----- |
-| `v11-plan-hub-widgets-light.png` | Light |
-| `v11-plan-hub-widgets-dark.png`  | Dark  |
+**Archived:** [`docs/archive/design-experiments-2026/v11-plan/`](../../archive/design-experiments-2026/v11-plan/)
 
-Surfaces: **Objectif** · **Prochaines séances** (horizon → intensity-gate → limit 5) · **Charge / récup**. Quiet links only (Planification / Bilan hebdo). No Accès / Fil de la semaine / Séjours.
+**Canonical design:** [`../DESIGN_LANGUAGE.md`](../DESIGN_LANGUAGE.md) · [`../DESIGN_SYSTEM_PROMPT.md`](../DESIGN_SYSTEM_PROMPT.md) · [`../INFORMATION_ARCHITECTURE.md`](../INFORMATION_ARCHITECTURE.md)

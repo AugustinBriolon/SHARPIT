@@ -44,6 +44,18 @@ describe('Plan hub continuous thread', () => {
     expect(widgets).not.toContain('grid-cols-2');
   });
 
+  it('keeps macro rail labels from overlapping on narrow viewports', () => {
+    const plate = readFileSync(
+      resolve(process.cwd(), 'src/components/plan/hub/plan-destination-plate.tsx'),
+      'utf8',
+    );
+    expect(plate).toContain('minmax(0, 1fr)');
+    expect(plate).toContain('min-w-0 overflow-hidden');
+    expect(plate).toContain('PHASE_RAIL_SHORT');
+    expect(plate).toContain('sm:hidden');
+    expect(plate).toContain('hidden truncate sm:block');
+  });
+
   it('rails completed previews and caps remaining on the hub', () => {
     expect(entries).toContain('snap-x snap-mandatory');
     expect(entries).toContain('min-w-[min(14rem,100cqi)]');

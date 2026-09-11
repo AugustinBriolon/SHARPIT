@@ -1,4 +1,5 @@
 import { ActivityType } from '@prisma/client';
+import { isDemoSessionLinkPlannedTitle } from '@/lib/demo/demo-session-link-markers';
 import type { ThreadEntry } from '@/lib/training/thread/thread-model';
 
 /** Four map cards is a rail. A week of six is still a gallery. */
@@ -90,7 +91,12 @@ export function selectHubRemainingEntries(
   overflow: number;
 } {
   const excluded = resolveExcludedPlannedIds(remaining, excludePlannedId);
-  const owed = remaining.filter((entry) => entry.planned && !excluded.has(entry.planned.id));
+  const owed = remaining.filter(
+    (entry) =>
+      entry.planned &&
+      !excluded.has(entry.planned.id) &&
+      !isDemoSessionLinkPlannedTitle(entry.planned.title),
+  );
   const units: ThreadEntry[][] = [];
   const seenBricks = new Set<string>();
 

@@ -113,6 +113,35 @@ function resolveNarrativeView(
   return 'generate' as const;
 }
 
+function NarrativeCardView({
+  props,
+  state,
+  mode,
+}: {
+  props: ActivityNarrativeSectionProps;
+  state: ReturnType<typeof useActivityNarrativeSection>;
+  mode: ReturnType<typeof useDisplayMode>['mode'];
+}) {
+  const analysis = state.parseNarrative(state.narrativeAnalysis)!;
+  return (
+    <ActivityNarrativeCard
+      activityTitle={props.activityTitle}
+      activityType={state.activityType}
+      analysis={analysis}
+      mode={mode}
+      narrativeAnalyzedAt={state.narrativeAnalyzedAt}
+      footer={
+        state.isDemo ? (
+          <DemoSignupNudge
+            label="Sur tes vraies séances, cette lecture vient de ton coach."
+            embedded
+          />
+        ) : undefined
+      }
+    />
+  );
+}
+
 export function ActivityNarrativeSection(props: ActivityNarrativeSectionProps) {
   const { mode } = useDisplayMode();
   const state = useActivityNarrativeSection({
@@ -130,29 +159,12 @@ export function ActivityNarrativeSection(props: ActivityNarrativeSectionProps) {
   if (view === 'hidden') {
     return null;
   }
-
   if (view === 'card') {
-    const analysis = state.parseNarrative(state.narrativeAnalysis)!;
-    return (
-      <div className="space-y-3">
-        <ActivityNarrativeCard
-          activityTitle={props.activityTitle}
-          activityType={state.activityType}
-          analysis={analysis}
-          mode={mode}
-          narrativeAnalyzedAt={state.narrativeAnalyzedAt}
-        />
-        {state.isDemo ? (
-          <DemoSignupNudge label="Sur tes vraies séances, cette lecture vient de ton coach personnel." />
-        ) : null}
-      </div>
-    );
+    return <NarrativeCardView mode={mode} props={props} state={state} />;
   }
-
   if (view === 'loading') {
     return <NarrativeLoadingSection />;
   }
-
   if (view === 'locked') {
     return <NarrativeLockedSection />;
   }

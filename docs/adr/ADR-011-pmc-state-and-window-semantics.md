@@ -35,7 +35,7 @@ Measured on the production dataset (303 activities spanning 1007 days, 24x `tau_
 
 The dashboard reported a negative TSB — the athlete carrying fatigue debt — while the athlete was in fact fresh at +20. The sign of the most actionable number in the product was inverted.
 
-`docs/SNAPSHOT_QUALITY_V1_AUDIT.md` had already recorded the symptom ("TSB/readiness numbers cited from coach context (PMC), not snapshot fields — can diverge") without identifying the cause.
+`docs/audits/SNAPSHOT_QUALITY_V1_AUDIT_2026-07.md` had already recorded the symptom ("TSB/readiness numbers cited from coach context (PMC), not snapshot fields — can diverge") without identifying the cause.
 
 Note on ADR-001: that ADR accepts "new users initialize at CTL=0" as a consequence. That refers to the athlete's genuine first day, which remains correct and is retained here as `PMC_COLD_START`. Reseeding at the start of a rolling window is not that consequence; it was an implementation defect.
 

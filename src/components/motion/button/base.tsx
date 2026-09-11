@@ -42,7 +42,7 @@ const VARIANT_CLASS: Record<ButtonVariant, string> = {
   primary: 'bg-primary text-primary-foreground hover:bg-primary/90',
   secondary: 'border border-border bg-card text-foreground hover:border-border',
   ghost: 'text-muted-foreground hover:text-foreground hover:bg-primary/5',
-  outline: 'border border-border bg-transparent text-foreground hover:bg-primary/5',
+  outline: 'border border-border bg-card text-foreground hover:bg-primary/5',
 };
 
 const SIZE_CLASS: Record<ButtonSize, string> = {
@@ -76,6 +76,23 @@ function buttonMotionProps(reduce: boolean | null, canHover: boolean, pressScale
     whileHover: reduce || !canHover ? undefined : { scale: 1.02 },
     whileTap: reduce ? undefined : { scale: pressScale },
   };
+}
+
+function buttonSurfaceClass(
+  variant: ButtonVariant,
+  size: ButtonSize,
+  ripple: boolean,
+  className: string | undefined,
+) {
+  return cn(
+    'inline-flex items-center justify-center font-medium select-none',
+    'transition-colors',
+    'disabled:pointer-events-none disabled:opacity-50',
+    ripple && 'relative overflow-hidden',
+    VARIANT_CLASS[variant],
+    SIZE_CLASS[size],
+    className,
+  );
 }
 
 function ButtonRipples({
@@ -146,15 +163,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
       transition={SPRING_PRESS}
       type="button"
       {...buttonMotionProps(reduce, canHover, pressScale)}
-      className={cn(
-        'inline-flex items-center justify-center font-medium select-none',
-        'transition-colors',
-        'disabled:pointer-events-none disabled:opacity-50',
-        ripple && 'relative overflow-hidden',
-        VARIANT_CLASS[variant],
-        SIZE_CLASS[size],
-        className,
-      )}
+      className={buttonSurfaceClass(variant, size, ripple, className)}
       onPointerDown={handlePointerDown}
       {...rest}
     >

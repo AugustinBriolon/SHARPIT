@@ -410,7 +410,7 @@ Decision Engine → DecisionState → AthleteSnapshot.decision → Presentation 
 
 **Exit criterion for stabilization phase:** P0–P2 complete. Product-focused vertical work may proceed.
 
-See [`STABILIZATION_P2_REPORT.md`](./STABILIZATION_P2_REPORT.md) for the full audit.
+See [`docs/archive/models-process-2026/STABILIZATION_P2_REPORT.md`](../archive/models-process-2026/STABILIZATION_P2_REPORT.md) for the full audit.
 
 ---
 

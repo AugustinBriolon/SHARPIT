@@ -23,7 +23,7 @@ export function TodayVerdictContextLabel({
         <SkeletonDataValue
           className="bg-ink-surface-foreground/20"
           heightClassName="h-3"
-          widthClassName="w-48 sm:w-64"
+          widthClassName="w-36 sm:w-44"
         />
       ) : (
         contextLabel
@@ -42,7 +42,7 @@ export function TodayVerdictHeadline({
   if (loading) {
     return (
       <div
-        className="text-verdict text-ink-surface-foreground mt-6 max-w-3xl text-[1.75rem] leading-[1.15] sm:text-[2.125rem]"
+        className="text-verdict text-ink-surface-foreground mt-5 max-w-3xl text-[1.75rem] leading-[1.15] sm:text-[2.125rem]"
         aria-hidden
       >
         <SkeletonDataValue
@@ -55,7 +55,7 @@ export function TodayVerdictHeadline({
   }
 
   return (
-    <h1 className="text-verdict text-ink-surface-foreground mt-6 max-w-3xl text-[1.75rem] leading-[1.15] text-balance sm:text-[2.125rem]">
+    <h1 className="text-verdict text-ink-surface-foreground mt-5 max-w-3xl text-[1.75rem] leading-[1.15] text-balance sm:text-[2.125rem]">
       {headline}
     </h1>
   );
@@ -65,13 +65,10 @@ export function TodayVerdictActionLine({
   loading,
   secondaryLine,
   secondaryMuted,
-  whyHref,
 }: {
   loading: boolean;
   secondaryLine: string | null;
   secondaryMuted: boolean;
-  /** Drill-down for « Pourquoi » — limiting factor when known. */
-  whyHref?: string | null;
 }) {
   if (loading) {
     return (
@@ -80,33 +77,76 @@ export function TodayVerdictActionLine({
       </div>
     );
   }
-  if (!secondaryLine && !whyHref) {
+  if (!secondaryLine) {
     return null;
   }
   return (
-    <div className="flex max-w-2xl flex-wrap items-baseline gap-x-3 gap-y-1">
-      {secondaryLine ? (
-        <p
-          className={cn(
-            'text-sm leading-relaxed text-pretty',
-            secondaryMuted
-              ? 'text-ink-surface-foreground/70'
-              : 'text-ink-surface-foreground/80 font-medium',
-          )}
-        >
-          {secondaryLine}
-        </p>
-      ) : null}
-      {whyHref ? (
-        <Link
-          className="text-ink-surface-foreground/65 hover:text-ink-surface-foreground shrink-0 text-sm underline-offset-4 hover:underline"
-          href={whyHref}
-        >
-          Pourquoi
-        </Link>
-      ) : null}
-    </div>
+    <p
+      className={cn(
+        'max-w-2xl text-sm leading-relaxed text-pretty',
+        secondaryMuted
+          ? 'text-ink-surface-foreground/70'
+          : 'text-ink-surface-foreground/80 font-medium',
+      )}
+    >
+      {secondaryLine}
+    </p>
   );
+}
+
+/** Canonical plate frein — DESIGN_LANGUAGE §14. */
+export function TodayVerdictLimiter({
+  loading,
+  cause,
+  href,
+}: {
+  loading: boolean;
+  cause: string | null;
+  href: string | null;
+}) {
+  if (loading) {
+    return (
+      <div className="mt-3" aria-hidden>
+        <SkeletonDataValue
+          className="bg-ink-surface-foreground/20"
+          heightClassName="h-3"
+          widthClassName="w-52"
+        />
+      </div>
+    );
+  }
+  if (!cause || !href) {
+    return null;
+  }
+
+  return (
+    <Link
+      href={href}
+      className={cn(
+        'text-data text-ink-surface-foreground/55 hover:text-ink-surface-foreground/85',
+        'mt-3 inline-flex max-w-2xl items-baseline gap-1.5 text-xs font-medium tracking-wide uppercase',
+        'transition-[color,transform] duration-150 ease-out',
+        'motion-safe:active:scale-[var(--press-scale-small)]',
+      )}
+    >
+      <span>
+        Limité par · {cause}
+        <span className="ms-1" aria-hidden>
+          →
+        </span>
+      </span>
+    </Link>
+  );
+}
+
+function confidenceTitleFor(trust: {
+  confidenceLabel: string | null;
+  confidencePctRounded: number | null;
+}): string | undefined {
+  if (trust.confidencePctRounded !== null) {
+    return `${trust.confidenceLabel} (${trust.confidencePctRounded} %)`;
+  }
+  return trust.confidenceLabel ?? undefined;
 }
 
 export function TodayVerdictConfidence({
@@ -122,32 +162,11 @@ export function TodayVerdictConfidence({
   };
   bars: number;
 }) {
-  const confidenceInner = loading ? (
-    <>
-      <ConfidenceBars filled={0} tone="highlight" />
-      <SkeletonDataValue
-        className="bg-ink-surface-foreground/20"
-        heightClassName="h-[11px]"
-        widthClassName="w-44 sm:w-56"
-      />
-    </>
-  ) : (
-    <>
-      <ConfidenceBars filled={bars} tone="highlight" />
-      <span className="text-data text-xs font-medium tracking-wide uppercase">
-        {trust.confidenceLabel}
-      </span>
-    </>
-  );
-
-  const confidenceTitle =
-    trust.confidencePctRounded !== null
-      ? `${trust.confidenceLabel} (${trust.confidencePctRounded} %)`
-      : (trust.confidenceLabel ?? undefined);
+  const confidenceInner = <VerdictConfidenceInner bars={bars} loading={loading} trust={trust} />;
 
   if (loading) {
     return (
-      <div className="text-ink-surface-foreground/65 inline-flex items-center gap-2">
+      <div className="text-ink-surface-foreground/50 mt-5 inline-flex items-center gap-2">
         {confidenceInner}
       </div>
     );
@@ -157,12 +176,13 @@ export function TodayVerdictConfidence({
     return null;
   }
 
+  const title = confidenceTitleFor(trust);
   if (trust.confidenceHref) {
     return (
       <Link
-        className="text-ink-surface-foreground/65 hover:text-ink-surface-foreground inline-flex items-center gap-2 transition-colors"
+        className="text-ink-surface-foreground/50 hover:text-ink-surface-foreground/75 mt-5 inline-flex items-center gap-2 transition-colors duration-150"
         href={trust.confidenceHref}
-        title={confidenceTitle}
+        title={title}
       >
         {confidenceInner}
       </Link>
@@ -171,45 +191,42 @@ export function TodayVerdictConfidence({
 
   return (
     <div
-      className="text-ink-surface-foreground/65 inline-flex items-center gap-2"
-      title={confidenceTitle}
+      className="text-ink-surface-foreground/50 mt-5 inline-flex items-center gap-2"
+      title={title}
     >
       {confidenceInner}
     </div>
   );
 }
 
-export function TodayVerdictGoalBadge({
+function VerdictConfidenceInner({
   loading,
-  goalLine,
+  trust,
+  bars,
 }: {
   loading: boolean;
-  goalLine: string | null;
+  trust: { confidenceLabel: string | null };
+  bars: number;
 }) {
-  if (loading && !goalLine) {
-    return <BadgeSkeleton />;
-  }
-  if (!loading && goalLine) {
+  if (loading) {
     return (
-      <span className="border-ink-surface-foreground/25 text-ink-surface-foreground/80 text-data rounded-full border bg-transparent px-2.5 py-0.5 text-xs font-normal">
-        {goalLine}
-      </span>
+      <>
+        <ConfidenceBars filled={0} tone="highlight" />
+        <SkeletonDataValue
+          className="bg-ink-surface-foreground/20"
+          heightClassName="h-[11px]"
+          widthClassName="w-44 sm:w-56"
+        />
+      </>
     );
   }
-  return null;
-}
 
-function BadgeSkeleton() {
   return (
-    <span
-      className="border-ink-surface-foreground/25 text-ink-surface-foreground/80 rounded-full border bg-transparent px-2.5 py-0.5 text-xs font-normal"
-      aria-hidden
-    >
-      <SkeletonDataValue
-        className="bg-ink-surface-foreground/20"
-        heightClassName="h-3"
-        widthClassName="w-36"
-      />
-    </span>
+    <>
+      <ConfidenceBars filled={bars} tone="highlight" />
+      <span className="text-data text-xs font-medium tracking-wide uppercase">
+        {trust.confidenceLabel}
+      </span>
+    </>
   );
 }

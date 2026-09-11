@@ -147,7 +147,7 @@ export function SessionPreviewBody({
   return (
     <div
       className={cn(
-        'bg-background/90 relative z-10 flex flex-col justify-end gap-3 px-4 pt-2 pb-4',
+        'bg-card/90 relative z-10 flex flex-col justify-end gap-3 px-4 pt-2 pb-4',
         'sm:justify-center sm:bg-transparent sm:px-5 sm:py-5',
         className,
       )}

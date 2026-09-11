@@ -3,10 +3,7 @@
 > **Status:** Phase 1.5 complete — public contract **FROZEN** (`environment-v1.1`)  
 > **Version:** `environment-v1.1`  
 > **Code:** `src/core/environment/`, `src/core/adapters/environment/`, `src/infrastructure/environment/`  
-> **Freeze report:** [`ENVIRONMENTAL_CONTEXT_ENGINE_V1_1_CONTRACT_FREEZE.md`](./ENVIRONMENTAL_CONTEXT_ENGINE_V1_1_CONTRACT_FREEZE.md)  
-> **Boundary review:** [`ENVIRONMENTAL_CONTEXT_ENGINE_PRE_PHASE2_BOUNDARY_REVIEW.md`](./ENVIRONMENTAL_CONTEXT_ENGINE_PRE_PHASE2_BOUNDARY_REVIEW.md)  
-> **Migration from v1:** [`ENVIRONMENTAL_CONTEXT_ENGINE_V1_1_MIGRATION.md`](./ENVIRONMENTAL_CONTEXT_ENGINE_V1_1_MIGRATION.md)  
-> **Prior freeze:** [`ENVIRONMENTAL_CONTEXT_ENGINE_PHASE1_CONTRACT_FREEZE.md`](./ENVIRONMENTAL_CONTEXT_ENGINE_PHASE1_CONTRACT_FREEZE.md)
+> **Process history (archived):** [`docs/archive/models-process-2026/`](../archive/models-process-2026/) — freeze, migration, phase notes.
 
 ---
 
@@ -125,11 +122,11 @@ yarn test src/core/environment/__tests__/environment-v1.1.test.ts
 
 ---
 
-**Phase 2 complete** — see [`ENVIRONMENTAL_CONTEXT_ENGINE_PHASE2_INTEGRATION.md`](./ENVIRONMENTAL_CONTEXT_ENGINE_PHASE2_INTEGRATION.md).
+**Phase 2 complete** — see [`docs/archive/models-process-2026/ENVIRONMENTAL_CONTEXT_ENGINE_PHASE2_INTEGRATION.md`](../archive/models-process-2026/ENVIRONMENTAL_CONTEXT_ENGINE_PHASE2_INTEGRATION.md).
 
 **Phase 2.6 complete** — calibration frozen — see [`ENVIRONMENTAL_CALIBRATION.md`](./ENVIRONMENTAL_CALIBRATION.md).
 
-**Phase 3 in progress** — presentation — see [`ENVIRONMENTAL_CONTEXT_ENGINE_PHASE3_PRESENTATION.md`](./ENVIRONMENTAL_CONTEXT_ENGINE_PHASE3_PRESENTATION.md).
+**Phase 3 presentation notes (archived)** — see [`docs/archive/models-process-2026/ENVIRONMENTAL_CONTEXT_ENGINE_PHASE3_PRESENTATION.md`](../archive/models-process-2026/ENVIRONMENTAL_CONTEXT_ENGINE_PHASE3_PRESENTATION.md).
 
 Cross-engine dependencies: [`PHYSIOLOGICAL_INTERACTION_MATRIX.md`](./PHYSIOLOGICAL_INTERACTION_MATRIX.md).
 

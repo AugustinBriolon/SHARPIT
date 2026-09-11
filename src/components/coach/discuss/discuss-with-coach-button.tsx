@@ -38,7 +38,7 @@ export function DiscussWithCoachButton({
   target,
   className,
   size = 'default',
-  variant = 'outline',
+  variant = 'highlight',
   onBeforeNavigate,
 }: DiscussWithCoachButtonProps) {
   const dismissFromDialog = usePlannedSessionNavDismiss();

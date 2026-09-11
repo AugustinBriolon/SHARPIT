@@ -4,7 +4,7 @@
 > **Phase:** Stabilization — Core frozen  
 > **Scope:** Presentation / client cache / mutation UX only  
 > **Non-goals:** Physiological engines · Digital Twin · Decision Engine · offline sync implementation  
-> **Related:** [`EVENT_DRIVEN_ARCHITECTURE.md`](EVENT_DRIVEN_ARCHITECTURE.md) · [`PRESENTATION_LAYER_ARCHITECTURE.md`](PRESENTATION_LAYER_ARCHITECTURE.md) · [`ARCHITECTURE.md`](../ARCHITECTURE.md)
+> **Related:** [`EVENT_DRIVEN_ARCHITECTURE.md`](EVENT_DRIVEN_ARCHITECTURE.md) · [`engineering/PRESENTATION_LAYER_ARCHITECTURE.md`](engineering/PRESENTATION_LAYER_ARCHITECTURE.md) · [`ARCHITECTURE.md`](../ARCHITECTURE.md)
 
 ---
 

@@ -1,6 +1,6 @@
-import { format, startOfDay } from 'date-fns';
 import type { PrismaClient } from '@prisma/client';
-import { getOrBuildAthleteSnapshot } from '@/lib/athlete-state/snapshot-service';
+import { generateAthleteSnapshot } from '@/lib/athlete-state/snapshot-service';
+import { demoAnchorTrainingDayId } from '@/lib/demo/demo-calendar';
 import { backfillBodyCompositionObservationsFromMeasurements } from '@/lib/integrations/shared/body-composition-observation-backfill';
 import { backfillHealthObservationsFromDailyHealth } from '@/lib/integrations/shared/health-observation-backfill';
 import { activityInclude } from '@/lib/queries/activity-include';
@@ -18,7 +18,10 @@ export async function purgeDemoDerivedState(
   await prisma.physicalNote.deleteMany({ where: { athleteId } });
 }
 
-/** Backfill observations + rebuild today's snapshot so load/recovery/adapt pages work. */
+/**
+ * Backfill observations + force-rebuild today's snapshot.
+ * forceRefresh clears twin recovery BASELINE_PENDING left by a racey first land.
+ */
 export async function finalizeDemoSeed(prisma: PrismaClient, athleteId: string): Promise<void> {
   await backfillHealthObservationsFromDailyHealth(athleteId, { days: 30 });
   await backfillBodyCompositionObservationsFromMeasurements(athleteId, { days: 90 });
@@ -32,6 +35,17 @@ export async function finalizeDemoSeed(prisma: PrismaClient, athleteId: string):
     await syncManualActivityObservations(activity);
   }
 
-  const trainingDayId = format(startOfDay(new Date()), 'yyyy-MM-dd');
-  await getOrBuildAthleteSnapshot(athleteId, trainingDayId);
+  const trainingDayId = demoAnchorTrainingDayId();
+  // Drop stale twin + today's snapshot so forceRefresh cannot reuse BASELINE_PENDING.
+  await prisma.athleteSnapshotRecord.deleteMany({
+    where: { athleteId, trainingDayId },
+  });
+  await prisma.digitalTwin.deleteMany({
+    where: { athleteId },
+  });
+  await generateAthleteSnapshot({
+    athleteId,
+    trainingDayId,
+    forceRefresh: true,
+  });
 }

@@ -12,7 +12,7 @@ describe('clerkAppearance theme bridge', () => {
     expect(variables.colorBackground).toBe('var(--card)');
     expect(variables.colorForeground).toBe('var(--card-foreground)');
     expect(variables.colorMutedForeground).toBe('var(--muted-foreground)');
-    expect(variables.colorInput).toBe('var(--background)');
+    expect(variables.colorInput).toBe('var(--card)');
     expect(variables.colorBorder).toBe('var(--border)');
     expect(variables.borderRadius).toBe(BRAND.radius);
   });

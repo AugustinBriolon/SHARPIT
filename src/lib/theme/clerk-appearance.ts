@@ -14,9 +14,9 @@ const clerkColorVariables = {
   colorForeground: 'var(--card-foreground)',
   colorMuted: 'var(--muted)',
   colorMutedForeground: 'var(--muted-foreground)',
-  /** Solid fill — SHARPIT `--input` is a border token, not an input background. */
-  colorInput: 'var(--background)',
-  colorInputForeground: 'var(--foreground)',
+  /** Solid fill — white card plate, not canvas Snow White. */
+  colorInput: 'var(--card)',
+  colorInputForeground: 'var(--card-foreground)',
   colorNeutral: 'var(--foreground)',
   colorBorder: 'var(--border)',
   colorRing: 'var(--ring)',
@@ -31,11 +31,11 @@ const sharedElements = {
   headerTitle: 'font-heading text-lg font-semibold text-foreground',
   headerSubtitle: 'text-sm text-muted-foreground',
   socialButtonsBlockButton:
-    'rounded-lg border border-border bg-background text-foreground shadow-none hover:bg-muted/60',
+    'rounded-lg border border-border bg-card text-foreground shadow-none hover:bg-muted/60',
   socialButtonsBlockButtonText: 'font-medium text-foreground',
   formButtonPrimary: 'rounded-lg bg-foreground text-background shadow-none hover:bg-foreground/90',
   formFieldInput:
-    'rounded-lg border border-input bg-background text-foreground shadow-none focus:ring-2 focus:ring-ring/30',
+    'rounded-lg border border-input bg-card text-foreground shadow-none focus:ring-2 focus:ring-ring/30',
   formFieldLabel: 'font-medium text-foreground',
   footerActionLink: 'text-primary hover:text-primary/80 font-medium',
   identityPreviewEditButton: 'text-primary',
@@ -45,7 +45,7 @@ const sharedElements = {
   footer: 'bg-transparent',
   footerActionText: 'text-muted-foreground',
   formFieldAction: 'text-primary',
-  otpCodeFieldInput: 'rounded-lg border border-input bg-background text-foreground',
+  otpCodeFieldInput: 'rounded-lg border border-input bg-card text-foreground',
   alertText: 'text-foreground',
   formResendCodeLink: 'text-primary',
   userButtonPopoverCard: 'rounded-xl border border-border bg-card shadow-none',

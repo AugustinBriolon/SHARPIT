@@ -1,5 +1,3 @@
 # Moved
 
-**Canonical location:** [`docs/engineering/CODE_MAP.md`](engineering/CODE_MAP.md)
-
-_Migration: July 2026 documentation consolidation._
+**Canonical location:** [`docs/engineering/CODE_MAP.md`](../docs/engineering/CODE_MAP.md)

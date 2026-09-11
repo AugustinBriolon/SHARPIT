@@ -83,6 +83,30 @@ describe('selectHubRemainingEntries', () => {
     });
   });
 
+  it('hides the demo session-link planned row from hub À faire', () => {
+    const remaining = [
+      {
+        ...doneEntry('link'),
+        kind: 'planned' as const,
+        activity: null,
+        planned: {
+          id: 'link',
+          title: 'Footing récup — démo liaison',
+        } as ThreadEntry['planned'],
+      },
+      {
+        ...doneEntry('real'),
+        kind: 'planned' as const,
+        activity: null,
+        planned: { id: 'real', title: 'Sortie club' } as ThreadEntry['planned'],
+      },
+    ];
+    expect(selectHubRemainingEntries(remaining)).toEqual({
+      featured: [remaining[1]],
+      overflow: 0,
+    });
+  });
+
   it('counts a brick as one remaining unit and keeps every leg', () => {
     const remaining = [
       {

@@ -196,5 +196,5 @@ Assertions:
 ## Related documents
 
 - [`ENVIRONMENTAL_CONTEXT_ENGINE.md`](./ENVIRONMENTAL_CONTEXT_ENGINE.md) — engine reference
-- [`ENVIRONMENTAL_CONTEXT_ENGINE_PHASE2_5_VALIDATION.md`](./ENVIRONMENTAL_CONTEXT_ENGINE_PHASE2_5_VALIDATION.md) — pre-calibration validation
+- [`docs/archive/models-process-2026/ENVIRONMENTAL_CONTEXT_ENGINE_PHASE2_5_VALIDATION.md`](../archive/models-process-2026/ENVIRONMENTAL_CONTEXT_ENGINE_PHASE2_5_VALIDATION.md) — pre-calibration validation
 - [`PHYSIOLOGICAL_INTERACTION_MATRIX.md`](./PHYSIOLOGICAL_INTERACTION_MATRIX.md) — cross-engine interactions

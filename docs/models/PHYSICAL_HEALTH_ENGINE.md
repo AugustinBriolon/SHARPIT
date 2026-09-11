@@ -286,11 +286,11 @@ Do not migrate product UI until Phase 2 is validated on real athlete data.
 
 Personalized hypotheses only — not implemented in Phase 3.
 
-| File                                                                | Role                            |
-| ------------------------------------------------------------------- | ------------------------------- |
-| `src/core/physical-health/types.ts`                                 | Domain types                    |
-| `src/core/physical-health/legacy-mapping.ts`                        | Legacy → domain transforms      |
-| `src/core/physical-health/timeline.ts`                              | `buildConditionTimeline`        |
-| `src/lib/physical-health/migrate-legacy.ts`                         | Migration bundles + report rows |
-| `src/core/physical-health/__tests__/physical-health-phase1.test.ts` | Phase 1 tests                   |
-| `docs/migrations/PHYSICAL_HEALTH_PHASE1_MIGRATION_REPORT.md`        | Detailed migration report       |
+| File                                                                 | Role                                   |
+| -------------------------------------------------------------------- | -------------------------------------- |
+| `src/core/physical-health/types.ts`                                  | Domain types                           |
+| `src/core/physical-health/legacy-mapping.ts`                         | Legacy → domain transforms             |
+| `src/core/physical-health/timeline.ts`                               | `buildConditionTimeline`               |
+| `src/lib/physical-health/migrate-legacy.ts`                          | Migration bundles + report rows        |
+| `src/core/physical-health/__tests__/physical-health-phase1.test.ts`  | Phase 1 tests                          |
+| `docs/archive/migrations/PHYSICAL_HEALTH_PHASE1_MIGRATION_REPORT.md` | Detailed migration report (historical) |

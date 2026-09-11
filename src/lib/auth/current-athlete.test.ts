@@ -15,6 +15,10 @@ vi.mock('next/headers', () => ({
   cookies: async () => ({ get: cookiesGetMock }),
 }));
 
+vi.mock('@/lib/demo/seed-demo-data', () => ({
+  ensureDemoSeedFresh: vi.fn().mockResolvedValue(false),
+}));
+
 vi.mock('@/lib/prisma', () => ({
   prisma: {
     athleteProfile: {

@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { format } from 'date-fns';
 import {
   isPresentationValuesLoading,
   useTodayPresentationViewModel,
@@ -15,6 +14,7 @@ import { resolveTodayDashboardView } from '@/components/today/today-dashboard-vi
 import { TodayDashboardResolvedView } from '@/components/today/today-dashboard-resolved-view';
 import { TodayDashboardShell } from '@/components/today/today-dashboard-shell';
 import { useActivities } from '@/hooks/use-activities';
+import { trainingDayIdForNow } from '@/lib/training/training-day';
 
 function TodayDashboardLoaded({ trainingDayId }: { trainingDayId: string }) {
   const query = useTodayPresentationViewModel(trainingDayId);
@@ -64,7 +64,7 @@ export function TodayDashboard() {
   const [trainingDayId, setTrainingDayId] = useState<string | null>(null);
 
   useEffect(() => {
-    setTrainingDayId(format(new Date(), 'yyyy-MM-dd'));
+    setTrainingDayId(trainingDayIdForNow());
   }, []);
 
   if (!trainingDayId) {

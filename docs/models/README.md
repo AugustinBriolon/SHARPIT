@@ -51,17 +51,14 @@ Training Stress (Tier 0 — features)
 
 ---
 
-## Architecture reviews
+## Architecture reviews & process history
 
-Point-in-time scientific reviews live in [`docs/audits/`](../audits/) — not model specs.
+Point-in-time scientific reviews: [`docs/audits/`](../audits/). Stabilization / env migration reports: [`docs/archive/models-process-2026/`](../archive/models-process-2026/) — **not** model specs.
 
-| Review                                                                              | Topic                                                |
-| ----------------------------------------------------------------------------------- | ---------------------------------------------------- |
-| [STABILIZATION_P0_MIGRATION_REPORT.md](./STABILIZATION_P0_MIGRATION_REPORT.md)      | Sprint 1 P0 — single decision pipeline migration     |
-| [STABILIZATION_P1_REPORT.md](./STABILIZATION_P1_REPORT.md)                          | Sprint 2 P1 — drill-downs, useToday, Reasoning audit |
-| [STABILIZATION_P2_REPORT.md](./STABILIZATION_P2_REPORT.md)                          | Sprint 3 P2 — legacy removal, guards, repo hygiene   |
-| [ADAPTATION_ARCHITECTURE_REVIEW](../audits/ADAPTATION_ARCHITECTURE_REVIEW.md)       | Whether Adaptation should be an independent model    |
-| [INFERENCE_ARCHITECTURE_REVIEW](../audits/INFERENCE_ARCHITECTURE_REVIEW_2026-07.md) | Feature Extraction Layer gate review                 |
+| Review                                                                              | Topic                                             |
+| ----------------------------------------------------------------------------------- | ------------------------------------------------- |
+| [ADAPTATION_ARCHITECTURE_REVIEW](../audits/ADAPTATION_ARCHITECTURE_REVIEW.md)       | Whether Adaptation should be an independent model |
+| [INFERENCE_ARCHITECTURE_REVIEW](../audits/INFERENCE_ARCHITECTURE_REVIEW_2026-07.md) | Feature Extraction Layer gate review              |
 
 ---
 

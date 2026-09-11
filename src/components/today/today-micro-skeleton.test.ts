@@ -123,3 +123,44 @@ describe('TodayDashboard loading gate contract', () => {
     expect(mainSource).toContain('signalPreviews={content.hero.signalPreviews}');
   });
 });
+
+describe('TodayVerdictHero decision plate', () => {
+  const heroSource = readFileSync(
+    resolve(process.cwd(), 'src/components/today/rich/today-verdict-hero.tsx'),
+    'utf8',
+  );
+  const partsSource = readFileSync(
+    resolve(process.cwd(), 'src/components/today/rich/today-verdict-hero-parts.tsx'),
+    'utf8',
+  );
+
+  it('orders posture → headline → action → Limité par → confidence', () => {
+    const body = heroSource.slice(heroSource.indexOf('return ('));
+    expect(body).toContain('TodayVerdictContextLabel');
+    expect(body).toContain('TodayVerdictHeadline');
+    expect(body).toContain('TodayVerdictActionLine');
+    expect(body).toContain('TodayVerdictLimiter');
+    expect(body).toContain('TodayVerdictConfidence');
+    const postureAt = body.indexOf('TodayVerdictContextLabel');
+    const headlineAt = body.indexOf('TodayVerdictHeadline');
+    const actionAt = body.indexOf('TodayVerdictActionLine');
+    const limiterAt = body.indexOf('TodayVerdictLimiter');
+    const confidenceAt = body.indexOf('TodayVerdictConfidence');
+    expect(postureAt).toBeLessThan(headlineAt);
+    expect(headlineAt).toBeLessThan(actionAt);
+    expect(actionAt).toBeLessThan(limiterAt);
+    expect(limiterAt).toBeLessThan(confidenceAt);
+  });
+
+  it('does not mount the goal chip or orphan Pourquoi link on the plate', () => {
+    expect(heroSource).not.toContain('TodayVerdictGoalBadge');
+    expect(heroSource).not.toContain('goalLine');
+    expect(partsSource).not.toContain('Pourquoi');
+    expect(partsSource).toContain('Limité par ·');
+  });
+
+  it('reveals once via FadeIn with prefers-reduced-motion-safe press on the frein', () => {
+    expect(heroSource).toContain('FadeIn');
+    expect(partsSource).toContain('motion-safe:active:scale-[var(--press-scale-small)]');
+  });
+});

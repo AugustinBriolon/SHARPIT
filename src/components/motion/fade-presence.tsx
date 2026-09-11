@@ -60,12 +60,21 @@ type FadeInProps = {
   className?: string;
   /** When false, render static (SSR-safe content already visible). */
   active?: boolean;
+  /** Defaults to opacity-only; pass fadeUpVariants for a short rise. */
+  variants?: HTMLMotionProps<'div'>['variants'];
 } & Omit<HTMLMotionProps<'div'>, 'children' | 'animate' | 'initial' | 'variants'>;
 
 /**
- * One-shot fade-in after mount. Uses opacity-only; safe when `active` flips true client-side.
+ * One-shot fade-in after mount. Opacity-only by default; safe when `active` flips true client-side.
+ * Skips motion entirely under prefers-reduced-motion.
  */
-export function FadeIn({ children, className, active = true, ...rest }: FadeInProps) {
+export function FadeIn({
+  children,
+  className,
+  active = true,
+  variants = fadeVariants,
+  ...rest
+}: FadeInProps) {
   const animate = useShouldAnimate();
 
   if (!animate || !active) {
@@ -78,7 +87,7 @@ export function FadeIn({ children, className, active = true, ...rest }: FadeInPr
       className={cn(className)}
       initial="hidden"
       transition={fadeTransition}
-      variants={fadeVariants}
+      variants={variants}
       {...rest}
     >
       {children}

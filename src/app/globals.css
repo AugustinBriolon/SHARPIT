@@ -90,13 +90,14 @@
   Hex sources: src/lib/brand-tokens.ts
 */
 :root {
-  /* Snow White #fcfcf7 */
+  /* Snow White #fcfcf7 — page canvas only */
   --background: oklch(0.99 0.007 106.5);
   /* Forest Depths #1c3a13 — body ink */
   --foreground: oklch(0.315 0.073 139);
-  --card: oklch(0.99 0.007 106.5);
+  /* Pure white plates — cards, outline buttons, chip wells (lift off canvas) */
+  --card: #fff;
   --card-foreground: oklch(0.315 0.073 139);
-  --popover: oklch(0.99 0.007 106.5);
+  --popover: #fff;
   --popover-foreground: oklch(0.315 0.073 139);
   /*
     Interactive brand green — Seed hue family, enough chroma to read at /10–/15.
@@ -123,8 +124,8 @@
      here, inverted to Forest-on-Lime in dark. Exists as a variable (not a
      `dark:` class) because SVG/recharts color props take a raw color string. */
   --ink-accent: var(--highlight);
-  /* Chip surface — pure white, crisper than Snow White canvas */
-  --chip-surface: #fff;
+  /* Chip / analysis plates share card white so they lift off Snow White canvas */
+  --chip-surface: var(--card);
   --destructive: oklch(0.58 0.2 27);
   --border: oklch(0.315 0.073 139 / 12%);
   --input: oklch(0.315 0.073 139 / 14%);
@@ -138,7 +139,7 @@
   --chart-3: oklch(0.72 0.11 122); /* tempo — olive-lime (moderate days) */
   --chart-4: oklch(0.74 0.12 95); /* threshold — warm gold, still lime-adjacent */
   --chart-5: oklch(0.66 0.15 55); /* VO2max / charge — warm orange (data) */
-  --analysis-surface: oklch(0.99 0.007 106.5);
+  --analysis-surface: var(--card);
   --analysis-surface-alt: oklch(0.955 0.012 115);
   --analysis-border: oklch(0.315 0.073 139 / 16%);
   --analysis-grid: oklch(0.315 0.073 139 / 8%);
@@ -220,7 +221,7 @@
   --ink-surface: oklch(0.936 0.13 126.6);
   --ink-surface-foreground: oklch(0.22 0.045 139);
   --ink-accent: var(--ink-surface-foreground);
-  --chip-surface: oklch(0.28 0.05 139);
+  --chip-surface: var(--card);
   --destructive: oklch(0.62 0.2 27);
   --border: oklch(0.99 0.007 106.5 / 12%);
   --input: oklch(0.99 0.007 106.5 / 14%);
@@ -230,7 +231,7 @@
   --chart-3: oklch(0.82 0.1 122);
   --chart-4: oklch(0.82 0.11 95);
   --chart-5: oklch(0.74 0.14 55);
-  --analysis-surface: oklch(0.26 0.048 139);
+  --analysis-surface: var(--card);
   --analysis-surface-alt: oklch(0.3 0.05 139);
   --analysis-border: oklch(0.99 0.007 106.5 / 14%);
   --analysis-grid: oklch(0.99 0.007 106.5 / 8%);
@@ -646,7 +647,7 @@
   /* Slightly stronger than Pewter so labels clear 4.5:1 on Snow */
   --auth-muted: oklch(0.42 0 0);
   --auth-placeholder: oklch(0.42 0 0);
-  --auth-input-bg: var(--background);
+  --auth-input-bg: var(--card);
   --auth-input-border: oklch(0.315 0.073 139 / 28%);
   --auth-panel-border: oklch(0.315 0.073 139 / 20%);
   --auth-divider: oklch(0.315 0.073 139 / 22%);

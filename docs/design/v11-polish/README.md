@@ -1,13 +1,7 @@
-# V1.1 Plan / Moi UX polish — Design validation
+# Moved
 
-Mobile evidence of Plan + Moi hub tap targets and section order (PR polish). Captured on Vercel preview via `/demo` cookie.
+Design experiment / capture folder — **not design law**.
 
-| File                             | Surface                                                |
-| -------------------------------- | ------------------------------------------------------ |
-| `plan-hub-objectif-sessions.png` | Plan · Objectif + Prochaines séances (full-card links) |
-| `plan-session-navigated.png`     | Session card → planned-session detail                  |
-| `moi-hub-sections-light.png`     | Moi · Essentiel / Compte / Équipement                  |
-| `moi-hub-apps-apparence.png`     | Moi · Apps connectées / Apparence / Autre              |
-| `moi-hub-sections-dark.png`      | Moi hub (dark preference attempt)                      |
+**Archived:** [`docs/archive/design-experiments-2026/v11-polish/`](../../archive/design-experiments-2026/v11-polish/)
 
-IA order: Modèle → Offre/Compte → Préférences → Données → Aide → Légal. No consent / glass / back-nav changes.
+**Canonical design:** [`../DESIGN_LANGUAGE.md`](../DESIGN_LANGUAGE.md) · [`../DESIGN_SYSTEM_PROMPT.md`](../DESIGN_SYSTEM_PROMPT.md) · [`../INFORMATION_ARCHITECTURE.md`](../INFORMATION_ARCHITECTURE.md)

@@ -1,6 +1,5 @@
 'use client';
 
-import { format } from 'date-fns';
 import { useQuery } from '@tanstack/react-query';
 import {
   TodayNutritionCardBody,
@@ -10,11 +9,12 @@ import { resolveNutritionLinkTitle } from '@/components/today/dashboard/today-nu
 import { useTodayNutritionDay } from '@/components/today/dashboard/nutrition-day-resolver';
 import { fetchNutritionPresentation } from '@/lib/query/presentation-fetchers';
 import { queryKeys } from '@/lib/query/keys';
+import { trainingDayIdForNow } from '@/lib/training/training-day';
 
 export { TodayNutritionCardSkeleton };
 
 export function TodayNutritionCard() {
-  const trainingDayId = format(new Date(), 'yyyy-MM-dd');
+  const trainingDayId = trainingDayIdForNow();
   const query = useQuery({
     queryKey: queryKeys.presentationNutrition(trainingDayId),
     queryFn: () => fetchNutritionPresentation(trainingDayId),

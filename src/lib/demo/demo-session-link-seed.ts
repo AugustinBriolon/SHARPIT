@@ -1,5 +1,6 @@
 import { ActivityType, Prisma, SessionIntensity, type PrismaClient } from '@prisma/client';
-import { addDays, addHours, startOfDay } from 'date-fns';
+import { addDays, addHours } from 'date-fns';
+import { demoAnchorTrainingDayId, demoDateFromTrainingDayId } from '@/lib/demo/demo-calendar';
 import {
   DEMO_LINK_ACTIVITY_TITLE,
   DEMO_SESSION_LINK_PLANNED_TITLE,
@@ -25,16 +26,14 @@ export async function seedDemoSessionLinkPair(
   athleteId: string,
   day: Date,
 ): Promise<void> {
-  const dayStart = startOfDay(day);
-
   await prisma.plannedSession.deleteMany({
-    where: { athleteId, title: DEMO_SESSION_LINK_PLANNED_TITLE, date: dayStart },
+    where: { athleteId, title: DEMO_SESSION_LINK_PLANNED_TITLE, date: day },
   });
   await prisma.activity.deleteMany({
     where: {
       athleteId,
       title: DEMO_LINK_ACTIVITY_TITLE,
-      date: { gte: dayStart, lt: addDays(dayStart, 1) },
+      date: { gte: day, lt: addDays(day, 1) },
     },
   });
 
@@ -42,7 +41,7 @@ export async function seedDemoSessionLinkPair(
     data: {
       athleteId,
       type: ActivityType.RUN,
-      date: dayStart,
+      date: day,
       title: DEMO_SESSION_LINK_PLANNED_TITLE,
       durationMin: 40,
       intensity: SessionIntensity.ENDURANCE,
@@ -54,7 +53,7 @@ export async function seedDemoSessionLinkPair(
     data: {
       athleteId,
       type: ActivityType.RUN,
-      date: addHours(dayStart, 18),
+      date: addHours(day, 18),
       title: DEMO_LINK_ACTIVITY_TITLE,
       duration: 40 * 60,
       rpe: 4,
@@ -91,33 +90,37 @@ export async function purgeStaleDemoSessionLinkPairs(
   athleteId: string,
   today: Date,
 ): Promise<void> {
-  const todayStart = startOfDay(today);
-
   await prisma.plannedSession.deleteMany({
     where: {
       athleteId,
       title: DEMO_SESSION_LINK_PLANNED_TITLE,
-      date: { lt: todayStart },
+      date: { lt: today },
     },
   });
   await prisma.activity.deleteMany({
     where: {
       athleteId,
       title: DEMO_LINK_ACTIVITY_TITLE,
-      date: { lt: todayStart },
+      date: { lt: today },
     },
   });
 }
 
-/** One orphan pair for today only — powers the session-link suggestion chip. */
+/**
+ * One orphan pair for today only — powers the session-link suggestion chip.
+ * Idempotent: never delete/recreate an existing pair (that rotated activity ids
+ * and 404'd open detail pages on every demo land).
+ */
 export async function ensureDemoSessionLinkStory(
   prisma: PrismaClient,
   athleteId: string,
 ): Promise<void> {
-  const today = startOfDay(new Date());
+  const today = demoDateFromTrainingDayId(demoAnchorTrainingDayId());
   await purgeStaleDemoSessionLinkPairs(prisma, athleteId, today);
   await resetDemoSessionLinkStory(prisma, athleteId);
-  // Stale orphan RUN planned rows on the same day steal greedy link matching.
+
+  // Other RUN planned / realized on the anchor day steal link matching or
+  // duplicate the session-link story in Today.
   await prisma.plannedSession.deleteMany({
     where: {
       athleteId,
@@ -128,7 +131,6 @@ export async function ensureDemoSessionLinkStory(
       title: { not: DEMO_SESSION_LINK_PLANNED_TITLE },
     },
   });
-  // Past-week seed can land "Sortie longue" on today — it steals post-session loop focus.
   await prisma.activity.deleteMany({
     where: {
       athleteId,
@@ -137,5 +139,25 @@ export async function ensureDemoSessionLinkStory(
       title: { not: DEMO_LINK_ACTIVITY_TITLE },
     },
   });
+
+  const [existingPlanned, existingActivity] = await Promise.all([
+    prisma.plannedSession.findFirst({
+      where: { athleteId, title: DEMO_SESSION_LINK_PLANNED_TITLE, date: today },
+      select: { id: true },
+    }),
+    prisma.activity.findFirst({
+      where: {
+        athleteId,
+        title: DEMO_LINK_ACTIVITY_TITLE,
+        date: { gte: today, lt: addDays(today, 1) },
+      },
+      select: { id: true },
+    }),
+  ]);
+
+  if (existingPlanned && existingActivity) {
+    return;
+  }
+
   await seedDemoSessionLinkPair(prisma, athleteId, today);
 }

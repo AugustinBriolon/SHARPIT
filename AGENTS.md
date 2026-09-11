@@ -24,13 +24,14 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - [`docs/EVENT_DRIVEN_ARCHITECTURE.md`](docs/EVENT_DRIVEN_ARCHITECTURE.md) — sync and orchestration (athlete-centric)
 - [`docs/INSTANT_UX_ARCHITECTURE.md`](docs/INSTANT_UX_ARCHITECTURE.md) — optimistic UI, cache strategy, Instant / Background / Blocking
 - [`docs/ATHLETE_SNAPSHOT.md`](docs/ATHLETE_SNAPSHOT.md) — canonical athlete state (Morning Experience)
-- [`docs/SNAPSHOT_QUALITY_V1_AUDIT.md`](docs/SNAPSHOT_QUALITY_V1_AUDIT.md) — snapshot field audit & quality gate
+
+Point-in-time audits, sprint reports, design capture folders, and Superpowers plans live under [`docs/archive/`](docs/archive/) or [`docs/audits/`](docs/audits/) — **not** product/design law.
 
 ## Agent skills (curated allowlist)
 
 Skills live in [`.agents/skills/`](.agents/skills/). **Only the folders listed below are allowed.** Do not install taste/Expo/other-DB/Prisma-v7 packs without an explicit product decision. Prefer project docs above before any skill.
 
-**Precedence:** `docs/design/*` + `PRODUCT.md` + `CORE_ARCHITECTURE.md` **win** over skill taste defaults. Skills refine execution; they do not redefine SHARPIT's visual or domain law.
+**Precedence:** `docs/design/DESIGN_LANGUAGE.md` + `DESIGN_SYSTEM_PROMPT.md` + `INFORMATION_ARCHITECTURE.md` + `PRODUCT.md` + `CORE_ARCHITECTURE.md` **win** over skill taste defaults and over anything in `docs/archive/`. Skills refine execution; they do not redefine SHARPIT's visual or domain law.
 
 ### When to invoke
 

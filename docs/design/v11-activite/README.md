@@ -1,12 +1,7 @@
-# V1.1 Activité hub — Design validation
+# Moved
 
-Mobile evidence of `/activite` after Plan hub / chrome (wave 2). Captured on Vercel preview via `/demo` cookie.
+Design experiment / capture folder — **not design law**.
 
-| File                         | Theme |
-| ---------------------------- | ----- |
-| `v11-activite-hub-light.png` | Light |
-| `v11-activite-hub-dark.png`  | Dark  |
+**Archived:** [`docs/archive/design-experiments-2026/v11-activite/`](../../archive/design-experiments-2026/v11-activite/)
 
-Surfaces: **Historique** (list) · CTA **Nouvelle activité**. No Accès dump. Séjours not featured (deep link `/training/trips` only).
-
-Deferred (next briefs): Moi-split for Séjours entry · full back-navigation audit beyond saisie / session detail.
+**Canonical design:** [`../DESIGN_LANGUAGE.md`](../DESIGN_LANGUAGE.md) · [`../DESIGN_SYSTEM_PROMPT.md`](../DESIGN_SYSTEM_PROMPT.md) · [`../INFORMATION_ARCHITECTURE.md`](../INFORMATION_ARCHITECTURE.md)

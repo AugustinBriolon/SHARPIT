@@ -78,6 +78,6 @@ iOS partitions storage (cookies, localStorage, IndexedDB) between a Safari tab a
 ## References
 
 - `docs/models/CORE_ARCHITECTURE.md` — `AthleteSnapshot` as canonical state; no client-side recomputation.
-- `docs/SNAPSHOT_QUALITY_V1_AUDIT.md` — the `READY`-classified fields (`todaysDecision`, `confidence`/`confidenceLabel`, `limitingFactor`) the offline summary is built from, and nothing beyond them.
+- `docs/audits/SNAPSHOT_QUALITY_V1_AUDIT_2026-07.md` — the `READY`-classified fields (`todaysDecision`, `confidence`/`confidenceLabel`, `limitingFactor`) the offline summary is built from, and nothing beyond them.
 - `src/lib/pwa/snapshot-store.ts`, `snapshot-store-validation.ts`, `sw-update-state.ts` — implementation.
 - `src/sw.ts` — the service-worker lifecycle change.

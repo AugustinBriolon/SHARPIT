@@ -509,10 +509,10 @@ type ActivityStatusDrawerProps = {
 function ActivityStatusDrawerHeader() {
   return (
     <>
-      <div className="flex justify-center pt-3 pb-1" aria-hidden>
+      <div className="flex justify-center pt-3" aria-hidden>
         <div className="bg-foreground/20 h-1 w-10 rounded-full" />
       </div>
-      <div className="border-foreground/8 flex items-center justify-between border-b px-4 py-3">
+      <div className="border-foreground/8 flex items-center justify-between border-b px-4 pb-3">
         <Drawer.Title className="text-sm font-semibold">Statut d’activité</Drawer.Title>
         <Drawer.Close
           render={
