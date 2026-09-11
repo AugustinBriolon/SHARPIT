@@ -12,6 +12,9 @@ function heroFixture(overrides: Partial<TodayViewModel['hero']> = {}): TodayView
     postureLabel: 'Récup d’abord',
     focusPriority: 'Allège la séance. Elle sert Half IronMan',
     goalLine: 'Half IronMan · J-30',
+    goalHref: '/moi/objectifs#goal-g1',
+    goalId: 'g1',
+    goalLinkedToSession: true,
     actionLine: 'Allège la séance',
     adaptationReminders: [],
     verdictStyle: {

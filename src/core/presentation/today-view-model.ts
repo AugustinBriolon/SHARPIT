@@ -104,6 +104,11 @@ export type TodayViewModel = {
     postureLabel: string;
     focusPriority: string | null;
     goalLine: string | null;
+    /** Deep-link to `/moi/objectifs#goal-{id}` when a goal context exists. */
+    goalHref: string | null;
+    goalId: string | null;
+    /** Today's planned session carries this goal. */
+    goalLinkedToSession: boolean;
     actionLine: string | null;
     adaptationReminders: string[];
     verdictStyle: {

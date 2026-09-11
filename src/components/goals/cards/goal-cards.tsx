@@ -17,6 +17,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { parseGoalMetricConfig } from '@/lib/goals/goal-metric-config';
+import { goalDomId } from '@/lib/today/rich/today-goal-anchor';
 import { cn } from '@/lib/utils';
 import { useGoalMutations } from '@/hooks/use-data';
 
@@ -267,7 +268,7 @@ export function RaceCard({ goal }: { goal: GoalItem }) {
 
   return (
     <>
-      <Card>
+      <Card id={goalDomId(goal.id)}>
         <RaceCardBody goal={goal} />
         <GoalCardFooter
           achieved={goal.achieved}
@@ -298,7 +299,7 @@ export function MetricGoalCard({ goal }: { goal: GoalItem }) {
 
   return (
     <>
-      <Card>
+      <Card id={goalDomId(goal.id)}>
         <MetricGoalCardBody goal={goal} />
         <GoalCardFooter
           achieved={goal.achieved}
