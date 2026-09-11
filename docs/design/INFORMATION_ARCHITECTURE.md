@@ -10,14 +10,16 @@
 
 ## Purpose
 
-SHARPIT is an Athlete State Intelligence product. Its information architecture must help an athlete move from present state to an appropriate decision with minimal cognitive effort.
+SHARPIT is an Athlete State Intelligence product expressed as a **Digital Twin coach**. Its information architecture must help an athlete move from present state to an appropriate decision **and** keep the programme coherent with their goal — with minimal cognitive effort.
+
+The Twin is the foundation (state, confidence, evidence). Coaching + programme + suivi is the product athletes feel across Today, Plan, and contextual Coach discuss. Core stays frozen; growth is vertical expression.
 
 The application is organised around the athlete's time horizon, not around internal data domains:
 
-1. **Today** — make the right decision now.
-2. **My week** — organise the next seven days.
+1. **Today** — make the right decision now (and see when the plan ahead should be rearranged).
+2. **My week / Plan** — organise the coming days; **Coacher mon objectif** (macro, Remplir, Ajuster).
 3. **Progress** — understand long-term development.
-4. **Coach** — discuss freely or with relevant context.
+4. **Coach** — discuss freely or with relevant context (one coaching expression — not the whole product).
 5. **Profile** — maintain the athlete model, data sources, and application preferences.
 
 This is a product-surface contract. It complements [PRODUCT.md](../product/PRODUCT.md), [DESIGN_LANGUAGE.md](./DESIGN_LANGUAGE.md), and [ATHLETE_SNAPSHOT.md](../ATHLETE_SNAPSHOT.md). When they conflict, the product constitution and frozen Core contracts prevail.
@@ -33,7 +35,7 @@ Use a temporal, decision-led navigation model. **Shell V1** (shipped in primary 
 | **Activité** | What did I actually do?                | Past → present  | Activity history, trips, manual entry, completed-session detail.                           |
 | **Moi**      | How does SHARPIT know and support me?  | Persistent      | Corps, objectifs, Confidentialité (consents / export / delete), account, equipment, prefs. |
 
-**Coach is not a tab.** It remains a contextual entry (and `/coach` deep link) from Today, Plan, sessions, and related surfaces. Legal (`/consent`, `/privacy`, `/terms`), onboarding, and any future teaser stay **outside** the auth app shell — they must not wrap the tab bar.
+**Coach is not a tab.** That is a **chrome** decision, not a product-ambition ceiling: coaching lives in Today (verdict / why / rearrange CTAs), Plan (**Coacher mon objectif**), and `/coach` discuss deep links from those surfaces. Legal (`/consent`, `/privacy`, `/terms`), onboarding, and any future teaser stay **outside** the auth app shell — they must not wrap the tab bar.
 
 These destinations form a single floating bottom tab bar on every viewport (iOS-style capsule, narrower than the reading column). Moi stays a tab, not an identity footer.
 
@@ -158,14 +160,16 @@ Multi-day hiking trips are an activity-history grouping, not a top-level product
 
 ### Coach
 
-**Job:** let the athlete ask for reflection without making a chat interface the product's centre of gravity.
+**Job:** deepen reflection and allow conversational coaching without making a chat UI the only centre of gravity. Programme generation and rearrange live primarily on **Plan** (and Today CTAs that deep-link there); discuss complements them.
 
 Coach supports two equally valid entry points:
 
 - **Free conversation:** start a new question from the Coach destination with no forced topic.
 - **Contextual conversation:** start from Today, a planned session, an activity, My week, a goal, a record, a physical-health constraint, or journal analyses.
 
-Every contextual conversation must identify the attached context in plain language, expose the evidence behind the Coach's answer, and allow the athlete to remove or change the context before sending a message. The Coach may inform a decision; it never silently changes the athlete's plan. Composer text is never prefilled from a discuss deep-link — only the context chip is attached.
+Every contextual conversation must identify the attached context in plain language, expose the evidence behind the Coach's answer, and allow the athlete to remove or change the context before sending a message. The Coach may propose plan mutations via tools; it **never silently** changes the athlete's plan — athlete approval is mandatory. Composer text is never prefilled from a discuss deep-link — only the context chip is attached.
+
+**Product note:** absence of a Coach tab must not be read as "SHARPIT does not coach." Twin-grounded coaching (analyses + programme + suivi + rearrange) is the product; chat is one surface among several.
 
 ### Profile
 

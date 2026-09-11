@@ -40,15 +40,15 @@ Neither path produces durable performance.
 
 ### Why SHARPIT exists
 
-SHARPIT exists to give every athlete a **continuous, honest, evolving representation of their physiological state** — one they can reason with across days, seasons, and years.
+SHARPIT exists to give every athlete a **continuous, honest, evolving Digital Twin** — and to **coach from that Twin**: best analyses, best programme toward a goal, follow-through, and rearrange when reality changes.
 
 Not to collect more observations.
 
 Not to display more charts.
 
-Not to automate coaching.
+Not to improvise as a free-form chatbot detached from state.
 
-To close the gap between **what was measured** and **what is true about the athlete right now** — and to make that truth actionable without concealing its limits.
+The Twin is the **foundation**. Coaching + programme + suivi is the **product**. Together they close the gap between **what was measured** and **what is true about the athlete right now** — then turn that truth into an adaptive plan without concealing its limits.
 
 ### What we solve
 
@@ -66,11 +66,11 @@ In five years, SHARPIT is not remembered as an application athletes open.
 
 It is remembered as the **reference system for athlete state** — the place where an athlete's physiological reality is modeled, challenged, updated, and made legible.
 
-SHARPIT becomes a new category: **Athlete State Intelligence**.
+SHARPIT becomes a new category: **Athlete State Intelligence** expressed as a **Digital Twin coach**.
 
-This category sits between raw wearable data and human expertise. It is not a tracker (which records). It is not a planner (which prescribes). It is not a coach chatbot (which improvises). It is a **persistent intelligence layer** that maintains a living model of the athlete and reasons from that model with scientific discipline.
+This category sits on top of raw wearable data. It is not a tracker (which records). It is not a calendar that only lists workouts. It is not a coach chatbot that improvises without a model. It is a **persistent Twin** that maintains a living model of the athlete — and from that model **analyses, programmes, follows, and rearranges** toward an objective, with scientific discipline and athlete approval.
 
-An athlete in 2031 does not ask "what does my app say?" They ask "what does my model say?" — and they understand the answer because the model is theirs: built from their history, transparent in its assumptions, honest about what it does not know.
+An athlete in 2031 does not ask "what does my app say?" They ask "what does my Twin say I should train, and why?" — and they understand the answer because the model is theirs: built from their history, transparent in its assumptions, honest about what it does not know.
 
 ### The category we create
 
@@ -80,8 +80,8 @@ An athlete in 2031 does not ask "what does my app say?" They ask "what does my m
 - Intelligence is synthesized across systems, not siloed by metric.
 - The product remembers; it does not reset every Monday.
 - The Twin persists across devices and integrations; evidence changes, the athlete model endures.
-- Recommendations are consequences of understanding, not the product itself.
-- The athlete develops a relationship with a model of themselves — not with a feed, a leaderboard, or a notification stream.
+- Recommendations and programme changes are consequences of understanding — not freestanding chatbot prescriptions.
+- The athlete develops a relationship with a Twin that coaches them — not with a feed, a leaderboard, or a notification stream.
 
 SHARPIT in five years is the system an athlete trusts to represent them accurately when no one else — including the athlete — has the full picture.
 
@@ -121,7 +121,7 @@ What SHARPIT remembers shapes what it recommends. We treat longitudinal data as 
 
 ### VIII. Agency remains with the athlete
 
-SHARPIT augments judgment. It does not replace it. The athlete decides. The coach remains valuable. The physician remains authoritative. Our role is to make decisions more informed — not to remove accountability.
+SHARPIT coaches. It does not seize the wheel. The athlete remains the final decision-maker: programme proposals, rearranges, and chat tools require **explicit approval** — never silent plan mutation. The physician remains authoritative for clinical judgment. A human coach may coexist later; SHARPIT's job is still to coach the athlete through the Twin, not to defer that responsibility to someone else.
 
 ### IX. Science is the floor, not the ceiling
 
@@ -143,11 +143,11 @@ If a capability does not improve the athlete's next decision or deepen their und
 
 The Digital Twin is not a database table. It is not a cache of API responses. It is not a dashboard backend.
 
-The Digital Twin is **the product**.
+The Digital Twin is the **foundation of the product**.
 
-It is SHARPIT's continuously maintained answer to the question: _What is happening inside this athlete right now, and how confident are we?_
+It is SHARPIT's continuously maintained answer to the question: _What is happening inside this athlete right now, and how confident are we?_ Coaching — analyses, programme toward a goal, suivi, rearrange — is how that answer becomes a living training partnership. Without the Twin, coaching is improvisation; without coaching expression, the Twin is only a state layer.
 
-It holds interpreted state — recovery capacity, fatigue accumulation, adaptation trajectory, limiting factors, constraints, confidence — not raw observations. Observations enter. Understanding remains.
+It holds interpreted state — recovery capacity, fatigue accumulation, adaptation trajectory, limiting factors, constraints, confidence — not raw observations. Observations enter. Understanding remains. Programme and follow-through flow from that understanding.
 
 ### The Twin as platform
 
@@ -249,7 +249,7 @@ It helps by **reducing the gap between sensation and reality** — without claim
 
 Today, athletes interact with screens: dashboards, charts, lists. Tomorrow, they interact with **state**.
 
-The interface question shifts from "show me my data" to "what is my state, what changed, what does it mean, what is the best next move?" The Twin is the conversational anchor — not a chatbot persona, but the underlying model that every surface expresses.
+The interface question shifts from "show me my data" to "what is my state, what should I train next toward my goal, and why?" The Twin is the coaching foundation — not a chatbot persona, but the underlying model that every surface expresses: Today, Plan, and discuss.
 
 Over time, surfaces become views on the Twin. The activity list becomes evidence. The plan becomes intent. The recommendation becomes a verdict with provenance. The athlete's relationship migrates from navigating software to **consulting their model** — through whatever interface exists that year.
 
@@ -299,15 +299,15 @@ Endure is the pillar competitors ignore because it does not spike quarterly metr
 
 SHARPIT has built what most products never build: a scientifically grounded intelligence core. Observations flow through features into independent inference models. The Digital Twin persists. Reasoning synthesizes across models. Decision Records create auditability. The AI Coach speaks from context, not from templates.
 
-What changes now: the product must **express** the Kernel, not **prove** it. Engineering is no longer the bottleneck. Clarity of expression is.
+What changes now: the product must **express** the Kernel as a Digital Twin coach — not only prove state inference. Engineering is no longer the bottleneck. Clarity of coaching expression (programme, suivi, rearrange) is.
 
-The athlete should feel that SHARPIT knows something true about them — not that SHARPIT has many capabilities.
+The athlete should feel that SHARPIT knows something true about them **and** coaches the next block toward their goal — not that SHARPIT has many capabilities.
 
 ### One Year — Trusted Daily Judgment
 
-Within one year, SHARPIT becomes the first application the athlete opens to answer: **"What should I do today?"**
+Within one year, SHARPIT becomes the first application the athlete opens to answer: **"What should I do today — and how does my programme stay aligned with my goal?"**
 
-Not because of habit loops. Because the daily verdict has been right often enough to earn trust. The Twin is visible — not as engineering architecture, but as felt understanding. Plans adapt before they break. Post-session interpretation closes the loop between execution and model update.
+Not because of habit loops. Because the daily verdict and the adaptive plan have been right often enough to earn trust. The Twin is visible — not as engineering architecture, but as felt understanding. Plans adapt before they break (athlete-approved rearrange). Post-session interpretation closes the loop between execution, model update, and the next block of training.
 
 What fundamentally changes: SHARPIT shifts from **system athletes explore** to **system athletes rely on**.
 
@@ -321,7 +321,7 @@ What fundamentally changes: SHARPIT shifts from **reactive intelligence** to **p
 
 ### Five Years — Athlete State Infrastructure
 
-Within five years, SHARPIT is the authoritative layer of athlete state — potentially interfacing with coaches, physicians, and devices not as another data source, but as **the integrated model**.
+Within five years, SHARPIT is the authoritative Twin an athlete trains with — optionally interfacing with human coaches, physicians, and devices not as another data source, but as **the integrated model that already coaches**.
 
 The category is established. Competitors may copy features. They cannot easily copy a decade of calibrated, athlete-specific state memory with scientific provenance.
 
@@ -359,9 +359,9 @@ If the athlete cannot understand why SHARPIT said what it said, we have built su
 
 We surface risk signals. We do not diagnose. We do not replace clinical judgment. Pretending otherwise endangers athletes and destroys institutional trust.
 
-### A replacement for human coaches
+### A state dashboard that refuses to coach
 
-Coaches provide relationship, accountability, and context machines cannot fully access. SHARPIT makes coaches more effective by giving them a rigorous model — it does not make them obsolete.
+SHARPIT is a **Digital Twin coach**: it must propose the best analyses and the best programme for an objective, follow progress, and rearrange when evidence changes. Stopping at "here is your state — discuss with a human" is a failure of product ambition. A human coach may still coexist for relationship and accountability; that coexistence is optional, not the definition of SHARPIT. What we refuse is opaque, unaccountable prescription — not coaching itself.
 
 ### A certainty engine
 
@@ -465,9 +465,9 @@ They should feel that someone competent has been paying attention to their body 
 
 ### What relationship should they have with the product?
 
-A relationship of **earned trust**, closer to a rigorous training journal written by a scientifically literate version of themselves than to a coach, a friend, or a boss.
+A relationship of **earned trust** with a Twin that coaches: scientifically literate, honest about uncertainty, concrete about the next block of training — closer to a rigorous partner than to a passive journal, a friend, or a boss.
 
-They consult SHARPIT the way a pilot consults instruments: not because the instruments fly the plane, but because flying without them in complex conditions is negligence.
+They consult SHARPIT the way a pilot consults instruments **and** a flight plan: the Twin does not seize the controls, but without state + programme under uncertainty, training is negligence.
 
 ### What should they trust?
 
@@ -896,10 +896,10 @@ Internal: updated state, post-session narrative, plan-match score, goal progress
 
 **Current friction:**
 
-- Sync runs on cron (3×/day UTC), not necessarily soon after session end.
-- **Inference does not run automatically post-sync** — Twin may stay stale until next Today visit.
-- Athlete has no signal that sync completed and interpretation is ready.
+- Sync runs on cron (6×/day UTC), not necessarily seconds after session end.
+- Athlete has limited signal that sync completed and interpretation is ready (state updates on return to Today).
 - Garmin/Strava merge is robust; athlete may not know which source "won."
+- Programme rearrange after feedback is proposed (athlete-approved Adapt) — not applied silently; the athlete must still confirm.
 
 ---
 
@@ -1338,7 +1338,7 @@ Off-season structure: volume caps, strength emphasis, health markers, optional g
 
 ## Friction map — current product
 
-> **Last verified:** 2026-09-10 against code on `main` (post journal–coach discuss + Daily Briefing remount).  
+> **Last verified:** 2026-09-11 against code on `main` (post #90 feedback→rearrange, #91/#94 Today why, #92 Plan coaching offer, #93 habit→coaching).  
 > Prior audit: [`docs/audits/PRODUCT_AUDIT_AND_ROADMAP_2026-08.md`](../audits/PRODUCT_AUDIT_AND_ROADMAP_2026-08.md).  
 > Frozen next four weeks: [`docs/product/ROADMAP_NEXT_4_WEEKS.md`](./ROADMAP_NEXT_4_WEEKS.md).
 
@@ -1350,9 +1350,11 @@ Grouped by severity to the daily journey.
 | ---------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
 | Inference not triggered post-sync        | `cron/sync` calls `refreshAthleteState({ skipSync: true })` after sync                                                |
 | `INSUFFICIENT_DATA` blocks entire Today  | Degrades to empty / status banner / offline snapshot path — never a blank wall                                        |
-| Daily briefing generated but never shown | `DailyBriefingPanel` mounted under the verdict on Today (progressive `<details>`; open morning / first visit)         |
+| Feedback updates Twin but not the plan   | Presentation rearrange proposal → PlanAdapter deep-link (`?adapt=1`); athlete approves (#90); habit path can propose too (#93) |
+| Goal / why invisible on Today            | `TodayWhyBlock` ships (habit/journal facts retained after #94); goal anchor + Daily Briefing panel intentionally unmounted from Today summary (#94) |
+| Plan coaching felt like four equal doors | Single intention **Coacher mon objectif** with ranked gestures (#92)                                                  |
 | Weekly review generated but not shown    | LLM narrative at `/plan/bilan` (`WeeklyReviewGate`); deterministic Weekly Coaching Brief remains available from Coach |
-| No adaptation drill-down                 | `/today/adaptation` exists                                                                                            |
+| No adaptation drill-down                 | `/today/adaptation` / Plan Adaptation reading exists                                                                  |
 | Cron sync only 3×/day                    | Cadence is **6×/day** UTC (06:30, 09, 12, 15, 18, 21) plus `planned-forecast` at 19:00                                |
 
 ### Critical — breaks the morning contract

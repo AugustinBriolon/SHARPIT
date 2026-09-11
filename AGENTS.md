@@ -10,7 +10,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 # SHARPIT — Agent context
 
-**Phase:** Stabilization — Core frozen. Express the Digital Twin vertically; do not add core engines.
+**Phase:** Stabilization — Core frozen. Express the Digital Twin vertically as a **Digital Twin coach** (analyses + programme + suivi toward a goal); do not add core engines.
 
 **Before implementing, read:**
 

@@ -7,6 +7,9 @@
 > because the user asked to complete `/impeccable init` without a live interview.
 > Marked `[inferred]` where not reconfirmed verbally. Canonical long-form constitution
 > remains `docs/product/PRODUCT.md`.
+>
+> **Direction (2026-09-11):** Digital Twin coach — Twin = foundation; coaching +
+> programme + suivi toward a goal = product. Core stays frozen; express vertically.
 
 ## Platform
 
@@ -15,33 +18,35 @@ web
 ## Users
 
 [inferred] Endurance / multi-sport athletes (triathlon, run, bike, swim, strength) who
-already collect wearable and training data and need a continuous model of physiological
-state to decide train / hold / recover day to day.
+already collect wearable and training data and need a continuous Twin that analyses,
+programmes, follows, and rearranges toward a performance or health goal.
 
-[inferred] Secondary: the same athlete planning a week toward a race goal; human coaches
-remain valuable but are not the primary in-app user.
+[inferred] Secondary: the same athlete with optional human-coach coexistence later;
+SHARPIT coaches the athlete in-product — human coaches are not the primary in-app user.
 
 ## Product Purpose
 
-SHARPIT exists to give athletes a continuous, honest, evolving representation of their
-physiological state — closing the gap between what was measured and what is true about
-the athlete right now, and making that truth actionable without concealing its limits.
+SHARPIT exists to maintain a continuous, honest Digital Twin of the athlete — and to
+**coach from that Twin**: best analyses, best programme for an objective, suivi of
+progress and habits, rearrange when evidence changes. Twin = foundation; coaching +
+programme + suivi = product.
 
-Success = better **decision quality over time** (train or rest, push or hold, adapt the
-plan or trust the process), not engagement metrics or workout volume.
+Success = better **decision quality and programme coherence over time** (train or rest,
+push or hold, fill the week, adjust the plan), not engagement metrics or workout volume.
 
 ## Positioning
 
-**Athlete State Intelligence** — a persistent intelligence layer between raw wearable
-data and human expertise. Not a tracker (records), not a planner identity (prescribes
-as the center), not a coach chatbot (improvises). State is estimated; uncertainty is
-shown; the Digital Twin is the center of gravity.
+**Athlete State Intelligence** expressed as a **Digital Twin coach** — a persistent Twin
+between raw wearable data and credible training guidance. Not a tracker (records), not a
+calendar-only planner, not an improvising chatbot. State is estimated; uncertainty is
+shown; analyses and programme changes are consequences of the Twin, with athlete approval.
 
 ## Operating Context
 
-[inferred] Primary daily ritual: **Today** morning orientation (verdict → signals →
-session response → trajectory). Secondary: Planning (week calendar), Training history,
-Biology / Corps, Coach discuss when the athlete chooses to deepen a question.
+[inferred] Primary daily ritual: **Today** morning orientation (verdict → why → session
+response → rearrange CTA when needed). Secondary: **Plan** (Coacher mon objectif —
+macro / Remplir / Ajuster), Activité, Moi; Coach discuss as contextual deepening — not
+the whole coaching product.
 
 [inferred] Mobile-first PWA / web app used on phone in the morning and around sessions;
 desktop for denser planning and analysis.
@@ -50,17 +55,18 @@ desktop for denser planning and analysis.
 
 Confirmed in product constitution / codebase:
 
-- Digital Twin / Athlete Snapshot as canonical state
-- Today morning instrument; physio drill-downs (sleep, recovery, adaptation, effort)
-- Planning with planned sessions, bricks, projection trajectory, scenario compare
+- Digital Twin / Athlete Snapshot as canonical state (**foundation**)
+- Today morning instrument; physio drill-downs; why / habit coaching signals; feedback→rearrange proposals
+- Plan hub: Coacher mon objectif (macro + Remplir + Ajuster) with athlete-approved mutation
 - Training activity history and compliance
-- Coach conversation as opt-in discuss — not the primary surface of Planning
-- Phase: **stabilization** — Core frozen; express the Twin vertically; do not add core
-  engines casually
+- Coach conversation as contextual / free discuss — one coaching expression, not the only one
+- Phase: **stabilization** — Core frozen; express the Twin vertically as coach; do not add
+  core engines casually
 
 Constraints:
 
-- Augments judgment; does not replace coach or physician
+- Athlete agency: proposals require approval; no silent plan mutation
+- Does not replace clinical / physician judgment (not a medical device)
 - No live in-session coaching by design
 - Instrument-editorial design law (`DESIGN.md` / `docs/design/DESIGN_LANGUAGE.md`)
 
@@ -85,15 +91,15 @@ Open / undecided for Impeccable:
 - Running Next.js app under `src/`
 
 Absences future work must not fabricate: testimonials, benchmarks, pricing claims,
-coach-replacement promises.
+or claims that SHARPIT replaces physicians / medical care.
 
 ## Product Principles
 
-1. **State before prescription** — the Twin explains before the calendar commands.
+1. **Twin before improvisation** — coaching and programme flow from the Twin, not from a free-form chat.
 2. **Honesty about limits** — confidence, freins, and empty states are product features.
 3. **Instrument, not dashboard** — one causal column; no metric inventory heroes.
-4. **Athlete decides** — SHARPIT informs; it does not remove accountability.
-5. **Silence in the session** — no live coaching noise; morning and post-session matter.
+4. **Athlete decides** — SHARPIT coaches and proposes; approval stays with the athlete.
+5. **Silence in the session** — no live coaching noise; morning, Plan, and post-session matter.
 
 ## Accessibility & Inclusion
 
