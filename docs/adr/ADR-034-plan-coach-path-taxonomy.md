@@ -36,7 +36,7 @@ Adopter les définitions suivantes comme **noms figés** (carte vivante : [`docs
 | -------------------------- | ----------------------------------------- | ---------------------------------------------------- |
 | `components/coach/`        | Chat + tools UI produit                   | **coach**                                            |
 | `components/agents/`       | Kit primitives chat **montées** par coach | **coach-kit** (path reste `agents/` jusqu’à P2 slim) |
-| `components/coaching/`     | Widgets partagés (ex. `coach-menu`)       | fusion P1 vers `plan` ou `planning`                  |
+| `components/coaching/`     | Widgets partagés (ex. `coach-menu`)       | **fait P1** → `components/planning/coach-menu.tsx`   |
 | `components/coach-memory/` | UI mémoire coach                          | **coach-memory**                                     |
 | `lib/coach/`               | Chat, context, tools, plan gen            | **coach**                                            |
 | `lib/coach-memory/`        | Persistance / lecture mémoire             | **coach-memory**                                     |

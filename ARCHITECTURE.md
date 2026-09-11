@@ -141,9 +141,13 @@ src/lib/
   integrations/           ← provider folders: garmin/, strava/, withings/, renpho/,
                             google/, myfitnesspal/; shared/ for cross-provider helpers
   engines/                ← lazy singletons wrapping core inference for the app
-  query/                  ← TanStack Query keys, fetchers, optimistic helpers
+  query/                  ← TanStack client cache (≠ queries/ = Prisma server helpers)
+  queries/                ← Prisma server helpers (mental alias: db-queries)
   validators/             ← Zod schemas
-  presentation/           ← ViewModel builders (pure; I/O stays in api/presentation)
+  presentation/           ← ViewModel builders nested by surface (today/, recovery/,
+                            sleep/, effort/, …); flat re-exports temporary (P1)
+  journal/                ← day-journal, habits, wellness (canon ; ≠ health/)
+  health/                 ← activity-status, body-composition, health-status
   product-insight/        ← page insight projections over core/product-insight
   decision-memory/        ← coaching decision aggregate helpers
   activity/               ← narrative/, list/, detail/, weather/, hike/, location/
@@ -185,12 +189,13 @@ src/components/
   today/          ← Morning Experience + drill-downs (dashboard/, drill-down/, rich/)
   plan/           ← hub Plan V1.1 (destination / semaine / trajectoire)
   planning/       ← séances planifiées, dialogs, scénarios (pas le hub)
-  journal/        ← journal / habitudes (UI) ; lib encore surtout sous lib/health/
+  journal/        ← journal / habitudes (UI) ; lib = `lib/journal/`
   sleep/, recovery/, effort/, adaptation/, nutrition/, physical-health/
   training/       ← activité
   coach/          ← chat + tools produit
   agents/         ← kit chat slim (uniquement modules montés par coach)
-  coach-memory/, coaching/  ← mémoire UI ; coaching/ = micro (coach-menu)
+  coach-memory/   ← mémoire UI
+  planning/       ← séances + `coach-menu.tsx` + `session/exercise-visual.tsx` (P1)
   shell/          ← hubs contenu tabs (Plan / Moi / Activité)
   corps/, goals/, settings/, profile/, analytics/
   ui/             ← reusable primitives at root; charts/, instruments/, map/ nested
@@ -199,7 +204,7 @@ src/components/
   pwa/            ← install / offline / SW toasts
 ```
 
-Il n’y a **pas** de `components/calendar/` (fantôme retiré). `sessions/` reste un micro-dossier (1 fichier) — candidat fusion P1.
+Il n’y a **pas** de `components/calendar/`, `components/sessions/`, ni `components/coaching/` (micros fusionnés dans `planning/` en P1).
 
 **Briefing :** `lib/briefing/` + `/api/coach/briefing` = background/API only. Pas d’UI `DailyBriefingPanel` sur Today.
 
@@ -209,9 +214,9 @@ Il n’y a **pas** de `components/calendar/` (fantôme retiré). `sessions/` res
 | --------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- | ---------------------------------------------------- |
 | Physio drill-down page (`recovery`, `effort`, `sleep`, `adaptation`, `nutrition`) | `*-screen.tsx`, `*-page-view.tsx`, plus any types or widgets other domains import | `blocks/` — hero, why, stats, charts, section panels |
 | Activity surface (`training/activity`)                                            | nothing at root — import from named seams                                         | `list/`, `form/`, `insights/`, `detail/`             |
-| Planned session (`planning/session`)                                              | `session-defaults.ts` (shared constants)                                          | `edit/`, `read/`, `realize/`, `accessories/`         |
+| Planned session (`planning/session`)                                              | `session-defaults.ts`, `exercise-visual.tsx`                                      | `edit/`, `read/`, `realize/`, `accessories/`         |
 | Interactive hub (`physical-health`, `goals`)                                      | screen / page-view / hub                                                          | `cards/` and `dialogs/`                              |
-| COACHING shared (`coaching/`)                                                     | widgets shared by sessions + planning                                             | e.g. `coach-menu.tsx`                                |
+| Planning shared (`planning/coach-menu.tsx`)                                       | menu coach partagé semaine / planning                                             | (ex-`coaching/`)                                     |
 | Shared widgets used outside the page                                              | stay at the domain root (they are part of the module interface)                   | —                                                    |
 
 **`ui/` nesting:** keep chrome primitives at the root (`button`, `dialog`, `input`, …). Nest specialized concerns:
@@ -314,7 +319,7 @@ SHARPIT has four domain boundaries. Code must not cross boundaries without going
 
 **`src/lib/decision-memory/`** — the auditable loop linking a coach recommendation (LLM proposal + `GateSessionResult`) to what the athlete decided and what happened afterward. Three Prisma models: `CoachingDecision` (immutable proposal + gate result + a frozen `snapshotContext`, never a bare `snapshotId` reference — `AthleteSnapshotRecord` is upserted per day, so a reference would dangle), `CoachingDecisionAction` (append-only athlete-action log: ACCEPTED/MODIFIED/REJECTED/OVERRIDDEN), `CoachingDecisionOutcome` (retrospective evaluation, EVALUATED or INCONCLUSIVE, never a bare success/quality verdict). Session-execution states (SCHEDULED/COMPLETED/SKIPPED/SUPERSEDED) are derived on read from the existing `PlannedSession` fields, not stored in a fourth table. `evaluate-outcome.ts` is pure; `repository.ts` is the sole Prisma boundary. See `docs/adr/ADR-006-decision-memory-aggregate.md` for the placement and embed-vs-reference decisions.
 
-**Presentation over `plan-gate`/`decision-memory`** — `src/lib/presentation/{session-rationale,weekly-coaching-brief,learning-feedback,snapshot-context-labels}.ts` and `src/lib/decision-memory/{describe-outcome,classify-trigger,learning-feedback}.ts` are read-only consumers: no new domain, no new tables, every builder pure (plain data in, ViewModel out), all I/O confined to the corresponding `src/app/api/presentation/*/route.ts`. See `docs/adr/ADR-007-coaching-explainability-presentation.md`.
+**Presentation over `plan-gate`/`decision-memory`** — `src/lib/presentation/planned-session/session-rationale.ts`, `src/lib/presentation/coaching/{weekly-coaching-brief,learning-feedback,snapshot-context-labels}.ts` and `src/lib/decision-memory/{describe-outcome,classify-trigger,learning-feedback}.ts` are read-only consumers: no new domain, no new tables, every builder pure (plain data in, ViewModel out), all I/O confined to the corresponding `src/app/api/presentation/*/route.ts`. See `docs/adr/ADR-007-coaching-explainability-presentation.md`.
 
 ### Domain input types
 
@@ -1019,14 +1024,16 @@ const deleteGoal = useMutation({
 
 These are documented violations of this handbook that exist in the current code. They are tracked for remediation and must not be used as justification for adding new violations.
 
-| File                                             | Violation                                                    | Section |
-| ------------------------------------------------ | ------------------------------------------------------------ | ------- |
-| `src/lib/queries/`                               | Still multi-domain; planned sessions extracted, rest pending | §3.2    |
-| `src/hooks/use-data.ts`                          | Partially split (`use-planned-sessions.ts`); rest pending    | §3.2    |
-| `src/lib/coach/coach-context.ts`                 | Module-level TTL cache — broken in serverless                | M9      |
-| `src/lib/ai.ts` `COACH_MODEL`                    | Model identifier may not match an existing model             | —       |
-| `prisma/schema.prisma` `AthleteProfile.context`  | Free-text field injected into AI prompt without validation   | M7      |
-| `prisma/schema.prisma` `Activity.id = "default"` | Singleton pattern prevents multi-user migration              | §8.1    |
+| File                                             | Violation                                                            | Section |
+| ------------------------------------------------ | -------------------------------------------------------------------- | ------- |
+| `src/lib/queries/`                               | Still multi-domain; planned sessions extracted, rest pending         | §3.2    |
+| `src/hooks/use-data.ts`                          | Partially split (`use-planned-sessions.ts` + modules) ; rest pending | §3.2    |
+| `src/hooks/use-coach.ts`                         | Barrel → `hooks/coach/*` (P1)                                        | §6.3    |
+| `src/hooks/use-planned-sessions.ts`              | Barrel → `hooks/planned-sessions/*` (P1)                             | §6.3    |
+| `src/lib/coach/coach-context.ts`                 | Module-level TTL cache — broken in serverless                        | M9      |
+| `src/lib/ai.ts` `COACH_MODEL`                    | Model identifier may not match an existing model                     | —       |
+| `prisma/schema.prisma` `AthleteProfile.context`  | Free-text field injected into AI prompt without validation           | M7      |
+| `prisma/schema.prisma` `Activity.id = "default"` | Singleton pattern prevents multi-user migration                      | §8.1    |
 
 ---
 
