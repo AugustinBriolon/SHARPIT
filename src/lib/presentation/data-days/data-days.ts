@@ -1,6 +1,6 @@
 import { differenceInCalendarDays, isValid, parseISO } from 'date-fns';
 import { dayKeyFromDate } from '@/lib/date/day-key';
-import { toTrainingDayId } from '@/lib/training/pmc';
+import { toTrainingDayId } from '@/lib/training/pmc/pmc';
 
 /**
  * Which days carry data for a drill-down — drives the date selector's availability dot.

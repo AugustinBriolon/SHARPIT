@@ -5,7 +5,7 @@ import {
   type ExperimentEvidence,
   type ExperimentRecord,
 } from '@/lib/journal/journal-habit-experiment';
-import { addTrainingDays } from '@/lib/training/training-day';
+import { addTrainingDays } from '@/lib/training/periodization/training-day';
 
 const START = '2026-09-01';
 

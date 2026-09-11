@@ -28,7 +28,7 @@ import {
 import { resolveDefaultActivityLocation } from '@/lib/geocoding/default-activity-location';
 import { fetchForecastPredictions } from '@/lib/planned-session/forecast/forecast-fetch';
 import { prisma } from '@/lib/prisma';
-import { approximateTrainingDayUtcRange } from '@/lib/training/training-day';
+import { approximateTrainingDayUtcRange } from '@/lib/training/periodization/training-day';
 
 export type TodayWeather = {
   city: string;

@@ -1,14 +1,14 @@
 import { generateText, Output } from 'ai';
 import { isSet } from '@/lib/util/value';
 import { COACH_MODEL, coachAnalysisGatewayOptions } from '@/lib/ai';
-import { recordAiUsage } from '@/lib/ai-usage';
+import { recordAiUsage } from '@/lib/ai/usage';
 import {
   describeBikeWorkBlocks,
   parsePrescriptionTargets,
   summarizeBikeWorkBlocks,
   type BikeWorkSummary,
 } from '@/lib/coach/plan/bike-work-blocks';
-import { categoryLabels, sideLabels, statusLabels } from '@/lib/physical';
+import { categoryLabels, sideLabels, statusLabels } from '@/lib/physical-health/physical';
 import {
   getActivePhysicalNotes,
   getAthleteProfile,

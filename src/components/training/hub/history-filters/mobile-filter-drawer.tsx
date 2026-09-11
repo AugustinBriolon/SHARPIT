@@ -1,6 +1,6 @@
 'use client';
 
-import { type TrainingHistoryFilters } from '@/lib/training/history-filters';
+import { type TrainingHistoryFilters } from '@/lib/training/periodization/history-filters';
 import { cn } from '@/lib/utils';
 import { Drawer } from '@base-ui/react/drawer';
 import { ActivityType } from '@prisma/client';

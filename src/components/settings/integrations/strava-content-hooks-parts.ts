@@ -12,7 +12,7 @@ import {
 } from '@/lib/integrations/shared/client-sync';
 import { invalidateAfterProviderSync } from '@/lib/query/invalidate-after-provider-sync';
 import { queryKeys } from '@/lib/query/keys';
-import type { RecordChange } from '@/lib/training/records';
+import type { RecordChange } from '@/lib/training/records/records';
 
 export function useStravaSync(onUpdated?: () => void, onSyncStart?: () => void) {
   const router = useRouter();

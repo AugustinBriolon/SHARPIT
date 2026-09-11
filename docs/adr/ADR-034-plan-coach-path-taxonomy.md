@@ -19,16 +19,16 @@ Adopter les définitions suivantes comme **noms figés** (carte vivante : [`docs
 
 ### Plan cluster
 
-| Nom actuel               | Intention                                            | Canonique cible (lecture)                                     |
-| ------------------------ | ---------------------------------------------------- | ------------------------------------------------------------- |
-| `components/plan/`       | Hub destination / semaine / trajectoire (Shell V1.1) | **plan-hub** (garder le dossier `plan/`)                      |
-| `components/planning/`   | UI calendrier séances, dialogs, scénarios            | **plan-week-ui** (garder `planning/`)                         |
-| `lib/planned-session/`   | Domaine données / prescriptions / linking séances    | **planned-session**                                           |
-| `lib/plan-gate/`         | Safety & coherence gate programme                    | **plan-gate**                                                 |
-| `lib/plan/`              | Orchestration hub Plan (non-gate)                    | **plan** (hub lib)                                            |
-| `lib/planning/`          | Helpers UI jour (mince)                              | **fait P2** → `lib/plan/planning-day-selection` (+ re-export) |
-| `lib/coach/plan/`        | Générateur / adaptateur programme coach              | **coach-plan-gen** (path reste `coach/plan/`)                 |
-| Route `/plan/adaptation` | Lecture Twin Adaptation                              | **≠** `PlanAdapter` (`coach/adapt`)                           |
+| Nom actuel               | Intention                                            | Canonique cible (lecture)                                                   |
+| ------------------------ | ---------------------------------------------------- | --------------------------------------------------------------------------- |
+| `components/plan/`       | Hub destination / semaine / trajectoire (Shell V1.1) | **plan-hub** (garder le dossier `plan/`)                                    |
+| `components/planning/`   | UI calendrier séances, dialogs, scénarios            | **plan-week-ui** (garder `planning/`)                                       |
+| `lib/planned-session/`   | Domaine données / prescriptions / linking séances    | **planned-session**                                                         |
+| `lib/plan-gate/`         | Safety & coherence gate programme                    | **plan-gate**                                                               |
+| `lib/plan/`              | Orchestration hub Plan (non-gate)                    | **plan** (hub lib)                                                          |
+| `lib/planning/`          | Helpers UI jour (mince)                              | **fait P2** → `lib/plan/planning-day-selection` ; re-export **supprimé P4** |
+| `lib/coach/plan/`        | Générateur / adaptateur programme coach              | **coach-plan-gen** (path reste `coach/plan/`)                               |
+| Route `/plan/adaptation` | Lecture Twin Adaptation                              | **≠** `PlanAdapter` (`coach/adapt`)                                         |
 
 ### Coach cluster
 

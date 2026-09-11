@@ -1,13 +1,13 @@
 import { featureRepository } from '@/lib/engines/feature-engine';
 import { getActivitiesForPmc } from '@/lib/queries';
-import { toTrainingDayId, type PmcDayPoint } from '@/lib/training/pmc';
+import { toTrainingDayId, type PmcDayPoint } from '@/lib/training/pmc/pmc';
 import {
   aggregateDailyTssPreferringCore,
   computeAthletePmc,
   type CoreSessionTss,
   type PmcPoint,
   toPmcPoints,
-} from '@/lib/training/pmc-history';
+} from '@/lib/training/pmc/pmc-history';
 
 /**
  * The athlete's PMC series, computed from the Core's Training Stress.

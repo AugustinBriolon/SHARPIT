@@ -20,7 +20,7 @@ import {
   legKindToActivityType,
   sportLegsOnly,
   type MultisportLeg,
-} from '@/lib/multisport';
+} from '@/lib/activity/multisport';
 
 export type { RawStreams };
 

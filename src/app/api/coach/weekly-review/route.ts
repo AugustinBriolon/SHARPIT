@@ -8,7 +8,7 @@ import {
   generateAndStoreWeeklyReview,
   getLatestWeeklyReview,
   getWeeklyReview,
-} from '@/lib/weekly-review';
+} from '@/lib/coach/weekly-review';
 import { requireAiProcessingConsent } from '@/lib/privacy/consent-store';
 
 export const maxDuration = 60;

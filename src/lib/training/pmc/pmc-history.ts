@@ -1,13 +1,13 @@
 import { format, startOfDay } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { estimateActivityLoad, type ActivityForAnalytics } from '@/lib/training/activity-load';
+import { estimateActivityLoad, type ActivityForAnalytics } from '@/lib/training/load/activity-load';
 import {
   pmcTsb,
   runPmc,
   toTrainingDayId,
   type PmcDayPoint,
   type PmcState,
-} from '@/lib/training/pmc';
+} from '@/lib/training/pmc/pmc';
 
 /**
  * Bridges activities to the PMC recurrence.

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createConversation, listConversations } from '@/lib/conversations';
+import { createConversation, listConversations } from '@/lib/coach/conversations';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 
 export async function GET() {

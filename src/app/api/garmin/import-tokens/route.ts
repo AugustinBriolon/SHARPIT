@@ -11,7 +11,7 @@ import {
   enableProviderForClass,
 } from '@/lib/integrations/source-prefs';
 import { persistSourcePrefsMutation } from '@/lib/integrations/source-prefs-store';
-import { updateRecordsForTypes } from '@/lib/training/records';
+import { updateRecordsForTypes } from '@/lib/training/records/records';
 import { gateProviderConnect } from '@/lib/privacy/gate-provider-connect';
 
 export const maxDuration = 300;

@@ -9,7 +9,7 @@ import {
 } from '@/lib/activity/narrative/activity-narrative-config';
 import { buildActivityNarrativeFacts } from '@/lib/activity/narrative/activity-narrative-facts';
 import { mapWithConcurrency } from '@/lib/async/map-with-concurrency';
-import { recordAiUsage } from '@/lib/ai-usage';
+import { recordAiUsage } from '@/lib/ai/usage';
 import { prisma } from '@/lib/prisma';
 import { activityNarrativeSchema, type ActivityNarrative } from '@/lib/validators/coach';
 import { COACH_COPY_DASH_RULE, sanitizeCoachCopy } from '@/lib/coach/sanitize-coach-copy';

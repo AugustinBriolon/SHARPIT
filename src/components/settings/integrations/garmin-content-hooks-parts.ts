@@ -7,7 +7,7 @@ import { notifyIntegrationSyncStarted } from '@/components/settings/integrations
 import { toast } from '@/components/ui/toast';
 import { runGarminSync } from '@/lib/integrations/shared/client-sync';
 import { invalidateAfterProviderSync } from '@/lib/query/invalidate-after-provider-sync';
-import type { RecordChange } from '@/lib/training/records';
+import type { RecordChange } from '@/lib/training/records/records';
 
 export function useGarminImportTokens(onUpdated?: () => void) {
   const router = useRouter();

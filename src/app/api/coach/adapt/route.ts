@@ -4,7 +4,7 @@ import { fr } from 'date-fns/locale';
 import { NextResponse } from 'next/server';
 import { isCoachConfigured } from '@/lib/ai';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { recordAiUsage } from '@/lib/ai-usage';
+import { recordAiUsage } from '@/lib/ai/usage';
 import {
   RETRY_AFTER_HEADER,
   aiBudgetResponseBody,
@@ -28,7 +28,7 @@ import { COACH_COPY_DASH_RULE, sanitizeCoachCopy } from '@/lib/coach/sanitize-co
 import { buildGateContext } from '@/lib/plan-gate/build-context';
 import { evaluatePlan } from '@/lib/plan-gate/evaluate-plan';
 import type { GateProposal, GateResult } from '@/lib/plan-gate/types';
-import { computeTrainingDayId } from '@/lib/training/training-day';
+import { computeTrainingDayId } from '@/lib/training/periodization/training-day';
 import { buildDecisionSnapshotContext } from '@/lib/decision-memory/build-snapshot-context';
 import { createCoachingDecision } from '@/lib/decision-memory/repository';
 import { dayKeyFromDate } from '@/lib/date/day-key';

@@ -17,7 +17,7 @@ import { useActivities, useRecords } from '@/hooks/use-data';
 import {
   DEFAULT_TRAINING_HISTORY_FILTERS,
   formatTrainingHistoryFilterStatus,
-} from '@/lib/training/history-filters';
+} from '@/lib/training/periodization/history-filters';
 import { useTrainingListState } from '@/components/training/hub/use-training-list-state';
 import { PAGE_CONTENT_MAX_CLASS } from '@/lib/ui/page-gutter';
 import { cn } from '@/lib/utils';

@@ -14,7 +14,7 @@ import { resolveTodayDashboardView } from '@/components/today/today-dashboard-vi
 import { TodayDashboardResolvedView } from '@/components/today/today-dashboard-resolved-view';
 import { TodayDashboardShell } from '@/components/today/today-dashboard-shell';
 import { useActivities } from '@/hooks/use-activities';
-import { trainingDayIdForNow } from '@/lib/training/training-day';
+import { trainingDayIdForNow } from '@/lib/training/periodization/training-day';
 
 /** Prerender-safe placeholder — Suspense fallback / SSR never freezes wall-clock day. */
 const SERVER_TRAINING_DAY_ID = '0000-00-00';

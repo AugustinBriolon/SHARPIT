@@ -5,7 +5,7 @@
  * what `evaluateOutcome` (pure) needs — never re-derives physiological state itself.
  */
 
-import { addTrainingDays, computeTrainingDayId } from '@/lib/training/training-day';
+import { addTrainingDays, computeTrainingDayId } from '@/lib/training/periodization/training-day';
 import { prisma } from '@/lib/prisma';
 import { getPlannedSessionById } from '@/lib/queries';
 import { parseSessionAnalysis } from '@/lib/planned-session/display/session-analysis-display';

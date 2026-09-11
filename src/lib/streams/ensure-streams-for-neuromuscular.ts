@@ -3,7 +3,10 @@ import { isSet } from '@/lib/util/value';
 import { NEUROMUSCULAR_EFFICIENCY_LOOKBACK_DAYS } from '@/core/inference/adaptation/constants';
 import { prisma } from '@/lib/prisma';
 import { fetchAndCacheActivityStreams } from '@/lib/streams/streams';
-import { addTrainingDays, approximateTrainingDayUtcRange } from '@/lib/training/training-day';
+import {
+  addTrainingDays,
+  approximateTrainingDayUtcRange,
+} from '@/lib/training/periodization/training-day';
 
 /** Outdoor endurance sports that can produce HR decoupling. */
 const NME_STREAM_TYPES: ActivityType[] = [ActivityType.RUN, ActivityType.BIKE];

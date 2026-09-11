@@ -15,7 +15,7 @@ import { activityTypeLabels } from '@/lib/format';
 import { intensityLabels } from '@/lib/planned-session/sessions';
 import { phaseLabels } from '@/lib/training/periodization';
 import { horizonLabels } from '@/lib/goals/goals';
-import { computeTrainingLoad, ACWR_THRESHOLDS } from '@/lib/training/training-load';
+import { computeTrainingLoad, ACWR_THRESHOLDS } from '@/lib/training/load/training-load';
 import { WEEKLY_TARGET_TOLERANCE } from '@/lib/plan-gate/rules/weekly-load';
 import { describeSnapshotContext } from '@/lib/presentation/coaching/snapshot-context-labels';
 import type {

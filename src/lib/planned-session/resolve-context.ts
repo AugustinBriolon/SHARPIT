@@ -51,7 +51,7 @@ import { resolveAthleteGeoLocation } from '@/lib/environment/athlete-location';
 import { getActiveTravelContext } from '@/lib/travel-context/service';
 import { extractSessionWeatherSignals } from '@/lib/planned-session/forecast/weather-signals';
 import { prisma } from '@/lib/prisma';
-import { computeTrainingDayId } from '@/lib/training/training-day';
+import { computeTrainingDayId } from '@/lib/training/periodization/training-day';
 import { fetchForecastPredictions } from '@/lib/planned-session/forecast/forecast-fetch';
 
 const CONTEXT_STALE_MS = 3 * 60 * 60 * 1000;

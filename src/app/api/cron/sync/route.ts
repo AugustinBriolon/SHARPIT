@@ -6,12 +6,12 @@ import { getGarminAccount, syncGarminHealth } from '@/lib/integrations/garmin/ga
 import { syncGarminActivities } from '@/lib/integrations/garmin/garmin-activity-sync';
 import { getGoogleAccount, syncFromGoogle } from '@/lib/integrations/google/google-sync';
 import { getMfpAccount, syncMfpNutrition } from '@/lib/integrations/myfitnesspal/myfitnesspal-sync';
-import { updateRecordsAfterProviderSync } from '@/lib/training/records';
+import { updateRecordsAfterProviderSync } from '@/lib/training/records/records';
 import { getRenphoAccount, syncRenphoHealth } from '@/lib/integrations/renpho/renpho-sync';
 import { getWithingsAccount, syncWithingsHealth } from '@/lib/integrations/withings/withings-sync';
 import { CRON_BACKFILL_BATCH, backfillActivityStreams } from '@/lib/streams/stream-backfill';
 import { getStravaAccount, syncStravaActivities } from '@/lib/integrations/strava/strava-sync';
-import { generateAndStoreWeeklyReview, isSunday } from '@/lib/weekly-review';
+import { generateAndStoreWeeklyReview, isSunday } from '@/lib/coach/weekly-review';
 import { isCoachConfigured } from '@/lib/ai';
 import { verifyCronSecret } from '@/lib/cron/verify-cron-secret';
 import { listConnectedCronProviders } from '@/lib/cron/list-connected-cron-providers';

@@ -8,7 +8,7 @@ import {
   resolveAcceptedFields,
   THRESHOLD_RECENCY_WINDOW_DAYS,
 } from './threshold-estimates';
-import type { RecordsPayload } from '@/lib/training/records';
+import type { RecordsPayload } from '@/lib/training/records/records';
 
 const NOW = new Date('2026-08-11T12:00:00.000Z');
 

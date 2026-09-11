@@ -21,7 +21,7 @@ import {
   decisionVerdict,
   limitingFactorFromDecision,
 } from '@/lib/decision/projection';
-import { activityMatchesTrainingDay } from '@/lib/training/training-day';
+import { activityMatchesTrainingDay } from '@/lib/training/periodization/training-day';
 import type { SleepCoachView } from '@/lib/sleep/sleep';
 
 export type { SnapshotActivityInput, SnapshotPlannedSessionInput };

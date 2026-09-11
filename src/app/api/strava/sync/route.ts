@@ -2,7 +2,10 @@ import { NextResponse } from 'next/server';
 import { onProviderSyncCompleted } from '@/lib/athlete-state/orchestrator';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { checkRateLimit, rateLimitJsonResponse, rateLimiters } from '@/lib/rate-limit';
-import { filterRecordChangesByActivities, updateRecordsForTypes } from '@/lib/training/records';
+import {
+  filterRecordChangesByActivities,
+  updateRecordsForTypes,
+} from '@/lib/training/records/records';
 import { syncStravaActivities } from '@/lib/integrations/strava/strava-sync';
 
 export async function POST() {

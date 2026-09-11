@@ -46,7 +46,7 @@ vi.mock('@/lib/queries', () => ({
   getAthleteProfile: vi.fn().mockResolvedValue(null),
 }));
 
-vi.mock('@/lib/training/pmc-server', () => ({
+vi.mock('@/lib/training/pmc/pmc-server', () => ({
   loadAthletePmcAnchor: vi.fn().mockResolvedValue(null),
   loadDailyTrainingStressEntries: vi.fn().mockResolvedValue([]),
 }));

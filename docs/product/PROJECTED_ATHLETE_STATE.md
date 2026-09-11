@@ -79,7 +79,7 @@ End-of-horizon summary also includes peak readiness day, highest risk day, and p
 
 ## Integration with Planned Sessions
 
-- TSS per day: `estimatePlannedLoad()` from `@/lib/planning` (same as calendar load).
+- TSS per day: `estimatePlannedLoad()` from `@/lib/planned-session/planning` (same as calendar load).
 - Environmental load: parsed from persisted `PlannedSession.environmentContext` (Intelligent Planned Sessions vertical).
 - Completed or linked sessions are excluded from forward load.
 

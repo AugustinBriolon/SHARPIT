@@ -1,4 +1,4 @@
-import type { RecordsPayload } from '@/lib/training/records';
+import type { RecordsPayload } from '@/lib/training/records/records';
 
 /** Compact badge labels for PR categories (full labels are too long for a pill). */
 const PR_BADGE_LABELS: Record<string, string> = {

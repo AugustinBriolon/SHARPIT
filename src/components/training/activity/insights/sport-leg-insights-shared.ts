@@ -1,5 +1,5 @@
 import { Bike, Footprints, Waves } from 'lucide-react';
-import type { MultisportLegKind } from '@/lib/multisport';
+import type { MultisportLegKind } from '@/lib/activity/multisport';
 
 export const sportHeader: Record<
   Exclude<MultisportLegKind, 'transition'>,

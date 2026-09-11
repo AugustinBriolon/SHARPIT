@@ -7,7 +7,7 @@ import { HistoryFilters } from '@/components/training/hub/history-filters';
 import { Button } from '@/components/ui/button';
 import { InkEmptyState } from '@/components/ui/ink-empty-state';
 import { LinkButton } from '@/components/ui/link-button';
-import { type TrainingHistoryFilters } from '@/lib/training/history-filters';
+import { type TrainingHistoryFilters } from '@/lib/training/periodization/history-filters';
 import { CalendarPlus, FilterX, Link2, MoreHorizontal, X } from 'lucide-react';
 import {
   DropdownMenu,

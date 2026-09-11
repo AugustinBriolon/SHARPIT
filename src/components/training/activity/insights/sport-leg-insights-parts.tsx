@@ -1,6 +1,6 @@
 'use client';
 
-import type { MultisportLegKind } from '@/lib/multisport';
+import type { MultisportLegKind } from '@/lib/activity/multisport';
 import type { MultisportLegStream } from '@/lib/streams/streams';
 import { formatDistance, formatDuration } from '@/lib/format';
 import { cn } from '@/lib/utils';

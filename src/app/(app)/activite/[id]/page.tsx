@@ -26,7 +26,7 @@ import { resolveBrickSiblingActivityLinks } from '@/lib/planned-session/brick/br
 import { ActivityBrickSiblingNav } from '@/components/training/activity/detail/activity-brick-sibling-nav';
 import { getGoalAchievementsForActivity } from '@/lib/goals/goal-achievements';
 import { isCoachConfigured } from '@/lib/ai';
-import { getPerformanceRecordsForActivity } from '@/lib/training/records';
+import { getPerformanceRecordsForActivity } from '@/lib/training/records/records';
 import { HikeTripMemberLink } from '@/components/training/trip/hike-trip-member-link';
 import { ActivityType } from '@prisma/client';
 

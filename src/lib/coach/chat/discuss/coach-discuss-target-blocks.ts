@@ -17,7 +17,7 @@ import {
 import { planningHorizonLabel } from '@/lib/coach/chat/discuss/coach-discuss-context';
 import { toLocalCalendarDate } from '@/lib/date/day-key';
 import { activityTypeLabels } from '@/lib/format';
-import { categoryLabels, sideLabels, statusLabels } from '@/lib/physical';
+import { categoryLabels, sideLabels, statusLabels } from '@/lib/physical-health/physical';
 import { formatPlannedDuration, intensityLabels } from '@/lib/planned-session/sessions';
 import {
   getActivityForCoach,
@@ -29,7 +29,7 @@ import {
   findPersonalRecordDefinition,
   getPerformanceRecordPodium,
   getPerformanceRecordsForActivity,
-} from '@/lib/training/records';
+} from '@/lib/training/records/records';
 import { isSet } from '@/lib/util/value';
 
 type Line = string | null | false | undefined;

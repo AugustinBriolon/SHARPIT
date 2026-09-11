@@ -2,7 +2,7 @@ import { format } from 'date-fns';
 import { generateText, Output } from 'ai';
 import type { NutritionCoachReadingView } from '@/core/presentation/nutrition-view-model';
 import { COACH_MODEL, coachAnalysisGatewayOptions, isCoachConfigured } from '@/lib/ai';
-import { recordAiUsage } from '@/lib/ai-usage';
+import { recordAiUsage } from '@/lib/ai/usage';
 import { sanitizeCoachCopy } from '@/lib/coach/sanitize-coach-copy';
 import { isDemoSession } from '@/lib/demo/demo-session';
 import { athleteHasAiProcessingConsent } from '@/lib/privacy/consent-store';

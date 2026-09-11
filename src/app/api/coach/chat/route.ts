@@ -19,7 +19,7 @@ import { buildBusySummary } from '@/lib/coach/plan/calendar-availability';
 import { buildCoachContext, formatCoachContext } from '@/lib/coach/context/coach-context';
 import { createCoachTools } from '@/lib/coach/chat/tools/coach-tools';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { recordAiUsage } from '@/lib/ai-usage';
+import { recordAiUsage } from '@/lib/ai/usage';
 import {
   RETRY_AFTER_HEADER,
   aiBudgetResponseBody,

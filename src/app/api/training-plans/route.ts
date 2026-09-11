@@ -1,6 +1,6 @@
 import { startOfDay } from 'date-fns';
 import { NextResponse } from 'next/server';
-import { loadAthletePmcAnchor } from '@/lib/training/pmc-server';
+import { loadAthletePmcAnchor } from '@/lib/training/pmc/pmc-server';
 import { generateMacroPlan } from '@/lib/training/periodization';
 import { prisma } from '@/lib/prisma';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';

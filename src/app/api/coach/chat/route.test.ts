@@ -58,7 +58,7 @@ vi.mock('@/lib/coach/chat/tools/coach-tools', () => ({
   createCoachTools: vi.fn(() => ({})),
 }));
 
-vi.mock('@/lib/ai-usage', () => ({
+vi.mock('@/lib/ai/usage', () => ({
   recordAiUsage: vi.fn(),
 }));
 

@@ -15,7 +15,7 @@ import { buildJournalHabitReading } from '@/lib/journal/journal-habit-reading';
 import { JOURNAL_ANALYSIS_MIN_DAYS, isJournalAnalysisReady } from '@/lib/journal/journal-limits';
 import { prisma } from '@/lib/prisma';
 import { getAthleteProfile } from '@/lib/queries';
-import { trainingDayIdForNow } from '@/lib/training/training-day';
+import { trainingDayIdForNow } from '@/lib/training/periodization/training-day';
 
 function JournalAnalysesSkeleton() {
   return (

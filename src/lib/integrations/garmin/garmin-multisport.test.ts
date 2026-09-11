@@ -5,7 +5,7 @@ import {
   mapGarminChildTypeToKind,
   totalTransitionSec,
   type MultisportLeg,
-} from '@/lib/multisport';
+} from '@/lib/activity/multisport';
 
 describe('mapGarminChildTypeToKind', () => {
   it('mappe les types Garmin multisport', () => {

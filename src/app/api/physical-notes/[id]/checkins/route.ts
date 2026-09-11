@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { syncPhysicalConditionObservation } from '@/lib/manual-observation-sync';
+import { syncPhysicalConditionObservation } from '@/lib/observation/manual-observation-sync';
 import { addPhysicalCheckin, getPhysicalNoteById } from '@/lib/queries';
 import { createCheckinSchema } from '@/lib/validators/physical-note';
 

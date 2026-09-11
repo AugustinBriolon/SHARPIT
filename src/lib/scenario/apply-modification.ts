@@ -9,7 +9,7 @@ import {
   type ScenarioSessionSlice,
 } from '@/core/scenario/types';
 import { stepDownIntensity } from '@/lib/scenario/apply-scenario-op';
-import { addTrainingDays } from '@/lib/training/training-day';
+import { addTrainingDays } from '@/lib/training/periodization/training-day';
 import { localDateLabel } from '@/lib/projection/build-projection-input';
 
 function sessionLabel(session: ScenarioSessionSlice): string {

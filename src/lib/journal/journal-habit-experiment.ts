@@ -19,7 +19,7 @@ import {
 } from '@/lib/journal/journal-habit-analysis';
 import { isDayContextFactorId } from '@/lib/journal/day-context-factors';
 import { isCustomTrackableId, journalTrackableById } from '@/lib/journal/journal-trackables';
-import { addTrainingDays } from '@/lib/training/training-day';
+import { addTrainingDays } from '@/lib/training/periodization/training-day';
 
 export const EXPERIMENT_WINDOW_DAYS = 7;
 

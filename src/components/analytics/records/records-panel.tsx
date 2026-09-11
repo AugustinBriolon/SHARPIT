@@ -17,7 +17,7 @@ import {
   type RecordCategory,
   type RecordEntry,
   type RecordSportTab,
-} from '@/lib/training/records';
+} from '@/lib/training/records/records';
 import { cn } from '@/lib/utils';
 import { differenceInCalendarDays, format, formatDistanceToNowStrict } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -214,7 +214,7 @@ function PrGrid({ categories }: { categories: RecordCategory[] }) {
 function GpsAnalysisSection({
   powerCurve,
 }: {
-  powerCurve: import('@/lib/training/records').PowerCurvePoint[];
+  powerCurve: import('@/lib/training/records/records').PowerCurvePoint[];
 }) {
   if (powerCurve.length === 0) {
     return null;

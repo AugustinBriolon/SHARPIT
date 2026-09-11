@@ -3,7 +3,7 @@
 import { useMemo } from 'react';
 import { motion, useReducedMotion } from 'motion/react';
 import { buildCoachProvenanceChips } from '@/lib/coach/chat/transcript/coach-provenance';
-import { trainingDayIdForNow } from '@/lib/training/training-day';
+import { trainingDayIdForNow } from '@/lib/training/periodization/training-day';
 import { useTodayPresentationViewModel } from '@/hooks/use-presentation-view-model';
 import { cn } from '@/lib/utils';
 

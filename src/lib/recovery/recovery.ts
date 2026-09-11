@@ -1,4 +1,4 @@
-import type { PmcPoint } from '@/lib/training/pmc-history';
+import type { PmcPoint } from '@/lib/training/pmc/pmc-history';
 import type { CorpsTone } from '@/lib/ui/metric-tone';
 
 export type RecoveryTone = 'good' | 'moderate' | 'low' | 'neutral';

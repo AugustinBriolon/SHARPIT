@@ -2,13 +2,13 @@ import type { ActivityType } from '@prisma/client';
 import { isSet } from '@/lib/util/value';
 import { differenceInCalendarDays, format, startOfDay } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { pmcTsb, type PmcState } from '@/lib/training/pmc';
+import { pmcTsb, type PmcState } from '@/lib/training/pmc/pmc';
 import {
   formatActivityWeatherNarrative,
   parseActivityWeather,
 } from '@/lib/activity/weather/activity-weather';
-import { categoryLabels, sideLabels, statusLabels } from '@/lib/physical';
-import { computeTrainingLoad } from '@/lib/training/training-load';
+import { categoryLabels, sideLabels, statusLabels } from '@/lib/physical-health/physical';
+import { computeTrainingLoad } from '@/lib/training/load/training-load';
 
 const SLEEP_TARGET_MIN = 390; // 6h30 — seuil récupération (cf. alerts.ts)
 

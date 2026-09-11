@@ -1,6 +1,6 @@
 import { Sparkline } from '@/components/today/dashboard/sparkline';
 import { formatDuration } from '@/lib/sleep/sleep';
-import type { WeeklyStats } from '@/lib/weekly-review';
+import type { WeeklyStats } from '@/lib/coach/weekly-review';
 import type { WeeklyReviewIllustrationKind } from '@/components/training/weekly-review/weekly-review-sections';
 
 function loadTrend(totalLoad: number, prevTotalLoad: number): string | undefined {

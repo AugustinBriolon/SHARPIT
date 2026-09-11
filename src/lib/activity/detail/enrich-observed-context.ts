@@ -13,7 +13,7 @@ import {
 import { isIndoorActivitySession } from '@/lib/activity/location/indoor-activity';
 import { runActivityNarrativeAnalysis } from '@/lib/activity/narrative/activity-narrative';
 import { fetchForecastPredictions } from '@/lib/planned-session/forecast/forecast-fetch';
-import { computeTrainingDayId } from '@/lib/training/training-day';
+import { computeTrainingDayId } from '@/lib/training/periodization/training-day';
 
 export { isActivityToday } from '@/lib/activity/list/activity-day';
 
