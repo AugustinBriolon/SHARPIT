@@ -112,7 +112,10 @@ function usePlanHubQueries() {
 function usePlanHubDerived(now: Date | null, queries: ReturnType<typeof usePlanHubQueries>) {
   const { goalsQuery, activitiesQuery, plannedQuery, planQuery, snapshot } = queries;
   const verdict = resolveVerdict(snapshot);
-  const goal = useMemo(() => selectPlanGoal(goalsQuery.data ?? []), [goalsQuery.data]);
+  const goal = useMemo(
+    () => (now ? selectPlanGoal(goalsQuery.data ?? [], now) : null),
+    [goalsQuery.data, now],
+  );
   const macroRail = useMemo(
     () => (now ? buildMacroPhaseRail(planQuery.data ?? null, now) : null),
     [planQuery.data, now],

@@ -62,8 +62,8 @@ function resolveDetail(goal: ClientGoal | undefined, targetPerformance: string |
   return targetPerformance ?? goal.raceFormat ?? null;
 }
 
-export function selectPlanGoal(goals: readonly ClientGoal[]): PlanGoalView | null {
-  const [line] = selectTodayGoals([...goals], 1);
+export function selectPlanGoal(goals: readonly ClientGoal[], now: Date): PlanGoalView | null {
+  const [line] = selectTodayGoals([...goals], 1, now);
   if (!line) {
     return null;
   }

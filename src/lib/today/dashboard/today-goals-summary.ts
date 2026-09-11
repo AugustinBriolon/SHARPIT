@@ -75,8 +75,11 @@ function toTodayGoalLine(goal: ClientGoal): TodayGoalLine {
 }
 
 /** Sélectionne jusqu'à 3 objectifs actifs pour l'aperçu Today. */
-export function selectTodayGoals(goals: ClientGoal[], max = 3): TodayGoalLine[] {
-  const now = new Date();
+export function selectTodayGoals(
+  goals: ClientGoal[],
+  max = 3,
+  now: Date = new Date(),
+): TodayGoalLine[] {
   const active = goals.filter((g) => !g.achieved && !isGoalExpired(g.targetDate, now));
 
   return [...active]
