@@ -151,7 +151,8 @@ data ever could. Without the Athlete, nothing else has meaning. The Athlete is t
 **Responsibilities**
 The Athlete has a physiological state (always evolving), a history of training (Observations), performance capabilities
 (estimated thresholds and capacities), a set of Goals, and a Context (lifestyle, constraints, psychology). The Athlete
-is the final decision-maker — SHARPIT provides inputs to those decisions, not replacements for them.
+is the final decision-maker — SHARPIT coaches with analyses, programme proposals, and suivi, but does not silently
+replace the Athlete's choices or clinical judgment.
 
 **What it is NOT**
 Not a user profile. Not a database record. Not a collection of metrics. The Athlete is a living system that SHARPIT
@@ -1451,6 +1452,7 @@ human reasoning.
 - Provide context that deterministic Models cannot capture: "Your moderate Readiness is expected given Sunday's
   long ride — not a concern in isolation"
 - Engage in multi-turn conversation about training, recovery, planning, and performance
+- Propose programme fills and rearranges (plan generation / adaptation / session tools) that the Athlete must approve before apply — coaching expression, not silent mutation
 - Generate daily Briefings and weekly Reviews that synthesize the physiological narrative
 - Apply Context to personalize explanations and avoid irrelevant suggestions
 - Acknowledge uncertainty and limitations honestly — never project more Confidence than the data supports
