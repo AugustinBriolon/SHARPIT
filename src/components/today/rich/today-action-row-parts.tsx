@@ -271,7 +271,7 @@ export function TodayActionRowSessionLists({
   onWellnessCompleted?: () => void;
   openPlannedSession: (args: { sessionId: string }) => void;
 }) {
-  if (loading) {
+  if (loading && derived.sessionLines.length === 0 && derived.sessionLinkSuggestions.length === 0) {
     return <TodayActionRowSkeleton />;
   }
 

@@ -92,30 +92,95 @@ export function useTrainingPlan() {
 
 export function useTrainingPlanMutations() {
   const queryClient = useQueryClient();
-  const invalidate = () => queryClient.invalidateQueries({ queryKey: queryKeys.trainingPlan });
+  const key = queryKeys.trainingPlan;
 
   const generate = useMutation({
     mutationFn: (goalId: string) => sendJson('/api/training-plans', 'POST', { goalId }),
-    onSuccess: () => {
-      invalidate();
+    onSuccess: (data) => {
+      queryClient.setQueryData(key, data);
       toast.success("Plan d'entraînement généré");
     },
     onError: (err: unknown) =>
       toast.error('La génération du plan a échoué.', {
         description: err instanceof Error ? err.message : undefined,
       }),
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: key });
+    },
   });
 
   const archive = useMutation({
     mutationFn: (id: string) => sendJson(`/api/training-plans/${id}`, 'DELETE'),
-    onSuccess: invalidate,
-    onError: (err: unknown) =>
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: key });
+      const previous = queryClient.getQueryData(key);
+      queryClient.setQueryData(key, null);
+      return { previous };
+    },
+    onError: (err: unknown, _id, context) => {
+      if (context?.previous !== undefined) {
+        queryClient.setQueryData(key, context.previous);
+      }
       toast.error("Impossible d'archiver le plan.", {
         description: err instanceof Error ? err.message : undefined,
-      }),
+      });
+    },
+    onSuccess: () => {
+      toast.success('Plan macro archivé');
+    },
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: key });
+    },
   });
 
   return { generate, archive };
+}
+
+type ThresholdPreviewCache = {
+  estimates: {
+    ftpW: number | null;
+    runThresholdPaceSecPerKm: number | null;
+    swimCssSecPer100m: number | null;
+  };
+  changes: { field: ThresholdField }[];
+};
+
+function buildThresholdEstimatePatch(
+  fields: ThresholdField[] | undefined,
+  preview: ThresholdPreviewCache,
+) {
+  const accepted = new Set(fields?.length ? fields : preview.changes.map((change) => change.field));
+  const patch: Record<string, number | null> = {};
+  if (accepted.has('ftpW')) {
+    patch.ftpW = preview.estimates.ftpW;
+  }
+  if (accepted.has('runThresholdPaceSecPerKm')) {
+    patch.runThresholdPaceSecPerKm = preview.estimates.runThresholdPaceSecPerKm;
+  }
+  if (accepted.has('swimCssSecPer100m')) {
+    patch.swimCssSecPer100m = preview.estimates.swimCssSecPer100m;
+  }
+  return patch;
+}
+
+async function optimisticallyApplyThresholdEstimates(
+  queryClient: ReturnType<typeof useQueryClient>,
+  fields?: ThresholdField[],
+) {
+  await queryClient.cancelQueries({ queryKey: queryKeys.athleteProfile });
+  await queryClient.cancelQueries({ queryKey: queryKeys.thresholdPreview });
+  const previousProfile = queryClient.getQueryData(queryKeys.athleteProfile);
+  const preview = queryClient.getQueryData<ThresholdPreviewCache>(queryKeys.thresholdPreview);
+
+  if (previousProfile && preview) {
+    queryClient.setQueryData(queryKeys.athleteProfile, {
+      ...(previousProfile as object),
+      ...buildThresholdEstimatePatch(fields, preview),
+      thresholdsSyncedAt: new Date().toISOString(),
+    });
+  }
+
+  return { previousProfile };
 }
 
 export function useApplyThresholdEstimates() {
@@ -123,9 +188,22 @@ export function useApplyThresholdEstimates() {
   return useMutation({
     mutationFn: (fields?: ThresholdField[]) =>
       sendJson('/api/athlete-profile/apply-estimates', 'POST', fields ? { fields } : {}),
+    onMutate: (fields) => optimisticallyApplyThresholdEstimates(queryClient, fields),
+    onError: (err: unknown, _fields, context) => {
+      if (context?.previousProfile !== undefined) {
+        queryClient.setQueryData(queryKeys.athleteProfile, context.previousProfile);
+      }
+      toast.error("Impossible d'appliquer les seuils estimés.", {
+        description: err instanceof Error ? err.message : undefined,
+      });
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.thresholdPreview });
-      queryClient.invalidateQueries({ queryKey: queryKeys.thresholdHistory });
+      toast.success('Seuils estimés appliqués');
+    },
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: queryKeys.thresholdPreview });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.thresholdHistory });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.athleteProfile });
     },
   });
 }

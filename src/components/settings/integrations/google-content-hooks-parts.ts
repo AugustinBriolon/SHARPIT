@@ -11,6 +11,7 @@ import {
 import { notifyIntegrationSyncStarted } from '@/components/settings/integrations/modal-sync-start';
 import { useGoogleCalendars } from '@/hooks/use-data';
 import type { IntegrationDefinition } from '@/components/settings/integrations/types';
+import { toast } from '@/components/ui/toast';
 
 export function useGoogleCalendarSelection(
   integration: IntegrationDefinition,
@@ -23,24 +24,23 @@ export function useGoogleCalendarSelection(
   const targetCalendarId = integration.account?.extra?.targetCalendarId as string | null;
   const targetCalendarName = integration.account?.extra?.targetCalendarName as string | null;
   const calendarId = pendingCalendarId ?? targetCalendarId ?? '';
-  const [savingTarget, setSavingTarget] = useState(false);
 
-  async function handleSelectCalendar(nextCalendarId: string | null) {
-    if (!nextCalendarId) {
+  function handleSelectCalendar(nextCalendarId: string | null) {
+    if (!nextCalendarId || nextCalendarId === calendarId) {
       return;
     }
     setPendingCalendarId(nextCalendarId);
-    setSavingTarget(true);
-    try {
-      await selectGoogleCalendarTarget({
-        nextCalendarId,
-        calendars,
-        router,
-        onUpdated,
+    void selectGoogleCalendarTarget({
+      nextCalendarId,
+      calendars,
+      router,
+      onUpdated,
+    }).catch((err: unknown) => {
+      setPendingCalendarId(null);
+      toast.error('Impossible de changer le calendrier', {
+        description: err instanceof Error ? err.message : undefined,
       });
-    } finally {
-      setSavingTarget(false);
-    }
+    });
   }
 
   return {
@@ -48,7 +48,7 @@ export function useGoogleCalendarSelection(
     calendarsQuery,
     calendarId,
     targetCalendarName,
-    savingTarget,
+    savingTarget: false,
     handleSelectCalendar,
   };
 }

@@ -1,5 +1,6 @@
 import { Suspense } from 'react';
 import { StickyHeader } from '@/components/layout/header/sticky-header';
+import { PlanCoachMenu } from '@/components/plan/hub/plan-actions';
 import { PlanHubWidgets } from '@/components/shell/plan-hub-widgets';
 
 /**
@@ -7,13 +8,17 @@ import { PlanHubWidgets } from '@/components/shell/plan-hub-widgets';
  *
  * Causal order: destination, week decision, then the thread (owed, done,
  * block state, projection). Chrome stays outside Suspense (Instant UX).
+ * Coaching gestures live in the header ··· menu — not a competing body block.
  */
 export function PlanHub() {
   return (
     <div className="space-y-4">
       <StickyHeader>
         <p className="text-label">Plan</p>
-        <h1 className="text-page-title mt-1">Ton cap, cette semaine</h1>
+        <div className="mt-1 flex items-center justify-between gap-3">
+          <h1 className="text-page-title min-w-0 text-pretty">Ton cap, cette semaine</h1>
+          <PlanCoachMenu />
+        </div>
       </StickyHeader>
 
       <Suspense fallback={<PlanHubWidgetsFallback />}>

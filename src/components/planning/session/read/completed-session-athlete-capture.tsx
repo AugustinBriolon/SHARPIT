@@ -47,7 +47,75 @@ function FeelingHero({
   );
 }
 
-function NoteEditor({ activityId, notes }: { activityId: string; notes: string | null }) {
+function NoteEditorForm({
+  activityId,
+  draft,
+  isPending,
+  onCancel,
+  onChange,
+  onSave,
+}: {
+  activityId: string;
+  draft: string;
+  isPending: boolean;
+  onCancel: () => void;
+  onChange: (value: string) => void;
+  onSave: () => void;
+}) {
+  return (
+    <div className="space-y-2">
+      <label className="text-label" htmlFor={`session-note-${activityId}`}>
+        Ta note
+      </label>
+      <textarea
+        className="border-analysis-border bg-background text-foreground focus-visible:ring-ring rounded-analysis min-h-24 w-full border px-3 py-2 text-sm leading-relaxed focus-visible:ring-2 focus-visible:outline-none"
+        id={`session-note-${activityId}`}
+        maxLength={2000}
+        value={draft}
+        autoFocus
+        onChange={(event) => onChange(event.target.value)}
+      />
+      <div className="flex flex-wrap gap-2">
+        <Button disabled={isPending} size="sm" type="button" onClick={onSave}>
+          Enregistrer
+        </Button>
+        <Button disabled={isPending} size="sm" type="button" variant="ghost" onClick={onCancel}>
+          Annuler
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function NoteDisplay({ notes, onEdit }: { notes: string; onEdit: () => void }) {
+  return (
+    <button
+      className="pressable border-analysis-border/50 bg-analysis-surface-alt/40 rounded-analysis w-full space-y-1 border px-3 py-3 text-left"
+      type="button"
+      onClick={onEdit}
+    >
+      <p className="text-label">Ta note</p>
+      <p className="text-verdict text-foreground text-base leading-snug wrap-break-word whitespace-pre-wrap">
+        {notes}
+      </p>
+    </button>
+  );
+}
+
+function NoteEmptyState({ onEdit }: { onEdit: () => void }) {
+  return (
+    <button
+      className="pressable border-analysis-border/60 rounded-analysis inline-flex min-h-11 w-full items-center gap-2 border border-dashed px-3 py-3 text-left text-sm"
+      type="button"
+      onClick={onEdit}
+    >
+      <NotebookPen className="text-muted-foreground size-4 shrink-0" aria-hidden />
+      <span className="text-foreground font-medium">Ajouter une note</span>
+    </button>
+  );
+}
+
+function useNoteEditorState(activityId: string, notes: string | null) {
   const { update } = useActivityMutations();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(notes ?? '');
@@ -70,63 +138,30 @@ function NoteEditor({ activityId, notes }: { activityId: string; notes: string |
     );
   }
 
-  if (editing) {
+  return { draft, editing, isPending: update.isPending, save, setDraft, setEditing, startEdit };
+}
+
+function NoteEditor({ activityId, notes }: { activityId: string; notes: string | null }) {
+  const editor = useNoteEditorState(activityId, notes);
+
+  if (editor.editing) {
     return (
-      <div className="space-y-2">
-        <label className="text-label" htmlFor={`session-note-${activityId}`}>
-          Ta note
-        </label>
-        <textarea
-          className="border-analysis-border bg-background text-foreground focus-visible:ring-ring rounded-analysis min-h-24 w-full border px-3 py-2 text-sm leading-relaxed focus-visible:ring-2 focus-visible:outline-none"
-          id={`session-note-${activityId}`}
-          maxLength={2000}
-          value={draft}
-          autoFocus
-          onChange={(event) => setDraft(event.target.value)}
-        />
-        <div className="flex flex-wrap gap-2">
-          <Button disabled={update.isPending} size="sm" type="button" onClick={save}>
-            Enregistrer
-          </Button>
-          <Button
-            disabled={update.isPending}
-            size="sm"
-            type="button"
-            variant="ghost"
-            onClick={() => setEditing(false)}
-          >
-            Annuler
-          </Button>
-        </div>
-      </div>
+      <NoteEditorForm
+        activityId={activityId}
+        draft={editor.draft}
+        isPending={editor.isPending}
+        onCancel={() => editor.setEditing(false)}
+        onChange={editor.setDraft}
+        onSave={editor.save}
+      />
     );
   }
 
   if (notes?.trim()) {
-    return (
-      <button
-        className="pressable border-analysis-border/50 bg-analysis-surface-alt/40 rounded-analysis w-full space-y-1 border px-3 py-3 text-left"
-        type="button"
-        onClick={startEdit}
-      >
-        <p className="text-label">Ta note</p>
-        <p className="text-verdict text-foreground text-base leading-snug wrap-break-word whitespace-pre-wrap">
-          {notes}
-        </p>
-      </button>
-    );
+    return <NoteDisplay notes={notes} onEdit={editor.startEdit} />;
   }
 
-  return (
-    <button
-      className="pressable border-analysis-border/60 rounded-analysis inline-flex min-h-11 w-full items-center gap-2 border border-dashed px-3 py-3 text-left text-sm"
-      type="button"
-      onClick={startEdit}
-    >
-      <NotebookPen className="text-muted-foreground size-4 shrink-0" aria-hidden />
-      <span className="text-foreground font-medium">Ajouter une note</span>
-    </button>
-  );
+  return <NoteEmptyState onEdit={editor.startEdit} />;
 }
 
 /**
@@ -152,7 +187,6 @@ export function CompletedSessionAthleteCapture({ activity }: { activity: ClientA
         activityId={activity.id}
         feeling={editor.editFeeling}
         feelingError={editor.feelingError}
-        isPending={editor.isPending}
         open={editor.open}
         rpe={editor.editRpe}
         onFeelingChange={editor.setEditFeeling}

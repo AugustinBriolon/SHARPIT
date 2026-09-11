@@ -18,7 +18,6 @@ export function ActivityFeelingPrompt({ activityId }: { activityId: string }) {
         activityId={activityId}
         feeling={editor.editFeeling}
         feelingError={editor.feelingError}
-        isPending={editor.isPending}
         open={editor.open}
         rpe={editor.editRpe}
         onOpenChange={editor.setOpen}

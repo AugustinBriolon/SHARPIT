@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useSyncExternalStore } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAthleteSnapshot } from '@/hooks/use-athlete-snapshot';
 import {
@@ -29,17 +29,15 @@ import { mapVerdictToDisplay, type OverallVerdict } from '@/lib/today/dashboard/
 import type { ClientActivity, ClientPlannedSession } from '@/lib/query/types';
 import type { AthleteSnapshot } from '@/core/athlete-state/snapshot';
 
+const emptySubscribe = () => () => {};
+
+/** Client clock for Plan — SSR stays null; first client paint seeds session now (no effect flash). */
 function useClientNow(): Date | null {
-  const [now, setNow] = useState<Date | null>(readPlanHubNow);
-  useEffect(() => {
-    const next = new Date();
-    const previous = readPlanHubNow();
-    if (previous && previous.toDateString() === next.toDateString()) {
-      return;
-    }
-    setNow(rememberPlanHubNow(next));
-  }, []);
-  return now;
+  return useSyncExternalStore(
+    emptySubscribe,
+    () => readPlanHubNow() ?? rememberPlanHubNow(new Date()),
+    () => null,
+  );
 }
 
 function resolveVerdict(snapshot: AthleteSnapshot | null): OverallVerdict | null {
@@ -157,7 +155,7 @@ function assemblePlanHubModel(
     verdict: derived.verdict,
     verdictLabel: hubVerdictLabel(derived.verdict),
     goal: derived.goal,
-    goalsPending: queries.goalsQuery.isPending,
+    goalsPending: queries.goalsQuery.isPending && queries.goalsQuery.data === undefined,
     macroRail: derived.macroRail,
     week: derived.week,
     weekReady: derived.week !== null && !listsPending,

@@ -44,6 +44,35 @@ function computeIsPendingScheduled({
   );
 }
 
+function createManualAnalysisHandler({
+  analyze,
+  guardDisabled,
+  pollState,
+  sessionId,
+}: {
+  analyze: ReturnType<typeof usePlannedSessionMutations>['analyze'];
+  guardDisabled: boolean;
+  pollState: ReturnType<typeof useSessionAnalysisPoll>;
+  sessionId: string;
+}) {
+  return function handleManualAnalysis() {
+    if (guardDisabled) {
+      return;
+    }
+    clearAnalysisPollTimedOut(sessionId);
+    pollState.setPollTimedOut(false);
+    try {
+      sessionStorage.removeItem(`sharpit.analysis-kick.${sessionId}`);
+    } catch {
+      // ignore
+    }
+    // BACKGROUND: panel already shows isAnalyzing — no blocking toast await.
+    analyze.mutate(sessionId, {
+      onSuccess: () => toast.success('Analyse terminée'),
+    });
+  };
+}
+
 export function useSessionRealizationAnalysis({
   session,
   isLinked,
@@ -76,35 +105,20 @@ export function useSessionRealizationAnalysis({
   });
 
   const painReassessments = usePainReassessments({ session, analysis: pollState.analysis });
-  const isAnalyzing = isDemo ? isLinked && !hasAnalysis : analyze.isPending || isPendingScheduled;
-
-  async function handleManualAnalysis() {
-    if (guardDisabled) {
-      return;
-    }
-    clearAnalysisPollTimedOut(session.id);
-    pollState.setPollTimedOut(false);
-    try {
-      sessionStorage.removeItem(`sharpit.analysis-kick.${session.id}`);
-    } catch {
-      // ignore
-    }
-    const loadingToast = toast.loading('Analyse de la séance en cours');
-    try {
-      await analyze.mutateAsync(session.id);
-    } finally {
-      toast.close(loadingToast);
-    }
-  }
 
   return {
     analysis: pollState.analysis,
     analyzedAt: pollState.analyzedAt,
     pollTimedOut: pollState.pollTimedOut,
     painReassessments,
-    isAnalyzing,
+    isAnalyzing: isDemo ? isLinked && !hasAnalysis : analyze.isPending || isPendingScheduled,
     analyzePending: analyze.isPending,
     guardDisabled,
-    handleManualAnalysis,
+    handleManualAnalysis: createManualAnalysisHandler({
+      analyze,
+      guardDisabled,
+      pollState,
+      sessionId: session.id,
+    }),
   };
 }

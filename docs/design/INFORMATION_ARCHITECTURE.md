@@ -134,11 +134,12 @@ The phase is resolved in `src/lib/daily-phase/`, from session status first, athl
 2. Week plan: planned versus done, with intensity gate when readiness conflicts with owed hard work.
 3. Trajectory signals: **Adaptation** and **Charge** — block-scale context for the week (not overnight recovery; those stay on Today).
 4. Projection: expected effect of holding the week, when actionable.
-5. **Coacher mon objectif** — one coaching intention, three ranked gestures (not four equal doors):
-   1. **Cadre jusqu’à la course** (macro phases / target load — not sessions)
-   2. **Remplir ma semaine** (`/plan/semaine?create=1`)
-   3. **Ajuster le planning** (`/plan/semaine?adapt=1`)
+5. **Coacher mon objectif** — coaching gestures live in the Plan hub header overflow (`···`), not as a competing body block:
+   1. **Plan macro** (Cadre : phases / charge cible — dialog in place)
+   2. **Remplir ma semaine** (PlanGenerator in place; cross-destination `/plan/semaine?generate=1`)
+   3. **Ajuster le planning** (PlanAdapter in place; cross-destination `/plan/semaine?adapt=1`)
       Plus contextual Coach discuss. Weekly brief stays a _reading_ under Projection (`Bilan hebdo`), not a peer coaching CTA.
+      **Anti-pattern:** do not navigate to another route solely to open a modal the current surface can host. Do not paint one gesture in competing ink accent on the hub reading column.
 
 **Vocabulary guard (Plan):** Twin **Adaptation** (`/plan/adaptation`) is the body-response _reading_. Plan mutation is always **Ajuster le planning** (`PlanAdapter`) — never “Adaptation”. Macro ≠ séances.
 

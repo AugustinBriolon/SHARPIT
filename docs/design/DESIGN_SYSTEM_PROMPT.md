@@ -216,6 +216,7 @@ confirm → optimistic cache patch → close + exit anim → mutate in backgroun
 - ❌ Raw Tailwind status colors (`emerald-*`, `blue-*`, `amber-*`, `red-*`) for done / caution / risk — use `STATUS_SURFACE` / `ADEQUATE_TONE` / `CAUTION_TONE` / `ELEVATED_TONE` / `RISK_TONE`
 - ❌ Legacy `bg-card` / `rounded-2xl border` SaaS plates — use `analysis-panel`
 - ❌ Plain muted empty paragraphs on main routes — use `InkEmptyState`
+- ❌ **Route-hop to open a modal** — `Link` / `router.push` to another route whose only job is to read `?create=` / `?adapt=` / `?modal=` and open a dialog already importable on the current surface. Open in place. Query deep-links are for **cross-destination** entry only (Today → Plan semaine). Example fixed: Plan hub « Coacher mon objectif » opens Macro / Generator / Adapter locally.
 
 ## Target feeling
 

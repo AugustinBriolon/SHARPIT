@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
+  PLAN_COACH_ADAPT_HREF,
+  PLAN_COACH_GENERATE_HREF,
   PLAN_COACH_INTENTION,
   PLAN_COACH_STEPS,
   TWIN_ADAPTATION_READING,
@@ -10,9 +12,11 @@ describe('plan-coach-offer', () => {
   it('exposes one intention and three ranked steps', () => {
     expect(PLAN_COACH_INTENTION).toBe('Coacher mon objectif');
     expect(PLAN_COACH_STEPS.map((step) => step.id)).toEqual(['cadre', 'remplir', 'ajuster']);
-    expect(PLAN_COACH_STEPS[0]?.href).toBeNull();
-    expect(PLAN_COACH_STEPS[1]?.href).toContain('create=1');
-    expect(PLAN_COACH_STEPS[2]?.href).toContain('adapt=1');
+    expect(PLAN_COACH_STEPS[0]?.deepLink).toBeNull();
+    expect(PLAN_COACH_STEPS[1]?.deepLink).toBe(PLAN_COACH_GENERATE_HREF);
+    expect(PLAN_COACH_STEPS[2]?.deepLink).toBe(PLAN_COACH_ADAPT_HREF);
+    expect(PLAN_COACH_GENERATE_HREF).toContain('generate=1');
+    expect(PLAN_COACH_ADAPT_HREF).toContain('adapt=1');
   });
 
   it('keeps Twin Adaptation copy distinct from Ajuster', () => {

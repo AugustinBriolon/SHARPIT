@@ -2,7 +2,6 @@
 
 import { useRef } from 'react';
 import { format, startOfWeek } from 'date-fns';
-import { PlanActions } from '@/components/plan/hub/plan-actions';
 import {
   PlanDestinationPlate,
   PlanDestinationPlateSkeleton,
@@ -46,9 +45,19 @@ function DestinationSlot({ model }: { model: PlanHubModel }) {
 }
 
 function DecisionSlot({ model, decision }: { model: PlanHubModel; decision: WeekDecision | null }) {
+  const retained = useRef<{
+    week: NonNullable<PlanHubModel['week']>;
+    decision: WeekDecision;
+  } | null>(null);
+
   if (model.weekReady && model.week && decision) {
-    return <PlanWeekDecision decision={decision} week={model.week} />;
+    retained.current = { week: model.week, decision };
   }
+
+  if (retained.current) {
+    return <PlanWeekDecision decision={retained.current.decision} week={retained.current.week} />;
+  }
+
   return <PlanWeekDecisionSkeleton />;
 }
 
@@ -93,12 +102,6 @@ export function PlanHubWidgets() {
       <DestinationSlot model={model} />
       <DecisionSlot decision={decision} model={model} />
       <ThreadSlot decision={decision} model={model} />
-      <PlanActions
-        calibration={model.calibration}
-        hasActiveMacro={Boolean(model.macroRail)}
-        hasDatedGoal={Boolean(model.goal?.targetDate)}
-        hasRemainingSessions={(model.week?.remaining.length ?? 0) > 0}
-      />
     </div>
   );
 }

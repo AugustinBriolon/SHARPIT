@@ -20,7 +20,8 @@ import {
 import { useOfflineGuard } from '@/hooks/use-offline-guard';
 import { shouldHydrateProfileForm } from '@/lib/profile/map-athlete-profile';
 import { invalidateAfterAthleteProfileSave } from '@/lib/query/invalidate-after-athlete-profile-save';
-import type { ThresholdField } from '@/lib/threshold/threshold-estimates';
+import { queryKeys } from '@/lib/query/keys';
+import type { ThresholdApplyPreview, ThresholdField } from '@/lib/threshold/threshold-estimates';
 
 export interface GarminImportResult {
   imported: boolean;
@@ -220,107 +221,110 @@ type CalibrationActionsOptions = {
   setError: (value: string | null) => void;
 };
 
-function useCalibrationActions(options: CalibrationActionsOptions) {
-  const {
-    initial,
-    form,
-    queryClient,
-    router,
-    guardDisabled,
-    applyEstimates,
-    setSaving,
-    setImporting,
-    setMessage,
-    setError,
-  } = options;
-  async function handleGarminImport() {
-    if (guardDisabled) {
+async function runGarminImport(options: CalibrationActionsOptions) {
+  const { form, queryClient, router, guardDisabled, setImporting, setMessage, setError } = options;
+  if (guardDisabled) {
+    return;
+  }
+  setImporting(true);
+  setError(null);
+  setMessage(null);
+  try {
+    const data = await fetchGarminImport();
+    if (!data.imported) {
+      const feedback = buildGarminImportMessage(data);
+      if ((data.failedSources ?? []).length > 0) {
+        setError(feedback);
+      } else {
+        setMessage(feedback);
+      }
       return;
     }
-    setImporting(true);
-    setError(null);
-    setMessage(null);
-    try {
-      const data = await fetchGarminImport();
-      if (!data.imported) {
-        const feedback = buildGarminImportMessage(data);
-        if ((data.failedSources ?? []).length > 0) {
-          setError(feedback);
-        } else {
-          setMessage(feedback);
-        }
-        return;
-      }
-      applyGarminResult(data, form);
-      setMessage(buildGarminImportMessage(data));
-      router.refresh();
-      await invalidateAfterAthleteProfileSave(queryClient);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erreur');
-    } finally {
-      setImporting(false);
-    }
+    applyGarminResult(data, form);
+    setMessage(buildGarminImportMessage(data));
+    router.refresh();
+    await invalidateAfterAthleteProfileSave(queryClient);
+  } catch (err) {
+    setError(err instanceof Error ? err.message : 'Erreur');
+  } finally {
+    setImporting(false);
   }
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (guardDisabled) {
-      return;
-    }
-    setSaving(true);
-    setError(null);
-    setMessage(null);
-    try {
-      const result = await persistCalibrationPatch(initial, form, queryClient, router);
-      if (result === 'empty') {
-        setMessage('Rien à enregistrer.');
-        setSaving(false);
-        return;
-      }
-      setMessage('Calibration enregistrée.');
-      toast.success('Calibration enregistrée');
-      setSaving(false);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erreur');
-      setSaving(false);
-    }
-  }
-
-  async function handleApplyEstimates(fields: ThresholdField[]) {
-    if (guardDisabled) {
-      return;
-    }
-    setError(null);
-    setMessage(null);
-    try {
-      const result = await applyEstimates.mutateAsync(fields);
-      const applied = result as {
-        profile?: {
-          ftpW?: number | null;
-          runThresholdPaceSecPerKm?: number | null;
-          swimCssSecPer100m?: number | null;
-        };
-      };
-      if (applied.profile) {
-        applyEstimateProfile(applied.profile, form);
-      }
-      setMessage('Seuils estimés appliqués depuis tes records.');
-      router.refresh();
-      await invalidateAfterAthleteProfileSave(queryClient);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erreur');
-    }
-  }
-
-  return { handleGarminImport, handleSubmit, handleApplyEstimates };
 }
 
-export function usePerformanceCalibration(
-  initial: ProfileData | null,
-  queryClient: QueryClient,
-  router: AppRouterInstance,
-) {
-  const form = useCalibrationFormState(initial);
+async function runCalibrationSubmit(e: React.FormEvent, options: CalibrationActionsOptions) {
+  e.preventDefault();
+  const { initial, form, queryClient, router, guardDisabled, setSaving, setMessage, setError } =
+    options;
+  if (guardDisabled) {
+    return;
+  }
+  setSaving(true);
+  setError(null);
+  setMessage(null);
+  try {
+    const result = await persistCalibrationPatch(initial, form, queryClient, router);
+    if (result === 'empty') {
+      setMessage('Rien à enregistrer.');
+      setSaving(false);
+      return;
+    }
+    setMessage('Calibration enregistrée.');
+    toast.success('Calibration enregistrée');
+    setSaving(false);
+  } catch (err) {
+    setError(err instanceof Error ? err.message : 'Erreur');
+    setSaving(false);
+  }
+}
+
+function runApplyEstimates(fields: ThresholdField[], options: CalibrationActionsOptions) {
+  const { form, queryClient, router, guardDisabled, applyEstimates, setMessage, setError } =
+    options;
+  if (guardDisabled) {
+    return;
+  }
+  setError(null);
+  setMessage(null);
+
+  const preview = queryClient.getQueryData<ThresholdApplyPreview>(queryKeys.thresholdPreview);
+  if (preview) {
+    const accepted = new Set(fields.length > 0 ? fields : preview.changes.map((c) => c.field));
+    applyEstimateProfile(
+      {
+        ftpW: accepted.has('ftpW') ? preview.estimates.ftpW : undefined,
+        runThresholdPaceSecPerKm: accepted.has('runThresholdPaceSecPerKm')
+          ? preview.estimates.runThresholdPaceSecPerKm
+          : undefined,
+        swimCssSecPer100m: accepted.has('swimCssSecPer100m')
+          ? preview.estimates.swimCssSecPer100m
+          : undefined,
+      },
+      form,
+    );
+  }
+
+  setMessage('Seuils estimés appliqués depuis tes records.');
+  applyEstimates.mutate(fields, {
+    onError: (err) => {
+      setError(err instanceof Error ? err.message : 'Erreur');
+      setMessage(null);
+    },
+    onSuccess: () => {
+      router.refresh();
+      void invalidateAfterAthleteProfileSave(queryClient);
+    },
+  });
+}
+
+function useCalibrationActions(options: CalibrationActionsOptions) {
+  return {
+    handleGarminImport: () => runGarminImport(options),
+    handleSubmit: (e: React.FormEvent) => runCalibrationSubmit(e, options),
+    handleApplyEstimates: (fields: ThresholdField[]) => runApplyEstimates(fields, options),
+  };
+}
+
+function useCalibrationFeedbackState() {
   const [saving, setSaving] = useState(false);
   const [importing, setImporting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
@@ -331,50 +335,49 @@ export function usePerformanceCalibration(
     setError(null);
   });
 
+  return { saving, setSaving, importing, setImporting, message, setMessage, error, setError };
+}
+
+export function usePerformanceCalibration(
+  initial: ProfileData | null,
+  queryClient: QueryClient,
+  router: AppRouterInstance,
+) {
+  const form = useCalibrationFormState(initial);
+  const feedback = useCalibrationFeedbackState();
   const previewQuery = useThresholdPreview();
   const historyQuery = useThresholdHistory();
   const applyEstimates = useApplyThresholdEstimates();
   const { offline, guardDisabled, offlineLabel } = useOfflineGuard();
 
-  const { handleGarminImport, handleSubmit, handleApplyEstimates } = useCalibrationActions({
+  const actions = useCalibrationActions({
     initial,
     form,
     queryClient,
     router,
     guardDisabled,
     applyEstimates,
-    setSaving,
-    setImporting,
-    setMessage,
-    setError,
+    ...feedback,
   });
 
   const baseline = useMemo(
     () => calibrationValuesFromProfile(initial ?? ({} as ProfileData)),
     [initial],
   );
-  const dirty = isCalibrationDirty(form, baseline);
-  const hasThresholds = hasCalibrationThresholds(form);
-  const syncedLabel = formatSyncedLabel(initial);
 
   return {
     ...form,
-    saving,
-    importing,
-    message,
-    error,
+    ...feedback,
     preview: previewQuery.data,
     history: historyQuery.data ?? [],
     applyEstimates,
     offline,
     guardDisabled,
     offlineLabel,
-    handleGarminImport,
-    handleSubmit,
-    handleApplyEstimates,
-    dirty,
-    hasThresholds,
-    syncedLabel,
+    ...actions,
+    dirty: isCalibrationDirty(form, baseline),
+    hasThresholds: hasCalibrationThresholds(form),
+    syncedLabel: formatSyncedLabel(initial),
     initial,
   };
 }

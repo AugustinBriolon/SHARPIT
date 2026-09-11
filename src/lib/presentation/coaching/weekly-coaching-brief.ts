@@ -252,45 +252,33 @@ function buildWeeklyBriefEmptyViewModel(input: {
     emptyState: {
       title: 'Pas de plan structuré pour cette semaine',
       description: 'Génère un plan avec le coach pour voir ta semaine expliquée ici.',
-      action: { label: 'Remplir ma semaine', href: '/plan/semaine?create=1' },
+      action: { label: 'Remplir ma semaine', href: '/plan/semaine?generate=1' },
     },
   };
 }
 
-export function buildWeeklyCoachingBriefViewModel(
-  input: WeeklyCoachingBriefInput,
-): WeeklyCoachingBriefViewModel {
-  const {
-    weekStart,
-    now,
-    planWeek,
-    goal,
-    plannedSessions,
-    sessionDecisions,
-    todaysSnapshotContext,
-  } = input;
-  const weekEnd = addDays(weekStart, WEEK_DAYS - 1);
-  const weekStartLabel = format(weekStart, 'd MMM', { locale: fr });
-  const weekEndLabel = format(weekEnd, 'd MMM yyyy', { locale: fr });
-
-  const hasNothing = !planWeek && !goal && plannedSessions.length === 0;
-  if (hasNothing) {
-    return buildWeeklyBriefEmptyViewModel({
-      weekStartLabel,
-      weekEndLabel,
-      learningFeedback: input.learningFeedback,
-    });
+function buildWeeklyBriefLimitingFactor(
+  todaysSnapshotContext: WeeklyCoachingBriefInput['todaysSnapshotContext'],
+  now: Date,
+): WeeklyCoachingBriefViewModel['limitingFactor'] {
+  if (!todaysSnapshotContext) {
+    return null;
   }
+  const snapshot = describeSnapshotContext(todaysSnapshotContext);
+  return {
+    limitingFactorLabel: snapshot.limitingFactorLabel,
+    confidenceTierLabel: snapshot.confidenceTierLabel,
+    asOfLabel: `Situation au ${format(now, 'd MMM', { locale: fr })} — peut évoluer d'ici la fin de semaine.`,
+  };
+}
 
+function buildWeeklyBriefPopulatedViewModel(
+  input: WeeklyCoachingBriefInput,
+  weekStartLabel: string,
+  weekEndLabel: string,
+): WeeklyCoachingBriefViewModel {
+  const { weekStart, now, planWeek, goal, plannedSessions, sessionDecisions } = input;
   const gateSignals = collectWeeklyBriefGateSignals(sessionDecisions);
-
-  const limitingFactor = todaysSnapshotContext
-    ? {
-        limitingFactorLabel: describeSnapshotContext(todaysSnapshotContext).limitingFactorLabel,
-        confidenceTierLabel: describeSnapshotContext(todaysSnapshotContext).confidenceTierLabel,
-        asOfLabel: `Situation au ${format(now, 'd MMM', { locale: fr })} — peut évoluer d'ici la fin de semaine.`,
-      }
-    : null;
 
   return {
     weekStartLabel,
@@ -308,11 +296,31 @@ export function buildWeeklyCoachingBriefViewModel(
     load: buildLoad(weekStart, plannedSessions, planWeek, input.dailyTrainingStress),
     keySessions: buildKeySessions(plannedSessions, sessionDecisions, input.goalTitleById),
     recovery: buildRecoveryDays(weekStart, plannedSessions),
-    limitingFactor,
+    limitingFactor: buildWeeklyBriefLimitingFactor(input.todaysSnapshotContext, now),
     assumptions: gateSignals.assumptions,
     dataGaps: gateSignals.dataGaps,
     whatWouldChange: gateSignals.whatWouldChange,
     learningFeedback: input.learningFeedback,
     emptyState: null,
   };
+}
+
+export function buildWeeklyCoachingBriefViewModel(
+  input: WeeklyCoachingBriefInput,
+): WeeklyCoachingBriefViewModel {
+  const { weekStart, planWeek, goal, plannedSessions } = input;
+  const weekEnd = addDays(weekStart, WEEK_DAYS - 1);
+  const weekStartLabel = format(weekStart, 'd MMM', { locale: fr });
+  const weekEndLabel = format(weekEnd, 'd MMM yyyy', { locale: fr });
+
+  const hasNothing = !planWeek && !goal && plannedSessions.length === 0;
+  if (hasNothing) {
+    return buildWeeklyBriefEmptyViewModel({
+      weekStartLabel,
+      weekEndLabel,
+      learningFeedback: input.learningFeedback,
+    });
+  }
+
+  return buildWeeklyBriefPopulatedViewModel(input, weekStartLabel, weekEndLabel);
 }

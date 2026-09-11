@@ -11,6 +11,7 @@ import {
 import { isIndoorActivitySession } from '@/lib/activity/location/indoor-activity';
 import { activityTypeLabels, formatDate, formatDuration } from '@/lib/format';
 import { parseSessionAnalysis } from '@/lib/planned-session/display/session-analysis-display';
+import { isTempId } from '@/lib/query/optimistic';
 import { prefetchActivityDetail } from '@/lib/query/prefetch-activity-detail';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
@@ -177,6 +178,56 @@ function ActivityRowContent({
   );
 }
 
+function ActivityRowShell({
+  activity,
+  panelClassName,
+  selectionMode,
+  selectable,
+  onToggle,
+  queryClient,
+  children,
+}: {
+  activity: ActivityListItem;
+  panelClassName: string;
+  selectionMode: boolean;
+  selectable: boolean;
+  onToggle?: (activityId: string) => void;
+  queryClient: ReturnType<typeof useQueryClient>;
+  children: React.ReactNode;
+}) {
+  function handleClick() {
+    handleActivitySelectionClick({
+      selectionMode,
+      selectable,
+      activityId: activity.id,
+      onToggle,
+    });
+  }
+
+  if (selectionMode) {
+    return (
+      <button className={panelClassName} type="button" onClick={handleClick}>
+        {children}
+      </button>
+    );
+  }
+
+  // Optimistic create rows use temp ids — detail RSC would 404 until reconcile.
+  if (isTempId(activity.id)) {
+    return <div className={panelClassName}>{children}</div>;
+  }
+
+  return (
+    <Link
+      className={panelClassName}
+      href={`/activite/${activity.id}`}
+      onPointerEnter={() => prefetchActivityDetail(queryClient, activity.id, activity.type)}
+    >
+      {children}
+    </Link>
+  );
+}
+
 export function ActivityRow({
   activity,
   compact = false,
@@ -196,8 +247,6 @@ export function ActivityRow({
   const loadValue = activity.load !== null ? Math.round(activity.load) : null;
   const metaParts = buildRowMetaParts({ activity, compact, metric: metric ?? null, weatherLine });
   const selectable = isSelectableHike(activity);
-  const railLabel = buildRailLabel(loadValue);
-
   const panelClassName = buildActivityRowPanelClassName({
     compact,
     selectionMode,
@@ -205,44 +254,26 @@ export function ActivityRow({
     selected,
   });
 
-  const content = (
-    <ActivityRowContent
+  return (
+    <ActivityRowShell
       activity={activity}
-      compact={compact}
-      loadValue={loadValue}
-      metaParts={metaParts}
-      railLabel={railLabel}
+      panelClassName={panelClassName}
+      queryClient={queryClient}
       selectable={selectable}
-      selected={selected}
       selectionMode={selectionMode}
       onToggle={onToggle}
-    />
-  );
-
-  function handleClick() {
-    handleActivitySelectionClick({
-      selectionMode,
-      selectable,
-      activityId: activity.id,
-      onToggle,
-    });
-  }
-
-  if (selectionMode) {
-    return (
-      <button className={panelClassName} type="button" onClick={handleClick}>
-        {content}
-      </button>
-    );
-  }
-
-  return (
-    <Link
-      className={panelClassName}
-      href={`/activite/${activity.id}`}
-      onPointerEnter={() => prefetchActivityDetail(queryClient, activity.id, activity.type)}
     >
-      {content}
-    </Link>
+      <ActivityRowContent
+        activity={activity}
+        compact={compact}
+        loadValue={loadValue}
+        metaParts={metaParts}
+        railLabel={buildRailLabel(loadValue)}
+        selectable={selectable}
+        selected={selected}
+        selectionMode={selectionMode}
+        onToggle={onToggle}
+      />
+    </ActivityRowShell>
   );
 }

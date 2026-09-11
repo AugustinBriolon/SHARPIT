@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useSyncExternalStore } from 'react';
 import {
   isPresentationValuesLoading,
   useTodayPresentationViewModel,
@@ -15,6 +15,15 @@ import { TodayDashboardResolvedView } from '@/components/today/today-dashboard-r
 import { TodayDashboardShell } from '@/components/today/today-dashboard-shell';
 import { useActivities } from '@/hooks/use-activities';
 import { trainingDayIdForNow } from '@/lib/training/training-day';
+
+/** Prerender-safe placeholder — Suspense fallback / SSR never freezes wall-clock day. */
+const SERVER_TRAINING_DAY_ID = '0000-00-00';
+
+const emptySubscribe = () => () => {};
+
+function useClientTrainingDayId(): string {
+  return useSyncExternalStore(emptySubscribe, trainingDayIdForNow, () => SERVER_TRAINING_DAY_ID);
+}
 
 function TodayDashboardLoaded({ trainingDayId }: { trainingDayId: string }) {
   const query = useTodayPresentationViewModel(trainingDayId);
@@ -57,17 +66,13 @@ function TodayDashboardLoaded({ trainingDayId }: { trainingDayId: string }) {
 }
 
 /**
- * Today root — defer `new Date()` to an effect so Next prerender / Suspense
- * never freezes wall-clock time (stuck loading shell).
+ * Today root — SSR uses a placeholder day id (shell); first client paint seeds
+ * the real training day without waiting on an effect (avoids shell → shell flash).
  */
 export function TodayDashboard() {
-  const [trainingDayId, setTrainingDayId] = useState<string | null>(null);
+  const trainingDayId = useClientTrainingDayId();
 
-  useEffect(() => {
-    setTrainingDayId(trainingDayIdForNow());
-  }, []);
-
-  if (!trainingDayId) {
+  if (trainingDayId === SERVER_TRAINING_DAY_ID) {
     return <TodayDashboardShell />;
   }
 
