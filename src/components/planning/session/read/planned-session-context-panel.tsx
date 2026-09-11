@@ -9,7 +9,7 @@ import { MapPin } from 'lucide-react';
 import {
   PlannedSessionContextAdvisoryPanel,
   PlannedSessionLocationConfirmationPanel,
-} from '@/components/planning/session/edit/planned-session-context-parts';
+} from '@/components/planning/session/read/planned-session-context-parts';
 
 export function PlannedSessionContextPanelSkeleton({ className }: { className?: string }) {
   return (

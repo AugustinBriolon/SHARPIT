@@ -4,7 +4,7 @@ import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { ClipboardList, Target } from 'lucide-react';
 import { DiscussWithCoachButton } from '@/components/coach/discuss/discuss-with-coach-button';
-import { MorningProposalCompare } from '../edit/morning-proposal-compare';
+import { MorningProposalCompare } from '@/components/planning/session/read/morning-proposal-compare';
 import { SessionAccessoriesSection } from '../accessories/session-accessories-section';
 import { SessionRealization } from '../realize/session-realization';
 import type { PlannedSessionViewModel } from '@/core/presentation/planned-session-view-model';

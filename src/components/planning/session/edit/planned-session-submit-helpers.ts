@@ -12,14 +12,23 @@ import {
 import type { EquipmentItemId } from '@/lib/equipment/catalog';
 import type { ClientPlannedSession } from '@/lib/query/types';
 import { ActivityType, SessionIntensity } from '@prisma/client';
-import type {
-  CreateMode,
-  BrickLegForm,
+import {
+  type CreateMode,
+  type BrickLegForm,
+  NO_GOAL,
+  type LocationSource,
 } from '@/components/planning/session/edit/planned-session-dialog-helpers';
-import { NO_GOAL } from '@/components/planning/session/edit/planned-session-dialog-helpers';
-import { resolveLocationPayload } from '@/components/planning/session/edit/planned-session-location-helpers';
-import type { LocationSource } from '@/components/planning/session/edit/planned-session-dialog-helpers';
 import type { LocationPlaceValue } from '@/components/ui/location-place-picker';
+
+/** Where an outdoor session happens — resolved into label + coordinates on submit. */
+export type LocationInput = {
+  showOutdoorContext: boolean;
+  exposure: 'INDOOR' | 'OUTDOOR' | 'UNKNOWN';
+  locationSource: LocationSource;
+  home?: { label?: string; latitude: number; longitude: number };
+  travel?: { locationLabel: string; locationLat: number; locationLng: number } | null;
+  customPlace: LocationPlaceValue;
+};
 
 export function resolveStrengthPrescriptionPayload(
   type: ActivityType,
@@ -66,22 +75,18 @@ function parseFormMeta(formData: FormData) {
   };
 }
 
-function buildSingleSessionPayload(input: {
-  formData: FormData;
-  type: ActivityType;
-  intensity: SessionIntensity;
-  goalId: string;
-  showOutdoorContext: boolean;
-  exposure: 'INDOOR' | 'OUTDOOR' | 'UNKNOWN';
-  locationSource: LocationSource;
-  home?: { label?: string; latitude: number; longitude: number };
-  travel?: { locationLabel: string; locationLat: number; locationLng: number } | null;
-  customPlace: LocationPlaceValue;
-  strengthRows: StrengthPrescriptionDraftRow[];
-  enduranceBlocks: EnduranceDraftBlock[];
-  accessories: EquipmentItemId[];
-  defaultExposureType?: ActivityType;
-}) {
+function buildSingleSessionPayload(
+  input: LocationInput & {
+    formData: FormData;
+    type: ActivityType;
+    intensity: SessionIntensity;
+    goalId: string;
+    strengthRows: StrengthPrescriptionDraftRow[];
+    enduranceBlocks: EnduranceDraftBlock[];
+    accessories: EquipmentItemId[];
+    defaultExposureType?: ActivityType;
+  },
+) {
   const descriptionRaw = (input.formData.get('description') as string) || null;
   const strength = resolveStrengthPrescriptionPayload(
     input.type,
@@ -170,22 +175,18 @@ export function buildBrickCreatePayload(formData: FormData, goalId: string, legs
   };
 }
 
-export function buildSessionUpdateData(input: {
-  formData: FormData;
-  session: ClientPlannedSession;
-  type: ActivityType;
-  intensity: SessionIntensity;
-  goalId: string;
-  showOutdoorContext: boolean;
-  exposure: 'INDOOR' | 'OUTDOOR' | 'UNKNOWN';
-  locationSource: LocationSource;
-  home?: { label?: string; latitude: number; longitude: number };
-  travel?: { locationLabel: string; locationLat: number; locationLng: number } | null;
-  customPlace: LocationPlaceValue;
-  strengthRows: StrengthPrescriptionDraftRow[];
-  enduranceBlocks: EnduranceDraftBlock[];
-  accessories: EquipmentItemId[];
-}) {
+export function buildSessionUpdateData(
+  input: LocationInput & {
+    formData: FormData;
+    session: ClientPlannedSession;
+    type: ActivityType;
+    intensity: SessionIntensity;
+    goalId: string;
+    strengthRows: StrengthPrescriptionDraftRow[];
+    enduranceBlocks: EnduranceDraftBlock[];
+    accessories: EquipmentItemId[];
+  },
+) {
   return buildSingleSessionPayload({
     formData: input.formData,
     type: input.type,
@@ -208,4 +209,56 @@ export function buildSessionCreateData(
   input: Omit<Parameters<typeof buildSingleSessionPayload>[0], 'defaultExposureType'>,
 ) {
   return buildSingleSessionPayload(input);
+}
+
+function homeLocationPayload(home: { label?: string; latitude: number; longitude: number }) {
+  return {
+    locationLabel: home.label ?? 'Colombes, France',
+    locationLat: home.latitude,
+    locationLng: home.longitude,
+  };
+}
+
+function travelLocationPayload(travel: {
+  locationLabel: string;
+  locationLat: number;
+  locationLng: number;
+}) {
+  return {
+    locationLabel: travel.locationLabel,
+    locationLat: travel.locationLat,
+    locationLng: travel.locationLng,
+  };
+}
+
+function customLocationPayload(customPlace: NonNullable<LocationPlaceValue>) {
+  return {
+    locationLabel: customPlace.label,
+    locationLat: customPlace.latitude,
+    locationLng: customPlace.longitude,
+  };
+}
+
+export function resolveLocationPayload(input: LocationInput): {
+  locationLabel: string | null;
+  locationLat: number | null;
+  locationLng: number | null;
+} {
+  if (!input.showOutdoorContext || input.exposure === 'INDOOR') {
+    return { locationLabel: null, locationLat: null, locationLng: null };
+  }
+
+  if (input.locationSource === 'home' && input.home) {
+    return homeLocationPayload(input.home);
+  }
+
+  if (input.locationSource === 'travel' && input.travel) {
+    return travelLocationPayload(input.travel);
+  }
+
+  if (input.customPlace) {
+    return customLocationPayload(input.customPlace);
+  }
+
+  return { locationLabel: null, locationLat: null, locationLng: null };
 }

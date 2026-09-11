@@ -4,7 +4,7 @@ import { SessionRationaleCard } from '@/components/coach/plan/session-rationale-
 import {
   PlannedSessionContextPanel,
   PlannedSessionContextPanelSkeleton,
-} from '@/components/planning/session/edit/planned-session-context-panel';
+} from '@/components/planning/session/read/planned-session-context-panel';
 import { CollapsibleSection } from '@/components/ui/collapsible-section';
 import type { PlannedSessionViewModel } from '@/core/presentation/planned-session-view-model';
 import { Brain, MapPin } from 'lucide-react';

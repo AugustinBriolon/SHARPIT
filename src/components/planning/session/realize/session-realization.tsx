@@ -11,7 +11,7 @@ import { LinkAnalysisStatus } from '@/components/planning/session/link-analysis-
 import { formatActivityMatchLabel } from '@/lib/planned-session/linking/session-link-match-score';
 import { HeartPulse, Link2, Unlink } from 'lucide-react';
 import Link from 'next/link';
-import { usePlannedSessionNavDismiss } from '@/components/planning/session/edit/planned-session-nav-dismiss';
+import { usePlannedSessionNavDismiss } from '@/components/planning/session/planned-session-nav-dismiss';
 import { useAppModalOptional } from '@/providers/app-modal-provider';
 import {
   PhysicalReassessmentCard,

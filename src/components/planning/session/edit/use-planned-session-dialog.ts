@@ -13,9 +13,9 @@ import {
 import type { ClientGoal, ClientPlannedSession } from '@/lib/query/types';
 import type { MorningProposalCompareInput } from '@/lib/today/rich/morning-proposal-compare';
 import { useQueryClient } from '@tanstack/react-query';
-import { usePlannedSessionLinkableGoals } from '@/components/planning/session/edit/use-planned-session-linkable-goals';
+import { usePlannedSessionLinkableGoals } from '@/components/planning/session/edit/use-planned-session-dialog-effects';
 import { useConfirmDialog } from '@/components/ui/confirm-dialog';
-import { usePlannedSessionLocationQueries } from '@/components/planning/session/edit/use-planned-session-location-queries';
+import { usePlannedSessionLocationQueries } from '@/components/planning/session/edit/use-planned-session-dialog-effects';
 import { EMPTY_GOALS } from '@/components/planning/session/edit/planned-session-dialog-helpers';
 import { usePlannedSessionFormState } from '@/components/planning/session/edit/use-planned-session-form-state';
 import {
@@ -25,8 +25,8 @@ import {
 import {
   deletePlannedSessionDialog,
   submitPlannedSessionDialogForm,
-} from '@/components/planning/session/edit/planned-session-dialog-actions';
-import { usePlannedSessionOutdoorLocationSync } from '@/components/planning/session/edit/use-planned-session-outdoor-location-sync';
+} from '@/components/planning/session/edit/planned-session-submit';
+import { usePlannedSessionOutdoorLocationSync } from '@/components/planning/session/edit/use-planned-session-dialog-effects';
 
 function useLivePlannedSession(
   session: ClientPlannedSession | null | undefined,
