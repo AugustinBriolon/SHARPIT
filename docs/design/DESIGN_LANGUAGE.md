@@ -489,6 +489,8 @@ These arrows are Unicode characters, not SVG icons. This ensures they render at 
 
 Colored dots (`h-2.5 w-2.5 rounded-full`) communicate state category without requiring reading. They are always paired with a text label — never used alone. The dot precedes the label.
 
+**Exception — data availability dot** (date strip and calendar, ADR-033): a `size-1.5` dot under a day marks that it has data. Repeating a label on every day would crowd the strip, so the pairing moves to the accessible name of each day control and to a visible legend in the calendar. This exception covers only this dot. It is not a general license for unlabeled state dots.
+
 ### 11.4 Confidence Bars
 
 The confidence tier visualization uses three stacked bars (`h-2 w-1.5 rounded-full`). Filled bars at `opacity-90`, empty bars at `opacity-20`. This communicates a scale without requiring a number. It is the only instance of a non-text, non-arrow visual metaphor in the interface.
@@ -599,7 +601,10 @@ One question: _where is my body today?_
 
 Same Instrument column as Today. All four routes share one shell (`PhysioDrillDownHero` + chips + why/evidence) — do not fork four hero designs.
 
-1. **Plate** — **centered** date selector with a **fixed-width** pill (`w-[15.5rem]`, mobile + desktop) · soft tint · Syne verdict · one action/read line · score or duration as a mono instrument line (never PhysioRail, never a lateral inset %). Confidence bars sit **under** the date/subline (centered) — never absolute over the date controls.
+1. **Plate** — **date strip** (`TodayDateSelector`, [ADR-033](../adr/ADR-033-drill-down-date-strip-and-data-availability.md)) · soft tint · Syne verdict · one action/read line · score or duration as a mono instrument line (never PhysioRail, never a lateral inset %). Confidence bars sit **under** the date strip/subline (centered) — never absolute over the date controls.
+   - **Header row:** month label + calendar icon (opens the calendar dialog) on the left; `Aujourd'hui` when away from today, and ‹ › day arrows from `sm`, on the right.
+   - **Strip:** day cards (`rounded-2xl`, number over short weekday), full width, horizontal snap-scroll on every viewport, growing toward the past as the athlete scrolls (28-day chunks, fenced by the demo `minDate`). Selected day inverted (`bg-foreground text-background`); today outlined; the rest of the current week shown disabled. The selected day stays centered. Tapping it again opens the calendar. ←/→ step one day.
+   - **Data availability dot:** `size-1.5` under the weekday (strip) or the number (calendar) — `bg-primary`, `bg-highlight` on the inverted selected day. Decorative: the day's accessible name carries « données disponibles » / « aucune donnée », and the calendar shows the legend « ● Données disponibles » (§11.3 pairing).
 2. **Chips** — compact signal chips (`DrillDownStatsStrip`): **horizontal snap-scroll on mobile** · even grid row from `sm`. No parent panel. Confidence does **not** belong in the strip. Avoid 2×1 wrap leftovers.
 3. **Why** — domain narrative bandeau (phrase + link Accueil / expand), not a second hero card.
 4. **Evidence** — one primary chart or reading block visible; surfaces use iOS-like inset radius on mobile (`rounded-[1.25rem]`), analysis panel on desktop. Secondary detail densified or expandable — not hidden forever.
