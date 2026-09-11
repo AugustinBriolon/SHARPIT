@@ -282,7 +282,7 @@ export type TodayViewModel = {
     ctaLabel: string;
     href: string;
     focus: string;
-    trigger: 'POST_SESSION' | 'MORNING_MISMATCH';
+    trigger: 'POST_SESSION' | 'MORNING_MISMATCH' | 'HABIT_ASSOCIATION' | 'HABIT_EXPERIMENT';
   } | null;
 
   hierarchy: PresentationHierarchy;

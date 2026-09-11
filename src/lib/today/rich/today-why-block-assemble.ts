@@ -6,12 +6,15 @@ import { whyBlockTitle } from '@/lib/today/rich/today-rich-view';
 /**
  * Assembles the Today whyBlock for the hub.
  * Avoids a posture-only block that restates the verdict plate; surfaces
- * session→goal when linked, plus non-redundant signal / evidence facts.
+ * session→goal when linked, habit journal lever when present, plus
+ * non-redundant signal / evidence facts.
  */
 export function assembleTodayWhyBlock(input: {
   phase: DailyPhase;
   whyFacts: TodayFactRow[];
   goalContext: TodayGoalContext | null;
+  /** Journal association or running habit test — coaching signal, not Core. */
+  habitFact?: TodayFactRow | null;
 }): {
   title: string;
   lines: string[];
@@ -26,6 +29,10 @@ export function assembleTodayWhyBlock(input: {
       value: `Sert ${input.goalContext.title}`,
       hint: input.goalContext.badge ?? 'liée à ton objectif',
     });
+  }
+
+  if (input.habitFact) {
+    facts.push(input.habitFact);
   }
 
   for (const fact of input.whyFacts) {

@@ -65,8 +65,9 @@ function TodayDecisionStack({
 
 /**
  * Today hierarchy: one decision above the fold (verdict), then living goal
- * anchor + progressive briefing + why evidence (outside the ink plate), then
- * action row, Comprendre, and a quiet journal footnote.
+ * anchor + progressive briefing + why evidence (objectif / journal / signaux),
+ * then action row (incl. rearrange habit ou Twin), Comprendre, and a quiet
+ * journal footnote for analyses / test progress.
  *
  * Metric chips live as tertiary visual evidence under Comprendre — never as a
  * primary equal grid under the verdict.

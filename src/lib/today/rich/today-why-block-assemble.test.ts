@@ -59,4 +59,27 @@ describe('assembleTodayWhyBlock', () => {
     expect(block.visible).toBe(true);
     expect(block.facts).toEqual([{ label: 'Signaux', value: 'Partiels' }]);
   });
+
+  it('surfaces habit journal fact after session→goal and before other signals', () => {
+    const block = assembleTodayWhyBlock({
+      phase: 'MORNING',
+      whyFacts: [{ label: 'Signaux', value: 'Divergents' }],
+      goalContext: {
+        goalId: 'g1',
+        title: 'Semi Lyon',
+        badge: 'J-12',
+        linkedToTodaySession: true,
+        isPrimaryRace: true,
+        daysUntil: 12,
+      },
+      habitFact: {
+        label: 'Journal',
+        value: 'Quand tu notes « Repas tardif », sommeil est souvent plus bas.',
+        hint: 'Association nette',
+      },
+    });
+
+    expect(block.visible).toBe(true);
+    expect(block.facts.map((f) => f.label)).toEqual(['Séance', 'Journal', 'Signaux']);
+  });
 });
