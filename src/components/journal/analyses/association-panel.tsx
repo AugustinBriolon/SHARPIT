@@ -7,7 +7,7 @@ import type {
   DomainSectionModel,
   DumbbellRowModel,
   JournalAnalysesViewModel,
-} from '@/lib/health/journal-analyses-view-model';
+} from '@/lib/journal/journal-analyses-view-model';
 import { cn } from '@/lib/utils';
 import { DUMBBELL_GRID, DUMBBELL_LABEL_CELL, DUMBBELL_TRACK_CELL } from './dumbbell-grid';
 import { DumbbellRow } from './dumbbell-row';

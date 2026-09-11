@@ -1,6 +1,6 @@
 import { Sparkles } from 'lucide-react';
-import { journalCategoryIcon } from '@/lib/health/journal-category-surface';
-import { isCustomTrackableId, journalTrackableById } from '@/lib/health/journal-trackables';
+import { journalCategoryIcon } from '@/lib/journal/journal-category-surface';
+import { isCustomTrackableId, journalTrackableById } from '@/lib/journal/journal-trackables';
 import { cn } from '@/lib/utils';
 
 /** Icon well tinted by the habit's category — never by the association's polarity. */

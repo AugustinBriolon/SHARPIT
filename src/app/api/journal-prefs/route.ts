@@ -6,7 +6,7 @@ import {
   defaultJournalPrefs,
   parseJournalPrefs,
   sanitizeJournalPrefsForPersist,
-} from '@/lib/health/journal-prefs';
+} from '@/lib/journal/journal-prefs';
 import { awaitRequest } from '@/lib/next/await-request';
 import { prisma } from '@/lib/prisma';
 

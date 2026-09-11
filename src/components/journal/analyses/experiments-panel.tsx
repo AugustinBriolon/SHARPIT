@@ -4,7 +4,7 @@ import { useId } from 'react';
 import { ExperimentDaySegments } from '@/components/journal/analyses/experiment-day-segments';
 import { FadeIn } from '@/components/motion';
 import { Button } from '@/components/ui/button';
-import type { HabitExperimentView } from '@/lib/health/journal-habit-experiment-view';
+import type { HabitExperimentView } from '@/lib/journal/journal-habit-experiment-view';
 
 /**
  * Live 7-day test only. History and empty states stay off the page —

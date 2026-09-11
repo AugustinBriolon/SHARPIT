@@ -7,7 +7,7 @@ import {
   demoJournalNightOutcomes,
   demoJournalPrefs,
 } from '@/lib/demo/demo-journal-seed';
-import { isJournalAnalysisReady } from '@/lib/health/journal-limits';
+import { isJournalAnalysisReady } from '@/lib/journal/journal-limits';
 
 describe('demoJournalSeed', () => {
   it('covers enough days to unlock analyses', () => {

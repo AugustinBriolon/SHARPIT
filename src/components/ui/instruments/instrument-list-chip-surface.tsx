@@ -7,7 +7,7 @@ import {
   InstrumentListChipTrailing,
 } from '@/components/ui/instruments/instrument-list-chip-parts';
 import { cn } from '@/lib/utils';
-import { STATUS_SURFACE } from '@/lib/presentation/status-surface';
+import { STATUS_SURFACE } from '@/lib/presentation/coaching/status-surface';
 
 const chipClassName = (done: boolean, className?: string) =>
   cn(

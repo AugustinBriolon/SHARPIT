@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import type { ProjectionHorizonDays } from '@/core/projection/types';
-import { buildProjectedAthletePresentationViewModel } from '@/lib/presentation/projected-athlete';
+import { buildProjectedAthletePresentationViewModel } from '@/lib/presentation/projected-athlete/projected-athlete';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 
 const VALID_HORIZONS = new Set<number>([1, 3, 7, 14]);

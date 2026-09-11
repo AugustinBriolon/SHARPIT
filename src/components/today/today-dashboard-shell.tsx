@@ -1,6 +1,6 @@
 'use client';
 
-import { todayLoadingShell } from '@/lib/presentation/today-loading-shell';
+import { todayLoadingShell } from '@/lib/presentation/today/today-loading-shell';
 import { TodayUnderstandSection } from './dashboard/today-understand-section';
 import { TodayActionRow } from './rich/today-action-row';
 import { TodayHeader } from './dashboard/today-header';

@@ -63,7 +63,6 @@ async function invalidateProviderSyncCaches(
     queryClient.invalidateQueries({ queryKey: queryKeys.athleteSnapshot(trainingDayId) }),
     queryClient.invalidateQueries({ queryKey: queryKeys.presentationToday(trainingDayId) }),
     queryClient.invalidateQueries({ queryKey: queryKeys.today(trainingDayId) }),
-    queryClient.invalidateQueries({ queryKey: queryKeys.dailyBriefing(trainingDayId) }),
   ];
 
   if (includeBodyComposition) {

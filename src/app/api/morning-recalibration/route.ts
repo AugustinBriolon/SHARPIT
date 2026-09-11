@@ -4,7 +4,7 @@ import {
   ensureMorningRecalibration,
   getMorningRecalibrationPresentation,
 } from '@/lib/morning-recalibration/service';
-import { todayTrainingDayId } from '@/lib/health/wellness-checkin';
+import { todayTrainingDayId } from '@/lib/journal/wellness-checkin';
 
 /** Evaluate / return today's morning session recalibration proposal (idempotent write). */
 export async function POST(request: Request) {

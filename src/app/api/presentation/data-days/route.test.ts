@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { NextRequest } from 'next/server';
 
-vi.mock('@/lib/presentation/data-days-server', () => ({
+vi.mock('@/lib/presentation/data-days/data-days-server', () => ({
   loadDataDays: vi.fn(),
 }));
 
@@ -23,7 +23,7 @@ describe('GET /api/presentation/data-days', () => {
   });
 
   it('returns the days with data for the athlete', async () => {
-    const { loadDataDays } = await import('@/lib/presentation/data-days-server');
+    const { loadDataDays } = await import('@/lib/presentation/data-days/data-days-server');
     vi.mocked(loadDataDays).mockResolvedValue(['2026-09-09', '2026-09-10']);
 
     const { GET } = await importRoute();
@@ -39,7 +39,7 @@ describe('GET /api/presentation/data-days', () => {
   });
 
   it('rejects an invalid request without touching the database', async () => {
-    const { loadDataDays } = await import('@/lib/presentation/data-days-server');
+    const { loadDataDays } = await import('@/lib/presentation/data-days/data-days-server');
 
     const { GET } = await importRoute();
     const response = await GET(request('domain=sleep&from=2026-09-11&to=2026-08-15'));
@@ -49,7 +49,7 @@ describe('GET /api/presentation/data-days', () => {
   });
 
   it('returns 500 when loading fails', async () => {
-    const { loadDataDays } = await import('@/lib/presentation/data-days-server');
+    const { loadDataDays } = await import('@/lib/presentation/data-days/data-days-server');
     vi.mocked(loadDataDays).mockRejectedValue(new Error('db down'));
     vi.spyOn(console, 'error').mockImplementation(() => {});
 

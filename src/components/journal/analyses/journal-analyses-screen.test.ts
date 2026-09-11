@@ -3,12 +3,12 @@ import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import { JournalAnalysesScreen } from './journal-analyses-screen';
-import { buildJournalAnalysesViewModel } from '@/lib/health/journal-analyses-view-model';
-import type { JournalHabitFinding } from '@/lib/health/journal-habit-analysis';
-import { JOURNAL_HABIT_AXES, axisPosition } from '@/lib/health/journal-habit-axis';
-import { buildJournalHabitReading } from '@/lib/health/journal-habit-reading';
+import { buildJournalAnalysesViewModel } from '@/lib/journal/journal-analyses-view-model';
+import type { JournalHabitFinding } from '@/lib/journal/journal-habit-analysis';
+import { JOURNAL_HABIT_AXES, axisPosition } from '@/lib/journal/journal-habit-axis';
+import { buildJournalHabitReading } from '@/lib/journal/journal-habit-reading';
 
-import type { HabitExperimentView } from '@/lib/health/journal-habit-experiment-view';
+import type { HabitExperimentView } from '@/lib/journal/journal-habit-experiment-view';
 
 function finding(overrides: Partial<JournalHabitFinding>): JournalHabitFinding {
   return {

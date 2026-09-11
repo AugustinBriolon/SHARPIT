@@ -4,11 +4,11 @@ vi.mock('@/lib/auth/current-athlete', () => ({
   getCurrentAthleteId: vi.fn().mockResolvedValue('athlete-1'),
 }));
 
-vi.mock('@/lib/health/journal-habit-analysis-load', () => ({
+vi.mock('@/lib/journal/journal-habit-analysis-load', () => ({
   loadJournalHabitFindings: vi.fn(),
 }));
 
-vi.mock('@/lib/health/journal-habit-today-bridge', () => ({
+vi.mock('@/lib/journal/journal-habit-today-bridge', () => ({
   buildTodayJournalHabitBridge: vi.fn(),
 }));
 
@@ -30,9 +30,9 @@ describe('GET /api/journal/habit-bridge', () => {
   });
 
   it('returns bridge payload from findings', async () => {
-    const { loadJournalHabitFindings } = await import('@/lib/health/journal-habit-analysis-load');
+    const { loadJournalHabitFindings } = await import('@/lib/journal/journal-habit-analysis-load');
     const { buildTodayJournalHabitBridge } =
-      await import('@/lib/health/journal-habit-today-bridge');
+      await import('@/lib/journal/journal-habit-today-bridge');
     vi.mocked(loadJournalHabitFindings).mockResolvedValue({
       daysWithSignal: 14,
       findings: [],
@@ -62,9 +62,9 @@ describe('GET /api/journal/habit-bridge', () => {
   });
 
   it('returns bridge null when silent', async () => {
-    const { loadJournalHabitFindings } = await import('@/lib/health/journal-habit-analysis-load');
+    const { loadJournalHabitFindings } = await import('@/lib/journal/journal-habit-analysis-load');
     const { buildTodayJournalHabitBridge } =
-      await import('@/lib/health/journal-habit-today-bridge');
+      await import('@/lib/journal/journal-habit-today-bridge');
     vi.mocked(loadJournalHabitFindings).mockResolvedValue({
       daysWithSignal: 2,
       findings: [],
@@ -80,7 +80,7 @@ describe('GET /api/journal/habit-bridge', () => {
   });
 
   it('returns 500 when load fails', async () => {
-    const { loadJournalHabitFindings } = await import('@/lib/health/journal-habit-analysis-load');
+    const { loadJournalHabitFindings } = await import('@/lib/journal/journal-habit-analysis-load');
     vi.mocked(loadJournalHabitFindings).mockRejectedValue(new Error('db down'));
 
     const { GET } = await importRoute();

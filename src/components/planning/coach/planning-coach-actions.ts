@@ -1,5 +1,5 @@
 import type { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
-import type { SessionsCoachAction } from '@/components/coaching/coach-menu';
+import type { SessionsCoachAction } from '@/components/planning/coach-menu';
 
 export function handleSessionsCoachAction(
   action: SessionsCoachAction,

@@ -2,7 +2,7 @@
 
 import type { KeyboardEvent } from 'react';
 import { cn } from '@/lib/utils';
-import type { DataDaysLookup } from '@/lib/presentation/data-days-chunks';
+import type { DataDaysLookup } from '@/lib/presentation/data-days/data-days-chunks';
 import { DataDayDot } from '@/components/today/drill-down/data-day-dot';
 import {
   stripArrowDirection,

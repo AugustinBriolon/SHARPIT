@@ -1,6 +1,6 @@
 import { useId, type ReactNode } from 'react';
 import { FadeIn } from '@/components/motion';
-import type { JournalHabitReading } from '@/lib/health/journal-habit-reading';
+import type { JournalHabitReading } from '@/lib/journal/journal-habit-reading';
 import { cn } from '@/lib/utils';
 
 export function TakeawayPlate({

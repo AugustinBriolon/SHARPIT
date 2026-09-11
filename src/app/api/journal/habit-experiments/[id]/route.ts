@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { loadJournalHabitExperiments } from '@/lib/health/journal-habit-experiment-load';
-import { toHabitExperimentView } from '@/lib/health/journal-habit-experiment-view';
+import { loadJournalHabitExperiments } from '@/lib/journal/journal-habit-experiment-load';
+import { toHabitExperimentView } from '@/lib/journal/journal-habit-experiment-view';
 import { awaitRequest } from '@/lib/next/await-request';
 import { prisma } from '@/lib/prisma';
 import { trainingDayIdForNow } from '@/lib/training/training-day';

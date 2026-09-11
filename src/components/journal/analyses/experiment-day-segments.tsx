@@ -1,4 +1,4 @@
-import type { ExperimentDaySegment } from '@/lib/health/journal-habit-experiment';
+import type { ExperimentDaySegment } from '@/lib/journal/journal-habit-experiment';
 import { cn } from '@/lib/utils';
 
 const SEGMENT_CLASS: Record<ExperimentDaySegment, string> = {

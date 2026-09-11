@@ -1,8 +1,8 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import type { HabitExperimentView } from '@/lib/health/journal-habit-experiment-view';
-import { splitExperimentViews } from '@/lib/health/journal-habit-experiment-view';
+import type { HabitExperimentView } from '@/lib/journal/journal-habit-experiment-view';
+import { splitExperimentViews } from '@/lib/journal/journal-habit-experiment-view';
 import { queryKeys } from '@/lib/query/keys';
 import { sendJson } from '@/lib/query/send-json';
 

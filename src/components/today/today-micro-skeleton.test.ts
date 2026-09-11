@@ -7,7 +7,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { TodayDashboardShell } from '@/components/today/today-dashboard-shell';
 import { isPresentationValuesLoading } from '@/hooks/use-presentation-view-model';
-import { todayLoadingShell } from '@/lib/presentation/today-loading-shell';
+import { todayLoadingShell } from '@/lib/presentation/today/today-loading-shell';
 import { AppModalProvider } from '@/providers/app-modal-provider';
 
 vi.mock('@/hooks/use-data', () => ({

@@ -4,7 +4,7 @@ import {
   ExerciseIndex,
   ExerciseMediaCaption,
   ExerciseVisual,
-} from '@/components/sessions/exercise-visual';
+} from '@/components/planning/session/exercise-visual';
 import { resolveStrengthSetMedia } from '@/lib/exercises';
 import {
   strengthSetWatchCompat,

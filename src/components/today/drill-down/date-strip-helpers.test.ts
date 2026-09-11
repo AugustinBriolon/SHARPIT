@@ -10,7 +10,7 @@ import {
   stripDayProps,
 } from '@/components/today/drill-down/date-strip-helpers';
 import { calendarDayCellProps } from '@/components/today/drill-down/date-selector-helpers';
-import type { DataDaysLookup, DataDayStatus } from '@/lib/presentation/data-days-chunks';
+import type { DataDaysLookup, DataDayStatus } from '@/lib/presentation/data-days/data-days-chunks';
 
 const TODAY = new Date(2026, 8, 11); // Friday
 

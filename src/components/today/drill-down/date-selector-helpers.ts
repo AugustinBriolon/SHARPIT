@@ -8,7 +8,7 @@ import {
 } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
-import type { DataDayStatus } from '@/lib/presentation/data-days-chunks';
+import type { DataDayStatus } from '@/lib/presentation/data-days/data-days-chunks';
 import { dataStatusLabel } from '@/components/today/drill-down/date-strip-helpers';
 
 export function calendarDayCellProps({

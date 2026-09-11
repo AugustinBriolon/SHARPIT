@@ -23,7 +23,6 @@ export const queryKeys = {
   googleCalendars: ['google-calendars'] as const,
   conversations: ['conversations'] as const,
   conversation: (id: string) => ['conversation', id] as const,
-  dailyBriefing: (date: string) => ['daily-briefing', date] as const,
   weeklyReview: (date: string) => ['weekly-review', date] as const,
   records: ['records'] as const,
   trainingPlan: ['training-plan'] as const,

@@ -10,8 +10,8 @@ import {
   readJournalPrefsCache,
   writeJournalPrefsCache,
   type JournalPrefs,
-} from '@/lib/health/journal-prefs';
-import { JOURNAL_BUILTIN_TRACKABLES, type JournalFilterId } from '@/lib/health/journal-trackables';
+} from '@/lib/journal/journal-prefs';
+import { JOURNAL_BUILTIN_TRACKABLES, type JournalFilterId } from '@/lib/journal/journal-trackables';
 import { queryKeys } from '@/lib/query/keys';
 import {
   JournalPrefsDrawerPanel,

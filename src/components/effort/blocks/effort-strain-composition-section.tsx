@@ -2,7 +2,7 @@ import { DrillDownSectionCard } from '@/components/today/drill-down/section-card
 import { TermInfo } from '@/components/ui/term-info';
 import { DrillDownSectionLabel } from '@/components/today/drill-down/section-label';
 import { SkeletonDataValue } from '@/components/ui/skeleton-data-value';
-import type { EffortStrainCompositionView } from '@/lib/presentation/effort-strain-composition';
+import type { EffortStrainCompositionView } from '@/lib/presentation/effort/effort-strain-composition';
 import { cn } from '@/lib/utils';
 
 function StrainContributorValue({

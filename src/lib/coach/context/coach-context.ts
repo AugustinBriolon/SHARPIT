@@ -22,11 +22,11 @@ import { buildTopActionLine } from '@/lib/today/rich/today-rich-view';
 import { decisionVerdict } from '@/lib/decision/projection';
 import { resolve, resolveCode } from '@/lib/french';
 import { computeTrainingLoad } from '@/lib/training/training-load';
-import { buildEnvironmentPresentationContext } from '@/lib/presentation/environment';
+import { buildEnvironmentPresentationContext } from '@/lib/presentation/environment/environment';
 import {
   formatScenarioComparisonForCoach,
   loadScenarioComparisonForCoach,
-} from '@/lib/presentation/scenario-comparison';
+} from '@/lib/presentation/scenario/scenario-comparison';
 import { formatEquipmentForCoach } from '@/lib/equipment/format';
 import { normalizeAthleteEquipment } from '@/lib/equipment/parse';
 import {

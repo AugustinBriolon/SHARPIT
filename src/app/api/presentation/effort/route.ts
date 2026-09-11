@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { buildEffortViewModel } from '@/lib/presentation/effort';
+import { buildEffortViewModel } from '@/lib/presentation/effort/effort';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);

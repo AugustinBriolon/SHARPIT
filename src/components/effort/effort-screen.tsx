@@ -11,7 +11,7 @@ import {
   isPresentationValuesLoading,
   useEffortViewModel,
 } from '@/hooks/use-presentation-view-model';
-import { effortLoadingShell } from '@/lib/presentation/drill-down-loading-shells';
+import { effortLoadingShell } from '@/lib/presentation/shared/drill-down-loading-shells';
 
 function EffortEmptyView({
   viewModel,

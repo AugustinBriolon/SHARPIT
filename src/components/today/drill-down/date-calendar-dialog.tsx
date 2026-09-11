@@ -22,7 +22,7 @@ import {
 import { CalendarDayCell } from '@/components/today/drill-down/calendar-day-cell';
 import { DataDayDot } from '@/components/today/drill-down/data-day-dot';
 import { buildMonthGridDays } from '@/components/today/drill-down/date-strip-helpers';
-import type { DataDaysLookup } from '@/lib/presentation/data-days-chunks';
+import type { DataDaysLookup } from '@/lib/presentation/data-days/data-days-chunks';
 
 function useWeekdayLabels(): string[] {
   return useMemo(() => {

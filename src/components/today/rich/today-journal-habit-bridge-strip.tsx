@@ -8,7 +8,7 @@ import type {
   TodayJournalHabitBridge,
   TodayJournalHabitCallout,
   TodayJournalHabitExperimentBridge,
-} from '@/lib/health/journal-habit-today-bridge';
+} from '@/lib/journal/journal-habit-today-bridge';
 
 function AssociationBody({ bridge }: { bridge: TodayJournalHabitBridge }) {
   const { sourceLabel, meaning, disclaimer, confidenceNote, ctaLabel, factorId } = bridge;

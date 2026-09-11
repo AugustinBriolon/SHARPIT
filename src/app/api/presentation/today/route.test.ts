@@ -10,7 +10,7 @@ vi.mock('@/lib/morning-recalibration/service', () => ({
   ensureMorningRecalibration: vi.fn(),
 }));
 
-vi.mock('@/lib/presentation/today', () => ({
+vi.mock('@/lib/presentation/today/today', () => ({
   buildTodayPresentationViewModel: vi.fn(),
 }));
 
@@ -26,7 +26,7 @@ describe('GET /api/presentation/today', () => {
   it('is read-only: loads existing morning recalibration without ensure', async () => {
     const { getMorningRecalibrationPresentation, ensureMorningRecalibration } =
       await import('@/lib/morning-recalibration/service');
-    const { buildTodayPresentationViewModel } = await import('@/lib/presentation/today');
+    const { buildTodayPresentationViewModel } = await import('@/lib/presentation/today/today');
     vi.mocked(getMorningRecalibrationPresentation).mockResolvedValue(null);
     vi.mocked(buildTodayPresentationViewModel).mockResolvedValue({ headline: 'ok' } as never);
 

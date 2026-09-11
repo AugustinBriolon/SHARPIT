@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { formatJournalAnalysesCoachBlock } from '@/lib/coach/chat/discuss/journal-analyses-coach-gate';
-import type { JournalHabitReading } from '@/lib/health/journal-habit-reading';
+import type { JournalHabitReading } from '@/lib/journal/journal-habit-reading';
 
 function reading(overrides: Partial<JournalHabitReading> = {}): JournalHabitReading {
   return {

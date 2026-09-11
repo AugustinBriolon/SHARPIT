@@ -2,7 +2,7 @@
 
 import type { ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
-import { ExerciseMediaAttribution } from '@/components/sessions/exercise-visual';
+import { ExerciseMediaAttribution } from '@/components/planning/session/exercise-visual';
 import { EnduranceStepList } from '@/components/planning/session/read/endurance-step-list';
 import { StrengthSetListItem } from '@/components/planning/session/read/strength-set-list-item';
 import { dayLabelFromDayKey } from '@/lib/date/day-key';

@@ -5,7 +5,7 @@ import {
   findDecisionForPlannedSession,
   findDecisionWithHistory,
 } from '@/lib/decision-memory/repository';
-import { buildSessionRationaleViewModel } from '@/lib/presentation/session-rationale';
+import { buildSessionRationaleViewModel } from '@/lib/presentation/planned-session/session-rationale';
 
 type RouteProps = { params: Promise<{ plannedSessionId: string }> };
 

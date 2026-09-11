@@ -2,12 +2,12 @@
 
 import { useCallback } from 'react';
 import { useQueries, type UseQueryResult } from '@tanstack/react-query';
-import type { DataDaysDomain } from '@/lib/presentation/data-days';
+import type { DataDaysDomain } from '@/lib/presentation/data-days/data-days';
 import {
   buildDataDaysLookup,
   type DataDaysLookup,
   type DayRange,
-} from '@/lib/presentation/data-days-chunks';
+} from '@/lib/presentation/data-days/data-days-chunks';
 import { fetchDataDays } from '@/lib/query/presentation-fetchers';
 import { queryKeys } from '@/lib/query/keys';
 

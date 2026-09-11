@@ -8,7 +8,7 @@ import {
   ExerciseMediaAttribution,
   ExerciseMediaCaption,
   ExerciseVisual,
-} from '@/components/sessions/exercise-visual';
+} from '@/components/planning/session/exercise-visual';
 import { toast } from '@/components/ui/toast';
 import { resolveStrengthSetMedia } from '@/lib/exercises';
 import type { ActivityDetail } from '@/components/training/activity/detail/types';

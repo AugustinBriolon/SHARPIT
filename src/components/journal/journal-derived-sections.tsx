@@ -1,12 +1,12 @@
 'use client';
 
 import { Check, Minus, CircleDashed } from 'lucide-react';
-import type { JournalAutoChecklistItem } from '@/lib/health/journal-auto-checklist';
+import type { JournalAutoChecklistItem } from '@/lib/journal/journal-auto-checklist';
 import {
   JOURNAL_CATEGORY_HEADER,
   JOURNAL_CATEGORY_ICON,
-} from '@/lib/health/journal-category-surface';
-import type { JournalNutritionSummary } from '@/lib/health/journal-day-signals';
+} from '@/lib/journal/journal-category-surface';
+import type { JournalNutritionSummary } from '@/lib/journal/journal-day-signals';
 import { cn } from '@/lib/utils';
 
 function StatusIcon({ status }: { status: JournalAutoChecklistItem['status'] }) {
