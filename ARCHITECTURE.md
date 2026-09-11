@@ -177,16 +177,31 @@ Actions (verbs) are acceptable as path segments when the operation is not a stan
 
 Components live in `src/components/[domain]/`. A component belongs to the domain that uses it. If a component is used by more than two domains, it moves to `src/components/ui/`.
 
+**Intention → path (carte vivante):** [`docs/architecture/INTENT_MAP.md`](docs/architecture/INTENT_MAP.md) — table athlete intention → routes / components / lib.  
+**Taxonomie Plan/Coach:** [`docs/adr/ADR-034-plan-coach-path-taxonomy.md`](docs/adr/ADR-034-plan-coach-path-taxonomy.md).
+
 ```
 src/components/
   today/          ← Morning Experience + drill-downs (dashboard/, drill-down/, rich/)
-  sleep/, recovery/, effort/, adaptation/, nutrition/
-  training/, planning/, calendar/, sessions/, coaching/, coach/, coach-memory/
-  corps/, goals/, settings/, analytics/, physical-health/
+  plan/           ← hub Plan V1.1 (destination / semaine / trajectoire)
+  planning/       ← séances planifiées, dialogs, scénarios (pas le hub)
+  journal/        ← journal / habitudes (UI) ; lib encore surtout sous lib/health/
+  sleep/, recovery/, effort/, adaptation/, nutrition/, physical-health/
+  training/       ← activité
+  coach/          ← chat + tools produit
+  agents/         ← kit chat slim (uniquement modules montés par coach)
+  coach-memory/, coaching/  ← mémoire UI ; coaching/ = micro (coach-menu)
+  shell/          ← hubs contenu tabs (Plan / Moi / Activité)
+  corps/, goals/, settings/, profile/, analytics/
   ui/             ← reusable primitives at root; charts/, instruments/, map/ nested
-  layout/         ← StickyHeader, Shell, BottomNav — structural chrome
+  layout/         ← StickyHeader, AppShell, BottomNav — chrome structurel
+  chrome/         ← glass / overlays légers
   pwa/            ← install / offline / SW toasts
 ```
+
+Il n’y a **pas** de `components/calendar/` (fantôme retiré). `sessions/` reste un micro-dossier (1 fichier) — candidat fusion P1.
+
+**Briefing :** `lib/briefing/` + `/api/coach/briefing` = background/API only. Pas d’UI `DailyBriefingPanel` sur Today.
 
 **Domain folder nesting (locality rule):** keep the root of a domain folder thin. Soft cap ≈ 8–10 files at depth 1; when a folder grows past that, nest by concept rather than dumping siblings.
 
@@ -196,7 +211,7 @@ src/components/
 | Activity surface (`training/activity`)                                            | nothing at root — import from named seams                                         | `list/`, `form/`, `insights/`, `detail/`             |
 | Planned session (`planning/session`)                                              | `session-defaults.ts` (shared constants)                                          | `edit/`, `read/`, `realize/`, `accessories/`         |
 | Interactive hub (`physical-health`, `goals`)                                      | screen / page-view / hub                                                          | `cards/` and `dialogs/`                              |
-| COACHING shared (`coaching/`)                                                     | widgets shared by sessions + calendar + planning                                  | e.g. `coach-menu.tsx`                                |
+| COACHING shared (`coaching/`)                                                     | widgets shared by sessions + planning                                             | e.g. `coach-menu.tsx`                                |
 | Shared widgets used outside the page                                              | stay at the domain root (they are part of the module interface)                   | —                                                    |
 
 **`ui/` nesting:** keep chrome primitives at the root (`button`, `dialog`, `input`, …). Nest specialized concerns:

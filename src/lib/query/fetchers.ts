@@ -327,31 +327,6 @@ export async function fetchConversation(id: string): Promise<ClientConversation>
   };
 }
 
-export interface ClientDailyBriefing {
-  id: string;
-  date: string;
-  content: string;
-  readiness: number | null;
-  generatedAt: Date;
-}
-
-export async function fetchDailyBriefing(date: string): Promise<ClientDailyBriefing | null> {
-  const data = await fetchJson<{
-    briefing: Serialized<ClientDailyBriefing> | null;
-  }>(`/api/coach/briefing?date=${encodeURIComponent(date)}`);
-  if (!data.briefing) {
-    return null;
-  }
-  const b = data.briefing;
-  return {
-    id: b.id,
-    date: b.date,
-    content: b.content,
-    readiness: b.readiness ?? null,
-    generatedAt: toDate(b.generatedAt),
-  };
-}
-
 export interface ClientWeeklyReview {
   id: string;
   weekStart: Date;

@@ -37,6 +37,7 @@
 | [ADR-031](./ADR-031-coach-discuss-server-context-registry.md)       | Coach discuss server context via per-kind registry                                | Accepted |
 | [ADR-032](./ADR-032-journal-habit-experiments-derived-at-read.md)   | Journal habit experiments — intent stored, verdict derived at read time           | Proposed |
 | [ADR-033](./ADR-033-drill-down-date-strip-and-data-availability.md) | Drill-down date strip with per-day data availability                              | Accepted |
+| [ADR-034](./ADR-034-plan-coach-path-taxonomy.md)                    | Taxonomie des chemins Plan / Coach (noms figés, pas de mega-rename)               | Accepted |
 
 **Template:** [ADR-template.md](./ADR-template.md)
 
