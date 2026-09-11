@@ -43,7 +43,6 @@ function isNutritionDisconnected(
 
 function nutritionViewDefaults(viewModel: ReturnType<typeof useNutritionViewModel>['data'] | null) {
   return {
-    averages: viewModel?.averages ?? null,
     emptyState: viewModel?.emptyState,
     history: viewModel?.history ?? [],
     selectedDay: viewModel?.selectedDay ?? null,
@@ -69,7 +68,6 @@ export function NutritionScreen() {
     <div className="space-y-4">
       <MobileDrillDownHeader title="Nutrition" />
       <NutritionPageView
-        averages={defaults.averages}
         date={date}
         emptyState={defaults.emptyState}
         history={defaults.history}

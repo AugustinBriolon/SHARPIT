@@ -62,12 +62,6 @@ export type NutritionViewModel = {
   /** Alias for Today card — always the live calendar day. */
   today: NutritionDaySummary | null;
   history: NutritionDaySummary[];
-  averages: {
-    calories: number;
-    protein: number;
-    carbohydrates: number;
-    fat: number;
-  } | null;
   emptyState?: {
     title: string;
     description: string;

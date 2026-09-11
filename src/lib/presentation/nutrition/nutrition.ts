@@ -182,19 +182,6 @@ async function enrichSelectedDay(
   return { ...day, goalsProgress, fuelDensity };
 }
 
-function computeNutritionAverages(history: NutritionDaySummary[]) {
-  if (history.length === 0) {
-    return null;
-  }
-  const count = history.length;
-  return {
-    calories: Math.round(history.reduce((s, d) => s + d.calories, 0) / count),
-    protein: Math.round((history.reduce((s, d) => s + d.protein, 0) / count) * 10) / 10,
-    carbohydrates: Math.round((history.reduce((s, d) => s + d.carbohydrates, 0) / count) * 10) / 10,
-    fat: Math.round((history.reduce((s, d) => s + d.fat, 0) / count) * 10) / 10,
-  };
-}
-
 function buildNutritionEmptyState(
   selectedDay: NutritionDaySummary | null,
   selectedDayId: string,
@@ -249,10 +236,9 @@ async function buildConnectedNutritionViewModel(
   const todayBase = history.find((d) => d.date === todayId) ?? null;
   const today = await enrichDayIfPresent(athleteId, todayBase, todayRow);
 
-  const averages = computeNutritionAverages(history);
   const emptyState = buildNutritionEmptyState(selectedDay, selectedDayId, todayId);
 
-  return { connected: true, selectedDay, today, history, averages, emptyState };
+  return { connected: true, selectedDay, today, history, emptyState };
 }
 
 export async function buildNutritionViewModel(
@@ -268,7 +254,6 @@ export async function buildNutritionViewModel(
       selectedDay: null,
       today: null,
       history: [],
-      averages: null,
       emptyState: {
         title: 'Nutrition indisponible',
         description: 'Connecte MyFitnessPal dans les réglages pour suivre tes apports.',
