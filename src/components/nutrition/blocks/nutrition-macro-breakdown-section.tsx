@@ -79,9 +79,25 @@ function macroLine(kind: MacroKind, grams: number | null, goal: number | null): 
   return `${MACRO_LABELS[kind]} ${g} g`;
 }
 
+/** Spoken form — "Glucides 245 g sur 328 g" reads better than the hint's "245/328 g". */
+function macroSpokenLine(kind: MacroKind, grams: number | null, goal: number | null) {
+  if (grams === null) {
+    return null;
+  }
+  const consumed = `${MACRO_LABELS[kind]} ${Math.round(grams)} g`;
+  return goal !== null && goal > 0 ? `${consumed} sur ${Math.round(goal)} g` : consumed;
+}
+
+/** Accessible name of a day column: the date, then each logged macro as plain text. */
 export function macroDayReadout(day: BreakdownDay): string {
-  const hint = dayHint(day);
-  return `${hint.title} · ${hint.lines.join(' · ')}`;
+  const title = format(parseISO(day.key), 'EEEE d MMM', { locale: fr });
+  const lines = day.entry
+    ? ROWS.flatMap(({ kind, field }) => {
+        const line = macroSpokenLine(kind, day.entry?.[field] ?? null, goalFor(day.entry, field));
+        return line ? [line] : [];
+      })
+    : [];
+  return [title, ...(lines.length > 0 ? lines : ['Pas de journal'])].join(' · ');
 }
 
 function coloredMacroLine(kind: MacroKind, text: string) {
