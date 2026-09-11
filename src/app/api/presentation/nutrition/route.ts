@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { format } from 'date-fns';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { buildNutritionViewModel } from '@/lib/presentation/nutrition';
+import { buildNutritionViewModel } from '@/lib/presentation/nutrition/nutrition';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);

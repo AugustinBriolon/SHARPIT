@@ -6,7 +6,7 @@ import { ConfidenceBars, confidenceBarsFromPct } from '@/components/ui/instrumen
 import { quickReadBadge } from '@/components/today/drill-down/physio-drill-down-hero-helpers';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
-import type { DataDaysDomain } from '@/lib/presentation/data-days';
+import type { DataDaysDomain } from '@/lib/presentation/data-days/data-days';
 import { format as formatDate } from 'date-fns';
 import { fr } from 'date-fns/locale';
 

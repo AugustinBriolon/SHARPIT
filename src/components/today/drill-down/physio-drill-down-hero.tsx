@@ -5,7 +5,7 @@ import {
   PhysioDrillDownDateHeader,
   PhysioDrillDownVerdictSection,
 } from '@/components/today/drill-down/physio-drill-down-hero-parts';
-import type { DataDaysDomain } from '@/lib/presentation/data-days';
+import type { DataDaysDomain } from '@/lib/presentation/data-days/data-days';
 
 /**
  * Physio drill-down plate — one dominant verdict.

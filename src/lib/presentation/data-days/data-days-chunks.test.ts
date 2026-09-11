@@ -3,7 +3,7 @@ import {
   buildDataDaysLookup,
   dataDaysChunkRanges,
   mergeDayRanges,
-} from '@/lib/presentation/data-days-chunks';
+} from '@/lib/presentation/data-days/data-days-chunks';
 
 const TODAY = new Date(2026, 8, 11);
 

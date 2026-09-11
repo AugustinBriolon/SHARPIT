@@ -7,7 +7,7 @@ import {
   GARMIN_SSO_MESSAGE_ORIGIN,
   parseGarminSsoPostMessage,
 } from '@/lib/integrations/garmin/garmin-browser-sso-shared';
-import { RISK_TONE, STATUS_SURFACE } from '@/lib/presentation/status-surface';
+import { RISK_TONE, STATUS_SURFACE } from '@/lib/presentation/coaching/status-surface';
 import { cn } from '@/lib/utils';
 
 export type GarminSsoPhase = 'form' | 'connecting' | 'success' | 'error';

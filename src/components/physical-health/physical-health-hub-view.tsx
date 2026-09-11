@@ -5,7 +5,7 @@ import {
   isPresentationValuesLoading,
   usePhysicalHealthViewModel,
 } from '@/hooks/use-presentation-view-model';
-import { physicalHealthLoadingShell } from '@/lib/presentation/physical-health-loading-shell';
+import { physicalHealthLoadingShell } from '@/lib/presentation/physical-health/physical-health-loading-shell';
 import { useTodaySelectedDate } from '@/hooks/use-today-selected-date';
 import { PhysicalHealthPageView } from './physical-health-page-view';
 

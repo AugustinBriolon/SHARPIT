@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { buildTodayPresentationViewModel } from '@/lib/presentation/today';
+import { buildTodayPresentationViewModel } from '@/lib/presentation/today/today';
 import { getMorningRecalibrationPresentation } from '@/lib/morning-recalibration/service';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 

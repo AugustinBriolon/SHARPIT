@@ -10,7 +10,7 @@ import {
   isPresentationValuesLoading,
   useSleepViewModel,
 } from '@/hooks/use-presentation-view-model';
-import { sleepLoadingShell } from '@/lib/presentation/drill-down-loading-shells';
+import { sleepLoadingShell } from '@/lib/presentation/shared/drill-down-loading-shells';
 
 function isSleepEmptyState(
   valuesLoading: boolean,

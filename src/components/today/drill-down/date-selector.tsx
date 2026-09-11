@@ -16,8 +16,8 @@ import {
   initialStripStart,
 } from '@/components/today/drill-down/date-strip-helpers';
 import { useDataDays } from '@/hooks/use-data-days';
-import type { DataDaysDomain } from '@/lib/presentation/data-days';
-import { dataDaysChunkRanges, mergeDayRanges } from '@/lib/presentation/data-days-chunks';
+import type { DataDaysDomain } from '@/lib/presentation/data-days/data-days';
+import { dataDaysChunkRanges, mergeDayRanges } from '@/lib/presentation/data-days/data-days-chunks';
 
 /** Oldest rendered day grows as the athlete scrolls back, and never skips the selected date. */
 function useStripDays(date: Date, maxDate: Date, minDate?: Date) {

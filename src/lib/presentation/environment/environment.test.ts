@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildEnvironmentPresentationContext } from '@/lib/presentation/environment';
+import { buildEnvironmentPresentationContext } from '@/lib/presentation/environment/environment';
 import type { EnvironmentalDecisionSnapshot } from '@/core/inference/environment/types';
 
 describe('environment presentation', () => {

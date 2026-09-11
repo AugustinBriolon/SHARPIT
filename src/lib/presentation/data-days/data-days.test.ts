@@ -5,7 +5,7 @@ import {
   parseDataDaysRequest,
   type DataDaysHealthRow,
   type DataDaysSources,
-} from '@/lib/presentation/data-days';
+} from '@/lib/presentation/data-days/data-days';
 
 const RANGE = { from: '2026-09-01', to: '2026-09-30' };
 

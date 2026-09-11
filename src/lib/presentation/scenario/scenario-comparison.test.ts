@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   buildScenarioComparisonViewModel,
   isGenericEquivalentExplanation,
-} from '@/lib/presentation/scenario-comparison';
+} from '@/lib/presentation/scenario/scenario-comparison';
 import type { ScenarioComparison, ScenarioComparisonEntry } from '@/core/scenario/types';
 import { SCENARIO_MODEL_ID } from '@/core/scenario/types';
 

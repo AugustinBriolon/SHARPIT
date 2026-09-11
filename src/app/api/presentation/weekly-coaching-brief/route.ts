@@ -7,11 +7,11 @@ import {
   findRecentEvaluatedOutcomes,
 } from '@/lib/decision-memory/repository';
 import { buildLearningFeedback } from '@/lib/decision-memory/learning-feedback';
-import { buildLearningFeedbackViewModel } from '@/lib/presentation/learning-feedback';
+import { buildLearningFeedbackViewModel } from '@/lib/presentation/coaching/learning-feedback';
 import { buildDecisionSnapshotContext } from '@/lib/decision-memory/build-snapshot-context';
 import { getOrBuildAthleteSnapshot } from '@/lib/athlete-state/snapshot-service';
 import { computeTrainingDayId } from '@/lib/training/training-day';
-import { buildWeeklyCoachingBriefViewModel } from '@/lib/presentation/weekly-coaching-brief';
+import { buildWeeklyCoachingBriefViewModel } from '@/lib/presentation/coaching/weekly-coaching-brief';
 import { loadDailyTrainingStressEntries } from '@/lib/training/pmc-server';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import type { CoachingDecisionRecord } from '@/lib/decision-memory/types';

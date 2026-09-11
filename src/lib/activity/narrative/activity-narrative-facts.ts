@@ -22,7 +22,7 @@ import { isIndoorActivitySession } from '@/lib/activity/location/indoor-activity
 import { resolveActivityEnvironmentPresentation } from '@/lib/environment/activity-environment';
 import { formatDistance, formatDuration } from '@/lib/format';
 import { formatGoalDisplayValue, parseGoalMetricConfig } from '@/lib/goals/goal-metric-config';
-import { resolveEnvironmentalExplanation } from '@/lib/presentation/environment';
+import { resolveEnvironmentalExplanation } from '@/lib/presentation/environment/environment';
 import { getActivePhysicalNotes, getAthleteProfile } from '@/lib/queries';
 import { buildTechnicalSessionFacts } from '@/lib/activity/narrative/activity-narrative-technical-facts';
 import { getCachedActivityStreams } from '@/lib/streams/streams';

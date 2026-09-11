@@ -5,7 +5,7 @@ import {
   buildProjectedAthleteViewModel,
   buildProjectionCaution,
   buildProjectionTrajectory,
-} from '@/lib/presentation/projected-athlete';
+} from '@/lib/presentation/projected-athlete/projected-athlete';
 import { buildPlanningDiscussPrompt } from '@/lib/coach/chat/conversations/coach-session-thread';
 
 function buildProjectionDay(overrides?: {

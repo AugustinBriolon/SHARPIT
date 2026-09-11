@@ -44,7 +44,7 @@ import { suggestGarminTaxonomy } from '@/lib/integrations/garmin/garmin-exercise
 import {
   formatScenarioComparisonForCoach,
   loadScenarioComparisonForCoach,
-} from '@/lib/presentation/scenario-comparison';
+} from '@/lib/presentation/scenario/scenario-comparison';
 import {
   coachActivityTypesForPracticed,
   isCoachActivityTypeAllowed,

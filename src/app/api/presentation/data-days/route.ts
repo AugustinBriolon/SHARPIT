@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { parseDataDaysRequest } from '@/lib/presentation/data-days';
-import { loadDataDays } from '@/lib/presentation/data-days-server';
+import { parseDataDaysRequest } from '@/lib/presentation/data-days/data-days';
+import { loadDataDays } from '@/lib/presentation/data-days/data-days-server';
 
 export async function GET(request: NextRequest) {
   const parsed = parseDataDaysRequest(new URL(request.url).searchParams);

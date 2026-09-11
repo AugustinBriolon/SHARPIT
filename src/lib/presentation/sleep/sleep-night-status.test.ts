@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { resolveSleepNightStatus, sleepAdequacySignalForNight } from '@/lib/presentation/sleep';
+import {
+  resolveSleepNightStatus,
+  sleepAdequacySignalForNight,
+} from '@/lib/presentation/sleep/sleep';
 import { mapSleepScoreToAdequacy } from '@/lib/sleep/sleep-scoring';
 import { mapSleepAdequacySignalToDisplay } from '@/lib/today/dashboard/today-mapping';
 

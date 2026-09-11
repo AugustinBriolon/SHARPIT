@@ -5,7 +5,7 @@ import {
   shouldSkipTodayPresentationRebuild,
 } from '@/lib/athlete-state/orchestrator';
 import { computeFreshnessSnapshot, trainingDayIdNow } from '@/lib/athlete-state/freshness-service';
-import { buildTodayPresentationViewModel } from '@/lib/presentation/today';
+import { buildTodayPresentationViewModel } from '@/lib/presentation/today/today';
 import { ensureMorningRecalibration } from '@/lib/morning-recalibration/service';
 
 export const maxDuration = 120;

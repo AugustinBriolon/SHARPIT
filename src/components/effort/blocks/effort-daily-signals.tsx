@@ -1,7 +1,7 @@
 'use client';
 
 import { TermInfo } from '@/components/ui/term-info';
-import type { EffortDailySignals } from '@/lib/presentation/effort-strain-composition';
+import type { EffortDailySignals } from '@/lib/presentation/effort/effort-strain-composition';
 import type { GlossaryKey } from '@/lib/glossary';
 
 type SignalCard = {
