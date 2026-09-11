@@ -119,13 +119,15 @@ export function stripDayClassName({
   isToday,
   isFuture,
 }: Pick<StripDayProps, 'isSelected' | 'isToday' | 'isFuture'>): string {
+  // Mobile: tappable cards. Desktop: quiet ghost cells, only the selection is filled.
   return cn(
-    'pressable flex h-[4.25rem] w-[3.25rem] shrink-0 snap-center flex-col items-center justify-center gap-1 rounded-2xl',
+    'pressable flex h-[4.25rem] w-[3.25rem] shrink-0 snap-center flex-col items-center justify-center gap-1 rounded-2xl border',
+    'sm:h-14 sm:w-11 sm:gap-0.5 sm:rounded-xl',
     'focus-visible:outline-ring transition-colors focus-visible:outline-2 focus-visible:outline-offset-2',
     isSelected
-      ? 'bg-foreground text-background'
-      : 'bg-card text-foreground border-analysis-border/60 hover:bg-muted border',
-    !isSelected && isToday && 'border-foreground/40',
+      ? 'bg-foreground text-background border-transparent'
+      : 'bg-card text-foreground border-analysis-border/60 hover:bg-muted sm:border-transparent sm:bg-transparent',
+    !isSelected && isToday && 'border-foreground/40 sm:border-foreground/25',
     isFuture && 'pointer-events-none opacity-40',
   );
 }

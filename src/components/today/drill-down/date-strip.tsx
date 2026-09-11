@@ -34,10 +34,12 @@ function DateStripDay({
       type="button"
       onClick={() => (day.isSelected ? onOpenCalendar() : onSelect(day.dayStart))}
     >
-      <span className="text-lg leading-none font-semibold tabular-nums">{day.dayNumber}</span>
+      <span className="text-lg leading-none font-semibold tabular-nums sm:text-base">
+        {day.dayNumber}
+      </span>
       <span
         className={cn(
-          'text-[0.6875rem] leading-none capitalize',
+          'text-[0.6875rem] leading-none capitalize sm:text-[0.625rem]',
           day.isSelected ? 'text-background/80' : 'text-muted-foreground',
         )}
       >
@@ -48,9 +50,14 @@ function DateStripDay({
   );
 }
 
+/** Edge fade hints that the strip scrolls and keeps its ends from reading as cut-off cards. */
+const STRIP_EDGE_FADE =
+  '[mask-image:linear-gradient(to_right,transparent,black_1.5rem,black_calc(100%-1.5rem),transparent)]';
+
 const STRIP_CLASS = cn(
-  'relative flex w-full gap-1.5 overflow-x-auto overscroll-x-contain py-0.5',
-  'snap-x snap-proximity scroll-px-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden',
+  'relative flex w-full gap-1.5 overflow-x-auto overscroll-x-contain px-1.5 py-0.5 sm:gap-1',
+  'snap-x snap-proximity scroll-px-6 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden',
+  STRIP_EDGE_FADE,
 );
 
 interface DateStripProps {

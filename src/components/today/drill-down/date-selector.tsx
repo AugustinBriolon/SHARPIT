@@ -188,7 +188,7 @@ export function TodayDateSelector(props: TodayDateSelectorProps) {
   const navigation = { isToday, onPreviousDay: props.onPreviousDay, onNextDay: props.onNextDay };
 
   return (
-    <div aria-label="Date" className="flex w-full flex-col gap-2" role="group">
+    <div aria-label="Date" className="flex w-full flex-col gap-2 sm:max-w-3xl" role="group">
       <DateSelectorHeader
         {...navigation}
         date={date}
