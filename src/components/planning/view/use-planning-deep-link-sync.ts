@@ -9,6 +9,51 @@ import { prefetchPlannedSessionDetail } from '@/lib/query/prefetch-planned-sessi
 
 const WEEK_OPTS = { weekStartsOn: 1 as const };
 
+function clearPlannedDialogParams(params: URLSearchParams, showCoachMenu: boolean): boolean {
+  const hadPlanned = params.has('planned');
+  const hadCreate = showCoachMenu && params.has('create');
+  if (!hadPlanned && !hadCreate) {
+    return false;
+  }
+  params.delete('planned');
+  if (hadCreate) {
+    params.delete('create');
+  }
+  return true;
+}
+
+function clearAdaptParams(params: URLSearchParams): boolean {
+  if (!params.has('adapt') && !params.has('focus')) {
+    return false;
+  }
+  params.delete('adapt');
+  params.delete('focus');
+  return true;
+}
+
+function useDeepLinkSessionEffects(
+  plannedIdFromUrl: string | null,
+  deepLinkSession: ClientPlannedSession | null,
+  setWeekStart: (value: Date | ((prev: Date) => Date)) => void,
+) {
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (!plannedIdFromUrl) {
+      return;
+    }
+    prefetchPlannedSessionDetail(queryClient, plannedIdFromUrl);
+  }, [plannedIdFromUrl, queryClient]);
+
+  useEffect(() => {
+    if (!deepLinkSession) {
+      return;
+    }
+    const sessionWeek = startOfWeek(new Date(deepLinkSession.date), WEEK_OPTS);
+    setWeekStart((current) => (isSameDay(current, sessionWeek) ? current : sessionWeek));
+  }, [deepLinkSession, setWeekStart]);
+}
+
 export function usePlanningDeepLinkSync({
   showCoachMenu,
   planned,
@@ -25,42 +70,27 @@ export function usePlanningDeepLinkSync({
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const queryClient = useQueryClient();
 
   const deepLinkSession =
     plannedIdFromUrl && !plannedQueryPending
       ? (planned.find((s) => s.id === plannedIdFromUrl) ?? null)
       : null;
 
-  useEffect(() => {
-    if (!plannedIdFromUrl) {
-      return;
-    }
-    prefetchPlannedSessionDetail(queryClient, plannedIdFromUrl);
-  }, [plannedIdFromUrl, queryClient]);
+  useDeepLinkSessionEffects(plannedIdFromUrl, deepLinkSession, setWeekStart);
 
-  useEffect(() => {
-    if (!deepLinkSession) {
-      return;
-    }
-    const sessionWeek = startOfWeek(new Date(deepLinkSession.date), WEEK_OPTS);
-    setWeekStart((current) => (isSameDay(current, sessionWeek) ? current : sessionWeek));
-  }, [deepLinkSession, setWeekStart]);
-
-  function closePlannedDialogUrlParams() {
+  function replaceUrlParams(mutate: (params: URLSearchParams) => boolean) {
     const params = new URLSearchParams(searchParams.toString());
-    const hadPlanned = params.has('planned');
-    const hadCreate = showCoachMenu && params.has('create');
-    if (!hadPlanned && !hadCreate) {
+    if (!mutate(params)) {
       return;
-    }
-    params.delete('planned');
-    if (hadCreate) {
-      params.delete('create');
     }
     const query = params.toString();
     router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
   }
 
-  return { deepLinkSession, closePlannedDialogUrlParams };
+  return {
+    deepLinkSession,
+    closePlannedDialogUrlParams: () =>
+      replaceUrlParams((params) => clearPlannedDialogParams(params, showCoachMenu)),
+    closeAdaptUrlParams: () => replaceUrlParams(clearAdaptParams),
+  };
 }

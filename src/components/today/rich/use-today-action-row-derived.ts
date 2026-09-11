@@ -76,14 +76,12 @@ export function useTodayActionRowDerived(vm: TodayViewModel, loading: boolean) {
     [vm, pendingLinkSuggestions, linkExclusions, sessionLines],
   );
 
-  const daySummaryEmpty =
-    !loading && sessionLines.length === 0 && sessionLinkSuggestions.length === 0;
-
   const reminders = useMemo(() => {
     const base = deriveReminders(vm, loading);
-    const modeFact = loading
-      ? null
-      : activityStatusReminderFact(activityStore.status, activityStore.retention);
+    if (loading) {
+      return base;
+    }
+    const modeFact = activityStatusReminderFact(activityStore.status, activityStore.retention);
     return modeFact ? [modeFact, ...base] : base;
   }, [vm, loading, activityStore]);
 
@@ -93,7 +91,8 @@ export function useTodayActionRowDerived(vm: TodayViewModel, loading: boolean) {
     sessionLines,
     primaryIndex,
     postSessionLoop,
-    daySummaryEmpty,
+    rearrangeProposal: loading ? null : (vm.rearrangeProposal ?? null),
+    daySummaryEmpty: !loading && sessionLines.length === 0 && sessionLinkSuggestions.length === 0,
     reminders,
   };
 }

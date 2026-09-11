@@ -5,25 +5,9 @@ import { PlanningPlannedSessionOverlay } from '@/components/planning/overlays/pl
 import type { ClientGoal, ClientPlannedSession } from '@/lib/query/types';
 import type { ScenarioComparisonViewModel } from '@/core/presentation/scenario-comparison-view-model';
 
-export function PlanningViewOverlays({
-  adapterOpen,
-  createDefaultDate,
-  editSession,
-  goals,
-  generatorOpen,
-  isCreateDialog,
-  isLoading,
-  scenarioComparisonOpen,
-  scenarioComparisonLoading,
-  scenarioComparisonViewModel,
-  anchorTrainingDayId,
-  showPlannedDialog,
-  onCloseAdapter,
-  onCloseGenerator,
-  onClosePlannedDialog,
-  onCloseScenarioComparison,
-}: {
+type PlanningViewOverlaysProps = {
   adapterOpen: boolean;
+  adapterFocus?: string;
   createDefaultDate: Date;
   editSession: ClientPlannedSession | null;
   goals: ClientGoal[];
@@ -39,7 +23,27 @@ export function PlanningViewOverlays({
   onCloseGenerator: () => void;
   onClosePlannedDialog: () => void;
   onCloseScenarioComparison: () => void;
-}) {
+};
+
+export function PlanningViewOverlays({
+  adapterOpen,
+  adapterFocus,
+  createDefaultDate,
+  editSession,
+  goals,
+  generatorOpen,
+  isCreateDialog,
+  isLoading,
+  scenarioComparisonOpen,
+  scenarioComparisonLoading,
+  scenarioComparisonViewModel,
+  anchorTrainingDayId,
+  showPlannedDialog,
+  onCloseAdapter,
+  onCloseGenerator,
+  onClosePlannedDialog,
+  onCloseScenarioComparison,
+}: PlanningViewOverlaysProps) {
   return (
     <>
       <PlanningPlannedSessionOverlay
@@ -52,6 +56,7 @@ export function PlanningViewOverlays({
         onClose={onClosePlannedDialog}
       />
       <PlanningCoachOverlays
+        adapterFocus={adapterFocus}
         adapterOpen={adapterOpen}
         anchorTrainingDayId={anchorTrainingDayId}
         generatorOpen={generatorOpen}

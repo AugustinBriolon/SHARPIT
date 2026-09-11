@@ -1,7 +1,7 @@
 'use client';
 
 import { useResetWhenHidden } from '@/hooks/use-reset-when-hidden';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { SessionsCoachAction } from '@/components/coaching/coach-menu';
 import { handleSessionsCoachAction } from '@/components/planning/coach/planning-coach-actions';
 import { getPlannedDialogPresentation } from '@/components/planning/overlays/planning-dialog-presentation';
@@ -63,12 +63,76 @@ export function PlanningView({ embedded = false, showCoachMenu = !embedded }: Pl
   return <PlanningWeekView embedded={embedded} showCoachMenu={showCoachMenu} />;
 }
 
+function useAdaptDeepLinkOpen(adaptFromUrl: boolean, closeAdaptUrlParams: () => void) {
+  const [adapterOpen, setAdapterOpen] = useState(false);
+
+  useEffect(() => {
+    if (adaptFromUrl) {
+      setAdapterOpen(true);
+    }
+  }, [adaptFromUrl]);
+
+  function handleCloseAdapter() {
+    setAdapterOpen(false);
+    closeAdaptUrlParams();
+  }
+
+  return { adapterOpen, setAdapterOpen, handleCloseAdapter };
+}
+
+function PlanningWeekOverlays({
+  data,
+  dialogState,
+  generatorOpen,
+  adapterOpen,
+  scenarioComparisonOpen,
+  onCloseAdapter,
+  onCloseGenerator,
+  onCloseScenarioComparison,
+}: {
+  data: ReturnType<typeof usePlanningViewData>;
+  dialogState: ReturnType<typeof usePlanningDialogState>;
+  generatorOpen: boolean;
+  adapterOpen: boolean;
+  scenarioComparisonOpen: boolean;
+  onCloseAdapter: () => void;
+  onCloseGenerator: () => void;
+  onCloseScenarioComparison: () => void;
+}) {
+  return (
+    <PlanningViewOverlays
+      adapterFocus={data.adaptFocusFromUrl}
+      adapterOpen={adapterOpen}
+      anchorTrainingDayId={data.anchorTrainingDayId}
+      createDefaultDate={dialogState.createDefaultDate}
+      editSession={dialogState.editSession}
+      generatorOpen={generatorOpen}
+      goals={data.goals}
+      isCreateDialog={dialogState.isCreateDialog}
+      isLoading={data.isLoading}
+      scenarioComparisonOpen={scenarioComparisonOpen}
+      scenarioComparisonViewModel={data.scenarioComparisonQuery.data}
+      showPlannedDialog={dialogState.showPlannedDialog}
+      scenarioComparisonLoading={
+        data.scenarioComparisonQuery.isPending || data.scenarioComparisonQuery.isPlaceholderData
+      }
+      onCloseAdapter={onCloseAdapter}
+      onCloseGenerator={onCloseGenerator}
+      onClosePlannedDialog={dialogState.closePlannedDialog}
+      onCloseScenarioComparison={onCloseScenarioComparison}
+    />
+  );
+}
+
 function PlanningWeekView({ embedded = false, showCoachMenu = !embedded }: PlanningViewProps) {
   const data = usePlanningViewData(showCoachMenu);
   const dialogState = usePlanningDialogState(data);
   const [generatorOpen, setGeneratorOpen] = useState(false);
-  const [adapterOpen, setAdapterOpen] = useState(false);
   const [scenarioComparisonOpen, setScenarioComparisonOpen] = useState(false);
+  const { adapterOpen, setAdapterOpen, handleCloseAdapter } = useAdaptDeepLinkOpen(
+    data.adaptFromUrl,
+    data.closeAdaptUrlParams,
+  );
 
   useResetWhenHidden(() => setScenarioComparisonOpen(false));
 
@@ -113,24 +177,14 @@ function PlanningWeekView({ embedded = false, showCoachMenu = !embedded }: Plann
         onEditSession={dialogState.openPlannedSession}
       />
 
-      <PlanningViewOverlays
+      <PlanningWeekOverlays
         adapterOpen={adapterOpen}
-        anchorTrainingDayId={data.anchorTrainingDayId}
-        createDefaultDate={dialogState.createDefaultDate}
-        editSession={dialogState.editSession}
+        data={data}
+        dialogState={dialogState}
         generatorOpen={generatorOpen}
-        goals={data.goals}
-        isCreateDialog={dialogState.isCreateDialog}
-        isLoading={data.isLoading}
         scenarioComparisonOpen={scenarioComparisonOpen}
-        scenarioComparisonViewModel={data.scenarioComparisonQuery.data}
-        showPlannedDialog={dialogState.showPlannedDialog}
-        scenarioComparisonLoading={
-          data.scenarioComparisonQuery.isPending || data.scenarioComparisonQuery.isPlaceholderData
-        }
-        onCloseAdapter={() => setAdapterOpen(false)}
+        onCloseAdapter={handleCloseAdapter}
         onCloseGenerator={() => setGeneratorOpen(false)}
-        onClosePlannedDialog={dialogState.closePlannedDialog}
         onCloseScenarioComparison={() => setScenarioComparisonOpen(false)}
       />
     </div>

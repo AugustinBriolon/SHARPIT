@@ -95,6 +95,13 @@ function renderApplyButtonContent(
   return 'Appliquer';
 }
 
+function planAdapterDescription(fromTwinFeedback: boolean): string {
+  if (fromTwinFeedback) {
+    return 'Proposition préparée depuis ton Twin après feedback. Vérifie le contexte, lance les propositions, puis valide ce que tu gardes — rien n’est appliqué sans toi.';
+  }
+  return 'Le coach analyse ce que tu as réellement fait et propose des modifications sur tes séances déjà planifiées (14 prochains jours), sans tout recréer.';
+}
+
 function PlanAdapterResults({
   applyError,
   applied,
@@ -280,10 +287,7 @@ export function PlanAdapter({
             <ListRestart className="text-primary size-4" />
             Ajuster mon planning
           </DialogTitle>
-          <DialogDescription>
-            Le coach analyse ce que tu as réellement fait et propose des modifications sur tes
-            séances déjà planifiées (14 prochains jours), sans tout recréer.
-          </DialogDescription>
+          <DialogDescription>{planAdapterDescription(Boolean(initialFocus))}</DialogDescription>
         </DialogHeader>
 
         <ProfileContextBanner />

@@ -129,6 +129,7 @@ export function todayLoadingShell(now: Date = LOADING_SHELL_REFERENCE): TodayVie
     environmentContext: null,
     nutrition: null,
     postSessionLoop: null,
+    rearrangeProposal: null,
     hierarchy: { rootId: 'today', order: [] },
     sections: [],
   };

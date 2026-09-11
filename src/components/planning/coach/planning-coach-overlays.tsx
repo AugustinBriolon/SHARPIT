@@ -21,6 +21,7 @@ const ScenarioComparisonDialog = dynamic(
 
 export function PlanningCoachOverlays({
   adapterOpen,
+  adapterFocus,
   generatorOpen,
   scenarioComparisonOpen,
   scenarioComparisonLoading,
@@ -31,6 +32,7 @@ export function PlanningCoachOverlays({
   onCloseScenarioComparison,
 }: {
   adapterOpen: boolean;
+  adapterFocus?: string;
   generatorOpen: boolean;
   scenarioComparisonOpen: boolean;
   scenarioComparisonLoading: boolean;
@@ -43,7 +45,7 @@ export function PlanningCoachOverlays({
   return (
     <>
       {generatorOpen ? <PlanGenerator onClose={onCloseGenerator} /> : null}
-      {adapterOpen ? <PlanAdapter onClose={onCloseAdapter} /> : null}
+      {adapterOpen ? <PlanAdapter initialFocus={adapterFocus} onClose={onCloseAdapter} /> : null}
       {scenarioComparisonOpen ? (
         <ScenarioComparisonDialog
           anchorTrainingDayId={anchorTrainingDayId}
