@@ -2,7 +2,7 @@
 
 import { useResetWhenHidden } from '@/hooks/use-reset-when-hidden';
 import { useEffect, useState } from 'react';
-import type { SessionsCoachAction } from '@/components/coaching/coach-menu';
+import type { SessionsCoachAction } from '@/components/planning/coach-menu';
 import { handleSessionsCoachAction } from '@/components/planning/coach/planning-coach-actions';
 import { getPlannedDialogPresentation } from '@/components/planning/overlays/planning-dialog-presentation';
 import {

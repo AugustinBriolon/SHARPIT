@@ -2,7 +2,7 @@
 
 import { TravelContextBanner } from '@/components/planning/overlays/travel-context-banner';
 import { ActivityStatusPlanningBanner } from '@/components/planning/overlays/activity-status-planning-banner';
-import { SessionsCoachMenu, type SessionsCoachAction } from '@/components/coaching/coach-menu';
+import { SessionsCoachMenu, type SessionsCoachAction } from '@/components/planning/coach-menu';
 import { Button } from '@/components/ui/button';
 import { addWeeks, format, subWeeks } from 'date-fns';
 import { fr } from 'date-fns/locale';
