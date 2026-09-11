@@ -17,7 +17,15 @@ import { computeSharpitSleepScoreForDay, SLEEP_TARGET_MIN } from '@/lib/sleep/sl
 import { activityTypeLabels } from '@/lib/format';
 import { buildPostSessionLoop } from '@/lib/today/rich/post-session-loop';
 import { buildFeedbackRearrangeProposal } from '@/lib/today/rich/feedback-rearrange-proposal';
+import {
+  buildHabitRearrangeProposal,
+  mergeRearrangeProposals,
+  type HabitCoachingSignal,
+} from '@/lib/today/rich/habit-coaching-signal';
+import { loadTodayHabitCoachingSignal } from '@/lib/presentation/today-habit-coaching';
 import { buildTodayDaySummary } from '@/lib/today/dashboard/today-day-summary';
+import { prisma } from '@/lib/prisma';
+import { addDays } from 'date-fns';
 import {
   findSessionLinkSuggestions,
   type SessionLinkSuggestion,
@@ -151,6 +159,11 @@ export type TodayPresentationInputs = {
   reconnectNames?: string[];
   /** Ensured by the API route (write side-effect stays off this projection). */
   morningRecalibration: MorningRecalibrationInput | null;
+  /**
+   * Journal habit → coaching signal (why fact + optional rearrange).
+   * Optional so pure VM tests can omit it; load path always fills it.
+   */
+  habitCoaching?: HabitCoachingSignal | null;
 };
 
 function mapSessionLinkSuggestion(s: SessionLinkSuggestion) {
@@ -535,16 +548,25 @@ function buildTodayRearrangeProposal(input: {
   activities: ReturnType<typeof mapPostSessionActivities>;
   plannedSessions: TodayPresentationInputs['plannedSessions'];
   verdict: ReturnType<typeof decisionVerdict>;
+  habitCoaching?: HabitCoachingSignal | null;
 }) {
-  return buildFeedbackRearrangeProposal({
+  const upcoming = mapUpcomingForRearrange(input.plannedSessions);
+  const twinProposal = buildFeedbackRearrangeProposal({
     phase: input.phase,
     overallFresh: input.effectiveSnapshot.freshness.overallFresh,
     verdict: input.verdict,
     confidence: input.effectiveSnapshot.confidence ?? null,
     day: input.day,
-    upcoming: mapUpcomingForRearrange(input.plannedSessions),
+    upcoming,
     latestEffort: latestEffortForRearrange(input.activities, input.day),
   });
+  const habitProposal = buildHabitRearrangeProposal({
+    phase: input.phase,
+    day: input.day,
+    upcoming,
+    callout: input.habitCoaching?.callout ?? null,
+  });
+  return mergeRearrangeProposals(twinProposal, habitProposal);
 }
 
 function prepareTodayMorningFields(input: {
@@ -558,6 +580,7 @@ function prepareTodayMorningFields(input: {
   activities: TodayPresentationInputs['activities'];
   plannedSessions: TodayPresentationInputs['plannedSessions'];
   verdict: ReturnType<typeof decisionVerdict>;
+  habitCoaching?: HabitCoachingSignal | null;
 }) {
   const morningOrientation = resolveMorningOrientation({
     phase: input.phase,
@@ -584,6 +607,7 @@ function prepareTodayMorningFields(input: {
       activities: postSessionActivities,
       plannedSessions: input.plannedSessions,
       verdict: input.verdict,
+      habitCoaching: input.habitCoaching,
     }),
   };
 }
@@ -645,6 +669,7 @@ function prepareTodayDerivedSections(
     activities: inputs.activities,
     plannedSessions: inputs.plannedSessions,
     verdict,
+    habitCoaching: inputs.habitCoaching,
   });
 
   return { phase, verdict, displayVerdict, hero, action, status, morning };
@@ -689,6 +714,7 @@ function prepareTodayViewModelContext(inputs: TodayPresentationInputs) {
     plateLimiter: buildPlateLimiter(effectiveSnapshot),
     goalContext,
     goalAnchor,
+    habitCoaching: inputs.habitCoaching ?? null,
   };
 }
 
@@ -836,6 +862,7 @@ function assembleTodayViewModel(
       phase: ctx.phase,
       whyFacts: ctx.whyFacts,
       goalContext: ctx.goalContext,
+      habitFact: ctx.habitCoaching?.whyFact ?? null,
     }),
     actionRow: assembleTodayActionRow(ctx),
     insights: [],
@@ -880,7 +907,6 @@ async function loadTodayPresentationInputs(
   options: BuildTodayPresentationOptions,
 ) {
   const dayStart = startOfDay(day);
-  const dayEnd = endOfDay(day);
 
   const [
     snapshot,
@@ -891,17 +917,20 @@ async function loadTodayPresentationInputs(
     athleteProfile,
     reconnectNames,
     weather,
+    habitCoaching,
   ] = await Promise.all([
     options.athleteSnapshot
       ? Promise.resolve(options.athleteSnapshot)
       : getOrBuildAthleteSnapshot(athleteId, trainingDayId),
     getHealthEntries(athleteId, 14, day),
     getActivitiesList(athleteId, { sinceDays: 60 }),
-    getPlannedSessions(athleteId, { from: dayStart, to: dayEnd }),
+    // Horizon covers Today day summary (filters to today) + rearrange detectors (14d).
+    getPlannedSessions(athleteId, { from: dayStart, to: endOfDay(addDays(day, 14)) }),
     getGoals(athleteId),
     getAthleteProfile(athleteId),
     loadReconnectProviderNames(athleteId),
     loadTodayWeather(athleteId, trainingDayId),
+    loadTodayHabitCoachingSignal(prisma, athleteId, trainingDayId),
   ]);
 
   return {
@@ -917,6 +946,7 @@ async function loadTodayPresentationInputs(
     // Demo stubs have empty credentials on purpose — never show reconnect.
     reconnectNames: isDemoAthleteProfile(athleteProfile) ? [] : reconnectNames,
     weather,
+    habitCoaching,
   };
 }
 
