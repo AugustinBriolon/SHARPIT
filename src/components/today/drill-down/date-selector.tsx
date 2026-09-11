@@ -1,220 +1,223 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { NavArrowLeft, NavArrowRight } from '@/components/icons/nav-arrows';
-import {
-  addMonths,
-  endOfMonth,
-  endOfWeek,
-  format as formatDate,
-  isAfter,
-  startOfDay,
-  startOfMonth,
-  startOfWeek,
-  subMonths,
-} from 'date-fns';
+import { format as formatDate, isAfter, isBefore, startOfDay, startOfMonth } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { CalendarDays } from 'lucide-react';
+import { NavArrowLeft, NavArrowRight } from '@/components/icons/nav-arrows';
 import { Button } from '@/components/ui/button';
+import { DateCalendarDialog } from '@/components/today/drill-down/date-calendar-dialog';
+import { DateStrip } from '@/components/today/drill-down/date-strip';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { CalendarDayCell } from '@/components/today/drill-down/calendar-day-cell';
+  buildMonthGridDays,
+  buildStripDays,
+  canExtendStrip,
+  extendStripStart,
+  initialStripStart,
+} from '@/components/today/drill-down/date-strip-helpers';
+import { useDataDays } from '@/hooks/use-data-days';
+import type { DataDaysDomain } from '@/lib/presentation/data-days';
+import { dataDaysChunkRanges, mergeDayRanges } from '@/lib/presentation/data-days-chunks';
 
-/** Fixed pill width — long FR weekdays (“mercredi 18 septembre”) still fit. */
-const DATE_PILL_CLASS = 'h-9 w-[15.5rem] shrink-0 justify-center gap-2 rounded-full px-3';
+/** Oldest rendered day grows as the athlete scrolls back, and never skips the selected date. */
+function useStripDays(date: Date, maxDate: Date, minDate?: Date) {
+  const [extendedStart, setExtendedStart] = useState<Date | null>(null);
+  const baseStart = initialStripStart(date, maxDate, minDate);
+  const stripStart =
+    extendedStart && isBefore(extendedStart, baseStart) ? extendedStart : baseStart;
+  const stripStartKey = stripStart.getTime();
+  const days = useMemo(
+    () => buildStripDays(new Date(stripStartKey), maxDate),
+    [stripStartKey, maxDate],
+  );
+  const onReachStart = canExtendStrip(stripStart, minDate)
+    ? () => setExtendedStart(extendStripStart(stripStart, minDate))
+    : null;
+  return { stripStart, days, onReachStart };
+}
 
-export function TodayDateSelector({
-  date,
+function useSelectorDataDays({
+  domain,
+  stripStart,
   maxDate,
-  minDate,
+  calendarMonth,
+}: {
+  domain: DataDaysDomain;
+  stripStart: Date;
+  maxDate: Date;
+  /** Null while the calendar is closed. */
+  calendarMonth: Date | null;
+}) {
+  const stripStartKey = stripStart.getTime();
+  const maxDateKey = maxDate.getTime();
+  const calendarMonthKey = calendarMonth?.getTime() ?? null;
+  const ranges = useMemo(() => {
+    const anchor = new Date(maxDateKey);
+    const stripRanges = dataDaysChunkRanges(new Date(stripStartKey), anchor, anchor);
+    if (calendarMonthKey === null) {
+      return stripRanges;
+    }
+    const grid = buildMonthGridDays(new Date(calendarMonthKey));
+    return mergeDayRanges(stripRanges, dataDaysChunkRanges(grid[0], grid[grid.length - 1], anchor));
+  }, [calendarMonthKey, maxDateKey, stripStartKey]);
+  return useDataDays(domain, ranges);
+}
+
+function DayStepButtons({
   isToday,
-  onChange,
+  isAtMinDate,
   onPreviousDay,
   onNextDay,
-}: {
+}: Pick<DateSelectorHeaderProps, 'isToday' | 'isAtMinDate' | 'onPreviousDay' | 'onNextDay'>) {
+  return (
+    <>
+      <Button
+        aria-label="Jour précédent"
+        className="hidden sm:inline-flex"
+        disabled={isAtMinDate}
+        size="icon-sm"
+        type="button"
+        variant="ghost"
+        onClick={onPreviousDay}
+      >
+        <NavArrowLeft className="size-4" aria-hidden />
+      </Button>
+      <Button
+        aria-label="Jour suivant"
+        className="hidden sm:inline-flex"
+        disabled={isToday}
+        size="icon-sm"
+        type="button"
+        variant="ghost"
+        onClick={onNextDay}
+      >
+        <NavArrowRight className="size-4" aria-hidden />
+      </Button>
+    </>
+  );
+}
+
+interface DateSelectorHeaderProps {
+  date: Date;
+  isToday: boolean;
+  isAtMinDate: boolean;
+  onOpenCalendar: () => void;
+  onToday: () => void;
+  onPreviousDay: () => void;
+  onNextDay: () => void;
+}
+
+function DateSelectorHeader({
+  date,
+  onOpenCalendar,
+  onToday,
+  ...stepProps
+}: DateSelectorHeaderProps) {
+  return (
+    <div className="flex w-full items-center justify-between gap-2">
+      <Button
+        aria-haspopup="dialog"
+        className="-ml-2 gap-1.5 px-2"
+        size="sm"
+        type="button"
+        variant="ghost"
+        onClick={onOpenCalendar}
+      >
+        <CalendarDays className="text-muted-foreground size-4 shrink-0" aria-hidden />
+        <span className="text-sm font-semibold capitalize">
+          {formatDate(date, 'LLLL yyyy', { locale: fr })}
+        </span>
+      </Button>
+
+      <div className="flex items-center gap-1">
+        {!stepProps.isToday ? (
+          <Button size="sm" type="button" variant="ghost" onClick={onToday}>
+            Aujourd&apos;hui
+          </Button>
+        ) : null}
+        <DayStepButtons {...stepProps} />
+      </div>
+    </div>
+  );
+}
+
+/** Calendar is opened on the selected date's month and closes once a day is picked. */
+function useCalendarDialog(date: Date, onChange: (date: Date) => void) {
+  const [open, setOpen] = useState(false);
+  const [visibleMonth, setVisibleMonth] = useState(() => startOfMonth(date));
+
+  return {
+    open,
+    visibleMonth,
+    setOpen,
+    setVisibleMonth,
+    openCalendar: () => {
+      setVisibleMonth(startOfMonth(date));
+      setOpen(true);
+    },
+    select: (next: Date) => {
+      onChange(next);
+      setOpen(false);
+    },
+  };
+}
+
+interface TodayDateSelectorProps {
   date: Date;
   maxDate: Date;
   /** Set only for a demo session — fences navigation to the rolling seeded window. */
   minDate?: Date;
   isToday: boolean;
+  /** Which drill-down's data the availability dots reflect. */
+  dataDomain: DataDaysDomain;
   onChange: (date: Date) => void;
   onPreviousDay: () => void;
   onNextDay: () => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const [visibleMonth, setVisibleMonth] = useState(() => startOfMonth(date));
-  const isAtMinDate = minDate ? !isAfter(startOfDay(date), minDate) : false;
+}
 
-  const monthDays = useMemo(() => {
-    const monthStart = startOfMonth(visibleMonth);
-    const monthEnd = endOfMonth(visibleMonth);
-    const gridStart = startOfWeek(monthStart, { locale: fr });
-    const gridEnd = endOfWeek(monthEnd, { locale: fr });
-    const days: Date[] = [];
-    for (let current = gridStart; current <= gridEnd; current.setDate(current.getDate() + 1)) {
-      days.push(new Date(current));
-    }
-    return days;
-  }, [visibleMonth]);
-
-  const weekdayLabels = useMemo(() => {
-    const weekStart = startOfWeek(new Date(), { locale: fr });
-    return Array.from({ length: 7 }, (_, index) =>
-      formatDate(
-        new Date(weekStart.getFullYear(), weekStart.getMonth(), weekStart.getDate() + index),
-        'EEEEE',
-        {
-          locale: fr,
-        },
-      ),
-    );
-  }, []);
-
-  function handleOpenChange(nextOpen: boolean) {
-    setOpen(nextOpen);
-    if (nextOpen) {
-      setVisibleMonth(startOfMonth(date));
-    }
-  }
+export function TodayDateSelector(props: TodayDateSelectorProps) {
+  const { date, maxDate, minDate, isToday, dataDomain, onChange } = props;
+  const calendar = useCalendarDialog(date, onChange);
+  const { stripStart, days, onReachStart } = useStripDays(date, maxDate, minDate);
+  const dataDays = useSelectorDataDays({
+    domain: dataDomain,
+    stripStart,
+    maxDate,
+    calendarMonth: calendar.open ? calendar.visibleMonth : null,
+  });
+  const navigation = { isToday, onPreviousDay: props.onPreviousDay, onNextDay: props.onNextDay };
 
   return (
-    <>
-      <div aria-label="Date" className="flex w-full items-center justify-center gap-1" role="group">
-        <Button
-          aria-label="Jour précédent"
-          className="size-11 sm:size-7"
-          disabled={isAtMinDate}
-          size="icon-sm"
-          type="button"
-          variant="ghost"
-          onClick={onPreviousDay}
-        >
-          <NavArrowLeft className="size-4" aria-hidden />
-        </Button>
-
-        <Button
-          aria-expanded={open}
-          aria-haspopup="dialog"
-          className={DATE_PILL_CLASS}
-          size="sm"
-          type="button"
-          variant="outline"
-          onClick={() => handleOpenChange(true)}
-        >
-          <CalendarDays className="text-muted-foreground size-3.5 shrink-0" aria-hidden />
-          <span className="min-w-0 truncate text-xs capitalize">
-            {formatDate(date, 'EEEE d MMMM', { locale: fr })}
-          </span>
-        </Button>
-
-        <Button
-          aria-label="Jour suivant"
-          className="size-11 sm:size-7"
-          disabled={isToday}
-          size="icon-sm"
-          type="button"
-          variant="ghost"
-          onClick={onNextDay}
-        >
-          <NavArrowRight className="size-4" aria-hidden />
-        </Button>
-      </div>
-
-      <Dialog open={open} onOpenChange={handleOpenChange}>
-        <DialogContent className="gap-3 p-0 sm:max-w-md" showCloseButton={false}>
-          <DialogHeader className="px-4 pt-4">
-            <DialogTitle>Sélectionner une date</DialogTitle>
-            <DialogDescription>
-              Choisis un jour pour consulter l&apos;état physiologique à cette date.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="px-4 pb-4">
-            <div className="mb-3 flex items-center justify-between">
-              <Button
-                aria-label="Mois précédent"
-                className="size-11 sm:size-7"
-                size="icon-sm"
-                type="button"
-                variant="ghost"
-                onClick={() => setVisibleMonth((current) => subMonths(current, 1))}
-              >
-                <NavArrowLeft className="size-4" aria-hidden />
-              </Button>
-
-              <p aria-live="polite" className="text-sm font-semibold capitalize">
-                {formatDate(visibleMonth, 'LLLL yyyy', { locale: fr })}
-              </p>
-
-              <Button
-                aria-label="Mois suivant"
-                className="size-11 sm:size-7"
-                disabled={!isAfter(startOfMonth(maxDate), startOfMonth(visibleMonth))}
-                size="icon-sm"
-                type="button"
-                variant="ghost"
-                onClick={() => setVisibleMonth((current) => addMonths(current, 1))}
-              >
-                <NavArrowRight className="size-4" aria-hidden />
-              </Button>
-            </div>
-
-            <div
-              aria-label={formatDate(visibleMonth, 'LLLL yyyy', { locale: fr })}
-              className="grid grid-cols-7 gap-1 text-center"
-              role="grid"
-            >
-              {weekdayLabels.map((label, index) => (
-                <span key={`${index}-${label}`} className="text-label py-1" role="columnheader">
-                  {label}
-                </span>
-              ))}
-              {monthDays.map((day) => (
-                <CalendarDayCell
-                  key={day.toISOString()}
-                  date={date}
-                  day={day}
-                  maxDate={maxDate}
-                  minDate={minDate}
-                  visibleMonth={visibleMonth}
-                  onSelect={(dayStart) => {
-                    onChange(dayStart);
-                    setOpen(false);
-                  }}
-                />
-              ))}
-            </div>
-
-            {minDate ? (
-              <p className="text-muted-foreground mt-4 text-xs">
-                Démo limitée aux {formatDate(minDate, 'd MMMM', { locale: fr })} –{' '}
-                {formatDate(maxDate, 'd MMMM', { locale: fr })}.
-              </p>
-            ) : null}
-
-            {!isToday ? (
-              <div className="mt-4 flex justify-end">
-                <Button
-                  size="sm"
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    onChange(maxDate);
-                    setOpen(false);
-                  }}
-                >
-                  Revenir à aujourd&apos;hui
-                </Button>
-              </div>
-            ) : null}
-          </div>
-        </DialogContent>
-      </Dialog>
-    </>
+    <div aria-label="Date" className="flex w-full flex-col gap-2" role="group">
+      <DateSelectorHeader
+        {...navigation}
+        date={date}
+        isAtMinDate={minDate ? !isAfter(startOfDay(date), minDate) : false}
+        onOpenCalendar={calendar.openCalendar}
+        onToday={() => onChange(maxDate)}
+      />
+      <DateStrip
+        {...navigation}
+        dataDays={dataDays}
+        date={date}
+        days={days}
+        maxDate={maxDate}
+        onOpenCalendar={calendar.openCalendar}
+        onReachStart={onReachStart}
+        onSelect={onChange}
+      />
+      <DateCalendarDialog
+        dataDays={dataDays}
+        date={date}
+        isToday={isToday}
+        maxDate={maxDate}
+        minDate={minDate}
+        open={calendar.open}
+        visibleMonth={calendar.visibleMonth}
+        onOpenChange={calendar.setOpen}
+        onSelect={calendar.select}
+        onVisibleMonthChange={calendar.setVisibleMonth}
+      />
+    </div>
   );
 }

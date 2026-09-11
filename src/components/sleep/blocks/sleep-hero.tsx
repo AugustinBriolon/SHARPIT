@@ -41,6 +41,7 @@ export function SleepHero({
   return (
     <PhysioDrillDownHero
       confidencePct={confidencePct}
+      dataDomain="sleep"
       date={date}
       eyebrow="Sommeil"
       headline={adequacyDisplay.label}

@@ -5,12 +5,14 @@ import {
   PhysioDrillDownDateHeader,
   PhysioDrillDownVerdictSection,
 } from '@/components/today/drill-down/physio-drill-down-hero-parts';
+import type { DataDaysDomain } from '@/lib/presentation/data-days';
 
 /**
  * Physio drill-down plate — one dominant verdict.
  */
 export function PhysioDrillDownHero({
   date,
+  dataDomain,
   isToday = true,
   maxDate,
   minDate,
@@ -35,6 +37,8 @@ export function PhysioDrillDownHero({
   loading = false,
 }: {
   date: Date;
+  /** Which drill-down's data the date selector's availability dots reflect. */
+  dataDomain: DataDaysDomain;
   isToday?: boolean;
   maxDate?: Date;
   minDate?: Date;
@@ -62,6 +66,7 @@ export function PhysioDrillDownHero({
     <div className="space-y-4">
       <PhysioDrillDownDateHeader
         confidencePct={confidencePct}
+        dataDomain={dataDomain}
         date={date}
         isToday={isToday}
         loading={loading}

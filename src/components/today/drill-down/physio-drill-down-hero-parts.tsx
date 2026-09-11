@@ -6,11 +6,13 @@ import { ConfidenceBars, confidenceBarsFromPct } from '@/components/ui/instrumen
 import { quickReadBadge } from '@/components/today/drill-down/physio-drill-down-hero-helpers';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
+import type { DataDaysDomain } from '@/lib/presentation/data-days';
 import { format as formatDate } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
 function PhysioDrillDownDateLine({
   date,
+  dataDomain,
   isToday,
   maxDate,
   minDate,
@@ -19,6 +21,7 @@ function PhysioDrillDownDateLine({
   onNextDay,
 }: {
   date: Date;
+  dataDomain: DataDaysDomain;
   isToday: boolean;
   maxDate?: Date;
   minDate?: Date;
@@ -37,6 +40,7 @@ function PhysioDrillDownDateLine({
   if (showDateNav) {
     return (
       <TodayDateSelector
+        dataDomain={dataDomain}
         date={date}
         isToday={isToday}
         maxDate={maxDate}
@@ -89,6 +93,7 @@ function PhysioDrillDownConfidence({
 
 export function PhysioDrillDownDateHeader({
   date,
+  dataDomain,
   isToday,
   maxDate,
   minDate,
@@ -100,6 +105,7 @@ export function PhysioDrillDownDateHeader({
   confidencePct,
 }: {
   date: Date;
+  dataDomain: DataDaysDomain;
   isToday: boolean;
   maxDate?: Date;
   minDate?: Date;
@@ -113,6 +119,7 @@ export function PhysioDrillDownDateHeader({
   return (
     <div className="flex flex-col items-center">
       <PhysioDrillDownDateLine
+        dataDomain={dataDomain}
         date={date}
         isToday={isToday}
         maxDate={maxDate}

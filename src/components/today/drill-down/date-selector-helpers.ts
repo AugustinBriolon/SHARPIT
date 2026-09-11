@@ -8,6 +8,8 @@ import {
 } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import type { DataDayStatus } from '@/lib/presentation/data-days-chunks';
+import { dataStatusLabel } from '@/components/today/drill-down/date-strip-helpers';
 
 export function calendarDayCellProps({
   day,
@@ -15,12 +17,14 @@ export function calendarDayCellProps({
   visibleMonth,
   maxDate,
   minDate,
+  dataStatus,
 }: {
   day: Date;
   date: Date;
   visibleMonth: Date;
   maxDate: Date;
   minDate?: Date;
+  dataStatus: DataDayStatus;
 }) {
   const dayStart = startOfDay(day);
   const isSelected = isSameDay(dayStart, date);
@@ -35,7 +39,10 @@ export function calendarDayCellProps({
     isCurrentMonth,
     isDisabled,
     isCurrentDay,
-    dayLabel: formatDate(dayStart, 'EEEE d MMMM yyyy', { locale: fr }),
+    hasData: !isDisabled && dataStatus === 'data',
+    dayLabel: `${formatDate(dayStart, 'EEEE d MMMM yyyy', { locale: fr })}${
+      isDisabled ? '' : dataStatusLabel(dataStatus)
+    }`,
     dayNumber: formatDate(dayStart, 'd'),
   };
 }
@@ -52,9 +59,9 @@ export function calendarDayCellClassName({
   isDisabled: boolean;
 }) {
   return cn(
-    'hover:bg-muted inline-flex aspect-square min-h-11 items-center justify-center rounded-lg text-sm font-medium transition-colors sm:min-h-0',
+    'hover:bg-muted relative inline-flex aspect-square min-h-11 flex-col items-center justify-center rounded-lg text-sm font-medium tabular-nums transition-colors sm:min-h-0',
     !isCurrentMonth && 'text-muted-foreground/45',
-    isSelected && 'bg-primary text-primary-foreground hover:bg-primary/90',
+    isSelected && 'bg-foreground text-background hover:bg-foreground/90',
     !isSelected && isCurrentDay && 'ring-ring/50 ring-1',
     isDisabled && 'pointer-events-none opacity-35',
   );

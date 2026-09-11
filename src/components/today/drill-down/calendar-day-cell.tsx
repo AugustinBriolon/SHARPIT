@@ -1,9 +1,11 @@
 'use client';
 
+import type { DataDayStatus } from '@/lib/presentation/data-days-chunks';
 import {
   calendarDayCellClassName,
   calendarDayCellProps,
 } from '@/components/today/drill-down/date-selector-helpers';
+import { DataDayDot } from '@/components/today/drill-down/data-day-dot';
 
 export function CalendarDayCell({
   day,
@@ -11,6 +13,7 @@ export function CalendarDayCell({
   visibleMonth,
   maxDate,
   minDate,
+  dataStatus,
   onSelect,
 }: {
   day: Date;
@@ -18,9 +21,10 @@ export function CalendarDayCell({
   visibleMonth: Date;
   maxDate: Date;
   minDate?: Date;
+  dataStatus: DataDayStatus;
   onSelect: (dayStart: Date) => void;
 }) {
-  const props = calendarDayCellProps({ day, date, visibleMonth, maxDate, minDate });
+  const props = calendarDayCellProps({ day, date, visibleMonth, maxDate, minDate, dataStatus });
 
   return (
     <button
@@ -34,7 +38,10 @@ export function CalendarDayCell({
       type="button"
       onClick={() => onSelect(props.dayStart)}
     >
-      {props.dayNumber}
+      <span className="leading-none">{props.dayNumber}</span>
+      <span className="absolute bottom-1.5">
+        <DataDayDot inverse={props.isSelected} visible={props.hasData} />
+      </span>
     </button>
   );
 }

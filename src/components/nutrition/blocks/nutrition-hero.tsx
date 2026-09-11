@@ -64,6 +64,7 @@ export function NutritionHero({
   return (
     <PhysioDrillDownHero
       confidencePct={confidencePctForDay(day)}
+      dataDomain="nutrition"
       date={date}
       eyebrow="Nutrition"
       headline={reading.headline}

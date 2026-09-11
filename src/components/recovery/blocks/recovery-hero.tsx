@@ -92,6 +92,7 @@ export function RecoveryHero({
     <PhysioDrillDownHero
       badge={calibrationBadge}
       confidencePct={confidencePct}
+      dataDomain="recovery"
       date={date}
       eyebrow="Récupération"
       footer={recoveryEta ?? undefined}

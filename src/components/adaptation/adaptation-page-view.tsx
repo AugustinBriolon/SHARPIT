@@ -232,6 +232,7 @@ export function AdaptationPageView(props: AdaptationPageViewProps) {
     >
       <PhysioDrillDownHero
         confidencePct={confidencePct}
+        dataDomain="adaptation"
         date={date}
         eyebrow="Adaptation"
         headline={statusLabel}

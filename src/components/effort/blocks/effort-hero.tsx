@@ -103,6 +103,7 @@ export function EffortHero({
   return (
     <PhysioDrillDownHero
       confidencePct={confidencePct}
+      dataDomain="effort"
       date={date}
       eyebrow="Charge"
       headline={strainStatusLabel}
