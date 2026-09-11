@@ -7,7 +7,7 @@ import type { usePlanningViewData } from '@/components/planning/view/use-plannin
 import {
   planningDayKey,
   resolveSelectedPlanningDayId,
-} from '@/lib/planning/planning-day-selection';
+} from '@/lib/plan/planning-day-selection';
 import type { ClientActivity } from '@/lib/query/types';
 
 export function PlanningDaysPanel({

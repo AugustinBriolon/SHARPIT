@@ -3,7 +3,7 @@ import {
   planningDayKey,
   planningDayStripMark,
   resolveSelectedPlanningDayId,
-} from '@/lib/planning/planning-day-selection';
+} from '@/lib/plan/planning-day-selection';
 
 function day(iso: string, planned = 0, activities = 0, completedPlanned = 0) {
   const open = Array.from({ length: planned }, (_, i) => ({

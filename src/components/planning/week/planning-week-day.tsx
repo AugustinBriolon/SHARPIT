@@ -14,7 +14,7 @@ import {
   groupPlannedSessions,
 } from '@/lib/planned-session/brick/brick-sessions';
 import { activityTypeLabels } from '@/lib/format';
-import { planningDayKey } from '@/lib/planning/planning-day-selection';
+import { planningDayKey } from '@/lib/plan/planning-day-selection';
 import type { ClientActivity, ClientPlannedSession } from '@/lib/query/types';
 import { buildCompletedSessionMetrics } from '@/lib/today/rich/completed-session-metrics';
 import { buildPlannedSessionPreview } from '@/lib/today/rich/planned-session-metrics';

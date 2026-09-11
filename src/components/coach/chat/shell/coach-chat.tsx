@@ -1,7 +1,7 @@
 'use client';
 
 import { ArrowDown } from 'lucide-react';
-import { MessageScroller } from '@/components/agents/message';
+import { MessageScroller } from '@/components/coach/kit/message';
 import { coachBeuiCopy } from '@/components/coach/beui/coach-beui-copy';
 import { coachBeuiTheme } from '@/components/coach/beui/coach-beui-theme';
 import { CoachChatScrollerContent } from '@/components/coach/chat/transcript/coach-chat-scroller-content';

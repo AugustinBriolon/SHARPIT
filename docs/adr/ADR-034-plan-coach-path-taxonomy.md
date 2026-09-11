@@ -19,29 +19,30 @@ Adopter les définitions suivantes comme **noms figés** (carte vivante : [`docs
 
 ### Plan cluster
 
-| Nom actuel               | Intention                                            | Canonique cible (lecture)                          |
-| ------------------------ | ---------------------------------------------------- | -------------------------------------------------- |
-| `components/plan/`       | Hub destination / semaine / trajectoire (Shell V1.1) | **plan-hub** (garder le dossier `plan/`)           |
-| `components/planning/`   | UI calendrier séances, dialogs, scénarios            | **plan-week-ui** (garder `planning/`)              |
-| `lib/planned-session/`   | Domaine données / prescriptions / linking séances    | **planned-session**                                |
-| `lib/plan-gate/`         | Safety & coherence gate programme                    | **plan-gate**                                      |
-| `lib/plan/`              | Orchestration hub Plan (non-gate)                    | **plan** (hub lib)                                 |
-| `lib/planning/`          | Helpers UI jour (mince)                              | fusionner vers `plan/` ou `planned-session/` en P1 |
-| `lib/coach/plan/`        | Générateur / adaptateur programme coach              | **coach-plan-gen** (path reste `coach/plan/`)      |
-| Route `/plan/adaptation` | Lecture Twin Adaptation                              | **≠** `PlanAdapter` (`coach/adapt`)                |
+| Nom actuel               | Intention                                            | Canonique cible (lecture)                                     |
+| ------------------------ | ---------------------------------------------------- | ------------------------------------------------------------- |
+| `components/plan/`       | Hub destination / semaine / trajectoire (Shell V1.1) | **plan-hub** (garder le dossier `plan/`)                      |
+| `components/planning/`   | UI calendrier séances, dialogs, scénarios            | **plan-week-ui** (garder `planning/`)                         |
+| `lib/planned-session/`   | Domaine données / prescriptions / linking séances    | **planned-session**                                           |
+| `lib/plan-gate/`         | Safety & coherence gate programme                    | **plan-gate**                                                 |
+| `lib/plan/`              | Orchestration hub Plan (non-gate)                    | **plan** (hub lib)                                            |
+| `lib/planning/`          | Helpers UI jour (mince)                              | **fait P2** → `lib/plan/planning-day-selection` (+ re-export) |
+| `lib/coach/plan/`        | Générateur / adaptateur programme coach              | **coach-plan-gen** (path reste `coach/plan/`)                 |
+| Route `/plan/adaptation` | Lecture Twin Adaptation                              | **≠** `PlanAdapter` (`coach/adapt`)                           |
 
 ### Coach cluster
 
-| Nom actuel                 | Intention                                 | Canonique cible (lecture)                            |
-| -------------------------- | ----------------------------------------- | ---------------------------------------------------- |
-| `components/coach/`        | Chat + tools UI produit                   | **coach**                                            |
-| `components/agents/`       | Kit primitives chat **montées** par coach | **coach-kit** (path reste `agents/` jusqu’à P2 slim) |
-| `components/coaching/`     | Widgets partagés (ex. `coach-menu`)       | **fait P1** → `components/planning/coach-menu.tsx`   |
-| `components/coach-memory/` | UI mémoire coach                          | **coach-memory**                                     |
-| `lib/coach/`               | Chat, context, tools, plan gen            | **coach**                                            |
-| `lib/coach-memory/`        | Persistance / lecture mémoire             | **coach-memory**                                     |
-| `lib/decision-memory/`     | Aggregate décisions coaching (ADR-006)    | **decision-memory**                                  |
-| `core/decision/`           | Engine décision Core gelé                 | **core-decision** — ne pas étendre                   |
+| Nom actuel                 | Intention                                 | Canonique cible (lecture)                          |
+| -------------------------- | ----------------------------------------- | -------------------------------------------------- |
+| `components/coach/`        | Chat + tools UI produit                   | **coach**                                          |
+| `components/coach/kit/`    | Kit primitives chat **montées** par coach | **coach-kit** (**fait P2**)                        |
+| `components/agents/`       | Re-exports temporaires → `coach/kit`      | ne plus ajouter de code ici                        |
+| `components/coaching/`     | Widgets partagés (ex. `coach-menu`)       | **fait P1** → `components/planning/coach-menu.tsx` |
+| `components/coach-memory/` | UI mémoire coach                          | **coach-memory**                                   |
+| `lib/coach/`               | Chat, context, tools, plan gen            | **coach**                                          |
+| `lib/coach-memory/`        | Persistance / lecture mémoire             | **coach-memory**                                   |
+| `lib/decision-memory/`     | Aggregate décisions coaching (ADR-006)    | **decision-memory**                                |
+| `core/decision/`           | Engine décision Core gelé                 | **core-decision** — ne pas étendre                 |
 
 ### Briefing
 
@@ -82,6 +83,7 @@ Adopter les définitions suivantes comme **noms figés** (carte vivante : [`docs
 
 ## Rollout
 
-1. INTENT_MAP + ce ADR (P0, cette PR).
+1. INTENT_MAP + ce ADR (P0).
 2. Purge dead `agents/` + UI briefing (P0).
-3. Renames / fusions mécaniques en P1 uniquement avec re-exports.
+3. Renames / fusions mécaniques en P1 avec re-exports.
+4. Slim kit → `components/coach/kit` + nest `lib/training` + flat lib moves (P2).

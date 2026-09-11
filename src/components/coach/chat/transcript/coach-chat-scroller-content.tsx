@@ -1,6 +1,6 @@
 'use client';
 
-import { Message } from '@/components/agents/message';
+import { Message } from '@/components/coach/kit/message';
 import { coachBeuiCopy } from '@/components/coach/beui/coach-beui-copy';
 import { CoachBeuiLoadingStatus } from '@/components/coach/beui/coach-beui-loading';
 import { showSubmittedPlaceholder } from '@/components/coach/beui/coach-message-mapper';
