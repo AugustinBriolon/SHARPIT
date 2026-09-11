@@ -163,7 +163,8 @@ export function PlanTrajectoryStrip({
         <div className="space-y-1 px-0.5">
           <h2 className="text-section-title">Comment tu te portes</h2>
           <p className="text-muted-foreground text-xs leading-snug">
-            Adaptation du bloc et charge du jour. Le cadre de la semaine.
+            Adaptation = réponse du corps au bloc (lecture Twin). Charge du jour. Pas un ajustement
+            de planning.
           </p>
         </div>
       )}

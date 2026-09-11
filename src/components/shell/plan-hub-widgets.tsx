@@ -93,7 +93,12 @@ export function PlanHubWidgets() {
       <DestinationSlot model={model} />
       <DecisionSlot decision={decision} model={model} />
       <ThreadSlot decision={decision} model={model} />
-      <PlanActions calibration={model.calibration} />
+      <PlanActions
+        calibration={model.calibration}
+        hasActiveMacro={Boolean(model.macroRail)}
+        hasDatedGoal={Boolean(model.goal?.targetDate)}
+        hasRemainingSessions={(model.week?.remaining.length ?? 0) > 0}
+      />
     </div>
   );
 }

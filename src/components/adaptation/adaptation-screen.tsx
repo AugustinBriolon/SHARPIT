@@ -11,11 +11,20 @@ import {
   useAdaptationViewModel,
 } from '@/hooks/use-presentation-view-model';
 import { adaptationLoadingShell } from '@/lib/presentation/drill-down-loading-shells';
+import { TWIN_ADAPTATION_READING } from '@/lib/plan/hub/plan-coach-offer';
 
 function adaptationEmptyDescription(viewModel: ReturnType<typeof useAdaptationViewModel>['data']) {
   return (
     viewModel?.emptyState?.description ??
     'Les dimensions d’adaptation ne sont pas encore assez complètes pour un indice fiable.'
+  );
+}
+
+function AdaptationReadingBlurb() {
+  return (
+    <p className="text-muted-foreground text-sm leading-snug text-pretty">
+      {TWIN_ADAPTATION_READING.blurb}
+    </p>
   );
 }
 
@@ -26,7 +35,8 @@ function AdaptationEmptyView({
 }) {
   return (
     <div className="space-y-4">
-      <MobileDrillDownHeader title="Adaptation" />
+      <MobileDrillDownHeader title={TWIN_ADAPTATION_READING.title} />
+      <AdaptationReadingBlurb />
       <InkEmptyState
         description={adaptationEmptyDescription(viewModel)}
         icon={TrendingUp}
@@ -53,7 +63,8 @@ export function AdaptationScreen() {
 
   return (
     <div className="space-y-4">
-      <MobileDrillDownHeader title="Adaptation" />
+      <MobileDrillDownHeader title={TWIN_ADAPTATION_READING.title} />
+      <AdaptationReadingBlurb />
       <AdaptationPageView
         date={date}
         isToday={isToday}
