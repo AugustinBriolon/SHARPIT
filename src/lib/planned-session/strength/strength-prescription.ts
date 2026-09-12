@@ -1,6 +1,13 @@
 import { z } from 'zod';
 import { isSet } from '@/lib/util/value';
 import { resolveGarminExerciseMatch } from '@/lib/integrations/garmin/garmin-exercise-map';
+import {
+  movementIntentSchema,
+  movementPatternSchema,
+  type MovementIntent,
+  type MovementPattern,
+} from '@/lib/exercises/movement-taxonomy';
+import { resolveExerciseMedia } from '@/lib/exercises/resolve';
 
 /** Resolved Garmin Connect identity persisted with the prescription set. */
 export const strengthPrescriptionGarminSchema = z.object({
@@ -18,6 +25,13 @@ export type StrengthRestMode = z.infer<typeof strengthRestModeSchema>;
 export const strengthPrescriptionSetSchema = z.object({
   exercise: z.string().trim().min(1).max(120),
   exerciseCatalogId: z.string().trim().min(1).max(32).optional().nullable(),
+  /**
+   * What this movement does, as declared by whoever prescribed it. Absent on
+   * rows written before the coach was asked to declare it — consumers fall back
+   * to the curated taxonomy, never to the media catalog's body group.
+   */
+  intent: movementIntentSchema.optional().nullable(),
+  pattern: movementPatternSchema.optional().nullable(),
   sets: z.coerce.number().int().min(1).max(50),
   reps: z.coerce.number().int().min(0).max(500),
   durationSec: z.coerce.number().int().min(0).max(3600).optional().nullable(),
@@ -56,6 +70,14 @@ export const coachStrengthSetSchema = z.object({
     .max(120)
     .describe(
       'Nom FR de l’exercice. Préférer un libellé proche du catalogue Garmin Connect (ex. Pompe, Étirement 90/90, Clamshell avec élastique).',
+    ),
+  intent: movementIntentSchema.describe(
+    'Ce que l’exercice entraîne. MOBILITY = étirement, auto-massage, mobilité (aucune mise en charge). CORE = gainage. STRENGTH = renforcement contre résistance. PLYOMETRIC = pliométrie. CONDITIONING = cardio.',
+  ),
+  pattern: movementPatternSchema
+    .nullable()
+    .describe(
+      'Famille biomécanique sollicitée. null OBLIGATOIREMENT si intent=MOBILITY ou CONDITIONING. C’est ce champ qui permet de vérifier qu’un exercice ne charge pas une zone sensible — ne le devine pas, choisis le motif réellement sollicité.',
     ),
   sets: z.number().int().min(1).max(20).describe('Nombre de séries.'),
   reps: z
@@ -178,7 +200,16 @@ export function strengthSetWatchCompat(set: Pick<StrengthPrescriptionSet, 'garmi
 }
 
 /** Normalize coach/LLM payload → persisted StrengthPrescription (+ Garmin refs). */
-function restModeFromCoachSet(set: CoachStrengthPrescription['sets'][number]): StrengthRestMode {
+/**
+ * A set on its way to persistence: freshly declared by the coach, or re-read
+ * from a row written before the declaration existed.
+ */
+type NormalizableSet = Omit<CoachStrengthPrescription['sets'][number], 'intent' | 'pattern'> & {
+  intent?: MovementIntent | null;
+  pattern?: MovementPattern | null;
+};
+
+function restModeFromCoachSet(set: NormalizableSet): StrengthRestMode {
   if (set.restMode === 'lap') {
     return 'lap';
   }
@@ -188,24 +219,33 @@ function restModeFromCoachSet(set: CoachStrengthPrescription['sets'][number]): S
   return 'lap';
 }
 
-function coachSetToNormalized(set: CoachStrengthPrescription['sets'][number], order: number) {
-  const exercise = set.exercise?.trim();
-  if (!exercise) {
-    return null;
-  }
-  const restMode = restModeFromCoachSet(set);
+function coachSetDetails(set: NormalizableSet, restMode: StrengthRestMode) {
   return {
-    exercise,
-    exerciseCatalogId: null,
-    sets: set.sets,
-    reps: set.reps,
+    intent: set.intent ?? null,
+    pattern: set.pattern ?? null,
     durationSec: set.durationSec ?? null,
     weightKg: set.weightKg ?? null,
     restMode,
     restSec: restMode === 'time' ? (set.restSec ?? 90) : null,
     notes: set.notes ?? null,
+  };
+}
+
+function coachSetToNormalized(set: NormalizableSet, order: number) {
+  const exercise = set.exercise?.trim();
+  if (!exercise) {
+    return null;
+  }
+  return {
+    exercise,
+    // Resolved at write time: the persisted id is the only stable handle later
+    // consumers have, and matching a French label gets harder, never easier.
+    exerciseCatalogId: resolveExerciseMedia(exercise)?.catalogId ?? null,
+    sets: set.sets,
+    reps: set.reps,
     order,
     garmin: null,
+    ...coachSetDetails(set, restModeFromCoachSet(set)),
   };
 }
 

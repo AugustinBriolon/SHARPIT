@@ -74,13 +74,20 @@ describe('exerciseZoneConflict', () => {
   ];
 
   it('flags an exercise loading the protected group', () => {
-    expect(exerciseZoneConflict('upper legs', zones)?.label).toBe('Nerf sciatique');
+    expect(exerciseZoneConflict({ groups: ['upper legs'], loads: true }, zones)?.label).toBe(
+      'Nerf sciatique',
+    );
   });
 
   it('lets everything else through', () => {
-    expect(exerciseZoneConflict('shoulders', zones)).toBeNull();
+    expect(exerciseZoneConflict({ groups: ['shoulders'], loads: true }, zones)).toBeNull();
     expect(exerciseZoneConflict(null, zones)).toBeNull();
-    expect(exerciseZoneConflict('upper legs', [])).toBeNull();
+    expect(exerciseZoneConflict({ groups: ['upper legs'], loads: true }, [])).toBeNull();
+  });
+
+  it('never flags mobility work on the zone — that is the prehab, not the injury', () => {
+    expect(exerciseZoneConflict({ groups: ['upper legs'], loads: false }, zones)).toBeNull();
+    expect(exerciseZoneConflict({ groups: [], loads: true }, zones)).toBeNull();
   });
 });
 

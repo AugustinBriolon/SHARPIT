@@ -41,8 +41,22 @@ describe('normalizeCoachStrengthPrescription', () => {
   it('assigns version and order from coach payload', () => {
     const normalized = normalizeCoachStrengthPrescription({
       sets: [
-        { exercise: 'Pompe', sets: 3, reps: 12, restSec: 60 },
-        { exercise: 'Planche', sets: 3, reps: 0, durationSec: 45 },
+        {
+          exercise: 'Pompe',
+          intent: 'STRENGTH',
+          pattern: 'HORIZONTAL_PUSH',
+          sets: 3,
+          reps: 12,
+          restSec: 60,
+        },
+        {
+          exercise: 'Planche',
+          intent: 'CORE',
+          pattern: 'CORE_ANTI_EXTENSION',
+          sets: 3,
+          reps: 0,
+          durationSec: 45,
+        },
       ],
     });
     expect(normalized).toMatchObject({
@@ -93,7 +107,17 @@ describe('resolveStrengthFieldsForPersist', () => {
       resolveStrengthFieldsForPersist({
         type: 'RUN',
         description: 'Z2',
-        strengthPrescription: { sets: [{ exercise: 'Pompe', sets: 3, reps: 10 }] },
+        strengthPrescription: {
+          sets: [
+            {
+              exercise: 'Pompe',
+              intent: 'STRENGTH',
+              pattern: 'HORIZONTAL_PUSH',
+              sets: 3,
+              reps: 10,
+            },
+          ],
+        },
       }),
     ).toEqual({ strengthPrescription: null, description: 'Z2' });
   });
@@ -103,7 +127,16 @@ describe('resolveStrengthFieldsForPersist', () => {
       type: 'STRENGTH',
       description: null,
       strengthPrescription: {
-        sets: [{ exercise: 'Squat', sets: 4, reps: 6, weightKg: 80 }],
+        sets: [
+          {
+            exercise: 'Squat',
+            intent: 'STRENGTH',
+            pattern: 'SQUAT',
+            sets: 4,
+            reps: 6,
+            weightKg: 80,
+          },
+        ],
       },
     });
     expect(result.strengthPrescription?.sets).toHaveLength(1);
@@ -116,8 +149,21 @@ describe('resolveStrengthFieldsForPersist', () => {
       description: 'Focus chaîne postérieure. 1. Goblet Squat : 3x12 2. Romanian Deadlift : 3x10',
       strengthPrescription: {
         sets: [
-          { exercise: 'Clamshell avec élastique', sets: 3, reps: 15 },
-          { exercise: 'Squat avec haltère', sets: 3, reps: 10, weightKg: 12 },
+          {
+            exercise: 'Clamshell avec élastique',
+            intent: 'STRENGTH',
+            pattern: 'HIP_ABDUCTION',
+            sets: 3,
+            reps: 15,
+          },
+          {
+            exercise: 'Squat avec haltère',
+            intent: 'STRENGTH',
+            pattern: 'SQUAT',
+            sets: 3,
+            reps: 10,
+            weightKg: 12,
+          },
         ],
       },
     });

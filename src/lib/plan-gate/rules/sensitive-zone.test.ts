@@ -3,13 +3,28 @@ import { sensitiveZoneRule } from './sensitive-zone';
 import { baseContext, baseProposal, physicalHealthData } from '../test-fixtures';
 import type { GateContext } from '../types';
 
-/** Real catalog entries, so the test proves the mapping and not a stubbed resolver. */
-const UPPER_LEGS_EXERCISE = { exercise: 'Squat', exerciseCatalogId: '1512', sets: 3, reps: 12 };
-const SHOULDER_EXERCISE = {
-  exercise: 'Élévation latérale',
-  exerciseCatalogId: '0977',
+/** The coach declares what each movement does; the rule judges the declaration. */
+const UPPER_LEGS_EXERCISE = {
+  exercise: 'Squat',
+  intent: 'STRENGTH',
+  pattern: 'SQUAT',
   sets: 3,
   reps: 12,
+};
+const SHOULDER_EXERCISE = {
+  exercise: 'Élévation latérale',
+  intent: 'STRENGTH',
+  pattern: 'SHOULDER_ABDUCTION',
+  sets: 3,
+  reps: 12,
+};
+/** Prehab on the injured zone — mobility, not load. */
+const UPPER_LEGS_STRETCH = {
+  exercise: 'Étirement ischio-jambiers',
+  intent: 'MOBILITY',
+  pattern: null,
+  sets: 2,
+  reps: 0,
 };
 
 type Condition = NonNullable<GateContext['physicalHealth']>['conditions'][number];
@@ -59,6 +74,12 @@ describe('sensitiveZoneRule', () => {
     expect(findings[0]?.severity).toBe('WARNING');
     expect(findings[0]?.rationale).toContain('Nerf sciatique');
     expect(findings[0]?.rationale).toContain('Squat');
+  });
+
+  it('never flags mobility work on the injured zone — that is the treatment', () => {
+    expect(
+      sensitiveZoneRule(contextWith([condition()]), strengthProposal([UPPER_LEGS_STRETCH])),
+    ).toEqual([]);
   });
 
   it('leaves an exercise on another body group alone', () => {

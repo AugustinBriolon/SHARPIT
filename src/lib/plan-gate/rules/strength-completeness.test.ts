@@ -11,6 +11,8 @@ function strengthProposal(exerciseCount: number, durationMin = 45) {
     strengthPrescription: {
       sets: Array.from({ length: exerciseCount }, (_, index) => ({
         exercise: `Exercice ${index + 1}`,
+        intent: 'STRENGTH' as const,
+        pattern: 'SQUAT' as const,
         sets: 3,
         reps: 12,
       })),

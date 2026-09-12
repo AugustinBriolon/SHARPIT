@@ -211,5 +211,6 @@ export function formatStrengthSessionRules(): string {
     "- Le nombre d'exercices suit durationMin (~1 exercice par 4 min) : 30 min ≈ 6-10, 45 min ≈ 9-13, 60 min ≈ 13-17. Une séance de 3 à 5 exercices au-delà de 20 min est un échec.",
     '- Prévention articulaire : couvre toute la chaîne autour de la zone sensible (agonistes, antagonistes, stabilisateurs), avec du travail unilatéral et au moins un exercice excentrique.',
     '- Libellés FR proches du catalogue Garmin Connect — vérifie avec searchWatchExercises quand tu hésites, sinon la montre affichera un nom générique.',
+    "- Pour CHAQUE exercice, déclare intent et pattern : c'est ce qui permet de vérifier qu'un étirement n'est pas compté comme une mise en charge, et qu'aucune zone sensible n'est chargée. Un étirement ou un auto-massage est intent=MOBILITY, pattern=null.",
   ].join('\n');
 }

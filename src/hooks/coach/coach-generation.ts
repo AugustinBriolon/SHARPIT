@@ -6,6 +6,8 @@ import { toast } from '@/components/ui/toast';
 import type { ActivityType, SessionIntensity } from '@prisma/client';
 import type { CoachEndurancePrescription } from '@/lib/planned-session/endurance/coach-endurance-prescription';
 import type { GateResult } from '@/lib/plan-gate/types';
+// The shape the coach actually returns — mirroring it by hand let it drift.
+import type { CoachStrengthPrescription } from '@/lib/planned-session/strength/strength-prescription';
 
 export interface GeneratedSession {
   dayOffset: number;
@@ -15,17 +17,7 @@ export interface GeneratedSession {
   intensity: SessionIntensity;
   title: string;
   description: string;
-  strengthPrescription?: {
-    sets: Array<{
-      exercise: string;
-      sets: number;
-      reps: number;
-      durationSec?: number | null;
-      weightKg?: number | null;
-      restSec?: number | null;
-      notes?: string | null;
-    }>;
-  } | null;
+  strengthPrescription?: CoachStrengthPrescription | null;
   endurancePrescription?: CoachEndurancePrescription | null;
   durationMin: number;
   load: number;
@@ -131,17 +123,7 @@ export interface AdaptChange {
   intensity: SessionIntensity | null;
   title: string | null;
   description: string | null;
-  strengthPrescription?: {
-    sets: Array<{
-      exercise: string;
-      sets: number;
-      reps: number;
-      durationSec?: number | null;
-      weightKg?: number | null;
-      restSec?: number | null;
-      notes?: string | null;
-    }>;
-  } | null;
+  strengthPrescription?: CoachStrengthPrescription | null;
   endurancePrescription?: CoachEndurancePrescription | null;
   durationMin: number | null;
   load: number | null;

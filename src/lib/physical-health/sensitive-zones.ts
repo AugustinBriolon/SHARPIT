@@ -136,17 +136,22 @@ export function sensitiveZonesFrom(
   });
 }
 
-/** The zone an exercise would load, when it is one the athlete is protecting. */
+/**
+ * The zone an exercise would load, when it is one the athlete is protecting.
+ *
+ * Takes a load profile rather than a body group: mobility work on a sensitive
+ * zone is prehab, not aggravation, and must never be flagged as loading it.
+ */
 export function exerciseZoneConflict(
-  bodyPart: string | null | undefined,
+  profile: { groups: readonly string[]; loads: boolean } | null | undefined,
   zones: readonly SensitiveZone[],
 ): SensitiveZone | null {
-  if (!bodyPart) {
+  if (!profile?.loads || profile.groups.length === 0) {
     return null;
   }
-  const normalized = normalizeRegion(bodyPart);
+  const loaded = new Set(profile.groups.map(normalizeRegion));
   return (
-    zones.find((zone) => zone.groups.some((group) => normalizeRegion(group) === normalized)) ?? null
+    zones.find((zone) => zone.groups.some((group) => loaded.has(normalizeRegion(group)))) ?? null
   );
 }
 

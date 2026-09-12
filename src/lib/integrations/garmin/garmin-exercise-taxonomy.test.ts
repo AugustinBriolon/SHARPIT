@@ -57,7 +57,16 @@ describe('resolveGarminExerciseMatch + prescription enrich', () => {
 
   it('attaches garmin refs when normalizing coach prescription', () => {
     const normalized = normalizeCoachStrengthPrescription({
-      sets: [{ exercise: 'Étirement 90/90', sets: 2, reps: 0, durationSec: 45 }],
+      sets: [
+        {
+          exercise: 'Étirement 90/90',
+          intent: 'MOBILITY',
+          pattern: null,
+          sets: 2,
+          reps: 0,
+          durationSec: 45,
+        },
+      ],
     });
     expect(normalized?.sets[0].garmin).toMatchObject({
       category: 'WARM_UP',

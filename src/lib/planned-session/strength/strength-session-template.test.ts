@@ -55,10 +55,34 @@ describe('auditStrengthPrescription', () => {
     durationMin: 45,
     prescription: {
       sets: [
-        { exercise: 'Massage piriforme', sets: 1, reps: 1 },
-        { exercise: 'Nerve flossing', sets: 3, reps: 15 },
-        { exercise: 'Pont fessier', sets: 3, reps: 15 },
-        { exercise: 'Clamshell', sets: 3, reps: 15 },
+        {
+          exercise: 'Massage piriforme',
+          intent: 'MOBILITY' as const,
+          pattern: null,
+          sets: 1,
+          reps: 1,
+        },
+        {
+          exercise: 'Nerve flossing',
+          intent: 'MOBILITY' as const,
+          pattern: null,
+          sets: 3,
+          reps: 15,
+        },
+        {
+          exercise: 'Pont fessier',
+          intent: 'STRENGTH' as const,
+          pattern: 'HIP_EXTENSION' as const,
+          sets: 3,
+          reps: 15,
+        },
+        {
+          exercise: 'Clamshell',
+          intent: 'STRENGTH' as const,
+          pattern: 'HIP_ABDUCTION' as const,
+          sets: 3,
+          reps: 15,
+        },
       ],
     },
   };
@@ -72,6 +96,8 @@ describe('auditStrengthPrescription', () => {
   it('accepts a prescription that fills the planned duration', () => {
     const sets = Array.from({ length: 13 }, (_, index) => ({
       exercise: `Exercice ${index + 1}`,
+      intent: 'STRENGTH' as const,
+      pattern: 'SQUAT' as const,
       sets: 3,
       reps: 12,
     }));
@@ -82,6 +108,8 @@ describe('auditStrengthPrescription', () => {
   it('flags a prescription far longer than the slot', () => {
     const sets = Array.from({ length: 14 }, (_, index) => ({
       exercise: `Exercice ${index + 1}`,
+      intent: 'STRENGTH' as const,
+      pattern: 'SQUAT' as const,
       sets: 4,
       reps: 15,
     }));

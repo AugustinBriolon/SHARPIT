@@ -1,4 +1,7 @@
-import { resolveStrengthSetMedia } from '@/lib/exercises/resolve';
+import {
+  exerciseLoadProfile,
+  type ProfilableSet,
+} from '@/lib/physical-health/exercise-load-profile';
 import {
   exerciseZoneConflict,
   sensitiveZonesFrom,
@@ -14,13 +17,10 @@ function flaggedExercises(
 ): FlaggedExercise[] {
   const sets = proposal.strengthPrescription?.sets ?? [];
   return sets.flatMap((set) => {
-    // The model's own prescription carries no catalog id; a persisted one does.
-    const catalogId = (set as { exerciseCatalogId?: string | null }).exerciseCatalogId ?? null;
-    const media = resolveStrengthSetMedia({
-      exercise: set.exercise,
-      exerciseCatalogId: catalogId,
-    });
-    const zone = exerciseZoneConflict(media?.bodyPart, zones);
+    // A freshly generated prescription carries the coach's declaration; a
+    // persisted one may also carry a catalog id and watch refs.
+    const profile = exerciseLoadProfile(set as ProfilableSet);
+    const zone = exerciseZoneConflict(profile, zones);
     return zone ? [{ exercise: set.exercise, zone }] : [];
   });
 }

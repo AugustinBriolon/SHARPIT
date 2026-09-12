@@ -11,8 +11,8 @@
  * Pure: no I/O, no React.
  */
 
-import { resolveStrengthSetMedia } from '@/lib/exercises/resolve';
 import { parseStrengthPrescription } from '@/lib/planned-session/strength/strength-prescription';
+import { exerciseLoadProfile } from '@/lib/physical-health/exercise-load-profile';
 import { exerciseZoneConflict, type SensitiveZone } from '@/lib/physical-health/sensitive-zones';
 
 export type AuditableSession = {
@@ -53,8 +53,7 @@ export function sessionZoneFlags(
     return [];
   }
   return prescription.sets.flatMap((set) => {
-    const media = resolveStrengthSetMedia(set);
-    const zone = exerciseZoneConflict(media?.bodyPart, zones);
+    const zone = exerciseZoneConflict(exerciseLoadProfile(set), zones);
     return zone ? [{ exercise: set.exercise, zone }] : [];
   });
 }

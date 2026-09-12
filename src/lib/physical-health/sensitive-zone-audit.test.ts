@@ -9,27 +9,25 @@ import type { SensitiveZone } from './sensitive-zones';
 
 const NOW = new Date('2026-09-13T09:00:00.000Z');
 
-/** Real catalog ids, so the audit proves the mapping rather than a stub. */
-const UPPER_LEGS_ID = '1512';
-const SHOULDERS_ID = '0977';
-
 const ZONES: SensitiveZone[] = [
   { label: 'Nerf sciatique', region: 'Ischio', side: 'LEFT', severity: 3, groups: ['upper legs'] },
 ];
 
-function prescription(catalogId: string) {
-  return {
-    version: 1,
-    sets: [
-      {
-        exercise: 'Squat gobelet',
-        exerciseCatalogId: catalogId,
-        sets: 3,
-        reps: 12,
-        order: 0,
-      },
-    ],
-  };
+/** What the coach declared when it prescribed the movement. */
+const LOADS_ZONE = { exercise: 'Squat gobelet', intent: 'STRENGTH', pattern: 'SQUAT' };
+const LOADS_ELSEWHERE = {
+  exercise: 'Élévation latérale',
+  intent: 'STRENGTH',
+  pattern: 'SHOULDER_ABDUCTION',
+};
+const MOBILISES_ZONE = {
+  exercise: 'Étirement ischio-jambiers',
+  intent: 'MOBILITY',
+  pattern: null,
+};
+
+function prescription(movement: Record<string, unknown>) {
+  return { version: 1, sets: [{ ...movement, sets: 3, reps: 12, order: 0 }] };
 }
 
 function session(overrides: Record<string, unknown> = {}) {
@@ -38,7 +36,7 @@ function session(overrides: Record<string, unknown> = {}) {
     date: '2026-09-15T08:00:00.000Z',
     title: 'Renfo bas du corps',
     completed: false,
-    strengthPrescription: prescription(UPPER_LEGS_ID),
+    strengthPrescription: prescription(LOADS_ZONE),
     ...overrides,
   };
 }
@@ -54,7 +52,13 @@ describe('sessionZoneFlags', () => {
 
   it('leaves another body group alone', () => {
     expect(
-      sessionZoneFlags(session({ strengthPrescription: prescription(SHOULDERS_ID) }), ZONES),
+      sessionZoneFlags(session({ strengthPrescription: prescription(LOADS_ELSEWHERE) }), ZONES),
+    ).toEqual([]);
+  });
+
+  it('never flags mobility work on the zone — the athlete was told to do it', () => {
+    expect(
+      sessionZoneFlags(session({ strengthPrescription: prescription(MOBILISES_ZONE) }), ZONES),
     ).toEqual([]);
   });
 
