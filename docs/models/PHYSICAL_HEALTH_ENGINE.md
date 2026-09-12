@@ -1,6 +1,6 @@
 # SHARPIT — Physical Health Engine (Phase 1)
 
-> **Status:** Phase 1 — domain model and persistence only. No inference engine. No UI.
+> **Status:** Phase 1 (domain model and persistence) shipped. No inference engine — condition state is still declared, never inferred. Athlete surfaces and training guards now exist on top of it, see [ADR-037](../adr/ADR-037-injury-declaration-changes-training-retroactively.md).
 > **Code:** `src/core/physical-health/`, `src/lib/physical-health/`
 > **Prisma:** `Condition`, `ConditionEpisode`, `ConditionObservation`, `FunctionalCapacity`, `ConditionKnowledge`
 > **Domain context:** [`docs/domain/DOMAIN.md`](../domain/DOMAIN.md)
@@ -22,6 +22,8 @@ It becomes a core physiological system alongside Recovery, Fatigue, and Adaptati
 | 2     | Inference engine, Digital Twin / Snapshot / Coach integration |
 | 3     | Product surfaces (Biology hub first)                          |
 | 4     | Personalized hypotheses (triggers, recovery duration)         |
+
+**Delivered ahead of those phases, without an inference engine** ([ADR-037](../adr/ADR-037-injury-declaration-changes-training-retroactively.md)): declaration and re-assessment surfaces, a deterministic follow-up cadence, `functionalImpact` collected from the athlete, sensitive zones named in the coach prompt, a plan-gate rule on prescribed exercises, and a read-time audit of already-planned sessions. None of it infers condition state — it maps and checks what the athlete declared.
 
 ---
 

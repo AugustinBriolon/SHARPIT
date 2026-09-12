@@ -40,6 +40,7 @@
 | [ADR-034](./ADR-034-plan-coach-path-taxonomy.md)                               | Taxonomie des chemins Plan / Coach (noms figés, pas de mega-rename)               | Accepted |
 | [ADR-035](./ADR-035-nutrition-coach-reading-not-an-engine.md)                  | Nutrition day analysis is a coach reading, not a Nutrition Engine                 | Accepted |
 | [ADR-036](./ADR-036-analyses-run-in-the-background-and-announce-themselves.md) | Coach analyses run in the background and announce themselves                      | Accepted |
+| [ADR-037](./ADR-037-injury-declaration-changes-training-retroactively.md)      | A declared injury changes training, including the plan already written            | Accepted |
 
 **Template:** [ADR-template.md](./ADR-template.md)
 
