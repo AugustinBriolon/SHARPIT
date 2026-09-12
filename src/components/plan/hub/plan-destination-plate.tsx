@@ -1,9 +1,13 @@
+'use client';
+
 import Link from 'next/link';
 import type { PlanPhase } from '@prisma/client';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Target } from 'lucide-react';
 import { InkEmptyState } from '@/components/ui/ink-empty-state';
+import { GoalAdvancementPanel } from '@/components/today/rich/goal-advancement-panel';
+import { useGoalAdvancement } from '@/hooks/use-goal-advancement';
 import type { MacroPhaseRail } from '@/lib/plan/trajectory/plan-macro-rail';
 import type { PlanGoalView } from '@/lib/plan/trajectory/plan-goal';
 import { MOI_OBJECTIFS_PATH } from '@/lib/moi/paths';
@@ -156,7 +160,17 @@ export function PlanDestinationPlate({
         <DestinationGoal goal={goal} />
         {goal.progress !== null ? <GoalProgressRail progress={goal.progress} /> : null}
         {rail ? <DestinationRail rail={rail} /> : null}
+        <DestinationAdvancementNote />
       </div>
     </section>
   );
+}
+
+/** Quiet Suivi lab-note — same builder as Today; no fourth coach CTA. */
+function DestinationAdvancementNote() {
+  const { view, pending } = useGoalAdvancement();
+  if (pending || !view) {
+    return null;
+  }
+  return <GoalAdvancementPanel density="note" view={view} />;
 }
