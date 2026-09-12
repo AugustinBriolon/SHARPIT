@@ -21,11 +21,14 @@ import {
 } from '@/hooks/use-coach';
 import { CoachGenerationProgressPanel } from '@/components/coach/plan/generation-progress';
 import { usePlannedSessions, usePlannedSessionMutations, useTrainingPlan } from '@/hooks/use-data';
+import { useGoals } from '@/hooks/use-goals';
 import type { GateSessionResult } from '@/lib/plan-gate/types';
 import { useOfflineGuard } from '@/hooks/use-offline-guard';
 import { warmCoachContext } from '@/lib/coach/warm-coach-context';
 import { AdaptChangeRow } from '@/components/coach/plan/adapt-change-row';
 import { buildAdaptBatchOps } from '@/components/coach/plan/plan-adapter-apply';
+import { PlanAdaptAppliedPanel } from '@/components/plan/adapt-applied-panel';
+import { recordAdaptAppliedAck, type AdaptAppliedAck } from '@/lib/plan/adapt-applied-ack';
 import { Check } from 'lucide-react';
 
 /** REMOVE changes bypass the Gate (see coach/adapt/route.ts) — only ADD/MODIFY changes have a gate result. */
@@ -198,6 +201,7 @@ export function PlanAdapter({
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [applyError, setApplyError] = useState<string | null>(null);
   const [applied, setApplied] = useState(false);
+  const [confirmedAck, setConfirmedAck] = useState<AdaptAppliedAck | null>(null);
 
   useEffect(() => {
     warmCoachContext({ includeScenario: true });
@@ -207,9 +211,18 @@ export function PlanAdapter({
   const adapt = useAdaptPlan(setProgress);
   const plannedQuery = usePlannedSessions();
   const planQuery = useTrainingPlan();
+  const goalsQuery = useGoals();
   const { applyBatch } = usePlannedSessionMutations();
   const result = adapt.data;
   const defaultGoalId = planQuery.data?.goalId ?? null;
+
+  const goalLabel = useMemo(() => {
+    const goalId = planQuery.data?.goalId;
+    if (!goalId) {
+      return null;
+    }
+    return goalsQuery.data?.find((goal) => goal.id === goalId)?.title ?? null;
+  }, [goalsQuery.data, planQuery.data?.goalId]);
 
   const sessionsById = useMemo(() => {
     const map = new Map<string, ClientPlannedSession>();
@@ -229,6 +242,7 @@ export function PlanAdapter({
     }
     setApplyError(null);
     setApplied(false);
+    setConfirmedAck(null);
     setProgress(null);
     const res = await adapt.mutateAsync({
       days: 14,
@@ -268,16 +282,50 @@ export function PlanAdapter({
 
     setApplied(true);
     applyBatch.mutate(ops, {
+      onSuccess: () => {
+        setConfirmedAck(
+          recordAdaptAppliedAck({
+            goalLabel,
+            changeCount: ops.length,
+            now: new Date(),
+          }),
+        );
+      },
       onError: (err) => {
         setApplied(false);
         setApplyError(err instanceof Error ? err.message : 'Erreur');
       },
     });
-    setTimeout(onClose, 400);
   }
 
   const isAdapting = adapt.isPending;
   const isApplying = applyBatch.isPending;
+
+  const body = confirmedAck ? (
+    <PlanAdaptAppliedPanel ack={confirmedAck} dismissLabel="Voir le planning" onDismiss={onClose} />
+  ) : (
+    <PlanAdapterEditor
+      adaptError={adapt.error}
+      applied={applied}
+      applyError={applyError}
+      focus={focus}
+      gateResults={gateResults}
+      guardDisabled={guardDisabled}
+      isAdapting={isAdapting}
+      isApplying={isApplying}
+      offline={offline}
+      offlineLabel={offlineLabel}
+      progress={progress}
+      result={result}
+      selected={selected}
+      sessionsById={sessionsById}
+      onAdapt={handleAdapt}
+      onApply={handleApply}
+      onClose={onClose}
+      onFocusChange={setFocus}
+      onToggle={toggle}
+    />
+  );
 
   return (
     <Dialog open onOpenChange={(open) => !open && onClose()}>
@@ -289,46 +337,90 @@ export function PlanAdapter({
           </DialogTitle>
           <DialogDescription>{planAdapterDescription(Boolean(initialFocus))}</DialogDescription>
         </DialogHeader>
-
-        <ProfileContextBanner />
-
-        <Textarea
-          placeholder="Contexte optionnel : fatigue, blessure, contrainte d'agenda…"
-          rows={2}
-          value={focus}
-          onChange={(e) => setFocus(e.target.value)}
-        />
-
-        <Button className="w-fit" disabled={guardDisabled || isAdapting} onClick={handleAdapt}>
-          {renderAdaptButtonContent(isAdapting, offline, offlineLabel, Boolean(result))}
-        </Button>
-
-        {isAdapting && <CoachGenerationProgressPanel itemNoun="ajustement" progress={progress} />}
-
-        {adapt.error && (
-          <p className="bg-destructive/10 text-destructive rounded-md p-3 text-sm">
-            {adapt.error.message}
-          </p>
-        )}
-
-        {result ? (
-          <PlanAdapterResults
-            applied={applied}
-            applyError={applyError}
-            gateResults={gateResults}
-            guardDisabled={guardDisabled}
-            isApplying={isApplying}
-            offline={offline}
-            offlineLabel={offlineLabel}
-            result={result}
-            selected={selected}
-            sessionsById={sessionsById}
-            toggle={toggle}
-            onApply={handleApply}
-            onClose={onClose}
-          />
-        ) : null}
+        {body}
       </DialogContent>
     </Dialog>
+  );
+}
+
+function PlanAdapterEditor({
+  adaptError,
+  applied,
+  applyError,
+  focus,
+  gateResults,
+  guardDisabled,
+  isAdapting,
+  isApplying,
+  offline,
+  offlineLabel,
+  onAdapt,
+  onApply,
+  onClose,
+  onFocusChange,
+  onToggle,
+  progress,
+  result,
+  selected,
+  sessionsById,
+}: {
+  adaptError: Error | null;
+  applied: boolean;
+  applyError: string | null;
+  focus: string;
+  gateResults: Map<string, GateSessionResult>;
+  guardDisabled: boolean;
+  isAdapting: boolean;
+  isApplying: boolean;
+  offline: boolean;
+  offlineLabel: string;
+  onAdapt: () => void;
+  onApply: () => void;
+  onClose: () => void;
+  onFocusChange: (value: string) => void;
+  onToggle: (i: number) => void;
+  progress: CoachGenerationProgress | null;
+  result: AdaptPlanResult | undefined;
+  selected: Set<number>;
+  sessionsById: Map<string, ClientPlannedSession>;
+}) {
+  return (
+    <>
+      <ProfileContextBanner />
+      <Textarea
+        placeholder="Contexte optionnel : fatigue, blessure, contrainte d'agenda…"
+        rows={2}
+        value={focus}
+        onChange={(e) => onFocusChange(e.target.value)}
+      />
+      <Button className="w-fit" disabled={guardDisabled || isAdapting} onClick={onAdapt}>
+        {renderAdaptButtonContent(isAdapting, offline, offlineLabel, Boolean(result))}
+      </Button>
+      {isAdapting ? (
+        <CoachGenerationProgressPanel itemNoun="ajustement" progress={progress} />
+      ) : null}
+      {adaptError ? (
+        <p className="bg-destructive/10 text-destructive rounded-md p-3 text-sm">
+          {adaptError.message}
+        </p>
+      ) : null}
+      {result ? (
+        <PlanAdapterResults
+          applied={applied}
+          applyError={applyError}
+          gateResults={gateResults}
+          guardDisabled={guardDisabled}
+          isApplying={isApplying}
+          offline={offline}
+          offlineLabel={offlineLabel}
+          result={result}
+          selected={selected}
+          sessionsById={sessionsById}
+          toggle={onToggle}
+          onApply={onApply}
+          onClose={onClose}
+        />
+      ) : null}
+    </>
   );
 }

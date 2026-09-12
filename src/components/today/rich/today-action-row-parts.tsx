@@ -8,6 +8,8 @@ import { SessionLinkSuggestionCard } from '@/components/today/rich/session-link-
 import { ActivityFeelingPrompt } from '@/components/training/activity/detail/activity-feeling-prompt';
 import { TodayDaySummaryLine } from '@/components/today/rich/today-day-summary-line';
 import { TodayRearrangeProposal } from '@/components/today/rich/today-rearrange-proposal';
+import { PlanAdaptAppliedPanel } from '@/components/plan/adapt-applied-panel';
+import type { AdaptAppliedAck } from '@/lib/plan/adapt-applied-ack';
 import { SkeletonDataValue } from '@/components/ui/skeleton-data-value';
 import type { TodayViewModel } from '@/core/presentation/today-view-model';
 
@@ -201,6 +203,7 @@ function TodayActionRowLoadedContent({
     orientation: TodayViewModel['morningOrientation'];
     postSessionLoop: TodayViewModel['postSessionLoop'] | null;
     rearrangeProposal: TodayViewModel['rearrangeProposal'] | null;
+    adaptAppliedAck: AdaptAppliedAck | null;
   };
   vm: TodayViewModel;
   onWellnessCompleted?: () => void;
@@ -226,11 +229,28 @@ function TodayActionRowLoadedContent({
         sessionLines={derived.sessionLines}
       />
       {derived.postSessionLoop ? <TodayPostSessionLoop loop={derived.postSessionLoop} /> : null}
-      {derived.rearrangeProposal ? (
-        <TodayRearrangeProposal proposal={derived.rearrangeProposal} />
-      ) : null}
+      <TodayPlanVivantSlot
+        adaptAppliedAck={derived.adaptAppliedAck}
+        rearrangeProposal={derived.rearrangeProposal}
+      />
     </>
   );
+}
+
+function TodayPlanVivantSlot({
+  adaptAppliedAck,
+  rearrangeProposal,
+}: {
+  adaptAppliedAck: AdaptAppliedAck | null;
+  rearrangeProposal: TodayViewModel['rearrangeProposal'] | null;
+}) {
+  if (adaptAppliedAck) {
+    return <PlanAdaptAppliedPanel ack={adaptAppliedAck} />;
+  }
+  if (rearrangeProposal) {
+    return <TodayRearrangeProposal proposal={rearrangeProposal} />;
+  }
+  return null;
 }
 
 export function TodayActionRowSessionLists({
@@ -249,6 +269,7 @@ export function TodayActionRowSessionLists({
     orientation: TodayViewModel['morningOrientation'];
     postSessionLoop: TodayViewModel['postSessionLoop'] | null;
     rearrangeProposal: TodayViewModel['rearrangeProposal'] | null;
+    adaptAppliedAck: AdaptAppliedAck | null;
   };
   vm: TodayViewModel;
   onWellnessCompleted?: () => void;

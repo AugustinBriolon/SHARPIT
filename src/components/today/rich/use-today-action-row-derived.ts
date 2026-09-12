@@ -17,6 +17,7 @@ import {
   subscribeActivityStatus,
   type ActivityStatusStore,
 } from '@/lib/health/activity-status';
+import { useAdaptAppliedSettled } from '@/hooks/use-adapt-applied-settled';
 import {
   deriveLinkContext,
   derivePostSessionLoop,
@@ -85,13 +86,16 @@ export function useTodayActionRowDerived(vm: TodayViewModel, loading: boolean) {
     return modeFact ? [modeFact, ...base] : base;
   }, [vm, loading, activityStore]);
 
+  const { adaptAck, settled } = useAdaptAppliedSettled();
+
   return {
     orientation,
     sessionLinkSuggestions,
     sessionLines,
     primaryIndex,
     postSessionLoop,
-    rearrangeProposal: loading ? null : (vm.rearrangeProposal ?? null),
+    rearrangeProposal: loading || settled ? null : (vm.rearrangeProposal ?? null),
+    adaptAppliedAck: !loading && settled ? adaptAck : null,
     daySummaryEmpty: !loading && sessionLines.length === 0 && sessionLinkSuggestions.length === 0,
     reminders,
   };
