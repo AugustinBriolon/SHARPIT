@@ -1,11 +1,11 @@
 'use client';
 
-import { format, isToday } from 'date-fns';
+import { format, isBefore, isToday, startOfDay } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Plus } from 'lucide-react';
 import { BrickOverviewCard } from '@/components/planning/brick/brick-overview-card';
 import { firstOpenPlannedSessionId } from '@/components/planning/week/planning-day-row-helpers';
-import { CompletedSessionPreview } from '@/components/today/rich/completed-session-preview';
+import { PlanningSettledRow } from '@/components/planning/week/planning-settled-row';
 import { PlannedSessionPreview } from '@/components/today/rich/planned-session-preview';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -15,8 +15,8 @@ import {
 } from '@/lib/planned-session/brick/brick-sessions';
 import { activityTypeLabels } from '@/lib/format';
 import { planningDayKey } from '@/lib/plan/planning-day-selection';
+import { planningSessionMode } from '@/lib/plan/planning-day-display';
 import type { ClientActivity, ClientPlannedSession } from '@/lib/query/types';
-import { buildCompletedSessionMetrics } from '@/lib/today/rich/completed-session-metrics';
 import { buildPlannedSessionPreview } from '@/lib/today/rich/planned-session-metrics';
 import { TWIN_DRILL_DOWN } from '@/lib/today/navigation/today-twin-navigation';
 import { cn } from '@/lib/utils';
@@ -65,24 +65,12 @@ function DoneActivityPreview({ activity }: { activity: ClientActivity }) {
   const title = activity.title?.trim() || activityTypeLabels[activity.type];
 
   return (
-    <CompletedSessionPreview
-      accessibleName={`${title}, réalisé`}
-      activityId={activity.id}
+    <PlanningSettledRow
       activityType={activity.type}
+      durationSec={activity.duration}
       href={TWIN_DRILL_DOWN.activity(activity.id)}
-      layout="column"
+      mode="done"
       title={title}
-      metrics={buildCompletedSessionMetrics({
-        type: activity.type,
-        duration: activity.duration,
-        load: activity.load,
-        rpe: activity.rpe,
-        runMetrics: activity.runMetrics,
-        bikeMetrics: activity.bikeMetrics,
-        swimMetrics: activity.swimMetrics,
-        hikeMetrics: activity.hikeMetrics,
-        strengthSets: activity.strengthSets ?? [],
-      })}
     />
   );
 }
@@ -97,46 +85,53 @@ function LinkedDonePreview({
   const title = session.title?.trim() || activity.title?.trim() || activityTypeLabels[session.type];
 
   return (
-    <CompletedSessionPreview
-      accessibleName={`${title}, réalisé`}
-      activityId={activity.id}
+    <PlanningSettledRow
       activityType={activity.type}
+      analysis={session.analysis}
+      durationSec={activity.duration}
       href={TWIN_DRILL_DOWN.activity(activity.id)}
-      layout="column"
+      mode="done"
       title={title}
-      metrics={buildCompletedSessionMetrics({
-        type: activity.type,
-        duration: activity.duration,
-        load: activity.load,
-        rpe: activity.rpe,
-        runMetrics: activity.runMetrics,
-        bikeMetrics: activity.bikeMetrics,
-        swimMetrics: activity.swimMetrics,
-        hikeMetrics: activity.hikeMetrics,
-        strengthSets: activity.strengthSets ?? [],
-      })}
     />
   );
+}
+
+function MissedSessionRow({ session }: { session: ClientPlannedSession }) {
+  const title = session.title?.trim() || activityTypeLabels[session.type];
+
+  return <PlanningSettledRow activityType={session.type} href={null} mode="missed" title={title} />;
 }
 
 function SessionItem({
   session,
   activityById,
+  isPastDay,
   primary,
   onEdit,
   onPrefetch,
 }: {
   session: ClientPlannedSession;
   activityById: ReadonlyMap<string, ClientActivity>;
+  isPastDay: boolean;
   primary: boolean;
   onEdit: (session: ClientPlannedSession) => void;
   onPrefetch: (session: ClientPlannedSession) => void;
 }) {
-  if (session.completed && session.activityId) {
-    const linked = activityById.get(session.activityId);
+  const mode = planningSessionMode({
+    completed: session.completed,
+    activityId: session.activityId,
+    isPastDay,
+  });
+
+  if (mode === 'done') {
+    const linked = session.activityId ? activityById.get(session.activityId) : undefined;
     if (linked) {
       return <LinkedDonePreview activity={linked} session={session} />;
     }
+  }
+
+  if (mode === 'missed') {
+    return <MissedSessionRow session={session} />;
   }
 
   return (
@@ -152,11 +147,13 @@ function SessionItem({
 function PlannedGroups({
   planned,
   activityById,
+  isPastDay,
   onEdit,
   onPrefetch,
 }: {
   planned: ClientPlannedSession[];
   activityById: ReadonlyMap<string, ClientActivity>;
+  isPastDay: boolean;
   onEdit: (session: ClientPlannedSession) => void;
   onPrefetch: (session: ClientPlannedSession) => void;
 }) {
@@ -174,6 +171,7 @@ function PlannedGroups({
             <li key={item.session.id}>
               <SessionItem
                 activityById={activityById}
+                isPastDay={isPastDay}
                 primary={item.session.id === primarySessionId}
                 session={item.session}
                 onEdit={onEdit}
@@ -257,6 +255,7 @@ function PlanningWeekDayContent({
   activities,
   date,
   empty,
+  isPastDay,
   loading,
   planned,
   onAdd,
@@ -267,6 +266,7 @@ function PlanningWeekDayContent({
   activities: ClientActivity[];
   date: Date;
   empty: boolean;
+  isPastDay: boolean;
   loading: boolean;
   planned: ClientPlannedSession[];
   onAdd: () => void;
@@ -290,6 +290,7 @@ function PlanningWeekDayContent({
     <>
       <PlannedGroups
         activityById={activityById}
+        isPastDay={isPastDay}
         planned={planned}
         onEdit={onEdit}
         onPrefetch={onPrefetch}
@@ -326,6 +327,8 @@ export function PlanningWeekDay({
 }) {
   const empty = !loading && planned.length === 0 && activities.length === 0;
   const today = isToday(date);
+  // A settled day states its outcome quietly; the week keeps its weight on what is ahead.
+  const isPastDay = isBefore(startOfDay(date), startOfDay(new Date()));
   const dayId = planningDayKey(date);
   const headingId = `planning-day-${dayId}`;
   const addLabel = format(date, 'EEEE d MMMM', { locale: fr });
@@ -350,6 +353,7 @@ export function PlanningWeekDay({
           activityById={activityById}
           date={date}
           empty={empty}
+          isPastDay={isPastDay}
           loading={loading}
           planned={planned}
           onAdd={onAdd}
