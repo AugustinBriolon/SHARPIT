@@ -15,7 +15,7 @@ import {
   adaptChangeRowClass,
   adaptChangeSelectClass,
 } from './adapt-change-row-helpers';
-
+import { AdaptChangeDiffVisual } from '@/components/coach/plan/adapt-change-diff-visual';
 function AdaptChangeRowHeader({
   change,
   dateStr,
@@ -128,6 +128,7 @@ export function AdaptChangeRow({
           existing={existing}
           gateResult={gateResult}
         />
+        <AdaptChangeDiffVisual change={change} existing={existing} />
         <AdaptChangeRowDetails change={change} fields={fields} gateResult={gateResult} />
       </div>
     </button>

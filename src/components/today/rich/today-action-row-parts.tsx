@@ -7,6 +7,7 @@ import { BookOpen, CalendarClock } from 'lucide-react';
 import { SessionLinkSuggestionCard } from '@/components/today/rich/session-link-suggestion-card';
 import { ActivityFeelingPrompt } from '@/components/training/activity/detail/activity-feeling-prompt';
 import { TodayDaySummaryLine } from '@/components/today/rich/today-day-summary-line';
+import { TodayRearrangeProposal } from '@/components/today/rich/today-rearrange-proposal';
 import { SkeletonDataValue } from '@/components/ui/skeleton-data-value';
 import type { TodayViewModel } from '@/core/presentation/today-view-model';
 
@@ -125,25 +126,7 @@ export function TodayPostSessionLoop({
   );
 }
 
-export function TodayRearrangeProposal({
-  proposal,
-}: {
-  proposal: NonNullable<TodayViewModel['rearrangeProposal']>;
-}) {
-  return (
-    <div className="border-analysis-border/80 bg-background/50 rounded-analysis space-y-2 border px-3 py-3">
-      <p className="text-sm font-medium text-pretty">{proposal.headline}</p>
-      <p className="text-muted-foreground text-xs text-pretty">{proposal.why}</p>
-      <Link
-        className="text-primary inline-flex min-h-11 items-center text-xs font-medium hover:underline sm:min-h-0"
-        href={proposal.href}
-      >
-        {proposal.ctaLabel}
-        <span aria-hidden> →</span>
-      </Link>
-    </div>
-  );
-}
+export { TodayRearrangeProposal } from '@/components/today/rich/today-rearrange-proposal';
 
 export function TodayActionRowLinkSuggestions({
   suggestions,
