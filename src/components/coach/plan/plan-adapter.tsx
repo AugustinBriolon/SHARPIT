@@ -29,11 +29,8 @@ import { AdaptChangeRow } from '@/components/coach/plan/adapt-change-row';
 import { buildAdaptBatchOps } from '@/components/coach/plan/plan-adapter-apply';
 import { PlanAdaptAppliedPanel } from '@/components/plan/adapt-applied-panel';
 import { recordAdaptAppliedAck, type AdaptAppliedAck } from '@/lib/plan/adapt-applied-ack';
-<<<<<<< HEAD
 import { recordCoachingAdvancementEntry } from '@/lib/plan/coaching-advancement-ledger';
-=======
 import { isHabitPlanFocus } from '@/lib/today/rich/habit-coaching-signal';
->>>>>>> origin/cursor/habitudes-plan-36c4
 import { Check } from 'lucide-react';
 
 /** REMOVE changes bypass the Gate (see coach/adapt/route.ts) — only ADD/MODIFY changes have a gate result. */
