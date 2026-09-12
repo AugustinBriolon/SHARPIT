@@ -1,3 +1,4 @@
+import { after } from 'next/server';
 import { isCoachConfigured } from '@/lib/ai';
 import { generateAndStoreDailyBriefing } from '@/lib/briefing/daily-briefing';
 import {
@@ -22,9 +23,20 @@ export function scheduleBackgroundTasks(params: {
   /** Planned sessions linked this turn — analyze off the critical path. */
   plannedSessionIdsToAnalyze?: string[];
 }): void {
-  void runBackgroundTasks(params).catch((error) => {
-    console.error('[athlete-state/background]', error);
-  });
+  const run = () =>
+    runBackgroundTasks(params).catch((error) => {
+      console.error('[athlete-state/background]', error);
+    });
+
+  // `after()` keeps the work alive past the response; a bare promise is frozen
+  // with the serverless function, which silently dropped narratives and
+  // compliance analyses in production (ADR-036).
+  try {
+    after(run);
+  } catch {
+    // Outside a request scope (scripts, tests) — run it inline.
+    void run();
+  }
 }
 
 type BackgroundTaskParams = {
