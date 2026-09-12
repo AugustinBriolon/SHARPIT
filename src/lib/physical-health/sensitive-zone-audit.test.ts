@@ -63,8 +63,27 @@ describe('sessionZoneFlags', () => {
   });
 
   it('says nothing without a prescription or without zones', () => {
-    expect(sessionZoneFlags(session({ strengthPrescription: null }), ZONES)).toEqual([]);
+    expect(sessionZoneFlags(session({ strengthPrescription: null, type: 'SWIM' }), ZONES)).toEqual(
+      [],
+    );
     expect(sessionZoneFlags(session(), [])).toEqual([]);
+  });
+
+  it('flags the sport itself when an endurance session loads the zone', () => {
+    const flags = sessionZoneFlags(
+      session({ strengthPrescription: null, type: 'RUN', title: 'Sortie longue' }),
+      ZONES,
+    );
+
+    expect(flags).toHaveLength(1);
+    expect(flags[0]?.exercise).toBeNull();
+    expect(flags[0]?.zone.label).toBe('Nerf sciatique');
+  });
+
+  it('leaves an endurance sport that loads elsewhere alone', () => {
+    expect(sessionZoneFlags(session({ strengthPrescription: null, type: 'SWIM' }), ZONES)).toEqual(
+      [],
+    );
   });
 });
 

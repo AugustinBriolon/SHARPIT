@@ -109,13 +109,37 @@ describe('sensitiveZoneRule', () => {
     ).toEqual([]);
   });
 
-  it('only judges strength sessions carrying a prescription', () => {
-    expect(sensitiveZoneRule(contextWith([condition()]), baseProposal({ type: 'RUN' }))).toEqual(
+  it('flags an endurance sport that loads the protected zone', () => {
+    const findings = sensitiveZoneRule(contextWith([condition()]), baseProposal({ type: 'RUN' }));
+
+    expect(findings).toHaveLength(1);
+    expect(findings[0]?.rationale).toContain('Ce sport sollicite');
+    expect(findings[0]?.rationale).toContain('Nerf sciatique (gauche, sévérité 3/10)');
+  });
+
+  it('leaves a sport that loads elsewhere alone', () => {
+    expect(sensitiveZoneRule(contextWith([condition()]), baseProposal({ type: 'SWIM' }))).toEqual(
       [],
     );
+  });
+
+  it('says nothing about a strength session carrying no prescription', () => {
     expect(
       sensitiveZoneRule(contextWith([condition()]), baseProposal({ type: 'STRENGTH' })),
     ).toEqual([]);
+  });
+
+  it('names the worst zone first', () => {
+    const findings = sensitiveZoneRule(
+      contextWith([
+        condition({ conditionId: 'c1', label: 'Gêne légère', severity: 1 }),
+        condition({ conditionId: 'c2', label: 'Tendinite', severity: 8 }),
+      ]),
+      baseProposal({ type: 'RUN' }),
+    );
+    const rationale = findings[0]?.rationale ?? '';
+
+    expect(rationale.indexOf('Tendinite')).toBeLessThan(rationale.indexOf('Gêne légère'));
   });
 
   it('stays quiet for an athlete with nothing to protect', () => {

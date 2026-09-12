@@ -155,6 +155,70 @@ export function exerciseZoneConflict(
   );
 }
 
+/**
+ * Body groups an endurance sport loads, as a whole.
+ *
+ * Endurance sessions carry no per-exercise structure, so the sport itself is the
+ * only handle. Coarse on purpose: a declared knee is relevant to every run, and
+ * saying so is the point — the previous version stayed silent on a bike-and-run
+ * week, which is most weeks in a triathlon block.
+ */
+const SPORT_GROUPS: Readonly<Record<string, readonly CatalogBodyPart[]>> = {
+  RUN: ['lower legs', 'upper legs'],
+  BIKE: ['upper legs'],
+  SWIM: ['shoulders', 'back'],
+};
+
+/** Zones an endurance session would load by virtue of its sport. Strength is judged per exercise. */
+export function sportZoneConflicts(
+  sport: string | null | undefined,
+  zones: readonly SensitiveZone[],
+): SensitiveZone[] {
+  const groups = sport ? SPORT_GROUPS[sport] : undefined;
+  if (!groups) {
+    return [];
+  }
+  const loaded = new Set(groups.map(normalizeRegion));
+  return zones.filter((zone) => zone.groups.some((group) => loaded.has(normalizeRegion(group))));
+}
+
+/** Worst first — an 8/10 deserves to lead the sentence a 1/10 also appears in. */
+export function bySeverityDesc(a: SensitiveZone, b: SensitiveZone): number {
+  return (b.severity ?? 0) - (a.severity ?? 0);
+}
+
+const SIDE_WORDS: Readonly<Record<string, string>> = {
+  LEFT: 'gauche',
+  RIGHT: 'droite',
+  BILATERAL: 'des deux côtés',
+};
+
+/**
+ * One zone, named the way the athlete declared it: side and severity included.
+ *
+ * Side cannot filter anything — a prescription never says which leg, and a
+ * unilateral movement is done on both — but naming it tells the athlete which
+ * side to protect, which is the part they can act on.
+ */
+export function describeZone(zone: SensitiveZone): string {
+  const bits = [
+    zone.side ? (SIDE_WORDS[zone.side.toUpperCase()] ?? zone.side.toLowerCase()) : null,
+    zone.severity !== null ? `sévérité ${zone.severity}/10` : null,
+  ].filter(Boolean);
+  return bits.length > 0 ? `${zone.label} (${bits.join(', ')})` : zone.label;
+}
+
+/**
+ * Zones whose body region the catalog vocabulary does not know.
+ *
+ * These are the silent holes: the prompt still names them, but no deterministic
+ * check can fire, so the athlete must be told the automatic verification does
+ * not cover this one rather than reading its absence as an all-clear.
+ */
+export function unmappedSensitiveZones(zones: readonly SensitiveZone[]): SensitiveZone[] {
+  return zones.filter((zone) => zone.groups.length === 0);
+}
+
 function zoneLine(zone: SensitiveZone): string {
   const side = zone.side ? ` (${zone.side.toLowerCase()})` : '';
   const severity = zone.severity !== null ? `, sévérité ${zone.severity}/10` : '';

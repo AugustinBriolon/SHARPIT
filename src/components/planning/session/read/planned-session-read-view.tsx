@@ -16,7 +16,11 @@ import { PlanSectionHeading } from '@/components/plan/hub/plan-section-heading';
 import { usePlannedSessionReadData } from '@/components/planning/session/read/use-planned-session-read-data';
 import { usePhysicalNotes } from '@/hooks/use-physical';
 import { sessionZoneFlags } from '@/lib/physical-health/sensitive-zone-audit';
-import { sensitiveZonesFrom } from '@/lib/physical-health/sensitive-zones';
+import {
+  bySeverityDesc,
+  describeZone,
+  sensitiveZonesFrom,
+} from '@/lib/physical-health/sensitive-zones';
 import { PlannedSessionReadHeader } from '@/components/planning/session/read/planned-session-read-header';
 import { PlannedSessionDeroulePanel } from '@/components/planning/session/read/planned-session-deroule-panel';
 import { PlannedSessionReadSecondaryDetails } from '@/components/planning/session/read/planned-session-read-secondary';
@@ -47,13 +51,25 @@ function SensitiveZoneWarning({ session }: { session: ClientPlannedSession }) {
     return null;
   }
 
-  const zoneLabels = [...new Set(flags.map((flag) => flag.zone.label))].join(', ');
-  const exercises = [...new Set(flags.map((flag) => flag.exercise))].join(', ');
+  const zoneText = [...new Map(flags.map((flag) => [flag.zone.label, flag.zone])).values()]
+    .sort(bySeverityDesc)
+    .map(describeZone)
+    .join(', ');
+  const exercises = [...new Set(flags.map((flag) => flag.exercise).filter(Boolean))];
 
   return (
     <p className="border-signal-vo2/30 bg-signal-vo2/8 text-signal-vo2 rounded-lg border px-3 py-2 text-xs">
-      Cette séance charge une zone que tu protèges ({zoneLabels}) : {exercises}. Adapte ou remplace
-      ces exercices.
+      {exercises.length > 0 ? (
+        <>
+          Cette séance charge une zone que tu protèges ({zoneText}) : {exercises.join(', ')}. Adapte
+          ou remplace ces exercices.
+        </>
+      ) : (
+        <>
+          Ce sport sollicite une zone que tu protèges ({zoneText}). Adapte le volume et l’intensité,
+          ou change de sport ce jour-là.
+        </>
+      )}
     </p>
   );
 }

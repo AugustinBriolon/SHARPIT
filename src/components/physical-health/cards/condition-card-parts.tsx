@@ -23,7 +23,12 @@ import {
   countSessionsLoadingZone,
   zoneAuditLabel,
 } from '@/lib/physical-health/sensitive-zone-audit';
-import { sensitiveZonesFrom } from '@/lib/physical-health/sensitive-zones';
+import {
+  sensitiveZonesFrom,
+  unmappedSensitiveZones,
+  type SensitiveZone,
+} from '@/lib/physical-health/sensitive-zones';
+import { useClientNow } from '@/hooks/use-client-now';
 import { cn } from '@/lib/utils';
 
 function TrendIcon({ trend }: { trend: string }) {
@@ -183,22 +188,20 @@ function ReassessmentDueChip({ due }: { due: ReassessmentDue }) {
 }
 
 /** Deterministic follow-up state for the legacy note behind this condition. */
-function useConditionReassessmentDue(legacyNoteId: string | null): ReassessmentDue | null {
+function useConditionReassessmentDue(
+  legacyNoteId: string | null,
+  now: Date | null,
+): ReassessmentDue | null {
   const notesQuery = usePhysicalNotes();
   const note = legacyNoteId ? notesQuery.data?.find((n) => n.id === legacyNoteId) : undefined;
-  if (!note) {
+  if (!note || !now) {
     return null;
   }
-  return reassessmentDue({ note, lastRealisedSessionAt: null, now: new Date() });
+  return reassessmentDue({ note, lastRealisedSessionAt: null, now });
 }
 
-/**
- * Declaring an injury must change what the athlete sees about the plan they
- * already have — not only the sessions generated afterwards.
- */
-function useUpcomingSessionsLoadingZone(condition: PhysicalHealthConditionCard): number {
-  const sessionsQuery = usePlannedSessions();
-  const zones = sensitiveZonesFrom([
+function conditionZones(condition: PhysicalHealthConditionCard): SensitiveZone[] {
+  return sensitiveZonesFrom([
     {
       label: condition.label,
       bodyRegion: condition.bodyRegion,
@@ -208,14 +211,22 @@ function useUpcomingSessionsLoadingZone(condition: PhysicalHealthConditionCard):
       status: condition.isActive ? 'ACTIVE' : 'RESOLVED',
     },
   ]);
-  if (zones.length === 0) {
+}
+
+/**
+ * Declaring an injury must change what the athlete sees about the plan they
+ * already have — not only the sessions generated afterwards.
+ */
+function useUpcomingSessionsLoadingZone(
+  condition: PhysicalHealthConditionCard,
+  now: Date | null,
+): number {
+  const sessionsQuery = usePlannedSessions();
+  const zones = conditionZones(condition);
+  if (!now || zones.length === 0) {
     return 0;
   }
-  const audits = auditUpcomingSessions({
-    sessions: sessionsQuery.data ?? [],
-    zones,
-    now: new Date(),
-  });
+  const audits = auditUpcomingSessions({ sessions: sessionsQuery.data ?? [], zones, now });
   return countSessionsLoadingZone(audits, condition.label);
 }
 
@@ -231,20 +242,38 @@ function ZoneLoadChip({ count }: { count: number }) {
   );
 }
 
+/**
+ * The catalog vocabulary does not know this body region, so no automatic check
+ * can fire on it. Silence here would read as an all-clear.
+ */
+function ZoneUnverifiableChip({ unverifiable }: { unverifiable: boolean }) {
+  if (!unverifiable) {
+    return null;
+  }
+  return (
+    <span className="bg-muted text-muted-foreground inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium">
+      Zone non reconnue — vérification automatique indisponible
+    </span>
+  );
+}
+
 function ConditionCardChips({
   due,
   loadingCount,
+  unverifiable,
 }: {
   due: ReassessmentDue | null;
   loadingCount: number;
+  unverifiable: boolean;
 }) {
-  if (!due && loadingCount <= 0) {
+  if (!due && loadingCount <= 0 && !unverifiable) {
     return null;
   }
   return (
     <div className="flex flex-wrap gap-1.5 pb-2">
       {due ? <ReassessmentDueChip due={due} /> : null}
       <ZoneLoadChip count={loadingCount} />
+      <ZoneUnverifiableChip unverifiable={unverifiable} />
     </div>
   );
 }
@@ -256,12 +285,14 @@ export function ConditionCardActions({
   condition: PhysicalHealthConditionCard;
   onEditLegacy?: (legacyNoteId: string) => void;
 }) {
-  const due = useConditionReassessmentDue(condition.legacyPhysicalNoteId);
-  const loadingCount = useUpcomingSessionsLoadingZone(condition);
+  const now = useClientNow();
+  const due = useConditionReassessmentDue(condition.legacyPhysicalNoteId, now);
+  const loadingCount = useUpcomingSessionsLoadingZone(condition, now);
+  const unverifiable = unmappedSensitiveZones(conditionZones(condition)).length > 0;
 
   return (
     <CardContent className="pt-0">
-      <ConditionCardChips due={due} loadingCount={loadingCount} />
+      <ConditionCardChips due={due} loadingCount={loadingCount} unverifiable={unverifiable} />
       <div className="flex flex-wrap gap-2 pt-1">
         {condition.legacyPhysicalNoteId && onEditLegacy ? (
           <button

@@ -13,19 +13,25 @@
 
 import { parseStrengthPrescription } from '@/lib/planned-session/strength/strength-prescription';
 import { exerciseLoadProfile } from '@/lib/physical-health/exercise-load-profile';
-import { exerciseZoneConflict, type SensitiveZone } from '@/lib/physical-health/sensitive-zones';
+import {
+  exerciseZoneConflict,
+  sportZoneConflicts,
+  type SensitiveZone,
+} from '@/lib/physical-health/sensitive-zones';
 
 export type AuditableSession = {
   id: string;
   date: Date | string;
   title?: string | null;
+  type?: string | null;
   completed?: boolean | null;
   /** Raw JSON as stored — parsed here so callers need not. */
   strengthPrescription?: unknown;
 };
 
 export type SessionZoneFlag = {
-  exercise: string;
+  /** null when the sport itself loads the zone, rather than one movement in it. */
+  exercise: string | null;
   zone: SensitiveZone;
 };
 
@@ -40,7 +46,10 @@ function toDate(value: Date | string): Date {
   return value instanceof Date ? value : new Date(value);
 }
 
-/** Exercises in this session that load a protected zone. */
+/**
+ * What in this session loads a protected zone: each conflicting exercise for a
+ * strength session, or the sport itself for an endurance one.
+ */
 export function sessionZoneFlags(
   session: AuditableSession,
   zones: readonly SensitiveZone[],
@@ -50,7 +59,7 @@ export function sessionZoneFlags(
   }
   const prescription = parseStrengthPrescription(session.strengthPrescription);
   if (!prescription) {
-    return [];
+    return sportZoneConflicts(session.type, zones).map((zone) => ({ exercise: null, zone }));
   }
   return prescription.sets.flatMap((set) => {
     const zone = exerciseZoneConflict(exerciseLoadProfile(set), zones);

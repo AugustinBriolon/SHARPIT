@@ -1,9 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import {
+  bySeverityDesc,
   catalogGroupsForRegion,
+  describeZone,
   exerciseZoneConflict,
   formatSensitiveZoneRules,
   sensitiveZonesFrom,
+  sportZoneConflicts,
+  unmappedSensitiveZones,
   type SensitiveZone,
 } from './sensitive-zones';
 
@@ -88,6 +92,103 @@ describe('exerciseZoneConflict', () => {
   it('never flags mobility work on the zone — that is the prehab, not the injury', () => {
     expect(exerciseZoneConflict({ groups: ['upper legs'], loads: false }, zones)).toBeNull();
     expect(exerciseZoneConflict({ groups: [], loads: true }, zones)).toBeNull();
+  });
+});
+
+describe('sportZoneConflicts', () => {
+  const ischio: SensitiveZone = {
+    label: 'Nerf sciatique',
+    region: 'Ischio',
+    side: 'LEFT',
+    severity: 4,
+    groups: ['upper legs'],
+  };
+  const epaule: SensitiveZone = {
+    label: 'Coiffe',
+    region: 'Épaule',
+    side: null,
+    severity: 2,
+    groups: ['shoulders'],
+  };
+
+  it('flags the endurance sports that load the zone', () => {
+    expect(sportZoneConflicts('RUN', [ischio])).toEqual([ischio]);
+    expect(sportZoneConflicts('BIKE', [ischio])).toEqual([ischio]);
+  });
+
+  it('leaves a sport that loads elsewhere alone', () => {
+    expect(sportZoneConflicts('SWIM', [ischio])).toEqual([]);
+    expect(sportZoneConflicts('RUN', [epaule])).toEqual([]);
+  });
+
+  it('says nothing for strength — that is judged exercise by exercise', () => {
+    expect(sportZoneConflicts('STRENGTH', [ischio])).toEqual([]);
+    expect(sportZoneConflicts(null, [ischio])).toEqual([]);
+  });
+
+  it('returns every matching zone, not just the first', () => {
+    expect(sportZoneConflicts('SWIM', [epaule, { ...epaule, label: 'Autre épaule' }])).toHaveLength(
+      2,
+    );
+  });
+});
+
+describe('describeZone', () => {
+  it('names the side and the severity the athlete declared', () => {
+    expect(
+      describeZone({
+        label: 'Nerf sciatique',
+        region: 'Ischio',
+        side: 'LEFT',
+        severity: 4,
+        groups: ['upper legs'],
+      }),
+    ).toBe('Nerf sciatique (gauche, sévérité 4/10)');
+  });
+
+  it('falls back to the bare label when neither is known', () => {
+    expect(
+      describeZone({ label: 'Gêne', region: 'Dos', side: null, severity: null, groups: ['back'] }),
+    ).toBe('Gêne');
+  });
+});
+
+describe('unmappedSensitiveZones', () => {
+  it('surfaces the zones no automatic check can cover', () => {
+    const unknown: SensitiveZone = {
+      label: 'Mâchoire',
+      region: 'Mâchoire',
+      side: null,
+      severity: 3,
+      groups: [],
+    };
+    const known: SensitiveZone = {
+      label: 'Nerf sciatique',
+      region: 'Ischio',
+      side: null,
+      severity: 3,
+      groups: ['upper legs'],
+    };
+
+    expect(unmappedSensitiveZones([unknown, known])).toEqual([unknown]);
+  });
+});
+
+describe('bySeverityDesc', () => {
+  it('puts the worst first, and treats an unknown severity as lowest', () => {
+    const zone = (severity: number | null): SensitiveZone => ({
+      label: `z${severity}`,
+      region: 'Ischio',
+      side: null,
+      severity,
+      groups: ['upper legs'],
+    });
+
+    expect([zone(1), zone(8), zone(null)].sort(bySeverityDesc).map((z) => z.severity)).toEqual([
+      8,
+      1,
+      null,
+    ]);
   });
 });
 
