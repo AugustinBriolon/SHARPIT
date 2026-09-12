@@ -3,7 +3,6 @@
 import { MorningOrientationActions } from '@/components/today/rich/morning-orientation-actions';
 import {
   TodayActionRowHeader,
-  TodayActionRowReminders,
   TodayActionRowSessionLists,
 } from '@/components/today/rich/today-action-row-parts';
 import { useTodayActionRowDerived } from '@/components/today/rich/use-today-action-row-derived';
@@ -28,15 +27,13 @@ export function TodayActionRow({
     <section aria-busy={loading || undefined} aria-label="Actions du jour" className="space-y-3">
       <TodayActionRowHeader loading={loading} />
 
-      {derived.orientation ? (
+      {derived.orientation && (
         <MorningOrientationActions
           orientation={derived.orientation}
           trainingDayId={trainingDayId}
           onRefreshed={onWellnessCompleted}
         />
-      ) : null}
-
-      <TodayActionRowReminders reminders={derived.reminders} />
+      )}
 
       <TodayActionRowSessionLists
         derived={derived}
