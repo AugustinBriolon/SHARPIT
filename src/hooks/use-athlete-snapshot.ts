@@ -13,14 +13,32 @@ import { queryKeys } from '@/lib/query/keys';
 const RECOMMENDATION_REFRESH_INTERVAL_MS = 12_000;
 const PHASE_DRIFT_REFRESH_INTERVAL_MS = 60_000;
 
-function snapshotRefetchIntervalMs(snapshot: AthleteSnapshot | undefined): number | false {
+/**
+ * Waiting has a bound.
+ *
+ * Recommendations that never turn fresh — the briefing generation is failing,
+ * the provider is down — used to poll a 2-5 s refresh every 12 s, forever, on
+ * every page of the app. After this many tries the athlete is clearly not
+ * waiting on something that is about to land; the next app open or window
+ * focus refetches anyway.
+ */
+export const SNAPSHOT_MAX_POLLS = 8;
+
+const PENDING_RECOMMENDATION_FRESHNESS = ['stale', 'awaiting_data', 'computing'];
+
+function recommendationsStillComing(snapshot: AthleteSnapshot | undefined): boolean {
   const rec = snapshot?.freshness.domains.find((d) => d.domain === 'recommendations');
-  if (
-    rec &&
-    (rec.freshness === 'stale' ||
-      rec.freshness === 'awaiting_data' ||
-      rec.freshness === 'computing')
-  ) {
+  return Boolean(rec && PENDING_RECOMMENDATION_FRESHNESS.includes(rec.freshness));
+}
+
+export function snapshotRefetchIntervalMs(
+  snapshot: AthleteSnapshot | undefined,
+  polls: number,
+): number | false {
+  if (polls >= SNAPSHOT_MAX_POLLS) {
+    return false;
+  }
+  if (recommendationsStillComing(snapshot)) {
     return RECOMMENDATION_REFRESH_INTERVAL_MS;
   }
   if (snapshot && shouldRefreshSnapshotForPhaseDrift(snapshot)) {
@@ -120,7 +138,8 @@ export function useAthleteSnapshot(date?: Date): UseAthleteSnapshotResult {
     enabled: dayReady,
     placeholderData: keepPreviousData,
     staleTime: 5 * 60_000,
-    refetchInterval: (q) => snapshotRefetchIntervalMs(q.state.data?.snapshot),
+    refetchInterval: (q) =>
+      snapshotRefetchIntervalMs(q.state.data?.snapshot, q.state.dataUpdateCount),
   });
 
   const refresh = useCallback(async () => {
