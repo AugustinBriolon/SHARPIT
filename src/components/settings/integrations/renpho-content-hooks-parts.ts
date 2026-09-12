@@ -22,8 +22,13 @@ export function useRenphoConnect(onUpdated?: () => void) {
     setError(null);
     const form = new FormData(e.currentTarget);
     try {
-      await connectRenpho({ email: form.get('email'), password: form.get('password') });
-      toast.success('Renpho connecté');
+      const data = await connectRenpho({
+        email: form.get('email'),
+        password: form.get('password'),
+      });
+      toast.success('Renpho connecté', {
+        description: `${data.sync?.imported ?? 0} mesure(s) importée(s)`,
+      });
       await queryClient.invalidateQueries({ queryKey: queryKeys.bodyComposition() });
       router.refresh();
       onUpdated?.();

@@ -1,5 +1,6 @@
 export type ApiErrorBody = {
   error?: string;
+  detail?: string;
   tripId?: string;
   tripName?: string;
   details?: { fieldErrors?: Record<string, string[]> };
@@ -12,6 +13,7 @@ export function parseApiErrorBody(data: unknown): ApiErrorBody | null {
   const body = data as ApiErrorBody;
   return {
     error: typeof body.error === 'string' ? body.error : undefined,
+    detail: typeof body.detail === 'string' ? body.detail : undefined,
     tripId: typeof body.tripId === 'string' ? body.tripId : undefined,
     tripName: typeof body.tripName === 'string' ? body.tripName : undefined,
     details: body.details,
@@ -26,12 +28,12 @@ export function formatApiErrorMessage(
     return `Une activité est déjà dans « ${body.tripName} »`;
   }
 
-  let message = body.error ?? fallback;
+  let message = body.detail ?? body.error ?? fallback;
   const fieldErr = body.details?.fieldErrors;
   if (fieldErr) {
-    const [first] = Object.values(fieldErr).flat();
-    if (first) {
-      message = first;
+    const joined = Object.values(fieldErr).flat().join(' · ');
+    if (joined) {
+      message = joined;
     }
   }
   return message;
