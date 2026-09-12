@@ -142,14 +142,15 @@ All use GET `/api/presentation/*`, typically stale 5m.
 
 ### 4.5 Background / non-navigation GETs
 
-| Call site               | Endpoint                   | Class      | Notes                                                               |
-| ----------------------- | -------------------------- | ---------- | ------------------------------------------------------------------- |
-| Geocoding home / search | GET geocoding              | Background | Typeahead — never block form open.                                  |
-| Weather preview         | POST weather-preview       | Background | Preview only; not a persistence mutation.                           |
-| Travel context read     | GET `/api/travel-context`  | Background | Prefer React Query key `travelContext` instead of ad-hoc fetch.     |
-| Narrative poll          | GET activity by id         | Background | Soft polling until narrative ready.                                 |
-| Nutrition reading poll  | GET presentation/nutrition | Background | 4 s poll only while `coachReading` is pending/refreshing (ADR-035). |
-| Dev / cron / inspect    | various                    | N/A        | Out of Instant UX product surface.                                  |
+| Call site               | Endpoint                   | Class      | Notes                                                                                      |
+| ----------------------- | -------------------------- | ---------- | ------------------------------------------------------------------------------------------ |
+| Geocoding home / search | GET geocoding              | Background | Typeahead — never block form open.                                                         |
+| Weather preview         | POST weather-preview       | Background | Preview only; not a persistence mutation.                                                  |
+| Travel context read     | GET `/api/travel-context`  | Background | Prefer React Query key `travelContext` instead of ad-hoc fetch.                            |
+| Narrative poll          | GET activity by id         | Background | Soft polling until narrative ready.                                                        |
+| Nutrition reading poll  | GET presentation/nutrition | Background | 4 s poll only while `coachReading` is pending/refreshing (ADR-035).                        |
+| Analysis run watcher    | GET `/api/analyses/status` | Background | One shell-mounted watcher; 5 s poll only while a run is in flight, then a toast (ADR-036). |
+| Dev / cron / inspect    | various                    | N/A        | Out of Instant UX product surface.                                                         |
 
 ### 4.6 Query strategy rules (target)
 
@@ -165,6 +166,8 @@ All use GET `/api/presentation/*`, typically stale 5m.
 7. **PWA must not wipe the query cache.** Reconnect must never hard-reload the page (that destroys TanStack Query memory and re-shows cold skeletons). Serwist runs in configurator mode and injects no client entry, so no reload path exists ([ADR-009](adr/ADR-009-turbopack-build-and-serwist-configurator.md)). `AppShell` mounts page `{children}` once (not in both mobile and desktop shells). Registration stays manual via `SwRegister`.
 
 8. **Client-only URL state never goes through the router.** When a search param is read only by client hooks (e.g. the drill-down `?date=` in `useTodaySelectedDate`), write it with `window.history.replaceState`. Next syncs `useSearchParams` from native history, so the selected day switches on tap and the screen shows its value micro-skeletons while the day's query loads. `router.replace` would wait for an RSC round-trip before the UI moves.
+
+9. **An analysis never depends on the page that started it.** Generative work registers with `after()` (never a bare promise — serverless freezes it once the response is sent), records an `AnalysisRun`, and is announced by the shell-mounted watcher. Page-local polling may complement it, never replace it ([ADR-036](adr/ADR-036-analyses-run-in-the-background-and-announce-themselves.md)).
 
 ---
 
