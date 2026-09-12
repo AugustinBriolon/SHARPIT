@@ -24,7 +24,7 @@ The athlete's report: _"I'm afraid I've forgotten this feature lately, between t
 
 ## Decision
 
-**A declared injury is an input to training, enforced at four points, and the last of them looks backwards.**
+**A declared injury is an input to training, enforced at five points, and the last of them looks backwards.**
 
 1. **The follow-up loop is deterministic, not conversational.** `reassessmentDue` decides from the note alone — severity band → silence tolerance (`high: 3d`, `moderate: 5d`, `low: 8d`) — whether news is due, and phrases the question. No model call decides whether to ask.
 2. **The declaration collects functional impact, not only pain.** `FunctionalImpact` (`NONE` · `MILD` · `MODERATE` · `LIMITING` · `STOPPED`) is asked directly and stored. When the athlete declares it, **the declared value wins**; the severity-derived value is only a fallback for legacy notes that never carried one.
@@ -35,6 +35,8 @@ The athlete's report: _"I'm afraid I've forgotten this feature lately, between t
    - the session itself, opened, says which exercises conflict and why.
 
    No regeneration, no model call, no migration, no background job.
+
+6. **What an exercise loads is declared, never guessed from the media catalog.** The coach fills `intent` and `pattern` per exercise, drawn from the enums the curated movement taxonomy already defines. Classification falls back to that taxonomy, then to the Garmin category on an exact/alias match only, then to nothing. An unrecognised movement yields no claim and therefore no warning.
 
 ---
 
@@ -109,7 +111,9 @@ The athlete's report: _"I'm afraid I've forgotten this feature lately, between t
 
 ### Negative
 
-- **The audit only sees strength prescriptions.** Endurance sessions carry no per-exercise catalog reference, so a declared knee injury does not flag tomorrow's long run. For an athlete whose upcoming week is bike and run only — the common case in a triathlon block — the retroactive surfaces show nothing. Volume and intensity constraints for endurance remain the job of the existing load rules.
+- **The audit only sees strength prescriptions.** Endurance sessions carry no per-exercise structure, so a declared knee injury does not flag tomorrow's long run. For an athlete whose upcoming week is bike and run only — the common case in a triathlon block — the retroactive surfaces show nothing. Volume and intensity constraints for endurance remain the job of the existing load rules.
+- **Declarations only help the sessions generated after this change.** Measured on 52 exercises across the eight most recent strength sessions: none carried a catalog id, the media catalog classified 13, and the curated taxonomy 16. Legacy rows therefore depend on the Garmin fallback, which covers them only where the watch match was exact or aliased.
+- **The guard is quieter than it looks, on purpose.** Refusing fuzzy watch matches means a movement neither declared nor curated is simply not judged. That is the deliberate trade: the previous catalog-based version classified 25% of exercises and inverted the verdict on the rest, warning about the cat-cow stretch and the piriformis release prescribed _for_ the sciatica while missing the Bulgarian split squat and the Romanian deadlift that actually loaded it.
 - The region→group mapping is a hand-written French lexicon; an unrecognised region yields no zone and therefore no protection, silently.
 - Warnings can be ignored. Nothing prevents an athlete from following a flagged session.
 - Two body-region vocabularies still coexist (legacy `PhysicalNote.bodyPart`, modern `Condition.bodyRegion`), and the mapping accepts both shapes.
