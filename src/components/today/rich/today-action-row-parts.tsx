@@ -9,6 +9,8 @@ import { ActivityFeelingPrompt } from '@/components/training/activity/detail/act
 import { TodayDaySummaryLine } from '@/components/today/rich/today-day-summary-line';
 import { TodayRearrangeProposal } from '@/components/today/rich/today-rearrange-proposal';
 import { PlanAdaptAppliedPanel } from '@/components/plan/adapt-applied-panel';
+import { GoalAdvancementPanel } from '@/components/today/rich/goal-advancement-panel';
+import { useGoalAdvancement } from '@/hooks/use-goal-advancement';
 import type { AdaptAppliedAck } from '@/lib/plan/adapt-applied-ack';
 import { SkeletonDataValue } from '@/components/ui/skeleton-data-value';
 import type { TodayViewModel } from '@/core/presentation/today-view-model';
@@ -211,8 +213,18 @@ function TodayActionRowLoadedContent({
         adaptAppliedAck={derived.adaptAppliedAck}
         rearrangeProposal={derived.rearrangeProposal}
       />
+      <TodayGoalAdvancementSlot />
     </>
   );
+}
+
+/** Suivi under Plan vivant — never replaces rearrange / after-apply. */
+function TodayGoalAdvancementSlot() {
+  const { view, pending } = useGoalAdvancement();
+  if (pending || !view) {
+    return null;
+  }
+  return <GoalAdvancementPanel view={view} />;
 }
 
 function TodayPlanVivantSlot({

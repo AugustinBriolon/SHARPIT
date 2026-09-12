@@ -278,6 +278,11 @@ export type TodayViewModel = {
     trigger: 'POST_SESSION' | 'MORNING_MISMATCH' | 'HABIT_ASSOCIATION' | 'HABIT_EXPERIMENT';
     kind: 'protect' | 'push' | 'effort' | 'habit';
     goalLabel: string | null;
+    /** Journal lever when habit drives or annotates the same Plan vivant CTA. */
+    habitLever: {
+      label: string;
+      source: 'association' | 'experiment';
+    } | null;
     previewSessions: Array<{
       id: string;
       dateLabel: string;
