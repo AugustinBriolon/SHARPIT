@@ -91,7 +91,7 @@ export function useSessionRealizationAnalysis({
     analyzePending: analyze.isPending,
   });
 
-  const pollState = useSessionAnalysisPoll({ session, isPendingScheduled });
+  const pollState = useSessionAnalysisPoll({ session });
   const hasAnalysis = Boolean(pollState.analysis && pollState.analyzedAt);
 
   useSessionAnalysisKick({

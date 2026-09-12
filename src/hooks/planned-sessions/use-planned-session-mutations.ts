@@ -316,6 +316,11 @@ export function usePlannedSessionMutations() {
     onSuccess: (data, id) => {
       // The analysis may still be running server-side — let the shell watcher know.
       void queryClient.invalidateQueries({ queryKey: queryKeys.analysisRuns });
+      // Outside demo the route only acknowledges the schedule; there is no
+      // session to patch yet (ADR-036).
+      if (!data || typeof data !== 'object' || !('id' in data)) {
+        return;
+      }
       const hydrated = hydratePlannedSession(data as ClientPlannedSession);
       patchPlannedSessionAnalysisInCaches(queryClient, id, {
         analysis: hydrated.analysis ?? null,

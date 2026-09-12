@@ -1,14 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
 import type { ClientPlannedSession } from '@/lib/query/types';
 import type { SessionAnalysis } from '@/lib/validators/coach';
-import { fetchPlannedSessionById } from '@/lib/query/fetchers';
-import { patchPlannedSessionAnalysisInCaches } from '@/lib/query/patch-planned-session-analysis-cache';
 
-const ANALYSIS_POLL_MS = 3_000;
-const ANALYSIS_POLL_MAX_MS = 120_000;
 const ANALYSIS_TIMEOUT_STORAGE_PREFIX = 'sharpit.analysis-poll-timeout.';
 
 function analysisTimeoutStorageKey(sessionId: string): string {
@@ -26,14 +21,6 @@ function readAnalysisPollTimedOut(sessionId: string): boolean {
   }
 }
 
-function writeAnalysisPollTimedOut(sessionId: string): void {
-  try {
-    sessionStorage.setItem(analysisTimeoutStorageKey(sessionId), '1');
-  } catch {
-    // ignore quota / private mode
-  }
-}
-
 export function clearAnalysisPollTimedOut(sessionId: string): void {
   try {
     sessionStorage.removeItem(analysisTimeoutStorageKey(sessionId));
@@ -42,72 +29,23 @@ export function clearAnalysisPollTimedOut(sessionId: string): void {
   }
 }
 
-async function pollSessionAnalysis({
-  sessionId,
-  queryClient,
-  onComplete,
-  onTimeout,
-}: {
-  sessionId: string;
-  queryClient: ReturnType<typeof useQueryClient>;
-  onComplete: (result: {
-    analysis: SessionAnalysis;
-    analyzedAt: ClientPlannedSession['analyzedAt'];
-  }) => void;
-  onTimeout: () => void;
-}) {
-  const startedAt = Date.now();
-
-  while (Date.now() - startedAt < ANALYSIS_POLL_MAX_MS) {
-    await new Promise((resolve) => setTimeout(resolve, ANALYSIS_POLL_MS));
-
-    try {
-      const updated = await fetchPlannedSessionById(sessionId);
-      if (updated.analyzedAt && updated.analysis) {
-        onComplete({
-          analysis: updated.analysis as unknown as SessionAnalysis,
-          analyzedAt: updated.analyzedAt,
-        });
-        clearAnalysisPollTimedOut(sessionId);
-        patchPlannedSessionAnalysisInCaches(queryClient, sessionId, {
-          analysis: updated.analysis,
-          analyzedAt: updated.analyzedAt,
-        });
-        return;
-      }
-    } catch {
-      // best-effort polling
-    }
-  }
-
-  writeAnalysisPollTimedOut(sessionId);
-  onTimeout();
-  try {
-    sessionStorage.removeItem(`sharpit.analysis-kick.${sessionId}`);
-  } catch {
-    // ignore
-  }
-}
-
-export function useSessionAnalysisPoll({
-  session,
-  isPendingScheduled,
-}: {
-  session: ClientPlannedSession;
-  isPendingScheduled: boolean;
-}) {
-  const queryClient = useQueryClient();
-  const [polled, setPolled] = useState<{
-    analysis: SessionAnalysis | null;
-    analyzedAt: typeof session.analyzedAt;
-  } | null>(null);
+/**
+ * Reads the session's analysis — no polling of its own.
+ *
+ * This hook used to re-fetch the session every 3 s for two minutes while an
+ * analysis ran. When the analysis failed, that loop kept hammering the API for
+ * the full window and the athlete saw an endless "analyse en cours". The shell
+ * watcher now owns waiting: it polls one small status endpoint while a run is in
+ * flight, refreshes this session when it lands, and says so — success or
+ * failure (ADR-036).
+ */
+export function useSessionAnalysisPoll({ session }: { session: ClientPlannedSession }) {
   const [pollTimedOut, setPollTimedOut] = useState(() => readAnalysisPollTimedOut(session.id));
 
-  const analysis = polled?.analysis ?? (session.analysis as unknown as SessionAnalysis | null);
-  const analyzedAt = polled?.analyzedAt ?? session.analyzedAt;
+  const analysis = session.analysis as unknown as SessionAnalysis | null;
+  const { analyzedAt } = session;
 
   useEffect(() => {
-    setPolled(null);
     setPollTimedOut(readAnalysisPollTimedOut(session.id));
   }, [session.id]);
 
@@ -115,38 +53,9 @@ export function useSessionAnalysisPoll({
     if (!session.analyzedAt) {
       return;
     }
-    setPolled(null);
     clearAnalysisPollTimedOut(session.id);
     setPollTimedOut(false);
   }, [session.analyzedAt, session.id]);
-
-  useEffect(() => {
-    if (!isPendingScheduled) {
-      return;
-    }
-
-    let cancelled = false;
-
-    void pollSessionAnalysis({
-      sessionId: session.id,
-      queryClient,
-      onComplete: (result) => {
-        if (!cancelled) {
-          setPolled(result);
-          setPollTimedOut(false);
-        }
-      },
-      onTimeout: () => {
-        if (!cancelled) {
-          setPollTimedOut(true);
-        }
-      },
-    });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [isPendingScheduled, queryClient, session.id]);
 
   return { analysis, analyzedAt, pollTimedOut, setPollTimedOut };
 }

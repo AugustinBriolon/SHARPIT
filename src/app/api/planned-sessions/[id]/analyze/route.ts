@@ -1,5 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse, after } from 'next/server';
 import { isCoachConfigured } from '@/lib/ai';
+import { withAnalysisRun } from '@/lib/analysis/analysis-run-store';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { analyzePlannedSession } from '@/lib/coach/plan/coach-analysis';
 import { checkRateLimit, rateLimitJsonResponse, rateLimiters } from '@/lib/rate-limit';
@@ -9,6 +10,13 @@ type RouteContext = { params: Promise<{ id: string }> };
 
 export const maxDuration = 60;
 
+/**
+ * Schedules the compliance analysis and returns immediately (ADR-036).
+ *
+ * The model call used to block this request: leaving the page abandoned it, and
+ * a failure surfaced only as a page that polled forever. The run now carries the
+ * outcome, and the shell watcher announces it — success or failure.
+ */
 export async function POST(_request: NextRequest, context: RouteContext) {
   try {
     const { id } = await context.params;
@@ -39,15 +47,23 @@ export async function POST(_request: NextRequest, context: RouteContext) {
       });
     }
 
-    const analysis = await analyzePlannedSession(athleteId, id);
-    if (!analysis) {
-      return NextResponse.json({ error: 'Analyse impossible' }, { status: 500 });
-    }
+    after(async () => {
+      try {
+        await withAnalysisRun({ athleteId, kind: 'SESSION_COMPLIANCE', targetId: id }, async () => {
+          const analysis = await analyzePlannedSession(athleteId, id);
+          if (!analysis) {
+            throw new Error('Analyse impossible');
+          }
+          await setPlannedSessionAnalysis(athleteId, id, analysis);
+        });
+      } catch (error) {
+        console.error('[planned-sessions/analyze]', id, error);
+      }
+    });
 
-    const session = await setPlannedSessionAnalysis(athleteId, id, analysis);
-    return NextResponse.json(session);
+    return NextResponse.json({ ok: true, status: 'scheduled' }, { status: 202 });
   } catch (error) {
     console.error('[planned-sessions/analyze]', error);
-    return NextResponse.json({ error: "L'analyse a échoué" }, { status: 500 });
+    return NextResponse.json({ error: "Impossible de lancer l'analyse" }, { status: 500 });
   }
 }
