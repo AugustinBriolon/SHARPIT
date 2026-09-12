@@ -3,7 +3,11 @@ import type { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.
 import { invalidateAfterProviderSync } from '@/lib/query/invalidate-after-provider-sync';
 import { runGoogleSync } from '@/lib/integrations/shared/client-sync';
 import { toast } from '@/components/ui/toast';
-import type { GoogleCalendarInfo } from '@/lib/query/fetchers';
+import {
+  disconnectGoogle,
+  selectGoogleCalendar,
+  type GoogleCalendarInfo,
+} from '@/lib/query/fetchers';
 
 export function googleSyncErrorDescription(err: unknown): string | undefined {
   if (!(err instanceof Error)) {
@@ -23,15 +27,12 @@ export async function selectGoogleCalendarTarget(options: {
   onUpdated?: () => void;
 }): Promise<void> {
   const calendar = options.calendars.find((c) => c.id === options.nextCalendarId);
-  const response = await fetch('/api/google/select-calendar', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
+  try {
+    await selectGoogleCalendar({
       calendarId: options.nextCalendarId,
       calendarName: calendar?.summary ?? null,
-    }),
-  });
-  if (!response.ok) {
+    });
+  } catch {
     throw new Error('Impossible de changer le calendrier cible.');
   }
   options.router.refresh();
@@ -63,7 +64,7 @@ export async function disconnectGoogleCalendar(options: {
   router: AppRouterInstance;
   onUpdated?: () => void;
 }): Promise<void> {
-  await fetch('/api/google/disconnect', { method: 'POST' });
+  await disconnectGoogle();
   options.router.refresh();
   options.onUpdated?.();
 }

@@ -17,6 +17,11 @@ import { toast } from '@/components/ui/toast';
 import type { DataClassId } from '@/lib/integrations/provider-catalog';
 import type { IntegrationId } from '@/lib/integrations/shared/client-sync';
 import type { IntegrationSourcePrefs } from '@/lib/integrations/source-prefs';
+import {
+  connectMyFitnessPal,
+  connectRenpho,
+  fetchIntegrationSourcePrefs,
+} from '@/lib/query/fetchers';
 
 type CredentialProvider = Extract<IntegrationId, 'garmin' | 'renpho' | 'myfitnesspal'>;
 
@@ -52,33 +57,20 @@ async function postCredentialConnect(
   provider: Exclude<CredentialProvider, 'garmin'>,
   form: FormData,
   dataClass: DataClassId | null,
-): Promise<Response> {
+): Promise<void> {
   if (provider === 'renpho') {
-    return fetch('/api/renpho/connect', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        email: form.get('email'),
-        password: form.get('password'),
-        dataClass,
-      }),
+    await connectRenpho({
+      email: form.get('email'),
+      password: form.get('password'),
+      dataClass,
     });
+    return;
   }
 
-  return fetch('/api/myfitnesspal/connect', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ sessionToken: form.get('sessionToken'), dataClass }),
+  await connectMyFitnessPal({
+    sessionToken: form.get('sessionToken'),
+    dataClass,
   });
-}
-
-async function loadIntegrationSourcePrefs(): Promise<IntegrationSourcePrefs | null> {
-  const prefsRes = await fetch('/api/integrations/source-prefs');
-  if (!prefsRes.ok) {
-    return null;
-  }
-  const data = (await prefsRes.json()) as { prefs: IntegrationSourcePrefs };
-  return data.prefs;
 }
 
 export function OnboardingCredentialDialog({
@@ -118,14 +110,14 @@ export function OnboardingCredentialDialog({
         return;
       }
 
-      const response = await postCredentialConnect(activeProvider, form, dataClass);
-      if (!response.ok) {
-        const data = (await response.json().catch(() => null)) as { error?: string } | null;
-        setError(data?.error ?? 'Connexion échouée');
+      try {
+        await postCredentialConnect(activeProvider, form, dataClass);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Connexion échouée');
         return;
       }
 
-      const nextPrefs = await loadIntegrationSourcePrefs();
+      const nextPrefs = await fetchIntegrationSourcePrefs();
       toast.success(`${COPY[activeProvider].title.replace('Connecter ', '')} connecté`);
       onConnected(activeProvider, nextPrefs);
       onOpenChange(false);

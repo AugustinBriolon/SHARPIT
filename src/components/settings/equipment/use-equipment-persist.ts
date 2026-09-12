@@ -3,20 +3,13 @@
 import type { AthleteEquipment } from '@/lib/equipment/types';
 import { normalizeAthleteEquipment } from '@/lib/equipment/parse';
 import { invalidateAfterAthleteProfileSave } from '@/lib/query/invalidate-after-athlete-profile-save';
+import { patchAthleteProfile, patchAthleteProfileKeepalive } from '@/lib/query/fetchers';
 import { queryKeys } from '@/lib/query/keys';
 import { useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 
 const SAVE_DEBOUNCE_MS = 450;
-
-async function parseError(res: Response): Promise<string> {
-  const data = (await res.json().catch(() => null)) as {
-    error?: string;
-    detail?: string;
-  } | null;
-  return data?.detail || data?.error || "Impossible d'enregistrer l'équipement";
-}
 
 function equipmentEqual(a: AthleteEquipment, b: AthleteEquipment): boolean {
   if (a.strengthVenue !== b.strengthVenue) {
@@ -78,11 +71,10 @@ function applyOptimisticEquipment(
   });
 }
 
-async function applySavedProfile(
-  res: Response,
+function applySavedProfile(
+  saved: Record<string, unknown> | null,
   queryClient: ReturnType<typeof useQueryClient>,
-): Promise<void> {
-  const saved = (await res.json().catch(() => null)) as Record<string, unknown> | null;
+): void {
   if (!saved || typeof saved !== 'object') {
     return;
   }
@@ -99,15 +91,8 @@ async function persistEquipmentPayload(
   queryClient: ReturnType<typeof useQueryClient>,
   router: ReturnType<typeof useRouter>,
 ): Promise<void> {
-  const res = await fetch('/api/athlete-profile', {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ equipment: payload }),
-  });
-  if (!res.ok) {
-    throw new Error(await parseError(res));
-  }
-  await applySavedProfile(res, queryClient);
+  const saved = await patchAthleteProfile({ equipment: payload });
+  applySavedProfile(saved, queryClient);
   router.refresh();
   await invalidateAfterAthleteProfileSave(queryClient);
 }
@@ -186,12 +171,7 @@ export function useEquipmentPersist(initial: AthleteEquipment) {
       if (!dirtyRef.current) {
         return;
       }
-      void fetch('/api/athlete-profile', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ equipment: equipmentRef.current }),
-        keepalive: true,
-      });
+      patchAthleteProfileKeepalive({ equipment: equipmentRef.current });
     };
   }, []);
 

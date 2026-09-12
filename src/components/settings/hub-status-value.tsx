@@ -3,20 +3,13 @@
 import { useQuery } from '@tanstack/react-query';
 import { isIntegrationsAttentionLabel, type SettingsHubStatus } from '@/lib/settings/hub-status';
 import { queryKeys } from '@/lib/query/keys';
+import { fetchSettingsHubPresentation } from '@/lib/query/presentation-fetchers';
 import { cn } from '@/lib/utils';
-
-async function fetchHubStatus(): Promise<SettingsHubStatus> {
-  const res = await fetch('/api/presentation/settings-hub');
-  if (!res.ok) {
-    throw new Error('Failed to load settings hub status');
-  }
-  return res.json();
-}
 
 export function HubStatusValue({ statusKey }: { statusKey: keyof SettingsHubStatus }) {
   const { data, isLoading } = useQuery({
     queryKey: queryKeys.presentationSettingsHub,
-    queryFn: fetchHubStatus,
+    queryFn: fetchSettingsHubPresentation,
     staleTime: 30_000,
   });
 

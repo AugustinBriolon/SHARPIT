@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import type { GeocodedPlace } from '@/lib/geocoding/types';
 import type { LocationPlaceValue } from '@/components/ui/location-place-picker';
+import { fetchGeocodingSearch } from '@/lib/query/fetchers';
 
 export function useLocationPlaceSearch({
   disabled,
@@ -30,9 +31,8 @@ export function useLocationPlaceSearch({
     const timer = setTimeout(async () => {
       setLoading(true);
       try {
-        const res = await fetch(`/api/geocoding/search?q=${encodeURIComponent(trimmed)}`);
-        const data = (await res.json()) as { places?: GeocodedPlace[] };
-        setResults(data.places ?? []);
+        const places = await fetchGeocodingSearch(trimmed);
+        setResults(places);
         setOpen(true);
       } catch {
         setResults([]);

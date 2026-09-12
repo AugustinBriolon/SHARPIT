@@ -7,6 +7,11 @@ import { toast } from '@/components/ui/toast';
 import { providersForClass } from '@/lib/integrations/provider-catalog';
 import type { OnboardingWizardStep } from '@/lib/onboarding/wizard/wizard-steps';
 import type { PracticedSportId } from '@/lib/practiced-sports';
+import {
+  completeOnboarding as completeOnboardingFetcher,
+  patchAthleteProfile,
+  patchIntegrationSourcePrefs,
+} from '@/lib/query/fetchers';
 
 const OAUTH_STATUS_LABELS: Record<string, string> = {
   connected: 'connecté',
@@ -22,25 +27,16 @@ export async function patchOnboardingPrefs(
   dataClass: DataClassId,
   provider: IntegrationId,
 ): Promise<IntegrationSourcePrefs | null> {
-  const response = await fetch('/api/integrations/source-prefs', {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ action, dataClass, provider }),
-  });
-  if (!response.ok) {
-    return null;
-  }
-  const data = (await response.json()) as { prefs: IntegrationSourcePrefs };
-  return data.prefs;
+  return patchIntegrationSourcePrefs({ action, dataClass, provider });
 }
 
 export async function patchPracticedSports(sports: PracticedSportId[]): Promise<boolean> {
-  const response = await fetch('/api/athlete-profile', {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ practicedSports: { version: 1, sports } }),
-  });
-  return response.ok;
+  try {
+    await patchAthleteProfile({ practicedSports: { version: 1, sports } });
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 function providerLabel(id: string): string {
@@ -75,10 +71,5 @@ export function processOAuthReturn(
 }
 
 export async function completeOnboarding(): Promise<{ ok: true } | { ok: false; error: string }> {
-  const response = await fetch('/api/onboarding/complete', { method: 'POST' });
-  if (!response.ok) {
-    const data = (await response.json().catch(() => null)) as { error?: string } | null;
-    return { ok: false, error: data?.error ?? "Impossible de terminer l'onboarding" };
-  }
-  return { ok: true };
+  return completeOnboardingFetcher();
 }

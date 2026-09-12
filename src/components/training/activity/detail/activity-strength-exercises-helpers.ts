@@ -1,6 +1,7 @@
 import { toast } from '@/components/ui/toast';
 import { formatClockDuration } from '@/lib/format';
 import type { ActivityDetail } from '@/components/training/activity/detail/types';
+import { createGarminWorkoutFromActivity } from '@/lib/query/fetchers';
 
 export function formatStrengthSetDetail(set: ActivityDetail['strengthSets'][number]): string {
   if (set.durationSec && set.durationSec > 0 && !set.weightKg) {
@@ -13,21 +14,7 @@ export function formatStrengthSetDetail(set: ActivityDetail['strengthSets'][numb
 }
 
 export async function sendActivityStrengthToGarmin(activityId: string): Promise<void> {
-  const response = await fetch('/api/garmin/workouts/from-activity', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ activityId, schedule: true }),
-  });
-  const data = (await response.json()) as {
-    error?: string;
-    workoutName?: string;
-    mappedCount?: number;
-    skipped?: Array<{ exercise: string }>;
-    scheduledDate?: string | null;
-  };
-  if (!response.ok) {
-    throw new Error(data.error || 'Envoi impossible');
-  }
+  const data = await createGarminWorkoutFromActivity({ activityId, schedule: true });
   const skipped = data.skipped?.length ?? 0;
   toast.success('Workout envoyé à Garmin', {
     description: [

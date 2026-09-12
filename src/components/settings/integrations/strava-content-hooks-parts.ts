@@ -11,6 +11,7 @@ import {
   stravaBackfillSummary,
 } from '@/lib/integrations/shared/client-sync';
 import { invalidateAfterProviderSync } from '@/lib/query/invalidate-after-provider-sync';
+import { disconnectStrava } from '@/lib/query/fetchers';
 import { queryKeys } from '@/lib/query/keys';
 import type { RecordChange } from '@/lib/training/records/records';
 
@@ -84,7 +85,7 @@ export function useStravaDisconnect(onUpdated?: () => void) {
   async function handleDisconnect() {
     setDisconnecting(true);
     try {
-      await fetch('/api/strava/disconnect', { method: 'POST' });
+      await disconnectStrava();
       router.refresh();
       onUpdated?.();
     } finally {

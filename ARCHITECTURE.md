@@ -143,6 +143,9 @@ src/lib/
   engines/                ← lazy singletons wrapping core inference for the app
   query/                  ← TanStack client cache (≠ queries/ = Prisma server helpers)
                             fetchers/ nested by resource (index = `@/lib/query/fetchers`)
+                            + integrations / travel-geocoding / journal / privacy /
+                              onboarding / admin / morning (P5) ; send-json opts signal/keepalive
+                            exception UI : streaming coach custom `fetch` only
   queries/                ← Prisma server helpers (alias transition: db-queries/)
   db-queries/             ← re-export of queries/ (naming anti-collision)
   validators/             ← Zod schemas

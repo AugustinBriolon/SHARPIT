@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { notifyIntegrationSyncStarted } from '@/components/settings/integrations/modal-sync-start';
 import { toast } from '@/components/ui/toast';
 import { runWithingsSync } from '@/lib/integrations/shared/client-sync';
+import { disconnectWithings } from '@/lib/query/fetchers';
 import { invalidateAfterProviderSync } from '@/lib/query/invalidate-after-provider-sync';
 
 export function useWithingsSync(onUpdated?: () => void, onSyncStart?: () => void) {
@@ -53,7 +54,7 @@ export function useWithingsDisconnect(onUpdated?: () => void) {
   async function handleDisconnect() {
     setDisconnecting(true);
     try {
-      await fetch('/api/withings/disconnect', { method: 'POST' });
+      await disconnectWithings();
       router.refresh();
       onUpdated?.();
     } finally {

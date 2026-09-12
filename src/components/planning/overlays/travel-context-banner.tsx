@@ -7,6 +7,7 @@ import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { LinkButton } from '@/components/ui/link-button';
 import { queryKeys } from '@/lib/query/keys';
+import { fetchTravelContext } from '@/lib/query/fetchers';
 import { asLocalCalendarDate } from '@/lib/travel-context/calendar-date';
 import { filterTravelsOverlappingRange } from '@/lib/travel-context/overlap';
 import { cn } from '@/lib/utils';
@@ -72,13 +73,7 @@ export function TravelContextBanner({
 }) {
   const query = useQuery({
     queryKey: queryKeys.travelContext,
-    queryFn: async (): Promise<TravelContextResponse> => {
-      const res = await fetch('/api/travel-context');
-      if (!res.ok) {
-        throw new Error('travel context fetch failed');
-      }
-      return res.json();
-    },
+    queryFn: () => fetchTravelContext<TravelContextResponse>(),
     staleTime: 60_000,
   });
 

@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from '@/components/ui/toast';
 import { CURRENT_PRIVACY_VERSION } from '@/lib/privacy/constants';
+import { postPrivacyConsent } from '@/lib/query/fetchers';
 
 export function ConsentWallForm() {
   const router = useRouter();
@@ -25,20 +26,12 @@ export function ConsentWallForm() {
     }
     setBusy(true);
     try {
-      const response = await fetch('/api/privacy/consent', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          acceptLegal: true,
-          healthDataConsent: true,
-          aiProcessingConsent: ai || undefined,
-          unofficialProvidersAck: unofficial || undefined,
-        }),
+      await postPrivacyConsent({
+        acceptLegal: true,
+        healthDataConsent: true,
+        aiProcessingConsent: ai || undefined,
+        unofficialProvidersAck: unofficial || undefined,
       });
-      if (!response.ok) {
-        const data = (await response.json().catch(() => ({}))) as { error?: string };
-        throw new Error(data.error ?? 'Enregistrement impossible');
-      }
       toast.success('Consentements enregistrés');
       router.replace('/');
       router.refresh();

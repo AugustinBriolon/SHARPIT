@@ -1,8 +1,13 @@
 import { parseClockInput, clockToInput } from '@/components/settings/profile/profile-input-format';
 import type { ProfileData } from '@/components/settings/profile/profile-types';
-import { commitProfileSave, saveProfilePatch } from '@/components/settings/profile/profile-save';
+import {
+  commitProfileSave,
+  rollbackProfilePatch,
+  saveProfilePatch,
+} from '@/components/settings/profile/profile-save';
 import { changedProfileFields } from '@/lib/profile/profile-patch';
 import { birthDateToInput } from '@/lib/profile/athlete-profile-utils';
+import { patchAthleteProfile } from '@/lib/query/fetchers';
 import type { QueryClient } from '@tanstack/react-query';
 import type { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
 
@@ -206,11 +211,12 @@ export async function submitPersonalProfile(options: {
   }
 
   const previousProfile = saveProfilePatch(queryClient, patch);
-  const res = await fetch('/api/athlete-profile', {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(patch),
-  });
-  await commitProfileSave(queryClient, router, res, previousProfile);
-  return { kind: 'saved' as const };
+  try {
+    const saved = await patchAthleteProfile(patch);
+    await commitProfileSave(queryClient, router, saved);
+    return { kind: 'saved' as const };
+  } catch (err) {
+    rollbackProfilePatch(queryClient, previousProfile);
+    throw err;
+  }
 }

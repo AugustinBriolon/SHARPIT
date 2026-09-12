@@ -1,5 +1,6 @@
 import { toast } from '@/components/ui/toast';
 import { writeClientMorningHold } from '@/components/today/rich/morning-orientation-hold';
+import { postMorningRecalibrationAction } from '@/lib/query/fetchers';
 
 export async function postMorningRecalibration({
   action,
@@ -14,14 +15,10 @@ export async function postMorningRecalibration({
   trainingDayId: string;
   onSuccess: () => void;
 }) {
-  const res = await fetch('/api/morning-recalibration/action', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ decisionId, action }),
-  });
-  const data = (await res.json()) as { error?: string };
-  if (!res.ok) {
-    toast.error(data.error ?? 'Action impossible');
+  try {
+    await postMorningRecalibrationAction({ decisionId, action });
+  } catch (err) {
+    toast.error(err instanceof Error ? err.message : 'Action impossible');
     return;
   }
   if (action === 'reject') {

@@ -17,42 +17,20 @@ export function saveProfilePatch(
   return previousProfile;
 }
 
-function profileFieldErrorMessage(
-  data: {
-    error?: string;
-    detail?: string;
-    details?: { fieldErrors?: Record<string, string[]> };
-  } | null,
-): string | null {
-  if (!data?.details?.fieldErrors) {
-    return null;
+export function rollbackProfilePatch(
+  queryClient: ReturnType<typeof useQueryClient>,
+  previousProfile: unknown,
+) {
+  if (previousProfile !== undefined) {
+    queryClient.setQueryData(queryKeys.athleteProfile, previousProfile);
   }
-  return Object.values(data.details.fieldErrors).flat().join(' · ') || null;
-}
-
-async function parseProfileError(res: Response): Promise<string> {
-  const data = (await res.json().catch(() => null)) as {
-    error?: string;
-    detail?: string;
-    details?: { fieldErrors?: Record<string, string[]> };
-  } | null;
-  const fieldMsg = profileFieldErrorMessage(data);
-  return fieldMsg || data?.detail || data?.error || 'Erreur';
 }
 
 export async function commitProfileSave(
   queryClient: ReturnType<typeof useQueryClient>,
   router: ReturnType<typeof useRouter>,
-  res: Response,
-  previousProfile: unknown,
+  saved: Record<string, unknown> | null,
 ): Promise<Record<string, unknown> | null> {
-  if (!res.ok) {
-    if (previousProfile !== undefined) {
-      queryClient.setQueryData(queryKeys.athleteProfile, previousProfile);
-    }
-    throw new Error(await parseProfileError(res));
-  }
-  const saved = (await res.json().catch(() => null)) as Record<string, unknown> | null;
   if (saved && typeof saved === 'object') {
     queryClient.setQueryData(queryKeys.athleteProfile, (current: unknown) => {
       if (!current || typeof current !== 'object') {

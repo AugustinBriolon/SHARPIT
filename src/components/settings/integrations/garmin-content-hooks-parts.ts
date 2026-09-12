@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { notifyIntegrationSyncStarted } from '@/components/settings/integrations/modal-sync-start';
 import { toast } from '@/components/ui/toast';
 import { runGarminSync } from '@/lib/integrations/shared/client-sync';
+import { disconnectGarmin, importGarminTokens } from '@/lib/query/fetchers';
 import { invalidateAfterProviderSync } from '@/lib/query/invalidate-after-provider-sync';
 import type { RecordChange } from '@/lib/training/records/records';
 
@@ -21,19 +22,15 @@ export function useGarminImportTokens(onUpdated?: () => void) {
     setError(null);
     const form = new FormData(e.currentTarget);
     const tokenStore = String(form.get('tokenStore') ?? '').trim();
-    const response = await fetch('/api/garmin/import-tokens', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ tokenStore }),
-    });
-    setConnecting(false);
-    if (!response.ok) {
-      const data = await response.json();
-      setError(data.error ?? 'Import échoué');
-      return;
+    try {
+      await importGarminTokens(tokenStore);
+      router.refresh();
+      onUpdated?.();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Import échoué');
+    } finally {
+      setConnecting(false);
     }
-    router.refresh();
-    onUpdated?.();
   }
 
   return { connecting, error, showAdvancedImport, setShowAdvancedImport, handleImportTokens };
@@ -87,7 +84,7 @@ export function useGarminDisconnect(onUpdated?: () => void) {
   async function handleDisconnect() {
     setDisconnecting(true);
     try {
-      await fetch('/api/garmin/disconnect', { method: 'POST' });
+      await disconnectGarmin();
       router.refresh();
       onUpdated?.();
     } finally {

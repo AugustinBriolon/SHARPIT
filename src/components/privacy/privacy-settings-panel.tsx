@@ -13,6 +13,11 @@ import {
   CURRENT_PRIVACY_VERSION,
   PRIVACY_PURGE_DELAY_DAYS,
 } from '@/lib/privacy/constants';
+import {
+  deletePrivacyAccount,
+  downloadPrivacyExport,
+  postPrivacyConsent,
+} from '@/lib/query/fetchers';
 
 type ConsentState = {
   termsAcceptedAt: string | null;
@@ -67,16 +72,7 @@ export function PrivacySettingsPanel({ initial }: { initial: ConsentState | null
   async function patchConsent(body: Record<string, boolean>) {
     setBusy(true);
     try {
-      const response = await fetch('/api/privacy/consent', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-      if (!response.ok) {
-        const data = (await response.json().catch(() => ({}))) as { error?: string };
-        throw new Error(data.error ?? 'Enregistrement impossible');
-      }
-      const data = (await response.json()) as { consents: ConsentState };
+      const data = (await postPrivacyConsent(body)) as { consents: ConsentState };
       setConsents(data.consents);
       toast.success('Consentement mis à jour');
       router.refresh();
@@ -90,11 +86,7 @@ export function PrivacySettingsPanel({ initial }: { initial: ConsentState | null
   async function handleExport() {
     setBusy(true);
     try {
-      const response = await fetch('/api/privacy/export');
-      if (!response.ok) {
-        throw new Error('Export impossible');
-      }
-      const blob = await response.blob();
+      const blob = await downloadPrivacyExport();
       const url = URL.createObjectURL(blob);
       const anchor = document.createElement('a');
       anchor.href = url;
@@ -122,10 +114,7 @@ export function PrivacySettingsPanel({ initial }: { initial: ConsentState | null
     }
     setBusy(true);
     try {
-      const response = await fetch('/api/privacy/delete', { method: 'POST' });
-      if (!response.ok) {
-        throw new Error('Suppression impossible');
-      }
+      await deletePrivacyAccount();
       toast.success('Compte désactivé');
       setPendingSignOut(true);
     } catch (error) {

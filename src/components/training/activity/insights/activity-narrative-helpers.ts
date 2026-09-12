@@ -1,6 +1,10 @@
 import { ActivityType } from '@prisma/client';
 import { activityNarrativeSchema, type ActivityNarrative } from '@/lib/validators/coach';
 import { sanitizeCoachCopy } from '@/lib/coach/sanitize-coach-copy';
+import {
+  fetchActivityNarrativeFields,
+  postActivityNarrative,
+} from '@/lib/query/fetchers';
 
 export const NARRATIVE_POLL_MS = 3_000;
 export const NARRATIVE_POLL_MAX_MS = 120_000;
@@ -54,14 +58,7 @@ async function fetchActivityNarrative(activityId: string): Promise<{
   narrativeAnalysis?: unknown;
   narrativeAnalyzedAt?: string | null;
 } | null> {
-  const response = await fetch(`/api/activities/${activityId}`);
-  if (!response.ok) {
-    return null;
-  }
-  return (await response.json()) as {
-    narrativeAnalysis?: unknown;
-    narrativeAnalyzedAt?: string | null;
-  };
+  return fetchActivityNarrativeFields(activityId);
 }
 
 export async function pollActivityNarrative({
@@ -103,22 +100,5 @@ export async function generateActivityNarrative(activityId: string): Promise<{
   narrativeAnalyzedAt?: string | null;
   error?: string;
 }> {
-  const res = await fetch(`/api/activities/${activityId}/narrative`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ force: true, wait: true }),
-  });
-  const data = (await res.json().catch(() => null)) as {
-    narrativeAnalysis?: unknown;
-    narrativeAnalyzedAt?: string | null;
-    error?: string;
-  } | null;
-  if (!res.ok) {
-    return { ok: false, error: data?.error ?? 'Synthèse impossible' };
-  }
-  return {
-    ok: true,
-    narrativeAnalysis: data?.narrativeAnalysis,
-    narrativeAnalyzedAt: data?.narrativeAnalyzedAt,
-  };
+  return postActivityNarrative(activityId, { force: true, wait: true });
 }
