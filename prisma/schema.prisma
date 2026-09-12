@@ -299,6 +299,7 @@ model AthleteProfile {
   activities                  Activity[]
   dailyNutrition              DailyNutrition[]
   nutritionDayAnalyses        NutritionDayAnalysis[]
+  analysisRuns                AnalysisRun[]
   hikeTrips                   HikeTrip[]
   dailyHealth                 DailyHealth[]
   bodyCompositionMeasurements BodyCompositionMeasurement[]
@@ -1573,6 +1574,41 @@ model BrickAnalysis {
   generatedAt  DateTime       @default(now())
 
   @@index([athleteId])
+}
+
+/// One coach analysis run per target (ADR-036).
+/// Makes background work visible: the client learns an analysis is running, and
+/// gets told when it is ready, from any page. Never read by Core.
+model AnalysisRun {
+  id        String              @id @default(cuid())
+  athleteId String
+  athlete   AthleteProfile      @relation(fields: [athleteId], references: [id], onDelete: Cascade)
+  kind      AnalysisKind
+  /// Activity id, planned-session id, brick group id, or the week start (yyyy-MM-dd).
+  targetId  String
+  status    AnalysisRunStatus   @default(RUNNING)
+
+  startedAt  DateTime  @default(now())
+  finishedAt DateTime?
+  /// Short reason kept for the athlete-facing failure toast.
+  error      String?
+
+  @@unique([athleteId, kind, targetId])
+  @@index([athleteId, finishedAt])
+  @@index([athleteId, status])
+}
+
+enum AnalysisKind {
+  ACTIVITY_NARRATIVE
+  SESSION_COMPLIANCE
+  BRICK
+  WEEKLY_REVIEW
+}
+
+enum AnalysisRunStatus {
+  RUNNING
+  READY
+  FAILED
 }
 
 /// Per-call AI token usage, for cost visibility — not an enforcement mechanism.

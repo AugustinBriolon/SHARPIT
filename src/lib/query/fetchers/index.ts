@@ -18,4 +18,5 @@ export * from './journal';
 export * from './privacy';
 export * from './onboarding';
 export * from './admin';
+export * from './analyses';
 export * from './morning';

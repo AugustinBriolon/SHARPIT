@@ -1,4 +1,5 @@
 import { Suspense } from 'react';
+import { AnalysisNotifications } from '@/components/analysis/analysis-notifications';
 import { AthleteStateInitializer } from '@/components/athlete-state/athlete-state-initializer';
 import { AppErrorBoundary } from '@/components/error/app-error-boundary';
 import { AppShell } from '@/components/layout/shell/app-shell';
@@ -12,6 +13,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <>
       <AthleteStateInitializer />
+      {/* Announces a background analysis from any page — renders nothing. */}
+      <AnalysisNotifications />
       {/* Reads the URL and renders nothing — no fallback needed. */}
       <Suspense>
         <NavStackTracker />
