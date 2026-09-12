@@ -44,12 +44,17 @@ export async function patchIntegrationSourcePrefsStrict(body: unknown): Promise<
   }>;
 }
 
+export type RenphoConnectResult = {
+  success?: boolean;
+  sync?: { imported: number; updated: number; days?: number };
+};
+
 export async function connectRenpho(body: {
   email: FormDataEntryValue | null;
   password: FormDataEntryValue | null;
   dataClass?: DataClassId | null;
-}): Promise<void> {
-  await sendJson('/api/renpho/connect', 'POST', body);
+}): Promise<RenphoConnectResult> {
+  return sendJson('/api/renpho/connect', 'POST', body) as Promise<RenphoConnectResult>;
 }
 
 export async function connectMyFitnessPal(body: {
@@ -63,28 +68,40 @@ export async function importGarminTokens(tokenStore: string): Promise<void> {
   await sendJson('/api/garmin/import-tokens', 'POST', { tokenStore });
 }
 
+/**
+ * Soft-ok disconnect: pre-P5 `fetch` ignored `!ok` and still refreshed.
+ * Call sites use try/finally without catch — swallow sendJson throws.
+ */
+async function softDisconnect(url: string): Promise<void> {
+  try {
+    await sendJson(url, 'POST');
+  } catch {
+    // ignore — UI still refreshes connection status
+  }
+}
+
 export async function disconnectGarmin(): Promise<void> {
-  await sendJson('/api/garmin/disconnect', 'POST');
+  await softDisconnect('/api/garmin/disconnect');
 }
 
 export async function disconnectStrava(): Promise<void> {
-  await sendJson('/api/strava/disconnect', 'POST');
+  await softDisconnect('/api/strava/disconnect');
 }
 
 export async function disconnectMyFitnessPal(): Promise<void> {
-  await sendJson('/api/myfitnesspal/disconnect', 'POST');
+  await softDisconnect('/api/myfitnesspal/disconnect');
 }
 
 export async function disconnectRenpho(): Promise<void> {
-  await sendJson('/api/renpho/disconnect', 'POST');
+  await softDisconnect('/api/renpho/disconnect');
 }
 
 export async function disconnectWithings(): Promise<void> {
-  await sendJson('/api/withings/disconnect', 'POST');
+  await softDisconnect('/api/withings/disconnect');
 }
 
 export async function disconnectGoogle(): Promise<void> {
-  await sendJson('/api/google/disconnect', 'POST');
+  await softDisconnect('/api/google/disconnect');
 }
 
 export async function selectGoogleCalendar(body: unknown): Promise<void> {
