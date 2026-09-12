@@ -10,7 +10,7 @@ import { loadJournalHabitExperiments } from '@/lib/journal/journal-habit-experim
 import { toHabitExperimentView } from '@/lib/journal/journal-habit-experiment-view';
 import { awaitRequest } from '@/lib/next/await-request';
 import { prisma } from '@/lib/prisma';
-import { addTrainingDays, trainingDayIdForNow } from '@/lib/training/training-day';
+import { addTrainingDays, trainingDayIdForNow } from '@/lib/training/periodization/training-day';
 
 const startSchema = z.object({
   factorId: z.string().max(80).refine(isExperimentFactorId),

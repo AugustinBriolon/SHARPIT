@@ -28,7 +28,7 @@ import { TSS_METHOD_CONFIDENCE, QUALITY_CONFIDENCE } from '../types';
 import {
   computeFosterSessionLoad,
   fosterSessionLoadToTss,
-} from '@/lib/training/foster-session-load';
+} from '@/lib/training/load/foster-session-load';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Sport-specific constants

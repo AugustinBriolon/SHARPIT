@@ -5,10 +5,10 @@ import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import {
   removeManualActivityObservations,
   syncManualActivityObservations,
-} from '@/lib/manual-observation-sync';
+} from '@/lib/observation/manual-observation-sync';
 import { deleteActivity, getActivityById, updateActivity } from '@/lib/queries';
-import { updateRecordsForTypesSafe } from '@/lib/training/records';
-import { computeTrainingDayId } from '@/lib/training/training-day';
+import { updateRecordsForTypesSafe } from '@/lib/training/records/records';
+import { computeTrainingDayId } from '@/lib/training/periodization/training-day';
 import { updateActivitySchema } from '@/lib/validators/activity';
 
 type RouteContext = { params: Promise<{ id: string }> };

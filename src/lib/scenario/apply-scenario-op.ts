@@ -10,7 +10,7 @@ import {
   type ScenarioDefinition,
   type ScenarioKind,
 } from '@/core/scenario/types';
-import { trainingDayIdToDate } from '@/lib/training/training-day';
+import { trainingDayIdToDate } from '@/lib/training/periodization/training-day';
 import type { PlannedSessionExposureSetting } from '@/core/planned-session/types';
 
 export type ScenarioApplyUpdateData = {

@@ -26,7 +26,10 @@ import { resolveEnvironmentalExplanation } from '@/lib/presentation/environment/
 import { getActivePhysicalNotes, getAthleteProfile } from '@/lib/queries';
 import { buildTechnicalSessionFacts } from '@/lib/activity/narrative/activity-narrative-technical-facts';
 import { getCachedActivityStreams } from '@/lib/streams/streams';
-import { loadAthletePmcAnchor, loadDailyTrainingStressEntries } from '@/lib/training/pmc-server';
+import {
+  loadAthletePmcAnchor,
+  loadDailyTrainingStressEntries,
+} from '@/lib/training/pmc/pmc-server';
 
 const TYPE_FR: Record<string, string> = {
   RUN: 'Course à pied',

@@ -9,7 +9,7 @@
  * @see docs/adr/ADR-011-pmc-state-and-window-semantics.md
  */
 
-import { PMC_ATL_TAU, PMC_CTL_TAU, pmcTsb, stepPmc, type PmcState } from '@/lib/training/pmc';
+import { PMC_ATL_TAU, PMC_CTL_TAU, pmcTsb, stepPmc, type PmcState } from '@/lib/training/pmc/pmc';
 
 export { PMC_ATL_TAU, PMC_CTL_TAU };
 

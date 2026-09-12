@@ -19,7 +19,7 @@ const PARTIAL_PARSE_STRIDE_CHARS = 48;
 
 /**
  * Resolves with the raw model output plus its token usage (for cost logging —
- * see src/lib/ai-usage.ts). Callers re-validate the output with their own
+ * see src/lib/ai/usage.ts). Callers re-validate the output with their own
  * narrower schema (the generation schema the model sees is deliberately looser
  * than the one the app persists), so widening to `unknown` here loses nothing.
  */

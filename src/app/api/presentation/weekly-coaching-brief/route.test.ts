@@ -11,7 +11,7 @@ vi.mock('@/lib/auth/current-athlete', () => ({
   getCurrentAthleteId: vi.fn().mockResolvedValue('default'),
 }));
 
-vi.mock('@/lib/training/pmc-server', () => ({
+vi.mock('@/lib/training/pmc/pmc-server', () => ({
   loadDailyTrainingStressEntries: vi.fn().mockResolvedValue([]),
 }));
 

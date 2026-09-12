@@ -4,7 +4,7 @@ import {
   estimateFtp,
   estimateRunThresholdPace,
   fmtPaceSecPerKm,
-} from '@/lib/training/performance-predictor';
+} from '@/lib/training/periodization/performance-predictor';
 import {
   estimateSwimCss,
   fmtCssSecPer100m,
@@ -17,7 +17,7 @@ import type {
   RecordsPayload,
   RunBestCategory,
   RunEffort,
-} from '@/lib/training/records';
+} from '@/lib/training/records/records';
 
 /** Recent demonstrated capacity window for threshold suggestions (ADR-012). */
 export const THRESHOLD_RECENCY_WINDOW_DAYS = 120;

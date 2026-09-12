@@ -39,7 +39,7 @@ Brand primitives live in `src/lib/brand-tokens.ts` (hex) and `src/app/globals.cs
 - Page bleed: shells set `--page-gutter`; use `page-bleed` / `PageBleed` / `InkEmptyState bleed` for edge-to-edge bands
 - App chrome: one floating bottom tab bar on every viewport (`BottomNav`); reading column `max-w-3xl` centered (`PAGE_CONTENT_MAX_CLASS`). No desktop sidebar.
 - Muted surface: Warm Stone `#f0f1e8` (`analysis-panel-alt`)
-- Done / success washes: use `STATUS_SURFACE` (`src/lib/presentation/status-surface.ts`) — primary tokens, never raw `emerald-*`
+- Done / success washes: use `STATUS_SURFACE` (`src/lib/presentation/coaching/status-surface.ts`) — primary tokens, never raw `emerald-*`
 - Status tiers (same file): `ADEQUATE_TONE` (eucalyptus), `CAUTION_TONE`, `ELEVATED_TONE` (vo2), `RISK_TONE` — never raw Tailwind amber/blue/red for status
 - Empty / known-nothing: `InkEmptyState` / `surface-ink` / `page-bleed-ink` — not plain muted paragraphs
 - Sport identity colors (`src/lib/activity/sport-identity.ts`): RUN orange · BIKE emerald · SWIM sky · STRENGTH rose · TRIATHLON teal — one hue each; success/done must not reuse them; never Lime Pulse for sport identity

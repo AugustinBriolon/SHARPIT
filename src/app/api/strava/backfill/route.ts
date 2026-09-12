@@ -1,6 +1,9 @@
 import { NextResponse } from 'next/server';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { filterRecordChangesByActivities, recomputeRecordGroups } from '@/lib/training/records';
+import {
+  filterRecordChangesByActivities,
+  recomputeRecordGroups,
+} from '@/lib/training/records/records';
 import { backfillActivityStreams } from '@/lib/streams/stream-backfill';
 import { getStravaAccount } from '@/lib/integrations/strava/strava-sync';
 

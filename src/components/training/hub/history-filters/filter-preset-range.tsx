@@ -5,7 +5,7 @@ import {
   presetsInScope,
   rangeToPresetSelections,
   togglePresetSelection,
-} from '@/lib/training/history-filters';
+} from '@/lib/training/periodization/history-filters';
 
 type VisualState = 'selected' | 'in-scope' | 'idle';
 

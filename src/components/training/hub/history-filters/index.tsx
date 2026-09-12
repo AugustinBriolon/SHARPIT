@@ -8,7 +8,7 @@ import {
   countActiveTrainingHistoryFilters,
   DEFAULT_TRAINING_HISTORY_FILTERS,
   type TrainingHistoryFilters,
-} from '@/lib/training/history-filters';
+} from '@/lib/training/periodization/history-filters';
 import { useIsMobile } from '@/hooks/use-viewport';
 import { useResetWhenHidden } from '@/hooks/use-reset-when-hidden';
 import { HistoryFilterTrigger } from '@/components/training/hub/history-filters/history-filter-trigger';

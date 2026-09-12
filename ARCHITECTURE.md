@@ -142,18 +142,19 @@ src/lib/
                             google/, myfitnesspal/; shared/ for cross-provider helpers
   engines/                ← lazy singletons wrapping core inference for the app
   query/                  ← TanStack client cache (≠ queries/ = Prisma server helpers)
+                            fetchers/ nested by resource (index = `@/lib/query/fetchers`)
   queries/                ← Prisma server helpers (alias transition: db-queries/)
   db-queries/             ← re-export of queries/ (naming anti-collision)
   validators/             ← Zod schemas
   presentation/           ← ViewModel builders nested by surface (today/, recovery/,
-                            sleep/, effort/, …); flat re-exports temporary (P1)
+                            sleep/, effort/, …) — no flat re-exports (P4)
   journal/                ← day-journal, habits, wellness (canon ; ≠ health/)
-  health/                 ← activity-status, body-composition, health-status
+  health/                 ← activity-status, body-composition, health-status only
   training/               ← nest pmc/, records/, load/, periodization/, thread/
-                            (+ flat re-exports temporary)
-  ai/                     ← coach model config + usage (re-export lib/ai-usage)
+                            (periodization/index = canon ; no flat facades)
+  ai/                     ← coach model config + usage (`ai/usage`)
   observation/            ← manual observation sync (≠ core/observation)
-  physical-health/        ← physical helpers (re-export plat lib/physical)
+  physical-health/        ← physical helpers (`physical-health/physical`)
   product-insight/        ← page insight projections over core/product-insight
   decision-memory/        ← coaching decision aggregate helpers
   activity/               ← narrative/, list/, detail/, weather/, hike/, location/,
@@ -594,7 +595,7 @@ model AthleteProfile {
 
 ### 8.2 Load units
 
-`Activity.load` and `PlannedSession.load` represent **Training Stress Score (TSS) equivalents**. For all sports and all entry paths, load must be normalized to the same unit before being written to the database. Use `estimateActivityLoad()` from `src/lib/training/activity-load.ts` as the normalizer.
+`Activity.load` and `PlannedSession.load` represent **Training Stress Score (TSS) equivalents**. For all sports and all entry paths, load must be normalized to the same unit before being written to the database. Use `estimateActivityLoad()` from `src/lib/training/load/activity-load.ts` as the normalizer.
 
 If a load value cannot be expressed in TSS equivalents, it must not be stored in `load`. Use a sport-specific metrics field instead.
 
@@ -667,7 +668,7 @@ If the feature reads from or writes to the database:
 
 ### Step 5 — Write the fetcher
 
-1. Add the fetcher to `src/lib/query/fetchers.ts`.
+1. Add the fetcher under `src/lib/query/fetchers/` (resource module + barrel `index.ts`).
 2. Type the wire format with `Serialized<ClientX>`.
 3. Re-hydrate all `Date` fields explicitly using `toDate()` / `toDateOrNull()`.
 4. Export the client type in `src/lib/query/types.ts` if it is a new entity.
@@ -768,7 +769,7 @@ Domain functions that accept Prisma types cannot be tested without a database co
 
 ### M5 — Adding a `Date` field without hydrating it
 
-The `Serialized<T>` pattern is only as good as the hydration functions in `fetchers.ts`. If you add a new `Date` field to a model and forget to add it to the fetcher, the field silently arrives as a `string` in the client. TypeScript will not catch this because `Serialized<T>` transforms `Date` → `string`.
+The `Serialized<T>` pattern is only as good as the hydration functions in `lib/query/fetchers/`. If you add a new `Date` field to a model and forget to add it to the fetcher, the field silently arrives as a `string` in the client. TypeScript will not catch this because `Serialized<T>` transforms `Date` → `string`.
 
 **Fix:** when adding a `Date` field to any model, update the corresponding fetcher on the same PR.
 

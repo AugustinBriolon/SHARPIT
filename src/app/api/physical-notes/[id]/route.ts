@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import {
   removePhysicalConditionObservations,
   syncPhysicalConditionObservation,
-} from '@/lib/manual-observation-sync';
+} from '@/lib/observation/manual-observation-sync';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { deletePhysicalNote, getPhysicalNoteById, updatePhysicalNote } from '@/lib/queries';
 import { updatePhysicalNoteSchema } from '@/lib/validators/physical-note';

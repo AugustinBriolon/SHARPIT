@@ -60,7 +60,7 @@ import {
 } from '@/lib/journal/journal-prefs';
 import { journalTrackableById } from '@/lib/journal/journal-trackables';
 import { queryKeys } from '@/lib/query/keys';
-import { trainingDayIdForNow } from '@/lib/training/training-day';
+import { trainingDayIdForNow } from '@/lib/training/periodization/training-day';
 import { cn } from '@/lib/utils';
 
 const MorningWellnessDialog = dynamic(

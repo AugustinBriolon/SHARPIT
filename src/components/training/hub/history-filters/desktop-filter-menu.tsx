@@ -11,7 +11,7 @@ import {
   presetsInScope,
   rangeToPresetSelections,
   type TrainingHistoryFilters,
-} from '@/lib/training/history-filters';
+} from '@/lib/training/periodization/history-filters';
 import { cn } from '@/lib/utils';
 import { ActivityType } from '@prisma/client';
 import { Calendar, Check, Ruler, Timer, Zap } from 'lucide-react';

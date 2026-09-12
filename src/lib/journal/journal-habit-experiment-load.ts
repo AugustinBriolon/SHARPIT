@@ -19,7 +19,7 @@ import {
   type ExperimentEvidence,
   type ExperimentRecord,
 } from '@/lib/journal/journal-habit-experiment';
-import { addTrainingDays } from '@/lib/training/training-day';
+import { addTrainingDays } from '@/lib/training/periodization/training-day';
 
 /** One running test plus a short history is all the page shows. */
 const EXPERIMENT_HISTORY_LIMIT = 6;

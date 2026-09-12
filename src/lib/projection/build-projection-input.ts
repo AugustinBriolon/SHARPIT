@@ -6,7 +6,7 @@ import type { SerializedDecisionState } from '@/core/decision/adapters';
 import type { EnvironmentalDecisionSnapshot } from '@/core/inference/environment/types';
 import type { ProjectionHorizonDays, ProjectedAthleteInput } from '@/core/projection/types';
 import type { ScenarioSessionSlice } from '@/core/scenario/types';
-import { loadAthletePmcAnchor } from '@/lib/training/pmc-server';
+import { loadAthletePmcAnchor } from '@/lib/training/pmc/pmc-server';
 import { adaptationEngine } from '@/lib/engines/adaptation-engine';
 import { fatigueEngine } from '@/lib/engines/fatigue-engine';
 import { physicalHealthEngine } from '@/lib/engines/physical-health-engine';
@@ -14,10 +14,10 @@ import { recoveryEngine } from '@/lib/engines/recovery-engine';
 import { aggregatePlanningMaps, slicePlannedSessions } from '@/lib/projection/planning-maps';
 import { getPlannedSessions } from '@/lib/queries';
 import { loadTodayState } from '@/lib/today/navigation/today-state-server';
-import { addTrainingDays, trainingDayIdForNow } from '@/lib/training/training-day';
+import { addTrainingDays, trainingDayIdForNow } from '@/lib/training/periodization/training-day';
 import { addDays, startOfDay } from 'date-fns';
 
-export { localDateLabel, trainingDayIdToDate } from '@/lib/training/training-day';
+export { localDateLabel, trainingDayIdToDate } from '@/lib/training/periodization/training-day';
 
 async function loadTwinState<TOutput, TState>(
   loader: {

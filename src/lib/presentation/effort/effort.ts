@@ -1,8 +1,11 @@
 import { getOrBuildAthleteSnapshot } from '@/lib/athlete-state/snapshot-service';
-import { computeTrainingLoad, enrichFatigueLoadDimension } from '@/lib/training/training-load';
-import { slicePmcWindow } from '@/lib/training/pmc';
-import type { PmcPoint } from '@/lib/training/pmc-history';
-import { loadAthletePmcPoints, loadDailyTrainingStressEntries } from '@/lib/training/pmc-server';
+import { computeTrainingLoad, enrichFatigueLoadDimension } from '@/lib/training/load/training-load';
+import { slicePmcWindow } from '@/lib/training/pmc/pmc';
+import type { PmcPoint } from '@/lib/training/pmc/pmc-history';
+import {
+  loadAthletePmcPoints,
+  loadDailyTrainingStressEntries,
+} from '@/lib/training/pmc/pmc-server';
 import { resolve } from '@/lib/french';
 import {
   mapConfidenceToTier,

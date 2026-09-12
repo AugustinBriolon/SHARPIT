@@ -9,7 +9,7 @@ import { resolveNutritionLinkTitle } from '@/components/today/dashboard/today-nu
 import { useTodayNutritionDay } from '@/components/today/dashboard/nutrition-day-resolver';
 import { fetchNutritionPresentation } from '@/lib/query/presentation-fetchers';
 import { queryKeys } from '@/lib/query/keys';
-import { trainingDayIdForNow } from '@/lib/training/training-day';
+import { trainingDayIdForNow } from '@/lib/training/periodization/training-day';
 
 export { TodayNutritionCardSkeleton };
 

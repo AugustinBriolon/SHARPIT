@@ -8,7 +8,7 @@ import {
   serializeActivityWeather,
 } from '@/lib/activity/weather/activity-weather';
 import { fetchForecastPredictions } from '@/lib/planned-session/forecast/forecast-fetch';
-import { computeTrainingDayId } from '@/lib/training/training-day';
+import { computeTrainingDayId } from '@/lib/training/periodization/training-day';
 
 const schema = z.object({
   latitude: z.coerce.number(),

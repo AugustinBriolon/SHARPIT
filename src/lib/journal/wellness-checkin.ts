@@ -2,7 +2,7 @@ import { observationEngine } from '@/lib/engines/observation-engine';
 import { prisma } from '@/lib/prisma';
 import type { WellnessCheckinPayload } from '@/lib/validators/wellness-checkin';
 import { onWellnessSubmitted } from '@/lib/athlete-state/orchestrator';
-import { trainingDayIdForNow } from '@/lib/training/training-day';
+import { trainingDayIdForNow } from '@/lib/training/periodization/training-day';
 
 export async function hasMorningWellnessCheckin(
   athleteId: string,

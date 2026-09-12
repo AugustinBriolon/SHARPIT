@@ -4,7 +4,10 @@ import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { syncGarminActivities } from '@/lib/integrations/garmin/garmin-activity-sync';
 import { syncGarminHealth } from '@/lib/integrations/garmin/garmin-sync';
 import { checkRateLimit, rateLimitJsonResponse, rateLimiters } from '@/lib/rate-limit';
-import { filterRecordChangesByActivities, updateRecordsForTypes } from '@/lib/training/records';
+import {
+  filterRecordChangesByActivities,
+  updateRecordsForTypes,
+} from '@/lib/training/records/records';
 
 export const maxDuration = 300;
 

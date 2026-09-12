@@ -9,9 +9,12 @@ import {
   getHealthEntries,
   getPlannedSessionsForCoach,
 } from '@/lib/queries';
-import { loadAthletePmcAnchor, loadDailyTrainingStressEntries } from '@/lib/training/pmc-server';
-import { pmcTsb } from '@/lib/training/pmc';
-import { categoryLabels, sideLabels, statusLabels } from '@/lib/physical';
+import {
+  loadAthletePmcAnchor,
+  loadDailyTrainingStressEntries,
+} from '@/lib/training/pmc/pmc-server';
+import { pmcTsb } from '@/lib/training/pmc/pmc';
+import { categoryLabels, sideLabels, statusLabels } from '@/lib/physical-health/physical';
 import { getOrBuildAthleteSnapshot } from '@/lib/athlete-state/snapshot-service';
 import { prisma } from '@/lib/prisma';
 import { listTravelContexts } from '@/lib/travel-context/service';
@@ -21,7 +24,7 @@ import { travelDisciplineLabels } from '@/lib/travel-context/disciplines';
 import { buildTopActionLine } from '@/lib/today/rich/today-rich-view';
 import { decisionVerdict } from '@/lib/decision/projection';
 import { resolve, resolveCode } from '@/lib/french';
-import { computeTrainingLoad } from '@/lib/training/training-load';
+import { computeTrainingLoad } from '@/lib/training/load/training-load';
 import { buildEnvironmentPresentationContext } from '@/lib/presentation/environment/environment';
 import {
   formatScenarioComparisonForCoach,

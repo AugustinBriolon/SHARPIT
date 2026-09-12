@@ -15,13 +15,13 @@ import { fatigueEngine } from '@/lib/engines/fatigue-engine';
 import { featureEngine } from '@/lib/engines/feature-engine';
 import { reasoningEngine } from '@/lib/engines/reasoning-engine';
 import { recoveryEngine } from '@/lib/engines/recovery-engine';
-import { computeDailyStrain } from '@/lib/training/daily-strain';
+import { computeDailyStrain } from '@/lib/training/load/daily-strain';
 import {
   activityMatchesTrainingDay,
   approximateTrainingDayUtcRange,
   DEFAULT_TRAINING_DAY_START_HOUR,
   DEFAULT_TRAINING_DAY_TIMEZONE,
-} from '@/lib/training/training-day';
+} from '@/lib/training/periodization/training-day';
 import type {
   AdaptationData,
   DailyStrainData,

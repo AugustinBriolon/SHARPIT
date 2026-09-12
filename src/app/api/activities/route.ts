@@ -6,10 +6,10 @@ import { buildActivityCreateData } from '@/lib/activity/activity-service';
 import { runActivityNarrativeAnalysis } from '@/lib/activity/narrative/activity-narrative';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { isDemoSession } from '@/lib/demo/demo-session';
-import { syncManualActivityObservations } from '@/lib/manual-observation-sync';
+import { syncManualActivityObservations } from '@/lib/observation/manual-observation-sync';
 import { createActivity, getActivitiesList } from '@/lib/queries';
 import { prisma } from '@/lib/prisma';
-import { updateRecordsForTypesSafe } from '@/lib/training/records';
+import { updateRecordsForTypesSafe } from '@/lib/training/records/records';
 import { createActivitySchema } from '@/lib/validators/activity';
 
 export async function GET(request: NextRequest) {

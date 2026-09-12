@@ -8,7 +8,7 @@ import {
   ActivityPerformanceSkeleton,
 } from '@/components/training/activity/detail/activity-detail-skeleton';
 import { useMultisportStreams } from '@/hooks/use-data';
-import type { MultisportLegKind } from '@/lib/multisport';
+import type { MultisportLegKind } from '@/lib/activity/multisport';
 import type { MultisportLegStream } from '@/lib/streams/streams';
 import { cn } from '@/lib/utils';
 import { SportLegInsights } from '@/components/training/activity/insights/sport-leg-insights';

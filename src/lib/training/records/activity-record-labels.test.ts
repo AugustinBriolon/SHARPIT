@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import type { RecordEntry, RecordsPayload } from '@/lib/training/records';
+import type { RecordEntry, RecordsPayload } from '@/lib/training/records/records';
 import { buildActivityRecordLabels } from './activity-record-labels';
 
 function entry(rank: number, activityId: string | null): RecordEntry {

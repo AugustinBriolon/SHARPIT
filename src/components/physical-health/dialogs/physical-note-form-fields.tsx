@@ -20,7 +20,7 @@ import {
   sideOrder,
   statusLabels,
   statusOrder,
-} from '@/lib/physical';
+} from '@/lib/physical-health/physical';
 import type { BodySide, PhysicalCategory, PhysicalStatus } from '@prisma/client';
 
 const BODY_PART_NONE = '__none__';

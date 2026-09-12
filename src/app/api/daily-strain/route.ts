@@ -2,13 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { featureEngine } from '@/lib/engines/feature-engine';
 import { prisma } from '@/lib/prisma';
-import { computeDailyStrain } from '@/lib/training/daily-strain';
+import { computeDailyStrain } from '@/lib/training/load/daily-strain';
 import {
   activityMatchesTrainingDay,
   approximateTrainingDayUtcRange,
   DEFAULT_TRAINING_DAY_START_HOUR,
   DEFAULT_TRAINING_DAY_TIMEZONE,
-} from '@/lib/training/training-day';
+} from '@/lib/training/periodization/training-day';
 
 function isValidTrainingDayId(trainingDayId: string | null): trainingDayId is string {
   return Boolean(trainingDayId && /^\d{4}-\d{2}-\d{2}$/.test(trainingDayId));

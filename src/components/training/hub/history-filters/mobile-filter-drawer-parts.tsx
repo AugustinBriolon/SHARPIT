@@ -10,7 +10,7 @@ import {
   rangeToPresetSelections,
   togglePresetSelection,
   type TrainingHistoryFilters,
-} from '@/lib/training/history-filters';
+} from '@/lib/training/periodization/history-filters';
 import { cn } from '@/lib/utils';
 import { ActivityType } from '@prisma/client';
 import { Bike, Dumbbell, Footprints, Mountain, Trophy, Waves, Zap } from 'lucide-react';

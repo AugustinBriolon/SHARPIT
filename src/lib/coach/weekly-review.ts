@@ -21,7 +21,7 @@ import {
   getPlannedSessions,
 } from '@/lib/queries';
 import { analyzeSleep, formatClock, formatDuration, type SleepEntryInput } from '@/lib/sleep/sleep';
-import { loadDailyTrainingStressEntries } from '@/lib/training/pmc-server';
+import { loadDailyTrainingStressEntries } from '@/lib/training/pmc/pmc-server';
 import { isExpertMode, toDisplayMode, type DisplayMode } from '@/lib/preferences/display-mode';
 
 const TYPE_FR: Record<string, string> = {

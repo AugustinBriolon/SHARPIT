@@ -1,6 +1,10 @@
 import type { GarminConnect } from '@flow-js/garmin-connect';
 import { mapWithConcurrency } from '@/lib/async/map-with-concurrency';
-import { legKindLabel, mapGarminChildTypeToKind, type MultisportLeg } from '@/lib/multisport';
+import {
+  legKindLabel,
+  mapGarminChildTypeToKind,
+  type MultisportLeg,
+} from '@/lib/activity/multisport';
 
 type GCClient = InstanceType<typeof GarminConnect>;
 

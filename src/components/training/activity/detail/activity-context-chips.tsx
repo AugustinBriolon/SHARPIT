@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { Trophy } from 'lucide-react';
-import { recordCategoryHref } from '@/lib/training/records';
+import { recordCategoryHref } from '@/lib/training/records/records';
 import { ActivityMetaChip } from './activity-meta-chip';
 import type { ActivityDetail, ActivityPerformanceRecordChip } from './types';
 

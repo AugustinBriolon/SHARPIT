@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { projectPmcForward } from '@/lib/projection/pmc-forward';
-import { pmcTsb, stepPmc } from '@/lib/training/pmc';
+import { pmcTsb, stepPmc } from '@/lib/training/pmc/pmc';
 import {
   projectAdaptationIndex,
   projectFatigueIndex,

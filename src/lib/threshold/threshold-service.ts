@@ -1,7 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { isSet } from '@/lib/util/value';
 import { createThresholdSnapshot, getAthleteProfile, upsertAthleteProfile } from '@/lib/queries';
-import { getStoredRecords } from '@/lib/training/records';
+import { getStoredRecords } from '@/lib/training/records/records';
 import { SWIM_CSS_MIN_DISTANCE_M, type SwimCssSample } from '@/lib/threshold/swim-css';
 import {
   computeThresholdEstimates,

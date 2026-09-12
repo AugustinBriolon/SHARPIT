@@ -3,7 +3,7 @@
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import type { ClientPhysicalNote } from '@/lib/query/types';
-import { severityColor } from '@/lib/physical';
+import { severityColor } from '@/lib/physical-health/physical';
 import { cn } from '@/lib/utils';
 import type { SessionAnalysis } from '@/lib/validators/coach';
 import { usePhysicalNoteMutations, usePhysicalNotes } from '@/hooks/use-physical';

@@ -6,7 +6,7 @@ import {
   totalTransitionSec,
   type MultisportLeg,
   type MultisportLegKind,
-} from '@/lib/multisport';
+} from '@/lib/activity/multisport';
 import {
   SPORT_IDENTITY_PANEL,
   SPORT_IDENTITY_SURFACE,

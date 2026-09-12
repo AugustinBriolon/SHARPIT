@@ -8,7 +8,7 @@ import {
   getPlannedSessions,
 } from '@/lib/queries';
 import { getGoogleAccount, getUpcomingBusy } from '@/lib/integrations/google/google-sync';
-import { loadDailyTrainingStressEntries } from '@/lib/training/pmc-server';
+import { loadDailyTrainingStressEntries } from '@/lib/training/pmc/pmc-server';
 import type { AthleteSnapshot } from '@/core/athlete-state/snapshot';
 import { normalizeAthletePracticedSports } from '@/lib/practiced-sports';
 import type { GateContext, GateProposal } from './types';

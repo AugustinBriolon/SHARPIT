@@ -4,7 +4,7 @@ import { demoAnchorTrainingDayId } from '@/lib/demo/demo-calendar';
 import { backfillBodyCompositionObservationsFromMeasurements } from '@/lib/integrations/shared/body-composition-observation-backfill';
 import { backfillHealthObservationsFromDailyHealth } from '@/lib/integrations/shared/health-observation-backfill';
 import { activityInclude } from '@/lib/queries/activity-include';
-import { syncManualActivityObservations } from '@/lib/manual-observation-sync';
+import { syncManualActivityObservations } from '@/lib/observation/manual-observation-sync';
 
 /** Purge derived inference state so a reseed never inherits stale twin/features. */
 export async function purgeDemoDerivedState(

@@ -5,7 +5,7 @@ import { loadJournalHabitExperiments } from '@/lib/journal/journal-habit-experim
 import { toHabitExperimentView } from '@/lib/journal/journal-habit-experiment-view';
 import { awaitRequest } from '@/lib/next/await-request';
 import { prisma } from '@/lib/prisma';
-import { trainingDayIdForNow } from '@/lib/training/training-day';
+import { trainingDayIdForNow } from '@/lib/training/periodization/training-day';
 
 type RouteContext = { params: Promise<{ id: string }> };
 

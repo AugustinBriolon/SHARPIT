@@ -17,7 +17,7 @@ import {
   invalidateCoachContext,
 } from '@/lib/coach/context/coach-context';
 import { COACH_COPY_DASH_RULE, sanitizeCoachCopy } from '@/lib/coach/sanitize-coach-copy';
-import { recordAiUsage } from '@/lib/ai-usage';
+import { recordAiUsage } from '@/lib/ai/usage';
 import { athleteHasAiProcessingConsent } from '@/lib/privacy/consent-store';
 import { prisma } from '@/lib/prisma';
 import { getActivities, getPlannedSessions } from '@/lib/queries';

@@ -14,7 +14,7 @@ import {
   splitWeeklyReviewSections,
 } from '@/components/training/weekly-review/weekly-review-sections';
 import { useGenerateWeeklyReview, useLatestWeeklyReview } from '@/hooks/use-coach';
-import type { WeeklyStats } from '@/lib/weekly-review';
+import type { WeeklyStats } from '@/lib/coach/weekly-review';
 
 /** Each chart sits directly above the paragraph it illustrates — reading the
  * numbers and reading the coach's take on them is the same motion, not two

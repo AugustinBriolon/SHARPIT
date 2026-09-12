@@ -1,4 +1,4 @@
-import { trainingDayIdForNow } from '@/lib/training/training-day';
+import { trainingDayIdForNow } from '@/lib/training/periodization/training-day';
 import { isSet } from '@/lib/util/value';
 import { resolveBriefingPhase } from '@/lib/briefing/briefing-phase';
 import type {

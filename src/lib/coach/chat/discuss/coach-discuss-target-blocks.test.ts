@@ -9,8 +9,8 @@ vi.mock('@/lib/queries', () => ({
   getPlannedSessionById: vi.fn(),
 }));
 
-vi.mock('@/lib/training/records', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@/lib/training/records')>()),
+vi.mock('@/lib/training/records/records', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/lib/training/records/records')>()),
   getPerformanceRecordPodium: vi.fn(),
   getPerformanceRecordsForActivity: vi.fn(),
 }));
@@ -34,7 +34,7 @@ async function queries() {
 }
 
 async function records() {
-  return await import('@/lib/training/records');
+  return await import('@/lib/training/records/records');
 }
 
 beforeEach(() => {

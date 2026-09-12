@@ -4,7 +4,7 @@ import {
   getConversation,
   renameConversation,
   saveConversationMessages,
-} from '@/lib/conversations';
+} from '@/lib/coach/conversations';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 
 type RouteContext = { params: Promise<{ id: string }> };

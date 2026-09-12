@@ -13,7 +13,7 @@ import {
   totalTransitionSec,
   transitionLegs,
   type MultisportLeg,
-} from '@/lib/multisport';
+} from '@/lib/activity/multisport';
 import { cn } from '@/lib/utils';
 
 const kindIcon: Record<'swim' | 'bike' | 'run', typeof Waves> = {

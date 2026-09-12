@@ -10,9 +10,9 @@ import {
   parseTrainingHistoryFilters,
   serializeTrainingHistoryFilters,
   type TrainingHistoryFilters,
-} from '@/lib/training/history-filters';
-import { buildActivityRecordLabels } from '@/lib/training/activity-record-labels';
-import type { RecordsPayload } from '@/lib/training/records';
+} from '@/lib/training/periodization/history-filters';
+import { buildActivityRecordLabels } from '@/lib/training/records/activity-record-labels';
+import type { RecordsPayload } from '@/lib/training/records/records';
 
 const TYPE_ORDER: ActivityType[] = [
   ActivityType.RUN,

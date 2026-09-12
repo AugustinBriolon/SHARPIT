@@ -1122,7 +1122,7 @@ of what the Athlete did with it (accepted, modified, rejected, or later overridd
 retrospective, deterministic evaluation of what happened — never a bare success/quality verdict, always evidence +
 explicit `limitations` + a confidence scaled by evidence completeness. See ADR-006 for the persistence and placement
 decisions, and ARCHITECTURE.md §4 for the COACHING-domain boundary. Its first athlete-facing consumer is the
-presentation layer built in ADR-007 (`src/lib/presentation/session-rationale.ts`, `weekly-coaching-brief.ts`,
+presentation layer built in ADR-007 (`src/lib/presentation/planned-session/session-rationale.ts`, `presentation/coaching/weekly-coaching-brief.ts`,
 `learning-feedback.ts`) — the Session Recommendation, action log, and outcome finally reach the Athlete as the
 "what SHARPIT observed / inferred / suggests / you chose" rationale and the weekly brief's evidence-backed learning
 sentences, rather than staying an engineering-only audit trail.

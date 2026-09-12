@@ -26,7 +26,7 @@ import {
   synthesizeProjectedFatigue,
   synthesizeProjectedRecovery,
 } from '@/lib/projection/score-projection';
-import { addTrainingDays } from '@/lib/training/training-day';
+import { addTrainingDays } from '@/lib/training/periodization/training-day';
 import { resolve } from '@/lib/french';
 
 function projectionHeadlineFromTsb(tsbEnd: number): string {

@@ -5,7 +5,7 @@
  */
 
 import { dayKeyFromDate } from '@/lib/date/day-key';
-import { addTrainingDays, trainingDayIdForNow } from '@/lib/training/training-day';
+import { addTrainingDays, trainingDayIdForNow } from '@/lib/training/periodization/training-day';
 import { toUtcDateOnly } from '@/lib/travel-context/calendar-date';
 
 /** Today's training day for the demo athlete (Paris, 4h cutoff). */
