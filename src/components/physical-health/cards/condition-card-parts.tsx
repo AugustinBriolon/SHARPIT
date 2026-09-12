@@ -15,6 +15,8 @@ import {
 import type { PhysicalHealthConditionCard } from '@/core/presentation/physical-health-view-model';
 import { CORPS_TONE_TEXT, type CorpsTone } from '@/lib/ui/metric-tone';
 import { corpsToneFromPhysicalSeverity } from '@/lib/health/health-status';
+import { usePhysicalNotes } from '@/hooks/use-physical';
+import { reassessmentDue, type ReassessmentDue } from '@/lib/physical-health/reassessment-due';
 import { cn } from '@/lib/utils';
 
 function TrendIcon({ trend }: { trend: string }) {
@@ -156,6 +158,33 @@ export function ConditionExpandedBody({ condition }: { condition: PhysicalHealth
   );
 }
 
+/**
+ * Says the condition is owed news, and why — the follow-up no longer waits for
+ * the coach model to think of asking (volet A).
+ */
+function ReassessmentDueChip({ due }: { due: ReassessmentDue }) {
+  const label =
+    due.trigger === 'after_session'
+      ? 'Nouvelles attendues après ta séance'
+      : `Sans nouvelles depuis ${due.daysSinceLastObservation} jours`;
+
+  return (
+    <span className="bg-signal-caution/12 text-signal-caution inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium">
+      {label}
+    </span>
+  );
+}
+
+/** Deterministic follow-up state for the legacy note behind this condition. */
+function useConditionReassessmentDue(legacyNoteId: string | null): ReassessmentDue | null {
+  const notesQuery = usePhysicalNotes();
+  const note = legacyNoteId ? notesQuery.data?.find((n) => n.id === legacyNoteId) : undefined;
+  if (!note) {
+    return null;
+  }
+  return reassessmentDue({ note, lastRealisedSessionAt: null, now: new Date() });
+}
+
 export function ConditionCardActions({
   condition,
   onEditLegacy,
@@ -163,8 +192,15 @@ export function ConditionCardActions({
   condition: PhysicalHealthConditionCard;
   onEditLegacy?: (legacyNoteId: string) => void;
 }) {
+  const due = useConditionReassessmentDue(condition.legacyPhysicalNoteId);
+
   return (
     <CardContent className="pt-0">
+      {due ? (
+        <div className="pb-2">
+          <ReassessmentDueChip due={due} />
+        </div>
+      ) : null}
       <div className="flex flex-wrap gap-2 pt-1">
         {condition.legacyPhysicalNoteId && onEditLegacy ? (
           <button
@@ -172,7 +208,7 @@ export function ConditionCardActions({
             type="button"
             onClick={() => onEditLegacy(condition.legacyPhysicalNoteId!)}
           >
-            Ajouter une observation
+            {due ? 'Donner des nouvelles' : 'Ajouter une observation'}
           </button>
         ) : null}
         {condition.legacyPhysicalNoteId && condition.isActive ? (
