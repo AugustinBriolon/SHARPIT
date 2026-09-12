@@ -40,29 +40,35 @@ export function RearrangeSessionChip({
 export function RearrangeSessionRail({
   sessions,
   ariaLabel,
+  caption,
 }: {
   sessions: readonly RearrangePreviewSession[];
   ariaLabel: string;
+  /** Optional lab-note above the rail (e.g. habit tension). */
+  caption?: string;
 }) {
   if (sessions.length === 0) {
     return null;
   }
 
   return (
-    <ol
-      aria-label={ariaLabel}
-      className="flex [scrollbar-width:none] gap-2 overflow-x-auto pb-0.5 [-ms-overflow-style:none] sm:flex-wrap sm:overflow-visible [&::-webkit-scrollbar]:hidden"
-    >
-      {sessions.map((session, index) => (
-        <div key={session.id} className="flex shrink-0 items-center gap-2">
-          <RearrangeSessionChip session={session} />
-          {index < sessions.length - 1 ? (
-            <span className="text-muted-foreground/50 hidden text-xs sm:inline" aria-hidden>
-              →
-            </span>
-          ) : null}
-        </div>
-      ))}
-    </ol>
+    <div className="space-y-1.5">
+      {caption ? <p className="text-label text-muted-foreground/90">{caption}</p> : null}
+      <ol
+        aria-label={ariaLabel}
+        className="flex [scrollbar-width:none] gap-2 overflow-x-auto pb-0.5 [-ms-overflow-style:none] sm:flex-wrap sm:overflow-visible [&::-webkit-scrollbar]:hidden"
+      >
+        {sessions.map((session, index) => (
+          <div key={session.id} className="flex shrink-0 items-center gap-2">
+            <RearrangeSessionChip session={session} />
+            {index < sessions.length - 1 ? (
+              <span className="text-muted-foreground/50 hidden text-xs sm:inline" aria-hidden>
+                →
+              </span>
+            ) : null}
+          </div>
+        ))}
+      </ol>
+    </div>
   );
 }

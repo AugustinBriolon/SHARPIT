@@ -29,6 +29,7 @@ import { AdaptChangeRow } from '@/components/coach/plan/adapt-change-row';
 import { buildAdaptBatchOps } from '@/components/coach/plan/plan-adapter-apply';
 import { PlanAdaptAppliedPanel } from '@/components/plan/adapt-applied-panel';
 import { recordAdaptAppliedAck, type AdaptAppliedAck } from '@/lib/plan/adapt-applied-ack';
+import { isHabitPlanFocus } from '@/lib/today/rich/habit-coaching-signal';
 import { Check } from 'lucide-react';
 
 /** REMOVE changes bypass the Gate (see coach/adapt/route.ts) — only ADD/MODIFY changes have a gate result. */
@@ -98,8 +99,11 @@ function renderApplyButtonContent(
   return 'Appliquer';
 }
 
-function planAdapterDescription(fromTwinFeedback: boolean): string {
-  if (fromTwinFeedback) {
+function planAdapterDescription(initialFocus?: string): string {
+  if (initialFocus && isHabitPlanFocus(initialFocus)) {
+    return 'Proposition préparée depuis ton journal. Vérifie le contexte, lance les propositions, puis valide ce que tu gardes — rien n’est appliqué sans toi.';
+  }
+  if (initialFocus) {
     return 'Proposition préparée depuis ton Twin après feedback. Vérifie le contexte, lance les propositions, puis valide ce que tu gardes — rien n’est appliqué sans toi.';
   }
   return 'Le coach analyse ce que tu as réellement fait et propose des modifications sur tes séances déjà planifiées (14 prochains jours), sans tout recréer.';
@@ -335,7 +339,7 @@ export function PlanAdapter({
             <ListRestart className="text-primary size-4" />
             Ajuster le planning
           </DialogTitle>
-          <DialogDescription>{planAdapterDescription(Boolean(initialFocus))}</DialogDescription>
+          <DialogDescription>{planAdapterDescription(initialFocus)}</DialogDescription>
         </DialogHeader>
         {body}
       </DialogContent>
