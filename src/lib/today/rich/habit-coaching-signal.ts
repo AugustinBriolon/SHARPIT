@@ -256,3 +256,6 @@ export function isHabitPlanFocus(focus: string | null | undefined): boolean {
 export function habitLeverChipLabel(lever: HabitLeverAnnotation): string {
   return lever.source === 'experiment' ? `Test · ${lever.label}` : `Journal · ${lever.label}`;
 }
+
+/** Rail caption when journal habit drives the rearrange preview (UI FR). */
+export const HABIT_SESSION_TENSION_CAPTION = 'Tension journal → séances';

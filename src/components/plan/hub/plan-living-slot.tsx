@@ -8,7 +8,10 @@ import { useTodayJournalHabitBridge } from '@/components/today/rich/use-today-jo
 import { useTodayRunningHabitExperiment } from '@/components/today/rich/use-today-running-habit-experiment';
 import { usePlanHubModel } from '@/hooks/use-plan-hub-model';
 import { useAdaptAppliedSettled } from '@/hooks/use-adapt-applied-settled';
-import { resolveTodayJournalHabitCallout } from '@/lib/journal/journal-habit-today-bridge';
+import {
+  resolveTodayJournalHabitCallout,
+  type TodayJournalHabitCallout,
+} from '@/lib/journal/journal-habit-today-bridge';
 import { buildPlanLivingCallout } from '@/lib/plan/hub/plan-living-callout';
 
 const PlanAdapter = dynamic(
@@ -16,7 +19,8 @@ const PlanAdapter = dynamic(
   { ssr: false },
 );
 
-type PlanWeek = NonNullable<ReturnType<typeof usePlanHubModel>['week']>;
+type PlanHubModel = ReturnType<typeof usePlanHubModel>;
+type PlanWeek = NonNullable<PlanHubModel['week']>;
 
 function remainingFromWeek(week: PlanWeek) {
   return week.remaining
@@ -42,6 +46,37 @@ function usePlanLivingHabitCallout(enabled: boolean) {
   );
 }
 
+/** Pure slot builder — habit annotate/fallback needs `model.now` (no invented clock). */
+function resolvePlanLivingSlotCallout(
+  model: PlanHubModel,
+  habitCallout: TodayJournalHabitCallout | null,
+  settled: boolean,
+) {
+  if (settled || !model.weekReady || !model.week) {
+    return null;
+  }
+  return buildCalloutFromReadyWeek(model, model.week, habitCallout);
+}
+
+function buildCalloutFromReadyWeek(
+  model: PlanHubModel,
+  week: PlanWeek,
+  habitCallout: TodayJournalHabitCallout | null,
+) {
+  const remaining = remainingFromWeek(week);
+  const day = model.now ?? undefined;
+  return buildPlanLivingCallout({
+    hasDatedGoal: Boolean(model.goal?.targetDate),
+    hasActiveMacro: Boolean(model.macroRail),
+    hasRemainingSessions: remaining.length > 0,
+    goalLabel: model.goal?.title ?? null,
+    verdict: model.verdict,
+    remaining,
+    habitCallout: day ? habitCallout : null,
+    day,
+  });
+}
+
 /**
  * Between destination and week decision — elevates adjust when Twin / habit + #92 align.
  * After apply, shows settled confirmation for the rest of the local day.
@@ -52,31 +87,20 @@ export function PlanLivingSlot() {
   const { adaptAck, settled } = useAdaptAppliedSettled();
   const habitCallout = usePlanLivingHabitCallout(!settled);
 
-  const callout = useMemo(() => {
-    if (settled || !model.weekReady || !model.week) {
-      return null;
-    }
-    const remaining = remainingFromWeek(model.week);
-    return buildPlanLivingCallout({
-      hasDatedGoal: Boolean(model.goal?.targetDate),
-      hasActiveMacro: Boolean(model.macroRail),
-      hasRemainingSessions: remaining.length > 0,
-      goalLabel: model.goal?.title ?? null,
-      verdict: model.verdict,
-      remaining,
+  const callout = useMemo(
+    () => resolvePlanLivingSlotCallout(model, habitCallout, settled),
+    [
       habitCallout,
-      day: model.now ?? undefined,
-    });
-  }, [
-    habitCallout,
-    model.goal,
-    model.macroRail,
-    model.now,
-    model.verdict,
-    model.week,
-    model.weekReady,
-    settled,
-  ]);
+      model,
+      model.goal,
+      model.macroRail,
+      model.now,
+      model.verdict,
+      model.week,
+      model.weekReady,
+      settled,
+    ],
+  );
 
   if (settled && adaptAck) {
     return <PlanAdaptAppliedPanel ack={adaptAck} />;

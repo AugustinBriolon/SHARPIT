@@ -4,7 +4,10 @@ import Link from 'next/link';
 import { ListRestart } from 'lucide-react';
 import { FadeIn } from '@/components/motion/fade-presence';
 import { RearrangeSessionRail } from '@/components/coach/plan/rearrange-session-rail';
-import { habitLeverChipLabel } from '@/lib/today/rich/habit-coaching-signal';
+import {
+  HABIT_SESSION_TENSION_CAPTION,
+  habitLeverChipLabel,
+} from '@/lib/today/rich/habit-coaching-signal';
 import type { TodayViewModel } from '@/core/presentation/today-view-model';
 
 type RearrangeProposal = NonNullable<TodayViewModel['rearrangeProposal']>;
@@ -66,7 +69,7 @@ export function TodayRearrangeProposal({ proposal }: { proposal: RearrangePropos
         </div>
 
         <RearrangeSessionRail
-          caption={habitDriven ? 'Tension habit → séances' : undefined}
+          caption={habitDriven ? HABIT_SESSION_TENSION_CAPTION : undefined}
           sessions={proposal.previewSessions}
           ariaLabel={
             habitDriven
