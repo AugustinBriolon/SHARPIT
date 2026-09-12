@@ -29,6 +29,7 @@ import { AdaptChangeRow } from '@/components/coach/plan/adapt-change-row';
 import { buildAdaptBatchOps } from '@/components/coach/plan/plan-adapter-apply';
 import { PlanAdaptAppliedPanel } from '@/components/plan/adapt-applied-panel';
 import { recordAdaptAppliedAck, type AdaptAppliedAck } from '@/lib/plan/adapt-applied-ack';
+import { recordCoachingAdvancementEntry } from '@/lib/plan/coaching-advancement-ledger';
 import { Check } from 'lucide-react';
 
 /** REMOVE changes bypass the Gate (see coach/adapt/route.ts) — only ADD/MODIFY changes have a gate result. */
@@ -283,13 +284,19 @@ export function PlanAdapter({
     setApplied(true);
     applyBatch.mutate(ops, {
       onSuccess: () => {
+        const appliedAt = new Date();
         setConfirmedAck(
           recordAdaptAppliedAck({
             goalLabel,
             changeCount: ops.length,
-            now: new Date(),
+            now: appliedAt,
           }),
         );
+        recordCoachingAdvancementEntry({
+          goalLabel,
+          changeCount: ops.length,
+          now: appliedAt,
+        });
       },
       onError: (err) => {
         setApplied(false);
