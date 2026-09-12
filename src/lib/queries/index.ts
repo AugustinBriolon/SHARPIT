@@ -10,7 +10,7 @@ import {
   activityPmcSelect,
 } from '@/lib/queries/activity-include';
 import { linkPlannedSessionActivity } from '@/lib/queries/planned-sessions';
-import { ActivityType, Prisma } from '@prisma/client';
+import { ActivityType, FunctionalImpact, Prisma } from '@prisma/client';
 import { addDays, endOfDay, startOfDay } from 'date-fns';
 import { prisma } from '@/lib/prisma';
 import type { DisplayMode } from '@/lib/preferences/display-mode';
@@ -486,7 +486,12 @@ async function recordConditionObservationForCheckin(input: {
   noteId: string;
   condition: NonNullable<Awaited<ReturnType<typeof prisma.condition.findFirst>>>;
   checkin: Awaited<ReturnType<typeof prisma.physicalCheckin.create>>;
-  data: { severity?: number | null; comment?: string | null; date?: Date };
+  data: {
+    severity?: number | null;
+    comment?: string | null;
+    date?: Date;
+    functionalImpact?: FunctionalImpact | null;
+  };
 }) {
   const { athleteId, condition, checkin, data } = input;
   const observedAt = data.date ?? new Date();
@@ -501,7 +506,7 @@ async function recordConditionObservationForCheckin(input: {
       source: 'ATHLETE',
       symptomPresent,
       severityReported: data.severity ?? null,
-      functionalImpact: severityToFunctionalImpact(data.severity),
+      functionalImpact: data.functionalImpact ?? severityToFunctionalImpact(data.severity),
       bodyRegion: condition.bodyRegion,
       side: condition.side,
       type: condition.type,
@@ -522,7 +527,12 @@ async function recordConditionObservationForCheckin(input: {
 export async function addPhysicalCheckin(
   athleteId: string,
   noteId: string,
-  data: { severity?: number | null; comment?: string | null; date?: Date },
+  data: {
+    severity?: number | null;
+    comment?: string | null;
+    date?: Date;
+    functionalImpact?: FunctionalImpact | null;
+  },
 ) {
   const note = await prisma.physicalNote.findFirst({
     where: { id: noteId, athleteId },

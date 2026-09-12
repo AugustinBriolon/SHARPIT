@@ -1,4 +1,4 @@
-import { BodySide, PhysicalCategory, PhysicalStatus } from '@prisma/client';
+import { BodySide, FunctionalImpact, PhysicalCategory, PhysicalStatus } from '@prisma/client';
 import { z } from 'zod';
 
 const optionalString = z
@@ -29,6 +29,12 @@ export const createCheckinSchema = z.object({
   severity: optionalSeverity,
   comment: optionalString,
   date: z.coerce.date().optional(),
+  /**
+   * What the athlete could actually do. Distinct from severity on purpose:
+   * pain 2/10 but unable to run is not pain 7/10 with the session completed.
+   * Absent → derived from severity, as before.
+   */
+  functionalImpact: z.nativeEnum(FunctionalImpact).optional().nullable(),
 });
 
 export type CreatePhysicalNoteInput = z.infer<typeof createPhysicalNoteSchema>;

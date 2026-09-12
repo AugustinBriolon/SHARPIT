@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type { BodySide, PhysicalCategory, PhysicalStatus } from '@prisma/client';
+import type { BodySide, FunctionalImpact, PhysicalCategory, PhysicalStatus } from '@prisma/client';
 import { fetchPhysicalNotes } from '@/lib/query/fetchers';
 import { queryKeys } from '@/lib/query/keys';
 import { listOptimistic, tempId } from '@/lib/query/optimistic';
@@ -24,6 +24,8 @@ export interface CheckinPayload {
   severity?: number | null;
   comment?: string | null;
   date?: Date;
+  /** What the athlete could still do — declared, never guessed from severity. */
+  functionalImpact?: FunctionalImpact | null;
 }
 
 async function sendJson(url: string, method: string, body?: unknown) {
