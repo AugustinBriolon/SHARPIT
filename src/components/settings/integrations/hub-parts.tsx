@@ -18,6 +18,7 @@ import {
   setPrimaryForClass,
   type IntegrationSourcePrefs,
 } from '@/lib/integrations/source-prefs';
+import { patchIntegrationSourcePrefsStrict } from '@/lib/query/fetchers';
 import type { RowSyncState } from '@/components/settings/integrations/hub-sync';
 
 function syncLabel(lastSyncAt: string | null): string {
@@ -117,18 +118,17 @@ async function patchClassProviderPrefs({
     optimistic = setPrimaryForClass(prefs, dataClass, integrationId);
   }
   onPrefsChange(optimistic);
-  const response = await fetch('/api/integrations/source-prefs', {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ action, dataClass, provider: integrationId }),
-  });
-  if (!response.ok) {
+  try {
+    const data = await patchIntegrationSourcePrefsStrict({
+      action,
+      dataClass,
+      provider: integrationId,
+    });
+    onPrefsChange(data.prefs);
+  } catch {
     onPrefsChange(prefs);
     toast.error('Impossible de mettre à jour la source');
-    return;
   }
-  const data = (await response.json()) as { prefs: IntegrationSourcePrefs };
-  onPrefsChange(data.prefs);
 }
 
 function ClassProviderRowHeader({

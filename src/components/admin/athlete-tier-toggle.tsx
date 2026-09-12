@@ -6,6 +6,7 @@ import type { AccessTier } from '@prisma/client';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { toast } from '@/components/ui/toast';
+import { patchAthleteTier } from '@/lib/query/fetchers';
 
 const TIER_LABEL: Record<AccessTier, string> = {
   FREE: 'Gratuit',
@@ -20,14 +21,7 @@ export function AthleteTierToggle({ athleteId, tier }: { athleteId: string; tier
   function toggle() {
     startTransition(async () => {
       try {
-        const response = await fetch(`/api/admin/athletes/${athleteId}/tier`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ tier: nextTier }),
-        });
-        if (!response.ok) {
-          throw new Error();
-        }
+        await patchAthleteTier(athleteId, nextTier);
         toast.success(`Palier changé pour ${TIER_LABEL[nextTier]}`);
         router.refresh();
       } catch {

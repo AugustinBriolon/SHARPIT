@@ -5,6 +5,7 @@ import type { UseFormReturn } from 'react-hook-form';
 import type { LocationPlaceValue } from '@/components/ui/location-place-picker';
 import type { ActivityFormValues } from '@/components/training/activity/form/activity-form-helpers';
 import { sportSupportsOutdoorContext } from '@/core/planned-session/defaults';
+import { fetchGeocodingHome, postActivityWeatherPreview } from '@/lib/query/fetchers';
 
 async function fetchWeatherPreview({
   location,
@@ -25,22 +26,19 @@ async function fetchWeatherPreview({
 }) {
   setWeatherLoading(true);
   try {
-    const response = await fetch('/api/activities/weather-preview', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
+    const data = await postActivityWeatherPreview(
+      {
         latitude: location.latitude,
         longitude: location.longitude,
         label: location.label,
         date: resolvedActivityDate,
         durationSec: resolvedDurationSec,
-      }),
-      signal: controller.signal,
-    });
-    if (!response.ok) {
+      },
+      { signal: controller.signal },
+    );
+    if (!data) {
       return;
     }
-    const data = (await response.json()) as { weather?: string | null; summary?: string | null };
     if (data.weather) {
       form.setValue('weather', data.weather);
     }
@@ -86,9 +84,8 @@ export function useActivityFormEffects({
       return;
     }
     const dateIso = resolvedActivityDate.toISOString();
-    void fetch(`/api/geocoding/home?date=${encodeURIComponent(dateIso)}`)
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data: { home?: { label: string; latitude: number; longitude: number } } | null) => {
+    void fetchGeocodingHome(dateIso)
+      .then((data) => {
         if (data?.home) {
           setLocation({
             label: data.home.label,

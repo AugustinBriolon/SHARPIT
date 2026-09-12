@@ -4,6 +4,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useState, useTransition } from 'react';
 import { toast } from '@/components/ui/toast';
 import { postMorningRecalibration } from '@/components/today/rich/morning-orientation-recalibration';
+import { refreshAthleteSnapshot } from '@/lib/query/athlete-snapshot-fetch';
 import { queryKeys } from '@/lib/query/keys';
 
 export function useMorningOrientationActions({
@@ -34,21 +35,14 @@ export function useMorningOrientationActions({
     }
     setPending('refresh');
     try {
-      const res = await fetch(
-        `/api/athlete-state/refresh?trainingDayId=${trainingDayId}&forceSync=true`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ source: 'today_refresh' }),
-        },
-      );
-      if (!res.ok) {
-        toast.error('Actualisation impossible — réessaie dans un instant.');
-        return;
-      }
+      await refreshAthleteSnapshot(trainingDayId);
       await refreshCaches();
-    } catch {
-      toast.error('Hors ligne ou erreur réseau — dernière info connue conservée.');
+    } catch (err) {
+      toast.error(
+        err instanceof Error && err.message.includes('Impossible de mettre à jour')
+          ? 'Actualisation impossible — réessaie dans un instant.'
+          : 'Hors ligne ou erreur réseau — dernière info connue conservée.',
+      );
     } finally {
       setPending(null);
     }

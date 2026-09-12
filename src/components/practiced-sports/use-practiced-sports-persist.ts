@@ -10,6 +10,7 @@ import {
   type PracticedSportId,
 } from '@/lib/practiced-sports';
 import { invalidateAfterAthleteProfileSave } from '@/lib/query/invalidate-after-athlete-profile-save';
+import { patchAthleteProfile } from '@/lib/query/fetchers';
 import { queryKeys } from '@/lib/query/keys';
 
 const SAVE_DEBOUNCE_MS = 450;
@@ -19,14 +20,6 @@ function sportsEqual(a: readonly PracticedSportId[], b: readonly PracticedSportI
     return false;
   }
   return a.every((id, index) => id === b[index]);
-}
-
-async function parseError(res: Response): Promise<string> {
-  const data = (await res.json().catch(() => null)) as {
-    error?: string;
-    detail?: string;
-  } | null;
-  return data?.detail || data?.error || "Impossible d'enregistrer les sports";
 }
 
 export function usePracticedSportsPersist(initial: AthletePracticedSports) {
@@ -87,14 +80,7 @@ export function usePracticedSportsPersist(initial: AthletePracticedSports) {
       });
 
       try {
-        const res = await fetch('/api/athlete-profile', {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ practicedSports: body }),
-        });
-        if (!res.ok) {
-          throw new Error(await parseError(res));
-        }
+        await patchAthleteProfile({ practicedSports: body });
         if (seq === saveSeq.current) {
           savedRef.current = payload;
           setMessage('Sports enregistrés.');

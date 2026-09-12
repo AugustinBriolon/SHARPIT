@@ -43,3 +43,71 @@ export async function fetchActivity(id: string): Promise<ClientActivityDetail> {
   );
   return hydrateActivityDetail(data);
 }
+
+/** Soft poll helper — returns null on HTTP error (narrative polling). */
+export async function fetchActivityNarrativeFields(id: string): Promise<{
+  narrativeAnalysis?: unknown;
+  narrativeAnalyzedAt?: string | null;
+} | null> {
+  try {
+    const activity = await fetchActivity(id);
+    return {
+      narrativeAnalysis: activity.narrativeAnalysis,
+      narrativeAnalyzedAt:
+        activity.narrativeAnalyzedAt instanceof Date
+          ? activity.narrativeAnalyzedAt.toISOString()
+          : (activity.narrativeAnalyzedAt as string | null | undefined) ?? null,
+    };
+  } catch {
+    return null;
+  }
+}
+
+export async function postActivityNarrative(
+  activityId: string,
+  body: { force?: boolean; wait?: boolean } = { force: true, wait: true },
+): Promise<{
+  ok: boolean;
+  narrativeAnalysis?: unknown;
+  narrativeAnalyzedAt?: string | null;
+  error?: string;
+}> {
+  const res = await fetch(`/api/activities/${encodeURIComponent(activityId)}/narrative`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  const data = (await res.json().catch(() => null)) as {
+    narrativeAnalysis?: unknown;
+    narrativeAnalyzedAt?: string | null;
+    error?: string;
+  } | null;
+  if (!res.ok) {
+    return { ok: false, error: data?.error ?? 'Synthèse impossible' };
+  }
+  return {
+    ok: true,
+    narrativeAnalysis: data?.narrativeAnalysis,
+    narrativeAnalyzedAt: data?.narrativeAnalyzedAt ?? null,
+  };
+}
+
+export async function postActivityWeatherPreview(
+  body: unknown,
+  options?: { signal?: AbortSignal },
+): Promise<{ weather?: string | null; summary?: string | null } | null> {
+  try {
+    const res = await fetch('/api/activities/weather-preview', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+      signal: options?.signal,
+    });
+    if (!res.ok) {
+      return null;
+    }
+    return (await res.json()) as { weather?: string | null; summary?: string | null };
+  } catch {
+    return null;
+  }
+}

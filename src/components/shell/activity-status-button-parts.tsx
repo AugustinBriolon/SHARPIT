@@ -33,6 +33,7 @@ import {
   todayIsoDate,
 } from '@/lib/health/activity-status';
 import { queryKeys } from '@/lib/query/keys';
+import { fetchTravelContext } from '@/lib/query/fetchers';
 import { cn } from '@/lib/utils';
 
 export const STATUS_ICON = {
@@ -649,13 +650,8 @@ function useActivityStatusDraft(store: ActivityStatusStore) {
 function useTravelContextQuery(open: boolean, draftStatus: ActivityStatusId) {
   return useQuery({
     queryKey: queryKeys.travelContext,
-    queryFn: async (): Promise<TravelContextResponse> => {
-      const res = await fetch('/api/travel-context');
-      if (!res.ok) {
-        throw new Error('travel context fetch failed');
-      }
-      return res.json();
-    },
+    queryFn: async (): Promise<TravelContextResponse> =>
+      (await fetchTravelContext()) as TravelContextResponse,
     enabled: open && draftStatus === 'paused',
     staleTime: 60_000,
   });

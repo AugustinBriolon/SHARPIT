@@ -151,3 +151,9 @@ export async function fetchDataDays(
   const { days } = await fetchJson<{ days: string[] }>(`/api/presentation/data-days?${params}`);
   return days;
 }
+
+export async function fetchSettingsHubPresentation(): Promise<
+  import('@/lib/settings/hub-status').SettingsHubStatus
+> {
+  return fetchJson('/api/presentation/settings-hub');
+}

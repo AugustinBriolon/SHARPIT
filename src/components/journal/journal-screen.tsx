@@ -59,6 +59,7 @@ import {
   type JournalPrefs,
 } from '@/lib/journal/journal-prefs';
 import { journalTrackableById } from '@/lib/journal/journal-trackables';
+import { fetchJournalDaySignals } from '@/lib/query/fetchers';
 import { queryKeys } from '@/lib/query/keys';
 import { trainingDayIdForNow } from '@/lib/training/periodization/training-day';
 import { cn } from '@/lib/utils';
@@ -557,13 +558,8 @@ function useJournalDaySignals(trainingDayId: string | null, prefs: JournalPrefs)
 
   return useQuery({
     queryKey: queryKeys.journalDaySignals(trainingDayId ?? 'pending'),
-    queryFn: async (): Promise<JournalDaySignals> => {
-      const res = await fetch(`/api/journal/day-signals?day=${encodeURIComponent(trainingDayId!)}`);
-      if (!res.ok) {
-        throw new Error('day signals fetch failed');
-      }
-      return res.json() as Promise<JournalDaySignals>;
-    },
+    queryFn: async (): Promise<JournalDaySignals> =>
+      (await fetchJournalDaySignals(trainingDayId!)) as JournalDaySignals,
     enabled: Boolean(trainingDayId) && needsSignals,
     staleTime: 60_000,
   });

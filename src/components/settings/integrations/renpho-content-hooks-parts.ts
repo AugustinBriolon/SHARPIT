@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { notifyIntegrationSyncStarted } from '@/components/settings/integrations/modal-sync-start';
 import { toast } from '@/components/ui/toast';
 import { runRenphoSync } from '@/lib/integrations/shared/client-sync';
+import { connectRenpho, disconnectRenpho } from '@/lib/query/fetchers';
 import { invalidateAfterProviderSync } from '@/lib/query/invalidate-after-provider-sync';
 import { queryKeys } from '@/lib/query/keys';
 
@@ -20,24 +21,17 @@ export function useRenphoConnect(onUpdated?: () => void) {
     setConnecting(true);
     setError(null);
     const form = new FormData(e.currentTarget);
-    const response = await fetch('/api/renpho/connect', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: form.get('email'), password: form.get('password') }),
-    });
-    setConnecting(false);
-    if (!response.ok) {
-      const data = await response.json();
-      setError(data.error ?? 'Connexion échouée');
-      return;
+    try {
+      await connectRenpho({ email: form.get('email'), password: form.get('password') });
+      toast.success('Renpho connecté');
+      await queryClient.invalidateQueries({ queryKey: queryKeys.bodyComposition() });
+      router.refresh();
+      onUpdated?.();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Connexion échouée');
+    } finally {
+      setConnecting(false);
     }
-    const data = await response.json();
-    toast.success('Renpho connecté', {
-      description: `${data.sync.imported} mesure(s) importée(s)`,
-    });
-    await queryClient.invalidateQueries({ queryKey: queryKeys.bodyComposition() });
-    router.refresh();
-    onUpdated?.();
   }
 
   return { connecting, error, handleConnect };
@@ -88,7 +82,7 @@ export function useRenphoDisconnect(onUpdated?: () => void) {
   async function handleDisconnect() {
     setDisconnecting(true);
     try {
-      await fetch('/api/renpho/disconnect', { method: 'POST' });
+      await disconnectRenpho();
       router.refresh();
       onUpdated?.();
     } finally {

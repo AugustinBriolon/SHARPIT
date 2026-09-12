@@ -3,7 +3,11 @@ import type { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.
 import { useEffect, useMemo, useState } from 'react';
 import { useResetWhenHidden } from '@/hooks/use-reset-when-hidden';
 import { paceToInput } from '@/components/settings/profile/profile-input-format';
-import { commitProfileSave, saveProfilePatch } from '@/components/settings/profile/profile-save';
+import {
+  commitProfileSave,
+  rollbackProfilePatch,
+  saveProfilePatch,
+} from '@/components/settings/profile/profile-save';
 import type { ProfileData } from '@/components/settings/profile/profile-types';
 import {
   buildCalibrationPatch,
@@ -20,6 +24,7 @@ import {
 import { useOfflineGuard } from '@/hooks/use-offline-guard';
 import { shouldHydrateProfileForm } from '@/lib/profile/map-athlete-profile';
 import { invalidateAfterAthleteProfileSave } from '@/lib/query/invalidate-after-athlete-profile-save';
+import { importGarminAthleteProfile, patchAthleteProfile } from '@/lib/query/fetchers';
 import { queryKeys } from '@/lib/query/keys';
 import type { ThresholdApplyPreview, ThresholdField } from '@/lib/threshold/threshold-estimates';
 
@@ -59,13 +64,7 @@ function buildGarminImportMessage(data: GarminImportResult): string {
 }
 
 async function fetchGarminImport(): Promise<GarminImportResult> {
-  const res = await fetch('/api/athlete-profile/import-garmin', { method: 'POST' });
-  const data = (await res.json().catch(() => null)) as
-    (GarminImportResult & { error?: string }) | null;
-  if (!res.ok || !data) {
-    throw new Error(data?.error ?? "Échec de l'import Garmin");
-  }
-  return data;
+  return (await importGarminAthleteProfile()) as GarminImportResult;
 }
 
 function useCalibrationFormState(initial: ProfileData | null) {
@@ -168,13 +167,14 @@ async function persistCalibrationPatch(
   }
 
   const previousProfile = saveProfilePatch(queryClient, patch);
-  const res = await fetch('/api/athlete-profile', {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(patch),
-  });
-  await commitProfileSave(queryClient, router, res, previousProfile);
-  return 'saved' as const;
+  try {
+    const saved = await patchAthleteProfile(patch);
+    await commitProfileSave(queryClient, router, saved);
+    return 'saved' as const;
+  } catch (err) {
+    rollbackProfilePatch(queryClient, previousProfile);
+    throw err;
+  }
 }
 
 function isCalibrationDirty(

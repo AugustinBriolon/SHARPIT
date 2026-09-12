@@ -7,6 +7,7 @@ import { NO_GOAL } from '@/components/planning/session/edit/planned-session-dial
 import type { usePlannedSessionFormState } from '@/components/planning/session/edit/use-planned-session-form-state';
 import { useQuery } from '@tanstack/react-query';
 import { queryKeys } from '@/lib/query/keys';
+import { fetchGeocodingHome, fetchTravelContext } from '@/lib/query/fetchers';
 import { usePlannedSessionMutations } from '@/hooks/use-data';
 import {
   shouldApplyTravelLocationToSession,
@@ -100,25 +101,21 @@ export function usePlannedSessionLocationQueries() {
   const homeQuery = useQuery({
     queryKey: ['geocoding', 'home'],
     queryFn: async () => {
-      const res = await fetch('/api/geocoding/home');
-      if (!res.ok) {
+      const data = await fetchGeocodingHome();
+      if (!data) {
         throw new Error('home fetch failed');
       }
-      return res.json() as Promise<{
+      return data as {
         home: { label?: string; latitude: number; longitude: number };
-      }>;
+      };
     },
     staleTime: 5 * 60_000,
   });
 
   const travelQuery = useQuery({
     queryKey: queryKeys.travelContext,
-    queryFn: async () => {
-      const res = await fetch('/api/travel-context');
-      if (!res.ok) {
-        throw new Error('travel fetch failed');
-      }
-      return res.json() as Promise<{
+    queryFn: async () =>
+      (await fetchTravelContext()) as {
         active: {
           locationLabel: string;
           locationLat: number;
@@ -126,8 +123,7 @@ export function usePlannedSessionLocationQueries() {
           startDate: string;
           endDate: string;
         } | null;
-      }>;
-    },
+      },
     staleTime: 60_000,
   });
 

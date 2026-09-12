@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { notifyIntegrationSyncStarted } from '@/components/settings/integrations/modal-sync-start';
 import { toast } from '@/components/ui/toast';
 import { runMfpSync } from '@/lib/integrations/shared/client-sync';
+import { connectMyFitnessPal, disconnectMyFitnessPal } from '@/lib/query/fetchers';
 import { queryKeys } from '@/lib/query/keys';
 
 export function useMfpSync(onUpdated?: () => void, onSyncStart?: () => void) {
@@ -44,7 +45,7 @@ export function useMfpDisconnect(onUpdated?: () => void) {
   async function handleDisconnect() {
     setDisconnecting(true);
     try {
-      await fetch('/api/myfitnesspal/disconnect', { method: 'POST' });
+      await disconnectMyFitnessPal();
       await queryClient.invalidateQueries({ queryKey: queryKeys.presentationRoot });
       onUpdated?.();
       router.refresh();
@@ -69,21 +70,12 @@ export function useMfpConnect(onUpdated?: () => void) {
     setConnectError(null);
     const form = new FormData(e.currentTarget);
     try {
-      const res = await fetch('/api/myfitnesspal/connect', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sessionToken: form.get('sessionToken') }),
-      });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({ error: 'Connexion échouée' }));
-        setConnectError(data.error ?? 'Connexion échouée');
-        return;
-      }
+      await connectMyFitnessPal({ sessionToken: form.get('sessionToken') });
       await queryClient.invalidateQueries({ queryKey: queryKeys.presentationRoot });
       onUpdated?.();
       router.refresh();
-    } catch {
-      setConnectError('Erreur réseau');
+    } catch (err) {
+      setConnectError(err instanceof Error ? err.message : 'Connexion échouée');
     } finally {
       setConnecting(false);
     }

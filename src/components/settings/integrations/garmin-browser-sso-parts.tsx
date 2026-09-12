@@ -7,29 +7,11 @@ import {
   GARMIN_SSO_MESSAGE_ORIGIN,
   parseGarminSsoPostMessage,
 } from '@/lib/integrations/garmin/garmin-browser-sso-shared';
+import { exchangeGarminSsoTicket } from '@/lib/query/fetchers';
 import { RISK_TONE, STATUS_SURFACE } from '@/lib/presentation/coaching/status-surface';
 import { cn } from '@/lib/utils';
 
 export type GarminSsoPhase = 'form' | 'connecting' | 'success' | 'error';
-
-type TicketExchangeResult =
-  { ok: true; redirectTo: string } | { ok: false; status: string | undefined };
-
-export async function exchangeGarminSsoTicket(ticket: string): Promise<TicketExchangeResult> {
-  const response = await fetch('/api/garmin/sso-callback', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ ticket }),
-  });
-  const data = (await response.json().catch(() => null)) as {
-    redirectTo?: string;
-    status?: string;
-  } | null;
-  if (!response.ok || !data?.redirectTo) {
-    return { ok: false, status: data?.status };
-  }
-  return { ok: true, redirectTo: data.redirectTo };
-}
 
 export function createGarminSsoMessageHandler(options: {
   exchanging: React.MutableRefObject<boolean>;

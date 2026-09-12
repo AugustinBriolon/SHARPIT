@@ -2,25 +2,18 @@
 
 import { useQuery } from '@tanstack/react-query';
 import type { TodayJournalHabitBridge } from '@/lib/journal/journal-habit-today-bridge';
+import { fetchJournalHabitBridge } from '@/lib/query/fetchers';
 import { queryKeys } from '@/lib/query/keys';
 
 type HabitBridgeResponse = {
   bridge: TodayJournalHabitBridge | null;
 };
 
-async function fetchJournalHabitBridge(): Promise<HabitBridgeResponse> {
-  const res = await fetch('/api/journal/habit-bridge');
-  if (!res.ok) {
-    throw new Error('journal habit bridge fetch failed');
-  }
-  return res.json() as Promise<HabitBridgeResponse>;
-}
-
 /** Parallel Today fetch — keeps presentation VM free of journal series. */
 export function useTodayJournalHabitBridge(enabled: boolean) {
   return useQuery({
     queryKey: queryKeys.journalHabitBridge,
-    queryFn: fetchJournalHabitBridge,
+    queryFn: async () => (await fetchJournalHabitBridge()) as HabitBridgeResponse,
     enabled,
     staleTime: 10 * 60_000,
   });

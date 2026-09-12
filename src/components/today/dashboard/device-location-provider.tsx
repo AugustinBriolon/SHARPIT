@@ -11,6 +11,7 @@ import {
   writeLastHomeLocationRefreshMs,
 } from '@/lib/geocoding/home-location-refresh';
 import { invalidateAfterAthleteProfileSave } from '@/lib/query/invalidate-after-athlete-profile-save';
+import { postAthleteHomeLocation } from '@/lib/query/fetchers';
 import { beginGeolocationRequest } from '@/components/today/dashboard/use-device-location-helpers';
 import type { DeviceLocationState } from '@/components/today/dashboard/use-device-location-types';
 
@@ -41,14 +42,7 @@ function useDeviceLocationController(): DeviceLocationContextValue {
 
   const persist = useCallback(
     async (latitude: number, longitude: number) => {
-      const res = await fetch('/api/athlete-profile/home-location', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ latitude, longitude }),
-      });
-      if (!res.ok) {
-        throw new Error(`save failed: ${res.status}`);
-      }
+      await postAthleteHomeLocation({ latitude, longitude });
       writeLastHomeLocationRefreshMs(Date.now());
       writeHomeLocationEverGranted();
       await invalidateAfterAthleteProfileSave(queryClient);
