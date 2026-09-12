@@ -6,6 +6,7 @@ import {
   PlanDestinationPlate,
   PlanDestinationPlateSkeleton,
 } from '@/components/plan/hub/plan-destination-plate';
+import { PlanLivingSlot } from '@/components/plan/hub/plan-living-slot';
 import {
   PlanWeekDecision,
   PlanWeekDecisionSkeleton,
@@ -100,6 +101,7 @@ export function PlanHubWidgets() {
   return (
     <div className="space-y-8">
       <DestinationSlot model={model} />
+      <PlanLivingSlot />
       <DecisionSlot decision={decision} model={model} />
       <ThreadSlot decision={decision} model={model} />
     </div>

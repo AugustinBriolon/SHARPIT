@@ -10,6 +10,10 @@ import {
   buildAdaptDeepLink,
   type FeedbackRearrangeUpcomingSession,
 } from '@/lib/today/rich/feedback-rearrange-proposal';
+import {
+  buildRearrangePreviewSessions,
+  type RearrangePreviewSession,
+} from '@/lib/today/rich/rearrange-preview';
 import type { SessionIntensity } from '@prisma/client';
 import type { DailyPhase } from '@/lib/daily-phase/types';
 
@@ -32,6 +36,8 @@ export type HabitRearrangeProposalView = {
   href: string;
   focus: string;
   trigger: HabitRearrangeTrigger;
+  kind: 'habit';
+  previewSessions: RearrangePreviewSession[];
 };
 
 export type HabitCoachingSignal = {
@@ -116,25 +122,34 @@ function countDemandingUpcoming(
 function proposalFromCopy(
   trigger: HabitRearrangeTrigger,
   copy: Pick<HabitRearrangeProposalView, 'headline' | 'why' | 'focus'>,
+  upcoming: readonly FeedbackRearrangeUpcomingSession[],
+  fromStart: Date,
 ): HabitRearrangeProposalView {
+  const windowSessions = pickUpcoming(upcoming, fromStart, 14);
   return {
     visible: true,
     ...copy,
     ctaLabel: 'Proposer un rearrange',
     href: buildAdaptDeepLink(copy.focus),
     trigger,
+    kind: 'habit',
+    previewSessions: buildRearrangePreviewSessions(windowSessions, 'habit'),
   };
 }
 
 function proposalFromCallout(
   callout: TodayJournalHabitCallout,
   demandingCount: number,
+  upcoming: readonly FeedbackRearrangeUpcomingSession[],
+  fromStart: Date,
 ): HabitRearrangeProposalView | null {
   if (callout.kind === 'experiment') {
     const { experiment } = callout;
     return proposalFromCopy(
       'HABIT_EXPERIMENT',
       experimentRearrangeCopy(experiment.habitLabel, experiment.meaning, demandingCount),
+      upcoming,
+      fromStart,
     );
   }
 
@@ -146,6 +161,8 @@ function proposalFromCallout(
   return proposalFromCopy(
     'HABIT_ASSOCIATION',
     associationRearrangeCopy(bridge.habitLabel, bridge.meaning, demandingCount),
+    upcoming,
+    fromStart,
   );
 }
 
@@ -163,15 +180,13 @@ export function buildHabitRearrangeProposal(input: {
     return null;
   }
 
-  const demandingCount = countDemandingUpcoming(
-    input.upcoming,
-    habitRearrangeWindowStart(input.phase, input.day),
-  );
+  const fromStart = habitRearrangeWindowStart(input.phase, input.day);
+  const demandingCount = countDemandingUpcoming(input.upcoming, fromStart);
   if (demandingCount === 0) {
     return null;
   }
 
-  return proposalFromCallout(input.callout, demandingCount);
+  return proposalFromCallout(input.callout, demandingCount, input.upcoming, fromStart);
 }
 
 /**

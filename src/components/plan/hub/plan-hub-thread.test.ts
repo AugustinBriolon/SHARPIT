@@ -42,8 +42,9 @@ describe('Plan hub continuous thread', () => {
     expect(widgets).not.toContain('PlanCoachMenu');
   });
 
-  it('composes destination, decision, and thread in one column', () => {
+  it('composes destination, living callout slot, decision, and thread in one column', () => {
     expect(widgets).toContain('PlanDestinationPlate');
+    expect(widgets).toContain('PlanLivingSlot');
     expect(widgets).toContain('PlanWeekDecision');
     expect(widgets).toContain('PlanWeekThread');
     expect(widgets).toContain('space-y-8');

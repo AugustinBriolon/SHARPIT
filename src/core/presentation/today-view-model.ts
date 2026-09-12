@@ -266,6 +266,7 @@ export type TodayViewModel = {
   /**
    * Feedback → rearrange CTA (presentation only). Deep-links to PlanAdapter;
    * never applies calendar mutations without athlete confirmation.
+   * Visual Plan vivant panel: goal band + session preview chips.
    */
   rearrangeProposal: {
     visible: true;
@@ -275,6 +276,15 @@ export type TodayViewModel = {
     href: string;
     focus: string;
     trigger: 'POST_SESSION' | 'MORNING_MISMATCH' | 'HABIT_ASSOCIATION' | 'HABIT_EXPERIMENT';
+    kind: 'protect' | 'push' | 'effort' | 'habit';
+    goalLabel: string | null;
+    previewSessions: Array<{
+      id: string;
+      dateLabel: string;
+      intensityLabel: string;
+      intensity: import('@prisma/client').SessionIntensity | null;
+      tone: 'tension' | 'calm' | 'neutral';
+    }>;
   } | null;
 
   hierarchy: PresentationHierarchy;

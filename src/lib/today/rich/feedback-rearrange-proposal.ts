@@ -10,6 +10,11 @@ import type { SessionIntensity } from '@prisma/client';
 import type { DailyPhase } from '@/lib/daily-phase/types';
 import type { OverallVerdict } from '@/lib/today/dashboard/today-mapping';
 import { TWIN_DRILL_DOWN } from '@/lib/today/navigation/today-twin-navigation';
+import {
+  buildRearrangePreviewSessions,
+  type RearrangeKind,
+  type RearrangePreviewSession,
+} from '@/lib/today/rich/rearrange-preview';
 
 const HARD_INTENSITY = new Set<SessionIntensity>(['THRESHOLD', 'VO2MAX', 'RACE']);
 const DEMANDING_INTENSITY = new Set<SessionIntensity>(['TEMPO', 'THRESHOLD', 'VO2MAX', 'RACE']);
@@ -56,9 +61,11 @@ export type FeedbackRearrangeProposalView = {
   /** Prefill for PlanAdapter focus textarea. */
   focus: string;
   trigger: 'POST_SESSION' | 'MORNING_MISMATCH';
+  kind: RearrangeKind;
+  previewSessions: RearrangePreviewSession[];
 };
 
-type ProposalCopy = { headline: string; why: string; focus: string };
+type ProposalCopy = { headline: string; why: string; focus: string; kind: RearrangeKind };
 type ProposalTrigger = FeedbackRearrangeProposalView['trigger'];
 
 export function buildAdaptDeepLink(focus: string): string {
@@ -128,6 +135,7 @@ function protectMismatchCopy(upcomingHardCount: number): ProposalCopy {
     why: `Ton Twin oriente vers la prudence, alors que ${upcomingHardCount} séance${upcomingHardCount > 1 ? 's' : ''} exigeante${upcomingHardCount > 1 ? 's' : ''} restent planifiées.`,
     focus:
       'Twin en mode prudence / récupération. Allège ou décale les séances exigeantes des 14 prochains jours pour absorber le feedback récent.',
+    kind: 'protect',
   };
 }
 
@@ -137,6 +145,7 @@ function pushMismatchCopy(): ProposalCopy {
     why: 'Tu as de la marge pour progresser, mais les séances à venir restent surtout faciles.',
     focus:
       'Twin en capacité de pousser. Propose un rearrange des 14 prochains jours pour mieux utiliser cette fenêtre (sans surcharge inutile).',
+    kind: 'push',
   };
 }
 
@@ -146,12 +155,14 @@ function hardEffortCopy(): ProposalCopy {
     why: 'L’effort d’aujourd’hui est exigeant. Le Twin est à jour : vérifie que les prochaines séances laissent de la place pour absorber.',
     focus:
       'Effort récent dur (ressenti / RPE). Réarrange les 14 prochains jours pour laisser absorber avant de remonter l’intensité.',
+    kind: 'effort',
   };
 }
 
 function buildProposal(
   trigger: ProposalTrigger,
   copy: ProposalCopy,
+  upcoming: FeedbackRearrangeUpcomingSession[],
 ): FeedbackRearrangeProposalView {
   return {
     visible: true,
@@ -161,6 +172,8 @@ function buildProposal(
     href: buildAdaptDeepLink(copy.focus),
     focus: copy.focus,
     trigger,
+    kind: copy.kind,
+    previewSessions: buildRearrangePreviewSessions(upcoming, copy.kind),
   };
 }
 
@@ -187,19 +200,19 @@ function matchRearrangeProposal(
 ): FeedbackRearrangeProposalView | null {
   const demandingCount = upcoming.filter((s) => isDemandingSession(s.intensity)).length;
   if (PROTECT_VERDICTS.has(input.verdict) && demandingCount > 0) {
-    return buildProposal(trigger, protectMismatchCopy(demandingCount));
+    return buildProposal(trigger, protectMismatchCopy(demandingCount), upcoming);
   }
 
   const onlyEasy = upcoming.every((s) => isEasyOrUnknown(s.intensity));
   if (PUSH_VERDICTS.has(input.verdict) && onlyEasy) {
-    return buildProposal(trigger, pushMismatchCopy());
+    return buildProposal(trigger, pushMismatchCopy(), upcoming);
   }
 
   const hardCount = upcoming.filter((s) => isHardSession(s.intensity)).length;
   const postHardEffort =
     trigger === 'POST_SESSION' && hardEffortLogged(input.latestEffort) && hardCount > 0;
   if (postHardEffort) {
-    return buildProposal('POST_SESSION', hardEffortCopy());
+    return buildProposal('POST_SESSION', hardEffortCopy(), upcoming);
   }
 
   return null;

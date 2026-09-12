@@ -856,7 +856,12 @@ function assembleTodayViewModel(
     environmentContext: null,
     nutrition: null,
     postSessionLoop: ctx.postSessionLoop,
-    rearrangeProposal: ctx.rearrangeProposal,
+    rearrangeProposal: ctx.rearrangeProposal
+      ? {
+          ...ctx.rearrangeProposal,
+          goalLabel: ctx.goalAnchor?.label ?? null,
+        }
+      : null,
     hierarchy: { rootId: 'today', order: ['hero', 'why', 'actionRow'] },
     sections: [],
   };
