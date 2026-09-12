@@ -8,6 +8,7 @@ import {
   NARRATIVE_ANALYSIS_SINCE,
 } from '@/lib/activity/narrative/activity-narrative-config';
 import { buildActivityNarrativeFacts } from '@/lib/activity/narrative/activity-narrative-facts';
+import { withAnalysisRun } from '@/lib/analysis/analysis-run-store';
 import { mapWithConcurrency } from '@/lib/async/map-with-concurrency';
 import { recordAiUsage } from '@/lib/ai/usage';
 import { prisma } from '@/lib/prisma';
@@ -98,6 +99,31 @@ async function shouldSkipNarrativeAnalysis(
   return { skip: false, activityDate: existing.date };
 }
 
+async function generateAndStoreNarrative(
+  athleteId: string,
+  activityId: string,
+  facts: string,
+): Promise<boolean> {
+  const { output, usage } = await generateText({
+    model: COACH_MODEL,
+    output: Output.object({ schema: activityNarrativeSchema }),
+    system: NARRATIVE_SYSTEM,
+    prompt: facts,
+    providerOptions: coachAnalysisGatewayOptions,
+  });
+  void recordAiUsage(athleteId, 'analysis', usage);
+
+  if (!output) {
+    return false;
+  }
+
+  await setActivityNarrativeAnalysis(activityId, {
+    headline: sanitizeCoachCopy(output.headline),
+    narrative: sanitizeCoachCopy(output.narrative),
+  });
+  return true;
+}
+
 export async function runActivityNarrativeAnalysis(
   athleteId: string,
   activityId: string,
@@ -126,24 +152,16 @@ export async function runActivityNarrativeAnalysis(
     return false;
   }
 
-  const { output, usage } = await generateText({
-    model: COACH_MODEL,
-    output: Output.object({ schema: activityNarrativeSchema }),
-    system: NARRATIVE_SYSTEM,
-    prompt: facts,
-    providerOptions: coachAnalysisGatewayOptions,
-  });
-  void recordAiUsage(athleteId, 'analysis', usage);
-
-  if (!output) {
-    return false;
-  }
-
-  await setActivityNarrativeAnalysis(activityId, {
-    headline: sanitizeCoachCopy(output.headline),
-    narrative: sanitizeCoachCopy(output.narrative),
-  });
-  return true;
+  // Recorded as a run so the athlete is told it landed, from whichever page
+  // they are on when it does (ADR-036).
+  let created = false;
+  await withAnalysisRun(
+    { athleteId, kind: 'ACTIVITY_NARRATIVE', targetId: activityId },
+    async () => {
+      created = await generateAndStoreNarrative(athleteId, activityId, facts);
+    },
+  );
+  return created;
 }
 
 /** Lance l'analyse pour des activités nouvellement importées (best-effort, parallel). */

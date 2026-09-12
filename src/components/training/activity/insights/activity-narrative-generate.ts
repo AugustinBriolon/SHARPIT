@@ -37,7 +37,6 @@ export async function runNarrativeGenerate({
   onFailure: () => void;
 }): Promise<void> {
   clearNarrativeTimedOut(activityId);
-  const loadingToast = toast.loading('Synthèse en cours');
   try {
     const result = await generateActivityNarrative(activityId);
     if (!result.ok) {
@@ -46,6 +45,9 @@ export async function runNarrativeGenerate({
       onFailure();
       return;
     }
+    toast.info('Analyse lancée', {
+      description: 'Continue, on te prévient quand elle est prête.',
+    });
     if (result.narrativeAnalyzedAt) {
       onSuccess({
         analysis: result.narrativeAnalysis ?? null,
@@ -58,7 +60,5 @@ export async function runNarrativeGenerate({
     toast.error('Synthèse impossible');
     writeNarrativeTimedOut(activityId);
     onFailure();
-  } finally {
-    toast.close(loadingToast);
   }
 }

@@ -1,10 +1,7 @@
 import { ActivityType } from '@prisma/client';
 import { activityNarrativeSchema, type ActivityNarrative } from '@/lib/validators/coach';
 import { sanitizeCoachCopy } from '@/lib/coach/sanitize-coach-copy';
-import {
-  fetchActivityNarrativeFields,
-  postActivityNarrative,
-} from '@/lib/query/fetchers';
+import { fetchActivityNarrativeFields, postActivityNarrative } from '@/lib/query/fetchers';
 
 export const NARRATIVE_POLL_MS = 3_000;
 export const NARRATIVE_POLL_MAX_MS = 120_000;
@@ -100,5 +97,7 @@ export async function generateActivityNarrative(activityId: string): Promise<{
   narrativeAnalyzedAt?: string | null;
   error?: string;
 }> {
-  return postActivityNarrative(activityId, { force: true, wait: true });
+  // Background: the server records the run and the app-shell watcher announces
+  // it, so leaving the page no longer abandons the analysis (ADR-036).
+  return postActivityNarrative(activityId, { force: true, wait: false });
 }

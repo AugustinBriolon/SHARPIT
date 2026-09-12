@@ -7,6 +7,7 @@ import {
   setPlannedSessionAnalysis,
 } from '@/lib/queries/planned-sessions';
 import { prisma } from '@/lib/prisma';
+import { withAnalysisRun } from '@/lib/analysis/analysis-run-store';
 
 export { scorePlannedActivityMatch } from '@/lib/planned-session/linking/session-link-match-score';
 
@@ -94,9 +95,16 @@ export async function analyzeLinkedPlannedSessions(
   let analyzed = 0;
   for (const sessionId of sessionIds) {
     try {
-      const analysis = await analyzePlannedSession(athleteId, sessionId);
-      if (analysis) {
-        await setPlannedSessionAnalysis(athleteId, sessionId, analysis);
+      const ran = await withAnalysisRun(
+        { athleteId, kind: 'SESSION_COMPLIANCE', targetId: sessionId },
+        async () => {
+          const analysis = await analyzePlannedSession(athleteId, sessionId);
+          if (analysis) {
+            await setPlannedSessionAnalysis(athleteId, sessionId, analysis);
+          }
+        },
+      );
+      if (ran) {
         analyzed += 1;
       }
     } catch (error) {

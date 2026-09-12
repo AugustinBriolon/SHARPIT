@@ -3,6 +3,7 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useCallback } from 'react';
 import { executeNarrativeGenerate } from '@/components/training/activity/insights/activity-narrative-generate-action';
+import { queryKeys } from '@/lib/query/keys';
 
 export function useNarrativeGenerateHandler({
   activityId,
@@ -26,6 +27,8 @@ export function useNarrativeGenerateHandler({
   return useCallback(async () => {
     setGenerating(true);
     try {
+      // Wakes the shell watcher now: it only learns about work started after its
+      // last fetch if something invalidates its key (ADR-036).
       await executeNarrativeGenerate({
         isDemo,
         demoLink,
@@ -36,6 +39,7 @@ export function useNarrativeGenerateHandler({
         onPolled: (result) =>
           setPolled({ analysis: result.analysis, analyzedAt: result.analyzedAt }),
       });
+      void queryClient.invalidateQueries({ queryKey: queryKeys.analysisRuns });
     } finally {
       setGenerating(false);
     }

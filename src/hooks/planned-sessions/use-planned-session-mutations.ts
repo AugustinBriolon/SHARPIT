@@ -314,6 +314,8 @@ export function usePlannedSessionMutations() {
       return { previous };
     },
     onSuccess: (data, id) => {
+      // The analysis may still be running server-side — let the shell watcher know.
+      void queryClient.invalidateQueries({ queryKey: queryKeys.analysisRuns });
       const hydrated = hydratePlannedSession(data as ClientPlannedSession);
       patchPlannedSessionAnalysisInCaches(queryClient, id, {
         analysis: hydrated.analysis ?? null,
