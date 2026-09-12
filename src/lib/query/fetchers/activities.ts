@@ -50,13 +50,13 @@ export async function fetchActivityNarrativeFields(id: string): Promise<{
   narrativeAnalyzedAt?: string | null;
 } | null> {
   try {
-    const activity = await fetchActivity(id);
+    const data = await fetchJson<{
+      narrativeAnalysis?: unknown;
+      narrativeAnalyzedAt?: string | null;
+    }>(`/api/activities/${encodeURIComponent(id)}`);
     return {
-      narrativeAnalysis: activity.narrativeAnalysis,
-      narrativeAnalyzedAt:
-        activity.narrativeAnalyzedAt instanceof Date
-          ? activity.narrativeAnalyzedAt.toISOString()
-          : (activity.narrativeAnalyzedAt as string | null | undefined) ?? null,
+      narrativeAnalysis: data.narrativeAnalysis,
+      narrativeAnalyzedAt: data.narrativeAnalyzedAt ?? null,
     };
   } catch {
     return null;

@@ -92,8 +92,7 @@ export async function selectGoogleCalendar(body: unknown): Promise<void> {
 }
 
 export type GarminSsoTicketResult =
-  | { ok: true; redirectTo: string }
-  | { ok: false; status: string | undefined };
+  { ok: true; redirectTo: string } | { ok: false; status: string | undefined };
 
 /** Browser SSO ticket exchange — keep fetch here (not in components). */
 export async function exchangeGarminSsoTicket(ticket: string): Promise<GarminSsoTicketResult> {

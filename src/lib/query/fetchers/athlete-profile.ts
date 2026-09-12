@@ -47,15 +47,16 @@ export type GarminProfileImportResult = {
   lthr: number | null;
   runThresholdPaceSecPerKm: number | null;
   swimCssSecPer100m?: number | null;
+  vo2maxRunning: number | null;
+  vo2maxCycling: number | null;
+  failedSources?: string[];
   error?: string;
-  [key: string]: unknown;
 };
 
 export async function importGarminAthleteProfile(): Promise<GarminProfileImportResult> {
   const res = await fetch('/api/athlete-profile/import-garmin', { method: 'POST' });
   const data = (await res.json().catch(() => null)) as
-    | (GarminProfileImportResult & { error?: string })
-    | null;
+    (GarminProfileImportResult & { error?: string }) | null;
   if (!res.ok) {
     throw new Error(data?.error ?? 'Import Garmin impossible');
   }
@@ -66,6 +67,8 @@ export async function importGarminAthleteProfile(): Promise<GarminProfileImportR
       maxHr: null,
       lthr: null,
       runThresholdPaceSecPerKm: null,
+      vo2maxRunning: null,
+      vo2maxCycling: null,
     }
   );
 }

@@ -64,7 +64,7 @@ function buildGarminImportMessage(data: GarminImportResult): string {
 }
 
 async function fetchGarminImport(): Promise<GarminImportResult> {
-  return (await importGarminAthleteProfile()) as GarminImportResult;
+  return importGarminAthleteProfile();
 }
 
 function useCalibrationFormState(initial: ProfileData | null) {

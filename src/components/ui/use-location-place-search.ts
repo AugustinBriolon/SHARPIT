@@ -32,7 +32,7 @@ export function useLocationPlaceSearch({
       setLoading(true);
       try {
         const places = await fetchGeocodingSearch(trimmed);
-        setResults(places as GeocodedPlace[]);
+        setResults(places);
         setOpen(true);
       } catch {
         setResults([]);

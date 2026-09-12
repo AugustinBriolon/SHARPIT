@@ -5,6 +5,17 @@ export type SendJsonOptions = {
   keepalive?: boolean;
 };
 
+async function readJsonBody(res: Response): Promise<unknown> {
+  if (res.status === 204) {
+    return null;
+  }
+  const text = await res.text();
+  if (!text) {
+    return null;
+  }
+  return JSON.parse(text) as unknown;
+}
+
 /** Shared JSON fetch helper for TanStack Query mutations. */
 export async function sendJson(
   url: string,
@@ -23,13 +34,5 @@ export async function sendJson(
     const parsed = parseApiErrorBody(await res.json().catch(() => null));
     throw new Error(formatApiErrorMessage(parsed ?? {}));
   }
-  // keepalive unload / 204 — empty body is ok
-  if (res.status === 204) {
-    return null;
-  }
-  const text = await res.text();
-  if (!text) {
-    return null;
-  }
-  return JSON.parse(text) as unknown;
+  return readJsonBody(res);
 }

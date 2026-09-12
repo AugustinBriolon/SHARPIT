@@ -1,14 +1,8 @@
+import type { GeocodedPlace } from '@/lib/geocoding/types';
 import { fetchJson } from './shared';
 
-export type TravelContextResponse = {
-  active: boolean;
-  label?: string | null;
-  placeLabel?: string | null;
-  [key: string]: unknown;
-};
-
-export async function fetchTravelContext(): Promise<TravelContextResponse> {
-  return fetchJson<TravelContextResponse>('/api/travel-context');
+export async function fetchTravelContext<T = unknown>(): Promise<T> {
+  return fetchJson<T>('/api/travel-context');
 }
 
 export type GeocodingHomePayload = {
@@ -28,12 +22,7 @@ export async function fetchGeocodingHome(dateIso?: string): Promise<GeocodingHom
   }
 }
 
-export type GeocodedPlace = {
-  label: string;
-  latitude: number;
-  longitude: number;
-  [key: string]: unknown;
-};
+export type { GeocodedPlace };
 
 export async function fetchGeocodingSearch(query: string): Promise<GeocodedPlace[]> {
   const data = await fetchJson<{ places?: GeocodedPlace[] }>(

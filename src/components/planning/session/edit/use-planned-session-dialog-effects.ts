@@ -114,8 +114,8 @@ export function usePlannedSessionLocationQueries() {
 
   const travelQuery = useQuery({
     queryKey: queryKeys.travelContext,
-    queryFn: async () =>
-      (await fetchTravelContext()) as {
+    queryFn: () =>
+      fetchTravelContext<{
         active: {
           locationLabel: string;
           locationLat: number;
@@ -123,7 +123,7 @@ export function usePlannedSessionLocationQueries() {
           startDate: string;
           endDate: string;
         } | null;
-      },
+      }>(),
     staleTime: 60_000,
   });
 

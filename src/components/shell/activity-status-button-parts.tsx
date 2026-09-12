@@ -650,8 +650,7 @@ function useActivityStatusDraft(store: ActivityStatusStore) {
 function useTravelContextQuery(open: boolean, draftStatus: ActivityStatusId) {
   return useQuery({
     queryKey: queryKeys.travelContext,
-    queryFn: async (): Promise<TravelContextResponse> =>
-      (await fetchTravelContext()) as TravelContextResponse,
+    queryFn: () => fetchTravelContext<TravelContextResponse>(),
     enabled: open && draftStatus === 'paused',
     staleTime: 60_000,
   });

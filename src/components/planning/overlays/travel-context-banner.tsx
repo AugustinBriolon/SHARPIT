@@ -73,8 +73,7 @@ export function TravelContextBanner({
 }) {
   const query = useQuery({
     queryKey: queryKeys.travelContext,
-    queryFn: async (): Promise<TravelContextResponse> =>
-      (await fetchTravelContext()) as TravelContextResponse,
+    queryFn: () => fetchTravelContext<TravelContextResponse>(),
     staleTime: 60_000,
   });
 
