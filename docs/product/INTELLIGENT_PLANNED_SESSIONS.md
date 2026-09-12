@@ -100,7 +100,7 @@ Does **not** mutate `DecisionState` or daily verdict — session-scoped only.
 ## Presentation (Phase 4)
 
 - Contract: `src/core/presentation/planned-session-view-model.ts`
-- Builder: `src/lib/presentation/planned-session.ts`
+- Builder: `src/lib/presentation/planned-session/planned-session.ts`
 - API: `GET /api/presentation/planned-session/[id]`
 - UI: `PlannedSessionContextPanel` in planning dialog
 
@@ -130,7 +130,7 @@ Narrative comparison on activity detail when linked
 | Forecast fetch   | `src/lib/planned-session/forecast-fetch.ts`                 |
 | Context resolver | `src/lib/planned-session/resolve-context.ts`                |
 | Advisories       | `src/core/decision/planned-session-advisory.ts`             |
-| Presentation     | `src/lib/presentation/planned-session.ts`                   |
+| Presentation     | `src/lib/presentation/planned-session/planned-session.ts`   |
 | UI panel         | `src/components/planning/planned-session-context-panel.tsx` |
 
 ---

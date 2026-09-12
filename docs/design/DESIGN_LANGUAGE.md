@@ -267,7 +267,7 @@ Components hold only UI state (is a section expanded, is a tooltip visible). Bus
 
 ### 8.4 Semantic Color, Not Arbitrary Color
 
-All color in components derives from the Seed semantic system (see `src/lib/presentation/status-surface.ts`):
+All color in components derives from the Seed semantic system (see `src/lib/presentation/coaching/status-surface.ts`):
 
 ```typescript
 primary / STATUS_SURFACE.done  →  positive, available, optimal, growth, done

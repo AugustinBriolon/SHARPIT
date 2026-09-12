@@ -137,16 +137,16 @@ anchorTrainingDayId
 
 ## Code map
 
-| Module                                               | Role                    |
-| ---------------------------------------------------- | ----------------------- |
-| `src/core/projection/types.ts`                       | Domain types            |
-| `src/lib/projection/pmc-forward.ts`                  | EWMA step forward       |
-| `src/lib/projection/score-projection.ts`             | Score transforms        |
-| `src/lib/projection/build-projection-input.ts`       | Input assembly          |
-| `src/lib/projection/project-athlete-state.ts`        | Orchestrator            |
-| `src/core/decision/projected-decision.ts`            | Decision Engine wrapper |
-| `src/lib/presentation/projected-athlete.ts`          | ViewModel mapping       |
-| `src/components/planning/projected-athlete-card.tsx` | Planning UI             |
+| Module                                                        | Role                    |
+| ------------------------------------------------------------- | ----------------------- |
+| `src/core/projection/types.ts`                                | Domain types            |
+| `src/lib/projection/pmc-forward.ts`                           | EWMA step forward       |
+| `src/lib/projection/score-projection.ts`                      | Score transforms        |
+| `src/lib/projection/build-projection-input.ts`                | Input assembly          |
+| `src/lib/projection/project-athlete-state.ts`                 | Orchestrator            |
+| `src/core/decision/projected-decision.ts`                     | Decision Engine wrapper |
+| `src/lib/presentation/projected-athlete/projected-athlete.ts` | ViewModel mapping       |
+| `src/components/planning/projected-athlete-card.tsx`          | Planning UI             |
 
 ---
 
