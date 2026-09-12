@@ -14,6 +14,9 @@ import type { MorningProposalCompareInput } from '@/lib/today/rich/morning-propo
 import { CollapsibleSection } from '@/components/ui/collapsible-section';
 import { PlanSectionHeading } from '@/components/plan/hub/plan-section-heading';
 import { usePlannedSessionReadData } from '@/components/planning/session/read/use-planned-session-read-data';
+import { usePhysicalNotes } from '@/hooks/use-physical';
+import { sessionZoneFlags } from '@/lib/physical-health/sensitive-zone-audit';
+import { sensitiveZonesFrom } from '@/lib/physical-health/sensitive-zones';
 import { PlannedSessionReadHeader } from '@/components/planning/session/read/planned-session-read-header';
 import { PlannedSessionDeroulePanel } from '@/components/planning/session/read/planned-session-deroule-panel';
 import { PlannedSessionReadSecondaryDetails } from '@/components/planning/session/read/planned-session-read-secondary';
@@ -28,6 +31,30 @@ function GoalLink({ title }: { title: string }) {
       <Target className="size-3.5 shrink-0 opacity-70" aria-hidden />
       <span className="text-pretty">Sert {title}</span>
     </Link>
+  );
+}
+
+/**
+ * A session planned before the injury was declared still carries its old
+ * exercises — say so where the athlete is about to follow it.
+ */
+function SensitiveZoneWarning({ session }: { session: ClientPlannedSession }) {
+  const notesQuery = usePhysicalNotes();
+  const zones = sensitiveZonesFrom(notesQuery.data ?? []);
+  const flags = sessionZoneFlags(session, zones);
+
+  if (flags.length === 0) {
+    return null;
+  }
+
+  const zoneLabels = [...new Set(flags.map((flag) => flag.zone.label))].join(', ');
+  const exercises = [...new Set(flags.map((flag) => flag.exercise))].join(', ');
+
+  return (
+    <p className="border-signal-vo2/30 bg-signal-vo2/8 text-signal-vo2 rounded-lg border px-3 py-2 text-xs">
+      Cette séance charge une zone que tu protèges ({zoneLabels}) : {exercises}. Adapte ou remplace
+      ces exercices.
+    </p>
   );
 }
 
@@ -53,6 +80,7 @@ function PrescribedPlanCollapsible({
         }
       >
         <div className="space-y-3">
+          <SensitiveZoneWarning session={session} />
           {deroulePanel}
           <SessionAccessoriesSection
             accessories={session.accessories}

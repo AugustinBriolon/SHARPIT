@@ -17,6 +17,13 @@ import { CORPS_TONE_TEXT, type CorpsTone } from '@/lib/ui/metric-tone';
 import { corpsToneFromPhysicalSeverity } from '@/lib/health/health-status';
 import { usePhysicalNotes } from '@/hooks/use-physical';
 import { reassessmentDue, type ReassessmentDue } from '@/lib/physical-health/reassessment-due';
+import { usePlannedSessions } from '@/hooks/use-planned-sessions';
+import {
+  auditUpcomingSessions,
+  countSessionsLoadingZone,
+  zoneAuditLabel,
+} from '@/lib/physical-health/sensitive-zone-audit';
+import { sensitiveZonesFrom } from '@/lib/physical-health/sensitive-zones';
 import { cn } from '@/lib/utils';
 
 function TrendIcon({ trend }: { trend: string }) {
@@ -185,6 +192,63 @@ function useConditionReassessmentDue(legacyNoteId: string | null): ReassessmentD
   return reassessmentDue({ note, lastRealisedSessionAt: null, now: new Date() });
 }
 
+/**
+ * Declaring an injury must change what the athlete sees about the plan they
+ * already have — not only the sessions generated afterwards.
+ */
+function useUpcomingSessionsLoadingZone(condition: PhysicalHealthConditionCard): number {
+  const sessionsQuery = usePlannedSessions();
+  const zones = sensitiveZonesFrom([
+    {
+      label: condition.label,
+      bodyRegion: condition.bodyRegion,
+      severity: condition.severity,
+      type: condition.type,
+      affectsTraining: condition.affectsTraining,
+      status: condition.isActive ? 'ACTIVE' : 'RESOLVED',
+    },
+  ]);
+  if (zones.length === 0) {
+    return 0;
+  }
+  const audits = auditUpcomingSessions({
+    sessions: sessionsQuery.data ?? [],
+    zones,
+    now: new Date(),
+  });
+  return countSessionsLoadingZone(audits, condition.label);
+}
+
+function ZoneLoadChip({ count }: { count: number }) {
+  const label = zoneAuditLabel(count);
+  if (!label) {
+    return null;
+  }
+  return (
+    <span className="bg-signal-vo2/12 text-signal-vo2 inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium">
+      {label}
+    </span>
+  );
+}
+
+function ConditionCardChips({
+  due,
+  loadingCount,
+}: {
+  due: ReassessmentDue | null;
+  loadingCount: number;
+}) {
+  if (!due && loadingCount <= 0) {
+    return null;
+  }
+  return (
+    <div className="flex flex-wrap gap-1.5 pb-2">
+      {due ? <ReassessmentDueChip due={due} /> : null}
+      <ZoneLoadChip count={loadingCount} />
+    </div>
+  );
+}
+
 export function ConditionCardActions({
   condition,
   onEditLegacy,
@@ -193,14 +257,11 @@ export function ConditionCardActions({
   onEditLegacy?: (legacyNoteId: string) => void;
 }) {
   const due = useConditionReassessmentDue(condition.legacyPhysicalNoteId);
+  const loadingCount = useUpcomingSessionsLoadingZone(condition);
 
   return (
     <CardContent className="pt-0">
-      {due ? (
-        <div className="pb-2">
-          <ReassessmentDueChip due={due} />
-        </div>
-      ) : null}
+      <ConditionCardChips due={due} loadingCount={loadingCount} />
       <div className="flex flex-wrap gap-2 pt-1">
         {condition.legacyPhysicalNoteId && onEditLegacy ? (
           <button
