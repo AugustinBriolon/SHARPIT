@@ -538,6 +538,7 @@ function buildTodayRearrangeProposal(input: {
   plannedSessions: TodayPresentationInputs['plannedSessions'];
   verdict: ReturnType<typeof decisionVerdict>;
   habitCoaching?: HabitCoachingSignal | null;
+  goalLabel?: string | null;
 }) {
   const upcoming = mapUpcomingForRearrange(input.plannedSessions);
   const twinProposal = buildFeedbackRearrangeProposal({
@@ -554,6 +555,7 @@ function buildTodayRearrangeProposal(input: {
     day: input.day,
     upcoming,
     callout: input.habitCoaching?.callout ?? null,
+    goalLabel: input.goalLabel,
   });
   return mergeRearrangeProposals(twinProposal, habitProposal);
 }
@@ -567,9 +569,6 @@ function prepareTodayMorningFields(input: {
   heroEyebrow: string;
   day: Date;
   activities: TodayPresentationInputs['activities'];
-  plannedSessions: TodayPresentationInputs['plannedSessions'];
-  verdict: ReturnType<typeof decisionVerdict>;
-  habitCoaching?: HabitCoachingSignal | null;
 }) {
   const morningOrientation = resolveMorningOrientation({
     phase: input.phase,
@@ -588,15 +587,6 @@ function prepareTodayMorningFields(input: {
       overallFresh: input.effectiveSnapshot.freshness.overallFresh,
       day: input.day,
       activities: postSessionActivities,
-    }),
-    rearrangeProposal: buildTodayRearrangeProposal({
-      phase: input.phase,
-      effectiveSnapshot: input.effectiveSnapshot,
-      day: input.day,
-      activities: postSessionActivities,
-      plannedSessions: input.plannedSessions,
-      verdict: input.verdict,
-      habitCoaching: input.habitCoaching,
     }),
   };
 }
@@ -656,9 +646,6 @@ function prepareTodayDerivedSections(
     heroEyebrow: hero.heroEyebrow,
     day: inputs.day,
     activities: inputs.activities,
-    plannedSessions: inputs.plannedSessions,
-    verdict,
-    habitCoaching: inputs.habitCoaching,
   });
 
   return { phase, verdict, displayVerdict, hero, action, status, morning };
@@ -680,6 +667,17 @@ function prepareTodayViewModelContext(inputs: TodayPresentationInputs) {
     trainingDayId: inputs.trainingDayId,
     narrativeGoalLine: derived.hero.goalLine,
   });
+  const goalLabel = goalAnchor?.label ?? null;
+  const rearrangeProposal = buildTodayRearrangeProposal({
+    phase: derived.phase,
+    effectiveSnapshot,
+    day: inputs.day,
+    activities: mapPostSessionActivities(inputs.activities),
+    plannedSessions: inputs.plannedSessions,
+    verdict: derived.verdict,
+    habitCoaching: inputs.habitCoaching,
+    goalLabel,
+  });
 
   return {
     day: inputs.day,
@@ -695,6 +693,7 @@ function prepareTodayViewModelContext(inputs: TodayPresentationInputs) {
     status: derived.status,
     emptyState: buildTodayEmptyState(effectiveSnapshot, derived.status.message),
     ...derived.morning,
+    rearrangeProposal,
     plateLimiter: buildPlateLimiter(effectiveSnapshot),
     goalAnchor,
     habitCoaching: inputs.habitCoaching ?? null,
@@ -860,6 +859,10 @@ function assembleTodayViewModel(
       ? {
           ...ctx.rearrangeProposal,
           goalLabel: ctx.goalAnchor?.label ?? null,
+          habitLever:
+            'habitLever' in ctx.rearrangeProposal
+              ? (ctx.rearrangeProposal.habitLever ?? null)
+              : null,
         }
       : null,
     hierarchy: { rootId: 'today', order: ['hero', 'why', 'actionRow'] },
