@@ -127,15 +127,3 @@ export function derivePostSessionLoop(
 
   return vm.postSessionLoop;
 }
-
-export function deriveReminders(vm: TodayViewModel, loading: boolean) {
-  if (
-    loading ||
-    vm.hero.twinTrustStrip.limitingCauseText ||
-    vm.actionRow.limitingMode !== 'facts' ||
-    vm.actionRow.limitingFacts.length === 0
-  ) {
-    return [];
-  }
-  return vm.actionRow.limitingFacts;
-}

@@ -143,23 +143,6 @@ export function defaultRetentionForStatus(status: ActivityStatusId): ActivitySta
   return { kind: 'until_modified' };
 }
 
-export function activityStatusReminderFact(
-  status: ActivityStatusId,
-  retention?: ActivityStatusRetention,
-): { label: string; value: string; hint: string } | null {
-  if (status === 'active') {
-    return null;
-  }
-  const option = activityStatusOption(status);
-  const until =
-    retention?.kind === 'until_date' ? ` Jusqu’au ${formatUntilDateFr(retention.untilDate)}.` : '';
-  return {
-    label: 'Mode',
-    value: option.label,
-    hint: `${option.planningImpact}${until}`,
-  };
-}
-
 export function formatUntilDateFr(isoDate: string): string {
   const [year, month, day] = isoDate.split('-').map(Number);
   if (!year || !month || !day) {

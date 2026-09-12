@@ -4,7 +4,6 @@ import {
   ACTIVITY_STATUS_IDS,
   activityStatusDraftMatchesStore,
   activityStatusLabel,
-  activityStatusReminderFact,
   activityStatusWriteFromDraft,
   isActivityStatus,
   parseActivityStatusStore,
@@ -54,22 +53,6 @@ describe('activity-status', () => {
     );
     expect(expired.status).toBe('active');
     expect(expired.travelId).toBeNull();
-  });
-
-  it('exposes planning reminders only when not actif', () => {
-    expect(activityStatusReminderFact('active')).toBeNull();
-    expect(activityStatusReminderFact('paused')).toEqual({
-      label: 'Mode',
-      value: 'En pause',
-      hint: 'Pas de charge volontaire — plan en veille jusqu’à reprise.',
-    });
-    expect(
-      activityStatusReminderFact('sick', { kind: 'until_date', untilDate: '2026-09-15' }),
-    ).toEqual({
-      label: 'Mode',
-      value: 'Malade',
-      hint: 'Repos avant la charge — reprendre seulement quand le corps suit. Jusqu’au 15 sept. 2026.',
-    });
   });
 
   it('builds write payload from draft and matches store without false dirty', () => {

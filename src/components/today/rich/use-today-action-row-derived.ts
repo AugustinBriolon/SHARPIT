@@ -8,20 +8,11 @@ import {
   getDemoSessionLinksSnapshot,
   subscribeDemoSessionLinks,
 } from '@/lib/demo/demo-session-link-state';
-import {
-  activityStatusReminderFact,
-  emptyActivityStatusStore,
-  getActivityStatusStoreServerSnapshot,
-  getActivityStatusStoreSnapshot,
-  hydrateActivityStatusFromServer,
-  subscribeActivityStatus,
-  type ActivityStatusStore,
-} from '@/lib/health/activity-status';
+import { hydrateActivityStatusFromServer } from '@/lib/health/activity-status';
 import { useAdaptAppliedSettled } from '@/hooks/use-adapt-applied-settled';
 import {
   deriveLinkContext,
   derivePostSessionLoop,
-  deriveReminders,
   deriveSessionLines,
   parseDemoLinksSnapshot,
   parseDismissedLinkIds,
@@ -42,19 +33,6 @@ export function useTodayActionRowDerived(vm: TodayViewModel, loading: boolean) {
     getDemoSessionLinksSnapshot,
     () => '',
   );
-  const activityStatusSnapshot = useSyncExternalStore(
-    subscribeActivityStatus,
-    getActivityStatusStoreSnapshot,
-    getActivityStatusStoreServerSnapshot,
-  );
-  const activityStore = useMemo((): ActivityStatusStore => {
-    try {
-      return JSON.parse(activityStatusSnapshot) as ActivityStatusStore;
-    } catch {
-      return emptyActivityStatusStore();
-    }
-  }, [activityStatusSnapshot]);
-
   const dismissedLinkIds = useMemo(
     () => parseDismissedLinkIds(dismissedSnapshot),
     [dismissedSnapshot],
@@ -77,15 +55,6 @@ export function useTodayActionRowDerived(vm: TodayViewModel, loading: boolean) {
     [vm, pendingLinkSuggestions, linkExclusions, sessionLines],
   );
 
-  const reminders = useMemo(() => {
-    const base = deriveReminders(vm, loading);
-    if (loading) {
-      return base;
-    }
-    const modeFact = activityStatusReminderFact(activityStore.status, activityStore.retention);
-    return modeFact ? [modeFact, ...base] : base;
-  }, [vm, loading, activityStore]);
-
   const { adaptAck, settled } = useAdaptAppliedSettled();
 
   return {
@@ -97,6 +66,5 @@ export function useTodayActionRowDerived(vm: TodayViewModel, loading: boolean) {
     rearrangeProposal: loading || settled ? null : (vm.rearrangeProposal ?? null),
     adaptAppliedAck: !loading && settled ? adaptAck : null,
     daySummaryEmpty: !loading && sessionLines.length === 0 && sessionLinkSuggestions.length === 0,
-    reminders,
   };
 }

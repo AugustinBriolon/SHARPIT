@@ -41,28 +41,6 @@ export function TodayActionRowHeader({ loading }: { loading: boolean }) {
   );
 }
 
-export function TodayActionRowReminders({
-  reminders,
-}: {
-  reminders: TodayViewModel['actionRow']['limitingFacts'];
-}) {
-  if (reminders.length === 0) {
-    return null;
-  }
-
-  return (
-    <ul className="text-muted-foreground space-y-1 px-0.5 text-xs leading-relaxed text-pretty">
-      {reminders.map((fact) => (
-        <li key={`${fact.label}-${fact.value}`}>
-          <span className="text-foreground/80 font-medium">{fact.label}</span>
-          {' · '}
-          <span className="tabular-nums">{fact.value}</span>
-        </li>
-      ))}
-    </ul>
-  );
-}
-
 export function TodayActionRowSkeleton() {
   return (
     <div className="analysis-panel border-analysis-border/80 rounded-analysis-lg overflow-hidden border">
