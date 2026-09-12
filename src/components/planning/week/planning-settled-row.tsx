@@ -108,7 +108,7 @@ export function PlanningSettledRow({
   return (
     <Link
       aria-label={accessibleName}
-      className={cn(className, 'hover:border-primary/30 pressable transition-colors')}
+      className={cn(className, 'hover:border-primary/30 pressable-lg transition-colors')}
       href={href}
     >
       {content}

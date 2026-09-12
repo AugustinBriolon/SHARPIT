@@ -6,6 +6,7 @@ import { Plus } from 'lucide-react';
 import { BrickOverviewCard } from '@/components/planning/brick/brick-overview-card';
 import { firstOpenPlannedSessionId } from '@/components/planning/week/planning-day-row-helpers';
 import { PlanningSettledRow } from '@/components/planning/week/planning-settled-row';
+import { CompletedSessionPreview } from '@/components/today/rich/completed-session-preview';
 import { PlannedSessionPreview } from '@/components/today/rich/planned-session-preview';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -15,6 +16,7 @@ import {
 } from '@/lib/planned-session/brick/brick-sessions';
 import { activityTypeLabels } from '@/lib/format';
 import { planningDayKey } from '@/lib/plan/planning-day-selection';
+import { buildCompletedSessionMetrics } from '@/lib/today/rich/completed-session-metrics';
 import { planningSessionMode } from '@/lib/plan/planning-day-display';
 import type { ClientActivity, ClientPlannedSession } from '@/lib/query/types';
 import { buildPlannedSessionPreview } from '@/lib/today/rich/planned-session-metrics';
@@ -61,8 +63,43 @@ function PlannedDayPreview({
   );
 }
 
-function DoneActivityPreview({ activity }: { activity: ClientActivity }) {
+/** What the athlete did today, in full — the day's own work stays visible. */
+function RichDonePreview({ activity, title }: { activity: ClientActivity; title: string }) {
+  return (
+    <CompletedSessionPreview
+      accessibleName={`${title}, réalisé`}
+      activityId={activity.id}
+      activityType={activity.type}
+      href={TWIN_DRILL_DOWN.activity(activity.id)}
+      layout="column"
+      title={title}
+      metrics={buildCompletedSessionMetrics({
+        type: activity.type,
+        duration: activity.duration,
+        load: activity.load,
+        rpe: activity.rpe,
+        runMetrics: activity.runMetrics,
+        bikeMetrics: activity.bikeMetrics,
+        swimMetrics: activity.swimMetrics,
+        hikeMetrics: activity.hikeMetrics,
+        strengthSets: activity.strengthSets ?? [],
+      })}
+    />
+  );
+}
+
+function DoneActivityPreview({
+  activity,
+  isPastDay,
+}: {
+  activity: ClientActivity;
+  isPastDay: boolean;
+}) {
   const title = activity.title?.trim() || activityTypeLabels[activity.type];
+
+  if (!isPastDay) {
+    return <RichDonePreview activity={activity} title={title} />;
+  }
 
   return (
     <PlanningSettledRow
@@ -78,11 +115,17 @@ function DoneActivityPreview({ activity }: { activity: ClientActivity }) {
 function LinkedDonePreview({
   session,
   activity,
+  isPastDay,
 }: {
   session: ClientPlannedSession;
   activity: ClientActivity;
+  isPastDay: boolean;
 }) {
   const title = session.title?.trim() || activity.title?.trim() || activityTypeLabels[session.type];
+
+  if (!isPastDay) {
+    return <RichDonePreview activity={activity} title={title} />;
+  }
 
   return (
     <PlanningSettledRow
@@ -123,11 +166,9 @@ function SessionItem({
     isPastDay,
   });
 
-  if (mode === 'done') {
-    const linked = session.activityId ? activityById.get(session.activityId) : undefined;
-    if (linked) {
-      return <LinkedDonePreview activity={linked} session={session} />;
-    }
+  const linked = session.activityId ? activityById.get(session.activityId) : undefined;
+  if (session.completed && linked) {
+    return <LinkedDonePreview activity={linked} isPastDay={isPastDay} session={session} />;
   }
 
   if (mode === 'missed') {
@@ -202,7 +243,13 @@ function PlannedGroups({
   );
 }
 
-function UnlinkedDoneList({ activities }: { activities: ClientActivity[] }) {
+function UnlinkedDoneList({
+  activities,
+  isPastDay,
+}: {
+  activities: ClientActivity[];
+  isPastDay: boolean;
+}) {
   if (activities.length === 0) {
     return null;
   }
@@ -211,7 +258,7 @@ function UnlinkedDoneList({ activities }: { activities: ClientActivity[] }) {
     <ul className="space-y-2.5">
       {activities.map((activity) => (
         <li key={activity.id}>
-          <DoneActivityPreview activity={activity} />
+          <DoneActivityPreview activity={activity} isPastDay={isPastDay} />
         </li>
       ))}
     </ul>
@@ -295,7 +342,7 @@ function PlanningWeekDayContent({
         onEdit={onEdit}
         onPrefetch={onPrefetch}
       />
-      <UnlinkedDoneList activities={activities} />
+      <UnlinkedDoneList activities={activities} isPastDay={isPastDay} />
     </>
   );
 }

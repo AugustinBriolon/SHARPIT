@@ -7,12 +7,15 @@ import {
 } from './planning-day-display';
 
 describe('planningSessionMode', () => {
-  it('reads a linked session as settled, today included', () => {
-    expect(planningSessionMode({ completed: true, activityId: 'a1', isPastDay: false })).toBe(
-      'done',
-    );
+  it('settles a linked session only once the day is past', () => {
     expect(planningSessionMode({ completed: true, activityId: 'a1', isPastDay: true })).toBe(
       'done',
+    );
+  });
+
+  it("keeps today's realised session in full — it is still today's work", () => {
+    expect(planningSessionMode({ completed: true, activityId: 'a1', isPastDay: false })).toBe(
+      'planned',
     );
   });
 

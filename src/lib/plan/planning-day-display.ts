@@ -18,18 +18,21 @@ import {
 export type PlanningDisplayMode = 'done' | 'missed' | 'planned';
 
 /**
- * `done` as soon as an activity is linked — a session realised today reads as
- * settled too, so the rest of the day moves up.
+ * Only a past day settles into a quiet row.
+ *
+ * A session realised today still belongs to today: the athlete wants to see
+ * what they just did, in full. Collapsing it the moment it is linked hides the
+ * day's own work.
  */
 export function planningSessionMode(input: {
   completed: boolean;
   activityId: string | null | undefined;
   isPastDay: boolean;
 }): PlanningDisplayMode {
-  if (input.completed && input.activityId) {
-    return 'done';
+  if (!input.isPastDay) {
+    return 'planned';
   }
-  return input.isPastDay ? 'missed' : 'planned';
+  return input.completed && input.activityId ? 'done' : 'missed';
 }
 
 export type PlanningComplianceView = {
