@@ -19,6 +19,10 @@ import { resolveDefaultPlanGoalId, selectableDatedGoalIds } from '@/lib/planned-
 import { intensityLabels } from '@/lib/planned-session/sessions';
 import { formatStrengthSessionRules } from '@/lib/planned-session/strength/strength-session-template';
 import {
+  formatSensitiveZoneRules,
+  sensitiveZonesFrom,
+} from '@/lib/physical-health/sensitive-zones';
+import {
   adaptPlanGenerationSchema,
   adaptPlanSchema,
   adaptRequestSchema,
@@ -191,7 +195,7 @@ function buildAdaptPrompt(input: {
   const { focus, today, horizon, ctx, upcomingLines } = input;
   return `${focus ? `Demande de l'athlète : ${focus}\n\n` : ''}Fenêtre d'ajustement : du ${format(today, 'd MMM', { locale: fr })} au ${format(horizon, 'd MMM yyyy', { locale: fr })} (dates ADD au format yyyy-MM-dd dans cette fenêtre).
 
-${formatCoachContext(ctx)}
+${formatCoachContext(ctx)}${formatSensitiveZoneRules(sensitiveZonesFrom(ctx.physical))}
 
 ## Séances déjà planifiées à venir (à ajuster)
 ${upcomingLines.length ? upcomingLines.join('\n') : 'Aucune séance planifiée à venir.'}`;

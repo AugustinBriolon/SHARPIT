@@ -1,0 +1,103 @@
+import { describe, expect, it } from 'vitest';
+import { sensitiveZoneRule } from './sensitive-zone';
+import { baseContext, baseProposal, physicalHealthData } from '../test-fixtures';
+import type { GateContext } from '../types';
+
+/** Real catalog entries, so the test proves the mapping and not a stubbed resolver. */
+const UPPER_LEGS_EXERCISE = { exercise: 'Squat', exerciseCatalogId: '1512', sets: 3, reps: 12 };
+const SHOULDER_EXERCISE = {
+  exercise: 'Élévation latérale',
+  exerciseCatalogId: '0977',
+  sets: 3,
+  reps: 12,
+};
+
+type Condition = NonNullable<GateContext['physicalHealth']>['conditions'][number];
+
+function condition(overrides: Partial<Condition> = {}): Condition {
+  return {
+    conditionId: 'c1',
+    label: 'Nerf sciatique',
+    bodyRegion: 'Ischio',
+    side: 'LEFT',
+    type: 'PAIN',
+    affectsTraining: true,
+    severity: 3,
+    status: 'ACTIVE',
+    trend: 'STABLE',
+    confidence: 0.8,
+    functionalCapacity: 'REDUCED',
+    estimatedRecoveryDays: null,
+    evidenceObservationIds: [],
+    ...overrides,
+  } as Condition;
+}
+
+function contextWith(conditions: Condition[]): GateContext {
+  return baseContext({ physicalHealth: physicalHealthData({ conditions }) });
+}
+
+function strengthProposal(sets: Array<Record<string, unknown>>) {
+  return baseProposal({
+    type: 'STRENGTH',
+    intensity: 'RECOVERY',
+    strengthPrescription: { sets } as NonNullable<
+      ReturnType<typeof baseProposal>['strengthPrescription']
+    >,
+  });
+}
+
+describe('sensitiveZoneRule', () => {
+  it('warns when an exercise loads a zone the athlete protects', () => {
+    const findings = sensitiveZoneRule(
+      contextWith([condition()]),
+      strengthProposal([UPPER_LEGS_EXERCISE]),
+    );
+
+    expect(findings).toHaveLength(1);
+    expect(findings[0]?.ruleCode).toBe('SENSITIVE_ZONE_LOADED');
+    expect(findings[0]?.severity).toBe('WARNING');
+    expect(findings[0]?.rationale).toContain('Nerf sciatique');
+    expect(findings[0]?.rationale).toContain('Squat');
+  });
+
+  it('leaves an exercise on another body group alone', () => {
+    expect(
+      sensitiveZoneRule(contextWith([condition()]), strengthProposal([SHOULDER_EXERCISE])),
+    ).toEqual([]);
+  });
+
+  it('says nothing about posture or mobility work — they are not a load restriction', () => {
+    const posture = condition({
+      type: 'POSTURE_ISSUE',
+      label: 'Bassin rétroversé',
+      bodyRegion: 'Bassin',
+    });
+
+    expect(
+      sensitiveZoneRule(contextWith([posture]), strengthProposal([UPPER_LEGS_EXERCISE])),
+    ).toEqual([]);
+  });
+
+  it('ignores a condition the athlete declared harmless for training', () => {
+    expect(
+      sensitiveZoneRule(
+        contextWith([condition({ affectsTraining: false })]),
+        strengthProposal([UPPER_LEGS_EXERCISE]),
+      ),
+    ).toEqual([]);
+  });
+
+  it('only judges strength sessions carrying a prescription', () => {
+    expect(sensitiveZoneRule(contextWith([condition()]), baseProposal({ type: 'RUN' }))).toEqual(
+      [],
+    );
+    expect(
+      sensitiveZoneRule(contextWith([condition()]), baseProposal({ type: 'STRENGTH' })),
+    ).toEqual([]);
+  });
+
+  it('stays quiet for an athlete with nothing to protect', () => {
+    expect(sensitiveZoneRule(baseContext(), strengthProposal([UPPER_LEGS_EXERCISE]))).toEqual([]);
+  });
+});

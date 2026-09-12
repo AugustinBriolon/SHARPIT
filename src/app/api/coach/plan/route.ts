@@ -35,6 +35,10 @@ import { buildDecisionSnapshotContext } from '@/lib/decision-memory/build-snapsh
 import { createCoachingDecision } from '@/lib/decision-memory/repository';
 import { formatStrengthSessionRules } from '@/lib/planned-session/strength/strength-session-template';
 import {
+  formatSensitiveZoneRules,
+  sensitiveZonesFrom,
+} from '@/lib/physical-health/sensitive-zones';
+import {
   formatTravelConstraintPromptRule,
   resolvePlanTargetUnderTravel,
 } from '@/lib/travel-context/training-constraint';
@@ -140,6 +144,8 @@ function buildPlanPrompt(input: {
   goalBlock: string;
   macroBlock: string;
   agendaBlock: string;
+  /** Names the zones to protect — the static rules block cannot, it is shared by every athlete. */
+  sensitiveZonesBlock: string;
 }) {
   const { days, start, focus, contextText, goalBlock, macroBlock, agendaBlock } = input;
   return `Génère un plan d'entraînement couvrant ${days} jour(s) à partir du ${format(
@@ -150,7 +156,7 @@ function buildPlanPrompt(input: {
 
 ${focus ? `Demande spécifique de l'athlète : ${focus}\n\n` : ''}Données de l'athlète :
 
-${contextText}${goalBlock}${macroBlock}${agendaBlock}`;
+${contextText}${goalBlock}${macroBlock}${agendaBlock}${input.sensitiveZonesBlock}`;
 }
 
 async function buildPlanGenerationContext(
@@ -228,6 +234,7 @@ async function preparePlanGeneration(
     goalBlock,
     macroBlock,
     agendaBlock,
+    sensitiveZonesBlock: formatSensitiveZoneRules(sensitiveZonesFrom(ctx.physical)),
   });
 
   return {

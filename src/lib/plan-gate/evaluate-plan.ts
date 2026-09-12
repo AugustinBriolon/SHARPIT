@@ -7,6 +7,7 @@ import { recoverySpacingRule } from './rules/recovery-spacing';
 import { goalPhaseCoherenceRule } from './rules/goal-phase-coherence';
 import { dataSufficiencyRule } from './rules/data-sufficiency';
 import { calendarConflictRule } from './rules/calendar-conflict';
+import { sensitiveZoneRule } from './rules/sensitive-zone';
 import { strengthCompletenessRule } from './rules/strength-completeness';
 import { practicedSportsRule } from './rules/practiced-sports';
 import { weeklyLoadRule } from './rules/weekly-load';
@@ -35,6 +36,7 @@ const RULES: readonly PlanGateRule[] = [
   dataSufficiencyRule,
   calendarConflictRule,
   strengthCompletenessRule,
+  sensitiveZoneRule,
 ];
 
 const PLAN_LEVEL_RULES: readonly PlanLevelGateRule[] = [weeklyLoadRule, intensityDistributionRule];
