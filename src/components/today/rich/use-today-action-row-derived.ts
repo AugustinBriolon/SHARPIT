@@ -17,12 +17,7 @@ import {
   subscribeActivityStatus,
   type ActivityStatusStore,
 } from '@/lib/health/activity-status';
-import {
-  getAdaptAppliedAckSnapshot,
-  parseAdaptAppliedAckSnapshot,
-  shouldSuppressRearrangeAfterApply,
-  subscribeAdaptAppliedAck,
-} from '@/lib/plan/adapt-applied-ack';
+import { useAdaptAppliedSettled } from '@/hooks/use-adapt-applied-settled';
 import {
   deriveLinkContext,
   derivePostSessionLoop,
@@ -91,16 +86,7 @@ export function useTodayActionRowDerived(vm: TodayViewModel, loading: boolean) {
     return modeFact ? [modeFact, ...base] : base;
   }, [vm, loading, activityStore]);
 
-  const adaptAckSnapshot = useSyncExternalStore(
-    subscribeAdaptAppliedAck,
-    getAdaptAppliedAckSnapshot,
-    () => '',
-  );
-  const adaptAck = useMemo(
-    () => parseAdaptAppliedAckSnapshot(adaptAckSnapshot),
-    [adaptAckSnapshot],
-  );
-  const suppressRearrange = shouldSuppressRearrangeAfterApply(adaptAck);
+  const { adaptAck, settled } = useAdaptAppliedSettled();
 
   return {
     orientation,
@@ -108,8 +94,8 @@ export function useTodayActionRowDerived(vm: TodayViewModel, loading: boolean) {
     sessionLines,
     primaryIndex,
     postSessionLoop,
-    rearrangeProposal: loading || suppressRearrange ? null : (vm.rearrangeProposal ?? null),
-    adaptAppliedAck: !loading && suppressRearrange ? adaptAck : null,
+    rearrangeProposal: loading || settled ? null : (vm.rearrangeProposal ?? null),
+    adaptAppliedAck: !loading && settled ? adaptAck : null,
     daySummaryEmpty: !loading && sessionLines.length === 0 && sessionLinkSuggestions.length === 0,
     reminders,
   };

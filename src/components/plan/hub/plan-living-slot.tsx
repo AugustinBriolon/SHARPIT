@@ -1,17 +1,12 @@
 'use client';
 
-import { useMemo, useState, useSyncExternalStore } from 'react';
+import { useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { PlanLivingCallout } from '@/components/plan/hub/plan-living-callout';
 import { PlanAdaptAppliedPanel } from '@/components/plan/adapt-applied-panel';
 import { usePlanHubModel } from '@/hooks/use-plan-hub-model';
+import { useAdaptAppliedSettled } from '@/hooks/use-adapt-applied-settled';
 import { buildPlanLivingCallout } from '@/lib/plan/hub/plan-living-callout';
-import {
-  getAdaptAppliedAckSnapshot,
-  parseAdaptAppliedAckSnapshot,
-  shouldSuppressRearrangeAfterApply,
-  subscribeAdaptAppliedAck,
-} from '@/lib/plan/adapt-applied-ack';
 
 const PlanAdapter = dynamic(
   () => import('@/components/coach/plan/plan-adapter').then((mod) => mod.PlanAdapter),
@@ -36,13 +31,7 @@ function remainingFromWeek(week: NonNullable<ReturnType<typeof usePlanHubModel>[
 export function PlanLivingSlot() {
   const model = usePlanHubModel();
   const [adapterOpen, setAdapterOpen] = useState(false);
-  const ackSnapshot = useSyncExternalStore(
-    subscribeAdaptAppliedAck,
-    getAdaptAppliedAckSnapshot,
-    () => '',
-  );
-  const adaptAck = useMemo(() => parseAdaptAppliedAckSnapshot(ackSnapshot), [ackSnapshot]);
-  const settled = shouldSuppressRearrangeAfterApply(adaptAck);
+  const { adaptAck, settled } = useAdaptAppliedSettled();
 
   const callout = useMemo(() => {
     if (settled || !model.weekReady || !model.week) {

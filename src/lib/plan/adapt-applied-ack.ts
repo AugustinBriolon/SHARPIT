@@ -39,12 +39,12 @@ export function localDayKey(date: Date): string {
 export function buildAdaptAppliedAck(input: {
   goalLabel: string | null;
   changeCount: number;
-  now?: Date;
+  /** Required — never default to `new Date()` (blocks Next prerender). */
+  now: Date;
 }): AdaptAppliedAck {
-  const now = input.now ?? new Date();
   return {
-    appliedAt: now.toISOString(),
-    dayKey: localDayKey(now),
+    appliedAt: input.now.toISOString(),
+    dayKey: localDayKey(input.now),
     goalLabel: input.goalLabel?.trim() || null,
     changeCount: Math.max(0, input.changeCount),
   };
@@ -53,11 +53,9 @@ export function buildAdaptAppliedAck(input: {
 /**
  * Same local day as apply → suppress stale rearrange / living tension CTA.
  * Next morning (new dayKey) → ack expired; Twin detector may propose again.
+ * `now` is required so prerender never evaluates current time at the call site.
  */
-export function shouldSuppressRearrangeAfterApply(
-  ack: AdaptAppliedAck | null,
-  now: Date = new Date(),
-): boolean {
+export function shouldSuppressRearrangeAfterApply(ack: AdaptAppliedAck | null, now: Date): boolean {
   if (!ack) {
     return false;
   }
@@ -101,7 +99,8 @@ export function getAdaptAppliedAckSnapshot(): string {
 export function recordAdaptAppliedAck(input: {
   goalLabel: string | null;
   changeCount: number;
-  now?: Date;
+  /** Required — pass from the click/apply handler (`new Date()` is fine there). */
+  now: Date;
 }): AdaptAppliedAck {
   const ack = buildAdaptAppliedAck(input);
   if (typeof window !== 'undefined') {

@@ -287,6 +287,7 @@ export function PlanAdapter({
           recordAdaptAppliedAck({
             goalLabel,
             changeCount: ops.length,
+            now: new Date(),
           }),
         );
       },
