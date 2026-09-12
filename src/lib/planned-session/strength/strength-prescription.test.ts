@@ -77,6 +77,27 @@ describe('normalizeCoachStrengthPrescription', () => {
   });
 });
 
+describe('normalizeCoachStrengthPrescription — incomplete declarations', () => {
+  it('keeps the block when the coach omits intent and pattern entirely', () => {
+    // Losing 14 sessions because one exercise of twenty lacks an enum is a worse
+    // outcome than one exercise going unjudged.
+    const normalized = normalizeCoachStrengthPrescription({
+      sets: [{ exercise: 'Pompe', sets: 3, reps: 12 }],
+    });
+
+    expect(normalized?.sets).toHaveLength(1);
+    expect(normalized?.sets[0]).toMatchObject({ exercise: 'Pompe', intent: null, pattern: null });
+  });
+
+  it('accepts an explicit null declaration too', () => {
+    const normalized = normalizeCoachStrengthPrescription({
+      sets: [{ exercise: 'Pompe', intent: null, pattern: null, sets: 3, reps: 12 }],
+    });
+
+    expect(normalized?.sets[0]?.intent).toBeNull();
+  });
+});
+
 describe('extractStrengthSessionIntent', () => {
   it('keeps the coach focus and drops the numbered exercise dump', () => {
     const description =

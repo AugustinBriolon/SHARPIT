@@ -11,7 +11,8 @@
  *
  * So classification comes from declarations and curated data only, in order:
  *
- *   1. declared    — the coach states intent + pattern per exercise
+ *   1. declared    — the coach states intent + pattern per exercise, except that
+ *                    curated data wins wherever the two contradict each other
  *   2. taxonomy    — 91 curated movements with FR labels (`movement-taxonomy`)
  *   3. watch       — Garmin Connect category, but only on an exact/alias match;
  *                    fuzzy matches name the wrong muscle often enough to lie
@@ -163,10 +164,43 @@ function watchProfile(set: ProfilableSet): ExerciseLoadProfile | null {
   return groups ? { groups: [...groups], loads: true, source: 'watch' } : null;
 }
 
+function unionGroups(
+  a: readonly CatalogBodyPart[],
+  b: readonly CatalogBodyPart[],
+): CatalogBodyPart[] {
+  return [...new Set([...a, ...b])];
+}
+
+/**
+ * Curated data outranks a declaration that contradicts it.
+ *
+ * Trusting the declaration unconditionally would only trade one unverifiable
+ * source for another: a movement declared MOBILITY silences the guard entirely,
+ * and the model is the one party with an interest in its own prescription
+ * passing. When the taxonomy knows the movement, it is evidence, not noise.
+ * Where both agree that load happens, the groups are unioned — a warning is
+ * cheap and a missed conflict is not.
+ */
+function reconcile(declared: ExerciseLoadProfile, curated: ExerciseLoadProfile) {
+  if (declared.loads !== curated.loads || !declared.loads) {
+    return curated;
+  }
+  return {
+    groups: unionGroups(declared.groups, curated.groups),
+    loads: true,
+    source: 'declared' as const,
+  };
+}
+
 /**
  * What this exercise loads. Never guesses: an unrecognised movement returns
  * `unknown`, which every caller must read as "no claim", not as "loads nothing".
  */
 export function exerciseLoadProfile(set: ProfilableSet): ExerciseLoadProfile {
-  return declaredProfile(set) ?? taxonomyProfile(set) ?? watchProfile(set) ?? NOTHING;
+  const declared = declaredProfile(set);
+  const curated = taxonomyProfile(set);
+  if (declared && curated) {
+    return reconcile(declared, curated);
+  }
+  return declared ?? curated ?? watchProfile(set) ?? NOTHING;
 }

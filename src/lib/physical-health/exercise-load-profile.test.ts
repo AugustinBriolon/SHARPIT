@@ -108,9 +108,51 @@ describe('exerciseLoadProfile — unknown', () => {
     });
   });
 
-  it('prefers the declaration over the taxonomy when both exist', () => {
+  it('uses the declaration when the taxonomy knows nothing of the movement', () => {
     expect(
-      exerciseLoadProfile({ exercise: 'Fente bulgare', intent: 'MOBILITY', pattern: null }).source,
-    ).toBe('declared');
+      exerciseLoadProfile({
+        exercise: 'Mouvement jamais vu',
+        intent: 'STRENGTH',
+        pattern: 'SQUAT',
+      }),
+    ).toEqual({ groups: ['upper legs'], loads: true, source: 'declared' });
+  });
+});
+
+describe('exerciseLoadProfile — declaration against curated data', () => {
+  it('refuses a declaration that would silence the guard on a known loading movement', () => {
+    // The taxonomy knows the Bulgarian split squat loads the thigh. A MOBILITY
+    // declaration on it must not be taken at face value.
+    const profile = exerciseLoadProfile({
+      exercise: 'Fente bulgare',
+      intent: 'MOBILITY',
+      pattern: null,
+    });
+
+    expect(profile.loads).toBe(true);
+    expect(profile.groups).toEqual(['upper legs']);
+    expect(profile.source).toBe('taxonomy');
+  });
+
+  it('trusts the curated answer when a stretch is declared as loading', () => {
+    const profile = exerciseLoadProfile({
+      exercise: 'Étirement 90/90',
+      intent: 'STRENGTH',
+      pattern: 'SQUAT',
+    });
+
+    expect(profile.loads).toBe(false);
+    expect(profile.source).toBe('taxonomy');
+  });
+
+  it('unions the groups when both agree the movement loads', () => {
+    const profile = exerciseLoadProfile({
+      exercise: 'Fente bulgare',
+      intent: 'STRENGTH',
+      pattern: 'CALF_RAISE',
+    });
+
+    expect(profile.groups).toEqual(['lower legs', 'upper legs']);
+    expect(profile.source).toBe('declared');
   });
 });

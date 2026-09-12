@@ -71,11 +71,15 @@ export const coachStrengthSetSchema = z.object({
     .describe(
       'Nom FR de l’exercice. Préférer un libellé proche du catalogue Garmin Connect (ex. Pompe, Étirement 90/90, Clamshell avec élastique).',
     ),
-  intent: movementIntentSchema.describe(
-    'Ce que l’exercice entraîne. MOBILITY = étirement, auto-massage, mobilité (aucune mise en charge). CORE = gainage. STRENGTH = renforcement contre résistance. PLYOMETRIC = pliométrie. CONDITIONING = cardio.',
-  ),
+  // Nullish, not required: a missing enum must cost one unjudged exercise, never
+  // the whole generated block. Absent values fall back to the curated taxonomy.
+  intent: movementIntentSchema
+    .nullish()
+    .describe(
+      'Ce que l’exercice entraîne. MOBILITY = étirement, auto-massage, mobilité (aucune mise en charge). CORE = gainage. STRENGTH = renforcement contre résistance. PLYOMETRIC = pliométrie. CONDITIONING = cardio. null seulement si tu ne sais vraiment pas.',
+    ),
   pattern: movementPatternSchema
-    .nullable()
+    .nullish()
     .describe(
       'Famille biomécanique sollicitée. null OBLIGATOIREMENT si intent=MOBILITY ou CONDITIONING. C’est ce champ qui permet de vérifier qu’un exercice ne charge pas une zone sensible — ne le devine pas, choisis le motif réellement sollicité.',
     ),
