@@ -3,6 +3,7 @@ import type { TodayJournalHabitCallout } from '@/lib/journal/journal-habit-today
 import {
   buildHabitCoachingSignal,
   buildHabitRearrangeProposal,
+  HABIT_SESSION_TENSION_CAPTION,
   habitLeverChipLabel,
   isHabitPlanFocus,
   mergeRearrangeProposals,
@@ -235,5 +236,12 @@ describe('habitLeverChipLabel', () => {
     expect(habitLeverChipLabel({ label: 'Écran au lit', source: 'experiment' })).toBe(
       'Test · Écran au lit',
     );
+  });
+});
+
+describe('HABIT_SESSION_TENSION_CAPTION', () => {
+  it('is French athlete-facing copy', () => {
+    expect(HABIT_SESSION_TENSION_CAPTION).toBe('Tension journal → séances');
+    expect(HABIT_SESSION_TENSION_CAPTION).not.toMatch(/\bhabit\b/i);
   });
 });

@@ -4,6 +4,10 @@ import { ListRestart } from 'lucide-react';
 import { FadeIn } from '@/components/motion/fade-presence';
 import { Button } from '@/components/ui/button';
 import { RearrangeSessionRail } from '@/components/coach/plan/rearrange-session-rail';
+import {
+  HABIT_SESSION_TENSION_CAPTION,
+  habitLeverChipLabel,
+} from '@/lib/today/rich/habit-coaching-signal';
 import type { PlanLivingCalloutView } from '@/lib/plan/hub/plan-living-callout';
 
 function LivingEyebrow({
@@ -44,6 +48,7 @@ export function PlanLivingCallout({
   onAdjust: () => void;
 }) {
   const habitDriven = callout.kind === 'habit';
+  const lever = callout.habitLever;
 
   return (
     <FadeIn>
@@ -55,10 +60,17 @@ export function PlanLivingCallout({
           <LivingEyebrow goalLabel={callout.goalLabel} habitDriven={habitDriven} />
           <p className="text-card-title text-pretty">{callout.headline}</p>
           <p className="text-muted-foreground text-xs leading-relaxed text-pretty">{callout.why}</p>
+          {lever ? (
+            <p className="pt-0.5">
+              <span className="border-analysis-border/80 bg-background/70 text-muted-foreground inline-flex items-center rounded-md border px-2 py-1 text-[0.65rem] font-semibold tracking-wide uppercase">
+                {habitLeverChipLabel(lever)}
+              </span>
+            </p>
+          ) : null}
         </div>
 
         <RearrangeSessionRail
-          caption={habitDriven ? 'Tension habit → séances' : undefined}
+          caption={habitDriven ? HABIT_SESSION_TENSION_CAPTION : undefined}
           sessions={callout.previewSessions}
           ariaLabel={
             habitDriven

@@ -99,6 +99,7 @@ describe('buildPlanLivingCallout', () => {
       accent: 'ajuster',
       ctaLabel: 'Ajuster le planning',
       goalLabel: 'Semi Paris',
+      habitLever: { label: 'Repas tardif', source: 'association' },
     });
     expect(callout?.why).toMatch(/vers Semi Paris/);
     expect(callout?.focus).toMatch(/^Journal\s*:/);
@@ -116,5 +117,36 @@ describe('buildPlanLivingCallout', () => {
       day: new Date(2026, 7, 26),
     });
     expect(callout?.kind).toBe('protect');
+    expect(callout?.habitLever).toEqual({ label: 'Repas tardif', source: 'association' });
+  });
+
+  it('stays quiet on habit path when day is missing', () => {
+    expect(
+      buildPlanLivingCallout({
+        hasDatedGoal: true,
+        hasActiveMacro: true,
+        hasRemainingSessions: true,
+        goalLabel: 'Semi Paris',
+        verdict: 'TRAIN_SMART',
+        remaining: remainingHard,
+        habitCallout: habitAssociation,
+      }),
+    ).toBeNull();
+  });
+
+  it('keeps Twin callout without inventing habit day', () => {
+    const callout = buildPlanLivingCallout({
+      hasDatedGoal: true,
+      hasActiveMacro: true,
+      hasRemainingSessions: true,
+      goalLabel: 'Semi Paris',
+      verdict: 'CAUTION',
+      remaining: remainingHard,
+      habitCallout: habitAssociation,
+    });
+    expect(callout).toMatchObject({
+      kind: 'protect',
+      habitLever: null,
+    });
   });
 });
