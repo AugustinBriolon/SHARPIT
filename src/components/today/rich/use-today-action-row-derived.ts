@@ -18,6 +18,12 @@ import {
   type ActivityStatusStore,
 } from '@/lib/health/activity-status';
 import {
+  getAdaptAppliedAckSnapshot,
+  parseAdaptAppliedAckSnapshot,
+  shouldSuppressRearrangeAfterApply,
+  subscribeAdaptAppliedAck,
+} from '@/lib/plan/adapt-applied-ack';
+import {
   deriveLinkContext,
   derivePostSessionLoop,
   deriveReminders,
@@ -85,13 +91,25 @@ export function useTodayActionRowDerived(vm: TodayViewModel, loading: boolean) {
     return modeFact ? [modeFact, ...base] : base;
   }, [vm, loading, activityStore]);
 
+  const adaptAckSnapshot = useSyncExternalStore(
+    subscribeAdaptAppliedAck,
+    getAdaptAppliedAckSnapshot,
+    () => '',
+  );
+  const adaptAck = useMemo(
+    () => parseAdaptAppliedAckSnapshot(adaptAckSnapshot),
+    [adaptAckSnapshot],
+  );
+  const suppressRearrange = shouldSuppressRearrangeAfterApply(adaptAck);
+
   return {
     orientation,
     sessionLinkSuggestions,
     sessionLines,
     primaryIndex,
     postSessionLoop,
-    rearrangeProposal: loading ? null : (vm.rearrangeProposal ?? null),
+    rearrangeProposal: loading || suppressRearrange ? null : (vm.rearrangeProposal ?? null),
+    adaptAppliedAck: !loading && suppressRearrange ? adaptAck : null,
     daySummaryEmpty: !loading && sessionLines.length === 0 && sessionLinkSuggestions.length === 0,
     reminders,
   };
