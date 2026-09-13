@@ -21,6 +21,7 @@ import {
   describeZone,
   sensitiveZonesFrom,
 } from '@/lib/physical-health/sensitive-zones';
+import { useSensitiveZoneAck } from '@/hooks/use-sensitive-zone-ack';
 import { PlannedSessionReadHeader } from '@/components/planning/session/read/planned-session-read-header';
 import { PlannedSessionDeroulePanel } from '@/components/planning/session/read/planned-session-deroule-panel';
 import { PlannedSessionReadSecondaryDetails } from '@/components/planning/session/read/planned-session-read-secondary';
@@ -42,35 +43,85 @@ function GoalLink({ title }: { title: string }) {
  * A session planned before the injury was declared still carries its old
  * exercises — say so where the athlete is about to follow it.
  */
+/** Accepted as deliberate — stay out of the way, but leave the door open. */
+function SensitiveZoneAcked({ onUndo }: { onUndo: () => void }) {
+  return (
+    <p className="text-muted-foreground flex flex-wrap items-center gap-x-2 gap-y-1 px-0.5 text-xs">
+      <span>Charge sur une zone sensible assumée pour cette séance.</span>
+      <button
+        className="hover:text-foreground underline underline-offset-2"
+        type="button"
+        onClick={onUndo}
+      >
+        Réafficher l’alerte
+      </button>
+    </p>
+  );
+}
+
+function SensitiveZoneAlert({
+  zoneText,
+  exercises,
+  onAcknowledge,
+}: {
+  zoneText: string;
+  exercises: string[];
+  onAcknowledge: () => void;
+}) {
+  return (
+    <div className="border-signal-vo2/30 bg-signal-vo2/8 text-signal-vo2 space-y-2 rounded-lg border px-3 py-2 text-xs">
+      <p>
+        {exercises.length > 0 ? (
+          <>
+            Cette séance charge une zone que tu protèges ({zoneText}) : {exercises.join(', ')}.
+            Adapte ou remplace ces exercices.
+          </>
+        ) : (
+          <>
+            Ce sport sollicite une zone que tu protèges ({zoneText}). Adapte le volume et
+            l’intensité, ou change de sport ce jour-là.
+          </>
+        )}
+      </p>
+      <button
+        className="border-signal-vo2/40 hover:bg-signal-vo2/10 pressable inline-flex min-h-8 items-center rounded-full border px-3 font-medium transition-colors"
+        type="button"
+        onClick={onAcknowledge}
+      >
+        C’est voulu
+      </button>
+    </div>
+  );
+}
+
+/**
+ * The guard cannot tell prehab from aggravation — a clamshell loads the glute a
+ * sciatica sits under, and is also its standard rehab. The athlete gets the
+ * last word, for this session only.
+ */
 function SensitiveZoneWarning({ session }: { session: ClientPlannedSession }) {
   const notesQuery = usePhysicalNotes();
-  const zones = sensitiveZonesFrom(notesQuery.data ?? []);
-  const flags = sessionZoneFlags(session, zones);
+  const { acked, acknowledge, undo } = useSensitiveZoneAck(session.id);
+  const flags = sessionZoneFlags(session, sensitiveZonesFrom(notesQuery.data ?? []));
 
   if (flags.length === 0) {
     return null;
+  }
+  if (acked) {
+    return <SensitiveZoneAcked onUndo={undo} />;
   }
 
   const zoneText = [...new Map(flags.map((flag) => [flag.zone.label, flag.zone])).values()]
     .sort(bySeverityDesc)
     .map(describeZone)
     .join(', ');
-  const exercises = [...new Set(flags.map((flag) => flag.exercise).filter(Boolean))];
 
   return (
-    <p className="border-signal-vo2/30 bg-signal-vo2/8 text-signal-vo2 rounded-lg border px-3 py-2 text-xs">
-      {exercises.length > 0 ? (
-        <>
-          Cette séance charge une zone que tu protèges ({zoneText}) : {exercises.join(', ')}. Adapte
-          ou remplace ces exercices.
-        </>
-      ) : (
-        <>
-          Ce sport sollicite une zone que tu protèges ({zoneText}). Adapte le volume et l’intensité,
-          ou change de sport ce jour-là.
-        </>
-      )}
-    </p>
+    <SensitiveZoneAlert
+      exercises={[...new Set(flags.flatMap((flag) => (flag.exercise ? [flag.exercise] : [])))]}
+      zoneText={zoneText}
+      onAcknowledge={acknowledge}
+    />
   );
 }
 
@@ -222,6 +273,10 @@ export function PlannedSessionReadView({
         {header}
         {readData.goal ? <GoalLink title={readData.goal.title} /> : null}
       </div>
+
+      {/* The session is still ahead — this is the only branch where the athlete
+          can still act on the warning, so it must not hide in a collapsible. */}
+      <SensitiveZoneWarning session={session} />
 
       {morningProposal ? (
         <MorningProposalCompare proposal={morningProposal} />
