@@ -43,7 +43,7 @@ function TallyChip({
   return (
     <li
       className={cn(
-        'flex min-w-0 flex-1 flex-col justify-center border px-3 py-3',
+        'flex min-w-0 flex-1 items-baseline gap-2 border px-3 py-3',
         onInk
           ? 'first:rounded-l-lg last:rounded-r-lg [&:not(:first-child)]:border-l-0'
           : 'rounded-lg',
@@ -53,7 +53,7 @@ function TallyChip({
     >
       <p
         className={cn(
-          'text-data text-lg leading-none font-semibold tabular-nums',
+          'text-data text-xl leading-none font-semibold tabular-nums',
           onInk ? 'text-highlight dark:text-ink-surface-foreground' : 'text-foreground',
         )}
       >
@@ -61,7 +61,7 @@ function TallyChip({
       </p>
       <p
         className={cn(
-          'mt-1.5 text-[11px] leading-snug text-pretty',
+          'min-w-0 text-[11px] leading-snug text-pretty',
           onInk ? 'text-ink-surface-foreground/70' : 'text-muted-foreground',
         )}
       >
