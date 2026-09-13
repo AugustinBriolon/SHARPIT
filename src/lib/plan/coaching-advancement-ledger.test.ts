@@ -3,6 +3,7 @@ import {
   adaptedSessionsThisWeek,
   appendCoachingAdvancementEntry,
   buildCoachingAdvancementEntry,
+  coachingAdvancementEntriesThisWeek,
   localWeekStartDayKey,
   sumAdaptedSessionsInRange,
 } from '@/lib/plan/coaching-advancement-ledger';
@@ -79,5 +80,26 @@ describe('coaching-advancement-ledger', () => {
       }),
     ];
     expect(adaptedSessionsThisWeek(entries, friday)).toBe(2);
+  });
+
+  it('lists this-week entries newest-first without older weeks', () => {
+    const friday = new Date(2026, 8, 11, 10, 0, 0);
+    const newest = buildCoachingAdvancementEntry({
+      goalLabel: 'A',
+      changeCount: 2,
+      now: new Date(2026, 8, 10),
+    });
+    const mid = buildCoachingAdvancementEntry({
+      goalLabel: 'B',
+      changeCount: 1,
+      now: new Date(2026, 8, 8),
+    });
+    const old = buildCoachingAdvancementEntry({
+      goalLabel: 'old',
+      changeCount: 4,
+      now: new Date(2026, 8, 6),
+    });
+    const week = coachingAdvancementEntriesThisWeek([newest, mid, old], friday);
+    expect(week.map((e) => e.goalLabel)).toEqual(['A', 'B']);
   });
 });

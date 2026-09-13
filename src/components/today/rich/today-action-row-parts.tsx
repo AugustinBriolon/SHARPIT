@@ -213,20 +213,14 @@ function TodayActionRowLoadedContent({
         adaptAppliedAck={derived.adaptAppliedAck}
         rearrangeProposal={derived.rearrangeProposal}
       />
-      <TodayGoalAdvancementSlot />
     </>
   );
 }
 
-/** Suivi under Plan vivant — never replaces rearrange / after-apply. */
-function TodayGoalAdvancementSlot() {
-  const { view, pending } = useGoalAdvancement();
-  if (pending || !view) {
-    return null;
-  }
-  return <GoalAdvancementPanel view={view} />;
-}
-
+/**
+ * Single Plan vivant widget — rearrange xor after-apply xor suivi-only.
+ * Suivi is absorbed into the shell; never a sibling panel.
+ */
 function TodayPlanVivantSlot({
   adaptAppliedAck,
   rearrangeProposal,
@@ -234,11 +228,17 @@ function TodayPlanVivantSlot({
   adaptAppliedAck: AdaptAppliedAck | null;
   rearrangeProposal: TodayViewModel['rearrangeProposal'] | null;
 }) {
+  const { view: advancement, pending } = useGoalAdvancement();
+  const suivi = pending ? null : advancement;
+
   if (adaptAppliedAck) {
-    return <PlanAdaptAppliedPanel ack={adaptAppliedAck} />;
+    return <PlanAdaptAppliedPanel ack={adaptAppliedAck} advancement={suivi} />;
   }
   if (rearrangeProposal) {
-    return <TodayRearrangeProposal proposal={rearrangeProposal} />;
+    return <TodayRearrangeProposal advancement={suivi} proposal={rearrangeProposal} />;
+  }
+  if (suivi) {
+    return <GoalAdvancementPanel view={suivi} />;
   }
   return null;
 }

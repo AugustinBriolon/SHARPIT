@@ -87,6 +87,19 @@ export function adaptedSessionsThisWeek(
   return sumAdaptedSessionsInRange(entries, localWeekStartDayKey(now), localDayKey(now));
 }
 
+/**
+ * Ledger entries whose dayKey falls in the local week up to `now` (inclusive).
+ * Preserves newest-first order from the ledger.
+ */
+export function coachingAdvancementEntriesThisWeek(
+  entries: readonly CoachingAdvancementEntry[],
+  now: Date,
+): CoachingAdvancementEntry[] {
+  const fromDayKey = localWeekStartDayKey(now);
+  const toDayKey = localDayKey(now);
+  return entries.filter((entry) => entry.dayKey >= fromDayKey && entry.dayKey <= toDayKey);
+}
+
 export function readCoachingAdvancementLedger(): CoachingAdvancementEntry[] {
   if (typeof window === 'undefined') {
     return [];

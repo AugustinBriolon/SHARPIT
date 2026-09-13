@@ -1,17 +1,36 @@
 /**
  * Suivi d’avancées — pure presentation builder.
- * Goal progress + week execution + coaching adapts → athlete-facing panel VM.
+ * Goal progress + week execution + coaching adapts → athlete-facing VM.
+ * Absorbed into Plan vivant shell on Today (not a twin panel).
  * No Core engines; no calendar mutation.
  */
 
+import { format, parseISO } from 'date-fns';
+import { fr } from 'date-fns/locale';
 import { goalDeepLinkHref } from '@/lib/today/rich/today-goal-anchor';
 import type { PlanGoalView } from '@/lib/plan/trajectory/plan-goal';
 import {
   adaptedSessionsThisWeek,
+  coachingAdvancementEntriesThisWeek,
   type CoachingAdvancementEntry,
 } from '@/lib/plan/coaching-advancement-ledger';
+import type { RearrangePreviewTone } from '@/lib/today/rich/rearrange-preview';
 
 export type GoalAdvancementFact = {
+  readonly id: string;
+  readonly label: string;
+};
+
+export type GoalAdvancementWeekSegment = {
+  readonly id: 'adapted' | 'done' | 'remaining';
+  readonly tone: RearrangePreviewTone;
+  /** Top chip line (count). */
+  readonly dateLabel: string;
+  /** Bottom chip line (full noun). */
+  readonly intensityLabel: string;
+};
+
+export type GoalAdvancementTrailItem = {
   readonly id: string;
   readonly label: string;
 };
@@ -24,7 +43,11 @@ export type GoalAdvancementView = {
   readonly headline: string;
   readonly why: string;
   readonly progress: number | null;
+  /** @deprecated Prefer weekSegments — kept for lab-note / transitional callers. */
   readonly facts: readonly GoalAdvancementFact[];
+  readonly weekSegments: readonly GoalAdvancementWeekSegment[];
+  readonly trail: readonly GoalAdvancementTrailItem[];
+  readonly phaseLabel: string | null;
   readonly href: string;
 };
 
@@ -53,104 +76,107 @@ function buildHeadline(goal: PlanGoalView): string {
   return goal.detail ?? 'Cap sur l’objectif';
 }
 
-function pushFact(
-  facts: GoalAdvancementFact[],
-  input: { id: string; count: number; singular: string; plural: string },
+function pushSegment(
+  segments: GoalAdvancementWeekSegment[],
+  input: {
+    id: GoalAdvancementWeekSegment['id'];
+    tone: RearrangePreviewTone;
+    count: number;
+    intensityLabel: string;
+  },
 ): void {
   if (input.count <= 0) {
     return;
   }
-  facts.push({
+  segments.push({
     id: input.id,
-    label: `${input.count} ${sessionWord(input.count, input.singular, input.plural)}`,
+    tone: input.tone,
+    dateLabel: String(input.count),
+    intensityLabel: input.intensityLabel,
   });
 }
 
-function buildFacts(input: {
+function buildWeekSegments(input: {
   adaptedCount: number;
   weekDoneCount: number;
   weekRemainingCount: number;
-  phaseLabel: string | null;
-}): GoalAdvancementFact[] {
-  const facts: GoalAdvancementFact[] = [];
-  pushFact(facts, {
+}): GoalAdvancementWeekSegment[] {
+  const segments: GoalAdvancementWeekSegment[] = [];
+  pushSegment(segments, {
     id: 'adapted',
+    tone: 'tension',
     count: input.adaptedCount,
-    singular: 'adaptée',
-    plural: 'adaptées',
+    intensityLabel: sessionWord(input.adaptedCount, 'séance adaptée', 'séances adaptées'),
   });
-  pushFact(facts, {
+  pushSegment(segments, {
     id: 'done',
+    tone: 'calm',
     count: input.weekDoneCount,
-    singular: 'faite',
-    plural: 'faites',
+    intensityLabel: sessionWord(input.weekDoneCount, 'faite', 'faites'),
   });
-  pushFact(facts, {
+  pushSegment(segments, {
     id: 'remaining',
+    tone: 'neutral',
     count: input.weekRemainingCount,
-    singular: 'restante',
-    plural: 'restantes',
+    intensityLabel: sessionWord(input.weekRemainingCount, 'restante', 'restantes'),
   });
-  const phase = input.phaseLabel?.trim();
-  if (phase) {
-    facts.push({ id: 'phase', label: phase });
-  }
-  return facts;
+  return segments;
 }
 
-function emptyWhy(isRace: boolean, progress: number | null): string {
-  if (progress !== null) {
-    return 'Le Twin suit ta progression vers la cible. Les ajustements de plan apparaîtront ici.';
-  }
-  if (isRace) {
-    return 'Le Twin ancre le plan sur cette échéance. Les séances adaptées et le fil de la semaine apparaîtront ici.';
-  }
-  return 'Le Twin suit ton avancée vers l’objectif.';
+/** Coaching-only facts for lab-note / transitional `facts` field (no phase, no %). */
+function buildCoachingFacts(
+  segments: readonly GoalAdvancementWeekSegment[],
+): GoalAdvancementFact[] {
+  return segments.map((segment) => ({
+    id: segment.id,
+    label: `${segment.dateLabel} ${segment.intensityLabel}`,
+  }));
 }
 
-function weekBit(done: number, remaining: number): string | null {
-  if (done <= 0 && remaining <= 0) {
-    return null;
-  }
-  return `${done} faite${done > 1 ? 's' : ''} · ${remaining} restante${remaining > 1 ? 's' : ''}`;
+function buildWhy(adaptedCount: number): string {
+  return adaptedCount > 0
+    ? 'Ce que le coaching a déjà changé cette semaine.'
+    : 'Suite du plan vers ton objectif.';
 }
 
-function adaptedBit(adaptedCount: number): string | null {
-  if (adaptedCount <= 0) {
-    return null;
+function capitalizeFrDay(label: string): string {
+  if (!label) {
+    return label;
   }
-  return `${adaptedCount} ${sessionWord(adaptedCount, 'séance adaptée', 'séances adaptées')} cette semaine`;
+  return label.charAt(0).toLocaleUpperCase('fr-FR') + label.slice(1);
 }
 
-function buildWhy(input: {
-  adaptedCount: number;
-  weekDoneCount: number;
-  weekRemainingCount: number;
-  phaseLabel: string | null;
-  isRace: boolean;
-  progress: number | null;
-}): string {
-  const bits = [
-    adaptedBit(input.adaptedCount),
-    weekBit(input.weekDoneCount, input.weekRemainingCount),
-    input.phaseLabel?.trim() ? `phase ${input.phaseLabel.trim()}` : null,
-  ].filter((bit): bit is string => Boolean(bit));
-
-  if (bits.length === 0) {
-    return emptyWhy(input.isRace, input.progress);
+function trailDayLabel(dayKey: string): string {
+  try {
+    return capitalizeFrDay(format(parseISO(dayKey), 'EEE', { locale: fr }));
+  } catch {
+    return dayKey;
   }
+}
 
-  const suffix =
-    input.adaptedCount > 0
-      ? 'Ce que le coaching a déjà changé vers ton objectif.'
-      : 'Suite du plan vers ton objectif.';
-  return `${bits.join(' · ')}. ${suffix}`;
+function buildTrailItem(entry: CoachingAdvancementEntry): GoalAdvancementTrailItem {
+  const count = entry.changeCount;
+  const adaptBit = `${count} ${sessionWord(count, 'séance adaptée', 'séances adaptées')}`;
+  const goalBit = entry.goalLabel ? ` · vers ${entry.goalLabel}` : '';
+  return {
+    id: `${entry.dayKey}-${entry.appliedAt}`,
+    label: `${trailDayLabel(entry.dayKey)} · ${adaptBit}${goalBit}`,
+  };
+}
+
+function buildTrail(
+  ledger: readonly CoachingAdvancementEntry[],
+  now: Date,
+): GoalAdvancementTrailItem[] {
+  return coachingAdvancementEntriesThisWeek(ledger, now)
+    .filter((entry) => entry.changeCount > 0)
+    .map(buildTrailItem);
 }
 
 /**
- * Builds the Suivi panel when an active goal has coaching / week facts.
+ * Builds the Suivi VM when an active goal has week / coaching segments.
  * Returns null without a goal, or when there is nothing meaningful to show
- * (goal alone must not surface emptyWhy under Plan vivant).
+ * (phase alone must not surface under Plan vivant).
  */
 export function buildGoalAdvancement(input: GoalAdvancementInput): GoalAdvancementView | null {
   const { goal } = input;
@@ -159,41 +185,39 @@ export function buildGoalAdvancement(input: GoalAdvancementInput): GoalAdvanceme
   }
 
   const adaptedCount = adaptedSessionsThisWeek(input.ledger, input.now);
-  const facts = buildFacts({
+  const weekSegments = buildWeekSegments({
     adaptedCount,
     weekDoneCount: input.weekDoneCount,
     weekRemainingCount: input.weekRemainingCount,
-    phaseLabel: input.phaseLabel,
   });
 
-  if (facts.length === 0) {
+  if (weekSegments.length === 0) {
     return null;
   }
+
+  const phase = input.phaseLabel?.trim() || null;
+  const facts = buildCoachingFacts(weekSegments);
 
   return {
     visible: true,
     goalId: goal.id,
     goalLabel: goal.title,
-    eyebrow: 'Suivi',
+    eyebrow: 'Plan vivant',
     headline: buildHeadline(goal),
-    why: buildWhy({
-      adaptedCount,
-      weekDoneCount: input.weekDoneCount,
-      weekRemainingCount: input.weekRemainingCount,
-      phaseLabel: input.phaseLabel,
-      isRace: goal.isRace,
-      progress: goal.progress,
-    }),
+    why: buildWhy(adaptedCount),
     progress: goal.progress,
     facts,
+    weekSegments,
+    trail: buildTrail(input.ledger, input.now),
+    phaseLabel: phase,
     href: goalDeepLinkHref(goal.id),
   };
 }
 
-/** Compact lab-note for Plan destination (same facts, one sentence). */
+/** Compact lab-note for Plan destination — coaching facts only (no countdown / %). */
 export function buildGoalAdvancementLabNote(view: GoalAdvancementView): string {
   if (view.facts.length === 0) {
     return view.why;
   }
-  return `${view.headline} · ${view.facts.map((f) => f.label).join(' · ')}`;
+  return view.facts.map((f) => f.label).join(' · ');
 }
