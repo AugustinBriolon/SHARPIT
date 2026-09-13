@@ -30,10 +30,13 @@ function ChoiceTile({
   label,
   selected,
   onSelect,
+  stacked = false,
 }: {
   label: string;
   selected: boolean;
   onSelect: () => void;
+  /** Full-width stack for long labels (capacity) — avoids cramped 3-up chips. */
+  stacked?: boolean;
 }) {
   return (
     <button
@@ -41,7 +44,8 @@ function ChoiceTile({
       role="radio"
       type="button"
       className={cn(
-        'pressable-lg min-h-11 flex-1 rounded-xl border px-2 py-2 text-xs font-medium',
+        'pressable-lg min-h-11 rounded-xl border px-3 py-2.5 text-left text-sm font-medium',
+        stacked ? 'w-full' : 'flex-1',
         selected
           ? 'border-highlight bg-highlight text-highlight-foreground'
           : 'border-border/70 bg-background text-muted-foreground hover:border-primary/30 hover:bg-muted/40',
@@ -53,11 +57,19 @@ function ChoiceTile({
   );
 }
 
-function ChoiceRow({ label, children }: { label: string; children: React.ReactNode }) {
+function ChoiceRow({
+  label,
+  stacked = false,
+  children,
+}: {
+  label: string;
+  stacked?: boolean;
+  children: React.ReactNode;
+}) {
   return (
-    <div className="space-y-1.5">
+    <div className="space-y-2">
       <p className="text-label text-muted-foreground">{label}</p>
-      <div className="flex gap-1.5" role="radiogroup">
+      <div className={cn(stacked ? 'flex flex-col gap-2' : 'flex gap-2')} role="radiogroup">
         {children}
       </div>
     </div>
@@ -145,13 +157,24 @@ function useReassessmentForm(initialSeverity: number) {
   };
 }
 
-function ReassessmentHeader({ title, onDismiss }: { title: string; onDismiss: () => void }) {
+function ReassessmentHeader({
+  title,
+  positionLabel,
+  onDismiss,
+}: {
+  title: string;
+  positionLabel?: string | null;
+  onDismiss: () => void;
+}) {
   return (
     <div className="flex items-start justify-between gap-2">
-      <p className="text-card-title text-sm">{title}</p>
+      <div className="min-w-0 space-y-1">
+        {positionLabel ? <p className="text-label text-muted-foreground">{positionLabel}</p> : null}
+        <p className="text-card-title text-sm">{title}</p>
+      </div>
       <button
         aria-label="Ignorer"
-        className="text-muted-foreground hover:text-foreground"
+        className="text-muted-foreground hover:text-foreground shrink-0"
         type="button"
         onClick={onDismiss}
       >
@@ -197,7 +220,7 @@ function ReassessmentFooter({
   onToggleDetail: () => void;
 }) {
   return (
-    <div className="flex items-center justify-between gap-2">
+    <div className="flex items-center justify-between gap-2 pt-1">
       <button
         className="text-muted-foreground hover:text-foreground text-xs underline underline-offset-2"
         type="button"
@@ -216,23 +239,17 @@ function ReassessmentFooter({
 function PhysicalReassessmentEditor({
   item,
   note,
+  positionLabel,
+  onResolved,
 }: {
   item: PhysicalReassessment;
   note: ClientPhysicalNote;
+  positionLabel?: string | null;
+  onResolved?: (result: { kind: 'saved'; noteTitle: string; severity: number } | { kind: 'dismissed' }) => void;
 }) {
   const { addCheckin } = usePhysicalNoteMutations();
   const { offline, guardDisabled, offlineLabel } = useOfflineGuard();
-  const [dismissed, setDismissed] = useState(false);
-  const [done, setDone] = useState(false);
   const form = useReassessmentForm(item.suggestedSeverity ?? note.severity ?? 5);
-
-  if (dismissed) {
-    return null;
-  }
-
-  if (done) {
-    return <ReassessmentDoneBanner noteTitle={item.noteTitle} severity={form.state.severity} />;
-  }
 
   function handleSave() {
     if (guardDisabled || !form.state.impact) {
@@ -247,14 +264,26 @@ function PhysicalReassessmentEditor({
           functionalImpact: impactToFunctionalImpact(form.state.impact),
         },
       },
-      { onSuccess: () => setDone(true) },
+      {
+        onSuccess: () => {
+          onResolved?.({
+            kind: 'saved',
+            noteTitle: item.noteTitle,
+            severity: form.state.severity,
+          });
+        },
+      },
     );
   }
 
   return (
-    <div className="border-analysis-border/60 bg-analysis-surface-alt/80 space-y-3 rounded-xl border p-3">
-      <ReassessmentHeader title={item.noteTitle} onDismiss={() => setDismissed(true)} />
-      <p className="text-muted-foreground text-xs">{item.question}</p>
+    <div className="border-analysis-border/60 bg-analysis-surface-alt/80 space-y-4 rounded-xl border p-4">
+      <ReassessmentHeader
+        positionLabel={positionLabel}
+        title={item.noteTitle}
+        onDismiss={() => onResolved?.({ kind: 'dismissed' })}
+      />
+      <p className="text-muted-foreground text-sm leading-snug">{item.question}</p>
 
       <ChoiceRow label="Par rapport à la dernière fois">
         {TRENDS.map((trend) => (
@@ -267,10 +296,11 @@ function PhysicalReassessmentEditor({
         ))}
       </ChoiceRow>
 
-      <ChoiceRow label="Ce que tu as pu faire">
+      <ChoiceRow label="Ce que tu as pu faire" stacked>
         {IMPACTS.map((impact) => (
           <ChoiceTile
             key={impact}
+            stacked
             label={impactLabel(impact)}
             selected={form.state.impact === impact}
             onSelect={() => form.setImpact(impact)}
@@ -292,7 +322,15 @@ function PhysicalReassessmentEditor({
   );
 }
 
-export function PhysicalReassessmentCard({ item }: { item: PhysicalReassessment }) {
+export function PhysicalReassessmentCard({
+  item,
+  positionLabel,
+  onResolved,
+}: {
+  item: PhysicalReassessment;
+  positionLabel?: string | null;
+  onResolved?: (result: { kind: 'saved'; noteTitle: string; severity: number } | { kind: 'dismissed' }) => void;
+}) {
   const notesQuery = usePhysicalNotes();
   const note = notesQuery.data?.find((n) => n.id === item.noteId);
 
@@ -300,7 +338,59 @@ export function PhysicalReassessmentCard({ item }: { item: PhysicalReassessment 
     return null;
   }
 
-  return <PhysicalReassessmentEditor item={item} note={note} />;
+  return (
+    <PhysicalReassessmentEditor
+      item={item}
+      note={note}
+      positionLabel={positionLabel}
+      onResolved={onResolved}
+    />
+  );
+}
+
+/** Focus queue: one injury at a time; advance after save / dismiss. */
+export function PhysicalReassessmentQueue({ items }: { items: PhysicalReassessment[] }) {
+  const [index, setIndex] = useState(0);
+  const [lastSaved, setLastSaved] = useState<{ noteTitle: string; severity: number } | null>(null);
+
+  if (items.length === 0) {
+    return null;
+  }
+
+  if (index >= items.length) {
+    return lastSaved ? (
+      <ReassessmentDoneBanner noteTitle={lastSaved.noteTitle} severity={lastSaved.severity} />
+    ) : null;
+  }
+
+  const current = items[index];
+  const remainingAfter = items.length - index - 1;
+  const positionLabel =
+    items.length > 1 ? `Douleur ${index + 1} sur ${items.length}` : null;
+
+  return (
+    <div className="space-y-2">
+      {lastSaved ? (
+        <ReassessmentDoneBanner noteTitle={lastSaved.noteTitle} severity={lastSaved.severity} />
+      ) : null}
+      <PhysicalReassessmentCard
+        key={current.noteId}
+        item={current}
+        positionLabel={positionLabel}
+        onResolved={(result) => {
+          if (result.kind === 'saved') {
+            setLastSaved({ noteTitle: result.noteTitle, severity: result.severity });
+          }
+          setIndex((prev) => prev + 1);
+        }}
+      />
+      {remainingAfter > 0 ? (
+        <p className="text-muted-foreground text-xs">
+          Encore {remainingAfter} douleur{remainingAfter > 1 ? 's' : ''} à suivre après celle-ci.
+        </p>
+      ) : null}
+    </div>
+  );
 }
 
 export function isReassessmentAnswered(

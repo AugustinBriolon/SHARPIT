@@ -14,7 +14,7 @@ import Link from 'next/link';
 import { usePlannedSessionNavDismiss } from '@/components/planning/session/planned-session-nav-dismiss';
 import { useAppModalOptional } from '@/providers/app-modal-provider';
 import {
-  PhysicalReassessmentCard,
+  PhysicalReassessmentQueue,
   type PhysicalReassessment,
 } from '@/components/planning/session/realize/physical-reassessment-card';
 import type { useSessionAnalysisPoll } from '@/components/planning/session/realize/use-session-analysis-poll';
@@ -209,14 +209,12 @@ function LinkedAnalysisSection({
         onReanalyze={onReanalyze}
       />
       {painReassessments.length > 0 ? (
-        <div className="border-analysis-border/50 space-y-2 border-t pt-3">
-          <p className="text-label text-signal-caution inline-flex items-center gap-1.5">
+        <div className="border-analysis-border/50 border-t pt-3">
+          <p className="text-label text-signal-caution mb-2 inline-flex items-center gap-1.5">
             <HeartPulse className="size-3.5 shrink-0" aria-hidden />
             Réévaluer une douleur ou blessure
           </p>
-          {painReassessments.map((item) => (
-            <PhysicalReassessmentCard key={item.noteId} item={item} />
-          ))}
+          <PhysicalReassessmentQueue items={painReassessments} />
         </div>
       ) : null}
     </div>
