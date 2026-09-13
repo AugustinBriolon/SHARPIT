@@ -245,7 +245,9 @@ function PhysicalReassessmentEditor({
   item: PhysicalReassessment;
   note: ClientPhysicalNote;
   positionLabel?: string | null;
-  onResolved?: (result: { kind: 'saved'; noteTitle: string; severity: number } | { kind: 'dismissed' }) => void;
+  onResolved?: (
+    result: { kind: 'saved'; noteTitle: string; severity: number } | { kind: 'dismissed' },
+  ) => void;
 }) {
   const { addCheckin } = usePhysicalNoteMutations();
   const { offline, guardDisabled, offlineLabel } = useOfflineGuard();
@@ -329,7 +331,9 @@ export function PhysicalReassessmentCard({
 }: {
   item: PhysicalReassessment;
   positionLabel?: string | null;
-  onResolved?: (result: { kind: 'saved'; noteTitle: string; severity: number } | { kind: 'dismissed' }) => void;
+  onResolved?: (
+    result: { kind: 'saved'; noteTitle: string; severity: number } | { kind: 'dismissed' },
+  ) => void;
 }) {
   const notesQuery = usePhysicalNotes();
   const note = notesQuery.data?.find((n) => n.id === item.noteId);
@@ -365,8 +369,7 @@ export function PhysicalReassessmentQueue({ items }: { items: PhysicalReassessme
 
   const current = items[index];
   const remainingAfter = items.length - index - 1;
-  const positionLabel =
-    items.length > 1 ? `Douleur ${index + 1} sur ${items.length}` : null;
+  const positionLabel = items.length > 1 ? `Douleur ${index + 1} sur ${items.length}` : null;
 
   return (
     <div className="space-y-2">

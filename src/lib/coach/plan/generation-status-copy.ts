@@ -32,6 +32,7 @@ export function coachGenerationStatusCopy(input: CoachGenerationStatusInput): st
   }
 
   const elapsed = Math.max(0, input.elapsedMs);
-  const index = Math.floor(elapsed / COACH_GENERATION_STATUS_STEP_MS) % COACH_GENERATION_STATUS_STEPS.length;
+  const index =
+    Math.floor(elapsed / COACH_GENERATION_STATUS_STEP_MS) % COACH_GENERATION_STATUS_STEPS.length;
   return COACH_GENERATION_STATUS_STEPS[index] ?? COACH_GENERATION_STATUS_STEPS[0];
 }

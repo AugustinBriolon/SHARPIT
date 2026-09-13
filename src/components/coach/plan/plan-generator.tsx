@@ -85,7 +85,7 @@ export function PlanGenerator({ startDate, onClose }: PlanGeneratorProps) {
         <ProfileContextBanner />
 
         <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
-          <div className="min-w-0 w-full space-y-2 sm:w-auto sm:flex-1">
+          <div className="w-full min-w-0 space-y-2 sm:w-auto sm:flex-1">
             <Label>Durée du bloc</Label>
             <Select value={generator.days} onValueChange={(v) => generator.setDays(v ?? '7')}>
               <SelectTrigger className="w-full min-w-0 sm:w-40">
@@ -102,7 +102,7 @@ export function PlanGenerator({ startDate, onClose }: PlanGeneratorProps) {
               </SelectContent>
             </Select>
           </div>
-          <div className="min-w-0 w-full space-y-2 sm:w-auto sm:flex-1">
+          <div className="w-full min-w-0 space-y-2 sm:w-auto sm:flex-1">
             <Label>Objectif ciblé</Label>
             <Select
               value={generator.goalId}
