@@ -35,15 +35,19 @@ function TallyChip({
   session,
   onInk,
   className,
+  stretch = false,
 }: {
   session: RearrangePreviewSession;
   onInk: boolean;
   className?: string;
+  /** Single-segment strip — spread count / label across full width. */
+  stretch?: boolean;
 }) {
   return (
     <li
       className={cn(
         'flex min-w-0 flex-1 items-baseline gap-2 border px-3 py-3',
+        stretch ? 'justify-between' : null,
         onInk
           ? 'first:rounded-l-lg last:rounded-r-lg [&:not(:first-child)]:border-l-0'
           : 'rounded-lg',
@@ -62,6 +66,7 @@ function TallyChip({
       <p
         className={cn(
           'min-w-0 text-[11px] leading-snug text-pretty',
+          stretch && 'text-end',
           onInk ? 'text-ink-surface-foreground/70' : 'text-muted-foreground',
         )}
       >
@@ -157,7 +162,10 @@ function TallyRailItems({
   sessions: readonly RearrangePreviewSession[];
   onInk: boolean;
 }) {
-  return sessions.map((session) => <TallyChip key={session.id} session={session} onInk={onInk} />);
+  const stretch = sessions.length === 1;
+  return sessions.map((session) => (
+    <TallyChip key={session.id} session={session} stretch={stretch} onInk={onInk} />
+  ));
 }
 
 function RailList({
