@@ -1,7 +1,7 @@
 'use client';
 
 import { Loader2, ListRestart } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ProfileContextBanner } from '@/components/profile/profile-context-banner';
 import { Button } from '@/components/ui/button';
 import {
@@ -12,7 +12,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
-import type { ClientPlannedSession } from '@/lib/query/types';
+import type { ClientGoal, ClientPlannedSession } from '@/lib/query/types';
 import {
   useAdaptPlan,
   type AdaptChange,
@@ -30,6 +30,7 @@ import { buildAdaptBatchOps } from '@/components/coach/plan/plan-adapter-apply';
 import { PlanAdaptAppliedPanel } from '@/components/plan/adapt-applied-panel';
 import { recordAdaptAppliedAck, type AdaptAppliedAck } from '@/lib/plan/adapt-applied-ack';
 import { recordCoachingAdvancementEntry } from '@/lib/plan/coaching-advancement-ledger';
+import { resolveAdaptGoalLabel } from '@/lib/plan/resolve-adapt-goal-label';
 import { isHabitPlanFocus } from '@/lib/today/rich/habit-coaching-signal';
 import { Check } from 'lucide-react';
 
@@ -221,12 +222,21 @@ export function PlanAdapter({
   const result = adapt.data;
   const defaultGoalId = planQuery.data?.goalId ?? null;
 
-  const goalLabel = useMemo(() => {
-    const goalId = planQuery.data?.goalId;
-    if (!goalId) {
-      return null;
+  const goalsRef = useRef<readonly ClientGoal[] | undefined>(goalsQuery.data);
+  const planGoalIdRef = useRef<string | null | undefined>(planQuery.data?.goalId);
+  const lastKnownGoalLabelRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    goalsRef.current = goalsQuery.data;
+    planGoalIdRef.current = planQuery.data?.goalId;
+    const resolved = resolveAdaptGoalLabel({
+      goals: goalsQuery.data,
+      planGoalId: planQuery.data?.goalId,
+      now: new Date(),
+    });
+    if (resolved) {
+      lastKnownGoalLabelRef.current = resolved;
     }
-    return goalsQuery.data?.find((goal) => goal.id === goalId)?.title ?? null;
   }, [goalsQuery.data, planQuery.data?.goalId]);
 
   const sessionsById = useMemo(() => {
@@ -289,6 +299,12 @@ export function PlanAdapter({
     applyBatch.mutate(ops, {
       onSuccess: () => {
         const appliedAt = new Date();
+        const goalLabel =
+          resolveAdaptGoalLabel({
+            goals: goalsRef.current,
+            planGoalId: planGoalIdRef.current,
+            now: appliedAt,
+          }) ?? lastKnownGoalLabelRef.current;
         setConfirmedAck(
           recordAdaptAppliedAck({
             goalLabel,

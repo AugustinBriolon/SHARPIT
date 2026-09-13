@@ -88,7 +88,7 @@ describe('buildGoalAdvancement', () => {
     expect(view?.why).toContain('phase Build');
   });
 
-  it('uses empty race copy when no week facts', () => {
+  it('hides when goal exists but no coaching or week facts', () => {
     const view = buildGoalAdvancement({
       goal: raceGoal(),
       weekDoneCount: 0,
@@ -97,7 +97,20 @@ describe('buildGoalAdvancement', () => {
       now: NOW,
       phaseLabel: null,
     });
-    expect(view?.why).toContain('échéanc');
+    expect(view).toBeNull();
+  });
+
+  it('hides metric goal without facts (no emptyWhy noise)', () => {
+    expect(
+      buildGoalAdvancement({
+        goal: metricGoal(),
+        weekDoneCount: 0,
+        weekRemainingCount: 0,
+        ledger: [],
+        now: NOW,
+        phaseLabel: null,
+      }),
+    ).toBeNull();
   });
 
   it('lab-note joins headline and facts', () => {
