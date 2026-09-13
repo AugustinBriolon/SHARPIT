@@ -29,15 +29,27 @@ Point-in-time audits, sprint reports, design capture folders, and Superpowers pl
 
 ## Agent skills (curated allowlist)
 
-Skills live in [`.agents/skills/`](.agents/skills/). **Only the folders listed below are allowed.** Do not install taste/Expo/other-DB/Prisma-v7 packs without an explicit product decision. Prefer project docs above before any skill.
+Skills live in [`.agents/skills/`](.agents/skills/). **Only the folders listed below are allowed.** Do not install Expo/other-DB/Prisma-v7 packs without an explicit product decision. Prefer project docs above before any skill.
 
-**Precedence:** `docs/design/DESIGN_LANGUAGE.md` + `DESIGN_SYSTEM_PROMPT.md` + `INFORMATION_ARCHITECTURE.md` + `PRODUCT.md` + `CORE_ARCHITECTURE.md` **win** over skill taste defaults and over anything in `docs/archive/`. Skills refine execution; they do not redefine SHARPIT's visual or domain law.
+**Precedence (always):** `docs/design/DESIGN_LANGUAGE.md` + `DESIGN_SYSTEM_PROMPT.md` + `INFORMATION_ARCHITECTURE.md` + `PRODUCT.md` + `CORE_ARCHITECTURE.md` **win** over skill taste defaults (including `design-taste-frontend` / `emil-design-eng` / `better-interface`) and over anything in `docs/archive/`. Skills refine execution; they do not redefine SHARPIT's visual or domain law.
+
+**Explicitly approved (Augustin Briolon — 2026-09-13):** `design-taste-frontend` (aka **taste** / taste-skill), `caveman`, `better-interface`, `emil-design-eng`. Install via `npx skills add <owner/repo> -s <skill> -a cursor -y`. Restore from lock with `npx skills experimental_install`.
+
+### How to invoke (Augustin)
+
+- **Slash commands** (project: `.cursor/commands/*.md`): type `/` in Cursor chat → `/caveman`, `/better-interface`, `/emil-design-eng`, `/design-taste` or `/taste`. Each command tells the agent to **read** the matching `.agents/skills/<name>/SKILL.md` first (run `npx skills experimental_install` if missing).
+- **Natural language**: name the skill (e.g. « critique UI with better-interface », « speak caveman ») — agent should still read `SKILL.md` and respect precedence above.
+- Skills under `.agents/skills/` are gitignored; commands + `skills-lock.json` + this allowlist are the shared contract.
 
 ### When to invoke
 
 | Situation                                          | Skill(s)                                                                                                | How to use                                                                                                   |
 | -------------------------------------------------- | ------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
 | UI / surface work inside the existing DS           | `impeccable`                                                                                            | Read skill, then apply **only** within `DESIGN_LANGUAGE.md` / `DESIGN_SYSTEM_PROMPT.md` tokens and patterns. |
+| Anti-slop / landing-style craft (approved taste)   | `design-taste-frontend` (aka taste)                                                                     | Explicitly approved. Still subordinate to `docs/design/*` — never override tokens, IA, or SHARPIT product UI with pack defaults. |
+| Design-eng polish / interaction feel               | `emil-design-eng`                                                                                       | Explicitly approved. Use for craft/polish judgment; docs + DS remain law.                                    |
+| Cross-cut interface review (a11y/layout/type/UI)   | `better-interface`                                                                                      | Explicitly approved. Orchestrates `better-*` review; keep FR copy and existing DS.                           |
+| Terse / token-saving agent communication           | `caveman`                                                                                               | Explicitly approved. Compression style only — do not drop technical accuracy or French UI strings.           |
 | Product craft / "is this SHARPIT-quality?"         | `hallmark`                                                                                              | Use for judgment passes on athlete-facing flows, not greenfield restyles.                                    |
 | Product / domain workshop (needs, model, strategy) | `layers-intro` → then the matching `layers-*`                                                           | Start with intro; pick one layer per question (user-needs, domain, surface, …).                              |
 | Motion / micro-interactions (web)                  | `animate`, then `motion-foundations` / `motion-patterns`, then `transitions-dev` / `transitions-polish` | Web only. CSS-first per ADR-028; Motion for state-bound animation only. Never Expo/RN skills.                |
@@ -57,8 +69,8 @@ Skills live in [`.agents/skills/`](.agents/skills/). **Only the folders listed b
 
 ### Explicitly out of scope (do not re-add casually)
 
-- Expo / React Native animation or mobile imagegen
-- Industrial brutalist / Awwwards / Stitch / GSAP "taste" packs that fight `docs/design/*`
+- Expo / React Native animation or mobile imagegen (`animate-expo`, `imagegen-frontend-mobile`, …)
+- Other Leonxlnx taste variants that fight `docs/design/*` (`industrial-brutalist-ui`, `stitch-design-taste`, `gpt-taste`, `minimalist-ui`, …) — only `design-taste-frontend` is approved
 - Prisma setups for MongoDB, Cockroach, MySQL, SQLite, SQL Server
 - Prisma **v7** upgrade skills while the repo is on Prisma 6
-- Duplicate UI directors (`ui-design`, `design-taste-frontend*`, `gpt-taste`, …) — **`impeccable` + docs are canonical**
+- Duplicate UI directors beyond the allowlist (`ui-design`, …) — **`impeccable` + `docs/design/*` remain canonical**; approved taste/design-eng skills refine, they do not replace docs
