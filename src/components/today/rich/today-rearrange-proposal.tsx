@@ -15,19 +15,14 @@ import {
 } from '@/lib/today/rich/habit-coaching-signal';
 import type { GoalAdvancementView } from '@/lib/today/rich/goal-advancement';
 import type { TodayViewModel } from '@/core/presentation/today-view-model';
-import { cn } from '@/lib/utils';
 
 type RearrangeProposal = NonNullable<TodayViewModel['rearrangeProposal']>;
 
 function RearrangeApplyLink({ href, label }: { href: string; label: string }) {
   return (
     <Link
+      className="bg-highlight text-highlight-foreground hover:bg-highlight/90 pressable inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-lg px-3 text-xs font-semibold transition-colors duration-150 sm:w-auto sm:justify-start sm:py-2.5"
       href={href}
-      className={cn(
-        'border-primary/40 bg-primary/10 text-primary hover:bg-primary/15 pressable',
-        'inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-lg border px-3 text-xs font-medium',
-        'transition-colors duration-150 sm:w-auto sm:justify-start sm:py-2.5',
-      )}
     >
       <ListRestart className="size-3.5 shrink-0" strokeWidth={1.8} aria-hidden />
       {label}
@@ -47,16 +42,20 @@ function RearrangeProposalHeader({
   return (
     <div className="space-y-2">
       <PlanVivantEyebrow habitDriven={habitDriven} />
-      <p className="text-verdict text-pretty">{proposal.headline}</p>
+      <p className="text-verdict text-ink-surface-foreground text-[1.5rem] leading-[1.15] text-pretty sm:text-[1.75rem]">
+        {proposal.headline}
+      </p>
       {proposal.goalLabel ? (
-        <p className="text-muted-foreground text-xs leading-snug text-pretty">
+        <p className="text-ink-surface-foreground/65 text-xs leading-snug text-pretty">
           vers {proposal.goalLabel}
         </p>
       ) : null}
-      <p className="text-muted-foreground text-xs leading-relaxed text-pretty">{proposal.why}</p>
+      <p className="text-ink-surface-foreground/70 text-xs leading-relaxed text-pretty">
+        {proposal.why}
+      </p>
       {lever ? (
         <p className="pt-0.5">
-          <span className="border-analysis-border/80 bg-background/70 text-muted-foreground inline-flex items-center rounded-md border px-2 py-1 text-[0.65rem] font-semibold tracking-wide uppercase">
+          <span className="border-ink-surface-foreground/30 text-ink-surface-foreground/75 inline-flex items-center rounded-md border px-2 py-1 text-[0.65rem] font-semibold tracking-wide uppercase">
             {habitLeverChipLabel(lever)}
           </span>
         </p>
@@ -66,15 +65,13 @@ function RearrangeProposalHeader({
 }
 
 /**
- * Plan vivant on Today — rearrange + Suivi absorbed in one shell.
- * Deep-links to PlanAdapter; never applies silently.
+ * Plan vivant on Today — rearrange + Suivi absorbed in one ink shell.
  */
 export function TodayRearrangeProposal({
   proposal,
   advancement = null,
 }: {
   proposal: RearrangeProposal;
-  /** Suivi section — same panel, not a sibling card. */
   advancement?: GoalAdvancementView | null;
 }) {
   const habitDriven = proposal.kind === 'habit';
@@ -92,6 +89,7 @@ export function TodayRearrangeProposal({
               ? 'Séances à venir en tension avec le journal'
               : 'Séances à venir en tension'
           }
+          onInk
         />
         <RearrangeApplyLink href={proposal.href} label={proposal.ctaLabel} />
         {advancement ? (

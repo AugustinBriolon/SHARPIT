@@ -9,63 +9,140 @@ const TONE_SURFACE: Record<RearrangePreviewSession['tone'], string> = {
   neutral: 'border-analysis-border/70 bg-background/60',
 };
 
+const TONE_SURFACE_INK: Record<RearrangePreviewSession['tone'], string> = {
+  tension: 'border-signal-caution/50 bg-signal-caution/20',
+  calm: 'border-highlight/45 bg-highlight/15',
+  neutral: 'border-ink-surface-foreground/25 bg-ink-surface-foreground/8',
+};
+
 export type RearrangeSessionRailFlow = 'sequence' | 'tally';
 
-export function RearrangeSessionChip({
+function toneClass(tone: RearrangePreviewSession['tone'], onInk: boolean): string {
+  return onInk ? TONE_SURFACE_INK[tone] : TONE_SURFACE[tone];
+}
+
+function intensityClassFor(
+  intensity: RearrangePreviewSession['intensity'],
+  onInk: boolean,
+): string {
+  if (intensity && intensity in intensityTextColors) {
+    return intensityTextColors[intensity as SessionIntensity];
+  }
+  return onInk ? 'text-ink-surface-foreground' : 'text-foreground';
+}
+
+function TallyChip({
   session,
+  onInk,
   className,
-  flow = 'sequence',
 }: {
   session: RearrangePreviewSession;
+  onInk: boolean;
   className?: string;
-  flow?: RearrangeSessionRailFlow;
 }) {
-  const intensityClass =
-    session.intensity && session.intensity in intensityTextColors
-      ? intensityTextColors[session.intensity as SessionIntensity]
-      : 'text-foreground';
-
-  if (flow === 'tally') {
-    return (
-      <li
-        className={cn(
-          'flex min-w-0 flex-1 flex-col justify-center rounded-lg border px-3 py-2.5',
-          TONE_SURFACE[session.tone],
-          className,
-        )}
-      >
-        <p className="text-data text-foreground text-lg leading-none font-semibold tabular-nums">
-          {session.dateLabel}
-        </p>
-        <p className="text-muted-foreground mt-1.5 text-[11px] leading-snug text-pretty">
-          {session.intensityLabel}
-        </p>
-      </li>
-    );
-  }
-
   return (
     <li
       className={cn(
-        'shrink-0 rounded-md border px-2.5 py-1.5 transition-colors duration-150',
-        TONE_SURFACE[session.tone],
+        'flex min-w-0 flex-1 flex-col justify-center border px-3 py-3',
+        onInk
+          ? 'first:rounded-l-lg last:rounded-r-lg [&:not(:first-child)]:border-l-0'
+          : 'rounded-lg',
+        toneClass(session.tone, onInk),
         className,
       )}
     >
-      <p className="text-label text-muted-foreground leading-none">{session.dateLabel}</p>
-      <p className={cn('mt-1 text-xs font-medium tabular-nums', intensityClass)}>
+      <p
+        className={cn(
+          'text-data text-lg leading-none font-semibold tabular-nums',
+          onInk ? 'text-highlight dark:text-ink-surface-foreground' : 'text-foreground',
+        )}
+      >
+        {session.dateLabel}
+      </p>
+      <p
+        className={cn(
+          'mt-1.5 text-[11px] leading-snug text-pretty',
+          onInk ? 'text-ink-surface-foreground/70' : 'text-muted-foreground',
+        )}
+      >
         {session.intensityLabel}
       </p>
     </li>
   );
 }
 
-function SequenceRailItems({ sessions }: { sessions: readonly RearrangePreviewSession[] }) {
+function SequenceChip({
+  session,
+  onInk,
+  className,
+}: {
+  session: RearrangePreviewSession;
+  onInk: boolean;
+  className?: string;
+}) {
+  return (
+    <li
+      className={cn(
+        'shrink-0 rounded-md border px-2.5 py-1.5 transition-colors duration-150',
+        toneClass(session.tone, onInk),
+        className,
+      )}
+    >
+      <p
+        className={cn(
+          'text-label leading-none',
+          onInk ? 'text-ink-surface-foreground/55' : 'text-muted-foreground',
+        )}
+      >
+        {session.dateLabel}
+      </p>
+      <p
+        className={cn(
+          'mt-1 text-xs font-medium tabular-nums',
+          intensityClassFor(session.intensity, onInk),
+        )}
+      >
+        {session.intensityLabel}
+      </p>
+    </li>
+  );
+}
+
+export function RearrangeSessionChip({
+  session,
+  className,
+  flow = 'sequence',
+  onInk = false,
+}: {
+  session: RearrangePreviewSession;
+  className?: string;
+  flow?: RearrangeSessionRailFlow;
+  onInk?: boolean;
+}) {
+  if (flow === 'tally') {
+    return <TallyChip className={className} session={session} onInk={onInk} />;
+  }
+  return <SequenceChip className={className} session={session} onInk={onInk} />;
+}
+
+function SequenceRailItems({
+  sessions,
+  onInk,
+}: {
+  sessions: readonly RearrangePreviewSession[];
+  onInk: boolean;
+}) {
   return sessions.map((session, index) => (
     <div key={session.id} className="flex shrink-0 items-center gap-2">
-      <RearrangeSessionChip flow="sequence" session={session} />
+      <SequenceChip session={session} onInk={onInk} />
       {index < sessions.length - 1 ? (
-        <span className="text-muted-foreground/50 hidden text-xs sm:inline" aria-hidden>
+        <span
+          className={cn(
+            'hidden text-xs sm:inline',
+            onInk ? 'text-ink-surface-foreground/40' : 'text-muted-foreground/50',
+          )}
+          aria-hidden
+        >
           →
         </span>
       ) : null}
@@ -73,10 +150,43 @@ function SequenceRailItems({ sessions }: { sessions: readonly RearrangePreviewSe
   ));
 }
 
-function TallyRailItems({ sessions }: { sessions: readonly RearrangePreviewSession[] }) {
-  return sessions.map((session) => (
-    <RearrangeSessionChip key={session.id} flow="tally" session={session} />
-  ));
+function TallyRailItems({
+  sessions,
+  onInk,
+}: {
+  sessions: readonly RearrangePreviewSession[];
+  onInk: boolean;
+}) {
+  return sessions.map((session) => <TallyChip key={session.id} session={session} onInk={onInk} />);
+}
+
+function RailList({
+  sessions,
+  ariaLabel,
+  isTally,
+  onInk,
+}: {
+  sessions: readonly RearrangePreviewSession[];
+  ariaLabel: string;
+  isTally: boolean;
+  onInk: boolean;
+}) {
+  return (
+    <ol
+      aria-label={ariaLabel}
+      className={
+        isTally
+          ? cn('flex w-full', onInk ? 'gap-0' : 'gap-2')
+          : 'flex [scrollbar-width:none] gap-2 overflow-x-auto pb-0.5 [-ms-overflow-style:none] sm:flex-wrap sm:overflow-visible [&::-webkit-scrollbar]:hidden'
+      }
+    >
+      {isTally ? (
+        <TallyRailItems sessions={sessions} onInk={onInk} />
+      ) : (
+        <SequenceRailItems sessions={sessions} onInk={onInk} />
+      )}
+    </ol>
+  );
 }
 
 export function RearrangeSessionRail({
@@ -84,40 +194,36 @@ export function RearrangeSessionRail({
   ariaLabel,
   caption,
   flow = 'sequence',
+  onInk = false,
 }: {
   sessions: readonly RearrangePreviewSession[];
   ariaLabel: string;
-  /** Optional lab-note above the rail (e.g. habit tension). */
   caption?: string;
-  /**
-   * `sequence` — séances chronologiques (flèches, chips shrink).
-   * `tally` — faits semaine parallèles (bandeau fill, sans flèches).
-   */
   flow?: RearrangeSessionRailFlow;
+  onInk?: boolean;
 }) {
   if (sessions.length === 0) {
     return null;
   }
 
-  const isTally = flow === 'tally';
-
   return (
     <div className="space-y-1.5">
-      {caption ? <p className="text-label text-muted-foreground/90">{caption}</p> : null}
-      <ol
-        aria-label={ariaLabel}
-        className={cn(
-          isTally
-            ? 'flex w-full gap-2'
-            : 'flex [scrollbar-width:none] gap-2 overflow-x-auto pb-0.5 [-ms-overflow-style:none] sm:flex-wrap sm:overflow-visible [&::-webkit-scrollbar]:hidden',
-        )}
-      >
-        {isTally ? (
-          <TallyRailItems sessions={sessions} />
-        ) : (
-          <SequenceRailItems sessions={sessions} />
-        )}
-      </ol>
+      {caption ? (
+        <p
+          className={cn(
+            'text-label',
+            onInk ? 'text-ink-surface-foreground/55' : 'text-muted-foreground/90',
+          )}
+        >
+          {caption}
+        </p>
+      ) : null}
+      <RailList
+        ariaLabel={ariaLabel}
+        isTally={flow === 'tally'}
+        sessions={sessions}
+        onInk={onInk}
+      />
     </div>
   );
 }

@@ -16,11 +16,26 @@ import {
 import type { GoalAdvancementView } from '@/lib/today/rich/goal-advancement';
 import { cn } from '@/lib/utils';
 
-/**
- * Visual confirmation after athlete-validated PlanAdapter apply.
- * Anchored on goal — never a silent toast-only close.
- * Suivi section absorbed when present (one Plan vivant shell).
- */
+function AdaptAppliedHeader({ ack }: { ack: AdaptAppliedAck }) {
+  return (
+    <div className="flex items-start gap-3">
+      <span className="bg-highlight text-highlight-foreground mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg">
+        <Check className="size-3.5" strokeWidth={2} aria-hidden />
+      </span>
+      <div className="min-w-0 space-y-1.5">
+        <PlanVivantEyebrow />
+        <p className="text-verdict text-ink-surface-foreground text-[1.5rem] leading-[1.15] text-pretty sm:text-[1.75rem]">
+          {adaptAppliedHeadline(ack.goalLabel)}
+        </p>
+        <p className="text-ink-surface-foreground/70 text-xs leading-relaxed text-pretty">
+          {adaptAppliedWhy(ack.changeCount)}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+/** Confirmation after PlanAdapter apply — ink Plan vivant shell + Suivi absorbed. */
 export function PlanAdaptAppliedPanel({
   ack,
   className,
@@ -38,22 +53,17 @@ export function PlanAdaptAppliedPanel({
     <FadeIn>
       <section
         aria-label="Confirmation d’ajustement du plan"
-        className={cn(PLAN_VIVANT_SHELL_CLASS, 'border-primary/35 bg-primary/5', className)}
+        className={cn(PLAN_VIVANT_SHELL_CLASS, className)}
       >
-        <div className="flex items-start gap-3">
-          <span className="bg-primary/15 text-primary mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg">
-            <Check className="size-3.5" strokeWidth={2} aria-hidden />
-          </span>
-          <div className="min-w-0 space-y-1.5">
-            <PlanVivantEyebrow />
-            <p className="text-verdict text-pretty">{adaptAppliedHeadline(ack.goalLabel)}</p>
-            <p className="text-muted-foreground text-xs leading-relaxed text-pretty">
-              {adaptAppliedWhy(ack.changeCount)}
-            </p>
-          </div>
-        </div>
+        <AdaptAppliedHeader ack={ack} />
         {onDismiss ? (
-          <Button className="w-fit" size="sm" type="button" variant="outline" onClick={onDismiss}>
+          <Button
+            className="border-ink-surface-foreground/30 text-ink-surface-foreground hover:bg-ink-surface-foreground/10 w-fit"
+            size="sm"
+            type="button"
+            variant="outline"
+            onClick={onDismiss}
+          >
             {dismissLabel}
           </Button>
         ) : null}
