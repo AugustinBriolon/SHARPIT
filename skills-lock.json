@@ -96,6 +96,12 @@
       "skillPath": "skills/break/SKILL.md",
       "computedHash": "528ebeb92997f30092b8c59a57944970febe4c84d3675d05e87432441c6f6832"
     },
+    "caveman": {
+      "source": "juliusbrussee/caveman",
+      "sourceType": "github",
+      "skillPath": "skills/caveman/SKILL.md",
+      "computedHash": "fa7c0951349ae3782a20e55c6d1e72e4c23585b7932bb5e021c17c4f8f055a07"
+    },
     "code-review": {
       "source": "mattpocock/skills",
       "sourceType": "github",
