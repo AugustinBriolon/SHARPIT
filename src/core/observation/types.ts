@@ -508,10 +508,10 @@ export type ObservationFilter = {
 export type AthleteObservationConfig = {
   /**
    * Hour of day (0–23) that marks the start of a new training day.
-   * Default: 4 (04:00). Configurable per athlete.
+   * Default: 0 (local midnight). Configurable per athlete (e.g. 4 for pre-dawn).
    *
    * Observations received before this hour are assigned to the previous
-   * training day (e.g., a 03:30 session on 2026-07-02 belongs to 2026-07-01).
+   * training day when a non-zero cutoff is configured.
    */
   trainingDayStartHour?: number;
   /** Athlete's local timezone (IANA format, e.g., 'Europe/Paris'). */

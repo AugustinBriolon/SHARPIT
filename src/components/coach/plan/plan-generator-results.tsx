@@ -2,9 +2,7 @@
 
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { CoachGenerationProgressPanel } from '@/components/coach/plan/generation-progress';
 import { PlanGeneratorSessionRow } from '@/components/coach/plan/plan-generator-session-row';
-import type { CoachGenerationProgress } from '@/hooks/use-coach';
 import { Button } from '@/components/ui/button';
 import type { ClientGoal } from '@/lib/query/types';
 import { phaseLabels } from '@/lib/training/periodization';
@@ -19,10 +17,8 @@ export function PlanGeneratorResults({
   onToggle,
   plan,
   planWeek: _planWeek,
-  progress,
   selected,
   guardDisabled,
-  isGenerating,
 }: {
   datedGoals: ClientGoal[];
   goalId: string;
@@ -34,15 +30,14 @@ export function PlanGeneratorResults({
   plan:
     NonNullable<ReturnType<typeof import('@/hooks/use-coach').useCoachPlan>['data']> | undefined;
   planWeek: { phase: keyof typeof phaseLabels; targetLoad: number; isDeload: boolean } | null;
-  progress: CoachGenerationProgress | null;
   selected: Set<number>;
   guardDisabled: boolean;
-  isGenerating: boolean;
+  /** Kept for call-site stability — progress UI lives only in PlanGenerator. */
+  isGenerating?: boolean;
+  progress?: unknown;
 }) {
   if (!plan) {
-    return isGenerating ? (
-      <CoachGenerationProgressPanel itemNoun="séance" progress={progress} />
-    ) : null;
+    return null;
   }
 
   return (

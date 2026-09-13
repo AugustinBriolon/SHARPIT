@@ -84,8 +84,8 @@ export function PlanGenerator({ startDate, onClose }: PlanGeneratorProps) {
 
         <ProfileContextBanner />
 
-        <div className="flex min-w-0 flex-wrap items-end gap-3">
-          <div className="min-w-0 flex-1 space-y-2 sm:flex-none">
+        <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
+          <div className="w-full min-w-0 space-y-2 sm:w-auto sm:flex-1">
             <Label>Durée du bloc</Label>
             <Select value={generator.days} onValueChange={(v) => generator.setDays(v ?? '7')}>
               <SelectTrigger className="w-full min-w-0 sm:w-40">
@@ -102,13 +102,13 @@ export function PlanGenerator({ startDate, onClose }: PlanGeneratorProps) {
               </SelectContent>
             </Select>
           </div>
-          <div className="min-w-0 flex-1 space-y-2 sm:flex-none">
+          <div className="w-full min-w-0 space-y-2 sm:w-auto sm:flex-1">
             <Label>Objectif ciblé</Label>
             <Select
               value={generator.goalId}
               onValueChange={(v) => generator.setGoalId(v ?? NO_GOAL)}
             >
-              <SelectTrigger className="w-full min-w-0 sm:w-56">
+              <SelectTrigger className="w-full min-w-0 sm:min-w-56">
                 <SelectValue>
                   {generator.goalId === NO_GOAL
                     ? 'Aucun (forme générale)'
@@ -127,7 +127,7 @@ export function PlanGenerator({ startDate, onClose }: PlanGeneratorProps) {
             </Select>
           </div>
           <Button
-            className="mb-2"
+            className="w-full sm:mb-0 sm:w-auto"
             disabled={generator.guardDisabled || generator.isGenerating}
             onClick={() => void generator.handleGenerate()}
           >
@@ -171,12 +171,10 @@ export function PlanGenerator({ startDate, onClose }: PlanGeneratorProps) {
           datedGoals={generator.datedGoals}
           goalId={generator.goalId}
           guardDisabled={generator.guardDisabled}
-          isGenerating={generator.isGenerating}
           offline={generator.offline}
           offlineLabel={generator.offlineLabel}
           plan={generator.plan}
           planWeek={generator.planWeek}
-          progress={generator.progress}
           selected={generator.selected}
           onClose={onClose}
           onInsert={generator.handleInsert}
