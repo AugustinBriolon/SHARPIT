@@ -110,7 +110,7 @@ describe('buildGoalAdvancement', () => {
       phaseLabel: 'Build',
     });
     expect(view?.headline).toBe('J-28 · Sub 1h30');
-    expect(view?.why).toBe('Suite du plan vers ton objectif.');
+    expect(view?.why).toBe('Le Twin suit l’exécution de ta semaine.');
     expect(view?.weekSegments.map((s) => s.id)).toEqual(['done', 'remaining']);
     expect(view?.phaseLabel).toBe('Build');
     expect(view?.facts.map((f) => f.label)).not.toContain('Build');

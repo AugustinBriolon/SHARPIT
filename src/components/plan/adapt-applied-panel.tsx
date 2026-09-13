@@ -3,7 +3,11 @@
 import { Check } from 'lucide-react';
 import { FadeIn } from '@/components/motion/fade-presence';
 import { Button } from '@/components/ui/button';
-import { PlanVivantAdvancementSection } from '@/components/today/rich/goal-advancement-panel';
+import {
+  PLAN_VIVANT_SHELL_CLASS,
+  PlanVivantAdvancementSection,
+  PlanVivantEyebrow,
+} from '@/components/today/rich/goal-advancement-panel';
 import {
   adaptAppliedHeadline,
   adaptAppliedWhy,
@@ -34,18 +38,15 @@ export function PlanAdaptAppliedPanel({
     <FadeIn>
       <section
         aria-label="Confirmation d’ajustement du plan"
-        className={cn(
-          'analysis-panel border-primary/35 bg-primary/5 rounded-analysis-lg space-y-3 border px-3.5 py-3.5 sm:px-4 sm:py-4',
-          className,
-        )}
+        className={cn(PLAN_VIVANT_SHELL_CLASS, 'border-primary/35 bg-primary/5', className)}
       >
-        <div className="flex items-start gap-2.5">
-          <span className="bg-primary/15 text-primary mt-0.5 flex size-7 shrink-0 items-center justify-center rounded-md">
+        <div className="flex items-start gap-3">
+          <span className="bg-primary/15 text-primary mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg">
             <Check className="size-3.5" strokeWidth={2} aria-hidden />
           </span>
-          <div className="min-w-0 space-y-1">
-            <p className="text-label">Plan vivant</p>
-            <p className="text-card-title text-pretty">{adaptAppliedHeadline(ack.goalLabel)}</p>
+          <div className="min-w-0 space-y-1.5">
+            <PlanVivantEyebrow />
+            <p className="text-verdict text-pretty">{adaptAppliedHeadline(ack.goalLabel)}</p>
             <p className="text-muted-foreground text-xs leading-relaxed text-pretty">
               {adaptAppliedWhy(ack.changeCount)}
             </p>
@@ -56,7 +57,9 @@ export function PlanAdaptAppliedPanel({
             {dismissLabel}
           </Button>
         ) : null}
-        {advancement ? <PlanVivantAdvancementSection view={advancement} showDivider /> : null}
+        {advancement ? (
+          <PlanVivantAdvancementSection prominence="secondary" view={advancement} showDivider />
+        ) : null}
       </section>
     </FadeIn>
   );
