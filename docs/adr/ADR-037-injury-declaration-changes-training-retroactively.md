@@ -128,6 +128,6 @@ The athlete's report: _"I'm afraid I've forgotten this feature lately, between t
 ## Review Criteria
 
 - If endurance prescriptions gain structured per-session targeting, extend the audit to them — the "strength only" limitation above is the first thing to revisit.
-- If athletes report false warnings on prehab work, refine the mapping to exercise-level contraindications rather than coarse body groups, or add an "on purpose" acknowledgement on the session.
+- **Done.** A real generation confirmed the false-warning case immediately: a session asked for as preventive work came back flagged on six exercises, every flag correct and every one intended. The athlete can now accept one session as deliberate ("C'est voulu"), which silences that session's warning and nothing else. Kept client-local, like the adapt-applied ack — a UI acknowledgement earns no schema change, at the cost of not following the athlete across devices. If that proves wrong, the next step is exercise-level contraindications rather than coarse body groups.
 - If declared `functionalImpact` proves more predictive than `severity` for load decisions, promote it from a recorded field to a direct input of plan generation.
 - If an unrecognised body region is ever observed in production data, the lexicon's silent failure becomes a defect: make unknown regions visible.
