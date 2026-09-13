@@ -4,10 +4,12 @@ import Link from 'next/link';
 import { ListRestart } from 'lucide-react';
 import { FadeIn } from '@/components/motion/fade-presence';
 import { RearrangeSessionRail } from '@/components/coach/plan/rearrange-session-rail';
+import { PlanVivantAdvancementSection } from '@/components/today/rich/goal-advancement-panel';
 import {
   HABIT_SESSION_TENSION_CAPTION,
   habitLeverChipLabel,
 } from '@/lib/today/rich/habit-coaching-signal';
+import type { GoalAdvancementView } from '@/lib/today/rich/goal-advancement';
 import type { TodayViewModel } from '@/core/presentation/today-view-model';
 
 type RearrangeProposal = NonNullable<TodayViewModel['rearrangeProposal']>;
@@ -38,12 +40,31 @@ function PlanVivantEyebrow({
   );
 }
 
+function RearrangeApplyLink({ href, label }: { href: string; label: string }) {
+  return (
+    <Link
+      className="border-primary/40 bg-primary/10 text-primary hover:bg-primary/15 pressable inline-flex min-h-11 items-center gap-1.5 rounded-lg border px-3 text-xs font-medium transition-colors duration-150 sm:min-h-0 sm:py-2"
+      href={href}
+    >
+      <ListRestart className="size-3.5 shrink-0" strokeWidth={1.8} aria-hidden />
+      {label}
+      <span aria-hidden>→</span>
+    </Link>
+  );
+}
+
 /**
- * Plan vivant on Today — visual rearrange proposal (goal + session tension rail).
+ * Plan vivant on Today — rearrange + Suivi absorbed in one shell.
  * Deep-links to PlanAdapter; never applies silently.
- * Habit lever chip when journal drives or annotates the same CTA.
  */
-export function TodayRearrangeProposal({ proposal }: { proposal: RearrangeProposal }) {
+export function TodayRearrangeProposal({
+  proposal,
+  advancement = null,
+}: {
+  proposal: RearrangeProposal;
+  /** Suivi section — same panel, not a sibling card. */
+  advancement?: GoalAdvancementView | null;
+}) {
   const habitDriven = proposal.kind === 'habit';
   const lever = proposal.habitLever;
 
@@ -78,14 +99,9 @@ export function TodayRearrangeProposal({ proposal }: { proposal: RearrangePropos
           }
         />
 
-        <Link
-          className="border-primary/40 bg-primary/10 text-primary hover:bg-primary/15 pressable inline-flex min-h-11 items-center gap-1.5 rounded-lg border px-3 text-xs font-medium transition-colors duration-150 sm:min-h-0 sm:py-2"
-          href={proposal.href}
-        >
-          <ListRestart className="size-3.5 shrink-0" strokeWidth={1.8} aria-hidden />
-          {proposal.ctaLabel}
-          <span aria-hidden>→</span>
-        </Link>
+        <RearrangeApplyLink href={proposal.href} label={proposal.ctaLabel} />
+
+        {advancement ? <PlanVivantAdvancementSection view={advancement} showDivider /> : null}
       </section>
     </FadeIn>
   );

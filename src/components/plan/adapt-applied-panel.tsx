@@ -3,27 +3,32 @@
 import { Check } from 'lucide-react';
 import { FadeIn } from '@/components/motion/fade-presence';
 import { Button } from '@/components/ui/button';
+import { PlanVivantAdvancementSection } from '@/components/today/rich/goal-advancement-panel';
 import {
   adaptAppliedHeadline,
   adaptAppliedWhy,
   type AdaptAppliedAck,
 } from '@/lib/plan/adapt-applied-ack';
+import type { GoalAdvancementView } from '@/lib/today/rich/goal-advancement';
 import { cn } from '@/lib/utils';
 
 /**
  * Visual confirmation after athlete-validated PlanAdapter apply.
  * Anchored on goal — never a silent toast-only close.
+ * Suivi section absorbed when present (one Plan vivant shell).
  */
 export function PlanAdaptAppliedPanel({
   ack,
   className,
   onDismiss,
   dismissLabel = 'Fermer',
+  advancement = null,
 }: {
   ack: AdaptAppliedAck;
   className?: string;
   onDismiss?: () => void;
   dismissLabel?: string;
+  advancement?: GoalAdvancementView | null;
 }) {
   return (
     <FadeIn>
@@ -51,6 +56,7 @@ export function PlanAdaptAppliedPanel({
             {dismissLabel}
           </Button>
         ) : null}
+        {advancement ? <PlanVivantAdvancementSection view={advancement} showDivider /> : null}
       </section>
     </FadeIn>
   );
