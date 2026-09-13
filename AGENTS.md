@@ -35,6 +35,12 @@ Skills live in [`.agents/skills/`](.agents/skills/). **Only the folders listed b
 
 **Explicitly approved (Augustin Briolon — 2026-09-13):** `design-taste-frontend` (aka **taste** / taste-skill), `caveman`, `better-interface`, `emil-design-eng`. Install via `npx skills add <owner/repo> -s <skill> -a cursor -y`. Restore from lock with `npx skills experimental_install`.
 
+### How to invoke (Augustin)
+
+- **Slash commands** (project: `.cursor/commands/*.md`): type `/` in Cursor chat → `/caveman`, `/better-interface`, `/emil-design-eng`, `/design-taste` or `/taste`. Each command tells the agent to **read** the matching `.agents/skills/<name>/SKILL.md` first (run `npx skills experimental_install` if missing).
+- **Natural language**: name the skill (e.g. « critique UI with better-interface », « speak caveman ») — agent should still read `SKILL.md` and respect precedence above.
+- Skills under `.agents/skills/` are gitignored; commands + `skills-lock.json` + this allowlist are the shared contract.
+
 ### When to invoke
 
 | Situation                                          | Skill(s)                                                                                                | How to use                                                                                                   |
