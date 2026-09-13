@@ -148,8 +148,9 @@ function buildWhy(input: {
 }
 
 /**
- * Builds the Suivi panel when an active goal exists.
- * Returns null when there is nothing to anchor on.
+ * Builds the Suivi panel when an active goal has coaching / week facts.
+ * Returns null without a goal, or when there is nothing meaningful to show
+ * (goal alone must not surface emptyWhy under Plan vivant).
  */
 export function buildGoalAdvancement(input: GoalAdvancementInput): GoalAdvancementView | null {
   const { goal } = input;
@@ -164,6 +165,10 @@ export function buildGoalAdvancement(input: GoalAdvancementInput): GoalAdvanceme
     weekRemainingCount: input.weekRemainingCount,
     phaseLabel: input.phaseLabel,
   });
+
+  if (facts.length === 0) {
+    return null;
+  }
 
   return {
     visible: true,
