@@ -12,6 +12,7 @@ export const COACH_GENERATION_STATUS_STEPS = [
   'Il aligne la proposition sur ton objectif…',
   'Il s’appuie sur ton macro-plan…',
   'Il compose le calendrier de la semaine…',
+  'Il finalise les séances — encore un instant…',
 ] as const;
 
 export type CoachGenerationStatusInput = {

@@ -25,7 +25,11 @@ import {
 import { runStructuredCoachStream } from '@/lib/coach/stream-structured-generation';
 import { buildBusySummary } from '@/lib/coach/plan/calendar-availability';
 import { getGoalById } from '@/lib/queries';
-import { coachPlanRequestSchema, coachPlanSchema, type CoachPlan } from '@/lib/validators/coach';
+import {
+  coachPlanGenerationSchema,
+  coachPlanRequestSchema,
+  type CoachPlan,
+} from '@/lib/validators/coach';
 import type { z } from 'zod';
 import { buildGateContext } from '@/lib/plan-gate/build-context';
 import { evaluatePlan } from '@/lib/plan-gate/evaluate-plan';
@@ -43,6 +47,11 @@ import {
   resolvePlanTargetUnderTravel,
 } from '@/lib/travel-context/training-constraint';
 import { COACH_COPY_DASH_RULE, sanitizeCoachCopy } from '@/lib/coach/sanitize-coach-copy';
+import { normalizeCoachPlanGeneration } from '@/lib/coach/plan/normalize-plan-generation';
+import {
+  coachGenerationErrorDetails,
+  planGenerationErrorMessage,
+} from '@/lib/coach/plan/plan-generation-errors';
 
 // Same long-running reasoning generation as adapt — see maxDuration comment there.
 export const maxDuration = 300;
@@ -292,7 +301,7 @@ export async function POST(req: Request) {
 
       try {
         const { output, usage } = await runStructuredCoachStream({
-          schema: coachPlanSchema,
+          schema: coachPlanGenerationSchema,
           system: SYSTEM_PROMPT,
           prompt,
           onReasoning: (delta) => send({ type: 'reasoning', delta }),
@@ -304,8 +313,9 @@ export async function POST(req: Request) {
           value: await finalizePlan(athleteId, output, start, goalId ?? null),
         });
       } catch (error) {
-        console.error('[coach/plan]', error);
-        send({ type: 'error', message: 'La génération a échoué. Réessaie dans un instant.' });
+        const details = coachGenerationErrorDetails(error);
+        console.error('[coach/plan]', error, details ? { zod: details } : undefined);
+        send({ type: 'error', message: planGenerationErrorMessage(error) });
       } finally {
         closed = true;
         controller.close();
@@ -337,7 +347,14 @@ async function finalizePlan(
   goalId: string | null,
 ): Promise<PlanPayload> {
   {
-    const output = coachPlanSchema.parse(rawOutput);
+    const normalized = normalizeCoachPlanGeneration(rawOutput);
+    if (!normalized.ok) {
+      console.error('[coach/plan] normalize failed', normalized.issues);
+      throw new Error(
+        normalized.issues[0] ?? 'Le coach a renvoyé une proposition incomplète. Réessaie.',
+      );
+    }
+    const output = normalized.plan;
 
     const sessions = [...output.sessions]
       .sort((a, b) => a.dayOffset - b.dayOffset)

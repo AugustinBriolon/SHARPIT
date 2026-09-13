@@ -367,4 +367,84 @@ describe('POST /api/coach/plan', () => {
     expect(call.snapshotIdAtRecommendation).toBe('snap-3');
     expect(call.snapshotContext.overallVerdict).toBe('TRAIN_SMART');
   });
+
+  it('generates against the loose schema and recovers invented strength enums', async () => {
+    const { runStructuredCoachStream } = await import('@/lib/coach/stream-structured-generation');
+    const { getOrBuildAthleteSnapshot } = await import('@/lib/athlete-state/snapshot-service');
+    const { coachPlanGenerationSchema } = await import('@/lib/validators/coach');
+
+    vi.mocked(runStructuredCoachStream).mockResolvedValue({
+      output: {
+        summary: 'Semaine légère',
+        sessions: [
+          {
+            dayOffset: 1.4,
+            startTime: '9:05',
+            type: 'STRENGTH',
+            intensity: 'RECOVERY',
+            title: 'Renfo',
+            description: 'Hanche',
+            durationMin: 40.6,
+            load: 25.2,
+            rationale: 'Prévention',
+            strengthPrescription: {
+              sets: [
+                {
+                  exercise: 'Clamshell',
+                  intent: 'STRENGTH',
+                  pattern: 'HIP_FLEXION_FAKE',
+                  sets: 3,
+                  reps: 12,
+                },
+              ],
+            },
+          },
+        ],
+      },
+      usage: { inputTokens: 1, outputTokens: 1, totalTokens: 2 },
+    } as never);
+
+    vi.mocked(getOrBuildAthleteSnapshot).mockResolvedValue({
+      snapshotId: 'snap-loose',
+      confidence: 0.8,
+      decision: decisionState(),
+      physicalHealth: physicalHealthData(),
+      fatigue: { trainingCapacity: 'FULL' },
+      todaysDecision: 'TRAIN_SMART',
+    } as never);
+
+    const { POST } = await importRoute();
+    const body = await consumeCoachProgressStream<PlanPayload, unknown>(
+      await POST(
+        new Request('http://localhost/api/coach/plan', {
+          method: 'POST',
+          body: JSON.stringify({ days: 7 }),
+        }),
+      ),
+    );
+
+    expect(vi.mocked(runStructuredCoachStream).mock.calls[0]?.[0]?.schema).toBe(
+      coachPlanGenerationSchema,
+    );
+    expect(body.sessions[0].startTime).toBe('09:05');
+    expect(body.sessions[0].durationMin).toBe(41);
+    expect(body.sessions[0].strengthPrescription?.sets[0]?.pattern).toBeNull();
+  });
+
+  it('streams a precise FR error when structured generation fails the schema', async () => {
+    const { runStructuredCoachStream } = await import('@/lib/coach/stream-structured-generation');
+    vi.mocked(runStructuredCoachStream).mockRejectedValue(
+      new Error('No object generated: response did not match schema.'),
+    );
+
+    const { POST } = await importRoute();
+    const response = await POST(
+      new Request('http://localhost/api/coach/plan', {
+        method: 'POST',
+        body: JSON.stringify({ days: 7 }),
+      }),
+    );
+
+    await expect(consumeCoachProgressStream(response)).rejects.toThrow(/proposition incomplète/i);
+  });
 });
