@@ -136,7 +136,7 @@ function buildCoachingFacts(
 function buildWhy(adaptedCount: number): string {
   return adaptedCount > 0
     ? 'Ce que le coaching a déjà changé cette semaine.'
-    : 'Suite du plan vers ton objectif.';
+    : 'Le Twin suit l’exécution de ta semaine.';
 }
 
 function capitalizeFrDay(label: string): string {
