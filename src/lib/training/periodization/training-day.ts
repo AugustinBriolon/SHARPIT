@@ -1,4 +1,8 @@
-export const DEFAULT_TRAINING_DAY_START_HOUR = 4;
+/**
+ * Athlete calendar day starts at local midnight by default.
+ * Pre-dawn cutoff (e.g. 4) remains available via `trainingDayStartHour` when configured.
+ */
+export const DEFAULT_TRAINING_DAY_START_HOUR = 0;
 export const DEFAULT_TRAINING_DAY_TIMEZONE = 'Europe/Paris';
 
 export type TrainingDayOptions = {
@@ -25,7 +29,8 @@ export function computeTrainingDayId(timestamp: Date, options: TrainingDayOption
   const timezone = options.timezone ?? DEFAULT_TRAINING_DAY_TIMEZONE;
   const trainingDayStartHour = options.trainingDayStartHour ?? DEFAULT_TRAINING_DAY_START_HOUR;
   const parts = formatPartsInTimezone(timestamp, timezone);
-  const localHour = Number.parseInt(parts.hour, 10);
+  // Some engines report midnight as "24" with hour12:false — normalize to 0–23.
+  const localHour = Number.parseInt(parts.hour, 10) % 24;
 
   if (localHour < trainingDayStartHour) {
     const previousDay = new Date(timestamp.getTime() - 24 * 60 * 60_000);

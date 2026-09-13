@@ -8,7 +8,7 @@ import { dayKeyFromDate } from '@/lib/date/day-key';
 import { addTrainingDays, trainingDayIdForNow } from '@/lib/training/periodization/training-day';
 import { toUtcDateOnly } from '@/lib/travel-context/calendar-date';
 
-/** Today's training day for the demo athlete (Paris, 4h cutoff). */
+/** Today's training day for the demo athlete (Paris, local-midnight default). */
 export function demoAnchorTrainingDayId(now: Date = new Date()): string {
   return trainingDayIdForNow({}, now);
 }

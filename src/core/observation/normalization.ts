@@ -24,7 +24,8 @@ import type {
   AthleteObservationConfig,
 } from './types';
 
-const DEFAULT_TRAINING_DAY_START_HOUR = 4;
+/** Default: local midnight. Configurable per athlete (e.g. 4 for pre-dawn cutoff). */
+const DEFAULT_TRAINING_DAY_START_HOUR = 0;
 const DEFAULT_TIMEZONE = 'Europe/Paris';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -37,6 +38,8 @@ const DEFAULT_TIMEZONE = 'Europe/Paris';
  * A training day starts at `trainingDayStartHour` in the athlete's timezone.
  * An observation timestamped before that hour belongs to the PREVIOUS training day.
  *
+ * Example with startHour = 0 (default — local midnight):
+ *   2026-09-13 03:00 Europe/Paris → "2026-09-13"
  * Example with startHour = 4:
  *   2026-07-02 03:30 UTC+2 → "2026-07-01" (before 04:00 → prior training day)
  *   2026-07-02 04:30 UTC+2 → "2026-07-02" (after 04:00 → current training day)
@@ -59,7 +62,7 @@ function computeTrainingDayId(
     formatter.formatToParts(anchorTimestamp).map(({ type, value }) => [type, value]),
   );
 
-  const localHour = parseInt(parts.hour, 10);
+  const localHour = parseInt(parts.hour, 10) % 24;
 
   if (localHour < trainingDayStartHour) {
     // Before the training day boundary → reformat the previous calendar day.
