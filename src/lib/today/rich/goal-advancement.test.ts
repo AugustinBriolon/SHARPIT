@@ -88,7 +88,7 @@ describe('buildGoalAdvancement', () => {
     expect(view?.trail[0]?.label).toMatch(/vers 5 km sous 20′/);
   });
 
-  it('hides when only phase exists (no week segments)', () => {
+  it('still reads the countdown when the week is empty', () => {
     const view = buildGoalAdvancement({
       goal: raceGoal(),
       weekDoneCount: 0,
@@ -97,7 +97,9 @@ describe('buildGoalAdvancement', () => {
       now: NOW,
       phaseLabel: 'Build',
     });
-    expect(view).toBeNull();
+    expect(view?.headline).toBe('J-28 · Sub 1h30');
+    expect(view?.weekSegments).toEqual([]);
+    expect(view?.why).toBe('Aucune séance planifiée cette semaine.');
   });
 
   it('puts phase in expand footer, not in rail', () => {
@@ -116,27 +118,29 @@ describe('buildGoalAdvancement', () => {
     expect(view?.facts.map((f) => f.label)).not.toContain('Build');
   });
 
-  it('hides when goal exists but no coaching or week facts', () => {
+  it('keeps a metric goal readable on an empty week', () => {
     const view = buildGoalAdvancement({
-      goal: raceGoal(),
+      goal: metricGoal(),
       weekDoneCount: 0,
       weekRemainingCount: 0,
       ledger: [],
       now: NOW,
       phaseLabel: null,
     });
-    expect(view).toBeNull();
+    expect(view?.headline).toBe('42 % de la cible');
+    expect(view?.weekSegments).toEqual([]);
   });
 
-  it('hides metric goal without facts (no emptyWhy noise)', () => {
+  it('hides only when there is nothing to read at all', () => {
+    // No countdown, no percentage, no week — an instrument with no reading.
     expect(
       buildGoalAdvancement({
-        goal: metricGoal(),
+        goal: raceGoal({ countdown: null, progress: null }),
         weekDoneCount: 0,
         weekRemainingCount: 0,
         ledger: [],
         now: NOW,
-        phaseLabel: null,
+        phaseLabel: 'Build',
       }),
     ).toBeNull();
   });

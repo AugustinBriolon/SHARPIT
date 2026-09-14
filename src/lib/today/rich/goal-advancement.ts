@@ -133,10 +133,18 @@ function buildCoachingFacts(
   }));
 }
 
-function buildWhy(adaptedCount: number): string {
+function buildWhy(adaptedCount: number, hasWeek: boolean): string {
+  if (!hasWeek) {
+    return 'Aucune séance planifiée cette semaine.';
+  }
   return adaptedCount > 0
     ? 'Ce que le coaching a déjà changé cette semaine.'
     : 'Le Twin suit l’exécution de ta semaine.';
+}
+
+/** A countdown or a percentage is a reading on its own — an empty week is not silence. */
+function hasReadableGoal(goal: PlanGoalView): boolean {
+  return Boolean(goal.countdown) || goal.progress !== null;
 }
 
 function capitalizeFrDay(label: string): string {
@@ -191,7 +199,7 @@ export function buildGoalAdvancement(input: GoalAdvancementInput): GoalAdvanceme
     weekRemainingCount: input.weekRemainingCount,
   });
 
-  if (weekSegments.length === 0) {
+  if (weekSegments.length === 0 && !hasReadableGoal(goal)) {
     return null;
   }
 
@@ -204,7 +212,7 @@ export function buildGoalAdvancement(input: GoalAdvancementInput): GoalAdvanceme
     goalLabel: goal.title,
     eyebrow: 'Plan vivant',
     headline: buildHeadline(goal),
-    why: buildWhy(adaptedCount),
+    why: buildWhy(adaptedCount, weekSegments.length > 0),
     progress: goal.progress,
     facts,
     weekSegments,

@@ -379,8 +379,14 @@ function PlanVivantInstrumentBody({ view }: { view: GoalAdvancementView }) {
       </div>
 
       <div className="mt-auto space-y-1.5 pt-1">
-        <WeekMeter segments={view.weekSegments} tone="plain" />
-        <WeekLegend segments={view.weekSegments} tone="plain" />
+        {view.weekSegments.length > 0 ? (
+          <>
+            <WeekMeter segments={view.weekSegments} tone="plain" />
+            <WeekLegend segments={view.weekSegments} tone="plain" />
+          </>
+        ) : (
+          <p className="text-muted-foreground text-[11px] leading-snug text-pretty">{view.why}</p>
+        )}
       </div>
     </div>
   );
