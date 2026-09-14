@@ -30,7 +30,7 @@ export function TodayActionRowHeader({ loading }: { loading: boolean }) {
           <>
             <ActivityStatusButton />
             <Link
-              className="border-primary/35 bg-primary/10 text-primary hover:bg-primary/15 inline-flex h-11 items-center gap-1.5 rounded-lg border px-2.5 text-[0.8rem] font-medium transition-colors duration-150 ease-out active:scale-[0.97] lg:h-8"
+              className="border-primary/35 bg-primary/10 text-primary hover:bg-primary/15 inline-flex h-8 items-center gap-1.5 rounded-lg border px-2.5 text-[0.8rem] font-medium transition-colors duration-150 ease-out active:scale-[0.97]"
               href="/journal"
             >
               <BookOpen className="size-3.5 shrink-0" strokeWidth={1.8} aria-hidden />

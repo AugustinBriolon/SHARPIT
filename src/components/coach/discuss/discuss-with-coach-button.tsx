@@ -52,7 +52,7 @@ export function DiscussWithCoachButton({
       className={cn(
         // Instrument radius from buttonVariants (rounded-lg) — never pill.
         // Wrap-safe on narrow mobile: allow multi-line label without nowrap fight.
-        'h-auto min-h-8 self-start text-left whitespace-normal',
+        'h-auto min-h-8 text-left whitespace-normal',
         className,
       )}
       onClick={() => {

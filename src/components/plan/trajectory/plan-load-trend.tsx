@@ -10,6 +10,32 @@ function barFillPercent(bar: RulerBar): number {
   return Math.max(bar.height * 100, 18);
 }
 
+function WeekWellFill({ bar, fill }: { bar: RulerBar; fill: number }) {
+  if (bar.unmeasured) {
+    return <span className="bg-analysis-border/60 h-1 w-full" />;
+  }
+  if (bar.state === 'future') {
+    return (
+      <span
+        className="border-analysis-border w-full border border-dashed bg-transparent"
+        style={{ height: `${Math.max(fill, 12)}%` }}
+      />
+    );
+  }
+  if (fill <= 0) {
+    return null;
+  }
+  return (
+    <span
+      style={{ height: `${fill}%` }}
+      className={cn(
+        'w-full rounded-sm',
+        bar.state === 'current' ? 'bg-primary' : 'bg-foreground/75',
+      )}
+    />
+  );
+}
+
 function WeekWell({ bar }: { bar: RulerBar }) {
   const fill = barFillPercent(bar);
 
@@ -19,22 +45,7 @@ function WeekWell({ bar }: { bar: RulerBar }) {
         className="bg-analysis-border/20 flex h-20 w-full items-end overflow-hidden rounded-md"
         aria-hidden
       >
-        {bar.unmeasured ? (
-          <span className="bg-analysis-border/60 h-1 w-full" />
-        ) : bar.state === 'future' ? (
-          <span
-            className="border-analysis-border w-full border border-dashed bg-transparent"
-            style={{ height: `${Math.max(fill, 12)}%` }}
-          />
-        ) : fill > 0 ? (
-          <span
-            style={{ height: `${fill}%` }}
-            className={cn(
-              'w-full rounded-sm',
-              bar.state === 'current' ? 'bg-primary' : 'bg-foreground/75',
-            )}
-          />
-        ) : null}
+        <WeekWellFill bar={bar} fill={fill} />
       </div>
       <span className="text-label truncate">{bar.label}</span>
     </li>

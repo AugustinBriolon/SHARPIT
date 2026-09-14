@@ -84,4 +84,19 @@ describe('TodayInstrumentCard', () => {
     expect(html).not.toContain('href=');
     expect(html).toContain('Ajuster le planning');
   });
+
+  it('can place the icon well before the title when a right hero needs the edge', () => {
+    const html = renderToStaticMarkup(
+      createElement(TodayInstrumentCard, {
+        href: '/journal/analyses',
+        icon: createElement('span', { 'data-icon': 'habit' }),
+        iconSide: 'start',
+        title: 'Écran au lit',
+      }),
+    );
+
+    expect(html).toContain('items-start gap-3');
+    expect(html).not.toContain('justify-between gap-3');
+    expect(html.indexOf('data-icon="habit"')).toBeLessThan(html.indexOf('font-semibold'));
+  });
 });

@@ -45,9 +45,16 @@ export function canExtendStrip(start: Date, minDate?: Date): boolean {
   return !minDate || isAfter(startOfDay(start), startOfDay(minDate));
 }
 
-/** Oldest → end of today's week; the remaining days of the week render disabled. */
+/**
+ * Days offered past today. Fixed rather than "to the end of the week", which
+ * left Sunday with nothing after the selected day: `endOfWeek(Sunday)` is that
+ * same Sunday, so the strip dead-ended on the last day of every week.
+ */
+const FUTURE_DAYS = 3;
+
+/** Oldest → three days past today; those future days render disabled. */
 export function buildStripDays(start: Date, maxDate: Date): Date[] {
-  const end = endOfWeek(maxDate, { locale: fr });
+  const end = addDays(startOfDay(maxDate), FUTURE_DAYS);
   const days: Date[] = [];
   for (let day = startOfDay(start); !isAfter(day, end); day = addDays(day, 1)) {
     days.push(day);

@@ -48,8 +48,12 @@ export function TodayUnderstandSection({
       <div className="grid items-stretch gap-4 lg:grid-cols-2">
         <ActivityConsistencyPanel activities={activities} loading={activitiesLoading || loading} />
         {loading ? <TodayNutritionCardSkeleton /> : <TodayNutritionCard />}
+        {!loading ? (
+          <div className="min-w-0 lg:col-span-2">
+            <TodayJournalHabitBridgeFooter enabled />
+          </div>
+        ) : null}
       </div>
-      {!loading ? <TodayJournalHabitBridgeFooter enabled /> : null}
     </section>
   );
 }

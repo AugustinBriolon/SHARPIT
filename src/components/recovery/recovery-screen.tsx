@@ -41,7 +41,7 @@ export function RecoveryScreen({ backHref, backLabel }: { backHref?: string; bac
       isToday={isToday}
       loading={valuesLoading}
       maxDate={maxDate}
-      minDate={minDate ?? date}
+      minDate={minDate}
       onDateChange={setDate}
       onNextDay={goToNextDay}
       onPreviousDay={goToPreviousDay}

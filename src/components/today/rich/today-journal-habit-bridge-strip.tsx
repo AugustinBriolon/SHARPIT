@@ -1,116 +1,116 @@
 'use client';
 
-import Link from 'next/link';
-import { BookOpen } from 'lucide-react';
+import { Sparkles, type LucideIcon } from 'lucide-react';
 import { ExperimentDaySegments } from '@/components/journal/analyses/experiment-day-segments';
-import { FactorIcon } from '@/components/journal/analyses/factor-icon';
+import { TodayInstrumentCard } from '@/components/today/dashboard/today-instrument-card';
 import type {
   TodayJournalHabitBridge,
   TodayJournalHabitCallout,
   TodayJournalHabitExperimentBridge,
 } from '@/lib/journal/journal-habit-today-bridge';
+import { journalTrackableById } from '@/lib/journal/journal-trackables';
+
+/** Lime icon-well glyph — same chrome as sleep / regularity / nutrition. */
+function HabitInstrumentIcon({ factorId }: { factorId: string }) {
+  const Icon: LucideIcon = journalTrackableById(factorId)?.icon ?? Sparkles;
+  return <Icon className="size-3.5" strokeWidth={2.25} />;
+}
+
+function parseProgressLabel(label: string): { day: number; total: number } | null {
+  const match = /^J(\d+)\s*\/\s*(\d+)$/i.exec(label.trim());
+  if (!match) {
+    return null;
+  }
+  return { day: Number(match[1]), total: Number(match[2]) };
+}
+
+function ExperimentHero({ experiment }: { experiment: TodayJournalHabitExperimentBridge }) {
+  const progress = parseProgressLabel(experiment.progressLabel);
+
+  return (
+    <div className="mt-3 flex flex-1 items-center gap-3">
+      <div className="flex min-w-0 flex-1 flex-col justify-center gap-2.5">
+        <ExperimentDaySegments label={experiment.segmentsLabel} segments={experiment.segments} />
+        <span className="text-muted-foreground text-[11px] leading-snug">
+          {experiment.heldLabel}
+        </span>
+      </div>
+      <div className="flex shrink-0 flex-col items-end justify-center self-center pl-1 text-right">
+        {progress ? (
+          <>
+            <span className="text-data text-foreground text-[2.75rem] leading-none font-semibold tracking-[-0.03em] tabular-nums">
+              {progress.day}
+            </span>
+            <span className="text-muted-foreground mt-1 text-[12px] leading-tight">
+              sur {progress.total}
+              <br />
+              jours
+            </span>
+          </>
+        ) : (
+          <span className="text-data text-foreground text-sm tabular-nums">
+            {experiment.progressLabel}
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
 
 function AssociationBody({ bridge }: { bridge: TodayJournalHabitBridge }) {
-  const { sourceLabel, meaning, disclaimer, confidenceNote, ctaLabel, factorId } = bridge;
   return (
-    <span className="flex gap-3">
-      <FactorIcon factorId={factorId} />
-      <span className="min-w-0 flex-1 space-y-1.5">
-        <span className="text-muted-foreground flex items-center gap-1.5 text-[0.7rem] font-medium tracking-wide">
-          <BookOpen className="size-3.5 shrink-0" strokeWidth={1.7} aria-hidden />
-          {sourceLabel}
-        </span>
-        <span className="text-foreground block text-sm leading-snug font-medium text-pretty">
-          {meaning}
-        </span>
-        <span className="text-muted-foreground block text-[0.7rem] leading-relaxed text-pretty">
-          {disclaimer}
-          {' · '}
-          {confidenceNote}
-        </span>
-        <span className="text-primary inline-flex min-h-10 items-center text-xs font-medium">
-          {ctaLabel}
-          <span
-            className="ml-1 transition-transform duration-150 ease-out group-hover:translate-x-0.5"
-            aria-hidden
-          >
-            →
-          </span>
-        </span>
-      </span>
-    </span>
+    <div className="mt-3 flex flex-1 flex-col justify-between gap-3">
+      <p className="text-muted-foreground text-xs leading-snug text-pretty">{bridge.meaning}</p>
+      <p className="text-muted-foreground/80 text-[11px] leading-relaxed text-pretty">
+        {bridge.disclaimer}
+        {' · '}
+        {bridge.confidenceNote}
+      </p>
+    </div>
   );
 }
 
-/**
- * Glanceable test plate: habit icon = what · Jx/7 = where · segment bar = days held.
- * No review-date paragraph — that lives on /journal/analyses.
- */
-function ExperimentBody({ experiment }: { experiment: TodayJournalHabitExperimentBridge }) {
-  const {
-    sourceLabel,
-    meaning,
-    progressLabel,
-    heldLabel,
-    segments,
-    segmentsLabel,
-    ctaLabel,
-    factorId,
-  } = experiment;
+function habitCardTitle(callout: TodayJournalHabitCallout): string {
+  // Category title like « Score sommeil » / « Régularité » — not the habit name.
+  return callout.kind === 'experiment'
+    ? callout.experiment.sourceLabel
+    : callout.bridge.sourceLabel;
+}
 
-  return (
-    <span className="flex gap-3">
-      <FactorIcon factorId={factorId} />
-      <span className="min-w-0 flex-1 space-y-2">
-        <span className="flex items-start justify-between gap-3">
-          <span className="min-w-0">
-            <span className="text-label text-muted-foreground">{sourceLabel}</span>
-            <span className="text-foreground mt-0.5 block text-sm font-semibold tracking-tight text-pretty">
-              {meaning}
-            </span>
-          </span>
-          <span className="text-data text-foreground shrink-0 pt-0.5 text-sm">{progressLabel}</span>
-        </span>
-        <ExperimentDaySegments label={segmentsLabel} segments={segments} />
-        <span className="flex items-center justify-between gap-2">
-          <span className="text-muted-foreground text-data text-[0.7rem]">{heldLabel}</span>
-          <span className="text-primary inline-flex min-h-9 items-center text-xs font-medium">
-            {ctaLabel}
-            <span
-              className="ml-1 transition-transform duration-150 ease-out group-hover:translate-x-0.5"
-              aria-hidden
-            >
-              →
-            </span>
-          </span>
-        </span>
-      </span>
-    </span>
-  );
+function habitCardSubtitle(callout: TodayJournalHabitCallout): string {
+  return callout.kind === 'experiment' ? callout.experiment.meaning : callout.bridge.habitLabel;
+}
+
+function habitFactorId(callout: TodayJournalHabitCallout): string {
+  return callout.kind === 'experiment' ? callout.experiment.factorId : callout.bridge.factorId;
 }
 
 /**
- * Quiet journal plate at the bottom of Today — association or running test.
- * Test mode is instrument-first (icon + track), not a text dump.
+ * Journal habit instrument on Résumé — same TodayInstrumentCard chrome as
+ * sleep / recovery / regularity / nutrition (title · Lime well · hero metric).
  */
 export function TodayJournalHabitBridgeStrip({ callout }: { callout: TodayJournalHabitCallout }) {
   const href = callout.kind === 'experiment' ? callout.experiment.href : callout.bridge.href;
-  const ariaLabel =
+  const title = habitCardTitle(callout);
+  const titleAttr =
     callout.kind === 'experiment'
       ? `${callout.experiment.sourceLabel} : ${callout.experiment.meaning}. ${callout.experiment.segmentsLabel}`
-      : undefined;
+      : `${callout.bridge.sourceLabel} : ${callout.bridge.meaning}`;
 
   return (
-    <Link
-      aria-label={ariaLabel}
-      className="analysis-panel border-analysis-border/70 group block px-3 py-3 transition-transform duration-150 ease-out active:scale-[0.99]"
+    <TodayInstrumentCard
+      className="min-h-38 active:scale-[0.988]"
       href={href}
+      icon={<HabitInstrumentIcon factorId={habitFactorId(callout)} />}
+      subtitle={habitCardSubtitle(callout)}
+      title={title}
+      titleAttr={titleAttr}
     >
       {callout.kind === 'experiment' ? (
-        <ExperimentBody experiment={callout.experiment} />
+        <ExperimentHero experiment={callout.experiment} />
       ) : (
         <AssociationBody bridge={callout.bridge} />
       )}
-    </Link>
+    </TodayInstrumentCard>
   );
 }

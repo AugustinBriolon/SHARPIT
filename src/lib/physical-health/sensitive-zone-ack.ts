@@ -119,7 +119,8 @@ export function clearSensitiveZoneAck(sessionId: string): void {
   if (!current.acks[sessionId]) {
     return;
   }
-  const { [sessionId]: _removed, ...rest } = current.acks;
+  const rest = { ...current.acks };
+  delete rest[sessionId];
   persist({ version: 1, acks: rest });
 }
 

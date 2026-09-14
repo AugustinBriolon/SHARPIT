@@ -9,7 +9,7 @@ import {
   type RefObject,
 } from 'react';
 import { Plus, X } from 'lucide-react';
-import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
+import { motion, useReducedMotion } from 'motion/react';
 import { PromptSubmitIcon } from '@/components/coach/kit/prompt-input-submit-icon';
 import type { CoachDiscussContext } from '@/lib/coach/chat/discuss/coach-discuss-context';
 import { cn } from '@/lib/utils';
@@ -304,7 +304,7 @@ export function PromptBarPlusButton({
 
 export function PromptBarSendButton({
   canSend,
-  disabled,
+  disabled: _disabled,
   loading,
   onSend,
   onStop,

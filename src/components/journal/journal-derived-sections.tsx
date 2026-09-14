@@ -2,10 +2,7 @@
 
 import { Check, Minus, CircleDashed } from 'lucide-react';
 import type { JournalAutoChecklistItem } from '@/lib/journal/journal-auto-checklist';
-import {
-  JOURNAL_CATEGORY_HEADER,
-  JOURNAL_CATEGORY_ICON,
-} from '@/lib/journal/journal-category-surface';
+import { JOURNAL_CATEGORY_HEADER } from '@/lib/journal/journal-category-surface';
 import type { JournalNutritionSummary } from '@/lib/journal/journal-day-signals';
 import { DietChipList } from '@/components/nutrition/diet-chip-list';
 import { cn } from '@/lib/utils';

@@ -24,7 +24,8 @@ export function RecoveryScreenBody({
   isToday: boolean;
   loading: boolean;
   maxDate: Date;
-  minDate: Date;
+  /** Demo sessions only — undefined for a real athlete, and must stay undefined. */
+  minDate?: Date;
   onDateChange: (date: Date) => void;
   onNextDay: () => void;
   onPreviousDay: () => void;

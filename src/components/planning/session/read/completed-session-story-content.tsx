@@ -100,12 +100,12 @@ export function CompletedSessionDetails({
   }
 
   const remarkCount = analysis.remarks.length;
-  const summary =
-    remarkCount > 0
-      ? `${remarkCount} point${remarkCount > 1 ? 's' : ''}`
-      : analysis.recommendation
-        ? 'Orientation'
-        : null;
+  let summary: string | null = null;
+  if (remarkCount > 0) {
+    summary = `${remarkCount} point${remarkCount > 1 ? 's' : ''}`;
+  } else if (analysis.recommendation) {
+    summary = 'Orientation';
+  }
 
   return (
     <CollapsibleSection

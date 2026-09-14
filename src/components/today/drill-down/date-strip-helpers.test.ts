@@ -52,10 +52,26 @@ describe('extendStripStart / canExtendStrip', () => {
 });
 
 describe('buildStripDays', () => {
-  it('runs from the start through the end of the current week', () => {
+  it('runs from the start through three days past today', () => {
     const days = buildStripDays(new Date(2026, 8, 9), TODAY).map(key);
 
-    expect(days).toEqual(['2026-09-09', '2026-09-10', '2026-09-11', '2026-09-12', '2026-09-13']);
+    expect(days).toEqual([
+      '2026-09-09',
+      '2026-09-10',
+      '2026-09-11',
+      '2026-09-12',
+      '2026-09-13',
+      '2026-09-14',
+    ]);
+  });
+
+  // Ending the strip at the end of the current week left Sunday with no day
+  // after the selected one: endOfWeek(Sunday) is that same Sunday.
+  it('still offers three days ahead on a Sunday', () => {
+    const sunday = new Date(2026, 8, 13);
+    const days = buildStripDays(new Date(2026, 8, 11), sunday).map(key);
+
+    expect(days.slice(-3)).toEqual(['2026-09-14', '2026-09-15', '2026-09-16']);
   });
 });
 

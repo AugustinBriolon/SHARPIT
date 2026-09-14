@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { pushSessionToGoogleInBackground } from '@/lib/integrations/google/google-sync';
+import { pushBrickToGoogleInBackground } from '@/lib/integrations/google/google-sync';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
+import { chainBrickLegStartTimes } from '@/lib/planned-session/brick/brick-schedule';
 import { createBrickSessions, getPlannedSessionById } from '@/lib/queries';
 import { createBrickSchema } from '@/lib/validators/planned-session';
 
@@ -18,12 +19,14 @@ export async function POST(request: NextRequest) {
     }
 
     const { date, startTime, goalId, legs } = parsed.data;
+    // A brick is a chain, not a stack: each leg starts when the previous ends.
+    const legStartTimes = chainBrickLegStartTimes(startTime, legs);
     const created = await createBrickSessions(
       athleteId,
-      legs.map((leg) => ({
+      legs.map((leg, index) => ({
         type: leg.type,
         date,
-        startTime: startTime ?? null,
+        startTime: legStartTimes[index] ?? null,
         title: leg.title ?? null,
         description: leg.description ?? null,
         durationMin: leg.durationMin ?? null,
@@ -33,9 +36,7 @@ export async function POST(request: NextRequest) {
       })),
     );
 
-    for (const session of created) {
-      pushSessionToGoogleInBackground(session);
-    }
+    pushBrickToGoogleInBackground(created);
 
     const fresh = await Promise.all(created.map((s) => getPlannedSessionById(athleteId, s.id)));
     return NextResponse.json(fresh.filter(Boolean), { status: 201 });

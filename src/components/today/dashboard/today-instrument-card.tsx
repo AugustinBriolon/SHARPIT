@@ -33,9 +33,51 @@ export type TodayInstrumentCardProps = {
   titleAttr?: string;
   /** `quiet` drops the fill and keeps the hairline. Defaults to `surface`. */
   tier?: TodayInstrumentTier;
+  /** Default `end` (sleep / regularity). `start` when a right-side hero metric needs the well clear. */
+  iconSide?: 'start' | 'end';
   className?: string;
   children?: ReactNode;
 };
+
+function InstrumentCardHeader({
+  title,
+  subtitle,
+  icon,
+  iconSide,
+}: {
+  title: string;
+  subtitle: string | null;
+  icon: ReactNode;
+  iconSide: 'start' | 'end';
+}) {
+  const titleBlock = (
+    <span className="min-w-0">
+      <span className="text-foreground block text-sm font-semibold tracking-tight">{title}</span>
+      {subtitle ? (
+        <span className="text-muted-foreground mt-0.5 block text-xs leading-snug">{subtitle}</span>
+      ) : null}
+    </span>
+  );
+  const iconWell = (
+    <span className="icon-well size-8 shrink-0" aria-hidden>
+      {icon}
+    </span>
+  );
+  if (iconSide === 'start') {
+    return (
+      <span className="flex min-w-0 items-start gap-3">
+        {iconWell}
+        {titleBlock}
+      </span>
+    );
+  }
+  return (
+    <span className="flex min-w-0 items-start justify-between gap-3">
+      {titleBlock}
+      {iconWell}
+    </span>
+  );
+}
 
 /**
  * Shared Today instrument chrome — title, optional subtitle, Lime icon well.
@@ -49,23 +91,12 @@ export function TodayInstrumentCard({
   href,
   titleAttr,
   tier = 'surface',
+  iconSide = 'end',
   className,
   children,
 }: TodayInstrumentCardProps) {
   const header = (
-    <span className="flex min-w-0 items-start justify-between gap-3">
-      <span className="min-w-0">
-        <span className="text-foreground block text-sm font-semibold tracking-tight">{title}</span>
-        {subtitle ? (
-          <span className="text-muted-foreground mt-0.5 block text-xs leading-snug">
-            {subtitle}
-          </span>
-        ) : null}
-      </span>
-      <span className="icon-well size-8 shrink-0" aria-hidden>
-        {icon}
-      </span>
-    </span>
+    <InstrumentCardHeader icon={icon} iconSide={iconSide} subtitle={subtitle} title={title} />
   );
 
   if (href) {

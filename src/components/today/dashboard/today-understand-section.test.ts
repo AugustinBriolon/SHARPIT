@@ -14,4 +14,9 @@ describe('TodayUnderstandSection contract', () => {
     expect(source).toContain('TodayNutritionCard');
     expect(source).not.toContain('buildUnderstandLinks');
   });
+
+  it('keeps the journal habit instrument inside the Comprendre grid rhythm', () => {
+    expect(source).toContain('TodayJournalHabitBridgeFooter');
+    expect(source).toContain('lg:col-span-2');
+  });
 });

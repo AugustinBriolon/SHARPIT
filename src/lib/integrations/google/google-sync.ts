@@ -328,6 +328,25 @@ export function pushSessionToGoogleInBackground(session: PlannedSession): void {
   });
 }
 
+/**
+ * Les jambes d'un brick partent l'une après l'autre, jamais en parallèle.
+ * Lancées ensemble, chaque recherche de créneau libre interroge Google avant que
+ * l'event de la jambe précédente existe : toutes retombent sur le même créneau,
+ * c'est-à-dire exactement le chevauchement qu'un brick ne doit pas produire.
+ */
+export function pushBrickToGoogleInBackground(sessions: readonly PlannedSession[]): void {
+  const ordered = [...sessions].sort((a, b) => (a.brickOrder ?? 0) - (b.brickOrder ?? 0));
+  void (async () => {
+    for (const session of ordered) {
+      try {
+        await pushSessionToGoogle(session);
+      } catch (error) {
+        console.error('Push Google Calendar échoué', error);
+      }
+    }
+  })();
+}
+
 export async function deleteSessionFromGoogle(
   session: Pick<PlannedSession, 'athleteId' | 'googleEventId'>,
 ): Promise<void> {
@@ -430,43 +449,28 @@ async function applyGoogleEventToSession(input: {
   return 'updated';
 }
 
-export async function syncFromGoogle(athleteId: string): Promise<GooglePullResult> {
-  const account = await getGoogleAccount(athleteId);
-  if (!account?.targetCalendarId) {
-    throw new Error('Aucun calendrier cible sélectionné');
-  }
-  const token = await getValidAccessToken(athleteId);
-  const { timeZone } = account;
-
-  const now = new Date();
-  const from = syncSinceFromLastSync(account.lastSyncAt, 7);
-  const to = new Date(now.getTime() + 90 * 86400_000);
-
-  // ---- 1. Push des séances futures non encore synchronisées ----
-  const todayStart = new Date(now);
-  todayStart.setHours(0, 0, 0, 0);
-  const unsynced = await prisma.plannedSession.findMany({
-    where: { athleteId, googleEventId: null, date: { gte: todayStart } },
-  });
-  const pushed = await pushUnsyncedSessionsToGoogle(unsynced);
-
-  // ---- 2. Pull des modifications depuis Google ----
+async function pullGoogleUpdatesOntoSessions(input: {
+  athleteId: string;
+  token: string;
+  calendarId: string;
+  timeZone: string;
+  from: Date;
+  to: Date;
+}): Promise<{ updated: number; unlinked: number }> {
   const [events, sessions] = await Promise.all([
-    listEvents(token, account.targetCalendarId, from, to),
+    listEvents(input.token, input.calendarId, input.from, input.to),
     prisma.plannedSession.findMany({
-      where: { athleteId, googleEventId: { not: null } },
+      where: { athleteId: input.athleteId, googleEventId: { not: null } },
     }),
   ]);
-
   const eventById = new Map(events.map((e) => [e.id, e]));
   let updated = 0;
   let unlinked = 0;
-
   for (const session of sessions) {
     const outcome = await applyGoogleEventToSession({
       session,
       event: eventById.get(session.googleEventId ?? ''),
-      timeZone,
+      timeZone: input.timeZone,
     });
     if (outcome === 'updated') {
       updated += 1;
@@ -474,6 +478,33 @@ export async function syncFromGoogle(athleteId: string): Promise<GooglePullResul
       unlinked += 1;
     }
   }
+  return { updated, unlinked };
+}
+
+export async function syncFromGoogle(athleteId: string): Promise<GooglePullResult> {
+  const account = await getGoogleAccount(athleteId);
+  if (!account?.targetCalendarId) {
+    throw new Error('Aucun calendrier cible sélectionné');
+  }
+  const token = await getValidAccessToken(athleteId);
+  const now = new Date();
+  const from = syncSinceFromLastSync(account.lastSyncAt, 7);
+  const to = new Date(now.getTime() + 90 * 86400_000);
+
+  const todayStart = new Date(now);
+  todayStart.setHours(0, 0, 0, 0);
+  const unsynced = await prisma.plannedSession.findMany({
+    where: { athleteId, googleEventId: null, date: { gte: todayStart } },
+  });
+  const pushed = await pushUnsyncedSessionsToGoogle(unsynced);
+  const { updated, unlinked } = await pullGoogleUpdatesOntoSessions({
+    athleteId,
+    token,
+    calendarId: account.targetCalendarId,
+    timeZone: account.timeZone,
+    from,
+    to,
+  });
 
   await prisma.googleAccount.update({
     where: { athleteId },

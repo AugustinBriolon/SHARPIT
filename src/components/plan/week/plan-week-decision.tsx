@@ -1,5 +1,6 @@
 'use client';
 
+import type { ReactNode } from 'react';
 import { CalendarDays } from 'lucide-react';
 import { PlanSectionHeading } from '@/components/plan/hub/plan-section-heading';
 import { BrickOverviewCard } from '@/components/planning/brick/brick-overview-card';
@@ -154,6 +155,19 @@ export function PlanWeekDecision({ decision, week }: { decision: WeekDecision; w
     decision.secondary ?? (isPlanningNav(decision.primary) ? decision.primary : null);
   const showPrimary = !next && headingAction !== decision.primary;
 
+  let body: ReactNode = null;
+  if (next) {
+    body = (
+      <NextSessionBlock
+        gated={decision.kind === 'gated'}
+        sessionId={decision.primary.sessionId}
+        week={week}
+      />
+    );
+  } else if (showPrimary) {
+    body = <DecisionAction action={decision.primary} />;
+  }
+
   return (
     <section aria-labelledby="plan-week-decision" className="space-y-3">
       <PlanSectionHeading
@@ -162,15 +176,7 @@ export function PlanWeekDecision({ decision, week }: { decision: WeekDecision; w
         id="plan-week-decision"
         title={decision.sentence}
       />
-      {next ? (
-        <NextSessionBlock
-          gated={decision.kind === 'gated'}
-          sessionId={decision.primary.sessionId}
-          week={week}
-        />
-      ) : showPrimary ? (
-        <DecisionAction action={decision.primary} />
-      ) : null}
+      {body}
     </section>
   );
 }
