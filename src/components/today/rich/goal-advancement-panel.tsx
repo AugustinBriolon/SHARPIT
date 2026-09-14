@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useId, useState } from 'react';
 import { Route } from 'lucide-react';
 import { FadeIn, MotionExpand } from '@/components/motion';
-import { TodayInstrumentPanel } from '@/components/today/dashboard/today-instrument-card';
+import { TodayInstrumentCard } from '@/components/today/dashboard/today-instrument-card';
 import {
   buildGoalAdvancementLabNote,
   type GoalAdvancementView,
@@ -358,26 +358,30 @@ export function PlanVivantEyebrow({
  * Body of the Today instrument — the readout is the countdown, not a gauge, so
  * Plan vivant keeps its own identity inside the family chrome.
  */
+/** « J-27 · Sub 6h » reads as a value and its unit, the way a score reads « 82 / sur 100 ». */
+function splitHeadline(headline: string): { readout: string; unit: string | null } {
+  const [readout, ...rest] = headline.split(' · ');
+  return { readout: readout ?? headline, unit: rest.length > 0 ? rest.join(' · ') : null };
+}
+
 function PlanVivantInstrumentBody({ view }: { view: GoalAdvancementView }) {
+  const { readout, unit } = splitHeadline(view.headline);
+
   return (
     <div className="mt-3 flex min-w-0 flex-1 flex-col gap-3">
-      <div className="space-y-1">
-        <p className="text-data text-foreground text-xl leading-none font-semibold tabular-nums">
-          {view.headline}
+      <div>
+        <p className="text-data text-foreground text-2xl leading-none font-semibold tabular-nums">
+          {readout}
         </p>
-        <p className="text-muted-foreground text-[11px] leading-snug text-pretty">{view.why}</p>
+        {unit ? (
+          <p className="text-muted-foreground mt-1 text-[11px] leading-snug text-pretty">{unit}</p>
+        ) : null}
       </div>
 
-      {view.progress !== null ? (
-        <GoalProgressHairline progress={view.progress} tone="plain" />
-      ) : null}
-
-      <div className="space-y-1.5">
+      <div className="mt-auto space-y-1.5 pt-1">
         <WeekMeter segments={view.weekSegments} tone="plain" />
         <WeekLegend segments={view.weekSegments} tone="plain" />
       </div>
-
-      <AdvancementDisclosure tone="plain" view={view} />
     </div>
   );
 }
@@ -401,15 +405,16 @@ export function GoalAdvancementPanel({
 
   return (
     <FadeIn>
-      <TodayInstrumentPanel
-        ariaLabel="Plan vivant — suivi vers l’objectif"
+      <TodayInstrumentCard
         className={className}
+        href={view.href}
         icon={<Route className="size-3.5" strokeWidth={2.25} />}
         subtitle={view.goalLabel ? `vers ${view.goalLabel}` : null}
         title="Plan vivant"
+        titleAttr="Voir l’objectif — Plan vivant"
       >
         <PlanVivantInstrumentBody view={view} />
-      </TodayInstrumentPanel>
+      </TodayInstrumentCard>
     </FadeIn>
   );
 }
