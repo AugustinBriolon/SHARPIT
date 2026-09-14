@@ -46,7 +46,7 @@ function GlassBack({
   replace: boolean;
 }) {
   return (
-    <div className="fixed top-3 left-[max(1rem,env(safe-area-inset-left))] z-50 w-fit lg:static lg:inset-auto lg:top-auto lg:left-auto lg:z-auto">
+    <div className="safe-top-offset fixed left-[max(1rem,env(safe-area-inset-left))] z-50 w-fit lg:static lg:inset-auto lg:top-auto lg:left-auto lg:z-auto">
       <ChromeGlass
         className="flex size-11 min-h-11 min-w-11 items-center justify-center lg:inline-flex lg:size-auto lg:min-h-0 lg:min-w-0 lg:justify-start lg:border-0 lg:bg-transparent lg:shadow-none lg:backdrop-blur-none"
         cornerRadius={999}

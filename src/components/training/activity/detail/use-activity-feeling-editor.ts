@@ -4,15 +4,19 @@ import { useEffect, useState } from 'react';
 import { useActivityMutations } from '@/hooks/use-data';
 import { toast } from '@/components/ui/toast';
 
+/**
+ * The draft starts empty rather than on a default RPE: a tile shown as selected
+ * is a number the athlete never chose, and it would be saved as if they had.
+ */
 function useFeelingEditorDraft(feeling: string, rpe: number | null, open: boolean) {
-  const [editRpe, setEditRpe] = useState(rpe ?? 5);
+  const [editRpe, setEditRpe] = useState<number | null>(rpe);
   const [editFeeling, setEditFeeling] = useState(feeling);
 
   useEffect(() => {
     if (open) {
       return;
     }
-    setEditRpe(rpe ?? 5);
+    setEditRpe(rpe);
     setEditFeeling(feeling);
   }, [feeling, open, rpe]);
 
@@ -28,7 +32,7 @@ function saveActivityFeeling({
   setOpen,
 }: {
   activityId: string;
-  editRpe: number;
+  editRpe: number | null;
   editFeeling: string;
   update: ReturnType<typeof useActivityMutations>['update'];
   setFeelingError: (value: string | null) => void;
@@ -36,6 +40,10 @@ function saveActivityFeeling({
 }) {
   if (!editFeeling) {
     setFeelingError('Choisis un ressenti.');
+    return;
+  }
+  if (editRpe === null) {
+    setFeelingError('Choisis un effort perçu.');
     return;
   }
   setFeelingError(null);
@@ -65,7 +73,7 @@ export function useActivityFeelingEditor({
   const draft = useFeelingEditorDraft(feeling, rpe, open);
 
   function openDialog() {
-    draft.setEditRpe(rpe ?? 5);
+    draft.setEditRpe(rpe);
     draft.setEditFeeling(feeling);
     setFeelingError(null);
     setOpen(true);

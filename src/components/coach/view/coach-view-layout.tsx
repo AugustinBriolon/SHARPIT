@@ -66,7 +66,7 @@ function CoachImmersiveFrame({
   return (
     <div
       className={cn(
-        'bg-background safe-area-top fixed inset-x-0 top-0 z-30 flex flex-col',
+        'bg-background fixed inset-x-0 top-0 z-30 flex flex-col',
         mobileFullBleed ? 'bottom-0' : 'bottom-(--bottom-nav-offset)',
       )}
     >
@@ -75,49 +75,34 @@ function CoachImmersiveFrame({
   );
 }
 
-function useCoachHistoryOpen() {
-  const [historyOpen, setHistoryOpen] = useState(false);
-  return { historyOpen, setHistoryOpen };
-}
-
-export function CoachViewLayout({
+function CoachViewOverlays({
   conversations,
   conversationsLoading,
   selectedId,
   isEphemeral,
   newDisabled,
-  viewportReady: _viewportReady,
-  isMobile,
-  mountLiveChat,
-  renderChat,
+  historyOpen,
+  dialog,
   onDelete,
   onNewConversation,
   onRename,
   onSelect,
-  dialog,
-}: CoachViewLayoutProps) {
-  const { historyOpen, setHistoryOpen } = useCoachHistoryOpen();
-  const title = useMemo(
-    () => resolveThreadTitle({ conversations, conversationsLoading, selectedId, isEphemeral }),
-    [conversations, conversationsLoading, selectedId, isEphemeral],
-  );
-  const header = (
-    <CoachImmersiveHeader
-      newDisabled={newDisabled}
-      title={title}
-      onNewConversation={onNewConversation}
-      onOpenHistory={() => setHistoryOpen(true)}
-    />
-  );
-
+  onHistoryOpenChange,
+}: Pick<
+  CoachViewLayoutProps,
+  | 'conversations'
+  | 'conversationsLoading'
+  | 'selectedId'
+  | 'isEphemeral'
+  | 'newDisabled'
+  | 'dialog'
+  | 'onDelete'
+  | 'onNewConversation'
+  | 'onRename'
+  | 'onSelect'
+> & { historyOpen: boolean; onHistoryOpenChange: (open: boolean) => void }) {
   return (
     <>
-      <CoachImmersiveFrame
-        header={header}
-        mobileFullBleed={isMobile}
-        mountLiveChat={mountLiveChat}
-        renderChat={renderChat}
-      />
       <CoachHistoryDrawer
         conversations={conversations}
         conversationsLoading={conversationsLoading}
@@ -127,11 +112,48 @@ export function CoachViewLayout({
         selectedId={selectedId}
         onDelete={onDelete}
         onNewConversation={onNewConversation}
-        onOpenChange={setHistoryOpen}
+        onOpenChange={onHistoryOpenChange}
         onRename={onRename}
         onSelect={onSelect}
       />
       {dialog}
+    </>
+  );
+}
+
+export function CoachViewLayout(props: CoachViewLayoutProps) {
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const title = useMemo(
+    () =>
+      resolveThreadTitle({
+        conversations: props.conversations,
+        conversationsLoading: props.conversationsLoading,
+        selectedId: props.selectedId,
+        isEphemeral: props.isEphemeral,
+      }),
+    [props.conversations, props.conversationsLoading, props.selectedId, props.isEphemeral],
+  );
+
+  return (
+    <>
+      <CoachImmersiveFrame
+        mobileFullBleed={props.isMobile}
+        mountLiveChat={props.mountLiveChat}
+        renderChat={props.renderChat}
+        header={
+          <CoachImmersiveHeader
+            newDisabled={props.newDisabled}
+            title={title}
+            onNewConversation={props.onNewConversation}
+            onOpenHistory={() => setHistoryOpen(true)}
+          />
+        }
+      />
+      <CoachViewOverlays
+        {...props}
+        historyOpen={historyOpen}
+        onHistoryOpenChange={setHistoryOpen}
+      />
     </>
   );
 }

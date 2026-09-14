@@ -1,13 +1,14 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
+import { useDesktopStickyHeader } from '@/components/layout/header/use-desktop-sticky-header';
 
 /**
  * En-tête de page collant (desktop uniquement). Au repos il est transparent ;
  * dès que la page défile, un fond translucide flouté apparaît en douceur.
  *
- * Sur mobile : en-tête statique, sans blur ni fondu (gain de place, pas de bug visuel).
+ * On mobile, the header stays static. `SystemEdgeBlur` owns the Dynamic Island
+ * edge, and document scrolling lets Safari composite live page pixels beneath it.
  *
  * Utiliser `embedded` dans les vues imbriquées (hubs à onglets) pour éviter
  * l'empilement de plusieurs barres sticky sur le même scroll.
@@ -19,43 +20,7 @@ export function StickyHeader({
   children: React.ReactNode;
   className?: string;
 }) {
-  const ref = useRef<HTMLElement>(null);
-  const [stuck, setStuck] = useState(false);
-
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) {
-      return;
-    }
-
-    const mq = window.matchMedia('(min-width: 1024px)');
-    if (!mq.matches) {
-      return;
-    }
-
-    // root: null (viewport) assumes the header's sticky point sits at
-    // viewport y≈0 — false whenever something persistent renders above
-    // <main> (e.g. DemoBanner). Anchor to the actual scrolling ancestor
-    // instead, so this holds regardless of what's stacked above it.
-    const observer = new IntersectionObserver(([entry]) => setStuck(entry.intersectionRatio < 1), {
-      root: el.closest('main'),
-      threshold: [1],
-      rootMargin: '-1px 0px 0px 0px',
-    });
-    observer.observe(el);
-
-    const onBreakpoint = () => {
-      if (!mq.matches) {
-        setStuck(false);
-      }
-    };
-    mq.addEventListener('change', onBreakpoint);
-
-    return () => {
-      observer.disconnect();
-      mq.removeEventListener('change', onBreakpoint);
-    };
-  }, []);
+  const { ref, stuck } = useDesktopStickyHeader();
 
   return (
     <header

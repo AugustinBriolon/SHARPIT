@@ -1,7 +1,12 @@
 'use client';
 
 import { useCallback } from 'react';
-import { Button } from '@/components/ui/button';
+import { DockedActionBar } from '@/components/ui/docked-action-bar';
+import {
+  GoalCreateCancelAction,
+  GoalCreateSkipAction,
+  GoalCreateSubmitAction,
+} from '@/components/goals/dialogs/goal-create-form-action-controls';
 import {
   buildRaceCreatePayload,
   GoalCreateRaceForm,
@@ -65,6 +70,7 @@ export function GoalCreateBranchFooter({
   submitLabel,
   submitReady,
   skipLabel,
+  footerVariant = 'inline',
   onSkip,
   onCancel,
 }: {
@@ -73,23 +79,48 @@ export function GoalCreateBranchFooter({
   submitLabel: string;
   submitReady: boolean;
   skipLabel?: string;
+  /** `docked` pins the row to the bottom of the screen (onboarding). */
+  footerVariant?: 'inline' | 'docked';
   onSkip?: () => void;
   onCancel?: () => void;
 }) {
+  // The submit button carries `form={id}`, so it stays wired to the form even
+  // when the bar is lifted out of the form's own box.
+  const actions = (
+    <GoalCreateFormActions
+      form={form}
+      fullWidthOnMobile={footerVariant === 'docked'}
+      skipLabel={skipLabel}
+      submitLabel={submitLabel}
+      submitReady={submitReady}
+      onCancel={onCancel}
+      onSkip={onSkip}
+    />
+  );
+
   return (
     <>
       <GoalCreateFormError message={displayError} />
-      <GoalCreateFormActions
-        form={form}
-        skipLabel={skipLabel}
-        submitLabel={submitLabel}
-        submitReady={submitReady}
-        onCancel={onCancel}
-        onSkip={onSkip}
-      />
+      {footerVariant === 'docked' ? <DockedActionBar>{actions}</DockedActionBar> : actions}
     </>
   );
 }
+
+type GoalCreateRaceBranchProps = {
+  compact: boolean;
+  raceFormId: string;
+  priority: string;
+  displayError: string | null;
+  submitLabel: string;
+  submitReady: boolean;
+  skipLabel?: string;
+  footerVariant?: 'inline' | 'docked';
+  onSkip?: () => void;
+  onCancel?: () => void;
+  onPriorityChange: (priority: string) => void;
+  onRaceReady?: (ready: boolean) => void;
+  onRaceSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
+};
 
 export function GoalCreateRaceBranch({
   compact,
@@ -99,25 +130,13 @@ export function GoalCreateRaceBranch({
   submitLabel,
   submitReady,
   skipLabel,
+  footerVariant,
   onSkip,
   onCancel,
   onPriorityChange,
   onRaceReady,
   onRaceSubmit,
-}: {
-  compact: boolean;
-  raceFormId: string;
-  priority: string;
-  displayError: string | null;
-  submitLabel: string;
-  submitReady: boolean;
-  skipLabel?: string;
-  onSkip?: () => void;
-  onCancel?: () => void;
-  onPriorityChange: (priority: string) => void;
-  onRaceReady?: (ready: boolean) => void;
-  onRaceSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
-}) {
+}: GoalCreateRaceBranchProps) {
   return (
     <>
       <GoalCreateRaceForm
@@ -130,6 +149,7 @@ export function GoalCreateRaceBranch({
       />
       <GoalCreateBranchFooter
         displayError={displayError}
+        footerVariant={footerVariant}
         form={raceFormId}
         skipLabel={skipLabel}
         submitLabel={submitLabel}
@@ -150,6 +170,7 @@ type GoalCreateMetricBranchProps = {
   submitLabel: string;
   submitReady: boolean;
   skipLabel?: string;
+  footerVariant?: 'inline' | 'docked';
   onSkip?: () => void;
   onCancel?: () => void;
   onError: (message: string | null) => void;
@@ -166,6 +187,7 @@ export function GoalCreateMetricBranch({
   submitLabel,
   submitReady,
   skipLabel,
+  footerVariant,
   onSkip,
   onCancel,
   onError,
@@ -185,6 +207,7 @@ export function GoalCreateMetricBranch({
       />
       <GoalCreateBranchFooter
         displayError={displayError}
+        footerVariant={footerVariant}
         form={metricFormId}
         skipLabel={skipLabel}
         submitLabel={submitLabel}
@@ -201,6 +224,7 @@ export function GoalCreateFormActions({
   submitLabel,
   submitReady,
   skipLabel,
+  fullWidthOnMobile = false,
   onSkip,
   onCancel,
 }: {
@@ -208,26 +232,30 @@ export function GoalCreateFormActions({
   submitLabel: string;
   submitReady: boolean;
   skipLabel?: string;
+  /** Matches the wizard's docked bar — same Passer / Continuer chrome as every step. */
+  fullWidthOnMobile?: boolean;
   onSkip?: () => void;
   onCancel?: () => void;
 }) {
-  return (
-    <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
-      {skipLabel && onSkip ? (
-        <Button className="sm:mr-auto" type="button" variant="ghost" onClick={onSkip}>
-          {skipLabel}
-        </Button>
-      ) : null}
-      {onCancel ? (
-        <Button type="button" variant="outline" onClick={onCancel}>
-          Annuler
-        </Button>
-      ) : null}
-      <Button disabled={!submitReady} form={form} type="submit">
-        {submitLabel}
-      </Button>
-    </div>
+  const docked = fullWidthOnMobile;
+  const actions = (
+    <>
+      <GoalCreateSkipAction docked={docked} skipLabel={skipLabel} onSkip={onSkip} />
+      <GoalCreateCancelAction docked={docked} onCancel={onCancel} />
+      <GoalCreateSubmitAction
+        docked={docked}
+        form={form}
+        submitLabel={submitLabel}
+        submitReady={submitReady}
+      />
+    </>
   );
+
+  if (docked) {
+    return actions;
+  }
+
+  return <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">{actions}</div>;
 }
 
 export function GoalCreateFormError({ message }: { message: string | null }) {

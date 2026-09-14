@@ -1,3 +1,0 @@
--- AlterEnum
-ALTER TYPE "GoalHorizon" ADD VALUE 'MONTHLY';
-ALTER TYPE "GoalHorizon" ADD VALUE 'YEARLY';

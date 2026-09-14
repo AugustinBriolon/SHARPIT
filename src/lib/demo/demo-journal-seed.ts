@@ -138,30 +138,19 @@ async function upsertDemoJournalHealthDay(input: {
     totalSteps: 8500 + daysAgo * 250,
   };
 
-  const existing = await prisma.dailyHealth.findUnique({
+  const createFields = {
+    hrv: 75 + (daysAgo % 4) * 4,
+    restingHr: 44 - (daysAgo % 3),
+    weightKg: 79.6,
+    calories: 3200 + (daysAgo % 5) * 100,
+    mood: outcomes.moodLabel,
+    ...healthPatch,
+  };
+
+  await prisma.dailyHealth.upsert({
     where: { athleteId_date: { athleteId, date } },
-    select: { id: true },
-  });
-
-  if (existing) {
-    await prisma.dailyHealth.update({
-      where: { athleteId_date: { athleteId, date } },
-      data: healthPatch,
-    });
-    return;
-  }
-
-  await prisma.dailyHealth.create({
-    data: {
-      athleteId,
-      date,
-      hrv: 75 + (daysAgo % 4) * 4,
-      restingHr: 44 - (daysAgo % 3),
-      weightKg: 79.6,
-      calories: 3200 + (daysAgo % 5) * 100,
-      mood: outcomes.moodLabel,
-      ...healthPatch,
-    },
+    create: { athleteId, date, ...createFields },
+    update: { mood: outcomes.moodLabel, ...healthPatch },
   });
 }
 

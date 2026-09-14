@@ -1,18 +1,17 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
+import { AnimatePresence, motion } from 'motion/react';
 import { fadeTransition, fadeVariants } from '@/lib/motion/variants';
+import {
+  useBootstrapLineCycle,
+  BOOTSTRAP_LINES,
+} from '@/components/onboarding/gate/use-bootstrap-line-cycle';
 import { cn } from '@/lib/utils';
 
-const BOOTSTRAP_LINES = [
-  'Création de ton profil…',
-  'Prise en compte de ton intention…',
-  'Préparation de ton Twin…',
-  'Ouverture de Today…',
-] as const;
+export { BOOTSTRAP_LINES };
 
-const LINE_MS = 1400;
+export const BOOTSTRAP_SUPPORT =
+  'Tout est finalisé. SharpIt assemble ta première lecture à partir de ce que tu viens de renseigner.';
 
 /**
  * Short theatrical beat after onboarding complete — no real work, just UX pacing
@@ -25,25 +24,7 @@ export function OnboardingBootstrapScreen({
   className?: string;
   onDone: () => void;
 }) {
-  const reduce = useReducedMotion();
-  const [index, setIndex] = useState(0);
-
-  useEffect(() => {
-    if (reduce) {
-      const t = window.setTimeout(onDone, 400);
-      return () => window.clearTimeout(t);
-    }
-
-    if (index >= BOOTSTRAP_LINES.length - 1) {
-      const t = window.setTimeout(onDone, LINE_MS);
-      return () => window.clearTimeout(t);
-    }
-
-    const t = window.setTimeout(() => setIndex((i) => i + 1), LINE_MS);
-    return () => window.clearTimeout(t);
-  }, [index, onDone, reduce]);
-
-  const line = BOOTSTRAP_LINES[Math.min(index, BOOTSTRAP_LINES.length - 1)]!;
+  const line = useBootstrapLineCycle(onDone);
 
   return (
     <div
@@ -74,9 +55,7 @@ export function OnboardingBootstrapScreen({
         </motion.p>
       </AnimatePresence>
 
-      <p className="text-muted-foreground max-w-xs text-sm text-pretty">
-        SharpIt assemble ta première lecture à partir de ce que tu viens de renseigner.
-      </p>
+      <p className="text-muted-foreground max-w-xs text-sm text-pretty">{BOOTSTRAP_SUPPORT}</p>
     </div>
   );
 }

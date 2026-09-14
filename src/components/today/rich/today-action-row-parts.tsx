@@ -17,7 +17,7 @@ import type { TodayViewModel } from '@/core/presentation/today-view-model';
  */
 export function TodayActionRowHeader({ loading }: { loading: boolean }) {
   return (
-    <div className="flex min-h-11 items-center justify-between gap-2 px-0.5 lg:min-h-8">
+    <div className="flex items-center justify-between gap-2 px-0.5 lg:min-h-8">
       {loading ? (
         <SkeletonDataValue heightClassName="h-11 lg:h-8" widthClassName="w-24" />
       ) : (

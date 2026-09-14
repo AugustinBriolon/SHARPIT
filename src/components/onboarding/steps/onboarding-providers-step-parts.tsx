@@ -6,11 +6,13 @@ import type { IntegrationSourcePrefs } from '@/lib/integrations/source-prefs';
 import type { CatalogProvider, DataClassId } from '@/lib/integrations/provider-catalog';
 import { OnboardingProviderRow } from '@/components/onboarding/steps/onboarding-provider-row';
 
-export function continueButtonLabel(busy: boolean, hasConnectedAny: boolean): string {
-  if (busy) {
-    return 'Suite…';
-  }
-  return hasConnectedAny ? 'Continuer' : 'Continuer sans connexion';
+/**
+ * Last-step forward label. Connecting nothing is a valid path; the step copy
+ * already says sources are optional, so we do not invent a lesser "sans
+ * connexion" variant. "Finaliser" (not "Continuer") marks the wizard end.
+ */
+export function continueButtonLabel(busy: boolean): string {
+  return busy ? 'Finalisation…' : 'Finaliser';
 }
 
 export function OnboardingProvidersClassList({
@@ -27,7 +29,7 @@ export function OnboardingProvidersClassList({
   onToggleUse: (integrationId: IntegrationId, dataClassId: DataClassId, enable: boolean) => void;
 }) {
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {DATA_CLASSES.map((dataClass) => {
         const providers = providersForClass(dataClass.id);
         const classPrefs = prefs.classes[dataClass.id];

@@ -1,392 +1,56 @@
 'use client';
 
-import type { ReactNode } from 'react';
-import { ActivityTypeIndicator } from '@/components/ui/instruments/activity-type-indicator';
-import { CompletedSessionStory } from '../read/completed-session-story';
-import { Button } from '@/components/ui/button';
-import type { ClientActivity, ClientPlannedSession } from '@/lib/query/types';
-import { activityTypeLabels, formatDate, formatDistance, formatDuration } from '@/lib/format';
-import { usePlannedSessionMutations } from '@/hooks/use-data';
-import { LinkAnalysisStatus } from '@/components/planning/session/link-analysis-status';
-import { formatActivityMatchLabel } from '@/lib/planned-session/linking/session-link-match-score';
-import { HeartPulse, Link2, Unlink } from 'lucide-react';
-import Link from 'next/link';
-import { usePlannedSessionNavDismiss } from '@/components/planning/session/planned-session-nav-dismiss';
-import { useAppModalOptional } from '@/providers/app-modal-provider';
-import {
-  PhysicalReassessmentQueue,
-  type PhysicalReassessment,
-} from '@/components/planning/session/realize/physical-reassessment-card';
-import type { useSessionAnalysisPoll } from '@/components/planning/session/realize/use-session-analysis-poll';
-import {
-  useSessionRealizationCandidates,
-  useSessionRealizationLinkedActivity,
-  useSessionRealizationPicker,
-  type SessionCandidate,
-} from '@/components/planning/session/realize/use-session-realization-state';
-import { useSessionRealizationAnalysis } from '@/components/planning/session/realize/use-session-realization-analysis';
+import type { ClientPlannedSession } from '@/lib/query/types';
+import { UnlinkedSessionRealization } from '@/components/planning/session/realize/session-realization-parts';
+import { LinkedAnalysisSection } from '@/components/planning/session/realize/session-realization-linked-section';
+import { useSessionRealizationController } from '@/components/planning/session/realize/use-session-realization-controller';
+import type { SessionRealizationAnalysisState } from '@/components/planning/session/realize/use-session-realization-analysis';
 
-function activityMetric(a: ClientActivity): string {
-  if (a.runMetrics?.distanceM) {
-    return formatDistance(a.runMetrics.distanceM);
-  }
-  if (a.bikeMetrics?.avgPower) {
-    return `${Math.round(a.bikeMetrics.avgPower)} W`;
-  }
-  if (a.swimMetrics?.distanceM) {
-    return formatDistance(a.swimMetrics.distanceM);
-  }
-  return formatDuration(a.duration);
-}
+export type { SessionRealizationAnalysisState };
 
-function AnalysisTimeoutBanner({
-  pollTimedOut,
-  hasAnalysis,
-  guardDisabled,
-  analyzePending,
-  onRetry,
-}: {
-  pollTimedOut: boolean;
-  hasAnalysis: boolean;
-  guardDisabled: boolean;
-  analyzePending: boolean;
-  onRetry: () => void;
-}) {
-  if (!pollTimedOut || hasAnalysis) {
-    return null;
-  }
-
-  return (
-    <div
-      aria-live="polite"
-      className="border-analysis-border/60 bg-analysis-surface-alt space-y-2 rounded-md border px-3 py-2.5"
-    >
-      <p className="text-sm font-medium">Analyse indisponible pour le moment</p>
-      <p className="text-muted-foreground text-xs leading-relaxed">
-        La comparaison plan/réel n&apos;a pas abouti dans le délai prévu. Tu peux relancer
-        l&apos;analyse manuellement.
-      </p>
-      <Button
-        disabled={guardDisabled || analyzePending}
-        size="sm"
-        type="button"
-        variant="outline"
-        onClick={onRetry}
-      >
-        Relancer l&apos;analyse
-      </Button>
-    </div>
-  );
-}
-
-function LinkedActivityCard({ linked, delink }: { linked: ClientActivity; delink: ReactNode }) {
-  // Rendered inside the planned-session modal (brick or standalone) — without
-  // this, the click navigates but the dialog stays mounted on top of the
-  // destination page. Both hooks no-op outside a modal context.
-  const dismissFromDialog = usePlannedSessionNavDismiss();
-  const appModal = useAppModalOptional();
-
-  return (
-    <div className="flex items-center justify-between gap-2">
-      <Link
-        className="hover:text-foreground text-muted-foreground flex min-w-0 items-center gap-2 text-sm transition-colors"
-        href={`/activite/${linked.id}`}
-        onClick={() => {
-          dismissFromDialog?.();
-          appModal?.closePlannedSession();
-        }}
-      >
-        <ActivityTypeIndicator type={linked.type} />
-        <span className="text-foreground truncate font-medium">
-          {linked.title ?? activityTypeLabels[linked.type]}
-        </span>
-        <span className="text-data shrink-0 text-xs tabular-nums">
-          {formatDate(linked.date)} · {formatDuration(linked.duration)}
-          {activityMetric(linked) ? ` · ${activityMetric(linked)}` : ''}
-        </span>
-      </Link>
-      {delink}
-    </div>
-  );
-}
-
-function ActivityPickerList({
-  candidates,
-  session,
-  onLink,
-}: {
-  candidates: SessionCandidate[];
-  session: ClientPlannedSession;
-  onLink: (activityId: string) => void;
-}) {
-  if (candidates.length === 0) {
-    return (
-      <p className="text-muted-foreground py-2 text-center text-xs">
-        Aucune activité trouvée.{' '}
-        <Link className="text-primary hover:underline" href="/settings/integrations">
-          Synchronise Strava
-        </Link>{' '}
-        puis réessaie.
-      </p>
-    );
-  }
-
-  return (
-    <>
-      {candidates.map(({ a, diff, sameType }) => (
-        <button
-          key={a.id}
-          className="border-analysis-border/60 bg-analysis-surface-alt/70 hover:border-primary/40 flex w-full items-center justify-between gap-2 rounded-md border p-2 text-left"
-          type="button"
-          onClick={() => onLink(a.id)}
-        >
-          <div className="flex min-w-0 items-start gap-1.5">
-            <ActivityTypeIndicator type={a.type} />
-            <div className="min-w-0">
-              <p className="truncate text-sm font-medium">
-                {a.title ?? activityTypeLabels[a.type]}
-              </p>
-              <p className="text-muted-foreground text-xs">
-                {formatDate(a.date)} · {formatDuration(a.duration)}
-                {diff === 0 && sameType ? ' · même jour' : ''}
-              </p>
-            </div>
-          </div>
-          <span
-            className="text-label text-primary shrink-0 normal-case"
-            title="Correspondance date et durée avec la séance planifiée"
-          >
-            {formatActivityMatchLabel(
-              { date: session.date, durationMin: session.durationMin },
-              { date: a.date, duration: a.duration },
-            )}
-          </span>
-        </button>
-      ))}
-    </>
-  );
-}
-
-function LinkedAnalysisSection({
-  session,
-  analysis,
-  analyzedAt,
-  isAnalyzing,
-  pollTimedOut,
-  painReassessments,
-  guardDisabled,
-  analyzePending,
-  onReanalyze,
-}: {
-  session: ClientPlannedSession;
-  analysis: ReturnType<typeof useSessionAnalysisPoll>['analysis'];
-  analyzedAt: ReturnType<typeof useSessionAnalysisPoll>['analyzedAt'];
-  isAnalyzing: boolean;
-  pollTimedOut: boolean;
-  painReassessments: PhysicalReassessment[];
-  guardDisabled: boolean;
-  analyzePending: boolean;
-  onReanalyze: () => void;
-}) {
-  const hasAnalysis = Boolean(analysis && analyzedAt);
-
-  return (
-    <div className="space-y-3">
-      <AnalysisTimeoutBanner
-        analyzePending={analyzePending}
-        guardDisabled={guardDisabled}
-        hasAnalysis={hasAnalysis}
-        pollTimedOut={pollTimedOut}
-        onRetry={onReanalyze}
-      />
-      <CompletedSessionStory
-        isAnalyzing={isAnalyzing && !pollTimedOut}
-        session={{
-          ...session,
-          analysis: analysis ?? session.analysis,
-          analyzedAt: analyzedAt ?? session.analyzedAt,
-        }}
-        onReanalyze={onReanalyze}
-      />
-      {painReassessments.length > 0 ? (
-        <div className="border-analysis-border/50 border-t pt-3">
-          <p className="text-label text-signal-caution mb-2 inline-flex items-center gap-1.5">
-            <HeartPulse className="size-3.5 shrink-0" aria-hidden />
-            Réévaluer une douleur ou blessure
-          </p>
-          <PhysicalReassessmentQueue items={painReassessments} />
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
-function LinkedSessionRealization({
-  linked,
-  omitLinkedActivityNavigation,
-  delink,
-  analysisSection,
-}: {
-  linked: ClientActivity | null;
-  omitLinkedActivityNavigation: boolean;
-  delink: ReactNode;
-  analysisSection: ReactNode;
-}) {
-  if (omitLinkedActivityNavigation) {
-    return (
-      <div className="space-y-3">
-        <div className="flex items-center justify-end">{delink}</div>
-        {analysisSection}
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-3">
-      {linked ? <LinkedActivityCard delink={delink} linked={linked} /> : null}
-      {analysisSection}
-    </div>
-  );
-}
-
-function UnlinkedSessionRealization({
-  pickerOpen,
-  isLinking,
-  isAnalyzing,
-  candidates,
-  session,
-  showAll,
-  onLink,
-  onPickerOpen,
-  onPickerClose,
-  onToggleShowAll,
-}: {
-  pickerOpen: boolean;
-  isLinking: boolean;
-  isAnalyzing: boolean;
-  candidates: SessionCandidate[];
-  session: ClientPlannedSession;
-  showAll: boolean;
-  onLink: (activityId: string) => void;
-  onPickerOpen: () => void;
-  onPickerClose: () => void;
-  onToggleShowAll: () => void;
-}) {
-  return (
-    <div className="space-y-2">
-      {!pickerOpen ? (
-        <Button
-          className="text-muted-foreground hover:text-foreground h-auto min-h-9 font-normal"
-          size="sm"
-          type="button"
-          variant="ghost"
-          onClick={onPickerOpen}
-        >
-          <Link2 className="size-3.5" aria-hidden /> Relier à l&apos;activité faite
-        </Button>
-      ) : (
-        <div className="space-y-2">
-          <p className="text-muted-foreground text-xs">
-            Choisis l&apos;activité qui correspond à cette séance planifiée :
-          </p>
-          {isLinking ? <LinkAnalysisStatus phase="linking" /> : null}
-          {!isLinking && isAnalyzing ? <LinkAnalysisStatus phase="analyzing" /> : null}
-          {!isLinking && !isAnalyzing ? (
-            <>
-              <div className="max-h-56 space-y-1 overflow-y-auto">
-                <ActivityPickerList candidates={candidates} session={session} onLink={onLink} />
-              </div>
-              <div className="flex items-center justify-between">
-                <button
-                  className="text-muted-foreground hover:text-foreground text-xs"
-                  type="button"
-                  onClick={onToggleShowAll}
-                >
-                  {showAll ? 'Activités proches' : 'Voir toutes les activités'}
-                </button>
-                <button
-                  className="text-muted-foreground hover:text-foreground text-xs"
-                  type="button"
-                  onClick={onPickerClose}
-                >
-                  Annuler
-                </button>
-              </div>
-            </>
-          ) : null}
-        </div>
-      )}
-    </div>
-  );
-}
-
+/**
+ * Linked activity chrome lives in the modal header menu.
+ * Body = lecture / gaps / note / pain reassessment only.
+ */
 export function SessionRealization({
   session,
-  omitLinkedActivityNavigation = false,
+  analysisState: analysisStateProp,
 }: {
   session: ClientPlannedSession;
-  omitLinkedActivityNavigation?: boolean;
+  /** Parent-owned analysis (realized modal) — skips a second kick. */
+  analysisState?: SessionRealizationAnalysisState;
 }) {
-  const { link } = usePlannedSessionMutations();
-  const picker = useSessionRealizationPicker();
-  const { isLinked, linked } = useSessionRealizationLinkedActivity(session);
-  const candidates = useSessionRealizationCandidates({ session, showAll: picker.showAll });
-  const analysisState = useSessionRealizationAnalysis({ session, isLinked });
+  const state = useSessionRealizationController(session, analysisStateProp);
 
-  function handleLink(activityId: string) {
-    link.mutate({ id: session.id, activityId });
-    picker.closePicker();
-  }
-
-  if (!isLinked) {
+  if (!state.isLinked) {
     return (
       <UnlinkedSessionRealization
-        candidates={candidates}
-        isAnalyzing={analysisState.isAnalyzing}
-        isLinking={link.isPending}
-        pickerOpen={picker.pickerOpen}
+        candidates={state.candidates}
+        isAnalyzing={state.analysisState.isAnalyzing}
+        isLinking={state.isLinking}
+        pickerOpen={state.picker.pickerOpen}
         session={session}
-        showAll={picker.showAll}
-        onLink={handleLink}
-        onPickerClose={picker.closePicker}
-        onPickerOpen={picker.openPicker}
-        onToggleShowAll={picker.toggleShowAll}
+        showAll={state.picker.showAll}
+        onLink={state.handleLink}
+        onPickerClose={state.picker.closePicker}
+        onPickerOpen={state.picker.openPicker}
+        onToggleShowAll={state.picker.toggleShowAll}
       />
     );
   }
 
-  const delink = (
-    <button
-      aria-label="Délier l'activité"
-      className="text-muted-foreground hover:text-destructive flex shrink-0 items-center gap-1 text-xs"
-      disabled={link.isPending}
-      type="button"
-      onClick={() => link.mutate({ id: session.id, activityId: null })}
-    >
-      <Unlink className="size-3" aria-hidden /> Délier
-    </button>
-  );
-
-  const analysisSection = (
-    <LinkedAnalysisSection
-      analysis={analysisState.analysis}
-      analyzedAt={analysisState.analyzedAt}
-      analyzePending={analysisState.analyzePending}
-      guardDisabled={analysisState.guardDisabled}
-      isAnalyzing={analysisState.isAnalyzing}
-      painReassessments={analysisState.painReassessments}
-      pollTimedOut={analysisState.pollTimedOut}
-      session={session}
-      onReanalyze={() => void analysisState.handleManualAnalysis()}
-    />
-  );
-
   return (
-    <LinkedSessionRealization
-      analysisSection={analysisSection}
-      delink={delink}
-      linked={linked}
-      omitLinkedActivityNavigation={omitLinkedActivityNavigation}
+    <LinkedAnalysisSection
+      analysis={state.analysisState.analysis}
+      analyzedAt={state.analysisState.analyzedAt}
+      analyzePending={state.analysisState.analyzePending}
+      guardDisabled={state.analysisState.guardDisabled}
+      isAnalyzing={state.analysisState.isAnalyzing}
+      linked={state.linked}
+      painReassessments={state.analysisState.painReassessments}
+      pollTimedOut={state.analysisState.pollTimedOut}
+      session={session}
+      onReanalyze={() => void state.analysisState.handleManualAnalysis()}
     />
   );
 }

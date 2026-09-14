@@ -2,14 +2,15 @@
 
 import type { ClientPlannedSession } from '@/lib/query/types';
 import {
-  CompletedSessionDetails,
   CompletedSessionStoryContent,
   parseActivityNarrative,
   parseSessionAnalysis,
 } from '@/components/planning/session/read/completed-session-story-content';
-import { ComplianceBadge } from '@/components/planning/session/read/completed-session-story-parts';
-import { CompletedSessionStoryActions } from '@/components/planning/session/read/completed-session-story-actions';
-import { CompletedSessionAthleteCapture } from '@/components/planning/session/read/completed-session-athlete-capture';
+import { CompletedSessionAthleteNote } from '@/components/planning/session/read/completed-session-athlete-capture';
+import {
+  CompletedSessionPlanGaps,
+  ExecutionScoreBlock,
+} from '@/components/planning/session/read/completed-session-story-parts';
 import { PlanSectionHeading } from '@/components/plan/hub/plan-section-heading';
 
 function readActivityNarrative(activity: ClientPlannedSession['activity']) {
@@ -26,56 +27,47 @@ function parseSessionStory(session: ClientPlannedSession) {
   const { activity, analysis: analysisRaw } = session;
   const analysis = parseSessionAnalysis(analysisRaw);
   const narrative = readActivityNarrative(activity);
-  const notes = activity?.notes?.trim() || null;
-  const hasStory = Boolean(narrative || analysis || notes || activity);
-  return { analysis, narrative, notes, hasStory, activity };
+  const hasStory = Boolean(narrative || analysis || activity?.notes?.trim() || activity);
+  return { analysis, narrative, hasStory, activity };
 }
 
 /**
- * SESSION_COMPLETED: capture first (hero), then coach lecture, then plan gaps.
+ * SESSION_COMPLETED plate (body): Lecture → score → récit → écarts → note.
+ * Actions live in the modal header menu.
  */
 export function CompletedSessionStory({
   session,
   isAnalyzing = false,
-  onReanalyze,
 }: {
   session: ClientPlannedSession;
   isAnalyzing?: boolean;
-  onReanalyze?: () => void;
 }) {
-  const { analysis, narrative, notes, hasStory, activity } = parseSessionStory(session);
-  if (!hasStory && !isAnalyzing && !onReanalyze) {
+  const { analysis, narrative, hasStory, activity } = parseSessionStory(session);
+  if (!hasStory && !isAnalyzing) {
     return null;
   }
 
   return (
-    <div className="min-w-0 space-y-6">
-      {activity ? <CompletedSessionAthleteCapture activity={activity} /> : null}
-
+    <div className="min-w-0 space-y-5">
       <section aria-labelledby="session-lecture" className="min-w-0 space-y-3">
-        <PlanSectionHeading
-          action={<ComplianceBadge analysis={analysis} isAnalyzing={isAnalyzing} />}
-          heading="h3"
-          id="session-lecture"
-          title="Lecture"
-        />
+        <PlanSectionHeading heading="h3" id="session-lecture" title="Lecture" />
+
+        <ExecutionScoreBlock analysis={analysis} isAnalyzing={isAnalyzing} />
 
         <CompletedSessionStoryContent
           analysis={analysis}
           isAnalyzing={isAnalyzing}
           narrative={narrative}
-          notes={notes}
         />
 
-        <CompletedSessionDetails analysis={analysis} />
-
-        <CompletedSessionStoryActions
-          analysis={analysis}
-          isAnalyzing={isAnalyzing}
-          sessionId={session.id}
-          onReanalyze={onReanalyze}
-        />
+        {analysis ? <CompletedSessionPlanGaps analysis={analysis} /> : null}
       </section>
+
+      {activity ? (
+        <div className="border-analysis-border/40 border-t pt-3">
+          <CompletedSessionAthleteNote activityId={activity.id} notes={activity.notes ?? null} />
+        </div>
+      ) : null}
     </div>
   );
 }

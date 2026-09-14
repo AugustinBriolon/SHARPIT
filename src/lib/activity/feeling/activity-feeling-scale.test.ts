@@ -13,7 +13,14 @@ describe('ACTIVITY_FEELING_SCALE', () => {
     ]);
     for (const option of ACTIVITY_FEELING_SCALE) {
       expect(option.hint.length).toBeGreaterThan(8);
-      expect(option.icon.length).toBeGreaterThan(0);
+    }
+  });
+
+  // Emoji faces are decorative and consumer-fitness DNA — the picker renders the
+  // ordinal and reads the hint back instead (DESIGN_LANGUAGE §11.1).
+  it('carries no icon field', () => {
+    for (const option of ACTIVITY_FEELING_SCALE) {
+      expect(option).not.toHaveProperty('icon');
     }
   });
 });

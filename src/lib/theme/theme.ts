@@ -17,10 +17,14 @@ export function readStoredThemePreference(): ThemePreference {
   }
   try {
     const stored = window.localStorage.getItem(THEME_STORAGE_KEY);
-    return isThemePreference(stored) ? stored : 'system';
+    if (isThemePreference(stored)) {
+      return stored;
+    }
   } catch {
-    return 'system';
+    // Ignore quota / private mode errors — fall through to cookie.
   }
+  // Match THEME_INIT_SCRIPT: cookie is the fallback when localStorage is empty.
+  return readThemePreferenceFromDocumentCookie() ?? 'system';
 }
 
 export function getSystemTheme(): ResolvedTheme {

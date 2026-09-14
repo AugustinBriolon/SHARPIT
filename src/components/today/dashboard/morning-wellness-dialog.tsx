@@ -10,16 +10,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { ScalePicker, StepDots, type ScaleOption } from '@/components/ui/instruments/scale-picker';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/components/ui/toast';
 import { useWellnessCheckin } from '@/hooks/use-wellness-checkin';
 import { useOfflineGuard } from '@/hooks/use-offline-guard';
 import { mapSorenessUiToDomain, type WellnessUiScore } from '@/lib/journal/morning-wellness-scale';
-import { cn } from '@/lib/utils';
 
-type ScaleOption = { value: WellnessUiScore; label: string };
+type WellnessOption = ScaleOption<WellnessUiScore>;
 
-const MOOD_OPTIONS: ScaleOption[] = [
+const MOOD_OPTIONS: readonly WellnessOption[] = [
   { value: 1, label: 'Très bas' },
   { value: 2, label: 'Bas' },
   { value: 3, label: 'Correct' },
@@ -27,7 +27,7 @@ const MOOD_OPTIONS: ScaleOption[] = [
   { value: 5, label: 'Top' },
 ];
 
-const ENERGY_OPTIONS: ScaleOption[] = [
+const ENERGY_OPTIONS: readonly WellnessOption[] = [
   { value: 1, label: 'Épuisé' },
   { value: 2, label: 'Fatigué' },
   { value: 3, label: 'Moyen' },
@@ -35,7 +35,7 @@ const ENERGY_OPTIONS: ScaleOption[] = [
   { value: 5, label: 'Plein' },
 ];
 
-const SORENESS_OPTIONS: ScaleOption[] = [
+const SORENESS_OPTIONS: readonly WellnessOption[] = [
   { value: 1, label: 'Aucune' },
   { value: 2, label: 'Légère' },
   { value: 3, label: 'Modérée' },
@@ -43,7 +43,7 @@ const SORENESS_OPTIONS: ScaleOption[] = [
   { value: 5, label: 'Max' },
 ];
 
-const STRESS_OPTIONS: ScaleOption[] = [
+const STRESS_OPTIONS: readonly WellnessOption[] = [
   { value: 1, label: 'Calme' },
   { value: 2, label: 'Léger' },
   { value: 3, label: 'Modéré' },
@@ -55,7 +55,7 @@ type Step = {
   key: string;
   label: string;
   hint: string;
-  options: ScaleOption[];
+  options: readonly WellnessOption[];
 };
 
 const STEPS: Step[] = [
@@ -86,174 +86,6 @@ const STEPS: Step[] = [
 ];
 
 const TOTAL_STEPS = STEPS.length + 1;
-
-function dotClass(i: number, current: number): string {
-  if (i === current) {
-    return 'bg-primary w-5';
-  }
-  if (i < current) {
-    return 'bg-primary/40 w-1.5';
-  }
-  return 'bg-border w-1.5';
-}
-
-function ProgressDots({ current, total }: { current: number; total: number }) {
-  return (
-    <div className="flex items-center gap-1.5" aria-hidden>
-      {Array.from({ length: total }, (_, i) => (
-        <div
-          key={i}
-          className={cn('h-1 rounded-full transition-all duration-200', dotClass(i, current))}
-        />
-      ))}
-    </div>
-  );
-}
-
-function ScaleOptionButton({
-  opt,
-  selected,
-  focusable,
-  onSelect,
-}: {
-  opt: ScaleOption;
-  selected: boolean;
-  focusable: boolean;
-  onSelect: () => void;
-}) {
-  return (
-    <button
-      aria-checked={selected}
-      aria-label={`${opt.value} — ${opt.label}`}
-      role="radio"
-      tabIndex={focusable ? 0 : -1}
-      type="button"
-      className={cn(
-        'pressable flex size-14 cursor-pointer items-center justify-center rounded-xl border transition-all duration-150',
-        selected
-          ? 'border-highlight bg-highlight text-highlight-foreground scale-105'
-          : 'border-border/60 bg-background hover:border-primary/30 hover:bg-muted/40',
-      )}
-      onClick={onSelect}
-    >
-      <span
-        className={cn(
-          'font-mono text-2xl leading-none font-semibold tabular-nums',
-          selected ? 'text-highlight-foreground' : 'text-foreground/70',
-        )}
-        aria-hidden
-      >
-        {opt.value}
-      </span>
-    </button>
-  );
-}
-
-function moveScaleSelection(
-  options: ScaleOption[],
-  value: WellnessUiScore | null,
-  delta: number,
-): WellnessUiScore {
-  const idx = options.findIndex((opt) => opt.value === value);
-  if (idx < 0) {
-    return delta >= 0 ? options[0]!.value : options.at(-1)!.value;
-  }
-  const next = (idx + delta + options.length) % options.length;
-  return options[next]!.value;
-}
-
-function ScaleStepHeader({
-  label,
-  hint,
-  labelId,
-  hintId,
-}: {
-  label: string;
-  hint: string;
-  labelId: string;
-  hintId: string;
-}) {
-  return (
-    <div className="text-center">
-      <p className="text-section-title" id={labelId}>
-        {label}
-      </p>
-      <p className="text-muted-foreground mt-1 min-h-5 text-sm" id={hintId}>
-        {hint}
-      </p>
-    </div>
-  );
-}
-
-function ScaleStepOptions({
-  options,
-  value,
-  onChange,
-}: {
-  options: ScaleOption[];
-  value: WellnessUiScore | null;
-  onChange: (value: WellnessUiScore) => void;
-}) {
-  return (
-    <div className="flex w-full items-center justify-center gap-2">
-      {options.map((opt, index) => {
-        const selected = value === opt.value;
-        const focusable = value === null ? index === 0 : selected;
-        return (
-          <ScaleOptionButton
-            key={opt.value}
-            focusable={focusable}
-            opt={opt}
-            selected={selected}
-            onSelect={() => onChange(opt.value)}
-          />
-        );
-      })}
-    </div>
-  );
-}
-
-function ScaleStep({
-  step,
-  value,
-  onChange,
-}: {
-  step: Step;
-  value: WellnessUiScore | null;
-  onChange: (value: WellnessUiScore) => void;
-}) {
-  const labelId = useId();
-  const hintId = useId();
-  const selectedOption = step.options.find((opt) => opt.value === value) ?? null;
-  const hint = selectedOption ? selectedOption.label : step.hint;
-
-  return (
-    <div
-      aria-describedby={hintId}
-      aria-labelledby={labelId}
-      className="flex flex-col items-center gap-6"
-      role="radiogroup"
-      onKeyDown={(event) => {
-        if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
-          event.preventDefault();
-          onChange(moveScaleSelection(step.options, value, 1));
-        } else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
-          event.preventDefault();
-          onChange(moveScaleSelection(step.options, value, -1));
-        } else if (event.key === 'Home') {
-          event.preventDefault();
-          onChange(step.options[0]!.value);
-        } else if (event.key === 'End') {
-          event.preventDefault();
-          onChange(step.options.at(-1)!.value);
-        }
-      }}
-    >
-      <ScaleStepHeader hint={hint} hintId={hintId} label={step.label} labelId={labelId} />
-      <ScaleStepOptions options={step.options} value={value} onChange={onChange} />
-    </div>
-  );
-}
 
 function NotesStep({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   const labelId = useId();
@@ -306,7 +138,7 @@ function StepFooterPrimaryAction({
   if (isLastStep) {
     return (
       <Button
-        className="h-8 px-4 text-xs"
+        className="h-11 px-4 text-xs lg:h-8"
         disabled={guardDisabled || !canSubmit}
         type="button"
         onClick={onSubmit}
@@ -318,7 +150,7 @@ function StepFooterPrimaryAction({
 
   return (
     <Button
-      className="h-8 px-3 text-xs"
+      className="h-11 px-3 text-xs lg:h-8"
       disabled={!canAdvance}
       type="button"
       variant="ghost"
@@ -346,7 +178,7 @@ type StepFooterProps = {
 function StepFooterBackButton({ disabled, onBack }: { disabled: boolean; onBack: () => void }) {
   return (
     <Button
-      className="h-8 px-3 text-xs"
+      className="h-11 px-3 text-xs lg:h-8"
       disabled={disabled}
       type="button"
       variant="ghost"
@@ -499,13 +331,17 @@ function MorningWellnessDialogBody({
   form: ReturnType<typeof useWellnessForm>;
   error: string | null;
 }) {
+  const step = STEPS[form.currentStep];
+
   return (
     <div className="flex min-h-0 flex-1 flex-col justify-center px-5 py-6">
-      {form.isScaleStep ? (
-        <ScaleStep
-          key={STEPS[form.currentStep]!.key}
-          step={STEPS[form.currentStep]!}
-          value={form.values[form.currentStep]!}
+      {form.isScaleStep && step ? (
+        <ScalePicker
+          key={step.key}
+          hint={step.hint}
+          options={step.options}
+          title={step.label}
+          value={form.values[form.currentStep] ?? null}
           onChange={form.handleScaleChange}
         />
       ) : (
@@ -540,7 +376,7 @@ function MorningWellnessDialogPanel({
       <DialogHeader className="shrink-0 border-b px-5 py-3 pr-12 text-left">
         <div className="flex items-center justify-between gap-3">
           <DialogTitle className="font-heading text-base">Ressenti du matin</DialogTitle>
-          <ProgressDots current={form.currentStep} total={TOTAL_STEPS} />
+          <StepDots current={form.currentStep} total={TOTAL_STEPS} />
         </div>
         <DialogDescription className="sr-only">
           Quelques secondes pour affiner ta récupération et la fiabilité du bilan.
@@ -615,6 +451,15 @@ function useMorningWellnessDialogActions({
   return { open, handleOpenChange, handleSubmit, openDialog: () => setOpen(true) };
 }
 
+type MorningWellnessDialogProps = {
+  onCompleted?: (result: MorningWellnessCompleted) => void;
+  debugBypassCompleted?: boolean;
+  triggerClassName?: string;
+  triggerLabel?: string;
+  triggerChildren?: ReactNode;
+  triggerAriaLabel?: string;
+};
+
 export function MorningWellnessDialog({
   onCompleted,
   debugBypassCompleted,
@@ -622,14 +467,7 @@ export function MorningWellnessDialog({
   triggerLabel = 'Ressenti du matin',
   triggerChildren,
   triggerAriaLabel,
-}: {
-  onCompleted?: (result: MorningWellnessCompleted) => void;
-  debugBypassCompleted?: boolean;
-  triggerClassName?: string;
-  triggerLabel?: string;
-  triggerChildren?: ReactNode;
-  triggerAriaLabel?: string;
-}) {
+}: MorningWellnessDialogProps) {
   const { completed, loading, error, submit } = useWellnessCheckin();
   const { offline, guardDisabled, offlineLabel } = useOfflineGuard();
   const form = useWellnessForm();

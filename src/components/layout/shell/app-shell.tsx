@@ -2,6 +2,7 @@
 
 import { Suspense, type ReactNode } from 'react';
 import { BottomNav } from './mobile-shell';
+import { SystemEdgeBlur } from './system-edge-blur';
 import { OfflineBanner } from '@/components/pwa/offline-banner';
 import { SyncingIndicator } from '@/components/ui/syncing-indicator';
 import { PAGE_CONTENT_MAX_CLASS } from '@/lib/ui/page-gutter';
@@ -23,6 +24,17 @@ type AppShellFrameProps = {
   coachMobileImmersive: boolean;
 };
 
+function AppShellSkipLink() {
+  return (
+    <a
+      className="bg-background text-foreground focus-visible:ring-ring focus:safe-top-offset sr-only focus:not-sr-only focus:absolute focus:left-3 focus:z-100 focus:rounded-lg focus:px-3 focus:py-2 focus:text-sm focus:font-medium focus-visible:ring-3 focus-visible:outline-none"
+      href="#main-content"
+    >
+      Aller au contenu
+    </a>
+  );
+}
+
 /**
  * Presentational chrome — no URL hooks, so it can prerender as a Suspense fallback.
  */
@@ -33,31 +45,32 @@ function AppShellFrame({
   coachMobileImmersive,
 }: AppShellFrameProps) {
   return (
-    <div className="bg-background flex h-dvh flex-col overflow-hidden">
-      <a
-        className="bg-background text-foreground focus-visible:ring-ring sr-only focus:not-sr-only focus:absolute focus:top-3 focus:left-3 focus:z-100 focus:rounded-lg focus:px-3 focus:py-2 focus:text-sm focus:font-medium focus-visible:ring-3 focus-visible:outline-none"
-        href="#main-content"
-      >
-        Aller au contenu
-      </a>
+    <div className="bg-background flex min-h-dvh flex-col overflow-x-clip">
+      <AppShellSkipLink />
 
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+      <div className="flex min-w-0 flex-1 flex-col">
         {demoBanner}
         <OfflineBanner />
-        <SyncingIndicator className="border-border/40 fixed top-0 left-0 z-50 w-full border-b" />
+        <SyncingIndicator className="border-border/40 safe-top-offset fixed left-0 z-50 w-full border-b" />
 
         <main
           id="main-content"
           tabIndex={-1}
           className={cn(
-            'min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-y-contain',
-            'no-scrollbar',
+            'min-w-0 flex-1 overflow-x-clip',
+            // The document owns vertical scrolling so Safari can composite live
+            // page pixels under its system edge. `clip` protects horizontal
+            // overflow without creating another vertical scroll container.
             hideBottomNav ? 'pb-0' : 'pb-(--bottom-nav-offset)',
           )}
         >
+          <SystemEdgeBlur enabled={!coachMobileImmersive} />
           <div
             className={cn(
-              'mx-auto px-4 py-4 [--page-gutter:1rem] lg:p-6 lg:[--page-gutter:1.5rem]',
+              // Mobile: clear the status strip (Safari paints a solid/soft body
+              // tint there at rest — titles must not start inside it). Desktop
+              // keeps the regular page gutter via lg:p-6.
+              'safe-page-top mx-auto px-4 pb-4 [--page-gutter:1rem] lg:p-6 lg:[--page-gutter:1.5rem]',
               PAGE_CONTENT_MAX_CLASS,
               coachMobileImmersive && 'max-w-none p-0',
             )}

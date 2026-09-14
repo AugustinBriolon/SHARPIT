@@ -21,11 +21,13 @@ export function OnboardingIntentionStep({
       intro="Pose un premier objectif en quelques champs. Tu pourras le compléter (nom, lieu, notes…) dans Progression."
       title="Pourquoi SharpIt ?"
       titleId="onboarding-intention-title"
+      docksOwnActions
     >
       <GoalCreateForm
         error={error}
+        footerVariant="docked"
         practicedSports={practicedSports}
-        skipLabel="Je décide plus tard"
+        skipLabel="Passer"
         submitLabel="Continuer"
         compact
         onSkip={onSkip}

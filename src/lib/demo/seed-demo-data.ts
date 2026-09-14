@@ -18,6 +18,7 @@ import { seedDemoJournalAnalyses } from '@/lib/demo/demo-journal-seed';
 import {
   demoAnchorTrainingDayId,
   demoDateFromTrainingDayId,
+  demoTrainingDayIdDaysAgo,
   isDemoHealthDateCurrent,
 } from '@/lib/demo/demo-calendar';
 import { isSet } from '@/lib/util/value';
@@ -607,39 +608,47 @@ async function seedDemoPastActivities(prisma: PrismaClient, athleteId: string, t
   }
 }
 
-async function seedDemoRecoveryTrend(prisma: PrismaClient, athleteId: string, today: Date) {
+async function seedDemoRecoveryTrend(prisma: PrismaClient, athleteId: string, _today: Date) {
+  // Upsert: concurrent ensureDemoSeedFresh (dev HMR / parallel RSC) can interleave
+  // purge+create and trip @@unique([athleteId, date]). Same calendar helper as journal.
   for (let daysAgo = 9; daysAgo >= 0; daysAgo--) {
     const recoveryScore = RECOVERY_SCORES[9 - daysAgo]!;
-    await prisma.dailyHealth.create({
-      data: {
-        athleteId,
-        date: subDays(today, daysAgo),
-        hrv: 75 + (daysAgo % 4) * 4,
-        restingHr: 44 - (daysAgo % 3),
-        weightKg: 79.6,
-        calories: 3200 + (daysAgo % 5) * 100,
-        recoveryScore,
-        stress: 2 + (daysAgo % 3),
-        mood: 'Bien',
-        ...sleepFieldsForDemo(daysAgo, recoveryScore),
-      },
+    const date = demoDateFromTrainingDayId(demoTrainingDayIdDaysAgo(daysAgo));
+    const fields = {
+      hrv: 75 + (daysAgo % 4) * 4,
+      restingHr: 44 - (daysAgo % 3),
+      weightKg: 79.6,
+      calories: 3200 + (daysAgo % 5) * 100,
+      recoveryScore,
+      stress: 2 + (daysAgo % 3),
+      mood: 'Bien',
+      ...sleepFieldsForDemo(daysAgo, recoveryScore),
+    };
+    await prisma.dailyHealth.upsert({
+      where: { athleteId_date: { athleteId, date } },
+      create: { athleteId, date, ...fields },
+      update: fields,
     });
   }
 }
 
-async function seedDemoNutritionWindow(prisma: PrismaClient, athleteId: string, today: Date) {
+async function seedDemoNutritionWindow(prisma: PrismaClient, athleteId: string, _today: Date) {
   for (let daysAgo = 6; daysAgo >= 0; daysAgo--) {
     const macros = NUTRITION_WINDOW[6 - daysAgo]!;
-    await prisma.dailyNutrition.create({
-      data: {
-        athleteId,
-        date: subDays(today, daysAgo),
-        provider: 'myfitnesspal',
-        complete: true,
-        meals: demoMealsForDay(6 - daysAgo),
-        ...macros,
-        ...NUTRITION_GOALS,
+    const date = demoDateFromTrainingDayId(demoTrainingDayIdDaysAgo(daysAgo));
+    const fields = {
+      provider: 'myfitnesspal' as const,
+      complete: true,
+      meals: demoMealsForDay(6 - daysAgo),
+      ...macros,
+      ...NUTRITION_GOALS,
+    };
+    await prisma.dailyNutrition.upsert({
+      where: {
+        athleteId_date_provider: { athleteId, date, provider: 'myfitnesspal' },
       },
+      create: { athleteId, date, ...fields },
+      update: fields,
     });
   }
 }

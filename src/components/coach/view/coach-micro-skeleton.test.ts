@@ -22,8 +22,9 @@ describe('coach hub micro-skeleton', () => {
   it('renders immersive fixed shell; full-bleed on mobile, nav offset on desktop', () => {
     const html = renderWithQuery(createElement(CoachHubSkeleton));
     expect(html).toContain('fixed inset-x-0 top-0');
-    expect(html).toContain('safe-area-top');
+    expect(html).not.toContain('safe-area-top');
     expect(html).toContain('--bottom-nav-offset');
+    expect(html).toContain('safe-area-inset-top');
     expect(html).not.toContain('Fil &amp; conversations');
     expect(html).not.toContain('Mémoire &amp; contexte');
   });

@@ -4,24 +4,24 @@ import { describe, expect, it } from 'vitest';
 import { OnboardingProgress } from '@/components/onboarding/gate/onboarding-progress';
 
 describe('OnboardingProgress rail', () => {
-  it('fills a quarter of the rail on the first step', () => {
+  it('fills a fifth of the rail on the first step', () => {
     const html = renderToStaticMarkup(createElement(OnboardingProgress, { step: 'sports' }));
-    expect(html).toContain('width:25%');
-    expect(html).toContain('1/4');
+    expect(html).toContain('width:20%');
+    expect(html).toContain('1/5');
   });
 
   it('extends the fill as the athlete advances', () => {
     const html = renderToStaticMarkup(createElement(OnboardingProgress, { step: 'intention' }));
-    expect(html).toContain('width:75%');
-    expect(html).toContain('3/4');
+    expect(html).toContain('width:80%');
+    expect(html).toContain('4/5');
   });
 
   it('exposes the step count to assistive tech', () => {
-    const html = renderToStaticMarkup(createElement(OnboardingProgress, { step: 'equipment' }));
+    const html = renderToStaticMarkup(createElement(OnboardingProgress, { step: 'availability' }));
     expect(html).toContain('role="progressbar"');
-    expect(html).toContain('aria-valuenow="2"');
-    expect(html).toContain('aria-valuemax="4"');
-    expect(html).toContain('Étape 2 sur 4 · Équipement');
+    expect(html).toContain('aria-valuenow="3"');
+    expect(html).toContain('aria-valuemax="5"');
+    expect(html).toContain('Étape 3 sur 5 · Disponibilités');
   });
 
   it('animates the fill with CSS only (reduced motion is handled globally)', () => {
@@ -30,11 +30,12 @@ describe('OnboardingProgress rail', () => {
     expect(html).toContain('duration-300');
   });
 
-  it('draws three ticks so the remaining steps stay countable', () => {
+  it('draws four ticks so the remaining steps stay countable', () => {
     const html = renderToStaticMarkup(createElement(OnboardingProgress, { step: 'sports' }));
-    expect(html).toContain('left:25%');
-    expect(html).toContain('left:50%');
-    expect(html).toContain('left:75%');
+    expect(html).toContain('left:20%');
+    expect(html).toContain('left:40%');
+    expect(html).toContain('left:60%');
+    expect(html).toContain('left:80%');
   });
 });
 
@@ -49,8 +50,8 @@ describe('OnboardingProgress back affordance', () => {
     const html = renderToStaticMarkup(
       createElement(OnboardingProgress, { step: 'intention', onBack: () => undefined }),
     );
-    expect(html).toContain('aria-label="Revenir à Équipement"');
-    expect(html).toContain('>Équipement<');
+    expect(html).toContain('aria-label="Revenir à Disponibilités"');
+    expect(html).toContain('>Disponibilités<');
     expect(html).not.toContain('>Intention<');
   });
 });

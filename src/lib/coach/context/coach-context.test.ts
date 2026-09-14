@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { normalizeAthleteEquipment } from '@/lib/equipment/parse';
+import { normalizeTrainingAvailability } from '@/lib/training-availability/parse';
 import {
   formatConstraintsSection,
   formatDecisionSection,
@@ -62,6 +63,7 @@ function minimalContext(overrides: Partial<CoachContext> = {}): CoachContext {
       loadStrain: null,
     },
     availableDays: ['Lundi'],
+    trainingAvailability: normalizeTrainingAvailability(null),
     health: {
       readinessToday: 70,
       readinessLevel: null,
@@ -152,6 +154,50 @@ describe('formatConstraintsSection', () => {
   it('renders active constraints', () => {
     const text = formatConstraintsSection([baseConstraint()]).join('\n');
     expect(text).toContain('Tendinite genou');
+  });
+});
+
+describe('formatCoachContext availability', () => {
+  // Intent and reality are different facts: a plan built on four wanted days
+  // when three actually happen is a plan that will slip.
+  it('labels declared rhythm apart from observed days', () => {
+    const text = formatCoachContext(
+      minimalContext({
+        availableDays: ['Lundi', 'Mercredi'],
+        trainingAvailability: {
+          version: 1,
+          targetSessionsPerWeek: 4,
+          availableWeekdays: [2, 4, 6],
+        },
+      }),
+    );
+
+    expect(text).toContain('Souhaité : 4 séances par semaine.');
+    expect(text).toContain('Jours déclarés libres : Mardi, Jeudi, Samedi.');
+    expect(text).toContain('Jours observés (8 dernières semaines) : Lundi, Mercredi.');
+  });
+
+  it('still reads the observed days when nothing was declared', () => {
+    const text = formatCoachContext(
+      minimalContext({
+        availableDays: ['Samedi'],
+        trainingAvailability: normalizeTrainingAvailability(null),
+      }),
+    );
+
+    expect(text).toContain('Jours observés (8 dernières semaines) : Samedi.');
+    expect(text).not.toContain('Souhaité :');
+  });
+
+  it('drops the section when neither source has anything', () => {
+    const text = formatCoachContext(
+      minimalContext({
+        availableDays: [],
+        trainingAvailability: normalizeTrainingAvailability(null),
+      }),
+    );
+
+    expect(text).not.toContain('## Disponibilités');
   });
 });
 

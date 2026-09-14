@@ -5,16 +5,17 @@ import type { ClientActivity, ClientPlannedSession } from '@/lib/query/types';
 import { useActivities } from '@/hooks/use-data';
 import { differenceInCalendarDays } from 'date-fns';
 import { scorePlannedActivityMatch } from '@/lib/planned-session/linking/session-link-match-score';
+import { resolveLinkedActivity } from '@/lib/query/patch-activity-athlete-capture';
 
 export function useSessionRealizationLinkedActivity(session: ClientPlannedSession) {
   const activitiesQuery = useActivities();
   const isLinked = Boolean(session.activityId);
 
-  const linked =
-    (session.activity?.type !== null ? session.activity : null) ??
-    (session.activityId
-      ? (activitiesQuery.data?.find((item) => item.id === session.activityId) ?? null)
-      : null);
+  const linked = resolveLinkedActivity({
+    nested: session.activity,
+    activityId: session.activityId,
+    activities: activitiesQuery.data,
+  });
 
   return { isLinked, linked };
 }

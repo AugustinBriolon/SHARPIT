@@ -40,7 +40,9 @@ describe('ActivityConsistencyPanel', () => {
     expect(html).not.toContain('flex-col-reverse');
     expect(html).not.toContain('Séances / semaine');
     expect(html).not.toContain('rounded-[3px]');
-    // Title lives inside the chip with the icon — not as an outer section label.
+    // Same filled chip as sleep / nutrition — not the quiet (transparent) tier.
+    expect(html).toContain('chip-surface-lg');
+    expect(html).not.toContain('chip-surface-quiet');
     expect(html.indexOf('chip-surface-lg')).toBeLessThan(html.indexOf('Régularité'));
   });
 

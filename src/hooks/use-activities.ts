@@ -9,6 +9,7 @@ import {
   invalidateTodayPresentationCaches,
   patchTodayPostSessionLoopAfterFeeling,
 } from '@/lib/query/patch-post-session-loop';
+import { patchActivityAthleteCaptureInPlannedSessions } from '@/lib/query/patch-activity-athlete-capture';
 import { sendJson } from '@/lib/query/send-json';
 import type { QueryClient } from '@tanstack/react-query';
 import type { ClientActivity, ClientActivityDetail } from '@/lib/query/types';
@@ -66,6 +67,10 @@ function optimisticSwimMetrics(payload: ActivityMutationPayload) {
 
 function containsFeelingUpdate(data: Partial<ActivityMutationPayload>): boolean {
   return data.feeling !== undefined || data.rpe !== undefined;
+}
+
+function containsAthleteCaptureUpdate(data: Partial<ActivityMutationPayload>): boolean {
+  return containsFeelingUpdate(data) || data.notes !== undefined;
 }
 
 function patchActivityDetailCache(
@@ -171,6 +176,35 @@ function buildUpdateActivityOptimistic(queryClient: QueryClient, key: readonly s
   });
 }
 
+function patchActivityCachesOnMutate(
+  queryClient: QueryClient,
+  vars: { id: string; data: Partial<ActivityMutationPayload> },
+) {
+  if (containsFeelingUpdate(vars.data)) {
+    patchTodayPostSessionLoopAfterFeeling(queryClient, vars.id);
+  }
+  if (containsAthleteCaptureUpdate(vars.data)) {
+    patchActivityAthleteCaptureInPlannedSessions(queryClient, vars.id, {
+      feeling: vars.data.feeling,
+      rpe: vars.data.rpe as number | null | undefined,
+      notes: vars.data.notes,
+    });
+  }
+  patchActivityDetailCache(queryClient, vars.id, vars.data);
+}
+
+function invalidateActivitySideEffects(
+  queryClient: QueryClient,
+  data: Partial<ActivityMutationPayload>,
+) {
+  if (containsFeelingUpdate(data)) {
+    invalidateTodayPresentationCaches(queryClient);
+  }
+  if (containsAthleteCaptureUpdate(data)) {
+    void queryClient.invalidateQueries({ queryKey: queryKeys.plannedSessions });
+  }
+}
+
 function updateActivityMutationOptions(
   queryClient: QueryClient,
   key: readonly string[],
@@ -181,18 +215,12 @@ function updateActivityMutationOptions(
       sendJson(`/api/activities/${id}`, 'PATCH', data) as Promise<{ id: string }>,
     ...updateOptimistic,
     onMutate: async (vars: { id: string; data: Partial<ActivityMutationPayload> }) => {
-      if (containsFeelingUpdate(vars.data)) {
-        patchTodayPostSessionLoopAfterFeeling(queryClient, vars.id);
-      }
-      patchActivityDetailCache(queryClient, vars.id, vars.data);
+      patchActivityCachesOnMutate(queryClient, vars);
       return updateOptimistic.onMutate(vars);
     },
     onError: (...args: Parameters<typeof updateOptimistic.onError>) => {
       updateOptimistic.onError(...args);
-      const [, vars] = args;
-      if (containsFeelingUpdate(vars.data)) {
-        invalidateTodayPresentationCaches(queryClient);
-      }
+      invalidateActivitySideEffects(queryClient, args[1].data);
     },
     onSettled: (
       _data: { id: string } | undefined,
@@ -201,12 +229,11 @@ function updateActivityMutationOptions(
     ) => {
       void queryClient.invalidateQueries({ queryKey: key });
       void queryClient.invalidateQueries({ queryKey: queryKeys.records });
-      if (vars) {
-        void queryClient.invalidateQueries({ queryKey: queryKeys.activity(vars.id) });
-        if (containsFeelingUpdate(vars.data)) {
-          invalidateTodayPresentationCaches(queryClient);
-        }
+      if (!vars) {
+        return;
       }
+      void queryClient.invalidateQueries({ queryKey: queryKeys.activity(vars.id) });
+      invalidateActivitySideEffects(queryClient, vars.data);
     },
   };
 }

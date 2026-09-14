@@ -1,7 +1,8 @@
 'use client';
 
-import { useId } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { NavArrowLeft, NavArrowRight } from '@/components/icons/nav-arrows';
 import {
   Dialog,
   DialogContent,
@@ -9,197 +10,120 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import {
-  ACTIVITY_FEELING_SCALE,
-  type ActivityFeelingOption,
-} from '@/lib/activity/feeling/activity-feeling-scale';
-import { cn } from '@/lib/utils';
+import { ScalePicker, StepDots, type ScaleOption } from '@/components/ui/instruments/scale-picker';
+import { ACTIVITY_FEELING_SCALE } from '@/lib/activity/feeling/activity-feeling-scale';
 
-function moveFeelingSelection(value: string, delta: number): string {
-  const index = ACTIVITY_FEELING_SCALE.findIndex((option) => option.value === value);
-  const fallback = index < 0 ? 0 : index;
-  const next =
-    ACTIVITY_FEELING_SCALE[
-      (fallback + delta + ACTIVITY_FEELING_SCALE.length) % ACTIVITY_FEELING_SCALE.length
-    ]!;
-  return next.value;
-}
+/**
+ * Session feeling — the same instrument as « Ressenti du matin »: one question
+ * per step, ordinal tiles, a hint that reads back what the choice means.
+ *
+ * Picking an answer advances on its own. A tap is the answer; asking for a
+ * second tap on « suivant » to confirm it is a step that carries no decision.
+ */
 
-function FeelingScaleOption({
-  option,
-  selected,
-  onSelect,
-}: {
-  option: ActivityFeelingOption;
-  selected: boolean;
-  onSelect: () => void;
-}) {
-  return (
-    <button
-      aria-checked={selected}
-      aria-label={`${option.label} — ${option.hint}`}
-      role="radio"
-      tabIndex={selected ? 0 : -1}
-      type="button"
-      className={cn(
-        'pressable-lg flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl border px-1 py-2',
-        selected
-          ? 'border-highlight bg-highlight text-highlight-foreground'
-          : 'border-border/70 bg-background hover:border-primary/30 hover:bg-muted/40',
-      )}
-      onClick={onSelect}
-    >
-      <span className="text-xl leading-none" aria-hidden>
-        {option.icon}
-      </span>
-      <span
-        className={cn(
-          'text-[0.65rem] leading-tight font-medium',
-          selected ? 'text-highlight-foreground/80' : 'text-muted-foreground',
-        )}
-        aria-hidden
-      >
-        {option.label}
-      </span>
-    </button>
-  );
-}
+const FEELING_OPTIONS: readonly ScaleOption<string>[] = ACTIVITY_FEELING_SCALE.map((option) => ({
+  value: option.value,
+  label: option.label,
+  hint: option.hint,
+}));
 
-function createFeelingScaleKeyDownHandler(value: string, onChange: (feeling: string) => void) {
-  return (event: React.KeyboardEvent) => {
-    if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
-      event.preventDefault();
-      onChange(moveFeelingSelection(value, 1));
-    } else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
-      event.preventDefault();
-      onChange(moveFeelingSelection(value, -1));
-    } else if (event.key === 'Home') {
-      event.preventDefault();
-      onChange(ACTIVITY_FEELING_SCALE[0]!.value);
-    } else if (event.key === 'End') {
-      event.preventDefault();
-      onChange(ACTIVITY_FEELING_SCALE.at(-1)!.value);
-    }
-  };
-}
+/** Foster CR10 anchors — the number alone tells the athlete nothing. */
+const RPE_LABELS = [
+  'Très facile',
+  'Facile',
+  'Modéré',
+  'Assez dur',
+  'Dur',
+  'Plus dur',
+  'Très dur',
+  'Très dur soutenu',
+  'Proche du max',
+  'Maximal',
+];
 
-function FeelingScaleLabels({
-  labelId,
-  hintId,
-  hint,
-}: {
-  labelId: string;
-  hintId: string;
-  hint: string;
-}) {
-  return (
-    <div>
-      <p className="text-foreground text-sm font-medium" id={labelId}>
-        Ressenti global
-      </p>
-      <p className="text-muted-foreground text-xs" id={hintId}>
-        {hint}
-      </p>
-    </div>
-  );
-}
+const RPE_OPTIONS: readonly ScaleOption<number>[] = RPE_LABELS.map((label, index) => ({
+  value: index + 1,
+  label,
+  hint: `${index + 1}/10 · ${label}.`,
+}));
 
-function FeelingScalePicker({
-  value,
-  onChange,
-  feelingError,
-  feelingErrorId,
-}: {
-  value: string;
-  onChange: (feeling: string) => void;
-  feelingError: string | null;
-  feelingErrorId: string;
-}) {
-  const labelId = useId();
-  const hintId = useId();
-  const selected = ACTIVITY_FEELING_SCALE.find((option) => option.value === value);
-  const hint = selected?.hint ?? 'Comment as-tu vécu cette séance dans l’ensemble ?';
+const TOTAL_STEPS = 2;
 
-  return (
-    <div
-      aria-describedby={hintId}
-      aria-labelledby={labelId}
-      className="space-y-2.5"
-      role="radiogroup"
-      onKeyDown={createFeelingScaleKeyDownHandler(value, onChange)}
-    >
-      <FeelingScaleLabels hint={hint} hintId={hintId} labelId={labelId} />
-      <div className="grid grid-cols-5 gap-1.5">
-        {ACTIVITY_FEELING_SCALE.map((option) => (
-          <FeelingScaleOption
-            key={option.value}
-            option={option}
-            selected={value === option.value}
-            onSelect={() => onChange(option.value)}
-          />
-        ))}
-      </div>
-      {feelingError ? (
-        <p aria-live="assertive" className="text-destructive text-xs" id={feelingErrorId}>
-          {feelingError}
-        </p>
-      ) : null}
-    </div>
-  );
-}
-
-function FeelingDialogFooter({
-  feeling,
-  onClose,
+function FeelingFooterAction({
+  isLastStep,
+  canAdvance,
+  canSave,
+  onNext,
   onSave,
 }: {
-  feeling: string;
-  onClose: () => void;
+  isLastStep: boolean;
+  canAdvance: boolean;
+  canSave: boolean;
+  onNext: () => void;
   onSave: () => void;
 }) {
-  return (
-    <div className="border-border/60 bg-muted/40 flex shrink-0 flex-wrap items-center justify-end gap-2 border-t px-5 py-3">
-      <Button className="h-8 w-fit px-3 text-xs" type="button" variant="ghost" onClick={onClose}>
-        Fermer
-      </Button>
+  if (isLastStep) {
+    return (
       <Button
-        className="h-8 w-fit px-3 text-xs"
-        disabled={!feeling}
+        className="h-11 px-4 text-xs lg:h-8"
+        disabled={!canSave}
         type="button"
         variant="highlight"
         onClick={onSave}
       >
         Enregistrer
       </Button>
-    </div>
+    );
+  }
+
+  return (
+    <Button
+      className="h-11 px-3 text-xs lg:h-8"
+      disabled={!canAdvance}
+      type="button"
+      variant="ghost"
+      onClick={onNext}
+    >
+      Effort perçu
+      <NavArrowRight className="size-3.5" aria-hidden />
+    </Button>
   );
 }
 
-function FeelingRpeField({
-  activityId,
-  rpe,
-  onRpeChange,
+function FeelingDialogFooter({
+  step,
+  canAdvance,
+  canSave,
+  onBack,
+  onNext,
+  onSave,
 }: {
-  activityId: string;
-  rpe: number;
-  onRpeChange: (rpe: number) => void;
+  step: number;
+  canAdvance: boolean;
+  canSave: boolean;
+  onBack: () => void;
+  onNext: () => void;
+  onSave: () => void;
 }) {
   return (
-    <div className="space-y-1.5">
-      <Label htmlFor={`feeling-rpe-${activityId}`}>Effort perçu (RPE) · {rpe}/10</Label>
-      <input
-        className="accent-primary w-full"
-        id={`feeling-rpe-${activityId}`}
-        max={10}
-        min={1}
-        type="range"
-        value={rpe}
-        onChange={(e) => onRpeChange(Number(e.target.value))}
+    <div className="border-border/60 flex shrink-0 items-center justify-between border-t px-5 py-3">
+      <Button
+        className="h-11 px-3 text-xs lg:h-8"
+        disabled={step === 0}
+        type="button"
+        variant="ghost"
+        onClick={onBack}
+      >
+        <NavArrowLeft className="size-3.5" aria-hidden />
+        Retour
+      </Button>
+      <FeelingFooterAction
+        canAdvance={canAdvance}
+        canSave={canSave}
+        isLastStep={step === TOTAL_STEPS - 1}
+        onNext={onNext}
+        onSave={onSave}
       />
-      <p className="text-muted-foreground text-xs">
-        1 = très facile · 10 = effort maximal sur la séance.
-      </p>
     </div>
   );
 }
@@ -207,7 +131,8 @@ function FeelingRpeField({
 type ActivityFeelingDialogProps = {
   activityId: string;
   open: boolean;
-  rpe: number;
+  /** Null until the athlete picks one — never a default shown as chosen. */
+  rpe: number | null;
   feeling: string;
   feelingError: string | null;
   onOpenChange: (open: boolean) => void;
@@ -216,65 +141,102 @@ type ActivityFeelingDialogProps = {
   onSave: () => void;
 };
 
-function ActivityFeelingDialogBody({
-  activityId,
+function FeelingDialogHeader({ step }: { step: number }) {
+  return (
+    <DialogHeader className="shrink-0 border-b px-5 py-3 pr-12 text-left">
+      <div className="flex items-center justify-between gap-3">
+        <DialogTitle className="font-heading text-base">Ressenti de la séance</DialogTitle>
+        <StepDots current={step} total={TOTAL_STEPS} />
+      </div>
+      <DialogDescription className="sr-only">
+        Ton vécu nourrit la charge perçue (Foster) et la lecture de récupération.
+      </DialogDescription>
+    </DialogHeader>
+  );
+}
+
+function FeelingDialogBody({
+  step,
   rpe,
   feeling,
   feelingError,
-  feelingErrorId,
   onRpeChange,
   onFeelingChange,
 }: Pick<
   ActivityFeelingDialogProps,
-  'activityId' | 'rpe' | 'feeling' | 'feelingError' | 'onRpeChange' | 'onFeelingChange'
-> & { feelingErrorId: string }) {
+  'rpe' | 'feeling' | 'feelingError' | 'onRpeChange' | 'onFeelingChange'
+> & { step: number }) {
   return (
-    <div className="min-h-0 flex-1 space-y-5 overflow-y-auto overscroll-contain px-5 py-4">
-      <FeelingScalePicker
-        feelingError={feelingError}
-        feelingErrorId={feelingErrorId}
-        value={feeling}
-        onChange={onFeelingChange}
-      />
-      <FeelingRpeField activityId={activityId} rpe={rpe} onRpeChange={onRpeChange} />
+    <div className="flex min-h-0 flex-1 flex-col justify-center px-5 py-6">
+      {step === 0 ? (
+        <ScalePicker
+          footnote="Ton vécu nourrit la charge perçue (Foster) et la lecture de récupération."
+          hint="Comment as-tu vécu cette séance dans l’ensemble ?"
+          options={FEELING_OPTIONS}
+          title="Ressenti global"
+          value={feeling || null}
+          onChange={onFeelingChange}
+        />
+      ) : (
+        <ScalePicker
+          footnote="1 = très facile · 10 = effort maximal sur la séance."
+          hint="Quel effort la séance t’a demandé ?"
+          options={RPE_OPTIONS}
+          title="Effort perçu (RPE)"
+          value={rpe}
+          onChange={onRpeChange}
+        />
+      )}
+
+      {feelingError ? (
+        <p aria-live="assertive" className="text-destructive mt-4 text-center text-xs" role="alert">
+          {feelingError}
+        </p>
+      ) : null}
     </div>
   );
 }
 
-export function ActivityFeelingDialog({
-  activityId,
-  open,
-  rpe,
-  feeling,
-  feelingError,
-  onOpenChange,
-  onRpeChange,
-  onFeelingChange,
-  onSave,
-}: ActivityFeelingDialogProps) {
-  const feelingErrorId = useId();
+export function ActivityFeelingDialog(props: ActivityFeelingDialogProps) {
+  const { open, rpe, feeling, feelingError, onOpenChange, onRpeChange, onFeelingChange, onSave } =
+    props;
+  const [step, setStep] = useState(0);
+
+  // Reopening must start on the first question, never where the last pass left off.
+  useEffect(() => {
+    if (!open) {
+      setStep(0);
+    }
+  }, [open]);
+
+  // The tap is the answer — move to the next question rather than asking for a
+  // second tap to confirm it.
+  const handleFeelingChange = useCallback(
+    (next: string) => {
+      onFeelingChange(next);
+      setStep((previous) => Math.min(previous + 1, TOTAL_STEPS - 1));
+    },
+    [onFeelingChange],
+  );
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex max-h-[min(92dvh,40rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-md">
-        <DialogHeader className="shrink-0 space-y-1 border-b px-5 py-4 pr-12 text-left">
-          <DialogTitle className="font-heading text-lg">Ressenti de la séance</DialogTitle>
-          <DialogDescription>
-            Ton vécu nourrit la charge perçue (Foster) et la lecture de récupération.
-          </DialogDescription>
-        </DialogHeader>
-        <ActivityFeelingDialogBody
-          activityId={activityId}
+      <DialogContent className="flex max-h-[min(92dvh,34rem)] flex-col gap-0 overflow-hidden p-0 sm:max-w-sm">
+        <FeelingDialogHeader step={step} />
+        <FeelingDialogBody
           feeling={feeling}
           feelingError={feelingError}
-          feelingErrorId={feelingErrorId}
           rpe={rpe}
-          onFeelingChange={onFeelingChange}
+          step={step}
+          onFeelingChange={handleFeelingChange}
           onRpeChange={onRpeChange}
         />
         <FeelingDialogFooter
-          feeling={feeling}
-          onClose={() => onOpenChange(false)}
+          canAdvance={Boolean(feeling)}
+          canSave={Boolean(feeling) && rpe !== null}
+          step={step}
+          onBack={() => setStep((previous) => Math.max(previous - 1, 0))}
+          onNext={() => setStep((previous) => Math.min(previous + 1, TOTAL_STEPS - 1))}
           onSave={onSave}
         />
       </DialogContent>

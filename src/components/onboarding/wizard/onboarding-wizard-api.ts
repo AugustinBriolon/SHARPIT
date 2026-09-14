@@ -7,6 +7,7 @@ import { toast } from '@/components/ui/toast';
 import { providersForClass } from '@/lib/integrations/provider-catalog';
 import type { OnboardingWizardStep } from '@/lib/onboarding/wizard/wizard-steps';
 import type { PracticedSportId } from '@/lib/practiced-sports';
+import type { TrainingAvailability } from '@/lib/training-availability/types';
 import {
   completeOnboarding as completeOnboardingFetcher,
   patchAthleteProfile,
@@ -33,6 +34,18 @@ export async function patchOnboardingPrefs(
 export async function patchPracticedSports(sports: PracticedSportId[]): Promise<boolean> {
   try {
     await patchAthleteProfile({ practicedSports: { version: 1, sports } });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** Declared rhythm — saved on leaving the step, skip included (it may be empty). */
+export async function patchTrainingAvailability(
+  availability: TrainingAvailability,
+): Promise<boolean> {
+  try {
+    await patchAthleteProfile({ trainingAvailability: availability });
     return true;
   } catch {
     return false;

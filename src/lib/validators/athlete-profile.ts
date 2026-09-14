@@ -3,6 +3,7 @@ import { parseBirthDateInput } from '@/lib/profile/athlete-profile-utils';
 import { EQUIPMENT_ITEM_IDS, STRENGTH_VENUES } from '@/lib/equipment/catalog';
 import { DISPLAY_MODES } from '@/lib/preferences/display-mode';
 import { PRACTICED_SPORTS } from '@/lib/practiced-sports';
+import { MAX_SESSIONS_PER_WEEK, MIN_SESSIONS_PER_WEEK } from '@/lib/training-availability/types';
 
 /**
  * Absent is not the same as cleared.
@@ -90,6 +91,18 @@ export const athletePracticedSportsSchema = z.object({
   sports: z.array(z.enum(PRACTICED_SPORTS)),
 });
 
+/** Declared rhythm — both answers are independently optional. */
+export const athleteTrainingAvailabilitySchema = z.object({
+  version: z.literal(1),
+  targetSessionsPerWeek: z
+    .number()
+    .int()
+    .min(MIN_SESSIONS_PER_WEEK)
+    .max(MAX_SESSIONS_PER_WEEK)
+    .nullable(),
+  availableWeekdays: z.array(z.number().int().min(0).max(6)),
+});
+
 /** Partial patch — personal profile, calibration and equipment save independently. */
 export const athleteProfileSchema = z
   .object({
@@ -106,6 +119,7 @@ export const athleteProfileSchema = z
     sleepBedtimeTargetMin: nullableBedtimeMin,
     equipment: athleteEquipmentSchema.nullable(),
     practicedSports: athletePracticedSportsSchema.nullable(),
+    trainingAvailability: athleteTrainingAvailabilitySchema.nullable(),
     displayMode: z.enum(DISPLAY_MODES),
   })
   .partial()

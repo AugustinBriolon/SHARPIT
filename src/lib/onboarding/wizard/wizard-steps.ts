@@ -1,10 +1,18 @@
 /**
  * Onboarding wizard step order and navigation helpers (pure — Vitest-friendly).
  *
- * Sports → Equipment (context from sports) → Intention → Sources → done.
+ * Sports → Equipment (context from sports) → Availability (when you can train)
+ * → Intention → Sources → done. Equipment and Availability sit together: both
+ * describe the constraints a plan has to respect, before the goal it serves.
  */
 
-export const ONBOARDING_STEPS = ['sports', 'equipment', 'intention', 'providers'] as const;
+export const ONBOARDING_STEPS = [
+  'sports',
+  'equipment',
+  'availability',
+  'intention',
+  'providers',
+] as const;
 
 export type OnboardingWizardStep = (typeof ONBOARDING_STEPS)[number] | 'bootstrap';
 
@@ -12,6 +20,7 @@ export type OnboardingWizardStep = (typeof ONBOARDING_STEPS)[number] | 'bootstra
 export const ONBOARDING_STEP_LABELS: Record<(typeof ONBOARDING_STEPS)[number], string> = {
   sports: 'Sports',
   equipment: 'Équipement',
+  availability: 'Disponibilités',
   intention: 'Intention',
   providers: 'Sources',
 };
@@ -39,8 +48,13 @@ export function previousOnboardingStep(
   return ONBOARDING_STEPS[index - 1]!;
 }
 
-/** Equipment continue / skip both land on Intention. */
-export function stepAfterEquipment(): 'intention' {
+/** Equipment continue / skip both land on Availability. */
+export function stepAfterEquipment(): 'availability' {
+  return 'availability';
+}
+
+/** Availability continue / skip both land on Intention. */
+export function stepAfterAvailability(): 'intention' {
   return 'intention';
 }
 
@@ -52,10 +66,16 @@ export function equipmentStepAllowsSkip(): true {
   return true;
 }
 
+/** Availability is optional too — an athlete may not know their week yet. */
+export function availabilityStepAllowsSkip(): true {
+  return true;
+}
+
 export function parseOnboardingStepParam(value: string | null): OnboardingWizardStep {
   if (
     value === 'providers' ||
     value === 'intention' ||
+    value === 'availability' ||
     value === 'equipment' ||
     value === 'sports'
   ) {

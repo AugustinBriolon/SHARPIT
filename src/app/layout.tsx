@@ -10,7 +10,8 @@ import { Toaster } from '@/components/ui/toast';
 import { QueryProvider } from '@/providers/query-provider';
 import { AppModalProvider } from '@/providers/app-modal-provider';
 import { DeviceLocationProvider } from '@/components/today/dashboard/device-location-provider';
-import { THEME_INIT_SCRIPT, THEME_DARK_COLOR, THEME_LIGHT_COLOR } from '@/lib/theme/theme';
+import { THEME_DARK_COLOR, THEME_LIGHT_COLOR } from '@/lib/theme/theme';
+import { RootLayoutHead } from '@/app/root-layout-head';
 import { cn } from '@/lib/utils';
 import './globals.css';
 
@@ -38,7 +39,7 @@ export const metadata: Metadata = {
   applicationName: 'SHARPIT',
   appleWebApp: {
     capable: true,
-    statusBarStyle: 'default',
+    statusBarStyle: 'black-translucent',
     title: 'SHARPIT',
   },
   formatDetection: {
@@ -96,32 +97,7 @@ export default function RootLayout({
         suppressHydrationWarning
       >
         <head>
-          {/* Inline blocking theme boot — plain <script>, not next/script (avoids client Script warning). */}
-          <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} id="theme-init" />
-          <link crossOrigin="anonymous" href="https://basemaps.cartocdn.com" rel="preconnect" />
-          <link href="https://basemaps.cartocdn.com" rel="dns-prefetch" />
-          {/* iOS splash screens — one representative device per class (docs/PWA_TESTING.md).
-              Not a Next.js metadata field; Apple requires exact <link>+media pairs. */}
-          <link
-            href="/apple-splash/iphone-notch"
-            media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3)"
-            rel="apple-touch-startup-image"
-          />
-          <link
-            href="/apple-splash/iphone-se"
-            media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2)"
-            rel="apple-touch-startup-image"
-          />
-          <link
-            href="/apple-splash/ipad-portrait"
-            media="(device-width: 820px) and (device-height: 1180px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)"
-            rel="apple-touch-startup-image"
-          />
-          <link
-            href="/apple-splash/ipad-landscape"
-            media="(device-width: 1180px) and (device-height: 820px) and (-webkit-device-pixel-ratio: 2) and (orientation: landscape)"
-            rel="apple-touch-startup-image"
-          />
+          <RootLayoutHead />
         </head>
         <body className="bg-background text-foreground min-h-full font-sans">
           <ThemeProvider>

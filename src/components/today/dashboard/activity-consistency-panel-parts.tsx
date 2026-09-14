@@ -114,7 +114,7 @@ export function ActivityConsistencyLoading() {
   const days = buildConsistencyDayWindow([], LOADING_ANCHOR, layout.pastDays, layout.futureDays);
 
   return (
-    <TodayInstrumentCardSkeleton className="min-h-38 flex-1" tier="quiet" title="Régularité">
+    <TodayInstrumentCardSkeleton className="min-h-38 flex-1" title="Régularité">
       <div className="mt-3 flex flex-1 items-center gap-2">
         <div className="min-w-0 flex-1">
           <ConsistencyDayGrid columns={layout.columns} days={days} />
@@ -154,7 +154,6 @@ export function ActivityConsistencyContent({
       className="min-h-38 flex-1 active:scale-[0.988]"
       href="/plan/semaine"
       icon={<Activity className="size-3.5" strokeWidth={2.25} />}
-      tier="quiet"
       title="Régularité"
       titleAttr="Voir l’historique d’entraînement"
     >

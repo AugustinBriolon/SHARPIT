@@ -3,9 +3,6 @@
 import { parseSessionAnalysis } from '@/lib/planned-session/display/session-analysis-display';
 import { activityNarrativeSchema } from '@/lib/validators/coach';
 import { sanitizeCoachCopy } from '@/lib/coach/sanitize-coach-copy';
-import { GitCompare } from 'lucide-react';
-import { CompletedSessionPlanGaps } from '@/components/planning/session/read/completed-session-story-parts';
-import { CollapsibleSection } from '@/components/ui/collapsible-section';
 
 function parseActivityNarrative(raw: unknown) {
   const parsed = activityNarrativeSchema.safeParse(raw);
@@ -19,9 +16,7 @@ function parseActivityNarrative(raw: unknown) {
 }
 
 function StoryHeadline({ headline }: { headline: string }) {
-  return (
-    <p className="text-foreground text-sm leading-snug font-semibold text-pretty">{headline}</p>
-  );
+  return <p className="text-verdict text-foreground leading-snug text-pretty">{headline}</p>;
 }
 
 function StoryBody({ body }: { body: string }) {
@@ -58,11 +53,15 @@ function StoryNarrativeBlock({
   const primaryHeadline = narrative?.headline ?? null;
   const primaryBody = resolvePrimaryBody({ narrative, analysis, isAnalyzing });
 
+  if (!primaryHeadline && !primaryBody) {
+    return null;
+  }
+
   return (
-    <>
+    <div className="space-y-2">
       {primaryHeadline ? <StoryHeadline headline={primaryHeadline} /> : null}
       {primaryBody ? <StoryBody body={primaryBody} /> : null}
-    </>
+    </div>
   );
 }
 
@@ -76,50 +75,12 @@ export function CompletedSessionStoryContent({
   isAnalyzing: boolean;
   notes?: string | null;
 }) {
-  // Loading chrome lives only on ComplianceBadge — avoid a second spinner here.
   return (
     <StoryNarrativeBlock analysis={analysis} isAnalyzing={isAnalyzing} narrative={narrative} />
   );
 }
 
-function hasPlanGaps(analysis: ReturnType<typeof parseSessionAnalysis>): boolean {
-  if (!analysis) {
-    return false;
-  }
-  return analysis.remarks.length > 0 || Boolean(analysis.recommendation?.trim());
-}
-
-/** Plan gaps as a quiet disclosure — not a nested card stack. */
-export function CompletedSessionDetails({
-  analysis,
-}: {
-  analysis: ReturnType<typeof parseSessionAnalysis>;
-}) {
-  if (!hasPlanGaps(analysis) || !analysis) {
-    return null;
-  }
-
-  const remarkCount = analysis.remarks.length;
-  let summary: string | null = null;
-  if (remarkCount > 0) {
-    summary = `${remarkCount} point${remarkCount > 1 ? 's' : ''}`;
-  } else if (analysis.recommendation) {
-    summary = 'Orientation';
-  }
-
-  return (
-    <CollapsibleSection
-      defaultOpen={false}
-      icon={GitCompare}
-      label="Écarts au plan"
-      summary={summary}
-    >
-      <CompletedSessionPlanGaps analysis={analysis} />
-    </CollapsibleSection>
-  );
-}
-
-/** @deprecated Prefer CompletedSessionAthleteCapture for editable notes. */
+/** @deprecated Prefer CompletedSessionAthleteNote. */
 export function CompletedSessionNote({ notes }: { notes: string }) {
   return (
     <div className="min-w-0 space-y-1">

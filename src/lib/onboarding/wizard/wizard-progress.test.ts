@@ -10,11 +10,12 @@ import {
 import { ONBOARDING_STEPS } from './wizard-steps';
 
 describe('onboardingStepPosition', () => {
-  it('numbers the four steps from one', () => {
+  it('numbers the five steps from one', () => {
     expect(onboardingStepPosition('sports')).toBe(1);
     expect(onboardingStepPosition('equipment')).toBe(2);
-    expect(onboardingStepPosition('intention')).toBe(3);
-    expect(onboardingStepPosition('providers')).toBe(4);
+    expect(onboardingStepPosition('availability')).toBe(3);
+    expect(onboardingStepPosition('intention')).toBe(4);
+    expect(onboardingStepPosition('providers')).toBe(5);
   });
 
   it('reads bootstrap as the wizard being behind us', () => {
@@ -28,9 +29,10 @@ describe('onboardingStepPosition', () => {
 
 describe('onboardingProgressPercent (inclusive fill)', () => {
   it('counts the current step as attained', () => {
-    expect(onboardingProgressPercent('sports')).toBe(25);
-    expect(onboardingProgressPercent('equipment')).toBe(50);
-    expect(onboardingProgressPercent('intention')).toBe(75);
+    expect(onboardingProgressPercent('sports')).toBe(20);
+    expect(onboardingProgressPercent('equipment')).toBe(40);
+    expect(onboardingProgressPercent('availability')).toBe(60);
+    expect(onboardingProgressPercent('intention')).toBe(80);
   });
 
   it('fills the rail on the last step', () => {
@@ -47,6 +49,7 @@ describe('onboardingProgressPercent (inclusive fill)', () => {
 describe('onboardingStepStatus', () => {
   it('splits past, current and upcoming around the active step', () => {
     expect(onboardingStepStatus('sports', 'intention')).toBe('done');
+    expect(onboardingStepStatus('availability', 'intention')).toBe('done');
     expect(onboardingStepStatus('intention', 'intention')).toBe('current');
     expect(onboardingStepStatus('providers', 'intention')).toBe('upcoming');
   });
@@ -59,17 +62,18 @@ describe('onboardingStepStatus', () => {
 
 describe('onboardingProgressLabel (progressbar aria-valuetext)', () => {
   it('announces the count and the step name', () => {
-    expect(onboardingProgressLabel('intention')).toBe('Étape 3 sur 4 · Intention');
+    expect(onboardingProgressLabel('availability')).toBe('Étape 3 sur 5 · Disponibilités');
+    expect(onboardingProgressLabel('intention')).toBe('Étape 4 sur 5 · Intention');
   });
 
   it('announces completion on bootstrap', () => {
-    expect(onboardingProgressLabel('bootstrap')).toBe('Étape 4 sur 4 · terminé');
+    expect(onboardingProgressLabel('bootstrap')).toBe('Étape 5 sur 5 · terminé');
   });
 });
 
 describe('onboardingSegmentTicks', () => {
   it('marks the boundaries between steps, never the rail ends', () => {
-    expect(onboardingSegmentTicks()).toEqual([25, 50, 75]);
+    expect(onboardingSegmentTicks()).toEqual([20, 40, 60, 80]);
   });
 
   it('draws one tick fewer than there are steps', () => {

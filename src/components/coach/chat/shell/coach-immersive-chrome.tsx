@@ -51,7 +51,7 @@ export function CoachImmersiveHeader({
   onNewConversation: () => void;
 }) {
   return (
-    <div className="border-border/50 flex items-center gap-1 border-b px-2 py-1.5 sm:px-3">
+    <div className="border-border/50 flex items-center gap-1 border-b px-2 pt-[max(0.375rem,env(safe-area-inset-top,0px))] pb-1.5 sm:px-3">
       <CoachHeaderBackButton />
       <h1 className="text-foreground min-w-0 flex-1 truncate px-0.5 text-[15px] font-medium tracking-tight">
         {title}

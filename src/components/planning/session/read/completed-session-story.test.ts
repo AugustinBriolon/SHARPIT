@@ -66,29 +66,34 @@ function sessionFixture(
 }
 
 describe('CompletedSessionStory', () => {
-  it('leads with athlete capture, then coach lecture and plan gaps', () => {
+  it('leads with Lecture, score, narrative, gaps, then athlete note', () => {
     const html = renderWithQuery(
       createElement(CompletedSessionStory, { session: sessionFixture({}) }),
     );
 
-    expect(html).toContain('aria-label="Ton ressenti"');
-    expect(html).toContain('Ta note');
-    expect(html).toContain('Jambes légères');
-    expect(html).toContain('Bien');
-    expect(html).toContain('RPE 4/10');
     expect(html).toContain('Lecture');
     expect(html).toContain('Bonne densité');
     expect(html).toContain('Tu as tenu la zone tempo sans dérive.');
-    expect(html).toContain('Conforme');
+    expect(html).toMatch(/Note d(&#x27;|')exécution/);
     expect(html).toContain('88');
-    expect(html).toContain('Écarts au plan');
+    expect(html).toContain('Conforme');
+    expect(html).toMatch(/Écarts au plan/);
     expect(html).toContain('Allure stable');
+    expect(html).toContain('À faire');
     expect(html).toContain('Garder ce rythme mardi.');
+    expect(html).toContain('Note complémentaire');
+    expect(html).toContain('Jambes légères');
+    expect(html).not.toContain('Recalculer');
+    expect(html).not.toContain('Discuter avec le coach');
     expect(html).not.toContain('Séance exécutée comme prévu.');
-    expect(html.indexOf('Jambes légères')).toBeLessThan(html.indexOf('Bonne densité'));
+
+    expect(html.indexOf('Lecture')).toBeLessThan(html.indexOf('88'));
+    expect(html.indexOf('88')).toBeLessThan(html.indexOf('Bonne densité'));
+    expect(html.indexOf('Bonne densité')).toBeLessThan(html.indexOf('Allure stable'));
+    expect(html.indexOf('Allure stable')).toBeLessThan(html.indexOf('Jambes légères'));
   });
 
-  it('shows an analyzing badge when compliance is pending', () => {
+  it('shows analyzing state on the execution score', () => {
     const html = renderWithQuery(
       createElement(CompletedSessionStory, {
         session: sessionFixture({ analysis: null, analyzedAt: null }),
@@ -96,7 +101,8 @@ describe('CompletedSessionStory', () => {
       }),
     );
 
-    expect(html).toContain('Analyse…');
+    expect(html).toContain('Lecture');
+    expect(html).toContain('Calcul en cours…');
     expect(html).not.toContain('Séance exécutée comme prévu.');
   });
 
@@ -117,8 +123,7 @@ describe('CompletedSessionStory', () => {
     );
 
     expect(html).toContain('Séance exécutée comme prévu.');
-    expect(html).toContain('Écarts au plan');
-    expect(html).toContain('Ajouter ressenti et RPE');
-    expect(html).toContain('Ajouter une note');
+    expect(html).toMatch(/Écarts au plan/);
+    expect(html).toContain('Ajouter une note complémentaire');
   });
 });

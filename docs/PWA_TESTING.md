@@ -30,6 +30,21 @@ Playwright covers the highest-value, Chromium-automatable slices of this checkli
 - [ ] iPad, portrait
 - [ ] iPad, landscape (confirms the manifest's dropped `orientation` lock doesn't regress this)
 
+### Immersive top edge (Dynamic Island / notch)
+
+Requires `viewport-fit=cover`. See [ADR-039](./adr/ADR-039-ios-system-edge-fade.md).
+
+**Method (shipped):** readable content uses `safe-page-top` so headings clear Safari’s native status tint at rest. Progressive blur mounts only after a short document scroll — never as a permanent band over the first title.
+
+- [ ] **Safari tab at rest (Plan / Today):** first heading fully readable — not clipped by a dark strip
+- [ ] **Safari tab after scroll:** soft progressive blur at the top; no hard opaque rectangle
+- [ ] **Standalone PWA:** same contract; reinstall Home Screen icon if `statusBarStyle` changed
+- [ ] **No `scroll-fade-t` mask** on `<main>`
+- [ ] **Floating back** / **SyncingIndicator** use `safe-top-offset`
+- [ ] **Coach immersive:** own safe-area on header; no opaque `safe-area-top` on the frame
+- [ ] **BottomNav** clears the home indicator
+- [ ] **Reduce Transparency:** fade becomes a light tint without backdrop blur
+
 ## Appearance
 
 - [ ] Light mode: theme color, background, and app icon read correctly in the app switcher and on the home screen

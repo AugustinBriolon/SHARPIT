@@ -10,6 +10,10 @@ import {
   type OnboardingWizardStep,
 } from '@/lib/onboarding/wizard/wizard-steps';
 import type { PracticedSportId } from '@/lib/practiced-sports';
+import {
+  EMPTY_TRAINING_AVAILABILITY,
+  type TrainingAvailability,
+} from '@/lib/training-availability/types';
 import type { CredentialProvider } from '@/components/onboarding/wizard/use-onboarding-wizard';
 
 export function useOnboardingWizardState(
@@ -19,6 +23,9 @@ export function useOnboardingWizardState(
 ) {
   const [step, setStep] = useState<OnboardingWizardStep>(initialStep);
   const [sports, setSports] = useState<PracticedSportId[]>([]);
+  const [availability, setAvailability] = useState<TrainingAvailability>(
+    EMPTY_TRAINING_AVAILABILITY,
+  );
   const [connected, setConnected] = useState<Set<string>>(() => new Set(initiallyConnected));
   const [prefs, setPrefs] = useState<IntegrationSourcePrefs>(initialPrefs);
   const [credentialTarget, setCredentialTarget] = useState<{
@@ -38,6 +45,8 @@ export function useOnboardingWizardState(
     setStep,
     sports,
     setSports,
+    availability,
+    setAvailability,
     connected,
     setConnected,
     prefs,

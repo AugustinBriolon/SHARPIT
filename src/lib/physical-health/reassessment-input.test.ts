@@ -3,6 +3,8 @@ import {
   clampSeverity,
   impactChoiceFromFunctionalImpact,
   impactForTrend,
+  impactLabel,
+  impactShortLabel,
   impactToFunctionalImpact,
   severityForTrend,
   TREND_SEVERITY_STEP,
@@ -47,6 +49,15 @@ describe('impactToFunctionalImpact', () => {
     expect(impactToFunctionalImpact('normal')).toBe('NONE');
     expect(impactToFunctionalImpact('reduced')).toBe('MODERATE');
     expect(impactToFunctionalImpact('stopped')).toBe('STOPPED');
+  });
+});
+
+describe('impactShortLabel', () => {
+  it('keeps compact UI labels while full labels stay available for a11y', () => {
+    expect(impactShortLabel('normal')).toBe('Normal');
+    expect(impactShortLabel('reduced')).toBe('Réduit');
+    expect(impactShortLabel('stopped')).toBe('Arrêté');
+    expect(impactLabel('normal')).toBe('Entraînement normal');
   });
 });
 

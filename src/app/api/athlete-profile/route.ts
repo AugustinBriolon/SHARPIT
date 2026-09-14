@@ -6,6 +6,7 @@ import { athleteProfileSchema, type AthleteProfileInput } from '@/lib/validators
 import { invalidateCoachContext } from '@/lib/coach/context/coach-context';
 import { normalizeAthleteEquipment } from '@/lib/equipment/parse';
 import { sanitizePracticedSportsForPersist } from '@/lib/practiced-sports';
+import { sanitizeTrainingAvailabilityForPersist } from '@/lib/training-availability/parse';
 import { DEFAULT_DISPLAY_MODE } from '@/lib/preferences/display-mode';
 import { accessTierSetCookieValue } from '@/lib/access/tier-cookie';
 
@@ -67,6 +68,22 @@ function practicedSportsPatch(
   return { practicedSports: sanitized as Prisma.InputJsonValue };
 }
 
+function trainingAvailabilityPatch(
+  trainingAvailability: AthleteProfileInput['trainingAvailability'],
+): { trainingAvailability: Prisma.InputJsonValue | null } | Record<string, never> {
+  if (trainingAvailability === undefined) {
+    return {};
+  }
+  if (trainingAvailability === null) {
+    return { trainingAvailability: null };
+  }
+  return {
+    trainingAvailability: sanitizeTrainingAvailabilityForPersist(
+      trainingAvailability,
+    ) as Prisma.InputJsonValue,
+  };
+}
+
 export async function GET() {
   try {
     const athleteId = await getCurrentAthleteId();
@@ -106,12 +123,13 @@ export async function PATCH(request: NextRequest) {
   }
 
   try {
-    const { equipment, practicedSports, ...rest } = parsed.data;
+    const { equipment, practicedSports, trainingAvailability, ...rest } = parsed.data;
     const athleteId = await getCurrentAthleteId();
     const profile = await upsertAthleteProfile(athleteId, {
       ...rest,
       ...equipmentPatch(equipment),
       ...practicedSportsPatch(practicedSports),
+      ...trainingAvailabilityPatch(trainingAvailability),
     });
     // Any profile field can affect coach prompts / twin — clear the 30s cache.
     invalidateCoachContext();

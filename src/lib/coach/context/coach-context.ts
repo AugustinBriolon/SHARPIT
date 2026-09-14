@@ -36,6 +36,12 @@ import {
   formatPracticedSportsForCoach,
   normalizeAthletePracticedSports,
 } from '@/lib/practiced-sports';
+import { normalizeTrainingAvailability } from '@/lib/training-availability/parse';
+import {
+  WEEKDAY_LABELS_FR,
+  weekdayLabels,
+  type TrainingAvailability,
+} from '@/lib/training-availability/types';
 import { dayKeyFromDate, toLocalCalendarDate } from '@/lib/date/day-key';
 
 async function loadNutritionSummary(
@@ -59,8 +65,6 @@ async function loadNutritionSummary(
     return null;
   }
 }
-
-const WEEKDAYS_FR = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
 
 const TYPE_FR: Record<string, string> = {
   RUN: 'Course',
@@ -562,7 +566,7 @@ function buildAvailableDays(
   return dayCounts
     .map((count, day) => ({ day, count }))
     .filter((entry) => entry.count >= 8 * 0.25)
-    .map((entry) => WEEKDAYS_FR[entry.day]);
+    .map((entry) => WEEKDAY_LABELS_FR[entry.day]!);
 }
 
 function mapRealizedSession(
@@ -669,6 +673,24 @@ function assembleCoachActivitySections(
   };
 }
 
+/** Free-text athlete note — blank and absent both read as nothing to say. */
+function coachProfileNote(profile: CoachContextSources[5]): string | null {
+  return profile?.context?.trim() || null;
+}
+
+/**
+ * The declared inventories, each normalised from its own JSON blob. Kept apart
+ * from the section builder: three optional chains plus their fallbacks is most
+ * of a function's complexity budget on their own.
+ */
+function coachProfileInventories(profile: CoachContextSources[5]) {
+  return {
+    equipment: normalizeAthleteEquipment(profile?.equipment ?? null),
+    practicedSports: normalizeAthletePracticedSports(profile?.practicedSports ?? null).sports,
+    trainingAvailability: normalizeTrainingAvailability(profile?.trainingAvailability ?? null),
+  };
+}
+
 function assembleCoachProfileSections(
   today: Date,
   profile: CoachContextSources[5],
@@ -679,9 +701,8 @@ function assembleCoachProfileSections(
   const { primaryRace, races, metricGoals } = buildGoalsContext(goals, today);
   return {
     today: format(today, 'EEEE d MMMM yyyy', { locale: fr }),
-    note: profile?.context?.trim() || null,
-    equipment: normalizeAthleteEquipment(profile?.equipment ?? null),
-    practicedSports: normalizeAthletePracticedSports(profile?.practicedSports ?? null).sports,
+    note: coachProfileNote(profile),
+    ...coachProfileInventories(profile),
     profile: buildCoachProfile(profile),
     health,
     primaryRace,
@@ -1210,10 +1231,27 @@ function formatPmcSection(ctx: CoachContext): string[] {
   ];
 }
 
-function formatAvailabilitySection(availableDays: string[]): string[] {
-  return availableDays.length
-    ? [`\n## Disponibilités\nJours d'entraînement habituels : ${availableDays.join(', ')}.`]
-    : [];
+/**
+ * Declared intent and observed reality are two different facts, and the gap
+ * between them is itself coaching signal: a plan built on four wanted days when
+ * three actually happen is a plan that will slip. Label both rather than letting
+ * one stand in for the other.
+ */
+function formatAvailabilitySection(
+  declared: TrainingAvailability,
+  observedDays: string[],
+): string[] {
+  const lines: string[] = [];
+  if (declared.targetSessionsPerWeek !== null) {
+    lines.push(`Souhaité : ${declared.targetSessionsPerWeek} séances par semaine.`);
+  }
+  if (declared.availableWeekdays.length > 0) {
+    lines.push(`Jours déclarés libres : ${weekdayLabels(declared.availableWeekdays).join(', ')}.`);
+  }
+  if (observedDays.length > 0) {
+    lines.push(`Jours observés (8 dernières semaines) : ${observedDays.join(', ')}.`);
+  }
+  return lines.length > 0 ? [`\n## Disponibilités\n${lines.join('\n')}`] : [];
 }
 
 function formatRealizedSessionsSection(
@@ -1264,7 +1302,7 @@ function collectCoachContextLines(ctx: CoachContext): string[] {
     ...formatDecisionSection(ctx.decision),
     ...formatEnvironmentSection(ctx.environment),
     ...formatHealthSection(ctx.health),
-    ...formatAvailabilitySection(ctx.availableDays),
+    ...formatAvailabilitySection(ctx.trainingAvailability, ctx.availableDays),
     ...formatGoalsSection(ctx),
     ...formatRecentActivitiesSection(ctx.recent),
     ...formatRealizedSessionsSection(ctx.realizedSessions),

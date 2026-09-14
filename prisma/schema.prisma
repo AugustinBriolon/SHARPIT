@@ -262,6 +262,12 @@ model AthleteProfile {
   /// Null = treat as all core sports on read (existing athletes).
   practicedSports Json?
 
+  /// Declared training rhythm — sessions wanted per week and days free to train.
+  /// Shape: { version: 1, targetSessionsPerWeek: number|null, availableWeekdays: (0-6)[] }
+  /// Weekdays follow `Date#getDay` (0 = Sunday). Null = never declared; the coach
+  /// then reads only the days observed from past activities.
+  trainingAvailability Json?
+
   /// Longueur du bassin habituel (m) — Garmin en a besoin pour rendre une séance
   /// de natation en piscine. Surchargeable séance par séance.
   defaultPoolLengthM Int?

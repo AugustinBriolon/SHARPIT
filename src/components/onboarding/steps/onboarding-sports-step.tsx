@@ -1,8 +1,8 @@
 'use client';
 
+import { OnboardingContinueButton } from '@/components/onboarding/steps/onboarding-step-actions';
 import { OnboardingStepShell } from '@/components/onboarding/steps/onboarding-step-shell';
 import { PracticedSportsPicker } from '@/components/practiced-sports/practiced-sports-picker';
-import { Button } from '@/components/ui/button';
 import { hasCorePracticedSport, type PracticedSportId } from '@/lib/practiced-sports';
 
 export function OnboardingSportsStep({
@@ -32,14 +32,7 @@ export function OnboardingSportsStep({
             Choisis au moins un sport d&apos;endurance pour continuer.
           </p>
 
-          <Button
-            className="w-full sm:w-auto"
-            disabled={!canContinue || busy}
-            type="button"
-            onClick={onContinue}
-          >
-            Continuer
-          </Button>
+          <OnboardingContinueButton disabled={!canContinue || busy} onClick={onContinue} />
         </>
       }
     >

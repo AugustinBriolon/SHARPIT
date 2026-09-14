@@ -12,4 +12,9 @@ export type GoalCreateFormProps = {
   practicedSports?: readonly PracticedSportId[];
   /** Onboarding: hide title, notes, lieu, priorité, fin — those stay on Objectifs. */
   compact?: boolean;
+  /**
+   * `docked` pins the submit row to the bottom of the screen like every other
+   * onboarding step. Defaults to `inline`, so the goal dialog is untouched.
+   */
+  footerVariant?: 'inline' | 'docked';
 };

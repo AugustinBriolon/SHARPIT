@@ -8,10 +8,10 @@ import {
 import { cn } from '@/lib/utils';
 import { Loader2 } from 'lucide-react';
 
-const CHIP_SHELL =
-  'text-data inline-flex max-w-full min-h-7 items-center gap-1.5 rounded-xl border px-2.5 py-1 text-xs transition-[color,background-color,border-color] duration-150 ease-out';
-
-export function ComplianceBadge({
+/**
+ * Note d'exécution — instrument line under Lecture title, before the narrative.
+ */
+export function ExecutionScoreBlock({
   analysis,
   isAnalyzing,
 }: {
@@ -20,75 +20,82 @@ export function ComplianceBadge({
 }) {
   if (analysis) {
     return (
-      <span
-        aria-label={`Conformité au plan : ${analysis.complianceScore} sur 100, ${SESSION_VERDICT_LABELS[analysis.verdict]}`}
-        role="status"
-        className={cn(
-          CHIP_SHELL,
-          'border-analysis-border/70 bg-background/70 font-semibold tabular-nums',
-        )}
-      >
-        <span className={sessionScoreColor(analysis.complianceScore)}>
-          {analysis.complianceScore}
-        </span>
-        <span className="text-muted-foreground font-normal">/100</span>
-        <span className="text-muted-foreground mx-0.5 font-normal">·</span>
-        <span className="text-foreground/80 font-medium">
-          {SESSION_VERDICT_LABELS[analysis.verdict]}
-        </span>
-      </span>
+      <div className="space-y-1">
+        <p className="text-label">Note d&apos;exécution</p>
+        <p
+          aria-label={`Note d'exécution : ${analysis.complianceScore} sur 100, ${SESSION_VERDICT_LABELS[analysis.verdict]}`}
+          className="text-data flex flex-wrap items-baseline gap-x-2 gap-y-0.5"
+        >
+          <span
+            className={cn(
+              'text-2xl leading-none font-semibold tabular-nums',
+              sessionScoreColor(analysis.complianceScore),
+            )}
+          >
+            {analysis.complianceScore}
+          </span>
+          <span className="text-muted-foreground text-sm">/100</span>
+          <span className="text-foreground text-sm font-medium">
+            {SESSION_VERDICT_LABELS[analysis.verdict]}
+          </span>
+        </p>
+      </div>
     );
   }
 
-  if (!isAnalyzing) {
-    return null;
+  if (isAnalyzing) {
+    return (
+      <div className="space-y-1">
+        <p className="text-label">Note d&apos;exécution</p>
+        <p className="text-muted-foreground inline-flex items-center gap-1.5 text-sm" role="status">
+          <Loader2
+            className="text-primary size-3.5 shrink-0 animate-spin motion-reduce:animate-none"
+            aria-hidden
+          />
+          Calcul en cours…
+        </p>
+      </div>
+    );
   }
 
-  return (
-    <span
-      aria-busy="true"
-      aria-live="polite"
-      className={cn(CHIP_SHELL, 'border-analysis-border/70 bg-background/70 text-muted-foreground')}
-      role="status"
-    >
-      <Loader2
-        className="text-primary size-3.5 shrink-0 animate-spin motion-reduce:animate-none"
-        aria-hidden
-      />
-      Analyse…
-    </span>
-  );
+  return null;
 }
 
+/**
+ * Evidence under the Lecture: findings then orientation.
+ * Visual weight stays below the narrative.
+ */
 export function CompletedSessionPlanGaps({
   analysis,
 }: {
   analysis: NonNullable<ReturnType<typeof parseSessionAnalysis>>;
 }) {
   const hasRemarks = analysis.remarks.length > 0;
-  const hasRecommendation = Boolean(analysis.recommendation?.trim());
-  if (!hasRemarks && !hasRecommendation) {
+  const recommendation = analysis.recommendation?.trim() || null;
+  if (!hasRemarks && !recommendation) {
     return null;
   }
 
   return (
-    <div className="space-y-2">
+    <div className="border-analysis-border/50 space-y-3 border-t pt-3">
       {hasRemarks ? (
-        <ul className="space-y-1">
-          {analysis.remarks.map((remark) => (
-            <li key={remark} className="text-muted-foreground flex gap-1.5 text-xs leading-snug">
-              <span className="text-primary mt-0.5" aria-hidden>
-                ·
-              </span>
-              <span>{remark}</span>
-            </li>
-          ))}
-        </ul>
+        <div className="space-y-2">
+          <p className="text-label text-foreground/70">Écarts au plan</p>
+          <ul className="space-y-2">
+            {analysis.remarks.map((remark) => (
+              <li key={remark} className="text-foreground/85 text-sm leading-snug text-pretty">
+                {remark}
+              </li>
+            ))}
+          </ul>
+        </div>
       ) : null}
-      {hasRecommendation ? (
-        <p className="text-foreground/85 text-xs leading-relaxed text-pretty">
-          {analysis.recommendation}
-        </p>
+
+      {recommendation ? (
+        <div className="bg-muted/35 rounded-lg px-2.5 py-2">
+          <p className="text-label text-foreground/70 mb-1">À faire</p>
+          <p className="text-foreground text-sm leading-snug text-pretty">{recommendation}</p>
+        </div>
       ) : null}
     </div>
   );

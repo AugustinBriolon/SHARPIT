@@ -1,6 +1,9 @@
 'use client';
 
-import { Button } from '@/components/ui/button';
+import {
+  OnboardingContinueButton,
+  OnboardingSkipButton,
+} from '@/components/onboarding/steps/onboarding-step-actions';
 
 export function OnboardingEquipmentActions({
   pending,
@@ -13,23 +16,8 @@ export function OnboardingEquipmentActions({
 }) {
   return (
     <>
-      <Button
-        className="sm:mr-auto"
-        disabled={pending}
-        type="button"
-        variant="ghost"
-        onClick={() => void onSkip()}
-      >
-        Passer
-      </Button>
-      <Button
-        className="w-full sm:w-auto"
-        disabled={pending}
-        type="button"
-        onClick={() => void onContinue()}
-      >
-        Continuer
-      </Button>
+      <OnboardingSkipButton disabled={pending} onClick={onSkip} />
+      <OnboardingContinueButton disabled={pending} onClick={onContinue} />
     </>
   );
 }

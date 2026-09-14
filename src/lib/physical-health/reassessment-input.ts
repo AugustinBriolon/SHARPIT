@@ -31,6 +31,13 @@ const IMPACT_LABELS: Record<ImpactChoice, string> = {
   stopped: 'Entraînement arrêté',
 };
 
+/** Compact segment labels — full meaning stays on aria-label via impactLabel. */
+const IMPACT_SHORT_LABELS: Record<ImpactChoice, string> = {
+  normal: 'Normal',
+  reduced: 'Réduit',
+  stopped: 'Arrêté',
+};
+
 const IMPACT_TO_ENUM: Record<ImpactChoice, FunctionalImpactValue> = {
   normal: 'NONE',
   reduced: 'MODERATE',
@@ -43,6 +50,10 @@ export function trendLabel(trend: ReassessmentTrend): string {
 
 export function impactLabel(choice: ImpactChoice): string {
   return IMPACT_LABELS[choice];
+}
+
+export function impactShortLabel(choice: ImpactChoice): string {
+  return IMPACT_SHORT_LABELS[choice];
 }
 
 export function impactToFunctionalImpact(choice: ImpactChoice): FunctionalImpactValue {

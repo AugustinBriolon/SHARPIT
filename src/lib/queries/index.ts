@@ -591,6 +591,23 @@ export const getAthleteProfile = cache(async (athleteId: string) => {
   return prisma.athleteProfile.findUnique({ where: { id: athleteId } });
 });
 
+/**
+ * One versioned JSON column of the athlete profile, patched the Prisma way:
+ * an absent key leaves the column untouched, an explicit null clears it.
+ *
+ * Shared by the three blobs — equipment, practiced sports and training
+ * availability — which otherwise repeat the same ternary three times.
+ */
+function jsonBlobPatch(
+  key: 'equipment' | 'practicedSports' | 'trainingAvailability',
+  value: Prisma.InputJsonValue | typeof Prisma.JsonNull | null | undefined,
+): Record<string, Prisma.InputJsonValue | typeof Prisma.JsonNull> {
+  if (value === undefined) {
+    return {};
+  }
+  return { [key]: value === null ? Prisma.JsonNull : value };
+}
+
 export async function upsertAthleteProfile(
   athleteId: string,
   data: {
@@ -612,23 +629,16 @@ export async function upsertAthleteProfile(
     sleepBedtimeTargetMin?: number | null;
     equipment?: Prisma.InputJsonValue | typeof Prisma.JsonNull | null;
     practicedSports?: Prisma.InputJsonValue | typeof Prisma.JsonNull | null;
+    trainingAvailability?: Prisma.InputJsonValue | typeof Prisma.JsonNull | null;
     displayMode?: DisplayMode;
   },
 ) {
-  const { equipment, practicedSports, ...rest } = data;
+  const { equipment, practicedSports, trainingAvailability, ...rest } = data;
   const payload = {
     ...rest,
-    ...(equipment !== undefined
-      ? { equipment: equipment === undefined || equipment === null ? Prisma.JsonNull : equipment }
-      : {}),
-    ...(practicedSports !== undefined
-      ? {
-          practicedSports:
-            practicedSports === undefined || practicedSports === null
-              ? Prisma.JsonNull
-              : practicedSports,
-        }
-      : {}),
+    ...jsonBlobPatch('equipment', equipment),
+    ...jsonBlobPatch('practicedSports', practicedSports),
+    ...jsonBlobPatch('trainingAvailability', trainingAvailability),
   };
 
   // Every AthleteProfile row now carries a required clerkUserId — there is no

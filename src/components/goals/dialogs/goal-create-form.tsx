@@ -15,6 +15,7 @@ function GoalCreateRaceFormBody(
     compact: boolean;
     submitLabel: string;
     skipLabel?: string;
+    footerVariant?: 'inline' | 'docked';
     onSkip?: () => void;
     onCancel?: () => void;
   },
@@ -23,6 +24,7 @@ function GoalCreateRaceFormBody(
     <GoalCreateRaceBranch
       compact={props.compact}
       displayError={props.displayError}
+      footerVariant={props.footerVariant}
       priority={props.priority}
       raceFormId={props.raceFormId}
       skipLabel={props.skipLabel}
@@ -42,6 +44,7 @@ function GoalCreateMetricFormBody(
     compact: boolean;
     submitLabel: string;
     skipLabel?: string;
+    footerVariant?: 'inline' | 'docked';
     onSkip?: () => void;
     onCancel?: () => void;
   },
@@ -53,6 +56,7 @@ function GoalCreateMetricFormBody(
     <GoalCreateMetricBranch
       compact={props.compact}
       displayError={props.displayError}
+      footerVariant={props.footerVariant}
       metricFormId={props.metricFormId}
       practicedSports={props.resolvedSports}
       skipLabel={props.skipLabel}
@@ -78,9 +82,10 @@ export function GoalCreateForm(props: GoalCreateFormProps) {
     error: externalError,
     practicedSports,
     compact = false,
+    footerVariant = 'inline',
   } = props;
   const form = useGoalCreateFormState({ onSubmit, practicedSports, compact, error: externalError });
-  const bodyProps = { ...form, compact, submitLabel, skipLabel, onSkip, onCancel };
+  const bodyProps = { ...form, compact, submitLabel, skipLabel, onSkip, onCancel, footerVariant };
 
   return (
     <div className="space-y-4">

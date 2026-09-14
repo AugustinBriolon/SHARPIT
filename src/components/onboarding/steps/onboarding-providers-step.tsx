@@ -7,8 +7,8 @@ import {
   continueButtonLabel,
   OnboardingProvidersClassList,
 } from '@/components/onboarding/steps/onboarding-providers-step-parts';
+import { OnboardingContinueButton } from '@/components/onboarding/steps/onboarding-step-actions';
 import { OnboardingStepShell } from '@/components/onboarding/steps/onboarding-step-shell';
-import { Button } from '@/components/ui/button';
 
 export function OnboardingProvidersStep({
   prefs,
@@ -36,9 +36,9 @@ export function OnboardingProvidersStep({
       title="Connecte tes sources"
       titleId="onboarding-providers-title"
       actions={
-        <Button className="w-full sm:w-auto" disabled={busy} type="button" onClick={onContinue}>
-          {continueButtonLabel(busy, connected.size > 0)}
-        </Button>
+        <OnboardingContinueButton disabled={busy} onClick={onContinue}>
+          {continueButtonLabel(busy)}
+        </OnboardingContinueButton>
       }
     >
       <OnboardingProvidersClassList

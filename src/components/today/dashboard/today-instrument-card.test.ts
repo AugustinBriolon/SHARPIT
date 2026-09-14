@@ -46,10 +46,10 @@ describe('TodayInstrumentCard', () => {
   it('drops the fill on the quiet tier, and keeps skeleton and card on the same one', () => {
     const card = renderToStaticMarkup(
       createElement(TodayInstrumentCard, {
-        href: '/plan/semaine',
+        href: '/today',
         icon: createElement('span'),
         tier: 'quiet',
-        title: 'Régularité',
+        title: 'Contexte',
       }),
     );
 
@@ -59,7 +59,7 @@ describe('TodayInstrumentCard', () => {
     const skeleton = renderToStaticMarkup(
       createElement(
         TodayInstrumentCardSkeleton,
-        { tier: 'quiet', title: 'Régularité' },
+        { tier: 'quiet', title: 'Contexte' },
         createElement('span'),
       ),
     );

@@ -122,3 +122,5 @@ export function useSessionRealizationAnalysis({
     }),
   };
 }
+
+export type SessionRealizationAnalysisState = ReturnType<typeof useSessionRealizationAnalysis>;

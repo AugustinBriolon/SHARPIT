@@ -186,10 +186,22 @@
     adds the home-indicator inset. Sticky action bars and chat composers must
     anchor on `--bottom-nav-offset` so they never swallow a nav tap. Toasts live
     at the top edge instead — they must not compete with the floating capsule.
+
+    Top system edge (Dynamic Island / notch / status bar): `--safe-top` is the
+    inset from iOS when `viewport-fit=cover` + translucent status bar. The
+    document owns AppShell scrolling (ADR-039). Readable content uses
+    `safe-page-top` so headings clear Safari's native status tint at rest.
+    `--system-edge-blur-height` sizes the scroll-only progressive blur.
+    Interactive chrome uses `safe-top-offset` — never model-specific heights.
   */
   /* Floating glass tab bar — keep last hub cards / quiet links clear of the bar. */
   --bottom-nav-height: 5.75rem;
   --bottom-nav-offset: calc(var(--bottom-nav-height) + 2rem + env(safe-area-inset-bottom, 0px));
+  --safe-top: env(safe-area-inset-top, 0px);
+  /* Floor clears Safari-tab Liquid Glass overlap when env() under-reports;
+     standalone island insets still win via max(). Not a model-specific px. */
+  --safe-page-top-floor: 3.5rem;
+  --system-edge-blur-height: calc(max(var(--safe-top), var(--safe-page-top-floor)) + 1.25rem);
 
   /* Press feedback scales — ADR-028 / motionTokens.scale.press* */
   --press-scale-micro: 0.95;
@@ -301,10 +313,9 @@
     touch-action: manipulation;
   }
   html {
-    @apply font-sans;
-    /* Kills the rubber-band bounce at the true document edges. The main
-       scroll container already has overscroll-y-contain (mobile-shell.tsx);
-       this closes the gap for the html/body level outside it. */
+    @apply font-sans bg-background;
+    /* Kills the rubber-band bounce at the true document edges while preserving
+       document scrolling for the app shell. */
     overscroll-behavior-y: none;
     color-scheme: light;
   }
@@ -373,6 +384,76 @@
 
 @utility safe-area-bottom {
   padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/** Fixed/absolute controls under Dynamic Island / notch — never a model-specific px. */
+@utility safe-top-offset {
+  top: max(0.75rem, env(safe-area-inset-top, 0px));
+}
+
+/**
+ * Reading column top inset — titles clear the status strip.
+ *
+ * Safari Liquid Glass (tab mode) often reports `safe-area-inset-top` as 0 or a
+ * few px while the status UI still overlaps ~50px of the layout viewport.
+ * `max(1rem, env(...))` then equals the old `py-4` and nothing moves on device.
+ * Floor at 3.5rem on small viewports; standalone insets (~47–59px) still win.
+ * At `lg`, match the regular page gutter (same as `lg:p-6`).
+ */
+@utility safe-page-top {
+  padding-top: max(var(--safe-page-top-floor), env(safe-area-inset-top, 0px));
+  @media (width >= 64rem) {
+    padding-top: 1.5rem;
+  }
+}
+
+/**
+ * Sticky zero-height sentinel inside <main> — takes no layout space.
+ * Do not put background / backdrop-filter here (Safari 26 Liquid Glass samples
+ * the sticky box for status-bar tint — ADR-039).
+ */
+@utility system-edge-blur {
+  z-index: 45;
+  position: sticky;
+  top: 0;
+  height: 0;
+  overflow: visible;
+  pointer-events: none;
+}
+
+/**
+ * Progressive top-edge blur (absolute child). Mounted only while scrolled so
+ * the first viewport is not double-covered by native tint + our glass.
+ * Tint stays low; mask dissolves into the canvas.
+ */
+@utility system-edge-fade {
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  height: var(--system-edge-blur-height);
+  -webkit-backdrop-filter: blur(14px) saturate(1.2);
+  backdrop-filter: blur(14px) saturate(1.2);
+  background-color: color-mix(in oklab, var(--background) 12%, transparent);
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    #000 0%,
+    #000 35%,
+    rgb(0 0 0 / 0.55) 68%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to bottom,
+    #000 0%,
+    #000 35%,
+    rgb(0 0 0 / 0.55) 68%,
+    transparent 100%
+  );
+
+  @media (prefers-reduced-transparency: reduce) {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    background-color: color-mix(in oklab, var(--background) 55%, transparent);
+  }
 }
 
 /** Hide scrollbar while keeping scroll (dialogs, tab strips, etc.). */
@@ -636,18 +717,16 @@
 /* Quiet tier under chip-surface-lg — hairline only, no fill.
    A filled surface says « separate object ». Spending it on every block flattens
    the hierarchy it was meant to create, so context-level evidence keeps the
-   border and drops the fill; consultable evidence keeps chip-surface-lg. */
+   border and drops the fill; consultable evidence keeps chip-surface-lg.
+   Theme via `.dark` tokens — never `prefers-color-scheme` (app preference
+   light/dark/system owns the canvas, not the OS media query alone). */
 @utility chip-surface-quiet {
   border: 1px solid color-mix(in oklch, var(--color-analysis-border) 60%, transparent);
-  background-color: white;
+  background-color: transparent;
   color: var(--color-card-foreground);
   transition-duration: 150ms;
   transition-property: color, background-color, border-color, opacity, transform;
   transition-timing-function: ease-out;
-  /* if black background, set background-color to black green */
-  @media (prefers-color-scheme: dark) {
-    background-color: var(--color-chip-surface);
-  }
   @media (prefers-reduced-motion: no-preference) {
     &:is(a, button, [role='button']):active:not(:disabled):not([aria-disabled='true']) {
       transform: scale(var(--press-scale-surface));

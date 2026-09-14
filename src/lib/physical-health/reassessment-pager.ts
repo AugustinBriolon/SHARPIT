@@ -1,6 +1,6 @@
 /**
  * Pure helpers for the post-session pain reassessment pager.
- * Index clamp stays out of React so swipe/slider controls stay testable.
+ * Index clamp stays out of React so named-step / swipe controls stay testable.
  */
 
 export function clampReassessmentIndex(index: number, length: number): number {
@@ -10,6 +10,7 @@ export function clampReassessmentIndex(index: number, length: number): number {
   return Math.min(length - 1, Math.max(0, Math.floor(index)));
 }
 
+/** Position label for multi-injury strip — null when a single item remains. */
 export function reassessmentProgressLabel(index: number, length: number): string | null {
   if (length <= 1) {
     return null;
@@ -18,18 +19,17 @@ export function reassessmentProgressLabel(index: number, length: number): string
   return `${safe + 1} / ${length}`;
 }
 
-/** Fraction 0..1 for a range slider thumb (multi-injury only). */
-export function reassessmentSliderValue(index: number, length: number): number {
+/** How many items are still waiting in the queue (including the current one). */
+export function reassessmentRemainingLabel(length: number): string | null {
   if (length <= 1) {
-    return 0;
+    return null;
   }
-  return clampReassessmentIndex(index, length) / (length - 1);
+  return length === 2 ? '2 restantes' : `${length} restantes`;
 }
 
-export function reassessmentIndexFromSlider(value: number, length: number): number {
-  if (length <= 1) {
-    return 0;
-  }
-  const clamped = Math.min(1, Math.max(0, value));
-  return clampReassessmentIndex(Math.round(clamped * (length - 1)), length);
+/** Chip text: drop redundant "Douleur :" / "Blessure :" when section already says it. */
+export function reassessmentChipLabel(noteTitle: string): string {
+  const trimmed = noteTitle.trim();
+  const stripped = trimmed.replace(/^(Douleur|Blessure)\s*:\s*/i, '').trim();
+  return stripped.length > 0 ? stripped : trimmed;
 }

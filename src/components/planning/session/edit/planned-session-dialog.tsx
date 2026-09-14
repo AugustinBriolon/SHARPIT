@@ -6,10 +6,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import type { ClientGoal, ClientPlannedSession } from '@/lib/query/types';
 import type { MorningProposalCompareInput } from '@/lib/today/rich/morning-proposal-compare';
 import {
-  dialogTitle,
   EMPTY_GOALS,
   type CreateMode,
 } from '@/components/planning/session/edit/planned-session-dialog-helpers';
+import { resolvePlannedSessionDialogPresentation } from '@/components/planning/session/edit/planned-session-dialog-presentation';
 import { BrickAnalysisPanel } from '@/components/planning/brick/brick-analysis-panel';
 import { PlannedSessionReadView } from '@/components/planning/session/read/planned-session-read-view';
 import { PlannedSessionEditForm } from '@/components/planning/session/edit/planned-session-edit-form';
@@ -23,16 +23,6 @@ interface PlannedSessionDialogProps {
   onClose: () => void;
   omitLinkedActivityNavigation?: boolean;
   morningProposal?: MorningProposalCompareInput;
-}
-
-function resolveDialogTitle(
-  dialog: ReturnType<typeof usePlannedSessionDialog>,
-  session?: ClientPlannedSession | null,
-) {
-  const hasLinkedActivity = Boolean(
-    dialog.liveSession?.activityId ?? dialog.liveSession?.activity ?? session?.activityId,
-  );
-  return dialogTitle(dialog.isEdit, dialog.mode, hasLinkedActivity);
 }
 
 export function PlannedSessionDialog({
@@ -51,17 +41,16 @@ export function PlannedSessionDialog({
     omitLinkedActivityNavigation,
     morningProposal,
   });
-
-  const showReadMode = dialog.isEdit && dialog.mode === 'read' && dialog.liveSession;
-  const showEditMode = !dialog.isEdit || dialog.mode === 'edit';
+  const { showReadMode, showEditMode, isRealizedRead, title } =
+    resolvePlannedSessionDialogPresentation(dialog, session);
 
   return (
     <>
       <Dialog open onOpenChange={(open) => !open && onClose()}>
         <DialogContent className="no-scrollbar max-h-[80dvh] min-w-0 overflow-x-hidden overflow-y-auto sm:max-h-[90vh] sm:max-w-2xl">
           <PlannedSessionNavDismissProvider onDismiss={onClose}>
-            <DialogHeader className="pr-10">
-              <DialogTitle>{resolveDialogTitle(dialog, session)}</DialogTitle>
+            <DialogHeader className={isRealizedRead ? 'sr-only' : 'pr-10'}>
+              <DialogTitle>{title}</DialogTitle>
             </DialogHeader>
 
             {showReadMode ? (
