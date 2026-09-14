@@ -93,7 +93,7 @@ export function TodayRearrangeProposal({
         />
         <RearrangeApplyLink href={proposal.href} label={proposal.ctaLabel} />
         {advancement ? (
-          <PlanVivantAdvancementSection prominence="secondary" view={advancement} showDivider />
+          <PlanVivantAdvancementSection tone="ink" view={advancement} showDivider />
         ) : null}
       </section>
     </FadeIn>

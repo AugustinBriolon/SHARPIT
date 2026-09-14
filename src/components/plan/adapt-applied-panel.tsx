@@ -68,7 +68,7 @@ export function PlanAdaptAppliedPanel({
           </Button>
         ) : null}
         {advancement ? (
-          <PlanVivantAdvancementSection prominence="secondary" view={advancement} showDivider />
+          <PlanVivantAdvancementSection tone="ink" view={advancement} showDivider />
         ) : null}
       </section>
     </FadeIn>

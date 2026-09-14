@@ -3,20 +3,131 @@
 import Link from 'next/link';
 import { useId, useState } from 'react';
 import { FadeIn, MotionExpand } from '@/components/motion';
-import { RearrangeSessionRail } from '@/components/coach/plan/rearrange-session-rail';
 import {
   buildGoalAdvancementLabNote,
   type GoalAdvancementView,
+  type GoalAdvancementWeekSegment,
 } from '@/lib/today/rich/goal-advancement';
-import type { RearrangePreviewSession } from '@/lib/today/rich/rearrange-preview';
 import { cn } from '@/lib/utils';
 import { NavArrowDown } from '@/components/icons/nav-arrows';
 
 const EMPTY_TRAIL = 'Pas encore d’ajustement validé cette semaine — le Twin suit l’exécution.';
 
-/** Plan vivant = ink instrument band (same family as Verdict / plaque Objectif). */
+/**
+ * Plan vivant answers one question: où en est ma semaine vers l'objectif ?
+ *
+ * It used to answer it on a full ink band with verdict-sized type, a tally rail
+ * that stretched a single count across the whole width, and a bordered
+ * accordion — a second dark hero competing with the verdict it sits under.
+ * Ink is reserved for the verdict and the Objectif plate (§10.1); on Today this
+ * is a sibling card, and the week reads as one proportional bar rather than a
+ * row of boxes that degenerates at one segment.
+ */
+export type PlanVivantTone = 'ink' | 'plain';
+
+/** Standalone on Today — reads as a sibling of the surrounding cards. */
+export const PLAN_VIVANT_PLAIN_SHELL_CLASS =
+  'analysis-panel rounded-analysis-lg space-y-3 px-4 py-3.5 sm:px-5 sm:py-4';
+
+/** Ink band — kept for the surfaces that host a confirmation or a proposal. */
 export const PLAN_VIVANT_SHELL_CLASS =
   'surface-ink rounded-analysis-lg space-y-4 px-4 py-4 sm:px-5 sm:py-5';
+
+type ToneClasses = {
+  title: string;
+  body: string;
+  faint: string;
+  track: string;
+  hover: string;
+  link: string;
+  ring: string;
+};
+
+const TONE: Record<PlanVivantTone, ToneClasses> = {
+  ink: {
+    title: 'text-ink-surface-foreground',
+    body: 'text-ink-surface-foreground/70',
+    faint: 'text-ink-surface-foreground/55',
+    track: 'bg-ink-surface-foreground/15',
+    hover: 'hover:text-ink-surface-foreground',
+    link: 'text-highlight hover:text-highlight/85 dark:text-ink-surface-foreground',
+    ring: 'focus-visible:ring-highlight/60',
+  },
+  plain: {
+    title: 'text-foreground',
+    body: 'text-muted-foreground',
+    faint: 'text-muted-foreground/80',
+    track: 'bg-muted-foreground/15',
+    hover: 'hover:text-foreground',
+    link: 'text-primary hover:text-primary/85',
+    ring: 'focus-visible:ring-primary/50',
+  },
+};
+
+/** Semantic per §8.4 — adapted is a caution signal, done is capacity, rest is metadata. */
+const SEGMENT_FILL: Record<GoalAdvancementWeekSegment['id'], Record<PlanVivantTone, string>> = {
+  adapted: { ink: 'bg-signal-caution/80', plain: 'bg-signal-caution' },
+  done: { ink: 'bg-highlight', plain: 'bg-primary' },
+  remaining: { ink: 'bg-ink-surface-foreground/25', plain: 'bg-muted-foreground/30' },
+};
+
+function segmentCount(segment: GoalAdvancementWeekSegment): number {
+  const parsed = Number.parseInt(segment.dateLabel, 10);
+  return Number.isFinite(parsed) ? Math.max(0, parsed) : 0;
+}
+
+function WeekMeter({
+  segments,
+  tone,
+}: {
+  segments: readonly GoalAdvancementWeekSegment[];
+  tone: PlanVivantTone;
+}) {
+  const total = segments.reduce((sum, segment) => sum + segmentCount(segment), 0);
+  if (total <= 0) {
+    return null;
+  }
+
+  return (
+    <div className={cn('flex h-1.5 overflow-hidden rounded-full', TONE[tone].track)} aria-hidden>
+      {segments.map((segment) => (
+        <span
+          key={segment.id}
+          className={SEGMENT_FILL[segment.id][tone]}
+          style={{ width: `${(segmentCount(segment) / total) * 100}%` }}
+        />
+      ))}
+    </div>
+  );
+}
+
+function WeekLegend({
+  segments,
+  tone,
+}: {
+  segments: readonly GoalAdvancementWeekSegment[];
+  tone: PlanVivantTone;
+}) {
+  return (
+    <ul className={cn('flex flex-wrap items-baseline gap-x-3 gap-y-1', TONE[tone].body)}>
+      {segments.map((segment) => (
+        <li key={segment.id} className="flex items-baseline gap-1.5 text-[11px] leading-snug">
+          <span
+            className={cn(
+              'size-1.5 shrink-0 translate-y-[-1px] rounded-full',
+              SEGMENT_FILL[segment.id][tone],
+            )}
+            aria-hidden
+          />
+          <span className={cn('text-data font-semibold tabular-nums', TONE[tone].title)}>
+            {segment.dateLabel}
+          </span>
+          <span>{segment.intensityLabel}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
 
 function AdvancementNote({ view, className }: { view: GoalAdvancementView; className?: string }) {
   const note = buildGoalAdvancementLabNote(view);
@@ -33,141 +144,102 @@ function AdvancementNote({ view, className }: { view: GoalAdvancementView; class
   );
 }
 
-function AdvancementProgress({ progress }: { progress: number }) {
+function GoalProgressHairline({ progress, tone }: { progress: number; tone: PlanVivantTone }) {
   const clamped = Math.min(100, Math.max(0, progress));
   return (
     <div
-      aria-label={`Progression ${clamped} %`}
+      aria-label={`Progression vers l’objectif ${clamped} %`}
       aria-valuemax={100}
       aria-valuemin={0}
       aria-valuenow={clamped}
-      className="bg-ink-surface-foreground/15 h-1.5 overflow-hidden rounded-full"
+      className={cn('h-[3px] overflow-hidden rounded-full', TONE[tone].track)}
       role="progressbar"
     >
       <div
-        className="bg-highlight dark:bg-ink-surface-foreground h-full rounded-full transition-[width] duration-200 ease-out motion-reduce:transition-none"
         style={{ width: `${clamped}%` }}
+        className={cn(
+          'h-full rounded-full transition-[width] duration-200 ease-out motion-reduce:transition-none',
+          tone === 'ink' ? 'bg-highlight dark:bg-ink-surface-foreground' : 'bg-primary',
+        )}
       />
     </div>
   );
 }
 
-function weekSegmentsAsPreview(
-  segments: GoalAdvancementView['weekSegments'],
-): RearrangePreviewSession[] {
-  return segments.map((segment) => ({
-    id: segment.id,
-    dateLabel: segment.dateLabel,
-    intensityLabel: segment.intensityLabel,
-    intensity: null,
-    tone: segment.tone,
-  }));
-}
-
-function TrailList({ view }: { view: GoalAdvancementView }) {
+function TrailList({ view, tone }: { view: GoalAdvancementView; tone: PlanVivantTone }) {
   if (view.trail.length === 0) {
     return (
-      <p className="text-ink-surface-foreground/70 text-xs leading-relaxed text-pretty">
+      <p className={cn('text-[11px] leading-relaxed text-pretty', TONE[tone].body)}>
         {EMPTY_TRAIL}
       </p>
     );
   }
   return (
-    <ol className="text-ink-surface-foreground/75 space-y-2 text-xs leading-relaxed">
+    <ol className={cn('space-y-1.5 text-[11px] leading-relaxed', TONE[tone].body)}>
       {view.trail.map((item) => (
-        <li key={item.id} className="flex gap-2 text-pretty">
-          <span
-            className="text-highlight dark:text-ink-surface-foreground mt-0.5 shrink-0"
-            aria-hidden
-          >
-            ·
-          </span>
-          <span>{item.label}</span>
+        <li key={item.id} className="text-pretty">
+          {item.label}
         </li>
       ))}
     </ol>
   );
 }
 
-function AdvancementTrail({
-  view,
+function TrailToggle({
+  count,
   open,
-  onOpenChange,
+  panelId,
+  tone,
+  onToggle,
 }: {
-  view: GoalAdvancementView;
+  count: number;
   open: boolean;
-  onOpenChange: (next: boolean) => void;
+  panelId: string;
+  tone: PlanVivantTone;
+  onToggle: () => void;
 }) {
-  const panelId = useId();
-  const trailCount = view.trail.length;
-
   return (
-    <div className="space-y-0">
-      <button
-        aria-controls={panelId}
-        aria-expanded={open}
-        className="border-ink-surface-foreground/25 hover:bg-ink-surface-foreground/8 focus-visible:ring-highlight/60 flex min-h-11 w-full items-center gap-2 rounded-lg border px-3 py-2.5 text-start transition-colors duration-150 outline-none focus-visible:ring-2"
-        type="button"
-        onClick={() => onOpenChange(!open)}
-      >
-        <span className="text-ink-surface-foreground min-w-0 flex-1 text-xs font-medium text-pretty">
-          Ce que le coaching a changé
-          {trailCount > 0 ? (
-            <span className="text-data text-ink-surface-foreground/55 ml-1.5 tabular-nums">
-              · {trailCount}
-            </span>
-          ) : null}
-        </span>
-        <NavArrowDown
-          className={cn(
-            'text-ink-surface-foreground/55 size-3.5 shrink-0 transition-transform duration-150 motion-reduce:transition-none',
-            open && 'rotate-180',
-          )}
-          aria-hidden
-        />
-      </button>
-      <MotionExpand id={panelId} open={open}>
-        <div className="space-y-2 px-0.5 pt-2.5 pb-0.5">
-          <TrailList view={view} />
-          {view.phaseLabel ? (
-            <p className="text-label text-ink-surface-foreground/55">Phase · {view.phaseLabel}</p>
-          ) : null}
-        </div>
-      </MotionExpand>
-    </div>
+    <button
+      aria-controls={panelId}
+      aria-expanded={open}
+      type="button"
+      className={cn(
+        'inline-flex min-h-9 items-center gap-1.5 rounded-md text-[11px] font-medium transition-colors duration-150 outline-none focus-visible:ring-2',
+        TONE[tone].body,
+        TONE[tone].hover,
+        TONE[tone].ring,
+      )}
+      onClick={onToggle}
+    >
+      Ce que le coaching a changé
+      {count > 0 ? <span className="text-data tabular-nums">· {count}</span> : null}
+      <NavArrowDown
+        className={cn(
+          'size-3 shrink-0 transition-transform duration-150 motion-reduce:transition-none',
+          open && 'rotate-180',
+        )}
+        aria-hidden
+      />
+    </button>
   );
 }
 
-function AdvancementSectionHeader({
+function AdvancementHeader({
   view,
-  prominence,
+  tone,
   headlineId,
 }: {
   view: GoalAdvancementView;
-  prominence: 'primary' | 'secondary';
+  tone: PlanVivantTone;
   headlineId: string;
 }) {
-  const isPrimary = prominence === 'primary';
   return (
-    <div className="space-y-1.5">
-      <h3
-        id={headlineId}
-        className={cn(
-          'text-ink-surface-foreground text-pretty',
-          isPrimary
-            ? 'text-verdict text-[1.5rem] leading-[1.15] sm:text-[1.75rem]'
-            : 'text-section-title',
-          view.progress !== null && 'tabular-nums',
-        )}
-      >
+    <div className="space-y-0.5">
+      <h3 className={cn('text-card-title text-pretty', TONE[tone].title)} id={headlineId}>
         {view.headline}
       </h3>
-      {view.goalLabel ? (
-        <p className="text-ink-surface-foreground/65 text-xs leading-snug text-pretty">
-          vers {view.goalLabel}
-        </p>
-      ) : null}
-      <p className="text-ink-surface-foreground/70 text-xs leading-relaxed text-pretty">
+      <p className={cn('text-[11px] leading-snug text-pretty', TONE[tone].body)}>
+        {view.goalLabel ? `vers ${view.goalLabel} · ` : null}
         {view.why}
       </p>
     </div>
@@ -175,49 +247,86 @@ function AdvancementSectionHeader({
 }
 
 /**
- * Suivi body absorbed into Plan vivant — no outer panel.
- * Lives on ink shell; week rail = contiguous tally strip.
+ * Suivi body — surface-agnostic so it can sit on the ink confirmation shells
+ * without dragging a dark band onto Today.
  */
+function AdvancementDisclosure({
+  view,
+  tone,
+}: {
+  view: GoalAdvancementView;
+  tone: PlanVivantTone;
+}) {
+  const [trailOpen, setTrailOpen] = useState(false);
+  const panelId = useId();
+
+  return (
+    <>
+      <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
+        <TrailToggle
+          count={view.trail.length}
+          open={trailOpen}
+          panelId={panelId}
+          tone={tone}
+          onToggle={() => setTrailOpen(!trailOpen)}
+        />
+        <Link
+          href={view.href}
+          className={cn(
+            'pressable inline-flex min-h-9 items-center gap-1 text-[11px] font-medium transition-colors duration-150',
+            TONE[tone].link,
+          )}
+        >
+          Voir l’objectif
+          <span aria-hidden>→</span>
+        </Link>
+      </div>
+
+      <MotionExpand id={panelId} open={trailOpen}>
+        <div className="space-y-1.5 pt-0.5">
+          <TrailList tone={tone} view={view} />
+          {view.phaseLabel ? (
+            <p className={cn('text-label', TONE[tone].faint)}>Phase · {view.phaseLabel}</p>
+          ) : null}
+        </div>
+      </MotionExpand>
+    </>
+  );
+}
+
+function dividerClass(showDivider: boolean, tone: PlanVivantTone): string | false {
+  return (
+    showDivider &&
+    cn('border-t pt-4', tone === 'ink' ? 'border-ink-surface-foreground/20' : 'border-border')
+  );
+}
+
 export function PlanVivantAdvancementSection({
   view,
   className,
   showDivider = false,
-  prominence = 'primary',
+  tone = 'ink',
 }: {
   view: GoalAdvancementView;
   className?: string;
   showDivider?: boolean;
-  prominence?: 'primary' | 'secondary';
+  tone?: PlanVivantTone;
 }) {
-  const [trailOpen, setTrailOpen] = useState(false);
   const headlineId = useId();
-  const preview = weekSegmentsAsPreview(view.weekSegments);
 
   return (
-    <div
-      className={cn(
-        'space-y-3.5',
-        showDivider && 'border-ink-surface-foreground/20 border-t pt-4',
-        className,
-      )}
-    >
-      <AdvancementSectionHeader headlineId={headlineId} prominence={prominence} view={view} />
-      {view.progress !== null ? <AdvancementProgress progress={view.progress} /> : null}
-      <RearrangeSessionRail
-        ariaLabel="Exécution de la semaine"
-        caption="Cette semaine"
-        flow="tally"
-        sessions={preview}
-        onInk
-      />
-      <AdvancementTrail open={trailOpen} view={view} onOpenChange={setTrailOpen} />
-      <Link
-        className="text-highlight hover:text-highlight/85 dark:text-ink-surface-foreground dark:hover:text-ink-surface-foreground/80 pressable inline-flex min-h-11 items-center gap-1 text-xs font-medium transition-colors duration-150 sm:min-h-10"
-        href={view.href}
-      >
-        Voir l’objectif
-        <span aria-hidden>→</span>
-      </Link>
+    <div className={cn('space-y-3', dividerClass(showDivider, tone), className)}>
+      <AdvancementHeader headlineId={headlineId} tone={tone} view={view} />
+      {view.progress !== null ? (
+        <GoalProgressHairline progress={view.progress} tone={tone} />
+      ) : null}
+
+      <div className="space-y-1.5">
+        <WeekMeter segments={view.weekSegments} tone={tone} />
+        <WeekLegend segments={view.weekSegments} tone={tone} />
+      </div>
+
+      <AdvancementDisclosure tone={tone} view={view} />
     </div>
   );
 }
@@ -225,29 +334,30 @@ export function PlanVivantAdvancementSection({
 export function PlanVivantEyebrow({
   goalLabel: _goalLabel,
   habitDriven = false,
+  tone = 'ink',
 }: {
   goalLabel?: string | null;
   habitDriven?: boolean;
+  tone?: PlanVivantTone;
 }) {
   void _goalLabel;
   return (
-    <div className="text-data text-ink-surface-foreground/65 inline-flex flex-wrap items-center gap-2 text-xs font-semibold tracking-wide uppercase">
+    <div className={cn('text-label inline-flex flex-wrap items-center gap-1.5', TONE[tone].faint)}>
       <span
-        className="bg-highlight dark:bg-ink-surface-foreground h-2.5 w-2.5 shrink-0 rounded-full"
+        className={cn(
+          'size-1.5 shrink-0 rounded-full',
+          tone === 'ink' ? 'bg-highlight dark:bg-ink-surface-foreground' : 'bg-primary',
+        )}
         aria-hidden
       />
       <span>Plan vivant</span>
-      {habitDriven ? (
-        <span className="border-ink-surface-foreground/30 text-ink-surface-foreground/70 inline-flex items-center rounded-md border px-1.5 py-0.5 text-[0.65rem] font-semibold tracking-wide uppercase">
-          Journal
-        </span>
-      ) : null}
+      {habitDriven ? <span className={TONE[tone].body}>· Journal</span> : null}
     </div>
   );
 }
 
 /**
- * Plan hub lab-note, or Today suivi-only fallback shell (ink Plan vivant).
+ * Plan hub lab-note, or Today suivi-only card.
  */
 export function GoalAdvancementPanel({
   view,
@@ -266,10 +376,10 @@ export function GoalAdvancementPanel({
     <FadeIn>
       <section
         aria-label="Plan vivant — suivi vers l’objectif"
-        className={cn(PLAN_VIVANT_SHELL_CLASS, className)}
+        className={cn(PLAN_VIVANT_PLAIN_SHELL_CLASS, className)}
       >
-        <PlanVivantEyebrow />
-        <PlanVivantAdvancementSection prominence="primary" view={view} />
+        <PlanVivantEyebrow tone="plain" />
+        <PlanVivantAdvancementSection tone="plain" view={view} />
       </section>
     </FadeIn>
   );
