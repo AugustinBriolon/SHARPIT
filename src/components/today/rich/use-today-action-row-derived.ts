@@ -9,7 +9,6 @@ import {
   subscribeDemoSessionLinks,
 } from '@/lib/demo/demo-session-link-state';
 import { hydrateActivityStatusFromServer } from '@/lib/health/activity-status';
-import { useAdaptAppliedSettled } from '@/hooks/use-adapt-applied-settled';
 import {
   deriveLinkContext,
   derivePostSessionLoop,
@@ -18,6 +17,10 @@ import {
   parseDismissedLinkIds,
 } from '@/components/today/rich/today-action-row-derived-helpers';
 
+/**
+ * Plan vivant state is deliberately absent: the slot owns it, so the widget can
+ * mount outside « Actions du jour » without this hook forwarding it.
+ */
 export function useTodayActionRowDerived(vm: TodayViewModel, loading: boolean) {
   useEffect(() => {
     void hydrateActivityStatusFromServer();
@@ -55,16 +58,12 @@ export function useTodayActionRowDerived(vm: TodayViewModel, loading: boolean) {
     [vm, pendingLinkSuggestions, linkExclusions, sessionLines],
   );
 
-  const { adaptAck, settled } = useAdaptAppliedSettled();
-
   return {
     orientation,
     sessionLinkSuggestions,
     sessionLines,
     primaryIndex,
     postSessionLoop,
-    rearrangeProposal: loading || settled ? null : (vm.rearrangeProposal ?? null),
-    adaptAppliedAck: !loading && settled ? adaptAck : null,
     daySummaryEmpty: !loading && sessionLines.length === 0 && sessionLinkSuggestions.length === 0,
   };
 }

@@ -22,18 +22,17 @@ type Matcher = {
   resolve: (match: RegExpMatchArray) => RouteEntry;
 };
 
-const HOME_PARENT = { href: '/', label: 'Aujourd’hui' } as const;
+const HOME_PARENT = { href: '/', label: 'Résumé' } as const;
 const PLAN_PARENT = { href: '/plan', label: 'Plan' } as const;
 const ACTIVITY_PARENT = { href: '/activite', label: 'Activité' } as const;
 const TRIPS_PARENT = { href: '/activite/sejours', label: 'Séjours' } as const;
 const MOI_PARENT = { href: '/moi', label: 'Moi' } as const;
 
 const MATCHERS: Matcher[] = [
-  { pattern: /^\/$/, resolve: () => ({ label: 'Aujourd’hui' }) },
+  { pattern: /^\/$/, resolve: () => ({ label: 'Résumé' }) },
   { pattern: /^\/plan$/, resolve: () => ({ label: 'Plan', defaultParent: HOME_PARENT }) },
   { pattern: /^\/activite$/, resolve: () => ({ label: 'Activité', defaultParent: HOME_PARENT }) },
   { pattern: /^\/moi$/, resolve: () => ({ label: 'Moi', defaultParent: HOME_PARENT }) },
-  // Coach stays reachable but is not a primary tab (Shell V1).
   { pattern: /^\/coach$/, resolve: () => ({ label: 'Coach', defaultParent: HOME_PARENT }) },
 
   {

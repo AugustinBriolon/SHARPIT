@@ -7,6 +7,7 @@ import {
   TodayNutritionCardSkeleton,
 } from '@/components/today/dashboard/today-nutrition-card';
 import { TodaySignalStrip } from '@/components/today/dashboard/today-signal-strip';
+import { TodayJournalHabitBridgeFooter } from '@/components/today/rich/today-journal-habit-bridge-footer';
 import type { ClientActivity } from '@/lib/query/types';
 import { cn } from '@/lib/utils';
 
@@ -17,6 +18,8 @@ type SignalPreviews = TodayViewModel['hero']['signalPreviews'];
  * Tertiary visual evidence — mini signal cards + secondary panels.
  *
  * Lives below the bilan. Never competes with the hero decision above the fold.
+ * The journal footnote closes this section rather than the page: the last block
+ * an athlete reads should not be a conditional pointer to an analysis.
  */
 export function TodayUnderstandSection({
   metricsRow,
@@ -46,6 +49,7 @@ export function TodayUnderstandSection({
         <ActivityConsistencyPanel activities={activities} loading={activitiesLoading || loading} />
         {loading ? <TodayNutritionCardSkeleton /> : <TodayNutritionCard />}
       </div>
+      {!loading ? <TodayJournalHabitBridgeFooter enabled /> : null}
     </section>
   );
 }

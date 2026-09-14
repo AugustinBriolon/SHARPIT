@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { isTransientRoute, resolveRouteFallback, resolveRouteLabel } from './route-registry';
 
-const HOME = { href: '/', label: 'Aujourd’hui' };
+const HOME = { href: '/', label: 'Résumé' };
 const PLAN = { href: '/plan', label: 'Plan' };
 const ACTIVITE = { href: '/activite', label: 'Activité' };
 const MOI = { href: '/moi', label: 'Moi' };
@@ -9,7 +9,7 @@ const MOI = { href: '/moi', label: 'Moi' };
 describe('route-registry', () => {
   describe('resolveRouteLabel', () => {
     it('matches hubs and static routes', () => {
-      expect(resolveRouteLabel('/')).toBe('Aujourd’hui');
+      expect(resolveRouteLabel('/')).toBe('Résumé');
       expect(resolveRouteLabel('/plan')).toBe('Plan');
       expect(resolveRouteLabel('/activite')).toBe('Activité');
       expect(resolveRouteLabel('/moi')).toBe('Moi');
@@ -109,7 +109,7 @@ describe('route-registry', () => {
       expect(resolveRouteFallback('/settings/appearance/expert-mode')).toEqual(MOI);
     });
 
-    it('sends remaining /today drill-downs and nutrition back to Aujourd’hui', () => {
+    it('sends remaining /today drill-downs and nutrition back to Résumé', () => {
       expect(resolveRouteFallback('/today/recovery')).toEqual(HOME);
       expect(resolveRouteFallback('/today/sleep')).toEqual(HOME);
       expect(resolveRouteFallback('/nutrition')).toEqual(HOME);

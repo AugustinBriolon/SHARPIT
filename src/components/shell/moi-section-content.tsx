@@ -1,12 +1,10 @@
 'use client';
 
-import Link from 'next/link';
 import { GoalsToolbar } from '@/components/goals/cards/goal-cards';
-import { GoalsView } from '@/components/goals/goals-view';
+import { GoalsCapView } from '@/components/goals/cap/goals-cap-view';
 import { BodySection, PerformanceSection } from '@/components/progress/progress-hub-sections';
 import { useProgressHubOffline } from '@/components/progress/use-progress-hub-offline';
 import { OfflineSnapshotSummary } from '@/components/pwa/offline-snapshot-summary';
-import { MOI_PERFORMANCE_PATH } from '@/lib/moi/paths';
 
 export type MoiSectionId = 'corps' | 'objectifs' | 'performance';
 
@@ -24,15 +22,7 @@ export function MoiSectionContent({ section }: { section: MoiSectionId }) {
   if (section === 'objectifs') {
     return (
       <div className="space-y-6">
-        <GoalsView embedded />
-        <nav aria-label="Suite objectifs" className="pt-1">
-          <Link
-            className="text-muted-foreground hover:text-foreground inline-block text-sm underline underline-offset-2"
-            href={MOI_PERFORMANCE_PATH}
-          >
-            Records
-          </Link>
-        </nav>
+        <GoalsCapView />
       </div>
     );
   }

@@ -47,20 +47,20 @@ describe('resolveBackTargetWithoutStack', () => {
     }
   });
 
-  it('falls back to Aujourd’hui for the remaining Today drill-downs', () => {
+  it('falls back to Résumé for the remaining Today drill-downs', () => {
     expect(resolveBackTargetWithoutStack('/today/recovery')).toEqual({
       href: '/',
-      label: 'Aujourd’hui',
+      label: 'Résumé',
       fromStack: false,
     });
     expect(resolveBackTargetWithoutStack('/today/sleep')).toEqual({
       href: '/',
-      label: 'Aujourd’hui',
+      label: 'Résumé',
       fromStack: false,
     });
     expect(resolveBackTargetWithoutStack('/nutrition')).toEqual({
       href: '/',
-      label: 'Aujourd’hui',
+      label: 'Résumé',
       fromStack: false,
     });
   });

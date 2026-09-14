@@ -146,7 +146,7 @@ function proposalFromCopy(input: {
   return {
     visible: true,
     ...input.copy,
-    ctaLabel: 'Proposer un rearrange',
+    ctaLabel: 'Ajuster le planning',
     href: buildAdaptDeepLink(input.copy.focus),
     trigger: input.trigger,
     kind: 'habit',

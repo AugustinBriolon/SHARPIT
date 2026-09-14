@@ -3,34 +3,34 @@
 import Link from 'next/link';
 import { DiscussWithCoachButton } from '@/components/coach/discuss/discuss-with-coach-button';
 import { ActivityStatusButton } from '@/components/shell/activity-status-button';
-import { BookOpen, CalendarClock } from 'lucide-react';
+import { BookOpen, CalendarClock, Check } from 'lucide-react';
+import { TodayInstrumentCard } from '@/components/today/dashboard/today-instrument-card';
 import { SessionLinkSuggestionCard } from '@/components/today/rich/session-link-suggestion-card';
 import { ActivityFeelingPrompt } from '@/components/training/activity/detail/activity-feeling-prompt';
 import { TodayDaySummaryLine } from '@/components/today/rich/today-day-summary-line';
-import { TodayRearrangeProposal } from '@/components/today/rich/today-rearrange-proposal';
-import { PlanAdaptAppliedPanel } from '@/components/plan/adapt-applied-panel';
-import { GoalAdvancementPanel } from '@/components/today/rich/goal-advancement-panel';
-import { useGoalAdvancement } from '@/hooks/use-goal-advancement';
-import type { AdaptAppliedAck } from '@/lib/plan/adapt-applied-ack';
 import { SkeletonDataValue } from '@/components/ui/skeleton-data-value';
 import type { TodayViewModel } from '@/core/presentation/today-view-model';
 
+/**
+ * Row controls are 44px tall on touch and compact from `lg`: the header sits on
+ * the primary surface, where a 32px target is under the tap minimum.
+ */
 export function TodayActionRowHeader({ loading }: { loading: boolean }) {
   return (
-    <div className="flex min-h-8 items-center justify-between gap-2 px-0.5">
+    <div className="flex min-h-11 items-center justify-between gap-2 px-0.5 lg:min-h-8">
       {loading ? (
-        <SkeletonDataValue heightClassName="h-8" widthClassName="w-24" />
+        <SkeletonDataValue heightClassName="h-11 lg:h-8" widthClassName="w-24" />
       ) : (
         <DiscussWithCoachButton size="sm" target={{ kind: 'today' }} />
       )}
       <div className="flex shrink-0 items-center gap-2">
         {loading ? (
-          <SkeletonDataValue heightClassName="h-8" widthClassName="w-36" />
+          <SkeletonDataValue heightClassName="h-11 lg:h-8" widthClassName="w-36" />
         ) : (
           <>
             <ActivityStatusButton />
             <Link
-              className="border-primary/35 bg-primary/10 text-primary hover:bg-primary/15 inline-flex h-8 items-center gap-1.5 rounded-lg border px-2.5 text-[0.8rem] font-medium transition-colors duration-150 ease-out active:scale-[0.97]"
+              className="border-primary/35 bg-primary/10 text-primary hover:bg-primary/15 inline-flex h-11 items-center gap-1.5 rounded-lg border px-2.5 text-[0.8rem] font-medium transition-colors duration-150 ease-out active:scale-[0.97] lg:h-8"
               href="/journal"
             >
               <BookOpen className="size-3.5 shrink-0" strokeWidth={1.8} aria-hidden />
@@ -72,7 +72,7 @@ export function TodayActionRowEmpty({
     <div className="border-analysis-border/80 bg-background/50 rounded-analysis space-y-2 border px-3 py-3">
       <p className="text-muted-foreground text-sm text-pretty">{emptyText}</p>
       <Link
-        className="text-primary inline-flex items-center gap-1.5 text-xs font-medium hover:underline"
+        className="text-primary inline-flex min-h-11 items-center gap-1.5 text-xs font-medium hover:underline lg:min-h-0"
         href={emptyHref}
       >
         <CalendarClock className="size-3.5" />
@@ -83,32 +83,43 @@ export function TodayActionRowEmpty({
   );
 }
 
+/**
+ * The window right after a session is the day's peak, and it used to be served
+ * by a bordered note. It gets the instrument chrome instead — not the verdict's
+ * ink plate, which must stay the single differing surface on the page.
+ */
 export function TodayPostSessionLoop({
   loop,
 }: {
   loop: NonNullable<TodayViewModel['postSessionLoop']>;
 }) {
   return (
-    <div className="border-analysis-border/80 bg-background/50 rounded-analysis space-y-2 border px-3 py-3">
-      <p className="text-sm font-medium text-pretty">{loop.activityTitle}</p>
-      {loop.freshnessLine ? (
-        <p className="text-muted-foreground text-xs text-pretty">{loop.freshnessLine}</p>
-      ) : null}
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-        <Link
-          className="text-primary text-xs font-medium hover:underline"
-          href={loop.narrativeHref}
-        >
-          Voir le récit de séance
-          <span aria-hidden> →</span>
-        </Link>
-        {loop.needsFeeling ? <ActivityFeelingPrompt activityId={loop.activityId} /> : null}
+    <TodayInstrumentCard
+      icon={<Check className="size-3.5" strokeWidth={2.25} />}
+      subtitle={loop.activityTitle}
+      title="Séance faite"
+      titleAttr={`Ce que la séance a produit — ${loop.activityTitle}`}
+    >
+      <div className="mt-3 flex min-w-0 flex-1 flex-col gap-3">
+        {loop.freshnessLine ? (
+          <p className="text-foreground text-[13px] leading-snug text-pretty">
+            {loop.freshnessLine}
+          </p>
+        ) : null}
+        <div className="mt-auto flex flex-wrap items-center gap-x-4 gap-y-2">
+          <Link
+            className="text-primary hover:text-primary/85 inline-flex min-h-11 items-center gap-1 text-[13px] font-semibold tracking-tight transition-colors lg:min-h-0"
+            href={loop.narrativeHref}
+          >
+            Voir le récit de séance
+            <span aria-hidden>→</span>
+          </Link>
+          {loop.needsFeeling ? <ActivityFeelingPrompt activityId={loop.activityId} /> : null}
+        </div>
       </div>
-    </div>
+    </TodayInstrumentCard>
   );
 }
-
-export { TodayRearrangeProposal } from '@/components/today/rich/today-rearrange-proposal';
 
 export function TodayActionRowLinkSuggestions({
   suggestions,
@@ -169,22 +180,22 @@ export function TodayActionRowDaySummary({
   );
 }
 
+type ActionRowDerived = {
+  daySummaryEmpty: boolean;
+  sessionLinkSuggestions: TodayViewModel['actionRow']['sessionLinkSuggestions'];
+  sessionLines: TodayViewModel['actionRow']['daySummaryLines'];
+  primaryIndex: number;
+  orientation: TodayViewModel['morningOrientation'];
+  postSessionLoop: TodayViewModel['postSessionLoop'] | null;
+};
+
 function TodayActionRowLoadedContent({
   derived,
   vm,
   onWellnessCompleted,
   openPlannedSession,
 }: {
-  derived: {
-    daySummaryEmpty: boolean;
-    sessionLinkSuggestions: TodayViewModel['actionRow']['sessionLinkSuggestions'];
-    sessionLines: TodayViewModel['actionRow']['daySummaryLines'];
-    primaryIndex: number;
-    orientation: TodayViewModel['morningOrientation'];
-    postSessionLoop: TodayViewModel['postSessionLoop'] | null;
-    rearrangeProposal: TodayViewModel['rearrangeProposal'] | null;
-    adaptAppliedAck: AdaptAppliedAck | null;
-  };
+  derived: ActionRowDerived;
   vm: TodayViewModel;
   onWellnessCompleted?: () => void;
   openPlannedSession: (args: { sessionId: string }) => void;
@@ -209,38 +220,8 @@ function TodayActionRowLoadedContent({
         sessionLines={derived.sessionLines}
       />
       {derived.postSessionLoop ? <TodayPostSessionLoop loop={derived.postSessionLoop} /> : null}
-      <TodayPlanVivantSlot
-        adaptAppliedAck={derived.adaptAppliedAck}
-        rearrangeProposal={derived.rearrangeProposal}
-      />
     </>
   );
-}
-
-/**
- * Single Plan vivant widget — rearrange xor after-apply xor suivi-only.
- * Suivi is absorbed into the shell; never a sibling panel.
- */
-function TodayPlanVivantSlot({
-  adaptAppliedAck,
-  rearrangeProposal,
-}: {
-  adaptAppliedAck: AdaptAppliedAck | null;
-  rearrangeProposal: TodayViewModel['rearrangeProposal'] | null;
-}) {
-  const { view: advancement, pending } = useGoalAdvancement();
-  const suivi = pending ? null : advancement;
-
-  if (adaptAppliedAck) {
-    return <PlanAdaptAppliedPanel ack={adaptAppliedAck} advancement={suivi} />;
-  }
-  if (rearrangeProposal) {
-    return <TodayRearrangeProposal advancement={suivi} proposal={rearrangeProposal} />;
-  }
-  if (suivi) {
-    return <GoalAdvancementPanel view={suivi} />;
-  }
-  return null;
 }
 
 export function TodayActionRowSessionLists({
@@ -251,16 +232,7 @@ export function TodayActionRowSessionLists({
   openPlannedSession,
 }: {
   loading: boolean;
-  derived: {
-    daySummaryEmpty: boolean;
-    sessionLinkSuggestions: TodayViewModel['actionRow']['sessionLinkSuggestions'];
-    sessionLines: TodayViewModel['actionRow']['daySummaryLines'];
-    primaryIndex: number;
-    orientation: TodayViewModel['morningOrientation'];
-    postSessionLoop: TodayViewModel['postSessionLoop'] | null;
-    rearrangeProposal: TodayViewModel['rearrangeProposal'] | null;
-    adaptAppliedAck: AdaptAppliedAck | null;
-  };
+  derived: ActionRowDerived;
   vm: TodayViewModel;
   onWellnessCompleted?: () => void;
   openPlannedSession: (args: { sessionId: string }) => void;

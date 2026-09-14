@@ -7,13 +7,14 @@
 
 import { format, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { goalDeepLinkHref } from '@/lib/today/rich/today-goal-anchor';
 import type { PlanGoalView } from '@/lib/plan/trajectory/plan-goal';
 import {
   adaptedSessionsThisWeek,
   coachingAdvancementEntriesThisWeek,
   type CoachingAdvancementEntry,
 } from '@/lib/plan/coaching-advancement-ledger';
+import type { PlanWeekDayState } from '@/lib/plan/week/plan-week';
+import { goalDeepLinkHref } from '@/lib/today/rich/today-goal-anchor';
 import type { RearrangePreviewTone } from '@/lib/today/rich/rearrange-preview';
 
 export type GoalAdvancementFact = {
@@ -35,6 +36,15 @@ export type GoalAdvancementTrailItem = {
   readonly label: string;
 };
 
+/** One calendar day of the current plan week — execution instrument. */
+export type GoalAdvancementDayCell = {
+  readonly dayKey: string;
+  readonly weekdayLabel: string;
+  readonly dayOfMonth: number;
+  readonly state: PlanWeekDayState;
+  readonly isToday: boolean;
+};
+
 export type GoalAdvancementView = {
   readonly visible: true;
   readonly goalId: string;
@@ -46,20 +56,48 @@ export type GoalAdvancementView = {
   /** @deprecated Prefer weekSegments — kept for lab-note / transitional callers. */
   readonly facts: readonly GoalAdvancementFact[];
   readonly weekSegments: readonly GoalAdvancementWeekSegment[];
+  /** Mon→Sun execution strip — primary interactive signal on suivi. */
+  readonly weekDays: readonly GoalAdvancementDayCell[];
   readonly trail: readonly GoalAdvancementTrailItem[];
   readonly phaseLabel: string | null;
+  /** Periodisation blocks toward the goal — empty when no macro plan exists. */
+  readonly phases: readonly GoalAdvancementPhaseCell[];
+  /**
+   * The goal this week serves. Not the planning page: Résumé already carries a
+   * row to the week, and two rows to the same place is not information.
+   */
   readonly href: string;
+  readonly ctaLabel: string;
+};
+
+/**
+ * One periodisation block. For a race there is no percentage to show, so the
+ * progress toward the goal is the block you are in out of those that remain.
+ */
+export type GoalAdvancementPhaseCell = {
+  readonly label: string;
+  readonly current: boolean;
+};
+
+export type GoalAdvancementWeekDayInput = {
+  readonly dayKey: string;
+  readonly date: Date;
+  readonly state: PlanWeekDayState;
+  readonly isToday: boolean;
 };
 
 export type GoalAdvancementInput = {
   readonly goal: PlanGoalView | null;
   readonly weekDoneCount: number;
   readonly weekRemainingCount: number;
+  readonly weekDays: readonly GoalAdvancementWeekDayInput[];
   readonly ledger: readonly CoachingAdvancementEntry[];
   /** Required — never default to `new Date()` at call sites used during prerender. */
   readonly now: Date;
   /** Optional macro phase short label (e.g. « Build »). */
   readonly phaseLabel: string | null;
+  /** Periodisation blocks, in order. Empty when the athlete has no macro plan. */
+  readonly phases?: readonly GoalAdvancementPhaseCell[];
 };
 
 function sessionWord(count: number, singular: string, plural: string): string {
@@ -123,6 +161,16 @@ function buildWeekSegments(input: {
   return segments;
 }
 
+function buildWeekDays(days: readonly GoalAdvancementWeekDayInput[]): GoalAdvancementDayCell[] {
+  return days.map((day) => ({
+    dayKey: day.dayKey,
+    weekdayLabel: format(day.date, 'EEEEE', { locale: fr }).toUpperCase(),
+    dayOfMonth: day.date.getDate(),
+    state: day.state,
+    isToday: day.isToday,
+  }));
+}
+
 /** Coaching-only facts for lab-note / transitional `facts` field (no phase, no %). */
 function buildCoachingFacts(
   segments: readonly GoalAdvancementWeekSegment[],
@@ -133,13 +181,25 @@ function buildCoachingFacts(
   }));
 }
 
-function buildWhy(adaptedCount: number, hasWeek: boolean): string {
-  if (!hasWeek) {
+function buildWhy(input: {
+  adaptedCount: number;
+  weekDoneCount: number;
+  weekRemainingCount: number;
+  hasWeek: boolean;
+}): string {
+  if (!input.hasWeek) {
     return 'Aucune séance planifiée cette semaine.';
   }
-  return adaptedCount > 0
-    ? 'Ce que le coaching a déjà changé cette semaine.'
-    : 'Le Twin suit l’exécution de ta semaine.';
+  if (input.adaptedCount > 0) {
+    return `${input.adaptedCount} ${sessionWord(input.adaptedCount, 'séance adaptée', 'séances adaptées')} cette semaine.`;
+  }
+  if (input.weekRemainingCount > 0) {
+    return `${input.weekRemainingCount} ${sessionWord(input.weekRemainingCount, 'séance encore due', 'séances encore dues')} cette semaine.`;
+  }
+  if (input.weekDoneCount > 0) {
+    return 'Semaine bouclée — le Twin garde le cap.';
+  }
+  return 'Le Twin suit l’exécution de ta semaine.';
 }
 
 /** A countdown or a percentage is a reading on its own — an empty week is not silence. */
@@ -198,6 +258,8 @@ export function buildGoalAdvancement(input: GoalAdvancementInput): GoalAdvanceme
     weekDoneCount: input.weekDoneCount,
     weekRemainingCount: input.weekRemainingCount,
   });
+  const weekDays = buildWeekDays(input.weekDays);
+  const hasWeek = weekSegments.length > 0 || weekDays.some((day) => day.state !== 'rest');
 
   if (weekSegments.length === 0 && !hasReadableGoal(goal)) {
     return null;
@@ -212,13 +274,21 @@ export function buildGoalAdvancement(input: GoalAdvancementInput): GoalAdvanceme
     goalLabel: goal.title,
     eyebrow: 'Plan vivant',
     headline: buildHeadline(goal),
-    why: buildWhy(adaptedCount, weekSegments.length > 0),
+    why: buildWhy({
+      adaptedCount,
+      weekDoneCount: input.weekDoneCount,
+      weekRemainingCount: input.weekRemainingCount,
+      hasWeek,
+    }),
     progress: goal.progress,
     facts,
     weekSegments,
+    weekDays,
     trail: buildTrail(input.ledger, input.now),
     phaseLabel: phase,
+    phases: input.phases ?? [],
     href: goalDeepLinkHref(goal.id),
+    ctaLabel: 'Voir l’objectif',
   };
 }
 

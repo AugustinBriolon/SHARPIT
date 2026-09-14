@@ -1,5 +1,8 @@
 import { z } from 'zod';
-import { coachEndurancePrescriptionSchema } from '@/lib/planned-session/endurance/coach-endurance-prescription';
+import {
+  coachEndurancePrescriptionGenerationSchema,
+  coachEndurancePrescriptionSchema,
+} from '@/lib/planned-session/endurance/coach-endurance-prescription';
 import { coachStrengthPrescriptionSchema } from '@/lib/planned-session/strength/strength-prescription';
 
 const planSessionTypeSchema = z.enum(['RUN', 'BIKE', 'SWIM', 'STRENGTH']);
@@ -175,7 +178,7 @@ export const coachPlanGenerationSchema = z.object({
           .describe(
             'OBLIGATOIRE si type=STRENGTH (exercices + séries/reps). null pour RUN/BIKE/SWIM.',
           ),
-        endurancePrescription: coachEndurancePrescriptionSchema
+        endurancePrescription: coachEndurancePrescriptionGenerationSchema
           .nullable()
           .optional()
           .describe(
@@ -334,7 +337,19 @@ const adaptChangeBase = {
 /** Schéma permissif pour la génération IA (accepte les décimales). */
 export const adaptPlanGenerationSchema = z.object({
   summary: z.string().describe('Synthèse des ajustements proposés et de leur logique.'),
-  changes: z.array(z.object(adaptChangeBase)).max(20),
+  changes: z
+    .array(
+      z.object({
+        ...adaptChangeBase,
+        endurancePrescription: coachEndurancePrescriptionGenerationSchema
+          .nullable()
+          .optional()
+          .describe(
+            'Pour ADD/MODIFY RUN ou BIKE structurée : déroulé en étapes et groupes répétés. null/omit = ne pas changer (MODIFY) ou séance sans structure.',
+          ),
+      }),
+    )
+    .max(20),
 });
 
 export const adaptPlanSchema = z.object({

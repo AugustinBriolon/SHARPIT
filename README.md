@@ -196,20 +196,23 @@ record and nothing that can expire.
 
 ## Modules
 
-| Module          | Route                                                  | Description                                                                                                                                                                                                                                                    |
-| --------------- | ------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Today**       | `/`                                                    | Daily Brief — physiological score cards (Recovery, Effort, Sleep) + narrative decision center (what to do, why, session, health signals, confidence) via the Reasoning Engine and Digital Twin                                                                 |
-| **Drill-downs** | `/today/{sleep,recovery}`, `/plan/{charge,adaptation}` | One page per Digital Twin dimension; the Effort drill-down (`/plan/charge`) carries the PMC chart (CTL, ATL, TSB). A shared day strip marks days with data and opens a calendar ([ADR-033](./docs/adr/ADR-033-drill-down-date-strip-and-data-availability.md)) |
-| **Training**    | `/training`                                            | The thread — planned and completed sessions in one timeline, merging calendar, planning and history; activity CRUD (run, bike, swim, strength) with load and stream analysis                                                                                   |
-| **Planning**    | `/training/planning`                                   | Macrocycle planning with brick analysis; session authoring and push to the Garmin watch                                                                                                                                                                        |
-| **Progression** | `/progress`                                            | Goals, personal records and power curve, threshold calibration, body composition trends, physical-health tracking                                                                                                                                              |
-| **Nutrition**   | `/nutrition`                                           | Daily fuelling read from MyFitnessPal, with weight-aware ratios; declared diet tag; a stored coach reading of each finished day (fuel vs load, product quality, diet, weight target); macro trend (protein/carbs/fat, week/month/year) averaged per logged day |
-| **Coach**       | `/coach`                                               | Conversations plus the session, weekly-brief and plan-adjustment entry points                                                                                                                                                                                  |
-| **Settings**    | `/settings/*`                                          | Strava, Garmin, Renpho, Google Calendar integrations; threshold calibration (FTP, LTHR, threshold pace, swim CSS, pool length); theme and reading density (Essential / Expert)                                                                                 |
+| Module          | Route                                                    | Description                                                                                                                                                                                                                                                    |
+| --------------- | -------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Résumé**      | `/`                                                      | Daily Brief — verdict plate (what to do, why, limiting factor, confidence) via the Reasoning Engine and Digital Twin, then the day's actions, Plan vivant, and the overnight signal cards                                                                      |
+| **Drill-downs** | `/today/{sleep,recovery}`, `/plan/{charge,adaptation}`   | One page per Digital Twin dimension; the Effort drill-down (`/plan/charge`) carries the PMC chart (CTL, ATL, TSB). A shared day strip marks days with data and opens a calendar ([ADR-033](./docs/adr/ADR-033-drill-down-date-strip-and-data-availability.md)) |
+| **Plan**        | `/plan`, `/plan/semaine`, `/plan/bilan`                  | The week read against the goal it serves — destination plate, week decision, and the thread of planned versus done. `Coacher mon objectif` (macro, fill, adjust) lives in the hub header menu                                                                  |
+| **Coach**       | `/coach`                                                 | Free conversation plus every contextual discuss deep link — session, activity, week, goal, record, physical constraint, journal analyses                                                                                                                       |
+| **Activité**    | `/activite`, `/activite/sejours`                         | Completed execution — activity history, multi-day trips, manual entry, and session detail with load and stream analysis                                                                                                                                        |
+| **Moi**         | `/moi`, `/moi/{corps,objectifs,performance,calibration}` | The athlete model and the app. **Objectifs** is the Cap surface: primary goal, volume accumulated toward it, and whether the trajectory is closing. Performance carries records, power curve and thresholds                                                    |
+| **Journal**     | `/journal`, `/journal/analyses`                          | Modular day log with opt-in trackables; analyses surface habit ↔ physiology associations once enough signal days exist                                                                                                                                         |
+| **Nutrition**   | `/nutrition`                                             | Daily fuelling read from MyFitnessPal, with weight-aware ratios; declared diet tag; a stored coach reading of each finished day (fuel vs load, product quality, diet, weight target); macro trend (protein/carbs/fat, week/month/year) averaged per logged day |
+| **Settings**    | `/settings/*`                                            | Reached from Moi (`/settings` redirects there). Strava, Garmin, Renpho, Google Calendar integrations; equipment; coach memory; theme and reading density (Essential / Expert)                                                                                  |
 
-The athlete-facing hierarchy these routes are migrating toward is defined in
+Five of these are primary destinations in the floating tab bar — **Résumé · Plan · Coach · Activité · Moi**
+(`src/lib/app-navigation.ts`). The hierarchy is defined in
 [INFORMATION_ARCHITECTURE.md](./docs/design/INFORMATION_ARCHITECTURE.md) and decided in
-[ADR-022](./docs/adr/ADR-022-temporal-product-navigation.md).
+[ADR-022](./docs/adr/ADR-022-temporal-product-navigation.md). The former `/training`, `/training/planning`
+and `/progress` routes no longer exist — they were replaced by `/plan`, `/activite` and `/moi`.
 
 ## Integrations
 
@@ -254,7 +257,7 @@ are defined by being easy rather than by holding a number
 | Bike  | Power band (watts)  | `ftpW`                     | Explicit watts, never a Connect zone index                |
 | Swim  | Pace band (`/100m`) | `swimCssSecPer100m`        | Stroke per step; pool length required; no fallback metric |
 
-Thresholds are set or estimated under **Progression → Performance** (`/progress?tab=performance`). Swim CSS is estimated from
+Thresholds are set or estimated under **Moi → Performance** (`/moi/performance`). Swim CSS is estimated from
 realised pool sessions ([ADR-021](./docs/adr/ADR-021-swim-css-from-session-pace.md)).
 
 A session with no authored structure is still sent, as a single timed step derived from its

@@ -1,9 +1,11 @@
 import { CalendarRange, CircleUser, Footprints, MessagesSquare, Sun } from 'lucide-react';
 
 /**
- * Primary nav — four temporal destinations (auth shell only).
+ * Primary nav — five destinations (auth shell only).
  *
- * Today · Plan · Activité · Moi. Coach is contextual, not a tab.
+ * Résumé · Plan · Coach · Activité · Moi. Four are temporal horizons; Coach is
+ * the coaching conversation, promoted to a tab so it is reachable from anywhere
+ * rather than only from the CTAs of whichever surface happens to offer one.
  * Legal / onboarding / future teaser stay outside `(app)` and never wrap the tab bar.
  *
  * One prefix per intention: `/plan/*` is future and organisation, `/activite/*`
@@ -50,8 +52,8 @@ export const activityNavItem: AppNavItem = {
 };
 
 /**
- * Kept for contextual Coach entry points and deep links — not a primary tab.
- * Surfaces that open Coach should use `coachDiscussHref` / existing CTAs.
+ * A primary tab, and still the target of contextual entry points: surfaces that
+ * open Coach with an attached context keep using `coachDiscussHref`.
  */
 export const coachNavItem: AppNavItem = {
   href: '/coach',
@@ -67,7 +69,7 @@ export const moiNavItem: AppNavItem = {
   match: (p) => underPrefix(p, '/moi') || underPrefix(p, '/settings'),
 };
 
-/** Onglets barre flottante — tous viewports (Coach hors barre). */
+/** Onglets barre flottante — tous viewports. */
 export const bottomNavItems: AppNavItem[] = [
   todayNavItem,
   planNavItem,

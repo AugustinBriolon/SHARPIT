@@ -144,7 +144,7 @@ function pushMismatchCopy(): ProposalCopy {
     headline: 'Le plan est trop sage pour ton Twin',
     why: 'Tu as de la marge pour progresser, mais les séances à venir restent surtout faciles.',
     focus:
-      'Twin en capacité de pousser. Propose un rearrange des 14 prochains jours pour mieux utiliser cette fenêtre (sans surcharge inutile).',
+      'Twin en capacité de pousser. Propose un ajustement des 14 prochains jours pour mieux utiliser cette fenêtre (sans surcharge inutile).',
     kind: 'push',
   };
 }
@@ -154,7 +154,7 @@ function hardEffortCopy(): ProposalCopy {
     headline: 'Séance dure intégrée — ajuster la suite ?',
     why: 'L’effort d’aujourd’hui est exigeant. Le Twin est à jour : vérifie que les prochaines séances laissent de la place pour absorber.',
     focus:
-      'Effort récent dur (ressenti / RPE). Réarrange les 14 prochains jours pour laisser absorber avant de remonter l’intensité.',
+      'Effort récent dur (ressenti / RPE). Ajuste les 14 prochains jours pour laisser absorber avant de remonter l’intensité.',
     kind: 'effort',
   };
 }
@@ -168,7 +168,7 @@ function buildProposal(
     visible: true,
     headline: copy.headline,
     why: copy.why,
-    ctaLabel: 'Proposer un rearrange',
+    ctaLabel: 'Ajuster le planning',
     href: buildAdaptDeepLink(copy.focus),
     focus: copy.focus,
     trigger,

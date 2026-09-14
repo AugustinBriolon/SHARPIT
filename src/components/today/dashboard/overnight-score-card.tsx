@@ -122,7 +122,7 @@ function GaugeReadout({
           >
             {formatGaugeDisplay(displayScore)}
           </span>
-          <span className="text-muted-foreground mt-0.5 text-[10px] tracking-wide sm:mt-1 sm:text-[11px]">
+          <span className="text-muted-foreground text-meta mt-0.5 tracking-wide sm:mt-1">
             sur 100
           </span>
         </span>

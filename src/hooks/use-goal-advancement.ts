@@ -16,9 +16,13 @@ import { buildGoalAdvancement, type GoalAdvancementView } from '@/lib/today/rich
 import type { ClientActivity, ClientGoal, ClientPlannedSession } from '@/lib/query/types';
 import type { PlanPhaseSource } from '@/lib/plan/trajectory/plan-phase';
 
-function currentPhaseLabel(plan: PlanPhaseSource | null | undefined, now: Date): string | null {
+/** The periodisation blocks toward the goal — built once, read twice. */
+function macroPhases(
+  plan: PlanPhaseSource | null | undefined,
+  now: Date,
+): { label: string; current: boolean }[] {
   const rail = buildMacroPhaseRail(plan ?? null, now);
-  return rail?.runs.find((run) => run.current)?.label ?? null;
+  return rail?.runs.map((run) => ({ label: run.label, current: run.current })) ?? [];
 }
 
 function assembleAdvancementView(input: {
@@ -34,13 +38,21 @@ function assembleAdvancementView(input: {
     plannedSessions: input.plannedSessions,
     now: input.now,
   });
+  const phases = macroPhases(input.plan, input.now);
   return buildGoalAdvancement({
     goal: selectPlanGoal(input.goals, input.now),
+    phases,
     weekDoneCount: week.done.length,
     weekRemainingCount: week.remaining.length,
+    weekDays: week.days.map((day) => ({
+      dayKey: day.dayKey,
+      date: day.date,
+      state: day.state,
+      isToday: day.isToday,
+    })),
     ledger: input.ledger,
     now: input.now,
-    phaseLabel: currentPhaseLabel(input.plan, input.now),
+    phaseLabel: phases.find((phase) => phase.current)?.label ?? null,
   });
 }
 

@@ -574,7 +574,7 @@ export function JournalScreen() {
 
   return (
     <div className="space-y-4 sm:space-y-5">
-      <MobileDrillDownHeader backHref="/" backLabel="Aujourd’hui" title="Journal" />
+      <MobileDrillDownHeader backHref="/" backLabel="Résumé" title="Journal" />
       <JournalScreenToolbar
         isPro={isPro}
         prefs={prefs}

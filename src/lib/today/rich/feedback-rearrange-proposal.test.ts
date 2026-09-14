@@ -71,7 +71,7 @@ describe('buildFeedbackRearrangeProposal', () => {
     expect(proposal).toMatchObject({
       visible: true,
       trigger: 'POST_SESSION',
-      ctaLabel: 'Proposer un rearrange',
+      ctaLabel: 'Ajuster le planning',
     });
     expect(proposal?.href).toContain('adapt=1');
     expect(proposal?.focus.toLowerCase()).toContain('prudence');

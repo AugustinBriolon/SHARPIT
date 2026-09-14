@@ -10,6 +10,10 @@ import {
   type MovementIntent,
   type MovementPattern,
 } from '@/lib/exercises/movement-taxonomy';
+import {
+  swimStrokeSchema,
+  type SwimStroke,
+} from '@/lib/planned-session/endurance/endurance-prescription';
 import { strengthRestModeSchema } from '@/lib/planned-session/strength/strength-prescription';
 import { coachPlanSchema, type CoachPlan } from '@/lib/validators/coach';
 
@@ -178,7 +182,8 @@ function assignOptionalStepFields(
   setIfPresent(next, 'lap', step.lap, typeof step.lap === 'boolean');
   const effort = pickEnduranceEffort(step.effort, kind);
   setIfPresent(next, 'effort', effort, Boolean(effort));
-  setIfPresent(next, 'stroke', step.stroke, typeof step.stroke === 'string');
+  const stroke = parseKnownEnum<SwimStroke>(swimStrokeSchema, step.stroke);
+  setIfPresent(next, 'stroke', stroke, stroke !== null);
   const notes = truncateNotes(step.notes);
   setIfPresent(next, 'notes', notes, Boolean(notes));
 }

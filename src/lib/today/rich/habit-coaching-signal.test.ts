@@ -124,7 +124,7 @@ describe('buildHabitRearrangeProposal', () => {
       visible: true,
       trigger: 'HABIT_ASSOCIATION',
       kind: 'habit',
-      ctaLabel: 'Proposer un rearrange',
+      ctaLabel: 'Ajuster le planning',
       habitLever: { label: 'Repas tardif', source: 'association' },
     });
     expect(proposal?.why).toMatch(/vers Semi Paris/);
@@ -176,7 +176,7 @@ describe('mergeRearrangeProposals', () => {
       visible: true as const,
       headline: 'Twin',
       why: 'mismatch',
-      ctaLabel: 'Proposer un rearrange',
+      ctaLabel: 'Ajuster le planning',
       href: '/plan/semaine?adapt=1',
       focus: 'twin',
       trigger: 'POST_SESSION' as const,
@@ -209,7 +209,7 @@ describe('mergeRearrangeProposals', () => {
       visible: true as const,
       headline: 'Twin',
       why: 'mismatch',
-      ctaLabel: 'Proposer un rearrange',
+      ctaLabel: 'Ajuster le planning',
       href: '/plan/semaine?adapt=1',
       focus: 'twin',
       trigger: 'MORNING_MISMATCH' as const,

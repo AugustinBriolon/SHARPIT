@@ -12,6 +12,70 @@ export type ShellHubRowProps = {
   className?: string;
 } & ({ href: string; comingSoon?: false } | { comingSoon: true; href?: never });
 
+function ShellHubRowBody({
+  title,
+  icon: Icon,
+  meta,
+  comingSoon,
+}: {
+  title: string;
+  icon: LucideIcon | React.ComponentType<{ className?: string }>;
+  meta?: ReactNode;
+  comingSoon?: boolean;
+}) {
+  return (
+    <>
+      <div className="icon-well size-8 shrink-0" aria-hidden>
+        <Icon className="size-3.5" />
+      </div>
+      <span className="min-w-0 flex-1 truncate text-sm font-medium">{title}</span>
+      {meta ? (
+        <span className="text-muted-foreground shrink-0 text-xs tabular-nums">{meta}</span>
+      ) : null}
+      {comingSoon ? (
+        <span className="text-label shrink-0 tracking-wide">À venir</span>
+      ) : (
+        <NavArrowRight className="text-muted-foreground/70 size-3.5 shrink-0" />
+      )}
+    </>
+  );
+}
+
+function shellHubRowClass(className?: string) {
+  return cn(
+    'flex min-h-12 w-full items-center px-3.5 py-2.5',
+    'focus-visible:bg-muted/40 focus-visible:outline-hidden',
+    className,
+  );
+}
+
+function ShellHubRowLink({
+  href,
+  rowClass,
+  children,
+}: {
+  href: string;
+  rowClass: string;
+  children: ReactNode;
+}) {
+  const interactiveClass = cn(
+    rowClass,
+    'group hover:bg-muted/35 focus-visible:ring-primary/30 focus-visible:ring-2 focus-visible:ring-inset',
+  );
+  if (/^(mailto:|https?:|tel:)/i.test(href)) {
+    return (
+      <a className={interactiveClass} href={href}>
+        {children}
+      </a>
+    );
+  }
+  return (
+    <Link className={interactiveClass} href={href}>
+      {children}
+    </Link>
+  );
+}
+
 /**
  * Single inset row inside a {@link ShellHubGroup}.
  * Bevel-like: icon · label · meta · chevron — no description stack.
@@ -21,32 +85,11 @@ export type ShellHubRowProps = {
  * Surface preset (0.988): discreet for list rows used tens of times/day.
  */
 export function ShellHubRow(props: ShellHubRowProps) {
-  const { title, icon: Icon, meta, className } = props;
-
+  const { title, icon, meta, className } = props;
   const body = (
-    <>
-      <div className="icon-well size-8 shrink-0" aria-hidden>
-        <Icon className="size-3.5" />
-      </div>
-      <span className="min-w-0 flex-1 truncate text-sm font-medium">{title}</span>
-      {meta ? (
-        <span className="text-muted-foreground shrink-0 text-xs tabular-nums">{meta}</span>
-      ) : null}
-      {props.comingSoon ? (
-        <span className="text-muted-foreground shrink-0 text-[10px] font-medium tracking-wide uppercase">
-          À venir
-        </span>
-      ) : (
-        <NavArrowRight className="text-muted-foreground/70 size-3.5 shrink-0" />
-      )}
-    </>
+    <ShellHubRowBody comingSoon={props.comingSoon} icon={icon} meta={meta} title={title} />
   );
-
-  const rowClass = cn(
-    'flex min-h-12 w-full items-center px-3.5 py-2.5',
-    'focus-visible:bg-muted/40 focus-visible:outline-hidden',
-    className,
-  );
+  const rowClass = shellHubRowClass(className);
 
   if (props.comingSoon) {
     return (
@@ -58,42 +101,19 @@ export function ShellHubRow(props: ShellHubRowProps) {
     );
   }
 
-  const isExternal = /^(mailto:|https?:|tel:)/i.test(props.href);
-  const inner = (
-    <span
-      className={cn(
-        'flex min-w-0 flex-1 items-center gap-3',
-        'transition-transform duration-150 ease-out',
-        'motion-safe:group-active:scale-[var(--press-scale-surface)]',
-      )}
-    >
-      {body}
-    </span>
-  );
-
   return (
     <li>
-      {isExternal ? (
-        <a
-          href={props.href}
+      <ShellHubRowLink href={props.href} rowClass={rowClass}>
+        <span
           className={cn(
-            rowClass,
-            'group hover:bg-muted/35 focus-visible:ring-primary/30 focus-visible:ring-2 focus-visible:ring-inset',
+            'flex min-w-0 flex-1 items-center gap-3',
+            'transition-transform duration-150 ease-out',
+            'motion-safe:group-active:scale-[var(--press-scale-surface)]',
           )}
         >
-          {inner}
-        </a>
-      ) : (
-        <Link
-          href={props.href}
-          className={cn(
-            rowClass,
-            'group hover:bg-muted/35 focus-visible:ring-primary/30 focus-visible:ring-2 focus-visible:ring-inset',
-          )}
-        >
-          {inner}
-        </Link>
-      )}
+          {body}
+        </span>
+      </ShellHubRowLink>
     </li>
   );
 }
@@ -148,75 +168,100 @@ export function ShellHubSolo({
   );
 }
 
-/**
- * @deprecated Prefer {@link ShellHubRow} inside {@link ShellHubGroup}.
- * Kept for legacy single-chip links.
- */
-export function ShellHubLink(
-  props: {
-    title: string;
-    description?: string;
-    icon: LucideIcon | React.ComponentType<{ className?: string }>;
-    meta?: ReactNode;
-    className?: string;
-  } & ({ href: string; comingSoon?: false } | { comingSoon: true; href?: never }),
-) {
-  if (props.description) {
-    const { title, description, icon: Icon, meta, className } = props;
-    const body = (
-      <>
-        <div className="icon-well size-9 shrink-0" aria-hidden>
-          <Icon className="size-4" />
-        </div>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-baseline justify-between gap-2">
-            <p className="min-w-0 truncate text-sm font-medium">{title}</p>
-            {meta ? <p className="text-data shrink-0 text-xs tabular-nums">{meta}</p> : null}
-          </div>
-          <p className="text-muted-foreground mt-0.5 text-sm leading-relaxed">{description}</p>
-        </div>
-        {props.comingSoon ? (
-          <span className="text-muted-foreground shrink-0 text-[10px] font-medium tracking-wide uppercase">
-            À venir
-          </span>
-        ) : (
-          <NavArrowRight className="text-muted-foreground/70 size-3.5 shrink-0 transition-transform duration-150 ease-out group-hover:translate-x-0.5 motion-reduce:transition-none" />
-        )}
-      </>
-    );
+type ShellHubLinkProps = {
+  title: string;
+  description?: string;
+  icon: LucideIcon | React.ComponentType<{ className?: string }>;
+  meta?: ReactNode;
+  className?: string;
+} & ({ href: string; comingSoon?: false } | { comingSoon: true; href?: never });
 
-    if (props.comingSoon) {
-      return (
-        <li>
-          <div
-            className={cn(
-              'chip-surface-lg flex items-center gap-3 px-3 py-2.5',
-              'rounded-analysis-lg opacity-80',
-              className,
-            )}
-            aria-disabled
-          >
-            {body}
-          </div>
-        </li>
-      );
-    }
+function ShellHubDescribedBody({
+  title,
+  description,
+  icon: Icon,
+  meta,
+  comingSoon,
+}: {
+  title: string;
+  description: string;
+  icon: LucideIcon | React.ComponentType<{ className?: string }>;
+  meta?: ReactNode;
+  comingSoon?: boolean;
+}) {
+  return (
+    <>
+      <div className="icon-well size-9 shrink-0" aria-hidden>
+        <Icon className="size-4" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-baseline justify-between gap-2">
+          <p className="min-w-0 truncate text-sm font-medium">{title}</p>
+          {meta ? <p className="text-data shrink-0 text-xs tabular-nums">{meta}</p> : null}
+        </div>
+        <p className="text-muted-foreground mt-0.5 text-sm leading-relaxed">{description}</p>
+      </div>
+      {comingSoon ? (
+        <span className="text-label shrink-0 tracking-wide">À venir</span>
+      ) : (
+        <NavArrowRight className="text-muted-foreground/70 size-3.5 shrink-0 transition-transform duration-150 ease-out group-hover:translate-x-0.5 motion-reduce:transition-none" />
+      )}
+    </>
+  );
+}
 
+function ShellHubDescribedLink(props: ShellHubLinkProps & { description: string }) {
+  const { title, description, icon, meta, className } = props;
+  const body = (
+    <ShellHubDescribedBody
+      comingSoon={props.comingSoon}
+      description={description}
+      icon={icon}
+      meta={meta}
+      title={title}
+    />
+  );
+
+  if (props.comingSoon) {
     return (
       <li>
-        <Link
-          href={props.href}
+        <div
           className={cn(
-            'chip-surface-lg group flex items-center gap-3 px-3 py-2.5',
-            'rounded-analysis-lg hover:border-primary/25 focus-visible:ring-primary/35 focus-visible:ring-2 focus-visible:outline-hidden',
+            'chip-surface-lg flex items-center gap-3 px-3 py-2.5',
+            'rounded-analysis-lg opacity-80',
             className,
           )}
+          aria-disabled
         >
           {body}
-        </Link>
+        </div>
       </li>
     );
   }
 
+  return (
+    <li>
+      <Link
+        href={props.href}
+        className={cn(
+          'chip-surface-lg group flex items-center gap-3 px-3 py-2.5',
+          'rounded-analysis-lg hover:border-primary/25 focus-visible:ring-primary/35 focus-visible:ring-2 focus-visible:outline-hidden',
+          className,
+        )}
+      >
+        {body}
+      </Link>
+    </li>
+  );
+}
+
+/**
+ * @deprecated Prefer {@link ShellHubRow} inside {@link ShellHubGroup}.
+ * Kept for legacy single-chip links.
+ */
+export function ShellHubLink(props: ShellHubLinkProps) {
+  if (props.description) {
+    return <ShellHubDescribedLink {...props} description={props.description} />;
+  }
   return <ShellHubRow {...props} />;
 }

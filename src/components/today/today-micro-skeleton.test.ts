@@ -109,19 +109,48 @@ describe('TodayDashboard loading gate contract', () => {
     expect(dashboardSource).toContain('onWellnessCompleted={() => void query.refetch()}');
   });
 
+  const understandSource = readFileSync(
+    resolve(process.cwd(), 'src/components/today/dashboard/today-understand-section.tsx'),
+    'utf8',
+  );
+
   it('keeps one-decision hierarchy without why block, goal anchor or briefing', () => {
-    // Verdict → action row → Comprendre → journal.
+    // Verdict → action row → Plan vivant → Comprendre.
     expect(mainSource).not.toContain('TodayGoalAnchor');
     expect(mainSource).not.toContain('DailyBriefingPanel');
     expect(mainSource).not.toContain('TodayWhyBlock');
     expect(mainSource).toContain('TodayActionRow');
     expect(mainSource).toContain('TodayUnderstandSection');
-    expect(mainSource).toContain('TodayJournalHabitBridgeFooter');
     expect(mainSource).toContain('TodayCriticalStatus');
     // Signal strip must not sit as primary under the hero in TodayDashboardMain.
     expect(mainSource).not.toMatch(/TodayVerdictHero[\s\S]*TodaySignalStrip/);
     expect(mainSource).toContain('metricsRow={content.hero.metricsRow}');
     expect(mainSource).toContain('signalPreviews={content.hero.signalPreviews}');
+  });
+
+  // A goal weeks out is not one of the day's actions: sharing that section's
+  // bounded region made it read as one (law of common region). It heads the
+  // widget group instead, above Comprendre.
+  it('mounts Plan vivant as its own block, ahead of Comprendre and outside the action row', () => {
+    expect(mainSource).toContain('TodayPlanVivantSlot');
+    const slotAt = mainSource.indexOf('<TodayPlanVivantSlot');
+    const understandAt = mainSource.indexOf('<TodayUnderstandSection');
+    const actionRowAt = mainSource.indexOf('<TodayActionRow');
+    expect(slotAt).toBeGreaterThan(actionRowAt);
+    expect(slotAt).toBeLessThan(understandAt);
+
+    const actionRowParts = readFileSync(
+      resolve(process.cwd(), 'src/components/today/rich/today-action-row-parts.tsx'),
+      'utf8',
+    );
+    expect(actionRowParts).not.toContain('PlanVivant');
+  });
+
+  // Serial position: the last block an athlete reads should not be a conditional
+  // pointer to an analysis, so the journal footnote closes Comprendre instead.
+  it('closes Comprendre with the journal footnote rather than the page', () => {
+    expect(mainSource).not.toContain('TodayJournalHabitBridgeFooter');
+    expect(understandSource).toContain('TodayJournalHabitBridgeFooter');
   });
 });
 

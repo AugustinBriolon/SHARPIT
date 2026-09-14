@@ -49,11 +49,12 @@ export const activityListSelect = {
   updatedAt: true,
   runMetrics: { select: { distanceM: true } },
   bikeMetrics: { select: { tss: true, avgPower: true } },
-  swimMetrics: { select: { distanceM: true } },
+  swimMetrics: { select: { distanceM: true, avgPaceSecPer100m: true } },
   hikeMetrics: { select: { distanceM: true, elevationM: true } },
   strengthSets: { select: { exercise: true }, orderBy: { order: 'asc' as const } },
   plannedSession: { select: plannedSessionSummarySelect },
   hikeTripId: true,
+  multisportLegs: true,
 } satisfies Prisma.ActivitySelect;
 
 /**

@@ -111,6 +111,90 @@ export const coachEndurancePrescriptionSchema = z
   );
 
 export type CoachEndurancePrescription = z.infer<typeof coachEndurancePrescriptionSchema>;
+
+/**
+ * Loose endurance shape for LLM generation only.
+ * Invented kinds / strokes and float meters must not fail Output.object —
+ * `normalizeCoachPlanGeneration` coerces into the persist schema.
+ */
+const coachEnduranceStepGenerationSchema = z
+  .object({
+    kind: z
+      .string()
+      .describe(
+        "Rôle de l'étape : warmup | interval | recovery | rest | cooldown. Dans un groupe répété, l'étape facile qui sépare deux blocs est un recovery.",
+      ),
+    minutes: z
+      .number()
+      .min(0.5)
+      .max(360)
+      .optional()
+      .describe('Durée en minutes. Renseigne minutes OU meters, jamais les deux.'),
+    meters: z
+      .number()
+      .min(25)
+      .max(200_000)
+      .optional()
+      .describe('Distance en mètres (ex. 1000 pour un 1000 m). Alternative à minutes.'),
+    lap: z
+      .boolean()
+      .optional()
+      .describe("true = l'étape se termine quand l'athlète appuie sur Lap (durée libre)."),
+    effort: z
+      .string()
+      .optional()
+      .describe(
+        'Intensité : RECOVERY | ENDURANCE | TEMPO | THRESHOLD | VO2MAX | RACE. Omettre sur un rest.',
+      ),
+    stroke: z
+      .string()
+      .optional()
+      .describe(
+        'NATATION uniquement : free | back | breast | fly | im | drill | mixed. Omettre hors natation.',
+      ),
+    notes: z
+      .string()
+      .max(240)
+      .optional()
+      .describe('Consigne technique ou sensation pour cette étape (facultatif).'),
+  })
+  .describe('Une étape de la séance.');
+
+const coachEnduranceBlockGenerationSchema = z
+  .object({
+    times: z
+      .number()
+      .min(1)
+      .max(30)
+      .optional()
+      .describe('Nombre de répétitions du groupe. Omettre (ou 1) pour une étape simple.'),
+    steps: z
+      .array(coachEnduranceStepGenerationSchema)
+      .min(1)
+      .max(6)
+      .describe('Étapes du groupe, répétées ensemble. Une seule étape si times est omis.'),
+  })
+  .describe('Soit une étape simple, soit un groupe répété (ex. times=6 pour 6×1000 m).');
+
+export const coachEndurancePrescriptionGenerationSchema = z
+  .object({
+    blocks: z
+      .array(coachEnduranceBlockGenerationSchema)
+      .min(1)
+      .max(30)
+      .describe(
+        'Déroulé ordonné de la séance : échauffement, corps de séance, retour au calme. Un seul niveau de répétition.',
+      ),
+    poolLengthM: z
+      .number()
+      .min(10)
+      .max(100)
+      .optional()
+      .describe('Longueur du bassin en mètres. Natation uniquement.'),
+  })
+  .describe(
+    "Déroulé structuré d'une séance d'endurance (montre Garmin). Pour RUN, BIKE et SWIM. Omettre pour STRENGTH.",
+  );
 type CoachEnduranceStep = z.infer<typeof coachEnduranceStepSchema>;
 type CoachEffort = z.infer<typeof effortEnum>;
 

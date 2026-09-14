@@ -4,7 +4,7 @@ import { SnapshotStatusBanner } from '@/components/today/dashboard/today-dashboa
 import { TodayHeader } from '@/components/today/dashboard/today-header';
 import { TodayUnderstandSection } from '@/components/today/dashboard/today-understand-section';
 import { TodayActionRow } from '@/components/today/rich/today-action-row';
-import { TodayJournalHabitBridgeFooter } from '@/components/today/rich/today-journal-habit-bridge-footer';
+import { TodayPlanVivantSlot } from '@/components/today/rich/today-plan-vivant-slot';
 import { TodayVerdictHero } from '@/components/today/rich/today-verdict-hero';
 import type { TodayViewModel } from '@/core/presentation/today-view-model';
 import type { ClientActivity } from '@/lib/query/types';
@@ -51,9 +51,13 @@ function TodayDecisionStack({
 }
 
 /**
- * Today hierarchy: one decision above the fold (verdict), then the action row
- * (incl. rearrange habit ou Twin), Comprendre, and a quiet journal footnote for
- * analyses / test progress. The plate already carries the why; no separate block.
+ * Today hierarchy: one decision above the fold (verdict), then the action row,
+ * then the widgets — Plan vivant heading them, and Comprendre under it. The
+ * plate already carries the why; no separate block.
+ *
+ * Plan vivant leads the widget group rather than sitting inside the action row:
+ * a trajectory toward a goal weeks out is not one of the day's actions, and
+ * sharing that section's bounded region made it read as one.
  *
  * Goal anchor and daily briefing are unmounted from the hub (presentation-only);
  * VM builders may still populate unused goal/briefing fields.
@@ -97,6 +101,7 @@ export function TodayDashboardMain({
         vm={content}
         onWellnessCompleted={onWellnessCompleted}
       />
+      <TodayPlanVivantSlot loading={valuesLoading} vm={content} />
       <TodayUnderstandSection
         activities={activities}
         activitiesLoading={activitiesLoading}
@@ -104,7 +109,6 @@ export function TodayDashboardMain({
         metricsRow={content.hero.metricsRow}
         signalPreviews={content.hero.signalPreviews}
       />
-      {!valuesLoading ? <TodayJournalHabitBridgeFooter enabled /> : null}
     </div>
   );
 }

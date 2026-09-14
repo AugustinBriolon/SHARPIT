@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils';
  *
  * Mobile pins the back button via `MobileBackLink` (liquid-glass chrome +
  * app nav stack). Empty-stack parent comes from the route registry (Today
- * children → Aujourd’hui) unless the caller passes an explicit fallback pair.
+ * children → Résumé) unless the caller passes an explicit fallback pair.
  * Never hard-code a fixed hub here.
  */
 export function MobileDrillDownHeader({

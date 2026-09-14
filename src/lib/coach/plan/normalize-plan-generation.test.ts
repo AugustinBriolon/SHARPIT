@@ -3,6 +3,7 @@ import {
   normalizeCoachPlanGeneration,
   normalizePlanStartTime,
 } from '@/lib/coach/plan/normalize-plan-generation';
+import { coachPlanGenerationSchema } from '@/lib/validators/coach';
 
 describe('normalizePlanStartTime', () => {
   it('pads single-digit hours', () => {
@@ -85,5 +86,94 @@ describe('normalizeCoachPlanGeneration', () => {
   it('rejects empty session lists', () => {
     const result = normalizeCoachPlanGeneration({ summary: 'x', sessions: [] });
     expect(result.ok).toBe(false);
+  });
+
+  it('drops invented swim strokes so a week is not discarded', () => {
+    const result = normalizeCoachPlanGeneration({
+      summary: 'Eau',
+      sessions: [
+        {
+          dayOffset: 0,
+          type: 'SWIM',
+          intensity: 'ENDURANCE',
+          title: 'Nage',
+          description: 'crawl',
+          durationMin: 40,
+          load: 35,
+          rationale: 'tech',
+          endurancePrescription: {
+            blocks: [
+              {
+                steps: [{ kind: 'interval', meters: 100, effort: 'ENDURANCE', stroke: 'crawl' }],
+              },
+            ],
+            poolLengthM: 25,
+          },
+        },
+      ],
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) {
+      return;
+    }
+    expect(result.plan.sessions[0]?.endurancePrescription?.blocks[0]?.steps[0]).toMatchObject({
+      kind: 'interval',
+      meters: 100,
+    });
+    expect(result.plan.sessions[0]?.endurancePrescription?.blocks[0]?.steps[0]).not.toHaveProperty(
+      'stroke',
+    );
+  });
+});
+
+/**
+ * Generation schema is what Output.object validates before normalize runs.
+ * Invented endurance enums / float meters must not kill the whole week there.
+ */
+describe('coachPlanGenerationSchema endurance looseness', () => {
+  const looseEnduranceWeek = {
+    summary: 'Semaine seuil',
+    sessions: [
+      {
+        dayOffset: 0,
+        startTime: '09:00',
+        type: 'RUN' as const,
+        intensity: 'THRESHOLD' as const,
+        title: 'Seuil',
+        description: '6x1000',
+        durationMin: 60,
+        load: 70,
+        rationale: 'spé',
+        endurancePrescription: {
+          blocks: [
+            {
+              times: 6,
+              steps: [
+                { kind: 'warm-up', meters: 1000.5, effort: 'THRESHOLD' },
+                { kind: 'recovery', minutes: 2, effort: 'RECOVERY' },
+              ],
+            },
+          ],
+        },
+      },
+    ],
+  };
+
+  it('accepts float meters and invented step kinds the model invents', () => {
+    const parsed = coachPlanGenerationSchema.safeParse(looseEnduranceWeek);
+    expect(parsed.success).toBe(true);
+  });
+
+  it('still normalizes that payload into a persistable plan', () => {
+    const result = normalizeCoachPlanGeneration(looseEnduranceWeek);
+    expect(result.ok).toBe(true);
+    if (!result.ok) {
+      return;
+    }
+    expect(result.plan.sessions[0]?.endurancePrescription?.blocks[0]?.steps[0]).toMatchObject({
+      kind: 'interval',
+      meters: 1001,
+    });
   });
 });

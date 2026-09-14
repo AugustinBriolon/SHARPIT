@@ -131,12 +131,13 @@ text-card-title:    1rem                   — font-heading, weight 500
 Body primary:       0.875rem               — sans, regular (14px)
 Body secondary:     0.8125rem              — sans, regular (13px)
 text-label:         0.6875rem              — 11px, uppercase, tracked 0.14em, weight 600
-Caption / meta:     0.75rem                — 12px, muted
+text-meta:          0.75rem                — 12px, size + leading only (caption / meta tier)
 ```
 
 ### 4.3 Typographic Rules
 
 - **Never set body text below 13px.** Below this threshold, precision reads as anxiety.
+- **`text-label` is not a size.** It also forces uppercase, weight 600 and the muted colour, so it classifies — it must never be reached for merely to shrink prose. Small readable text takes `text-meta`; an arbitrary `text-[10px]` is neither and is prohibited.
 - **Never use italic for emphasis in data contexts.** Use weight instead.
 - **Uppercase is reserved for labels.** Never use all-caps for body text or headings.
 - **Tracking (letter-spacing) on body text is always 0.** Only labels and uppercase elements receive tracked spacing.
@@ -191,6 +192,8 @@ On larger viewports, the column widens to a maximum width, centered. The content
 Blocks are separated by `space-y-3` (12px). This is intentionally tight — the blocks are related, part of a continuous argument. They are not independent cards in a dashboard grid.
 
 Each block uses the `analysis-panel` / `analysis-panel-alt` shell (`rounded-analysis` / `rounded-analysis-lg`). No shadows. Surface luminosity + border separation are the only elevation signals — never `bg-card` SaaS plates.
+
+**Two chip tiers, spent by role.** A fill says « separate object »; stamping it on every block flattens the hierarchy it was meant to create. `chip-surface-lg` is consultable evidence the athlete opens (sleep, recovery, nutrition, Plan vivant); `chip-surface-quiet` keeps the hairline and drops the fill for context that only has to stay legible beside it (regularity). A skeleton always declares the same tier as the card it precedes, or the surface swaps on arrival (§9.4).
 
 ### 6.3 The Expand Pattern
 

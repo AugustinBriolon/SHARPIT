@@ -26,16 +26,17 @@ This is a product-surface contract. It complements [PRODUCT.md](../product/PRODU
 
 ## Design decision
 
-Use a temporal, decision-led navigation model. **Shell V1** (shipped in primary chrome) uses four bottom-tab destinations:
+Use a temporal, decision-led navigation model. **Shell V1** (shipped in primary chrome) uses five bottom-tab destinations — four temporal horizons plus the Coach conversation:
 
 | Destination  | Athlete question                       | Primary horizon | What belongs there                                                                         |
 | ------------ | -------------------------------------- | --------------- | ------------------------------------------------------------------------------------------ |
 | **Today**    | What should I do now?                  | This day        | State, decision, check-in, today's session, day-specific context, and tomorrow preview.    |
 | **Plan**     | How should I organise the coming days? | 7–14 days       | Week thread, planning, weekly brief, capacity projection, and plan adjustments.            |
+| **Coach**    | Can I talk this through?               | Any             | Free conversation, plus every contextual discuss deep link from the other surfaces.        |
 | **Activité** | What did I actually do?                | Past → present  | Activity history, trips, manual entry, completed-session detail.                           |
 | **Moi**      | How does SHARPIT know and support me?  | Persistent      | Corps, objectifs, Confidentialité (consents / export / delete), account, equipment, prefs. |
 
-**Coach is not a tab.** That is a **chrome** decision, not a product-ambition ceiling: coaching lives in Today (verdict / why / rearrange CTAs), Plan (**Coacher mon objectif**), and `/coach` discuss deep links from those surfaces. Legal (`/consent`, `/privacy`, `/terms`), onboarding, and any future teaser stay **outside** the auth app shell — they must not wrap the tab bar.
+**Coach is a tab.** Coaching also lives in Today (verdict / why / rearrange CTAs), Plan (**Coacher mon objectif**), and `/coach` discuss deep links from those surfaces — but the conversation itself is reachable from anywhere rather than only from whichever surface happens to offer a CTA. Legal (`/consent`, `/privacy`, `/terms`), onboarding, and any future teaser stay **outside** the auth app shell — they must not wrap the tab bar.
 
 These destinations form a single floating bottom tab bar on every viewport (iOS-style capsule, narrower than the reading column). Moi stays a tab, not an identity footer.
 
@@ -45,14 +46,14 @@ This document is written in English; hub copy ships in French. Tab labels in [`s
 
 | Destination | Shipped label | Canonical hub | Replaces (ADR-022 stage) |
 | ----------- | ------------- | ------------- | ------------------------ |
-| Today       | `Aujourd’hui` | `/`           | Accueil                  |
+| Today       | `Résumé`      | `/`           | Accueil                  |
 | Plan        | `Plan`        | `/plan`       | `Ma semaine`             |
 | Activité    | `Activité`    | `/activite`   | (history half of week)   |
 | Moi         | `Moi`         | `/moi`        | `Profil` / Réglages      |
 
 Moi child surfaces (Shell V1.1+): hub `/moi` title **Paramètres** (Bevel-like grouped inset lists). `/moi/corps` (composition + suivi), `/moi/objectifs`, `/moi/performance` (quiet), `/moi/calibration`. Hub order: **SHARPIT Pro** solo card first (when not subscribed) → **Modèle** → **Compte** → **Préférences** → **Données** → **Ressources** → **Support** → **Mentions légales**. Chrome: one plate per section, hairline rows (icon · label · meta · chevron); press scale on row _content_ (`--press-scale-surface`), not the hit target. Personnalisation owns Mode Expert, data-history window (1–5 ans), and navbar module toggles (Nutrition · Renfo · Biologie · Journal). **Journal** lives at `/journal` — modular day log with opt-in trackables (auto checklist, health / lifestyle / behaviour / wellness factors, custom items). Athlete enables items via **Personnaliser** (profile `journalPrefs` + day values in `AthleteDayJournal.factors`, both DB). Stable factor IDs feed `/journal/analyses` (habit↔physio associations, presentation only; Core untouched). When analysis is ready (≥7 signal days) and a priority finding exists, Today shows **one** instrument strip under morning orientation linking to `/journal/analyses` (`GET /api/journal/habit-bridge`). **Nuit dernière** factors (`Repas tardif`, `Écran au lit`) mean the night ending on the training day (J-1 evening → J wake) for both athlete copy and algo notes (`nuit J-1→J`). **Statut d’activité** (Actif · En pause · Blessé · Malade) is independent — pill on Today (`/`) opens a drawer; retention jusqu’à modification or until date; pause may link to a déplacement. Impacts Today reminders, planning chrome, and coach discuss labels (presentation layer, not Core Gate). Default Actif. `/settings/account` is **Profil**; weight stays on Corps. Legacy `/progress?tab=` redirects onto these.
 
-Coach keeps the label `Coach` on contextual CTAs only — not in `bottomNavItems`.
+Coach ships as the label `Coach` both in `bottomNavItems` and on contextual CTAs.
 
 Deep routes (`/training/*`, `/progress`, `/settings/*`) stay valid and light the matching tab. `/settings` redirects to `/moi`.
 
