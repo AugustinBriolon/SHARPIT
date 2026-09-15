@@ -41,6 +41,7 @@ import {
   upsertDayJournalEntry,
   writeDayJournalStore,
 } from '@/lib/journal/day-journal';
+import { splitJournalFactorIdsForScreen } from '@/lib/journal/journal-screen-sections';
 import {
   flushDayJournalPersist,
   scheduleDayJournalPersist,
@@ -486,8 +487,10 @@ function JournalLoadedContent({
   signals: JournalDaySignals | undefined;
 }) {
   const factorIds = useMemo(() => enabledFactorIds(prefs), [prefs]);
-  const priorNightIds = factorIds.filter((id) => id === 'late_meal' || id === 'device_in_bed');
-  const dayFactorIds = factorIds.filter((id) => id !== 'late_meal' && id !== 'device_in_bed');
+  const { priorNightIds, dayFactorIds } = useMemo(
+    () => splitJournalFactorIdsForScreen(factorIds),
+    [factorIds],
+  );
 
   function setFactor(id: DayJournalFactorKey, next: DayJournalFactorState) {
     persist({
@@ -496,9 +499,12 @@ function JournalLoadedContent({
     });
   }
 
+  // Order: day_metrics → derived_panels → prior_night → day_signals
+  // (see JOURNAL_LOADED_CONTENT_ORDER).
   return (
     <>
       <JournalDayMetricsSection entry={entry} persist={persist} prefs={prefs} />
+      <JournalDerivedPanels prefs={prefs} signals={signals} />
       <FactorListSection
         entry={entry}
         hint="De la veille au réveil (J-1 → J)."
@@ -508,7 +514,6 @@ function JournalLoadedContent({
         titleId="journal-prior-night"
         onChange={setFactor}
       />
-      <JournalDerivedPanels prefs={prefs} signals={signals} />
       <FactorListSection
         entry={entry}
         ids={dayFactorIds}

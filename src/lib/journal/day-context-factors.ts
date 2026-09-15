@@ -101,24 +101,29 @@ function day(
   return { id, label, hint, window: 'calendar_day', group };
 }
 
+function priorNight(
+  id: DayContextFactorId,
+  label: string,
+  hint: string,
+  group: DayContextFactorGroup = 'prior_night',
+): DayContextFactor {
+  return { id, label, hint, window: 'prior_night', group };
+}
+
 export const DAY_CONTEXT_FACTORS: readonly DayContextFactor[] = [
   day('coffee', 'Café', 'Stimulant sur la journée', 'basics'),
   day('mood_low', 'Humeur basse', 'Moral en retrait sur la journée', 'basics'),
   day('hydration_low', 'Hydratation', 'Pas assez bu sur la journée', 'basics'),
-  {
-    id: 'late_meal',
-    label: 'Repas tardif',
-    hint: 'Nuit dernière (J-1 → J) — dîner / collation avant le sommeil',
-    window: 'prior_night',
-    group: 'prior_night',
-  },
-  {
-    id: 'device_in_bed',
-    label: 'Écran au lit',
-    hint: 'Nuit dernière (J-1 → J) — appareil avant le sommeil',
-    window: 'prior_night',
-    group: 'prior_night',
-  },
+  priorNight(
+    'late_meal',
+    'Repas tardif',
+    'Nuit dernière (J-1 → J) — dîner / collation avant le sommeil',
+  ),
+  priorNight(
+    'device_in_bed',
+    'Écran au lit',
+    'Nuit dernière (J-1 → J) — appareil avant le sommeil',
+  ),
   day('alcohol', 'Alcool', 'Consommation d’alcool sur la journée', 'alcohol'),
   day('omega3', 'Oméga-3', 'Complément pris aujourd’hui', 'supplements'),
   day('creatine', 'Créatine', 'Complément pris aujourd’hui', 'supplements'),
@@ -169,11 +174,15 @@ export const DAY_CONTEXT_FACTORS: readonly DayContextFactor[] = [
   day('meal_out', 'Repas hors domicile', 'Repas à l’extérieur', 'behaviour'),
   day('skipped_meal', 'Repas sauté', 'Au moins un repas sauté', 'behaviour'),
   day('night_work', 'Travail de nuit', 'Horaires de nuit / décalage', 'behaviour'),
-  day('shared_bed', 'Lit partagé', 'Sommeil à deux / lit partagé', 'sleep'),
-  day('earplugs', 'Bouchons d’oreille', 'Bouchons pour dormir', 'sleep'),
-  day('sleep_mask', 'Masque de sommeil', 'Masque occultant', 'sleep'),
-  day('pet_in_room', 'Animal dans la chambre', 'Animal dans la chambre la nuit', 'sleep'),
-  day('melatonin', 'Mélatonine', 'Prise de mélatonine', 'sleep'),
+  priorNight('shared_bed', 'Lit partagé', 'Nuit dernière (J-1 → J) — sommeil à deux / lit partagé'),
+  priorNight('earplugs', 'Bouchons d’oreille', 'Nuit dernière (J-1 → J) — bouchons pour dormir'),
+  priorNight('sleep_mask', 'Masque de sommeil', 'Nuit dernière (J-1 → J) — masque occultant'),
+  priorNight(
+    'pet_in_room',
+    'Animal dans la chambre',
+    'Nuit dernière (J-1 → J) — animal dans la chambre',
+  ),
+  priorNight('melatonin', 'Mélatonine', 'Nuit dernière (J-1 → J) — prise de mélatonine'),
 ] as const;
 
 const FACTOR_SET = new Set<string>(DAY_CONTEXT_FACTOR_IDS);
