@@ -4,19 +4,27 @@ import Link from 'next/link';
 import { ConfidenceBars } from '@/components/ui/instruments/confidence-bars';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SkeletonDataValue } from '@/components/ui/skeleton-data-value';
+import {
+  packTierConfidenceBarsTone,
+  packTierInkDotClass,
+  type AthletePackTier,
+} from '@/lib/presentation/today/pack-tier-athlete';
 import { cn } from '@/lib/utils';
 
 export function TodayVerdictContextLabel({
   loading,
   contextLabel,
+  packTier,
 }: {
   loading: boolean;
   contextLabel: string;
+  /** Soft-hero packTier drives amber / gray dots; FULL stays Lime. */
+  packTier?: AthletePackTier | null;
 }) {
   return (
     <div className="text-ink-surface-foreground/65 text-data inline-flex min-w-0 items-center gap-2 text-xs font-semibold tracking-wide uppercase">
       <span
-        className="bg-highlight dark:bg-ink-surface-foreground h-2.5 w-2.5 shrink-0 rounded-full"
+        className={cn('h-2.5 w-2.5 shrink-0 rounded-full', packTierInkDotClass(packTier))}
         aria-hidden
       />
       {loading ? (
@@ -153,6 +161,7 @@ export function TodayVerdictConfidence({
   loading,
   trust,
   bars,
+  packTier,
 }: {
   loading: boolean;
   trust: {
@@ -161,8 +170,11 @@ export function TodayVerdictConfidence({
     confidenceHref: string | null;
   };
   bars: number;
+  packTier?: AthletePackTier | null;
 }) {
-  const confidenceInner = <VerdictConfidenceInner bars={bars} loading={loading} trust={trust} />;
+  const confidenceInner = (
+    <VerdictConfidenceInner bars={bars} loading={loading} packTier={packTier} trust={trust} />
+  );
 
   if (loading) {
     return (
@@ -203,15 +215,18 @@ function VerdictConfidenceInner({
   loading,
   trust,
   bars,
+  packTier,
 }: {
   loading: boolean;
   trust: { confidenceLabel: string | null };
   bars: number;
+  packTier?: AthletePackTier | null;
 }) {
+  const barsTone = packTierConfidenceBarsTone(packTier);
   if (loading) {
     return (
       <>
-        <ConfidenceBars filled={0} tone="highlight" />
+        <ConfidenceBars filled={0} tone={barsTone} />
         <SkeletonDataValue
           className="bg-ink-surface-foreground/20"
           heightClassName="h-[11px]"
@@ -223,7 +238,7 @@ function VerdictConfidenceInner({
 
   return (
     <>
-      <ConfidenceBars filled={bars} tone="highlight" />
+      <ConfidenceBars filled={bars} tone={barsTone} />
       <span className="text-data text-xs font-medium tracking-wide uppercase">
         {trust.confidenceLabel}
       </span>

@@ -9,13 +9,23 @@ export function ConfidenceBars({
   /** 0–3 filled bars */
   filled: number;
   className?: string;
-  /** `highlight` = Lime Pulse bars for the ink band plate. */
-  tone?: 'primary' | 'highlight';
+  /**
+   * `highlight` = Lime Pulse (FULL ink plate).
+   * `caution` = signal-caution amber (PARTIAL / LOW soft-hero).
+   * `muted` = gray (INSUFFICIENT soft-hero).
+   */
+  tone?: 'primary' | 'highlight' | 'caution' | 'muted';
 }) {
   const count = Math.max(0, Math.min(3, Math.round(filled)));
   // Ink band inverts to Lime in dark — bars flip to Forest to stay visible.
-  const barColorClass =
-    tone === 'highlight' ? 'bg-highlight dark:bg-ink-surface-foreground' : 'bg-primary';
+  let barColorClass = 'bg-primary';
+  if (tone === 'highlight') {
+    barColorClass = 'bg-highlight dark:bg-ink-surface-foreground';
+  } else if (tone === 'caution') {
+    barColorClass = 'bg-signal-caution';
+  } else if (tone === 'muted') {
+    barColorClass = 'bg-ink-surface-foreground/40';
+  }
 
   return (
     <div

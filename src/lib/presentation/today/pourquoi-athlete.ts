@@ -3,6 +3,8 @@
  * Deterministic FR prose — no machine packTier labels, no sync ages, no rationale codes.
  */
 
+import { athletePackTierSummary } from '@/lib/presentation/today/pack-tier-athlete';
+
 export type PourquoiAthleteInput = {
   readonly softHero: boolean;
   readonly packTier: 'FULL' | 'PARTIAL' | 'LOW' | 'INSUFFICIENT';
@@ -39,27 +41,23 @@ export function buildPourquoiAthleteCopy(input: PourquoiAthleteInput): PourquoiA
       noEmDash(
         input.packTier === 'INSUFFICIENT'
           ? 'Les signaux du matin ne suffisent pas encore pour un verdict ferme.'
-          : 'On s\'appuie sur ce qui est déjà là, avec une orientation prudente.',
+          : "On s'appuie sur ce qui est déjà là, avec une orientation prudente.",
       ),
-      noEmDash(
-        'Complète les sources manquantes ou attends la sync pour affiner la lecture.',
-      ),
+      noEmDash('Complète les sources manquantes ou attends la sync pour affiner la lecture.'),
     ];
     return {
-      summary: input.packTier === 'INSUFFICIENT' ? 'Données insuffisantes' : 'Estimation partielle',
+      summary: athletePackTierSummary(input.packTier),
       gapBullets,
       sentences,
     };
   }
 
   const sentences = [
-    noEmDash(
-      'Le verdict s\'appuie sur ton sommeil, ta HRV et ta charge récente déjà synchronisés.',
-    ),
+    noEmDash("Le verdict s'appuie sur ton sommeil, ta HRV et ta charge récente déjà synchronisés."),
     noEmDash(
       input.journalWeighted
         ? 'Ton objectif reste prioritaire ; le journal wellness compte déjà dans Recovery.'
-        : 'Ton objectif reste prioritaire ; le journal wellness n\'est pas encore saisi.',
+        : "Ton objectif reste prioritaire ; le journal wellness n'est pas encore saisi.",
     ),
     noEmDash(
       input.journalWeighted
@@ -69,7 +67,7 @@ export function buildPourquoiAthleteCopy(input: PourquoiAthleteInput): PourquoiA
   ];
 
   return {
-    summary: null,
+    summary: athletePackTierSummary('FULL'),
     gapBullets: [],
     sentences,
   };
