@@ -12,7 +12,9 @@ import {
   splitExperimentViews,
   type HabitExperimentView,
 } from '@/lib/journal/journal-habit-experiment-view';
+import { canBeHabitPriorityLever } from '@/lib/journal/journal-habit-priors';
 import type { JournalHabitReading } from '@/lib/journal/journal-habit-reading';
+import type { DumbbellRowModel } from '@/lib/journal/journal-analyses-view-model';
 import { AssociationPanel } from './association-panel';
 import { CoachReadingCta } from './coach-reading-cta';
 import { RunningExperimentBanner } from './experiments-panel';
@@ -114,6 +116,26 @@ function useTestActions(initial: HabitExperimentView[]) {
   };
 }
 
+function plateExperienceForReading(
+  reading: JournalAnalysesData['reading'],
+  renderStart: ReturnType<typeof useTestActions>['renderStart'],
+  running: ReturnType<typeof useTestActions>['running'],
+): ReactNode | undefined {
+  // When a test runs, the banner above is the source of truth — no duplicate CTA.
+  if (running) {
+    return undefined;
+  }
+  const { priority } = reading;
+  return (
+    <>
+      <p className="text-sm text-pretty">{reading.actionHint}</p>
+      {priority && reading.supportsExperiment
+        ? renderStart(priority.factorId, priority.polarity)
+        : null}
+    </>
+  );
+}
+
 /** Single causal column: plate → optional live test → associations. */
 function JournalAnalysesReady({
   analysis,
@@ -126,22 +148,13 @@ function JournalAnalysesReady({
 }) {
   const { reading, viewModel } = analysis;
   const { renderStart, running, stopping, error, onStop } = useTestActions(experiments);
-  const { priority } = reading;
-
-  // When a test runs, the banner above is the source of truth — no duplicate CTA.
-  let plateExperience: ReactNode | undefined;
-  if (!running) {
-    plateExperience = (
-      <>
-        <p className="text-sm text-pretty">{reading.actionHint}</p>
-        {priority ? renderStart(priority.factorId, priority.polarity) : null}
-      </>
-    );
-  }
 
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-8">
-      <TakeawayPlate experience={plateExperience} reading={reading} />
+      <TakeawayPlate
+        experience={plateExperienceForReading(reading, renderStart, running)}
+        reading={reading}
+      />
       {running ? (
         <RunningExperimentBanner
           error={error}
@@ -152,8 +165,9 @@ function JournalAnalysesReady({
       ) : null}
       <AssociationPanel
         vm={viewModel}
-        actionsFor={(row) => {
-          const start = renderStart(row.factorId, row.polarity);
+        actionsFor={(row: DumbbellRowModel) => {
+          const canTest = !row.weak && canBeHabitPriorityLever(row.factorId, row.outcome);
+          const start = canTest ? renderStart(row.factorId, row.polarity) : null;
           return (
             <>
               {start}

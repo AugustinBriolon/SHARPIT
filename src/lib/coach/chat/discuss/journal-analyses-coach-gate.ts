@@ -39,13 +39,23 @@ function formatEmptyBlock(reading: JournalHabitReading): string {
 
 function formatFindingLines(reading: JournalHabitReading): string[] {
   const lines: string[] = [];
+  if (reading.strengths.length > 0) {
+    lines.push('Ce qui tient :');
+    lines.push(
+      ...reading.strengths.map((item) => `- ${item.title} (${confidenceLabel(item.confidence)})`),
+    );
+  }
   const { priority } = reading;
   if (priority) {
     lines.push(
       `Priorité : ${priority.title} (${confidenceLabel(priority.confidence)}). ${priority.detail}`,
     );
   }
-  const others = reading.highlights.filter((item) => item.factorId !== priority?.factorId);
+  const others = reading.highlights.filter(
+    (item) =>
+      item.factorId !== priority?.factorId &&
+      !reading.strengths.some((strength) => strength.factorId === item.factorId),
+  );
   if (others.length > 0) {
     lines.push('Autres associations :');
     lines.push(...others.map((item) => `- ${item.title} (${confidenceLabel(item.confidence)})`));

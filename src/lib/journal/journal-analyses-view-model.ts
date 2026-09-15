@@ -33,6 +33,7 @@ import type { JournalHabitReading } from '@/lib/journal/journal-habit-reading';
 export type DumbbellRowModel = {
   key: string;
   factorId: string;
+  outcome: JournalOutcomeKey;
   label: string;
   lagLabel: string | null;
   polarity: ObservationPolarity;
@@ -96,6 +97,7 @@ function toDumbbellRow(effect: JournalHabitFinding, tested: ReadonlySet<string>)
   return {
     key: `${effect.factorId}:${effect.polarity}:${effect.outcome}`,
     factorId: effect.factorId,
+    outcome: effect.outcome,
     label: journalFactorDisplayLabel(effect.factorId),
     lagLabel: formatLagLabel(effect.lagDays),
     polarity: effect.polarity,

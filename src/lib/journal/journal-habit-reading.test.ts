@@ -11,8 +11,8 @@ function finding(
     yesValues: [],
     noValues: [],
     outcome: 'sleepMinutes',
-    nYes: 5,
-    nNo: 5,
+    nYes: 6,
+    nNo: 6,
     medianYes: 360,
     medianNo: 450,
     absDelta: 90,
@@ -28,12 +28,13 @@ describe('buildJournalHabitReading', () => {
     expect(reading.headline).toMatch(/rien|aucune/i);
     expect(reading.priority).toBeNull();
     expect(reading.highlights).toHaveLength(0);
+    expect(reading.supportsExperiment).toBe(false);
   });
 
-  it('prioritizes a high-confidence minus finding and counts compiled rows', () => {
+  it('picks the strongest eligible high signal and celebrates lifts in strengths', () => {
     const findings = [
       finding({
-        factorId: 'creatine',
+        factorId: 'yoga',
         polarity: 'plus',
         confidence: 'high',
         outcome: 'recoveryScore',
@@ -67,11 +68,13 @@ describe('buildJournalHabitReading', () => {
     expect(reading.weakCount).toBe(1);
     expect(reading.priority?.factorId).toBe('device_in_bed');
     expect(reading.priority?.title).toMatch(/sommeil et récupération/);
-    expect(reading.headline).toContain('2');
+    expect(reading.strengths.some((item) => item.factorId === 'yoga')).toBe(true);
+    expect(reading.highlights[0]?.polarity).toBe('plus');
+    expect(reading.supportsExperiment).toBe(true);
     expect(reading.actionHint.toLowerCase()).toMatch(/sans|7 jours|teste/);
   });
 
-  it('falls back to medium when no high confidence', () => {
+  it('does not offer an experiment CTA on a medium-only piste', () => {
     const reading = buildJournalHabitReading(
       [
         finding({
@@ -86,7 +89,53 @@ describe('buildJournalHabitReading', () => {
     expect(reading.netCount).toBe(0);
     expect(reading.weakCount).toBe(1);
     expect(reading.priority?.factorId).toBe('alcohol');
+    expect(reading.supportsExperiment).toBe(false);
+    expect(reading.actionHint.toLowerCase()).toMatch(/fragile|noter/);
     expect(reading.headline.toLowerCase()).toMatch(/piste|fragile|confirmer/);
+  });
+
+  it('never promotes an exploratory supplement as the priority lever', () => {
+    const reading = buildJournalHabitReading(
+      [
+        finding({
+          factorId: 'probiotic',
+          polarity: 'minus',
+          confidence: 'high',
+          absDelta: 56,
+        }),
+        finding({
+          factorId: 'late_meal',
+          polarity: 'minus',
+          confidence: 'medium',
+          absDelta: 45,
+        }),
+      ],
+      7,
+    );
+    expect(reading.priority?.factorId).toBe('late_meal');
+    expect(reading.supportsExperiment).toBe(false);
+  });
+
+  it('surfaces a favourable habit when that is all the mirror has', () => {
+    const reading = buildJournalHabitReading(
+      [
+        finding({
+          factorId: 'yoga',
+          polarity: 'plus',
+          confidence: 'high',
+          outcome: 'recoveryScore',
+          medianYes: 75,
+          medianNo: 55,
+          absDelta: 20,
+        }),
+      ],
+      21,
+    );
+    expect(reading.priority?.factorId).toBe('yoga');
+    expect(reading.priority?.polarity).toBe('plus');
+    expect(reading.verdict.toLowerCase()).toMatch(/plus|tient|yoga/);
+    expect(reading.supportsExperiment).toBe(true);
+    expect(reading.actionHint.toLowerCase()).toMatch(/garde/);
   });
 
   it('names the lever and its size in the verdict, with counts in the summary', () => {

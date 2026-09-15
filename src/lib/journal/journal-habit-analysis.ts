@@ -9,9 +9,12 @@
  *   sleep) use +1 day so the morning metric after the night is compared.
  * - Multiple outcomes per factor allowed; recoveryScore vs bodyBattery collapsed when
  *   redundant (same polarity) to limit multiple-testing noise.
+ * - Plausibility priors demote exploratory supplements; contradictory polarities on the
+ *   same habit are stripped from actionable findings.
  */
 
 import { isDayContextFactorId, isPriorNightFactor } from '@/lib/journal/day-context-factors';
+import { habitOutcomePlausibility } from '@/lib/journal/journal-habit-priors';
 
 export type RecordedFactor = 'yes' | 'no';
 
@@ -87,11 +90,11 @@ export const MIN_ABS_DELTA: Record<JournalOutcomeKey, number> = {
   bodyBattery: 10,
 };
 
-/** Solid association: both arms well sampled. */
-export const MIN_N_PER_GROUP_HIGH = 5;
+/** Solid association: both arms well sampled (~two weeks of contrast). */
+export const MIN_N_PER_GROUP_HIGH = 6;
 
-/** Early signal only. */
-export const MIN_N_PER_GROUP_MEDIUM = 3;
+/** Early signal only — still needs a real contrast, not a 3-day fluke. */
+export const MIN_N_PER_GROUP_MEDIUM = 4;
 
 export function recordedFactorValue(state: string | null | undefined): RecordedFactor | null {
   return state === 'yes' || state === 'no' ? state : null;
@@ -153,11 +156,67 @@ export function scoreObservationConfidence(input: {
     return 'none';
   }
 
-  const sampleScore = Math.min(1, total / 16) * Math.min(1, minN / MIN_N_PER_GROUP_HIGH);
+  const sampleScore = Math.min(1, total / 20) * Math.min(1, minN / MIN_N_PER_GROUP_HIGH);
   const effectScore = Math.min(1, absDelta / (threshold * 1.5));
   const score = sampleScore * 0.6 + effectScore * 0.4;
 
   return confidenceFromScore({ minN, absDelta, threshold, score });
+}
+
+/**
+ * Exploratory factors (most supplements) never become "high" and need a high-n
+ * sample just to appear as medium. Primary/secondary keep the scored confidence.
+ */
+export function applyPlausibilityToEffect(effect: FactorOutcomeEffect): FactorOutcomeEffect | null {
+  const rank = habitOutcomePlausibility(effect.factorId, effect.outcome);
+  if (effect.confidence === 'none') {
+    return null;
+  }
+  if (rank === 'exploratory') {
+    const minN = Math.min(effect.nYes, effect.nNo);
+    if (minN < MIN_N_PER_GROUP_HIGH) {
+      return null;
+    }
+    return { ...effect, confidence: 'medium' };
+  }
+  if (rank === 'secondary' && effect.confidence === 'high') {
+    const minN = Math.min(effect.nYes, effect.nNo);
+    if (minN < MIN_N_PER_GROUP_HIGH + 2) {
+      return { ...effect, confidence: 'medium' };
+    }
+  }
+  return effect;
+}
+
+/**
+ * Same habit lifting one outcome and dragging another is noise under confounders —
+ * keep nothing actionable for that factor until the pattern clarifies.
+ */
+export function dropContradictoryFactorFindings(findings: readonly JournalHabitFinding[]): {
+  kept: JournalHabitFinding[];
+  incoherentFactorIds: string[];
+} {
+  const polarities = new Map<string, Set<ObservationPolarity>>();
+  for (const finding of findings) {
+    const set = polarities.get(finding.factorId) ?? new Set<ObservationPolarity>();
+    set.add(finding.polarity);
+    polarities.set(finding.factorId, set);
+  }
+
+  const incoherentFactorIds = [...polarities.entries()]
+    .filter(([, set]) => set.has('plus') && set.has('minus'))
+    .map(([factorId]) => factorId)
+    .sort();
+
+  if (incoherentFactorIds.length === 0) {
+    return { kept: [...findings], incoherentFactorIds };
+  }
+
+  const drop = new Set(incoherentFactorIds);
+  return {
+    kept: findings.filter((finding) => !drop.has(finding.factorId)),
+    incoherentFactorIds,
+  };
 }
 
 function confidenceFromScore(input: {
@@ -275,7 +334,10 @@ function confidenceRank(confidence: 'high' | 'medium'): number {
   return confidence === 'high' ? 2 : 1;
 }
 
-function relativeEffect(effect: FactorOutcomeEffect): number {
+export function relativeEffectForFinding(effect: {
+  absDelta: number;
+  outcome: JournalOutcomeKey;
+}): number {
   return effect.absDelta / MIN_ABS_DELTA[effect.outcome];
 }
 
@@ -294,7 +356,7 @@ export function collapseRedundantRecoveryFindings(
     if (conf !== 0) {
       return conf;
     }
-    return b.absDelta / MIN_ABS_DELTA[b.outcome] - a.absDelta / MIN_ABS_DELTA[a.outcome];
+    return relativeEffectForFinding(b) - relativeEffectForFinding(a);
   });
 
   for (const finding of sorted) {
@@ -319,12 +381,13 @@ export function collapseRedundantRecoveryFindings(
     if (conf !== 0) {
       return conf;
     }
-    return relativeEffect(b as FactorOutcomeEffect) - relativeEffect(a as FactorOutcomeEffect);
+    return relativeEffectForFinding(b) - relativeEffectForFinding(a);
   });
 }
 
 /**
- * Build athlete-facing associations: every solid factor×outcome effect after lag + filters.
+ * Build athlete-facing associations: every solid factor×outcome effect after lag,
+ * plausibility gate, redundancy collapse, and contradiction drop.
  */
 export function buildJournalHabitFindings(
   days: readonly JournalAnalysisDay[],
@@ -334,28 +397,33 @@ export function buildJournalHabitFindings(
   for (const factorId of collectFactorIds(days)) {
     for (const outcome of OUTCOMES) {
       const effect = compareFactorOutcome(days, factorId, outcome);
-      if (!effect || effect.confidence === 'none') {
+      if (!effect) {
+        continue;
+      }
+      const gated = applyPlausibilityToEffect(effect);
+      if (!gated || gated.confidence === 'none') {
         continue;
       }
       raw.push({
         kind: 'effect',
-        factorId: effect.factorId,
-        outcome: effect.outcome,
-        nYes: effect.nYes,
-        nNo: effect.nNo,
-        medianYes: effect.medianYes,
-        medianNo: effect.medianNo,
-        yesValues: effect.yesValues,
-        noValues: effect.noValues,
-        absDelta: effect.absDelta,
-        polarity: effect.polarity,
-        confidence: effect.confidence,
-        lagDays: effect.lagDays,
+        factorId: gated.factorId,
+        outcome: gated.outcome,
+        nYes: gated.nYes,
+        nNo: gated.nNo,
+        medianYes: gated.medianYes,
+        medianNo: gated.medianNo,
+        yesValues: gated.yesValues,
+        noValues: gated.noValues,
+        absDelta: gated.absDelta,
+        polarity: gated.polarity,
+        confidence: gated.confidence,
+        lagDays: gated.lagDays,
       });
     }
   }
 
-  return collapseRedundantRecoveryFindings(raw);
+  const collapsed = collapseRedundantRecoveryFindings(raw);
+  return dropContradictoryFactorFindings(collapsed).kept;
 }
 
 export function partitionHabitFindings(findings: readonly JournalHabitFinding[]): {
@@ -407,7 +475,7 @@ export function compileJournalHabitFindings(
   const compiled: CompiledJournalHabitFinding[] = [];
   for (const effects of groups.values()) {
     const sortedEffects = [...effects].sort(
-      (a, b) => relativeEffect(b as FactorOutcomeEffect) - relativeEffect(a as FactorOutcomeEffect),
+      (a, b) => relativeEffectForFinding(b) - relativeEffectForFinding(a),
     );
     const primary = sortedEffects[0]!;
     compiled.push({
@@ -424,10 +492,7 @@ export function compileJournalHabitFindings(
     if (conf !== 0) {
       return conf;
     }
-    return (
-      relativeEffect(b.effects[0]! as FactorOutcomeEffect) -
-      relativeEffect(a.effects[0]! as FactorOutcomeEffect)
-    );
+    return relativeEffectForFinding(b.effects[0]!) - relativeEffectForFinding(a.effects[0]!);
   });
 }
 

@@ -32,8 +32,10 @@ function reading(overrides: Partial<JournalHabitReading> = {}): JournalHabitRead
         confidence: 'medium',
       },
     ],
+    strengths: [],
     actionHint:
       'Teste 7 jours sans « Écran au lit » (ou en réduisant), puis compare sommeil et récupération.',
+    supportsExperiment: true,
     ...overrides,
   };
 }

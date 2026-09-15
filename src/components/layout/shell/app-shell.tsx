@@ -29,9 +29,9 @@ type AppShellFrameProps = {
  * Floor 3.5rem: Safari tabs often report safe-area-inset-top as 0 while UI still
  * overlaps ~50px. Standalone insets (~47–59px) still win via max().
  */
-// const SAFE_PAGE_TOP_STYLE: CSSProperties = {
-//   paddingTop: 'max(3.5rem, env(safe-area-inset-top, 0px))',
-// };
+const SAFE_PAGE_TOP_STYLE: CSSProperties = {
+  paddingTop: 'max(3.5rem, env(safe-area-inset-top, 0px))',
+};
 
 function AppShellSkipLink() {
   return (
@@ -70,19 +70,14 @@ function AppShellFrame({
             hideBottomNav ? 'pb-0' : 'pb-(--bottom-nav-offset)',
           )}
         >
-          {/*
-            No SystemEdgeBlur overlay: in Safari tabs it cannot paint under the
-            status strip and was masking the first heading. Native Liquid Glass
-            owns that edge; we only clear readable content below it.
-          */}
           <div
             data-safe-page-top=""
+            style={coachMobileImmersive ? undefined : SAFE_PAGE_TOP_STYLE}
             className={cn(
               'mx-auto px-4 pb-4 [--page-gutter:1rem] lg:p-6 lg:pt-6 lg:[--page-gutter:1.5rem]',
               PAGE_CONTENT_MAX_CLASS,
               coachMobileImmersive && 'max-w-none p-0',
             )}
-            // style={coachMobileImmersive ? undefined : SAFE_PAGE_TOP_STYLE}
           >
             {children}
           </div>

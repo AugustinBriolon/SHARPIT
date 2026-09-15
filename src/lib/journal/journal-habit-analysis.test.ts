@@ -1,13 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import {
+  applyPlausibilityToEffect,
   buildJournalHabitFindings,
   collapseRedundantRecoveryFindings,
   compileJournalHabitFindings,
   compareFactorOutcome,
+  dropContradictoryFactorFindings,
   median,
   outcomeLagDays,
   scoreObservationConfidence,
   shiftTrainingDayId,
+  type FactorOutcomeEffect,
   type JournalAnalysisDay,
   type JournalHabitFinding,
 } from '@/lib/journal/journal-habit-analysis';
@@ -47,18 +50,20 @@ describe('journal-habit-analysis', () => {
       day('2026-09-03', 'yes', 370),
       day('2026-09-04', 'yes', 340),
       day('2026-09-05', 'yes', 355),
-      day('2026-09-06', 'no', 480),
-      day('2026-09-07', 'no', 470),
-      day('2026-09-08', 'no', 490),
-      day('2026-09-09', 'no', 460),
-      day('2026-09-10', 'no', 475),
+      day('2026-09-06', 'yes', 365),
+      day('2026-09-07', 'no', 480),
+      day('2026-09-08', 'no', 470),
+      day('2026-09-09', 'no', 490),
+      day('2026-09-10', 'no', 460),
+      day('2026-09-11', 'no', 475),
+      day('2026-09-12', 'no', 485),
     ];
     const result = compareFactorOutcome(days, 'device_in_bed', 'sleepMinutes');
     expect(result).not.toBeNull();
     expect(result!.medianYes).toBeLessThan(result!.medianNo);
     expect(result!.polarity).toBe('minus');
-    expect(result!.nYes).toBe(5);
-    expect(result!.nNo).toBe(5);
+    expect(result!.nYes).toBe(6);
+    expect(result!.nNo).toBe(6);
     expect(result!.confidence).toBe('high');
   });
 
@@ -155,8 +160,17 @@ describe('journal-habit-analysis', () => {
 
     expect(
       scoreObservationConfidence({
-        nYes: 5,
-        nNo: 5,
+        nYes: 3,
+        nNo: 3,
+        absDelta: 90,
+        outcome: 'sleepMinutes',
+      }),
+    ).toBe('none');
+
+    expect(
+      scoreObservationConfidence({
+        nYes: 6,
+        nNo: 6,
         absDelta: 90,
         outcome: 'sleepMinutes',
       }),
@@ -301,5 +315,85 @@ describe('journal-habit-analysis', () => {
     expect(effect?.yesValues).toEqual([360, 350, 370]);
     expect(effect?.noValues).toEqual([480, 470, 490]);
     expect(effect?.medianYes).toBe(360);
+  });
+
+  it('suppresses short-sample probiotic sleep contrasts via plausibility', () => {
+    const base: FactorOutcomeEffect = {
+      factorId: 'probiotic',
+      outcome: 'sleepMinutes',
+      nYes: 4,
+      nNo: 3,
+      medianYes: 360,
+      medianNo: 416,
+      yesValues: [360, 350, 370, 355],
+      noValues: [400, 416, 430],
+      absDelta: 56,
+      polarity: 'minus',
+      confidence: 'medium',
+      lagDays: 0,
+    };
+    expect(applyPlausibilityToEffect(base)).toBeNull();
+
+    const solid = applyPlausibilityToEffect({
+      ...base,
+      nYes: 6,
+      nNo: 6,
+      confidence: 'high',
+    });
+    expect(solid?.confidence).toBe('medium');
+  });
+
+  it('drops a habit that both lifts and drags outcomes', () => {
+    const findings: JournalHabitFinding[] = [
+      {
+        kind: 'effect',
+        yesValues: [],
+        noValues: [],
+        factorId: 'probiotic',
+        outcome: 'sleepMinutes',
+        nYes: 6,
+        nNo: 6,
+        medianYes: 360,
+        medianNo: 416,
+        absDelta: 56,
+        polarity: 'minus',
+        confidence: 'medium',
+        lagDays: 0,
+      },
+      {
+        kind: 'effect',
+        yesValues: [],
+        noValues: [],
+        factorId: 'probiotic',
+        outcome: 'recoveryScore',
+        nYes: 6,
+        nNo: 6,
+        medianYes: 70,
+        medianNo: 31,
+        absDelta: 39,
+        polarity: 'plus',
+        confidence: 'medium',
+        lagDays: 0,
+      },
+      {
+        kind: 'effect',
+        yesValues: [],
+        noValues: [],
+        factorId: 'late_meal',
+        outcome: 'sleepMinutes',
+        nYes: 6,
+        nNo: 6,
+        medianYes: 400,
+        medianNo: 460,
+        absDelta: 60,
+        polarity: 'minus',
+        confidence: 'high',
+        lagDays: 0,
+      },
+    ];
+
+    const { kept, incoherentFactorIds } = dropContradictoryFactorFindings(findings);
+    expect(incoherentFactorIds).toEqual(['probiotic']);
+    expect(kept.map((f) => f.factorId)).toEqual(['late_meal']);
   });
 });

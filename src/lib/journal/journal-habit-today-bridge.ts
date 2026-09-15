@@ -116,10 +116,11 @@ export function todayJournalHabitBridgeFromReading(
   if (!isJournalAnalysisReady(reading.daysWithSignal)) {
     return null;
   }
-  const { priority } = reading;
-  if (!priority) {
+  // Today only amplifies levers solid enough for an honest experiment.
+  if (!reading.supportsExperiment || !reading.priority) {
     return null;
   }
+  const { priority } = reading;
   const copy = formatTodayJournalHabitBridgeCopy(priority);
   return {
     ...copy,
