@@ -110,8 +110,8 @@ function JournalWeightBadge({ fieldId }: { fieldId: string }) {
 function JournalRecoveryCallout() {
   return (
     <p
-      role="note"
       className="border-analysis-border/80 bg-muted/40 text-muted-foreground rounded-analysis border px-3 py-2.5 text-sm text-pretty"
+      role="note"
     >
       {JOURNAL_RECOVERY_CALLOUT}
     </p>

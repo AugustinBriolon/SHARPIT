@@ -4,12 +4,7 @@
  * (header callout explains the model — no per-line failure badges).
  */
 
-export const WEIGHTED_MORNING_WELLNESS_FIELDS = [
-  'mood',
-  'energy',
-  'soreness',
-  'stress',
-] as const;
+export const WEIGHTED_MORNING_WELLNESS_FIELDS = ['mood', 'energy', 'soreness', 'stress'] as const;
 
 export type WeightedMorningWellnessField = (typeof WEIGHTED_MORNING_WELLNESS_FIELDS)[number];
 
