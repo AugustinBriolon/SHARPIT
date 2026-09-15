@@ -33,7 +33,7 @@ export function AppClerkProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <ClerkProvider
-      afterSignOutUrl="/sign-in"
+      afterSignOutUrl="/welcome"
       allowedRedirectOrigins={allowedRedirectOrigins}
       appearance={clerkAppearance}
       localization={frFR}

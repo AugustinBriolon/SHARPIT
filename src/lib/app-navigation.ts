@@ -6,7 +6,7 @@ import { CalendarRange, CircleUser, Footprints, MessagesSquare, Sun } from 'luci
  * Résumé · Plan · Coach · Activité · Moi. Four are temporal horizons; Coach is
  * the coaching conversation, promoted to a tab so it is reachable from anywhere
  * rather than only from the CTAs of whichever surface happens to offer one.
- * Legal / onboarding / future teaser stay outside `(app)` and never wrap the tab bar.
+ * Legal / onboarding / public teaser (`/welcome`) stay outside `(app)` and never wrap the tab bar.
  *
  * One prefix per intention: `/plan/*` is future and organisation, `/activite/*`
  * is completed execution, `/moi/*` and `/settings/*` are the athlete model and
