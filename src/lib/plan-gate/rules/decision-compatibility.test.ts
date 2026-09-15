@@ -15,6 +15,27 @@ describe('decisionCompatibilityRule', () => {
     expect(findings[0]?.saferAlternative?.intensity).toBe('ENDURANCE');
   });
 
+  it('rejects TEMPO under RECOVER (aligned with Plan intensity-gate)', () => {
+    const context = baseContext({ decision: decisionState({ overallVerdict: 'RECOVER' }) });
+    const proposal = baseProposal({ intensity: 'TEMPO' });
+
+    const findings = decisionCompatibilityRule(context, proposal);
+
+    expect(findings.some((f) => f.ruleCode === 'DECISION_INTENSITY_CONFLICT')).toBe(true);
+    expect(findings.some((f) => f.severity === 'REJECTED')).toBe(true);
+  });
+
+  it('rejects TEMPO under CAUTION', () => {
+    const context = baseContext({ decision: decisionState({ overallVerdict: 'CAUTION' }) });
+    const proposal = baseProposal({ intensity: 'TEMPO' });
+
+    expect(
+      decisionCompatibilityRule(context, proposal).some(
+        (f) => f.ruleCode === 'DECISION_INTENSITY_CONFLICT',
+      ),
+    ).toBe(true);
+  });
+
   it('rejects a high-intensity proposal when the verdict is CAUTION', () => {
     const context = baseContext({ decision: decisionState({ overallVerdict: 'CAUTION' }) });
     const proposal = baseProposal({ intensity: 'VO2MAX' });

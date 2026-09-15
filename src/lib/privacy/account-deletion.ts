@@ -56,6 +56,15 @@ export async function softDeleteAthlete(
     select: { id: true, deletedAt: true },
   });
   await clearAthleteProviderCredentials(athleteId);
+  // Science Sport evidence is athlete-isolated — purge immediately on soft-delete.
+  try {
+    const { purgeAnalysisEvidenceForAthlete } = await import(
+      '@/lib/science/reliability/analysis-evidence-store'
+    );
+    await purgeAnalysisEvidenceForAthlete(athleteId);
+  } catch (error) {
+    logSafeError('privacy/purge-analysis-evidence', error, { athleteId });
+  }
   const deletedAt = updated.deletedAt ?? now;
   return {
     athleteId: updated.id,

@@ -158,6 +158,30 @@ export type TodayViewModel = {
       /** Drill-down when plate limiter is shown. */
       limitingFactorHref: string | null;
     };
+    /** Science Sport reliability V0 — packTier soft-hero + provenance. */
+    reliability: {
+      packTier: 'FULL' | 'PARTIAL' | 'LOW' | 'INSUFFICIENT';
+      softHero: boolean;
+      estimationChip: string | null;
+      visibleGaps: readonly string[];
+      ctaCompleteSources: boolean;
+      withholdIntensityTopAction: boolean;
+      provenance: {
+        packTier: 'FULL' | 'PARTIAL' | 'LOW' | 'INSUFFICIENT';
+        estimationChip: string | null;
+        series: ReadonlyArray<{
+          key: string;
+          label: string;
+          detail: string;
+          status: 'ok' | 'gap' | 'partial';
+        }>;
+        gaps: readonly string[];
+        gapLabels: readonly string[];
+        goalVsJournalWeight: string;
+        rationaleCodes: readonly string[];
+        rationaleLabels: readonly string[];
+      };
+    } | null;
   };
 
   actionRow: {

@@ -1,10 +1,28 @@
 import { prisma } from '@/lib/prisma';
 import { CURRENT_PRIVACY_VERSION, PRIVACY_PURGE_DELAY_DAYS } from '@/lib/privacy/constants';
+import { ANALYSIS_EVIDENCE_RETENTION } from '@/lib/science/reliability/analysis-evidence';
+import { listAnalysisEvidenceForExport } from '@/lib/science/reliability/analysis-evidence-store';
+
+function serializeEvidenceForExport(
+  rows: Awaited<ReturnType<typeof listAnalysisEvidenceForExport>>,
+) {
+  return rows.map((row) => ({
+    id: row.id,
+    trainingDayId: row.trainingDayId,
+    snapshotId: row.snapshotId,
+    inputs: row.inputs,
+    verdict: row.verdict,
+    createdAt: row.createdAt.toISOString(),
+  }));
+}
 
 /**
  * Athlete data export (JSON). Omits encrypted provider credentials and never
  * includes plaintext secrets. Body metrics and health rows are included as
- * stored — this is the athlete's own copy under GDPR art. 20.
+ * stored — this is the athlete's own copy under GDPR art. 15 / 20.
+ *
+ * Health category includes AnalysisEvidenceSnapshot rows inside the locked
+ * retention window (N=5 OR 14 days, whichever shorter).
  */
 export async function buildAthleteExportJson(athleteId: string) {
   const profile = await prisma.athleteProfile.findUniqueOrThrow({
@@ -60,6 +78,7 @@ export async function buildAthleteExportJson(athleteId: string) {
     dailyBriefings,
     weeklyReviews,
     performanceRecords,
+    analysisEvidenceSnapshots,
   ] = await Promise.all([
     prisma.activity.findMany({
       where: { athleteId },
@@ -104,6 +123,7 @@ export async function buildAthleteExportJson(athleteId: string) {
       take: 104,
     }),
     prisma.performanceRecord.findMany({ where: { athleteId } }),
+    listAnalysisEvidenceForExport(athleteId),
   ]);
 
   // Connection status only — never encrypted tokens / passwords.
@@ -134,12 +154,19 @@ export async function buildAthleteExportJson(athleteId: string) {
     }),
   ]);
 
+  const healthEvidenceExport = serializeEvidenceForExport(analysisEvidenceSnapshots);
+
   return {
     exportedAt: new Date().toISOString(),
     privacyVersion: profile.privacyVersion ?? CURRENT_PRIVACY_VERSION,
     retention: {
       softDeletePurgeDays: PRIVACY_PURGE_DELAY_DAYS,
       note: 'Après demande de suppression, les données sont purgées au plus tard sous 30 jours.',
+      analysisEvidence: {
+        maxRows: ANALYSIS_EVIDENCE_RETENTION.maxRowsPerAthlete,
+        maxAgeDays: ANALYSIS_EVIDENCE_RETENTION.maxAgeDays,
+        note: 'Preuves d’analyse : 5 dernières ou 14 jours (la fenêtre la plus courte).',
+      },
     },
     profile,
     activities,
@@ -154,6 +181,16 @@ export async function buildAthleteExportJson(athleteId: string) {
     dailyBriefings,
     weeklyReviews,
     performanceRecords,
+    /** Art. 9 health category — inferences / pack evidence (no secrets). */
+    categories: {
+      health: {
+        analysisEvidenceSnapshots: healthEvidenceExport,
+        dailyHealth,
+        bodyComposition,
+        physicalNotes,
+        conditions,
+      },
+    },
     integrations: {
       garmin: garmin ? { connected: true, ...garmin } : { connected: false },
       strava: strava ? { connected: true, ...strava } : { connected: false },

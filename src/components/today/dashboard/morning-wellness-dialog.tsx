@@ -16,6 +16,8 @@ import { toast } from '@/components/ui/toast';
 import { useWellnessCheckin } from '@/hooks/use-wellness-checkin';
 import { useOfflineGuard } from '@/hooks/use-offline-guard';
 import { mapSorenessUiToDomain, type WellnessUiScore } from '@/lib/journal/morning-wellness-scale';
+import { JOURNAL_WEIGHT_BADGE } from '@/lib/journal/reliability-weighting';
+import { cn } from '@/lib/utils';
 
 type WellnessOption = ScaleOption<WellnessUiScore>;
 
@@ -98,8 +100,11 @@ function NotesStep({ value, onChange }: { value: string; onChange: (v: string) =
           Note
         </p>
         <p className="text-muted-foreground mt-1 text-sm" id={hintId}>
-          Optionnel — un détail pour le coach si besoin.
+          Optionnel. Un détail pour le coach si besoin.
         </p>
+        <span className="bg-muted text-muted-foreground mt-2 inline-flex rounded-md px-1.5 py-0.5 text-[10px] font-semibold tracking-wide uppercase">
+          {JOURNAL_WEIGHT_BADGE.notedNotWeighted}
+        </span>
       </div>
       <Textarea
         aria-describedby={hintId}
@@ -336,14 +341,23 @@ function MorningWellnessDialogBody({
   return (
     <div className="flex min-h-0 flex-1 flex-col justify-center px-5 py-6">
       {form.isScaleStep && step ? (
-        <ScalePicker
-          key={step.key}
-          hint={step.hint}
-          options={step.options}
-          title={step.label}
-          value={form.values[form.currentStep] ?? null}
-          onChange={form.handleScaleChange}
-        />
+        <div className="flex w-full flex-col items-center gap-3">
+          <ScalePicker
+            key={step.key}
+            hint={step.hint}
+            options={step.options}
+            title={step.label}
+            value={form.values[form.currentStep] ?? null}
+            onChange={form.handleScaleChange}
+          />
+          <span
+            className={cn(
+              'bg-primary/12 text-primary inline-flex rounded-md px-1.5 py-0.5 text-[10px] font-semibold tracking-wide uppercase',
+            )}
+          >
+            {JOURNAL_WEIGHT_BADGE.weighted}
+          </span>
+        </div>
       ) : (
         <NotesStep value={form.notes} onChange={form.setNotes} />
       )}

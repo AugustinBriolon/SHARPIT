@@ -325,6 +325,7 @@ model AthleteProfile {
   activityStatus              AthleteActivityStatus?
   activityStatusHistory       AthleteActivityStatusHistory[]
   brickAnalyses               BrickAnalysis[]
+  analysisEvidenceSnapshots   AnalysisEvidenceSnapshot[]
   // Integration accounts (one row per provider per athlete):
   garminAccount               GarminAccount?
   stravaAccount               StravaAccount?
@@ -1615,6 +1616,26 @@ enum AnalysisRunStatus {
   RUNNING
   READY
   FAILED
+}
+
+/// Science Sport reliability V0 — athlete-isolated A/B evidence for deterministic recalc.
+/// Retention LOCKED: last 5 OR 14 days (see ANALYSIS_EVIDENCE_RETENTION).
+/// Cascade on AthleteProfile delete; purgeAnalysisEvidenceForAthlete on soft-delete / health or AI consent withdraw.
+model AnalysisEvidenceSnapshot {
+  id            String         @id @default(cuid())
+  athleteId     String
+  athlete       AthleteProfile @relation(fields: [athleteId], references: [id], onDelete: Cascade)
+  trainingDayId String
+  /// Best-effort cross-ref to AthleteSnapshotRecord.snapshotId (upserted, not append-only).
+  snapshotId    String?
+  /// Deterministic pack inputs used for the verdict (PackInputSignals + gaps).
+  inputs        Json
+  /// Deterministic verdict snapshot (overallVerdict, packTier, rationaleCodes, …).
+  verdict       Json
+  createdAt     DateTime       @default(now())
+
+  @@index([athleteId, createdAt])
+  @@index([athleteId, trainingDayId, createdAt])
 }
 
 /// Per-call AI token usage, for cost visibility — not an enforcement mechanism.

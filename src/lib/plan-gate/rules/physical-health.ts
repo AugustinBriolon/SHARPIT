@@ -1,7 +1,8 @@
 import type { GateContext, GateProposal, PlanGateRule, RuleFinding } from '../types';
 import { isSet } from '@/lib/util/value';
+import { PLAN_GATE_HIGH_INTENSITY } from '@/lib/plan-gate/high-intensity';
 
-const HIGH_INTENSITY = new Set(['THRESHOLD', 'VO2MAX', 'RACE']);
+const HIGH_INTENSITY = PLAN_GATE_HIGH_INTENSITY;
 
 function blockedTrainingFinding(): RuleFinding {
   return {
