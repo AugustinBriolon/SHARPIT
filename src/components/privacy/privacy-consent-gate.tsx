@@ -1,7 +1,11 @@
 import { redirect } from 'next/navigation';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { athleteNeedsLegalConsent } from '@/lib/privacy/consent-store';
-import { prisma } from '@/lib/prisma';
+import { CURRENT_PRIVACY_VERSION } from '@/lib/privacy/constants';
+import { athleteNeedsLegalConsent, getAthleteConsentRow } from '@/lib/privacy/consent-store';
+import {
+  consentWallHrefAfterHealthWithdraw,
+  resolveConsentWallReason,
+} from '@/lib/privacy/consent-withdraw-ux';
 
 /**
  * Soft wall: redirects athletes missing CGU/Privacy/health accept into `/consent`.
@@ -10,15 +14,23 @@ import { prisma } from '@/lib/prisma';
  */
 export async function PrivacyConsentGate() {
   const athleteId = await getCurrentAthleteId();
-  const profile = await prisma.athleteProfile.findUnique({
-    where: { id: athleteId },
-    select: { deletedAt: true },
-  });
+  const profile = await getAthleteConsentRow(athleteId);
   if (profile?.deletedAt) {
     redirect('/sign-in');
   }
-  if (await athleteNeedsLegalConsent(athleteId)) {
-    redirect('/consent');
+  if (!(await athleteNeedsLegalConsent(athleteId))) {
+    return null;
   }
-  return null;
+
+  const withdrawReason = profile
+    ? resolveConsentWallReason({
+        termsAcceptedAt: profile.termsAcceptedAt,
+        privacyAcceptedAt: profile.privacyAcceptedAt,
+        privacyVersion: profile.privacyVersion,
+        healthDataConsentAt: profile.healthDataConsentAt,
+        currentPrivacyVersion: CURRENT_PRIVACY_VERSION,
+      })
+    : null;
+
+  redirect(withdrawReason ? consentWallHrefAfterHealthWithdraw() : '/consent');
 }

@@ -14,6 +14,10 @@ import {
   PRIVACY_PURGE_DELAY_DAYS,
 } from '@/lib/privacy/constants';
 import {
+  consentWallHrefAfterHealthWithdraw,
+  shouldRedirectToConsentWallAfterPatch,
+} from '@/lib/privacy/consent-withdraw-ux';
+import {
   deletePrivacyAccount,
   downloadPrivacyExport,
   postPrivacyConsent,
@@ -74,6 +78,12 @@ export function PrivacySettingsPanel({ initial }: { initial: ConsentState | null
     try {
       const data = (await postPrivacyConsent(body)) as { consents: ConsentState };
       setConsents(data.consents);
+      // Art. 9 fail-closed: leave Settings immediately for the soft wall (not toast-only).
+      if (shouldRedirectToConsentWallAfterPatch(body)) {
+        router.replace(consentWallHrefAfterHealthWithdraw());
+        router.refresh();
+        return;
+      }
       toast.success('Consentement mis à jour');
       router.refresh();
     } catch (error) {

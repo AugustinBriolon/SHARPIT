@@ -47,3 +47,11 @@ export {
   UNOFFICIAL_PROVIDERS,
 } from '@/lib/privacy/provider-classification';
 export { loadLegalPageMarkdown, stripLegalMetaHeader } from '@/lib/privacy/load-legal-page';
+export {
+  CONSENT_WALL_HEALTH_WITHDRAWN_REASON,
+  consentWallCopy,
+  consentWallHrefAfterHealthWithdraw,
+  parseConsentWallReason,
+  resolveConsentWallReason,
+  shouldRedirectToConsentWallAfterPatch,
+} from '@/lib/privacy/consent-withdraw-ux';
