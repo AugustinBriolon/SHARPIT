@@ -37,8 +37,9 @@ Pas de glass hors allowlist chrome. Pas d’em dash dans le copy FR.
 
 ## 3. Journal
 
-- Champs morning wellness (humeur, énergie, courbatures, stress) : badge **pris en compte**.
-- Autres champs journal : badge **Noté, pas encore pondéré**.
+- Un seul callout d’en-tête : *Recovery lit 4 signaux matin : le reste est archivé pour toi, pas encore dans le modèle* (pas d’em dash).
+- Champs morning wellness pondérés Recovery v1 (humeur, énergie, courbatures, stress) : badge positif vert **Pris en compte** uniquement.
+- Autres facteurs journal : lignes silencieuses (pas de badge « Noté, pas encore pondéré » ni ton d’échec par ligne).
 
 ---
 
