@@ -35,7 +35,7 @@ export function TeaserFunnel() {
         </header>
 
         <div
-          className="mt-10 flex flex-1 flex-col gap-6 max-sm:pb-44"
+          className="mt-10 flex flex-1 flex-col gap-6 max-sm:pb-52"
           aria-live="polite"
           key={screen.id}
         >
@@ -46,26 +46,26 @@ export function TeaserFunnel() {
           </p>
         </div>
 
-        <nav
-          aria-label="Étapes du teaser"
-          className="mt-8 flex items-center justify-center gap-2 sm:mt-10"
-        >
-          {TEASER_SCREENS.map((step, i) => (
-            <button
-              key={step.id}
-              type="button"
-              aria-label={`Écran ${i + 1} : ${step.eyebrow}`}
-              aria-current={i === index ? 'step' : undefined}
-              className={cn(
-                'h-1.5 rounded-full transition-[width,background-color] duration-200',
-                i === index ? 'bg-foreground w-8' : 'bg-foreground/25 w-1.5',
-              )}
-              onClick={() => setIndex(i)}
-            />
-          ))}
-        </nav>
-
-        <DockedActionBar>
+        {/* Progress + actions share the docked band so dots stay visible above CTAs on mobile. */}
+        <DockedActionBar className="gap-3">
+          <nav
+            aria-label="Étapes du teaser"
+            className="flex items-center justify-center gap-2 sm:order-first sm:mr-auto sm:justify-start"
+          >
+            {TEASER_SCREENS.map((step, i) => (
+              <button
+                key={step.id}
+                type="button"
+                aria-label={`Écran ${i + 1} : ${step.eyebrow}`}
+                aria-current={i === index ? 'step' : undefined}
+                className={cn(
+                  'h-1.5 rounded-full transition-[width,background-color] duration-200',
+                  i === index ? 'bg-foreground w-8' : 'bg-foreground/25 w-1.5',
+                )}
+                onClick={() => setIndex(i)}
+              />
+            ))}
+          </nav>
           {isLast ? (
             <>
               <LinkButton
