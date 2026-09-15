@@ -93,6 +93,23 @@ export function PrivacySettingsPanel({ initial }: { initial: ConsentState | null
     }
   }
 
+  async function onHealthConsentChange(checked: boolean) {
+    if (!checked) {
+      const ok = await confirm({
+        title: 'Retirer le consentement santé ?',
+        description:
+          'Today et les traitements physiologiques seront bloqués immédiatement. Tu pourras réactiver le consentement sur l’écran dédié.',
+        confirmLabel: 'Retirer',
+        cancelLabel: 'Annuler',
+        variant: 'destructive',
+      });
+      if (!ok) {
+        return;
+      }
+    }
+    await patchConsent({ healthDataConsent: checked });
+  }
+
   async function handleExport() {
     setBusy(true);
     try {
@@ -148,7 +165,7 @@ export function PrivacySettingsPanel({ initial }: { initial: ConsentState | null
             checked={Boolean(consents?.healthDataConsentAt)}
             className="mt-0.5"
             disabled={busy}
-            onCheckedChange={(value) => void patchConsent({ healthDataConsent: value === true })}
+            onCheckedChange={(value) => void onHealthConsentChange(value === true)}
           />
           <span>
             Synchronisation et traitement des données de santé / physiologiques (art. 9). Sans ce

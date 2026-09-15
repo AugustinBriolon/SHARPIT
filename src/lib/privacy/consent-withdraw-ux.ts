@@ -18,6 +18,19 @@ export function shouldRedirectToConsentWallAfterPatch(body: Record<string, boole
   return body.healthDataConsent === false;
 }
 
+/**
+ * Art. 9: without health consent, cron must not rebuild Twin / briefing / evidence
+ * from already-stored dailyHealth / HRV (would re-create purged evidence).
+ */
+export function canRunHealthDerivedAthleteRefresh(hasHealthConsent: boolean): boolean {
+  return hasHealthConsent;
+}
+
+/** Persist path must refuse Science Sport evidence without health consent. */
+export function canPersistAnalysisEvidence(hasHealthConsent: boolean): boolean {
+  return hasHealthConsent;
+}
+
 export function consentWallHrefAfterHealthWithdraw(): string {
   return `/consent?reason=${CONSENT_WALL_HEALTH_WITHDRAWN_REASON}`;
 }

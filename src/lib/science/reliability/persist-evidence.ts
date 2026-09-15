@@ -7,23 +7,27 @@ import type { AthleteSnapshot } from '@/core/athlete-state/snapshot';
 import { computePackTier, type PackTierResult } from '@/core/science/pack-tier';
 import { buildPackInputsFromSnapshot } from '@/lib/science/reliability/pack-inputs-from-snapshot';
 import { persistAnalysisEvidence } from '@/lib/science/reliability/analysis-evidence-store';
+import { runAnalysisRecalcWithRollback } from '@/lib/science/reliability/analysis-evidence';
 import {
-  runAnalysisRecalcWithRollback,
-  type AnalysisEvidenceRecord,
-} from '@/lib/science/reliability/analysis-evidence';
-import { getLatestAthleteSnapshot, saveAthleteSnapshot } from '@/infrastructure/athlete-state/snapshot-repository';
+  getLatestAthleteSnapshot,
+  saveAthleteSnapshot,
+} from '@/infrastructure/athlete-state/snapshot-repository';
+import { canPersistAnalysisEvidence } from '@/lib/privacy/consent-withdraw-ux';
 
 function packResultFromSnapshot(snapshot: AthleteSnapshot): PackTierResult {
   return computePackTier(buildPackInputsFromSnapshot(snapshot));
 }
 
-export async function persistEvidenceFromSnapshot(snapshot: AthleteSnapshot): Promise<void> {
-  const packInput = buildPackInputsFromSnapshot(snapshot);
-  const pack = computePackTier(packInput);
-  const rationaleCodes = [
+function rationaleCodesFromSnapshot(snapshot: AthleteSnapshot): string[] {
+  return [
     snapshot.decision?.primaryDecision?.rationaleCode,
     snapshot.reasoning?.topAction?.rationaleCode,
   ].filter((c): c is string => Boolean(c));
+}
+
+async function writeEvidenceFromSnapshot(snapshot: AthleteSnapshot): Promise<void> {
+  const packInput = buildPackInputsFromSnapshot(snapshot);
+  const pack = computePackTier(packInput);
 
   await persistAnalysisEvidence({
     athleteId: snapshot.athleteId,
@@ -38,10 +42,18 @@ export async function persistEvidenceFromSnapshot(snapshot: AthleteSnapshot): Pr
       confidence: snapshot.confidence,
       confidenceTier: snapshot.decision?.confidenceTier ?? null,
       packTier: pack.packTier,
-      rationaleCodes,
+      rationaleCodes: rationaleCodesFromSnapshot(snapshot),
       allowsHardVerdict: pack.allowsHardVerdict,
     },
   });
+}
+
+export async function persistEvidenceFromSnapshot(snapshot: AthleteSnapshot): Promise<void> {
+  const { athleteHasHealthDataConsent } = await import('@/lib/privacy/consent-store');
+  if (!canPersistAnalysisEvidence(await athleteHasHealthDataConsent(snapshot.athleteId))) {
+    return;
+  }
+  await writeEvidenceFromSnapshot(snapshot);
 }
 
 /**

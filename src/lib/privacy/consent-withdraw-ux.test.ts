@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   CONSENT_WALL_HEALTH_WITHDRAWN_REASON,
+  canPersistAnalysisEvidence,
+  canRunHealthDerivedAthleteRefresh,
   consentWallHrefAfterHealthWithdraw,
   consentWallCopy,
   resolveConsentWallReason,
@@ -19,6 +21,20 @@ describe('shouldRedirectToConsentWallAfterPatch', () => {
   it('does not redirect for AI or unofficial ack toggles', () => {
     expect(shouldRedirectToConsentWallAfterPatch({ aiProcessingConsent: false })).toBe(false);
     expect(shouldRedirectToConsentWallAfterPatch({ unofficialProvidersAck: true })).toBe(false);
+  });
+});
+
+describe('canRunHealthDerivedAthleteRefresh', () => {
+  it('allows Twin / briefing refresh only with health consent', () => {
+    expect(canRunHealthDerivedAthleteRefresh(true)).toBe(true);
+    expect(canRunHealthDerivedAthleteRefresh(false)).toBe(false);
+  });
+});
+
+describe('canPersistAnalysisEvidence', () => {
+  it('refuses evidence persist without health consent', () => {
+    expect(canPersistAnalysisEvidence(true)).toBe(true);
+    expect(canPersistAnalysisEvidence(false)).toBe(false);
   });
 });
 

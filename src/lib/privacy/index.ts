@@ -49,6 +49,8 @@ export {
 export { loadLegalPageMarkdown, stripLegalMetaHeader } from '@/lib/privacy/load-legal-page';
 export {
   CONSENT_WALL_HEALTH_WITHDRAWN_REASON,
+  canPersistAnalysisEvidence,
+  canRunHealthDerivedAthleteRefresh,
   consentWallCopy,
   consentWallHrefAfterHealthWithdraw,
   parseConsentWallReason,
