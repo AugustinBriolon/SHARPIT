@@ -35,6 +35,8 @@ describe('journal-habit-analysis', () => {
     expect(median([10, 30, 20])).toBe(20);
     expect(outcomeLagDays('device_in_bed', 'sleepMinutes')).toBe(0);
     expect(outcomeLagDays('late_meal', 'sleepMinutes')).toBe(0);
+    expect(outcomeLagDays('shared_bed', 'sleepMinutes')).toBe(0);
+    expect(outcomeLagDays('melatonin', 'sleepMinutes')).toBe(0);
     expect(outcomeLagDays('alcohol', 'sleepMinutes')).toBe(1);
   });
 
