@@ -1,7 +1,8 @@
 import type { GateContext, GateProposal, PlanLevelGateRule, RuleFinding } from '../types';
 import { isSet } from '@/lib/util/value';
+import { PLAN_GATE_HIGH_INTENSITY } from '@/lib/plan-gate/high-intensity';
 
-const HIGH_INTENSITY = new Set(['THRESHOLD', 'VO2MAX', 'RACE']);
+const HIGH_INTENSITY = PLAN_GATE_HIGH_INTENSITY;
 /** Matches the coach/plan SYSTEM_PROMPT's own stated target ("2-3 séances qualité max/semaine") — not a new number. */
 const MAX_HIGH_INTENSITY_PER_ROLLING_WEEK = 3;
 
