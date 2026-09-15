@@ -1,9 +1,11 @@
 /**
- * Declared training rhythm — how many sessions the athlete wants in a week and
- * which days they can actually train.
+ * Declared training rhythm — which days the athlete can train, and how many
+ * sessions that implies for the week.
  *
- * Distinct from the days *observed* in past activities: this is intent, and the
- * gap between the two is itself coaching signal.
+ * Onboarding captures days only; `targetSessionsPerWeek` is derived as the
+ * number of selected days (N days ⇒ N possible sessions). Distinct from the
+ * days *observed* in past activities: this is intent, and the gap between the
+ * two is itself coaching signal.
  */
 
 /** `Date#getDay` convention: 0 = Sunday … 6 = Saturday. */
@@ -40,11 +42,19 @@ export const MAX_SESSIONS_PER_WEEK = 14;
 /** Persisted on AthleteProfile.trainingAvailability. */
 export type TrainingAvailability = {
   version: 1;
-  /** Sessions wanted per week. Null when the athlete never declared one. */
+  /**
+   * Sessions possible per week. Null when no days are declared.
+   * Derived from `availableWeekdays.length` in onboarding (not a separate input).
+   */
   targetSessionsPerWeek: number | null;
   /** Days free to train, `Date#getDay` values, stored Monday-first. */
   availableWeekdays: Weekday[];
 };
+
+/** N selected days ⇒ N possible sessions; empty days ⇒ undeclared. */
+export function sessionsFromWeekdays(days: readonly Weekday[]): number | null {
+  return days.length > 0 ? days.length : null;
+}
 
 export const EMPTY_TRAINING_AVAILABILITY: TrainingAvailability = {
   version: 1,

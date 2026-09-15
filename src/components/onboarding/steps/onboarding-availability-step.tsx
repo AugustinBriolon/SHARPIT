@@ -7,6 +7,7 @@ import {
 import { OnboardingStepShell } from '@/components/onboarding/steps/onboarding-step-shell';
 import {
   orderWeekdays,
+  sessionsFromWeekdays,
   WEEKDAY_SHORT_LABELS_FR,
   WEEKDAYS_MONDAY_FIRST,
   weekdayLabel,
@@ -16,14 +17,12 @@ import {
 import { cn } from '@/lib/utils';
 
 /**
- * Declared rhythm — what the athlete wants, not what their history shows.
+ * Declared rhythm: days the athlete can train.
  *
- * Both answers stay optional: an athlete who does not yet know their week must
- * be able to pass, and the coach then falls back to the days it observes.
+ * Session count is derived from the number of selected days (N days ⇒ N possible
+ * sessions). Both remain optional: skip leaves nothing declared and the coach
+ * falls back to observed days.
  */
-
-/** Beyond seven the answer stops being a weekly rhythm; storage still tolerates more. */
-const SESSION_CHOICES = [1, 2, 3, 4, 5, 6, 7] as const;
 
 const TILE_CLASS = cn(
   'pressable flex min-h-11 items-center justify-center rounded-xl border px-1',
@@ -34,42 +33,6 @@ function tileToneClass(selected: boolean): string {
   return selected
     ? 'border-highlight bg-highlight text-highlight-foreground'
     : 'border-border/60 bg-background hover:border-primary/30 hover:bg-muted/40';
-}
-
-function SessionCountPicker({
-  value,
-  onChange,
-}: {
-  value: number | null;
-  onChange: (next: number | null) => void;
-}) {
-  return (
-    <fieldset className="space-y-2">
-      <legend className="text-foreground text-sm font-medium">Séances par semaine</legend>
-      <p className="text-muted-foreground text-xs">
-        Le rythme que tu vises, pas celui que tu tiens déjà. Retape le même chiffre pour l’effacer.
-      </p>
-      <div className="grid grid-cols-7 gap-1.5">
-        {SESSION_CHOICES.map((count) => {
-          const selected = value === count;
-          return (
-            <button
-              key={count}
-              aria-label={`${count} séances par semaine`}
-              aria-pressed={selected}
-              className={cn(TILE_CLASS, tileToneClass(selected))}
-              type="button"
-              onClick={() => onChange(selected ? null : count)}
-            >
-              <span className="text-data text-base font-semibold tabular-nums" aria-hidden>
-                {count}
-              </span>
-            </button>
-          );
-        })}
-      </div>
-    </fieldset>
-  );
 }
 
 function WeekdayPicker({
@@ -85,7 +48,8 @@ function WeekdayPicker({
     <fieldset className="space-y-2">
       <legend className="text-foreground text-sm font-medium">Jours disponibles</legend>
       <p className="text-muted-foreground text-xs">
-        Les jours où tu peux réellement t’entraîner, contraintes pro et perso comprises.
+        Les jours où tu peux réellement t’entraîner, contraintes pro et perso comprises. Un jour
+        sélectionné compte comme une séance possible.
       </p>
       <div className="grid grid-cols-7 gap-1.5">
         {WEEKDAYS_MONDAY_FIRST.map((day) => {
@@ -113,16 +77,20 @@ function WeekdayPicker({
 /** Says nothing when nothing is declared, rather than inventing a default. */
 function AvailabilityReading({ availability }: { availability: TrainingAvailability }) {
   const { targetSessionsPerWeek, availableWeekdays } = availability;
-  if (targetSessionsPerWeek === null && availableWeekdays.length === 0) {
+  if (availableWeekdays.length === 0) {
     return null;
   }
 
-  const parts = [
-    targetSessionsPerWeek !== null ? `${targetSessionsPerWeek} séances / semaine` : null,
-    availableWeekdays.length > 0 ? availableWeekdays.map(weekdayLabel).join(', ') : null,
-  ].filter(Boolean);
+  const sessionLabel =
+    targetSessionsPerWeek === 1
+      ? '1 séance possible'
+      : `${targetSessionsPerWeek ?? availableWeekdays.length} séances possibles`;
 
-  return <p className="text-muted-foreground text-xs text-pretty">{parts.join(' · ')}</p>;
+  return (
+    <p className="text-muted-foreground text-xs text-pretty">
+      {sessionLabel} · {availableWeekdays.map(weekdayLabel).join(', ')}
+    </p>
+  );
 }
 
 function AvailabilityActions({
@@ -159,11 +127,13 @@ export function OnboardingAvailabilityStep({
 }) {
   const toggleDay = (day: Weekday) => {
     const present = availability.availableWeekdays.includes(day);
+    const availableWeekdays = present
+      ? availability.availableWeekdays.filter((value) => value !== day)
+      : orderWeekdays([...availability.availableWeekdays, day]);
     onChange({
       ...availability,
-      availableWeekdays: present
-        ? availability.availableWeekdays.filter((value) => value !== day)
-        : orderWeekdays([...availability.availableWeekdays, day]),
+      availableWeekdays,
+      targetSessionsPerWeek: sessionsFromWeekdays(availableWeekdays),
     });
   };
 
@@ -171,15 +141,11 @@ export function OnboardingAvailabilityStep({
     <OnboardingStepShell
       actions={<AvailabilityActions busy={busy} onContinue={onContinue} onSkip={onSkip} />}
       error={error}
-      intro="Optionnel — le coach cale le plan sur ton vrai rythme plutôt que sur une semaine théorique. Modifiable ensuite dans Profil."
+      intro="Optionnel. Le coach cale le plan sur ton vrai rythme plutôt que sur une semaine théorique. Modifiable ensuite dans Profil."
       title="Ta semaine type"
       titleId="onboarding-availability-title"
     >
       <div className="space-y-5">
-        <SessionCountPicker
-          value={availability.targetSessionsPerWeek}
-          onChange={(targetSessionsPerWeek) => onChange({ ...availability, targetSessionsPerWeek })}
-        />
         <WeekdayPicker value={availability.availableWeekdays} onToggle={toggleDay} />
         <AvailabilityReading availability={availability} />
       </div>
