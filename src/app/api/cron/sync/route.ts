@@ -26,6 +26,7 @@ import {
   athleteHasAiProcessingConsent,
   athleteHasHealthDataConsent,
 } from '@/lib/privacy/consent-store';
+import { canRunHealthDerivedAthleteRefresh } from '@/lib/privacy/consent-withdraw-ux';
 
 export const maxDuration = 300;
 
@@ -334,8 +335,13 @@ async function syncOneAthlete(
   }
 
   await backfillStreamsIfNeeded(athleteId, accounts, result);
-  await refreshAthleteBriefing(athleteId, result);
-  if (hasAiConsent) {
+  // Art. 9: without health consent, skip Twin/briefing refresh — skipSync still
+  // re-reads stored dailyHealth/HRV and would recreate purged evidence.
+  if (canRunHealthDerivedAthleteRefresh(hasHealthConsent)) {
+    await refreshAthleteBriefing(athleteId, result);
+  }
+  // Weekly review loads getHealthEntries — require health consent as well as AI.
+  if (hasAiConsent && canRunHealthDerivedAthleteRefresh(hasHealthConsent)) {
     await generateWeeklyReviewIfSunday(athleteId, result);
   }
 

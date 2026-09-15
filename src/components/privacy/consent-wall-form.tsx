@@ -1,16 +1,24 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from '@/components/ui/toast';
 import { CURRENT_PRIVACY_VERSION } from '@/lib/privacy/constants';
+import {
+  consentWallCopy,
+  parseConsentWallReason,
+  type ConsentWallReason,
+} from '@/lib/privacy/consent-withdraw-ux';
 import { postPrivacyConsent } from '@/lib/query/fetchers';
 
-export function ConsentWallForm() {
+export function ConsentWallForm({ reason }: { reason?: ConsentWallReason | null } = {}) {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const resolvedReason = reason ?? parseConsentWallReason(searchParams.get('reason'));
+  const copy = consentWallCopy(resolvedReason, { privacyVersion: CURRENT_PRIVACY_VERSION });
   const [terms, setTerms] = useState(false);
   const [privacy, setPrivacy] = useState(false);
   const [health, setHealth] = useState(false);
@@ -51,11 +59,8 @@ export function ConsentWallForm() {
       }}
     >
       <div className="space-y-1 text-center">
-        <h1 className="text-section-title">Confidentialité & conditions</h1>
-        <p className="text-muted-foreground text-sm text-pretty">
-          Avant d&apos;utiliser SharpIt, accepte les documents légaux et le traitement des données
-          de santé (version {CURRENT_PRIVACY_VERSION}).
-        </p>
+        <h1 className="text-section-title">{copy.title}</h1>
+        <p className="text-muted-foreground text-sm text-pretty">{copy.description}</p>
       </div>
 
       <div className="analysis-panel rounded-analysis-lg space-y-4 px-4 py-4">
@@ -125,8 +130,8 @@ export function ConsentWallForm() {
         </label>
       </div>
 
-      <Button className="w-full" disabled={!canSubmit} type="submit">
-        {busy ? 'Enregistrement…' : 'Continuer'}
+      <Button className="w-full" disabled={!canSubmit} type="submit" variant="accent">
+        {busy ? copy.ctaBusy : copy.cta}
       </Button>
     </form>
   );
