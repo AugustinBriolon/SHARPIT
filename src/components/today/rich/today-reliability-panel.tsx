@@ -2,7 +2,9 @@
 
 import { CollapsibleSection } from '@/components/ui/collapsible-section';
 import { LinkButton } from '@/components/ui/link-button';
+import { ExpertOnly } from '@/components/display-mode';
 import type { TodayViewModel } from '@/core/presentation/today-view-model';
+import { buildPourquoiAthleteCopy } from '@/lib/presentation/today/pourquoi-athlete';
 import { cn } from '@/lib/utils';
 
 type Reliability = NonNullable<TodayViewModel['hero']['reliability']>;
@@ -21,16 +23,30 @@ function VisibleGaps({ gaps }: { gaps: readonly string[] }) {
   }
   return (
     <ul className="text-ink-surface-foreground/70 mt-3 space-y-1 text-xs leading-snug">
-      {gaps.slice(0, 4).map((gap) => (
+      {gaps.slice(0, 2).map((gap) => (
         <li key={gap}>· {gap}</li>
       ))}
     </ul>
   );
 }
 
-function ProvenanceBody({ provenance }: { provenance: Reliability['provenance'] }) {
+function AthletePourquoiBody({ sentences }: { sentences: readonly string[] }) {
   return (
-    <div className="text-ink-surface-foreground/80 space-y-3 text-xs leading-relaxed">
+    <div className="text-ink-surface-foreground/80 space-y-3 text-sm leading-relaxed">
+      {sentences.map((sentence) => (
+        <p key={sentence}>{sentence}</p>
+      ))}
+    </div>
+  );
+}
+
+/** Technical dump — Mode Expert only (ages, series, rationale codes). */
+function ExpertProvenanceBody({ provenance }: { provenance: Reliability['provenance'] }) {
+  return (
+    <div className="text-ink-surface-foreground/80 border-ink-surface-foreground/15 mt-3 space-y-3 border-t pt-3 text-xs leading-relaxed">
+      <p className="text-ink-surface-foreground/65 font-medium tracking-wide uppercase">
+        Mode Expert
+      </p>
       <ul className="space-y-1.5">
         {provenance.series.map((line) => (
           <li key={line.key} className="flex flex-col gap-0.5">
@@ -65,12 +81,22 @@ export function TodayReliabilityPanel({
     return null;
   }
 
+  const journalWeighted = reliability.provenance.series.some(
+    (line) => line.key === 'journal' && line.status === 'ok',
+  );
+  const athlete = buildPourquoiAthleteCopy({
+    softHero: reliability.softHero,
+    packTier: reliability.packTier,
+    visibleGaps: reliability.visibleGaps,
+    journalWeighted,
+  });
+
   return (
     <div className="mt-5">
       {reliability.estimationChip ? (
         <EstimationChip label={reliability.estimationChip} />
       ) : null}
-      {reliability.softHero ? <VisibleGaps gaps={reliability.visibleGaps} /> : null}
+      {reliability.softHero ? <VisibleGaps gaps={athlete.gapBullets} /> : null}
       {reliability.ctaCompleteSources ? (
         <div className="mt-4 flex flex-wrap gap-2">
           <LinkButton href="/settings/integrations" size="sm" variant="secondary">
@@ -92,10 +118,13 @@ export function TodayReliabilityPanel({
       >
         <CollapsibleSection
           label="Pourquoi"
-          summary={reliability.estimationChip ?? reliability.packTier}
+          summary={athlete.summary}
           defaultOpen={false}
         >
-          <ProvenanceBody provenance={reliability.provenance} />
+          <AthletePourquoiBody sentences={athlete.sentences} />
+          <ExpertOnly>
+            <ExpertProvenanceBody provenance={reliability.provenance} />
+          </ExpertOnly>
         </CollapsibleSection>
       </div>
     </div>

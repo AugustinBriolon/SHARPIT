@@ -621,13 +621,14 @@ export function JournalScreen() {
   return (
     <div className="space-y-4 sm:space-y-5">
       <MobileDrillDownHeader backHref="/" backLabel="Résumé" title="Journal" />
+      {/* Single Recovery callout: Journal header only — never under Analyses / Today / dialogs. */}
+      <JournalRecoveryCallout />
       <JournalScreenToolbar
         isPro={isPro}
         prefs={prefs}
         onIsProChange={setIsPro}
         onPrefsChange={setPrefs}
       />
-      <JournalRecoveryCallout />
       {!isReady ? (
         <JournalLoadingSkeleton heightClass="h-40" />
       ) : (

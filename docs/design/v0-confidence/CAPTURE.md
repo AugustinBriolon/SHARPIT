@@ -7,7 +7,8 @@ Binary PNG evidence for Today `packTier` / soft-hero states (PR #117).
 | `today-full.png` | FULL — assertive hero OK |
 | `today-partial-soft-hero.png` | PARTIAL — chip Estimation partielle + gaps |
 | `today-insufficient.png` | INSUFFICIENT — CTA sources / sync, no intensity topAction |
-| `today-pourquoi-open.png` | Provenance « Pourquoi » expanded |
+| `today-pourquoi-open.png` | Provenance « Pourquoi » expanded (athlete prose; Expert dump gated) |
+| `today-pourquoi-soft-readable.png` | Soft-hero Pourquoi : gaps FR + phrases lisibles (pas FULL / âges) |
 
 ## Capture method
 

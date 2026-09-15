@@ -4,7 +4,7 @@ Binary PNG evidence for journal weighting polish (PR #118).
 
 | File | State |
 | ---- | ----- |
-| `journal-callout-header.png` | Single Recovery callout at top of Journal |
+| `journal-callout-header.png` | Single Recovery callout at top of Journal (before Analyses toolbar) |
 | `journal-pris-en-compte.png` | Green **Pris en compte** on morning wellness 4 signals (mood / energy / soreness / stress) |
 | `journal-quiet-rows.png` | Unweighted journal factors without per-line « Noté, pas encore pondéré » |
 

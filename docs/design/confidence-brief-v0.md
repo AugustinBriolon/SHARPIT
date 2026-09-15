@@ -23,13 +23,12 @@ Copy : jamais « taper fort » / race-ready sans `FULL`.
 
 ## 2. Provenance sous le hero
 
-Collapsible **Pourquoi** :
+Collapsible **Pourquoi** (lecture athlète par défaut) :
 
-- séries utilisées ;
-- âge des données ;
-- gaps ;
-- poids journal vs objectif ;
-- `rationaleCodes` lisibles en français.
+- 2–3 phrases FR lisibles (pas de label machine `FULL` / `PARTIAL` / …) ;
+- soft-hero (`PARTIAL` / `LOW` / `INSUFFICIENT`) : 1–2 puces gaps FR + chip Estimation partielle / Données insuffisantes ;
+- **pas** d’âges de sync bruts ni de `rationaleCodes` dupliqués dans le Pourquoi Essential ;
+- détail technique (séries, âges, codes) derrière **Mode Expert** uniquement.
 
 Pas de glass hors allowlist chrome. Pas d’em dash dans le copy FR.
 
@@ -37,7 +36,8 @@ Pas de glass hors allowlist chrome. Pas d’em dash dans le copy FR.
 
 ## 3. Journal
 
-- Un seul callout d’en-tête : *Recovery lit 4 signaux matin : le reste est archivé pour toi, pas encore dans le modèle* (pas d’em dash).
+- Un seul callout d’en-tête, **uniquement en haut de l’écran Journal** (après le titre, avant Analyses / Personnaliser) : *Recovery lit 4 signaux matin : le reste est archivé pour toi, pas encore dans le modèle* (pas d’em dash).
+- Ne pas remonter ce callout sous le bouton Analyses, ni dans Today / dialogs wellness / ailleurs.
 - Champs morning wellness pondérés Recovery v1 (humeur, énergie, courbatures, stress) : badge positif vert **Pris en compte** uniquement.
 - Autres facteurs journal : lignes silencieuses (pas de badge « Noté, pas encore pondéré » ni ton d’échec par ligne).
 
