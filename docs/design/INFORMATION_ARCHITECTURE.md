@@ -36,7 +36,7 @@ Use a temporal, decision-led navigation model. **Shell V1** (shipped in primary 
 | **Activité** | What did I actually do?                | Past → present  | Activity history, trips, manual entry, completed-session detail.                           |
 | **Moi**      | How does SHARPIT know and support me?  | Persistent      | Corps, objectifs, Confidentialité (consents / export / delete), account, equipment, prefs. |
 
-**Coach is a tab.** Coaching also lives in Today (verdict / why / rearrange CTAs), Plan (**Coacher mon objectif**), and `/coach` discuss deep links from those surfaces — but the conversation itself is reachable from anywhere rather than only from whichever surface happens to offer a CTA. Legal (`/consent`, `/privacy`, `/terms`), onboarding, and any future teaser stay **outside** the auth app shell — they must not wrap the tab bar.
+**Coach is a tab.** Coaching also lives in Today (verdict / why / rearrange CTAs), Plan (**Coacher mon objectif**), and `/coach` discuss deep links from those surfaces — but the conversation itself is reachable from anywhere rather than only from whichever surface happens to offer a CTA. Legal (`/consent`, `/privacy`, `/terms`), onboarding, and the public teaser (`/welcome`) stay **outside** the auth app shell — they must not wrap the tab bar. Signed-out visitors hitting `/` are redirected to `/welcome` (promise → `/sign-up`); signed-in athletes keep Today at `/`.
 
 These destinations form a single floating bottom tab bar on every viewport (iOS-style capsule, narrower than the reading column). Moi stays a tab, not an identity footer.
 

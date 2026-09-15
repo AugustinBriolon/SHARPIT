@@ -26,8 +26,10 @@ const FORBIDDEN_DIR_PREFIXES = [
   'src/app/consent/',
   'src/app/privacy/',
   'src/app/terms/',
+  'src/app/welcome/',
   'src/app/(app)/settings/privacy/',
   'src/components/privacy/',
+  'src/components/teaser/',
 ];
 
 function isSkippableDirEntry(entry: fs.Dirent): boolean {

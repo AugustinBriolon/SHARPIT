@@ -13,6 +13,8 @@ import { checkRateLimit, rateLimiters, rateLimitResponseBody } from '@/lib/rate-
 const isPublicRoute = createRouteMatcher([
   '/sign-in(.*)',
   '/sign-up(.*)',
+  // Public promise funnel (teaser → signup). Outside auth app shell.
+  '/welcome(.*)',
   '/privacy',
   '/terms',
   '/api/cron(.*)',
@@ -77,6 +79,20 @@ export default clerkMiddleware(async (auth, req) => {
     if (blocked) {
       return blocked;
     }
+  }
+
+  // Strangers hitting `/` (Today) land on the public teaser instead of the
+  // Clerk sign-in wall (and its demo callout). Signed-in athletes and demo
+  // visitors keep Today at `/`.
+  if (
+    !userId &&
+    !isDemoVisitor &&
+    req.nextUrl.pathname === '/' &&
+    req.method === 'GET'
+  ) {
+    const welcome = req.nextUrl.clone();
+    welcome.pathname = '/welcome';
+    return NextResponse.redirect(welcome);
   }
 
   // A demo visitor carries no Clerk session by design (ADR-026) — mutations
