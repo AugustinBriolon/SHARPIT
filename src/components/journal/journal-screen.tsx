@@ -98,7 +98,7 @@ function JournalWeightBadge({ fieldId }: { fieldId: string }) {
   return (
     <span
       className={cn(
-        'mt-1 inline-flex rounded-md border px-1.5 py-0.5 text-[10px] font-semibold tracking-wide uppercase',
+        'mt-1 inline-flex rounded-md border px-1.5 py-0.5 text-[10px] font-semibold tracking-wide',
         STATUS_SURFACE.doneBadge,
       )}
     >
