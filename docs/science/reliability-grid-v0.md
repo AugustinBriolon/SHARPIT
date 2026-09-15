@@ -284,14 +284,14 @@ Le LLM **n’entre pas** dans A/B du verdict. Le briefing peut être régénér�
 
 ### 7.1 État code actuel
 
-`decisionCompatibilityRule` (`src/lib/plan-gate/rules/decision-compatibility.ts`) :
+`decisionCompatibilityRule` (`src/lib/plan-gate/rules/decision-compatibility.ts`) via `PLAN_GATE_HIGH_INTENSITY` (`src/lib/plan-gate/high-intensity.ts`, aligné `HARD_SESSION_INTENSITIES`) :
 
-- Si `overallVerdict ∈ { RECOVER, CAUTION }` **et** intensité ∈ `{ THRESHOLD, VO2MAX, RACE }` → **REJECTED** + alternative `ENDURANCE`
-- `TEMPO` **n’est pas** dans le set haute intensité aujourd’hui
+- Si `overallVerdict ∈ { RECOVER, CAUTION }` **et** intensité ∈ `{ TEMPO, THRESHOLD, VO2MAX, RACE }` → **REJECTED** + alternative `ENDURANCE`
+- `TEMPO` **est** dans le set haute intensité (PASS V0)
 - `confidenceTier = INSUFFICIENT` → `REQUIRES_CONFIRMATION`
 - Fatigue `REST_ONLY` / `LIGHT_ONLY` : règles additionnelles
 
-### 7.2 Position Science Sport V0 (réaffirmation + durcissement soft)
+### 7.2 Position Science Sport V0 (réaffirmation)
 
 **Réaffirmer :** sous `RECOVER` ou `CAUTION`, **retenir** (reject ou requires confirmation) les intensités :
 
@@ -299,10 +299,10 @@ Le LLM **n’entre pas** dans A/B du verdict. Le briefing peut être régénér�
 | --- | --- | --- |
 | `RECOVERY` | Autorisée | OK |
 | `ENDURANCE` | Autorisée (souvent safer alt.) | OK |
-| **`TEMPO`** | **Retenir** sous RECOVER/CAUTION | **À ajouter** (écart V0) |
-| `THRESHOLD` | Retenir | Déjà |
-| `VO2MAX` | Retenir | Déjà |
-| `RACE` | Retenir | Déjà |
+| **`TEMPO`** | **Retenir** sous RECOVER/CAUTION | **PASS** (`PLAN_GATE_HIGH_INTENSITY`) |
+| `THRESHOLD` | Retenir | PASS |
+| `VO2MAX` | Retenir | PASS |
+| `RACE` | Retenir | PASS |
 
 Le Gate reste **hors Core** (ADR-005) : pure validation vs DecisionState, pas de nouvelle inférence.
 
@@ -318,7 +318,6 @@ Copy gate (déjà FR dans le code) : conserver le ton « cohérence avec l’ét
 | Calibration individuelle poids Recovery | Besoin ≥ 90 j | recovery-synthesis-v2 |
 | Glycogène / nutrition dans readiness | Non observable consumer | v3+ |
 | Diagnostic différentiel illness vs OTS vs fatigue | Impossible wellness | Rester sur `illnessRisk` pattern + Privacy copy |
-| Gate `TEMPO` | Écart soft shippé | Ticket Eng plan-gate (ajout set HIGH_INTENSITY) |
 | Persistance GateResult | ADR-005 : response-only | Decision Memory phase |
 | Soft-hero Design final pixels | Spec comportement ici | Design Language / Today |
 | Seuils H1–H5 | Hypothèses endurance | Validation Science Sport + dogfooding |
@@ -335,7 +334,7 @@ Copy gate (déjà FR dans le code) : conserver le ton « cohérence avec l’ét
 - [ ] Brancher soft-hero / hard sur `packTier` × `confidenceTier` (Presentation)  
 - [ ] Provenance snapshot (§4) versionnée avec Decision Record  
 - [ ] Recalc A/B fail → rollback A (§6)  
-- [ ] Étendre Gate : `TEMPO` retenu sous RECOVER/CAUTION (§7.2)  
+- [x] Gate : `TEMPO` retenu sous RECOVER/CAUTION via `PLAN_GATE_HIGH_INTENSITY` (§7)  
 - [ ] Matrice journal : aucun poids non documenté (§5)
 
 **Design**
