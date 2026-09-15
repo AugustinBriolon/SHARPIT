@@ -1619,8 +1619,8 @@ enum AnalysisRunStatus {
 }
 
 /// Science Sport reliability V0 — athlete-isolated A/B evidence for deterministic recalc.
-/// Retention placeholder: last 5 OR 14 days (see ANALYSIS_EVIDENCE_RETENTION). Privacy TBD for TTL lock.
-/// Cascade on AthleteProfile delete; purgeAnalysisEvidenceForAthlete on consent withdraw / soft-delete.
+/// Retention LOCKED: last 5 OR 14 days (see ANALYSIS_EVIDENCE_RETENTION).
+/// Cascade on AthleteProfile delete; purgeAnalysisEvidenceForAthlete on soft-delete / health or AI consent withdraw.
 model AnalysisEvidenceSnapshot {
   id            String         @id @default(cuid())
   athleteId     String

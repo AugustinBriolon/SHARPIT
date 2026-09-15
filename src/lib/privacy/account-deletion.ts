@@ -56,7 +56,7 @@ export async function softDeleteAthlete(
     select: { id: true, deletedAt: true },
   });
   await clearAthleteProviderCredentials(athleteId);
-  // Science Sport evidence is athlete-isolated — purge immediately on soft-delete (Privacy TBD TTL).
+  // Science Sport evidence is athlete-isolated — purge immediately on soft-delete.
   try {
     const { purgeAnalysisEvidenceForAthlete } = await import(
       '@/lib/science/reliability/analysis-evidence-store'

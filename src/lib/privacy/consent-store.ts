@@ -14,6 +14,7 @@ import { providerConnectRequirements } from '@/lib/privacy/provider-classificati
 import type { IntegrationId } from '@/lib/integrations/shared/client-sync';
 import { DEMO_CLERK_USER_ID, isDemoSession } from '@/lib/demo/demo-session';
 import { isDevClerkBypass } from '@/lib/dev/dev-auth';
+import { logSafeError } from '@/lib/privacy/safe-log';
 
 const CONSENT_SELECT = {
   termsAcceptedAt: true,
@@ -219,15 +220,15 @@ export async function updateAthleteConsents(
     select: CONSENT_SELECT,
   });
 
-  // Science Sport evidence holds health-derived inputs — purge on health consent withdraw.
-  if (input.healthDataConsent === false) {
+  // Science Sport evidence holds health-derived inputs — purge on health or AI consent withdraw.
+  if (input.healthDataConsent === false || input.aiProcessingConsent === false) {
     try {
       const { purgeAnalysisEvidenceForAthlete } = await import(
         '@/lib/science/reliability/analysis-evidence-store'
       );
       await purgeAnalysisEvidenceForAthlete(athleteId);
-    } catch {
-      // Best-effort purge; soft-delete / cron remain the hard isolation path.
+    } catch (error) {
+      logSafeError('privacy/purge-analysis-evidence-consent', error, { athleteId });
     }
   }
 

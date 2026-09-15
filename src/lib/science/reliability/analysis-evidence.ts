@@ -3,14 +3,18 @@
  *
  * Persist athlete-isolated snapshots of deterministic inputs + verdict.
  * Recalc: A → B; fail B → rollback A.
- * Retention placeholder: last 5 OR 14 days max (whichever first).
- * Privacy TBD for TTL lock — purge hooks on soft-delete / consent withdraw.
+ *
+ * Retention LOCKED (Privacy + Secu): last N=5 OR 14 days (whichever shorter).
+ * Purge on soft-delete / health or AI consent withdraw.
+ * Athlete isolation via athleteId + AthleteProfile cascade.
+ * LLM phrasing remains behind the AI hard gate only — evidence itself is deterministic.
  *
  * @see docs/science/reliability-grid-v0.md
  */
 
+/** Privacy + Secu locked TTL for analysis evidence (whichever shorter wins). */
 export const ANALYSIS_EVIDENCE_RETENTION = {
-  /** Keep at most this many evidence rows per athlete (training-day analyses). */
+  /** Keep at most this many evidence rows per athlete. */
   maxRowsPerAthlete: 5,
   /** Drop rows older than this many days. */
   maxAgeDays: 14,
@@ -91,7 +95,7 @@ export function diffAnalysisEvidence(
   return lines;
 }
 
-/** Retention cutoff: keep rows within maxAgeDays and maxRowsPerAthlete. */
+/** Retention cutoff: keep rows within maxAgeDays and maxRowsPerAthlete (whichever shorter). */
 export function selectEvidenceRowsToKeep<T extends { createdAt: Date }>(
   rowsNewestFirst: readonly T[],
   now: Date = new Date(),

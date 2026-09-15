@@ -1,8 +1,9 @@
 /**
  * Prisma-backed store for Science Sport analysis evidence (A/B recalc).
- * Athlete-isolated. Cascade on AthleteProfile delete; explicit purge on consent withdraw.
+ * Athlete-isolated. Cascade on AthleteProfile delete; explicit purge on soft-delete
+ * and health / AI consent withdraw.
  *
- * Privacy TBD: TTL constants in ANALYSIS_EVIDENCE_RETENTION need Privacy confirm to lock.
+ * Retention LOCKED: ANALYSIS_EVIDENCE_RETENTION (N=5 OR 14 days, whichever shorter).
  */
 
 import { prisma } from '@/lib/prisma';
@@ -64,6 +65,24 @@ export async function listAnalysisEvidenceForAthlete(
     take,
   });
   return rows.map(mapRow);
+}
+
+/**
+ * Rows visible for GDPR export (art. 15/20): same retention window as live store.
+ * No secrets in this table — inputs/verdict are deterministic pack signals only.
+ */
+export async function listAnalysisEvidenceForExport(
+  athleteId: string,
+  now: Date = new Date(),
+): Promise<AnalysisEvidenceRecord[]> {
+  const rows = await prisma.analysisEvidenceSnapshot.findMany({
+    where: { athleteId },
+    orderBy: { createdAt: 'desc' },
+    // Fetch slightly past the row cap so age filtering can drop stale rows first.
+    take: ANALYSIS_EVIDENCE_RETENTION.maxRowsPerAthlete + 20,
+  });
+  const { keep } = selectEvidenceRowsToKeep(rows.map(mapRow), now);
+  return keep;
 }
 
 export async function latestAnalysisEvidencePair(
