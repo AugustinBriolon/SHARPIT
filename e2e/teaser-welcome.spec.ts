@@ -12,7 +12,7 @@ test.describe('public teaser funnel', () => {
       page,
       async () => {
         await page.goto('/welcome');
-        await expect(page.getByText('SharpIt').first()).toBeVisible();
+        await expect(page.getByText('SHARPIT').first()).toBeVisible();
         await expect(
           page.getByRole('heading', { name: 'Un coach pour tenir la distance' }),
         ).toBeVisible();

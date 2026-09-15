@@ -15,7 +15,7 @@ export const TEASER_SCREENS: readonly TeaserScreen[] = [
     id: 'endurance',
     eyebrow: 'Endurance',
     title: 'Un coach pour tenir la distance',
-    body: 'SharpIt t’accompagne sur la durée. Objectif, programme, suivi. Une lecture claire pour progresser sans te perdre dans les chiffres.',
+    body: 'SHARPIT t’accompagne sur la durée. Objectif, programme, suivi. Une lecture claire pour progresser sans te perdre dans les chiffres.',
   },
   {
     id: 'twin',
@@ -27,11 +27,11 @@ export const TEASER_SCREENS: readonly TeaserScreen[] = [
     id: 'morning',
     eyebrow: 'Chaque matin',
     title: 'Décider le matin, avancer le reste du jour',
-    body: 'Ouvre SharpIt. Comprends où tu en es. Choisis la bonne séance, ou le bon repos. Une décision, puis tu passes à autre chose.',
+    body: 'Ouvre SHARPIT. Comprends où tu en es. Choisis la bonne séance, ou le bon repos. Une décision, puis tu passes à autre chose.',
   },
 ] as const;
 
-export const TEASER_BRAND = 'SharpIt';
+export const TEASER_BRAND = 'SHARPIT';
 
 export const TEASER_PRIMARY_CTA = {
   label: 'Créer mon compte',
