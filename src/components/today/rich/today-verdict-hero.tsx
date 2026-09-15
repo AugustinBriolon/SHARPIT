@@ -43,7 +43,11 @@ export function TodayVerdictHero({
           duration: motionTokens.duration.fast,
         }}
       >
-        <TodayVerdictContextLabel contextLabel={display.contextLabel} loading={loading} />
+        <TodayVerdictContextLabel
+          contextLabel={display.contextLabel}
+          loading={loading}
+          packTier={hero.reliability?.packTier}
+        />
 
         <TodayVerdictHeadline headline={hero.headline} loading={loading} />
 
@@ -56,7 +60,12 @@ export function TodayVerdictHero({
           <TodayVerdictLimiter cause={display.limiterCause} href={limiterHref} loading={loading} />
         </div>
 
-        <TodayVerdictConfidence bars={bars} loading={loading} trust={trust} />
+        <TodayVerdictConfidence
+          bars={bars}
+          loading={loading}
+          packTier={hero.reliability?.packTier}
+          trust={trust}
+        />
 
         <TodayReliabilityPanel loading={loading} reliability={hero.reliability} />
       </FadeIn>

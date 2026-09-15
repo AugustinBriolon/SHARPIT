@@ -10,10 +10,11 @@ describe('buildPourquoiAthleteCopy', () => {
       journalWeighted: true,
     });
 
-    expect(copy.summary).toBeNull();
+    expect(copy.summary).toBe('Complet');
     expect(copy.gapBullets).toEqual([]);
     expect(copy.sentences).toHaveLength(3);
     expect(copy.sentences.join(' ')).not.toMatch(/\bFULL\b/);
+    expect(copy.summary).not.toMatch(/\bFULL\b/);
     expect(copy.sentences.join(' ')).not.toMatch(/Recovery v1/);
     expect(copy.sentences.join(' ')).not.toMatch(/Âge\s*:/);
     expect(copy.sentences.join(' ')).not.toMatch(/[—–]/);

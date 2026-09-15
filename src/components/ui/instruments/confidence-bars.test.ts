@@ -17,6 +17,20 @@ describe('ConfidenceBars', () => {
     expect(html).toContain('bg-highlight');
     expect(html).not.toContain('bg-primary');
   });
+
+  it('uses caution amber bars for PARTIAL soft-hero', () => {
+    const html = renderToStaticMarkup(
+      createElement(ConfidenceBars, { filled: 2, tone: 'caution' }),
+    );
+    expect(html).toContain('bg-signal-caution');
+    expect(html).not.toContain('bg-highlight');
+  });
+
+  it('uses muted gray bars for INSUFFICIENT soft-hero', () => {
+    const html = renderToStaticMarkup(createElement(ConfidenceBars, { filled: 1, tone: 'muted' }));
+    expect(html).toContain('bg-ink-surface-foreground/40');
+    expect(html).not.toContain('bg-highlight');
+  });
 });
 
 describe('confidenceBarsFromPct', () => {
