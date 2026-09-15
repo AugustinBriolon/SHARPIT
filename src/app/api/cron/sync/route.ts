@@ -340,7 +340,8 @@ async function syncOneAthlete(
   if (canRunHealthDerivedAthleteRefresh(hasHealthConsent)) {
     await refreshAthleteBriefing(athleteId, result);
   }
-  if (hasAiConsent) {
+  // Weekly review loads getHealthEntries — require health consent as well as AI.
+  if (hasAiConsent && canRunHealthDerivedAthleteRefresh(hasHealthConsent)) {
     await generateWeeklyReviewIfSunday(athleteId, result);
   }
 
