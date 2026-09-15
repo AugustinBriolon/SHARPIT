@@ -24,7 +24,7 @@ SHARPIT built plans against a week it inferred, and never once asked the athlete
 **Store the athlete's declared rhythm as first-class profile data, capture it in a dedicated onboarding step, and give the coach both the declared intent and the observed reality, labelled as two different facts.**
 
 1. **One versioned JSON column**, `AthleteProfile.trainingAvailability`, shaped `{ version: 1, targetSessionsPerWeek: number | null, availableWeekdays: (0-6)[] }`. Weekdays follow `Date#getDay`. This is the same pattern as `equipment`, `practicedSports` and `journalPrefs`: a blob on the profile with a normaliser that degrades anything unreadable to "nothing declared" rather than throwing.
-2. **Both answers are independently optional.** An athlete may declare a rhythm without days, days without a rhythm, or neither. `null` means never declared and is the state of every athlete who predates the column.
+2. **Both answers are optional at rest.** Onboarding captures **days only**; `targetSessionsPerWeek` is derived as `availableWeekdays.length` (N days ⇒ N possible sessions). Legacy profiles may still hold an independent session count. `null` means never declared and is the state of every athlete who predates the column.
 3. **A dedicated fifth onboarding step**, `Disponibilités`, placed between Équipement and Intention — the two constraint questions sit together, before the goal they constrain. It is skippable, and skipping still persists the empty state.
 4. **The coach prompt carries both readings, named.** The `## Disponibilités` section now reads `Souhaité`, `Jours déclarés libres` and `Jours observés (8 dernières semaines)` as separate lines, emitting only those that exist.
 
@@ -36,7 +36,7 @@ SHARPIT built plans against a week it inferred, and never once asked the athlete
 - **Declared data must not silently overwrite a working inference.** Every existing athlete has `null`. Had the declared value replaced the observed one, the entire install base would have lost its availability section on the day the column shipped, in exchange for nothing.
 - **A JSON blob, not columns, because the shape will move.** Two answers today; session-length preferences, per-sport days or blackout periods are plausible next. The repo already carries three such blobs with a normalise-on-read contract, so this adds a pattern rather than inventing one.
 - **Out-of-range values read as "not declared", never as a clamp.** A `targetSessionsPerWeek` of 0 or 15 is a bug or a hostile payload; silently storing 1 or 14 would fabricate an intent the athlete never expressed.
-- **Storage tolerates more than the UI offers.** The picker exposes 1–7; the schema accepts 1–14. A future two-a-day athlete does not require a migration.
+- **Storage tolerates more than the UI offers.** Onboarding exposes weekday tiles only; `targetSessionsPerWeek` is derived from the selected day count (1–7). The schema still accepts 1–14 for legacy or future two-a-day athletes.
 
 ---
 

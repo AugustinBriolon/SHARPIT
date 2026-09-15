@@ -1,15 +1,15 @@
 # Design — Hotfix callout + Pourquoi (post #118)
 
-Binary PNG evidence for Design hotfix:
+Binary PNG evidence for Design hotfix (historical for Today Pourquoi):
 
 1. Journal Recovery callout **header only** (before Analyses)
-2. Today « Pourquoi » soft / readable athlete prose (no machine dump)
+2. Today « Pourquoi » soft / readable athlete prose (no machine dump) — **superseded**: Pourquoi panel removed from Today hero
 
 | File | State |
 | ---- | ----- |
 | `journal-callout-header-only.png` | Callout under Journal title, above Analyses |
-| `today-pourquoi-soft-readable.png` | Soft-hero Pourquoi : gaps FR + phrases (pas FULL / âges) |
-| `today-pourquoi-readable.png` | FULL Pourquoi : 2–3 phrases athlète (pas dump Expert) |
+| `today-pourquoi-soft-readable.png` | (historical) soft-hero Pourquoi |
+| `today-pourquoi-readable.png` | (historical) FULL Pourquoi |
 
 ## Capture method
 

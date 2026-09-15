@@ -12,7 +12,7 @@ Ce brief **n’ajoute pas** une esthétique parallèle. Il précise comment le h
 
 | Tier              | Comportement                                                                                                          |
 | ----------------- | --------------------------------------------------------------------------------------------------------------------- |
-| `FULL`            | Hero actuel (verdict déterministe tel quel). Dot Lime. Résumé Pourquoi **Complet** (jamais le label machine `FULL`).  |
+| `FULL`            | Hero actuel (verdict déterministe tel quel). Dot Lime. Pas de panel « Pourquoi ».                                     |
 | `PARTIAL` / `LOW` | Soft-hero : titre hedged + chip **Estimation partielle** + gaps visibles. Dot **amber** (`signal-caution`), pas Lime. |
 | `INSUFFICIENT`    | Pas d’`topAction` d’intensité ; CTA compléter les sources / attendre la sync. Dot **gris** (muted), pas Lime.         |
 
@@ -23,15 +23,13 @@ Les dots / barres de confiance soft-hero ne doivent pas lire « ok » (Lime) pou
 
 ---
 
-## 2. Provenance sous le hero
+## 2. Sous le hero (soft-hero only)
 
-Collapsible **Pourquoi** (lecture athlète par défaut) :
+Pas de collapsible **Pourquoi** sur Today (retiré). Sous le verdict, uniquement :
 
-- 2–3 phrases FR lisibles (pas de label machine `FULL` / `PARTIAL` / …) ;
-- résumé collapsed : **Complet** / Estimation partielle / Données insuffisantes ;
-- soft-hero (`PARTIAL` / `LOW` / `INSUFFICIENT`) : 1–2 puces gaps FR + chip Estimation partielle / Données insuffisantes ;
-- **pas** d’âges de sync bruts ni de `rationaleCodes` dupliqués dans le Pourquoi Essential ;
-- détail technique (séries, âges, codes) derrière **Mode Expert** uniquement.
+- soft-hero (`PARTIAL` / `LOW` / `INSUFFICIENT`) : chip Estimation partielle / Données insuffisantes + 1–2 puces gaps FR ;
+- CTA compléter les sources / attendre la sync quand `INSUFFICIENT` ;
+- pas d’âges de sync bruts ni de `rationaleCodes` sur le hero.
 
 Pas de glass hors allowlist chrome. Pas d’em dash dans le copy FR.
 

@@ -262,7 +262,7 @@ The week hub already exists as the training thread, so stage 1 is a rename and n
 
    Two consequences of renaming before moving, visible until stage 3: `Progression` is served by the body hub, whose page still reads `Forme & bien-être` and holds no goals; and `Ma semaine` is served by the training thread, which spans more than a week.
 
-2. **Daily loop (medium) — shipped.** The phase transitions were already in place: five phases resolved from session status and athlete state, each driving its own hero narrative, action labels, why-block title, trajectory eyebrow and adaptation hints, with the morning wellness check-in and post-session effort capture already surfaced. The gap was the contextual Coach, and that is what this stage closed.
+2. **Daily loop (medium) — shipped.** The phase transitions were already in place: five phases resolved from session status and athlete state, each driving its own hero narrative, action labels, trajectory eyebrow and adaptation hints, with the morning wellness check-in and post-session effort capture already surfaced. The gap was the contextual Coach, and that is what this stage closed.
 
    Every surface the Coach section names can now start a conversation — Today, a planned session, an activity, My week, a goal, a record, an active physical constraint — and each one arrives with its context named in a chip above the composer, a link back to where it came from, and a control that drops it before sending. The attachment is the athlete's to keep or discard; it is no longer implicit in a wall of prefilled text.
 

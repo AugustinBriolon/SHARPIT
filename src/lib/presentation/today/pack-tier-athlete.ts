@@ -7,7 +7,7 @@ import { CAUTION_TONE } from '@/lib/presentation/coaching/status-surface';
 
 export type AthletePackTier = 'FULL' | 'PARTIAL' | 'LOW' | 'INSUFFICIENT';
 
-/** Collapsed Pourquoi summary — French only, never a machine tier. */
+/** French packTier label for athletes — never a machine tier like FULL. */
 export function athletePackTierSummary(packTier: AthletePackTier): string {
   if (packTier === 'FULL') {
     return 'Complet';
