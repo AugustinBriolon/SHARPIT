@@ -17,6 +17,7 @@ import { useWellnessCheckin } from '@/hooks/use-wellness-checkin';
 import { useOfflineGuard } from '@/hooks/use-offline-guard';
 import { mapSorenessUiToDomain, type WellnessUiScore } from '@/lib/journal/morning-wellness-scale';
 import { JOURNAL_WEIGHT_BADGE } from '@/lib/journal/reliability-weighting';
+import { STATUS_SURFACE } from '@/lib/presentation/coaching/status-surface';
 import { cn } from '@/lib/utils';
 
 type WellnessOption = ScaleOption<WellnessUiScore>;
@@ -102,9 +103,6 @@ function NotesStep({ value, onChange }: { value: string; onChange: (v: string) =
         <p className="text-muted-foreground mt-1 text-sm" id={hintId}>
           Optionnel. Un détail pour le coach si besoin.
         </p>
-        <span className="bg-muted text-muted-foreground mt-2 inline-flex rounded-md px-1.5 py-0.5 text-[10px] font-semibold tracking-wide uppercase">
-          {JOURNAL_WEIGHT_BADGE.notedNotWeighted}
-        </span>
       </div>
       <Textarea
         aria-describedby={hintId}
@@ -352,7 +350,8 @@ function MorningWellnessDialogBody({
           />
           <span
             className={cn(
-              'bg-primary/12 text-primary inline-flex rounded-md px-1.5 py-0.5 text-[10px] font-semibold tracking-wide uppercase',
+              'inline-flex rounded-md border px-1.5 py-0.5 text-[10px] font-semibold tracking-wide uppercase',
+              STATUS_SURFACE.doneBadge,
             )}
           >
             {JOURNAL_WEIGHT_BADGE.weighted}

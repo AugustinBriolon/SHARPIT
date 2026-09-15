@@ -64,9 +64,11 @@ import { fetchJournalDaySignals } from '@/lib/query/fetchers';
 import { queryKeys } from '@/lib/query/keys';
 import { trainingDayIdForNow } from '@/lib/training/periodization/training-day';
 import {
+  JOURNAL_RECOVERY_CALLOUT,
   isJournalFieldWeightedInRecoveryV1,
   journalWeightBadgeLabel,
 } from '@/lib/journal/reliability-weighting';
+import { STATUS_SURFACE } from '@/lib/presentation/coaching/status-surface';
 import { cn } from '@/lib/utils';
 
 const MorningWellnessDialog = dynamic(
@@ -90,18 +92,29 @@ function factorHint(id: DayJournalFactorKey): string {
 }
 
 function JournalWeightBadge({ fieldId }: { fieldId: string }) {
-  const weighted = isJournalFieldWeightedInRecoveryV1(fieldId);
+  if (!isJournalFieldWeightedInRecoveryV1(fieldId)) {
+    return null;
+  }
   return (
     <span
       className={cn(
-        'mt-1 inline-flex rounded-md px-1.5 py-0.5 text-[10px] font-semibold tracking-wide uppercase',
-        weighted
-          ? 'bg-primary/12 text-primary'
-          : 'bg-muted text-muted-foreground',
+        'mt-1 inline-flex rounded-md border px-1.5 py-0.5 text-[10px] font-semibold tracking-wide uppercase',
+        STATUS_SURFACE.doneBadge,
       )}
     >
       {journalWeightBadgeLabel(fieldId)}
     </span>
+  );
+}
+
+function JournalRecoveryCallout() {
+  return (
+    <p
+      role="note"
+      className="border-analysis-border/80 bg-muted/40 text-muted-foreground rounded-analysis border px-3 py-2.5 text-sm text-pretty"
+    >
+      {JOURNAL_RECOVERY_CALLOUT}
+    </p>
   );
 }
 
@@ -175,6 +188,7 @@ function FactorListRow({
           <p className="text-muted-foreground mt-0.5 line-clamp-2 text-xs text-pretty">
             {factorHint(id)}
           </p>
+          {/* Unweighted factors stay quiet — no per-line failure badge. */}
           <JournalWeightBadge fieldId={id} />
         </div>
       </div>
@@ -613,6 +627,7 @@ export function JournalScreen() {
         onIsProChange={setIsPro}
         onPrefsChange={setPrefs}
       />
+      <JournalRecoveryCallout />
       {!isReady ? (
         <JournalLoadingSkeleton heightClass="h-40" />
       ) : (
