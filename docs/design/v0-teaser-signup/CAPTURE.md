@@ -27,8 +27,10 @@ npx playwright screenshot --viewport-size=390,844 \
 ### Alternative (local)
 
 ```bash
-yarn dev
-# then Playwright / DevTools device toolbar at 390×844
+yarn build && yarn start
+# or, if Turbopack CSS flakes in this environment:
+# yarn next dev -H 0.0.0.0 --webpack
+# then Playwright / DevTools device toolbar at 390×844 @2x
 ```
 
 ## Notes
