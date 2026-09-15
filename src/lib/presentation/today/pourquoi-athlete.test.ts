@@ -7,7 +7,6 @@ describe('buildPourquoiAthleteCopy', () => {
       softHero: false,
       packTier: 'FULL',
       visibleGaps: [],
-      goalVsJournalWeight: 'Objectif prioritaire · Journal wellness pondéré en Recovery v1',
       journalWeighted: true,
     });
 
@@ -15,6 +14,7 @@ describe('buildPourquoiAthleteCopy', () => {
     expect(copy.gapBullets).toEqual([]);
     expect(copy.sentences).toHaveLength(3);
     expect(copy.sentences.join(' ')).not.toMatch(/\bFULL\b/);
+    expect(copy.sentences.join(' ')).not.toMatch(/Recovery v1/);
     expect(copy.sentences.join(' ')).not.toMatch(/Âge\s*:/);
     expect(copy.sentences.join(' ')).not.toMatch(/[—–]/);
     expect(copy.sentences[0]).toMatch(/sommeil/i);
@@ -29,7 +29,6 @@ describe('buildPourquoiAthleteCopy', () => {
         'HRV du matin manquante',
         'Baseline HRV trop courte (moins de 7 j)',
       ],
-      goalVsJournalWeight: 'Objectif prioritaire · journal wellness non encore saisi',
       journalWeighted: false,
     });
 
@@ -44,7 +43,6 @@ describe('buildPourquoiAthleteCopy', () => {
       softHero: true,
       packTier: 'INSUFFICIENT',
       visibleGaps: ['Sommeil de la nuit manquant'],
-      goalVsJournalWeight: 'Objectif prioritaire · journal wellness non encore saisi',
       journalWeighted: false,
     });
 

@@ -30,22 +30,9 @@ function VisibleGaps({ gaps }: { gaps: readonly string[] }) {
   );
 }
 
-function AthletePourquoiBody({
-  sentences,
-  gapBullets,
-}: {
-  sentences: readonly string[];
-  gapBullets: readonly string[];
-}) {
+function AthletePourquoiBody({ sentences }: { sentences: readonly string[] }) {
   return (
     <div className="text-ink-surface-foreground/80 space-y-3 text-sm leading-relaxed">
-      {gapBullets.length > 0 ? (
-        <ul className="space-y-1 text-xs leading-snug">
-          {gapBullets.map((gap) => (
-            <li key={gap}>· {gap}</li>
-          ))}
-        </ul>
-      ) : null}
       {sentences.map((sentence) => (
         <p key={sentence}>{sentence}</p>
       ))}
@@ -101,7 +88,6 @@ export function TodayReliabilityPanel({
     softHero: reliability.softHero,
     packTier: reliability.packTier,
     visibleGaps: reliability.visibleGaps,
-    goalVsJournalWeight: reliability.provenance.goalVsJournalWeight,
     journalWeighted,
   });
 
@@ -110,7 +96,7 @@ export function TodayReliabilityPanel({
       {reliability.estimationChip ? (
         <EstimationChip label={reliability.estimationChip} />
       ) : null}
-      {reliability.softHero ? <VisibleGaps gaps={reliability.visibleGaps} /> : null}
+      {reliability.softHero ? <VisibleGaps gaps={athlete.gapBullets} /> : null}
       {reliability.ctaCompleteSources ? (
         <div className="mt-4 flex flex-wrap gap-2">
           <LinkButton href="/settings/integrations" size="sm" variant="secondary">
@@ -135,7 +121,7 @@ export function TodayReliabilityPanel({
           summary={athlete.summary}
           defaultOpen={false}
         >
-          <AthletePourquoiBody gapBullets={athlete.gapBullets} sentences={athlete.sentences} />
+          <AthletePourquoiBody sentences={athlete.sentences} />
           <ExpertOnly>
             <ExpertProvenanceBody provenance={reliability.provenance} />
           </ExpertOnly>
