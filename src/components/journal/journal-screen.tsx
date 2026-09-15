@@ -63,6 +63,10 @@ import { journalTrackableById } from '@/lib/journal/journal-trackables';
 import { fetchJournalDaySignals } from '@/lib/query/fetchers';
 import { queryKeys } from '@/lib/query/keys';
 import { trainingDayIdForNow } from '@/lib/training/periodization/training-day';
+import {
+  isJournalFieldWeightedInRecoveryV1,
+  journalWeightBadgeLabel,
+} from '@/lib/journal/reliability-weighting';
 import { cn } from '@/lib/utils';
 
 const MorningWellnessDialog = dynamic(
@@ -85,18 +89,36 @@ function factorHint(id: DayJournalFactorKey): string {
   return DAY_CONTEXT_FACTORS.find((factor) => factor.id === id)?.hint ?? 'Élément personnalisé';
 }
 
+function JournalWeightBadge({ fieldId }: { fieldId: string }) {
+  const weighted = isJournalFieldWeightedInRecoveryV1(fieldId);
+  return (
+    <span
+      className={cn(
+        'mt-1 inline-flex rounded-md px-1.5 py-0.5 text-[10px] font-semibold tracking-wide uppercase',
+        weighted
+          ? 'bg-primary/12 text-primary'
+          : 'bg-muted text-muted-foreground',
+      )}
+    >
+      {journalWeightBadgeLabel(fieldId)}
+    </span>
+  );
+}
+
 function JournalMetricRow({
   icon: Icon,
   iconClassName,
   label,
   value,
   action,
+  weightFieldId,
 }: {
   icon: ComponentType<{ className?: string }>;
   iconClassName?: string;
   label: string;
   value: string;
   action: ReactNode;
+  weightFieldId?: string;
 }) {
   return (
     <div className="border-analysis-border/60 flex items-center gap-3 border-b px-3 py-3 last:border-b-0">
@@ -111,6 +133,7 @@ function JournalMetricRow({
       <div className="min-w-0 flex-1">
         <p className="text-sm font-medium">{label}</p>
         <p className="text-muted-foreground text-data mt-0.5 text-xs tabular-nums">{value}</p>
+        {weightFieldId ? <JournalWeightBadge fieldId={weightFieldId} /> : null}
       </div>
       {action}
     </div>
@@ -152,6 +175,7 @@ function FactorListRow({
           <p className="text-muted-foreground mt-0.5 line-clamp-2 text-xs text-pretty">
             {factorHint(id)}
           </p>
+          <JournalWeightBadge fieldId={id} />
         </div>
       </div>
       <div className="shrink-0 self-center">
@@ -344,6 +368,7 @@ function CaffeineMetricRow({
       iconClassName={JOURNAL_METRIC_ICON.caffeine}
       label="Caféine"
       value={`${caffeineMg} mg`}
+      weightFieldId="metric_caffeine"
       action={
         <MetricStepper
           decrementDisabled={caffeineMg <= 0}
@@ -368,6 +393,7 @@ function MoodMetricRow({
       iconClassName={JOURNAL_METRIC_ICON.mood}
       label="Humeur"
       value={entry.moodLabel ?? 'Non renseignée'}
+      weightFieldId="metric_mood"
       action={
         <MoodAction
           moodLabel={entry.moodLabel}
@@ -392,6 +418,7 @@ function HydrationMetricRow({
       iconClassName={JOURNAL_METRIC_ICON.hydration}
       label="Hydratation"
       value={entry.hydrationMl !== null ? `${entry.hydrationMl} ml` : '— ml'}
+      weightFieldId="metric_hydration"
       action={
         <MetricStepper
           decrementDisabled={hydrationMl <= 0}

@@ -185,7 +185,33 @@ export async function generateAthleteSnapshot(
   }
 
   if (!options.skipPersist) {
+    if (options.forceRefresh && priorSnapshot) {
+      const { regenerateSnapshotWithEvidenceRollback } = await import(
+        '@/lib/science/reliability/persist-evidence'
+      );
+      const rolled = await regenerateSnapshotWithEvidenceRollback({
+        athleteId,
+        trainingDayId,
+        buildB: async () => {
+          await saveAthleteSnapshot(snapshot);
+          return snapshot;
+        },
+      });
+      if (!rolled.ok) {
+        return rolled.snapshot ?? priorSnapshot;
+      }
+      return rolled.snapshot;
+    }
+
     await saveAthleteSnapshot(snapshot);
+    try {
+      const { persistEvidenceFromSnapshot } = await import(
+        '@/lib/science/reliability/persist-evidence'
+      );
+      await persistEvidenceFromSnapshot(snapshot);
+    } catch {
+      // Evidence is best-effort; never block the athlete-facing snapshot path.
+    }
   }
 
   return snapshot;

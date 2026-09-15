@@ -23,6 +23,7 @@ import {
   type HabitCoachingSignal,
 } from '@/lib/today/rich/habit-coaching-signal';
 import { loadTodayHabitCoachingSignal } from '@/lib/presentation/today/today-habit-coaching';
+import { buildTodayHeroReliability } from '@/lib/science/reliability/today-hero-reliability';
 import { buildTodayDaySummary } from '@/lib/today/dashboard/today-day-summary';
 import { prisma } from '@/lib/prisma';
 import { addDays } from 'date-fns';
@@ -752,22 +753,33 @@ function assembleTodayHeroGoalFields(ctx: ReturnType<typeof prepareTodayViewMode
 }
 
 function assembleTodayHero(ctx: ReturnType<typeof prepareTodayViewModelContext>) {
+  const reliabilityBundle = buildTodayHeroReliability(
+    ctx.effectiveSnapshot,
+    ctx.verdict as import('@/core/athlete-state/today-state').OverallVerdict | null,
+  );
+  const headline = reliabilityBundle.effectiveHeadlineOverride ?? ctx.effectiveHeadline;
+  const displayVerdict = reliabilityBundle.displayVerdict;
+  const displayVerdictStyle = mapVerdictToDisplay(displayVerdict);
+  const focusPriority = reliabilityBundle.reliability.withholdIntensityTopAction
+    ? null
+    : ctx.focusPriority;
+
   return {
     eyebrow: ctx.heroEyebrow,
-    headline: ctx.effectiveHeadline,
+    headline,
     subline: ctx.effectiveSubline,
     posture: ctx.posture,
     postureLabel: ctx.postureLabel,
-    focusPriority: ctx.focusPriority,
+    focusPriority,
     ...assembleTodayHeroGoalFields(ctx),
-    actionLine: ctx.focusPriority,
+    actionLine: focusPriority,
     adaptationReminders: [],
     verdictStyle: {
-      showVerdictColors: ctx.verdict !== 'INSUFFICIENT_DATA',
-      bgClass: ctx.displayVerdict.bgClass,
-      colorClass: ctx.displayVerdict.colorClass,
-      dotClass: ctx.displayVerdict.dotClass,
-      accentBarClass: ctx.displayVerdict.accentBarClass,
+      showVerdictColors: displayVerdict !== 'INSUFFICIENT_DATA',
+      bgClass: displayVerdictStyle.bgClass,
+      colorClass: displayVerdictStyle.colorClass,
+      dotClass: displayVerdictStyle.dotClass,
+      accentBarClass: displayVerdictStyle.accentBarClass,
     },
     metricsRow: {
       sleepScore: ctx.scores.sleepScore,
@@ -797,6 +809,7 @@ function assembleTodayHero(ctx: ReturnType<typeof prepareTodayViewModelContext>)
       limitingCauseText: ctx.plateLimiter.text,
       limitingFactorHref: ctx.plateLimiter.href,
     },
+    reliability: reliabilityBundle.reliability,
   };
 }
 

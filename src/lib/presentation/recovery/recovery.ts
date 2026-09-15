@@ -51,8 +51,8 @@ const RISK_DISPLAY: Record<string, { label: string; colorClass: string } | undef
 };
 
 const ILLNESS_RISK_DISPLAY: Record<string, { label: string; colorClass: string } | undefined> = {
-  ELEVATED: { label: 'Risque modéré', colorClass: 'text-signal-caution' },
-  HIGH: { label: 'Risque élevé', colorClass: 'text-signal-risk' },
+  ELEVATED: { label: 'Récupération atypique', colorClass: 'text-signal-caution' },
+  HIGH: { label: 'Récupération atypique marquée', colorClass: 'text-signal-risk' },
 };
 
 const CONFIDENCE_TONE = {

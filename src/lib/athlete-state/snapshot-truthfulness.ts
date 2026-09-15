@@ -100,7 +100,7 @@ export function confidenceLabelFor(confidence: number | null): string | null {
   if (confidence >= MIN_ADVICE_CONFIDENCE) {
     return 'Estimation modérée';
   }
-  return 'Estimation partielle — données incomplètes';
+  return 'Estimation partielle : données incomplètes';
 }
 
 export function effortUnavailableMessage(

@@ -11,6 +11,7 @@ import {
   TodayVerdictLimiter,
 } from '@/components/today/rich/today-verdict-hero-parts';
 import { deriveVerdictHeroDisplay } from '@/components/today/rich/today-verdict-hero-helpers';
+import { TodayReliabilityPanel } from '@/components/today/rich/today-reliability-panel';
 import { fadeUpTransition, fadeUpVariants } from '@/lib/motion/variants';
 import { motionTokens } from '@/lib/motion/tokens';
 import { cn } from '@/lib/utils';
@@ -56,6 +57,8 @@ export function TodayVerdictHero({
         </div>
 
         <TodayVerdictConfidence bars={bars} loading={loading} trust={trust} />
+
+        <TodayReliabilityPanel loading={loading} reliability={hero.reliability} />
       </FadeIn>
     </section>
   );

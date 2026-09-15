@@ -16,6 +16,9 @@ vi.mock('@/lib/prisma', () => ({
     withingsAccount: { updateMany: (...args: unknown[]) => updateManyMock(...args) },
     renphoAccount: { updateMany: (...args: unknown[]) => updateManyMock(...args) },
     myFitnessPalAccount: { updateMany: (...args: unknown[]) => updateManyMock(...args) },
+    analysisEvidenceSnapshot: {
+      deleteMany: vi.fn().mockResolvedValue({ count: 0 }),
+    },
   },
 }));
 

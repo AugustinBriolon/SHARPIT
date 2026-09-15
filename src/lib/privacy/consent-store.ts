@@ -213,9 +213,23 @@ export async function updateAthleteConsents(
     data.unofficialProvidersAckAt = null;
   }
 
-  return prisma.athleteProfile.update({
+  const updated = await prisma.athleteProfile.update({
     where: { id: athleteId },
     data,
     select: CONSENT_SELECT,
   });
+
+  // Science Sport evidence holds health-derived inputs — purge on health consent withdraw.
+  if (input.healthDataConsent === false) {
+    try {
+      const { purgeAnalysisEvidenceForAthlete } = await import(
+        '@/lib/science/reliability/analysis-evidence-store'
+      );
+      await purgeAnalysisEvidenceForAthlete(athleteId);
+    } catch {
+      // Best-effort purge; soft-delete / cron remain the hard isolation path.
+    }
+  }
+
+  return updated;
 }

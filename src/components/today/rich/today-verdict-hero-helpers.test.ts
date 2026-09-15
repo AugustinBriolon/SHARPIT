@@ -40,6 +40,7 @@ function heroFixture(overrides: Partial<TodayViewModel['hero']> = {}): TodayView
       limitingCauseText: 'Sommeil fragmenté',
       limitingFactorHref: '/sleep',
     },
+    reliability: null,
     ...overrides,
   };
 }
