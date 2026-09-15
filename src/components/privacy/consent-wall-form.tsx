@@ -1,18 +1,24 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from '@/components/ui/toast';
 import { CURRENT_PRIVACY_VERSION } from '@/lib/privacy/constants';
-import { consentWallCopy, type ConsentWallReason } from '@/lib/privacy/consent-withdraw-ux';
+import {
+  consentWallCopy,
+  parseConsentWallReason,
+  type ConsentWallReason,
+} from '@/lib/privacy/consent-withdraw-ux';
 import { postPrivacyConsent } from '@/lib/query/fetchers';
 
-export function ConsentWallForm({ reason = null }: { reason?: ConsentWallReason | null }) {
+export function ConsentWallForm({ reason }: { reason?: ConsentWallReason | null } = {}) {
   const router = useRouter();
-  const copy = consentWallCopy(reason, { privacyVersion: CURRENT_PRIVACY_VERSION });
+  const searchParams = useSearchParams();
+  const resolvedReason = reason ?? parseConsentWallReason(searchParams.get('reason'));
+  const copy = consentWallCopy(resolvedReason, { privacyVersion: CURRENT_PRIVACY_VERSION });
   const [terms, setTerms] = useState(false);
   const [privacy, setPrivacy] = useState(false);
   const [health, setHealth] = useState(false);
