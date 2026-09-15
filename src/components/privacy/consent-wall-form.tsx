@@ -130,7 +130,7 @@ export function ConsentWallForm({ reason }: { reason?: ConsentWallReason | null 
         </label>
       </div>
 
-      <Button className="w-full" disabled={!canSubmit} type="submit">
+      <Button className="w-full" disabled={!canSubmit} type="submit" variant="accent">
         {busy ? copy.ctaBusy : copy.cta}
       </Button>
     </form>
