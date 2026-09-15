@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { Activity } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DockedActionBar } from '@/components/ui/docked-action-bar';
@@ -9,6 +10,7 @@ import { LinkButton } from '@/components/ui/link-button';
 import {
   TEASER_BRAND,
   TEASER_CONTINUE_LABEL,
+  TEASER_LEGAL_LINKS,
   TEASER_PRIMARY_CTA,
   TEASER_SCREENS,
   TEASER_SECONDARY_CTA,
@@ -35,7 +37,7 @@ export function TeaserFunnel() {
         </header>
 
         <div
-          className="mt-10 flex flex-1 flex-col gap-6 max-sm:pb-52"
+          className="mt-10 flex flex-1 flex-col gap-6 max-sm:pb-56"
           aria-live="polite"
           key={screen.id}
         >
@@ -45,6 +47,19 @@ export function TeaserFunnel() {
             {screen.body}
           </p>
         </div>
+
+        {/* Art. 13 transparency — legal pages reachable before signup (Privacy nit). */}
+        <footer className="text-muted-foreground mt-6 flex flex-wrap gap-4 text-sm max-sm:pb-2">
+          {TEASER_LEGAL_LINKS.map((item) => (
+            <Link
+              key={item.href}
+              className="underline-offset-4 hover:underline"
+              href={item.href}
+            >
+              {item.label}
+            </Link>
+          ))}
+        </footer>
 
         {/* Progress + actions share the docked band so dots stay visible above CTAs on mobile. */}
         <DockedActionBar className="gap-3">

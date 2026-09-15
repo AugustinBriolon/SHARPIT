@@ -17,6 +17,14 @@ test.describe('public teaser funnel', () => {
           page.getByRole('heading', { name: 'Un coach pour tenir la distance' }),
         ).toBeVisible();
         await expect(page.getByRole('button', { name: 'Continuer' })).toBeVisible();
+        await expect(page.getByRole('link', { name: 'Confidentialité' })).toHaveAttribute(
+          'href',
+          '/privacy',
+        );
+        await expect(page.getByRole('link', { name: 'Conditions' })).toHaveAttribute(
+          'href',
+          '/terms',
+        );
       },
       { baseURL: 'http://localhost:3000' },
     );

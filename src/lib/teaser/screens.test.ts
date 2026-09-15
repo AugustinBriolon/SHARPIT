@@ -3,6 +3,7 @@ import {
   TEASER_BRAND,
   TEASER_CONTINUE_LABEL,
   TEASER_FORBIDDEN_COPY,
+  TEASER_LEGAL_LINKS,
   TEASER_PRIMARY_CTA,
   TEASER_SCREENS,
   TEASER_SECONDARY_CTA,
@@ -14,6 +15,7 @@ function allCopy(): string {
     TEASER_CONTINUE_LABEL,
     TEASER_PRIMARY_CTA.label,
     TEASER_SECONDARY_CTA.label,
+    ...TEASER_LEGAL_LINKS.map((l) => l.label),
     ...TEASER_SCREENS.flatMap((s) => [s.eyebrow, s.title, s.body]),
   ].join('\n');
 }
@@ -27,6 +29,13 @@ describe('teaser screens copy', () => {
   it('wires primary CTA to Clerk sign-up and secondary to sign-in', () => {
     expect(TEASER_PRIMARY_CTA.href).toBe('/sign-up');
     expect(TEASER_SECONDARY_CTA.href).toBe('/sign-in');
+  });
+
+  it('exposes privacy and terms footer links for Art. 13 transparency', () => {
+    expect(TEASER_LEGAL_LINKS).toEqual([
+      { label: 'Confidentialité', href: '/privacy' },
+      { label: 'Conditions', href: '/terms' },
+    ]);
   });
 
   it('uses French athlete copy without em dashes or AI dash separators', () => {

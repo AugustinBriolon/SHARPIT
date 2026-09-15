@@ -45,6 +45,12 @@ export const TEASER_SECONDARY_CTA = {
 
 export const TEASER_CONTINUE_LABEL = 'Continuer';
 
+/** Art. 13 transparency — legal pages before signup (Privacy). */
+export const TEASER_LEGAL_LINKS = [
+  { label: 'Confidentialité', href: '/privacy' },
+  { label: 'Conditions', href: '/terms' },
+] as const;
+
 /** Words / phrases that must never appear on the public teaser (Art. 9 + product walls). */
 export const TEASER_FORBIDDEN_COPY = [
   'cercle privé',
