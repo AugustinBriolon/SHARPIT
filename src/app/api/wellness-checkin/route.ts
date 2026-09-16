@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import {
+  getMorningWellnessCheckin,
   hasMorningWellnessCheckin,
   submitMorningWellnessCheckin,
   todayTrainingDayId,
@@ -19,8 +20,15 @@ export async function GET(request: NextRequest) {
   }
 
   const athleteId = await getCurrentAthleteId();
-  const completed = await hasMorningWellnessCheckin(athleteId, trainingDayId);
-  return NextResponse.json({ trainingDayId, completed });
+  const [completed, entry] = await Promise.all([
+    hasMorningWellnessCheckin(athleteId, trainingDayId),
+    getMorningWellnessCheckin(athleteId, trainingDayId),
+  ]);
+  return NextResponse.json({
+    trainingDayId,
+    completed,
+    entry,
+  });
 }
 
 export async function POST(request: NextRequest) {

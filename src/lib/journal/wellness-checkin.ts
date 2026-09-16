@@ -1,27 +1,58 @@
 import { observationEngine } from '@/lib/engines/observation-engine';
 import { prisma } from '@/lib/prisma';
+import {
+  parseMorningWellnessEntry,
+  type MorningWellnessEntry,
+} from '@/lib/journal/morning-wellness-entry';
 import type { WellnessCheckinPayload } from '@/lib/validators/wellness-checkin';
 import { onWellnessSubmitted } from '@/lib/athlete-state/orchestrator';
 import { trainingDayIdForNow } from '@/lib/training/periodization/training-day';
 
-export async function hasMorningWellnessCheckin(
-  athleteId: string,
-  trainingDayId: string,
-): Promise<boolean> {
-  const rows = await prisma.observation.findMany({
+export type { MorningWellnessEntry };
+
+async function listMorningSubjectiveRows(athleteId: string, trainingDayId: string) {
+  return prisma.observation.findMany({
     where: {
       athleteId,
       trainingDayId,
       type: 'SUBJECTIVE',
       source: 'MANUAL',
     },
+    orderBy: { timestamp: 'desc' },
     select: { data: true },
   });
+}
 
-  return rows.some((row) => {
-    const data = row.data as Record<string, unknown>;
-    return !data.sessionExternalId;
-  });
+function isNonSessionSubjective(data: unknown): boolean {
+  if (typeof data !== 'object' || data === null || Array.isArray(data)) {
+    return false;
+  }
+  return !('sessionExternalId' in data && (data as { sessionExternalId?: unknown }).sessionExternalId);
+}
+
+/** Latest morning (non-session) SUBJECTIVE MANUAL entry with full scales, if any. */
+export async function getMorningWellnessCheckin(
+  athleteId: string,
+  trainingDayId: string,
+): Promise<MorningWellnessEntry | null> {
+  const rows = await listMorningSubjectiveRows(athleteId, trainingDayId);
+
+  for (const row of rows) {
+    const entry = parseMorningWellnessEntry(row.data);
+    if (entry) {
+      return entry;
+    }
+  }
+
+  return null;
+}
+
+export async function hasMorningWellnessCheckin(
+  athleteId: string,
+  trainingDayId: string,
+): Promise<boolean> {
+  const rows = await listMorningSubjectiveRows(athleteId, trainingDayId);
+  return rows.some((row) => isNonSessionSubjective(row.data));
 }
 
 export async function submitMorningWellnessCheckin(
