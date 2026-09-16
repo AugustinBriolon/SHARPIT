@@ -15,6 +15,10 @@ import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/components/ui/toast';
 import { useWellnessCheckin } from '@/hooks/use-wellness-checkin';
 import { useOfflineGuard } from '@/hooks/use-offline-guard';
+import {
+  seedMorningWellnessForm,
+  type MorningWellnessEntry,
+} from '@/lib/journal/morning-wellness-entry';
 import { mapSorenessUiToDomain, type WellnessUiScore } from '@/lib/journal/morning-wellness-scale';
 
 type WellnessOption = ScaleOption<WellnessUiScore>;
@@ -251,6 +255,25 @@ function useWellnessForm() {
     setNotes('');
   }, []);
 
+  /** Prefill from a saved day entry on edit open; empty seed keeps first-time unset. */
+  const hydrate = useCallback((entry: MorningWellnessEntry | null) => {
+    const seed = seedMorningWellnessForm(entry);
+    setCurrentStep(0);
+    if (!seed) {
+      setMood(null);
+      setEnergyLevel(null);
+      setPerceivedSoreness(null);
+      setStressLevel(null);
+      setNotes('');
+      return;
+    }
+    setMood(seed.mood);
+    setEnergyLevel(seed.energyLevel);
+    setPerceivedSoreness(seed.perceivedSoreness);
+    setStressLevel(seed.stressLevel);
+    setNotes(seed.notes);
+  }, []);
+
   const allScalesAnswered =
     mood !== null && energyLevel !== null && perceivedSoreness !== null && stressLevel !== null;
 
@@ -266,6 +289,7 @@ function useWellnessForm() {
     values,
     handleScaleChange,
     reset,
+    hydrate,
     isLastStep: currentStep === TOTAL_STEPS - 1,
     isScaleStep: currentStep < STEPS.length,
     canAdvance: currentStep >= STEPS.length || values[currentStep] !== null,
@@ -407,11 +431,13 @@ function useMorningWellnessDialogActions({
   form,
   submit,
   guardDisabled,
+  entry,
   onCompleted,
 }: {
   form: ReturnType<typeof useWellnessForm>;
   submit: ReturnType<typeof useWellnessCheckin>['submit'];
   guardDisabled: boolean;
+  entry: MorningWellnessEntry | null;
   onCompleted?: (result: MorningWellnessCompleted) => void;
 }) {
   const [open, setOpen] = useState(false);
@@ -421,6 +447,11 @@ function useMorningWellnessDialogActions({
     if (!next) {
       form.reset();
     }
+  }
+
+  function openDialog() {
+    form.hydrate(entry);
+    setOpen(true);
   }
 
   async function handleSubmit() {
@@ -448,7 +479,7 @@ function useMorningWellnessDialogActions({
     }
   }
 
-  return { open, handleOpenChange, handleSubmit, openDialog: () => setOpen(true) };
+  return { open, handleOpenChange, handleSubmit, openDialog };
 }
 
 type MorningWellnessDialogProps = {
@@ -468,13 +499,14 @@ export function MorningWellnessDialog({
   triggerChildren,
   triggerAriaLabel,
 }: MorningWellnessDialogProps) {
-  const { completed, loading, error, submit } = useWellnessCheckin();
+  const { completed, entry, loading, error, submit } = useWellnessCheckin();
   const { offline, guardDisabled, offlineLabel } = useOfflineGuard();
   const form = useWellnessForm();
   const { open, handleOpenChange, handleSubmit, openDialog } = useMorningWellnessDialogActions({
     form,
     submit,
     guardDisabled,
+    entry,
     onCompleted,
   });
 

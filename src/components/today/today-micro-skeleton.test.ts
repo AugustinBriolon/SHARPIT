@@ -23,6 +23,7 @@ vi.mock('@/hooks/use-data', () => ({
 vi.mock('@/hooks/use-wellness-checkin', () => ({
   useWellnessCheckin: () => ({
     completed: false,
+    entry: null,
     loading: false,
     isPending: false,
     error: null,
