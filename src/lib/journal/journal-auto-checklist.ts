@@ -4,6 +4,7 @@
 
 import type { JournalThresholds } from '@/lib/journal/journal-prefs';
 import { JOURNAL_AUTO_ITEM_LABELS, type JournalAutoItemId } from '@/lib/journal/journal-auto-ids';
+import { formatOutcomeValue } from '@/lib/journal/journal-habit-finding-copy';
 
 export type { JournalAutoItemId };
 
@@ -176,7 +177,8 @@ function buildSleepItem(
     'sleep_target',
     health?.sleepMinutes,
     thresholds.sleepMinMinutes,
-    (value, threshold) => `${formatMinutes(value)} / ≥ ${threshold} min`,
+    (value, threshold) =>
+      `${formatOutcomeValue('sleepMinutes', value)} / ≥ ${formatOutcomeValue('sleepMinutes', threshold)}`,
   );
 }
 
