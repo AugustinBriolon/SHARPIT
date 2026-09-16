@@ -16,9 +16,6 @@ import { toast } from '@/components/ui/toast';
 import { useWellnessCheckin } from '@/hooks/use-wellness-checkin';
 import { useOfflineGuard } from '@/hooks/use-offline-guard';
 import { mapSorenessUiToDomain, type WellnessUiScore } from '@/lib/journal/morning-wellness-scale';
-import { JOURNAL_WEIGHT_BADGE } from '@/lib/journal/reliability-weighting';
-import { STATUS_SURFACE } from '@/lib/presentation/coaching/status-surface';
-import { cn } from '@/lib/utils';
 
 type WellnessOption = ScaleOption<WellnessUiScore>;
 
@@ -339,24 +336,14 @@ function MorningWellnessDialogBody({
   return (
     <div className="flex min-h-0 flex-1 flex-col justify-center px-5 py-6">
       {form.isScaleStep && step ? (
-        <div className="flex w-full flex-col items-center gap-3">
-          <ScalePicker
-            key={step.key}
-            hint={step.hint}
-            options={step.options}
-            title={step.label}
-            value={form.values[form.currentStep] ?? null}
-            onChange={form.handleScaleChange}
-          />
-          <span
-            className={cn(
-              'inline-flex rounded-md border px-1.5 py-0.5 text-[10px] font-semibold tracking-wide',
-              STATUS_SURFACE.doneBadge,
-            )}
-          >
-            {JOURNAL_WEIGHT_BADGE.weighted}
-          </span>
-        </div>
+        <ScalePicker
+          key={step.key}
+          hint={step.hint}
+          options={step.options}
+          title={step.label}
+          value={form.values[form.currentStep] ?? null}
+          onChange={form.handleScaleChange}
+        />
       ) : (
         <NotesStep value={form.notes} onChange={form.setNotes} />
       )}
