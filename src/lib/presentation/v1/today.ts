@@ -1,5 +1,9 @@
+import type { ActivityType } from '@prisma/client';
 import type { PresentationEmptyState } from '@/core/presentation/types';
 import type { TodayViewModel } from '@/core/presentation/today-view-model';
+import { activityTypeLabels } from '@/lib/format';
+
+export type V1TodayPackTier = 'FULL' | 'PARTIAL' | 'LOW' | 'INSUFFICIENT';
 
 export type V1TodaySource = {
   hasContent: boolean;
@@ -9,10 +13,18 @@ export type V1TodaySource = {
     headline: string;
     subline: string;
     posture: 'protect' | 'steady' | 'push' | 'uncertain';
+    postureLabel?: string | null;
+    focusPriority?: string | null;
+    actionLine?: string | null;
     twinTrustStrip: {
       confidencePctRounded: number | null;
       limitingCauseText: string | null;
+      confidenceLabel?: string | null;
     };
+    reliability?: {
+      packTier: V1TodayPackTier;
+      visibleGaps: readonly string[];
+    } | null;
     signalPreviews: Array<{
       key: 'sleep' | 'recovery' | 'adaptation' | 'effort';
       scoreDisplay: string;
@@ -28,6 +40,7 @@ export type V1TodaySource = {
       kind: 'done' | 'planned';
       primary: string;
       secondary?: string | null;
+      activityType?: ActivityType;
       metrics?: Array<{ label: string; value: string; unit: string }> | null;
     }>;
   };
@@ -49,6 +62,11 @@ export type V1TodayResponse = {
     posture: 'protect' | 'steady' | 'push' | 'uncertain';
     confidencePct: number | null;
     limitingCause: string | null;
+    statusLabel: string;
+    actionLine: string | null;
+    confidenceLabel: string | null;
+    packTier: V1TodayPackTier | null;
+    estimationGaps: string[];
   };
   weather: { city: string; tempC: number; condition: string } | null;
   sessions: Array<{
@@ -57,6 +75,8 @@ export type V1TodayResponse = {
     title: string;
     subtitle: string | null;
     metrics: Array<{ label: string; value: string; unit: string }>;
+    sport: string | null;
+    priority: boolean;
   }>;
   signals: Array<{
     key: 'sleep' | 'recovery' | 'effort' | 'adaptation';
@@ -95,37 +115,142 @@ function emptyPayload(
   };
 }
 
+function sportLabel(activityType: ActivityType | undefined): string | null {
+  if (!activityType) {
+    return null;
+  }
+  return activityTypeLabels[activityType] ?? null;
+}
+
+function resolveStatusLabel(hero: V1TodaySource['hero']): string {
+  const fromPosture = hero.postureLabel?.trim();
+  if (fromPosture) {
+    return fromPosture;
+  }
+  return hero.eyebrow;
+}
+
+function resolveActionLine(hero: V1TodaySource['hero']): string | null {
+  const fromFocus = hero.focusPriority?.trim();
+  if (fromFocus) {
+    return fromFocus;
+  }
+  const fromAction = hero.actionLine?.trim();
+  if (fromAction) {
+    return fromAction;
+  }
+  return hero.subline || null;
+}
+
+function projectVerdict(
+  hero: V1TodaySource['hero'],
+  empty: V1TodayResponse['empty'],
+): V1TodayResponse['verdict'] {
+  return {
+    eyebrow: hero.eyebrow,
+    headline: empty ? empty.title : hero.headline,
+    subline: hero.subline,
+    posture: hero.posture,
+    confidencePct: hero.twinTrustStrip.confidencePctRounded,
+    limitingCause: hero.twinTrustStrip.limitingCauseText,
+    statusLabel: resolveStatusLabel(hero),
+    actionLine: resolveActionLine(hero),
+    confidenceLabel: hero.twinTrustStrip.confidenceLabel ?? null,
+    packTier: hero.reliability?.packTier ?? null,
+    estimationGaps: [...(hero.reliability?.visibleGaps ?? [])],
+  };
+}
+
+function projectSessions(
+  lines: V1TodaySource['actionRow']['daySummaryLines'],
+): V1TodayResponse['sessions'] {
+  return lines.map((line, index) => ({
+    id: line.id,
+    kind: line.kind,
+    title: line.primary,
+    subtitle: line.secondary ?? null,
+    metrics: line.metrics ?? [],
+    sport: sportLabel(line.activityType),
+    priority: index === 0,
+  }));
+}
+
+function projectOvernightSignals(
+  previews: V1TodaySource['hero']['signalPreviews'],
+): V1TodayResponse['signals'] {
+  return previews
+    .filter((signal) => signal.key === 'sleep' || signal.key === 'recovery')
+    .map((signal) => ({
+      key: signal.key,
+      score: signal.scoreDisplay,
+      caption: signal.subtitle,
+    }));
+}
+
 export function projectV1Today(
   source: V1TodaySource,
   input: { trainingDayId: string; webOrigin: string },
 ): V1TodayResponse {
   const empty = projectEmpty(source, input.webOrigin);
-
   return {
     apiVersion: 1,
     trainingDayId: input.trainingDayId,
     empty,
-    verdict: {
-      eyebrow: source.hero.eyebrow,
-      headline: empty ? empty.title : source.hero.headline,
-      subline: source.hero.subline,
-      posture: source.hero.posture,
-      confidencePct: source.hero.twinTrustStrip.confidencePctRounded,
-      limitingCause: source.hero.twinTrustStrip.limitingCauseText,
-    },
+    verdict: projectVerdict(source.hero, empty),
     weather: source.header.weather,
-    sessions: source.actionRow.daySummaryLines.map((line) => ({
-      id: line.id,
-      kind: line.kind,
-      title: line.primary,
-      subtitle: line.secondary ?? null,
-      metrics: line.metrics ?? [],
-    })),
-    signals: source.hero.signalPreviews.map((signal) => ({
-      key: signal.key,
-      score: signal.scoreDisplay,
-      caption: signal.subtitle,
-    })),
+    sessions: projectSessions(source.actionRow.daySummaryLines),
+    signals: projectOvernightSignals(source.hero.signalPreviews),
+  };
+}
+
+function sourceFromViewModel(vm: TodayViewModel): V1TodaySource {
+  return {
+    hasContent: vm.hasContent,
+    emptyState: vm.emptyState,
+    hero: {
+      eyebrow: vm.hero.eyebrow,
+      headline: vm.hero.headline,
+      subline: vm.hero.subline,
+      posture: vm.hero.posture,
+      postureLabel: vm.hero.postureLabel,
+      focusPriority: vm.hero.focusPriority,
+      actionLine: vm.hero.actionLine,
+      twinTrustStrip: {
+        confidencePctRounded: vm.hero.twinTrustStrip.confidencePctRounded,
+        limitingCauseText: vm.hero.twinTrustStrip.limitingCauseText,
+        confidenceLabel: vm.hero.twinTrustStrip.confidenceLabel,
+      },
+      reliability: vm.hero.reliability
+        ? {
+            packTier: vm.hero.reliability.packTier,
+            visibleGaps: vm.hero.reliability.visibleGaps,
+          }
+        : null,
+      signalPreviews: vm.hero.signalPreviews.map((signal) => ({
+        key: signal.key,
+        scoreDisplay: signal.scoreDisplay,
+        subtitle: signal.subtitle,
+      })),
+    },
+    header: {
+      weather: vm.header.weather
+        ? {
+            city: vm.header.weather.city,
+            tempC: vm.header.weather.tempC,
+            condition: vm.header.weather.condition,
+          }
+        : null,
+    },
+    actionRow: {
+      daySummaryLines: vm.actionRow.daySummaryLines.map((line) => ({
+        id: line.id,
+        kind: line.kind,
+        primary: line.primary,
+        secondary: line.secondary,
+        activityType: line.activityType,
+        metrics: line.metrics,
+      })),
+    },
   };
 }
 
@@ -133,5 +258,5 @@ export function projectV1TodayFromViewModel(
   vm: TodayViewModel,
   input: { trainingDayId: string; webOrigin: string },
 ): V1TodayResponse {
-  return projectV1Today(vm, input);
+  return projectV1Today(sourceFromViewModel(vm), input);
 }

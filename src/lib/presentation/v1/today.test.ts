@@ -1,3 +1,4 @@
+import { ActivityType } from '@prisma/client';
 import { describe, expect, it } from 'vitest';
 import { projectV1Today, type V1TodaySource } from './today';
 
@@ -15,7 +16,18 @@ function source(
       headline: 'Séance prévue',
       subline: 'Tenir',
       posture: 'steady',
-      twinTrustStrip: { confidencePctRounded: 72, limitingCauseText: 'Sommeil court' },
+      postureLabel: 'FEU VERT',
+      focusPriority: 'Entraîne-toi — légèrement',
+      actionLine: null,
+      twinTrustStrip: {
+        confidencePctRounded: 72,
+        limitingCauseText: 'Sommeil',
+        confidenceLabel: 'ESTIMATION PARTIELLE',
+      },
+      reliability: {
+        packTier: 'PARTIAL',
+        visibleGaps: ['Baseline HRV partielle (moins de 14 j)'],
+      },
       signalPreviews: [
         { key: 'sleep', scoreDisplay: '78', subtitle: 'Correct' },
         { key: 'recovery', scoreDisplay: '61', subtitle: null },
@@ -32,6 +44,7 @@ function source(
           kind: 'planned',
           primary: 'Seuil 40 min',
           secondary: 'Course',
+          activityType: ActivityType.RUN,
           metrics: [{ label: 'Durée', value: '40', unit: 'min' }],
         },
       ],
@@ -52,7 +65,12 @@ describe('projectV1Today', () => {
       subline: 'Tenir',
       posture: 'steady',
       confidencePct: 72,
-      limitingCause: 'Sommeil court',
+      limitingCause: 'Sommeil',
+      statusLabel: 'FEU VERT',
+      actionLine: 'Entraîne-toi — légèrement',
+      confidenceLabel: 'ESTIMATION PARTIELLE',
+      packTier: 'PARTIAL',
+      estimationGaps: ['Baseline HRV partielle (moins de 14 j)'],
     });
     expect(json.weather).toEqual({ city: 'Lyon', tempC: 12, condition: 'Nuageux' });
     expect(json.sessions).toEqual([
@@ -62,9 +80,11 @@ describe('projectV1Today', () => {
         title: 'Seuil 40 min',
         subtitle: 'Course',
         metrics: [{ label: 'Durée', value: '40', unit: 'min' }],
+        sport: 'Course',
+        priority: true,
       },
     ]);
-    expect(json.signals).toHaveLength(4);
+    expect(json.signals.map((s) => s.key)).toEqual(['sleep', 'recovery']);
     expect(JSON.stringify(json)).not.toMatch(/href|bgClass|rounded-/);
   });
 
