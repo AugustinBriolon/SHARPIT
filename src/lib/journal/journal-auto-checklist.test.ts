@@ -76,4 +76,23 @@ describe('journal-auto-checklist', () => {
     expect(items.find((item) => item.id === 'sleep_target')?.status).toBe('unavailable');
     expect(items.find((item) => item.id === 'cardio_20')?.status).toBe('missed');
   });
+
+  it('formats sleep target detail as hours and minutes for actual and cible', () => {
+    const items = buildJournalAutoChecklist({
+      health: {
+        totalSteps: null,
+        stress: null,
+        napMinutes: null,
+        sleepMinutes: 450,
+        bodyBattery: null,
+        waterMl: null,
+      },
+      activities: [],
+      thresholds: { ...DEFAULT_JOURNAL_THRESHOLDS, sleepMinMinutes: 420 },
+      enabledIds: ['sleep_target'],
+    });
+    const sleep = items.find((item) => item.id === 'sleep_target');
+    expect(sleep?.detail).toBe('7 h 30 / ≥ 7 h 00');
+    expect(sleep?.detail).not.toMatch(/\d+ min/);
+  });
 });
