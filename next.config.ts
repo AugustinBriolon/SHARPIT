@@ -1,7 +1,7 @@
 import type { NextConfig } from 'next';
 
 function loadAllowedDevOrigins(): string[] {
-  const hosts = new Set<string>(['localhost']);
+  const hosts = new Set<string>(['localhost', '127.0.0.1']);
   const lanHost = process.env.DEV_LAN_HOST?.trim();
   if (lanHost) hosts.add(lanHost);
   return [...hosts];
