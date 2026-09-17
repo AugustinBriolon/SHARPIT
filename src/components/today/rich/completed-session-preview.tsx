@@ -1,26 +1,24 @@
 'use client';
 
-import { useEffect } from 'react';
 import Link from 'next/link';
 import type { ActivityType } from '@prisma/client';
 import { MemoizedRouteMap as RouteMap } from '@/components/training/activity/insights/route-map';
 import { ActivityTypeIndicator } from '@/components/ui/instruments/activity-type-indicator';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useActivityStream } from '@/hooks/use-data';
 import { SPORT_IDENTITY_HEX, SPORT_IDENTITY_PANEL } from '@/lib/activity/sport-identity';
-import { readRememberedHubRoute, rememberHubRoute } from '@/lib/plan/hub/plan-hub-preview-paths';
 import { cn } from '@/lib/utils';
 import {
-  activityMayHaveRoutePath,
   completedPreviewDetailsClass,
   completedPreviewFadeClass,
   completedPreviewGridClass,
   completedPreviewTitleClass,
-  resolveCompletedSessionMapSlot,
-  resolveUsableRoutePath,
   selectCompletedPreviewMetrics,
   type CompletedSessionPreviewLayout,
+  type CompletedSessionPreviewRoute,
 } from '@/components/today/rich/completed-session-preview-helpers';
+import { useCompletedPreviewMap } from '@/components/today/rich/completed-session-preview-map';
+
+export type { CompletedSessionPreviewRoute } from '@/components/today/rich/completed-session-preview-helpers';
 
 export type CompletedSessionPreviewMetric = {
   label: string;
@@ -214,34 +212,6 @@ function CompletedSessionPreviewGrid({
   );
 }
 
-function useCompletedPreviewMap(
-  activityId: string,
-  activityType: ActivityType,
-  mapEnabled: boolean,
-) {
-  const mayHavePath = activityMayHaveRoutePath(activityType);
-  const stream = useActivityStream(activityId, { enabled: mapEnabled && mayHavePath });
-  const remembered = readRememberedHubRoute(activityId);
-  const usablePath = resolveUsableRoutePath(stream.data?.path) ?? remembered.path;
-
-  useEffect(() => {
-    if (mapEnabled && mayHavePath && stream.isFetched) {
-      rememberHubRoute(activityId, resolveUsableRoutePath(stream.data?.path));
-    }
-  }, [activityId, mapEnabled, mayHavePath, stream.data?.path, stream.isFetched]);
-
-  return {
-    usablePath,
-    showMapSlot: resolveCompletedSessionMapSlot({
-      mayHavePath,
-      isPending: mapEnabled && stream.isPending,
-      isError: stream.isError,
-      usablePath,
-      rememberedHasPath: remembered.known ? remembered.hasPath : null,
-    }),
-  };
-}
-
 /**
  * Today completed-session preview — map + fade + KPIs when GPS exists,
  * sport band + KPIs otherwise. Fluid in the Today reading column.
@@ -249,47 +219,48 @@ function useCompletedPreviewMap(
  * side-by-side variant.
  *
  * Pass `mapEnabled={false}` to skip the stream fetch (virtualized / offscreen lists).
+ * Pass `previewRoute` for batch hub paths (Activité history) — never hits /streams.
  */
-export function CompletedSessionPreview({
-  accessibleName,
-  activityId,
-  activityType,
-  className,
-  href,
-  layout = 'column',
-  mapEnabled = true,
-  metrics,
-  title,
-}: {
+export function CompletedSessionPreview(props: {
   accessibleName?: string;
   activityId: string;
   activityType: ActivityType;
   className?: string;
   href: string;
   layout?: CompletedSessionPreviewLayout;
-  /** When false, skips GPS stream fetch and uses remembered / sport-band fallback. */
   mapEnabled?: boolean;
   metrics: CompletedSessionPreviewMetric[];
+  previewRoute?: CompletedSessionPreviewRoute;
   title: string;
 }) {
-  const { showMapSlot, usablePath } = useCompletedPreviewMap(activityId, activityType, mapEnabled);
-  const surfaceClass = cn(
-    'analysis-panel border-analysis-border/80 rounded-analysis-lg block w-full overflow-hidden border',
-    'hover:border-analysis-border transition-[border-color,background-color]',
-    'focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none',
-    layout === 'stack' && 'h-full',
-    className,
+  const layout = props.layout ?? 'column';
+  const mapEnabled = props.mapEnabled ?? true;
+  const { showMapSlot, usablePath } = useCompletedPreviewMap(
+    props.activityId,
+    props.activityType,
+    mapEnabled,
+    props.previewRoute,
   );
 
   return (
-    <Link aria-label={accessibleName} className={surfaceClass} href={href}>
+    <Link
+      aria-label={props.accessibleName}
+      href={props.href}
+      className={cn(
+        'analysis-panel border-analysis-border/80 rounded-analysis-lg block w-full overflow-hidden border',
+        'hover:border-analysis-border transition-[border-color,background-color]',
+        'focus-visible:ring-ring focus-visible:ring-2 focus-visible:outline-none',
+        layout === 'stack' && 'h-full',
+        props.className,
+      )}
+    >
       <CompletedSessionPreviewGrid
-        activityId={activityId}
-        activityType={activityType}
+        activityId={props.activityId}
+        activityType={props.activityType}
         layout={layout}
-        metrics={metrics}
+        metrics={props.metrics}
         showMapSlot={showMapSlot}
-        title={title}
+        title={props.title}
         usablePath={usablePath}
       />
     </Link>

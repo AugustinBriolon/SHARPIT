@@ -1,9 +1,14 @@
 import type { RecordsPayload } from '@/lib/training/records/records';
+import type { ActivityRoutePreviews } from '@/lib/streams/route-previews';
 import type { ActivityStreamPayload, MultisportStreamsPayload } from '@/lib/streams/streams';
 import { fetchJson } from './shared';
 
 export async function fetchActivityStream(id: string): Promise<ActivityStreamPayload> {
   return fetchJson<ActivityStreamPayload>(`/api/activities/${id}/streams`);
+}
+
+export async function fetchActivityRoutePreviews(): Promise<ActivityRoutePreviews> {
+  return fetchJson<ActivityRoutePreviews>('/api/activities/route-previews');
 }
 
 export async function fetchMultisportStreams(id: string): Promise<MultisportStreamsPayload> {

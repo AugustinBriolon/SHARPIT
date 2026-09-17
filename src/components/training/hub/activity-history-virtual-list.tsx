@@ -3,12 +3,14 @@
 import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { ActivityChip } from '@/components/training/activity/list/activity-list-chip';
+import type { CompletedSessionPreviewRoute } from '@/components/today/rich/completed-session-preview';
 import {
   estimateActivityHistoryRowSize,
   flattenActivityWeekGroups,
   formatWeekSessionCount,
   type ActivityWeekGroup,
 } from '@/components/training/hub/training-list-logbook';
+import type { ActivityRoutePreviews } from '@/lib/streams/route-previews';
 
 const MAIN_SCROLL_ID = 'main-content';
 const ROW_GAP_PX = 10;
@@ -20,23 +22,36 @@ function measureScrollMargin(listEl: HTMLElement, scrollEl: HTMLElement): number
   );
 }
 
+function resolvePreviewRoute(
+  activityId: string,
+  routePreviews: ActivityRoutePreviews | undefined,
+  routePreviewsPending: boolean,
+): CompletedSessionPreviewRoute {
+  if (routePreviewsPending || routePreviews === undefined) {
+    return { status: 'pending' };
+  }
+  return { status: 'ready', path: routePreviews[activityId] ?? null };
+}
+
 /**
  * Virtualized history logbook — mounts ~overscan cards while scrolling
- * `#main-content`. GPS stream fetches stay OFF here (`mapEnabled={false}`):
- * one GET `/streams` per outdoor row burned the global `apiGeneral` quota
- * (300/5 min) and 429'd the rest of the app in production.
+ * `#main-content`. GPS comes from one batch `/route-previews` (not N× /streams).
  */
 export function ActivityHistoryVirtualList({
   weekGroups,
   recordLabelsById,
   selectionMode,
   selectedIds,
+  routePreviews,
+  routePreviewsPending,
   onToggle,
 }: {
   weekGroups: ActivityWeekGroup[];
   recordLabelsById: Map<string, string>;
   selectionMode: boolean;
   selectedIds: Set<string>;
+  routePreviews?: ActivityRoutePreviews;
+  routePreviewsPending?: boolean;
   onToggle: (activityId: string) => void;
 }) {
   const listRef = useRef<HTMLDivElement | null>(null);
@@ -131,6 +146,11 @@ export function ActivityHistoryVirtualList({
                   recordLabel={recordLabelsById.get(row.activity.id) ?? null}
                   selected={selectedIds.has(row.activity.id)}
                   selectionMode={selectionMode}
+                  previewRoute={resolvePreviewRoute(
+                    row.activity.id,
+                    routePreviews,
+                    routePreviewsPending ?? false,
+                  )}
                   onToggle={onToggle}
                 />
               </div>

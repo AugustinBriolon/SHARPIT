@@ -35,6 +35,7 @@ export type {
 export {
   useActivities,
   useActivityMutations,
+  useActivityRoutePreviews,
   useActivityStream,
   useMultisportStreams,
 } from '@/hooks/use-activities';

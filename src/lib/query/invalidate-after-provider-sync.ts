@@ -54,6 +54,7 @@ async function invalidateProviderSyncCaches(
 
   const tasks: Promise<unknown>[] = [
     queryClient.invalidateQueries({ queryKey: queryKeys.activities }),
+    queryClient.invalidateQueries({ queryKey: queryKeys.activityRoutePreviews }),
     queryClient.invalidateQueries({ queryKey: queryKeys.records }),
     queryClient.invalidateQueries({ queryKey: queryKeys.plannedSessions }),
     queryClient.invalidateQueries({ queryKey: ['health'] }),

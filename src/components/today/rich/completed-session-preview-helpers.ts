@@ -96,3 +96,60 @@ export function resolveCompletedSessionMapSlot(input: {
   }
   return isPending;
 }
+
+export type CompletedSessionPreviewRoute =
+  { status: 'pending' } | { status: 'ready'; path: [number, number][] | null };
+
+export function resolveBatchPreviewPath(
+  previewRoute: CompletedSessionPreviewRoute | undefined,
+): [number, number][] | null {
+  if (!previewRoute || previewRoute.status !== 'ready') {
+    return null;
+  }
+  return resolveUsableRoutePath(previewRoute.path);
+}
+
+export function resolvePreviewUsablePath(input: {
+  batchMode: boolean;
+  batchPath: [number, number][] | null;
+  streamPath: [number, number][] | null;
+  rememberedPath: [number, number][] | null;
+}): [number, number][] | null {
+  const primary = input.batchMode ? input.batchPath : input.streamPath;
+  return primary ?? input.rememberedPath;
+}
+
+export function isPreviewMapPending(input: {
+  batchMode: boolean;
+  previewPending: boolean;
+  mayHavePath: boolean;
+  usablePath: [number, number][] | null;
+  mapEnabled: boolean;
+  streamPending: boolean;
+}): boolean {
+  if (input.batchMode) {
+    return input.previewPending && input.mayHavePath && !input.usablePath;
+  }
+  return input.mapEnabled && input.streamPending;
+}
+
+/** Persist hub route memory from batch or stream — called from preview mount effect. */
+export function pathToRememberForPreview(input: {
+  batchMode: boolean;
+  previewRoute?: CompletedSessionPreviewRoute;
+  mapEnabled: boolean;
+  mayHavePath: boolean;
+  streamFetched: boolean;
+  streamPath: [number, number][] | null | undefined;
+}): [number, number][] | null | undefined {
+  if (input.batchMode) {
+    if (input.previewRoute?.status !== 'ready') {
+      return undefined;
+    }
+    return resolveUsableRoutePath(input.previewRoute.path);
+  }
+  if (!input.mapEnabled || !input.mayHavePath || !input.streamFetched) {
+    return undefined;
+  }
+  return resolveUsableRoutePath(input.streamPath);
+}

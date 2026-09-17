@@ -178,10 +178,16 @@ describe('Plan hub continuous thread', () => {
     expect(map).toContain('shouldDeferRouteMapMount');
     expect(
       readFileSync(
-        resolve(process.cwd(), 'src/components/today/rich/completed-session-preview.tsx'),
+        resolve(process.cwd(), 'src/components/today/rich/completed-session-preview-map.ts'),
         'utf8',
       ),
     ).toContain('readRememberedHubRoute');
+    expect(
+      readFileSync(
+        resolve(process.cwd(), 'src/components/today/rich/completed-session-preview.tsx'),
+        'utf8',
+      ),
+    ).toContain('useCompletedPreviewMap');
     expect(
       readFileSync(resolve(process.cwd(), 'src/components/shell/plan-hub-widgets.tsx'), 'utf8'),
     ).toContain('retained.current');

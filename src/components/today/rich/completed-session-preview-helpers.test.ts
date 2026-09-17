@@ -6,7 +6,10 @@ import {
   completedPreviewFadeClass,
   completedPreviewGridClass,
   completedPreviewTitleClass,
+  isPreviewMapPending,
+  resolveBatchPreviewPath,
   resolveCompletedSessionMapSlot,
+  resolvePreviewUsablePath,
   selectCompletedPreviewMetrics,
   hasUsableRoutePath,
 } from './completed-session-preview-helpers';
@@ -83,5 +86,65 @@ describe('completed-session-preview-helpers', () => {
         [48.81, 2.31],
       ]),
     ).toBe(true);
+  });
+
+  it('resolves batch preview paths without treating pending as ready', () => {
+    expect(resolveBatchPreviewPath({ status: 'pending' })).toBeNull();
+    expect(
+      resolveBatchPreviewPath({
+        status: 'ready',
+        path: [
+          [1, 2],
+          [3, 4],
+        ],
+      }),
+    ).toEqual([
+      [1, 2],
+      [3, 4],
+    ]);
+    expect(resolveBatchPreviewPath({ status: 'ready', path: null })).toBeNull();
+  });
+
+  it('prefers batch path over stream when in batch mode', () => {
+    expect(
+      resolvePreviewUsablePath({
+        batchMode: true,
+        batchPath: [
+          [1, 1],
+          [2, 2],
+        ],
+        streamPath: [
+          [9, 9],
+          [8, 8],
+        ],
+        rememberedPath: null,
+      }),
+    ).toEqual([
+      [1, 1],
+      [2, 2],
+    ]);
+  });
+
+  it('shows pending map slot only while batch is loading', () => {
+    expect(
+      isPreviewMapPending({
+        batchMode: true,
+        previewPending: true,
+        mayHavePath: true,
+        usablePath: null,
+        mapEnabled: false,
+        streamPending: false,
+      }),
+    ).toBe(true);
+    expect(
+      isPreviewMapPending({
+        batchMode: true,
+        previewPending: false,
+        mayHavePath: true,
+        usablePath: null,
+        mapEnabled: false,
+        streamPending: true,
+      }),
+    ).toBe(false);
   });
 });

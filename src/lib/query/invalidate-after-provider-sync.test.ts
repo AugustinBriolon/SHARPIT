@@ -24,6 +24,7 @@ describe('invalidateAfterProviderSync', () => {
     expect(keys).toEqual(
       expect.arrayContaining([
         ['activities'],
+        ['activity-route-previews'],
         ['records'],
         ['planned-sessions'],
         ['health'],

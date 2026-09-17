@@ -1,7 +1,10 @@
 'use client';
 
 import { Checkbox } from '@/components/ui/checkbox';
-import { CompletedSessionPreview } from '@/components/today/rich/completed-session-preview';
+import {
+  CompletedSessionPreview,
+  type CompletedSessionPreviewRoute,
+} from '@/components/today/rich/completed-session-preview';
 import { ActivityTypeIndicator } from '@/components/ui/instruments/activity-type-indicator';
 import { buildCompletedSessionMetrics } from '@/lib/today/rich/completed-session-metrics';
 import { TWIN_DRILL_DOWN } from '@/lib/today/navigation/today-twin-navigation';
@@ -100,14 +103,16 @@ export function ActivityChip({
   selectionMode = false,
   selected = false,
   mapEnabled = true,
+  previewRoute,
   onToggle,
 }: {
   activity: ActivityChipSource;
   recordLabel?: string | null;
   selectionMode?: boolean;
   selected?: boolean;
-  /** Gate GPS stream fetch — keep false on history lists (N+1 burns apiGeneral). */
+  /** Gate GPS stream fetch — keep false on history lists; use previewRoute instead. */
   mapEnabled?: boolean;
+  previewRoute?: CompletedSessionPreviewRoute;
   onToggle?: (activityId: string) => void;
 }) {
   if (selectionMode) {
@@ -121,6 +126,27 @@ export function ActivityChip({
     );
   }
 
+  return (
+    <HistoryPreviewChip
+      activity={activity}
+      mapEnabled={mapEnabled}
+      previewRoute={previewRoute}
+      recordLabel={recordLabel}
+    />
+  );
+}
+
+function HistoryPreviewChip({
+  activity,
+  mapEnabled,
+  previewRoute,
+  recordLabel,
+}: {
+  activity: ActivityChipSource;
+  mapEnabled: boolean;
+  previewRoute?: CompletedSessionPreviewRoute;
+  recordLabel: string | null;
+}) {
   const title = activity.title ?? activityTypeLabels[activity.type];
 
   return (
@@ -133,6 +159,7 @@ export function ActivityChip({
         layout="column"
         mapEnabled={mapEnabled}
         metrics={metricsFromActivity(activity)}
+        previewRoute={previewRoute}
         title={title}
       />
       {recordLabel ? (

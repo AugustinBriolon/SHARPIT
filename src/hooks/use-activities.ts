@@ -2,7 +2,12 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { isSet } from '@/lib/util/value';
-import { fetchActivities, fetchActivityStream, fetchMultisportStreams } from '@/lib/query/fetchers';
+import {
+  fetchActivities,
+  fetchActivityRoutePreviews,
+  fetchActivityStream,
+  fetchMultisportStreams,
+} from '@/lib/query/fetchers';
 import { queryKeys } from '@/lib/query/keys';
 import { listOptimistic, tempId, isTempId } from '@/lib/query/optimistic';
 import {
@@ -24,6 +29,16 @@ export function useActivities() {
     // Shared history across 8 views — avoid full refetch on every mount / focus.
     // Mutations invalidate explicitly.
     staleTime: 2 * 60 * 1000,
+  });
+}
+
+/** One batch for Activité hub map cards — cache-only paths, no per-row /streams. */
+export function useActivityRoutePreviews(enabled = true) {
+  return useQuery({
+    queryKey: queryKeys.activityRoutePreviews,
+    queryFn: fetchActivityRoutePreviews,
+    staleTime: 30 * 60 * 1000,
+    enabled,
   });
 }
 

@@ -13,7 +13,8 @@ import type { ClientActivity } from '@/lib/query/types';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SkeletonDataValue } from '@/components/ui/skeleton-data-value';
-import { useActivities, useRecords } from '@/hooks/use-data';
+import { useActivities, useActivityRoutePreviews, useRecords } from '@/hooks/use-data';
+import type { ActivityRoutePreviews } from '@/lib/streams/route-previews';
 import {
   DEFAULT_TRAINING_HISTORY_FILTERS,
   formatTrainingHistoryFilterStatus,
@@ -140,6 +141,8 @@ type TrainingListContentProps = {
   selectedIds: ReturnType<typeof useTrainingListState>['selectedIds'];
   selectedIdsArray: string[];
   createDialogOpen: boolean;
+  routePreviews: ActivityRoutePreviews | undefined;
+  routePreviewsPending: boolean;
   setCreateDialogOpen: (open: boolean) => void;
   setFilters: ReturnType<typeof useTrainingListState>['setFilters'];
   exitSelectionMode: () => void;
@@ -157,6 +160,8 @@ function TrainingListMain({
   selectionMode,
   recordLabelsById,
   selectedIds,
+  routePreviews,
+  routePreviewsPending,
   setFilters,
   exitSelectionMode,
   toggleSelectionMode,
@@ -185,6 +190,8 @@ function TrainingListMain({
       />
       <TrainingListWeekGroups
         recordLabelsById={recordLabelsById}
+        routePreviews={routePreviews}
+        routePreviewsPending={routePreviewsPending}
         selectedIds={selectedIds}
         selectionMode={selectionMode}
         weekGroups={weekGroups}
@@ -247,6 +254,7 @@ function TrainingListContent(props: TrainingListContentProps) {
 export function TrainingList() {
   const { data, isPending } = useActivities();
   const { data: records } = useRecords();
+  const { data: routePreviews, isPending: routePreviewsPending } = useActivityRoutePreviews();
   const activities = data ?? [];
 
   const listState = useTrainingListState(activities, records);
@@ -266,6 +274,8 @@ export function TrainingList() {
       filters={listState.filters}
       hasLinkableHikes={listState.hasLinkableHikes}
       recordLabelsById={listState.recordLabelsById}
+      routePreviews={routePreviews}
+      routePreviewsPending={routePreviewsPending}
       selectedIds={listState.selectedIds}
       selectedIdsArray={listState.selectedIdsArray}
       selectionMode={listState.selectionMode}

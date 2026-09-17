@@ -4,11 +4,13 @@ import { Plus } from 'lucide-react';
 import type { ClientActivity } from '@/lib/query/types';
 import { ActivityHistoryVirtualList } from '@/components/training/hub/activity-history-virtual-list';
 import { HistoryFilters } from '@/components/training/hub/history-filters';
+import { ActivitySourceEmptyActions } from '@/components/integrations/connect-source-cta';
 import { Button } from '@/components/ui/button';
 import { InkEmptyState } from '@/components/ui/ink-empty-state';
 import { LinkButton } from '@/components/ui/link-button';
 import { type TrainingHistoryFilters } from '@/lib/training/periodization/history-filters';
-import { CalendarPlus, FilterX, Link2, MoreHorizontal, X } from 'lucide-react';
+import type { ActivityRoutePreviews } from '@/lib/streams/route-previews';
+import { FilterX, Link2, MoreHorizontal, X } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -92,14 +94,9 @@ export function TrainingListEmptyStates({
     <>
       {weekGroupsCount === 0 && activitiesCount === 0 ? (
         <InkEmptyState
-          description="Connecte une source ou ajoute une séance manuelle pour construire l’historique."
+          action={<ActivitySourceEmptyActions />}
+          description="Synchronise Garmin ou ajoute une séance manuelle pour construire l’historique."
           title="Aucune activité enregistrée"
-          action={
-            <LinkButton href="/activite/nouvelle" size="sm" variant="outline">
-              <CalendarPlus className="size-3.5" aria-hidden />
-              Saisir une activité
-            </LinkButton>
-          }
           bleed
         />
       ) : null}
@@ -125,12 +122,16 @@ export function TrainingListWeekGroups({
   recordLabelsById,
   selectionMode,
   selectedIds,
+  routePreviews,
+  routePreviewsPending,
   onToggle,
 }: {
   weekGroups: WeekGroup[];
   recordLabelsById: Map<string, string>;
   selectionMode: boolean;
   selectedIds: Set<string>;
+  routePreviews?: ActivityRoutePreviews;
+  routePreviewsPending?: boolean;
   onToggle: (activityId: string) => void;
 }) {
   if (weekGroups.length === 0) {
@@ -140,6 +141,8 @@ export function TrainingListWeekGroups({
   return (
     <ActivityHistoryVirtualList
       recordLabelsById={recordLabelsById}
+      routePreviews={routePreviews}
+      routePreviewsPending={routePreviewsPending}
       selectedIds={selectedIds}
       selectionMode={selectionMode}
       weekGroups={weekGroups}
