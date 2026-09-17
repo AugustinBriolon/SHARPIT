@@ -4,6 +4,7 @@ import dynamic from 'next/dynamic';
 import { RefreshCw } from 'lucide-react';
 import { ClassProviderRow } from '@/components/settings/integrations/hub-parts';
 import { syncAllButtonLabel } from '@/components/settings/integrations/hub-hooks';
+import { IntegrationLogo } from '@/components/settings/integrations/logos';
 import type { RowSyncState } from '@/components/settings/integrations/hub-sync';
 import type { IntegrationDefinition } from '@/components/settings/integrations/types';
 import { Button } from '@/components/ui/button';
@@ -15,7 +16,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
-import { DATA_CLASSES, providersForClass } from '@/lib/integrations/provider-catalog';
+import { DATA_CLASSES, visibleProvidersForClass } from '@/lib/integrations/provider-catalog';
 import type { IntegrationId } from '@/lib/integrations/shared/client-sync';
 import type { IntegrationSourcePrefs } from '@/lib/integrations/source-prefs';
 import { cn } from '@/lib/utils';
@@ -62,6 +63,77 @@ export function IntegrationsHubToolbar({
   );
 }
 
+function ComingSoonProviderRow({
+  name,
+  tagline,
+  integrationId,
+}: {
+  name: string;
+  tagline: string;
+  integrationId: IntegrationId;
+}) {
+  return (
+    <div
+      className="analysis-panel rounded-analysis-lg flex flex-col gap-3 p-4 opacity-55"
+      aria-disabled
+    >
+      <div className="flex w-full items-start justify-between gap-3 text-left">
+        <div className="flex items-start gap-3">
+          <IntegrationLogo className="size-10 shrink-0" id={integrationId} />
+          <div>
+            <p className="font-medium">{name}</p>
+            <p className="text-muted-foreground text-xs">{tagline}</p>
+          </div>
+        </div>
+        <span className="text-muted-foreground text-label shrink-0">Bientôt</span>
+      </div>
+    </div>
+  );
+}
+
+function ClassSectionProviderRow({
+  dataClassId,
+  provider,
+  byId,
+  prefs,
+  rowSync,
+  onOpen,
+  onPrefsChange,
+}: {
+  dataClassId: (typeof DATA_CLASSES)[number]['id'];
+  provider: ReturnType<typeof visibleProvidersForClass>[number];
+  byId: Record<IntegrationId, IntegrationDefinition>;
+  prefs: IntegrationSourcePrefs;
+  rowSync: Partial<Record<IntegrationId, RowSyncState>>;
+  onOpen: (id: IntegrationId) => void;
+  onPrefsChange: (next: IntegrationSourcePrefs) => void;
+}) {
+  const integrationId = provider.integrationId!;
+  if (provider.status === 'coming_soon') {
+    return (
+      <ComingSoonProviderRow
+        integrationId={integrationId}
+        name={provider.name}
+        tagline={provider.tagline}
+      />
+    );
+  }
+  const integration = byId[integrationId];
+  if (!integration) {
+    return null;
+  }
+  return (
+    <ClassProviderRow
+      dataClass={dataClassId}
+      integration={integration}
+      prefs={prefs}
+      syncState={rowSync[integration.id]}
+      onOpen={() => onOpen(integration.id)}
+      onPrefsChange={onPrefsChange}
+    />
+  );
+}
+
 export function IntegrationsHubClassSections({
   byId,
   prefs,
@@ -75,38 +147,28 @@ export function IntegrationsHubClassSections({
   onOpen: (id: IntegrationId) => void;
   onPrefsChange: (next: IntegrationSourcePrefs) => void;
 }) {
-  return DATA_CLASSES.map((dataClass) => {
-    const providers = providersForClass(dataClass.id).filter(
-      (p) => p.status === 'available' && p.integrationId,
-    );
-    return (
-      <div key={dataClass.id} className="space-y-3">
-        <div>
-          <h2 className="text-sm font-medium">{dataClass.label}</h2>
-          <p className="text-muted-foreground text-xs">{dataClass.description}</p>
-        </div>
-        <div className="grid gap-3 sm:grid-cols-2">
-          {providers.map((provider) => {
-            const integration = byId[provider.integrationId!];
-            if (!integration) {
-              return null;
-            }
-            return (
-              <ClassProviderRow
-                key={`${dataClass.id}-${integration.id}`}
-                dataClass={dataClass.id}
-                integration={integration}
-                prefs={prefs}
-                syncState={rowSync[integration.id]}
-                onOpen={() => onOpen(integration.id)}
-                onPrefsChange={onPrefsChange}
-              />
-            );
-          })}
-        </div>
+  return DATA_CLASSES.map((dataClass) => (
+    <div key={dataClass.id} className="space-y-3">
+      <div>
+        <h2 className="text-sm font-medium">{dataClass.label}</h2>
+        <p className="text-muted-foreground text-xs">{dataClass.description}</p>
       </div>
-    );
-  });
+      <div className="grid gap-3 sm:grid-cols-2">
+        {visibleProvidersForClass(dataClass.id).map((provider) => (
+          <ClassSectionProviderRow
+            key={`${dataClass.id}-${provider.id}`}
+            byId={byId}
+            dataClassId={dataClass.id}
+            prefs={prefs}
+            provider={provider}
+            rowSync={rowSync}
+            onOpen={onOpen}
+            onPrefsChange={onPrefsChange}
+          />
+        ))}
+      </div>
+    </div>
+  ));
 }
 
 export function IntegrationsHubModal({

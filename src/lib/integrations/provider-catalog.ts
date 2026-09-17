@@ -78,12 +78,12 @@ export const PROVIDER_CATALOG: CatalogProvider[] = [
   {
     id: 'strava',
     name: 'Strava',
-    tagline: 'Activités & séances',
-    status: 'available',
+    tagline: 'Temporairement indisponible',
+    status: 'coming_soon',
     classes: ['activities'],
+    /** Kept for logo + greyed hub rows; OAuth/cron stay off while status is coming_soon. */
     integrationId: 'strava',
-    authKind: 'oauth',
-    oauthPath: '/api/strava/connect',
+    authKind: 'none',
     dataTypesByClass: {
       activities: ['Course', 'Vélo', 'Natation', 'Records'],
     },
@@ -184,6 +184,19 @@ export function providersForClass(classId: DataClassId): CatalogProvider[] {
 
 export function availableProvidersForClass(classId: DataClassId): CatalogProvider[] {
   return providersForClass(classId).filter((p) => p.status === 'available' && p.integrationId);
+}
+
+/** Available + coming-soon rows with an IntegrationId — settings hub greys the latter. */
+export function visibleProvidersForClass(classId: DataClassId): CatalogProvider[] {
+  return providersForClass(classId).filter(
+    (p) => Boolean(p.integrationId) && (p.status === 'available' || p.status === 'coming_soon'),
+  );
+}
+
+/** True when athletes may start or resume OAuth / credential connect for this integration. */
+export function isProviderConnectable(integrationId: IntegrationId): boolean {
+  const provider = getCatalogProviderByIntegration(integrationId);
+  return Boolean(provider && provider.status === 'available' && provider.authKind !== 'none');
 }
 
 export function providerCoversClass(integrationId: IntegrationId, classId: DataClassId): boolean {

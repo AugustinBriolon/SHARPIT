@@ -6,6 +6,7 @@ import {
   redirectIfBindHost,
   setIntegrationReturnTo,
 } from '@/lib/integrations/oauth-return';
+import { isProviderConnectable } from '@/lib/integrations/provider-catalog';
 import { buildAuthorizeUrl, isStravaConfigured } from '@/lib/integrations/strava/strava';
 import { gateProviderConnect } from '@/lib/privacy/gate-provider-connect';
 
@@ -13,6 +14,10 @@ export async function GET(request: NextRequest) {
   const bindRedirect = redirectIfBindHost(request);
   if (bindRedirect) {
     return bindRedirect;
+  }
+
+  if (!isProviderConnectable('strava')) {
+    return NextResponse.json({ error: 'Strava est temporairement indisponible.' }, { status: 503 });
   }
 
   if (!isStravaConfigured()) {

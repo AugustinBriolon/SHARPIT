@@ -10,6 +10,7 @@ import {
   pickTodayResumeSignalPreviews,
   type SignalPreview,
 } from '@/lib/today/dashboard/signal-previews';
+import { cn } from '@/lib/utils';
 
 type MetricsRow = TodayViewModel['hero']['metricsRow'];
 type SignalPreviews = TodayViewModel['hero']['signalPreviews'];
@@ -29,7 +30,7 @@ const CARD_META = {
     title: 'Score récupération',
     scoreKey: 'recoveryScore' as const,
   },
-};
+} as const;
 
 function gaugeOrEmpty(preview: SignalPreview | null) {
   if (preview?.visual.kind === 'gauge') {
@@ -44,7 +45,15 @@ function gaugeOrEmpty(preview: SignalPreview | null) {
   };
 }
 
-function cardProps({
+function resolveOvernightScore(
+  kind: 'sleep' | 'recovery',
+  preview: SignalPreview | null,
+  metricsRow: MetricsRow,
+): number | null {
+  return gaugeOrEmpty(preview).score ?? metricsRow[CARD_META[kind].scoreKey];
+}
+
+function overnightCardProps({
   kind,
   preview,
   metricsRow,
@@ -85,43 +94,75 @@ function cardProps({
   };
 }
 
-function OvernightPair({
+function pickOvernightPreviews(signalPreviews: SignalPreviews | undefined) {
+  const previews = signalPreviews ? pickTodayResumeSignalPreviews(signalPreviews) : [];
+  return {
+    sleep: previews.find((p) => p.key === 'sleep') ?? null,
+    recovery: previews.find((p) => p.key === 'recovery') ?? null,
+  };
+}
+
+function OvernightCards({
   metricsRow,
   signalPreviews,
   loading,
+  showSleep,
+  showRecovery,
 }: {
   metricsRow: MetricsRow;
   signalPreviews?: SignalPreviews;
   loading: boolean;
+  showSleep: boolean;
+  showRecovery: boolean;
 }) {
-  const previews = signalPreviews ? pickTodayResumeSignalPreviews(signalPreviews) : [];
-  const sleep = previews.find((p) => p.key === 'sleep') ?? null;
-  const recovery = previews.find((p) => p.key === 'recovery') ?? null;
-
+  const { sleep, recovery } = pickOvernightPreviews(signalPreviews);
   return (
     <>
-      <OvernightScoreCard
-        {...cardProps({
-          kind: 'sleep',
-          preview: sleep,
-          metricsRow,
-          loading,
-        })}
-      />
-      <OvernightScoreCard
-        {...cardProps({
-          kind: 'recovery',
-          preview: recovery,
-          metricsRow,
-          loading,
-        })}
-      />
+      {showSleep ? (
+        <OvernightScoreCard
+          {...overnightCardProps({
+            kind: 'sleep',
+            preview: sleep,
+            metricsRow,
+            loading,
+          })}
+        />
+      ) : null}
+      {showRecovery ? (
+        <OvernightScoreCard
+          {...overnightCardProps({
+            kind: 'recovery',
+            preview: recovery,
+            metricsRow,
+            loading,
+          })}
+        />
+      ) : null}
     </>
   );
 }
 
+function overnightVisibility(
+  loading: boolean,
+  metricsRow: MetricsRow,
+  signalPreviews: SignalPreviews | undefined,
+) {
+  if (loading) {
+    return { showSleep: true, showRecovery: true, visibleCount: 2 };
+  }
+  const { sleep, recovery } = pickOvernightPreviews(signalPreviews);
+  const showSleep = resolveOvernightScore('sleep', sleep, metricsRow) !== null;
+  const showRecovery = resolveOvernightScore('recovery', recovery, metricsRow) !== null;
+  return {
+    showSleep,
+    showRecovery,
+    visibleCount: Number(showSleep) + Number(showRecovery),
+  };
+}
+
 /**
  * Overnight state on Today — twin tick-gauge cards (sleep + recovery).
+ * Hidden entirely when neither score exists (no wearable data yet).
  * Same mounted chrome while loading (empty gauge); ticks fill when score arrives.
  */
 export function TodaySignalStrip({
@@ -135,14 +176,33 @@ export function TodaySignalStrip({
   className?: string;
   loading?: boolean;
 }) {
+  const { showSleep, showRecovery, visibleCount } = overnightVisibility(
+    loading,
+    metricsRow,
+    signalPreviews,
+  );
+
+  if (visibleCount === 0) {
+    return null;
+  }
+
   return (
     <div className={className}>
       <nav
         aria-busy={loading || undefined}
         aria-label="Signaux de nuit — ouvrir le détail"
-        className="grid grid-cols-2 items-stretch gap-2 sm:gap-3"
+        className={cn(
+          'grid items-stretch gap-2 sm:gap-3',
+          visibleCount === 1 ? 'grid-cols-1' : 'grid-cols-2',
+        )}
       >
-        <OvernightPair loading={loading} metricsRow={metricsRow} signalPreviews={signalPreviews} />
+        <OvernightCards
+          loading={loading}
+          metricsRow={metricsRow}
+          showRecovery={showRecovery}
+          showSleep={showSleep}
+          signalPreviews={signalPreviews}
+        />
       </nav>
     </div>
   );

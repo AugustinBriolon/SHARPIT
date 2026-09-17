@@ -5,6 +5,7 @@ import { Activity } from 'lucide-react';
 import { MobileDrillDownHeader } from '@/components/layout/header/mobile-drill-down-header';
 import { EffortPageView } from '@/components/effort/effort-page-view';
 import { ExpertModeBadge } from '@/components/display-mode';
+import { ConnectSourceCta } from '@/components/integrations/connect-source-cta';
 import { InkEmptyState } from '@/components/ui/ink-empty-state';
 import { useTodaySelectedDate } from '@/hooks/use-today-selected-date';
 import {
@@ -22,9 +23,13 @@ function EffortEmptyView({
     <div className="space-y-4">
       <MobileDrillDownHeader title="Charge" />
       <InkEmptyState
-        description={viewModel?.emptyState?.description ?? 'Données de charge indisponibles.'}
+        action={<ConnectSourceCta />}
         icon={Activity}
         title={viewModel?.emptyState?.title ?? 'Charge indisponible'}
+        description={
+          viewModel?.emptyState?.description ??
+          'Synchronise Garmin pour construire ta charge d’entraînement.'
+        }
       />
     </div>
   );

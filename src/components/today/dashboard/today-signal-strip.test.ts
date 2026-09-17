@@ -8,15 +8,21 @@ describe('TodaySignalStrip overnight résumé', () => {
     'utf8',
   );
 
-  it('renders twin overnight score cards for sleep and recovery', () => {
+  it('renders overnight score cards for sleep and recovery when scores exist', () => {
     expect(source).toContain('OvernightScoreCard');
     expect(source).toContain('Score sommeil');
     expect(source).toContain('Score récupération');
     expect(source).toContain('pickTodayResumeSignalPreviews');
     expect(source).toContain('grid-cols-2');
-    expect(source).not.toContain('grid-cols-1');
+    expect(source).toContain('grid-cols-1');
     expect(source).not.toContain("label: 'Adaptation'");
     expect(source).not.toContain('Sparkline');
+  });
+
+  it('hides the strip when neither overnight score is available', () => {
+    expect(source).toContain('overnightVisibility');
+    expect(source).toContain('visibleCount === 0');
+    expect(source).toContain('return null');
   });
 
   it('does not paint a limiter wash on overnight cards', () => {

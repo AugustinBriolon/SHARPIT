@@ -1,3 +1,4 @@
+import { getCatalogProviderByIntegration } from '@/lib/integrations/provider-catalog';
 import {
   isGarminAccountConnected,
   isMfpAccountConnected,
@@ -34,5 +35,9 @@ const CRON_CONNECTION_CHECKS: Record<CronSyncProvider, (account: MaybeAccount) =
  * provider API call, no `[cron/sync]` warn/error.
  */
 export function shouldCronSyncProvider(provider: CronSyncProvider, account: MaybeAccount): boolean {
+  const catalog = getCatalogProviderByIntegration(provider);
+  if (catalog?.status === 'coming_soon') {
+    return false;
+  }
   return CRON_CONNECTION_CHECKS[provider](account);
 }

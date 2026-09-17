@@ -1,6 +1,6 @@
 'use client';
 
-import { DATA_CLASSES, providersForClass } from '@/lib/integrations/provider-catalog';
+import { DATA_CLASSES, availableProvidersForClass } from '@/lib/integrations/provider-catalog';
 import type { IntegrationId } from '@/lib/integrations/shared/client-sync';
 import type { IntegrationSourcePrefs } from '@/lib/integrations/source-prefs';
 import type { CatalogProvider, DataClassId } from '@/lib/integrations/provider-catalog';
@@ -31,7 +31,11 @@ export function OnboardingProvidersClassList({
   return (
     <div className="space-y-8">
       {DATA_CLASSES.map((dataClass) => {
-        const providers = providersForClass(dataClass.id);
+        // Beta: only connectable providers — hide "Bientôt" noise (Strava, Polar, …).
+        const providers = availableProvidersForClass(dataClass.id);
+        if (providers.length === 0) {
+          return null;
+        }
         const classPrefs = prefs.classes[dataClass.id];
         return (
           <div key={dataClass.id} className="space-y-2">

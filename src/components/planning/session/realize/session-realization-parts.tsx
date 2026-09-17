@@ -64,9 +64,9 @@ export function ActivityPickerList({
       <p className="text-muted-foreground py-2 text-center text-xs">
         Aucune activité trouvée.{' '}
         <Link className="text-primary hover:underline" href="/settings/integrations">
-          Synchronise Strava
+          Synchronise Garmin
         </Link>{' '}
-        puis réessaie.
+        ou ajoute une activité manuelle, puis réessaie.
       </p>
     );
   }

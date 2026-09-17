@@ -5,6 +5,7 @@ import { CompositionSkeleton } from '@/components/corps/composition/composition-
 import { CompositionViewLoaded } from '@/components/corps/composition/composition-view-loaded';
 import type { useCompositionView } from '@/components/corps/composition/use-composition-view';
 import { CorpsDisclaimer, CorpsEmptyState } from '@/components/corps/corps-ui';
+import { ConnectSourceCta } from '@/components/integrations/connect-source-cta';
 import { Scale } from 'lucide-react';
 
 type CompositionVm = ReturnType<typeof useCompositionView>['vm'];
@@ -13,6 +14,7 @@ function CompositionViewEmpty({ vm }: { vm: CompositionVm }) {
   return (
     <div className="space-y-4">
       <CorpsEmptyState
+        action={<ConnectSourceCta label="Connecter une balance" />}
         icon={Scale}
         title={vm?.emptyState?.title ?? 'Aucune mesure importée'}
         description={

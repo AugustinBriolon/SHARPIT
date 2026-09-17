@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
+import { isProviderConnectable } from '@/lib/integrations/provider-catalog';
 import {
   filterRecordChangesByActivities,
   recomputeRecordGroups,
@@ -11,6 +12,13 @@ export const maxDuration = 120;
 
 export async function POST() {
   try {
+    if (!isProviderConnectable('strava')) {
+      return NextResponse.json(
+        { error: 'Strava est temporairement indisponible.' },
+        { status: 503 },
+      );
+    }
+
     const athleteId = await getCurrentAthleteId();
     const account = await getStravaAccount(athleteId);
     if (!account) {

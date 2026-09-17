@@ -2,8 +2,8 @@
 
 import { Button } from '@/components/ui/button';
 import { useConfirmDialog } from '@/components/ui/confirm-dialog';
-import { LinkButton } from '@/components/ui/link-button';
 import { InkEmptyState } from '@/components/ui/ink-empty-state';
+import { ActivitySourceEmptyActions } from '@/components/integrations/connect-source-cta';
 import { useActivityMutations } from '@/hooks/use-data';
 import { Dumbbell } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -15,12 +15,8 @@ import { navStack } from '@/lib/navigation/nav-stack';
 function ActivityListEmpty({ emptyLabel }: { emptyLabel?: string }) {
   const description = emptyLabel
     ? undefined
-    : 'Commence par une saisie manuelle ou synchronise une source connectée.';
-  const action = emptyLabel ? undefined : (
-    <LinkButton className="mt-1" href="/activite/nouvelle" size="sm">
-      Saisir une séance manuellement
-    </LinkButton>
-  );
+    : 'Synchronise Garmin ou saisis une séance manuellement pour construire l’historique.';
+  const action = emptyLabel ? undefined : <ActivitySourceEmptyActions className="mt-1" />;
 
   return (
     <InkEmptyState

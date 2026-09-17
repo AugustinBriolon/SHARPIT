@@ -13,6 +13,10 @@ import { trainingDayIdForNow } from '@/lib/training/periodization/training-day';
 
 export { TodayNutritionCardSkeleton };
 
+/**
+ * Nutrition on Today only when a nutrition source is connected.
+ * Disconnected / error → hide (full `/nutrition` page owns the connect gate).
+ */
 export function TodayNutritionCard() {
   const trainingDayId = trainingDayIdForNow();
   const query = useQuery({
@@ -22,14 +26,22 @@ export function TodayNutritionCard() {
   });
   const { day, disconnected } = useTodayNutritionDay(query);
 
+  if (query.isPending) {
+    return <TodayNutritionCardSkeleton />;
+  }
+
+  if (disconnected || query.isError) {
+    return null;
+  }
+
   return (
-    <section aria-busy={query.isPending || undefined} className="flex h-full min-w-0 flex-col">
+    <section className="flex h-full min-w-0 flex-col">
       <TodayNutritionCardBody
         day={day}
-        disconnected={disconnected}
-        isError={query.isError}
-        isPending={query.isPending}
-        linkTitle={resolveNutritionLinkTitle({ disconnected, isError: query.isError })}
+        disconnected={false}
+        isError={false}
+        isPending={false}
+        linkTitle={resolveNutritionLinkTitle({ disconnected: false, isError: false })}
       />
     </section>
   );

@@ -1,6 +1,6 @@
 export const coachBeuiCopy = {
   emptyHint:
-    'Pose une question à ton coach. Il connaît ta forme, ta récupération, tes seuils et tes objectifs.',
+    'Pose une question à ton coach. Avec Garmin synchronisé, il s’appuie sur ta forme, ta récupération et tes objectifs.',
   composerPlaceholder: 'Demande conseil à ton coach…',
   composerPlaceholderOffline: 'Hors ligne, envoi indisponible',
   composerPlaceholderPendingApproval:

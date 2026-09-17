@@ -90,4 +90,13 @@ describe('shouldCronSyncProvider', () => {
       }),
     ).toBe(true);
   });
+
+  it('skips Strava while the catalog marks it coming_soon (paid API pause)', () => {
+    expect(
+      shouldCronSyncProvider('strava', {
+        accessTokenEnc: enc('access'),
+        refreshTokenEnc: enc('refresh'),
+      }),
+    ).toBe(false);
+  });
 });

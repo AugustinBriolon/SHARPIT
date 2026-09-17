@@ -12,9 +12,8 @@ function render() {
 }
 
 /**
- * The card used to disappear on a day with nothing logged, which moved the whole
- * foot of the page every morning. Connected + empty now shows zeros so the shape
- * stays put and the journal is one tap away.
+ * Connected + empty day keeps zeros so the layout stays stable.
+ * Disconnected / error: the card hides — `/nutrition` owns the connect gate.
  */
 describe('TodayNutritionCard', () => {
   it('stays on screen with zeros when nothing is logged', () => {
@@ -37,7 +36,7 @@ describe('TodayNutritionCard', () => {
     expect(html.indexOf('chip-surface-lg')).toBeLessThan(html.indexOf('Nutrition'));
   });
 
-  it('offers the connection when there is no journal behind it', () => {
+  it('hides when no nutrition journal is connected', () => {
     useQuery.mockReturnValue({
       data: { connected: false, today: null },
       isPending: false,
@@ -45,8 +44,14 @@ describe('TodayNutritionCard', () => {
     });
     const html = render();
 
-    expect(html).toContain('Journal alimentaire non connecté');
-    expect(html).toContain('Connecter');
+    expect(html).toBe('');
+  });
+
+  it('hides on query error — nutrition page owns the recovery path', () => {
+    useQuery.mockReturnValue({ data: undefined, isPending: false, isError: true });
+    const html = render();
+
+    expect(html).toBe('');
   });
 
   it('shows the figures once there are some', () => {
@@ -72,21 +77,9 @@ describe('TodayNutritionCard', () => {
     const html = render();
 
     expect(html).toContain('Nutrition');
-    expect(html).toContain('Total aujourd');
     expect(html).toContain('kcal');
     expect(html).toContain('Protéines');
-    expect(html).not.toContain('animate-pulse');
     expect(html).not.toContain('Rien enregistré');
-  });
-
-  it('names the failure and keeps a path to the journal when the query errors', () => {
-    useQuery.mockReturnValue({ data: undefined, isPending: false, isError: true });
-    const html = render();
-
-    expect(html).toContain('Journal indisponible pour le moment');
-    expect(html).toContain('Ouvrir le journal');
-    expect(html).not.toContain('Rien enregistré');
-    expect(html).not.toContain('animate-pulse');
   });
 
   it('keeps over-budget copy informational and a touch clearer than remaining', () => {

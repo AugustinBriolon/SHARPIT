@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { onProviderSyncCompleted } from '@/lib/athlete-state/orchestrator';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
+import { isProviderConnectable } from '@/lib/integrations/provider-catalog';
 import { checkRateLimit, rateLimitJsonResponse, rateLimiters } from '@/lib/rate-limit';
 import {
   filterRecordChangesByActivities,
@@ -10,6 +11,13 @@ import { syncStravaActivities } from '@/lib/integrations/strava/strava-sync';
 
 export async function POST() {
   try {
+    if (!isProviderConnectable('strava')) {
+      return NextResponse.json(
+        { error: 'Strava est temporairement indisponible.' },
+        { status: 503 },
+      );
+    }
+
     const athleteId = await getCurrentAthleteId();
     const rateLimit = await checkRateLimit(rateLimiters.providerSync, `${athleteId}:strava`, {
       failClosed: true,
