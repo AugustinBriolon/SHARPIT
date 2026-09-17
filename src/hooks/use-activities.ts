@@ -285,7 +285,13 @@ export function useActivityStream(id: string, options?: { enabled?: boolean }) {
     queryKey: queryKeys.activityStream(id),
     queryFn: () => fetchActivityStream(id),
     staleTime: Infinity, // frozen historical activity data
-    retry: 1,
+    // Never amplify a rate-limit storm — 429 must not retry.
+    retry: (failureCount, error) => {
+      if (error instanceof Error && /429|too many requests/i.test(error.message)) {
+        return false;
+      }
+      return failureCount < 1;
+    },
     enabled: options?.enabled ?? true,
   });
 }

@@ -21,8 +21,10 @@ function measureScrollMargin(listEl: HTMLElement, scrollEl: HTMLElement): number
 }
 
 /**
- * Virtualized history logbook — only mounts ~overscan CompletedSessionPreview
- * cards so GPS stream fetches stay bounded while scrolling `#main-content`.
+ * Virtualized history logbook — mounts ~overscan cards while scrolling
+ * `#main-content`. GPS stream fetches stay OFF here (`mapEnabled={false}`):
+ * one GET `/streams` per outdoor row burned the global `apiGeneral` quota
+ * (300/5 min) and 429'd the rest of the app in production.
  */
 export function ActivityHistoryVirtualList({
   weekGroups,
@@ -125,10 +127,10 @@ export function ActivityHistoryVirtualList({
               <div className="pb-2.5">
                 <ActivityChip
                   activity={row.activity}
+                  mapEnabled={false}
                   recordLabel={recordLabelsById.get(row.activity.id) ?? null}
                   selected={selectedIds.has(row.activity.id)}
                   selectionMode={selectionMode}
-                  mapEnabled
                   onToggle={onToggle}
                 />
               </div>

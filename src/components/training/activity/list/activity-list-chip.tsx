@@ -106,7 +106,7 @@ export function ActivityChip({
   recordLabel?: string | null;
   selectionMode?: boolean;
   selected?: boolean;
-  /** Gate GPS stream fetch — virtualized lists keep this true only for mounted rows. */
+  /** Gate GPS stream fetch — keep false on history lists (N+1 burns apiGeneral). */
   mapEnabled?: boolean;
   onToggle?: (activityId: string) => void;
 }) {
