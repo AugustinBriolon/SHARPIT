@@ -1,3 +1,4 @@
+import { shouldDemoteBrick } from '@/lib/planned-session/brick/brick-demotion';
 import type { ThreadEntry } from './thread-model';
 
 export type ThreadDayItem =
@@ -31,5 +32,11 @@ export function groupThreadDayEntries(entries: readonly ThreadEntry[]): ThreadDa
     group.entries.sort((a, b) => (a.planned?.brickOrder ?? 0) - (b.planned?.brickOrder ?? 0));
   }
 
-  return result;
+  // Product lock: a lone leg is not a brick in Plan/Today thread views.
+  return result.flatMap((item) => {
+    if (item.kind !== 'brick' || !shouldDemoteBrick(item.entries.length)) {
+      return [item];
+    }
+    return item.entries.map((entry) => ({ kind: 'single' as const, entry }));
+  });
 }

@@ -1,6 +1,7 @@
 import type { ActivityType, SessionIntensity } from '@prisma/client';
 import type { ClientPlannedSession } from '@/lib/query/types';
 import { activityTypeLabels } from '@/lib/format';
+import { shouldDemoteBrick } from '@/lib/planned-session/brick/brick-demotion';
 
 export type DayPlannedItem =
   | { kind: 'single'; session: ClientPlannedSession }
@@ -81,5 +82,12 @@ export function groupPlannedSessions(planned: ClientPlannedSession[]): DayPlanne
   for (const entry of bricks.values()) {
     entry.sessions.sort((a, b) => (a.brickOrder ?? 0) - (b.brickOrder ?? 0));
   }
-  return result;
+
+  // Product lock: one remaining leg is a simple session, never a brick tag.
+  return result.flatMap((item) => {
+    if (item.kind !== 'brick' || !shouldDemoteBrick(item.sessions.length)) {
+      return [item];
+    }
+    return item.sessions.map((session) => ({ kind: 'single' as const, session }));
+  });
 }

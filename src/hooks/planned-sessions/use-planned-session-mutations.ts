@@ -4,6 +4,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from '@/components/ui/toast';
 import { hydratePlannedSession } from '@/lib/query/fetchers';
 import { queryKeys } from '@/lib/query/keys';
+import { demoteBrickLegsAfterRemoval } from '@/lib/planned-session/brick/brick-demotion';
 import { listOptimistic, tempId } from '@/lib/query/optimistic';
 import {
   applyPlannedSessionBatchOps,
@@ -281,7 +282,7 @@ export function usePlannedSessionMutations() {
   const removeListOpts = listOptimistic<ClientPlannedSession, string>({
     queryClient,
     queryKey: key,
-    apply: (prev, id) => prev.filter((s) => s.id !== id),
+    apply: (prev, id) => demoteBrickLegsAfterRemoval(prev, id),
     success: 'Séance supprimée',
     error: 'Impossible de supprimer la séance.',
   });
