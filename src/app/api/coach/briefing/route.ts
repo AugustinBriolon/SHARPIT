@@ -4,6 +4,7 @@ import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { checkRateLimit, rateLimitJsonResponse, rateLimiters } from '@/lib/rate-limit';
 import { requireAiProcessingConsent } from '@/lib/privacy/consent-store';
 import { generateAndStoreDailyBriefing, getDailyBriefing } from '@/lib/briefing/daily-briefing';
+import { withCoachTrace } from '@/lib/ai/coach-trace';
 
 export const maxDuration = 60;
 
@@ -57,7 +58,10 @@ export async function POST(request: NextRequest) {
         status: limited.status,
       });
     }
-    const briefing = await generateAndStoreDailyBriefing(athleteId, date);
+    const briefing = await withCoachTrace(
+      { traceName: 'coach-briefing', athleteId, tags: ['briefing'] },
+      () => generateAndStoreDailyBriefing(athleteId, date),
+    );
     return NextResponse.json({ briefing });
   } catch (error) {
     console.error('[coach/briefing] POST', error);

@@ -10,6 +10,7 @@ import {
   getWeeklyReview,
 } from '@/lib/coach/weekly-review';
 import { requireAiProcessingConsent } from '@/lib/privacy/consent-store';
+import { withCoachTrace } from '@/lib/ai/coach-trace';
 
 export const maxDuration = 60;
 
@@ -84,7 +85,10 @@ export async function POST(request: NextRequest) {
         status: limited.status,
       });
     }
-    const review = await generateAndStoreWeeklyReview(athleteId, date, { current: true });
+    const review = await withCoachTrace(
+      { traceName: 'coach-weekly-review', athleteId, tags: ['weekly-review'] },
+      () => generateAndStoreWeeklyReview(athleteId, date, { current: true }),
+    );
     return NextResponse.json({ review });
   } catch (error) {
     console.error('[coach/weekly-review] POST', error);

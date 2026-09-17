@@ -23,6 +23,7 @@ import {
   type CoachProgressEvent,
 } from '@/lib/coach/chat/transcript/coach-progress-stream';
 import { runStructuredCoachStream } from '@/lib/coach/stream-structured-generation';
+import { withCoachTrace } from '@/lib/ai/coach-trace';
 import { buildBusySummary } from '@/lib/coach/plan/calendar-availability';
 import { getGoalById } from '@/lib/queries';
 import {
@@ -300,13 +301,17 @@ export async function POST(req: Request) {
       };
 
       try {
-        const { output, usage } = await runStructuredCoachStream({
-          schema: coachPlanGenerationSchema,
-          system: SYSTEM_PROMPT,
-          prompt,
-          onReasoning: (delta) => send({ type: 'reasoning', delta }),
-          onPartial: (value) => send({ type: 'partial', value }),
-        });
+        const { output, usage } = await withCoachTrace(
+          { traceName: 'coach-plan', athleteId, tags: ['plan'] },
+          () =>
+            runStructuredCoachStream({
+              schema: coachPlanGenerationSchema,
+              system: SYSTEM_PROMPT,
+              prompt,
+              onReasoning: (delta) => send({ type: 'reasoning', delta }),
+              onPartial: (value) => send({ type: 'partial', value }),
+            }),
+        );
         void recordAiUsage(athleteId, 'coach', usage);
         send({
           type: 'result',

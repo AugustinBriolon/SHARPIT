@@ -315,6 +315,7 @@ Rédige la rétrospective hebdomadaire en suivant la structure imposée. Mets l'
     system: buildWeeklySystem(toDisplayMode(profile?.displayMode)),
     prompt,
     providerOptions: coachGatewayOptions,
+    telemetry: { functionId: 'coach-weekly-review' },
   });
   void recordAiUsage(athleteId, 'coach', usage);
 

@@ -136,6 +136,7 @@ Rédige le ${dayCtx.phaseLabel} en suivant la structure imposée et les règles 
     system: buildBriefingSystem(phase),
     prompt,
     providerOptions: coachGatewayOptions,
+    telemetry: { functionId: 'coach-briefing' },
   });
   void recordAiUsage(athleteId, 'coach', usage);
 

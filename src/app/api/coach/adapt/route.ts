@@ -1,4 +1,5 @@
 import { runStructuredCoachStream } from '@/lib/coach/stream-structured-generation';
+import { withCoachTrace } from '@/lib/ai/coach-trace';
 import { addDays, format, startOfDay } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { NextResponse } from 'next/server';
@@ -294,13 +295,17 @@ function createAdaptProgressStream(input: {
       };
 
       try {
-        const { output, usage } = await runStructuredCoachStream({
-          schema: adaptPlanGenerationSchema,
-          system: SYSTEM_PROMPT,
-          prompt,
-          onReasoning: (delta) => send({ type: 'reasoning', delta }),
-          onPartial: (value) => send({ type: 'partial', value }),
-        });
+        const { output, usage } = await withCoachTrace(
+          { traceName: 'coach-adapt', athleteId, tags: ['adapt'] },
+          () =>
+            runStructuredCoachStream({
+              schema: adaptPlanGenerationSchema,
+              system: SYSTEM_PROMPT,
+              prompt,
+              onReasoning: (delta) => send({ type: 'reasoning', delta }),
+              onPartial: (value) => send({ type: 'partial', value }),
+            }),
+        );
         void recordAiUsage(athleteId, 'coach', usage);
         send({
           type: 'result',

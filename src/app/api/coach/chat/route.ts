@@ -31,6 +31,7 @@ import { formatStrengthSessionRules } from '@/lib/planned-session/strength/stren
 import { checkRateLimit, rateLimitJsonResponse, rateLimiters } from '@/lib/rate-limit';
 import { COACH_COPY_DASH_RULE } from '@/lib/coach/sanitize-coach-copy';
 import { resolveCoachDiscussServerContext } from '@/lib/coach/chat/discuss/coach-discuss-server-context';
+import { withCoachTrace } from '@/lib/ai/coach-trace';
 
 /** Horizon de pré-chargement de l'agenda, aligné sur les séances du contexte. */
 const AGENDA_PREFETCH_DAYS = 14;
@@ -177,6 +178,9 @@ async function streamCoachReply(input: {
     reasoning: COACH_REASONING_LEVEL.conversational,
     maxOutputTokens: COACH_MAX_OUTPUT_TOKENS.conversational,
     providerOptions: coachGatewayOptions,
+    telemetry: {
+      functionId: 'coach-chat',
+    },
     onFinish: ({ totalUsage }) => {
       void recordAiUsage(athleteId, 'coach', totalUsage);
     },
@@ -214,11 +218,13 @@ export async function POST(req: Request) {
   }
 
   const { system, practicedSports } = await buildCoachSystemPrompt(athleteId, discuss.loadBlock);
-  return streamCoachReply({
-    athleteId,
-    system,
-    messages,
-    practicedSports,
-    budgetWarning: guard.budgetWarning,
-  });
+  return withCoachTrace({ traceName: 'coach-chat', athleteId, tags: ['chat'] }, () =>
+    streamCoachReply({
+      athleteId,
+      system,
+      messages,
+      practicedSports,
+      budgetWarning: guard.budgetWarning,
+    }),
+  );
 }

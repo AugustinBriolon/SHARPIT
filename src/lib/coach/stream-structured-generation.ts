@@ -238,6 +238,9 @@ export async function runStructuredCoachStream({
     // No maxOutputTokens here on purpose — see COACH_MAX_OUTPUT_TOKENS.
     reasoning: COACH_REASONING_LEVEL.structured,
     providerOptions: coachStructuredGatewayOptions,
+    telemetry: {
+      functionId: 'coach-structured',
+    },
   });
 
   const jsonText = await consumeCoachFullStream(result.fullStream, onReasoning, onPartial);
