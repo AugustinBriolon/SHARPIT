@@ -43,7 +43,7 @@ A Garmin-proprietary metric (0–100) representing estimated energy reserves. Co
 
 ### Brick Session
 
-A training session combining two consecutive sports without rest between them — typically cycling followed by running. Stored in SHARPIT as multiple linked `PlannedSession` records sharing a `brickGroupId`. The transition between sports is physiologically significant (metabolic and neuromuscular crossover).
+A training session combining exactly two consecutive sports without rest between them, typically cycling followed by running. Stored in SHARPIT as linked `PlannedSession` records sharing a `brickGroupId`. The transition is physiologically significant (metabolic and neuromuscular crossover). If one leg is removed, the remaining session is demoted to a simple session and brick metadata is cleared (no half-brick label).
 
 ---
 

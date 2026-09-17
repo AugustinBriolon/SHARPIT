@@ -81,4 +81,14 @@ describe('groupThreadDayEntries', () => {
     expect(items).toHaveLength(1);
     expect(items[0]).toMatchObject({ kind: 'brick', id: 'brick-1' });
   });
+
+  it('demotes a lone remaining leg to a simple session (no brick tag)', () => {
+    const only = plannedEntry('leg-run', {
+      type: 'RUN',
+      brickGroupId: 'brick-1',
+      brickOrder: 0,
+    });
+    const items = groupThreadDayEntries([only]);
+    expect(items).toEqual([{ kind: 'single', entry: only }]);
+  });
 });

@@ -1,6 +1,10 @@
 import { Prisma } from '@prisma/client';
 import { isSet } from '@/lib/util/value';
 import { prisma } from '@/lib/prisma';
+import {
+  clearedBrickMetadata,
+  shouldDemoteBrick,
+} from '@/lib/planned-session/brick/brick-demotion';
 import { activityInclude, plannedSessionCoachSelect } from '@/lib/queries/activity-include';
 
 const plannedSessionInclude = {
@@ -154,10 +158,39 @@ export async function updatePlannedSession(
 export async function deletePlannedSession(athleteId: string, id: string) {
   const owned = await prisma.plannedSession.findFirst({
     where: { id, athleteId },
-    select: { id: true },
+    select: { id: true, brickGroupId: true },
   });
   if (!owned) {
     return null;
   }
-  return prisma.plannedSession.delete({ where: { id } });
+
+  return prisma.$transaction(async (tx) => {
+    const deleted = await tx.plannedSession.delete({ where: { id } });
+
+    if (!owned.brickGroupId) {
+      return deleted;
+    }
+
+    const remaining = await tx.plannedSession.findMany({
+      where: { athleteId, brickGroupId: owned.brickGroupId },
+      select: { id: true },
+    });
+
+    if (!shouldDemoteBrick(remaining.length)) {
+      return deleted;
+    }
+
+    if (remaining.length === 1) {
+      await tx.plannedSession.update({
+        where: { id: remaining[0]!.id },
+        data: clearedBrickMetadata(),
+      });
+    }
+
+    await tx.brickAnalysis.deleteMany({
+      where: { brickGroupId: owned.brickGroupId, athleteId },
+    });
+
+    return deleted;
+  });
 }
