@@ -49,7 +49,7 @@ export default function SettingsAboutPage() {
               Conditions d&apos;utilisation
             </a>
             {' · '}
-            <a className="underline underline-offset-2" href="/settings/privacy">
+            <a className="underline underline-offset-2" href="/settings/account#confidentialite">
               Gérer mes consentements
             </a>
           </p>

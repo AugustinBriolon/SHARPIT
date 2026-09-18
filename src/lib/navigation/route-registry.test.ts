@@ -14,7 +14,7 @@ describe('route-registry', () => {
       expect(resolveRouteLabel('/activite')).toBe('Activité');
       expect(resolveRouteLabel('/moi')).toBe('Moi');
       expect(resolveRouteLabel('/coach')).toBe('Coach');
-      expect(resolveRouteLabel('/settings/privacy')).toBe('Confidentialité');
+      expect(resolveRouteLabel('/settings/privacy')).toBe('Profil');
     });
 
     it('matches Plan children', () => {

@@ -87,7 +87,8 @@ test.describe('navigation shell', () => {
     await expect(page.getByRole('heading', { level: 1, name: 'Paramètres' })).toBeVisible();
     await expect(page.locator('a[href="/moi/corps"]:visible').first()).toBeVisible();
     await expect(page.locator('a[href="/moi/objectifs"]:visible').first()).toBeVisible();
-    await expect(page.locator('a[href="/settings/privacy"]:visible').first()).toBeVisible();
+    await expect(page.locator('a[href="/settings/account"]:visible').first()).toBeVisible();
+    await expect(page.locator('a[href="/settings/privacy"]')).toHaveCount(0);
 
     await expect(page.getByRole('heading', { name: 'Modèle' })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Compte' })).toBeVisible();
@@ -149,8 +150,9 @@ test.describe('navigation shell', () => {
     await expect(page.getByRole('link', { name: /Réglages|Paramètres/ }).first()).toBeVisible();
 
     await page.goto('/settings/privacy');
-    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Confidentialité');
-    await expect(page.getByRole('link', { name: /Réglages|Paramètres/ }).first()).toBeVisible();
+    await expect(page).toHaveURL(/\/settings\/account/);
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText('Profil');
+    await expect(page.getByRole('heading', { name: 'Confidentialité' })).toBeVisible();
   });
 
   test('the back link resolves its label from the nav stack', async ({ page }) => {

@@ -21,8 +21,9 @@ export async function gateProviderConnect(
   if (mode === 'json') {
     return blocked;
   }
-  const dest = new URL('/settings/privacy', request.nextUrl.origin);
+  const dest = new URL('/settings/account', request.nextUrl.origin);
   dest.searchParams.set('error', 'provider_consent_required');
   dest.searchParams.set('provider', integrationId);
+  dest.hash = 'confidentialite';
   return NextResponse.redirect(dest);
 }

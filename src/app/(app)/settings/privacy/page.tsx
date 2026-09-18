@@ -1,52 +1,21 @@
-import { Suspense } from 'react';
-import { MobileBackLink } from '@/components/layout/header/mobile-back-link';
-import { StickyHeader } from '@/components/layout/header/sticky-header';
-import { PrivacySettingsPanel } from '@/components/privacy/privacy-settings-panel';
-import { SettingsDemoBlock } from '@/components/settings/settings-demo-block';
-import { Skeleton } from '@/components/ui/skeleton';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { isDemoSession } from '@/lib/demo/demo-session';
-import { serializeConsentRow } from '@/lib/privacy/consent-serialize';
-import { getAthleteConsentRow } from '@/lib/privacy/consent-store';
+import { permanentRedirect } from 'next/navigation';
+import { MOI_ACCOUNT_PATH, MOI_PRIVACY_HASH } from '@/lib/moi/paths';
 
-function PrivacySkeleton() {
-  return (
-    <div className="space-y-4" aria-busy>
-      <Skeleton className="rounded-analysis-lg h-32 w-full border-0" />
-      <Skeleton className="rounded-analysis-lg h-48 w-full border-0" />
-    </div>
-  );
-}
-
-async function PrivacyPanelWithData() {
-  if (await isDemoSession()) {
-    return (
-      <SettingsDemoBlock description="Les consentements et la suppression de compte concernent un compte réel. Désactivés sur la démo partagée." />
-    );
+/** Confidentialité lives on Profil — keep the old URL as a deep link. */
+export default async function SettingsPrivacyPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const params = await searchParams;
+  const dest = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    if (typeof value === 'string') {
+      dest.set(key, value);
+    } else if (Array.isArray(value) && value[0]) {
+      dest.set(key, value[0]);
+    }
   }
-
-  const athleteId = await getCurrentAthleteId();
-  const row = await getAthleteConsentRow(athleteId);
-  const initial = row ? serializeConsentRow(row) : null;
-
-  return <PrivacySettingsPanel initial={initial} />;
-}
-
-export default function SettingsPrivacyPage() {
-  return (
-    <div className="space-y-4">
-      <MobileBackLink fallbackHref="/moi" fallbackLabel="Réglages" showOnDesktop />
-      <StickyHeader>
-        <p className="text-label">Réglages</p>
-        <h1 className="text-page-title mt-1">Confidentialité</h1>
-        <p className="text-muted-foreground mt-1 text-sm">
-          Consentements, export et suppression — contact{' '}
-          <span className="text-foreground">augustin.briolon@gmail.com</span>.
-        </p>
-      </StickyHeader>
-      <Suspense fallback={<PrivacySkeleton />}>
-        <PrivacyPanelWithData />
-      </Suspense>
-    </div>
-  );
+  const query = dest.toString();
+  permanentRedirect(`${MOI_ACCOUNT_PATH}${query ? `?${query}` : ''}${MOI_PRIVACY_HASH}`);
 }

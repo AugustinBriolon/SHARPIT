@@ -1,22 +1,34 @@
 import { Suspense } from 'react';
-import Link from 'next/link';
 import { MobileBackLink } from '@/components/layout/header/mobile-back-link';
 import { StickyHeader } from '@/components/layout/header/sticky-header';
+import { PrivacySettingsPanel } from '@/components/privacy/privacy-settings-panel';
 import { PersonalProfilePanel } from '@/components/settings/profile';
 import { SettingsDemoBlock } from '@/components/settings/settings-demo-block';
 import { SettingsSignOut } from '@/components/settings/settings-sign-out';
 import { Skeleton } from '@/components/ui/skeleton';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { isDemoSession } from '@/lib/demo/demo-session';
-import { MOI_HUB_PATH, MOI_PRIVACY_PATH } from '@/lib/moi/paths';
+import { MOI_HUB_PATH } from '@/lib/moi/paths';
 import { isHangingPromiseRejection } from '@/lib/next/hanging-promise';
+import { serializeConsentRow } from '@/lib/privacy/consent-serialize';
+import { getAthleteConsentRow } from '@/lib/privacy/consent-store';
 import { mapAthleteProfileToFormData } from '@/lib/profile/map-athlete-profile';
 import { getAthleteProfile } from '@/lib/queries';
+import { CONTROLLER_EMAIL } from '@/lib/privacy/constants';
 
 function ProfileIdentityFallback() {
   return (
     <div className="space-y-3" aria-busy>
       <Skeleton className="rounded-analysis h-48 w-full border-0" />
+    </div>
+  );
+}
+
+function PrivacySkeleton() {
+  return (
+    <div className="space-y-4" aria-busy>
+      <Skeleton className="rounded-analysis-lg h-32 w-full border-0" />
+      <Skeleton className="rounded-analysis-lg h-48 w-full border-0" />
     </div>
   );
 }
@@ -50,9 +62,23 @@ async function ProfileIdentityPanel() {
   );
 }
 
+async function PrivacyPanelWithData() {
+  if (await isDemoSession()) {
+    return (
+      <SettingsDemoBlock description="Les consentements et la suppression de compte concernent un compte réel. Désactivés sur la démo partagée." />
+    );
+  }
+
+  const athleteId = await getCurrentAthleteId();
+  const row = await getAthleteConsentRow(athleteId);
+  const initial = row ? serializeConsentRow(row) : null;
+
+  return <PrivacySettingsPanel initial={initial} compact />;
+}
+
 /**
- * Profil = identité & rythme + session + porte Confidentialité.
- * Weight / composition stay on Corps (living signals, not profile fields).
+ * Profil = identité & rythme + session + confidentialité (consents / export / delete).
+ * Weight / composition stay on Corps.
  */
 export default function SettingsAccountPage() {
   return (
@@ -61,7 +87,9 @@ export default function SettingsAccountPage() {
       <StickyHeader>
         <p className="text-label">Réglages</p>
         <h1 className="text-page-title mt-1">Profil</h1>
-        <p className="text-muted-foreground mt-1 text-sm">Identité, rythme de vie et connexion.</p>
+        <p className="text-muted-foreground mt-1 text-sm">
+          Identité, connexion et données personnelles.
+        </p>
       </StickyHeader>
 
       <section aria-labelledby="profil-identite" className="space-y-3" id="identite">
@@ -70,7 +98,7 @@ export default function SettingsAccountPage() {
             Identité & rythme
           </h2>
           <p className="text-muted-foreground mt-1 text-sm leading-relaxed">
-            Attributs stables du modèle. Le poids se lit dans Corps.
+            Attributs stables. Le poids se lit dans Corps.
           </p>
         </div>
         <Suspense fallback={<ProfileIdentityFallback />}>
@@ -82,19 +110,18 @@ export default function SettingsAccountPage() {
         <SettingsSignOut />
       </Suspense>
 
-      <section aria-labelledby="profil-privacy" className="space-y-2">
-        <h2 className="text-section-title" id="profil-privacy">
-          Confidentialité
-        </h2>
-        <p className="text-muted-foreground text-sm leading-relaxed">
-          Consentements, export et suppression du compte.
-        </p>
-        <Link
-          className="text-foreground text-sm font-medium underline-offset-2 hover:underline"
-          href={MOI_PRIVACY_PATH}
-        >
-          Ouvrir Confidentialité
-        </Link>
+      <section aria-labelledby="profil-privacy" className="space-y-3" id="confidentialite">
+        <div>
+          <h2 className="text-section-title" id="profil-privacy">
+            Confidentialité
+          </h2>
+          <p className="text-muted-foreground mt-1 text-sm leading-relaxed">
+            Consentements, export et suppression — {CONTROLLER_EMAIL}.
+          </p>
+        </div>
+        <Suspense fallback={<PrivacySkeleton />}>
+          <PrivacyPanelWithData />
+        </Suspense>
       </section>
     </div>
   );

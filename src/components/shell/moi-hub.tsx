@@ -9,7 +9,6 @@ import {
   Gauge,
   HeartPulse,
   Link2,
-  Lock,
   MessageSquarePlus,
   MoonStar,
   Route,
@@ -38,12 +37,9 @@ import { isAccessTier, ACCESS_TIER_COOKIE } from '@/lib/access/tier-cookie';
 import {
   MOI_CALIBRATION_PATH,
   MOI_CORPS_PATH,
-  MOI_HELP_PATH,
   MOI_OBJECTIFS_PATH,
   MOI_PERSONALIZATION_PATH,
-  MOI_PRIVACY_PATH,
   MOI_PRO_PATH,
-  MOI_WHATS_NEW_PATH,
 } from '@/lib/moi/paths';
 import { FEEDBACK_BUG_MAILTO, FEEDBACK_FEATURE_MAILTO } from '@/lib/moi/feedback-mailto';
 import { getAthleteProfile } from '@/lib/queries';
@@ -96,7 +92,6 @@ const COMPTE_BASE: HubEntry[] = [
     icon: User2,
     meta: <HubStatusValue statusKey="account" />,
   },
-  { href: MOI_PRIVACY_PATH, title: 'Confidentialité', icon: Lock },
 ];
 
 const PRO_ENTRY: HubEntry = {
@@ -145,14 +140,9 @@ const AFTER_COMPTE: HubSection[] = [
     id: 'ressources',
     title: 'Ressources',
     entries: [
-      { href: MOI_WHATS_NEW_PATH, title: 'Nouveautés', icon: Sparkles },
-      { href: MOI_HELP_PATH, title: 'Base de connaissances', icon: BookOpen },
-      {
-        href: '/settings/about',
-        title: 'À propos',
-        icon: ShieldCheck,
-        meta: <HubStatusValue statusKey="about" />,
-      },
+      { comingSoon: true, title: 'Nouveautés', icon: Sparkles },
+      { comingSoon: true, title: 'Base de connaissances', icon: BookOpen },
+      { comingSoon: true, title: 'À propos', icon: ShieldCheck },
     ],
   },
   {

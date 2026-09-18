@@ -161,7 +161,7 @@ const MATCHERS: Matcher[] = [
   },
   {
     pattern: /^\/settings\/privacy$/,
-    resolve: () => ({ label: 'Confidentialité', defaultParent: MOI_PARENT }),
+    resolve: () => ({ label: 'Profil', defaultParent: MOI_PARENT }),
   },
   {
     pattern: /^\/settings\/pro$/,

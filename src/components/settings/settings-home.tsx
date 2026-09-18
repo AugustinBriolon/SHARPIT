@@ -5,7 +5,6 @@ import {
   Dumbbell,
   Gauge,
   Link2,
-  Lock,
   Microscope,
   MoonStar,
   ShieldCheck,
@@ -122,14 +121,6 @@ const GROUPS: SettingsGroup[] = [
         description: 'Version, principes et limite d’usage.',
         icon: ShieldCheck,
         statusKey: 'about',
-      },
-      // Confidentialité lives in Moi featured (Shell V1) — keep a settings deep
-      // link so export / delete stay one hop from account maintenance.
-      {
-        href: '/settings/privacy',
-        title: 'Confidentialité',
-        description: 'Consentements, export et suppression du compte.',
-        icon: Lock,
       },
     ],
   },
