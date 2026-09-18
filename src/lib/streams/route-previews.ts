@@ -1,4 +1,3 @@
-import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 
 /** Compact enough for hub cards; detail page still loads full streams. */
@@ -19,15 +18,19 @@ function isLatLngPair(value: unknown): value is LatLng {
   );
 }
 
+function readLatLngArray(latlng: unknown): LatLng[] {
+  if (!Array.isArray(latlng)) {
+    return [];
+  }
+  return latlng.filter(isLatLngPair);
+}
+
 function readLatLngFromStreamData(data: unknown): LatLng[] {
   if (!data || typeof data !== 'object') {
     return [];
   }
   const { latlng } = data as { latlng?: unknown };
-  if (!Array.isArray(latlng)) {
-    return [];
-  }
-  return latlng.filter(isLatLngPair);
+  return readLatLngArray(latlng);
 }
 
 export function downsamplePath(path: LatLng[], maxPoints: number): LatLng[] {
@@ -60,25 +63,39 @@ export function extractRoutePreviewPath(
   return downsamplePath(path, maxPoints);
 }
 
+export function extractRoutePreviewPathFromLatLng(
+  latlng: unknown,
+  maxPoints = ROUTE_PREVIEW_MAX_POINTS,
+): LatLng[] | null {
+  const path = readLatLngArray(latlng);
+  if (path.length < 2) {
+    return null;
+  }
+  return downsamplePath(path, maxPoints);
+}
+
+type RoutePreviewRow = {
+  activityId: string;
+  latlng: unknown;
+};
+
 /**
  * One DB read for the Activité hub: downsampled GPS paths for every cached stream.
+ * Pulls only `data->latlng` (not full stream JSON) so Neon transfer stays small.
  */
 export async function getActivityRoutePreviews(athleteId: string): Promise<ActivityRoutePreviews> {
-  const rows = await prisma.activityStream.findMany({
-    where: {
-      available: true,
-      data: { not: Prisma.DbNull },
-      activity: { athleteId },
-    },
-    select: {
-      activityId: true,
-      data: true,
-    },
-  });
+  const rows = await prisma.$queryRaw<RoutePreviewRow[]>`
+    SELECT s."activityId", s.data->'latlng' AS latlng
+    FROM "ActivityStream" s
+    INNER JOIN "Activity" a ON a.id = s."activityId"
+    WHERE a."athleteId" = ${athleteId}
+      AND s.available = true
+      AND s.data IS NOT NULL
+  `;
 
   const previews: ActivityRoutePreviews = {};
   for (const row of rows) {
-    const path = extractRoutePreviewPath(row.data);
+    const path = extractRoutePreviewPathFromLatLng(row.latlng);
     if (path) {
       previews[row.activityId] = path;
     }

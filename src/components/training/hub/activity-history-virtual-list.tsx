@@ -3,13 +3,13 @@
 import { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { ActivityChip } from '@/components/training/activity/list/activity-list-chip';
-import type { CompletedSessionPreviewRoute } from '@/components/today/rich/completed-session-preview';
 import {
   estimateActivityHistoryRowSize,
   flattenActivityWeekGroups,
   formatWeekSessionCount,
   type ActivityWeekGroup,
 } from '@/components/training/hub/training-list-logbook';
+import { resolveHubPreviewRoute } from '@/components/today/rich/completed-session-preview-helpers';
 import type { ActivityRoutePreviews } from '@/lib/streams/route-previews';
 
 const MAIN_SCROLL_ID = 'main-content';
@@ -20,17 +20,6 @@ function measureScrollMargin(listEl: HTMLElement, scrollEl: HTMLElement): number
   return (
     listEl.getBoundingClientRect().top - scrollEl.getBoundingClientRect().top + scrollEl.scrollTop
   );
-}
-
-function resolvePreviewRoute(
-  activityId: string,
-  routePreviews: ActivityRoutePreviews | undefined,
-  routePreviewsPending: boolean,
-): CompletedSessionPreviewRoute {
-  if (routePreviewsPending || routePreviews === undefined) {
-    return { status: 'pending' };
-  }
-  return { status: 'ready', path: routePreviews[activityId] ?? null };
 }
 
 /**
@@ -146,7 +135,7 @@ export function ActivityHistoryVirtualList({
                   recordLabel={recordLabelsById.get(row.activity.id) ?? null}
                   selected={selectedIds.has(row.activity.id)}
                   selectionMode={selectionMode}
-                  previewRoute={resolvePreviewRoute(
+                  previewRoute={resolveHubPreviewRoute(
                     row.activity.id,
                     routePreviews,
                     routePreviewsPending ?? false,

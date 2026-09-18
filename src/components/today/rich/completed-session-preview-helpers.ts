@@ -133,6 +133,22 @@ export function isPreviewMapPending(input: {
   return input.mapEnabled && input.streamPending;
 }
 
+/**
+ * Hub list GPS state — pending only while the batch is in flight.
+ * Once settled (success or error), missing ids become ready/null (sport band),
+ * never an infinite skeleton.
+ */
+export function resolveHubPreviewRoute(
+  activityId: string,
+  routePreviews: Record<string, [number, number][]> | undefined,
+  routePreviewsPending: boolean,
+): CompletedSessionPreviewRoute {
+  if (routePreviewsPending) {
+    return { status: 'pending' };
+  }
+  return { status: 'ready', path: routePreviews?.[activityId] ?? null };
+}
+
 /** Persist hub route memory from batch or stream — called from preview mount effect. */
 export function pathToRememberForPreview(input: {
   batchMode: boolean;

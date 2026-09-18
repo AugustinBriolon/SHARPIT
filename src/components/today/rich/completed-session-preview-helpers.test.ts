@@ -9,6 +9,7 @@ import {
   isPreviewMapPending,
   resolveBatchPreviewPath,
   resolveCompletedSessionMapSlot,
+  resolveHubPreviewRoute,
   resolvePreviewUsablePath,
   selectCompletedPreviewMetrics,
   hasUsableRoutePath,
@@ -146,5 +147,31 @@ describe('completed-session-preview-helpers', () => {
         streamPending: true,
       }),
     ).toBe(false);
+  });
+
+  it('does not keep hub cards pending after the batch settles without data', () => {
+    expect(resolveHubPreviewRoute('a1', undefined, true)).toEqual({ status: 'pending' });
+    expect(resolveHubPreviewRoute('a1', undefined, false)).toEqual({
+      status: 'ready',
+      path: null,
+    });
+    expect(
+      resolveHubPreviewRoute(
+        'a1',
+        {
+          a1: [
+            [1, 2],
+            [3, 4],
+          ],
+        },
+        false,
+      ),
+    ).toEqual({
+      status: 'ready',
+      path: [
+        [1, 2],
+        [3, 4],
+      ],
+    });
   });
 });

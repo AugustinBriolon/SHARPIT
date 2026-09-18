@@ -38,6 +38,8 @@ export function useActivityRoutePreviews(enabled = true) {
     queryKey: queryKeys.activityRoutePreviews,
     queryFn: fetchActivityRoutePreviews,
     staleTime: 30 * 60 * 1000,
+    // Fail closed to sport-band cards — never leave the hub in infinite skeleton.
+    retry: 1,
     enabled,
   });
 }

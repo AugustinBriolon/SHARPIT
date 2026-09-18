@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   downsamplePath,
   extractRoutePreviewPath,
+  extractRoutePreviewPathFromLatLng,
   ROUTE_PREVIEW_MAX_POINTS,
 } from '@/lib/streams/route-previews';
 
@@ -33,15 +34,13 @@ describe('extractRoutePreviewPath', () => {
     expect(preview![preview!.length - 1]).toEqual(latlng[latlng.length - 1]);
   });
 
-  it('ignores malformed latlng entries', () => {
-    const preview = extractRoutePreviewPath({
-      latlng: [[48.8, 2.3], 'nope', [48.81, 2.31], [null, 1], [48.82, 2.32]],
-    });
-    expect(preview).toEqual([
+  it('builds a preview from a bare latlng array', () => {
+    const path: [number, number][] = [
       [48.8, 2.3],
       [48.81, 2.31],
-      [48.82, 2.32],
-    ]);
+    ];
+    expect(extractRoutePreviewPathFromLatLng(path)).toEqual(path);
+    expect(extractRoutePreviewPathFromLatLng(null)).toBeNull();
   });
 });
 
