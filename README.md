@@ -179,20 +179,22 @@ record and nothing that can expire.
 
 ## Development
 
-| Command                                          | Description                                                                       |
-| ------------------------------------------------ | --------------------------------------------------------------------------------- |
-| `yarn dev`                                       | Start in watch mode (installs deps first)                                         |
-| `yarn build`                                     | Production build                                                                  |
-| `yarn lint`                                      | ESLint                                                                            |
-| `yarn lint:fix`                                  | Auto-fix lint errors                                                              |
-| `yarn format`                                    | Prettier write                                                                    |
-| `yarn typecheck`                                 | TypeScript check without emitting                                                 |
-| `yarn db:migrate`                                | Run Prisma migrations (dev)                                                       |
-| `yarn db:push`                                   | Sync schema without migration                                                     |
-| `yarn db:studio`                                 | Open Prisma Studio                                                                |
-| `yarn db:seed`                                   | Seed demo data                                                                    |
-| `yarn db:backfill:body-composition-observations` | Backfill `BODY_COMPOSITION` observations from stored Withings/Renpho measurements |
-| `yarn db:recompute:fuel-features`                | Recompute FUEL feature sets for days with nutrition data (after weight backfill)  |
+| Command                                          | Description                                                                                                              |
+| ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------ |
+| `yarn dev`                                       | Start in watch mode (installs deps first)                                                                                |
+| `yarn build`                                     | Production build                                                                                                         |
+| `yarn lint`                                      | ESLint                                                                                                                   |
+| `yarn lint:fix`                                  | Auto-fix lint errors                                                                                                     |
+| `yarn format`                                    | Prettier write                                                                                                           |
+| `yarn typecheck`                                 | TypeScript check without emitting                                                                                        |
+| `yarn db:migrate`                                | Run Prisma migrations (dev)                                                                                              |
+| `yarn db:push`                                   | Sync schema without migration                                                                                            |
+| `yarn db:studio`                                 | Open Prisma Studio                                                                                                       |
+| `yarn db:seed`                                   | Seed demo data                                                                                                           |
+| `yarn db:backfill:body-composition-observations` | Backfill `BODY_COMPOSITION` observations from stored Withings/Renpho measurements                                        |
+| `yarn db:recompute:fuel-features`                | Recompute FUEL feature sets for days with nutrition data (after weight backfill)                                         |
+| `yarn tokens:ios`                                | Regenerate the native client's Swift design tokens ([ADR-041](docs/adr/ADR-041-ios-design-tokens-generated-from-web.md)) |
+| `yarn tokens:ios:check`                          | Fail if the committed Swift tokens are stale                                                                             |
 
 ## Modules
 
