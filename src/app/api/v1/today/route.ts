@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
+import { getActivitiesList } from '@/lib/queries';
 import { getMorningRecalibrationPresentation } from '@/lib/morning-recalibration/service';
 import { buildTodayPresentationViewModel } from '@/lib/presentation/today/today';
+import { projectV1Consistency } from '@/lib/presentation/v1/consistency';
 import { projectV1TodayFromViewModel } from '@/lib/presentation/v1/today';
 
 function isValidTrainingDayId(value: string): boolean {
@@ -14,6 +16,11 @@ function webOriginFrom(request: NextRequest): string {
     return configured.replace(/\/$/, '');
   }
   return request.nextUrl.origin;
+}
+
+/** Midday local time on the requested day — away from both DST edges. */
+function referenceDateFor(trainingDayId: string): Date {
+  return new Date(`${trainingDayId}T12:00:00`);
 }
 
 /**
@@ -41,6 +48,17 @@ export async function GET(request: NextRequest) {
       return null;
     });
 
+    // Regularity is read from the athlete's recent activities rather than from the
+    // Today view model, which does not carry them. Two ISO weeks is the smallest window
+    // that always covers the day strip *and* a full current week, whichever weekday the
+    // request lands on. A failure here costs the card, not the screen.
+    const consistencyActivities = await getActivitiesList(athleteId, { sinceDays: 14 }).catch(
+      (error) => {
+        console.error('[api/v1/today/consistency]', error);
+        return null;
+      },
+    );
+
     const viewModel = await buildTodayPresentationViewModel(athleteId, trainingDayId, {
       morningRecalibration,
     });
@@ -48,6 +66,9 @@ export async function GET(request: NextRequest) {
       projectV1TodayFromViewModel(viewModel, {
         trainingDayId,
         webOrigin: webOriginFrom(request),
+        consistency: consistencyActivities
+          ? projectV1Consistency(consistencyActivities, referenceDateFor(trainingDayId))
+          : null,
       }),
     );
   } catch (error) {

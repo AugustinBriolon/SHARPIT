@@ -1,4 +1,5 @@
 import type { ActivityType } from '@prisma/client';
+import type { V1TodayConsistency } from '@/lib/presentation/v1/consistency';
 import type { PresentationEmptyState } from '@/core/presentation/types';
 import type { TodayViewModel } from '@/core/presentation/today-view-model';
 import { activityTypeLabels } from '@/lib/format';
@@ -83,6 +84,8 @@ export type V1TodayResponse = {
     score: string;
     caption: string | null;
   }>;
+  /** Null when the caller could not resolve the athlete's recent activities. */
+  consistency: V1TodayConsistency | null;
 };
 
 function joinWebURL(webOrigin: string, href: string | undefined): string {
@@ -187,9 +190,19 @@ function projectOvernightSignals(
     }));
 }
 
+export type V1TodayProjectionInput = {
+  trainingDayId: string;
+  webOrigin: string;
+  /**
+   * Regularity is not part of the Today view model — the web computes it client-side
+   * from a separate activity fetch — so the caller resolves it and passes it in.
+   */
+  consistency?: V1TodayConsistency | null;
+};
+
 export function projectV1Today(
   source: V1TodaySource,
-  input: { trainingDayId: string; webOrigin: string },
+  input: V1TodayProjectionInput,
 ): V1TodayResponse {
   const empty = projectEmpty(source, input.webOrigin);
   return {
@@ -200,6 +213,7 @@ export function projectV1Today(
     weather: source.header.weather,
     sessions: projectSessions(source.actionRow.daySummaryLines),
     signals: projectOvernightSignals(source.hero.signalPreviews),
+    consistency: input.consistency ?? null,
   };
 }
 
@@ -256,7 +270,7 @@ function sourceFromViewModel(vm: TodayViewModel): V1TodaySource {
 
 export function projectV1TodayFromViewModel(
   vm: TodayViewModel,
-  input: { trainingDayId: string; webOrigin: string },
+  input: V1TodayProjectionInput,
 ): V1TodayResponse {
   return projectV1Today(sourceFromViewModel(vm), input);
 }
