@@ -1199,6 +1199,7 @@ function formatTravelSection(travel: CoachContext['travel']): string[] {
     '\n## Déplacements / voyages',
     "IMPÉRATIF : pour toute séance dont la date tombe dans une période de déplacement, adapte le lieu (météo, altitude, chaleur attendue) et la logistique — ne propose pas une séance nécessitant du matériel resté au domicile (ex. home trainer, piscine spécifique) si l'athlète est en déplacement.",
     'Respecte aussi la contrainte d’entraînement du voyage (FULL / REDUCED / MOBILITY_ONLY / NONE) : MOBILITY_ONLY = mobilité/étirements uniquement ; NONE = pas de séance structurée ; REDUCED = volume/intensité réduits.',
+    'Quand une ligne indique « sports : … », cette liste est une contrainte STRICTE choisie par l’athlète : ne crée, ne déplace ni ne propose AUCUNE séance d’un autre sport pendant ces dates (une séance de mobilité n’est pas du renfo). Ces déplacements sont DÉJÀ enregistrés : ne les recrée pas et ne modifie pas leurs sports.',
     ...travel.map((t) => {
       const label = t.label?.trim() || t.locationLabel;
       const constraintLabel =

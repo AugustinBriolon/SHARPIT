@@ -239,3 +239,35 @@ describe('formatCoachContext relevance contract', () => {
     expect(text).toContain('Comparaison de scénarios');
   });
 });
+
+describe('formatCoachContext travel contract', () => {
+  const joigny: CoachContext['travel'][number] = {
+    label: 'Week-end Joigny',
+    locationLabel: 'Joigny',
+    startDate: '2026-09-19',
+    endDate: '2026-09-20',
+    isActiveNow: true,
+    note: null,
+    trainingConstraint: 'FULL',
+    allowedDisciplines: ['RUN', 'MOBILITY'],
+  };
+
+  it('lists the declared sports and makes them a strict constraint', () => {
+    const text = formatCoachContext(minimalContext({ travel: [joigny] }));
+
+    expect(text).toContain('sports : Course, Mobilité / étirements');
+    expect(text).toContain('contrainte STRICTE');
+  });
+
+  it('tells the coach declared travel already exists so it is not recreated', () => {
+    const text = formatCoachContext(minimalContext({ travel: [joigny] }));
+
+    expect(text).toContain('DÉJÀ enregistrés');
+  });
+
+  it('adds no travel rules when nothing is declared', () => {
+    const text = formatCoachContext(minimalContext({ travel: [] }));
+
+    expect(text).not.toContain('contrainte STRICTE');
+  });
+});

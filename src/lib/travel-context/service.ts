@@ -173,6 +173,36 @@ export async function purgeExpiredTravelContexts(
   return result.count;
 }
 
+/**
+ * TRAVEL and CONSTRAINT entries covering a calendar day: the windows that limit which
+ * sports may be scheduled. Read-only, unlike `listTravelContexts` it never purges.
+ */
+export async function listRestrictionsOnDay(prisma: PrismaClient, athleteId: string, onDate: Date) {
+  const day = toUtcDateOnly(onDate);
+  return prisma.athleteTravelContext.findMany({
+    where: { athleteId, startDate: { lte: day }, endDate: { gte: day } },
+    orderBy: [{ startDate: 'asc' }, { createdAt: 'asc' }],
+  });
+}
+
+/** TRAVEL entries sharing at least one calendar day with [startDate, endDate] (inclusive). */
+export async function listTravelsOverlapping(
+  prisma: PrismaClient,
+  athleteId: string,
+  startDate: Date,
+  endDate: Date,
+) {
+  return prisma.athleteTravelContext.findMany({
+    where: {
+      athleteId,
+      type: 'TRAVEL',
+      startDate: { lte: toUtcDateOnly(endDate) },
+      endDate: { gte: toUtcDateOnly(startDate) },
+    },
+    orderBy: [{ startDate: 'asc' }, { createdAt: 'asc' }],
+  });
+}
+
 /** Active + upcoming only (expired rows are purged first). */
 export async function listTravelContexts(
   prisma: PrismaClient,

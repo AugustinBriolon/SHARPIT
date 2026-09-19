@@ -28,6 +28,12 @@ import { dayKeyFromDate } from '@/lib/date/day-key';
 import { garminPushClearOnSessionChange } from '@/lib/integrations/garmin/garmin-workout-push-state';
 import { auditStrengthPrescription } from '@/lib/planned-session/strength/strength-session-template';
 import {
+  findBrickTravelViolation,
+  findExistingTravelOverlap,
+  findSessionTravelViolation,
+  strengthIntentsOf,
+} from './coach-tools-travel-guard';
+import {
   type CoachPlannedSessionInput,
   type CoachPlannedSessionResolved,
   endurancePrescriptionToolSchema,
@@ -101,6 +107,14 @@ export async function executeCreatePlannedSessionTool(
   athleteId: string,
   input: CoachPlannedSessionInput,
 ) {
+  const violation = await findSessionTravelViolation(athleteId, {
+    date: input.date,
+    type: input.type,
+    strengthIntents: strengthIntentsOf(input.strengthPrescription),
+  });
+  if (violation) {
+    return { ok: false as const, error: violation };
+  }
   const resolved = await resolveCoachPlannedSessionFields(athleteId, input);
   const s = await createCoachPlannedSessionRecord(athleteId, input, resolved);
 
@@ -297,6 +311,50 @@ function applyPrescriptionUpdates(
   );
 }
 
+/**
+ * Only a change of day, sport or prescription can newly break a travel restriction:
+ * renaming a session that already sits in one must stay possible.
+ */
+async function findUpdatedSessionTravelViolation(
+  athleteId: string,
+  input: {
+    date?: string;
+    type?: z.infer<typeof typeEnum>;
+    strengthPrescription?: z.infer<typeof strengthPrescriptionToolSchema>;
+  },
+  existing: NonNullable<Awaited<ReturnType<typeof getPlannedSessionById>>>,
+): Promise<string | null> {
+  if (!input.date && !input.type && !input.strengthPrescription) {
+    return null;
+  }
+  return findSessionTravelViolation(athleteId, {
+    date: input.date ?? dayKeyFromDate(existing.date),
+    type: input.type ?? existing.type,
+    strengthIntents: strengthIntentsOf(
+      input.strengthPrescription ?? parseStrengthPrescription(existing.strengthPrescription),
+    ),
+  });
+}
+
+function buildUpdatedSessionResult(
+  s: NonNullable<Awaited<ReturnType<typeof updatePlannedSession>>>,
+  durationMin: number | null | undefined,
+) {
+  return {
+    ok: true as const,
+    id: s.id,
+    action: 'updated' as const,
+    date: dayKeyFromDate(s.date),
+    startTime: s.startTime,
+    type: s.type,
+    title: s.title,
+    strengthAudit: auditStrengthPrescription({
+      durationMin,
+      prescription: parseStrengthPrescription(s.strengthPrescription),
+    }),
+  };
+}
+
 export async function executeUpdatePlannedSessionTool(
   athleteId: string,
   input: {
@@ -321,6 +379,10 @@ export async function executeUpdatePlannedSessionTool(
   if (!existing) {
     return { ok: false as const, error: 'Séance introuvable' };
   }
+  const violation = await findUpdatedSessionTravelViolation(athleteId, input, existing);
+  if (violation) {
+    return { ok: false as const, error: violation };
+  }
   const data: Prisma.PlannedSessionUncheckedUpdateInput = {};
   applyScalarPlannedSessionUpdate(input, data);
   applyPrescriptionUpdates(input, existing, data);
@@ -332,39 +394,20 @@ export async function executeUpdatePlannedSessionTool(
   scheduleSessionContextRefresh(athleteId, s.id);
   pushSessionToGoogleInBackground(s);
 
-  return {
-    ok: true as const,
-    id: s.id,
-    action: 'updated' as const,
-    date: dayKeyFromDate(s.date),
-    startTime: s.startTime,
-    type: s.type,
-    title: s.title,
-    strengthAudit: auditStrengthPrescription({
-      durationMin: input.durationMin ?? existing.durationMin,
-      prescription: parseStrengthPrescription(s.strengthPrescription),
-    }),
-  };
+  return buildUpdatedSessionResult(s, input.durationMin ?? existing.durationMin);
 }
 
-export async function executeCreateBrickSessionTool(
-  athleteId: string,
-  input: {
-    date: string;
-    startTime?: string;
-    title?: string;
-    legs: Array<{
-      type: z.infer<typeof typeEnum>;
-      intensity?: z.infer<typeof intensityEnum>;
-      title: string;
-      description?: string;
-      durationMin?: number;
-      load?: number;
-    }>;
-  },
-) {
-  const goalId = await resolveCoachDefaultGoalId(athleteId);
-  const legRows = input.legs.map((leg) => ({
+type BrickLegInput = {
+  type: z.infer<typeof typeEnum>;
+  intensity?: z.infer<typeof intensityEnum>;
+  title: string;
+  description?: string;
+  durationMin?: number;
+  load?: number;
+};
+
+function buildBrickLegRows(input: { date: string; legs: BrickLegInput[] }, goalId: string | null) {
+  return input.legs.map((leg) => ({
     type: leg.type,
     date: toDate(input.date),
     title: leg.title,
@@ -374,6 +417,23 @@ export async function executeCreateBrickSessionTool(
     intensity: leg.intensity ?? null,
     goalId,
   }));
+}
+
+export async function executeCreateBrickSessionTool(
+  athleteId: string,
+  input: {
+    date: string;
+    startTime?: string;
+    title?: string;
+    legs: BrickLegInput[];
+  },
+) {
+  const violation = await findBrickTravelViolation(athleteId, input);
+  if (violation) {
+    return { ok: false as const, error: violation };
+  }
+  const goalId = await resolveCoachDefaultGoalId(athleteId);
+  const legRows = buildBrickLegRows(input, goalId);
   const legStartTimes = chainBrickLegStartTimes(input.startTime, legRows);
   const created = await createBrickSessions(
     athleteId,
@@ -435,6 +495,19 @@ export async function executeSetTravelContextTool(
     applyToPlannedSessions?: boolean;
   },
 ) {
+  const alreadyDeclared = await findExistingTravelOverlap(
+    athleteId,
+    new Date(input.startDate),
+    new Date(input.endDate),
+  );
+  if (alreadyDeclared.length > 0) {
+    return {
+      ok: false as const,
+      error:
+        "Un déplacement est déjà enregistré sur ces dates : ne le recrée pas et ne modifie pas ses sports. Applique-le tel quel. Si l'athlète veut le changer, il le modifie dans Mémoire coach.",
+      existing: alreadyDeclared,
+    };
+  }
   const travel = await createTravelContext(prisma, athleteId, {
     label: input.label ?? null,
     locationLabel: input.locationLabel,

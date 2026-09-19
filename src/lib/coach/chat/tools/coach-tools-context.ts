@@ -12,7 +12,7 @@ function buildSetTravelContextTool(
 ) {
   return tool({
     description:
-      "Enregistre un contexte voyage (ville + dates) pour pré-remplir les séances outdoor et améliorer les prévisions météo. À utiliser quand l'athlète mentionne des vacances, un déplacement ou un camp d'entraînement — c'est-à-dire qu'il n'est pas chez lui. Si la capacité d'entraînement est réduite sans déplacement (maladie, blessure, semaine de travail chargée), utilise setTrainingConstraint à la place.",
+      "Enregistre un contexte voyage (ville + dates) pour pré-remplir les séances outdoor et améliorer les prévisions météo. À utiliser quand l'athlète mentionne des vacances, un déplacement ou un camp d'entraînement — c'est-à-dire qu'il n'est pas chez lui — ET seulement si ce déplacement n'est pas déjà dans le contexte système (« Déplacements / voyages »). Si la capacité d'entraînement est réduite sans déplacement (maladie, blessure, semaine de travail chargée), utilise setTrainingConstraint à la place.",
     inputSchema: z.object({
       locationLabel: z.string().describe("Ville ou lieu (ex. Les Sables-d'Olonne)."),
       startDate: z.string().describe('Date de début yyyy-MM-dd.'),
