@@ -45,6 +45,7 @@
 | [ADR-039](./ADR-039-ios-system-edge-fade.md)                                   | iOS system edge — clear content below Safari Liquid Glass                          | Accepted |
 | [ADR-040](./ADR-040-ios-product-canonical-api-v1.md)                           | iOS is the product client; `/api/v1` is the canonical contract                     | Accepted |
 | [ADR-041](./ADR-041-ios-design-tokens-generated-from-web.md)                   | The iOS design system is generated from the web design system                      | Accepted |
+| [ADR-042](./ADR-042-today-links-activities-on-read.md)                         | `/api/v1/today` links the day's activities to their planned sessions               | Accepted |
 
 **Template:** [ADR-template.md](./ADR-template.md)
 
