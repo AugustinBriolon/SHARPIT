@@ -2,7 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { defaultExposureForActivityType } from '@/core/planned-session/defaults';
 import { pushSessionToGoogle } from '@/lib/integrations/google/google-sync';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { createPlannedSession, getPlannedSessionById, getPlannedSessions } from '@/lib/queries';
+import {
+  createPlannedSession,
+  getAthleteProfile,
+  getPlannedSessionById,
+  getPlannedSessions,
+} from '@/lib/queries';
+import { buildPlannedSessionSteps } from '@/lib/planned-session/session-steps';
 import type { PlannedSession } from '@prisma/client';
 import { refreshAndPersistPlannedSessionContext } from '@/lib/planned-session/resolve-context';
 import { createPlannedSessionSchema } from '@/lib/validators/planned-session';
@@ -43,6 +49,25 @@ async function runPlannedSessionSideEffects(athleteId: string, session: PlannedS
   ]);
 }
 
+type AthleteProfileRow = Awaited<ReturnType<typeof getAthleteProfile>>;
+
+const NO_THRESHOLDS = {
+  runThresholdPaceSecPerKm: null,
+  swimCssSecPer100m: null,
+  ftpW: null,
+  lthr: null,
+  maxHr: null,
+};
+
+/** The references an endurance target is resolved against. Absent profile → unresolved. */
+function athleteThresholds(profile: AthleteProfileRow) {
+  if (!profile) {
+    return NO_THRESHOLDS;
+  }
+  const { runThresholdPaceSecPerKm, swimCssSecPer100m, ftpW, lthr, maxHr } = profile;
+  return { runThresholdPaceSecPerKm, swimCssSecPer100m, ftpW, lthr, maxHr };
+}
+
 export async function GET(request: NextRequest) {
   // Read search params before try so Cache Components prerender interrupts propagate.
   const { searchParams } = new URL(request.url);
@@ -51,11 +76,27 @@ export async function GET(request: NextRequest) {
 
   try {
     const athleteId = await getCurrentAthleteId();
-    const sessions = await getPlannedSessions(athleteId, {
-      from: fromParam ? new Date(fromParam) : undefined,
-      to: toParam ? new Date(toParam) : undefined,
-    });
-    return NextResponse.json(sessions);
+    const [sessions, profile] = await Promise.all([
+      getPlannedSessions(athleteId, {
+        from: fromParam ? new Date(fromParam) : undefined,
+        to: toParam ? new Date(toParam) : undefined,
+      }),
+      getAthleteProfile(athleteId),
+    ]);
+
+    // Targets are stored relative to thresholds and resolved for reading, so the
+    // breakdown a client shows is the one a watch push would send. Resolving it here
+    // keeps that one calculation on the server instead of in every client.
+    const thresholds = athleteThresholds(profile);
+
+    return NextResponse.json(
+      sessions.map((session) => ({
+        ...session,
+        breakdown: buildPlannedSessionSteps(session, thresholds, {
+          defaultPoolLengthM: profile?.defaultPoolLengthM,
+        }),
+      })),
+    );
   } catch (error) {
     console.error(error);
     return NextResponse.json(
