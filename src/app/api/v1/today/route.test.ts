@@ -32,6 +32,17 @@ vi.mock('@/lib/presentation/v1/today', () => ({
   }),
 }));
 
+const afterMock = vi.hoisted(() => vi.fn());
+vi.mock('next/server', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('next/server')>()),
+  after: afterMock,
+}));
+
+vi.mock('@/lib/planned-session/linking/session-linking', () => ({
+  autoLinkActivitiesOfDay: vi.fn().mockResolvedValue([]),
+  analyzeLinkedPlannedSessions: vi.fn().mockResolvedValue(0),
+}));
+
 async function importRoute() {
   return await import('./route');
 }
@@ -58,5 +69,66 @@ describe('GET /api/v1/today', () => {
     expect(response.status).toBe(200);
     expect(body.apiVersion).toBe(1);
     expect(body.viewModel).toBeUndefined();
+  });
+
+  describe('auto-link', () => {
+    const request = () => new NextRequest('http://localhost/api/v1/today?trainingDayId=2026-09-10');
+
+    it('links the requested day’s activities before building the view', async () => {
+      const linking = await import('@/lib/planned-session/linking/session-linking');
+      const { buildTodayPresentationViewModel } = await import('@/lib/presentation/today/today');
+      const order: string[] = [];
+      vi.mocked(linking.autoLinkActivitiesOfDay).mockImplementation(async () => {
+        order.push('link');
+        return [];
+      });
+      vi.mocked(buildTodayPresentationViewModel).mockImplementation(async () => {
+        order.push('build');
+        return {} as never;
+      });
+
+      const { GET } = await importRoute();
+      await GET(request());
+
+      expect(order).toEqual(['link', 'build']);
+      const [[athleteId, day]] = vi.mocked(linking.autoLinkActivitiesOfDay).mock.calls;
+      expect(athleteId).toBe('athlete-1');
+      expect(day.getFullYear()).toBe(2026);
+      expect(day.getMonth()).toBe(8);
+      expect(day.getDate()).toBe(10);
+    });
+
+    it('schedules the compliance analysis for what it linked', async () => {
+      const linking = await import('@/lib/planned-session/linking/session-linking');
+      vi.mocked(linking.autoLinkActivitiesOfDay).mockResolvedValue(['session-1']);
+
+      const { GET } = await importRoute();
+      await GET(request());
+
+      expect(afterMock).toHaveBeenCalledTimes(1);
+      await afterMock.mock.calls[0][0]();
+      expect(linking.analyzeLinkedPlannedSessions).toHaveBeenCalledWith('athlete-1', ['session-1']);
+    });
+
+    it('schedules nothing when nothing was linked', async () => {
+      const linking = await import('@/lib/planned-session/linking/session-linking');
+      vi.mocked(linking.autoLinkActivitiesOfDay).mockResolvedValue([]);
+
+      const { GET } = await importRoute();
+      await GET(request());
+
+      expect(afterMock).not.toHaveBeenCalled();
+    });
+
+    it('still answers when linking fails', async () => {
+      const linking = await import('@/lib/planned-session/linking/session-linking');
+      vi.mocked(linking.autoLinkActivitiesOfDay).mockRejectedValue(new Error('db down'));
+      vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+      const { GET } = await importRoute();
+      const response = await GET(request());
+
+      expect(response.status).toBe(200);
+    });
   });
 });

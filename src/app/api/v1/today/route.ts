@@ -1,6 +1,10 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse, after } from 'next/server';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { getActivitiesList } from '@/lib/queries';
+import {
+  analyzeLinkedPlannedSessions,
+  autoLinkActivitiesOfDay,
+} from '@/lib/planned-session/linking/session-linking';
 import { getMorningRecalibrationPresentation } from '@/lib/morning-recalibration/service';
 import { buildTodayPresentationViewModel } from '@/lib/presentation/today/today';
 import { projectV1Consistency } from '@/lib/presentation/v1/consistency';
@@ -24,6 +28,23 @@ function referenceDateFor(trainingDayId: string): Date {
 }
 
 /**
+ * Pairs the day's finished activities with their planned sessions, as the web does when an
+ * activity arrives. The native client never triggers that sync, so without this an athlete
+ * who only opens the app would never see a session marked as done. Best effort: a failure
+ * costs the pairing, not the screen.
+ */
+async function autoLinkTodayActivities(athleteId: string, trainingDayId: string): Promise<void> {
+  try {
+    const sessionIds = await autoLinkActivitiesOfDay(athleteId, referenceDateFor(trainingDayId));
+    if (sessionIds.length > 0) {
+      after(() => analyzeLinkedPlannedSessions(athleteId, sessionIds));
+    }
+  } catch (error) {
+    console.error('[api/v1/today/auto-link]', error);
+  }
+}
+
+/**
  * Canonical Today payload for native (and future complementary-web) clients.
  * Presentation `/api/presentation/today` remains for the current Next.js UI.
  */
@@ -40,6 +61,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const athleteId = await getCurrentAthleteId();
+    await autoLinkTodayActivities(athleteId, trainingDayId);
     const morningRecalibration = await getMorningRecalibrationPresentation(
       athleteId,
       trainingDayId,

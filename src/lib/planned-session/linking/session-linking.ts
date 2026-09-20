@@ -83,6 +83,28 @@ export async function autoLinkActivities(
   return { linked: sessionIds.length, sessionIds };
 }
 
+/**
+ * Links the day's activities that still have no planned session.
+ * Safe to call on every read: an activity that is already linked is not a candidate.
+ * Returns the sessions linked by this call, for the caller to analyze off the critical path.
+ */
+export async function autoLinkActivitiesOfDay(athleteId: string, day: Date): Promise<string[]> {
+  const start = startOfDay(day);
+  const unlinked = await prisma.activity.findMany({
+    where: { athleteId, date: { gte: start, lt: addDays(start, 1) }, plannedSession: { is: null } },
+    select: { id: true },
+  });
+  if (unlinked.length === 0) {
+    return [];
+  }
+
+  const { sessionIds } = await autoLinkActivities(
+    athleteId,
+    unlinked.map((activity) => activity.id),
+  );
+  return sessionIds;
+}
+
 /** Post-link compliance analysis — run off the HTTP critical path. */
 export async function analyzeLinkedPlannedSessions(
   athleteId: string,
