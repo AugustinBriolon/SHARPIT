@@ -217,6 +217,11 @@ export type TodayViewModel = {
       kind: 'done' | 'planned';
       href: string;
       isDone: boolean;
+      /**
+       * The prescription behind this line, when there is one. Distinct from `id`: a brick
+       * line is identified by its group, so only this addresses the session itself.
+       */
+      plannedSessionId?: string | null;
       /** Key KPIs for session preview cards (done + planned — max 3). */
       metrics?: Array<{ label: string; value: string; unit: string }> | null;
       /** Morning choice annotation on this session (post-choice). */

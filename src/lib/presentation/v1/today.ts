@@ -42,6 +42,7 @@ export type V1TodaySource = {
       primary: string;
       secondary?: string | null;
       activityType?: ActivityType;
+      plannedSessionId?: string | null;
       metrics?: Array<{ label: string; value: string; unit: string }> | null;
     }>;
   };
@@ -78,6 +79,11 @@ export type V1TodayResponse = {
     metrics: Array<{ label: string; value: string; unit: string }>;
     sport: string | null;
     priority: boolean;
+    /**
+     * The prescription this line stands for, when there is one. Distinct from `id`: a
+     * brick line is identified by its group, so only this addresses the session itself.
+     */
+    plannedSessionId: string | null;
   }>;
   signals: Array<{
     key: 'sleep' | 'recovery' | 'effort' | 'adaptation';
@@ -175,6 +181,7 @@ function projectSessions(
     metrics: line.metrics ?? [],
     sport: sportLabel(line.activityType),
     priority: index === 0,
+    plannedSessionId: line.plannedSessionId ?? null,
   }));
 }
 
@@ -262,6 +269,7 @@ function sourceFromViewModel(vm: TodayViewModel): V1TodaySource {
         primary: line.primary,
         secondary: line.secondary,
         activityType: line.activityType,
+        plannedSessionId: line.plannedSessionId,
         metrics: line.metrics,
       })),
     },

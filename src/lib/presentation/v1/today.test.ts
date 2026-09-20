@@ -82,6 +82,7 @@ describe('projectV1Today', () => {
         metrics: [{ label: 'Durée', value: '40', unit: 'min' }],
         sport: 'Course',
         priority: true,
+        plannedSessionId: null,
       },
     ]);
     expect(json.signals.map((s) => s.key)).toEqual(['sleep', 'recovery']);

@@ -302,6 +302,9 @@ function mapDaySummaryLineForView(
     kind: line.kind,
     href: daySummaryLineHref(line),
     isDone: line.kind === 'done',
+    // The real prescription behind the line. A brick's `id` is its group, so a client
+    // that needs to address the session itself cannot derive it from `id` alone.
+    plannedSessionId: plannedId,
     metrics: daySummaryLineMetrics(line),
     morningChoiceLabel: morningChoiceForLine(plannedId, sessionChoice),
     brickLegs: line.brickLegs ?? null,
@@ -758,7 +761,7 @@ function assembleTodayHero(ctx: ReturnType<typeof prepareTodayViewModelContext>)
     ctx.verdict as import('@/core/athlete-state/today-state').OverallVerdict | null,
   );
   const headline = reliabilityBundle.effectiveHeadlineOverride ?? ctx.effectiveHeadline;
-  const displayVerdict = reliabilityBundle.displayVerdict;
+  const { displayVerdict } = reliabilityBundle;
   const displayVerdictStyle = mapVerdictToDisplay(displayVerdict);
   const focusPriority = reliabilityBundle.reliability.withholdIntensityTopAction
     ? null
