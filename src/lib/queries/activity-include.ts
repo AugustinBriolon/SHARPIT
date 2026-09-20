@@ -27,6 +27,12 @@ export const activityInclude = {
   hikeTrip: { select: { id: true, name: true } },
 };
 
+/** Detail-only relation: GPS streams are intentionally excluded from list reads. */
+export const activityDetailInclude = {
+  ...activityInclude,
+  stream: true,
+};
+
 /**
  * Light select for client lists/analytics: fields shown or aggregated only.
  * Avoids transferring every sub-metric (payload ÷ ~3).

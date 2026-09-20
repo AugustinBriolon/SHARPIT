@@ -1,11 +1,14 @@
+import { BRAND } from '@/lib/brand/brand-tokens';
+
 export type ThemePreference = 'light' | 'dark' | 'system';
 export type ResolvedTheme = 'light' | 'dark';
 
 export const THEME_STORAGE_KEY = 'sharpit-theme';
 export const THEME_COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
 
-export const THEME_LIGHT_COLOR = '#f8faf8';
-export const THEME_DARK_COLOR = '#1a2420';
+/** Must match `html` / `--background` so overscroll + theme-color paint the same canvas. */
+export const THEME_LIGHT_COLOR = BRAND.snowWhite;
+export const THEME_DARK_COLOR = BRAND.forestNight;
 
 export function isThemePreference(value: string | null | undefined): value is ThemePreference {
   return value === 'light' || value === 'dark' || value === 'system';

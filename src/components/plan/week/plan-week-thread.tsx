@@ -7,6 +7,7 @@ import {
   selectHubDoneEntries,
   selectHubRemainingEntries,
 } from '@/lib/plan/week/plan-week-previews';
+import { upcomingRemaining } from '@/lib/plan/week/plan-week-decision';
 import type { PlanWeek } from '@/lib/plan/week/plan-week';
 
 export function PlanWeekThread({
@@ -20,14 +21,15 @@ export function PlanWeekThread({
   gateActive: boolean;
   excludePlannedId?: string | null;
 }) {
-  const remaining = selectHubRemainingEntries(week.remaining, excludePlannedId).featured.length > 0;
+  const ahead = upcomingRemaining(week.remaining, now);
+  const remaining = selectHubRemainingEntries(ahead, excludePlannedId).featured.length > 0;
   const done = selectHubDoneEntries(week.done).featured.length > 0;
 
   return (
     <>
       {remaining ? (
         <PlanRemainingList
-          entries={week.remaining}
+          entries={ahead}
           excludePlannedId={excludePlannedId}
           gateActive={gateActive}
         />

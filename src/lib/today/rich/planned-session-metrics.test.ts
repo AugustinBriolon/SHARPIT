@@ -6,7 +6,7 @@ import {
 } from './planned-session-metrics';
 
 describe('buildPlannedSessionMetrics', () => {
-  it('builds intensity, duration, and load for a planned run', () => {
+  it('builds intensity, duration, and goal for a planned run (no TSS)', () => {
     expect(
       buildPlannedSessionMetrics({
         type: 'RUN',
@@ -18,23 +18,22 @@ describe('buildPlannedSessionMetrics', () => {
     ).toEqual([
       { label: 'Intensité', value: 'Tempo', unit: '' },
       { label: 'Durée', value: '45', unit: 'min' },
-      { label: 'Charge', value: '55', unit: 'TSS' },
+      { label: 'Objectif', value: 'Nice 70.3', unit: '' },
     ]);
   });
 
-  it('falls back to goal when load is absent', () => {
+  it('falls back to intensity and duration when goal is absent', () => {
     expect(
       buildPlannedSessionMetrics({
         type: 'BIKE',
         durationMin: 90,
         intensity: 'ENDURANCE',
         load: null,
-        goalTitle: 'Nice 70.3',
+        goalTitle: null,
       }),
     ).toEqual([
       { label: 'Intensité', value: 'Endurance', unit: '' },
       { label: 'Durée', value: '1:30', unit: 'h' },
-      { label: 'Objectif', value: 'Nice 70.3', unit: '' },
     ]);
   });
 
@@ -118,7 +117,7 @@ describe('buildPlannedSessionMetrics', () => {
 });
 
 describe('buildBrickSessionMetrics', () => {
-  it('aggregates duration, leg count, and load', () => {
+  it('aggregates duration, leg count, and goal', () => {
     expect(
       buildBrickSessionMetrics({
         legs: [
@@ -130,20 +129,19 @@ describe('buildBrickSessionMetrics', () => {
     ).toEqual([
       { label: 'Durée', value: '1:30', unit: 'h' },
       { label: 'Jambes', value: '2', unit: 'sports' },
-      { label: 'Charge', value: '65', unit: 'TSS' },
+      { label: 'Objectif', value: 'Nice 70.3', unit: '' },
     ]);
   });
 
-  it('uses goal when brick has no load', () => {
+  it('omits goal when brick has none', () => {
     expect(
       buildBrickSessionMetrics({
         legs: [{ durationMin: 40, load: null }, { durationMin: 20 }],
-        goalTitle: 'A1',
+        goalTitle: null,
       }),
     ).toEqual([
       { label: 'Durée', value: '1:00', unit: 'h' },
       { label: 'Jambes', value: '2', unit: 'sports' },
-      { label: 'Objectif', value: 'A1', unit: '' },
     ]);
   });
 });

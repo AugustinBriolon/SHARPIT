@@ -13,6 +13,7 @@ import {
   type TodayJournalHabitCallout,
 } from '@/lib/journal/journal-habit-today-bridge';
 import { buildPlanLivingCallout } from '@/lib/plan/hub/plan-living-callout';
+import { upcomingRemaining } from '@/lib/plan/week/plan-week-decision';
 
 const PlanAdapter = dynamic(
   () => import('@/components/coach/plan/plan-adapter').then((mod) => mod.PlanAdapter),
@@ -22,8 +23,8 @@ const PlanAdapter = dynamic(
 type PlanHubModel = ReturnType<typeof usePlanHubModel>;
 type PlanWeek = NonNullable<PlanHubModel['week']>;
 
-function remainingFromWeek(week: PlanWeek) {
-  return week.remaining
+function remainingFromWeek(week: PlanWeek, now: Date) {
+  return upcomingRemaining(week.remaining, now)
     .filter((entry) => entry.planned)
     .map((entry) => ({
       id: entry.planned!.id,
@@ -63,8 +64,10 @@ function buildCalloutFromReadyWeek(
   week: PlanWeek,
   habitCallout: TodayJournalHabitCallout | null,
 ) {
-  const remaining = remainingFromWeek(week);
-  const day = model.now ?? undefined;
+  if (!model.now) {
+    return null;
+  }
+  const remaining = remainingFromWeek(week, model.now);
   return buildPlanLivingCallout({
     hasDatedGoal: Boolean(model.goal?.targetDate),
     hasActiveMacro: Boolean(model.macroRail),
@@ -72,8 +75,8 @@ function buildCalloutFromReadyWeek(
     goalLabel: model.goal?.title ?? null,
     verdict: model.verdict,
     remaining,
-    habitCallout: day ? habitCallout : null,
-    day,
+    habitCallout: habitCallout,
+    day: model.now,
   });
 }
 

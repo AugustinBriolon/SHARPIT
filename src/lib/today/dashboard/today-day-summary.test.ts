@@ -73,7 +73,7 @@ describe('buildTodayDaySummary', () => {
     ]);
   });
 
-  it('attaches structured preview metrics on planned lines', () => {
+  it('attaches structured preview metrics on planned lines (no TSS)', () => {
     const summary = buildTodayDaySummary(
       TODAY,
       [],
@@ -82,7 +82,6 @@ describe('buildTodayDaySummary', () => {
     expect(summary.lines[0].metrics).toEqual([
       { label: 'Intensité', value: 'Endurance', unit: '' },
       { label: 'Durée', value: '50', unit: 'min' },
-      { label: 'Charge', value: '40', unit: 'TSS' },
     ]);
   });
 

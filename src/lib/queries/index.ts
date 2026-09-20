@@ -5,6 +5,7 @@ import { dedupeBodyCompositionByDay } from '@/lib/health/body-composition';
 import { isMultisportLegArray, type MultisportLeg } from '@/lib/activity/multisport';
 import {
   activityInclude,
+  activityDetailInclude,
   activityListSelect,
   activityCoachSelect,
   activityPmcSelect,
@@ -133,7 +134,7 @@ export async function getActivitiesForSnapshotPhase(athleteId: string, limit = 4
 export const getActivityById = cache(async (athleteId: string, id: string) => {
   return prisma.activity.findFirst({
     where: { id, athleteId },
-    include: activityInclude,
+    include: activityDetailInclude,
   });
 });
 
@@ -222,7 +223,7 @@ export async function getMultisportLegsForActivity(
 export async function createActivity(athleteId: string, data: Prisma.ActivityUncheckedCreateInput) {
   return prisma.activity.create({
     data: { ...data, athleteId },
-    include: activityInclude,
+    include: activityDetailInclude,
   });
 }
 
@@ -243,7 +244,7 @@ export async function updateActivity(
   return prisma.activity.update({
     where: { id },
     data,
-    include: activityInclude,
+    include: activityDetailInclude,
   });
 }
 

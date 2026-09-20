@@ -1,5 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { THEME_STORAGE_KEY, readStoredThemePreference } from '@/lib/theme/theme';
+import { BRAND } from '@/lib/brand/brand-tokens';
+import {
+  THEME_DARK_COLOR,
+  THEME_LIGHT_COLOR,
+  THEME_STORAGE_KEY,
+  readStoredThemePreference,
+} from '@/lib/theme/theme';
 
 /**
  * Minimal window + document.cookie shim — matches how THEME_INIT_SCRIPT and
@@ -53,6 +59,13 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.unstubAllGlobals();
+});
+
+describe('theme-color canvas tokens', () => {
+  it('matches brand page canvases (Craft HTML background)', () => {
+    expect(THEME_LIGHT_COLOR).toBe(BRAND.snowWhite);
+    expect(THEME_DARK_COLOR).toBe(BRAND.forestNight);
+  });
 });
 
 describe('readStoredThemePreference', () => {

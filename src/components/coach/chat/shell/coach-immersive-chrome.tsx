@@ -62,7 +62,7 @@ export function CoachImmersiveHeader({
         className={cn(
           'text-muted-foreground hover:bg-muted hover:text-foreground',
           'inline-flex size-9 shrink-0 items-center justify-center rounded-full',
-          'transition-[background-color,color,transform] duration-150 ease-out',
+          'transition-transform duration-150 ease-out',
           'active:scale-[0.94]',
         )}
         onClick={onOpenHistory}
@@ -207,7 +207,7 @@ function CoachHistoryMobileDrawer(props: HistorySurfaceProps) {
                   className={cn(
                     'text-muted-foreground hover:bg-muted hover:text-foreground',
                     'inline-flex size-8 items-center justify-center rounded-full',
-                    'transition-[background-color,color,transform] duration-150',
+                    'transition-transform duration-150',
                     'active:scale-[0.94]',
                   )}
                 >
@@ -242,8 +242,7 @@ function CoachHistoryDesktopDialog(props: HistorySurfaceProps) {
               className={cn(
                 'text-muted-foreground hover:bg-muted hover:text-foreground',
                 'inline-flex size-8 items-center justify-center rounded-full',
-                'transition-[background-color,color,transform] duration-150',
-                'active:scale-[0.94]',
+                'transition-transform duration-150 active:scale-[0.94]',
               )}
             >
               <X className="size-4" strokeWidth={1.8} aria-hidden />

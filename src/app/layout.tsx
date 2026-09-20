@@ -92,7 +92,7 @@ export default function RootLayout({
           syne.variable,
           ibmPlexSans.variable,
           jetBrainsMono.variable,
-          'h-full antialiased',
+          'bg-background h-full antialiased',
         )}
         suppressHydrationWarning
       >

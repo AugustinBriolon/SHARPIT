@@ -3,7 +3,7 @@ import { generateAthleteSnapshot } from '@/lib/athlete-state/snapshot-service';
 import { demoAnchorTrainingDayId } from '@/lib/demo/demo-calendar';
 import { backfillBodyCompositionObservationsFromMeasurements } from '@/lib/integrations/shared/body-composition-observation-backfill';
 import { backfillHealthObservationsFromDailyHealth } from '@/lib/integrations/shared/health-observation-backfill';
-import { activityInclude } from '@/lib/queries/activity-include';
+import { activityDetailInclude } from '@/lib/queries/activity-include';
 import { syncManualActivityObservations } from '@/lib/observation/manual-observation-sync';
 
 /** Purge derived inference state so a reseed never inherits stale twin/features. */
@@ -28,7 +28,7 @@ export async function finalizeDemoSeed(prisma: PrismaClient, athleteId: string):
 
   const activities = await prisma.activity.findMany({
     where: { athleteId },
-    include: activityInclude,
+    include: activityDetailInclude,
     orderBy: { date: 'asc' },
   });
   for (const activity of activities) {

@@ -78,7 +78,7 @@ export function CitationFavicon({ url, className }: { url?: string; className?: 
         <img
           ref={favicon.ref}
           alt=""
-          className="size-4 rounded-sm object-contain"
+          className="image-outline size-4 rounded-sm object-contain"
           height={16}
           referrerPolicy="no-referrer"
           src={favicon.src}

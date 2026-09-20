@@ -50,24 +50,25 @@ describe('buildCompletedSessionMetrics', () => {
     expect(metrics[0]).toEqual({ label: 'Distance', value: '800', unit: 'm' });
   });
 
-  it('builds bike duration, power, and TSS', () => {
+  it('builds bike duration, power, and RPE (no TSS)', () => {
     const metrics = buildCompletedSessionMetrics(
       source({
         type: 'BIKE',
         duration: 3600,
         bikeMetrics: { tss: 72.4, avgPower: 188 },
         load: 70,
+        rpe: 6,
       }),
     );
 
     expect(metrics).toEqual([
       { label: 'Durée', value: '1:00:00', unit: 'h' },
       { label: 'Puissance', value: '188', unit: 'W' },
-      { label: 'Charge', value: '72', unit: 'TSS' },
+      { label: 'RPE', value: '6', unit: '' },
     ]);
   });
 
-  it('builds swim distance, pace, then load (duration is secondary)', () => {
+  it('builds swim distance, pace, then duration', () => {
     const metrics = buildCompletedSessionMetrics(
       source({
         type: 'SWIM',
@@ -80,7 +81,7 @@ describe('buildCompletedSessionMetrics', () => {
     expect(metrics).toEqual([
       { label: 'Distance', value: '1.50', unit: 'km' },
       { label: 'Allure', value: '2:00', unit: '/100m' },
-      { label: 'Charge', value: '40', unit: 'TSS' },
+      { label: 'Durée', value: '30:00', unit: 'min' },
     ]);
   });
 
@@ -115,7 +116,7 @@ describe('buildCompletedSessionMetrics', () => {
     ]);
   });
 
-  it('builds strength duration, RPE, and load before exercise count', () => {
+  it('builds strength duration, RPE, and exercise count', () => {
     const metrics = buildCompletedSessionMetrics(
       source({
         type: 'STRENGTH',
@@ -129,11 +130,11 @@ describe('buildCompletedSessionMetrics', () => {
     expect(metrics).toEqual([
       { label: 'Durée', value: '45:00', unit: 'min' },
       { label: 'RPE', value: '7', unit: '' },
-      { label: 'Charge', value: '35', unit: 'TSS' },
+      { label: 'Exercices', value: '2', unit: 'exos' },
     ]);
   });
 
-  it('uses exercise count when strength has no load', () => {
+  it('still surfaces exercise count when strength has no load', () => {
     const metrics = buildCompletedSessionMetrics(
       source({
         type: 'STRENGTH',

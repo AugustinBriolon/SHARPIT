@@ -28,6 +28,8 @@ export const BRAND = {
   eucalyptus: '#5f8a6e',
   /** Page canvas — warm off-white, never pure #fff */
   snowWhite: '#fcfcf7',
+  /** Dark page canvas — matches `.dark { --background: oklch(0.22 0.045 139) }` */
+  forestNight: '#0f1f0a',
   /** Secondary surface / muted panels — slight lime cast */
   warmStone: '#f0f1e8',
   /** Frosted / muted neutral */

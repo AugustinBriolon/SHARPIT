@@ -627,7 +627,7 @@
   letter-spacing: 0.08em;
   text-decoration: none;
   text-transform: uppercase;
-  transition: color 150ms ease;
+  /* Hover restraint — frequent text links switch color instantly. */
   &:hover {
     color: var(--color-foreground);
   }
@@ -641,7 +641,28 @@
   color: var(--color-muted-foreground);
   font-size: 0.6875rem;
   font-family: var(--font-data);
+  font-variant-numeric: tabular-nums;
   letter-spacing: 0.05em;
+}
+
+/**
+ * Inset image outline — Craft image-outlines.
+ * Paints a 10% edge on top of the media so pale photos/avatars keep a shape.
+ */
+@utility image-outline {
+  outline: 1px solid color-mix(in oklch, var(--foreground) 10%, transparent);
+  outline-offset: -1px;
+}
+
+/**
+ * Nested border radius — Craft concentric corners.
+ * Formula: inner = max(0, outer − inset). Set --nested-outer / --nested-inset.
+ */
+@utility rounded-nested {
+  border-radius: max(
+    0px,
+    calc(var(--nested-outer, var(--radius-lg)) - var(--nested-inset, 0.25rem))
+  );
 }
 
 @utility annotation-clinical {

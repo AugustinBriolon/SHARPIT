@@ -45,7 +45,9 @@ type AnalysisContentProps = {
 function BrickAnalysisScore({ score }: { score: number }) {
   return (
     <div className="flex items-center gap-2">
-      <span className={cn('font-mono text-2xl font-semibold', sessionScoreColor(score))}>
+      <span
+        className={cn('font-mono text-2xl font-semibold tabular-nums', sessionScoreColor(score))}
+      >
         {score}
       </span>
       <span className="text-muted-foreground text-xs">/100</span>

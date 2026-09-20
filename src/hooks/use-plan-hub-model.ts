@@ -20,6 +20,7 @@ import { resolveCalibrationConfidence } from '@/lib/plan/trajectory/plan-calibra
 import { buildMacroPhaseRail } from '@/lib/plan/trajectory/plan-macro-rail';
 import { selectPlanGoal } from '@/lib/plan/trajectory/plan-goal';
 import { buildPlanWeek, type PlanWeek } from '@/lib/plan/week/plan-week';
+import { upcomingRemaining } from '@/lib/plan/week/plan-week-decision';
 import {
   isHardSessionIntensity,
   shouldGateHardIntensities,
@@ -52,11 +53,17 @@ function snapshotIso(value: Date | string | undefined): string | null {
   return value ?? null;
 }
 
-function countGatedSessions(week: PlanWeek | null, verdict: OverallVerdict | null): number {
-  if (!week || !shouldGateHardIntensities(verdict)) {
+function countGatedSessions(
+  week: PlanWeek | null,
+  verdict: OverallVerdict | null,
+  now: Date | null,
+): number {
+  if (!week || !now || !shouldGateHardIntensities(verdict)) {
     return 0;
   }
-  return week.remaining.filter((entry) => isHardSessionIntensity(entry.planned?.intensity)).length;
+  return upcomingRemaining(week.remaining, now).filter((entry) =>
+    isHardSessionIntensity(entry.planned?.intensity),
+  ).length;
 }
 
 function resolveWeek(
@@ -163,7 +170,7 @@ function assemblePlanHubModel(
     week: derived.week,
     weekReady: derived.week !== null && !listsPending,
     calibration: hubCalibration(now, queries),
-    gatedCount: countGatedSessions(derived.week, derived.verdict),
+    gatedCount: countGatedSessions(derived.week, derived.verdict, now),
   };
 }
 

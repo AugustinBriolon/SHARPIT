@@ -126,7 +126,7 @@ export function AnimatedSidebarMenuSubButton({
   const select = createSidebarMenuSelect({ disabled, onSelect, context, closeOnSelect });
   const interactiveClassName = cn(
     'flex min-h-8 w-full min-w-0 items-center gap-2 rounded-lg px-2 text-left text-xs outline-none',
-    'text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground',
+    'text-muted-foreground hover:bg-muted/60 hover:text-foreground',
     'focus-visible:bg-muted/70 focus-visible:ring-2 focus-visible:ring-ring',
     isActive && 'bg-muted/70 text-foreground',
     disabled && 'cursor-not-allowed opacity-40',
@@ -262,7 +262,7 @@ export interface AnimatedSidebarMenuButtonProps {
 function menuButtonClassName(isActive: boolean, disabled: boolean, className?: string) {
   return cn(
     'relative flex min-h-9 w-full min-w-0 items-center gap-2.5 overflow-hidden rounded-xl px-3 text-left text-sm font-medium outline-none',
-    'text-muted-foreground transition-colors hover:text-foreground',
+    'text-muted-foreground hover:text-foreground',
     'focus-visible:bg-muted/70 focus-visible:ring-2 focus-visible:ring-ring',
     isActive && 'text-foreground',
     disabled && 'cursor-not-allowed opacity-40',

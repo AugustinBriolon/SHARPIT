@@ -16,7 +16,7 @@ export function AthleteNavAvatar({
   return (
     <span
       className={cn(
-        'bg-primary/15 text-primary relative inline-flex shrink-0 items-center justify-center rounded-full font-semibold tracking-tight',
+        'bg-primary/15 text-primary image-outline relative inline-flex shrink-0 items-center justify-center rounded-full font-semibold tracking-tight',
         size === 'sm' && 'size-5 text-[9px]',
         size === 'md' && 'size-8 text-xs',
         className,

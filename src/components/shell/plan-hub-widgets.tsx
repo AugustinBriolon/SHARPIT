@@ -27,7 +27,7 @@ function useHubWeekDecision(model: PlanHubModel): WeekDecision | null {
   const brief = useWeeklyCoachingBriefViewModel(
     model.now ? format(startOfWeek(model.now, WEEK_OPTS), 'yyyy-MM-dd') : '',
   );
-  if (!model.week) {
+  if (!model.week || !model.now) {
     return null;
   }
   return buildWeekDecision({
@@ -35,6 +35,7 @@ function useHubWeekDecision(model: PlanHubModel): WeekDecision | null {
     verdict: model.verdict,
     cautionLabel: projection.data?.caution?.label ?? null,
     hasBrief: Boolean(brief.data?.visible),
+    now: model.now,
   });
 }
 

@@ -110,20 +110,6 @@ function powerMetric(watts: number | null | undefined): CompletedSessionMetric |
   return { label: 'Puissance', value: String(Math.round(watts)), unit: 'W' };
 }
 
-function tssMetric(tss: number | null | undefined): CompletedSessionMetric | null {
-  if (!isSet(tss) || tss <= 0) {
-    return null;
-  }
-  return { label: 'Charge', value: String(Math.round(tss)), unit: 'TSS' };
-}
-
-function loadMetric(load: number | null | undefined): CompletedSessionMetric | null {
-  if (!isSet(load) || load <= 0) {
-    return null;
-  }
-  return { label: 'Charge', value: String(Math.round(load)), unit: 'TSS' };
-}
-
 function rpeMetric(rpe: number | null | undefined): CompletedSessionMetric | null {
   if (!isSet(rpe) || rpe <= 0) {
     return null;
@@ -149,7 +135,6 @@ function buildRunMetrics(activity: CompletedSessionMetricSource): CompletedSessi
   pushMetric(metrics, distanceMetric(activity.runMetrics?.distanceM));
   pushMetric(metrics, durationMetric(activity.duration));
   pushMetric(metrics, runPaceMetric(activity.duration, activity.runMetrics?.distanceM));
-  pushMetric(metrics, loadMetric(activity.load));
   return metrics;
 }
 
@@ -157,7 +142,6 @@ function buildBikeMetrics(activity: CompletedSessionMetricSource): CompletedSess
   const metrics: CompletedSessionMetric[] = [];
   pushMetric(metrics, durationMetric(activity.duration));
   pushMetric(metrics, powerMetric(activity.bikeMetrics?.avgPower));
-  pushMetric(metrics, tssMetric(activity.bikeMetrics?.tss) ?? loadMetric(activity.load));
   pushMetric(metrics, rpeMetric(activity.rpe));
   return metrics;
 }
@@ -167,7 +151,6 @@ function buildSwimMetrics(activity: CompletedSessionMetricSource): CompletedSess
   // Distance + allure first — duration is secondary for swim coaching reads.
   pushMetric(metrics, distanceMetric(activity.swimMetrics?.distanceM));
   pushMetric(metrics, swimPaceMetric(activity.duration, activity.swimMetrics?.distanceM));
-  pushMetric(metrics, loadMetric(activity.load));
   pushMetric(metrics, durationMetric(activity.duration));
   return metrics;
 }
@@ -186,7 +169,6 @@ function buildStrengthMetrics(activity: CompletedSessionMetricSource): Completed
   const metrics: CompletedSessionMetric[] = [];
   pushMetric(metrics, durationMetric(activity.duration));
   pushMetric(metrics, rpeMetric(activity.rpe));
-  pushMetric(metrics, loadMetric(activity.load));
   pushMetric(metrics, strengthExerciseMetric(activity.strengthSets));
   return metrics;
 }
@@ -194,7 +176,6 @@ function buildStrengthMetrics(activity: CompletedSessionMetricSource): Completed
 function buildGenericMetrics(activity: CompletedSessionMetricSource): CompletedSessionMetric[] {
   const metrics: CompletedSessionMetric[] = [];
   pushMetric(metrics, durationMetric(activity.duration));
-  pushMetric(metrics, loadMetric(activity.load));
   pushMetric(metrics, rpeMetric(activity.rpe));
   return metrics;
 }

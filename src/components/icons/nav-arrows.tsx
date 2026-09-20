@@ -14,7 +14,7 @@ type NavArrowProps = SVGProps<SVGSVGElement> & {
 export function NavArrowLeft({ className, strokeWidth = 1.25, ...rest }: NavArrowProps) {
   return (
     <svg
-      className={cn('shrink-0', className)}
+      className={cn('shrink-0 -translate-x-px', className)}
       fill="none"
       viewBox="0 0 24 24"
       xmlns="http://www.w3.org/2000/svg"
@@ -35,7 +35,7 @@ export function NavArrowLeft({ className, strokeWidth = 1.25, ...rest }: NavArro
 export function NavArrowRight({ className, strokeWidth = 1.25, ...rest }: NavArrowProps) {
   return (
     <svg
-      className={cn('shrink-0', className)}
+      className={cn('shrink-0 translate-x-px', className)}
       fill="none"
       viewBox="0 0 24 24"
       xmlns="http://www.w3.org/2000/svg"
@@ -57,7 +57,7 @@ export function NavArrowRight({ className, strokeWidth = 1.25, ...rest }: NavArr
 export function NavArrowDown({ className, strokeWidth = 1.25, ...rest }: NavArrowProps) {
   return (
     <svg
-      className={cn('shrink-0', className)}
+      className={cn('shrink-0 translate-y-px', className)}
       fill="none"
       viewBox="0 0 24 24"
       xmlns="http://www.w3.org/2000/svg"
@@ -78,7 +78,7 @@ export function NavArrowDown({ className, strokeWidth = 1.25, ...rest }: NavArro
 export function NavArrowUp({ className, strokeWidth = 1.25, ...rest }: NavArrowProps) {
   return (
     <svg
-      className={cn('shrink-0', className)}
+      className={cn('shrink-0 -translate-y-px', className)}
       fill="none"
       viewBox="0 0 24 24"
       xmlns="http://www.w3.org/2000/svg"

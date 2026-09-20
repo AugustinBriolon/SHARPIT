@@ -44,6 +44,9 @@ export function buildWeekSummarySegments({
   } else if (total > 0) {
     const plural = total > 1;
     segments.push(`${total} séance${plural ? 's' : ''} planifiée${plural ? 's' : ''}`);
+  } else {
+    // Keep the week chrome readable on empty future weeks — calendar stays, summary stays.
+    segments.push('Aucune séance planifiée');
   }
 
   return segments;

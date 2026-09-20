@@ -7,5 +7,5 @@ export function PromptSubmitIcon({ loading, className }: { loading: boolean; cla
   if (loading) {
     return <Square className={cn('size-3 fill-current', className)} aria-hidden />;
   }
-  return <ArrowUp className={cn('size-3.5', className)} aria-hidden />;
+  return <ArrowUp className={cn('size-3.5 -translate-y-px', className)} aria-hidden />;
 }

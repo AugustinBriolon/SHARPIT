@@ -38,13 +38,6 @@ function intensityMetric(
   return { label: 'Intensité', value: intensityLabels[intensity], unit: '' };
 }
 
-function loadMetric(load: number | null | undefined): SessionPreviewMetric | null {
-  if (!isSet(load) || load <= 0) {
-    return null;
-  }
-  return { label: 'Charge', value: String(Math.round(load)), unit: 'TSS' };
-}
-
 function goalMetric(goalTitle: string | null | undefined): SessionPreviewMetric | null {
   const title = goalTitle?.trim();
   if (!title) {
@@ -136,7 +129,8 @@ export type PlannedSessionMetricSource = {
   type: ActivityType;
   durationMin: number | null;
   intensity: SessionIntensity | null;
-  load: number | null;
+  /** Kept for call-site compatibility — never surfaced on athlete preview cards. */
+  load?: number | null;
   goalTitle?: string | null;
   title?: string | null;
   description?: string | null;
@@ -148,7 +142,6 @@ function buildEndurancePlannedMetrics(session: PlannedSessionMetricSource): Sess
   const metrics: SessionPreviewMetric[] = [];
   pushMetric(metrics, intensityMetric(session.intensity));
   pushMetric(metrics, plannedDurationMetric(session.durationMin));
-  pushMetric(metrics, loadMetric(session.load));
   pushMetric(metrics, goalMetric(session.goalTitle));
   return metrics;
 }
@@ -160,7 +153,6 @@ function buildStrengthPlannedMetrics(session: PlannedSessionMetricSource): Sessi
   if (metrics.length < 2) {
     pushMetric(metrics, intensityMetric(session.intensity));
   }
-  pushMetric(metrics, loadMetric(session.load));
   pushMetric(metrics, goalMetric(session.goalTitle));
   return metrics;
 }
@@ -193,7 +185,7 @@ export type BrickSessionMetricSource = {
   goalTitle?: string | null;
 };
 
-/** Aggregate brick KPIs: total duration, leg count, load or goal. */
+/** Aggregate brick KPIs: total duration, leg count, optional goal. */
 export function buildBrickSessionMetrics(source: BrickSessionMetricSource): SessionPreviewMetric[] {
   const metrics: SessionPreviewMetric[] = [];
   const totalMin = source.legs.reduce((sum, leg) => sum + (leg.durationMin ?? 0), 0);
@@ -203,8 +195,6 @@ export function buildBrickSessionMetrics(source: BrickSessionMetricSource): Sess
     value: String(source.legs.length),
     unit: source.legs.length === 1 ? 'sport' : 'sports',
   });
-  const totalLoad = source.legs.reduce((sum, leg) => sum + (leg.load ?? 0), 0);
-  pushMetric(metrics, loadMetric(totalLoad > 0 ? totalLoad : null));
   pushMetric(metrics, goalMetric(source.goalTitle));
   return metrics;
 }

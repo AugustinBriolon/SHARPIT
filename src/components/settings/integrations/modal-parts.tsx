@@ -248,7 +248,7 @@ export function IntegrationAccountCard({
       {avatarUrl && (
         <Image
           alt={avatarAlt}
-          className="size-10 rounded-full object-cover"
+          className="image-outline size-10 rounded-full object-cover"
           height={40}
           src={avatarUrl}
           width={40}

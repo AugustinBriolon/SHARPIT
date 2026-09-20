@@ -18,6 +18,10 @@ describe('BRAND tokens (Seed-inspired)', () => {
     expect(BRAND.snowWhite).not.toBe('#ffffff');
   });
 
+  it('keeps Forest Night as the dark page canvas hex', () => {
+    expect(BRAND.forestNight).toBe('#0f1f0a');
+  });
+
   it('exposes Lime Pulse for highlight punctuation', () => {
     expect(BRAND.limePulse).toBe('#d3fa99');
   });
