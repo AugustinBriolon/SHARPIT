@@ -1,7 +1,18 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { rowToActivityStatusStore } from './activity-status-service';
 
 describe('activity-status-service', () => {
+  // The mapper resolves a passed deadline back to "active", so a fixed deadline in the
+  // fixture needs a fixed "now" before it, or the test expires with the calendar.
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-09-15T12:00:00.000Z'));
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it('maps a DB row to the activity status store', () => {
     expect(
       rowToActivityStatusStore({
