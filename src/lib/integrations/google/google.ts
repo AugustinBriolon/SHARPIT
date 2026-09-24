@@ -34,6 +34,12 @@ export function getGoogleRedirectUri(): string {
   if (process.env.GOOGLE_REDIRECT_URI) {
     return process.env.GOOGLE_REDIRECT_URI;
   }
+  // The canonical origin (https://sharpit.app), not the per-deployment VERCEL_URL that
+  // Google's allowlist would never contain.
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL?.trim().replace(/\/+$/, '');
+  if (appUrl) {
+    return `${appUrl}/api/google/callback`;
+  }
   if (process.env.VERCEL_URL) {
     return `https://${process.env.VERCEL_URL}/api/google/callback`;
   }
