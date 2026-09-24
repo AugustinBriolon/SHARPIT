@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import { buttonVariants } from '@/components/ui/button';
 import { ConnectGarminHeader } from '@/components/integrations/connect-garmin/connect-garmin-header';
 import {
@@ -35,20 +34,19 @@ export function ConnectGarminIntro() {
         ))}
       </ol>
       <div className="flex flex-col gap-2">
-        {/* Plain anchor: the start route answers with a redirect, not a page. */}
+        {/* Plain anchors: full loads, so the iOS session sees the callback URL. */}
         <a
           className={cn(buttonVariants({ size: 'lg' }), 'w-full')}
           href={CONNECT_GARMIN_START_PATH}
         >
           Connecter Garmin
         </a>
-        <Link
+        <a
           className={cn(buttonVariants({ variant: 'ghost', size: 'lg' }), 'w-full')}
           href={garminHandoffCallbackPath('cancelled')}
-          prefetch={false}
         >
           Annuler
-        </Link>
+        </a>
       </div>
     </>
   );
