@@ -64,6 +64,12 @@ export async function softDeleteAthlete(
   } catch (error) {
     logSafeError('privacy/purge-analysis-evidence', error, { athleteId });
   }
+  // Delete push notification device tokens immediately on soft-delete.
+  try {
+    await prisma.deviceToken.deleteMany({ where: { athleteId } });
+  } catch (error) {
+    logSafeError('privacy/delete-device-tokens', error, { athleteId });
+  }
   const deletedAt = updated.deletedAt ?? now;
   return {
     athleteId: updated.id,

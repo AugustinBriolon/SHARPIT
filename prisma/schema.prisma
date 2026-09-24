@@ -299,6 +299,13 @@ model AthleteProfile {
   /// Shape: { version: 1, classes: { activities: { primary, enabled }, ... } }
   integrationSourcePrefs Json?
 
+  /// Date (YYYY-MM-DD) of the last morning verdict push sent to this athlete.
+  /// Prevents duplicate morning pushes across cron runs (silence over noise).
+  lastMorningPushDate String?
+
+  /// APNs device tokens for native push notifications (SHARPIT-APP).
+  deviceTokens DeviceToken[]
+
   thresholdSnapshots AthleteThresholdSnapshot[]
 
   // Tenant back-relations — multi-tenant conversion (ADR-025). Root data:
@@ -347,6 +354,24 @@ model AthleteProfile {
   updatedAt DateTime @updatedAt
 
   @@index([deletedAt])
+}
+
+/// APNs device token registered by the native iOS client (SHARPIT-APP).
+/// Multiple devices per athlete are supported; tokens are deactivated on APNs 410.
+model DeviceToken {
+  id         String         @id @default(cuid())
+  athleteId  String
+  athlete    AthleteProfile @relation(fields: [athleteId], references: [id], onDelete: Cascade)
+  token      String         @unique
+  platform   String         @default("ios")
+  bundleId   String         @default("app.sharpit.ios")
+  enabled    Boolean        @default(true)
+  lastUsedAt DateTime?
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+
+  @@index([athleteId])
+  @@index([token])
 }
 
 model AthleteThresholdSnapshot {
