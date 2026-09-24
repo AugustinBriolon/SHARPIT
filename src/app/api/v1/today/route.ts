@@ -39,6 +39,20 @@ async function autoLinkTodayActivities(athleteId: string, trainingDayId: string)
 }
 
 /**
+ * Regularity is read from the athlete's recent activities rather than from the Today
+ * view model, which does not carry them. Two ISO weeks is the smallest window that
+ * always covers the day strip *and* a full current week, whichever weekday the request
+ * lands on. A failure here costs the card, not the screen.
+ */
+async function loadConsistency(athleteId: string, trainingDayId: string) {
+  const activities = await getActivitiesList(athleteId, { sinceDays: 14 }).catch((error) => {
+    console.error('[api/v1/today/consistency]', error);
+    return null;
+  });
+  return activities ? projectV1Consistency(activities, referenceDateFor(trainingDayId)) : null;
+}
+
+/**
  * Canonical Today payload for native (and future complementary-web) clients.
  * Presentation `/api/presentation/today` remains for the current Next.js UI.
  */
@@ -64,17 +78,6 @@ export async function GET(request: NextRequest) {
       return null;
     });
 
-    // Regularity is read from the athlete's recent activities rather than from the
-    // Today view model, which does not carry them. Two ISO weeks is the smallest window
-    // that always covers the day strip *and* a full current week, whichever weekday the
-    // request lands on. A failure here costs the card, not the screen.
-    const consistencyActivities = await getActivitiesList(athleteId, { sinceDays: 14 }).catch(
-      (error) => {
-        console.error('[api/v1/today/consistency]', error);
-        return null;
-      },
-    );
-
     const [viewModel, garminAccount] = await Promise.all([
       buildTodayPresentationViewModel(athleteId, trainingDayId, { morningRecalibration }),
       getGarminAccount(athleteId),
@@ -84,9 +87,7 @@ export async function GET(request: NextRequest) {
         trainingDayId,
         webOrigin: appOrigin(request.nextUrl.origin),
         garminConnected: Boolean(garminAccount),
-        consistency: consistencyActivities
-          ? projectV1Consistency(consistencyActivities, referenceDateFor(trainingDayId))
-          : null,
+        consistency: await loadConsistency(athleteId, trainingDayId),
       }),
     );
   } catch (error) {
