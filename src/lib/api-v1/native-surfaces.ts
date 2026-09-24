@@ -32,6 +32,8 @@ export const NATIVE_V1_SURFACES = [
   { path: 'planned-sessions/[id]', methods: ['PATCH', 'DELETE'] },
   { path: 'planned-sessions/[id]/link', methods: ['POST'] },
   { path: 'garmin/workouts/from-planned-session', methods: ['POST'] },
+  { path: 'privacy/consent', methods: ['GET', 'POST'] },
+  { path: 'onboarding/complete', methods: ['POST'] },
 ] as const;
 
 /**
