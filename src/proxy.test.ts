@@ -69,10 +69,10 @@ describe('proxy', () => {
     expect(response.headers.get('location')).toBeNull();
   });
 
-  it('sends a signed-in athlete from the teaser to Today', async () => {
+  it('sends a signed-in athlete from the teaser to their next screen', async () => {
     state.userId = 'user_1';
     const response = await run('https://sharpit.app/welcome');
-    expect(response.headers.get('location')).toBe('https://sharpit.app/');
+    expect(response.headers.get('location')).toBe('https://sharpit.app/start');
   });
 
   it('sends a signed-in athlete from sign-in to where Clerk was taking them', async () => {
@@ -82,17 +82,18 @@ describe('proxy', () => {
     expect(response.headers.get('location')).toBe('https://sharpit.app/connect/garmin');
   });
 
-  it('sends a signed-in athlete from sign-up to Today, never back to the teaser', async () => {
+  it('sends a signed-in athlete from sign-up to their next screen, never the teaser', async () => {
     state.userId = 'user_1';
     const back = encodeURIComponent('https://sharpit.app/welcome');
     const response = await run(`https://sharpit.app/sign-up?redirect_url=${back}`);
-    expect(response.headers.get('location')).toBe('https://sharpit.app/');
+    expect(response.headers.get('location')).toBe('https://sharpit.app/start');
   });
 
-  it('protects athlete pages and the Garmin handoff entry', async () => {
+  it('protects athlete pages, the entry router and the Garmin handoff entry', async () => {
     await run('https://sharpit.app/connect/garmin');
     await run('https://sharpit.app/connect/garmin/start');
-    expect(state.protect).toHaveBeenCalledTimes(2);
+    await run('https://sharpit.app/start');
+    expect(state.protect).toHaveBeenCalledTimes(3);
   });
 
   it('keeps the AASA and the Garmin callback public', async () => {

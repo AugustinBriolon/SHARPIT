@@ -1,16 +1,13 @@
 import { GateRedirect } from '@/components/navigation/gate-redirect';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { CURRENT_PRIVACY_VERSION } from '@/lib/privacy/constants';
-import { athleteNeedsLegalConsent, getAthleteConsentRow } from '@/lib/privacy/consent-store';
-import {
-  consentWallHrefAfterHealthWithdraw,
-  resolveConsentWallReason,
-} from '@/lib/privacy/consent-withdraw-ux';
+import { consentWallHref } from '@/lib/onboarding/entry';
+import { getAthleteConsentRow } from '@/lib/privacy/consent-store';
 
 /**
  * Soft wall: sends athletes missing CGU/Privacy/health accept into `/consent`.
  * Soft-deleted accounts are signed out via redirect to sign-in after clear.
  * Health consent is required (art. 9 — sync + Twin processing), same as legal docs.
+ * Safety net only: sign-in / sign-up go through `/start`, which routes there directly.
  */
 export async function PrivacyConsentGate() {
   const athleteId = await getCurrentAthleteId();
@@ -18,19 +15,6 @@ export async function PrivacyConsentGate() {
   if (profile?.deletedAt) {
     return <GateRedirect href="/sign-in" />;
   }
-  if (!(await athleteNeedsLegalConsent(athleteId))) {
-    return null;
-  }
-
-  const withdrawReason = profile
-    ? resolveConsentWallReason({
-        termsAcceptedAt: profile.termsAcceptedAt,
-        privacyAcceptedAt: profile.privacyAcceptedAt,
-        privacyVersion: profile.privacyVersion,
-        healthDataConsentAt: profile.healthDataConsentAt,
-        currentPrivacyVersion: CURRENT_PRIVACY_VERSION,
-      })
-    : null;
-
-  return <GateRedirect href={withdrawReason ? consentWallHrefAfterHealthWithdraw() : '/consent'} />;
+  const wall = await consentWallHref(athleteId);
+  return wall ? <GateRedirect href={wall} /> : null;
 }

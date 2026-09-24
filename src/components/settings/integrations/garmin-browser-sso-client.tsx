@@ -188,7 +188,8 @@ export function GarminBrowserSsoClient({ returnTo = DEFAULT_BACK }: { returnTo?:
   }, []);
 
   const retryHref = `/api/garmin/connect?returnTo=${encodeURIComponent(returnTo)}`;
-  const backHref = returnTo;
+  // Back into onboarding lands on the providers step it came from, not step 1.
+  const backHref = returnTo === '/onboarding' ? '/onboarding?step=providers' : returnTo;
 
   useIosIframeFocusZoomGuard(iframeRef, phase === 'form' && Boolean(iframeSrc));
   useGarminSsoTicketExchange(setPhase, setErrorStatus);

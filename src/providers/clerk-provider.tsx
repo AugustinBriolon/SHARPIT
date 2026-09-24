@@ -3,10 +3,12 @@
 import { ClerkProvider } from '@clerk/nextjs';
 import { frFR } from '@clerk/localizations';
 import { useEffect, useState } from 'react';
+import { ENTRY_PATH } from '@/lib/onboarding/entry-path';
 import { clerkAppearance } from '@/lib/theme/clerk-appearance';
 
 /**
- * After sign-in/up with no `redirect_url`: Today, never the teaser — `/welcome` is
+ * After sign-in/up with no `redirect_url`: `/start`, which sends the athlete straight to
+ * consent, onboarding or Today — never through the teaser — `/welcome` is
  * signed-out only (the proxy enforces it). A `redirect_url` Clerk carries (e.g. back into
  * the Garmin handoff) still wins: fallbacks, not force redirects. sharpit.app is the
  * primary domain — no `isSatellite` / `domain` here.
@@ -42,9 +44,9 @@ export function AppClerkProvider({ children }: { children: React.ReactNode }) {
       allowedRedirectOrigins={allowedRedirectOrigins}
       appearance={clerkAppearance}
       localization={frFR}
-      signInFallbackRedirectUrl="/"
+      signInFallbackRedirectUrl={ENTRY_PATH}
       signInUrl="/sign-in"
-      signUpFallbackRedirectUrl="/"
+      signUpFallbackRedirectUrl={ENTRY_PATH}
       signUpUrl="/sign-up"
     >
       {children}

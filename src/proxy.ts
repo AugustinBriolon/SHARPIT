@@ -1,6 +1,7 @@
 import { type NextFetchEvent, type NextRequest, NextResponse } from 'next/server';
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 import { afterAuthPath } from '@/lib/auth/after-auth-redirect';
+import { ENTRY_PATH } from '@/lib/onboarding/entry-path';
 import { describeClerkConfigIssues, diagnoseClerkConfig } from '@/lib/auth/clerk-config';
 import { recoverFromHandshakeFailure } from '@/lib/auth/handshake-recovery';
 import { isDevClerkBypass } from '@/lib/dev/dev-auth';
@@ -77,8 +78,9 @@ const isSignedOutOnlyPage = createRouteMatcher(['/welcome(.*)', '/sign-in', '/si
 
 /**
  * A signed-in athlete never sees the teaser or an empty sign-in: `/welcome` goes to
- * Today, `/sign-in` and `/sign-up` go where Clerk was sending them (`redirect_url`, e.g.
- * back into the Garmin handoff) — same-origin only — else Today. Server-side, so no
+ * `/start` (their next screen), `/sign-in` and `/sign-up` go where Clerk was sending
+ * them (`redirect_url`, e.g. back into the Garmin handoff) — same-origin only — else
+ * `/start`. Server-side, so no
  * teaser flash and no client/server ping-pong.
  */
 function redirectSignedIn(req: NextRequest): NextResponse | null {
@@ -86,7 +88,7 @@ function redirectSignedIn(req: NextRequest): NextResponse | null {
     return null;
   }
   const destination = req.nextUrl.pathname.startsWith('/welcome')
-    ? '/'
+    ? ENTRY_PATH
     : afterAuthPath(req.nextUrl.searchParams.get('redirect_url'), req.nextUrl.origin);
   return NextResponse.redirect(new URL(destination, req.nextUrl.origin));
 }

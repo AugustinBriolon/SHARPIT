@@ -60,6 +60,10 @@ function providerLabel(id: string): string {
   return fromClass?.name ?? id;
 }
 
+const RETURN_PROVIDERS = ['garmin', 'strava', 'withings', 'google'] as const;
+/** Query keys a provider callback appends on its way back to `/onboarding`. */
+const RETURN_PARAMS = [...RETURN_PROVIDERS, 'step', 'dataClass'];
+
 export function processOAuthReturn(
   searchParams: URLSearchParams,
   setConnected: React.Dispatch<React.SetStateAction<Set<string>>>,
@@ -69,7 +73,7 @@ export function processOAuthReturn(
     setStep('providers');
   }
 
-  for (const provider of ['strava', 'withings', 'google'] as const) {
+  for (const provider of RETURN_PROVIDERS) {
     const status = searchParams.get(provider);
     if (!status) {
       continue;
@@ -80,6 +84,11 @@ export function processOAuthReturn(
     } else {
       toast.error(`${providerLabel(provider)} : ${OAUTH_STATUS_LABELS[status] ?? status}`);
     }
+  }
+
+  // Consumed: a reload must not replay the toast. The step is already in state.
+  if (RETURN_PARAMS.some((key) => searchParams.has(key))) {
+    window.history.replaceState(null, '', window.location.pathname);
   }
 }
 

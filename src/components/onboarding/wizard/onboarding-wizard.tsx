@@ -12,10 +12,13 @@ export function OnboardingWizard({
   initiallyConnected,
   initialPrefs,
   initialEquipment,
+  unofficialAcknowledged = false,
 }: {
   initiallyConnected: IntegrationId[];
   initialPrefs: IntegrationSourcePrefs;
   initialEquipment?: AthleteEquipment | null;
+  /** Garmin, Renpho and MyFitnessPal can't connect before this acknowledgement. */
+  unofficialAcknowledged?: boolean;
 }) {
   const wizard = useOnboardingWizard({ initiallyConnected, initialPrefs, initialEquipment });
 
@@ -28,6 +31,7 @@ export function OnboardingWizard({
       <OnboardingWizardShell initialEquipment={initialEquipment} wizard={wizard} />
       <OnboardingCredentialHost
         credentialTarget={wizard.credentialTarget}
+        unofficialAcknowledged={unofficialAcknowledged}
         onTargetChange={wizard.setCredentialTarget}
         onConnected={(id, nextPrefs) => {
           wizard.setConnected((prev) => new Set(prev).add(id));
