@@ -1,9 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  computePackTier,
-  isHardVerdictRequiringFull,
-  type PackInputSignals,
-} from './pack-tier';
+import { computePackTier, isHardVerdictRequiringFull, type PackInputSignals } from './pack-tier';
 
 function fullPack(overrides: Partial<PackInputSignals> = {}): PackInputSignals {
   return {

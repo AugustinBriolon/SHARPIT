@@ -39,9 +39,8 @@ describe('persistEvidenceFromSnapshot health consent gate', () => {
 
   it('does not persist evidence when health consent is missing', async () => {
     athleteHasHealthDataConsent.mockResolvedValue(false);
-    const { persistEvidenceFromSnapshot } = await import(
-      '@/lib/science/reliability/persist-evidence'
-    );
+    const { persistEvidenceFromSnapshot } =
+      await import('@/lib/science/reliability/persist-evidence');
 
     await persistEvidenceFromSnapshot({
       athleteId: 'ath-1',
@@ -59,9 +58,8 @@ describe('persistEvidenceFromSnapshot health consent gate', () => {
 
   it('persists evidence when health consent is present', async () => {
     athleteHasHealthDataConsent.mockResolvedValue(true);
-    const { persistEvidenceFromSnapshot } = await import(
-      '@/lib/science/reliability/persist-evidence'
-    );
+    const { persistEvidenceFromSnapshot } =
+      await import('@/lib/science/reliability/persist-evidence');
 
     await persistEvidenceFromSnapshot({
       athleteId: 'ath-1',

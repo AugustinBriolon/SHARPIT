@@ -2,10 +2,10 @@
 
 Binary PNG evidence for the signed-out promise screens (Design SHIP).
 
-| File | State |
-| ---- | ----- |
-| `teaser-01-endurance-mobile.png` | `/welcome` screen 1 — Endurance |
-| `teaser-02-twin-mobile.png` | `/welcome` screen 2 — Digital Twin |
+| File                               | State                                         |
+| ---------------------------------- | --------------------------------------------- |
+| `teaser-01-endurance-mobile.png`   | `/welcome` screen 1 — Endurance               |
+| `teaser-02-twin-mobile.png`        | `/welcome` screen 2 — Digital Twin            |
 | `teaser-03-morning-cta-mobile.png` | `/welcome` screen 3 — Décider le matin + CTAs |
 
 ## Capture method (Eng / Design)

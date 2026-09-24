@@ -3,6 +3,7 @@ import type { V1TodayConsistency } from '@/lib/presentation/v1/consistency';
 import type { PresentationEmptyState } from '@/core/presentation/types';
 import type { TodayViewModel } from '@/core/presentation/today-view-model';
 import { activityTypeLabels } from '@/lib/format';
+import { CONNECT_GARMIN_PATH } from '@/lib/integrations/garmin/garmin-connect-handoff';
 
 export type V1TodayPackTier = 'FULL' | 'PARTIAL' | 'LOW' | 'INSUFFICIENT';
 
@@ -55,7 +56,10 @@ export type V1TodayResponse = {
     title: string;
     message: string | null;
     code: 'NO_CONTENT';
+    /** Absolute Garmin handoff URL on the canonical origin (ADR-040). */
     webURL: string;
+    /** CTA label for `webURL`; null when Garmin is already connected — nothing to do. */
+    actionLabel: string | null;
   } | null;
   verdict: {
     eyebrow: string;
@@ -94,33 +98,41 @@ export type V1TodayResponse = {
   consistency: V1TodayConsistency | null;
 };
 
-function joinWebURL(webOrigin: string, href: string | undefined): string {
-  const base = webOrigin.replace(/\/$/, '');
-  if (!href || href === '/') {
-    return `${base}/`;
-  }
-  if (href.startsWith('http://') || href.startsWith('https://')) {
-    return href;
-  }
-  return `${base}${href.startsWith('/') ? href : `/${href}`}`;
-}
+const CONNECT_GARMIN_EMPTY = {
+  title: 'Pas encore de données',
+  message: 'Connecte Garmin pour que ton Twin lise ton sommeil, ta récupération et tes séances.',
+  actionLabel: 'Connecter Garmin',
+} as const;
 
-function projectEmpty(source: V1TodaySource, webOrigin: string): V1TodayResponse['empty'] {
+function projectEmpty(
+  source: V1TodaySource,
+  input: V1TodayProjectionInput,
+): V1TodayResponse['empty'] {
   if (source.hasContent && source.emptyState === null) {
     return null;
   }
-  return emptyPayload(source.emptyState, webOrigin);
+  return emptyPayload(source.emptyState, input);
 }
 
+/**
+ * Without Garmin the gap is the missing source, so the empty state says so and offers
+ * the handoff. With Garmin connected the data is on its way: the Twin's own message
+ * stands and there is no action.
+ */
 function emptyPayload(
   emptyState: V1TodaySource['emptyState'],
-  webOrigin: string,
+  input: V1TodayProjectionInput,
 ): NonNullable<V1TodayResponse['empty']> {
+  const webURL = `${input.webOrigin.replace(/\/$/, '')}${CONNECT_GARMIN_PATH}`;
+  if (!input.garminConnected) {
+    return { ...CONNECT_GARMIN_EMPTY, code: 'NO_CONTENT', webURL };
+  }
   return {
     title: emptyState?.title ?? 'Pas encore de données',
     message: emptyState?.description ?? null,
     code: 'NO_CONTENT',
-    webURL: joinWebURL(webOrigin, emptyState?.action?.href),
+    webURL,
+    actionLabel: null,
   };
 }
 
@@ -205,13 +217,15 @@ export type V1TodayProjectionInput = {
    * from a separate activity fetch — so the caller resolves it and passes it in.
    */
   consistency?: V1TodayConsistency | null;
+  /** Decides the empty state's copy and action; unknown reads as not connected. */
+  garminConnected?: boolean;
 };
 
 export function projectV1Today(
   source: V1TodaySource,
   input: V1TodayProjectionInput,
 ): V1TodayResponse {
-  const empty = projectEmpty(source, input.webOrigin);
+  const empty = projectEmpty(source, input);
   return {
     apiVersion: 1,
     trainingDayId: input.trainingDayId,

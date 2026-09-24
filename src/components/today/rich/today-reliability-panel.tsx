@@ -43,9 +43,7 @@ export function TodayReliabilityPanel({
 
   return (
     <div className="mt-5">
-      {reliability.estimationChip ? (
-        <EstimationChip label={reliability.estimationChip} />
-      ) : null}
+      {reliability.estimationChip ? <EstimationChip label={reliability.estimationChip} /> : null}
       {reliability.softHero ? <VisibleGaps gaps={reliability.visibleGaps} /> : null}
       {reliability.ctaCompleteSources ? (
         <div className="mt-4 flex flex-wrap gap-2">

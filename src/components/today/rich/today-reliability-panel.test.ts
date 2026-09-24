@@ -2,10 +2,7 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
 describe('TodayReliabilityPanel', () => {
-  const source = readFileSync(
-    new URL('./today-reliability-panel.tsx', import.meta.url),
-    'utf8',
-  );
+  const source = readFileSync(new URL('./today-reliability-panel.tsx', import.meta.url), 'utf8');
 
   it('does not mount a Pourquoi collapsible on the Today hero', () => {
     expect(source).not.toMatch(/label=["']Pourquoi["']/);

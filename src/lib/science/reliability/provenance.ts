@@ -99,9 +99,7 @@ export function buildReliabilityProvenance(input: ProvenanceBuildInput): Reliabi
       key: 'baseline',
       label: 'Baseline HRV',
       detail:
-        input.hrvBaselineDays === null
-          ? 'indisponible'
-          : `${input.hrvBaselineDays} j d’historique`,
+        input.hrvBaselineDays === null ? 'indisponible' : `${input.hrvBaselineDays} j d’historique`,
       status: seriesStatus(
         gaps.has('BASELINE_MISSING') || gaps.has('BASELINE_SHORT'),
         gaps.has('BASELINE_PARTIAL'),

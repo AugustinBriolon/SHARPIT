@@ -18,10 +18,7 @@ function hoursSince(iso: string | null | undefined, now: Date): number | null {
   return (now.getTime() - t) / 3_600_000;
 }
 
-function domainLastUpdated(
-  snapshot: AthleteSnapshot,
-  domain: string,
-): string | null {
+function domainLastUpdated(snapshot: AthleteSnapshot, domain: string): string | null {
   return snapshot.freshness.domains.find((d) => d.domain === domain)?.lastUpdatedAt ?? null;
 }
 
@@ -30,9 +27,8 @@ function countRecoveryDimensions(snapshot: AthleteSnapshot): number {
   if (!dims) {
     return 0;
   }
-  return [dims.autonomic, dims.sleep, dims.subjective, dims.loadContext].filter(
-    (d) => d.available,
-  ).length;
+  return [dims.autonomic, dims.sleep, dims.subjective, dims.loadContext].filter((d) => d.available)
+    .length;
 }
 
 /**

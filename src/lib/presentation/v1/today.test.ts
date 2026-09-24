@@ -89,25 +89,44 @@ describe('projectV1Today', () => {
     expect(JSON.stringify(json)).not.toMatch(/href|bgClass|rounded-/);
   });
 
-  it('sets empty NO_CONTENT and absolute webURL', () => {
+  it('offers the Garmin handoff when the day is empty and Garmin is not connected', () => {
     const json = projectV1Today(
       source({
         hasContent: false,
         emptyState: {
-          title: 'Pas encore de données',
-          description: 'Connecte Garmin sur le web',
+          title: 'Données insuffisantes',
+          description: 'SHARPIT attend tes premières données.',
           action: { label: 'Ouvrir', href: '/moi' },
         },
       }),
-      { trainingDayId: '2026-09-15', webOrigin: origin },
+      { trainingDayId: '2026-09-15', webOrigin: `${origin}/`, garminConnected: false },
     );
     expect(json.empty).toEqual({
       title: 'Pas encore de données',
-      message: 'Connecte Garmin sur le web',
+      message:
+        'Connecte Garmin pour que ton Twin lise ton sommeil, ta récupération et tes séances.',
       code: 'NO_CONTENT',
-      webURL: 'https://app.example/moi',
+      webURL: 'https://app.example/connect/garmin',
+      actionLabel: 'Connecter Garmin',
     });
     expect(json.verdict.headline).toBe('Pas encore de données');
+  });
+
+  it('keeps the Twin’s own message and drops the action once Garmin is connected', () => {
+    const json = projectV1Today(
+      source({
+        hasContent: false,
+        emptyState: { title: 'Données insuffisantes', description: 'SHARPIT attend tes données.' },
+      }),
+      { trainingDayId: '2026-09-15', webOrigin: origin, garminConnected: true },
+    );
+    expect(json.empty).toEqual({
+      title: 'Données insuffisantes',
+      message: 'SHARPIT attend tes données.',
+      code: 'NO_CONTENT',
+      webURL: 'https://app.example/connect/garmin',
+      actionLabel: null,
+    });
   });
 
   it('drops weather and sessions when absent', () => {

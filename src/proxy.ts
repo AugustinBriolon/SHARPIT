@@ -23,6 +23,11 @@ const isPublicRoute = createRouteMatcher([
   '/apple-splash(.*)',
   '/demo',
   '/api/demo/exit',
+  // Apple's CDN fetches it without a session and refuses redirects (ADR-040).
+  '/.well-known/apple-app-site-association',
+  // End of the native Garmin handoff: reads only its query string, and must render
+  // even if the web session expired mid-flow.
+  '/connect/garmin/callback',
 ]);
 
 // Callbacks OAuth : des GET qui écrivent en base au retour du fournisseur.
@@ -84,12 +89,7 @@ export default clerkMiddleware(async (auth, req) => {
   // Strangers hitting `/` (Today) land on the public teaser instead of the
   // Clerk sign-in wall (and its demo callout). Signed-in athletes and demo
   // visitors keep Today at `/`.
-  if (
-    !userId &&
-    !isDemoVisitor &&
-    req.nextUrl.pathname === '/' &&
-    req.method === 'GET'
-  ) {
+  if (!userId && !isDemoVisitor && req.nextUrl.pathname === '/' && req.method === 'GET') {
     const welcome = req.nextUrl.clone();
     welcome.pathname = '/welcome';
     return NextResponse.redirect(welcome);

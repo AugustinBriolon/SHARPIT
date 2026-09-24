@@ -1,9 +1,6 @@
 import { ActivityType } from '@prisma/client';
 import { describe, expect, it } from 'vitest';
-import {
-  groupPlannedSessions,
-  resolveBrickSiblingActivityLinks,
-} from './brick-sessions';
+import { groupPlannedSessions, resolveBrickSiblingActivityLinks } from './brick-sessions';
 
 describe('resolveBrickSiblingActivityLinks', () => {
   it('returns other realized legs in brick order, excluding the current activity', () => {
@@ -73,7 +70,6 @@ describe('resolveBrickSiblingActivityLinks', () => {
     ).toEqual([]);
   });
 });
-
 
 describe('groupPlannedSessions demotion', () => {
   const bike = {

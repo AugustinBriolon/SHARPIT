@@ -43,6 +43,10 @@ vi.mock('@/lib/planned-session/linking/session-linking', () => ({
   analyzeLinkedPlannedSessions: vi.fn().mockResolvedValue(0),
 }));
 
+vi.mock('@/lib/integrations/garmin/garmin-sync', () => ({
+  getGarminAccount: vi.fn().mockResolvedValue(null),
+}));
+
 async function importRoute() {
   return await import('./route');
 }
@@ -69,6 +73,24 @@ describe('GET /api/v1/today', () => {
     expect(response.status).toBe(200);
     expect(body.apiVersion).toBe(1);
     expect(body.viewModel).toBeUndefined();
+  });
+
+  it('hands iOS the canonical origin and whether Garmin is connected', async () => {
+    vi.stubEnv('NEXT_PUBLIC_APP_URL', 'https://sharpit.app/');
+    const { buildTodayPresentationViewModel } = await import('@/lib/presentation/today/today');
+    const { getGarminAccount } = await import('@/lib/integrations/garmin/garmin-sync');
+    const { projectV1TodayFromViewModel } = await import('@/lib/presentation/v1/today');
+    vi.mocked(buildTodayPresentationViewModel).mockResolvedValue({} as never);
+    vi.mocked(getGarminAccount).mockResolvedValue({ id: 'garmin-1' } as never);
+
+    const { GET } = await importRoute();
+    await GET(new NextRequest('http://localhost/api/v1/today?trainingDayId=2026-09-10'));
+
+    expect(vi.mocked(projectV1TodayFromViewModel).mock.calls[0][1]).toMatchObject({
+      webOrigin: 'https://sharpit.app',
+      garminConnected: true,
+    });
+    vi.unstubAllEnvs();
   });
 
   describe('auto-link', () => {

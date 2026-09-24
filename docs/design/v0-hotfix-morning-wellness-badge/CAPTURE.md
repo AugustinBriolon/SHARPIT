@@ -2,8 +2,8 @@
 
 Binary PNG evidence for removing **Pris en compte** from the morning wellness modal (`Ressenti du matin`) only. Journal header / pondération callout stay.
 
-| File | State |
-| ---- | ----- |
+| File                                         | State                                                                     |
+| -------------------------------------------- | ------------------------------------------------------------------------- |
 | `morning-wellness-modal-no-badge-mobile.png` | Mobile (390×844) modal scale step without the green badge under the tiles |
 
 ## Capture method

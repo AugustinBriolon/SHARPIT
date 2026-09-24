@@ -2,8 +2,8 @@
 
 Binary PNG evidence for the soft wall after health consent withdraw (PR #121).
 
-| File | State |
-| ---- | ----- |
+| File                                  | State                                                                                                                               |
+| ------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
 | `consent-health-withdrawn-mobile.png` | `/consent?reason=health_withdrawn` — title « Consentement santé retiré », body FR, CTA « Réactiver et continuer ». No liquid-glass. |
 
 ## Capture method

@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse, after } from 'next/server';
+import { appOrigin } from '@/lib/app-origin';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
+import { getGarminAccount } from '@/lib/integrations/garmin/garmin-sync';
 import { getActivitiesList } from '@/lib/queries';
 import {
   analyzeLinkedPlannedSessions,
@@ -12,14 +14,6 @@ import { projectV1TodayFromViewModel } from '@/lib/presentation/v1/today';
 
 function isValidTrainingDayId(value: string): boolean {
   return /^\d{4}-\d{2}-\d{2}$/.test(value);
-}
-
-function webOriginFrom(request: NextRequest): string {
-  const configured = process.env.NEXT_PUBLIC_APP_URL;
-  if (configured && configured.length > 0) {
-    return configured.replace(/\/$/, '');
-  }
-  return request.nextUrl.origin;
 }
 
 /** Midday local time on the requested day — away from both DST edges. */
@@ -42,6 +36,20 @@ async function autoLinkTodayActivities(athleteId: string, trainingDayId: string)
   } catch (error) {
     console.error('[api/v1/today/auto-link]', error);
   }
+}
+
+/**
+ * Regularity is read from the athlete's recent activities rather than from the Today
+ * view model, which does not carry them. Two ISO weeks is the smallest window that
+ * always covers the day strip *and* a full current week, whichever weekday the request
+ * lands on. A failure here costs the card, not the screen.
+ */
+async function loadConsistency(athleteId: string, trainingDayId: string) {
+  const activities = await getActivitiesList(athleteId, { sinceDays: 14 }).catch((error) => {
+    console.error('[api/v1/today/consistency]', error);
+    return null;
+  });
+  return activities ? projectV1Consistency(activities, referenceDateFor(trainingDayId)) : null;
 }
 
 /**
@@ -70,27 +78,16 @@ export async function GET(request: NextRequest) {
       return null;
     });
 
-    // Regularity is read from the athlete's recent activities rather than from the
-    // Today view model, which does not carry them. Two ISO weeks is the smallest window
-    // that always covers the day strip *and* a full current week, whichever weekday the
-    // request lands on. A failure here costs the card, not the screen.
-    const consistencyActivities = await getActivitiesList(athleteId, { sinceDays: 14 }).catch(
-      (error) => {
-        console.error('[api/v1/today/consistency]', error);
-        return null;
-      },
-    );
-
-    const viewModel = await buildTodayPresentationViewModel(athleteId, trainingDayId, {
-      morningRecalibration,
-    });
+    const [viewModel, garminAccount] = await Promise.all([
+      buildTodayPresentationViewModel(athleteId, trainingDayId, { morningRecalibration }),
+      getGarminAccount(athleteId),
+    ]);
     return NextResponse.json(
       projectV1TodayFromViewModel(viewModel, {
         trainingDayId,
-        webOrigin: webOriginFrom(request),
-        consistency: consistencyActivities
-          ? projectV1Consistency(consistencyActivities, referenceDateFor(trainingDayId))
-          : null,
+        webOrigin: appOrigin(request.nextUrl.origin),
+        garminConnected: Boolean(garminAccount),
+        consistency: await loadConsistency(athleteId, trainingDayId),
       }),
     );
   } catch (error) {

@@ -27,7 +27,9 @@ function isNonSessionSubjective(data: unknown): boolean {
   if (typeof data !== 'object' || data === null || Array.isArray(data)) {
     return false;
   }
-  return !('sessionExternalId' in data && (data as { sessionExternalId?: unknown }).sessionExternalId);
+  return !(
+    'sessionExternalId' in data && (data as { sessionExternalId?: unknown }).sessionExternalId
+  );
 }
 
 /** Latest morning (non-session) SUBJECTIVE MANUAL entry with full scales, if any. */
