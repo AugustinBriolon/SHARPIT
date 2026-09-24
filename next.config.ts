@@ -76,6 +76,21 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  async redirects() {
+    return [
+      {
+        source: '/:path*',
+        has: [
+          {
+            type: 'host',
+            value: 'sharpit.vercel.app',
+          },
+        ],
+        destination: 'https://sharpit.app/:path*',
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default nextConfig;
