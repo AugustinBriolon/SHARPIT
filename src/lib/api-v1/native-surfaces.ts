@@ -34,6 +34,27 @@ export const NATIVE_V1_SURFACES = [
   { path: 'garmin/workouts/from-planned-session', methods: ['POST'] },
   { path: 'privacy/consent', methods: ['GET', 'POST'] },
   { path: 'onboarding/complete', methods: ['POST'] },
+  { path: 'garmin/sync', methods: ['POST'] },
+] as const;
+
+/**
+ * Native-only surfaces: `/api/v1` routes with their own handler and v1 projection (no
+ * `/api` twin). Listed so the contract stays inventoried in one place.
+ */
+export const NATIVE_V1_ONLY = [
+  { path: 'today', methods: ['GET'] },
+  { path: 'sleep', methods: ['GET'] },
+  { path: 'recovery', methods: ['GET'] },
+  { path: 'sync', methods: ['POST'] },
+  { path: 'sync-status', methods: ['GET'] },
+  { path: 'health-samples', methods: ['POST'] },
+  { path: 'push/device-token', methods: ['POST', 'DELETE'] },
+  { path: 'push/test', methods: ['POST'] },
+  { path: 'body/overview', methods: ['GET'] },
+  { path: 'body/series', methods: ['GET'] },
+  { path: 'pro', methods: ['GET'] },
+  { path: 'billing/apple/app-account-token', methods: ['POST'] },
+  { path: 'billing/apple/verify', methods: ['POST'] },
 ] as const;
 
 /**
