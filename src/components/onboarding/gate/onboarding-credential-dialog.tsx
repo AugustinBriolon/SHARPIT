@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Dialog,
   DialogContent,
@@ -21,6 +22,7 @@ import {
   connectMyFitnessPal,
   connectRenpho,
   fetchIntegrationSourcePrefs,
+  postPrivacyConsent,
 } from '@/lib/query/fetchers';
 
 type CredentialProvider = Extract<IntegrationId, 'garmin' | 'renpho' | 'myfitnesspal'>;
@@ -73,13 +75,55 @@ async function postCredentialConnect(
   });
 }
 
+/**
+ * Garmin, Renpho and MyFitnessPal are unofficial integrations: connecting one needs the
+ * athlete's acknowledgement, optional on the consent wall. Asked here, in place — without
+ * it the connect was refused and Garmin bounced the athlete out of onboarding.
+ */
+function UnofficialAckField({
+  checked,
+  onCheckedChange,
+}: {
+  checked: boolean;
+  onCheckedChange: (checked: boolean) => void;
+}) {
+  return (
+    <label className="flex items-start gap-3 text-sm leading-relaxed">
+      <Checkbox
+        checked={checked}
+        className="mt-0.5"
+        onCheckedChange={(value) => onCheckedChange(value === true)}
+      />
+      <span>
+        Je comprends que cette source passe par un accès non officiel, fourni tel quel, qui peut
+        cesser de fonctionner.
+      </span>
+    </label>
+  );
+}
+
+/** Saves the acknowledgement; returns the message to show when it can't. */
+async function recordUnofficialAck(checked: boolean): Promise<string | null> {
+  if (!checked) {
+    return 'Coche la case pour continuer.';
+  }
+  try {
+    await postPrivacyConsent({ unofficialProvidersAck: true });
+    return null;
+  } catch (err) {
+    return err instanceof Error ? err.message : 'Enregistrement impossible';
+  }
+}
+
 export function OnboardingCredentialDialog({
   provider,
   dataClass,
   open,
   onOpenChange,
   onConnected,
+  unofficialAcknowledged,
 }: {
+  unofficialAcknowledged: boolean;
   provider: CredentialProvider | null;
   dataClass: DataClassId | null;
   open: boolean;
@@ -88,6 +132,8 @@ export function OnboardingCredentialDialog({
 }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [acknowledged, setAcknowledged] = useState(unofficialAcknowledged);
+  const [ackChecked, setAckChecked] = useState(false);
 
   if (!provider) {
     return null;
@@ -105,6 +151,15 @@ export function OnboardingCredentialDialog({
     const form = new FormData(e.currentTarget);
 
     try {
+      if (!acknowledged) {
+        const ackError = await recordUnofficialAck(ackChecked);
+        if (ackError) {
+          setError(ackError);
+          return;
+        }
+        setAcknowledged(true);
+      }
+
       if (activeProvider === 'garmin') {
         redirectGarminConnect(dataClass);
         return;
@@ -179,6 +234,9 @@ export function OnboardingCredentialDialog({
               />
             </div>
           ) : null}
+          {acknowledged ? null : (
+            <UnofficialAckField checked={ackChecked} onCheckedChange={setAckChecked} />
+          )}
           {error ? (
             <p aria-live="assertive" className="text-destructive text-sm">
               {error}

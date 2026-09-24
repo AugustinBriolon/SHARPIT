@@ -9,7 +9,9 @@ export function OnboardingCredentialHost({
   credentialTarget,
   onTargetChange,
   onConnected,
+  unofficialAcknowledged,
 }: {
+  unofficialAcknowledged: boolean;
   credentialTarget: { provider: CredentialProvider; dataClass: DataClassId } | null;
   onTargetChange: (target: { provider: CredentialProvider; dataClass: DataClassId } | null) => void;
   onConnected: (id: IntegrationId, nextPrefs?: IntegrationSourcePrefs) => void;
@@ -19,6 +21,7 @@ export function OnboardingCredentialHost({
       dataClass={credentialTarget?.dataClass ?? null}
       open={credentialTarget !== null}
       provider={credentialTarget?.provider ?? null}
+      unofficialAcknowledged={unofficialAcknowledged}
       onConnected={(id, prefs) => onConnected(id, prefs ?? undefined)}
       onOpenChange={(open) => {
         if (!open) {

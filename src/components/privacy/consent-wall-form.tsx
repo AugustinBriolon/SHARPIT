@@ -1,11 +1,12 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from '@/components/ui/toast';
+import { ENTRY_PATH } from '@/lib/onboarding/entry-path';
 import { CURRENT_PRIVACY_VERSION } from '@/lib/privacy/constants';
 import {
   consentWallCopy,
@@ -15,7 +16,6 @@ import {
 import { postPrivacyConsent } from '@/lib/query/fetchers';
 
 export function ConsentWallForm({ reason }: { reason?: ConsentWallReason | null } = {}) {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const resolvedReason = reason ?? parseConsentWallReason(searchParams.get('reason'));
   const copy = consentWallCopy(resolvedReason, { privacyVersion: CURRENT_PRIVACY_VERSION });
@@ -40,12 +40,11 @@ export function ConsentWallForm({ reason }: { reason?: ConsentWallReason | null 
         aiProcessingConsent: ai || undefined,
         unofficialProvidersAck: unofficial || undefined,
       });
-      toast.success('Consentements enregistrés');
-      router.replace('/');
-      router.refresh();
+      // Straight to the next screen (onboarding for a new account) — a full load through
+      // `/start`, so Today never renders in between. Stays busy until the page changes.
+      window.location.assign(ENTRY_PATH);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Enregistrement impossible');
-    } finally {
       setBusy(false);
     }
   }
