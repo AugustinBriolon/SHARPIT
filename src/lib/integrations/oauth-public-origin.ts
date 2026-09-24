@@ -1,3 +1,4 @@
+import { CONNECT_GARMIN_CALLBACK_PATH } from '@/lib/integrations/garmin/garmin-connect-handoff';
 import type { DataClassId } from '@/lib/integrations/provider-catalog';
 import { DATA_CLASSES } from '@/lib/integrations/provider-catalog';
 import type { NextRequest } from 'next/server';
@@ -10,7 +11,13 @@ export const INTEGRATION_DATA_CLASS_COOKIE = 'integration_data_class';
 
 export const DEFAULT_INTEGRATION_RETURN_PATH = '/settings/integrations';
 
-const ALLOWED_RETURN_PATHS = new Set(['/onboarding', '/settings/integrations', '/settings']);
+const ALLOWED_RETURN_PATHS = new Set([
+  '/onboarding',
+  '/settings/integrations',
+  '/settings',
+  // Native Garmin handoff (ADR-040) — ends the iOS ASWebAuthenticationSession.
+  CONNECT_GARMIN_CALLBACK_PATH,
+]);
 const DATA_CLASS_IDS = new Set<string>(DATA_CLASSES.map((c) => c.id));
 
 export function sanitizeDataClass(raw: string | null | undefined): DataClassId | null {

@@ -1,22 +1,12 @@
-import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import {
   garminConnectErrorMessage,
   garminConnectSchema,
   SSO_DISABLED_MESSAGE,
 } from '@/app/api/garmin/connect/connect-shared';
-import {
-  createGarminSsoState,
-  GARMIN_SSO_PAGE_PATH,
-  GARMIN_SSO_STATE_COOKIE,
-} from '@/lib/integrations/garmin/garmin-browser-sso';
-import {
-  publicOriginFromRequest,
-  redirectIfBindHost,
-  sanitizeIntegrationReturnTo,
-  setIntegrationReturnTo,
-} from '@/lib/integrations/oauth-return';
+import { GARMIN_SSO_PAGE_PATH } from '@/lib/integrations/garmin/garmin-browser-sso';
+import { startGarminBrowserSso } from '@/lib/integrations/garmin/garmin-sso-start';
+import { publicOriginFromRequest, redirectIfBindHost } from '@/lib/integrations/oauth-return';
 import { gateProviderConnect } from '@/lib/privacy/gate-provider-connect';
 
 export const maxDuration = 60;
@@ -26,14 +16,6 @@ export {
   garminConnectSchema,
   SSO_DISABLED_MESSAGE,
 } from '@/app/api/garmin/connect/connect-shared';
-
-const OAUTH_COOKIE_OPTS = {
-  httpOnly: true,
-  sameSite: 'lax' as const,
-  path: '/',
-  maxAge: 600,
-  secure: process.env.NODE_ENV === 'production',
-};
 
 /**
  * Start browser CAS SSO — sets CSRF state, then opens the Sharpit page that
@@ -51,18 +33,11 @@ export async function GET(request: NextRequest) {
       return consentBlock;
     }
 
-    const athleteId = await getCurrentAthleteId();
-    const returnTo = request.nextUrl.searchParams.get('returnTo');
-    const dataClass = request.nextUrl.searchParams.get('dataClass');
-    await setIntegrationReturnTo(returnTo, dataClass);
-
-    const state = createGarminSsoState({ athleteId });
-    const cookieStore = await cookies();
-    cookieStore.set(GARMIN_SSO_STATE_COOKIE, state, OAUTH_COOKIE_OPTS);
-
-    const target = new URL(GARMIN_SSO_PAGE_PATH, publicOriginFromRequest(request));
-    target.searchParams.set('returnTo', sanitizeIntegrationReturnTo(returnTo));
-    return NextResponse.redirect(target);
+    return await startGarminBrowserSso(request, {
+      returnTo: request.nextUrl.searchParams.get('returnTo'),
+      dataClass: request.nextUrl.searchParams.get('dataClass'),
+      pagePath: GARMIN_SSO_PAGE_PATH,
+    });
   } catch (error) {
     console.error('[api/garmin/connect] start SSO failed', {
       name: error instanceof Error ? error.name : 'Error',

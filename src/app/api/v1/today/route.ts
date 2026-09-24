@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse, after } from 'next/server';
+import { appOrigin } from '@/lib/app-origin';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
+import { getGarminAccount } from '@/lib/integrations/garmin/garmin-sync';
 import { getActivitiesList } from '@/lib/queries';
 import {
   analyzeLinkedPlannedSessions,
@@ -12,14 +14,6 @@ import { projectV1TodayFromViewModel } from '@/lib/presentation/v1/today';
 
 function isValidTrainingDayId(value: string): boolean {
   return /^\d{4}-\d{2}-\d{2}$/.test(value);
-}
-
-function webOriginFrom(request: NextRequest): string {
-  const configured = process.env.NEXT_PUBLIC_APP_URL;
-  if (configured && configured.length > 0) {
-    return configured.replace(/\/$/, '');
-  }
-  return request.nextUrl.origin;
 }
 
 /** Midday local time on the requested day — away from both DST edges. */
@@ -81,13 +75,15 @@ export async function GET(request: NextRequest) {
       },
     );
 
-    const viewModel = await buildTodayPresentationViewModel(athleteId, trainingDayId, {
-      morningRecalibration,
-    });
+    const [viewModel, garminAccount] = await Promise.all([
+      buildTodayPresentationViewModel(athleteId, trainingDayId, { morningRecalibration }),
+      getGarminAccount(athleteId),
+    ]);
     return NextResponse.json(
       projectV1TodayFromViewModel(viewModel, {
         trainingDayId,
-        webOrigin: webOriginFrom(request),
+        webOrigin: appOrigin(request.nextUrl.origin),
+        garminConnected: Boolean(garminAccount),
         consistency: consistencyActivities
           ? projectV1Consistency(consistencyActivities, referenceDateFor(trainingDayId))
           : null,
