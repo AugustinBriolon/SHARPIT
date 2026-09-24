@@ -25,6 +25,11 @@ vi.mock('@/lib/prisma', () => ({
   },
 }));
 
+const revokeAllMock = vi.fn();
+vi.mock('@/lib/integrations/provider-revocation', () => ({
+  revokeAllProviderAccess: (...args: unknown[]) => revokeAllMock(...args),
+}));
+
 const deleteTracesMock = vi.fn();
 vi.mock('@/lib/ai/langfuse-erasure', () => ({
   deleteLangfuseTracesForAthlete: (...args: unknown[]) => deleteTracesMock(...args),
@@ -44,6 +49,10 @@ describe('deleteAthleteAccount', () => {
       order.push('mark');
       return { id: 'athlete-1', clerkUserId: 'user_1' };
     });
+    revokeAllMock.mockImplementation(async () => {
+      order.push('revoke');
+      return {};
+    });
     transactionMock.mockImplementation(async () => {
       order.push('credentials');
       return [];
@@ -62,14 +71,14 @@ describe('deleteAthleteAccount', () => {
     });
   });
 
-  it('deletes everything now: mark, credentials, identity, Coach traces, then rows', async () => {
+  it('deletes everything now: mark, provider grants, credentials, identity, Coach traces, then rows', async () => {
     const { deleteAthleteAccount } = await import('./account-deletion');
     await expect(deleteAthleteAccount('athlete-1', now)).resolves.toEqual({
       athleteId: 'athlete-1',
       deletedAt: now,
     });
 
-    expect(order).toEqual(['mark', 'credentials', 'identity', 'traces', 'rows']);
+    expect(order).toEqual(['mark', 'revoke', 'credentials', 'identity', 'traces', 'rows']);
     expect(updateMock).toHaveBeenCalledWith({
       where: { id: 'athlete-1' },
       data: { deletedAt: now },

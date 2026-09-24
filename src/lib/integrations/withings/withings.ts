@@ -1,3 +1,4 @@
+import { createHmac } from 'node:crypto';
 import { ProviderAuthError } from '@/lib/integrations/shared/connection-status';
 import { normalizeOAuthPublicOrigin } from '@/lib/integrations/oauth-public-origin';
 
@@ -5,6 +6,7 @@ const WITHINGS_OAUTH_AUTHORIZE = 'https://account.withings.com/oauth2_user/autho
 const WITHINGS_OAUTH_TOKEN = 'https://wbsapi.withings.net/v2/oauth2';
 const WITHINGS_MEASURE = 'https://wbsapi.withings.net/measure';
 const WITHINGS_HEART = 'https://wbsapi.withings.net/v2/heart';
+const WITHINGS_SIGNATURE = 'https://wbsapi.withings.net/v2/signature';
 
 export const WITHINGS_SCOPE = 'user.info,user.metrics';
 
@@ -110,6 +112,33 @@ export async function exchangeWithingsCode(
     client_secret: clientSecret,
     code,
     redirect_uri: resolvedRedirectUri,
+  });
+}
+
+/** Withings request signature: HMAC-SHA256 of the ordered values, comma-joined. */
+function withingsSignature(clientSecret: string, values: string[]): string {
+  return createHmac('sha256', clientSecret).update(values.join(',')).digest('hex');
+}
+
+/**
+ * Ends SHARPIT's access to this Withings user on Withings' side (the athlete no longer
+ * sees SHARPIT among their partner apps). Signed with a one-time nonce, no token needed.
+ */
+export async function revokeWithingsAuthorization(withingsUserId: string): Promise<void> {
+  const { clientId, clientSecret } = getWithingsConfig();
+  const timestamp = String(Math.floor(Date.now() / 1000));
+  const { nonce } = await withingsFormPost<{ nonce: string }>(WITHINGS_SIGNATURE, {
+    action: 'getnonce',
+    client_id: clientId,
+    timestamp,
+    signature: withingsSignature(clientSecret, ['getnonce', clientId, timestamp]),
+  });
+  await withingsFormPost<unknown>(WITHINGS_OAUTH_TOKEN, {
+    action: 'revoke',
+    client_id: clientId,
+    nonce,
+    userid: withingsUserId,
+    signature: withingsSignature(clientSecret, ['revoke', clientId, nonce]),
   });
 }
 

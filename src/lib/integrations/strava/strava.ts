@@ -259,3 +259,14 @@ export function mapStravaType(stravaType: string): ActivityType | null {
   }
   return null;
 }
+
+/** Revokes SHARPIT's access for this Strava athlete — every token of the grant dies with it. */
+export async function deauthorizeStrava(accessToken: string): Promise<void> {
+  const response = await fetch(`${STRAVA_OAUTH_BASE}/deauthorize`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  if (!response.ok) {
+    throw new Error(`Strava deauthorize failed (HTTP ${response.status})`);
+  }
+}

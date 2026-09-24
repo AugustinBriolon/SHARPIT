@@ -34,6 +34,12 @@ export function getGoogleRedirectUri(): string {
   if (process.env.GOOGLE_REDIRECT_URI) {
     return process.env.GOOGLE_REDIRECT_URI;
   }
+  // The canonical origin (https://sharpit.app), not the per-deployment VERCEL_URL that
+  // Google's allowlist would never contain.
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL?.trim().replace(/\/+$/, '');
+  if (appUrl) {
+    return `${appUrl}/api/google/callback`;
+  }
   if (process.env.VERCEL_URL) {
     return `https://${process.env.VERCEL_URL}/api/google/callback`;
   }
@@ -321,4 +327,17 @@ export async function listEvents(
     `/calendars/${encodeURIComponent(calendarId)}/events?${params.toString()}`,
   );
   return (data?.items ?? []) as GoogleEvent[];
+}
+
+/** Revokes the grant behind this token (a refresh token revokes the whole grant). */
+export async function revokeGoogleToken(token: string): Promise<void> {
+  const response = await fetch('https://oauth2.googleapis.com/revoke', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ token }),
+  });
+  // 400 invalid_token: already revoked or expired — the grant is gone either way.
+  if (!response.ok && response.status !== 400) {
+    throw new Error(`Google revoke failed (HTTP ${response.status})`);
+  }
 }
