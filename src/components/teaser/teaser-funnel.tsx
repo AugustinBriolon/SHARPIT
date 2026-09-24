@@ -33,7 +33,9 @@ export function TeaserFunnel() {
           <div className="icon-well size-8" aria-hidden>
             <Activity className="size-4" strokeWidth={2.25} />
           </div>
-          <p className="text-page-title text-[1.25rem] leading-none tracking-tight">{TEASER_BRAND}</p>
+          <p className="text-page-title text-[1.25rem] leading-none tracking-tight">
+            {TEASER_BRAND}
+          </p>
         </header>
 
         <div
@@ -51,11 +53,7 @@ export function TeaserFunnel() {
         {/* Art. 13 transparency — legal pages reachable before signup (Privacy nit). */}
         <footer className="text-muted-foreground mt-6 flex flex-wrap gap-4 text-sm max-sm:pb-2">
           {TEASER_LEGAL_LINKS.map((item) => (
-            <Link
-              key={item.href}
-              className="underline-offset-4 hover:underline"
-              href={item.href}
-            >
+            <Link key={item.href} className="underline-offset-4 hover:underline" href={item.href}>
               {item.label}
             </Link>
           ))}

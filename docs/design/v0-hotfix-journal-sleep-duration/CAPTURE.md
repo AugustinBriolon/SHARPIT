@@ -2,16 +2,16 @@
 
 Binary PNG evidence that **Sommeil ≥ cible** shows actual and cible as hours + minutes (never lone `N min`).
 
-| File | State |
-| ---- | ----- |
+| File                                       | State                                                                  |
+| ------------------------------------------ | ---------------------------------------------------------------------- |
 | `journal-checklist-sleep-h-min-mobile.png` | Mobile (390×844 @2x) checklist auto with sleep row `7 h 30 / ≥ 7 h 00` |
 
 ## Before / after
 
-| | Detail |
-| --- | --- |
+|        | Detail                |
+| ------ | --------------------- |
 | Before | `450 min / ≥ 420 min` |
-| After | `7 h 30 / ≥ 7 h 00` |
+| After  | `7 h 30 / ≥ 7 h 00`   |
 
 ## Capture method
 

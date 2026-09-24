@@ -5,10 +5,10 @@ Binary PNG evidence for Design SHIP (PR hotfix):
 1. Today hero **sans** panel « Pourquoi » (soft-hero gaps conservés)
 2. Onboarding Disponibilités : **jours seuls** (pas d’input nb séances)
 
-| File | State |
-| ---- | ----- |
-| `today-hero-sans-pourquoi-mobile.png` | Soft-hero PARTIAL : chip + gaps, **pas** de collapsible Pourquoi |
-| `onboarding-days-only-mobile.png` | Étape Disponibilités : jours + lecture dérivée (3 séances possibles) |
+| File                                  | State                                                                |
+| ------------------------------------- | -------------------------------------------------------------------- |
+| `today-hero-sans-pourquoi-mobile.png` | Soft-hero PARTIAL : chip + gaps, **pas** de collapsible Pourquoi     |
+| `onboarding-days-only-mobile.png`     | Étape Disponibilités : jours + lecture dérivée (3 séances possibles) |
 
 ## Capture method
 

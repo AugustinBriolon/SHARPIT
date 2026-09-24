@@ -223,9 +223,8 @@ export async function updateAthleteConsents(
   // Science Sport evidence holds health-derived inputs — purge on health or AI consent withdraw.
   if (input.healthDataConsent === false || input.aiProcessingConsent === false) {
     try {
-      const { purgeAnalysisEvidenceForAthlete } = await import(
-        '@/lib/science/reliability/analysis-evidence-store'
-      );
+      const { purgeAnalysisEvidenceForAthlete } =
+        await import('@/lib/science/reliability/analysis-evidence-store');
       await purgeAnalysisEvidenceForAthlete(athleteId);
     } catch (error) {
       logSafeError('privacy/purge-analysis-evidence-consent', error, { athleteId });

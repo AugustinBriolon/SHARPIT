@@ -32,9 +32,7 @@ describe('decideAnalysisEvidenceRepair', () => {
   });
 
   it('is a no-op when the migration is not failed', () => {
-    expect(decideAnalysisEvidenceRepair({ failed: false, tableAlreadyPresent: true })).toBe(
-      'noop',
-    );
+    expect(decideAnalysisEvidenceRepair({ failed: false, tableAlreadyPresent: true })).toBe('noop');
   });
 
   it('marks applied when failed but AnalysisEvidenceSnapshot already exists', () => {

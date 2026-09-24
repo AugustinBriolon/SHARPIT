@@ -26,11 +26,7 @@ export const PACK_TIER_THRESHOLDS = {
  * Hard product verdicts that require pack FULL.
  * Assertive TRAIN_SMART is gated the same way (Science grille §4).
  */
-export const HARD_VERDICTS_REQUIRING_FULL = [
-  'TRAIN_HARD',
-  'RACE_READY',
-  'TRAIN_SMART',
-] as const;
+export const HARD_VERDICTS_REQUIRING_FULL = ['TRAIN_HARD', 'RACE_READY', 'TRAIN_SMART'] as const;
 
 export type HardVerdictRequiringFull = (typeof HARD_VERDICTS_REQUIRING_FULL)[number];
 

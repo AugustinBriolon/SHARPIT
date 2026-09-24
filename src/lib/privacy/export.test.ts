@@ -89,9 +89,7 @@ describe('buildAthleteExportJson', () => {
       trainingDayId: '2026-09-15',
       verdict: { packTier: 'FULL' },
     });
-    expect(payload.categories.health.analysisEvidenceSnapshots[0]).not.toHaveProperty(
-      'athleteId',
-    );
+    expect(payload.categories.health.analysisEvidenceSnapshots[0]).not.toHaveProperty('athleteId');
     expect(JSON.stringify(payload)).not.toMatch(/token|password|secret/i);
     expect(payload.retention.analysisEvidence).toEqual({
       maxRows: 5,

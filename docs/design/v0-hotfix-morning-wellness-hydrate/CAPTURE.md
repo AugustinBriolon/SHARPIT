@@ -2,8 +2,8 @@
 
 Binary PNG evidence that opening **Ressenti du matin** with an existing day entry prefills `ScalePicker` (saved score selected). First-time fill stays unset.
 
-| File | State |
-| ---- | ----- |
+| File                                             | State                                                                       |
+| ------------------------------------------------ | --------------------------------------------------------------------------- |
 | `morning-wellness-modal-edit-hydrate-mobile.png` | Mobile (390×844) modal Humeur step with tile **3** pre-selected (edit open) |
 
 ## Capture method
