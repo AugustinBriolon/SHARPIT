@@ -1,4 +1,5 @@
 import { clerkClient } from '@clerk/nextjs/server';
+import { deleteLangfuseTracesForAthlete } from '@/lib/ai/langfuse-erasure';
 import { prisma } from '@/lib/prisma';
 import { purgeEligibleBefore } from '@/lib/privacy/consent';
 import { PRIVACY_PURGE_DELAY_DAYS } from '@/lib/privacy/constants';
@@ -53,13 +54,37 @@ async function deleteClerkIdentity(clerkUserId: string, athleteId: string): Prom
   }
 }
 
-/** Removes the profile row; every tenant table cascades from it (Prisma relations). */
+/**
+ * Coach traces live in Langfuse, outside Postgres. Best effort: a Langfuse outage must
+ * not stop the account deletion.
+ */
+async function deleteCoachTraces(athleteId: string): Promise<void> {
+  try {
+    await deleteLangfuseTracesForAthlete(athleteId);
+  } catch (error) {
+    logSafeError('privacy/delete-langfuse', error, { athleteId });
+  }
+}
+
+/**
+ * Removes the profile row; every tenant table cascades from it (all 54, checked against
+ * the production schema).
+ */
 export async function hardDeleteAthleteData(athleteId: string): Promise<void> {
   await prisma.athleteProfile.deleteMany({ where: { id: athleteId } });
 }
 
 /**
- * Deletes an account now and for good: data and Clerk identity. Signing in again means
+ * Completes a deletion whose identity is signing back in: its data and traces go, the
+ * identity stays — it is about to own a fresh profile.
+ */
+export async function eraseAthleteData(athleteId: string): Promise<void> {
+  await deleteCoachTraces(athleteId);
+  await hardDeleteAthleteData(athleteId);
+}
+
+/**
+ * Deletes an account now and for good: data, Coach traces and Clerk identity. Signing in again means
  * signing up, from zero.
  *
  * Ordered so a failure midway still leaves the account unusable: `deletedAt` blocks the
@@ -77,6 +102,7 @@ export async function deleteAthleteAccount(
   });
   await clearAthleteProviderCredentials(athleteId);
   await deleteClerkIdentity(marked.clerkUserId, athleteId);
+  await deleteCoachTraces(athleteId);
   await hardDeleteAthleteData(athleteId);
   return { athleteId, deletedAt: now };
 }
@@ -100,6 +126,7 @@ export async function purgeSoftDeletedAthletes(now = new Date()): Promise<{ purg
   const purged: string[] = [];
   for (const row of due) {
     await deleteClerkIdentity(row.clerkUserId, row.id);
+    await deleteCoachTraces(row.id);
     await hardDeleteAthleteData(row.id);
     purged.push(row.id);
   }

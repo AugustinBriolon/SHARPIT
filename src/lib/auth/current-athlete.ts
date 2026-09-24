@@ -5,7 +5,7 @@ import { DEMO_CLERK_USER_ID, isDemoSession } from '@/lib/demo/demo-session';
 import { ensureDemoSeedFresh } from '@/lib/demo/seed-demo-data';
 import { prisma } from '@/lib/prisma';
 import { isDevClerkBypass } from '@/lib/dev/dev-auth';
-import { hardDeleteAthleteData } from '@/lib/privacy/account-deletion';
+import { eraseAthleteData } from '@/lib/privacy/account-deletion';
 
 const DEACTIVATED_ACCOUNT_ERROR = 'Compte supprimé';
 
@@ -53,7 +53,7 @@ async function restartAfterDeletion(
   if (Date.now() - deleted.deletedAt.getTime() < DELETION_SETTLE_MS) {
     assertAthleteActive(deleted.deletedAt);
   }
-  await hardDeleteAthleteData(deleted.id);
+  await eraseAthleteData(deleted.id);
   return createAthleteProfile(userId);
 }
 

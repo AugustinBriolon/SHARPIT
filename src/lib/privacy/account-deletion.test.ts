@@ -25,6 +25,11 @@ vi.mock('@/lib/prisma', () => ({
   },
 }));
 
+const deleteTracesMock = vi.fn();
+vi.mock('@/lib/ai/langfuse-erasure', () => ({
+  deleteLangfuseTracesForAthlete: (...args: unknown[]) => deleteTracesMock(...args),
+}));
+
 vi.mock('@clerk/nextjs/server', () => ({
   clerkClient: vi.fn(async () => ({ users: { deleteUser: deleteUserMock } })),
 }));
@@ -47,20 +52,24 @@ describe('deleteAthleteAccount', () => {
       order.push('identity');
       return {};
     });
+    deleteTracesMock.mockImplementation(async () => {
+      order.push('traces');
+      return 0;
+    });
     deleteManyMock.mockImplementation(async () => {
       order.push('rows');
       return { count: 1 };
     });
   });
 
-  it('deletes everything now: mark, credentials, identity, then rows', async () => {
+  it('deletes everything now: mark, credentials, identity, Coach traces, then rows', async () => {
     const { deleteAthleteAccount } = await import('./account-deletion');
     await expect(deleteAthleteAccount('athlete-1', now)).resolves.toEqual({
       athleteId: 'athlete-1',
       deletedAt: now,
     });
 
-    expect(order).toEqual(['mark', 'credentials', 'identity', 'rows']);
+    expect(order).toEqual(['mark', 'credentials', 'identity', 'traces', 'rows']);
     expect(updateMock).toHaveBeenCalledWith({
       where: { id: 'athlete-1' },
       data: { deletedAt: now },
@@ -68,6 +77,15 @@ describe('deleteAthleteAccount', () => {
     });
     expect((transactionMock.mock.calls[0]?.[0] as unknown[]).length).toBe(6);
     expect(deleteUserMock).toHaveBeenCalledWith('user_1');
+    expect(deleteManyMock).toHaveBeenCalledWith({ where: { id: 'athlete-1' } });
+  });
+
+  it('still deletes the data when Langfuse is unreachable', async () => {
+    deleteTracesMock.mockRejectedValue(new Error('langfuse down'));
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    const { deleteAthleteAccount } = await import('./account-deletion');
+
+    await deleteAthleteAccount('athlete-1', now);
     expect(deleteManyMock).toHaveBeenCalledWith({ where: { id: 'athlete-1' } });
   });
 
@@ -85,6 +103,7 @@ describe('purgeSoftDeletedAthletes', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     deleteUserMock.mockResolvedValue({});
+    deleteTracesMock.mockResolvedValue(0);
     deleteManyMock.mockResolvedValue({ count: 1 });
   });
 
@@ -104,6 +123,7 @@ describe('purgeSoftDeletedAthletes', () => {
       select: { id: true, clerkUserId: true },
     });
     expect(deleteUserMock).toHaveBeenCalledTimes(2);
+    expect(deleteTracesMock).toHaveBeenCalledWith('athlete-old');
     expect(deleteManyMock).toHaveBeenCalledTimes(2);
   });
 });
