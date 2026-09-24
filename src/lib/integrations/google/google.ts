@@ -322,3 +322,16 @@ export async function listEvents(
   );
   return (data?.items ?? []) as GoogleEvent[];
 }
+
+/** Revokes the grant behind this token (a refresh token revokes the whole grant). */
+export async function revokeGoogleToken(token: string): Promise<void> {
+  const response = await fetch('https://oauth2.googleapis.com/revoke', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ token }),
+  });
+  // 400 invalid_token: already revoked or expired — the grant is gone either way.
+  if (!response.ok && response.status !== 400) {
+    throw new Error(`Google revoke failed (HTTP ${response.status})`);
+  }
+}

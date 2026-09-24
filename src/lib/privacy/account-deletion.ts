@@ -1,5 +1,6 @@
 import { clerkClient } from '@clerk/nextjs/server';
 import { deleteLangfuseTracesForAthlete } from '@/lib/ai/langfuse-erasure';
+import { revokeAllProviderAccess } from '@/lib/integrations/provider-revocation';
 import { prisma } from '@/lib/prisma';
 import { purgeEligibleBefore } from '@/lib/privacy/consent';
 import { PRIVACY_PURGE_DELAY_DAYS } from '@/lib/privacy/constants';
@@ -88,7 +89,8 @@ export async function eraseAthleteData(athleteId: string): Promise<void> {
  * signing up, from zero.
  *
  * Ordered so a failure midway still leaves the account unusable: `deletedAt` blocks the
- * profile, credentials are wiped, the identity (and its sessions) goes, then the rows.
+ * profile, provider grants are revoked at Strava / Google / Withings, credentials are
+ * wiped, the identity (and its sessions) goes, then the rows.
  * If the last step fails, `/api/cron/privacy-purge` finishes it on its next run.
  */
 export async function deleteAthleteAccount(
@@ -100,6 +102,8 @@ export async function deleteAthleteAccount(
     data: { deletedAt: now },
     select: { id: true, clerkUserId: true },
   });
+  // Needs the credentials, so before they are wiped. Never throws.
+  await revokeAllProviderAccess(athleteId);
   await clearAthleteProviderCredentials(athleteId);
   await deleteClerkIdentity(marked.clerkUserId, athleteId);
   await deleteCoachTraces(athleteId);
