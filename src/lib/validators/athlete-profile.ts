@@ -4,6 +4,9 @@ import { EQUIPMENT_ITEM_IDS, STRENGTH_VENUES } from '@/lib/equipment/catalog';
 import { DISPLAY_MODES } from '@/lib/preferences/display-mode';
 import { PRACTICED_SPORTS } from '@/lib/practiced-sports';
 import { MAX_SESSIONS_PER_WEEK, MIN_SESSIONS_PER_WEEK } from '@/lib/training-availability/types';
+import { notificationPrefsPatchSchema } from '@/lib/notifications/notification-prefs';
+
+export const ATHLETE_SEXES = ['female', 'male', 'other'] as const;
 
 /**
  * Absent is not the same as cleared.
@@ -109,6 +112,7 @@ export const athleteProfileSchema = z
     heightCm: nullableHeightCm,
     targetWeightKg: nullableTargetWeightKg,
     birthDate: nullableBirthDate,
+    sex: z.enum(ATHLETE_SEXES).nullable(),
     ftpW: nullableInt,
     maxHr: nullableInt,
     lthr: nullableInt,
@@ -121,6 +125,8 @@ export const athleteProfileSchema = z
     practicedSports: athletePracticedSportsSchema.nullable(),
     trainingAvailability: athleteTrainingAvailabilitySchema.nullable(),
     displayMode: z.enum(DISPLAY_MODES),
+    /** Any subset; merged over what is stored. Null resets to the defaults. */
+    notificationPrefs: notificationPrefsPatchSchema.nullable(),
   })
   .partial()
   .refine((data) => Object.keys(data).length > 0, {

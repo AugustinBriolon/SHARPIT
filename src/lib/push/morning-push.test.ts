@@ -139,6 +139,21 @@ describe('morning-push', () => {
       });
     });
 
+    it('skips an athlete who turned the morning verdict off', async () => {
+      vi.mocked(prisma.athleteProfile.findUnique).mockResolvedValueOnce({
+        id: 'ath-1',
+        deletedAt: null,
+        lastMorningPushDate: null,
+        notificationPrefs: { version: 1, morningVerdict: false },
+        deviceTokens: [{ id: 'dev-1', token: 'token123', bundleId: 'app.sharpit.ios' }],
+      } as never);
+
+      const result = await sendMorningPushForAthlete('ath-1', { trainingDayId: '2026-09-24' });
+
+      expect(result.skippedReason).toBe('OPTED_OUT');
+      expect(result.sent).toBe(0);
+    });
+
     it('skips when athlete has no active device tokens', async () => {
       vi.mocked(prisma.athleteProfile.findUnique).mockResolvedValueOnce({
         id: 'ath-1',

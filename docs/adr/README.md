@@ -46,6 +46,9 @@
 | [ADR-040](./ADR-040-ios-product-canonical-api-v1.md)                           | iOS is the product client; `/api/v1` is the canonical contract                     | Accepted |
 | [ADR-041](./ADR-041-ios-design-tokens-generated-from-web.md)                   | The iOS design system is generated from the web design system                      | Accepted |
 | [ADR-042](./ADR-042-today-links-activities-on-read.md)                         | `/api/v1/today` links the day's activities to their planned sessions               | Accepted |
+| [ADR-043](./ADR-043-native-sync-and-apple-health.md)                           | Native sync and Apple Health day summaries                                         | Accepted |
+| [ADR-044](./ADR-044-sharpit-pro-billing.md)                                    | SharpIt Pro billing — StoreKit 2 verified by the web; the tier is derived          | Proposed |
+| [ADR-045](./ADR-045-biological-age-method.md)                                  | Biological age — a training estimate from VO₂max, adjusted, never a diagnosis      | Proposed |
 
 **Template:** [ADR-template.md](./ADR-template.md)
 

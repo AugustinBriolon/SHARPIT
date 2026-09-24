@@ -9,6 +9,10 @@ import { sanitizePracticedSportsForPersist } from '@/lib/practiced-sports';
 import { sanitizeTrainingAvailabilityForPersist } from '@/lib/training-availability/parse';
 import { DEFAULT_DISPLAY_MODE } from '@/lib/preferences/display-mode';
 import { accessTierSetCookieValue } from '@/lib/access/tier-cookie';
+import {
+  mergeNotificationPrefs,
+  resolveNotificationPrefs,
+} from '@/lib/notifications/notification-prefs';
 
 function withAccessTierCookie(response: NextResponse, tier: 'FREE' | 'PRO') {
   response.headers.append('Set-Cookie', accessTierSetCookieValue(tier));
@@ -84,6 +88,27 @@ function trainingAvailabilityPatch(
   };
 }
 
+/**
+ * Merges the PATCH over what is stored, so the column always holds a full v1 —
+ * a partial toggle never drops the other preferences.
+ */
+async function notificationPrefsPatch(
+  athleteId: string,
+  patch: AthleteProfileInput['notificationPrefs'],
+): Promise<{ notificationPrefs: Prisma.InputJsonValue } | Record<string, never>> {
+  if (patch === undefined) {
+    return {};
+  }
+  const stored = (await getAthleteProfile(athleteId))?.notificationPrefs ?? null;
+  return { notificationPrefs: mergeNotificationPrefs(stored, patch) as Prisma.InputJsonValue };
+}
+
+/** The profile as served: notification prefs always resolved, defaults included. */
+function withResolvedPrefs<T extends object>(profile: T) {
+  const stored = 'notificationPrefs' in profile ? profile.notificationPrefs : null;
+  return { ...profile, notificationPrefs: resolveNotificationPrefs(stored) };
+}
+
 export async function GET() {
   try {
     const athleteId = await getCurrentAthleteId();
@@ -94,7 +119,7 @@ export async function GET() {
       displayMode: DEFAULT_DISPLAY_MODE,
       tier: 'FREE' as const,
     };
-    const response = NextResponse.json(payload);
+    const response = NextResponse.json(withResolvedPrefs(payload));
     return withAccessTierCookie(response, payload.tier ?? 'FREE');
   } catch (error) {
     console.error(error);
@@ -123,17 +148,19 @@ export async function PATCH(request: NextRequest) {
   }
 
   try {
-    const { equipment, practicedSports, trainingAvailability, ...rest } = parsed.data;
+    const { equipment, practicedSports, trainingAvailability, notificationPrefs, ...rest } =
+      parsed.data;
     const athleteId = await getCurrentAthleteId();
     const profile = await upsertAthleteProfile(athleteId, {
       ...rest,
       ...equipmentPatch(equipment),
       ...practicedSportsPatch(practicedSports),
       ...trainingAvailabilityPatch(trainingAvailability),
+      ...(await notificationPrefsPatch(athleteId, notificationPrefs)),
     });
     // Any profile field can affect coach prompts / twin — clear the 30s cache.
     invalidateCoachContext();
-    const response = NextResponse.json(profile);
+    const response = NextResponse.json(withResolvedPrefs(profile));
     return withAccessTierCookie(response, profile.tier ?? 'FREE');
   } catch (error) {
     return profileUpdateError(error);

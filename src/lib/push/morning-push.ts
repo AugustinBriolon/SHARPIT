@@ -4,6 +4,7 @@ import { trainingDayIdNow } from '@/lib/athlete-state/freshness-service';
 import { refreshAthleteState } from '@/lib/athlete-state/orchestrator';
 import { getLatestAthleteSnapshot } from '@/infrastructure/athlete-state/snapshot-repository';
 import { prisma } from '@/lib/prisma';
+import { wantsMorningVerdict } from '@/lib/notifications/notification-prefs';
 import { isTokenExpiredOrInvalid, sendApnsNotification, type ApnsPayload } from '@/lib/push/apns';
 import { mapVerdictToDisplay, type OverallVerdict } from '@/lib/today/dashboard/today-mapping';
 import type { AthleteSnapshot } from '@/core/athlete-state/snapshot';
@@ -21,7 +22,8 @@ export type MorningPushAthleteResult = {
   sent: number;
   failed: number;
   deactivated: number;
-  skippedReason?: 'DEACTIVATED' | 'NO_DEVICE_TOKENS' | 'ALREADY_SENT_TODAY' | 'NO_SNAPSHOT';
+  skippedReason?:
+    'DEACTIVATED' | 'OPTED_OUT' | 'NO_DEVICE_TOKENS' | 'ALREADY_SENT_TODAY' | 'NO_SNAPSHOT';
   verdict?: OverallVerdict | null;
 };
 
@@ -92,6 +94,35 @@ export function toApnsPayload(morning: MorningPushPayload): ApnsPayload {
   };
 }
 
+type MorningPushSkipReason = NonNullable<MorningPushAthleteResult['skippedReason']>;
+
+/**
+ * Why this athlete gets no morning push today, if they don't. `force` (the test push)
+ * is the athlete asking for one: it overrides the opt-out and the once-a-day rule.
+ */
+function morningPushSkipReason(
+  athlete: {
+    deletedAt: Date | null;
+    lastMorningPushDate: string | null;
+    notificationPrefs: unknown;
+    deviceTokens: unknown[];
+  } | null,
+  dayId: string,
+  force: boolean,
+): MorningPushSkipReason | undefined {
+  if (!athlete || athlete.deletedAt) {
+    return 'DEACTIVATED';
+  }
+  // Paramètres → Notifications.
+  if (!force && !wantsMorningVerdict(athlete.notificationPrefs)) {
+    return 'OPTED_OUT';
+  }
+  if (!force && athlete.lastMorningPushDate === dayId) {
+    return 'ALREADY_SENT_TODAY';
+  }
+  return athlete.deviceTokens.length === 0 ? 'NO_DEVICE_TOKENS' : undefined;
+}
+
 /**
  * Sends the morning push notification to all active devices of an athlete.
  * By default, idempotent per day (skips if already sent today, unless force=true).
@@ -112,6 +143,7 @@ export async function sendMorningPushForAthlete(
       id: true,
       deletedAt: true,
       lastMorningPushDate: true,
+      notificationPrefs: true,
       deviceTokens: {
         where: { enabled: true },
         select: { id: true, token: true, bundleId: true },
@@ -119,34 +151,9 @@ export async function sendMorningPushForAthlete(
     },
   });
 
-  if (!athlete || athlete.deletedAt) {
-    return {
-      athleteId,
-      sent: 0,
-      failed: 0,
-      deactivated: 0,
-      skippedReason: 'DEACTIVATED',
-    };
-  }
-
-  if (!options?.force && athlete.lastMorningPushDate === dayId) {
-    return {
-      athleteId,
-      sent: 0,
-      failed: 0,
-      deactivated: 0,
-      skippedReason: 'ALREADY_SENT_TODAY',
-    };
-  }
-
-  if (athlete.deviceTokens.length === 0) {
-    return {
-      athleteId,
-      sent: 0,
-      failed: 0,
-      deactivated: 0,
-      skippedReason: 'NO_DEVICE_TOKENS',
-    };
+  const skippedReason = morningPushSkipReason(athlete, dayId, options?.force ?? false);
+  if (skippedReason || !athlete) {
+    return { athleteId, sent: 0, failed: 0, deactivated: 0, skippedReason };
   }
 
   // Read or compute today's snapshot
