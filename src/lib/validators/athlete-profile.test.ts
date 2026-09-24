@@ -86,4 +86,19 @@ describe('athleteProfileSchema', () => {
       }),
     ).toThrow();
   });
+
+  it('accepts a declared sex and clears it with null', () => {
+    expect(athleteProfileSchema.parse({ sex: 'female' })).toEqual({ sex: 'female' });
+    expect(athleteProfileSchema.parse({ sex: null })).toEqual({ sex: null });
+    expect(athleteProfileSchema.safeParse({ sex: 'F' }).success).toBe(false);
+  });
+
+  it('accepts a partial notification prefs patch', () => {
+    expect(athleteProfileSchema.parse({ notificationPrefs: { morningVerdict: false } })).toEqual({
+      notificationPrefs: { morningVerdict: false },
+    });
+    expect(
+      athleteProfileSchema.safeParse({ notificationPrefs: { morningTime: 'soon' } }).success,
+    ).toBe(false);
+  });
 });

@@ -11,7 +11,7 @@ import {
   activityPmcSelect,
 } from '@/lib/queries/activity-include';
 import { linkPlannedSessionActivity } from '@/lib/queries/planned-sessions';
-import { ActivityType, FunctionalImpact, Prisma } from '@prisma/client';
+import { ActivityType, type AthleteSex, FunctionalImpact, Prisma } from '@prisma/client';
 import { addDays, endOfDay, startOfDay } from 'date-fns';
 import { prisma } from '@/lib/prisma';
 import type { DisplayMode } from '@/lib/preferences/display-mode';
@@ -600,7 +600,7 @@ export const getAthleteProfile = cache(async (athleteId: string) => {
  * availability — which otherwise repeat the same ternary three times.
  */
 function jsonBlobPatch(
-  key: 'equipment' | 'practicedSports' | 'trainingAvailability',
+  key: 'equipment' | 'practicedSports' | 'trainingAvailability' | 'notificationPrefs',
   value: Prisma.InputJsonValue | typeof Prisma.JsonNull | null | undefined,
 ): Record<string, Prisma.InputJsonValue | typeof Prisma.JsonNull> {
   if (value === undefined) {
@@ -615,6 +615,7 @@ export async function upsertAthleteProfile(
     heightCm?: number | null;
     targetWeightKg?: number | null;
     birthDate?: Date | null;
+    sex?: AthleteSex | null;
     ftpW?: number | null;
     maxHr?: number | null;
     lthr?: number | null;
@@ -631,15 +632,17 @@ export async function upsertAthleteProfile(
     equipment?: Prisma.InputJsonValue | typeof Prisma.JsonNull | null;
     practicedSports?: Prisma.InputJsonValue | typeof Prisma.JsonNull | null;
     trainingAvailability?: Prisma.InputJsonValue | typeof Prisma.JsonNull | null;
+    notificationPrefs?: Prisma.InputJsonValue | typeof Prisma.JsonNull | null;
     displayMode?: DisplayMode;
   },
 ) {
-  const { equipment, practicedSports, trainingAvailability, ...rest } = data;
+  const { equipment, practicedSports, trainingAvailability, notificationPrefs, ...rest } = data;
   const payload = {
     ...rest,
     ...jsonBlobPatch('equipment', equipment),
     ...jsonBlobPatch('practicedSports', practicedSports),
     ...jsonBlobPatch('trainingAvailability', trainingAvailability),
+    ...jsonBlobPatch('notificationPrefs', notificationPrefs),
   };
 
   // Every AthleteProfile row now carries a required clerkUserId — there is no

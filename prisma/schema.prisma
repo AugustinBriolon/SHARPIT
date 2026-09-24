@@ -225,6 +225,13 @@ enum AccessTier {
   PRO
 }
 
+/// Declared by the athlete in Paramètres → Compte. Biological age and HR norms depend on it.
+enum AthleteSex {
+  female
+  male
+  other
+}
+
 model AthleteProfile {
   id                       String     @id @default(cuid())
   clerkUserId              String     @unique
@@ -234,6 +241,7 @@ model AthleteProfile {
   /// Optional body-weight target (kg) — read by the nutrition day analysis, never by Core.
   targetWeightKg           Float?
   birthDate                DateTime?  @db.Date // date de naissance — âge calculé dynamiquement
+  sex                      AthleteSex?
   ftpW                     Int? // FTP vélo (W)
   maxHr                    Int? // FC max (bpm)
   lthr                     Int? // FC seuil lactique (bpm)
@@ -298,6 +306,10 @@ model AthleteProfile {
   /// Per data-class source preferences: primary + enabled providers (ADR-027).
   /// Shape: { version: 1, classes: { activities: { primary, enabled }, ... } }
   integrationSourcePrefs Json?
+
+  /// Which pushes the athlete wants. Shape: NotificationPrefs v1 — see
+  /// src/lib/notifications/notification-prefs.ts. Null = server defaults.
+  notificationPrefs Json?
 
   /// Date (YYYY-MM-DD) of the last morning verdict push sent to this athlete.
   /// Prevents duplicate morning pushes across cron runs (silence over noise).
