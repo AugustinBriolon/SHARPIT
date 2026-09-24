@@ -6,6 +6,11 @@ import { useEffect, useState } from 'react';
 import { clerkAppearance } from '@/lib/theme/clerk-appearance';
 
 /**
+ * After sign-in/up with no `redirect_url`: Today, never the teaser — `/welcome` is
+ * signed-out only (the proxy enforces it). A `redirect_url` Clerk carries (e.g. back into
+ * the Garmin handoff) still wins: fallbacks, not force redirects. sharpit.app is the
+ * primary domain — no `isSatellite` / `domain` here.
+ *
  * Wrapper client : en dev, autorise l'origine courante (IP LAN, localhost…)
  * pour les redirects Clerk — sans config dashboard ni RegExp.
  */
@@ -38,6 +43,9 @@ export function AppClerkProvider({ children }: { children: React.ReactNode }) {
       appearance={clerkAppearance}
       localization={frFR}
       signInFallbackRedirectUrl="/"
+      signInUrl="/sign-in"
+      signUpFallbackRedirectUrl="/"
+      signUpUrl="/sign-up"
     >
       {children}
     </ClerkProvider>
