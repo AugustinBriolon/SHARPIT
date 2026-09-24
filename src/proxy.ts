@@ -29,6 +29,9 @@ const isPublicRoute = createRouteMatcher([
   '/api/demo/exit',
   // Apple's CDN fetches it without a session and refuses redirects (ADR-040).
   '/.well-known/apple-app-site-association',
+  // App Store Server Notifications V2 — Apple calls it with no session; the route
+  // trusts nothing before verifying the payload's signature (ADR-044).
+  '/api/billing/apple/notifications',
   // End of the native Garmin handoff: reads only its query string, and must render
   // even if the web session expired mid-flow.
   '/connect/garmin/callback',

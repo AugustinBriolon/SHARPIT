@@ -80,7 +80,7 @@ function PerkGroup({
       <p className="text-muted-foreground mt-1 text-sm leading-relaxed">{blurb}</p>
       <ul className="mt-3 space-y-2">
         {perks.map((perk) => (
-          <ProPerkRow key={perk.title} perk={perk} />
+          <ProPerkRow key={perk.id} perk={perk} />
         ))}
       </ul>
     </section>

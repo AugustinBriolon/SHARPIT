@@ -225,6 +225,22 @@ enum AccessTier {
   PRO
 }
 
+/// Where a SharpIt Pro entitlement comes from (ADR-044). `manual` is the /admin toggle.
+enum SubscriptionSource {
+  apple
+  stripe
+  manual
+}
+
+/// Only `active` and `grace_period` grant Pro (`subscriptionGrantsPro`).
+enum SubscriptionStatus {
+  active
+  grace_period
+  billing_retry
+  expired
+  revoked
+}
+
 /// Declared by the athlete in Paramètres → Compte. Biological age and HR norms depend on it.
 enum AthleteSex {
   female
@@ -235,8 +251,11 @@ enum AthleteSex {
 model AthleteProfile {
   id                       String     @id @default(cuid())
   clerkUserId              String     @unique
-  /// Palier d'accès (paiement géré hors Prisma pour l'instant — bascule manuelle via /admin).
+  /// Palier d'accès — dérivé des abonnements (`Subscription`, ADR-044) : jamais écrit
+  /// ailleurs que par `recomputeAthleteTier`. La bascule /admin passe par un abonnement `manual`.
   tier                     AccessTier @default(FREE)
+  /// UUID stable remis à StoreKit (`appAccountToken`) : relie un achat Apple à ce compte.
+  appAccountToken          String?    @unique
   heightCm                 Int? // taille (cm) — comparaisons composition (IMC, etc.)
   /// Optional body-weight target (kg) — read by the nutrition day analysis, never by Core.
   targetWeightKg           Float?
@@ -318,6 +337,9 @@ model AthleteProfile {
   /// APNs device tokens for native push notifications (SHARPIT-APP).
   deviceTokens DeviceToken[]
 
+  /// SharpIt Pro entitlements (Apple, Stripe, manual) — `tier` is derived from them.
+  subscriptions Subscription[]
+
   thresholdSnapshots AthleteThresholdSnapshot[]
 
   // Tenant back-relations — multi-tenant conversion (ADR-025). Root data:
@@ -370,6 +392,28 @@ model AthleteProfile {
 
 /// APNs device token registered by the native iOS client (SHARPIT-APP).
 /// Multiple devices per athlete are supported; tokens are deactivated on APNs 410.
+/// One SharpIt Pro entitlement. Apple rows are keyed by `originalTransactionId`, which
+/// stays the same across renewals; the manual row is one per athlete (/admin).
+model Subscription {
+  id                    String             @id @default(cuid())
+  athleteId             String
+  athlete               AthleteProfile     @relation(fields: [athleteId], references: [id], onDelete: Cascade)
+  source                SubscriptionSource
+  productId             String
+  originalTransactionId String?            @unique
+  status                SubscriptionStatus
+  expiresAt             DateTime?
+  willRenew             Boolean            @default(false)
+  /// App Store environment (`Production` | `Sandbox`), null for other sources.
+  environment           String?
+  appAccountToken       String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([athleteId])
+}
+
 model DeviceToken {
   id         String         @id @default(cuid())
   athleteId  String

@@ -15,10 +15,11 @@ export async function listAthletesForAdmin(): Promise<AdminAthleteRow[]> {
   });
 }
 
+/**
+ * The /admin toggle. Goes through a `manual` entitlement so the tier stays derived from
+ * subscriptions (ADR-044): an Apple renewal can no longer undo it, nor it an Apple one.
+ */
 export async function setAthleteTier(athleteId: string, tier: AccessTier) {
-  return prisma.athleteProfile.update({
-    where: { id: athleteId },
-    data: { tier },
-    select: { id: true, tier: true },
-  });
+  const { setManualTier } = await import('@/lib/billing/subscription-store');
+  return setManualTier(athleteId, tier);
 }

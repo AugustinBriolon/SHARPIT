@@ -99,6 +99,7 @@ describe('proxy', () => {
   it('keeps the AASA and the Garmin callback public', async () => {
     await run('https://sharpit.app/.well-known/apple-app-site-association');
     await run('https://sharpit.app/connect/garmin/callback?garmin=connected');
+    await run('https://sharpit.app/api/billing/apple/notifications');
     expect(state.protect).not.toHaveBeenCalled();
   });
 

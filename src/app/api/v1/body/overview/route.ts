@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
+import { awaitRequest } from '@/lib/next/await-request';
 import { projectV1BodyOverview } from '@/lib/body/body-v1';
 import { loadBodyOverviewInputs } from '@/lib/body/body-v1-data';
 
@@ -9,6 +10,9 @@ import { loadBodyOverviewInputs } from '@/lib/body/body-v1-data';
  * until its method ADR lands.
  */
 export async function GET() {
+  // Outside try: the Cache Components prerender interrupt must not be swallowed.
+  await awaitRequest();
+
   try {
     const athleteId = await getCurrentAthleteId();
     return NextResponse.json(projectV1BodyOverview(await loadBodyOverviewInputs(athleteId)));
