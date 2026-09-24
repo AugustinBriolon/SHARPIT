@@ -1,8 +1,11 @@
 /** Current Privacy Policy / Terms document version stamped on accept. */
 export const CURRENT_PRIVACY_VERSION = 'v0-2026-09';
 
-/** Soft-deleted profiles are hard-purged after this many days. */
-export const PRIVACY_PURGE_DELAY_DAYS = 30;
+/**
+ * Account deletion is immediate. Kept at 0 so the purge cron finishes any deletion
+ * still marked pending (including the former 30-day soft-deletes) on its next run.
+ */
+export const PRIVACY_PURGE_DELAY_DAYS = 0;
 
 /** French copy for blocked LLM / briefing paths (AI hard gate). */
 export const AI_CONSENT_REQUIRED_MESSAGE =

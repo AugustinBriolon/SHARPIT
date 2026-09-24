@@ -5,10 +5,13 @@ const authMock = vi.fn();
 const findUniqueMock = vi.fn();
 const createMock = vi.fn();
 const findUniqueOrThrowMock = vi.fn();
+const deleteManyMock = vi.fn();
+const getUserMock = vi.fn();
 const cookiesGetMock = vi.fn();
 
 vi.mock('@clerk/nextjs/server', () => ({
   auth: authMock,
+  clerkClient: async () => ({ users: { getUser: getUserMock } }),
 }));
 
 vi.mock('next/headers', () => ({
@@ -25,6 +28,7 @@ vi.mock('@/lib/prisma', () => ({
       findUnique: findUniqueMock,
       create: createMock,
       findUniqueOrThrow: findUniqueOrThrowMock,
+      deleteMany: deleteManyMock,
     },
   },
 }));
@@ -50,6 +54,8 @@ describe('getCurrentAthleteId', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     cookiesGetMock.mockReturnValue(undefined);
+    getUserMock.mockResolvedValue({ id: 'user' });
+    deleteManyMock.mockResolvedValue({ count: 1 });
   });
 
   it('resolves the fixed demo athlete for an anonymous visitor with the demo cookie set', async () => {
@@ -99,13 +105,55 @@ describe('getCurrentAthleteId', () => {
     });
   });
 
-  it('rejects a soft-deleted account still holding a Clerk session', async () => {
-    authMock.mockResolvedValue({ userId: 'user_deleted' });
+  it('starts a deleted athlete over when their identity signs back in', async () => {
+    authMock.mockResolvedValue({ userId: 'user_returning' });
     findUniqueMock.mockResolvedValue({ id: 'athlete_gone', deletedAt: new Date('2026-09-01') });
+    createMock.mockResolvedValue({ id: 'athlete_fresh' });
     const { getCurrentAthleteId } = await importFresh();
 
-    await expect(getCurrentAthleteId()).rejects.toThrow(/Compte désactivé/);
+    await expect(getCurrentAthleteId()).resolves.toBe('athlete_fresh');
+    expect(deleteManyMock).toHaveBeenCalledWith({ where: { id: 'athlete_gone' } });
+    expect(createMock).toHaveBeenCalledWith({ data: { clerkUserId: 'user_returning' } });
+  });
+
+  it('rejects a session racing a deletion that is still settling', async () => {
+    authMock.mockResolvedValue({ userId: 'user_deleting' });
+    findUniqueMock.mockResolvedValue({ id: 'athlete_gone', deletedAt: new Date() });
+    const { getCurrentAthleteId } = await importFresh();
+
+    await expect(getCurrentAthleteId()).rejects.toThrow(/Compte supprimé/);
+    expect(deleteManyMock).not.toHaveBeenCalled();
     expect(createMock).not.toHaveBeenCalled();
+  });
+
+  it('lets two parallel first requests after a deletion share one fresh profile', async () => {
+    authMock.mockResolvedValue({ userId: 'user_returning' });
+    findUniqueMock.mockResolvedValue({ id: 'athlete_gone', deletedAt: new Date('2026-09-01') });
+    createMock.mockRejectedValue(uniqueConstraintError());
+    findUniqueOrThrowMock.mockResolvedValue({ id: 'athlete_fresh', deletedAt: null });
+    const { getCurrentAthleteId } = await importFresh();
+
+    await expect(getCurrentAthleteId()).resolves.toBe('athlete_fresh');
+  });
+
+  it('never provisions a profile for an identity Clerk just deleted', async () => {
+    authMock.mockResolvedValue({ userId: 'user_just_deleted' });
+    findUniqueMock.mockResolvedValue(null);
+    getUserMock.mockRejectedValue(Object.assign(new Error('Not Found'), { status: 404 }));
+    const { getCurrentAthleteId } = await importFresh();
+
+    await expect(getCurrentAthleteId()).rejects.toThrow(/Compte supprimé/);
+    expect(createMock).not.toHaveBeenCalled();
+  });
+
+  it('still provisions a first profile when Clerk is merely unreachable', async () => {
+    authMock.mockResolvedValue({ userId: 'user_new' });
+    findUniqueMock.mockResolvedValue(null);
+    getUserMock.mockRejectedValue(Object.assign(new Error('timeout'), { status: 503 }));
+    createMock.mockResolvedValue({ id: 'athlete_new' });
+    const { getCurrentAthleteId } = await importFresh();
+
+    await expect(getCurrentAthleteId()).resolves.toBe('athlete_new');
   });
 
   it('lazily provisions a profile for a brand-new Clerk user', async () => {
@@ -142,7 +190,7 @@ describe('getCurrentAthleteId', () => {
     });
     const { getCurrentAthleteId } = await importFresh();
 
-    await expect(getCurrentAthleteId()).rejects.toThrow(/Compte désactivé/);
+    await expect(getCurrentAthleteId()).rejects.toThrow(/Compte supprimé/);
   });
 
   it('lets a non-race creation error propagate', async () => {

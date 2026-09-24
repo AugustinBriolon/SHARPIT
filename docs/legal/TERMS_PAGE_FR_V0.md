@@ -54,7 +54,7 @@ Points clés rappelés ici :
 
 - données physiologiques et inférences associées traitées comme données de santé (art. 9 RGPD) avec **consentement explicite** ;
 - traitement IA soumis à un **consentement distinct** et à une **porte dure** (sans ce consentement, les chemins IA sont bloqués) ;
-- export JSON et suppression (désactivation du compte, puis suppression définitive sous 30 jours) prévus dans le produit.
+- export JSON et suppression immédiate et définitive du compte prévus dans le produit.
 
 ### 7. Propriété intellectuelle
 
@@ -70,7 +70,7 @@ Dans les limites autorisées par la loi applicable :
 
 ### 9. Suppression du compte
 
-Vous pouvez demander la suppression de votre compte. Après demande, le compte est **désactivé**, puis les données associées sont **supprimées définitivement au plus tard sous 30 jours**, sous réserve des obligations légales de conservation éventuelles. Contact : [augustin.briolon@gmail.com](mailto:augustin.briolon@gmail.com).
+Vous pouvez demander la suppression de votre compte. Après demande, le compte et les données associées sont **supprimés immédiatement et définitivement**, sous réserve des obligations légales de conservation éventuelles. Contact : [augustin.briolon@gmail.com](mailto:augustin.briolon@gmail.com).
 
 ### 10. Modifications des CGU
 

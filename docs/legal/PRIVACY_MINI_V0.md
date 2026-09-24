@@ -35,7 +35,7 @@ Consequences:
 | AI consent       | **Hard gate** (no LLM path without `ai_processing_consent`)                                                                              |
 | Controller       | Augustin Briolon                                                                                                                         |
 | Contact email    | `augustin.briolon@gmail.com`                                                                                                             |
-| Account deletion | Soft-delete, then **purge at J+30**                                                                                                      |
+| Account deletion | **Immediate hard delete** (data + sign-in identity)                                                                                      |
 | Legal copy       | **FR only**                                                                                                                              |
 | Access model     | Classic signup (Clerk). « Cercle privé » = GTM bouche-à-oreille — **not** a technical invite lock. Wording must **not** say invite-only. |
 
@@ -49,7 +49,7 @@ Consequences:
 | P2  | `/terms`              | Copy source: [`TERMS_PAGE_FR_V0.md`](./TERMS_PAGE_FR_V0.md)                 |
 | P3  | Consent gates         | Signup accept privacy+terms; provider connect; AI hard gate — see eng brief |
 | P4  | Export                | Athlete JSON export of personal data held by Sharpit                        |
-| P5  | Delete                | Soft-delete → purge J+30                                                    |
+| P5  | Delete                | Immediate hard delete                                                       |
 | P6  | Health disclaimer     | Science Sport validated (verbatim below)                                    |
 | P7  | Unofficial disclaimer | Ack before connecting unofficial / as-is integrations                       |
 
@@ -63,7 +63,7 @@ Consequences:
 2. **Provider connect (health classes):** require `health_data_consent_at` + `unofficial_providers_ack_at` when applicable.
 3. **LLM briefing / coach AI paths:** require `ai_processing_consent_at`. Deterministic inference engines may run without AI consent.
 4. **Export:** JSON download of athlete-scoped data.
-5. **Delete:** soft-delete immediately; hard purge at **J+30**.
+5. **Delete:** hard delete immediately, data and sign-in identity.
 6. **Logging:** never log credentials or body metrics.
 
 Field table and QA checklist: [`PRIVACY_ENG_BRIEF_V0.md`](./PRIVACY_ENG_BRIEF_V0.md).
