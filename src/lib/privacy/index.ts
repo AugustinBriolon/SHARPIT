@@ -32,7 +32,7 @@ export {
 } from '@/lib/privacy/consent-store';
 
 export {
-  softDeleteAthlete,
+  deleteAthleteAccount,
   purgeSoftDeletedAthletes,
   clearAthleteProviderCredentials,
 } from '@/lib/privacy/account-deletion';

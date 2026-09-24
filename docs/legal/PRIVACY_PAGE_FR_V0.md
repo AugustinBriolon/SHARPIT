@@ -79,7 +79,7 @@ Les services que **vous** connectez (Garmin, Renpho, MyFitnessPal, etc.) reçoiv
 ### 9. Durée de conservation
 
 - Compte actif : conservation aussi longtemps que le compte est nécessaire au service.
-- **Suppression :** à votre demande, le compte est d’abord **désactivé**, puis les données sont **supprimées définitivement au plus tard sous 30 jours**.
+- **Suppression :** à votre demande, le compte, l’identifiant de connexion et les données associées sont **supprimés immédiatement et définitivement**.
 - Journaux techniques : conservation limitée au besoin d’exploitation et de sécurité.
 
 ### 10. Vos droits

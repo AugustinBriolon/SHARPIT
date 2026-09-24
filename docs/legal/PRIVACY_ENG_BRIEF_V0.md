@@ -32,7 +32,7 @@ Withdrawal: clearing a consent timestamp must immediately re-apply the correspon
 | Connect **unofficial** provider                                       | `unofficial_providers_ack_at` (+ health consent if health classes) | Block connect                                                |
 | LLM briefing, Coach AI, any path that sends athlete context to an LLM | `ai_processing_consent_at`                                         | **Hard block** — deterministic engines OK without AI consent |
 | Export personal data                                                  | Authenticated athlete                                              | Return JSON export                                           |
-| Delete account                                                        | Authenticated athlete                                              | Soft-delete now; schedule **purge at J+30**                  |
+| Delete account                                                        | Authenticated athlete                                              | Hard delete now (data + Clerk identity)                      |
 
 ### Rules of thumb
 
@@ -58,7 +58,7 @@ Exact schema is Soft Eng’s to define; must be athlete-scoped and complete enou
 
 1. Athlete requests deletion.
 2. **Soft-delete** immediately (account unusable; data retained for recovery / legal window).
-3. **Hard purge at J+30** (including provider tokens, snapshots, inferences, consents).
+3. **Hard delete immediately** (including provider tokens, snapshots, inferences, consents) and the Clerk identity; the purge cron finishes any deletion left pending.
 4. Coordinate Clerk user deletion with DB purge so no orphaned auth identity remains after purge.
 
 ---
@@ -88,7 +88,7 @@ Exact schema is Soft Eng’s to define; must be athlete-scoped and complete enou
 - [ ] LLM / Coach AI returns gated error without `ai_processing_consent_at`; deterministic Today/inference still works.
 - [ ] Cron/background sync skips athletes lacking health consent for health classes.
 - [ ] Export returns athlete-scoped JSON; no raw credentials.
-- [ ] Delete soft-hides account; purge job removes data at J+30 (or dry-run proves schedule).
+- [ ] Delete removes data and Clerk identity immediately; purge job finishes any pending deletion.
 - [ ] No credentials / body metrics in app logs for consent/connect/export/delete paths.
 - [ ] `/privacy` and `/terms` render FR drafts; no « sur invitation uniquement » / invite-only wording.
 - [ ] Privacy contact shown: `augustin.briolon@gmail.com`.

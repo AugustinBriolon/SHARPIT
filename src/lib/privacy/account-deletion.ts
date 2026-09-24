@@ -1,20 +1,19 @@
-import { addDays } from 'date-fns';
 import { clerkClient } from '@clerk/nextjs/server';
+import { deleteLangfuseTracesForAthlete } from '@/lib/ai/langfuse-erasure';
 import { prisma } from '@/lib/prisma';
 import { purgeEligibleBefore } from '@/lib/privacy/consent';
 import { PRIVACY_PURGE_DELAY_DAYS } from '@/lib/privacy/constants';
 import { logSafeError } from '@/lib/privacy/safe-log';
 
-export type SoftDeleteResult = {
+export type AccountDeletionResult = {
   athleteId: string;
   deletedAt: Date;
-  purgeAfter: Date;
 };
 
 /**
- * Wipe encrypted provider credentials immediately on soft-delete so sync cannot
- * continue during the J+30 retention window. Empty strings are not live AES-GCM
- * secrets — connection-status treats the account as disconnected.
+ * Wipe encrypted provider credentials first, so no sync can run on an account being
+ * deleted even if a later step fails. Empty strings are not live AES-GCM secrets —
+ * connection-status treats the account as disconnected.
  */
 export async function clearAthleteProviderCredentials(athleteId: string): Promise<void> {
   await prisma.$transaction([
@@ -45,43 +44,73 @@ export async function clearAthleteProviderCredentials(athleteId: string): Promis
   ]);
 }
 
-/** Immediate soft-delete. Profile is blocked from app use; hard purge after 30 days. */
-export async function softDeleteAthlete(
-  athleteId: string,
-  now = new Date(),
-): Promise<SoftDeleteResult> {
-  const updated = await prisma.athleteProfile.update({
-    where: { id: athleteId },
-    data: { deletedAt: now },
-    select: { id: true, deletedAt: true },
-  });
-  await clearAthleteProviderCredentials(athleteId);
-  // Science Sport evidence is athlete-isolated — purge immediately on soft-delete.
+async function deleteClerkIdentity(clerkUserId: string, athleteId: string): Promise<void> {
   try {
-    const { purgeAnalysisEvidenceForAthlete } =
-      await import('@/lib/science/reliability/analysis-evidence-store');
-    await purgeAnalysisEvidenceForAthlete(athleteId);
+    const client = await clerkClient();
+    await client.users.deleteUser(clerkUserId);
   } catch (error) {
-    logSafeError('privacy/purge-analysis-evidence', error, { athleteId });
+    // Already gone, or Clerk unreachable: the data deletion goes on regardless.
+    logSafeError('privacy/delete-clerk', error, { athleteId });
   }
-  // Delete push notification device tokens immediately on soft-delete.
-  try {
-    await prisma.deviceToken.deleteMany({ where: { athleteId } });
-  } catch (error) {
-    logSafeError('privacy/delete-device-tokens', error, { athleteId });
-  }
-  const deletedAt = updated.deletedAt ?? now;
-  return {
-    athleteId: updated.id,
-    deletedAt,
-    purgeAfter: addDays(deletedAt, PRIVACY_PURGE_DELAY_DAYS),
-  };
 }
 
 /**
- * Hard-deletes soft-deleted profiles whose deletedAt is older than the retention
- * window. Cascade removes tenant data via Prisma relations. Also deletes the
- * Clerk user so auth identity does not outlive DB data (eng brief §4).
+ * Coach traces live in Langfuse, outside Postgres. Best effort: a Langfuse outage must
+ * not stop the account deletion.
+ */
+async function deleteCoachTraces(athleteId: string): Promise<void> {
+  try {
+    await deleteLangfuseTracesForAthlete(athleteId);
+  } catch (error) {
+    logSafeError('privacy/delete-langfuse', error, { athleteId });
+  }
+}
+
+/**
+ * Removes the profile row; every tenant table cascades from it (all 54, checked against
+ * the production schema).
+ */
+export async function hardDeleteAthleteData(athleteId: string): Promise<void> {
+  await prisma.athleteProfile.deleteMany({ where: { id: athleteId } });
+}
+
+/**
+ * Completes a deletion whose identity is signing back in: its data and traces go, the
+ * identity stays — it is about to own a fresh profile.
+ */
+export async function eraseAthleteData(athleteId: string): Promise<void> {
+  await deleteCoachTraces(athleteId);
+  await hardDeleteAthleteData(athleteId);
+}
+
+/**
+ * Deletes an account now and for good: data, Coach traces and Clerk identity. Signing in again means
+ * signing up, from zero.
+ *
+ * Ordered so a failure midway still leaves the account unusable: `deletedAt` blocks the
+ * profile, credentials are wiped, the identity (and its sessions) goes, then the rows.
+ * If the last step fails, `/api/cron/privacy-purge` finishes it on its next run.
+ */
+export async function deleteAthleteAccount(
+  athleteId: string,
+  now = new Date(),
+): Promise<AccountDeletionResult> {
+  const marked = await prisma.athleteProfile.update({
+    where: { id: athleteId },
+    data: { deletedAt: now },
+    select: { id: true, clerkUserId: true },
+  });
+  await clearAthleteProviderCredentials(athleteId);
+  await deleteClerkIdentity(marked.clerkUserId, athleteId);
+  await deleteCoachTraces(athleteId);
+  await hardDeleteAthleteData(athleteId);
+  return { athleteId, deletedAt: now };
+}
+
+/**
+ * Finishes every deletion still pending — accounts marked `deletedAt` whose rows were
+ * not removed, including those left by the former 30-day soft-delete: identity first,
+ * then the rows. `PRIVACY_PURGE_DELAY_DAYS` is 0, so nothing waits anymore.
  *
  * Hook: GET /api/cron/privacy-purge (Bearer CRON_SECRET), scheduled in vercel.json.
  */
@@ -96,14 +125,9 @@ export async function purgeSoftDeletedAthletes(now = new Date()): Promise<{ purg
 
   const purged: string[] = [];
   for (const row of due) {
-    try {
-      const client = await clerkClient();
-      await client.users.deleteUser(row.clerkUserId);
-    } catch (error) {
-      // Continue DB purge even if Clerk identity is already gone.
-      logSafeError('privacy/purge-clerk', error, { athleteId: row.id });
-    }
-    await prisma.athleteProfile.delete({ where: { id: row.id } });
+    await deleteClerkIdentity(row.clerkUserId, row.id);
+    await deleteCoachTraces(row.id);
+    await hardDeleteAthleteData(row.id);
     purged.push(row.id);
   }
   return { purged };

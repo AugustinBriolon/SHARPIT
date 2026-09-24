@@ -3,16 +3,12 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { SignOutButton } from '@clerk/nextjs';
+import { useClerk } from '@clerk/nextjs';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useConfirmDialog } from '@/components/ui/confirm-dialog';
 import { toast } from '@/components/ui/toast';
-import {
-  CONTROLLER_EMAIL,
-  CURRENT_PRIVACY_VERSION,
-  PRIVACY_PURGE_DELAY_DAYS,
-} from '@/lib/privacy/constants';
+import { CONTROLLER_EMAIL, CURRENT_PRIVACY_VERSION } from '@/lib/privacy/constants';
 import {
   consentWallHrefAfterHealthWithdraw,
   shouldRedirectToConsentWallAfterPatch,
@@ -170,19 +166,32 @@ function PrivacyDataActionsSection({
           Supprimer mon compte
         </Button>
         {pendingSignOut ? (
-          <SignOutButton redirectUrl="/sign-in">
-            <Button type="button" variant="outline">
-              Se déconnecter
-            </Button>
-          </SignOutButton>
+          <p aria-live="polite" className="text-muted-foreground self-center text-sm" role="status">
+            Compte supprimé — déconnexion…
+          </p>
         ) : null}
       </div>
     </section>
   );
 }
 
+const AFTER_DELETION_URL = '/welcome?compte=supprime';
+
+/**
+ * The Clerk identity is deleted with the account, so its session is already dead
+ * server-side: leave now rather than let the next request fail. A full load either way.
+ */
+async function leaveDeletedAccount(signOut: ReturnType<typeof useClerk>['signOut']) {
+  try {
+    await signOut({ redirectUrl: AFTER_DELETION_URL });
+  } catch {
+    window.location.assign(AFTER_DELETION_URL);
+  }
+}
+
 function usePrivacySettingsActions(initial: ConsentState | null) {
   const router = useRouter();
+  const { signOut } = useClerk();
   const { confirm, dialog } = useConfirmDialog();
   const [consents, setConsents] = useState(initial);
   const [busy, setBusy] = useState(false);
@@ -255,7 +264,8 @@ function usePrivacySettingsActions(initial: ConsentState | null) {
   async function handleDelete() {
     const ok = await confirm({
       title: 'Supprimer mon compte ?',
-      description: `Le compte sera désactivé immédiatement, puis purgé définitivement sous ${PRIVACY_PURGE_DELAY_DAYS} jours.`,
+      description:
+        'Ton compte, ton identifiant de connexion et toutes tes données sont supprimés immédiatement et définitivement. Te reconnecter créera un nouveau compte vierge.',
       confirmLabel: 'Supprimer',
       cancelLabel: 'Annuler',
       variant: 'destructive',
@@ -266,8 +276,8 @@ function usePrivacySettingsActions(initial: ConsentState | null) {
     setBusy(true);
     try {
       await deletePrivacyAccount();
-      toast.success('Compte désactivé');
       setPendingSignOut(true);
+      await leaveDeletedAccount(signOut);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Suppression impossible');
       setBusy(false);

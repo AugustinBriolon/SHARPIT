@@ -6,7 +6,7 @@ import { logSafeError } from '@/lib/privacy/safe-log';
 export const maxDuration = 60;
 
 /**
- * Hard-purges soft-deleted athlete profiles after PRIVACY_PURGE_DELAY_DAYS (30).
+ * Finishes any account deletion still pending (see `purgeSoftDeletedAthletes`).
  * Scheduled in vercel.json — Bearer CRON_SECRET.
  */
 export async function GET(request: Request) {

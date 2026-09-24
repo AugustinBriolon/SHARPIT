@@ -161,7 +161,7 @@ export async function buildAthleteExportJson(athleteId: string) {
     privacyVersion: profile.privacyVersion ?? CURRENT_PRIVACY_VERSION,
     retention: {
       softDeletePurgeDays: PRIVACY_PURGE_DELAY_DAYS,
-      note: 'Après demande de suppression, les données sont purgées au plus tard sous 30 jours.',
+      note: 'Une demande de suppression efface immédiatement le compte et ses données.',
       analysisEvidence: {
         maxRows: ANALYSIS_EVIDENCE_RETENTION.maxRowsPerAthlete,
         maxAgeDays: ANALYSIS_EVIDENCE_RETENTION.maxAgeDays,

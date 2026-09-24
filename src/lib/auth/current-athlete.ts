@@ -1,12 +1,13 @@
 import { cache } from 'react';
-import { auth } from '@clerk/nextjs/server';
+import { auth, clerkClient } from '@clerk/nextjs/server';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { DEMO_CLERK_USER_ID, isDemoSession } from '@/lib/demo/demo-session';
 import { ensureDemoSeedFresh } from '@/lib/demo/seed-demo-data';
 import { prisma } from '@/lib/prisma';
 import { isDevClerkBypass } from '@/lib/dev/dev-auth';
+import { eraseAthleteData } from '@/lib/privacy/account-deletion';
 
-const DEACTIVATED_ACCOUNT_ERROR = 'Compte désactivé — suppression en cours';
+const DEACTIVATED_ACCOUNT_ERROR = 'Compte supprimé';
 
 function assertAthleteActive(deletedAt: Date | null): void {
   if (deletedAt) {
@@ -33,16 +34,61 @@ async function resolveDemoAthleteId(): Promise<string> {
   return demoAthlete.id;
 }
 
+/**
+ * A deletion still in flight: `/api/privacy/delete` marks the row, then deletes the
+ * identity and the rows within the same request. A parallel request from the same
+ * session must not treat that as a comeback.
+ */
+const DELETION_SETTLE_MS = 5 * 60 * 1000;
+
+/**
+ * A profile marked deleted whose identity signs back in — an account deleted under the
+ * former 30-day soft-delete, or one whose deletion stopped midway. The athlete asked
+ * for deletion, so it completes now and they start from zero on a fresh profile.
+ */
+async function restartAfterDeletion(
+  userId: string,
+  deleted: { id: string; deletedAt: Date },
+): Promise<string> {
+  if (Date.now() - deleted.deletedAt.getTime() < DELETION_SETTLE_MS) {
+    assertAthleteActive(deleted.deletedAt);
+  }
+  await eraseAthleteData(deleted.id);
+  return createAthleteProfile(userId);
+}
+
+/**
+ * A session token outlives its Clerk user by up to a minute: never provision a profile
+ * for an identity that was just deleted. Only a confirmed 404 counts — a Clerk hiccup
+ * must not block a real first sign-in.
+ */
+async function assertClerkIdentityExists(userId: string): Promise<void> {
+  try {
+    const client = await clerkClient();
+    await client.users.getUser(userId);
+  } catch (error) {
+    if ((error as { status?: number } | null)?.status === 404) {
+      throw new Error(DEACTIVATED_ACCOUNT_ERROR);
+    }
+  }
+}
+
 async function findOrCreateAthleteProfile(userId: string): Promise<string> {
   const existing = await prisma.athleteProfile.findUnique({
     where: { clerkUserId: userId },
     select: { id: true, deletedAt: true },
   });
+  if (existing?.deletedAt) {
+    return restartAfterDeletion(userId, { id: existing.id, deletedAt: existing.deletedAt });
+  }
   if (existing) {
-    assertAthleteActive(existing.deletedAt);
     return existing.id;
   }
+  return createAthleteProfile(userId);
+}
 
+async function createAthleteProfile(userId: string): Promise<string> {
+  await assertClerkIdentityExists(userId);
   try {
     const created = await prisma.athleteProfile.create({ data: { clerkUserId: userId } });
     return created.id;

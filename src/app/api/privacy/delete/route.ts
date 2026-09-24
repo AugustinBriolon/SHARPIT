@@ -1,23 +1,20 @@
 import { NextResponse } from 'next/server';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { awaitRequest } from '@/lib/next/await-request';
-import { softDeleteAthlete } from '@/lib/privacy/account-deletion';
-import { PRIVACY_PURGE_DELAY_DAYS } from '@/lib/privacy/constants';
+import { deleteAthleteAccount } from '@/lib/privacy/account-deletion';
 import { logSafeError } from '@/lib/privacy/safe-log';
 
-/** Soft-delete now; hard purge via /api/cron/privacy-purge at J+30. */
+/** Deletes the account now — data and sign-in identity. The client signs out next. */
 export async function POST() {
   await awaitRequest();
 
   try {
     const athleteId = await getCurrentAthleteId();
-    const result = await softDeleteAthlete(athleteId);
+    const result = await deleteAthleteAccount(athleteId);
     return NextResponse.json({
       ok: true,
       deletedAt: result.deletedAt.toISOString(),
-      purgeAfter: result.purgeAfter.toISOString(),
-      purgeDelayDays: PRIVACY_PURGE_DELAY_DAYS,
-      message: 'Compte désactivé. Les données seront purgées définitivement sous 30 jours.',
+      message: 'Compte supprimé définitivement.',
     });
   } catch (error) {
     logSafeError('privacy/delete POST', error);
