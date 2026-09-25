@@ -1,6 +1,6 @@
 # ADR-048: The web repository becomes a monorepo — one app and one Vercel project per host
 
-**Status:** Proposed  
+**Status:** Accepted — phase 0 done (2026-09-26)  
 **Date:** 2026-09-26  
 **Author:** Augustin Briolon (with Claude Code)  
 **Supersedes:** N/A — refines steps 5, 7, 8 and 9 of the host split ([runbook](../architecture/HOST_SPLIT_RUNBOOK.md))

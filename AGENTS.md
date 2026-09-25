@@ -10,6 +10,8 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 # SHARPIT — Agent context
 
+**Layout:** Yarn workspaces + Turborepo monorepo ([ADR-048](docs/adr/ADR-048-web-repository-becomes-a-monorepo.md)). The Next.js app is `apps/web` — every `src/…` path in these docs is relative to it. Run app scripts with `yarn web <script>`; `yarn test` / `yarn typecheck` / `yarn lint` / `yarn build` at the root go through Turbo.
+
 **Phase:** Stabilization — Core frozen. Express the Digital Twin vertically as a **Digital Twin coach** (analyses + programme + suivi toward a goal); do not add core engines.
 
 **Before implementing, read:**

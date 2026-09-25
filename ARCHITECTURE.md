@@ -110,6 +110,9 @@ Every mutation that modifies a list should use `listOptimistic()`. Every mutatio
 
 ### 3.1 Current structure (what exists)
 
+> Since ADR-048 phase 0 the app lives in `apps/web` of a Yarn workspaces + Turborepo monorepo; the paths
+> below are relative to `apps/web`. Legal page sources moved from `docs/legal` to `apps/web/content/legal`.
+
 ```
 src/
   app/

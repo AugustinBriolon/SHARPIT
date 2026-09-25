@@ -28,6 +28,19 @@ Performance operating system for endurance athletes — training load management
 - **Strava API** — activity sync
 - **Anthropic Claude API** — AI coach reasoning and recommendations
 
+## Repository layout
+
+The repository is a Yarn workspaces + Turborepo monorepo ([ADR-048](docs/adr/ADR-048-web-repository-becomes-a-monorepo.md)).
+The Next.js app lives in `apps/web`; every `src/…` path below is relative to it. Root commands
+(`yarn dev`, `yarn build`, `yarn test`, `yarn typecheck`, `yarn lint`) run through Turbo; app-only
+scripts run with `yarn web <script>`. Repository documentation (`docs/`, `knowledge/`) stays at the root.
+
+```
+apps/web/     Next.js app (src/, prisma/, scripts/, e2e/, content/legal/, public/)
+docs/         ADRs, architecture, product and design documentation
+knowledge/    Domain and science notes
+```
+
 ## Architecture
 
 SHARPIT is a Next.js application with a layered intelligence system:
@@ -85,7 +98,7 @@ Moved documents leave a redirect stub at their old path.
 # Create a project at neon.tech, copy the connection string to DATABASE_URL in .env
 
 # Option B — Docker
-yarn db:up
+yarn web db:up
 
 # Option C — Local PostgreSQL (macOS)
 brew install postgresql@16
@@ -98,10 +111,10 @@ createuser sharpit --createdb 2>/dev/null; \
 ### Installation
 
 ```bash
-cp .env.example .env   # fill in required values (see Environment variables below)
+cp apps/web/.env.example apps/web/.env   # fill in required values (see Environment variables below)
 yarn install
-yarn db:migrate        # run all migrations
-yarn db:seed           # optional demo data
+yarn web db:migrate        # run all migrations
+yarn web db:seed           # optional demo data
 yarn dev
 ```
 
@@ -156,47 +169,47 @@ Clerk needs outbound HTTPS from **your browser** and from **Node** (`yarn dev`) 
 
 ```bash
 yarn test                   # all unit and integration tests
-yarn test:watch             # watch mode
-yarn test:e2e               # Playwright, production build — prefetched shells
-yarn test:e2e:dev           # Playwright, against a running `yarn dev` — structural specs
+yarn web test:watch             # watch mode
+yarn web test:e2e               # Playwright, production build — prefetched shells
+yarn web test:e2e:dev           # Playwright, against a running `yarn dev` — structural specs
 
 # Scientific benchmark suites (CI deployment gates)
-yarn benchmark              # run all model benchmarks, human-readable output
-yarn benchmark:json         # JSON output for CI parsing
-yarn benchmark:compare      # compare v1 vs v2 model versions
+yarn web benchmark              # run all model benchmarks, human-readable output
+yarn web benchmark:json         # JSON output for CI parsing
+yarn web benchmark:compare      # compare v1 vs v2 model versions
 ```
 
 Scientific benchmarks gate intelligence model deployment. All four models (Recovery, Fatigue, Adaptation, Reasoning) must score **100/100 scientific regression score** and **1.0 safety score** to pass.
 
 The e2e suite has two modes ([ADR-010](docs/adr/ADR-010-cache-components-and-instant-navigation.md)).
-`yarn test:e2e` builds and starts the app, because anything asserting what a navigation shows _before_
+`yarn web test:e2e` builds and starts the app, because anything asserting what a navigation shows _before_
 the server answers needs a prefetched shell, and `next dev` disables prefetching. It covers the routes
 reachable without a session.
 
-`yarn test:e2e:dev` runs the structural specs against a `yarn dev` you already have up, where
+`yarn web test:e2e:dev` runs the structural specs against a `yarn dev` you already have up, where
 `DEV_BYPASS_CLERK` stands in for a session — so the athlete's routes are covered with no credential to
 record and nothing that can expire.
 
 ## Development
 
-| Command                                          | Description                                                                                                              |
-| ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------ |
-| `yarn dev`                                       | Start in watch mode (installs deps first)                                                                                |
-| `yarn build`                                     | Production build                                                                                                         |
-| `yarn lint`                                      | ESLint                                                                                                                   |
-| `yarn lint:fix`                                  | Auto-fix lint errors                                                                                                     |
-| `yarn format`                                    | Prettier write                                                                                                           |
-| `yarn typecheck`                                 | TypeScript check without emitting                                                                                        |
-| `yarn db:migrate`                                | Run Prisma migrations (dev)                                                                                              |
-| `yarn db:push`                                   | Sync schema without migration                                                                                            |
-| `yarn db:studio`                                 | Open Prisma Studio                                                                                                       |
-| `yarn db:seed`                                   | Seed demo data                                                                                                           |
-| `yarn db:backfill:body-composition-observations` | Backfill `BODY_COMPOSITION` observations from stored Withings/Renpho measurements                                        |
-| `yarn db:recompute:fuel-features`                | Recompute FUEL feature sets for days with nutrition data (after weight backfill)                                         |
-| `yarn tokens:ios`                                | Regenerate the native client's Swift design tokens ([ADR-041](docs/adr/ADR-041-ios-design-tokens-generated-from-web.md)) |
-| `yarn tokens:ios:check`                          | Fail if the committed Swift tokens are stale                                                                             |
-| `yarn smoke:must-private [origin…]`              | Live smoke of the private Must: AASA, Garmin handoff entry/callback, Today with `SHARPIT_SMOKE_BEARER` (env only)        |
-| `yarn smoke:api-host [origin]`                   | Live check of the `api.` contract: 401/404 JSON, no cookie, no-store, CORS for `web.` only                               |
+| Command                                              | Description                                                                                                              |
+| ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `yarn dev`                                           | Start in watch mode (installs deps first)                                                                                |
+| `yarn build`                                         | Production build                                                                                                         |
+| `yarn lint`                                          | ESLint                                                                                                                   |
+| `yarn web lint:fix`                                  | Auto-fix lint errors                                                                                                     |
+| `yarn format`                                        | Prettier write                                                                                                           |
+| `yarn typecheck`                                     | TypeScript check without emitting                                                                                        |
+| `yarn web db:migrate`                                | Run Prisma migrations (dev)                                                                                              |
+| `yarn web db:push`                                   | Sync schema without migration                                                                                            |
+| `yarn web db:studio`                                 | Open Prisma Studio                                                                                                       |
+| `yarn web db:seed`                                   | Seed demo data                                                                                                           |
+| `yarn web db:backfill:body-composition-observations` | Backfill `BODY_COMPOSITION` observations from stored Withings/Renpho measurements                                        |
+| `yarn web db:recompute:fuel-features`                | Recompute FUEL feature sets for days with nutrition data (after weight backfill)                                         |
+| `yarn web tokens:ios`                                | Regenerate the native client's Swift design tokens ([ADR-041](docs/adr/ADR-041-ios-design-tokens-generated-from-web.md)) |
+| `yarn web tokens:ios:check`                          | Fail if the committed Swift tokens are stale                                                                             |
+| `yarn web smoke:must-private [origin…]`              | Live smoke of the private Must: AASA, Garmin handoff entry/callback, Today with `SHARPIT_SMOKE_BEARER` (env only)        |
+| `yarn web smoke:api-host [origin]`                   | Live check of the `api.` contract: 401/404 JSON, no cookie, no-store, CORS for `web.` only                               |
 
 ## Modules
 

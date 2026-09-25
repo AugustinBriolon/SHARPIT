@@ -51,7 +51,7 @@
 | [ADR-045](./ADR-045-biological-age-method.md)                                  | Biological age — a training estimate from VO₂max, adjusted, never a diagnosis      | Proposed              |
 | [ADR-046](./ADR-046-garmin-connects-in-app-with-native-credentials.md)         | iOS connects Garmin in-app with a native credentials form                          | Superseded by ADR-047 |
 | [ADR-047](./ADR-047-garmin-connects-in-an-in-app-authentication-session.md)    | iOS connects Garmin in an in-app authentication session                            | Accepted              |
-| [ADR-048](./ADR-048-web-repository-becomes-a-monorepo.md)                      | The web repository becomes a monorepo — one app and one Vercel project per host    | Proposed              |
+| [ADR-048](./ADR-048-web-repository-becomes-a-monorepo.md)                      | The web repository becomes a monorepo — one app and one Vercel project per host    | Accepted              |
 
 **Template:** [ADR-template.md](./ADR-template.md)
 
