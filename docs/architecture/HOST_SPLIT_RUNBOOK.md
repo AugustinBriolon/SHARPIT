@@ -6,18 +6,18 @@
 Each step ends with a check that must pass before the next one starts. Nothing here pastes a secret:
 Bearer tokens for the smokes come from `SHARPIT_SMOKE_BEARER` in the environment only.
 
-| Step                                   | State                                                                               | Where                                                                              |
-| -------------------------------------- | ----------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
-| 1. Private Must green                  | ✅ Today · Garmin in-app session verified on device (2026-09-26)                    | ADR-047                                                                            |
-| 2. Inventory                           | ✅                                                                                  | `HOSTS_INVENTORY.md`                                                               |
-| 3. Apex safety net                     | ✅ live                                                                             | `src/proxy.test.ts`, `yarn smoke:must-private` (apex + web. all `PASS` 2026-09-25) |
-| 4. Prepare `api.`                      | ✅ live                                                                             | `src/lib/hosts/api-host.ts`, `yarn smoke:api-host` (5/5 `PASS` 2026-09-25)         |
-| 5. Web calls `api.`                    | ⏸ deferred to step 7                                                                | below                                                                              |
-| 6. iOS origin → `api.`                 | ✅ merged (SHARPIT-APP `18ef55c`); Garmin handoff verified on device through `api.` | `Config/Release.xcconfig`; web pages on `SHARPIT_WEB_ORIGIN`                       |
-| 7. Detach `api.` project               | ⏸ owner (Vercel)                                                                    | below                                                                              |
-| 8. Apex hub                            | ⏸ needs product copy                                                                | below                                                                              |
-| 9. Thin web                            | ⏸ needs team UX validation                                                          | below                                                                              |
-| 10. Stripe web · IAP · Pro entitlement | later                                                                               | ADR-044                                                                            |
+| Step                                   | State                                                                                 | Where                                                                              |
+| -------------------------------------- | ------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| 1. Private Must green                  | ✅ Today · Garmin in-app session verified on device (2026-09-26)                      | ADR-047                                                                            |
+| 2. Inventory                           | ✅                                                                                    | `HOSTS_INVENTORY.md`                                                               |
+| 3. Apex safety net                     | ✅ live                                                                               | `src/proxy.test.ts`, `yarn smoke:must-private` (apex + web. all `PASS` 2026-09-25) |
+| 4. Prepare `api.`                      | ✅ live                                                                               | `src/lib/hosts/api-host.ts`, `yarn smoke:api-host` (5/5 `PASS` 2026-09-25)         |
+| 5. Web calls `api.`                    | ⏸ folded into the monorepo, phase 3                                                   | [ADR-048](../adr/ADR-048-web-repository-becomes-a-monorepo.md)                     |
+| 6. iOS origin → `api.`                 | ✅ merged (SHARPIT-APP `18ef55c`); Garmin handoff verified on device through `api.`   | `Config/Release.xcconfig`; web pages on `SHARPIT_WEB_ORIGIN`                       |
+| 7. Detach `api.` project               | ⏸ folded into the monorepo, phase 2 (a second project on the single app was rejected) | [ADR-048](../adr/ADR-048-web-repository-becomes-a-monorepo.md)                     |
+| 8. Apex hub                            | ⏸ needs product copy                                                                  | below                                                                              |
+| 9. Thin web                            | ⏸ needs team UX validation                                                            | below                                                                              |
+| 10. Stripe web · IAP · Pro entitlement | later                                                                                 | ADR-044                                                                            |
 
 ---
 
@@ -60,18 +60,13 @@ API origin, and universal links are honoured on `https://sharpit.app` only (`Inc
    `SHARPIT_WEB_ORIGIN = https:/$()/sharpit.app`.
 3. Smoke on device: Today, pull-to-refresh sync, Garmin connect in-app, coach chat, morning push tap.
 
-## Step 5 + 7 — detach `api.` and point the web at it (owner, Vercel)
+## Step 5 + 7 — detach `api.` and point the web at it
 
-Done together: while one deployment serves both hosts, the web calling `api.` over HTTP only adds a
-network hop.
-
-1. Create Vercel project `sharpit-api` from the same repository; move the `api.sharpit.app` domain to it.
-   Env: everything the API needs (inventory §4, "`api.`" row); **no** public-page variables.
-2. On the `sharpit` project remove `APNS_*` and `CRON_SECRET` once crons run on `sharpit-api`
-   (move `vercel.json` crons with them).
-3. Web server code calls `https://api.sharpit.app/api/v1/*` with `await auth().getToken()` as Bearer;
-   Clerk cookies stay on `web.`. Start with Today (read-only).
-4. `yarn smoke:api-host`, `yarn smoke:must-private …` → all `PASS`.
+Folded into [ADR-048](../adr/ADR-048-web-repository-becomes-a-monorepo.md) (2026-09-26). A second Vercel project
+on the current single app would rebuild the whole app on every push and would still need the database for
+the web pages, so the split happens once the code is split: `apps/api` gets its own project in phase 2,
+the web moves onto `api.` in phase 3. Until then one project serves every host and the `api.` guards keep
+its contract.
 
 ## Step 8 — apex hub (needs product copy)
 
