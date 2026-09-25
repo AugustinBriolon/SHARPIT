@@ -7,6 +7,12 @@ import { recoverFromHandshakeFailure } from '@/lib/auth/handshake-recovery';
 import { isDevClerkBypass } from '@/lib/dev/dev-auth';
 import { DEMO_COOKIE } from '@/lib/demo/demo-session';
 import { checkRateLimit, rateLimiters, rateLimitResponseBody } from '@/lib/rate-limit';
+import {
+  apiHostError,
+  isApiHostRequest,
+  screenApiHostRequest,
+  sealApiHostResponse,
+} from '@/lib/hosts/api-host';
 
 // Routes accessibles sans session Clerk :
 // - pages de connexion/inscription
@@ -146,6 +152,27 @@ const clerkProxy = clerkMiddleware(async (auth, req) => {
   }
 }, AUTH_ROUTES);
 
+// `api.` authenticates by Bearer only: no page, no sign-in redirect, no handshake — a
+// missing or rejected token is a 401 JSON, never Clerk's 404 rewrite.
+const apiHostProxy = clerkMiddleware(async (auth, req) => {
+  const { userId } = await auth();
+  if (!userId) {
+    return apiHostError(req, 401, 'Invalid or expired token');
+  }
+  return rateLimitApiUser(userId, req.nextUrl.pathname);
+});
+
+async function proxyApiHost(req: NextRequest, event: NextFetchEvent) {
+  const screened = screenApiHostRequest(req);
+  if (screened) {
+    return screened;
+  }
+  const response = (await apiHostProxy(req, event)) ?? NextResponse.next();
+  const sealable =
+    response instanceof NextResponse ? response : new NextResponse(response.body, response);
+  return sealApiHostResponse(req, sealable);
+}
+
 // Printed once per server instance, by rule name only — never a key.
 const clerkConfigIssues = describeClerkConfigIssues(diagnoseClerkConfig());
 if (clerkConfigIssues.length > 0 && !isDevClerkBypass()) {
@@ -153,6 +180,9 @@ if (clerkConfigIssues.length > 0 && !isDevClerkBypass()) {
 }
 
 export default async function proxy(req: NextRequest, event: NextFetchEvent) {
+  if (isApiHostRequest(req)) {
+    return proxyApiHost(req, event);
+  }
   try {
     return await clerkProxy(req, event);
   } catch (error) {
