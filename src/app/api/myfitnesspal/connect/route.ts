@@ -12,10 +12,7 @@ import { persistSourcePrefsMutation } from '@/lib/integrations/source-prefs-stor
 import { gateProviderConnect } from '@/lib/privacy/gate-provider-connect';
 import { logSafeError } from '@/lib/privacy/safe-log';
 
-export const mfpConnectSchema = z.object({
-  sessionToken: z.string().min(1).max(8000),
-  dataClass: z.string().optional().nullable(),
-});
+import { mfpConnectSchema } from './schema';
 
 export async function POST(request: NextRequest) {
   const body = await request.json().catch(() => ({}));

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { mfpConnectSchema } from './route';
+import { mfpConnectSchema } from './schema';
 
 describe('mfpConnectSchema', () => {
   it('accepts a real-world session token', () => {

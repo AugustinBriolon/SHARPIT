@@ -11,12 +11,6 @@ import { gateProviderConnect } from '@/lib/privacy/gate-provider-connect';
 
 export const maxDuration = 60;
 
-export {
-  garminConnectErrorMessage,
-  garminConnectSchema,
-  SSO_DISABLED_MESSAGE,
-} from '@/app/api/garmin/connect/connect-shared';
-
 /**
  * Start browser CAS SSO — sets CSRF state, then opens the Sharpit page that
  * embeds Garmin's SSO iframe (password typed on Garmin, never on Sharpit).

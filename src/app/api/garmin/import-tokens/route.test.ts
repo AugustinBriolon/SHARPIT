@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { garminImportTokensSchema } from './route';
+import { garminImportTokensSchema } from './schema';
 
 describe('garminImportTokensSchema', () => {
   it('accepts python-garminconnect tokenstore object', () => {

@@ -16,10 +16,7 @@ import { gateProviderConnect } from '@/lib/privacy/gate-provider-connect';
 
 export const maxDuration = 300;
 
-export const garminImportTokensSchema = z.object({
-  tokenStore: z.union([z.string().min(20).max(200_000), z.record(z.string(), z.unknown())]),
-  dataClass: z.string().optional().nullable(),
-});
+import { garminImportTokensSchema } from './schema';
 
 /** Authenticated import of python-garminconnect ≥ 0.3 tokenstore JSON. */
 export async function POST(request: NextRequest) {

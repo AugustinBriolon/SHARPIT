@@ -29,7 +29,7 @@ export default function OnboardingPage() {
 /** The shape of a wizard step (progress, title, options) while the athlete loads. */
 function OnboardingStepSkeleton() {
   return (
-    <div aria-busy aria-label="Chargement de l’onboarding" className="space-y-6" role="status">
+    <div aria-label="Chargement de l’onboarding" className="space-y-6" role="status" aria-busy>
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <Skeleton className="h-4 w-24 rounded-md" />

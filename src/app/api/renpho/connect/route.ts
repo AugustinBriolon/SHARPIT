@@ -11,11 +11,7 @@ import { persistSourcePrefsMutation } from '@/lib/integrations/source-prefs-stor
 import { gateProviderConnect } from '@/lib/privacy/gate-provider-connect';
 import { logSafeError } from '@/lib/privacy/safe-log';
 
-export const renphoConnectSchema = z.object({
-  email: z.string().email().max(320),
-  password: z.string().min(1).max(200),
-  dataClass: z.string().optional().nullable(),
-});
+import { renphoConnectSchema } from './schema';
 
 export async function POST(request: NextRequest) {
   try {

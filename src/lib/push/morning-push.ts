@@ -276,8 +276,12 @@ export async function sendMorningVerdictPushes(options?: {
     if (res.skippedReason) {
       skippedCount += 1;
     } else {
-      if (res.sent > 0) sentCount += 1;
-      if (res.failed > 0 && res.sent === 0) failedCount += 1;
+      if (res.sent > 0) {
+        sentCount += 1;
+      }
+      if (res.failed > 0 && res.sent === 0) {
+        failedCount += 1;
+      }
     }
     deactivatedTokens += res.deactivated;
   }

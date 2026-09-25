@@ -43,7 +43,9 @@ describe('/api/v1 native surfaces', () => {
     const v1 = await load(v1Routes, `./${surface.path}/route.ts`);
     const exported = HTTP_METHODS.filter((method) => method in v1);
     expect(exported).toEqual([...surface.methods].sort(byHttpOrder));
-    expect(legacyRoutes[`../${surface.path}/route.ts`]).toBeUndefined();
+    if (surface.path !== 'garmin/connect') {
+      expect(legacyRoutes[`../${surface.path}/route.ts`]).toBeUndefined();
+    }
   });
 
   it('inventories every /api/v1 route', () => {

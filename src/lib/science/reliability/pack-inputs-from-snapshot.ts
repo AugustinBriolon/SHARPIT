@@ -36,7 +36,7 @@ function countRecoveryDimensions(snapshot: AthleteSnapshot): number {
  * V0 heuristic until feature-level baseline length is persisted on the snapshot.
  */
 export function estimateHrvBaselineDays(snapshot: AthleteSnapshot): number | null {
-  const recovery = snapshot.recovery;
+  const { recovery } = snapshot;
   if (!recovery) {
     return null;
   }

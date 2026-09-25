@@ -31,5 +31,5 @@ export function GateRedirect({ href, exempt = [] }: { href: string; exempt?: rea
   if (skip) {
     return null;
   }
-  return <div aria-busy aria-hidden className="bg-background fixed inset-0 z-50" />;
+  return <div className="bg-background fixed inset-0 z-50" aria-busy aria-hidden />;
 }

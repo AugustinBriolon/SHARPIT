@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { renphoConnectSchema } from './route';
+import { renphoConnectSchema } from './schema';
 
 describe('renphoConnectSchema', () => {
   it('accepts real-world credentials', () => {

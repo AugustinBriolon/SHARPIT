@@ -169,7 +169,9 @@ export async function sendApnsNotification(options: {
     };
 
     const done = (result: ApnsSendResult) => {
-      if (settled) return;
+      if (settled) {
+        return;
+      }
       settled = true;
       cleanup();
       resolve(result);
@@ -227,7 +229,7 @@ export async function sendApnsNotification(options: {
       if (resBody) {
         try {
           const parsed = JSON.parse(resBody);
-          reason = parsed.reason;
+          ({ reason } = parsed);
         } catch {
           reason = resBody;
         }

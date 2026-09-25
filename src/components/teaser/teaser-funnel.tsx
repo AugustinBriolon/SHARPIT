@@ -39,9 +39,9 @@ export function TeaserFunnel() {
         </header>
 
         <div
-          className="mt-10 flex flex-1 flex-col gap-6 max-sm:pb-56"
-          aria-live="polite"
           key={screen.id}
+          aria-live="polite"
+          className="mt-10 flex flex-1 flex-col gap-6 max-sm:pb-56"
         >
           <EyebrowLabel>{screen.eyebrow}</EyebrowLabel>
           <h1 className="text-verdict text-balance sm:text-[1.75rem]">{screen.title}</h1>
@@ -68,9 +68,9 @@ export function TeaserFunnel() {
             {TEASER_SCREENS.map((step, i) => (
               <button
                 key={step.id}
-                type="button"
-                aria-label={`Écran ${i + 1} : ${step.eyebrow}`}
                 aria-current={i === index ? 'step' : undefined}
+                aria-label={`Écran ${i + 1} : ${step.eyebrow}`}
+                type="button"
                 className={cn(
                   'h-1.5 rounded-full transition-[width,background-color] duration-200',
                   i === index ? 'bg-foreground w-8' : 'bg-foreground/25 w-1.5',

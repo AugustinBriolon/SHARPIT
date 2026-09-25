@@ -55,6 +55,7 @@ export const NATIVE_V1_ONLY = [
   { path: 'pro', methods: ['GET'] },
   { path: 'billing/apple/app-account-token', methods: ['POST'] },
   { path: 'billing/apple/verify', methods: ['POST'] },
+  { path: 'garmin/connect', methods: ['POST'] },
 ] as const;
 
 /**
