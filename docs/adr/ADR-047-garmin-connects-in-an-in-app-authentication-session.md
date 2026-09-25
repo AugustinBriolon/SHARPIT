@@ -23,7 +23,7 @@ Connect Garmin from iOS in an `ASWebAuthenticationSession` (SwiftUI `WebAuthenti
 2. The web's `<SignIn>` redeems the ticket — the athlete never signs in twice — and `/connect/garmin/start` runs Garmin's browser SSO: the password is typed on Garmin's own page, from the athlete's device.
 3. Every exit ends on `https://sharpit.app/connect/garmin/callback?garmin=<status>`; the session watches that `https` callback (the apex AASA declares the path) and closes on it. The app reads the status with `IncomingLink`.
 
-`POST /api/v1/garmin/connect` stays on the server for now but no client calls it.
+`POST /api/v1/garmin/connect` is removed (2026-09-26): no client calls it.
 
 ---
 
@@ -92,4 +92,3 @@ Connect Garmin from iOS in an `ASWebAuthenticationSession` (SwiftUI `WebAuthenti
 
 - If Clerk stops redeeming `__clerk_ticket` in `<SignIn>`, sign the ticket in explicitly on a dedicated page.
 - If Garmin publishes a supported OAuth flow for this data, replace the SSO handoff with it.
-- Remove `POST /api/v1/garmin/connect` once no app build in use calls it.
