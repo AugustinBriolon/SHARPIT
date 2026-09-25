@@ -6,36 +6,35 @@
 Each step ends with a check that must pass before the next one starts. Nothing here pastes a secret:
 Bearer tokens for the smokes come from `SHARPIT_SMOKE_BEARER` in the environment only.
 
-| Step                                   | State                                                                 | Where                                                                             |
-| -------------------------------------- | --------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
-| 1. Private Must green                  | ⚠️ Today ✅ · Garmin in-app ❌ (DI ticket rejected) · Upstash missing | —                                                                                 |
-| 2. Inventory                           | ✅                                                                    | `HOSTS_INVENTORY.md`                                                              |
-| 3. Apex safety net                     | ✅ in code                                                            | `src/proxy.test.ts` (apex AASA and callback untouched), `yarn smoke:must-private` |
-| 4. Prepare `api.`                      | ✅ in code, not deployed                                              | branch `feat/api-host-guards`, `yarn smoke:api-host`                              |
-| 5. Web calls `api.`                    | ⏸ deferred to step 7                                                  | below                                                                             |
-| 6. iOS origin → `api.`                 | ✅ in code, not merged                                                | SHARPIT-APP branch `feat/api-origin`                                              |
-| 7. Detach `api.` project               | ⏸ owner (Vercel)                                                      | below                                                                             |
-| 8. Apex hub                            | ⏸ needs product copy                                                  | below                                                                             |
-| 9. Thin web                            | ⏸ needs team UX validation                                            | below                                                                             |
-| 10. Stripe web · IAP · Pro entitlement | later                                                                 | ADR-044                                                                           |
+| Step                                   | State                                               | Where                                                                             |
+| -------------------------------------- | --------------------------------------------------- | --------------------------------------------------------------------------------- |
+| 1. Private Must green                  | ⚠️ Today ✅ · Garmin in-app ❌ (DI ticket rejected) | —                                                                                 |
+| 2. Inventory                           | ✅                                                  | `HOSTS_INVENTORY.md`                                                              |
+| 3. Apex safety net                     | ✅ in code                                          | `src/proxy.test.ts` (apex AASA and callback untouched), `yarn smoke:must-private` |
+| 4. Prepare `api.`                      | ✅ in code, not deployed                            | branch `feat/api-host-guards`, `yarn smoke:api-host`                              |
+| 5. Web calls `api.`                    | ⏸ deferred to step 7                                | below                                                                             |
+| 6. iOS origin → `api.`                 | ✅ in code, not merged                              | SHARPIT-APP branch `feat/api-origin`                                              |
+| 7. Detach `api.` project               | ⏸ owner (Vercel)                                    | below                                                                             |
+| 8. Apex hub                            | ⏸ needs product copy                                | below                                                                             |
+| 9. Thin web                            | ⏸ needs team UX validation                          | below                                                                             |
+| 10. Stripe web · IAP · Pro entitlement | later                                               | ADR-044                                                                           |
 
 ---
 
 ## Step 1 — close the private Must (owner)
 
-1. **Upstash** — create a Redis database, set `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`
-   (Production), redeploy. Without it, `/api/v1/sync` and the coach answer `503`.
-2. **Deploy `main`** (`git push`), which ships the Garmin diagnostics (`d7f7f0f2`).
-3. On the iPhone, connect Garmin in-app once. If it fails, the app now shows `(code : …)`; the Vercel log
+1. **Deploy `main`**, which ships the Garmin diagnostics (`d7f7f0f2`).
+2. On the iPhone, connect Garmin in-app once. If it fails, the app now shows `(code : …)`; the Vercel log
    line `[api/v1/garmin/connect] connection failed` lists every DI client id's rejection and the log line
    `[garmin] mobile login failed before the widget fallback` says why the primary path failed. Bring both.
-4. `yarn smoke:must-private https://sharpit.app https://web.sharpit.app` with a fresh Bearer → all `PASS`.
+3. `yarn smoke:must-private https://sharpit.app https://web.sharpit.app` with a fresh Bearer → all `PASS`.
 
 ## Step 4 — ship the `api.` guards
 
 Prerequisite: step 1 green.
 
-1. Set `NEXT_PUBLIC_APP_URL=https://sharpit.app` (Production) so links handed to iOS never name `api.`.
+1. `NEXT_PUBLIC_APP_URL` is `https://web.sharpit.app` in Production: links handed to iOS open the thin
+   web, never `api.`.
 2. Merge `feat/api-host-guards`, deploy.
 3. `yarn smoke:api-host` → all `PASS` (with `SHARPIT_SMOKE_BEARER` for the last check).
 4. `yarn smoke:must-private https://sharpit.app https://web.sharpit.app` → still all `PASS`.
@@ -44,7 +43,7 @@ Prerequisite: step 1 green.
 What the guards do, only when the host is `api.sharpit.app` (`src/lib/hosts/api-host.ts`):
 `/api/v1/*` and `/api/coach/chat` only, everything else `404` JSON; no Bearer or a rejected one → `401`
 JSON; `Set-Cookie` stripped; `Cache-Control: private, no-store`; CORS `https://web.sharpit.app` only,
-any other `Access-Control-Allow-Origin` removed; the existing per-athlete rate limit (needs Upstash).
+any other `Access-Control-Allow-Origin` removed; the existing per-athlete rate limit (Upstash).
 
 Known limits: a route handler's own `Set-Cookie` cannot be removed by the proxy — a test forbids any
 `/api/v1` route or the coach stream from setting one. Vercel cron calls the production domain, never `api.`.
