@@ -195,6 +195,7 @@ record and nothing that can expire.
 | `yarn db:recompute:fuel-features`                | Recompute FUEL feature sets for days with nutrition data (after weight backfill)                                         |
 | `yarn tokens:ios`                                | Regenerate the native client's Swift design tokens ([ADR-041](docs/adr/ADR-041-ios-design-tokens-generated-from-web.md)) |
 | `yarn tokens:ios:check`                          | Fail if the committed Swift tokens are stale                                                                             |
+| `yarn smoke:must-private [origin…]`              | Live smoke of the private Must: AASA, Garmin handoff entry/callback, Today with `SHARPIT_SMOKE_BEARER` (env only)        |
 
 ## Modules
 
