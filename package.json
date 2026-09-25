@@ -9,6 +9,7 @@
     "tokens:ios": "tsx scripts/export-ios-tokens.ts",
     "tokens:ios:check": "tsx scripts/export-ios-tokens.ts --check",
     "smoke:must-private": "tsx scripts/smoke-must-private.ts",
+    "smoke:api-host": "tsx scripts/smoke-api-host.ts",
     "db:migrate:deploy": "tsx scripts/repair-failed-migrations.ts && prisma migrate deploy",
     "start": "next start",
     "lint": "eslint",
