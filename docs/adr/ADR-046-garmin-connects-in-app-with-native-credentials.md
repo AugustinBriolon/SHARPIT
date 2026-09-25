@@ -88,6 +88,26 @@ Connect Garmin from iOS in-app, through the native credentials form calling `POS
 
 ---
 
+## Findings after the first device test (2026-09-25)
+
+The in-app connect failed on device with `Widget DI exchange failed after ticket … invalid service ticket
+provided`. Compared with the reference implementation our code ports (python-garminconnect `client.py`):
+
+- Same widget parameters (`service` = `https://sso.garmin.com/sso/embed`), same ticket regex, same DI
+  client ids and exchange body — the request shape is not the difference.
+- The reference tries the **mobile** login first through `curl_cffi` with `impersonate='chrome'` (a browser
+  TLS fingerprint). Node's `fetch` on Vercel cannot present one, which likely explains why our mobile path
+  fails first and the widget fallback runs at all.
+- The reference **expects** the DI exchange of a widget ticket to fail at times and falls back to a Garmin
+  web session (`JWT_WEB` cookie, `GET <service>?ticket=…`). We have no such fallback, and a cookie session
+  would not give the refreshable DI tokens our sync relies on.
+
+Server-side login is therefore fragile by construction. The device-side SSO (Alternative 1) avoids all
+three issues: the ticket is minted by the athlete's own browser session, and the web's `sso-callback`
+already exchanges such tickets.
+
+---
+
 ## Review Criteria
 
 - If more than 1 in 10 in-app Garmin connections fail with `server_sso_rejected`, `rate_limited` or `mfa_required` over a week, switch iOS to Alternative 1 (`ASWebAuthenticationSession`).
