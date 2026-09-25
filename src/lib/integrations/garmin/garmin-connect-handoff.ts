@@ -9,6 +9,24 @@ export const CONNECT_GARMIN_START_PATH = '/connect/garmin/start';
 export const CONNECT_GARMIN_AUTHORIZE_PATH = '/connect/garmin/authorize';
 export const CONNECT_GARMIN_CALLBACK_PATH = '/connect/garmin/callback';
 
+/**
+ * Where the in-app handoff runs (ADR-047): the apex, whose AASA declares the callback path the
+ * app's authentication session waits for. Never `api.` (no pages) nor `web.`.
+ */
+export const GARMIN_HANDOFF_ORIGIN = 'https://sharpit.app';
+
+/**
+ * The page an in-app authentication session opens: the web's sign-in, which redeems the
+ * one-time Clerk ticket (`__clerk_ticket`) so the athlete never signs in twice, then goes
+ * straight to the Garmin SSO. The URL is a credential — never log it.
+ */
+export function garminHandoffEntryUrl(origin: string, signInTicket: string): string {
+  const url = new URL('/sign-in', origin);
+  url.searchParams.set('__clerk_ticket', signInTicket);
+  url.searchParams.set('redirect_url', new URL(CONNECT_GARMIN_START_PATH, origin).toString());
+  return url.toString();
+}
+
 /** Outcome carried on the callback URL as `?garmin=<status>`. */
 export type GarminHandoffStatus =
   | 'connected'

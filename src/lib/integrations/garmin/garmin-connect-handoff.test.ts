@@ -3,6 +3,7 @@ import {
   CONNECT_GARMIN_CALLBACK_PATH,
   garminHandoffCallbackPath,
   garminHandoffCopy,
+  garminHandoffEntryUrl,
   parseGarminHandoffStatus,
 } from '@/lib/integrations/garmin/garmin-connect-handoff';
 import { sanitizeIntegrationReturnTo } from '@/lib/integrations/oauth-public-origin';
@@ -40,5 +41,12 @@ describe('Garmin handoff', () => {
     expect(garminHandoffCopy('already_connected').canRetry).toBe(false);
     expect(garminHandoffCopy('denied').canRetry).toBe(true);
     expect(garminHandoffCopy('connected').description).toContain('revenir dans l’app');
+  });
+
+  it('opens the sign-in with the ticket and goes straight to the Garmin SSO', () => {
+    const url = new URL(garminHandoffEntryUrl('https://sharpit.app', 'a&b=c'));
+    expect(url.pathname).toBe('/sign-in');
+    expect(url.searchParams.get('__clerk_ticket')).toBe('a&b=c');
+    expect(url.searchParams.get('redirect_url')).toBe('https://sharpit.app/connect/garmin/start');
   });
 });
