@@ -1,6 +1,6 @@
 # ADR-046: iOS connects Garmin in-app with a native credentials form
 
-**Status:** Proposed  
+**Status:** Superseded by [ADR-047](./ADR-047-garmin-connects-in-an-in-app-authentication-session.md)  
 **Date:** 2026-09-25  
 **Author:** Augustin Briolon (with Claude Code)  
 **Supersedes:** N/A — amends the iOS Garmin handoff described alongside [ADR-040](./ADR-040-ios-product-canonical-api-v1.md)
