@@ -1,37 +1,33 @@
 # Host split runbook — `api.` · `web.` · apex
 
 **Status:** in progress · **Last update:** 2026-09-25
-**Inventory:** [HOSTS_INVENTORY.md](./HOSTS_INVENTORY.md) · **Garmin:** [ADR-046](../adr/ADR-046-garmin-connects-in-app-with-native-credentials.md)
+**Inventory:** [HOSTS_INVENTORY.md](./HOSTS_INVENTORY.md) · **Garmin:** [ADR-047](../adr/ADR-047-garmin-connects-in-an-in-app-authentication-session.md)
 
 Each step ends with a check that must pass before the next one starts. Nothing here pastes a secret:
 Bearer tokens for the smokes come from `SHARPIT_SMOKE_BEARER` in the environment only.
 
-| Step                                   | State                                               | Where                                                                              |
-| -------------------------------------- | --------------------------------------------------- | ---------------------------------------------------------------------------------- |
-| 1. Private Must green                  | ⚠️ Today ✅ · Garmin in-app ❌ (DI ticket rejected) | —                                                                                  |
-| 2. Inventory                           | ✅                                                  | `HOSTS_INVENTORY.md`                                                               |
-| 3. Apex safety net                     | ✅ live                                             | `src/proxy.test.ts`, `yarn smoke:must-private` (apex + web. all `PASS` 2026-09-25) |
-| 4. Prepare `api.`                      | ✅ live                                             | `src/lib/hosts/api-host.ts`, `yarn smoke:api-host` (5/5 `PASS` 2026-09-25)         |
-| 5. Web calls `api.`                    | ⏸ deferred to step 7                                | below                                                                              |
-| 6. iOS origin → `api.`                 | ✅ in code, awaiting device smoke                   | SHARPIT-APP branch `feat/api-origin` (web pages on `SHARPIT_WEB_ORIGIN`)           |
-| 7. Detach `api.` project               | ⏸ owner (Vercel)                                    | below                                                                              |
-| 8. Apex hub                            | ⏸ needs product copy                                | below                                                                              |
-| 9. Thin web                            | ⏸ needs team UX validation                          | below                                                                              |
-| 10. Stripe web · IAP · Pro entitlement | later                                               | ADR-044                                                                            |
+| Step                                   | State                                                             | Where                                                                              |
+| -------------------------------------- | ----------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| 1. Private Must green                  | ⚠️ Today ✅ · Garmin in-app session shipped, awaiting device test | ADR-047                                                                            |
+| 2. Inventory                           | ✅                                                                | `HOSTS_INVENTORY.md`                                                               |
+| 3. Apex safety net                     | ✅ live                                                           | `src/proxy.test.ts`, `yarn smoke:must-private` (apex + web. all `PASS` 2026-09-25) |
+| 4. Prepare `api.`                      | ✅ live                                                           | `src/lib/hosts/api-host.ts`, `yarn smoke:api-host` (5/5 `PASS` 2026-09-25)         |
+| 5. Web calls `api.`                    | ⏸ deferred to step 7                                              | below                                                                              |
+| 6. iOS origin → `api.`                 | ✅ in code, awaiting device smoke                                 | SHARPIT-APP branch `feat/api-origin` (web pages on `SHARPIT_WEB_ORIGIN`)           |
+| 7. Detach `api.` project               | ⏸ owner (Vercel)                                                  | below                                                                              |
+| 8. Apex hub                            | ⏸ needs product copy                                              | below                                                                              |
+| 9. Thin web                            | ⏸ needs team UX validation                                        | below                                                                              |
+| 10. Stripe web · IAP · Pro entitlement | later                                                             | ADR-044                                                                            |
 
 ---
 
 ## Step 1 — close the private Must (owner)
 
-1. **Deploy `main`**, which ships the Garmin diagnostics (`d7f7f0f2`).
-2. On the iPhone, connect Garmin in-app once. If it fails, the app now shows `(code : …)`; the Vercel log
-   line `[api/v1/garmin/connect] connection failed` lists every DI client id's rejection and the log line
-   `[garmin] mobile login failed before the widget fallback` says why the primary path failed. Bring both.
+1. **Deploy `main`**, which ships `POST /api/v1/garmin/handoff`.
+2. On the iPhone, Paramètres → Sources de données → Garmin: a sheet opens on `sharpit.app` already signed
+   in, Garmin's page asks for the Garmin password, the sheet closes by itself on
+   `/connect/garmin/callback` and the row reads « Connecté » (ADR-047).
 3. `yarn smoke:must-private https://sharpit.app https://web.sharpit.app` with a fresh Bearer → all `PASS`.
-
-If the in-app connect keeps failing server-side (see the findings in ADR-046), the reliable in-app path is
-Alternative 1: `ASWebAuthenticationSession` on `https://sharpit.app/connect/garmin` — the sign-in happens on
-the athlete's device and never leaves the app. Product decision pending.
 
 ## Step 4 — ship the `api.` guards (done 2026-09-25)
 
