@@ -8,6 +8,7 @@
     "icons:pwa": "node scripts/generate-pwa-icons.mjs",
     "tokens:ios": "tsx scripts/export-ios-tokens.ts",
     "tokens:ios:check": "tsx scripts/export-ios-tokens.ts --check",
+    "smoke:must-private": "tsx scripts/smoke-must-private.ts",
     "db:migrate:deploy": "tsx scripts/repair-failed-migrations.ts && prisma migrate deploy",
     "start": "next start",
     "lint": "eslint",
