@@ -115,9 +115,14 @@ async function runCheck(
       { status: response.status, headers: response.headers, body: await response.text() },
       origin,
     );
-    return reason
-      ? { name: check.name, outcome: 'fail', reason }
-      : { name: check.name, outcome: 'pass' };
+    if (!reason) {
+      return { name: check.name, outcome: 'pass' };
+    }
+    // Clerk names why it refused a Bearer (e.g. token-expired) — the only way to tell an
+    // expired token from a misconfigured instance, and it never carries the token.
+    const clerkReason = response.headers.get('x-clerk-auth-reason');
+    const detail = clerkReason ? `${reason} (clerk: ${clerkReason})` : reason;
+    return { name: check.name, outcome: 'fail', reason: detail };
   } catch {
     return { name: check.name, outcome: 'fail', reason: 'network error' };
   }

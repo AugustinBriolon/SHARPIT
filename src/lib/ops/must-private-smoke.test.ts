@@ -132,6 +132,26 @@ describe('runMustPrivateSmoke', () => {
     expect(JSON.stringify(results)).not.toContain(BEARER);
   });
 
+  it('names why Clerk refused the Bearer', async () => {
+    const { fetcher } = fakeFetcher({
+      [`/api/v1/today?trainingDayId=${DAY}`]: {
+        status: 404,
+        headers: { 'content-type': 'text/html', 'x-clerk-auth-reason': 'token-expired' },
+      },
+    });
+
+    const results = await runMustPrivateSmoke(ORIGIN, {
+      bearer: BEARER,
+      trainingDayId: DAY,
+      fetcher,
+    });
+
+    expect(results[3]).toMatchObject({
+      outcome: 'fail',
+      reason: 'expected 200, got 404 (clerk: token-expired)',
+    });
+  });
+
   it('reports a network failure without throwing', async () => {
     const fetcher = async () => {
       throw new TypeError('fetch failed');
