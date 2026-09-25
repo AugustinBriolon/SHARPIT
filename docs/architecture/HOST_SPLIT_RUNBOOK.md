@@ -6,18 +6,18 @@
 Each step ends with a check that must pass before the next one starts. Nothing here pastes a secret:
 Bearer tokens for the smokes come from `SHARPIT_SMOKE_BEARER` in the environment only.
 
-| Step                                   | State                                                             | Where                                                                              |
-| -------------------------------------- | ----------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
-| 1. Private Must green                  | ⚠️ Today ✅ · Garmin in-app session shipped, awaiting device test | ADR-047                                                                            |
-| 2. Inventory                           | ✅                                                                | `HOSTS_INVENTORY.md`                                                               |
-| 3. Apex safety net                     | ✅ live                                                           | `src/proxy.test.ts`, `yarn smoke:must-private` (apex + web. all `PASS` 2026-09-25) |
-| 4. Prepare `api.`                      | ✅ live                                                           | `src/lib/hosts/api-host.ts`, `yarn smoke:api-host` (5/5 `PASS` 2026-09-25)         |
-| 5. Web calls `api.`                    | ⏸ deferred to step 7                                              | below                                                                              |
-| 6. iOS origin → `api.`                 | ✅ merged (SHARPIT-APP `18ef55c`), awaiting device smoke          | `Config/Release.xcconfig`; web pages on `SHARPIT_WEB_ORIGIN`                       |
-| 7. Detach `api.` project               | ⏸ owner (Vercel)                                                  | below                                                                              |
-| 8. Apex hub                            | ⏸ needs product copy                                              | below                                                                              |
-| 9. Thin web                            | ⏸ needs team UX validation                                        | below                                                                              |
-| 10. Stripe web · IAP · Pro entitlement | later                                                             | ADR-044                                                                            |
+| Step                                   | State                                                                               | Where                                                                              |
+| -------------------------------------- | ----------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| 1. Private Must green                  | ✅ Today · Garmin in-app session verified on device (2026-09-26)                    | ADR-047                                                                            |
+| 2. Inventory                           | ✅                                                                                  | `HOSTS_INVENTORY.md`                                                               |
+| 3. Apex safety net                     | ✅ live                                                                             | `src/proxy.test.ts`, `yarn smoke:must-private` (apex + web. all `PASS` 2026-09-25) |
+| 4. Prepare `api.`                      | ✅ live                                                                             | `src/lib/hosts/api-host.ts`, `yarn smoke:api-host` (5/5 `PASS` 2026-09-25)         |
+| 5. Web calls `api.`                    | ⏸ deferred to step 7                                                                | below                                                                              |
+| 6. iOS origin → `api.`                 | ✅ merged (SHARPIT-APP `18ef55c`); Garmin handoff verified on device through `api.` | `Config/Release.xcconfig`; web pages on `SHARPIT_WEB_ORIGIN`                       |
+| 7. Detach `api.` project               | ⏸ owner (Vercel)                                                                    | below                                                                              |
+| 8. Apex hub                            | ⏸ needs product copy                                                                | below                                                                              |
+| 9. Thin web                            | ⏸ needs team UX validation                                                          | below                                                                              |
+| 10. Stripe web · IAP · Pro entitlement | later                                                                               | ADR-044                                                                            |
 
 ---
 
