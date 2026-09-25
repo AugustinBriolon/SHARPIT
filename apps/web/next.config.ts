@@ -1,3 +1,4 @@
+import path from 'node:path';
 import type { NextConfig } from 'next';
 
 function loadAllowedDevOrigins(): string[] {
@@ -23,6 +24,9 @@ const nextConfig: NextConfig = {
     optimizePackageImports: ['lucide-react', 'date-fns', 'recharts', 'motion'],
   },
   turbopack: {},
+  // The app lives in apps/web of the monorepo (ADR-048); dependencies are hoisted to its root,
+  // so tracing starts there or the deployed functions miss them.
+  outputFileTracingRoot: path.join(__dirname, '../../'),
   allowedDevOrigins: loadAllowedDevOrigins(),
   images: {
     remotePatterns: [

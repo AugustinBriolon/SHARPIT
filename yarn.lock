@@ -2967,6 +2967,85 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@sharpit/web@workspace:apps/web":
+  version: 0.0.0-use.local
+  resolution: "@sharpit/web@workspace:apps/web"
+  dependencies:
+    "@ai-sdk/react": "npm:4.0.35"
+    "@apple/app-store-server-library": "npm:3.1.0"
+    "@base-ui/react": "npm:^1.6.0"
+    "@clerk/localizations": "npm:^4.11.0"
+    "@clerk/nextjs": "npm:^7.5.9"
+    "@clerk/themes": "npm:2.4.57"
+    "@eslint/compat": "npm:^2.1.0"
+    "@eslint/js": "npm:^9.39.0"
+    "@flow-js/garmin-connect": "npm:^1.6.17"
+    "@hookform/resolvers": "npm:^5.4.0"
+    "@langfuse/client": "npm:^5.11.1"
+    "@langfuse/otel": "npm:^5.11.1"
+    "@langfuse/tracing": "npm:^5.11.1"
+    "@langfuse/vercel-ai-sdk": "npm:^5.11.1"
+    "@next/eslint-plugin-next": "npm:16.3.0"
+    "@next/playwright": "npm:16.3.0"
+    "@opentelemetry/api": "npm:^1.9.1"
+    "@opentelemetry/core": "npm:^2.11.0"
+    "@opentelemetry/exporter-trace-otlp-http": "npm:^0.222.0"
+    "@opentelemetry/sdk-node": "npm:^0.222.0"
+    "@opentelemetry/sdk-trace-base": "npm:^2.11.0"
+    "@playwright/test": "npm:^1.51.1"
+    "@prisma/adapter-neon": "npm:^6.19.3"
+    "@prisma/client": "npm:^6.19.3"
+    "@serwist/cli": "npm:^9.5.11"
+    "@serwist/next": "npm:^9.5.11"
+    "@tailwindcss/postcss": "npm:^4"
+    "@tanstack/react-query": "npm:^5.101.2"
+    "@tanstack/react-virtual": "npm:^3.14.11"
+    "@types/geojson": "npm:^7946.0.16"
+    "@types/node": "npm:^20"
+    "@types/react": "npm:^19"
+    "@types/react-dom": "npm:^19"
+    "@typescript-eslint/eslint-plugin": "npm:^8.62.1"
+    "@typescript-eslint/parser": "npm:^8.62.1"
+    "@upstash/ratelimit": "npm:^2.0.8"
+    "@upstash/redis": "npm:^1.38.2"
+    ai: "npm:7.0.32"
+    class-variance-authority: "npm:^0.7.1"
+    clsx: "npm:^2.1.1"
+    date-fns: "npm:^4.4.0"
+    eslint: "npm:^9"
+    eslint-config-next: "npm:16.3.0"
+    eslint-config-prettier: "npm:^10.1.8"
+    eslint-plugin-prettier: "npm:^5.5.6"
+    eslint-plugin-react: "npm:^7.37.5"
+    eslint-plugin-react-hooks: "npm:^7.1.1"
+    fake-indexeddb: "npm:^6.2.5"
+    liquid-glass-react: "npm:1.1.1"
+    lucide-react: "npm:^1.21.0"
+    maplibre-gl: "npm:^5.24.0"
+    motion: "npm:^12.43.0"
+    next: "npm:16.3.0"
+    prisma: "npm:^6.19.3"
+    react: "npm:19.2.4"
+    react-dom: "npm:19.2.4"
+    react-hook-form: "npm:^7.80.0"
+    react-markdown: "npm:^10.1.0"
+    recharts: "npm:^3.9.0"
+    remark-breaks: "npm:^4.0.0"
+    remark-gfm: "npm:^4.0.1"
+    serwist: "npm:^9.5.11"
+    shadcn: "npm:^4.12.0"
+    sharp: "npm:^0.35.3"
+    shiki: "npm:^4.4.3"
+    tailwind-merge: "npm:^3.6.0"
+    tailwindcss: "npm:^4"
+    tsx: "npm:^4.22.4"
+    tw-animate-css: "npm:^1.4.0"
+    typescript: "npm:^5"
+    vitest: "npm:^4.1.9"
+    zod: "npm:^4.4.3"
+  languageName: unknown
+  linkType: soft
+
 "@shikijs/core@npm:4.4.3":
   version: 4.4.3
   resolution: "@shikijs/core@npm:4.4.3"
@@ -3293,6 +3372,48 @@ __metadata:
     minimatch: "npm:^10.0.1"
     path-browserify: "npm:^1.0.1"
   checksum: 10c0/3daa267bd78114ff504eb064c5215da6e46589e775b781ec0da4998d999b0d7130eff287e70d6e13e0a0a897ea16e9387f4cd885b4b9d6d628f318cecb81d473
+  languageName: node
+  linkType: hard
+
+"@turbo/darwin-64@npm:2.11.4":
+  version: 2.11.4
+  resolution: "@turbo/darwin-64@npm:2.11.4"
+  conditions: os=darwin & cpu=x64
+  languageName: node
+  linkType: hard
+
+"@turbo/darwin-arm64@npm:2.11.4":
+  version: 2.11.4
+  resolution: "@turbo/darwin-arm64@npm:2.11.4"
+  conditions: os=darwin & cpu=arm64
+  languageName: node
+  linkType: hard
+
+"@turbo/linux-64@npm:2.11.4":
+  version: 2.11.4
+  resolution: "@turbo/linux-64@npm:2.11.4"
+  conditions: (os=android | os=linux) & cpu=x64
+  languageName: node
+  linkType: hard
+
+"@turbo/linux-arm64@npm:2.11.4":
+  version: 2.11.4
+  resolution: "@turbo/linux-arm64@npm:2.11.4"
+  conditions: (os=android | os=linux) & cpu=arm64
+  languageName: node
+  linkType: hard
+
+"@turbo/windows-64@npm:2.11.4":
+  version: 2.11.4
+  resolution: "@turbo/windows-64@npm:2.11.4"
+  conditions: os=win32 & cpu=x64
+  languageName: node
+  linkType: hard
+
+"@turbo/windows-arm64@npm:2.11.4":
+  version: 2.11.4
+  resolution: "@turbo/windows-arm64@npm:2.11.4"
+  conditions: os=win32 & cpu=arm64
   languageName: node
   linkType: hard
 
@@ -11190,83 +11311,12 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "sharpit@workspace:."
   dependencies:
-    "@ai-sdk/react": "npm:4.0.35"
-    "@apple/app-store-server-library": "npm:3.1.0"
-    "@base-ui/react": "npm:^1.6.0"
-    "@clerk/localizations": "npm:^4.11.0"
-    "@clerk/nextjs": "npm:^7.5.9"
-    "@clerk/themes": "npm:2.4.57"
-    "@eslint/compat": "npm:^2.1.0"
-    "@eslint/js": "npm:^9.39.0"
-    "@flow-js/garmin-connect": "npm:^1.6.17"
-    "@hookform/resolvers": "npm:^5.4.0"
-    "@langfuse/client": "npm:^5.11.1"
-    "@langfuse/otel": "npm:^5.11.1"
-    "@langfuse/tracing": "npm:^5.11.1"
-    "@langfuse/vercel-ai-sdk": "npm:^5.11.1"
-    "@next/eslint-plugin-next": "npm:16.3.0"
-    "@next/playwright": "npm:16.3.0"
-    "@opentelemetry/api": "npm:^1.9.1"
-    "@opentelemetry/core": "npm:^2.11.0"
-    "@opentelemetry/exporter-trace-otlp-http": "npm:^0.222.0"
-    "@opentelemetry/sdk-node": "npm:^0.222.0"
-    "@opentelemetry/sdk-trace-base": "npm:^2.11.0"
-    "@playwright/test": "npm:^1.51.1"
-    "@prisma/adapter-neon": "npm:^6.19.3"
-    "@prisma/client": "npm:^6.19.3"
-    "@serwist/cli": "npm:^9.5.11"
-    "@serwist/next": "npm:^9.5.11"
-    "@tailwindcss/postcss": "npm:^4"
-    "@tanstack/react-query": "npm:^5.101.2"
-    "@tanstack/react-virtual": "npm:^3.14.11"
-    "@types/geojson": "npm:^7946.0.16"
-    "@types/node": "npm:^20"
-    "@types/react": "npm:^19"
-    "@types/react-dom": "npm:^19"
-    "@typescript-eslint/eslint-plugin": "npm:^8.62.1"
-    "@typescript-eslint/parser": "npm:^8.62.1"
-    "@upstash/ratelimit": "npm:^2.0.8"
-    "@upstash/redis": "npm:^1.38.2"
-    ai: "npm:7.0.32"
-    class-variance-authority: "npm:^0.7.1"
-    clsx: "npm:^2.1.1"
-    date-fns: "npm:^4.4.0"
-    eslint: "npm:^9"
-    eslint-config-next: "npm:16.3.0"
-    eslint-config-prettier: "npm:^10.1.8"
-    eslint-plugin-prettier: "npm:^5.5.6"
-    eslint-plugin-react: "npm:^7.37.5"
-    eslint-plugin-react-hooks: "npm:^7.1.1"
-    fake-indexeddb: "npm:^6.2.5"
     husky: "npm:^9.1.7"
     lint-staged: "npm:^17.0.8"
-    liquid-glass-react: "npm:1.1.1"
-    lucide-react: "npm:^1.21.0"
-    maplibre-gl: "npm:^5.24.0"
-    motion: "npm:^12.43.0"
-    next: "npm:16.3.0"
     prettier: "npm:^3.9.4"
     prettier-plugin-css-order: "npm:^2.2.0"
     prettier-plugin-tailwindcss: "npm:^0.8.0"
-    prisma: "npm:^6.19.3"
-    react: "npm:19.2.4"
-    react-dom: "npm:19.2.4"
-    react-hook-form: "npm:^7.80.0"
-    react-markdown: "npm:^10.1.0"
-    recharts: "npm:^3.9.0"
-    remark-breaks: "npm:^4.0.0"
-    remark-gfm: "npm:^4.0.1"
-    serwist: "npm:^9.5.11"
-    shadcn: "npm:^4.12.0"
-    sharp: "npm:^0.35.3"
-    shiki: "npm:^4.4.3"
-    tailwind-merge: "npm:^3.6.0"
-    tailwindcss: "npm:^4"
-    tsx: "npm:^4.22.4"
-    tw-animate-css: "npm:^1.4.0"
-    typescript: "npm:^5"
-    vitest: "npm:^4.1.9"
-    zod: "npm:^4.4.3"
+    turbo: "npm:^2.11.4"
   languageName: unknown
   linkType: soft
 
@@ -12002,6 +12052,35 @@ __metadata:
   bin:
     tsx: dist/cli.mjs
   checksum: 10c0/dc99c8988b42ec2443963a0b9051f42d068bc7e2a44e82f3b94b40539a991c5c01ea3ee049cf317d1040b2245711dd4c64ace9ac875f3b07edee29f610702e3c
+  languageName: node
+  linkType: hard
+
+"turbo@npm:^2.11.4":
+  version: 2.11.4
+  resolution: "turbo@npm:2.11.4"
+  dependencies:
+    "@turbo/darwin-64": "npm:2.11.4"
+    "@turbo/darwin-arm64": "npm:2.11.4"
+    "@turbo/linux-64": "npm:2.11.4"
+    "@turbo/linux-arm64": "npm:2.11.4"
+    "@turbo/windows-64": "npm:2.11.4"
+    "@turbo/windows-arm64": "npm:2.11.4"
+  dependenciesMeta:
+    "@turbo/darwin-64":
+      optional: true
+    "@turbo/darwin-arm64":
+      optional: true
+    "@turbo/linux-64":
+      optional: true
+    "@turbo/linux-arm64":
+      optional: true
+    "@turbo/windows-64":
+      optional: true
+    "@turbo/windows-arm64":
+      optional: true
+  bin:
+    turbo: bin/turbo
+  checksum: 10c0/23363cfeabe4b671f1346758b78381c9496e0b3640b28395be83de7e8f4bf8b8266b6498e4da203f8854f465261d3887116e04eb4de26348259ac3f89d216747
   languageName: node
   linkType: hard
 

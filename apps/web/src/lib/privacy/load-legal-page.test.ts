@@ -29,7 +29,9 @@ Augustin Briolon
 
 describe('Privacy Santé FR drafts consumed by /privacy and /terms', () => {
   function loadDraft(name: string): string {
-    return stripLegalMetaHeader(readFileSync(path.join(process.cwd(), 'docs/legal', name), 'utf8'));
+    return stripLegalMetaHeader(
+      readFileSync(path.join(process.cwd(), 'content/legal', name), 'utf8'),
+    );
   }
 
   it('privacy draft is classic signup / word-of-mouth beta, not invite-only product', () => {

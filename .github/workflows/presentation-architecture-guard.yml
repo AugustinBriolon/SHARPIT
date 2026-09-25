@@ -46,6 +46,7 @@ jobs:
         with:
           path: |
             node_modules
+            apps/web/node_modules
             .yarn/cache
           key: ${{ runner.os }}-node-modules-${{ hashFiles('yarn.lock', '.yarnrc.yml') }}
           restore-keys: |
@@ -58,7 +59,7 @@ jobs:
           PRISMA_GENERATE_SKIP_AUTOINSTALL: '1'
 
       - name: Generate Prisma Client
-        run: yarn prisma generate
+        run: yarn web prisma generate
         env:
           YARN_NODE_LINKER: node-modules
           PRISMA_GENERATE_SKIP_AUTOINSTALL: '1'

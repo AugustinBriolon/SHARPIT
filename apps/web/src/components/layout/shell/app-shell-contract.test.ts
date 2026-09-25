@@ -13,7 +13,8 @@ const APP_SHELL = fs.readFileSync(
 const ROOT_LAYOUT = fs.readFileSync(path.join(process.cwd(), 'src/app/layout.tsx'), 'utf8');
 
 const ADR_039 = fs.readFileSync(
-  path.join(process.cwd(), 'docs/adr/ADR-039-ios-system-edge-fade.md'),
+  // ADRs are repository documentation, at the monorepo root (ADR-048), two levels up.
+  path.join(process.cwd(), '../../docs/adr/ADR-039-ios-system-edge-fade.md'),
   'utf8',
 );
 

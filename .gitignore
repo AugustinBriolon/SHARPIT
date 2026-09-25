@@ -1,7 +1,7 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # dependencies
-/node_modules
+node_modules/
 /.pnp
 .pnp.*
 .yarn/*
@@ -14,17 +14,18 @@
 /pnpm-lock.yaml
 
 # testing
-/coverage
-/test-results
-/playwright-report
-/blob-report
-/playwright/.cache
-/e2e/.auth
+coverage/
+test-results/
+playwright-report/
+blob-report/
+playwright/.cache/
+apps/web/e2e/.auth
 
 # next.js / production output
-/.next/
-/out/
-/build
+.turbo/
+.next/
+out/
+build/
 
 # misc
 .DS_Store
@@ -48,12 +49,12 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# serwist (generated from src/sw.ts at build)
-/public/sw.js
-/public/sw.js.map
+# serwist (generated from apps/web/src/sw.ts at build)
+apps/web/public/sw.js
+apps/web/public/sw.js.map
 
 # clerk (can include secrets)
-/.clerk/
+.clerk/
 
 # local agent / critique tooling (not part of the app)
 /.agents/
@@ -65,8 +66,8 @@ next-env.d.ts
 /.uizze/
 
 # local one-off TypeScript scripts
-/scripts/tmp-*.ts
-/scripts/tmp-*.mts
+apps/web/scripts/tmp-*.ts
+apps/web/scripts/tmp-*.mts
 
 # Local Garmin DI mint (python-garminconnect) — never commit
 garmin_tokens.json

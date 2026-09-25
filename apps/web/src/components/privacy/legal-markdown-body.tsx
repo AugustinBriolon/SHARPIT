@@ -54,7 +54,7 @@ const components: Components = {
   hr: () => <hr className="border-border my-8" />,
 };
 
-/** Renders Privacy Santé FR drafts (`docs/legal/*_PAGE_FR_V0.md`) with SHARPIT typography. */
+/** Renders Privacy Santé FR drafts (`content/legal/*_PAGE_FR_V0.md`) with SHARPIT typography. */
 export function LegalMarkdownBody({ markdown }: { markdown: string }) {
   return (
     <div className="legal-markdown space-y-1">

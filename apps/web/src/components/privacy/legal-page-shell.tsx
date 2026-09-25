@@ -21,8 +21,8 @@ export function LegalPageShell({
             Version {version} · mise à jour {lastUpdatedLabel}
           </p>
           <p className="text-muted-foreground text-xs">
-            {/* Source: docs/legal/*_PAGE_FR_V0.md — Privacy Santé drafts */}
-            Brouillon V0 — source docs/legal (Privacy Santé).
+            {/* Source: content/legal/*_PAGE_FR_V0.md — Privacy Santé drafts */}
+            Brouillon V0 — source content/legal (Privacy Santé).
           </p>
         </header>
         <div>{children}</div>

@@ -11,7 +11,7 @@ const LEGAL_FILES = {
 export type LegalPageId = keyof typeof LEGAL_FILES;
 
 /**
- * Loads FR legal draft from docs/legal (Privacy Santé source of truth).
+ * Loads FR legal draft from content/legal (Privacy Santé source of truth).
  * Strips the status meta blockquote so athletes only see the published page body.
  * Cached so /privacy and /terms stay in the static shell (Cache Components).
  */
@@ -24,7 +24,7 @@ export async function loadLegalPageMarkdown(page: LegalPageId): Promise<{
   'use cache';
   cacheLife('max');
 
-  const filePath = path.join(process.cwd(), 'docs/legal', LEGAL_FILES[page]);
+  const filePath = path.join(process.cwd(), 'content/legal', LEGAL_FILES[page]);
   const raw = await readFile(filePath, 'utf8');
   const bodyMarkdown = stripLegalMetaHeader(raw);
   const titleMatch = bodyMarkdown.match(/^##\s+(.+)$/m);
