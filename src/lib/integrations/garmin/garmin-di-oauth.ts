@@ -120,8 +120,9 @@ export async function exchangeServiceTicketForDiTokens(
   deps: Partial<GarminDiOauthDeps> = {},
 ): Promise<GarminDiTokens> {
   const { fetch: doFetch, now } = { ...defaultDeps, ...deps };
-  let lastStatus = 0;
-  let lastBody = '';
+  // Every rejection is kept: a ticket is single-use, so only the first attempt says why it
+  // failed — the next ones merely report the ticket as already invalid.
+  const rejections: string[] = [];
 
   for (const clientId of DI_CLIENT_IDS) {
     const res = await doFetch(DI_TOKEN_URL, {
@@ -143,8 +144,8 @@ export async function exchangeServiceTicketForDiTokens(
     }
 
     if (!res.ok) {
-      lastStatus = res.status;
-      lastBody = await res.text().catch(() => '');
+      const body = await res.text().catch(() => '');
+      rejections.push(`${clientId}: HTTP ${res.status} ${body.slice(0, 160)}`);
       continue;
     }
 
@@ -156,13 +157,14 @@ export async function exchangeServiceTicketForDiTokens(
     try {
       return parseTokenResponse(data, clientId, now());
     } catch {
+      rejections.push(`${clientId}: HTTP ${res.status} without access_token`);
       continue;
     }
   }
 
   throw new GarminDiAuthError(
-    `DI token exchange failed for all client IDs (last HTTP ${lastStatus} ${lastBody.slice(0, 200)})`,
-    lastStatus === 401 ? 'unknown' : 'unknown',
+    `DI token exchange failed for all client IDs [${rejections.join(' | ')}]`,
+    'unknown',
   );
 }
 

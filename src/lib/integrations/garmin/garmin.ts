@@ -231,6 +231,13 @@ function translateWidgetLoginError(
   error: unknown,
   mobileError: GarminMobileAuthError | null,
 ): never {
+  if (mobileError) {
+    // Otherwise lost: the athlete only sees the widget outcome, not why the primary path failed.
+    console.warn('[garmin] mobile login failed before the widget fallback', {
+      kind: mobileError.kind,
+      message: mobileError.message,
+    });
+  }
   if (error instanceof GarminWidgetAuthError) {
     if (mobileError?.kind === 'rate_limited' && error.kind === 'rate_limited') {
       throw mobileAuthErrorToLoginError(mobileError);

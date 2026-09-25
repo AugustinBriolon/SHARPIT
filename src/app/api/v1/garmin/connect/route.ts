@@ -107,8 +107,15 @@ function handleConnectError(error: unknown): NextResponse {
       { status: 401 },
     );
   }
-  const message = error instanceof Error ? error.message : 'Connexion à Garmin impossible.';
-  return NextResponse.json({ error: message }, { status: 500 });
+  // The raw cause (Garmin endpoints, HTTP bodies) stays in the server log above; the athlete
+  // gets a readable sentence and a code to quote when reporting it.
+  const code = error instanceof GarminLoginError ? error.reason : 'unknown';
+  return NextResponse.json(
+    {
+      error: `Connexion à Garmin impossible pour le moment. Réessaie dans quelques minutes. (code : ${code})`,
+    },
+    { status: 500 },
+  );
 }
 
 /**

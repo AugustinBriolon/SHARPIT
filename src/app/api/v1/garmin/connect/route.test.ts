@@ -118,4 +118,25 @@ describe('POST /api/v1/garmin/connect', () => {
     const json = await res.json();
     expect(json.error).toContain('Identifiants Garmin incorrects');
   });
+
+  it('answers a server-side SSO failure with a readable message, never the raw cause', async () => {
+    vi.mocked(authModule.getCurrentAthleteId).mockResolvedValueOnce('ath-123');
+    const err = new garminModule.GarminLoginError(
+      'Widget DI exchange failed after ticket: DI token exchange failed for all client IDs',
+      'server_sso_rejected',
+    );
+    vi.mocked(garminModule.loginWithCredentials).mockRejectedValueOnce(err);
+
+    const req = new NextRequest('https://sharpit.app/api/v1/garmin/connect', {
+      method: 'POST',
+      body: JSON.stringify({ username: 'john@example.com', password: 'pw' }),
+    });
+
+    const res = await POST(req);
+    expect(res.status).toBe(500);
+    const json = await res.json();
+    expect(json.error).toContain('Connexion à Garmin impossible');
+    expect(json.error).toContain('server_sso_rejected');
+    expect(json.error).not.toContain('DI token exchange');
+  });
 });

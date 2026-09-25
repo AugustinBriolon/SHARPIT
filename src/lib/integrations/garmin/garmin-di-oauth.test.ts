@@ -54,6 +54,34 @@ describe('garmin-di-oauth', () => {
     expect(urls.every((u) => u === DI_TOKEN_URL)).toBe(true);
   });
 
+  it('reports why every client id was refused, first one included, without the ticket', async () => {
+    const fetchMock = vi.fn(async (_url: string | URL, init?: RequestInit) => {
+      const clientId = new URLSearchParams(String(init?.body ?? '')).get('client_id');
+      const reason =
+        clientId === DI_CLIENT_IDS[0] ? 'unauthorized_client' : 'invalid service ticket provided';
+      return Response.json(
+        { error: 'invalid_request', error_description: reason },
+        { status: 400 },
+      );
+    });
+
+    const failure = exchangeServiceTicketForDiTokens(
+      'ST-secret-ticket',
+      'https://sso.garmin.com/sso/embed',
+      {
+        fetch: fetchMock,
+        now: () => 1_000_000,
+      },
+    );
+
+    await expect(failure).rejects.toBeInstanceOf(GarminDiAuthError);
+    const message = await failure.catch((error: Error) => error.message);
+    expect(message).toContain(`${DI_CLIENT_IDS[0]}: HTTP 400`);
+    expect(message).toContain('unauthorized_client');
+    expect(message).toContain(`${DI_CLIENT_IDS[DI_CLIENT_IDS.length - 1]}: HTTP 400`);
+    expect(message).not.toContain('ST-secret-ticket');
+  });
+
   it('refreshes access token without any SSO/login request', async () => {
     const fetchMock = vi.fn(async (_url: string | URL, init?: RequestInit) => {
       const body = String(init?.body ?? '');
