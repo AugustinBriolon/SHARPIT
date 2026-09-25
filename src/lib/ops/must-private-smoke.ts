@@ -17,22 +17,25 @@ export type SmokeResponse = { status: number; headers: Headers; body: string };
 export type SmokeCheck = {
   name: string;
   path: string;
+  method?: 'GET' | 'OPTIONS';
   headers?: Record<string, string>;
+  /** Sent with the smoke Bearer; skipped when none is configured. */
+  authenticated?: boolean;
   /** Returns why the response fails the check, or null when it passes. */
   verify: (response: SmokeResponse, origin: string) => string | null;
 };
 
 export type SmokeResult = { name: string; outcome: 'pass' | 'fail' | 'skipped'; reason?: string };
 
-type Fetcher = (url: string, init: RequestInit) => Promise<Response>;
+export type Fetcher = (url: string, init: RequestInit) => Promise<Response>;
 
 const DOCUMENT_REQUEST = { Accept: 'text/html', 'Sec-Fetch-Dest': 'document' };
 
-function expectStatus(response: SmokeResponse, status: number): string | null {
+export function expectStatus(response: SmokeResponse, status: number): string | null {
   return response.status === status ? null : `expected ${status}, got ${response.status}`;
 }
 
-function expectContentType(response: SmokeResponse, type: string): string | null {
+export function expectContentType(response: SmokeResponse, type: string): string | null {
   const contentType = response.headers.get('content-type') ?? '';
   return contentType.startsWith(type) ? null : `expected ${type}, got "${contentType}"`;
 }
@@ -91,13 +94,10 @@ export function mustPrivateChecks(trainingDayId: string): SmokeCheck[] {
     {
       name: 'Today reads with a Clerk Bearer',
       path: `/api/v1/today?trainingDayId=${trainingDayId}`,
+      authenticated: true,
       verify: verifyJson,
     },
   ];
-}
-
-function isAuthenticated(check: SmokeCheck): boolean {
-  return check.path.startsWith('/api/');
 }
 
 async function runCheck(
@@ -106,11 +106,15 @@ async function runCheck(
   bearer: string,
   fetcher: Fetcher,
 ): Promise<SmokeResult> {
-  const headers = isAuthenticated(check)
+  const headers = check.authenticated
     ? { ...check.headers, Authorization: `Bearer ${bearer}` }
     : { ...check.headers };
   try {
-    const response = await fetcher(`${origin}${check.path}`, { headers, redirect: 'manual' });
+    const response = await fetcher(`${origin}${check.path}`, {
+      method: check.method ?? 'GET',
+      headers,
+      redirect: 'manual',
+    });
     const reason = check.verify(
       { status: response.status, headers: response.headers, body: await response.text() },
       origin,
@@ -128,19 +132,29 @@ async function runCheck(
   }
 }
 
+export type SmokeOptions = { bearer?: string; fetcher?: Fetcher };
+
 /** Runs every check in order; authenticated ones are skipped when no Bearer is given. */
-export async function runMustPrivateSmoke(
+export async function runSmokeChecks(
   origin: string,
-  options: { bearer?: string; trainingDayId: string; fetcher?: Fetcher },
+  checks: SmokeCheck[],
+  options: SmokeOptions,
 ): Promise<SmokeResult[]> {
   const fetcher = options.fetcher ?? fetch;
   const results: SmokeResult[] = [];
-  for (const check of mustPrivateChecks(options.trainingDayId)) {
-    if (isAuthenticated(check) && !options.bearer) {
+  for (const check of checks) {
+    if (check.authenticated && !options.bearer) {
       results.push({ name: check.name, outcome: 'skipped', reason: 'SHARPIT_SMOKE_BEARER unset' });
       continue;
     }
     results.push(await runCheck(origin, check, options.bearer ?? '', fetcher));
   }
   return results;
+}
+
+export function runMustPrivateSmoke(
+  origin: string,
+  options: SmokeOptions & { trainingDayId: string },
+): Promise<SmokeResult[]> {
+  return runSmokeChecks(origin, mustPrivateChecks(options.trainingDayId), options);
 }
