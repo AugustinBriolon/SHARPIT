@@ -49,6 +49,7 @@
 | [ADR-043](./ADR-043-native-sync-and-apple-health.md)                           | Native sync and Apple Health day summaries                                         | Accepted |
 | [ADR-044](./ADR-044-sharpit-pro-billing.md)                                    | SharpIt Pro billing — StoreKit 2 verified by the web; the tier is derived          | Proposed |
 | [ADR-045](./ADR-045-biological-age-method.md)                                  | Biological age — a training estimate from VO₂max, adjusted, never a diagnosis      | Proposed |
+| [ADR-046](./ADR-046-garmin-connects-in-app-with-native-credentials.md)         | iOS connects Garmin in-app with a native credentials form                          | Proposed |
 
 **Template:** [ADR-template.md](./ADR-template.md)
 
