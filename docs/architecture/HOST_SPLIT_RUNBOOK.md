@@ -13,7 +13,7 @@ Bearer tokens for the smokes come from `SHARPIT_SMOKE_BEARER` in the environment
 | 3. Apex safety net                     | ✅ live                                                           | `src/proxy.test.ts`, `yarn smoke:must-private` (apex + web. all `PASS` 2026-09-25) |
 | 4. Prepare `api.`                      | ✅ live                                                           | `src/lib/hosts/api-host.ts`, `yarn smoke:api-host` (5/5 `PASS` 2026-09-25)         |
 | 5. Web calls `api.`                    | ⏸ deferred to step 7                                              | below                                                                              |
-| 6. iOS origin → `api.`                 | ✅ in code, awaiting device smoke                                 | SHARPIT-APP branch `feat/api-origin` (web pages on `SHARPIT_WEB_ORIGIN`)           |
+| 6. iOS origin → `api.`                 | ✅ merged (SHARPIT-APP `18ef55c`), awaiting device smoke          | `Config/Release.xcconfig`; web pages on `SHARPIT_WEB_ORIGIN`                       |
 | 7. Detach `api.` project               | ⏸ owner (Vercel)                                                  | below                                                                              |
 | 8. Apex hub                            | ⏸ needs product copy                                              | below                                                                              |
 | 9. Thin web                            | ⏸ needs team UX validation                                        | below                                                                              |
@@ -55,7 +55,7 @@ Prerequisite: step 4 green on production.
 Already on SHARPIT-APP `main`: web pages (terms, privacy) open on `SHARPIT_WEB_ORIGIN` (apex), never on the
 API origin, and universal links are honoured on `https://sharpit.app` only (`IncomingLink`).
 
-1. Merge SHARPIT-APP `feat/api-origin` (`Config/Release.xcconfig` only; Associated Domains untouched).
+1. Merged on SHARPIT-APP `main` (`18ef55c`: `Config/Release.xcconfig` only; Associated Domains untouched).
 2. In your gitignored `Config/Local.xcconfig`: `SHARPIT_API_ORIGIN = https:/$()/api.sharpit.app` and
    `SHARPIT_WEB_ORIGIN = https:/$()/sharpit.app`.
 3. Smoke on device: Today, pull-to-refresh sync, Garmin connect in-app, coach chat, morning push tap.
