@@ -12,8 +12,16 @@ cd /Users/H6245/Documents/DEV/PERSO/SHARPIT/SHARPIT-WEBAPP/apps/hub && vercel li
 
 ## 2. Deploy the hub (no domain yet)
 
-`vercel deploy --prod` from the repository root with the hub project (`VERCEL_PROJECT_ID`), then check it with
-`vercel curl` on its deployment URL: AASA 200 JSON with the team id, `/connect/garmin` → `/sign-in` with
+Done once on 2026-09-27 from `phase-4/hub` (`https://sharpit-hub.vercel.app`, SSO-protected). Redeploy after
+adding the secret — one archive, the free plan caps uploads at 5,000 files a day:
+
+```bash
+cd /Users/H6245/Documents/DEV/PERSO/SHARPIT/SHARPIT-WEBAPP && git checkout phase-4/hub && VERCEL_ORG_ID=team_jMIBl43rBL63n8TtKtvEE1NO VERCEL_PROJECT_ID=prj_mgZ8pB8jWVXDKq5GbHcZZTXsbI4q vercel deploy --prod --yes --archive=tgz
+```
+
+Checked without the secret: AASA 200 (real team id), `/privacy`, `/terms`, `/connect/garmin/callback` 200, `/`
+and app paths 307 to the web; `/connect/garmin` and `/sign-in` 500 until the secret is set. Then check with
+`vercel curl` on the deployment URL: AASA 200 JSON with the team id, `/connect/garmin` → `/sign-in` with
 `redirect_url`, `/connect/garmin/callback` 200 HTML, `/privacy` 200, `/` → `https://web.sharpit.app/`.
 
 ## 3. Move the domains (quiet hour)

@@ -5,8 +5,8 @@ import { recoverFromHandshakeFailure } from '@sharpit/app/lib/auth/handshake-rec
 
 /**
  * The apex needs a session for the Garmin handoff only (ADR-047): its entry, start and
- * authorize steps. The AASA, the callback, the legal pages and the sign-in stay public; every
- * other path is redirected to the web by `next.config.ts` before this runs.
+ * authorize steps. Every other hub path is public, and every non-hub path is redirected to the
+ * web by `next.config.ts`.
  */
 const needsSession = createRouteMatcher([
   '/connect/garmin',
@@ -55,10 +55,16 @@ export default async function proxy(req: NextRequest, event: NextFetchEvent) {
   }
 }
 
+/**
+ * Clerk runs only where a session is read: the handoff steps and the sign-in. The AASA (Apple's
+ * CDN, no session, no redirect), the callback and the legal pages answer without it.
+ */
 export const config = {
   matcher: [
-    // The AASA never goes through Clerk: Apple's CDN fetches it with no session, no redirect.
-    '/((?!_next|\\.well-known|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|webmanifest)).*)',
-    '/__clerk/(.*)',
+    '/connect/garmin',
+    '/connect/garmin/start',
+    '/connect/garmin/authorize',
+    '/sign-in/:path*',
+    '/__clerk/:path*',
   ],
 };

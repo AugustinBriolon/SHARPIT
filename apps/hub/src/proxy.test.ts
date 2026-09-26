@@ -66,11 +66,15 @@ describe('hub proxy (sharpit.app)', () => {
     expect(response.headers.get('location')).toBe('https://sharpit.app/connect/garmin/start');
   });
 
-  it('never runs on the AASA: Apple fetches it without a session or a redirect', async () => {
+  it('runs only on the handoff steps and the sign-in — never on the AASA or the public pages', async () => {
     const { config } = await import('./proxy');
-    const matcher = new RegExp(`^${config.matcher[0]}$`);
-    expect(matcher.test('/.well-known/apple-app-site-association')).toBe(false);
-    expect(matcher.test('/connect/garmin')).toBe(true);
+    expect(config.matcher).toEqual([
+      '/connect/garmin',
+      '/connect/garmin/start',
+      '/connect/garmin/authorize',
+      '/sign-in/:path*',
+      '/__clerk/:path*',
+    ]);
   });
 
   it('points auth.protect at the apex sign-in', async () => {

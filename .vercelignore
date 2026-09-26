@@ -1,0 +1,20 @@
+# CLI uploads only (git deployments clone the repository): build output, caches and
+# local tooling never ship.
+**/.next
+**/node_modules
+.turbo
+**/.turbo
+.yarn/cache
+.yarn/install-state.gz
+.agents
+.claude
+.codex
+.cursor
+.hallmark
+.impeccable
+.superpowers
+.uizze
+.vscode
+**/.env
+**/.env.local
+docs/design
