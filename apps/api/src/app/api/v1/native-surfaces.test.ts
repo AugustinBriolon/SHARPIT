@@ -16,7 +16,9 @@ type RouteLoaders = Record<string, () => Promise<RouteModule>>;
 
 // Lazy: only the modules a test asks for are loaded.
 const v1Routes = import.meta.glob('./**/route.ts') as RouteLoaders;
-const legacyRoutes = import.meta.glob('../**/route.ts') as RouteLoaders;
+// The /api twins are mounted by the web app (ADR-048): the native contract must run their very handler.
+const legacyRoutes = import.meta.glob('../../../../../web/src/app/api/**/route.ts') as RouteLoaders;
+const LEGACY = '../../../../../web/src/app/api';
 
 async function load(routes: RouteLoaders, key: string): Promise<RouteModule> {
   const loader = routes[key];
@@ -29,7 +31,7 @@ async function load(routes: RouteLoaders, key: string): Promise<RouteModule> {
 describe('/api/v1 native surfaces', () => {
   it.each(NATIVE_V1_SURFACES)('/api/v1/$path serves the /api handler', async (surface) => {
     const v1 = await load(v1Routes, `./${surface.path}/route.ts`);
-    const legacy = await load(legacyRoutes, `../${surface.path}/route.ts`);
+    const legacy = await load(legacyRoutes, `${LEGACY}/${surface.path}/route.ts`);
 
     const exported = HTTP_METHODS.filter((method) => method in v1);
     expect(exported).toEqual([...surface.methods].sort(byHttpOrder));
@@ -43,7 +45,7 @@ describe('/api/v1 native surfaces', () => {
     const v1 = await load(v1Routes, `./${surface.path}/route.ts`);
     const exported = HTTP_METHODS.filter((method) => method in v1);
     expect(exported).toEqual([...surface.methods].sort(byHttpOrder));
-    expect(legacyRoutes[`../${surface.path}/route.ts`]).toBeUndefined();
+    expect(legacyRoutes[`${LEGACY}/${surface.path}/route.ts`]).toBeUndefined();
   });
 
   it('inventories every /api/v1 route', () => {

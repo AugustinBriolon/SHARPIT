@@ -9,8 +9,7 @@ import {
 import { recoverFromHandshakeFailure } from '@sharpit/server/lib/auth/handshake-recovery';
 import { isDevClerkBypass } from '@sharpit/server/lib/dev/dev-auth';
 import { DEMO_COOKIE } from '@sharpit/server/lib/demo/demo-session';
-import { isApiHostRequest } from '@sharpit/server/lib/hosts/api-host';
-import { apiProxy, rateLimitApiUser } from '@sharpit/server/lib/hosts/api-proxy';
+import { rateLimitApiUser } from '@sharpit/server/lib/hosts/api-proxy';
 
 // Routes accessibles sans session Clerk :
 // - pages de connexion/inscription
@@ -144,9 +143,6 @@ if (clerkConfigIssues.length > 0 && !isDevClerkBypass()) {
 }
 
 export default async function proxy(req: NextRequest, event: NextFetchEvent) {
-  if (isApiHostRequest(req)) {
-    return apiProxy(req, event);
-  }
   try {
     return await clerkProxy(req, event);
   } catch (error) {

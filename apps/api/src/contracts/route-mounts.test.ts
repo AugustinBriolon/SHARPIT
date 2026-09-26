@@ -30,8 +30,8 @@ describe('api route mounts', () => {
     ).toBe(true);
   });
 
-  // Until the web stops serving these routes (phase 3, ADR-048), both apps mount the same handler
-  // with the same segment config: a route cannot drift between api. and the web.
+  // A route both apps still mount (the coach stream, for the web's own UI) mounts the same handler
+  // with the same segment config: it cannot drift between api. and the web.
   const shared = mounts
     .map((file) => relative(API_ROUTES, file))
     .filter((path) => existsSync(join(WEB_ROUTES, path)));
@@ -45,9 +45,7 @@ describe('api route mounts', () => {
     expect(existsSync(join(WEB_ROUTES, 'cron'))).toBe(false);
   });
 
-  it('mounts every native route the web mounts', () => {
-    const webNative = routeFiles(join(WEB_ROUTES, 'v1')).map((file) => relative(WEB_ROUTES, file));
-    const apiPaths = new Set(mounts.map((file) => relative(API_ROUTES, file)));
-    expect(webNative.filter((path) => !apiPaths.has(path))).toEqual([]);
+  it('is the only app serving the native contract', () => {
+    expect(existsSync(join(WEB_ROUTES, 'v1'))).toBe(false);
   });
 });
