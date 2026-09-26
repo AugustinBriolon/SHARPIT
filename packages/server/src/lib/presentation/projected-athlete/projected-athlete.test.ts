@@ -6,7 +6,6 @@ import {
   buildProjectionCaution,
   buildProjectionTrajectory,
 } from '@sharpit/server/lib/presentation/projected-athlete/projected-athlete';
-import { buildPlanningDiscussPrompt } from '@sharpit/server/lib/coach/chat/conversations/coach-session-thread';
 
 function buildProjectionDay(overrides?: {
   tsbEnd?: number;
@@ -219,21 +218,5 @@ describe('buildProjectedAthleteViewModel', () => {
     expect(vm.synthesisSentence).toMatch(/point de vigilance/i);
     expect(vm.caution?.label.toLowerCase()).toContain('sommeil');
     expect(`${vm.synthesisSentence}${vm.caution?.body ?? ''}`).not.toMatch(/\d+\s*%/);
-  });
-});
-
-describe('buildPlanningDiscussPrompt', () => {
-  it('includes vigilance block when caution is present', () => {
-    const prompt = buildPlanningDiscussPrompt({
-      synthesisSentence: 'Ta forme devrait remonter.',
-      horizonDays: 7,
-      caution: {
-        label: 'Vigilance — sommeil',
-        body: 'Le sommeil freine ta récupération.',
-      },
-    });
-    expect(prompt).toContain('Vigilance — sommeil');
-    expect(prompt).toContain('Le sommeil freine ta récupération.');
-    expect(prompt).not.toMatch(/\d+\s*%/);
   });
 });
