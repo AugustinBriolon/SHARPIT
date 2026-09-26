@@ -1,6 +1,6 @@
 # Monorepo phase 2 — `packages/db`, `packages/server`, `apps/api` on its own Vercel project
 
-**Status:** Approved 2026-09-26 — steps 2a to 2d done; 2e needs your secrets · **Date:** 2026-09-26 · **Parent:** [ADR-048](../adr/ADR-048-web-repository-becomes-a-monorepo.md)
+**Status:** Approved 2026-09-26 — steps 2a to 2f done; iOS coach to re-check; 2g waits for `CRON_SECRET` on `sharpit-api` · **Date:** 2026-09-26 · **Parent:** [ADR-048](../adr/ADR-048-web-repository-becomes-a-monorepo.md)
 
 Goal: `api.sharpit.app` served by a new Vercel project `sharpit-api` built from `apps/api`, holding the
 server secrets, with its own crons — while the web keeps working unchanged until phase 3. The iOS app
@@ -119,11 +119,21 @@ http://localhost:3001` → 5/5; a cron with a wrong secret reaches its route and
 - First production deploy on `sharpit-api.vercel.app`; smoke there with a Bearer (the host guards only apply
   on `api.sharpit.app`, so this checks the handlers, database and Clerk wiring).
 
+- **Done (2026-09-26):** project `sharpit-api` (`prj_QshB03zOwyMZiyuDXgMBxo7fdRyW`), Root Directory `apps/api`, 22
+  Production variables. Most of `sharpit`'s variables are _sensitive_ — Vercel never returns their value — so they
+  were entered again from their source; `apps/api/scripts/copy-vercel-env.mjs` copies the others and refuses a value
+  Vercel did not decrypt (its first version copied ciphertext; caught by the first build, fixed with a test).
+- **Lesson:** a new project defaults to `iad1`; `sharpit` runs in `lhr1`, next to the database. Set
+  `functionDefaultRegions` to `lhr1` on any new project, or every query crosses the Atlantic (the coach, bound to 60 s,
+  stopped answering; the sync, bound to 300 s, survived).
+
 ### 2f — Cutover of `api.sharpit.app` (≈ 15 min, at a quiet hour)
 
 - Remove `api.sharpit.app` from `sharpit`, add it to `sharpit-api` (`vercel api`), wait for the certificate.
 - `yarn web smoke:api-host` → all `PASS`; on the iPhone: Today, pull-to-refresh, coach, Garmin connect.
 - **Rollback:** move the domain back (same two calls); the web project still serves `/api/v1`.
+- **Done (2026-09-26 11:38):** domain moved in 2 s, `smoke:api-host` 5/5 on `api.sharpit.app`, apex and `web.` 6/6.
+  On device: sync and Garmin connect OK; the coach failed until `sharpit-api` moved to `lhr1` (re-check pending).
 
 ### 2g — Crons and secret shrink (≈ ½ hour + one cron cycle)
 

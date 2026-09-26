@@ -21,7 +21,7 @@ Re-run `yarn smoke:must-private https://sharpit.app https://web.sharpit.app` aft
 
 ## 2. Hosts
 
-All four aliases point at the production deployment of project `sharpit` (`augustin-briolons-projects`).
+Since 2026-09-26, `api.sharpit.app` belongs to project `sharpit-api` (`apps/api`, region `lhr1`); `sharpit.app`, `www.` and `web.` stay on `sharpit` (`apps/web`, `lhr1`).
 `sharpit.vercel.app` redirects to `https://sharpit.app` (`next.config.ts`).
 
 | Route                                     | `sharpit.app`                            | `web.sharpit.app` | `api.sharpit.app` | Target                                   |
