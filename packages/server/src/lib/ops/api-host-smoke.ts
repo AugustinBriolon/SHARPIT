@@ -41,6 +41,15 @@ function verifyPreflight(response: SmokeResponse): string | null {
   );
 }
 
+function verifyCallbackLanding(response: SmokeResponse): string | null {
+  const location = response.headers.get('location') ?? '';
+  return (
+    expectStatus(response, 307) ??
+    (location.startsWith(`${API_ALLOWED_ORIGIN}/`) ? null : `lands on "${location}"`) ??
+    expectApiHeaders(response)
+  );
+}
+
 export function apiHostChecks(trainingDayId: string): SmokeCheck[] {
   const today = `/api/v1/today?trainingDayId=${trainingDayId}`;
   return [
@@ -66,8 +75,18 @@ export function apiHostChecks(trainingDayId: string): SmokeCheck[] {
       name: 'Preflight from another origin is refused',
       path: today,
       method: 'OPTIONS',
-      headers: { Origin: 'https://sharpit.app', 'Access-Control-Request-Method': 'GET' },
+      headers: { Origin: 'https://evil.example', 'Access-Control-Request-Method': 'GET' },
       verify: jsonError(403),
+    },
+    {
+      name: 'A web route without Bearer → 401 JSON',
+      path: `/api/presentation/today?trainingDayId=${trainingDayId}`,
+      verify: jsonError(401),
+    },
+    {
+      name: 'A provider callback with no state lands on the web, no Bearer asked',
+      path: '/api/withings/callback',
+      verify: verifyCallbackLanding,
     },
     {
       name: 'Today reads with a Clerk Bearer, uncached, no cookie',

@@ -25,7 +25,16 @@ function healthyApi(path: string, init: RequestInit): Reply {
       ? { status: 204, headers: { 'access-control-allow-origin': 'https://web.sharpit.app' } }
       : { status: 403, headers: SEALED };
   }
-  if (path !== TODAY) {
+  if (path === '/api/withings/callback') {
+    return {
+      status: 307,
+      headers: {
+        ...SEALED,
+        location: 'https://web.sharpit.app/settings/integrations?withings=invalid_state',
+      },
+    };
+  }
+  if (path !== TODAY && !path.startsWith('/api/presentation/')) {
     return { status: 404, headers: SEALED };
   }
   return { status: headers.get('authorization') ? 200 : 401, headers: SEALED };
@@ -39,7 +48,7 @@ describe('runApiHostSmoke', () => {
       fetcher: fetcherFor(healthyApi),
     });
 
-    expect(results.map((result) => result.outcome)).toEqual(Array(6).fill('pass'));
+    expect(results.map((result) => result.outcome)).toEqual(Array(8).fill('pass'));
   });
 
   it('fails an api host that still serves the whole web app', async () => {
@@ -54,8 +63,8 @@ describe('runApiHostSmoke', () => {
 
     const results = await runApiHostSmoke(ORIGIN, { trainingDayId: DAY, fetcher: webApp });
 
-    expect(results.slice(0, 5).every((result) => result.outcome === 'fail')).toBe(true);
-    expect(results[5]).toMatchObject({ outcome: 'skipped' });
+    expect(results.slice(0, 7).every((result) => result.outcome === 'fail')).toBe(true);
+    expect(results[7]).toMatchObject({ outcome: 'skipped' });
   });
 
   it('fails a response that sets a cookie or allows any origin', async () => {
