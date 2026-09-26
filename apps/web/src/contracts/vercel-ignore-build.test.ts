@@ -31,7 +31,10 @@ describe('vercel ignore build helpers', () => {
     ).toBe(true);
     expect(shouldIgnoreBuild(['docs/adr/ADR-001.md', 'src/lib/foo.ts'])).toBe(false);
     expect(shouldIgnoreBuild(['yarn.lock'])).toBe(false);
-    expect(shouldIgnoreBuild([])).toBe(true);
+  });
+
+  it('builds a redeploy of the same commit (empty diff), e.g. after an env change', () => {
+    expect(shouldIgnoreBuild([])).toBe(false);
   });
 
   it('prefers VERCEL_GIT_PREVIOUS_SHA and fails open without a parent', () => {

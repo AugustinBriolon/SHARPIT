@@ -32,9 +32,9 @@ export function isIgnorablePath(file) {
  */
 export function shouldIgnoreBuild(files) {
   if (!Array.isArray(files) || files.length === 0) {
-    // Empty diff: nothing to ship — skip. Callers that cannot resolve a range
-    // must exit 1 before calling this.
-    return true;
+    // Empty diff: the same commit again — a redeploy someone asked for (to apply
+    // changed environment variables, for one). Build it.
+    return false;
   }
   return files.every(isIgnorablePath);
 }
