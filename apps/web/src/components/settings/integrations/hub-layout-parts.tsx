@@ -16,10 +16,13 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
-import { DATA_CLASSES, visibleProvidersForClass } from '@/lib/integrations/provider-catalog';
-import type { IntegrationId } from '@/lib/integrations/shared/client-sync';
-import type { IntegrationSourcePrefs } from '@/lib/integrations/source-prefs';
-import { cn } from '@/lib/utils';
+import {
+  DATA_CLASSES,
+  visibleProvidersForClass,
+} from '@sharpit/server/lib/integrations/provider-catalog';
+import type { IntegrationId } from '@sharpit/server/lib/integrations/shared/client-sync';
+import type { IntegrationSourcePrefs } from '@sharpit/server/lib/integrations/source-prefs';
+import { cn } from '@sharpit/server/lib/utils';
 
 const IntegrationModalContent = dynamic(
   () =>

@@ -1,5 +1,5 @@
-import type { ThresholdApplyPreview } from '@/lib/threshold/threshold-estimates';
-import type { ClientThresholdSnapshot } from '@/lib/query/types';
+import type { ThresholdApplyPreview } from '@sharpit/server/lib/threshold/threshold-estimates';
+import type { ClientThresholdSnapshot } from '@sharpit/server/lib/query/types';
 import { fetchJson, type Serialized, toDate } from './shared';
 
 export type { ThresholdApplyPreview };

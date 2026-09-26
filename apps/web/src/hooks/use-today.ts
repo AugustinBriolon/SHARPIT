@@ -8,8 +8,8 @@ import {
   fetchAthleteSnapshot,
   refreshAthleteSnapshot,
 } from '@/client/query/athlete-snapshot-fetch';
-import { snapshotToProductView } from '@/lib/athlete-state/product-view';
-import type { AthleteSnapshotProductView } from '@/lib/athlete-state/product-view';
+import { snapshotToProductView } from '@sharpit/server/lib/athlete-state/product-view';
+import type { AthleteSnapshotProductView } from '@sharpit/server/lib/athlete-state/product-view';
 
 // Domain types live in Core — re-exported here for existing import paths.
 export type {
@@ -61,7 +61,7 @@ export type {
   AdaptationTrend,
   AdaptationData,
   TodayState,
-} from '@/athlete-state/today-state';
+} from '@sharpit/server/athlete-state/today-state';
 
 const EMPTY_PRODUCT_VIEW: AthleteSnapshotProductView = {
   decision: null,

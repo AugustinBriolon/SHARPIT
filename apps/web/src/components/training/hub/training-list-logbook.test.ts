@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ActivityType } from '@prisma/client';
 
-import type { ClientActivity } from '@/lib/query/types';
+import type { ClientActivity } from '@sharpit/server/lib/query/types';
 import {
   estimateActivityHistoryRowSize,
   flattenActivityWeekGroups,

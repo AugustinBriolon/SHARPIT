@@ -1,18 +1,25 @@
 import { type NextFetchEvent, type NextRequest, NextResponse } from 'next/server';
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
-import { afterAuthPath } from '@/lib/auth/after-auth-redirect';
-import { ENTRY_PATH } from '@/lib/onboarding/entry-path';
-import { describeClerkConfigIssues, diagnoseClerkConfig } from '@/lib/auth/clerk-config';
-import { recoverFromHandshakeFailure } from '@/lib/auth/handshake-recovery';
-import { isDevClerkBypass } from '@/lib/dev/dev-auth';
-import { DEMO_COOKIE } from '@/lib/demo/demo-session';
-import { checkRateLimit, rateLimiters, rateLimitResponseBody } from '@/lib/rate-limit';
+import { afterAuthPath } from '@sharpit/server/lib/auth/after-auth-redirect';
+import { ENTRY_PATH } from '@sharpit/server/lib/onboarding/entry-path';
+import {
+  describeClerkConfigIssues,
+  diagnoseClerkConfig,
+} from '@sharpit/server/lib/auth/clerk-config';
+import { recoverFromHandshakeFailure } from '@sharpit/server/lib/auth/handshake-recovery';
+import { isDevClerkBypass } from '@sharpit/server/lib/dev/dev-auth';
+import { DEMO_COOKIE } from '@sharpit/server/lib/demo/demo-session';
+import {
+  checkRateLimit,
+  rateLimiters,
+  rateLimitResponseBody,
+} from '@sharpit/server/lib/rate-limit';
 import {
   apiHostError,
   isApiHostRequest,
   screenApiHostRequest,
   sealApiHostResponse,
-} from '@/lib/hosts/api-host';
+} from '@sharpit/server/lib/hosts/api-host';
 
 // Routes accessibles sans session Clerk :
 // - pages de connexion/inscription

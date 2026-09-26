@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { awaitRequest } from '@/lib/next/await-request';
-import { deleteAthleteAccount } from '@/lib/privacy/account-deletion';
-import { logSafeError } from '@/lib/privacy/safe-log';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
+import { awaitRequest } from '@sharpit/server/lib/next/await-request';
+import { deleteAthleteAccount } from '@sharpit/server/lib/privacy/account-deletion';
+import { logSafeError } from '@sharpit/server/lib/privacy/safe-log';
 
 /** Deletes the account now — data and sign-in identity. The client signs out next. */
 export async function POST() {

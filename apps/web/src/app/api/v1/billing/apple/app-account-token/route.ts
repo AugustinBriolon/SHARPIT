@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { appAccountTokenFor } from '@/lib/billing/subscription-store';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
+import { appAccountTokenFor } from '@sharpit/server/lib/billing/subscription-store';
 
 /**
  * The UUID the app passes to StoreKit as `appAccountToken` on every purchase, so the

@@ -26,11 +26,15 @@ import {
 } from '@/components/ui/select';
 import { useTrainingPlan, useTrainingPlanMutations } from '@/hooks/use-data';
 import { guardedActionLabel, useOfflineGuard } from '@/hooks/use-offline-guard';
-import { MOI_OBJECTIFS_PATH } from '@/lib/moi/paths';
-import { buildMacroPhaseRail } from '@/lib/plan/trajectory/plan-macro-rail';
-import type { ClientGoal, ClientPlanWeek, ClientTrainingPlan } from '@/lib/query/types';
-import { phaseLabels } from '@/lib/training/periodization';
-import { cn } from '@/lib/utils';
+import { MOI_OBJECTIFS_PATH } from '@sharpit/server/lib/moi/paths';
+import { buildMacroPhaseRail } from '@sharpit/server/lib/plan/trajectory/plan-macro-rail';
+import type {
+  ClientGoal,
+  ClientPlanWeek,
+  ClientTrainingPlan,
+} from '@sharpit/server/lib/query/types';
+import { phaseLabels } from '@sharpit/server/lib/training/periodization';
+import { cn } from '@sharpit/server/lib/utils';
 
 const NO_GOAL = 'none';
 const WEEK_OPTS = { weekStartsOn: 1 as const };

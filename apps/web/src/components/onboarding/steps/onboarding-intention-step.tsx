@@ -3,7 +3,7 @@
 import { OnboardingStepShell } from '@/components/onboarding/steps/onboarding-step-shell';
 import { GoalCreateForm } from '@/components/goals/dialogs/goal-create-form';
 import type { GoalPayload } from '@/hooks/use-data';
-import type { PracticedSportId } from '@/lib/practiced-sports';
+import type { PracticedSportId } from '@sharpit/server/lib/practiced-sports';
 
 export function OnboardingIntentionStep({
   error,

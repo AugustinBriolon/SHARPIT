@@ -15,7 +15,7 @@ import {
   extractReassessmentsFromPlannedSessions,
   migrateAllLegacyPhysicalNotes,
   type MigrationReportRow,
-} from '@/lib/physical-health/migrate-legacy';
+} from '@sharpit/server/lib/physical-health/migrate-legacy';
 
 const prisma = new PrismaClient();
 const dryRun = process.argv.includes('--dry-run');

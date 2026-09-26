@@ -6,7 +6,7 @@ import { ActivityType } from '@prisma/client';
 import type { usePlannedSessionDialog } from '@/components/planning/session/edit/use-planned-session-dialog';
 import { EndurancePrescriptionEditor } from '@/components/planning/session/edit/endurance-prescription-editor';
 import { StrengthPrescriptionEditor } from '@/components/planning/session/edit/strength-prescription-editor';
-import { extractStrengthSessionIntent } from '@/lib/planned-session/strength/strength-prescription';
+import { extractStrengthSessionIntent } from '@sharpit/server/lib/planned-session/strength/strength-prescription';
 
 export function PlannedSessionPrescriptionFields({
   dialog,

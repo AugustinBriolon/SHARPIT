@@ -1,7 +1,7 @@
 import { useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { ChartTooltipCard } from '@/components/ui/charts/chart-tooltip';
-import { cn } from '@/lib/utils';
+import { cn } from '@sharpit/server/lib/utils';
 
 export type CursorHintLine = {
   text: string;

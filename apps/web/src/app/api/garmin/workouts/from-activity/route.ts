@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { pushStrengthWorkoutFromActivity } from '@/lib/integrations/garmin/garmin-strength-workout';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
+import { pushStrengthWorkoutFromActivity } from '@sharpit/server/lib/integrations/garmin/garmin-strength-workout';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
 
 const bodySchema = z.object({
   activityId: z.string().min(1),

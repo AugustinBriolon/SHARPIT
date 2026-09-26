@@ -1,14 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('@/lib/auth/current-athlete', () => ({
+vi.mock('@sharpit/server/lib/auth/current-athlete', () => ({
   getCurrentAthleteId: vi.fn().mockResolvedValue('athlete-1'),
 }));
 
-vi.mock('@/lib/next/await-request', () => ({
+vi.mock('@sharpit/server/lib/next/await-request', () => ({
   awaitRequest: vi.fn().mockResolvedValue(undefined),
 }));
 
-vi.mock('@/lib/analysis/analysis-run-store', () => ({
+vi.mock('@sharpit/server/lib/analysis/analysis-run-store', () => ({
   listRecentAnalysisRuns: vi.fn(),
 }));
 
@@ -26,7 +26,8 @@ describe('GET /api/analyses/status', () => {
   });
 
   it('returns the athlete’s recent and in-flight runs', async () => {
-    const { listRecentAnalysisRuns } = await import('@/lib/analysis/analysis-run-store');
+    const { listRecentAnalysisRuns } =
+      await import('@sharpit/server/lib/analysis/analysis-run-store');
     vi.mocked(listRecentAnalysisRuns).mockResolvedValue([RUN]);
 
     const { GET } = await import('./route');
@@ -38,7 +39,8 @@ describe('GET /api/analyses/status', () => {
   });
 
   it('counts what the athlete is still waiting on', async () => {
-    const { listRecentAnalysisRuns } = await import('@/lib/analysis/analysis-run-store');
+    const { listRecentAnalysisRuns } =
+      await import('@sharpit/server/lib/analysis/analysis-run-store');
     vi.mocked(listRecentAnalysisRuns).mockResolvedValue([
       { ...RUN, status: 'RUNNING', finishedAt: null, startedAt: new Date().toISOString() },
     ]);
@@ -50,7 +52,8 @@ describe('GET /api/analyses/status', () => {
   });
 
   it('never takes the app down when the store fails', async () => {
-    const { listRecentAnalysisRuns } = await import('@/lib/analysis/analysis-run-store');
+    const { listRecentAnalysisRuns } =
+      await import('@sharpit/server/lib/analysis/analysis-run-store');
     vi.mocked(listRecentAnalysisRuns).mockRejectedValue(new Error('db down'));
     vi.spyOn(console, 'error').mockImplementation(() => {});
 

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { getBodyCompositionMeasurements } from '@/lib/queries';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
+import { getBodyCompositionMeasurements } from '@sharpit/server/lib/queries';
 
 export async function GET(request: NextRequest) {
   const rawDays = request.nextUrl.searchParams.get('days');

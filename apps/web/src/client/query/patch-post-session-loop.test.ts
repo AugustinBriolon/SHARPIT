@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { QueryClient } from '@tanstack/react-query';
-import type { TodayViewModel } from '@/presentation/today-view-model';
+import type { TodayViewModel } from '@sharpit/server/presentation/today-view-model';
 import { queryKeys } from '@/client/query/keys';
 import { patchTodayPostSessionLoopAfterFeeling } from '@/client/query/patch-post-session-loop';
 

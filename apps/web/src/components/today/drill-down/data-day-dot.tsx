@@ -1,4 +1,4 @@
-import { cn } from '@/lib/utils';
+import { cn } from '@sharpit/server/lib/utils';
 
 /**
  * Marks a day that carries data. Decorative — the owning control states it in its

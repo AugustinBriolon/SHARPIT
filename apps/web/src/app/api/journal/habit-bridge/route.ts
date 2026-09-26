@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { loadJournalHabitFindings } from '@/lib/journal/journal-habit-analysis-load';
-import { buildTodayJournalHabitBridge } from '@/lib/journal/journal-habit-today-bridge';
-import { awaitRequest } from '@/lib/next/await-request';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
+import { loadJournalHabitFindings } from '@sharpit/server/lib/journal/journal-habit-analysis-load';
+import { buildTodayJournalHabitBridge } from '@sharpit/server/lib/journal/journal-habit-today-bridge';
+import { awaitRequest } from '@sharpit/server/lib/next/await-request';
 import { prisma } from '@sharpit/db/client';
 
 /**

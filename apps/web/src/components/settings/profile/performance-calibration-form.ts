@@ -1,6 +1,6 @@
 import type { ProfileData } from '@/components/settings/profile/profile-types';
 import { paceToInput, parsePaceInput } from '@/components/settings/profile/profile-input-format';
-import { changedProfileFields } from '@/lib/profile/profile-patch';
+import { changedProfileFields } from '@sharpit/server/lib/profile/profile-patch';
 
 export function profileStringField(value: number | null | undefined): string {
   if (value === null || value === undefined) {

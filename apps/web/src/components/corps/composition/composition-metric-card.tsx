@@ -1,8 +1,8 @@
 'use client';
 
 import { MetricCell } from '@/components/ui/instruments/metric-cell';
-import type { CorpsTone } from '@/lib/ui/metric-tone';
-import type { CompositionMetricId } from '@/lib/health/composition-metric-guides';
+import type { CorpsTone } from '@sharpit/server/lib/ui/metric-tone';
+import type { CompositionMetricId } from '@sharpit/server/lib/health/composition-metric-guides';
 
 export function CompositionMetricCard({
   label,

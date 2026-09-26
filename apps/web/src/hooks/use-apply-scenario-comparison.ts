@@ -6,8 +6,8 @@ import type { ProjectionHorizonDays } from '@sharpit/core/projection/types';
 import { queryKeys } from '@/client/query/keys';
 import { listOptimistic } from '@/client/query/optimistic';
 import { sendJson } from '@/client/query/send-json';
-import type { ClientPlannedSession } from '@/lib/query/types';
-import { optimisticSessionFieldsForKind } from '@/lib/scenario/apply-scenario-op';
+import type { ClientPlannedSession } from '@sharpit/server/lib/query/types';
+import { optimisticSessionFieldsForKind } from '@sharpit/server/lib/scenario/apply-scenario-op';
 
 export type ApplyScenarioComparisonVars = {
   scenarioId: string;

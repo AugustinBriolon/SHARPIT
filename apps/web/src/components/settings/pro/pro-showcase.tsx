@@ -6,10 +6,10 @@ import {
   PRO_ONLY_PERKS,
   type ProPerk,
 } from '@/components/settings/pro/pro-perks';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { hasProAccess } from '@/lib/access/tier';
-import { getAthleteProfile } from '@/lib/queries';
-import { cn } from '@/lib/utils';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
+import { hasProAccess } from '@sharpit/server/lib/access/tier';
+import { getAthleteProfile } from '@sharpit/server/lib/queries';
+import { cn } from '@sharpit/server/lib/utils';
 
 const STATUS_LABEL: Record<ProPerk['status'], string> = {
   pro: 'Pro',

@@ -1,20 +1,20 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { NextRequest } from 'next/server';
 
-vi.mock('@/lib/queries', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/lib/queries')>();
+vi.mock('@sharpit/server/lib/queries', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@sharpit/server/lib/queries')>();
   return {
     ...actual,
     getActivitiesList: vi.fn().mockResolvedValue([]),
   };
 });
 
-vi.mock('@/lib/auth/current-athlete', () => ({
+vi.mock('@sharpit/server/lib/auth/current-athlete', () => ({
   getCurrentAthleteId: vi.fn().mockResolvedValue('athlete-1'),
 }));
 
 const isDemoSessionMock = vi.fn();
-vi.mock('@/lib/demo/demo-session', () => ({
+vi.mock('@sharpit/server/lib/demo/demo-session', () => ({
   isDemoSession: isDemoSessionMock,
 }));
 
@@ -33,7 +33,7 @@ describe('GET /api/activities — demo sinceDays clamp', () => {
 
   it('passes sinceDays through unchanged for a real athlete', async () => {
     isDemoSessionMock.mockResolvedValue(false);
-    const { getActivitiesList } = await import('@/lib/queries');
+    const { getActivitiesList } = await import('@sharpit/server/lib/queries');
     const { GET } = await importRoute();
 
     await GET(getRequest('?sinceDays=30'));
@@ -46,7 +46,7 @@ describe('GET /api/activities — demo sinceDays clamp', () => {
 
   it('leaves an unbounded request unbounded for a real athlete', async () => {
     isDemoSessionMock.mockResolvedValue(false);
-    const { getActivitiesList } = await import('@/lib/queries');
+    const { getActivitiesList } = await import('@sharpit/server/lib/queries');
     const { GET } = await importRoute();
 
     await GET(getRequest());
@@ -59,7 +59,7 @@ describe('GET /api/activities — demo sinceDays clamp', () => {
 
   it('clamps an unbounded demo request to 7 days', async () => {
     isDemoSessionMock.mockResolvedValue(true);
-    const { getActivitiesList } = await import('@/lib/queries');
+    const { getActivitiesList } = await import('@sharpit/server/lib/queries');
     const { GET } = await importRoute();
 
     await GET(getRequest());
@@ -72,7 +72,7 @@ describe('GET /api/activities — demo sinceDays clamp', () => {
 
   it('clamps a demo request asking for more than 7 days down to 7', async () => {
     isDemoSessionMock.mockResolvedValue(true);
-    const { getActivitiesList } = await import('@/lib/queries');
+    const { getActivitiesList } = await import('@sharpit/server/lib/queries');
     const { GET } = await importRoute();
 
     await GET(getRequest('?sinceDays=30'));
@@ -85,7 +85,7 @@ describe('GET /api/activities — demo sinceDays clamp', () => {
 
   it('respects a demo request already asking for fewer than 7 days', async () => {
     isDemoSessionMock.mockResolvedValue(true);
-    const { getActivitiesList } = await import('@/lib/queries');
+    const { getActivitiesList } = await import('@sharpit/server/lib/queries');
     const { GET } = await importRoute();
 
     await GET(getRequest('?sinceDays=3'));

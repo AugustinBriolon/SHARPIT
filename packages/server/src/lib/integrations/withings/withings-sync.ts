@@ -1,0 +1,328 @@
+import { BodyCompositionSource, Prisma } from '@prisma/client';
+import { isSet } from '@sharpit/shared/value';
+import { resolveOAuthAccessToken } from '@sharpit/server/lib/integrations/shared/oauth-access-token';
+import { format, startOfDay, subDays } from 'date-fns';
+import { prisma } from '@sharpit/db/client';
+import { observationEngine } from '@sharpit/server/lib/engines/observation-engine';
+import { withingsMeasurementToBodyComposition } from '@sharpit/server/adapters/withings-adapter';
+import {
+  fetchWithingsMeasurements,
+  fetchWithingsHeartList,
+  refreshWithingsToken,
+  type WithingsParsedMeasurement,
+} from '@sharpit/server/lib/integrations/withings/withings';
+import { enrichMeasurementsWithHeartEcg } from '@sharpit/server/lib/integrations/withings/withings-measures';
+import { backfillBodyCompositionObservationsFromMeasurements } from '@sharpit/server/lib/integrations/shared/body-composition-observation-backfill';
+import {
+  syncSinceFromLastSync,
+  syncWindowDays,
+} from '@sharpit/server/lib/integrations/shared/sync-since';
+import { encryptSecret } from '@sharpit/server/lib/secret-box';
+
+async function ingestWithingsMeasurement(
+  athleteId: string,
+  measurement: WithingsParsedMeasurement,
+): Promise<void> {
+  try {
+    const raw = withingsMeasurementToBodyComposition(measurement, new Date());
+    if (!raw) {
+      return;
+    }
+    await observationEngine.ingest(athleteId, raw);
+  } catch (err) {
+    console.error('[ObservationEngine] withings ingest failed:', err);
+  }
+}
+
+export async function getWithingsAccount(athleteId: string) {
+  return prisma.withingsAccount.findUnique({ where: { athleteId } });
+}
+
+export async function disconnectWithings(athleteId: string) {
+  await prisma.withingsAccount.deleteMany({ where: { athleteId } });
+}
+
+/** Keeps the Withings profile row so the hub can ask for a reconnect. */
+export async function revokeWithingsCredentials(athleteId: string) {
+  const account = await getWithingsAccount(athleteId);
+  if (!account) {
+    return;
+  }
+  await prisma.withingsAccount.update({
+    where: { athleteId },
+    data: {
+      accessTokenEnc: '',
+      refreshTokenEnc: '',
+      expiresAt: new Date(0),
+    },
+  });
+}
+
+export async function getValidWithingsAccessToken(athleteId: string): Promise<string> {
+  const account = await getWithingsAccount(athleteId);
+  if (!account) {
+    throw new Error('Compte Withings non connecté');
+  }
+
+  return resolveOAuthAccessToken({
+    athleteId,
+    account,
+    reconnectMessage: 'Session Withings expirée. Reconnecte Withings dans les paramètres.',
+    revoke: revokeWithingsCredentials,
+    refresh: refreshWithingsToken,
+    extractAccessToken: (refreshed) => refreshed.access_token,
+    persist: async (refreshed) => {
+      await prisma.withingsAccount.update({
+        where: { athleteId },
+        data: {
+          accessTokenEnc: encryptSecret(refreshed.access_token),
+          refreshTokenEnc: encryptSecret(refreshed.refresh_token),
+          expiresAt: new Date(Date.now() + refreshed.expires_in * 1000),
+          withingsUserId: String(refreshed.userid),
+        },
+      });
+    },
+  });
+}
+
+function computeMusclePct(m: WithingsParsedMeasurement): number | null {
+  if (
+    m.muscleKg === undefined ||
+    m.muscleKg === null ||
+    m.weightKg === undefined ||
+    m.weightKg === null ||
+    m.weightKg <= 0
+  ) {
+    return null;
+  }
+  return (m.muscleKg / m.weightKg) * 100;
+}
+
+function measurementToPrisma(
+  m: WithingsParsedMeasurement,
+): Omit<Prisma.BodyCompositionMeasurementUncheckedCreateInput, 'athleteId'> {
+  return {
+    source: BodyCompositionSource.WITHINGS,
+    externalId: m.grpid,
+    measuredAt: m.measuredAt,
+    weightKg: m.weightKg,
+    bmi: m.bmi,
+    bodyFatPct: m.bodyFatPct,
+    musclePct: computeMusclePct(m),
+    boneKg: m.boneKg,
+    bmr: m.bmr,
+    visceralFat: m.visceralFat,
+    waterPct: m.waterPct,
+    fatFreeWeightKg: m.fatFreeWeightKg,
+    heartRate: isSet(m.heartRate) ? Math.round(m.heartRate) : null,
+    bodyAge: isSet(m.metabolicAge) ? Math.round(m.metabolicAge) : null,
+    vascularAgeYears: isSet(m.vascularAgeYears) ? Math.round(m.vascularAgeYears) : null,
+    pulseWaveVelocity: m.pulseWaveVelocity,
+    vo2Max: m.vo2Max,
+    nerveHealthScore: m.nerveHealthScore,
+    nerveHealthLeft: m.nerveHealthLeft,
+    nerveHealthRight: m.nerveHealthRight,
+    nerveResponseScore: m.nerveResponseScore,
+    skinConductance: m.skinConductance,
+    metabolicAge: isSet(m.metabolicAge) ? Math.round(m.metabolicAge) : null,
+    hydrationKg: m.hydrationKg,
+    fatMassKg: m.fatMassKg,
+    extracellularWaterKg: m.extracellularWaterKg,
+    intracellularWaterKg: m.intracellularWaterKg,
+    withingsExtras: (m.withingsExtras ?? Prisma.JsonNull) as Prisma.InputJsonValue,
+  };
+}
+
+async function upsertDailyWeightFromWithings(athleteId: string, m: WithingsParsedMeasurement) {
+  if (m.weightKg === undefined || m.weightKg === null) {
+    return;
+  }
+
+  const local = m.measuredAt;
+  const day = new Date(Date.UTC(local.getFullYear(), local.getMonth(), local.getDate()));
+
+  await prisma.dailyHealth.upsert({
+    where: { athleteId_date: { athleteId, date: day } },
+    create: { athleteId, date: day, weightKg: m.weightKg },
+    update: { weightKg: m.weightKg },
+  });
+}
+
+export interface WithingsSyncResult {
+  imported: number;
+  updated: number;
+  days: number;
+  observationsBackfilled?: number;
+}
+
+async function persistWithingsMeasurements(
+  athleteId: string,
+  measurements: WithingsParsedMeasurement[],
+): Promise<{
+  imported: number;
+  updated: number;
+  weightByDay: Map<string, WithingsParsedMeasurement>;
+}> {
+  const weightByDay = new Map<string, WithingsParsedMeasurement>();
+  if (measurements.length === 0) {
+    return { imported: 0, updated: 0, weightByDay };
+  }
+
+  const externalIds = measurements.map((m) => m.grpid);
+  const existingRows = await prisma.bodyCompositionMeasurement.findMany({
+    where: {
+      athleteId,
+      source: BodyCompositionSource.WITHINGS,
+      externalId: { in: externalIds },
+    },
+    select: { externalId: true },
+  });
+  const existingIds = new Set(
+    existingRows.map((r) => r.externalId).filter((id): id is string => isSet(id)),
+  );
+
+  const toCreate: Prisma.BodyCompositionMeasurementCreateManyInput[] = [];
+  const updateOps: Promise<unknown>[] = [];
+
+  for (const measurement of measurements) {
+    const data = measurementToPrisma(measurement);
+    const dayKey = format(measurement.measuredAt, 'yyyy-MM-dd');
+    const prev = weightByDay.get(dayKey);
+    if (!prev || measurement.measuredAt.getTime() > prev.measuredAt.getTime()) {
+      weightByDay.set(dayKey, measurement);
+    }
+
+    if (existingIds.has(measurement.grpid)) {
+      updateOps.push(
+        prisma.bodyCompositionMeasurement.update({
+          where: {
+            athleteId_source_externalId: {
+              athleteId,
+              source: BodyCompositionSource.WITHINGS,
+              externalId: measurement.grpid,
+            },
+          },
+          data,
+        }),
+      );
+    } else {
+      toCreate.push({ ...data, athleteId } as Prisma.BodyCompositionMeasurementCreateManyInput);
+    }
+  }
+
+  let imported = 0;
+  if (toCreate.length > 0) {
+    const result = await prisma.bodyCompositionMeasurement.createMany({
+      data: toCreate,
+      skipDuplicates: true,
+    });
+    imported = result.count;
+  }
+
+  let updated = 0;
+  if (updateOps.length > 0) {
+    await Promise.all(updateOps);
+    updated = updateOps.length;
+  }
+
+  await Promise.all(measurements.map((m) => ingestWithingsMeasurement(athleteId, m)));
+  return { imported, updated, weightByDay };
+}
+
+async function loadWithingsMeasurementsForSync(
+  accessToken: string,
+  range: { startdate: number; enddate: number },
+) {
+  const measurementsRaw = await fetchWithingsMeasurements(accessToken, range);
+  try {
+    const heartRecords = await fetchWithingsHeartList(accessToken, range);
+    return enrichMeasurementsWithHeartEcg(measurementsRaw, heartRecords);
+  } catch (err) {
+    console.warn(
+      '[withings-sync] Heart v2 list unavailable, ECG classification from getmeas only:',
+      err,
+    );
+    return measurementsRaw;
+  }
+}
+
+async function finalizeWithingsSync(input: {
+  athleteId: string;
+  since: Date;
+  full?: boolean;
+  imported: number;
+  updated: number;
+  days: number;
+}): Promise<WithingsSyncResult> {
+  await prisma.withingsAccount.update({
+    where: { athleteId: input.athleteId },
+    data: { lastSyncAt: new Date() },
+  });
+
+  const backfill = await backfillBodyCompositionObservationsFromMeasurements(input.athleteId, {
+    since: input.full ? subDays(startOfDay(new Date()), 365 * 3) : input.since,
+  });
+
+  return {
+    imported: input.imported,
+    updated: input.updated,
+    days: input.days,
+    observationsBackfilled: backfill.ingested,
+  };
+}
+
+export async function syncWithingsHealth(
+  athleteId: string,
+  options?: {
+    days?: number;
+    full?: boolean;
+  },
+): Promise<WithingsSyncResult> {
+  const account = await getWithingsAccount(athleteId);
+  if (!account) {
+    throw new Error('Compte Withings non connecté');
+  }
+
+  const accessToken = await getValidWithingsAccessToken(athleteId);
+  const since = options?.full
+    ? subDays(startOfDay(new Date()), 365 * 3)
+    : syncSinceFromLastSync(account.lastSyncAt, options?.days ?? 90);
+  const days = syncWindowDays(since);
+  const range = {
+    startdate: Math.floor(since.getTime() / 1000),
+    enddate: Math.floor(Date.now() / 1000),
+  };
+
+  const measurements = await loadWithingsMeasurementsForSync(accessToken, range);
+
+  const { imported, updated, weightByDay } = await persistWithingsMeasurements(
+    athleteId,
+    measurements,
+  );
+
+  await Promise.all(
+    [...weightByDay.values()].map((m) => upsertDailyWeightFromWithings(athleteId, m)),
+  );
+
+  return finalizeWithingsSync({
+    athleteId,
+    since,
+    full: options?.full,
+    imported,
+    updated,
+    days,
+  });
+}
+
+/** Jours où Withings a une pesée (priorité sur Renpho pour DailyHealth). */
+export async function withingsWeighInDayKeys(athleteId: string, since: Date): Promise<Set<string>> {
+  const rows = await prisma.bodyCompositionMeasurement.findMany({
+    where: {
+      athleteId,
+      source: BodyCompositionSource.WITHINGS,
+      measuredAt: { gte: since },
+    },
+    select: { measuredAt: true },
+  });
+  return new Set(rows.map((r) => format(r.measuredAt, 'yyyy-MM-dd')));
+}

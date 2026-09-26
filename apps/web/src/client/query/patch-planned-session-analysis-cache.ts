@@ -1,6 +1,10 @@
 import type { QueryClient } from '@tanstack/react-query';
 import { queryKeys } from '@/client/query/keys';
-import type { ClientActivity, ClientActivityDetail, ClientPlannedSession } from '@/lib/query/types';
+import type {
+  ClientActivity,
+  ClientActivityDetail,
+  ClientPlannedSession,
+} from '@sharpit/server/lib/query/types';
 import { seedPlannedSessionIntoCache } from '@/client/query/seed-planned-session-cache';
 
 type AnalysisPatch = {

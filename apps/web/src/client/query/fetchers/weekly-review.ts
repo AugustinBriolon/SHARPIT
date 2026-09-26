@@ -1,4 +1,4 @@
-import type { WeeklyStats } from '@/lib/coach/weekly-review';
+import type { WeeklyStats } from '@sharpit/server/lib/coach/weekly-review';
 import { fetchJson, type Serialized, toDate } from './shared';
 
 export interface ClientWeeklyReview {

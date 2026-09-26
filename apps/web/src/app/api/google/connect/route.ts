@@ -1,13 +1,16 @@
 import { randomBytes } from 'crypto';
 import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
-import { redirectIfBindHost, setIntegrationReturnTo } from '@/lib/integrations/oauth-return';
+import {
+  redirectIfBindHost,
+  setIntegrationReturnTo,
+} from '@sharpit/server/lib/integrations/oauth-return';
 import {
   buildAuthorizeUrl,
   getGoogleRedirectUri,
   isGoogleConfigured,
-} from '@/lib/integrations/google/google';
-import { gateProviderConnect } from '@/lib/privacy/gate-provider-connect';
+} from '@sharpit/server/lib/integrations/google/google';
+import { gateProviderConnect } from '@sharpit/server/lib/privacy/gate-provider-connect';
 
 const OAUTH_COOKIE_OPTS = {
   httpOnly: true,

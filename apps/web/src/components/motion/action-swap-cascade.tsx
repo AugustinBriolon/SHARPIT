@@ -1,7 +1,7 @@
 'use client';
 
 import { AnimatePresence, motion, type Variants } from 'motion/react';
-import { EASE_OUT, SPRING_SWAP } from '@/lib/ease';
+import { EASE_OUT, SPRING_SWAP } from '@sharpit/server/lib/ease';
 
 const CASCADE_STAGGER = 0.025;
 const ROLL_BLUR = 'blur(3px)';

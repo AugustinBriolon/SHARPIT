@@ -2,8 +2,8 @@ import { notFound } from 'next/navigation';
 import { MobileBackLink } from '@/components/layout/header/mobile-back-link';
 import { StickyHeader } from '@/components/layout/header/sticky-header';
 import { ActivityForm } from '@/components/training/activity/form/activity-form';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { getActivityById } from '@/lib/queries';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
+import { getActivityById } from '@sharpit/server/lib/queries';
 
 type PageProps = { params: Promise<{ id: string }> };
 

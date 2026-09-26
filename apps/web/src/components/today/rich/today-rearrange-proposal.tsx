@@ -4,9 +4,12 @@ import dynamic from 'next/dynamic';
 import { useState } from 'react';
 import { FadeIn } from '@/components/motion/fade-presence';
 import { PlanVivantBand } from '@/components/today/rich/plan-vivant-band';
-import { planVivantProgress, planVivantReading } from '@/lib/today/rich/plan-vivant-reading';
-import type { GoalAdvancementView } from '@/lib/today/rich/goal-advancement';
-import type { TodayViewModel } from '@/presentation/today-view-model';
+import {
+  planVivantProgress,
+  planVivantReading,
+} from '@sharpit/server/lib/today/rich/plan-vivant-reading';
+import type { GoalAdvancementView } from '@sharpit/server/lib/today/rich/goal-advancement';
+import type { TodayViewModel } from '@sharpit/server/presentation/today-view-model';
 
 const PlanAdapter = dynamic(
   () => import('@/components/coach/plan/plan-adapter').then((mod) => mod.PlanAdapter),

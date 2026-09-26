@@ -1,5 +1,5 @@
 import { tempId } from '@/client/query/optimistic';
-import type { ClientPlannedSession } from '@/lib/query/types';
+import type { ClientPlannedSession } from '@sharpit/server/lib/query/types';
 import type { ActivityType, SessionIntensity } from '@prisma/client';
 
 /** Payload shape shared with planned-session mutations (client-side). */

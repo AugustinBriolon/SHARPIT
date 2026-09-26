@@ -14,21 +14,24 @@ import {
 } from '@/hooks/use-data';
 import { fetchActivityStream } from '@/client/query/fetchers';
 import { queryKeys } from '@/client/query/keys';
-import { readPlanHubNow, rememberPlanHubNow } from '@/lib/plan/hub/plan-hub-clock';
-import { selectPlanHubStreamPrefetchIds } from '@/lib/plan/week/plan-week-previews';
-import { resolveCalibrationConfidence } from '@/lib/plan/trajectory/plan-calibration-confidence';
-import { buildMacroPhaseRail } from '@/lib/plan/trajectory/plan-macro-rail';
-import { selectPlanGoal } from '@/lib/plan/trajectory/plan-goal';
-import { buildPlanWeek, type PlanWeek } from '@/lib/plan/week/plan-week';
-import { upcomingRemaining } from '@/lib/plan/week/plan-week-decision';
+import { readPlanHubNow, rememberPlanHubNow } from '@sharpit/server/lib/plan/hub/plan-hub-clock';
+import { selectPlanHubStreamPrefetchIds } from '@sharpit/server/lib/plan/week/plan-week-previews';
+import { resolveCalibrationConfidence } from '@sharpit/server/lib/plan/trajectory/plan-calibration-confidence';
+import { buildMacroPhaseRail } from '@sharpit/server/lib/plan/trajectory/plan-macro-rail';
+import { selectPlanGoal } from '@sharpit/server/lib/plan/trajectory/plan-goal';
+import { buildPlanWeek, type PlanWeek } from '@sharpit/server/lib/plan/week/plan-week';
+import { upcomingRemaining } from '@sharpit/server/lib/plan/week/plan-week-decision';
 import {
   isHardSessionIntensity,
   shouldGateHardIntensities,
-} from '@/lib/plan/trajectory/intensity-gate';
-import { getProfileCompleteness } from '@/lib/profile/profile-completeness';
-import { mapVerdictToDisplay, type OverallVerdict } from '@/lib/today/dashboard/today-mapping';
-import type { ClientActivity, ClientPlannedSession } from '@/lib/query/types';
-import type { AthleteSnapshot } from '@/athlete-state/snapshot';
+} from '@sharpit/server/lib/plan/trajectory/intensity-gate';
+import { getProfileCompleteness } from '@sharpit/server/lib/profile/profile-completeness';
+import {
+  mapVerdictToDisplay,
+  type OverallVerdict,
+} from '@sharpit/server/lib/today/dashboard/today-mapping';
+import type { ClientActivity, ClientPlannedSession } from '@sharpit/server/lib/query/types';
+import type { AthleteSnapshot } from '@sharpit/server/athlete-state/snapshot';
 
 const emptySubscribe = () => () => {};
 

@@ -1,8 +1,11 @@
 import { ArrowRight, Plus, Trash2 } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { buildAdaptChangeDiff, type AdaptDiffSide } from '@/lib/coach/plan/adapt-change-diff';
+import { cn } from '@sharpit/server/lib/utils';
+import {
+  buildAdaptChangeDiff,
+  type AdaptDiffSide,
+} from '@sharpit/server/lib/coach/plan/adapt-change-diff';
 import type { AdaptChange } from '@/hooks/use-coach';
-import type { ClientPlannedSession } from '@/lib/query/types';
+import type { ClientPlannedSession } from '@sharpit/server/lib/query/types';
 
 function DiffChip({
   side,

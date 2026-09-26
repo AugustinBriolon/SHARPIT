@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { awaitRequest } from '@/lib/next/await-request';
-import { getStoredRecords } from '@/lib/training/records/records';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
+import { awaitRequest } from '@sharpit/server/lib/next/await-request';
+import { getStoredRecords } from '@sharpit/server/lib/training/records/records';
 
 export async function GET() {
   // Outside try: Cache Components prerender interrupt must not be swallowed.

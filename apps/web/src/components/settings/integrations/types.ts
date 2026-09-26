@@ -1,5 +1,5 @@
-import type { IntegrationId } from '@/lib/integrations/shared/client-sync';
-import { PROVIDER_CATALOG } from '@/lib/integrations/provider-catalog';
+import type { IntegrationId } from '@sharpit/server/lib/integrations/shared/client-sync';
+import { PROVIDER_CATALOG } from '@sharpit/server/lib/integrations/provider-catalog';
 
 export const INTEGRATION_CATALOG: Array<{
   id: IntegrationId;

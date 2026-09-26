@@ -8,8 +8,8 @@ import {
   packTierConfidenceBarsTone,
   packTierInkDotClass,
   type AthletePackTier,
-} from '@/lib/presentation/today/pack-tier-athlete';
-import { cn } from '@/lib/utils';
+} from '@sharpit/server/lib/presentation/today/pack-tier-athlete';
+import { cn } from '@sharpit/server/lib/utils';
 
 export function TodayVerdictContextLabel({
   loading,

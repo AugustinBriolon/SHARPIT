@@ -3,17 +3,17 @@
 import { ActivityTypeIndicator } from '@/components/ui/instruments/activity-type-indicator';
 import { PhysioRail } from '@/components/ui/instruments/physio-rail';
 import { Checkbox } from '@/components/ui/checkbox';
-import { getActivityListMetric } from '@/lib/activity/list/activity-list-summary';
+import { getActivityListMetric } from '@sharpit/server/lib/activity/list/activity-list-summary';
 import {
   formatActivityWeatherChip,
   parseActivityWeather,
-} from '@/lib/activity/weather/activity-weather';
-import { isIndoorActivitySession } from '@/lib/activity/location/indoor-activity';
-import { activityTypeLabels, formatDate, formatDuration } from '@/lib/format';
-import { parseSessionAnalysis } from '@/lib/planned-session/display/session-analysis-display';
+} from '@sharpit/server/lib/activity/weather/activity-weather';
+import { isIndoorActivitySession } from '@sharpit/server/lib/activity/location/indoor-activity';
+import { activityTypeLabels, formatDate, formatDuration } from '@sharpit/server/lib/format';
+import { parseSessionAnalysis } from '@sharpit/server/lib/planned-session/display/session-analysis-display';
 import { isTempId } from '@/client/query/optimistic';
 import { prefetchActivityDetail } from '@/client/query/prefetch-activity-detail';
-import { cn } from '@/lib/utils';
+import { cn } from '@sharpit/server/lib/utils';
 import Link from 'next/link';
 import { useQueryClient } from '@tanstack/react-query';
 import {

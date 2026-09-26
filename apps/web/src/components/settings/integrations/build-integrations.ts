@@ -3,8 +3,8 @@ import type {
   IntegrationsPayload,
 } from '@/components/settings/integrations/types';
 import { INTEGRATION_CATALOG } from '@/components/settings/integrations/types';
-import { getCatalogProviderByIntegration } from '@/lib/integrations/provider-catalog';
-import type { IntegrationId } from '@/lib/integrations/shared/client-sync';
+import { getCatalogProviderByIntegration } from '@sharpit/server/lib/integrations/provider-catalog';
+import type { IntegrationId } from '@sharpit/server/lib/integrations/shared/client-sync';
 
 type IntegrationBase = Omit<IntegrationDefinition, 'dataTypes' | 'tagline' | 'name'>;
 

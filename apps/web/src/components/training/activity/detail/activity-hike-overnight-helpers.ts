@@ -1,6 +1,6 @@
-import { formatDate, formatDistance, formatDuration } from '@/lib/format';
-import type { HikeOvernightSummary } from '@/lib/activity/hike/hike-overnight-summary';
-import { formatTrainingLoad } from '@/lib/preferences/display-mode';
+import { formatDate, formatDistance, formatDuration } from '@sharpit/server/lib/format';
+import type { HikeOvernightSummary } from '@sharpit/server/lib/activity/hike/hike-overnight-summary';
+import { formatTrainingLoad } from '@sharpit/server/lib/preferences/display-mode';
 
 function formatRange(start: Date, end: Date): string {
   const sameDay =

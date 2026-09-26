@@ -11,13 +11,13 @@ import {
 import { bottomNavItems, moiNavItem, type AppNavItem } from '@/client/app-navigation';
 import { useAthleteNavIdentity } from '@/hooks/use-athlete-nav-identity';
 import { usePrefetchNavQuery } from '@/hooks/use-prefetch-nav';
-import { PAGE_CONTENT_MAX_CLASS, PAGE_GUTTER } from '@/lib/ui/page-gutter';
+import { PAGE_CONTENT_MAX_CLASS, PAGE_GUTTER } from '@sharpit/server/lib/ui/page-gutter';
 import { springs } from '@/client/motion/tokens';
-import { cn } from '@/lib/utils';
+import { cn } from '@sharpit/server/lib/utils';
 import { OfflineBanner } from '@/components/pwa/offline-banner';
 import { SyncingIndicator } from '@/components/ui/syncing-indicator';
 import { ChromeGlass } from '@/components/chrome/chrome-glass';
-import { haptic } from '@/lib/haptic';
+import { haptic } from '@sharpit/server/lib/haptic';
 
 function bottomNavGlyph(options: {
   item: AppNavItem;

@@ -1,5 +1,5 @@
 import { GarminBrowserSsoClient } from '@/components/settings/integrations/garmin-browser-sso-client';
-import { sanitizeIntegrationReturnTo } from '@/lib/integrations/oauth-public-origin';
+import { sanitizeIntegrationReturnTo } from '@sharpit/server/lib/integrations/oauth-public-origin';
 
 type PageProps = {
   searchParams: Promise<{ returnTo?: string }>;

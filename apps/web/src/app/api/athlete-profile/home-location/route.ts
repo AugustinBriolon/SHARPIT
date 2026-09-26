@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { reverseGeocode } from '@/lib/geocoding/nominatim';
-import { upsertAthleteProfile } from '@/lib/queries';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
+import { reverseGeocode } from '@sharpit/server/lib/geocoding/nominatim';
+import { upsertAthleteProfile } from '@sharpit/server/lib/queries';
 
 /**
  * Persist the athlete's base location from a device reading.

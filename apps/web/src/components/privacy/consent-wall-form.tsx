@@ -6,13 +6,13 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from '@/components/ui/toast';
-import { ENTRY_PATH } from '@/lib/onboarding/entry-path';
-import { CURRENT_PRIVACY_VERSION } from '@/lib/privacy/constants';
+import { ENTRY_PATH } from '@sharpit/server/lib/onboarding/entry-path';
+import { CURRENT_PRIVACY_VERSION } from '@sharpit/server/lib/privacy/constants';
 import {
   consentWallCopy,
   parseConsentWallReason,
   type ConsentWallReason,
-} from '@/lib/privacy/consent-withdraw-ux';
+} from '@sharpit/server/lib/privacy/consent-withdraw-ux';
 import { postPrivacyConsent } from '@/client/query/fetchers';
 
 export function ConsentWallForm({ reason }: { reason?: ConsentWallReason | null } = {}) {

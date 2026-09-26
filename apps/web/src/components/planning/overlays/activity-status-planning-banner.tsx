@@ -8,8 +8,8 @@ import {
   getActivityStatusSnapshot,
   subscribeActivityStatus,
   type ActivityStatusId,
-} from '@/lib/health/activity-status';
-import { cn } from '@/lib/utils';
+} from '@sharpit/server/lib/health/activity-status';
+import { cn } from '@sharpit/server/lib/utils';
 
 /**
  * Planning chrome chip — surfaces non-active training mode next to travel.

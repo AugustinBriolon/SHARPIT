@@ -3,7 +3,7 @@ import { MobileBackLink } from '@/components/layout/header/mobile-back-link';
 import { StickyHeader } from '@/components/layout/header/sticky-header';
 import { MoiSectionContent } from '@/components/shell/moi-section-content';
 import { Skeleton } from '@/components/ui/skeleton';
-import { MOI_HUB_PATH } from '@/lib/moi/paths';
+import { MOI_HUB_PATH } from '@sharpit/server/lib/moi/paths';
 
 function PerformanceFallback() {
   return (

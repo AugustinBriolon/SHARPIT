@@ -4,9 +4,9 @@ import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-quer
 import { isSet } from '@sharpit/shared/value';
 import { format } from 'date-fns';
 import { useCallback, useSyncExternalStore } from 'react';
-import type { AthleteSnapshot } from '@/athlete-state/snapshot';
-import { snapshotHasDisplayableContent } from '@/athlete-state/snapshot';
-import { shouldRefreshSnapshotForPhaseDrift } from '@/lib/athlete-state/snapshot-phase';
+import type { AthleteSnapshot } from '@sharpit/server/athlete-state/snapshot';
+import { snapshotHasDisplayableContent } from '@sharpit/server/athlete-state/snapshot';
+import { shouldRefreshSnapshotForPhaseDrift } from '@sharpit/server/lib/athlete-state/snapshot-phase';
 import {
   fetchAthleteSnapshot,
   refreshAthleteSnapshot,

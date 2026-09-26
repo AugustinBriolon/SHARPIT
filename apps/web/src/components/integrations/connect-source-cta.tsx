@@ -1,7 +1,7 @@
 'use client';
 
 import { LinkButton } from '@/components/ui/link-button';
-import { cn } from '@/lib/utils';
+import { cn } from '@sharpit/server/lib/utils';
 
 /**
  * Primary empty-state CTA when a surface needs a connected provider.

@@ -2,8 +2,8 @@
 
 import { BodySide, PhysicalCategory, PhysicalStatus } from '@prisma/client';
 import { useMemo, useState } from 'react';
-import type { ClientPhysicalNote } from '@/lib/query/types';
-import { COMMON_BODY_PARTS } from '@/lib/physical-health/physical';
+import type { ClientPhysicalNote } from '@sharpit/server/lib/query/types';
+import { COMMON_BODY_PARTS } from '@sharpit/server/lib/physical-health/physical';
 import type { PhysicalNotePayload } from '@/hooks/use-physical';
 import { buildPhysicalNotePayload } from '@/components/physical-health/dialogs/physical-note-dialog-helpers';
 

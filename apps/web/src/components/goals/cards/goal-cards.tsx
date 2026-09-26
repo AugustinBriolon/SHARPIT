@@ -16,9 +16,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { parseGoalMetricConfig } from '@/lib/goals/goal-metric-config';
-import { goalDomId } from '@/lib/today/rich/today-goal-anchor';
-import { cn } from '@/lib/utils';
+import { parseGoalMetricConfig } from '@sharpit/server/lib/goals/goal-metric-config';
+import { goalDomId } from '@sharpit/server/lib/today/rich/today-goal-anchor';
+import { cn } from '@sharpit/server/lib/utils';
 import { useGoalMutations } from '@/hooks/use-data';
 
 const GoalDialog = dynamic(

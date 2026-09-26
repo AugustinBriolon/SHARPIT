@@ -2,8 +2,8 @@
 
 import { useCallback, useMemo } from 'react';
 import { renderCoachChat } from '@/components/coach/view/coach-view-chat';
-import type { CoachDiscussContext } from '@/lib/coach/chat/discuss/coach-discuss-context';
-import type { PersistedSnapshotEntry } from '@/lib/pwa/snapshot-store-validation';
+import type { CoachDiscussContext } from '@sharpit/server/lib/coach/chat/discuss/coach-discuss-context';
+import type { PersistedSnapshotEntry } from '@sharpit/server/lib/pwa/snapshot-store-validation';
 
 type UseCoachViewChatOptions = {
   online: boolean;

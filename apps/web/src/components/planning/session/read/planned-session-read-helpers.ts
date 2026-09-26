@@ -1,18 +1,18 @@
 import { sportSupportsOutdoorContext } from '@sharpit/core/planned-session/defaults';
-import { formatDate } from '@/lib/format';
-import { formatPlannedSessionLocationDisplay } from '@/lib/planned-session/display/planned-session-display';
+import { formatDate } from '@sharpit/server/lib/format';
+import { formatPlannedSessionLocationDisplay } from '@sharpit/server/lib/planned-session/display/planned-session-display';
 import {
   attachGarminRefsToPrescription,
   extractStrengthSessionIntent,
   parseStrengthPrescription,
-} from '@/lib/planned-session/strength/strength-prescription';
-import { resolveStrengthSetMedia } from '@/lib/exercises';
-import type { ClientPlannedSession } from '@/lib/query/types';
-import { exposureLabels, intensityLabels } from '@/lib/planned-session/sessions';
-import { formatTrainingLoad } from '@/lib/preferences/display-mode';
-import type { DisplayMode } from '@/lib/preferences/display-mode';
-import type { SessionRationaleViewModel } from '@/presentation/session-rationale-view-model';
-import type { PlannedSessionViewModel } from '@/presentation/planned-session-view-model';
+} from '@sharpit/server/lib/planned-session/strength/strength-prescription';
+import { resolveStrengthSetMedia } from '@sharpit/server/lib/exercises';
+import type { ClientPlannedSession } from '@sharpit/server/lib/query/types';
+import { exposureLabels, intensityLabels } from '@sharpit/server/lib/planned-session/sessions';
+import { formatTrainingLoad } from '@sharpit/server/lib/preferences/display-mode';
+import type { DisplayMode } from '@sharpit/server/lib/preferences/display-mode';
+import type { SessionRationaleViewModel } from '@sharpit/server/presentation/session-rationale-view-model';
+import type { PlannedSessionViewModel } from '@sharpit/server/presentation/planned-session-view-model';
 import { ActivityType } from '@prisma/client';
 
 export type PlannedSessionKeyChip = { label: string; value: string; valueClassName?: string };

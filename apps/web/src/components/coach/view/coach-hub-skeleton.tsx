@@ -7,8 +7,8 @@ import {
 } from '@/components/coach/chat/shell/coach-composer-chrome';
 import { CoachChatPanelShell } from '@/components/coach/chat/shell/coach-chat-panel-shell';
 import { Skeleton } from '@/components/ui/skeleton';
-import type { CoachDiscussContext } from '@/lib/coach/chat/discuss/coach-discuss-context';
-import { cn } from '@/lib/utils';
+import type { CoachDiscussContext } from '@sharpit/server/lib/coach/chat/discuss/coach-discuss-context';
+import { cn } from '@sharpit/server/lib/utils';
 
 /** @deprecated Prefer CoachChatPanelShell — kept as alias for existing imports. */
 export const CoachChatEmptyChrome = CoachChatPanelShell;

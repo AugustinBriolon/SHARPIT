@@ -16,12 +16,12 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { activityTypeLabels } from '@/lib/format';
+import { activityTypeLabels } from '@sharpit/server/lib/format';
 import {
   brickLegActivityTypes,
   intensityLabels,
   intensityOrder,
-} from '@/lib/planned-session/sessions';
+} from '@sharpit/server/lib/planned-session/sessions';
 import { ActivityType, type SessionIntensity } from '@prisma/client';
 import { Plus, Trash2 } from 'lucide-react';
 

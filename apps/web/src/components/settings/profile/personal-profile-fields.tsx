@@ -3,7 +3,7 @@
 import { NUMERIC_INPUT_CLASS } from '@/components/settings/profile/profile-input-format';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { athleteAgeYears } from '@/lib/profile/athlete-profile-utils';
+import { athleteAgeYears } from '@sharpit/server/lib/profile/athlete-profile-utils';
 import type {
   PersonalFieldKey,
   PersonalProfileFormState,

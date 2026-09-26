@@ -6,7 +6,7 @@ import {
 import { fetchPlannedSessionById } from '@/client/query/fetchers';
 import { queryKeys } from '@/client/query/keys';
 import { seedPlannedSessionIntoCache } from '@/client/query/seed-planned-session-cache';
-import type { ClientPlannedSession } from '@/lib/query/types';
+import type { ClientPlannedSession } from '@sharpit/server/lib/query/types';
 
 const DETAIL_STALE_MS = 5 * 60 * 1000;
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { cn } from '@/lib/utils';
+import { cn } from '@sharpit/server/lib/utils';
 
 /**
  * Action row pinned to the bottom of the viewport on a phone, sticky in flow

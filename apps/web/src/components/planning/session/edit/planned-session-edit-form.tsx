@@ -9,7 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { activityTypeLabels } from '@/lib/format';
+import { activityTypeLabels } from '@sharpit/server/lib/format';
 import { ActivityType } from '@prisma/client';
 import { format } from 'date-fns';
 import type { usePlannedSessionDialog } from '@/components/planning/session/edit/use-planned-session-dialog';

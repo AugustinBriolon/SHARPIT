@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { syncPhysicalConditionObservation } from '@/lib/observation/manual-observation-sync';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { createPhysicalNote, getPhysicalNotes } from '@/lib/queries';
-import { createPhysicalNoteSchema } from '@/lib/validators/physical-note';
+import { syncPhysicalConditionObservation } from '@sharpit/server/lib/observation/manual-observation-sync';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
+import { createPhysicalNote, getPhysicalNotes } from '@sharpit/server/lib/queries';
+import { createPhysicalNoteSchema } from '@sharpit/server/lib/validators/physical-note';
 
 export async function GET() {
   try {

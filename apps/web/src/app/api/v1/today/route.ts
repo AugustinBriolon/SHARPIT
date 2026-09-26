@@ -1,16 +1,16 @@
 import { NextRequest, NextResponse, after } from 'next/server';
-import { appOrigin } from '@/lib/app-origin';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { getGarminAccount } from '@/lib/integrations/garmin/garmin-sync';
-import { getActivitiesList } from '@/lib/queries';
+import { appOrigin } from '@sharpit/server/lib/app-origin';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
+import { getGarminAccount } from '@sharpit/server/lib/integrations/garmin/garmin-sync';
+import { getActivitiesList } from '@sharpit/server/lib/queries';
 import {
   analyzeLinkedPlannedSessions,
   autoLinkActivitiesOfDay,
-} from '@/lib/planned-session/linking/session-linking';
-import { getMorningRecalibrationPresentation } from '@/lib/morning-recalibration/service';
-import { buildTodayPresentationViewModel } from '@/lib/presentation/today/today';
-import { projectV1Consistency } from '@/lib/presentation/v1/consistency';
-import { projectV1TodayFromViewModel } from '@/lib/presentation/v1/today';
+} from '@sharpit/server/lib/planned-session/linking/session-linking';
+import { getMorningRecalibrationPresentation } from '@sharpit/server/lib/morning-recalibration/service';
+import { buildTodayPresentationViewModel } from '@sharpit/server/lib/presentation/today/today';
+import { projectV1Consistency } from '@sharpit/server/lib/presentation/v1/consistency';
+import { projectV1TodayFromViewModel } from '@sharpit/server/lib/presentation/v1/today';
 
 function isValidTrainingDayId(value: string): boolean {
   return /^\d{4}-\d{2}-\d{2}$/.test(value);

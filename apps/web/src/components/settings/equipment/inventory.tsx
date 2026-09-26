@@ -15,11 +15,14 @@ import {
   type EquipmentItemId,
   type EquipmentSport,
   type StrengthVenue,
-} from '@/lib/equipment/catalog';
-import { equipmentSportHint } from '@/lib/equipment/format';
-import { setStrengthVenue, toggleOwnedItem } from '@/lib/equipment/parse';
-import type { AthleteEquipment } from '@/lib/equipment/types';
-import { equipmentSportsForPracticed, type PracticedSportId } from '@/lib/practiced-sports';
+} from '@sharpit/server/lib/equipment/catalog';
+import { equipmentSportHint } from '@sharpit/server/lib/equipment/format';
+import { setStrengthVenue, toggleOwnedItem } from '@sharpit/server/lib/equipment/parse';
+import type { AthleteEquipment } from '@sharpit/server/lib/equipment/types';
+import {
+  equipmentSportsForPracticed,
+  type PracticedSportId,
+} from '@sharpit/server/lib/practiced-sports';
 
 function EquipmentStrengthSection({
   equipment,

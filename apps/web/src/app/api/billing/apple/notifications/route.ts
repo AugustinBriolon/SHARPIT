@@ -5,13 +5,13 @@ import {
   applyAppleTransaction,
   athleteForAppleTransaction,
   statusFromAppleNotification,
-} from '@/lib/billing/apple-sync';
+} from '@sharpit/server/lib/billing/apple-sync';
 import {
   verifyAppleNotification,
   verifyAppleRenewalInfo,
   verifyAppleTransaction,
-} from '@/lib/billing/apple-verifier';
-import { logSafeError } from '@/lib/privacy/safe-log';
+} from '@sharpit/server/lib/billing/apple-verifier';
+import { logSafeError } from '@sharpit/server/lib/privacy/safe-log';
 
 const bodySchema = z.object({ signedPayload: z.string().min(1).max(100_000) });
 

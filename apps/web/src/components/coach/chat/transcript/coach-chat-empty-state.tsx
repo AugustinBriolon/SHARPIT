@@ -3,8 +3,8 @@
 import { ArrowUpRight } from 'lucide-react';
 import { coachBeuiCopy } from '@/components/coach/beui/coach-beui-copy';
 import { coachBeuiTheme } from '@/components/coach/beui/coach-beui-theme';
-import { COACH_CHAT_SUGGESTIONS } from '@/lib/coach/chat/conversations/coach-chat-known-sessions';
-import { cn } from '@/lib/utils';
+import { COACH_CHAT_SUGGESTIONS } from '@sharpit/server/lib/coach/chat/conversations/coach-chat-known-sessions';
+import { cn } from '@sharpit/server/lib/utils';
 
 /**
  * Empty Chat — quiet instrument starters (not pill twins of the Prompt Bar).

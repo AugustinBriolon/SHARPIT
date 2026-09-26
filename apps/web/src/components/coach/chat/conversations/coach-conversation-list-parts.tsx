@@ -14,7 +14,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { SkeletonDataValue } from '@/components/ui/skeleton-data-value';
-import { cn } from '@/lib/utils';
+import { cn } from '@sharpit/server/lib/utils';
 import type { ClientConversationSummary } from '@/client/query/fetchers';
 import {
   CoachConversationMobilePicker,

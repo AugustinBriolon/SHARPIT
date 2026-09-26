@@ -1,4 +1,4 @@
-import type { DisplayMode } from '@/lib/preferences/display-mode';
+import type { DisplayMode } from '@sharpit/server/lib/preferences/display-mode';
 
 function normalizeWords(value: string): string[] {
   return value

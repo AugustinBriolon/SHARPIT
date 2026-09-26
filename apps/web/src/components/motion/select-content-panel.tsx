@@ -2,7 +2,7 @@
 
 import { motion, type Variants } from 'motion/react';
 import { type ReactNode, useLayoutEffect, useRef, useState } from 'react';
-import { cn } from '@/lib/utils';
+import { cn } from '@sharpit/server/lib/utils';
 import {
   selectContentAnimate,
   selectContentGapTransition,

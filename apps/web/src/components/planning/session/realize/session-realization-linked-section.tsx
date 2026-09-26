@@ -2,7 +2,7 @@
 
 import { CompletedSessionStory } from '../read/completed-session-story';
 import { Button } from '@/components/ui/button';
-import type { ClientActivity, ClientPlannedSession } from '@/lib/query/types';
+import type { ClientActivity, ClientPlannedSession } from '@sharpit/server/lib/query/types';
 import { HeartPulse } from 'lucide-react';
 import {
   PhysicalReassessmentQueue,

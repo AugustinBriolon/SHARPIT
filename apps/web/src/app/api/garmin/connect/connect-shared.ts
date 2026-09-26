@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { GarminLoginError } from '@/lib/integrations/garmin/garmin';
+import { GarminLoginError } from '@sharpit/server/lib/integrations/garmin/garmin';
 
 /** Legacy password body — rejected; phone UX uses GET browser SSO. */
 export const garminConnectSchema = z.object({

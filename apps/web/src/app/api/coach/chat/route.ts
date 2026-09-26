@@ -14,24 +14,31 @@ import {
   COACH_REASONING_LEVEL,
   coachGatewayOptions,
   isCoachConfigured,
-} from '@/lib/ai';
-import { buildBusySummary } from '@/lib/coach/plan/calendar-availability';
-import { buildCoachContext, formatCoachContext } from '@/lib/coach/context/coach-context';
-import { createCoachTools } from '@/lib/coach/chat/tools/coach-tools';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { recordAiUsage } from '@/lib/ai/usage';
+} from '@sharpit/server/lib/ai';
+import { buildBusySummary } from '@sharpit/server/lib/coach/plan/calendar-availability';
+import {
+  buildCoachContext,
+  formatCoachContext,
+} from '@sharpit/server/lib/coach/context/coach-context';
+import { createCoachTools } from '@sharpit/server/lib/coach/chat/tools/coach-tools';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
+import { recordAiUsage } from '@sharpit/server/lib/ai/usage';
 import {
   RETRY_AFTER_HEADER,
   aiBudgetResponseBody,
   ensureFreeAiBudget,
   withAiBudgetWarningHeader,
-} from '@/lib/access/ai-budget';
-import { requireAiProcessingConsent } from '@/lib/privacy/consent-store';
-import { formatStrengthSessionRules } from '@/lib/planned-session/strength/strength-session-template';
-import { checkRateLimit, rateLimitJsonResponse, rateLimiters } from '@/lib/rate-limit';
-import { COACH_COPY_DASH_RULE } from '@/lib/coach/sanitize-coach-copy';
-import { resolveCoachDiscussServerContext } from '@/lib/coach/chat/discuss/coach-discuss-server-context';
-import { withCoachTrace } from '@/lib/ai/coach-trace';
+} from '@sharpit/server/lib/access/ai-budget';
+import { requireAiProcessingConsent } from '@sharpit/server/lib/privacy/consent-store';
+import { formatStrengthSessionRules } from '@sharpit/server/lib/planned-session/strength/strength-session-template';
+import {
+  checkRateLimit,
+  rateLimitJsonResponse,
+  rateLimiters,
+} from '@sharpit/server/lib/rate-limit';
+import { COACH_COPY_DASH_RULE } from '@sharpit/server/lib/coach/sanitize-coach-copy';
+import { resolveCoachDiscussServerContext } from '@sharpit/server/lib/coach/chat/discuss/coach-discuss-server-context';
+import { withCoachTrace } from '@sharpit/server/lib/ai/coach-trace';
 
 /** Horizon de pré-chargement de l'agenda, aligné sur les séances du contexte. */
 const AGENDA_PREFETCH_DAYS = 14;

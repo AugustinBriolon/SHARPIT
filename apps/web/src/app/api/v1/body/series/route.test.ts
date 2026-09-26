@@ -1,11 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { NextRequest } from 'next/server';
 
-vi.mock('@/lib/auth/current-athlete', () => ({
+vi.mock('@sharpit/server/lib/auth/current-athlete', () => ({
   getCurrentAthleteId: vi.fn().mockResolvedValue('athlete-1'),
 }));
 const loadBodySeriesInputs = vi.fn();
-vi.mock('@/lib/body/body-v1-data', () => ({ loadBodySeriesInputs }));
+vi.mock('@sharpit/server/lib/body/body-v1-data', () => ({ loadBodySeriesInputs }));
 
 const request = (query: string) =>
   new NextRequest(`https://sharpit.app/api/v1/body/series${query}`);

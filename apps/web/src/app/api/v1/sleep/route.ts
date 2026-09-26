@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { buildSleepViewModel } from '@/lib/presentation/sleep/sleep';
-import { projectV1Sleep } from '@/lib/presentation/v1/sleep';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
+import { buildSleepViewModel } from '@sharpit/server/lib/presentation/sleep/sleep';
+import { projectV1Sleep } from '@sharpit/server/lib/presentation/v1/sleep';
 
 /**
  * Canonical Sleep payload for native clients (ADR-040). The web drill-down keeps reading

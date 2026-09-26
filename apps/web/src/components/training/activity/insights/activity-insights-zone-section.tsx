@@ -2,8 +2,8 @@
 
 import type { ReactNode } from 'react';
 import { ZoneDistribution } from '@/components/training/activity/insights/zone-distribution';
-import type { ZoneBucket } from '@/lib/activity/detail/activity-analysis';
-import { cn } from '@/lib/utils';
+import type { ZoneBucket } from '@sharpit/server/lib/activity/detail/activity-analysis';
+import { cn } from '@sharpit/server/lib/utils';
 
 function buildZoneBlocks({
   hrZones,

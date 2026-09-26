@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { importGarminThresholds } from '@/lib/integrations/garmin/garmin-sync';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
+import { importGarminThresholds } from '@sharpit/server/lib/integrations/garmin/garmin-sync';
 
 export async function POST() {
   try {

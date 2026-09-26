@@ -1,7 +1,7 @@
 'use client';
 
 import { AnimatePresence, motion } from 'motion/react';
-import { cn } from '@/lib/utils';
+import { cn } from '@sharpit/server/lib/utils';
 import type { InputClassNames } from '@/components/motion/input-types';
 
 export function InputErrorMessage({

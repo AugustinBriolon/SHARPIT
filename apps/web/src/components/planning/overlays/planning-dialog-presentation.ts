@@ -1,4 +1,4 @@
-import type { ClientPlannedSession } from '@/lib/query/types';
+import type { ClientPlannedSession } from '@sharpit/server/lib/query/types';
 
 function resolveEditSession(
   dialog: { mode: 'edit'; session: ClientPlannedSession } | { mode: 'create'; date: Date } | null,

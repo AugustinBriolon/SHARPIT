@@ -3,8 +3,8 @@ import {
   failureLabelForPart,
   isToolFailure,
   isToolSuccess,
-} from '@/lib/coach/chat/tools/coach-tool-display';
-import type { ToolPartLite } from '@/lib/coach/chat/tools/coach-tool-parts';
+} from '@sharpit/server/lib/coach/chat/tools/coach-tool-display';
+import type { ToolPartLite } from '@sharpit/server/lib/coach/chat/tools/coach-tool-parts';
 
 const TOOL_LABELS: Record<string, { running: string; done: string }> = {
   'tool-listPlannedSessions': {

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { buildCoachContext } from '@/lib/coach/context/coach-context';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
+import { buildCoachContext } from '@sharpit/server/lib/coach/context/coach-context';
 
 export const maxDuration = 60;
 

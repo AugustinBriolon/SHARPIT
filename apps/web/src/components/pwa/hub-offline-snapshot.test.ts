@@ -6,7 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { PlanningView } from '@/components/planning/view/planning-view';
 import { MoiSectionContent } from '@/components/shell/moi-section-content';
-import type { PersistedSnapshotEntry } from '@/lib/pwa/snapshot-store-validation';
+import type { PersistedSnapshotEntry } from '@sharpit/server/lib/pwa/snapshot-store-validation';
 
 const OFFLINE_BANNER = 'Lecture seule — hors ligne, données non synchronisables';
 

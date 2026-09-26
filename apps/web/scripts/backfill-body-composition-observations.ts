@@ -11,8 +11,8 @@
  *   yarn db:backfill:body-composition-observations --dry-run
  *   yarn db:backfill:body-composition-observations
  */
-import { backfillBodyCompositionObservationsFromMeasurements } from '../src/lib/integrations/body-composition-observation-backfill';
-import { prisma } from '../src/lib/prisma';
+import { backfillBodyCompositionObservationsFromMeasurements } from '@sharpit/server/lib/integrations/body-composition-observation-backfill';
+import { prisma } from '@sharpit/db/client';
 
 const dryRun = process.argv.includes('--dry-run');
 

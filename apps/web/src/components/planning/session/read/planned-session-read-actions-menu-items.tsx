@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { ExternalLink, MessageCircle, Pencil, RefreshCw, Unlink } from 'lucide-react';
 import { DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { COACH_DISCUSS_LABEL } from '@/components/coach/discuss/discuss-with-coach-button';
-import { coachDiscussHref } from '@/lib/coach/chat/discuss/coach-discuss-href';
+import { coachDiscussHref } from '@sharpit/server/lib/coach/chat/discuss/coach-discuss-href';
 
 export function EditSessionMenuItem({ onEdit }: { onEdit: () => void }) {
   return (

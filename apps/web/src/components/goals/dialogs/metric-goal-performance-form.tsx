@@ -11,8 +11,8 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { activityTypeLabels } from '@/lib/format';
-import { type GoalEndMode } from '@/lib/goals/goal-metric-config';
+import { activityTypeLabels } from '@sharpit/server/lib/format';
+import { type GoalEndMode } from '@sharpit/server/lib/goals/goal-metric-config';
 import {
   PerformanceMetricDistanceFields,
   PerformanceMetricEndModeField,

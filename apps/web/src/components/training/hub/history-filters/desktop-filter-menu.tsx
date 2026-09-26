@@ -1,6 +1,6 @@
 'use client';
 
-import { activityTypeLabels } from '@/lib/format';
+import { activityTypeLabels } from '@sharpit/server/lib/format';
 import { NavArrowRight } from '@/components/icons/nav-arrows';
 import {
   countDimensionSelections,
@@ -11,8 +11,8 @@ import {
   presetsInScope,
   rangeToPresetSelections,
   type TrainingHistoryFilters,
-} from '@/lib/training/periodization/history-filters';
-import { cn } from '@/lib/utils';
+} from '@sharpit/server/lib/training/periodization/history-filters';
+import { cn } from '@sharpit/server/lib/utils';
 import { ActivityType } from '@prisma/client';
 import { Calendar, Check, Ruler, Timer, Zap } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';

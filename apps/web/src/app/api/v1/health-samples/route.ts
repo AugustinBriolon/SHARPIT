@@ -1,12 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { refreshAthleteState } from '@/lib/athlete-state/orchestrator';
-import { appleHealthPatch } from '@/lib/integrations/apple-health/apple-health-merge';
-import { getGarminAccount } from '@/lib/integrations/garmin/garmin-sync';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
+import { refreshAthleteState } from '@sharpit/server/lib/athlete-state/orchestrator';
+import { appleHealthPatch } from '@sharpit/server/lib/integrations/apple-health/apple-health-merge';
+import { getGarminAccount } from '@sharpit/server/lib/integrations/garmin/garmin-sync';
 import { prisma } from '@sharpit/db/client';
-import { athleteHasHealthDataConsent } from '@/lib/privacy/consent-store';
-import { checkRateLimit, rateLimitJsonResponse, rateLimiters } from '@/lib/rate-limit';
+import { athleteHasHealthDataConsent } from '@sharpit/server/lib/privacy/consent-store';
+import {
+  checkRateLimit,
+  rateLimitJsonResponse,
+  rateLimiters,
+} from '@sharpit/server/lib/rate-limit';
 
 const minutes = z.number().int().min(0).max(1_440).nullish();
 

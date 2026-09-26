@@ -9,7 +9,7 @@
 
 import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { EXPORTED_COLORS, renderIosTokens } from '../src/lib/brand/ios-token-export';
+import { EXPORTED_COLORS, renderIosTokens } from '@sharpit/server/lib/brand/ios-token-export';
 
 const GLOBALS_CSS = resolve(import.meta.dirname, '../src/app/globals.css');
 const DEFAULT_OUTPUT = resolve(

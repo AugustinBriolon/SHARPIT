@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getDevTools, isDevToolsAccessAllowed } from '@/lib/dev/dev-tools';
+import { getDevTools, isDevToolsAccessAllowed } from '@sharpit/server/lib/dev/dev-tools';
 import type { FeatureCategory } from '@sharpit/core/features/types';
 
 const VALID_CATEGORIES: FeatureCategory[] = ['SESSION', 'LOAD', 'RECOVERY', 'BODY', 'CONDITION'];

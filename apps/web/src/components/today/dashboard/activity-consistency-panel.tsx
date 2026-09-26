@@ -1,7 +1,7 @@
 'use client';
 
-import { type ActivityForConsistency } from '@/lib/activity/list/activity-consistency';
-import { cn } from '@/lib/utils';
+import { type ActivityForConsistency } from '@sharpit/server/lib/activity/list/activity-consistency';
+import { cn } from '@sharpit/server/lib/utils';
 import {
   ActivityConsistencyContent,
   ActivityConsistencyLoading,

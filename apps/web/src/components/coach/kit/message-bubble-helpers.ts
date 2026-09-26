@@ -1,6 +1,6 @@
 import type { HTMLMotionProps } from 'motion/react';
-import { SPRING_LAYOUT } from '@/lib/ease';
-import { cn } from '@/lib/utils';
+import { SPRING_LAYOUT } from '@sharpit/server/lib/ease';
+import { cn } from '@sharpit/server/lib/utils';
 
 type MessageBubbleVariant = 'solid' | 'soft' | 'tint' | 'outline' | 'ghost' | 'danger';
 type MessageBubbleAlign = 'start' | 'end';

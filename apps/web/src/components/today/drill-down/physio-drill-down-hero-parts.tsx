@@ -5,8 +5,8 @@ import { TodayDateSelector } from '@/components/today/drill-down/date-selector';
 import { ConfidenceBars, confidenceBarsFromPct } from '@/components/ui/instruments/confidence-bars';
 import { quickReadBadge } from '@/components/today/drill-down/physio-drill-down-hero-helpers';
 import { Skeleton } from '@/components/ui/skeleton';
-import { cn } from '@/lib/utils';
-import type { DataDaysDomain } from '@/lib/presentation/data-days/data-days';
+import { cn } from '@sharpit/server/lib/utils';
+import type { DataDaysDomain } from '@sharpit/server/lib/presentation/data-days/data-days';
 import { format as formatDate } from 'date-fns';
 import { fr } from 'date-fns/locale';
 

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { appleAppSiteAssociation } from '@/lib/apple-app-site-association';
+import { appleAppSiteAssociation } from '@sharpit/server/lib/apple-app-site-association';
 
 /**
  * Apple App Site Association for https://sharpit.app (ADR-040). Apple's CDN fetches it

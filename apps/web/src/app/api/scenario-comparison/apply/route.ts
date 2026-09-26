@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import type { ProjectionHorizonDays } from '@sharpit/core/projection/types';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { applyScenarioComparisonChoice } from '@/lib/scenario/apply-scenario';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
+import { applyScenarioComparisonChoice } from '@sharpit/server/lib/scenario/apply-scenario';
 
 const VALID_HORIZONS = new Set([1, 3, 7, 14]);
 

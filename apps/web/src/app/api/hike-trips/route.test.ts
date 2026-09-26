@@ -1,8 +1,8 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { NextRequest } from 'next/server';
 
-vi.mock('@/lib/queries', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/lib/queries')>();
+vi.mock('@sharpit/server/lib/queries', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@sharpit/server/lib/queries')>();
   return {
     ...actual,
     createHikeTrip: vi.fn(),
@@ -10,7 +10,7 @@ vi.mock('@/lib/queries', async (importOriginal) => {
   };
 });
 
-vi.mock('@/lib/auth/current-athlete', () => ({
+vi.mock('@sharpit/server/lib/auth/current-athlete', () => ({
   getCurrentAthleteId: vi.fn().mockResolvedValue('default'),
 }));
 
@@ -32,7 +32,7 @@ describe('GET /api/hike-trips', () => {
   });
 
   it('returns the trip list', async () => {
-    const { listHikeTrips } = await import('@/lib/queries');
+    const { listHikeTrips } = await import('@sharpit/server/lib/queries');
     vi.mocked(listHikeTrips).mockResolvedValue([{ ...TRIP, summary: {} as never }]);
 
     const { GET } = await importRoute();
@@ -56,7 +56,7 @@ describe('POST /api/hike-trips', () => {
   });
 
   it('creates a trip and returns 201', async () => {
-    const { createHikeTrip } = await import('@/lib/queries');
+    const { createHikeTrip } = await import('@sharpit/server/lib/queries');
     vi.mocked(createHikeTrip).mockResolvedValue(TRIP);
 
     const { POST } = await importRoute();
@@ -83,7 +83,7 @@ describe('POST /api/hike-trips', () => {
   });
 
   it('returns 400 for invalid body', async () => {
-    const { createHikeTrip } = await import('@/lib/queries');
+    const { createHikeTrip } = await import('@sharpit/server/lib/queries');
 
     const { POST } = await importRoute();
     const response = await POST(
@@ -98,7 +98,7 @@ describe('POST /api/hike-trips', () => {
   });
 
   it('returns 409 when an activity is already linked elsewhere', async () => {
-    const { createHikeTrip, HikeTripConflictError } = await import('@/lib/queries');
+    const { createHikeTrip, HikeTripConflictError } = await import('@sharpit/server/lib/queries');
     vi.mocked(createHikeTrip).mockRejectedValue(
       new HikeTripConflictError(
         'Une activité appartient déjà à un autre séjour',
@@ -127,7 +127,7 @@ describe('POST /api/hike-trips', () => {
   });
 
   it('returns 400 for query validation errors', async () => {
-    const { createHikeTrip, HikeTripValidationError } = await import('@/lib/queries');
+    const { createHikeTrip, HikeTripValidationError } = await import('@sharpit/server/lib/queries');
     vi.mocked(createHikeTrip).mockRejectedValue(
       new HikeTripValidationError('Seules les randonnées peuvent être liées'),
     );

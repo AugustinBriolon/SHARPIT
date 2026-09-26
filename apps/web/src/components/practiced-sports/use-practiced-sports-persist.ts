@@ -8,7 +8,7 @@ import {
   normalizeAthletePracticedSports,
   type AthletePracticedSports,
   type PracticedSportId,
-} from '@/lib/practiced-sports';
+} from '@sharpit/server/lib/practiced-sports';
 import { invalidateAfterAthleteProfileSave } from '@/client/query/invalidate-after-athlete-profile-save';
 import { patchAthleteProfile } from '@/client/query/fetchers';
 import { queryKeys } from '@/client/query/keys';

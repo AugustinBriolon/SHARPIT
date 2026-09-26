@@ -1,6 +1,6 @@
-import { cn } from '@/lib/utils';
-import type { MetricTone } from '@/lib/ui/metric-tone';
-import { METRIC_TONE_CLASS } from '@/lib/ui/metric-tone';
+import { cn } from '@sharpit/server/lib/utils';
+import type { MetricTone } from '@sharpit/server/lib/ui/metric-tone';
+import { METRIC_TONE_CLASS } from '@sharpit/server/lib/ui/metric-tone';
 import { SkeletonDataValue } from '@/components/ui/skeleton-data-value';
 
 export type StatsStripItem = {

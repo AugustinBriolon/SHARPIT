@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
 import {
   createHikeTrip,
   HikeTripConflictError,
   HikeTripValidationError,
   listHikeTrips,
-} from '@/lib/queries';
-import { createHikeTripSchema } from '@/lib/validators/hike-trip';
+} from '@sharpit/server/lib/queries';
+import { createHikeTripSchema } from '@sharpit/server/lib/validators/hike-trip';
 
 function isTripNotFoundMessage(message: string): boolean {
   return message.includes('Dossier introuvable');

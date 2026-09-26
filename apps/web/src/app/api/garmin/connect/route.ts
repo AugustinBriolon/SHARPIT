@@ -4,10 +4,13 @@ import {
   garminConnectSchema,
   SSO_DISABLED_MESSAGE,
 } from '@/app/api/garmin/connect/connect-shared';
-import { GARMIN_SSO_PAGE_PATH } from '@/lib/integrations/garmin/garmin-browser-sso';
-import { startGarminBrowserSso } from '@/lib/integrations/garmin/garmin-sso-start';
-import { publicOriginFromRequest, redirectIfBindHost } from '@/lib/integrations/oauth-return';
-import { gateProviderConnect } from '@/lib/privacy/gate-provider-connect';
+import { GARMIN_SSO_PAGE_PATH } from '@sharpit/server/lib/integrations/garmin/garmin-browser-sso';
+import { startGarminBrowserSso } from '@sharpit/server/lib/integrations/garmin/garmin-sso-start';
+import {
+  publicOriginFromRequest,
+  redirectIfBindHost,
+} from '@sharpit/server/lib/integrations/oauth-return';
+import { gateProviderConnect } from '@sharpit/server/lib/privacy/gate-provider-connect';
 
 export const maxDuration = 60;
 

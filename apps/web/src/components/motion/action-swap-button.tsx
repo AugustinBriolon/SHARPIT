@@ -9,9 +9,9 @@ import {
 } from '@/components/motion/action-swap-button-helpers';
 import { ActionSwapButtonContent } from '@/components/motion/action-swap-button-parts';
 import { SIZE_CLASS, VARIANT_CLASS } from '@/components/motion/action-swap-styles';
-import { SPRING_PRESS } from '@/lib/ease';
+import { SPRING_PRESS } from '@sharpit/server/lib/ease';
 import { motionTokens } from '@/client/motion/tokens';
-import { cn } from '@/lib/utils';
+import { cn } from '@sharpit/server/lib/utils';
 import type { ActionSwapButtonProps } from './action-swap';
 
 function useActionSwapButtonState(props: ActionSwapButtonProps) {

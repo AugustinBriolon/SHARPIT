@@ -7,8 +7,8 @@
  */
 import { ActivityType, PrismaClient } from '@prisma/client';
 import { format } from 'date-fns';
-import { NARRATIVE_ANALYSIS_SINCE } from '../src/lib/activity-narrative-config';
-import { backfillActivityNarratives } from '../src/lib/activity-narrative';
+import { NARRATIVE_ANALYSIS_SINCE } from '@sharpit/server/lib/activity-narrative-config';
+import { backfillActivityNarratives } from '@sharpit/server/lib/activity-narrative';
 
 const prisma = new PrismaClient();
 const dryRun = process.argv.includes('--dry-run');

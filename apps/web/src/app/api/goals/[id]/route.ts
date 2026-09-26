@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { deleteGoal, getGoalById, updateGoal } from '@/lib/queries';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { recordManualGoalAchievement } from '@/lib/goals/goal-achievements';
-import { updateGoalSchema } from '@/lib/validators/goal';
+import { deleteGoal, getGoalById, updateGoal } from '@sharpit/server/lib/queries';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
+import { recordManualGoalAchievement } from '@sharpit/server/lib/goals/goal-achievements';
+import { updateGoalSchema } from '@sharpit/server/lib/validators/goal';
 
 type RouteContext = { params: Promise<{ id: string }> };
 

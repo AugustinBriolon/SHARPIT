@@ -4,7 +4,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { isSameDay, startOfWeek } from 'date-fns';
-import type { ClientPlannedSession } from '@/lib/query/types';
+import type { ClientPlannedSession } from '@sharpit/server/lib/query/types';
 import { prefetchPlannedSessionDetail } from '@/client/query/prefetch-planned-session-detail';
 
 const WEEK_OPTS = { weekStartsOn: 1 as const };

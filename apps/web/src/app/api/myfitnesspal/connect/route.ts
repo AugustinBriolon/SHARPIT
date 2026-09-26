@@ -1,16 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { MfpSessionExpiredError } from '@/lib/integrations/myfitnesspal/myfitnesspal';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { connectMfp, syncMfpNutrition } from '@/lib/integrations/myfitnesspal/myfitnesspal-sync';
-import { sanitizeDataClass } from '@/lib/integrations/oauth-public-origin';
+import { MfpSessionExpiredError } from '@sharpit/server/lib/integrations/myfitnesspal/myfitnesspal';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
+import {
+  connectMfp,
+  syncMfpNutrition,
+} from '@sharpit/server/lib/integrations/myfitnesspal/myfitnesspal-sync';
+import { sanitizeDataClass } from '@sharpit/server/lib/integrations/oauth-public-origin';
 import {
   enableProviderForAllCoveredClasses,
   enableProviderForClass,
-} from '@/lib/integrations/source-prefs';
-import { persistSourcePrefsMutation } from '@/lib/integrations/source-prefs-store';
-import { gateProviderConnect } from '@/lib/privacy/gate-provider-connect';
-import { logSafeError } from '@/lib/privacy/safe-log';
+} from '@sharpit/server/lib/integrations/source-prefs';
+import { persistSourcePrefsMutation } from '@sharpit/server/lib/integrations/source-prefs-store';
+import { gateProviderConnect } from '@sharpit/server/lib/privacy/gate-provider-connect';
+import { logSafeError } from '@sharpit/server/lib/privacy/safe-log';
 
 import { mfpConnectSchema } from './schema';
 

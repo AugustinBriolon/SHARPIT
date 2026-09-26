@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { GARMIN_SSO_EMBED_SERVICE } from '@/lib/integrations/garmin/garmin-browser-sso-shared';
+import { GARMIN_SSO_EMBED_SERVICE } from '@sharpit/server/lib/integrations/garmin/garmin-browser-sso-shared';
 
 const exchangeServiceTicketForDiTokens = vi.fn();
 const importGarminDiTokenStore = vi.fn();
@@ -23,20 +23,20 @@ vi.mock('next/headers', () => ({
   cookies: async () => cookieStore,
 }));
 
-vi.mock('@/lib/auth/current-athlete', () => ({
+vi.mock('@sharpit/server/lib/auth/current-athlete', () => ({
   getCurrentAthleteId: () => getCurrentAthleteId(),
 }));
 
-vi.mock('@/lib/integrations/garmin/garmin-di-oauth', () => ({
+vi.mock('@sharpit/server/lib/integrations/garmin/garmin-di-oauth', () => ({
   exchangeServiceTicketForDiTokens: (...args: [string, string]) =>
     exchangeServiceTicketForDiTokens(...args),
 }));
 
-vi.mock('@/lib/integrations/garmin/garmin-sync', () => ({
+vi.mock('@sharpit/server/lib/integrations/garmin/garmin-sync', () => ({
   importGarminDiTokenStore: (...args: [string, unknown]) => importGarminDiTokenStore(...args),
 }));
 
-vi.mock('@/lib/integrations/oauth-return', () => ({
+vi.mock('@sharpit/server/lib/integrations/oauth-return', () => ({
   redirectAfterIntegrationConnect: (...args: [unknown, string, string]) =>
     redirectAfterIntegrationConnect(...args),
 }));
@@ -50,7 +50,7 @@ describe('/api/garmin/sso-callback', () => {
 
   it('POST exchanges ticket with embed service_url and returns redirect JSON', async () => {
     const { createGarminSsoState, GARMIN_SSO_STATE_COOKIE } =
-      await import('@/lib/integrations/garmin/garmin-browser-sso');
+      await import('@sharpit/server/lib/integrations/garmin/garmin-browser-sso');
     const state = createGarminSsoState({ athleteId: 'ath-1' });
     cookieStore.get.mockReturnValue({ value: state });
 

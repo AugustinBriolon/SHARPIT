@@ -9,9 +9,9 @@ import {
   closeOpenMarkdown,
   remarkSoftBreaks,
   splitMarkdownBlocks,
-} from '@/lib/coach/chat/transcript/markdown-render';
-import { sanitizeCoachCopy } from '@/lib/coach/sanitize-coach-copy';
-import { cn } from '@/lib/utils';
+} from '@sharpit/server/lib/coach/chat/transcript/markdown-render';
+import { sanitizeCoachCopy } from '@sharpit/server/lib/coach/sanitize-coach-copy';
+import { cn } from '@sharpit/server/lib/utils';
 
 const REMARK_PLUGINS = [remarkGfm, remarkSoftBreaks];
 

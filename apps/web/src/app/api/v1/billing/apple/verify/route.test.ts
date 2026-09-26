@@ -2,20 +2,20 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { NextRequest } from 'next/server';
 
 vi.mock('server-only', () => ({}));
-vi.mock('@/lib/auth/current-athlete', () => ({
+vi.mock('@sharpit/server/lib/auth/current-athlete', () => ({
   getCurrentAthleteId: vi.fn().mockResolvedValue('athlete-1'),
 }));
 const verifier = vi.hoisted(() => ({
   verifyAppleTransaction: vi.fn(),
   verifyAppleRenewalInfo: vi.fn(),
 }));
-vi.mock('@/lib/billing/apple-verifier', () => verifier);
+vi.mock('@sharpit/server/lib/billing/apple-verifier', () => verifier);
 const sync = vi.hoisted(() => {
   class AppleOwnershipError extends Error {}
   return { AppleOwnershipError, applyAppleTransaction: vi.fn() };
 });
-vi.mock('@/lib/billing/apple-sync', () => sync);
-vi.mock('@/lib/billing/subscription-store', () => ({
+vi.mock('@sharpit/server/lib/billing/apple-sync', () => sync);
+vi.mock('@sharpit/server/lib/billing/subscription-store', () => ({
   appAccountTokenFor: vi.fn().mockResolvedValue('token-a'),
   loadProState: vi.fn().mockResolvedValue({ tier: 'PRO', subscription: null }),
 }));

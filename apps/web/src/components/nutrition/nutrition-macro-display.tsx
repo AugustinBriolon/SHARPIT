@@ -1,6 +1,6 @@
-import type { MacroKind } from '@/lib/nutrition/macro-colors';
-import { MACRO_COLORS, MACRO_SHORT } from '@/lib/nutrition/macro-colors';
-import { cn } from '@/lib/utils';
+import type { MacroKind } from '@sharpit/server/lib/nutrition/macro-colors';
+import { MACRO_COLORS, MACRO_SHORT } from '@sharpit/server/lib/nutrition/macro-colors';
+import { cn } from '@sharpit/server/lib/utils';
 
 export function ColoredMacroPills({
   protein,

@@ -4,7 +4,7 @@ import {
   CoachMemoryAddButton,
   CoachMemoryEntriesList,
 } from '@/components/coach-memory/manager/coach-memory-manager-sections';
-import type { CoachMemoryEntry } from '@/lib/coach-memory/core/types';
+import type { CoachMemoryEntry } from '@sharpit/server/lib/coach-memory/core/types';
 
 export function CoachMemoryDatedSection({
   entries,

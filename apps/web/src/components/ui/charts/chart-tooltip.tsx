@@ -1,4 +1,4 @@
-import { cn } from '@/lib/utils';
+import { cn } from '@sharpit/server/lib/utils';
 
 /** Recharts tooltip shell — theme-aware (light + dark). */
 export function ChartTooltipCard({

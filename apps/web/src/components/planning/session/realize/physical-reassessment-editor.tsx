@@ -14,7 +14,7 @@ import {
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { severityColor } from '@/lib/physical-health/physical';
+import { severityColor } from '@sharpit/server/lib/physical-health/physical';
 import {
   impactForTrend,
   impactLabel,
@@ -23,12 +23,15 @@ import {
   trendLabel,
   type ImpactChoice,
   type ReassessmentTrend,
-} from '@/lib/physical-health/reassessment-input';
+} from '@sharpit/server/lib/physical-health/reassessment-input';
 import { useReassessmentSave } from '@/components/planning/session/realize/use-reassessment-save';
-import { reassessmentChipLabel } from '@/lib/physical-health/reassessment-pager';
-import { ADEQUATE_TONE, CAUTION_TONE } from '@/lib/presentation/coaching/status-surface';
-import type { ClientPhysicalNote } from '@/lib/query/types';
-import { cn } from '@/lib/utils';
+import { reassessmentChipLabel } from '@sharpit/server/lib/physical-health/reassessment-pager';
+import {
+  ADEQUATE_TONE,
+  CAUTION_TONE,
+} from '@sharpit/server/lib/presentation/coaching/status-surface';
+import type { ClientPhysicalNote } from '@sharpit/server/lib/query/types';
+import { cn } from '@sharpit/server/lib/utils';
 import type { PhysicalReassessment } from '@/components/planning/session/realize/physical-reassessment-card';
 
 const TRENDS: readonly ReassessmentTrend[] = ['better', 'same', 'worse'];

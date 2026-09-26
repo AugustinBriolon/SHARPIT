@@ -1,7 +1,7 @@
 import Link from 'next/link';
-import { cn } from '@/lib/utils';
-import type { PlanLoadTrend } from '@/lib/plan/trajectory/plan-load-trend';
-import type { RulerBar } from '@/lib/training/thread/load-ruler';
+import { cn } from '@sharpit/server/lib/utils';
+import type { PlanLoadTrend } from '@sharpit/server/lib/plan/trajectory/plan-load-trend';
+import type { RulerBar } from '@sharpit/server/lib/training/thread/load-ruler';
 
 function barFillPercent(bar: RulerBar): number {
   if (bar.unmeasured || bar.load <= 0) {

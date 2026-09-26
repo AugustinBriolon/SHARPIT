@@ -7,8 +7,14 @@ import {
 import { OnboardingStepShell } from '@/components/onboarding/steps/onboarding-step-shell';
 import { EquipmentInventoryView } from '@/components/settings/equipment/inventory';
 import { useEquipmentPersist } from '@/components/settings/equipment/use-equipment-persist';
-import { EMPTY_ATHLETE_EQUIPMENT, type AthleteEquipment } from '@/lib/equipment/types';
-import { equipmentSportsForPracticed, type PracticedSportId } from '@/lib/practiced-sports';
+import {
+  EMPTY_ATHLETE_EQUIPMENT,
+  type AthleteEquipment,
+} from '@sharpit/server/lib/equipment/types';
+import {
+  equipmentSportsForPracticed,
+  type PracticedSportId,
+} from '@sharpit/server/lib/practiced-sports';
 import { useMemo } from 'react';
 
 export function OnboardingEquipmentStep({

@@ -6,9 +6,9 @@ import { CartesianGrid, Line, LineChart, Tooltip, XAxis, YAxis } from 'recharts'
 import { useReducedMotion } from 'motion/react';
 import { ChartTooltipCard } from '@/components/ui/charts/chart-tooltip';
 import { ResponsiveChartFrame } from '@/components/ui/charts/responsive-chart-frame';
-import { CHART_GRID_COLOR, CHART_TICK_COLOR } from '@/lib/theme/chart-theme';
-import { type NormalizedStreamChartPoint } from '@/lib/streams/stream-chart-data';
-import { cn } from '@/lib/utils';
+import { CHART_GRID_COLOR, CHART_TICK_COLOR } from '@sharpit/server/lib/theme/chart-theme';
+import { type NormalizedStreamChartPoint } from '@sharpit/server/lib/streams/stream-chart-data';
+import { cn } from '@sharpit/server/lib/utils';
 import {
   buildStreamMetricOptions,
   nextSelectedStreamMetricKeys,

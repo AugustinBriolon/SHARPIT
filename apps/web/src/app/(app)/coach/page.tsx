@@ -4,9 +4,9 @@ import { CoachView } from '@/components/coach/view/coach-view';
 import { CoachHubSkeleton } from '@/components/coach/view/coach-hub-skeleton';
 import { DemoCoachTranscript } from '@/components/coach/view/demo-coach-transcript';
 import { DemoExitButton } from '@/components/demo/demo-exit';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { isDemoSession } from '@/lib/demo/demo-session';
-import { parseDemoTranscriptMessages } from '@/lib/demo/demo-coach-transcript';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
+import { isDemoSession } from '@sharpit/server/lib/demo/demo-session';
+import { parseDemoTranscriptMessages } from '@sharpit/server/lib/demo/demo-coach-transcript';
 import { prisma } from '@sharpit/db/client';
 
 async function CoachDemoDisabled() {

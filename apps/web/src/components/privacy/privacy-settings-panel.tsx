@@ -8,11 +8,11 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useConfirmDialog } from '@/components/ui/confirm-dialog';
 import { toast } from '@/components/ui/toast';
-import { CONTROLLER_EMAIL, CURRENT_PRIVACY_VERSION } from '@/lib/privacy/constants';
+import { CONTROLLER_EMAIL, CURRENT_PRIVACY_VERSION } from '@sharpit/server/lib/privacy/constants';
 import {
   consentWallHrefAfterHealthWithdraw,
   shouldRedirectToConsentWallAfterPatch,
-} from '@/lib/privacy/consent-withdraw-ux';
+} from '@sharpit/server/lib/privacy/consent-withdraw-ux';
 import {
   deletePrivacyAccount,
   downloadPrivacyExport,

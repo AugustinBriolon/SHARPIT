@@ -1,19 +1,19 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { NextRequest } from 'next/server';
 
-vi.mock('@/lib/auth/current-athlete', () => ({
+vi.mock('@sharpit/server/lib/auth/current-athlete', () => ({
   getCurrentAthleteId: vi.fn().mockResolvedValue('athlete-1'),
 }));
 
-vi.mock('@/lib/morning-recalibration/service', () => ({
+vi.mock('@sharpit/server/lib/morning-recalibration/service', () => ({
   getMorningRecalibrationPresentation: vi.fn().mockResolvedValue(null),
 }));
 
-vi.mock('@/lib/presentation/today/today', () => ({
+vi.mock('@sharpit/server/lib/presentation/today/today', () => ({
   buildTodayPresentationViewModel: vi.fn(),
 }));
 
-vi.mock('@/lib/presentation/v1/today', () => ({
+vi.mock('@sharpit/server/lib/presentation/v1/today', () => ({
   projectV1TodayFromViewModel: vi.fn().mockReturnValue({
     apiVersion: 1,
     trainingDayId: '2026-09-10',
@@ -38,12 +38,12 @@ vi.mock('next/server', async (importOriginal) => ({
   after: afterMock,
 }));
 
-vi.mock('@/lib/planned-session/linking/session-linking', () => ({
+vi.mock('@sharpit/server/lib/planned-session/linking/session-linking', () => ({
   autoLinkActivitiesOfDay: vi.fn().mockResolvedValue([]),
   analyzeLinkedPlannedSessions: vi.fn().mockResolvedValue(0),
 }));
 
-vi.mock('@/lib/integrations/garmin/garmin-sync', () => ({
+vi.mock('@sharpit/server/lib/integrations/garmin/garmin-sync', () => ({
   getGarminAccount: vi.fn().mockResolvedValue(null),
 }));
 
@@ -63,7 +63,8 @@ describe('GET /api/v1/today', () => {
   });
 
   it('returns projected v1 JSON, not viewModel', async () => {
-    const { buildTodayPresentationViewModel } = await import('@/lib/presentation/today/today');
+    const { buildTodayPresentationViewModel } =
+      await import('@sharpit/server/lib/presentation/today/today');
     vi.mocked(buildTodayPresentationViewModel).mockResolvedValue({} as never);
     const { GET } = await importRoute();
     const response = await GET(
@@ -77,9 +78,12 @@ describe('GET /api/v1/today', () => {
 
   it('hands iOS the canonical origin and whether Garmin is connected', async () => {
     vi.stubEnv('NEXT_PUBLIC_APP_URL', 'https://sharpit.app/');
-    const { buildTodayPresentationViewModel } = await import('@/lib/presentation/today/today');
-    const { getGarminAccount } = await import('@/lib/integrations/garmin/garmin-sync');
-    const { projectV1TodayFromViewModel } = await import('@/lib/presentation/v1/today');
+    const { buildTodayPresentationViewModel } =
+      await import('@sharpit/server/lib/presentation/today/today');
+    const { getGarminAccount } =
+      await import('@sharpit/server/lib/integrations/garmin/garmin-sync');
+    const { projectV1TodayFromViewModel } =
+      await import('@sharpit/server/lib/presentation/v1/today');
     vi.mocked(buildTodayPresentationViewModel).mockResolvedValue({} as never);
     vi.mocked(getGarminAccount).mockResolvedValue({ id: 'garmin-1' } as never);
 
@@ -97,8 +101,9 @@ describe('GET /api/v1/today', () => {
     const request = () => new NextRequest('http://localhost/api/v1/today?trainingDayId=2026-09-10');
 
     it('links the requested day’s activities before building the view', async () => {
-      const linking = await import('@/lib/planned-session/linking/session-linking');
-      const { buildTodayPresentationViewModel } = await import('@/lib/presentation/today/today');
+      const linking = await import('@sharpit/server/lib/planned-session/linking/session-linking');
+      const { buildTodayPresentationViewModel } =
+        await import('@sharpit/server/lib/presentation/today/today');
       const order: string[] = [];
       vi.mocked(linking.autoLinkActivitiesOfDay).mockImplementation(async () => {
         order.push('link');
@@ -121,7 +126,7 @@ describe('GET /api/v1/today', () => {
     });
 
     it('schedules the compliance analysis for what it linked', async () => {
-      const linking = await import('@/lib/planned-session/linking/session-linking');
+      const linking = await import('@sharpit/server/lib/planned-session/linking/session-linking');
       vi.mocked(linking.autoLinkActivitiesOfDay).mockResolvedValue(['session-1']);
 
       const { GET } = await importRoute();
@@ -133,7 +138,7 @@ describe('GET /api/v1/today', () => {
     });
 
     it('schedules nothing when nothing was linked', async () => {
-      const linking = await import('@/lib/planned-session/linking/session-linking');
+      const linking = await import('@sharpit/server/lib/planned-session/linking/session-linking');
       vi.mocked(linking.autoLinkActivitiesOfDay).mockResolvedValue([]);
 
       const { GET } = await importRoute();
@@ -143,7 +148,7 @@ describe('GET /api/v1/today', () => {
     });
 
     it('still answers when linking fails', async () => {
-      const linking = await import('@/lib/planned-session/linking/session-linking');
+      const linking = await import('@sharpit/server/lib/planned-session/linking/session-linking');
       vi.mocked(linking.autoLinkActivitiesOfDay).mockRejectedValue(new Error('db down'));
       vi.spyOn(console, 'error').mockImplementation(() => undefined);
 

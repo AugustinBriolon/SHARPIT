@@ -1,10 +1,10 @@
 import { cookies } from 'next/headers';
 import { NextRequest } from 'next/server';
 import { prisma } from '@sharpit/db/client';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { redirectAfterIntegrationConnect } from '@/lib/integrations/oauth-return';
-import { exchangeCodeForToken } from '@/lib/integrations/strava/strava';
-import { encryptSecret } from '@/lib/secret-box';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
+import { redirectAfterIntegrationConnect } from '@sharpit/server/lib/integrations/oauth-return';
+import { exchangeCodeForToken } from '@sharpit/server/lib/integrations/strava/strava';
+import { encryptSecret } from '@sharpit/server/lib/secret-box';
 
 function readOAuthParams(searchParams: URLSearchParams) {
   return {

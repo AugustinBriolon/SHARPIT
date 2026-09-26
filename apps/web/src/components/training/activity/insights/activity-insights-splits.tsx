@@ -1,4 +1,4 @@
-import type { ActivityAnalysis } from '@/lib/activity/detail/activity-analysis';
+import type { ActivityAnalysis } from '@sharpit/server/lib/activity/detail/activity-analysis';
 import { RhythmSplits } from '@/components/training/activity/reading/rhythm-splits';
 
 export function RunSplitsSection({ analysis }: { analysis: ActivityAnalysis | null | undefined }) {

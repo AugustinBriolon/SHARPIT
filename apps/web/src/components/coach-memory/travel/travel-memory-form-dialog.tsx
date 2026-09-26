@@ -14,7 +14,7 @@ import type {
   CoachMemoryEntry,
   CoachMemoryType,
   TravelDiscipline,
-} from '@/lib/coach-memory/core/types';
+} from '@sharpit/server/lib/coach-memory/core/types';
 import type { LocationPlaceValue } from '@/components/ui/location-place-picker';
 import type { TravelMemoryPayload } from '@/hooks/use-coach-memory';
 import {
@@ -22,7 +22,7 @@ import {
   validateTravelMemoryForm,
 } from '@/components/coach-memory/travel/travel-memory-form-helpers';
 import { TravelMemoryFormFields } from '@/components/coach-memory/travel/travel-memory-form-fields';
-import { deriveTravelTrainingConstraint } from '@/lib/travel-context/disciplines';
+import { deriveTravelTrainingConstraint } from '@sharpit/server/lib/travel-context/disciplines';
 import { guardedActionLabel, useOfflineGuard } from '@/hooks/use-offline-guard';
 
 type TravelMemoryFormDialogProps = {

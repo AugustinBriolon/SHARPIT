@@ -1,20 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { DATA_CLASSES, type DataClassId } from '@/lib/integrations/provider-catalog';
-import type { IntegrationId } from '@/lib/integrations/shared/client-sync';
-import { catalogIntegrationIds } from '@/lib/integrations/source-prefs';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
+import { DATA_CLASSES, type DataClassId } from '@sharpit/server/lib/integrations/provider-catalog';
+import type { IntegrationId } from '@sharpit/server/lib/integrations/shared/client-sync';
+import { catalogIntegrationIds } from '@sharpit/server/lib/integrations/source-prefs';
 import {
   disableProviderForClass,
   enableProviderForClass,
   setPrimaryForClass,
   type IntegrationSourcePrefs,
-} from '@/lib/integrations/source-prefs';
+} from '@sharpit/server/lib/integrations/source-prefs';
 import {
   loadConnectedIntegrationIds,
   loadResolvedSourcePrefs,
   persistSourcePrefsMutation,
-} from '@/lib/integrations/source-prefs-store';
+} from '@sharpit/server/lib/integrations/source-prefs-store';
 
 const dataClassSchema = z.enum(DATA_CLASSES.map((c) => c.id) as [DataClassId, ...DataClassId[]]);
 

@@ -19,6 +19,8 @@ type Violation = {
 const REPO_ROOT = process.cwd();
 /** The domain package's sources (ADR-048): `@sharpit/core/*` resolves here. */
 const CORE_SRC = path.join(REPO_ROOT, '..', '..', 'packages', 'core', 'src');
+/** `@sharpit/server/*` resolves here. */
+const SERVER_SRC = path.join(REPO_ROOT, '..', '..', 'packages', 'server', 'src');
 
 const PRESENTATION_ROOTS: Array<{ dir: string; isExcluded: (relPath: string) => boolean }> = [
   {
@@ -40,9 +42,9 @@ const FORBIDDEN_ALIASES = {
   digitalTwin: '@sharpit/core/digital-twin',
   featureEngine: '@sharpit/core/features',
   observationEngine: '@sharpit/core/observation',
-  featureOrInferenceEnginesSingletons: '@/lib/engines',
+  featureOrInferenceEnginesSingletons: '@sharpit/server/lib/engines',
   productInsightBuilders: '@sharpit/core/product-insight',
-  productInsightProjections: '@/lib/product-insight',
+  productInsightProjections: '@sharpit/server/lib/product-insight',
 } as const;
 
 const ALLOWED_PRODUCT_INSIGHT_TYPES = '@sharpit/core/product-insight/types';
@@ -125,7 +127,9 @@ function collectTsFiles(dir: string, predicate: (filePath: string) => boolean): 
 function resolveToRepoAbsPath(importerFilePath: string, specifier: string): string | null {
   // Handle TS path alias `@/...` and relative imports.
   let absBase: string;
-  if (specifier.startsWith('@sharpit/core/')) {
+  if (specifier.startsWith('@sharpit/server/')) {
+    absBase = path.join(SERVER_SRC, specifier.slice('@sharpit/server/'.length));
+  } else if (specifier.startsWith('@sharpit/core/')) {
     absBase = path.join(CORE_SRC, specifier.slice('@sharpit/core/'.length));
   } else if (specifier.startsWith('@/')) {
     absBase = path.join(REPO_ROOT, 'src', specifier.slice(2));
@@ -158,13 +162,13 @@ const FORBIDDEN_RESOLVED_PREFIXES: Array<{ prefix: string; reason: string }> = [
   { prefix: path.join(CORE_SRC, 'digital-twin'), reason: 'digital-twin' },
   { prefix: path.join(CORE_SRC, 'features'), reason: 'feature-engine' },
   { prefix: path.join(CORE_SRC, 'observation'), reason: 'observation-engine' },
-  { prefix: path.join(REPO_ROOT, 'src', 'lib', 'engines'), reason: 'engines' },
+  { prefix: path.join(SERVER_SRC, 'lib', 'engines'), reason: 'engines' },
   {
     prefix: path.join(CORE_SRC, 'product-insight'),
     reason: 'product-insight-builders',
   },
   {
-    prefix: path.join(REPO_ROOT, 'src', 'lib', 'product-insight'),
+    prefix: path.join(SERVER_SRC, 'lib', 'product-insight'),
     reason: 'product-insight-projections',
   },
 ];
@@ -412,7 +416,7 @@ describe('Presentation Architecture Guard', () => {
 const LEGACY_PATTERN_ROOTS = [
   path.join(REPO_ROOT, 'src', 'components'),
   path.join(REPO_ROOT, 'src', 'hooks'),
-  path.join(REPO_ROOT, 'src', 'lib', 'presentation'),
+  path.join(SERVER_SRC, 'lib', 'presentation'),
 ];
 
 const LEGACY_FORBIDDEN_PATTERNS: Array<{ id: string; regex: RegExp; hint: string }> = [

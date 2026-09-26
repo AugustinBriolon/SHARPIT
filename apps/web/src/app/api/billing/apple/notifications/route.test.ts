@@ -7,7 +7,7 @@ const verifier = vi.hoisted(() => ({
   verifyAppleTransaction: vi.fn(),
   verifyAppleRenewalInfo: vi.fn(),
 }));
-vi.mock('@/lib/billing/apple-verifier', () => verifier);
+vi.mock('@sharpit/server/lib/billing/apple-verifier', () => verifier);
 const sync = vi.hoisted(() => {
   class AppleOwnershipError extends Error {}
   return {
@@ -18,7 +18,7 @@ const sync = vi.hoisted(() => {
       type === 'REFUND' ? 'revoked' : status === 1 ? 'active' : null,
   };
 });
-vi.mock('@/lib/billing/apple-sync', () => sync);
+vi.mock('@sharpit/server/lib/billing/apple-sync', () => sync);
 
 const post = (body: unknown) =>
   new NextRequest('https://sharpit.app/api/billing/apple/notifications', {

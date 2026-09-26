@@ -14,7 +14,7 @@ import {
 import { useGoalMutations } from '@/hooks/use-data';
 
 export type CredentialProvider = Extract<
-  import('@/lib/integrations/shared/client-sync').IntegrationId,
+  import('@sharpit/server/lib/integrations/shared/client-sync').IntegrationId,
   'garmin' | 'renpho' | 'myfitnesspal'
 >;
 

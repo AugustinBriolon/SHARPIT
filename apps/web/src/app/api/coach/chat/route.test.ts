@@ -13,7 +13,7 @@ vi.mock('ai', async (importOriginal) => {
   };
 });
 
-vi.mock('@/lib/ai', () => ({
+vi.mock('@sharpit/server/lib/ai', () => ({
   COACH_MODEL: 'mock-model',
   COACH_MAX_OUTPUT_TOKENS: { conversational: 1 },
   COACH_REASONING_LEVEL: { conversational: 'low' },
@@ -21,18 +21,18 @@ vi.mock('@/lib/ai', () => ({
   isCoachConfigured: () => true,
 }));
 
-vi.mock('@/lib/auth/current-athlete', () => ({
+vi.mock('@sharpit/server/lib/auth/current-athlete', () => ({
   getCurrentAthleteId: vi.fn().mockResolvedValue('athlete-1'),
 }));
 
-vi.mock('@/lib/rate-limit', () => ({
+vi.mock('@sharpit/server/lib/rate-limit', () => ({
   checkRateLimit: vi.fn().mockResolvedValue({ ok: true }),
   rateLimitJsonResponse: vi.fn(),
   rateLimiters: { coachChat: {} },
 }));
 
 // Mocked wholesale — ai-budget.ts imports @/lib/prisma, which must not run here.
-vi.mock('@/lib/access/ai-budget', () => ({
+vi.mock('@sharpit/server/lib/access/ai-budget', () => ({
   ensureFreeAiBudget: vi
     .fn()
     .mockResolvedValue({ allowed: true, isPro: false, warning: false, retryAfterSeconds: null }),
@@ -41,39 +41,39 @@ vi.mock('@/lib/access/ai-budget', () => ({
   RETRY_AFTER_HEADER: 'Retry-After',
 }));
 
-vi.mock('@/lib/privacy/consent-store', () => ({
+vi.mock('@sharpit/server/lib/privacy/consent-store', () => ({
   requireAiProcessingConsent: vi.fn().mockResolvedValue(null),
 }));
 
-vi.mock('@/lib/coach/context/coach-context', () => ({
+vi.mock('@sharpit/server/lib/coach/context/coach-context', () => ({
   buildCoachContext: vi.fn().mockResolvedValue({ practicedSports: [] }),
   formatCoachContext: () => 'mock coach context',
 }));
 
-vi.mock('@/lib/coach/plan/calendar-availability', () => ({
+vi.mock('@sharpit/server/lib/coach/plan/calendar-availability', () => ({
   buildBusySummary: vi.fn().mockResolvedValue(null),
 }));
 
-vi.mock('@/lib/coach/chat/tools/coach-tools', () => ({
+vi.mock('@sharpit/server/lib/coach/chat/tools/coach-tools', () => ({
   createCoachTools: vi.fn(() => ({})),
 }));
 
-vi.mock('@/lib/ai/usage', () => ({
+vi.mock('@sharpit/server/lib/ai/usage', () => ({
   recordAiUsage: vi.fn(),
 }));
 
-vi.mock('@/lib/planned-session/strength/strength-session-template', () => ({
+vi.mock('@sharpit/server/lib/planned-session/strength/strength-session-template', () => ({
   formatStrengthSessionRules: () => '',
 }));
 
-vi.mock('@/lib/queries', () => ({
+vi.mock('@sharpit/server/lib/queries', () => ({
   getAthleteProfile: vi.fn(),
   getGoalById: vi.fn(),
 }));
 
 vi.mock('@sharpit/db/client', () => ({ prisma: {} }));
 
-vi.mock('@/lib/journal/journal-habit-analysis-load', () => ({
+vi.mock('@sharpit/server/lib/journal/journal-habit-analysis-load', () => ({
   loadJournalHabitFindings: vi.fn().mockResolvedValue({ daysWithSignal: 3, findings: [] }),
 }));
 
@@ -98,7 +98,7 @@ function chatRequest(metadata?: Record<string, unknown>): Request {
 }
 
 async function givenTier(tier: 'FREE' | 'PRO') {
-  const { getAthleteProfile } = await import('@/lib/queries');
+  const { getAthleteProfile } = await import('@sharpit/server/lib/queries');
   vi.mocked(getAthleteProfile).mockResolvedValue({ tier } as never);
 }
 
@@ -120,7 +120,8 @@ describe('POST /api/coach/chat · journal analyses gate', () => {
   it('refuses a FREE athlete before loading any journal finding', async () => {
     await givenTier('FREE');
     const { streamText } = await import('ai');
-    const { loadJournalHabitFindings } = await import('@/lib/journal/journal-habit-analysis-load');
+    const { loadJournalHabitFindings } =
+      await import('@sharpit/server/lib/journal/journal-habit-analysis-load');
 
     const { POST } = await importRoute();
     const response = await POST(chatRequest({ discussKind: 'journal-analyses' }));
@@ -146,7 +147,7 @@ describe('POST /api/coach/chat · journal analyses gate', () => {
   });
 
   it('leaves ordinary conversations untouched and skips the tier lookup', async () => {
-    const { getAthleteProfile } = await import('@/lib/queries');
+    const { getAthleteProfile } = await import('@sharpit/server/lib/queries');
 
     const { POST } = await importRoute();
     const response = await POST(chatRequest());
@@ -175,14 +176,14 @@ describe('POST /api/coach/chat · discuss target context', () => {
 
   beforeEach(async () => {
     vi.clearAllMocks();
-    const { getGoalById } = await import('@/lib/queries');
+    const { getGoalById } = await import('@sharpit/server/lib/queries');
     // Mirrors the real query: the goal is only found under its owner's id.
     vi.mocked(getGoalById).mockImplementation((async (athleteId: string, id: string) =>
       athleteId === 'athlete-1' && id === 'g-1' ? race : null) as never);
   });
 
   it('names the discussed goal in the system prompt', async () => {
-    const { getGoalById } = await import('@/lib/queries');
+    const { getGoalById } = await import('@sharpit/server/lib/queries');
 
     const { POST } = await importRoute();
     const response = await POST(chatRequest({ discussKind: 'goal', goalId: 'g-1' }));
@@ -203,7 +204,7 @@ describe('POST /api/coach/chat · discuss target context', () => {
   });
 
   it('treats malformed discuss metadata as an ordinary conversation', async () => {
-    const { getGoalById, getAthleteProfile } = await import('@/lib/queries');
+    const { getGoalById, getAthleteProfile } = await import('@sharpit/server/lib/queries');
 
     const { POST } = await importRoute();
     const response = await POST(chatRequest({ discussKind: 'goal', goalId: ['g-1'] }));

@@ -10,8 +10,8 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { SPRING_LAYOUT } from '@/lib/ease';
-import { cn } from '@/lib/utils';
+import { SPRING_LAYOUT } from '@sharpit/server/lib/ease';
+import { cn } from '@sharpit/server/lib/utils';
 import { RadioItemButton } from '@/components/motion/radio-item-button';
 
 type RadioGroupContextValue = {

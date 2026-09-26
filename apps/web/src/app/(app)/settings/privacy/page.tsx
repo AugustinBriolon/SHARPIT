@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
-import { MOI_ACCOUNT_PATH, MOI_PRIVACY_HASH } from '@/lib/moi/paths';
+import { MOI_ACCOUNT_PATH, MOI_PRIVACY_HASH } from '@sharpit/server/lib/moi/paths';
 
 /** Confidentialité lives on Profil — keep the old URL as a deep link. */
 export default function SettingsPrivacyPage() {

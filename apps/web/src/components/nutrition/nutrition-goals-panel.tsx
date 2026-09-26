@@ -3,11 +3,11 @@
 import type {
   NutritionFuelDensity,
   NutritionGoalsProgress,
-} from '@/presentation/nutrition-view-model';
+} from '@sharpit/server/presentation/nutrition-view-model';
 import { MacroProgressBar } from '@/components/nutrition/blocks/nutrition-macro-progress-bar';
-import { CALORIE_RING } from '@/lib/nutrition/macro-colors';
-import { formatFuelDensityReference } from '@/lib/nutrition/fuel-density-display';
-import { cn } from '@/lib/utils';
+import { CALORIE_RING } from '@sharpit/server/lib/nutrition/macro-colors';
+import { formatFuelDensityReference } from '@sharpit/server/lib/nutrition/fuel-density-display';
+import { cn } from '@sharpit/server/lib/utils';
 
 function CalorieRing({
   consumed,

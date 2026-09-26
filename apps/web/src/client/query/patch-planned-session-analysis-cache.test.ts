@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { QueryClient } from '@tanstack/react-query';
 import { queryKeys } from '@/client/query/keys';
-import type { ClientActivity, ClientPlannedSession } from '@/lib/query/types';
+import type { ClientActivity, ClientPlannedSession } from '@sharpit/server/lib/query/types';
 import { patchPlannedSessionAnalysisInCaches } from '@/client/query/patch-planned-session-analysis-cache';
 
 function seedCaches(queryClient: QueryClient) {

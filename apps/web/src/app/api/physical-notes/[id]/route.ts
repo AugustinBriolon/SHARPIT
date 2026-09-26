@@ -2,10 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import {
   removePhysicalConditionObservations,
   syncPhysicalConditionObservation,
-} from '@/lib/observation/manual-observation-sync';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { deletePhysicalNote, getPhysicalNoteById, updatePhysicalNote } from '@/lib/queries';
-import { updatePhysicalNoteSchema } from '@/lib/validators/physical-note';
+} from '@sharpit/server/lib/observation/manual-observation-sync';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
+import {
+  deletePhysicalNote,
+  getPhysicalNoteById,
+  updatePhysicalNote,
+} from '@sharpit/server/lib/queries';
+import { updatePhysicalNoteSchema } from '@sharpit/server/lib/validators/physical-note';
 import type { z } from 'zod';
 
 type RouteContext = { params: Promise<{ id: string }> };

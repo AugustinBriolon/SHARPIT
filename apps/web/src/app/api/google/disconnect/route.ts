@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { clearProviderFromSourcePrefs } from '@/lib/integrations/clear-provider-prefs';
-import { revokeProviderAccess } from '@/lib/integrations/provider-revocation';
-import { disconnectGoogle } from '@/lib/integrations/google/google-sync';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
+import { clearProviderFromSourcePrefs } from '@sharpit/server/lib/integrations/clear-provider-prefs';
+import { revokeProviderAccess } from '@sharpit/server/lib/integrations/provider-revocation';
+import { disconnectGoogle } from '@sharpit/server/lib/integrations/google/google-sync';
 
 export async function POST() {
   try {

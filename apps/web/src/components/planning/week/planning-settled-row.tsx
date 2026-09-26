@@ -1,16 +1,16 @@
 'use client';
 
 import Link from 'next/link';
-import { activityTypeLabels } from '@/lib/format';
+import { activityTypeLabels } from '@sharpit/server/lib/format';
 import type { ActivityType } from '@prisma/client';
 import {
   planningComplianceView,
   planningDoneAccessibleName,
   planningDoneMetrics,
   type PlanningDisplayMode,
-} from '@/lib/plan/planning-day-display';
-import { SPORT_IDENTITY_TEXT } from '@/lib/activity/sport-identity';
-import { cn } from '@/lib/utils';
+} from '@sharpit/server/lib/plan/planning-day-display';
+import { SPORT_IDENTITY_TEXT } from '@sharpit/server/lib/activity/sport-identity';
+import { cn } from '@sharpit/server/lib/utils';
 
 /**
  * A settled day states its outcome in one line — done or missed — so the week

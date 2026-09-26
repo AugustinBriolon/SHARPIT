@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { sessionsFromWeekdays } from '@/lib/training-availability/types';
+import { sessionsFromWeekdays } from '@sharpit/server/lib/training-availability/types';
 
 describe('OnboardingAvailabilityStep', () => {
   const source = readFileSync(

@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse, after } from 'next/server';
 import { z } from 'zod';
-import { isCoachConfigured } from '@/lib/ai';
-import { runActivityNarrativeAnalysis } from '@/lib/activity/narrative/activity-narrative';
-import { canGenerateNarrativeForActivity } from '@/lib/access/narrative-trial';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { checkRateLimit, rateLimitJsonResponse, rateLimiters } from '@/lib/rate-limit';
-import { requireAiProcessingConsent } from '@/lib/privacy/consent-store';
+import { isCoachConfigured } from '@sharpit/server/lib/ai';
+import { runActivityNarrativeAnalysis } from '@sharpit/server/lib/activity/narrative/activity-narrative';
+import { canGenerateNarrativeForActivity } from '@sharpit/server/lib/access/narrative-trial';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
+import {
+  checkRateLimit,
+  rateLimitJsonResponse,
+  rateLimiters,
+} from '@sharpit/server/lib/rate-limit';
+import { requireAiProcessingConsent } from '@sharpit/server/lib/privacy/consent-store';
 import { prisma } from '@sharpit/db/client';
 
 type RouteContext = { params: Promise<{ id: string }> };

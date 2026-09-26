@@ -1,5 +1,5 @@
 import type { ActivityType } from '@prisma/client';
-import { sportIdentityHex } from '@/lib/activity/sport-identity';
+import { sportIdentityHex } from '@sharpit/server/lib/activity/sport-identity';
 
 type StreamPayload = NonNullable<
   Awaited<ReturnType<typeof import('@/hooks/use-data').useActivityStream>>['data']

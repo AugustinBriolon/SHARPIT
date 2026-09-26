@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse, after } from 'next/server';
-import { isCoachConfigured } from '@/lib/ai';
-import { withAnalysisRun } from '@/lib/analysis/analysis-run-store';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { analyzePlannedSession } from '@/lib/coach/plan/coach-analysis';
-import { checkRateLimit, rateLimitJsonResponse, rateLimiters } from '@/lib/rate-limit';
-import { getPlannedSessionById, setPlannedSessionAnalysis } from '@/lib/queries';
+import { isCoachConfigured } from '@sharpit/server/lib/ai';
+import { withAnalysisRun } from '@sharpit/server/lib/analysis/analysis-run-store';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
+import { analyzePlannedSession } from '@sharpit/server/lib/coach/plan/coach-analysis';
+import {
+  checkRateLimit,
+  rateLimitJsonResponse,
+  rateLimiters,
+} from '@sharpit/server/lib/rate-limit';
+import { getPlannedSessionById, setPlannedSessionAnalysis } from '@sharpit/server/lib/queries';
 
 type RouteContext = { params: Promise<{ id: string }> };
 

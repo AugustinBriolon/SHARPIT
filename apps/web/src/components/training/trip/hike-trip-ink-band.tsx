@@ -1,14 +1,14 @@
 import { Mountain } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { HikeTripElevationProfile } from '@/components/training/trip/hike-trip-elevation-profile';
-import type { HikeTripElevationProfile as Profile } from '@/lib/activity/hike/hike-trip-elevation';
+import type { HikeTripElevationProfile as Profile } from '@sharpit/server/lib/activity/hike/hike-trip-elevation';
 import {
   formatTripDateRange,
   formatTripStepCount,
   type HikeTripSummary,
-} from '@/lib/activity/hike/hike-trip-summary';
-import { formatDistance, formatDuration } from '@/lib/format';
-import { cn } from '@/lib/utils';
+} from '@sharpit/server/lib/activity/hike/hike-trip-summary';
+import { formatDistance, formatDuration } from '@sharpit/server/lib/format';
+import { cn } from '@sharpit/server/lib/utils';
 
 type BandMetric = { label: string; value: string; unit?: string; accent?: boolean };
 

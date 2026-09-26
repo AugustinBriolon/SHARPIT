@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { syncPhysicalConditionObservation } from '@/lib/observation/manual-observation-sync';
-import { addPhysicalCheckin, getPhysicalNoteById } from '@/lib/queries';
-import { createCheckinSchema } from '@/lib/validators/physical-note';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
+import { syncPhysicalConditionObservation } from '@sharpit/server/lib/observation/manual-observation-sync';
+import { addPhysicalCheckin, getPhysicalNoteById } from '@sharpit/server/lib/queries';
+import { createCheckinSchema } from '@sharpit/server/lib/validators/physical-note';
 
 type RouteContext = { params: Promise<{ id: string }> };
 

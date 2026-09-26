@@ -1,13 +1,13 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { activityWeatherWindow } from '@/lib/activity/weather/activity-weather-window';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
+import { activityWeatherWindow } from '@sharpit/server/lib/activity/weather/activity-weather-window';
 import {
   extractActivityWeatherSnapshot,
   formatActivityWeatherNarrative,
   serializeActivityWeather,
-} from '@/lib/activity/weather/activity-weather';
-import { fetchForecastPredictions } from '@/lib/planned-session/forecast/forecast-fetch';
+} from '@sharpit/server/lib/activity/weather/activity-weather';
+import { fetchForecastPredictions } from '@sharpit/server/lib/planned-session/forecast/forecast-fetch';
 import { computeTrainingDayId } from '@sharpit/core/training/training-day';
 
 const schema = z.object({

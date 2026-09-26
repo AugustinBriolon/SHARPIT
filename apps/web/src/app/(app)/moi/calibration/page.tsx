@@ -4,10 +4,10 @@ import { StickyHeader } from '@/components/layout/header/sticky-header';
 import { PerformanceCalibrationPanel } from '@/components/settings/profile/performance-calibration-panel';
 import { SettingsDemoBlock } from '@/components/settings/settings-demo-block';
 import { Skeleton } from '@/components/ui/skeleton';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { isDemoSession } from '@/lib/demo/demo-session';
-import { mapAthleteProfileToFormData } from '@/lib/profile/map-athlete-profile';
-import { getAthleteProfile } from '@/lib/queries';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
+import { isDemoSession } from '@sharpit/server/lib/demo/demo-session';
+import { mapAthleteProfileToFormData } from '@sharpit/server/lib/profile/map-athlete-profile';
+import { getAthleteProfile } from '@sharpit/server/lib/queries';
 
 function CalibrationPanelSkeleton() {
   return <Skeleton className="h-96 w-full rounded-2xl" aria-busy />;

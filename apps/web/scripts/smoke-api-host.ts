@@ -9,7 +9,7 @@
  * The Bearer is read from the environment only — never pass it as an argument.
  */
 
-import { runApiHostSmoke } from '../src/lib/ops/api-host-smoke';
+import { runApiHostSmoke } from '@sharpit/server/lib/ops/api-host-smoke';
 
 const DEFAULT_ORIGIN = 'https://api.sharpit.app';
 

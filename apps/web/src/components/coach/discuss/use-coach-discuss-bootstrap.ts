@@ -13,7 +13,7 @@ import {
   useDiscussDataReadyFlag,
   type CoachDiscussParams,
 } from '@/components/coach/discuss/use-coach-discuss-bootstrap-helpers';
-import type { CoachDiscussContext } from '@/lib/coach/chat/discuss/coach-discuss-context';
+import type { CoachDiscussContext } from '@sharpit/server/lib/coach/chat/discuss/coach-discuss-context';
 
 export type { CoachDiscussParams };
 

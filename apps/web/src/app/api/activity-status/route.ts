@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
 import {
   getActivityStatusStoreDb,
   setActivityStatusDb,
-} from '@/lib/health/activity-status-service';
-import { awaitRequest } from '@/lib/next/await-request';
+} from '@sharpit/server/lib/health/activity-status-service';
+import { awaitRequest } from '@sharpit/server/lib/next/await-request';
 import { prisma } from '@sharpit/db/client';
 
 const putSchema = z.object({

@@ -1,47 +1,64 @@
-import { runStructuredCoachStream } from '@/lib/coach/stream-structured-generation';
-import { withCoachTrace } from '@/lib/ai/coach-trace';
+import { runStructuredCoachStream } from '@sharpit/server/lib/coach/stream-structured-generation';
+import { withCoachTrace } from '@sharpit/server/lib/ai/coach-trace';
 import { addDays, format, startOfDay } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { NextResponse } from 'next/server';
-import { isCoachConfigured } from '@/lib/ai';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { recordAiUsage } from '@/lib/ai/usage';
+import { isCoachConfigured } from '@sharpit/server/lib/ai';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
+import { recordAiUsage } from '@sharpit/server/lib/ai/usage';
 import {
   RETRY_AFTER_HEADER,
   aiBudgetResponseBody,
   ensureFreeAiBudget,
   withAiBudgetWarningHeader,
-} from '@/lib/access/ai-budget';
-import { requireAiProcessingConsent } from '@/lib/privacy/consent-store';
-import { checkRateLimit, rateLimitJsonResponse, rateLimiters } from '@/lib/rate-limit';
-import { buildCoachContext, formatCoachContext } from '@/lib/coach/context/coach-context';
-import { getActiveTrainingPlan, getGoals, getPlannedSessionsForCoach } from '@/lib/queries';
-import { resolveDefaultPlanGoalId, selectableDatedGoalIds } from '@/lib/planned-session/plan-goal';
-import { intensityLabels } from '@/lib/planned-session/sessions';
-import { formatStrengthSessionRules } from '@/lib/planned-session/strength/strength-session-template';
+} from '@sharpit/server/lib/access/ai-budget';
+import { requireAiProcessingConsent } from '@sharpit/server/lib/privacy/consent-store';
+import {
+  checkRateLimit,
+  rateLimitJsonResponse,
+  rateLimiters,
+} from '@sharpit/server/lib/rate-limit';
+import {
+  buildCoachContext,
+  formatCoachContext,
+} from '@sharpit/server/lib/coach/context/coach-context';
+import {
+  getActiveTrainingPlan,
+  getGoals,
+  getPlannedSessionsForCoach,
+} from '@sharpit/server/lib/queries';
+import {
+  resolveDefaultPlanGoalId,
+  selectableDatedGoalIds,
+} from '@sharpit/server/lib/planned-session/plan-goal';
+import { intensityLabels } from '@sharpit/server/lib/planned-session/sessions';
+import { formatStrengthSessionRules } from '@sharpit/server/lib/planned-session/strength/strength-session-template';
 import {
   formatSensitiveZoneRules,
   sensitiveZonesFrom,
-} from '@/lib/physical-health/sensitive-zones';
+} from '@sharpit/server/lib/physical-health/sensitive-zones';
 import {
   adaptPlanGenerationSchema,
   adaptPlanSchema,
   adaptRequestSchema,
   type AdaptPlan,
-} from '@/lib/validators/coach';
-import { COACH_COPY_DASH_RULE, sanitizeCoachCopy } from '@/lib/coach/sanitize-coach-copy';
-import { buildGateContext } from '@/lib/plan-gate/build-context';
-import { evaluatePlan } from '@/lib/plan-gate/evaluate-plan';
-import type { GateProposal, GateResult } from '@/lib/plan-gate/types';
+} from '@sharpit/server/lib/validators/coach';
+import {
+  COACH_COPY_DASH_RULE,
+  sanitizeCoachCopy,
+} from '@sharpit/server/lib/coach/sanitize-coach-copy';
+import { buildGateContext } from '@sharpit/server/lib/plan-gate/build-context';
+import { evaluatePlan } from '@sharpit/server/lib/plan-gate/evaluate-plan';
+import type { GateProposal, GateResult } from '@sharpit/server/lib/plan-gate/types';
 import { computeTrainingDayId } from '@sharpit/core/training/training-day';
-import { buildDecisionSnapshotContext } from '@/lib/decision-memory/build-snapshot-context';
-import { createCoachingDecision } from '@/lib/decision-memory/repository';
-import { dayKeyFromDate } from '@/lib/date/day-key';
+import { buildDecisionSnapshotContext } from '@sharpit/server/lib/decision-memory/build-snapshot-context';
+import { createCoachingDecision } from '@sharpit/server/lib/decision-memory/repository';
+import { dayKeyFromDate } from '@sharpit/server/lib/date/day-key';
 import {
   COACH_PROGRESS_HEADERS,
   encodeCoachProgressEvent,
   type CoachProgressEvent,
-} from '@/lib/coach/chat/transcript/coach-progress-stream';
+} from '@sharpit/server/lib/coach/chat/transcript/coach-progress-stream';
 
 type AdaptChange = AdaptPlan['changes'][number];
 type UpcomingSession = Awaited<ReturnType<typeof getPlannedSessionsForCoach>>[number];

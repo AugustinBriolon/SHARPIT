@@ -1,6 +1,6 @@
 import type { QueryClient } from '@tanstack/react-query';
 import { queryKeys } from '@/client/query/keys';
-import type { ClientActivity, ClientPlannedSession } from '@/lib/query/types';
+import type { ClientActivity, ClientPlannedSession } from '@sharpit/server/lib/query/types';
 
 /** Athlete-editable fields that live on the activity, not the planned session. */
 export type ActivityAthleteCapturePatch = {

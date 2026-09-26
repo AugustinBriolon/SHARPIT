@@ -4,7 +4,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { ActivityType } from '@prisma/client';
 
 import { PlannedSessionReadHeader } from './planned-session-read-header';
-import type { ClientPlannedSession } from '@/lib/query/types';
+import type { ClientPlannedSession } from '@sharpit/server/lib/query/types';
 
 vi.mock('@/hooks/use-offline-guard', () => ({
   useOfflineGuard: () => ({ offline: false, offlineLabel: 'Hors ligne', guardDisabled: false }),

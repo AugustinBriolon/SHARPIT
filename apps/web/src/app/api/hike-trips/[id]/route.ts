@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
 import {
   deleteHikeTrip,
   getHikeTripById,
   HikeTripConflictError,
   HikeTripValidationError,
   updateHikeTrip,
-} from '@/lib/queries';
-import { patchHikeTripSchema } from '@/lib/validators/hike-trip';
+} from '@sharpit/server/lib/queries';
+import { patchHikeTripSchema } from '@sharpit/server/lib/validators/hike-trip';
 
 type RouteContext = { params: Promise<{ id: string }> };
 

@@ -3,12 +3,12 @@ import {
   DATA_CLASSES,
   visibleProvidersForClass,
   type CatalogProvider,
-} from '@/lib/integrations/provider-catalog';
-import type { IntegrationId } from '@/lib/integrations/shared/client-sync';
+} from '@sharpit/server/lib/integrations/provider-catalog';
+import type { IntegrationId } from '@sharpit/server/lib/integrations/shared/client-sync';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SkeletonStatusBadge } from '@/components/ui/skeleton-patterns';
-import { cn } from '@/lib/utils';
+import { cn } from '@sharpit/server/lib/utils';
 
 function IntegrationsHubShellHeader({ pending }: { pending: boolean }) {
   return (

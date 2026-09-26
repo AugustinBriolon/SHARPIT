@@ -17,10 +17,10 @@ import {
   activityDetailToDetailShell,
   activityDetailToHeaderActivity,
   clientActivityToDetailShell,
-} from '@/lib/activity/detail/activity-detail-cache';
-import { activityDetailExpectsMap } from '@/lib/activity/detail/activity-detail-skeleton-layout';
-import type { ActivityDetail } from '@/lib/activity/detail/types';
-import type { ClientActivity } from '@/lib/query/types';
+} from '@sharpit/server/lib/activity/detail/activity-detail-cache';
+import { activityDetailExpectsMap } from '@sharpit/server/lib/activity/detail/activity-detail-skeleton-layout';
+import type { ActivityDetail } from '@sharpit/server/lib/activity/detail/types';
+import type { ClientActivity } from '@sharpit/server/lib/query/types';
 
 function InstantShellFrame({ children }: { children: React.ReactNode }) {
   return (

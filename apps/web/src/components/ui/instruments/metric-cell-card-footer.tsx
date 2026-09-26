@@ -1,7 +1,7 @@
-import type { CorpsTone } from '@/lib/ui/metric-tone';
-import { isDeltaStatusTone } from '@/lib/health/health-status';
-import { CORPS_TONE_TEXT } from '@/lib/ui/metric-tone';
-import { cn } from '@/lib/utils';
+import type { CorpsTone } from '@sharpit/server/lib/ui/metric-tone';
+import { isDeltaStatusTone } from '@sharpit/server/lib/health/health-status';
+import { CORPS_TONE_TEXT } from '@sharpit/server/lib/ui/metric-tone';
+import { cn } from '@sharpit/server/lib/utils';
 
 export function MetricCellCardSub({ footer, sub }: { footer?: string; sub?: string }) {
   if (!sub) {

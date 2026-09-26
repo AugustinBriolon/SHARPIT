@@ -3,7 +3,7 @@
 import { motion } from 'motion/react';
 import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { cn } from '@/lib/utils';
+import { cn } from '@sharpit/server/lib/utils';
 import {
   AnimatedSidebarPanelContextProvider,
   useAnimatedSidebar,

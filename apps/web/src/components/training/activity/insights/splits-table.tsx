@@ -1,7 +1,7 @@
 'use client';
 
 import { memo } from 'react';
-import type { SplitRow } from '@/lib/activity/detail/activity-analysis';
+import type { SplitRow } from '@sharpit/server/lib/activity/detail/activity-analysis';
 import { SplitTableRow } from '@/components/training/activity/insights/splits-table-row';
 
 function SplitsTableComponent({

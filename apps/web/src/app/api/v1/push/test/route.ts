@@ -1,8 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { isApnsConfigured } from '@/lib/push/apns';
-import { sendMorningPushForAthlete } from '@/lib/push/morning-push';
-import { checkRateLimit, rateLimitJsonResponse, rateLimiters } from '@/lib/rate-limit';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
+import { isApnsConfigured } from '@sharpit/server/lib/push/apns';
+import { sendMorningPushForAthlete } from '@sharpit/server/lib/push/morning-push';
+import {
+  checkRateLimit,
+  rateLimitJsonResponse,
+  rateLimiters,
+} from '@sharpit/server/lib/rate-limit';
 
 export async function POST(request: NextRequest) {
   try {

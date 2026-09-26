@@ -3,7 +3,10 @@
 import { useEffect } from 'react';
 import type { ActivityType } from '@prisma/client';
 import { useActivityStream } from '@/hooks/use-data';
-import { readRememberedHubRoute, rememberHubRoute } from '@/lib/plan/hub/plan-hub-preview-paths';
+import {
+  readRememberedHubRoute,
+  rememberHubRoute,
+} from '@sharpit/server/lib/plan/hub/plan-hub-preview-paths';
 import {
   activityMayHaveRoutePath,
   isPreviewMapPending,

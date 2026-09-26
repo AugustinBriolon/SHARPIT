@@ -3,13 +3,20 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { isSet } from '@sharpit/shared/value';
 import { toast } from '@/components/ui/toast';
-import { buildHikeTripSummary } from '@/lib/activity/hike/hike-trip-summary';
+import { buildHikeTripSummary } from '@sharpit/server/lib/activity/hike/hike-trip-summary';
 import { fetchHikeTrip, fetchHikeTrips, hydrateHikeTrip } from '@/client/query/fetchers';
 import { queryKeys } from '@/client/query/keys';
 import { formatApiErrorMessage, parseApiErrorBody } from '@/client/query/api-error';
 import { sendJson } from '@/client/query/send-json';
-import type { ClientActivity, ClientHikeTrip, ClientHikeTripListItem } from '@/lib/query/types';
-import type { CreateHikeTripInput, PatchHikeTripInput } from '@/lib/validators/hike-trip';
+import type {
+  ClientActivity,
+  ClientHikeTrip,
+  ClientHikeTripListItem,
+} from '@sharpit/server/lib/query/types';
+import type {
+  CreateHikeTripInput,
+  PatchHikeTripInput,
+} from '@sharpit/server/lib/validators/hike-trip';
 
 export type { CreateHikeTripInput, PatchHikeTripInput };
 

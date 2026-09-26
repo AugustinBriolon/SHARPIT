@@ -6,8 +6,8 @@ import {
   SportLegHeader,
   SportLegSplits,
 } from '@/components/training/activity/insights/sport-leg-insights-parts';
-import type { MultisportLegStream } from '@/lib/streams/streams';
-import type { ActivityAnalysis } from '@/lib/activity/detail/activity-analysis';
+import type { MultisportLegStream } from '@sharpit/server/lib/streams/streams';
+import type { ActivityAnalysis } from '@sharpit/server/lib/activity/detail/activity-analysis';
 
 export function SportLegStreamSections({
   entry,

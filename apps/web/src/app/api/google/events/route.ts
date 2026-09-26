@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCalendarEvents, getGoogleAccount } from '@/lib/integrations/google/google-sync';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
+import {
+  getCalendarEvents,
+  getGoogleAccount,
+} from '@sharpit/server/lib/integrations/google/google-sync';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
 
 export async function GET(request: NextRequest) {
   // Read search params before try so Cache Components prerender interrupts propagate.

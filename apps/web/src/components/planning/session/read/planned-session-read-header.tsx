@@ -1,8 +1,8 @@
 'use client';
 
-import { activityTypeLabels } from '@/lib/format';
-import { sportIdentityHex } from '@/lib/activity/sport-identity';
-import type { ClientPlannedSession } from '@/lib/query/types';
+import { activityTypeLabels } from '@sharpit/server/lib/format';
+import { sportIdentityHex } from '@sharpit/server/lib/activity/sport-identity';
+import type { ClientPlannedSession } from '@sharpit/server/lib/query/types';
 import {
   PlannedSessionReadActionsMenu,
   type PlannedSessionHeaderActions,

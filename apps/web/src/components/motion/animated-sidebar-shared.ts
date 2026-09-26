@@ -1,7 +1,7 @@
 import type { Variants } from 'motion/react';
 import type { Ref } from 'react';
-import { EASE_DRAWER, EASE_OUT } from '@/lib/ease';
-import { cn } from '@/lib/utils';
+import { EASE_DRAWER, EASE_OUT } from '@sharpit/server/lib/ease';
+import { cn } from '@sharpit/server/lib/utils';
 
 export type SidebarState = 'expanded' | 'collapsed';
 export type SidebarSide = 'left' | 'right';

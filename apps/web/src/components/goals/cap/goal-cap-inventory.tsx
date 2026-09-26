@@ -4,7 +4,7 @@ import { GoalKind } from '@prisma/client';
 import { Flag } from 'lucide-react';
 import { MetricGoalCard, RaceCard, type GoalItem } from '@/components/goals/cards/goal-cards';
 import { InkEmptyState } from '@/components/ui/ink-empty-state';
-import { horizonLabels, horizonOrder } from '@/lib/goals/goals';
+import { horizonLabels, horizonOrder } from '@sharpit/server/lib/goals/goals';
 
 function RaceInventory({ races }: { races: readonly GoalItem[] }) {
   if (races.length === 0) {

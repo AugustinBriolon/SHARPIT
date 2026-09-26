@@ -3,8 +3,8 @@
 
 import { motion, useReducedMotion } from 'motion/react';
 import { type ComponentPropsWithRef, createContext, type ReactNode, useContext } from 'react';
-import { EASE_OUT } from '@/lib/ease';
-import { cn } from '@/lib/utils';
+import { EASE_OUT } from '@sharpit/server/lib/ease';
+import { cn } from '@sharpit/server/lib/utils';
 import { MessageSideContext } from '@/components/coach/kit/message-context';
 
 export {

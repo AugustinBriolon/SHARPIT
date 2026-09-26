@@ -1,16 +1,16 @@
 import { defaultExposureForActivityType } from '@sharpit/core/planned-session/defaults';
-import { formatEndurancePrescriptionSummary } from '@/lib/planned-session/endurance/coach-endurance-prescription';
+import { formatEndurancePrescriptionSummary } from '@sharpit/server/lib/planned-session/endurance/coach-endurance-prescription';
 import {
   endurancePrescriptionFromDraft,
   type EnduranceDraftBlock,
-} from '@/lib/planned-session/endurance/endurance-draft';
-import { resolveStrengthFieldsForPersist } from '@/lib/planned-session/strength/strength-prescription';
+} from '@sharpit/server/lib/planned-session/endurance/endurance-draft';
+import { resolveStrengthFieldsForPersist } from '@sharpit/server/lib/planned-session/strength/strength-prescription';
 import {
   strengthPrescriptionFromDraft,
   type StrengthPrescriptionDraftRow,
 } from '@/components/planning/session/edit/strength-prescription-editor';
-import type { EquipmentItemId } from '@/lib/equipment/catalog';
-import type { ClientPlannedSession } from '@/lib/query/types';
+import type { EquipmentItemId } from '@sharpit/server/lib/equipment/catalog';
+import type { ClientPlannedSession } from '@sharpit/server/lib/query/types';
 import { ActivityType, SessionIntensity } from '@prisma/client';
 import {
   type CreateMode,

@@ -6,10 +6,14 @@ import { TrendingUp } from 'lucide-react';
 import { InkEmptyState } from '@/components/ui/ink-empty-state';
 import { useWeeklyCoachingBriefViewModel } from '@/hooks/use-data';
 import { useProjectedAthleteViewModel } from '@/hooks/use-projected-athlete-view-model';
-import type { ProjectedAthleteCardViewModel } from '@/presentation/projected-athlete-view-model';
-import type { WeeklyBriefLoad } from '@/presentation/weekly-coaching-brief-view-model';
-import { athleteVisibleCopy } from '@/lib/plan/hub/athlete-visible-copy';
-import { formatTrainingLoad, isExpertMode, type DisplayMode } from '@/lib/preferences/display-mode';
+import type { ProjectedAthleteCardViewModel } from '@sharpit/server/presentation/projected-athlete-view-model';
+import type { WeeklyBriefLoad } from '@sharpit/server/presentation/weekly-coaching-brief-view-model';
+import { athleteVisibleCopy } from '@sharpit/server/lib/plan/hub/athlete-visible-copy';
+import {
+  formatTrainingLoad,
+  isExpertMode,
+  type DisplayMode,
+} from '@sharpit/server/lib/preferences/display-mode';
 import { useDisplayMode } from '@/providers/display-mode-provider';
 
 const WEEK_OPTS = { weekStartsOn: 1 as const };

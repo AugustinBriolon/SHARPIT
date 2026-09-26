@@ -1,7 +1,10 @@
 import { Sparkles } from 'lucide-react';
-import { journalCategoryIcon } from '@/lib/journal/journal-category-surface';
-import { isCustomTrackableId, journalTrackableById } from '@/lib/journal/journal-trackables';
-import { cn } from '@/lib/utils';
+import { journalCategoryIcon } from '@sharpit/server/lib/journal/journal-category-surface';
+import {
+  isCustomTrackableId,
+  journalTrackableById,
+} from '@sharpit/server/lib/journal/journal-trackables';
+import { cn } from '@sharpit/server/lib/utils';
 
 /** Icon well tinted by the habit's category — never by the association's polarity. */
 export function FactorIcon({ factorId }: { factorId: string }) {

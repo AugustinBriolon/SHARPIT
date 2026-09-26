@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { awaitRequest } from '@/lib/next/await-request';
-import { getAthleteConsentRow, updateAthleteConsents } from '@/lib/privacy/consent-store';
-import { serializeConsentRow } from '@/lib/privacy/consent-serialize';
-import { logSafeError } from '@/lib/privacy/safe-log';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
+import { awaitRequest } from '@sharpit/server/lib/next/await-request';
+import {
+  getAthleteConsentRow,
+  updateAthleteConsents,
+} from '@sharpit/server/lib/privacy/consent-store';
+import { serializeConsentRow } from '@sharpit/server/lib/privacy/consent-serialize';
+import { logSafeError } from '@sharpit/server/lib/privacy/safe-log';
 
 const consentBodySchema = z.object({
   acceptLegal: z.boolean().optional(),

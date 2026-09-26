@@ -14,7 +14,7 @@ import {
 import { InkEmptyState } from '@/components/ui/ink-empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
 import { guardedActionLabel } from '@/hooks/use-offline-guard';
-import type { CoachMemoryEntry } from '@/lib/coach-memory/core/types';
+import type { CoachMemoryEntry } from '@sharpit/server/lib/coach-memory/core/types';
 
 export function CoachMemoryEntriesList({
   entries,

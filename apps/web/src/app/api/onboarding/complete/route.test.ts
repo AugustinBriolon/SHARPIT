@@ -8,7 +8,7 @@ vi.mock('@sharpit/db/client', () => ({
   },
 }));
 
-vi.mock('@/lib/auth/current-athlete', () => ({
+vi.mock('@sharpit/server/lib/auth/current-athlete', () => ({
   getCurrentAthleteId: vi.fn(async () => 'athlete_1'),
 }));
 

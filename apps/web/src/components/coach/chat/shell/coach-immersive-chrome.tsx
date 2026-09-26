@@ -8,7 +8,7 @@ import { Dialog, DialogClose, DialogContent, DialogTitle } from '@/components/ui
 import { NavArrowLeft } from '@/components/icons/nav-arrows';
 import { useRouter } from 'next/navigation';
 import type { ClientConversationSummary } from '@/client/query/fetchers';
-import { cn } from '@/lib/utils';
+import { cn } from '@sharpit/server/lib/utils';
 
 function CoachHeaderBackButton() {
   const router = useRouter();

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { isCurrentUserAdmin } from '@/lib/auth/admin';
-import { setAthleteTier } from '@/lib/admin/queries';
-import { setAthleteTierSchema } from '@/lib/validators/admin';
+import { isCurrentUserAdmin } from '@sharpit/server/lib/auth/admin';
+import { setAthleteTier } from '@sharpit/server/lib/admin/queries';
+import { setAthleteTierSchema } from '@sharpit/server/lib/validators/admin';
 
 type RouteContext = { params: Promise<{ id: string }> };
 

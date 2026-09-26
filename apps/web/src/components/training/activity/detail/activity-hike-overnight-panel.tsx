@@ -1,10 +1,10 @@
 'use client';
 
 import { ActivityType } from '@prisma/client';
-import { SPORT_IDENTITY_PANEL } from '@/lib/activity/sport-identity';
-import type { HikeOvernightSummary } from '@/lib/activity/hike/hike-overnight-summary';
+import { SPORT_IDENTITY_PANEL } from '@sharpit/server/lib/activity/sport-identity';
+import type { HikeOvernightSummary } from '@sharpit/server/lib/activity/hike/hike-overnight-summary';
 import { useDisplayMode } from '@/providers/display-mode-provider';
-import { cn } from '@/lib/utils';
+import { cn } from '@sharpit/server/lib/utils';
 import { buildOvernightPanelRows } from '@/components/training/activity/detail/activity-hike-overnight-helpers';
 
 export function ActivityHikeOvernightPanel({ summary }: { summary: HikeOvernightSummary }) {

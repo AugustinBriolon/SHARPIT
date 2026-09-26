@@ -8,12 +8,12 @@ import {
   onboardingProgressPercent,
   onboardingSegmentTicks,
   onboardingStepPosition,
-} from '@/lib/onboarding/wizard/wizard-progress';
+} from '@sharpit/server/lib/onboarding/wizard/wizard-progress';
 import {
   ONBOARDING_STEP_LABELS,
   previousOnboardingStep,
   type OnboardingWizardStep,
-} from '@/lib/onboarding/wizard/wizard-steps';
+} from '@sharpit/server/lib/onboarding/wizard/wizard-steps';
 
 /**
  * Wizard wayfinding: one continuous rail that extends as the athlete advances,

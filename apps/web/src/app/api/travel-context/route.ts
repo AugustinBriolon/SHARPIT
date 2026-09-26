@@ -1,15 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@sharpit/db/client';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
 import {
   applyTravelContextToUpcomingSessions,
   createTravelContext,
   getActiveTravelContext,
   listActiveTravelContexts,
   listTravelContexts,
-} from '@/lib/travel-context/service';
-import { refreshAndPersistPlannedSessionContext } from '@/lib/planned-session/resolve-context';
+} from '@sharpit/server/lib/travel-context/service';
+import { refreshAndPersistPlannedSessionContext } from '@sharpit/server/lib/planned-session/resolve-context';
 
 const createSchema = z
   .object({

@@ -6,10 +6,10 @@ import {
   type CompletedSessionPreviewRoute,
 } from '@/components/today/rich/completed-session-preview';
 import { ActivityTypeIndicator } from '@/components/ui/instruments/activity-type-indicator';
-import { buildCompletedSessionMetrics } from '@/lib/today/rich/completed-session-metrics';
-import { TWIN_DRILL_DOWN } from '@/lib/today/navigation/today-twin-navigation';
-import { activityTypeLabels } from '@/lib/format';
-import { cn } from '@/lib/utils';
+import { buildCompletedSessionMetrics } from '@sharpit/server/lib/today/rich/completed-session-metrics';
+import { TWIN_DRILL_DOWN } from '@sharpit/server/lib/today/navigation/today-twin-navigation';
+import { activityTypeLabels } from '@sharpit/server/lib/format';
+import { cn } from '@sharpit/server/lib/utils';
 import {
   isSelectableHike,
   type ActivityListItem,

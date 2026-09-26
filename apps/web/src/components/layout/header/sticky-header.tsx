@@ -1,6 +1,6 @@
 'use client';
 
-import { cn } from '@/lib/utils';
+import { cn } from '@sharpit/server/lib/utils';
 import { useDesktopStickyHeader } from '@/components/layout/header/use-desktop-sticky-header';
 
 /**

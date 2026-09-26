@@ -31,10 +31,10 @@ import {
   setActivityStatus,
   subscribeActivityStatus,
   todayIsoDate,
-} from '@/lib/health/activity-status';
+} from '@sharpit/server/lib/health/activity-status';
 import { queryKeys } from '@/client/query/keys';
 import { fetchTravelContext } from '@/client/query/fetchers';
-import { cn } from '@/lib/utils';
+import { cn } from '@sharpit/server/lib/utils';
 
 export const STATUS_ICON = {
   active: Footprints,

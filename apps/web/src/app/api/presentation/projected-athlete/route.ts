@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import type { ProjectionHorizonDays } from '@sharpit/core/projection/types';
-import { buildProjectedAthletePresentationViewModel } from '@/lib/presentation/projected-athlete/projected-athlete';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
+import { buildProjectedAthletePresentationViewModel } from '@sharpit/server/lib/presentation/projected-athlete/projected-athlete';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
 
 const VALID_HORIZONS = new Set<number>([1, 3, 7, 14]);
 

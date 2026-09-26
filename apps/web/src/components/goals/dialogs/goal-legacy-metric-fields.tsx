@@ -12,7 +12,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { horizonLabels, horizonOrder } from '@/lib/goals/goals';
+import { horizonLabels, horizonOrder } from '@sharpit/server/lib/goals/goals';
 import type { GoalForEdit } from '@/components/goals/dialogs/goal-dialog';
 import { toDateInput } from '@/components/goals/dialogs/goal-dialog-edit-forms';
 

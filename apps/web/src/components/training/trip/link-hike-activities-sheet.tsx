@@ -10,7 +10,7 @@ import {
 } from '@/components/training/trip/link-hike-activities-sheet-parts';
 import { Button } from '@/components/ui/button';
 import { useActivities } from '@/hooks/use-data';
-import { cn } from '@/lib/utils';
+import { cn } from '@sharpit/server/lib/utils';
 
 type LinkHikeActivitiesSheetProps = {
   open: boolean;

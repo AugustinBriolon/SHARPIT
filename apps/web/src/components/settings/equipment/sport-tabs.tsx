@@ -1,8 +1,8 @@
 'use client';
 
 import { useRef } from 'react';
-import { EQUIPMENT_SPORT_LABELS, type EquipmentSport } from '@/lib/equipment/catalog';
-import { cn } from '@/lib/utils';
+import { EQUIPMENT_SPORT_LABELS, type EquipmentSport } from '@sharpit/server/lib/equipment/catalog';
+import { cn } from '@sharpit/server/lib/utils';
 import { Bike, Dumbbell, Footprints, StretchHorizontal, Waves } from 'lucide-react';
 import { handleRadioGroupKeyDown } from '@/components/settings/equipment/radio-group-keydown';
 

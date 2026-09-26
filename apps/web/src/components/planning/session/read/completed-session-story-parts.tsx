@@ -4,8 +4,8 @@ import {
   parseSessionAnalysis,
   SESSION_VERDICT_LABELS,
   sessionScoreColor,
-} from '@/lib/planned-session/display/session-analysis-display';
-import { cn } from '@/lib/utils';
+} from '@sharpit/server/lib/planned-session/display/session-analysis-display';
+import { cn } from '@sharpit/server/lib/utils';
 import { Loader2 } from 'lucide-react';
 
 /**

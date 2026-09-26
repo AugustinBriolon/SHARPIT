@@ -1,5 +1,5 @@
 import { Skeleton } from '@/components/ui/skeleton';
-import { cn } from '@/lib/utils';
+import { cn } from '@sharpit/server/lib/utils';
 
 export function SkeletonEyebrow({ className }: { className?: string }) {
   return <Skeleton className={cn('h-3 w-20 rounded-full', className)} />;

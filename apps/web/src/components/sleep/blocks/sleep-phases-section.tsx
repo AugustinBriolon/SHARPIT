@@ -1,7 +1,7 @@
 import { DrillDownSectionCard } from '@/components/today/drill-down/section-card';
 import { DrillDownSectionLabel } from '@/components/today/drill-down/section-label';
 import { SleepStageBreakdown } from '@/components/sleep/blocks/sleep-stage-breakdown';
-import { cn } from '@/lib/utils';
+import { cn } from '@sharpit/server/lib/utils';
 import type { ReactNode } from 'react';
 
 /**

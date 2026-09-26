@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
 import {
   ensureMorningRecalibration,
   getMorningRecalibrationPresentation,
-} from '@/lib/morning-recalibration/service';
-import { todayTrainingDayId } from '@/lib/journal/wellness-checkin';
+} from '@sharpit/server/lib/morning-recalibration/service';
+import { todayTrainingDayId } from '@sharpit/server/lib/journal/wellness-checkin';
 
 /** Evaluate / return today's morning session recalibration proposal (idempotent write). */
 export async function POST(request: Request) {

@@ -3,7 +3,7 @@
 import MapLibreGL from 'maplibre-gl';
 import { useEffect, useMemo, useState } from 'react';
 import { Map, MapMarker, MapRoute, MarkerContent, useMap } from '@/components/ui/map/map';
-import { SPORT_IDENTITY_HEX } from '@/lib/activity/sport-identity';
+import { SPORT_IDENTITY_HEX } from '@sharpit/server/lib/activity/sport-identity';
 
 type Path = [number, number][];
 

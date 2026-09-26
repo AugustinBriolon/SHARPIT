@@ -1,8 +1,8 @@
 'use client';
 
 import { X } from 'lucide-react';
-import type { CoachDiscussContext } from '@/lib/coach/chat/discuss/coach-discuss-context';
-import { cn } from '@/lib/utils';
+import type { CoachDiscussContext } from '@sharpit/server/lib/coach/chat/discuss/coach-discuss-context';
+import { cn } from '@sharpit/server/lib/utils';
 
 /**
  * Context tag above the composer — width follows the label. Dismiss sits outside

@@ -8,9 +8,9 @@ import {
   type TrendWindowId,
 } from '@/components/corps/composition/composition-view-parts';
 import { SkeletonDataValue } from '@/components/ui/skeleton-data-value';
-import type { BodyChartPoint } from '@/presentation/body-view-model';
-import type { CompositionMetricId } from '@/lib/health/composition-metric-guides';
-import { cn } from '@/lib/utils';
+import type { BodyChartPoint } from '@sharpit/server/presentation/body-view-model';
+import type { CompositionMetricId } from '@sharpit/server/lib/health/composition-metric-guides';
+import { cn } from '@sharpit/server/lib/utils';
 import type { useBodyPresentationViewModel } from '@/hooks/use-presentation-view-model';
 
 type CompositionVm = NonNullable<ReturnType<typeof useBodyPresentationViewModel>['data']>;

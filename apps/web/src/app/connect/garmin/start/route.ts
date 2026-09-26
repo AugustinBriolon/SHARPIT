@@ -1,14 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
 import {
   CONNECT_GARMIN_AUTHORIZE_PATH,
   CONNECT_GARMIN_CALLBACK_PATH,
   garminHandoffCallbackPath,
-} from '@/lib/integrations/garmin/garmin-connect-handoff';
-import { startGarminBrowserSso } from '@/lib/integrations/garmin/garmin-sso-start';
-import { getGarminAccount } from '@/lib/integrations/garmin/garmin-sync';
-import { publicOriginFromRequest, redirectIfBindHost } from '@/lib/integrations/oauth-return';
-import { athleteCanConnectProvider } from '@/lib/privacy/consent-store';
+} from '@sharpit/server/lib/integrations/garmin/garmin-connect-handoff';
+import { startGarminBrowserSso } from '@sharpit/server/lib/integrations/garmin/garmin-sso-start';
+import { getGarminAccount } from '@sharpit/server/lib/integrations/garmin/garmin-sync';
+import {
+  publicOriginFromRequest,
+  redirectIfBindHost,
+} from '@sharpit/server/lib/integrations/oauth-return';
+import { athleteCanConnectProvider } from '@sharpit/server/lib/privacy/consent-store';
 
 /**
  * Native Garmin handoff, step 2 — arms the SSO state and opens the Garmin sign-in.

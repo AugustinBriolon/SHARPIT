@@ -1,6 +1,6 @@
 'use client';
 
-import type { ClientPlannedSession } from '@/lib/query/types';
+import type { ClientPlannedSession } from '@sharpit/server/lib/query/types';
 import { UnlinkedSessionRealization } from '@/components/planning/session/realize/session-realization-parts';
 import { LinkedAnalysisSection } from '@/components/planning/session/realize/session-realization-linked-section';
 import { useSessionRealizationController } from '@/components/planning/session/realize/use-session-realization-controller';

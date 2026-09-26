@@ -2,7 +2,7 @@
 
 import { useAuth } from '@clerk/nextjs';
 import { useSyncExternalStore } from 'react';
-import { DEMO_COOKIE } from '@/lib/demo/demo-cookie';
+import { DEMO_COOKIE } from '@sharpit/server/lib/demo/demo-cookie';
 
 /** Pulled out of the DOM read so it's testable with a plain string — this repo's
  * vitest config runs `.test.ts` files under `environment: 'node'`, no `document`. */

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { searchPlaces } from '@/lib/geocoding/nominatim';
+import { searchPlaces } from '@sharpit/server/lib/geocoding/nominatim';
 
 export async function GET(request: NextRequest) {
   // Read search params before try so Cache Components prerender interrupts propagate.

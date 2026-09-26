@@ -1,5 +1,5 @@
 import { LinkButton } from '@/components/ui/link-button';
-import { cn } from '@/lib/utils';
+import { cn } from '@sharpit/server/lib/utils';
 
 /**
  * Contextual sign-up nudge — lives inside a coach plate footer, not as a

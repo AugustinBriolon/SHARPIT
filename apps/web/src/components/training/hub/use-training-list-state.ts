@@ -3,16 +3,16 @@
 import { ActivityType } from '@prisma/client';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useMemo, useRef, useState, useTransition } from 'react';
-import type { ClientActivity } from '@/lib/query/types';
+import type { ClientActivity } from '@sharpit/server/lib/query/types';
 import { useResetWhenHidden } from '@/hooks/use-reset-when-hidden';
 import {
   applyTrainingHistoryFilters,
   parseTrainingHistoryFilters,
   serializeTrainingHistoryFilters,
   type TrainingHistoryFilters,
-} from '@/lib/training/periodization/history-filters';
-import { buildActivityRecordLabels } from '@/lib/training/records/activity-record-labels';
-import type { RecordsPayload } from '@/lib/training/records/records';
+} from '@sharpit/server/lib/training/periodization/history-filters';
+import { buildActivityRecordLabels } from '@sharpit/server/lib/training/records/activity-record-labels';
+import type { RecordsPayload } from '@sharpit/server/lib/training/records/records';
 
 const TYPE_ORDER: ActivityType[] = [
   ActivityType.RUN,

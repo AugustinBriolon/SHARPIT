@@ -11,20 +11,28 @@ import {
   useRecords,
   useTrainingPlan,
 } from '@/hooks/use-data';
-import { buildGoalCapHero, partitionGoalsForCap, type GoalCapHeroView } from '@/lib/goals/goal-cap';
-import { buildGoalCapStats, type GoalCapStatsView } from '@/lib/goals/goal-cap-stats';
+import {
+  buildGoalCapHero,
+  partitionGoalsForCap,
+  type GoalCapHeroView,
+} from '@sharpit/server/lib/goals/goal-cap';
+import { buildGoalCapStats, type GoalCapStatsView } from '@sharpit/server/lib/goals/goal-cap-stats';
 import {
   buildGoalPositionAudit,
   type GoalPositionAuditView,
-} from '@/lib/goals/goal-position-audit';
-import { buildRaceFinishProjection } from '@/lib/goals/goal-race-projection';
-import { buildGoalRealizationLabels } from '@/lib/goals/goal-realization-labels';
-import { buildMacroPhaseRail } from '@/lib/plan/trajectory/plan-macro-rail';
-import { selectPlanGoal, type PlanGoalView } from '@/lib/plan/trajectory/plan-goal';
-import type { ClientActivity, ClientGoal, ClientPlannedSession } from '@/lib/query/types';
+} from '@sharpit/server/lib/goals/goal-position-audit';
+import { buildRaceFinishProjection } from '@sharpit/server/lib/goals/goal-race-projection';
+import { buildGoalRealizationLabels } from '@sharpit/server/lib/goals/goal-realization-labels';
+import { buildMacroPhaseRail } from '@sharpit/server/lib/plan/trajectory/plan-macro-rail';
+import { selectPlanGoal, type PlanGoalView } from '@sharpit/server/lib/plan/trajectory/plan-goal';
+import type {
+  ClientActivity,
+  ClientGoal,
+  ClientPlannedSession,
+} from '@sharpit/server/lib/query/types';
 import type { AthleteProfilePayload } from '@/client/query/fetchers/athlete-profile';
-import type { PlanPhaseSource } from '@/lib/plan/trajectory/plan-phase';
-import type { RecordsPayload } from '@/lib/training/records/records';
+import type { PlanPhaseSource } from '@sharpit/server/lib/plan/trajectory/plan-phase';
+import type { RecordsPayload } from '@sharpit/server/lib/training/records/records';
 
 function toGoalItem(goal: ClientGoal): GoalItem {
   return {

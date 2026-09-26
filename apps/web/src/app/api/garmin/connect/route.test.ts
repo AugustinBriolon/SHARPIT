@@ -4,7 +4,7 @@ import {
   garminConnectErrorMessage,
   SSO_DISABLED_MESSAGE,
 } from './connect-shared';
-import { GarminLoginError } from '@/lib/integrations/garmin/garmin';
+import { GarminLoginError } from '@sharpit/server/lib/integrations/garmin/garmin';
 
 describe('garminConnectSchema', () => {
   it('accepts real-world credentials', () => {

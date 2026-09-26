@@ -1,8 +1,12 @@
 import { NextResponse } from 'next/server';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { canRunHealthDerivedAthleteRefresh } from '@/lib/privacy/consent-withdraw-ux';
-import { projectV1SyncStatus } from '@/lib/presentation/v1/sync-status';
-import { checkRateLimit, rateLimitJsonResponse, rateLimiters } from '@/lib/rate-limit';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
+import { canRunHealthDerivedAthleteRefresh } from '@sharpit/server/lib/privacy/consent-withdraw-ux';
+import { projectV1SyncStatus } from '@sharpit/server/lib/presentation/v1/sync-status';
+import {
+  checkRateLimit,
+  rateLimitJsonResponse,
+  rateLimiters,
+} from '@sharpit/server/lib/rate-limit';
 import {
   backfillStreamsIfNeeded,
   connectedProviderSet,
@@ -10,7 +14,7 @@ import {
   loadAthleteSyncContext,
   refreshAthleteBriefing,
   syncConnectedProviders,
-} from '@/lib/sync/athlete-provider-sync';
+} from '@sharpit/server/lib/sync/athlete-provider-sync';
 
 export const maxDuration = 300;
 

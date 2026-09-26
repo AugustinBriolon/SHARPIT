@@ -1,9 +1,9 @@
 import { DrillDownSectionCard } from '@/components/today/drill-down/section-card';
 import { DrillDownSectionLabel } from '@/components/today/drill-down/section-label';
-import type { SleepNightStatus } from '@/presentation/sleep-view-model';
-import { formatClock, formatDuration, type SleepCoachView } from '@/lib/sleep/sleep';
-import { tonightReason } from '@/lib/sleep/tonight-reason';
-import { cn } from '@/lib/utils';
+import type { SleepNightStatus } from '@sharpit/server/presentation/sleep-view-model';
+import { formatClock, formatDuration, type SleepCoachView } from '@sharpit/server/lib/sleep/sleep';
+import { tonightReason } from '@sharpit/server/lib/sleep/tonight-reason';
+import { cn } from '@sharpit/server/lib/utils';
 
 const RELAXATION_LEAD_MIN = 30;
 

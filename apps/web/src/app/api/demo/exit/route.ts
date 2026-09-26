@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { DEMO_COOKIE } from '@/lib/demo/demo-session';
+import { DEMO_COOKIE } from '@sharpit/server/lib/demo/demo-session';
 
 /** Clears the demo cookie and sends the visitor to the real sign-in page. */
 export function GET(request: NextRequest) {

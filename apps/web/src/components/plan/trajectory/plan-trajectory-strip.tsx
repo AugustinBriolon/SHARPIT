@@ -6,10 +6,10 @@ import { SkeletonDataValue } from '@/components/ui/skeleton-data-value';
 import {
   mapStripScoreToColorClass,
   mapStripStrainToColorClass,
-} from '@/lib/today/dashboard/today-mapping';
-import { TWIN_DRILL_DOWN } from '@/lib/today/navigation/today-twin-navigation';
-import type { SignalPreview } from '@/lib/today/dashboard/signal-previews';
-import { cn } from '@/lib/utils';
+} from '@sharpit/server/lib/today/dashboard/today-mapping';
+import { TWIN_DRILL_DOWN } from '@sharpit/server/lib/today/navigation/today-twin-navigation';
+import type { SignalPreview } from '@sharpit/server/lib/today/dashboard/signal-previews';
+import { cn } from '@sharpit/server/lib/utils';
 
 const META = [
   {

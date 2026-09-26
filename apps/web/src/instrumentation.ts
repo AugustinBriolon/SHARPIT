@@ -12,7 +12,8 @@ export async function register() {
     return;
   }
 
-  const { isLangfuseConfigured, getLangfuseSpanProcessor } = await import('@/lib/ai/langfuse');
+  const { isLangfuseConfigured, getLangfuseSpanProcessor } =
+    await import('@sharpit/server/lib/ai/langfuse');
   if (!isLangfuseConfigured()) {
     return;
   }

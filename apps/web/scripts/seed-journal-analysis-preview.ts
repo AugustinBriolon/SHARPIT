@@ -16,7 +16,7 @@ import {
   demoJournalFactors,
   demoJournalHydrationMl,
   demoJournalNightOutcomes,
-} from '../src/lib/demo/demo-journal-seed';
+} from '@sharpit/server/lib/demo/demo-journal-seed';
 
 const prisma = new PrismaClient();
 

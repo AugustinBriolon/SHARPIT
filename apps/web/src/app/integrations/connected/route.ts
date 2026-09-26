@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { redirectAfterIntegrationConnect } from '@/lib/integrations/oauth-return';
+import { redirectAfterIntegrationConnect } from '@sharpit/server/lib/integrations/oauth-return';
 
 /**
  * Legacy bounce URL — OAuth callbacks now redirect straight to onboarding /

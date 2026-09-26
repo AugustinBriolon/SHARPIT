@@ -2,8 +2,8 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRef } from 'react';
-import type { ExperimentIntent } from '@/lib/journal/journal-habit-experiment';
-import type { HabitExperimentView } from '@/lib/journal/journal-habit-experiment-view';
+import type { ExperimentIntent } from '@sharpit/server/lib/journal/journal-habit-experiment';
+import type { HabitExperimentView } from '@sharpit/server/lib/journal/journal-habit-experiment-view';
 import { queryKeys } from '@/client/query/keys';
 import { sendJson } from '@/client/query/send-json';
 

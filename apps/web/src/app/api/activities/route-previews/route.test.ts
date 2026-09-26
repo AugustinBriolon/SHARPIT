@@ -2,11 +2,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const getActivityRoutePreviewsMock = vi.fn();
 
-vi.mock('@/lib/auth/current-athlete', () => ({
+vi.mock('@sharpit/server/lib/auth/current-athlete', () => ({
   getCurrentAthleteId: vi.fn().mockResolvedValue('athlete-1'),
 }));
 
-vi.mock('@/lib/streams/route-previews', () => ({
+vi.mock('@sharpit/server/lib/streams/route-previews', () => ({
   getActivityRoutePreviews: (...args: unknown[]) => getActivityRoutePreviewsMock(...args),
 }));
 

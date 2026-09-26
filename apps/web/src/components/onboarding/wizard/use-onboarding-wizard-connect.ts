@@ -5,10 +5,10 @@ import {
   oauthConnectHref,
   type CatalogProvider,
   type DataClassId,
-} from '@/lib/integrations/provider-catalog';
+} from '@sharpit/server/lib/integrations/provider-catalog';
 import type { CredentialProvider } from '@/components/onboarding/wizard/use-onboarding-wizard';
 import { completeOnboarding } from '@/components/onboarding/wizard/onboarding-wizard-api';
-import type { OnboardingWizardStep } from '@/lib/onboarding/wizard/wizard-steps';
+import type { OnboardingWizardStep } from '@sharpit/server/lib/onboarding/wizard/wizard-steps';
 
 export function useOnboardingWizardFinish(
   setStep: React.Dispatch<React.SetStateAction<OnboardingWizardStep>>,

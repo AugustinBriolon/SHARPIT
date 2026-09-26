@@ -14,7 +14,7 @@ import {
   useSelectRootState,
   type SelectContextValue,
 } from '@/components/motion/use-select-root-state';
-import { cn } from '@/lib/utils';
+import { cn } from '@sharpit/server/lib/utils';
 
 const CHEVRON_TRANSITION = SELECT_CHEVRON_TRANSITION;
 

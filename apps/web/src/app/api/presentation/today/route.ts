@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { buildTodayPresentationViewModel } from '@/lib/presentation/today/today';
-import { getMorningRecalibrationPresentation } from '@/lib/morning-recalibration/service';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
+import { buildTodayPresentationViewModel } from '@sharpit/server/lib/presentation/today/today';
+import { getMorningRecalibrationPresentation } from '@sharpit/server/lib/morning-recalibration/service';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
 
 function isValidTrainingDayId(value: string): boolean {
   return /^\d{4}-\d{2}-\d{2}$/.test(value);

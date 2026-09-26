@@ -1,14 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('@/lib/auth/current-athlete', () => ({
+vi.mock('@sharpit/server/lib/auth/current-athlete', () => ({
   getCurrentAthleteId: vi.fn().mockResolvedValue('athlete-1'),
 }));
 
-vi.mock('@/lib/journal/journal-habit-analysis-load', () => ({
+vi.mock('@sharpit/server/lib/journal/journal-habit-analysis-load', () => ({
   loadJournalHabitFindings: vi.fn(),
 }));
 
-vi.mock('@/lib/journal/journal-habit-today-bridge', () => ({
+vi.mock('@sharpit/server/lib/journal/journal-habit-today-bridge', () => ({
   buildTodayJournalHabitBridge: vi.fn(),
 }));
 
@@ -16,7 +16,7 @@ vi.mock('@sharpit/db/client', () => ({
   prisma: {},
 }));
 
-vi.mock('@/lib/next/await-request', () => ({
+vi.mock('@sharpit/server/lib/next/await-request', () => ({
   awaitRequest: vi.fn().mockResolvedValue(undefined),
 }));
 
@@ -30,9 +30,10 @@ describe('GET /api/journal/habit-bridge', () => {
   });
 
   it('returns bridge payload from findings', async () => {
-    const { loadJournalHabitFindings } = await import('@/lib/journal/journal-habit-analysis-load');
+    const { loadJournalHabitFindings } =
+      await import('@sharpit/server/lib/journal/journal-habit-analysis-load');
     const { buildTodayJournalHabitBridge } =
-      await import('@/lib/journal/journal-habit-today-bridge');
+      await import('@sharpit/server/lib/journal/journal-habit-today-bridge');
     vi.mocked(loadJournalHabitFindings).mockResolvedValue({
       daysWithSignal: 14,
       findings: [],
@@ -62,9 +63,10 @@ describe('GET /api/journal/habit-bridge', () => {
   });
 
   it('returns bridge null when silent', async () => {
-    const { loadJournalHabitFindings } = await import('@/lib/journal/journal-habit-analysis-load');
+    const { loadJournalHabitFindings } =
+      await import('@sharpit/server/lib/journal/journal-habit-analysis-load');
     const { buildTodayJournalHabitBridge } =
-      await import('@/lib/journal/journal-habit-today-bridge');
+      await import('@sharpit/server/lib/journal/journal-habit-today-bridge');
     vi.mocked(loadJournalHabitFindings).mockResolvedValue({
       daysWithSignal: 2,
       findings: [],
@@ -80,7 +82,8 @@ describe('GET /api/journal/habit-bridge', () => {
   });
 
   it('returns 500 when load fails', async () => {
-    const { loadJournalHabitFindings } = await import('@/lib/journal/journal-habit-analysis-load');
+    const { loadJournalHabitFindings } =
+      await import('@sharpit/server/lib/journal/journal-habit-analysis-load');
     vi.mocked(loadJournalHabitFindings).mockRejectedValue(new Error('db down'));
 
     const { GET } = await importRoute();

@@ -6,16 +6,16 @@ import { ActivityDetailActionsMenu } from '@/components/training/activity/detail
 import { MobileBackLink } from '@/components/layout/header/mobile-back-link';
 import { ActivityHeaderContextChips } from '@/components/training/activity/detail/activity-header-context-chips';
 import { SessionPlate } from '@/components/training/activity/reading/session-plate';
-import { activityTypeLabels } from '@/lib/format';
+import { activityTypeLabels } from '@sharpit/server/lib/format';
 import {
   formatActivityDetailLoad,
   formatActivityDetailMeta,
   sportIcon,
 } from './activity-detail-helpers';
-import type { ActivityDetail } from '@/lib/activity/detail/types';
+import type { ActivityDetail } from '@sharpit/server/lib/activity/detail/types';
 import { useDisplayMode } from '@/providers/display-mode-provider';
-import type { PlannedSessionSummary } from '@/lib/activity/detail/types';
-import type { ActivityDetailHeaderActivity } from '@/lib/activity/detail/types';
+import type { PlannedSessionSummary } from '@sharpit/server/lib/activity/detail/types';
+import type { ActivityDetailHeaderActivity } from '@sharpit/server/lib/activity/detail/types';
 export type { ActivityDetailHeaderActivity };
 
 function ActivityDetailHeaderToolbar({

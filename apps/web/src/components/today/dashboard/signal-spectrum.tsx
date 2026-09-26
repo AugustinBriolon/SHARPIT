@@ -1,4 +1,4 @@
-import { cn } from '@/lib/utils';
+import { cn } from '@sharpit/server/lib/utils';
 
 /**
  * Restrained 0–100 spectrum with a position marker for adaptation readings.

@@ -1,16 +1,16 @@
 'use client';
 
-import type { TodayViewModel } from '@/presentation/today-view-model';
+import type { TodayViewModel } from '@sharpit/server/presentation/today-view-model';
 import {
   OvernightScoreCard,
   type OvernightScoreCardProps,
 } from '@/components/today/dashboard/overnight-score-card';
-import { TWIN_DRILL_DOWN } from '@/lib/today/navigation/today-twin-navigation';
+import { TWIN_DRILL_DOWN } from '@sharpit/server/lib/today/navigation/today-twin-navigation';
 import {
   pickTodayResumeSignalPreviews,
   type SignalPreview,
-} from '@/lib/today/dashboard/signal-previews';
-import { cn } from '@/lib/utils';
+} from '@sharpit/server/lib/today/dashboard/signal-previews';
+import { cn } from '@sharpit/server/lib/utils';
 
 type MetricsRow = TodayViewModel['hero']['metricsRow'];
 type SignalPreviews = TodayViewModel['hero']['signalPreviews'];

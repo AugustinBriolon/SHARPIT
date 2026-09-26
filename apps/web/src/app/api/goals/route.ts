@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { enrichGoalsWithProgress } from '@/lib/goals/goal-achievements';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { createGoal, getGoals } from '@/lib/queries';
-import { createGoalSchema } from '@/lib/validators/goal';
+import { enrichGoalsWithProgress } from '@sharpit/server/lib/goals/goal-achievements';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
+import { createGoal, getGoals } from '@sharpit/server/lib/queries';
+import { createGoalSchema } from '@sharpit/server/lib/validators/goal';
 
 export async function GET() {
   try {

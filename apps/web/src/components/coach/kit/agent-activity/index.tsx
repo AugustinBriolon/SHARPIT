@@ -3,7 +3,7 @@
 
 import { useId } from 'react';
 import { useReducedMotion } from 'motion/react';
-import { cn } from '@/lib/utils';
+import { cn } from '@sharpit/server/lib/utils';
 import { AgentActivityHeader } from './agent-activity-header';
 import { getActiveLabel, getActivitySummary } from './agent-activity-helpers';
 import { AgentActivityPanel } from './agent-activity-list';

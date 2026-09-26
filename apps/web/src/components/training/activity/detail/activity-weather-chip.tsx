@@ -5,8 +5,8 @@ import {
   activityWeatherIconClassName,
   formatActivityWeatherChip,
   parseActivityWeather,
-} from '@/lib/activity/weather/activity-weather';
-import { isIndoorActivitySession } from '@/lib/activity/location/indoor-activity';
+} from '@sharpit/server/lib/activity/weather/activity-weather';
+import { isIndoorActivitySession } from '@sharpit/server/lib/activity/location/indoor-activity';
 import { ActivityMetaChip } from '@/components/training/activity/detail/activity-meta-chip';
 import type { ActivityType } from '@prisma/client';
 

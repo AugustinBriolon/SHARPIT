@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { Select as SelectPrimitive } from '@base-ui/react/select';
 
-import { cn } from '@/lib/utils';
+import { cn } from '@sharpit/server/lib/utils';
 import { CheckIcon } from 'lucide-react';
 import { NavArrowDown, NavArrowUp } from '@/components/icons/nav-arrows';
 

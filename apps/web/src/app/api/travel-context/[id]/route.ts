@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@sharpit/db/client';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { deleteTravelContext } from '@/lib/travel-context/service';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
+import { deleteTravelContext } from '@sharpit/server/lib/travel-context/service';
 
 type RouteContext = { params: Promise<{ id: string }> };
 

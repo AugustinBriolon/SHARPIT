@@ -12,7 +12,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
-import type { ClientGoal, ClientPlannedSession } from '@/lib/query/types';
+import type { ClientGoal, ClientPlannedSession } from '@sharpit/server/lib/query/types';
 import {
   useAdaptPlan,
   type AdaptChange,
@@ -22,16 +22,19 @@ import {
 import { CoachGenerationProgressPanel } from '@/components/coach/plan/generation-progress';
 import { usePlannedSessions, usePlannedSessionMutations, useTrainingPlan } from '@/hooks/use-data';
 import { useGoals } from '@/hooks/use-goals';
-import type { GateSessionResult } from '@/lib/plan-gate/types';
+import type { GateSessionResult } from '@sharpit/server/lib/plan-gate/types';
 import { useOfflineGuard } from '@/hooks/use-offline-guard';
-import { warmCoachContext } from '@/lib/coach/warm-coach-context';
+import { warmCoachContext } from '@sharpit/server/lib/coach/warm-coach-context';
 import { AdaptChangeRow } from '@/components/coach/plan/adapt-change-row';
 import { buildAdaptBatchOps } from '@/components/coach/plan/plan-adapter-apply';
 import { PlanAdaptAppliedPanel } from '@/components/plan/adapt-applied-panel';
-import { recordAdaptAppliedAck, type AdaptAppliedAck } from '@/lib/plan/adapt-applied-ack';
-import { recordCoachingAdvancementEntry } from '@/lib/plan/coaching-advancement-ledger';
-import { resolveAdaptGoalLabel } from '@/lib/plan/resolve-adapt-goal-label';
-import { isHabitPlanFocus } from '@/lib/today/rich/habit-coaching-signal';
+import {
+  recordAdaptAppliedAck,
+  type AdaptAppliedAck,
+} from '@sharpit/server/lib/plan/adapt-applied-ack';
+import { recordCoachingAdvancementEntry } from '@sharpit/server/lib/plan/coaching-advancement-ledger';
+import { resolveAdaptGoalLabel } from '@sharpit/server/lib/plan/resolve-adapt-goal-label';
+import { isHabitPlanFocus } from '@sharpit/server/lib/today/rich/habit-coaching-signal';
 import { Check } from 'lucide-react';
 
 /** REMOVE changes bypass the Gate (see coach/adapt/route.ts) — only ADD/MODIFY changes have a gate result. */

@@ -2,7 +2,7 @@ import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { NextRequest } from 'next/server';
 import { POST, DELETE } from './route';
 import { prisma } from '@sharpit/db/client';
-import * as authModule from '@/lib/auth/current-athlete';
+import * as authModule from '@sharpit/server/lib/auth/current-athlete';
 
 vi.mock('@sharpit/db/client', () => ({
   prisma: {
@@ -13,11 +13,11 @@ vi.mock('@sharpit/db/client', () => ({
   },
 }));
 
-vi.mock('@/lib/auth/current-athlete', () => ({
+vi.mock('@sharpit/server/lib/auth/current-athlete', () => ({
   getCurrentAthleteId: vi.fn(),
 }));
 
-vi.mock('@/lib/rate-limit', () => ({
+vi.mock('@sharpit/server/lib/rate-limit', () => ({
   rateLimiters: { apiGeneral: {} },
   checkRateLimit: vi.fn().mockResolvedValue({ ok: true }),
   rateLimitJsonResponse: vi.fn(),

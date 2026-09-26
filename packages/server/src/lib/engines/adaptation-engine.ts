@@ -1,0 +1,42 @@
+/**
+ * ADAPTATION INTELLIGENCE — Singleton
+ *
+ * Wires the production infrastructure to the Adaptation Inference Orchestrator.
+ *
+ * Usage:
+ *   import { adaptationEngine } from '@sharpit/server/lib/engines/adaptation-engine'
+ *   const result = await adaptationEngine.run(athleteId, trainingDayId)
+ */
+
+import { AdaptationInferenceOrchestrator } from '@sharpit/core/inference/adaptation-orchestrator';
+import { PrismaDigitalTwinRepository } from '@sharpit/server/infrastructure/digital-twin/prisma-digital-twin-repository';
+import { PrismaDecisionRecordRepository } from '@sharpit/server/infrastructure/inference/prisma-decision-record-repository';
+import { featureEngine } from '@sharpit/server/lib/engines/feature-engine';
+import { prisma } from '@sharpit/db/client';
+
+function createAdaptationEngine(): AdaptationInferenceOrchestrator {
+  const digitalTwinRepo = new PrismaDigitalTwinRepository(prisma);
+  const decisionRecordRepo = new PrismaDecisionRecordRepository(prisma);
+
+  return new AdaptationInferenceOrchestrator({
+    featureEngine,
+    digitalTwinRepo,
+    decisionRecordRepo,
+  });
+}
+
+let _adaptationEngine: AdaptationInferenceOrchestrator | null = null;
+
+export function getAdaptationEngine(): AdaptationInferenceOrchestrator {
+  if (!_adaptationEngine) {
+    _adaptationEngine = createAdaptationEngine();
+  }
+  return _adaptationEngine;
+}
+
+export const adaptationEngine = {
+  run: (athleteId: string, trainingDayId: string) =>
+    getAdaptationEngine().run(athleteId, trainingDayId),
+  getLatest: (athleteId: string, trainingDayId: string) =>
+    getAdaptationEngine().getLatest(athleteId, trainingDayId),
+};

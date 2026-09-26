@@ -1,7 +1,7 @@
 'use client';
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import type { ClientPhysicalNote } from '@/lib/query/types';
+import type { ClientPhysicalNote } from '@sharpit/server/lib/query/types';
 import { PhysicalNoteFormFields } from '@/components/physical-health/dialogs/physical-note-form-fields';
 import { PhysicalNoteDialogFooter } from '@/components/physical-health/dialogs/physical-note-dialog-footer';
 import {

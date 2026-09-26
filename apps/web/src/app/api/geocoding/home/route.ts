@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { resolveDefaultActivityLocation } from '@/lib/geocoding/default-activity-location';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
+import { resolveDefaultActivityLocation } from '@sharpit/server/lib/geocoding/default-activity-location';
 import { prisma } from '@sharpit/db/client';
 
 export async function GET(request: NextRequest) {

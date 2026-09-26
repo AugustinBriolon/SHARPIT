@@ -1,4 +1,4 @@
-import type { AthleteSnapshot } from '@/athlete-state/snapshot';
+import type { AthleteSnapshot } from '@sharpit/server/athlete-state/snapshot';
 
 export async function fetchAthleteSnapshot(
   trainingDayId: string,

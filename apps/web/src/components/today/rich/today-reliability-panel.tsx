@@ -1,7 +1,7 @@
 'use client';
 
 import { LinkButton } from '@/components/ui/link-button';
-import type { TodayViewModel } from '@/presentation/today-view-model';
+import type { TodayViewModel } from '@sharpit/server/presentation/today-view-model';
 
 type Reliability = NonNullable<TodayViewModel['hero']['reliability']>;
 

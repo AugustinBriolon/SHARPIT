@@ -2,9 +2,9 @@
 
 import { ActivityType } from '@prisma/client';
 
-import { SPORT_IDENTITY_SURFACE } from '@/lib/activity/sport-identity';
-import { activityTypeLabels } from '@/lib/format';
-import { cn } from '@/lib/utils';
+import { SPORT_IDENTITY_SURFACE } from '@sharpit/server/lib/activity/sport-identity';
+import { activityTypeLabels } from '@sharpit/server/lib/format';
+import { cn } from '@sharpit/server/lib/utils';
 
 /** Dense calendar / micro chips — keep short. Prefer `label` in lists. */
 const ACTIVITY_TYPE_CODES: Record<ActivityType, string> = {
@@ -17,7 +17,7 @@ const ACTIVITY_TYPE_CODES: Record<ActivityType, string> = {
   OTHER: 'AUT',
 };
 
-/** @deprecated Use SPORT_IDENTITY_SURFACE from `@/lib/activity/sport-identity`. */
+/** @deprecated Use SPORT_IDENTITY_SURFACE from `@sharpit/server/lib/activity/sport-identity`. */
 export const ACTIVITY_TYPE_SURFACE = SPORT_IDENTITY_SURFACE;
 
 /** @deprecated Prefer SPORT_IDENTITY_SURFACE. */

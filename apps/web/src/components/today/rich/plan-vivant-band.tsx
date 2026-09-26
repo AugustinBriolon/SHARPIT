@@ -2,8 +2,8 @@
 
 import Link from 'next/link';
 import { Check, Route } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import type { PlanVivantProgress } from '@/lib/today/rich/plan-vivant-reading';
+import { cn } from '@sharpit/server/lib/utils';
+import type { PlanVivantProgress } from '@sharpit/server/lib/today/rich/plan-vivant-reading';
 
 /**
  * Plan vivant on Résumé — a band that reads as a sentence, with one visual.

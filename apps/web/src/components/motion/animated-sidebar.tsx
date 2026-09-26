@@ -3,8 +3,8 @@
 import { AnimatePresence, type HTMLMotionProps, motion } from 'motion/react';
 import { type ButtonHTMLAttributes, forwardRef, type HTMLAttributes, type ReactNode } from 'react';
 import { SharedLayoutBg } from '@/components/motion/shared-layout-bg';
-import { SPRING_LAYOUT } from '@/lib/ease';
-import { cn } from '@/lib/utils';
+import { SPRING_LAYOUT } from '@sharpit/server/lib/ease';
+import { cn } from '@sharpit/server/lib/utils';
 import { useAnimatedSidebar, useAnimatedSidebarPanel } from './animated-sidebar-context';
 import { DesktopAnimatedSidebar, type AnimatedSidebarProps } from './animated-sidebar-desktop';
 import { MobileSidebar } from './animated-sidebar-mobile';

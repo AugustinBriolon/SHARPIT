@@ -6,8 +6,8 @@ import {
   PRACTICED_SPORT_LABELS,
   type PracticedSportId,
   togglePracticedSport,
-} from '@/lib/practiced-sports';
-import { cn } from '@/lib/utils';
+} from '@sharpit/server/lib/practiced-sports';
+import { cn } from '@sharpit/server/lib/utils';
 import type { LucideIcon } from 'lucide-react';
 import {
   Bike,

@@ -10,8 +10,8 @@
  *   yarn db:recompute:fuel-features --dry-run
  *   yarn db:recompute:fuel-features
  */
-import { featureEngine } from '../src/lib/engines/feature-engine';
-import { prisma } from '../src/lib/prisma';
+import { featureEngine } from '@sharpit/server/lib/engines/feature-engine';
+import { prisma } from '@sharpit/db/client';
 
 const dryRun = process.argv.includes('--dry-run');
 const ATHLETE_ID = 'default';

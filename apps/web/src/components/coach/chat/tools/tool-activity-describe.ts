@@ -1,6 +1,6 @@
 import type { ActivityType } from '@prisma/client';
-import { activityTypeLabels } from '@/lib/format';
-import { intensityLabels } from '@/lib/planned-session/sessions';
+import { activityTypeLabels } from '@sharpit/server/lib/format';
+import { intensityLabels } from '@sharpit/server/lib/planned-session/sessions';
 import type { KnownSession } from '@/components/coach/chat/tools/tool-activity';
 
 export type SessionInput = {

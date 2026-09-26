@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
-import { getPlannedSessionById } from '@/lib/queries';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { buildPlannedSessionViewModel } from '@/lib/presentation/planned-session/planned-session';
-import { resolvePlannedSessionContext } from '@/lib/planned-session/resolve-context';
-import { buildPlannedSessionCompletionComparison } from '@/lib/planned-session/display/completion-comparison';
-import { resolveActivityEnvironmentPresentation } from '@/lib/environment/activity-environment';
+import { getPlannedSessionById } from '@sharpit/server/lib/queries';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
+import { buildPlannedSessionViewModel } from '@sharpit/server/lib/presentation/planned-session/planned-session';
+import { resolvePlannedSessionContext } from '@sharpit/server/lib/planned-session/resolve-context';
+import { buildPlannedSessionCompletionComparison } from '@sharpit/server/lib/planned-session/display/completion-comparison';
+import { resolveActivityEnvironmentPresentation } from '@sharpit/server/lib/environment/activity-environment';
 
 type RouteProps = { params: Promise<{ id: string }> };
 

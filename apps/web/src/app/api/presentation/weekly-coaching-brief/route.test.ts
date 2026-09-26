@@ -1,26 +1,26 @@
 import { describe, expect, it, vi, beforeEach, beforeAll } from 'vitest';
 import { NextRequest } from 'next/server';
 
-vi.mock('@/lib/queries', () => ({
+vi.mock('@sharpit/server/lib/queries', () => ({
   getActiveTrainingPlan: vi.fn(),
   getGoals: vi.fn(),
   getPlannedSessions: vi.fn(),
 }));
 
-vi.mock('@/lib/auth/current-athlete', () => ({
+vi.mock('@sharpit/server/lib/auth/current-athlete', () => ({
   getCurrentAthleteId: vi.fn().mockResolvedValue('default'),
 }));
 
-vi.mock('@/lib/training/pmc/pmc-server', () => ({
+vi.mock('@sharpit/server/lib/training/pmc/pmc-server', () => ({
   loadDailyTrainingStressEntries: vi.fn().mockResolvedValue([]),
 }));
 
-vi.mock('@/lib/decision-memory/repository', () => ({
+vi.mock('@sharpit/server/lib/decision-memory/repository', () => ({
   findDecisionForPlannedSession: vi.fn().mockResolvedValue(null),
   findRecentEvaluatedOutcomes: vi.fn().mockResolvedValue([]),
 }));
 
-vi.mock('@/lib/athlete-state/snapshot-service', () => ({
+vi.mock('@sharpit/server/lib/athlete-state/snapshot-service', () => ({
   getOrBuildAthleteSnapshot: vi.fn(),
 }));
 
@@ -45,8 +45,10 @@ describe('GET /api/presentation/weekly-coaching-brief', () => {
   });
 
   it('degraded path: nothing configured produces the empty-state shape', async () => {
-    const { getActiveTrainingPlan, getGoals, getPlannedSessions } = await import('@/lib/queries');
-    const { getOrBuildAthleteSnapshot } = await import('@/lib/athlete-state/snapshot-service');
+    const { getActiveTrainingPlan, getGoals, getPlannedSessions } =
+      await import('@sharpit/server/lib/queries');
+    const { getOrBuildAthleteSnapshot } =
+      await import('@sharpit/server/lib/athlete-state/snapshot-service');
     vi.mocked(getActiveTrainingPlan).mockResolvedValue(null);
     vi.mocked(getGoals).mockResolvedValue([]);
     vi.mocked(getPlannedSessions).mockResolvedValue([]);
@@ -63,8 +65,10 @@ describe('GET /api/presentation/weekly-coaching-brief', () => {
   });
 
   it('happy path: active plan + sessions produce a populated brief', async () => {
-    const { getActiveTrainingPlan, getGoals, getPlannedSessions } = await import('@/lib/queries');
-    const { getOrBuildAthleteSnapshot } = await import('@/lib/athlete-state/snapshot-service');
+    const { getActiveTrainingPlan, getGoals, getPlannedSessions } =
+      await import('@sharpit/server/lib/queries');
+    const { getOrBuildAthleteSnapshot } =
+      await import('@sharpit/server/lib/athlete-state/snapshot-service');
     vi.mocked(getActiveTrainingPlan).mockResolvedValue({
       weeks: [
         {

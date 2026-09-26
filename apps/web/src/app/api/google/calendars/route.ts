@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { GoogleOAuthError } from '@/lib/integrations/google/google';
+import { GoogleOAuthError } from '@sharpit/server/lib/integrations/google/google';
 import {
   getGoogleAccount,
   isGoogleConnected,
   listGoogleCalendars,
-} from '@/lib/integrations/google/google-sync';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
+} from '@sharpit/server/lib/integrations/google/google-sync';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
 
 function mapCalendarListItem(
   calendar: Awaited<ReturnType<typeof listGoogleCalendars>>[number],

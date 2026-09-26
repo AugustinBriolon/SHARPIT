@@ -1,5 +1,5 @@
-import type { ExperimentDaySegment } from '@/lib/journal/journal-habit-experiment';
-import { cn } from '@/lib/utils';
+import type { ExperimentDaySegment } from '@sharpit/server/lib/journal/journal-habit-experiment';
+import { cn } from '@sharpit/server/lib/utils';
 
 const SEGMENT_CLASS: Record<ExperimentDaySegment, string> = {
   held: 'bg-primary h-1.5 rounded-full',

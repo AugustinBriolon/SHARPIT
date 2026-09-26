@@ -5,13 +5,16 @@ import {
   findNextRace,
   resolvePlanWeekForStart,
 } from '@/components/planning/view/use-planning-view-helpers';
-import { buildPlanningWeeks, resolvePlanningWeek } from '@/lib/planned-session/planning';
+import {
+  buildPlanningWeeks,
+  resolvePlanningWeek,
+} from '@sharpit/server/lib/planned-session/planning';
 import type {
   ClientActivity,
   ClientGoal,
   ClientPlannedSession,
   ClientTrainingPlan,
-} from '@/lib/query/types';
+} from '@sharpit/server/lib/query/types';
 import { endOfWeek, startOfWeek } from 'date-fns';
 import { useMemo, useState } from 'react';
 

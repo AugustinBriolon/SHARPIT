@@ -1,14 +1,17 @@
 import { cookies } from 'next/headers';
 import { NextRequest } from 'next/server';
 import { prisma } from '@sharpit/db/client';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
 import {
   publicOriginFromRequest,
   redirectAfterIntegrationConnect,
-} from '@/lib/integrations/oauth-return';
-import { exchangeWithingsCode, getWithingsRedirectUri } from '@/lib/integrations/withings/withings';
-import { syncWithingsHealth } from '@/lib/integrations/withings/withings-sync';
-import { encryptSecret } from '@/lib/secret-box';
+} from '@sharpit/server/lib/integrations/oauth-return';
+import {
+  exchangeWithingsCode,
+  getWithingsRedirectUri,
+} from '@sharpit/server/lib/integrations/withings/withings';
+import { syncWithingsHealth } from '@sharpit/server/lib/integrations/withings/withings-sync';
+import { encryptSecret } from '@sharpit/server/lib/secret-box';
 
 function readOAuthParams(searchParams: URLSearchParams) {
   return {

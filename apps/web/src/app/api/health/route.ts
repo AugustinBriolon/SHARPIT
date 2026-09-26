@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { parseISO } from 'date-fns';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { getHealthEntries } from '@/lib/queries';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
+import { getHealthEntries } from '@sharpit/server/lib/queries';
 
 export async function GET(request: NextRequest) {
   // Read search params before try so Cache Components prerender interrupts propagate.

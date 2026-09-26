@@ -4,8 +4,11 @@ import { useEffect, useMemo, useRef } from 'react';
 import { format } from 'date-fns';
 import { PlanningWeekDay } from '@/components/planning/week/planning-week-day';
 import type { usePlanningViewData } from '@/components/planning/view/use-planning-view-data';
-import { planningDayKey, resolveSelectedPlanningDayId } from '@/lib/plan/planning-day-selection';
-import type { ClientActivity } from '@/lib/query/types';
+import {
+  planningDayKey,
+  resolveSelectedPlanningDayId,
+} from '@sharpit/server/lib/plan/planning-day-selection';
+import type { ClientActivity } from '@sharpit/server/lib/query/types';
 
 export function PlanningDaysPanel({
   data,

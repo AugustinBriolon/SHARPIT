@@ -1,5 +1,5 @@
 import { PhysioDrillDownHero } from '@/components/today/drill-down/physio-drill-down-hero';
-import { formatClock } from '@/lib/sleep/sleep';
+import { formatClock } from '@sharpit/server/lib/sleep/sleep';
 
 export function SleepHero({
   date,

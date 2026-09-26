@@ -17,7 +17,7 @@ import {
   useState,
 } from 'react';
 import { usePopoverPortalPosition } from '@/components/motion/popover-position';
-import { cn } from '@/lib/utils';
+import { cn } from '@sharpit/server/lib/utils';
 
 import { resolveMorphPopoverPosition } from '@/components/motion/morph-popover-helpers';
 import { MorphPopoverPortal } from '@/components/motion/morph-popover-portal';

@@ -5,9 +5,12 @@ import {
   CONNECT_GARMIN_PATH,
   garminHandoffCopy,
   type GarminHandoffStatus,
-} from '@/lib/integrations/garmin/garmin-connect-handoff';
-import { RISK_TONE, STATUS_SURFACE } from '@/lib/presentation/coaching/status-surface';
-import { cn } from '@/lib/utils';
+} from '@sharpit/server/lib/integrations/garmin/garmin-connect-handoff';
+import {
+  RISK_TONE,
+  STATUS_SURFACE,
+} from '@sharpit/server/lib/presentation/coaching/status-surface';
+import { cn } from '@sharpit/server/lib/utils';
 
 /**
  * Where the handoff ends. On iOS the ASWebAuthenticationSession closes as soon as this

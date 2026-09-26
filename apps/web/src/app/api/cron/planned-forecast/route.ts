@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { refreshUpcomingPlannedSessionForecasts } from '@/lib/planned-session/forecast/refresh-forecasts';
-import { verifyCronSecret } from '@/lib/cron/verify-cron-secret';
+import { refreshUpcomingPlannedSessionForecasts } from '@sharpit/server/lib/planned-session/forecast/refresh-forecasts';
+import { verifyCronSecret } from '@sharpit/server/lib/cron/verify-cron-secret';
 
 export const maxDuration = 300;
 

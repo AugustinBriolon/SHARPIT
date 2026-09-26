@@ -1,6 +1,6 @@
 'use client';
 
-import type { MultisportLegStream } from '@/lib/streams/streams';
+import type { MultisportLegStream } from '@sharpit/server/lib/streams/streams';
 import { SportLegUnavailable } from '@/components/training/activity/insights/sport-leg-unavailable';
 import { SportLegStreamBody } from '@/components/training/activity/insights/sport-leg-stream-body';
 

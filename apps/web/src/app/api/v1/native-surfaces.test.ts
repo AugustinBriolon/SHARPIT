@@ -6,7 +6,7 @@ import {
   NATIVE_V1_DEFERRED,
   NATIVE_V1_ONLY,
   NATIVE_V1_SURFACES,
-} from '@/lib/api-v1/native-surfaces';
+} from '@sharpit/server/lib/api-v1/native-surfaces';
 
 type RouteModule = Record<string, unknown>;
 

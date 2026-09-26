@@ -1,4 +1,4 @@
-import type { GeocodedPlace } from '@/lib/geocoding/types';
+import type { GeocodedPlace } from '@sharpit/server/lib/geocoding/types';
 import { fetchJson } from './shared';
 
 export async function fetchTravelContext<T = unknown>(): Promise<T> {

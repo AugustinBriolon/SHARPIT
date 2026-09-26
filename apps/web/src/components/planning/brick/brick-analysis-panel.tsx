@@ -4,13 +4,13 @@ import { ArrowLeftRight, Layers, Loader2, RefreshCw, Sparkles } from 'lucide-rea
 import { useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/toast';
-import { activityTypeLabels } from '@/lib/format';
-import { sessionScoreColor } from '@/lib/planned-session/display/session-analysis-display';
-import { cn } from '@/lib/utils';
+import { activityTypeLabels } from '@sharpit/server/lib/format';
+import { sessionScoreColor } from '@sharpit/server/lib/planned-session/display/session-analysis-display';
+import { cn } from '@sharpit/server/lib/utils';
 import { useAnalyzeBrick, useBrickAnalysis, usePlannedSessions } from '@/hooks/use-data';
 import { useOfflineGuard } from '@/hooks/use-offline-guard';
-import type { BrickAnalysis } from '@/lib/validators/coach';
-import type { ClientPlannedSession } from '@/lib/query/types';
+import type { BrickAnalysis } from '@sharpit/server/lib/validators/coach';
+import type { ClientPlannedSession } from '@sharpit/server/lib/query/types';
 
 function renderAnalyzeButtonContent(isAnalyzing: boolean, offline: boolean, offlineLabel: string) {
   if (isAnalyzing) {

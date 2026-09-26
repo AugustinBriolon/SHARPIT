@@ -9,19 +9,19 @@ import {
   TrainingListWeekGroups,
 } from '@/components/training/hub/training-list-parts';
 import { groupActivitiesByWeek } from '@/components/training/hub/training-list-logbook';
-import type { ClientActivity } from '@/lib/query/types';
+import type { ClientActivity } from '@sharpit/server/lib/query/types';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SkeletonDataValue } from '@/components/ui/skeleton-data-value';
 import { useActivities, useActivityRoutePreviews, useRecords } from '@/hooks/use-data';
-import type { ActivityRoutePreviews } from '@/lib/streams/route-previews';
+import type { ActivityRoutePreviews } from '@sharpit/server/lib/streams/route-previews';
 import {
   DEFAULT_TRAINING_HISTORY_FILTERS,
   formatTrainingHistoryFilterStatus,
-} from '@/lib/training/periodization/history-filters';
+} from '@sharpit/server/lib/training/periodization/history-filters';
 import { useTrainingListState } from '@/components/training/hub/use-training-list-state';
-import { PAGE_CONTENT_MAX_CLASS } from '@/lib/ui/page-gutter';
-import { cn } from '@/lib/utils';
+import { PAGE_CONTENT_MAX_CLASS } from '@sharpit/server/lib/ui/page-gutter';
+import { cn } from '@sharpit/server/lib/utils';
 
 const CreateHikeTripDialog = dynamic(
   () =>

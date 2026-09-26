@@ -8,8 +8,8 @@ import {
   ApprovalCardQuestionNav,
 } from '@/components/coach/kit/approval-card/approval-card-parts';
 import { approvalCardCopy } from '@/components/coach/kit/approval-card/copy';
-import { EASE_OUT } from '@/lib/ease';
-import { cn } from '@/lib/utils';
+import { EASE_OUT } from '@sharpit/server/lib/ease';
+import { cn } from '@sharpit/server/lib/utils';
 import type { ApprovalCardAnswer, ApprovalCardProps } from './types';
 
 function QuestionStepPanel({

@@ -1,10 +1,10 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import type { MacroKind } from '@/lib/nutrition/macro-colors';
-import { MACRO_COLORS, MACRO_LABELS } from '@/lib/nutrition/macro-colors';
-import { formatMacroGPerKg } from '@/lib/nutrition/fuel-density-display';
-import { cn } from '@/lib/utils';
+import type { MacroKind } from '@sharpit/server/lib/nutrition/macro-colors';
+import { MACRO_COLORS, MACRO_LABELS } from '@sharpit/server/lib/nutrition/macro-colors';
+import { formatMacroGPerKg } from '@sharpit/server/lib/nutrition/fuel-density-display';
+import { cn } from '@sharpit/server/lib/utils';
 
 function formatMacroRemainingText(remaining: number, unit: 'g'): string {
   if (remaining > 0) {

@@ -5,14 +5,14 @@ import { fr } from 'date-fns/locale';
 import { Check } from 'lucide-react';
 import { GateFindingsList, GateStatusBadge } from '@/components/coach/plan/gate-status-badge';
 import type { GeneratedSession } from '@/hooks/use-coach';
-import { activityTypeLabels } from '@/lib/format';
+import { activityTypeLabels } from '@sharpit/server/lib/format';
 import {
   formatPlannedDuration,
   intensityAccent,
   intensityLabels,
-} from '@/lib/planned-session/sessions';
-import type { GateSessionResult } from '@/lib/plan-gate/types';
-import { cn } from '@/lib/utils';
+} from '@sharpit/server/lib/planned-session/sessions';
+import type { GateSessionResult } from '@sharpit/server/lib/plan-gate/types';
+import { cn } from '@sharpit/server/lib/utils';
 
 function SessionRowCheckbox({ rejected, selected }: { rejected: boolean; selected: boolean }) {
   return (

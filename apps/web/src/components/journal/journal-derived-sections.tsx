@@ -1,11 +1,11 @@
 'use client';
 
 import { Check, Minus, CircleDashed } from 'lucide-react';
-import type { JournalAutoChecklistItem } from '@/lib/journal/journal-auto-checklist';
-import { JOURNAL_CATEGORY_HEADER } from '@/lib/journal/journal-category-surface';
-import type { JournalNutritionSummary } from '@/lib/journal/journal-day-signals';
+import type { JournalAutoChecklistItem } from '@sharpit/server/lib/journal/journal-auto-checklist';
+import { JOURNAL_CATEGORY_HEADER } from '@sharpit/server/lib/journal/journal-category-surface';
+import type { JournalNutritionSummary } from '@sharpit/server/lib/journal/journal-day-signals';
 import { DietChipList } from '@/components/nutrition/diet-chip-list';
-import { cn } from '@/lib/utils';
+import { cn } from '@sharpit/server/lib/utils';
 
 function StatusIcon({ status }: { status: JournalAutoChecklistItem['status'] }) {
   if (status === 'done') {

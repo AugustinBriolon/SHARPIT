@@ -5,10 +5,10 @@ import { fr } from 'date-fns/locale';
 import { Target } from 'lucide-react';
 import { InkEmptyState } from '@/components/ui/ink-empty-state';
 import { DestinationAdvancementNote } from '@/components/plan/hub/destination-advancement-note';
-import type { MacroPhaseRail } from '@/lib/plan/trajectory/plan-macro-rail';
-import type { PlanGoalView } from '@/lib/plan/trajectory/plan-goal';
-import { MOI_OBJECTIFS_PATH } from '@/lib/moi/paths';
-import { cn } from '@/lib/utils';
+import type { MacroPhaseRail } from '@sharpit/server/lib/plan/trajectory/plan-macro-rail';
+import type { PlanGoalView } from '@sharpit/server/lib/plan/trajectory/plan-goal';
+import { MOI_OBJECTIFS_PATH } from '@sharpit/server/lib/moi/paths';
+import { cn } from '@sharpit/server/lib/utils';
 
 /** Compact rail labels — full names overflow on 5-column mobile grids. */
 const PHASE_RAIL_SHORT: Record<PlanPhase, string> = {

@@ -1,8 +1,8 @@
 import { GateRedirect } from '@/components/navigation/gate-redirect';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { GARMIN_SSO_PAGE_PATH } from '@/lib/integrations/garmin/garmin-browser-sso-shared';
-import { consentWallHref } from '@/lib/onboarding/entry';
-import { athleteNeedsOnboarding } from '@/lib/onboarding/status/status';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
+import { GARMIN_SSO_PAGE_PATH } from '@sharpit/server/lib/integrations/garmin/garmin-browser-sso-shared';
+import { consentWallHref } from '@sharpit/server/lib/onboarding/entry';
+import { athleteNeedsOnboarding } from '@sharpit/server/lib/onboarding/status/status';
 
 /**
  * Pages onboarding itself sends the athlete through: the Garmin sign-in lives under

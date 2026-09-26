@@ -1,4 +1,4 @@
-import type { RecoveryViewModel } from '@/presentation/recovery-view-model';
+import type { RecoveryViewModel } from '@sharpit/server/presentation/recovery-view-model';
 
 const DEFAULT_EMPTY = {
   description: 'Données de récupération indisponibles.',

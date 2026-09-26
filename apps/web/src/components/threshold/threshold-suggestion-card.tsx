@@ -8,8 +8,11 @@ import { StaggerList } from '@/components/motion/stagger-list';
 import { ThresholdChangeRow } from '@/components/threshold/threshold-change-row';
 import { useSafeMotion, useShouldAnimate } from '@/client/motion/hooks';
 import { motionTokens, springs } from '@/client/motion/tokens';
-import type { ThresholdApplyPreview, ThresholdField } from '@/lib/threshold/threshold-estimates';
-import { cn } from '@/lib/utils';
+import type {
+  ThresholdApplyPreview,
+  ThresholdField,
+} from '@sharpit/server/lib/threshold/threshold-estimates';
+import { cn } from '@sharpit/server/lib/utils';
 
 function thresholdApplyLabel(
   applyLabel: string,

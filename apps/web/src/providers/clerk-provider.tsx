@@ -3,8 +3,8 @@
 import { ClerkProvider } from '@clerk/nextjs';
 import { frFR } from '@clerk/localizations';
 import { useEffect, useState } from 'react';
-import { ENTRY_PATH } from '@/lib/onboarding/entry-path';
-import { clerkAppearance } from '@/lib/theme/clerk-appearance';
+import { ENTRY_PATH } from '@sharpit/server/lib/onboarding/entry-path';
+import { clerkAppearance } from '@sharpit/server/lib/theme/clerk-appearance';
 
 /**
  * After sign-in/up with no `redirect_url`: `/start`, which sends the athlete straight to

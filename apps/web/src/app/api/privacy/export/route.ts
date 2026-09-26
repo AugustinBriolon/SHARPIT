@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { awaitRequest } from '@/lib/next/await-request';
-import { buildAthleteExportJson } from '@/lib/privacy/export';
-import { logSafeError } from '@/lib/privacy/safe-log';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
+import { awaitRequest } from '@sharpit/server/lib/next/await-request';
+import { buildAthleteExportJson } from '@sharpit/server/lib/privacy/export';
+import { logSafeError } from '@sharpit/server/lib/privacy/safe-log';
 
 /** GDPR access/portability — athlete-scoped JSON, no raw credentials. */
 export async function GET() {

@@ -1,13 +1,17 @@
 import { NextResponse } from 'next/server';
-import { onProviderSyncCompleted } from '@/lib/athlete-state/orchestrator';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { isProviderConnectable } from '@/lib/integrations/provider-catalog';
-import { checkRateLimit, rateLimitJsonResponse, rateLimiters } from '@/lib/rate-limit';
+import { onProviderSyncCompleted } from '@sharpit/server/lib/athlete-state/orchestrator';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
+import { isProviderConnectable } from '@sharpit/server/lib/integrations/provider-catalog';
+import {
+  checkRateLimit,
+  rateLimitJsonResponse,
+  rateLimiters,
+} from '@sharpit/server/lib/rate-limit';
 import {
   filterRecordChangesByActivities,
   updateRecordsForTypes,
-} from '@/lib/training/records/records';
-import { syncStravaActivities } from '@/lib/integrations/strava/strava-sync';
+} from '@sharpit/server/lib/training/records/records';
+import { syncStravaActivities } from '@sharpit/server/lib/integrations/strava/strava-sync';
 
 export async function POST() {
   try {

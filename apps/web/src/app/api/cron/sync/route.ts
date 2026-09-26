@@ -1,10 +1,13 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@sharpit/db/client';
-import { mapWithConcurrency } from '@/lib/async/map-with-concurrency';
-import { verifyCronSecret } from '@/lib/cron/verify-cron-secret';
-import { DecryptCircuitBreaker } from '@/lib/cron/decrypt-circuit-breaker';
-import { summarizeCronSyncResults, type CronAthleteSyncResult } from '@/lib/cron/sync-summary';
-import { canRunHealthDerivedAthleteRefresh } from '@/lib/privacy/consent-withdraw-ux';
+import { mapWithConcurrency } from '@sharpit/server/lib/async/map-with-concurrency';
+import { verifyCronSecret } from '@sharpit/server/lib/cron/verify-cron-secret';
+import { DecryptCircuitBreaker } from '@sharpit/server/lib/cron/decrypt-circuit-breaker';
+import {
+  summarizeCronSyncResults,
+  type CronAthleteSyncResult,
+} from '@sharpit/server/lib/cron/sync-summary';
+import { canRunHealthDerivedAthleteRefresh } from '@sharpit/server/lib/privacy/consent-withdraw-ux';
 import {
   backfillStreamsIfNeeded,
   emptyAthleteResult,
@@ -12,7 +15,7 @@ import {
   loadAthleteSyncContext,
   refreshAthleteBriefing,
   syncConnectedProviders,
-} from '@/lib/sync/athlete-provider-sync';
+} from '@sharpit/server/lib/sync/athlete-provider-sync';
 
 export const maxDuration = 300;
 

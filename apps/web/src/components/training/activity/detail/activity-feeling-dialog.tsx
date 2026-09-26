@@ -11,7 +11,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { ScalePicker, StepDots, type ScaleOption } from '@/components/ui/instruments/scale-picker';
-import { ACTIVITY_FEELING_SCALE } from '@/lib/activity/feeling/activity-feeling-scale';
+import { ACTIVITY_FEELING_SCALE } from '@sharpit/server/lib/activity/feeling/activity-feeling-scale';
 
 /**
  * Session feeling — the same instrument as « Ressenti du matin »: one question

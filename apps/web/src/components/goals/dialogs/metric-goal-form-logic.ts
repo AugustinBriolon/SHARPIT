@@ -8,8 +8,8 @@ import {
   parseTargetInput,
   type GoalMetricTemplate,
   type PeriodMeasure,
-} from '@/lib/goals/goal-metric-config';
-import type { PeriodSportOption } from '@/lib/practiced-sports';
+} from '@sharpit/server/lib/goals/goal-metric-config';
+import type { PeriodSportOption } from '@sharpit/server/lib/practiced-sports';
 import type { MetricGoalFormResult } from '@/components/goals/dialogs/metric-goal-form';
 import {
   submitPerformanceMetricGoal,

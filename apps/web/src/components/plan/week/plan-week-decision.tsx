@@ -7,17 +7,20 @@ import { BrickOverviewCard } from '@/components/planning/brick/brick-overview-ca
 import { PlannedSessionPreview } from '@/components/today/rich/planned-session-preview';
 import { Button } from '@/components/ui/button';
 import { LinkButton } from '@/components/ui/link-button';
-import type { WeekDecision, WeekDecisionAction } from '@/lib/plan/week/plan-week-decision';
-import type { PlanWeek } from '@/lib/plan/week/plan-week';
+import type {
+  WeekDecision,
+  WeekDecisionAction,
+} from '@sharpit/server/lib/plan/week/plan-week-decision';
+import type { PlanWeek } from '@sharpit/server/lib/plan/week/plan-week';
 import {
   resolveDecisionSessionBlock,
   type HubRemainingItem,
-} from '@/lib/plan/week/plan-week-previews';
-import { brickLegSummaries } from '@/lib/planned-session/brick/brick-sessions';
-import { formatPlannedDuration } from '@/lib/planned-session/sessions';
-import { buildPlannedSessionPreview } from '@/lib/today/rich/planned-session-metrics';
-import type { ThreadEntry } from '@/lib/training/thread/thread-model';
-import type { ClientPlannedSession } from '@/lib/query/types';
+} from '@sharpit/server/lib/plan/week/plan-week-previews';
+import { brickLegSummaries } from '@sharpit/server/lib/planned-session/brick/brick-sessions';
+import { formatPlannedDuration } from '@sharpit/server/lib/planned-session/sessions';
+import { buildPlannedSessionPreview } from '@sharpit/server/lib/today/rich/planned-session-metrics';
+import type { ThreadEntry } from '@sharpit/server/lib/training/thread/thread-model';
+import type { ClientPlannedSession } from '@sharpit/server/lib/query/types';
 import { useAppModal } from '@/providers/app-modal-provider';
 
 function isPlanningNav(action: WeekDecisionAction): boolean {

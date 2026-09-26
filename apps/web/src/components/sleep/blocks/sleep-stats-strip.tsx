@@ -1,5 +1,8 @@
 import { InstrumentMetricGrid } from '@/components/ui/instruments/instrument-metric-chip';
-import { computeSleepEfficiencyPct, formatSleepDuration } from '@/lib/sleep/sleep-scoring';
+import {
+  computeSleepEfficiencyPct,
+  formatSleepDuration,
+} from '@sharpit/server/lib/sleep/sleep-scoring';
 
 /**
  * Sleep KPI chips — durée · efficacité · profond · restaurateur.

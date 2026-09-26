@@ -31,18 +31,21 @@ import {
 } from '@/components/settings/settings-appearance-status';
 import { SettingsAdminEntry } from '@/components/settings/settings-admin-entry';
 import type { SettingsEntry } from '@/components/settings/settings-home';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { hasProAccess } from '@/lib/access/tier';
-import { isAccessTier, ACCESS_TIER_COOKIE } from '@/lib/access/tier-cookie';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
+import { hasProAccess } from '@sharpit/server/lib/access/tier';
+import { isAccessTier, ACCESS_TIER_COOKIE } from '@sharpit/server/lib/access/tier-cookie';
 import {
   MOI_CALIBRATION_PATH,
   MOI_CORPS_PATH,
   MOI_OBJECTIFS_PATH,
   MOI_PERSONALIZATION_PATH,
   MOI_PRO_PATH,
-} from '@/lib/moi/paths';
-import { FEEDBACK_BUG_MAILTO, FEEDBACK_FEATURE_MAILTO } from '@/lib/moi/feedback-mailto';
-import { getAthleteProfile } from '@/lib/queries';
+} from '@sharpit/server/lib/moi/paths';
+import {
+  FEEDBACK_BUG_MAILTO,
+  FEEDBACK_FEATURE_MAILTO,
+} from '@sharpit/server/lib/moi/feedback-mailto';
+import { getAthleteProfile } from '@sharpit/server/lib/queries';
 
 type HubEntry =
   | (Pick<SettingsEntry, 'href' | 'title' | 'icon'> & {

@@ -17,8 +17,8 @@ import {
 import { patchActivityAthleteCaptureInPlannedSessions } from '@/client/query/patch-activity-athlete-capture';
 import { sendJson } from '@/client/query/send-json';
 import type { QueryClient } from '@tanstack/react-query';
-import type { ClientActivity, ClientActivityDetail } from '@/lib/query/types';
-import type { createActivitySchema } from '@/lib/validators/activity';
+import type { ClientActivity, ClientActivityDetail } from '@sharpit/server/lib/query/types';
+import type { createActivitySchema } from '@sharpit/server/lib/validators/activity';
 import { nullishFields } from '@/client/query/nullish-fields';
 import type { z } from 'zod';
 

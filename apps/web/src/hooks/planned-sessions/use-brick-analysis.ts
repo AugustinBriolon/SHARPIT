@@ -2,7 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '@/client/query/keys';
-import type { BrickAnalysis } from '@/lib/validators/coach';
+import type { BrickAnalysis } from '@sharpit/server/lib/validators/coach';
 
 export interface ClientBrickAnalysis {
   brickGroupId: string;

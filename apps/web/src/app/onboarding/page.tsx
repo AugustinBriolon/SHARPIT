@@ -1,18 +1,18 @@
 import { Suspense } from 'react';
 import { GateRedirect } from '@/components/navigation/gate-redirect';
 import { Skeleton } from '@/components/ui/skeleton';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { consentWallHref } from '@/lib/onboarding/entry';
-import { athleteNeedsOnboarding } from '@/lib/onboarding/status/status';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
+import { consentWallHref } from '@sharpit/server/lib/onboarding/entry';
+import { athleteNeedsOnboarding } from '@sharpit/server/lib/onboarding/status/status';
 import { OnboardingWizard } from '@/components/onboarding/wizard/onboarding-wizard';
 import {
   loadConnectedIntegrationIds,
   loadResolvedSourcePrefs,
-} from '@/lib/integrations/source-prefs-store';
-import { awaitRequest } from '@/lib/next/await-request';
-import { normalizeAthleteEquipment } from '@/lib/equipment/parse';
-import { getAthleteProfile } from '@/lib/queries';
-import { getAthleteConsentRow } from '@/lib/privacy/consent-store';
+} from '@sharpit/server/lib/integrations/source-prefs-store';
+import { awaitRequest } from '@sharpit/server/lib/next/await-request';
+import { normalizeAthleteEquipment } from '@sharpit/server/lib/equipment/parse';
+import { getAthleteProfile } from '@sharpit/server/lib/queries';
+import { getAthleteConsentRow } from '@sharpit/server/lib/privacy/consent-store';
 
 export const metadata = {
   title: 'Bienvenue — SharpIt',

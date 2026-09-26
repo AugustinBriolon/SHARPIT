@@ -1,6 +1,6 @@
 'use client';
 
-import { cn } from '@/lib/utils';
+import { cn } from '@sharpit/server/lib/utils';
 import type { ReactNode } from 'react';
 import type { InputProps } from '@/components/motion/input-types';
 import { InputSuccessIcon } from '@/components/motion/input-parts';

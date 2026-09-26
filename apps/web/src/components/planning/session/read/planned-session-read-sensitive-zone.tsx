@@ -2,13 +2,13 @@
 
 import { usePhysicalNotes } from '@/hooks/use-physical';
 import { useSensitiveZoneAck } from '@/hooks/use-sensitive-zone-ack';
-import { sessionZoneFlags } from '@/lib/physical-health/sensitive-zone-audit';
+import { sessionZoneFlags } from '@sharpit/server/lib/physical-health/sensitive-zone-audit';
 import {
   bySeverityDesc,
   describeZone,
   sensitiveZonesFrom,
-} from '@/lib/physical-health/sensitive-zones';
-import type { ClientPlannedSession } from '@/lib/query/types';
+} from '@sharpit/server/lib/physical-health/sensitive-zones';
+import type { ClientPlannedSession } from '@sharpit/server/lib/query/types';
 
 function SensitiveZoneAcked({ onUndo }: { onUndo: () => void }) {
   return (

@@ -1,7 +1,7 @@
 'use client';
 
 import { CheckCircle2, Loader2 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { cn } from '@sharpit/server/lib/utils';
 
 export type LinkAnalysisPhase = 'idle' | 'linking' | 'analyzing' | 'done';
 

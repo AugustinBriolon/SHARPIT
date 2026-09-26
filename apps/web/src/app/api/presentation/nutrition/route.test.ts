@@ -8,15 +8,15 @@ vi.mock('next/server', async (importOriginal) => ({
   after: (task: () => Promise<void>) => afterMock(task),
 }));
 
-vi.mock('@/lib/auth/current-athlete', () => ({
+vi.mock('@sharpit/server/lib/auth/current-athlete', () => ({
   getCurrentAthleteId: vi.fn().mockResolvedValue('athlete-1'),
 }));
 
-vi.mock('@/lib/presentation/nutrition/nutrition', () => ({
+vi.mock('@sharpit/server/lib/presentation/nutrition/nutrition', () => ({
   buildNutritionViewModel: vi.fn(),
 }));
 
-vi.mock('@/lib/nutrition/analysis/nutrition-analysis', () => ({
+vi.mock('@sharpit/server/lib/nutrition/analysis/nutrition-analysis', () => ({
   prepareNutritionCoachReading: vi.fn(),
 }));
 
@@ -35,9 +35,10 @@ function request(query: string) {
 }
 
 async function mocks() {
-  const { buildNutritionViewModel } = await import('@/lib/presentation/nutrition/nutrition');
+  const { buildNutritionViewModel } =
+    await import('@sharpit/server/lib/presentation/nutrition/nutrition');
   const { prepareNutritionCoachReading } =
-    await import('@/lib/nutrition/analysis/nutrition-analysis');
+    await import('@sharpit/server/lib/nutrition/analysis/nutrition-analysis');
   vi.mocked(buildNutritionViewModel).mockResolvedValue(VIEW_MODEL);
   return { prepare: vi.mocked(prepareNutritionCoachReading) };
 }

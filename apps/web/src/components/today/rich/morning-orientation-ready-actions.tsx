@@ -4,7 +4,7 @@ import { MorningEvidencePending } from '@/components/today/rich/morning-orientat
 import { MorningOrientationProposal } from '@/components/today/rich/morning-orientation-proposal';
 import { resolveMorningOrientationProposal } from '@/components/today/rich/morning-orientation-actions-helpers';
 import { useMorningOrientationActions } from '@/components/today/rich/use-morning-orientation-actions';
-import type { TodayViewModel } from '@/presentation/today-view-model';
+import type { TodayViewModel } from '@sharpit/server/presentation/today-view-model';
 import { prefetchPlannedSessionDetail } from '@/client/query/prefetch-planned-session-detail';
 import { useOfflineGuard } from '@/hooks/use-offline-guard';
 import { useAppModal } from '@/providers/app-modal-provider';

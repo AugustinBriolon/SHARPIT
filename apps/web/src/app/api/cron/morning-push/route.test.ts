@@ -1,18 +1,18 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { GET } from './route';
-import * as cronSecretModule from '@/lib/cron/verify-cron-secret';
-import * as apnsModule from '@/lib/push/apns';
-import * as morningPushModule from '@/lib/push/morning-push';
+import * as cronSecretModule from '@sharpit/server/lib/cron/verify-cron-secret';
+import * as apnsModule from '@sharpit/server/lib/push/apns';
+import * as morningPushModule from '@sharpit/server/lib/push/morning-push';
 
-vi.mock('@/lib/cron/verify-cron-secret', () => ({
+vi.mock('@sharpit/server/lib/cron/verify-cron-secret', () => ({
   verifyCronSecret: vi.fn(),
 }));
 
-vi.mock('@/lib/push/apns', () => ({
+vi.mock('@sharpit/server/lib/push/apns', () => ({
   isApnsConfigured: vi.fn(),
 }));
 
-vi.mock('@/lib/push/morning-push', () => ({
+vi.mock('@sharpit/server/lib/push/morning-push', () => ({
   sendMorningVerdictPushes: vi.fn(),
 }));
 

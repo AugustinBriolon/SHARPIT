@@ -1,9 +1,9 @@
 'use client';
 
 import { Skeleton } from '@/components/ui/skeleton';
-import type { PlannedSessionViewModel } from '@/presentation/planned-session-view-model';
+import type { PlannedSessionViewModel } from '@sharpit/server/presentation/planned-session-view-model';
 import { usePlannedSessionMutations } from '@/hooks/use-data';
-import { cn } from '@/lib/utils';
+import { cn } from '@sharpit/server/lib/utils';
 import { Card, CardContent } from '@/components/ui/card';
 import { MapPin } from 'lucide-react';
 import {

@@ -30,7 +30,7 @@
  */
 import { readFileSync } from 'node:fs';
 import { PrismaClient } from '@prisma/client';
-import { decryptSecret, encryptSecret } from '@/lib/secret-box';
+import { decryptSecret, encryptSecret } from '@sharpit/server/lib/secret-box';
 
 const LOCAL_URL =
   process.env.LOCAL_DATABASE_URL ?? 'postgresql://sharpit:sharpit@localhost:5432/sharpit';

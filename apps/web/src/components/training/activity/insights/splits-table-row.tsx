@@ -1,8 +1,8 @@
 'use client';
 
-import type { SplitRow } from '@/lib/activity/detail/activity-analysis';
-import { cn } from '@/lib/utils';
-import { formatPace } from '@/lib/format';
+import type { SplitRow } from '@sharpit/server/lib/activity/detail/activity-analysis';
+import { cn } from '@sharpit/server/lib/utils';
+import { formatPace } from '@sharpit/server/lib/format';
 
 function paceDelta(pace: number, ref: number | null): { pct: number; faster: boolean } | null {
   if (!ref || ref <= 0) {

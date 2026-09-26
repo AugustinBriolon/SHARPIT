@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
-import { purgeSoftDeletedAthletes } from '@/lib/privacy/account-deletion';
-import { verifyCronSecret } from '@/lib/cron/verify-cron-secret';
-import { logSafeError } from '@/lib/privacy/safe-log';
+import { purgeSoftDeletedAthletes } from '@sharpit/server/lib/privacy/account-deletion';
+import { verifyCronSecret } from '@sharpit/server/lib/cron/verify-cron-secret';
+import { logSafeError } from '@sharpit/server/lib/privacy/safe-log';
 
 export const maxDuration = 60;
 

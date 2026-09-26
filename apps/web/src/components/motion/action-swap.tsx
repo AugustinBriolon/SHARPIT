@@ -12,8 +12,8 @@ import {
   ActionSwapCascadeLabel,
   ActionSwapCascadeMeasure,
 } from '@/components/motion/action-swap-cascade';
-import { EASE_OUT, SPRING_SWAP } from '@/lib/ease';
-import { cn } from '@/lib/utils';
+import { EASE_OUT, SPRING_SWAP } from '@sharpit/server/lib/ease';
+import { cn } from '@sharpit/server/lib/utils';
 
 export { ActionSwapButton } from './action-swap-button';
 

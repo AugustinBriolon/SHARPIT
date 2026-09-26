@@ -1,0 +1,53 @@
+{
+  "name": "@sharpit/server",
+  "version": "0.0.0",
+  "private": true,
+  "exports": {
+    "./data/exercises-catalog.json": "./src/data/exercises-catalog.json",
+    "./data/garmin-exercise-taxonomy.json": "./src/data/garmin-exercise-taxonomy.json",
+    "./data/movement-taxonomy.json": "./src/data/movement-taxonomy.json",
+    "./lib/ai": "./src/lib/ai/index.ts",
+    "./lib/exercises": "./src/lib/exercises/index.ts",
+    "./lib/practiced-sports": "./src/lib/practiced-sports/index.ts",
+    "./lib/queries": "./src/lib/queries/index.ts",
+    "./lib/training/periodization": "./src/lib/training/periodization/index.ts",
+    "./lib/ui/brand-icon-canvas": "./src/lib/ui/brand-icon-canvas.tsx",
+    "./*": "./src/*.ts"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint"
+  },
+  "dependencies": {
+    "@apple/app-store-server-library": "3.1.0",
+    "@clerk/nextjs": "^7.5.9",
+    "@clerk/themes": "2.4.57",
+    "@flow-js/garmin-connect": "^1.6.17",
+    "@langfuse/otel": "^5.11.1",
+    "@langfuse/tracing": "^5.11.1",
+    "@prisma/client": "^6.19.3",
+    "@sharpit/core": "workspace:*",
+    "@sharpit/db": "workspace:*",
+    "@sharpit/shared": "workspace:*",
+    "@upstash/ratelimit": "^2.0.8",
+    "@upstash/redis": "^1.38.2",
+    "ai": "7.0.32",
+    "clsx": "^2.1.1",
+    "date-fns": "^4.4.0",
+    "lucide-react": "^1.21.0",
+    "next": "16.3.0",
+    "react": "19.2.4",
+    "tailwind-merge": "^3.6.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@sharpit/eslint-config": "workspace:*",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "eslint": "^9",
+    "fake-indexeddb": "^6.2.5",
+    "typescript": "^5",
+    "vitest": "^4.1.9"
+  }
+}

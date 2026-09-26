@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
 import {
   applyEstimatedThresholds,
   getThresholdApplyPreview,
-} from '@/lib/threshold/threshold-service';
+} from '@sharpit/server/lib/threshold/threshold-service';
 
 const bodySchema = z.object({
   /** Omitted = accept every proposed change, the historical behaviour. */

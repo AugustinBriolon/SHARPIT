@@ -4,9 +4,9 @@ import {
   mapScoreToBarColorClassProtective,
   mapScoreToColorClass,
   mapScoreToColorClassProtective,
-} from '@/lib/today/dashboard/today-mapping';
+} from '@sharpit/server/lib/today/dashboard/today-mapping';
 import { SkeletonDataValue, SkeletonInstrumentBar } from '@/components/ui/skeleton-data-value';
-import { cn } from '@/lib/utils';
+import { cn } from '@sharpit/server/lib/utils';
 
 function resolveColorScore(
   available: boolean,

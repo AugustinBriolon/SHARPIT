@@ -9,7 +9,7 @@ import { OnboardingStepProgressProvider } from '@/components/onboarding/steps/on
 import { OnboardingProvidersStep } from '@/components/onboarding/steps/onboarding-providers-step';
 import { OnboardingSportsStep } from '@/components/onboarding/steps/onboarding-sports-step';
 import type { useOnboardingWizard } from '@/components/onboarding/wizard/use-onboarding-wizard';
-import type { AthleteEquipment } from '@/lib/equipment/types';
+import type { AthleteEquipment } from '@sharpit/server/lib/equipment/types';
 
 type WizardState = ReturnType<typeof useOnboardingWizard>;
 

@@ -12,8 +12,8 @@ import {
   Wrench,
 } from 'lucide-react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
-import { EASE_OUT, SPRING_LAYOUT } from '@/lib/ease';
-import { cn } from '@/lib/utils';
+import { EASE_OUT, SPRING_LAYOUT } from '@sharpit/server/lib/ease';
+import { cn } from '@sharpit/server/lib/utils';
 import type {
   AgentActivityItem,
   AgentActivitySearch,

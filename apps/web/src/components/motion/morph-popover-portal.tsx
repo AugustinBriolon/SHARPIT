@@ -2,7 +2,7 @@
 
 import { AnimatePresence, motion } from 'motion/react';
 import { createPortal } from 'react-dom';
-import { cn } from '@/lib/utils';
+import { cn } from '@sharpit/server/lib/utils';
 import {
   buildMorphPortalVariants,
   morphPopoverOrigin,

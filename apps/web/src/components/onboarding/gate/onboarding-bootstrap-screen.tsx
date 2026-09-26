@@ -6,7 +6,7 @@ import {
   useBootstrapLineCycle,
   BOOTSTRAP_LINES,
 } from '@/components/onboarding/gate/use-bootstrap-line-cycle';
-import { cn } from '@/lib/utils';
+import { cn } from '@sharpit/server/lib/utils';
 
 export { BOOTSTRAP_LINES };
 

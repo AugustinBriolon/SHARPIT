@@ -1,5 +1,5 @@
-import { cn } from '@/lib/utils';
-import { PAGE_CONTENT_MAX_CLASS } from '@/lib/ui/page-gutter';
+import { cn } from '@sharpit/server/lib/utils';
+import { PAGE_CONTENT_MAX_CLASS } from '@sharpit/server/lib/ui/page-gutter';
 
 /** Cap chrome motion at 300ms per DESIGN_LANGUAGE. */
 export const COACH_BEUI_MOTION_MS = 300;

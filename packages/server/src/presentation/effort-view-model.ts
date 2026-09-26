@@ -1,0 +1,64 @@
+import type { ProductInsightBundle } from '@sharpit/core/product-insight/types';
+import type { GlobalDecisionContext } from '@sharpit/server/presentation/global-decision-context';
+import type {
+  PresentationEmptyState,
+  PresentationHierarchy,
+  PresentationSection,
+} from '@sharpit/server/presentation/types';
+import type { DimensionResult } from '@sharpit/server/athlete-state/today-state';
+import type { EffortStrainCompositionView } from '@sharpit/server/lib/presentation/effort/effort-strain-composition';
+import type {
+  FatigueType,
+  TrainingCapacity,
+} from '@sharpit/server/lib/today/dashboard/today-mapping';
+
+export type EffortViewModel = {
+  strainScore: number | null;
+  dailyLoad: number;
+  weeklyLoad: number;
+  /** Daily strain composition (training / Garmin cardio / steps) — display only. */
+  strainComposition: EffortStrainCompositionView;
+  fatigueType: FatigueType | string;
+  /** Label déjà résolu (côté serveur) pour éviter toute interprétation côté client. */
+  fatigueTypeLabel: string | null;
+  performancePercent: number | null;
+  consecutiveDays: number;
+  estimatedDaysToFresh: number | null;
+
+  acwr: number;
+  chronicWeeklyAvg: number | null;
+  tsb: number | null;
+
+  confidencePct: number;
+  confidenceTone: 'good' | 'warn' | 'neutral' | 'bad';
+  verdict: string;
+  verdictClass: string;
+  verdictKey: string;
+  rationale: string[];
+  trainingCapacity: TrainingCapacity;
+  /** Daily Strain : libellé/couleurs déjà résolus côté serveur. */
+  strainSubtitle: string;
+  strainStatusLabel: string;
+  strainStatusClassName: string;
+  strainStrokeColor: string;
+  dimensions: Record<string, DimensionResult>;
+  missingDimCount: number;
+  dominantDimension: string | null;
+  primaryLimitingFactor: string | null;
+  isLowFatigue: boolean;
+  pmcSeries: { label: string; ctl: number; atl: number; tsb: number }[];
+  weeklyTss: { week: string; tss: number }[];
+  avgWeeklyTss: number;
+  overreaching?: { label: string; colorClass: string };
+  keyEvidence: string[];
+  completenessLabel: string;
+  availableDimCount: number;
+
+  insights: ProductInsightBundle;
+
+  globalDecision: GlobalDecisionContext;
+
+  emptyState: PresentationEmptyState | null;
+  hierarchy: PresentationHierarchy;
+  sections: PresentationSection[];
+};

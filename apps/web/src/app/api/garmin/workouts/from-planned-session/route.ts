@@ -1,10 +1,10 @@
 import { ActivityType } from '@prisma/client';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { pushEnduranceWorkoutFromPlannedSession } from '@/lib/integrations/garmin/garmin-endurance-workout';
-import { pushStrengthWorkoutFromPlannedSession } from '@/lib/integrations/garmin/garmin-strength-workout';
-import { GarminWorkoutAlreadyPushedError } from '@/lib/integrations/garmin/garmin-workout-push';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
+import { pushEnduranceWorkoutFromPlannedSession } from '@sharpit/server/lib/integrations/garmin/garmin-endurance-workout';
+import { pushStrengthWorkoutFromPlannedSession } from '@sharpit/server/lib/integrations/garmin/garmin-strength-workout';
+import { GarminWorkoutAlreadyPushedError } from '@sharpit/server/lib/integrations/garmin/garmin-workout-push';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
 import { prisma } from '@sharpit/db/client';
 
 const bodySchema = z.object({

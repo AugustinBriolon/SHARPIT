@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { projectV1Pro } from '@/lib/access/pro-v1';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { AppleOwnershipError, applyAppleTransaction } from '@/lib/billing/apple-sync';
-import { verifyAppleRenewalInfo, verifyAppleTransaction } from '@/lib/billing/apple-verifier';
-import { appAccountTokenFor, loadProState } from '@/lib/billing/subscription-store';
-import { logSafeError } from '@/lib/privacy/safe-log';
+import { projectV1Pro } from '@sharpit/server/lib/access/pro-v1';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
+import { AppleOwnershipError, applyAppleTransaction } from '@sharpit/server/lib/billing/apple-sync';
+import {
+  verifyAppleRenewalInfo,
+  verifyAppleTransaction,
+} from '@sharpit/server/lib/billing/apple-verifier';
+import { appAccountTokenFor, loadProState } from '@sharpit/server/lib/billing/subscription-store';
+import { logSafeError } from '@sharpit/server/lib/privacy/safe-log';
 
 const bodySchema = z.object({
   signedTransaction: z.string().min(1).max(20_000),

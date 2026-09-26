@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
+import { cn } from '@sharpit/server/lib/utils';
 
 /** Full-page load to `/api/demo/exit` — clears the cookie and lands on `/sign-in`. */
 export const DEMO_EXIT_HREF = '/api/demo/exit';

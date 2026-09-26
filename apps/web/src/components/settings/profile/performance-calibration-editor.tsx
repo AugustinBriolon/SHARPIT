@@ -1,7 +1,7 @@
 import { Download } from 'lucide-react';
 import { ProfileFormSection } from '@/components/settings/profile/profile-form-section';
 import { NUMERIC_INPUT_CLASS } from '@/components/settings/profile/profile-input-format';
-import type { ClientThresholdSnapshot } from '@/lib/query/types';
+import type { ClientThresholdSnapshot } from '@sharpit/server/lib/query/types';
 import { ThresholdHistoryPanel } from '@/components/settings/profile/threshold-history-panel';
 import { Vo2maxIndicators } from '@/components/settings/profile/vo2max-indicators';
 import { ThresholdSuggestionCard } from '@/components/threshold/threshold-suggestion-card';
@@ -9,8 +9,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { guardedActionLabel } from '@/hooks/use-offline-guard';
-import type { ThresholdField } from '@/lib/threshold/threshold-estimates';
-import type { ThresholdApplyPreview } from '@/lib/threshold/threshold-estimates';
+import type { ThresholdField } from '@sharpit/server/lib/threshold/threshold-estimates';
+import type { ThresholdApplyPreview } from '@sharpit/server/lib/threshold/threshold-estimates';
 
 type CalibrationSummaryProps = {
   ftpW: string;

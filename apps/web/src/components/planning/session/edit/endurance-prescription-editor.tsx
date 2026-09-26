@@ -19,11 +19,11 @@ import {
   type EnduranceDraftMode,
   type EnduranceDraftStep,
   type EnduranceDraftStroke,
-} from '@/lib/planned-session/endurance/endurance-draft';
+} from '@sharpit/server/lib/planned-session/endurance/endurance-draft';
 import type {
   EnduranceSport,
   EnduranceStepKind,
-} from '@/lib/planned-session/endurance/endurance-prescription';
+} from '@sharpit/server/lib/planned-session/endurance/endurance-prescription';
 
 const KIND_OPTIONS: { value: EnduranceStepKind; label: string }[] = [
   { value: 'warmup', label: 'Échauffement' },

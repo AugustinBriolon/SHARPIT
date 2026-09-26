@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
 import {
   EXPERIMENT_WINDOW_DAYS,
   ONE_TEST_AT_A_TIME_MESSAGE,
   isExperimentFactorId,
-} from '@/lib/journal/journal-habit-experiment';
-import { loadJournalHabitExperiments } from '@/lib/journal/journal-habit-experiment-load';
-import { toHabitExperimentView } from '@/lib/journal/journal-habit-experiment-view';
-import { awaitRequest } from '@/lib/next/await-request';
+} from '@sharpit/server/lib/journal/journal-habit-experiment';
+import { loadJournalHabitExperiments } from '@sharpit/server/lib/journal/journal-habit-experiment-load';
+import { toHabitExperimentView } from '@sharpit/server/lib/journal/journal-habit-experiment-view';
+import { awaitRequest } from '@sharpit/server/lib/next/await-request';
 import { prisma } from '@sharpit/db/client';
 import { addTrainingDays, trainingDayIdForNow } from '@sharpit/core/training/training-day';
 

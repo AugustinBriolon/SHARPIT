@@ -3,9 +3,9 @@
  * SSO Garmin keeps a named wrapper (special browser ticket contract).
  */
 
-import type { DataClassId } from '@/lib/integrations/provider-catalog';
-import type { IntegrationId } from '@/lib/integrations/shared/client-sync';
-import type { IntegrationSourcePrefs } from '@/lib/integrations/source-prefs';
+import type { DataClassId } from '@sharpit/server/lib/integrations/provider-catalog';
+import type { IntegrationId } from '@sharpit/server/lib/integrations/shared/client-sync';
+import type { IntegrationSourcePrefs } from '@sharpit/server/lib/integrations/source-prefs';
 import { sendJson } from '@/client/query/send-json';
 import { fetchJson } from './shared';
 

@@ -2,7 +2,7 @@
 
 import type { QueryClient } from '@tanstack/react-query';
 import { toast } from '@/components/ui/toast';
-import { createClientId } from '@/lib/client-id';
+import { createClientId } from '@sharpit/server/lib/client-id';
 
 /** Temporary entity id for optimistic creates. */
 export function tempId(): string {

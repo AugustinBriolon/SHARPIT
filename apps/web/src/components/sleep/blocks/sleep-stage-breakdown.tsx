@@ -1,5 +1,5 @@
-import { formatSleepDuration } from '@/lib/sleep/sleep-scoring';
-import { cn } from '@/lib/utils';
+import { formatSleepDuration } from '@sharpit/server/lib/sleep/sleep-scoring';
+import { cn } from '@sharpit/server/lib/utils';
 
 const STAGE_STYLES = {
   deep: {

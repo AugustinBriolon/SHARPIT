@@ -3,7 +3,7 @@ import { auth, clerkClient } from '@clerk/nextjs/server';
 import {
   GARMIN_HANDOFF_ORIGIN,
   garminHandoffEntryUrl,
-} from '@/lib/integrations/garmin/garmin-connect-handoff';
+} from '@sharpit/server/lib/integrations/garmin/garmin-connect-handoff';
 
 /** Long enough to open the sheet, short enough that a leaked URL is already dead. */
 const TICKET_TTL_SECONDS = 60;

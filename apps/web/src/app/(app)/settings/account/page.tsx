@@ -6,15 +6,15 @@ import { PersonalProfilePanel } from '@/components/settings/profile';
 import { SettingsDemoBlock } from '@/components/settings/settings-demo-block';
 import { SettingsSignOut } from '@/components/settings/settings-sign-out';
 import { Skeleton } from '@/components/ui/skeleton';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { isDemoSession } from '@/lib/demo/demo-session';
-import { MOI_HUB_PATH } from '@/lib/moi/paths';
-import { isHangingPromiseRejection } from '@/lib/next/hanging-promise';
-import { serializeConsentRow } from '@/lib/privacy/consent-serialize';
-import { getAthleteConsentRow } from '@/lib/privacy/consent-store';
-import { mapAthleteProfileToFormData } from '@/lib/profile/map-athlete-profile';
-import { getAthleteProfile } from '@/lib/queries';
-import { CONTROLLER_EMAIL } from '@/lib/privacy/constants';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
+import { isDemoSession } from '@sharpit/server/lib/demo/demo-session';
+import { MOI_HUB_PATH } from '@sharpit/server/lib/moi/paths';
+import { isHangingPromiseRejection } from '@sharpit/server/lib/next/hanging-promise';
+import { serializeConsentRow } from '@sharpit/server/lib/privacy/consent-serialize';
+import { getAthleteConsentRow } from '@sharpit/server/lib/privacy/consent-store';
+import { mapAthleteProfileToFormData } from '@sharpit/server/lib/profile/map-athlete-profile';
+import { getAthleteProfile } from '@sharpit/server/lib/queries';
+import { CONTROLLER_EMAIL } from '@sharpit/server/lib/privacy/constants';
 
 function ProfileIdentityFallback() {
   return (

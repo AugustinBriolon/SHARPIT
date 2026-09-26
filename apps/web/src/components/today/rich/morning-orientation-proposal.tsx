@@ -6,7 +6,7 @@ import {
   MorningOrientationProposalButton,
   proposalStatusMessage,
 } from '@/components/today/rich/morning-orientation-proposal-parts';
-import type { DisplayMode } from '@/lib/preferences/display-mode';
+import type { DisplayMode } from '@sharpit/server/lib/preferences/display-mode';
 
 type Proposal = {
   why?: string | null;

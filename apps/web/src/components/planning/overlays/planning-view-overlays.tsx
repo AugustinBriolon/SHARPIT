@@ -2,8 +2,8 @@
 
 import { PlanningCoachOverlays } from '@/components/planning/coach/planning-coach-overlays';
 import { PlanningPlannedSessionOverlay } from '@/components/planning/overlays/planning-planned-session-overlay';
-import type { ClientGoal, ClientPlannedSession } from '@/lib/query/types';
-import type { ScenarioComparisonViewModel } from '@/presentation/scenario-comparison-view-model';
+import type { ClientGoal, ClientPlannedSession } from '@sharpit/server/lib/query/types';
+import type { ScenarioComparisonViewModel } from '@sharpit/server/presentation/scenario-comparison-view-model';
 
 type PlanningViewOverlaysProps = {
   adapterOpen: boolean;

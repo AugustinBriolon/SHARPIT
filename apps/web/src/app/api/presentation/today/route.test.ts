@@ -1,16 +1,16 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { NextRequest } from 'next/server';
 
-vi.mock('@/lib/auth/current-athlete', () => ({
+vi.mock('@sharpit/server/lib/auth/current-athlete', () => ({
   getCurrentAthleteId: vi.fn().mockResolvedValue('athlete-1'),
 }));
 
-vi.mock('@/lib/morning-recalibration/service', () => ({
+vi.mock('@sharpit/server/lib/morning-recalibration/service', () => ({
   getMorningRecalibrationPresentation: vi.fn(),
   ensureMorningRecalibration: vi.fn(),
 }));
 
-vi.mock('@/lib/presentation/today/today', () => ({
+vi.mock('@sharpit/server/lib/presentation/today/today', () => ({
   buildTodayPresentationViewModel: vi.fn(),
 }));
 
@@ -25,8 +25,9 @@ describe('GET /api/presentation/today', () => {
 
   it('is read-only: loads existing morning recalibration without ensure', async () => {
     const { getMorningRecalibrationPresentation, ensureMorningRecalibration } =
-      await import('@/lib/morning-recalibration/service');
-    const { buildTodayPresentationViewModel } = await import('@/lib/presentation/today/today');
+      await import('@sharpit/server/lib/morning-recalibration/service');
+    const { buildTodayPresentationViewModel } =
+      await import('@sharpit/server/lib/presentation/today/today');
     vi.mocked(getMorningRecalibrationPresentation).mockResolvedValue(null);
     vi.mocked(buildTodayPresentationViewModel).mockResolvedValue({ headline: 'ok' } as never);
 

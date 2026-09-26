@@ -4,7 +4,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useActivities } from '@/hooks/use-data';
 import { useActivityDetail } from '@/hooks/use-activity-detail';
 import { queryKeys } from '@/client/query/keys';
-import type { ClientActivity, ClientActivityDetail } from '@/lib/query/types';
+import type { ClientActivity, ClientActivityDetail } from '@sharpit/server/lib/query/types';
 
 function firstPresent<T>(candidates: Array<T | null | undefined>, fallback: T): T {
   for (const candidate of candidates) {

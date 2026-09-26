@@ -13,10 +13,10 @@ import { useDeleteConversation, useRenameConversation } from '@/hooks/use-coach'
 import { useOfflineGuard } from '@/hooks/use-offline-guard';
 import { useOnlineStatus } from '@/hooks/use-online-status';
 import { useIsMobile } from '@/hooks/use-viewport';
-import { clearCoachInputDraft } from '@/lib/coach/chat/composer/coach-input-draft';
-import { warmCoachContext } from '@/lib/coach/warm-coach-context';
-import { createClientId } from '@/lib/client-id';
-import type { CoachDiscussContext } from '@/lib/coach/chat/discuss/coach-discuss-context';
+import { clearCoachInputDraft } from '@sharpit/server/lib/coach/chat/composer/coach-input-draft';
+import { warmCoachContext } from '@sharpit/server/lib/coach/warm-coach-context';
+import { createClientId } from '@sharpit/server/lib/client-id';
+import type { CoachDiscussContext } from '@sharpit/server/lib/coach/chat/discuss/coach-discuss-context';
 
 function createEphemeralId(): string {
   return createClientId();

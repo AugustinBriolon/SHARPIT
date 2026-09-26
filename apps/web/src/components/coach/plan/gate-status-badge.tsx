@@ -1,6 +1,6 @@
 import { AlertTriangle, Ban, CircleHelp } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import type { GateSessionResult, GateStatus } from '@/lib/plan-gate/types';
+import { cn } from '@sharpit/server/lib/utils';
+import type { GateSessionResult, GateStatus } from '@sharpit/server/lib/plan-gate/types';
 
 const STATUS_LABEL: Record<GateStatus, string> = {
   ACCEPTED: 'Validée',

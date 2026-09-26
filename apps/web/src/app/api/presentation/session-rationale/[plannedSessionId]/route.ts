@@ -1,11 +1,11 @@
 import { NextResponse } from 'next/server';
-import { getPlannedSessionById } from '@/lib/queries';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
+import { getPlannedSessionById } from '@sharpit/server/lib/queries';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
 import {
   findDecisionForPlannedSession,
   findDecisionWithHistory,
-} from '@/lib/decision-memory/repository';
-import { buildSessionRationaleViewModel } from '@/lib/presentation/planned-session/session-rationale';
+} from '@sharpit/server/lib/decision-memory/repository';
+import { buildSessionRationaleViewModel } from '@sharpit/server/lib/presentation/planned-session/session-rationale';
 
 type RouteProps = { params: Promise<{ plannedSessionId: string }> };
 

@@ -12,8 +12,12 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { priorityDescriptions, priorityLabels, priorityOrder } from '@/lib/goals/goals';
-import { buildRaceTitle } from '@/lib/goals/race-title';
+import {
+  priorityDescriptions,
+  priorityLabels,
+  priorityOrder,
+} from '@sharpit/server/lib/goals/goals';
+import { buildRaceTitle } from '@sharpit/server/lib/goals/race-title';
 import type { GoalPayload } from '@/hooks/use-data';
 
 const NO_PRIORITY = 'none';

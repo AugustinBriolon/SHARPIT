@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { resolveStandaloneMode } from '@/lib/pwa/standalone';
+import { resolveStandaloneMode } from '@sharpit/server/lib/pwa/standalone';
 
 /** True once the app is confirmed running as an installed (standalone) PWA. */
 export function useStandalone(): boolean {

@@ -11,13 +11,13 @@ import { toast } from '@/components/ui/toast';
 import {
   getCatalogProviderByIntegration,
   type DataClassId,
-} from '@/lib/integrations/provider-catalog';
+} from '@sharpit/server/lib/integrations/provider-catalog';
 import {
   disableProviderForClass,
   enableProviderForClass,
   setPrimaryForClass,
   type IntegrationSourcePrefs,
-} from '@/lib/integrations/source-prefs';
+} from '@sharpit/server/lib/integrations/source-prefs';
 import { patchIntegrationSourcePrefsStrict } from '@/client/query/fetchers';
 import type { RowSyncState } from '@/components/settings/integrations/hub-sync';
 

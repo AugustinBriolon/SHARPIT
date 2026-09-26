@@ -5,8 +5,8 @@ import { CartesianGrid, Line, LineChart, Tooltip, XAxis, YAxis } from 'recharts'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { InkEmptyState } from '@/components/ui/ink-empty-state';
 import { ResponsiveChartFrame } from '@/components/ui/charts/responsive-chart-frame';
-import type { PowerCurvePoint } from '@/lib/training/records/records';
-import { CHART_RECORD_STROKE, CHART_TICK_COLOR } from '@/lib/theme/chart-theme';
+import type { PowerCurvePoint } from '@sharpit/server/lib/training/records/records';
+import { CHART_RECORD_STROKE, CHART_TICK_COLOR } from '@sharpit/server/lib/theme/chart-theme';
 
 interface PowerCurveChartProps {
   data: PowerCurvePoint[];

@@ -1,8 +1,8 @@
 import type { ComponentProps } from 'react';
 import { ChartTooltipCard } from '@/components/ui/charts/chart-tooltip';
 import { ChartFigure } from '@/components/ui/charts/chart-figure';
-import { CHART_RECOVERY_STROKE } from '@/lib/theme/chart-theme';
-import { cn } from '@/lib/utils';
+import { CHART_RECOVERY_STROKE } from '@sharpit/server/lib/theme/chart-theme';
+import { cn } from '@sharpit/server/lib/utils';
 import { Line, LineChart, ReferenceArea, Tooltip, XAxis, YAxis } from 'recharts';
 
 export type SparkPoint = { date: string; value: number | null };

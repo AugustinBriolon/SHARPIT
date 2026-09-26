@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { isCoachConfigured } from '@/lib/ai';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { analyzeBrick } from '@/lib/coach/plan/coach-analysis';
-import { checkRateLimit, rateLimitJsonResponse, rateLimiters } from '@/lib/rate-limit';
-import { getBrickAnalysis, getBrickSessions, setBrickAnalysis } from '@/lib/queries';
+import { isCoachConfigured } from '@sharpit/server/lib/ai';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
+import { analyzeBrick } from '@sharpit/server/lib/coach/plan/coach-analysis';
+import {
+  checkRateLimit,
+  rateLimitJsonResponse,
+  rateLimiters,
+} from '@sharpit/server/lib/rate-limit';
+import { getBrickAnalysis, getBrickSessions, setBrickAnalysis } from '@sharpit/server/lib/queries';
 
 export const maxDuration = 60;
 

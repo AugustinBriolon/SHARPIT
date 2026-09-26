@@ -1,13 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { onProviderSyncCompleted } from '@/lib/athlete-state/orchestrator';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { syncGarminActivities } from '@/lib/integrations/garmin/garmin-activity-sync';
-import { syncGarminHealth } from '@/lib/integrations/garmin/garmin-sync';
-import { checkRateLimit, rateLimitJsonResponse, rateLimiters } from '@/lib/rate-limit';
+import { onProviderSyncCompleted } from '@sharpit/server/lib/athlete-state/orchestrator';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
+import { syncGarminActivities } from '@sharpit/server/lib/integrations/garmin/garmin-activity-sync';
+import { syncGarminHealth } from '@sharpit/server/lib/integrations/garmin/garmin-sync';
+import {
+  checkRateLimit,
+  rateLimitJsonResponse,
+  rateLimiters,
+} from '@sharpit/server/lib/rate-limit';
 import {
   filterRecordChangesByActivities,
   updateRecordsForTypes,
-} from '@/lib/training/records/records';
+} from '@sharpit/server/lib/training/records/records';
 
 export const maxDuration = 300;
 

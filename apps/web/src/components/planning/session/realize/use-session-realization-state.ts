@@ -1,10 +1,10 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import type { ClientActivity, ClientPlannedSession } from '@/lib/query/types';
+import type { ClientActivity, ClientPlannedSession } from '@sharpit/server/lib/query/types';
 import { useActivities } from '@/hooks/use-data';
 import { differenceInCalendarDays } from 'date-fns';
-import { scorePlannedActivityMatch } from '@/lib/planned-session/linking/session-link-match-score';
+import { scorePlannedActivityMatch } from '@sharpit/server/lib/planned-session/linking/session-link-match-score';
 import { resolveLinkedActivity } from '@/client/query/patch-activity-athlete-capture';
 
 export function useSessionRealizationLinkedActivity(session: ClientPlannedSession) {

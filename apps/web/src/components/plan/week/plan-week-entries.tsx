@@ -9,22 +9,22 @@ import { BrickOverviewCard } from '@/components/planning/brick/brick-overview-ca
 import { CompletedSessionPreview } from '@/components/today/rich/completed-session-preview';
 import { PlannedSessionPreview } from '@/components/today/rich/planned-session-preview';
 import { LinkButton } from '@/components/ui/link-button';
-import { isHardSessionIntensity } from '@/lib/plan/trajectory/intensity-gate';
+import { isHardSessionIntensity } from '@sharpit/server/lib/plan/trajectory/intensity-gate';
 import {
   groupHubDoneByDay,
   groupHubRemainingItems,
   hubDoneCardAccessibleName,
   selectHubDoneEntries,
   selectHubRemainingEntries,
-} from '@/lib/plan/week/plan-week-previews';
-import { brickLegSummaries } from '@/lib/planned-session/brick/brick-sessions';
-import { formatPlannedDuration } from '@/lib/planned-session/sessions';
-import { buildCompletedSessionMetrics } from '@/lib/today/rich/completed-session-metrics';
-import { buildPlannedSessionPreview } from '@/lib/today/rich/planned-session-metrics';
-import { TWIN_DRILL_DOWN } from '@/lib/today/navigation/today-twin-navigation';
-import type { ThreadEntry } from '@/lib/training/thread/thread-model';
+} from '@sharpit/server/lib/plan/week/plan-week-previews';
+import { brickLegSummaries } from '@sharpit/server/lib/planned-session/brick/brick-sessions';
+import { formatPlannedDuration } from '@sharpit/server/lib/planned-session/sessions';
+import { buildCompletedSessionMetrics } from '@sharpit/server/lib/today/rich/completed-session-metrics';
+import { buildPlannedSessionPreview } from '@sharpit/server/lib/today/rich/planned-session-metrics';
+import { TWIN_DRILL_DOWN } from '@sharpit/server/lib/today/navigation/today-twin-navigation';
+import type { ThreadEntry } from '@sharpit/server/lib/training/thread/thread-model';
 import { useAppModal } from '@/providers/app-modal-provider';
-import type { ClientPlannedSession } from '@/lib/query/types';
+import type { ClientPlannedSession } from '@sharpit/server/lib/query/types';
 
 const HUB_DONE_CARD_CLASS = 'flex min-w-[min(14rem,100cqi)] flex-1';
 

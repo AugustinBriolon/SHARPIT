@@ -5,8 +5,11 @@ import type { ActivityType } from '@prisma/client';
 import { MemoizedRouteMap as RouteMap } from '@/components/training/activity/insights/route-map';
 import { ActivityTypeIndicator } from '@/components/ui/instruments/activity-type-indicator';
 import { Skeleton } from '@/components/ui/skeleton';
-import { SPORT_IDENTITY_HEX, SPORT_IDENTITY_PANEL } from '@/lib/activity/sport-identity';
-import { cn } from '@/lib/utils';
+import {
+  SPORT_IDENTITY_HEX,
+  SPORT_IDENTITY_PANEL,
+} from '@sharpit/server/lib/activity/sport-identity';
+import { cn } from '@sharpit/server/lib/utils';
 import {
   completedPreviewDetailsClass,
   completedPreviewFadeClass,

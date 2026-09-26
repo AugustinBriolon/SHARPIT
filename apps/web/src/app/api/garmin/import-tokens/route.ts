@@ -1,18 +1,21 @@
 import { NextRequest, NextResponse, after } from 'next/server';
 import { z } from 'zod';
-import { onProviderSyncCompleted } from '@/lib/athlete-state/orchestrator';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { syncGarminActivities } from '@/lib/integrations/garmin/garmin-activity-sync';
-import { importGarminDiTokenStore, syncGarminHealth } from '@/lib/integrations/garmin/garmin-sync';
-import { GarminTokenStoreError } from '@/lib/integrations/garmin/garmin-tokenstore';
-import { sanitizeDataClass } from '@/lib/integrations/oauth-public-origin';
+import { onProviderSyncCompleted } from '@sharpit/server/lib/athlete-state/orchestrator';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
+import { syncGarminActivities } from '@sharpit/server/lib/integrations/garmin/garmin-activity-sync';
+import {
+  importGarminDiTokenStore,
+  syncGarminHealth,
+} from '@sharpit/server/lib/integrations/garmin/garmin-sync';
+import { GarminTokenStoreError } from '@sharpit/server/lib/integrations/garmin/garmin-tokenstore';
+import { sanitizeDataClass } from '@sharpit/server/lib/integrations/oauth-public-origin';
 import {
   enableProviderForAllCoveredClasses,
   enableProviderForClass,
-} from '@/lib/integrations/source-prefs';
-import { persistSourcePrefsMutation } from '@/lib/integrations/source-prefs-store';
-import { updateRecordsForTypes } from '@/lib/training/records/records';
-import { gateProviderConnect } from '@/lib/privacy/gate-provider-connect';
+} from '@sharpit/server/lib/integrations/source-prefs';
+import { persistSourcePrefsMutation } from '@sharpit/server/lib/integrations/source-prefs-store';
+import { updateRecordsForTypes } from '@sharpit/server/lib/training/records/records';
+import { gateProviderConnect } from '@sharpit/server/lib/privacy/gate-provider-connect';
 
 export const maxDuration = 300;
 

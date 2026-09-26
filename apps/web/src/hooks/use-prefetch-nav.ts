@@ -13,8 +13,8 @@ import {
   fetchPlannedSessions,
   fetchTrainingPlan,
 } from '@/client/query/fetchers';
-import { selectPlanHubStreamPrefetchIds } from '@/lib/plan/week/plan-week-previews';
-import type { ClientActivity } from '@/lib/query/types';
+import { selectPlanHubStreamPrefetchIds } from '@sharpit/server/lib/plan/week/plan-week-previews';
+import type { ClientActivity } from '@sharpit/server/lib/query/types';
 import {
   fetchAdaptationPresentation,
   fetchBodyPresentation,

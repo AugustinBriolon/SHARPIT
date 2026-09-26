@@ -1,20 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { addDays, startOfWeek, subDays } from 'date-fns';
-import { getActiveTrainingPlan, getGoals, getPlannedSessions } from '@/lib/queries';
-import { findPlanWeekForDate } from '@/lib/training/periodization';
+import { getActiveTrainingPlan, getGoals, getPlannedSessions } from '@sharpit/server/lib/queries';
+import { findPlanWeekForDate } from '@sharpit/server/lib/training/periodization';
 import {
   findDecisionForPlannedSession,
   findRecentEvaluatedOutcomes,
-} from '@/lib/decision-memory/repository';
-import { buildLearningFeedback } from '@/lib/decision-memory/learning-feedback';
-import { buildLearningFeedbackViewModel } from '@/lib/presentation/coaching/learning-feedback';
-import { buildDecisionSnapshotContext } from '@/lib/decision-memory/build-snapshot-context';
-import { getOrBuildAthleteSnapshot } from '@/lib/athlete-state/snapshot-service';
+} from '@sharpit/server/lib/decision-memory/repository';
+import { buildLearningFeedback } from '@sharpit/server/lib/decision-memory/learning-feedback';
+import { buildLearningFeedbackViewModel } from '@sharpit/server/lib/presentation/coaching/learning-feedback';
+import { buildDecisionSnapshotContext } from '@sharpit/server/lib/decision-memory/build-snapshot-context';
+import { getOrBuildAthleteSnapshot } from '@sharpit/server/lib/athlete-state/snapshot-service';
 import { computeTrainingDayId } from '@sharpit/core/training/training-day';
-import { buildWeeklyCoachingBriefViewModel } from '@/lib/presentation/coaching/weekly-coaching-brief';
-import { loadDailyTrainingStressEntries } from '@/lib/training/pmc/pmc-server';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import type { CoachingDecisionRecord } from '@/lib/decision-memory/types';
+import { buildWeeklyCoachingBriefViewModel } from '@sharpit/server/lib/presentation/coaching/weekly-coaching-brief';
+import { loadDailyTrainingStressEntries } from '@sharpit/server/lib/training/pmc/pmc-server';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
+import type { CoachingDecisionRecord } from '@sharpit/server/lib/decision-memory/types';
 
 const WEEK_OPTS = { weekStartsOn: 1 as const };
 const LEARNING_FEEDBACK_WINDOW_DAYS = 90;

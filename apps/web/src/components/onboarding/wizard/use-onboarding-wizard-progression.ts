@@ -2,10 +2,10 @@
 
 import { useCallback } from 'react';
 import { patchPracticedSports } from '@/components/onboarding/wizard/onboarding-wizard-api';
-import { hasCorePracticedSport, type PracticedSportId } from '@/lib/practiced-sports';
+import { hasCorePracticedSport, type PracticedSportId } from '@sharpit/server/lib/practiced-sports';
 import type { GoalPayload } from '@/hooks/use-data';
 import type { useGoalMutations } from '@/hooks/use-data';
-import type { OnboardingWizardStep } from '@/lib/onboarding/wizard/wizard-steps';
+import type { OnboardingWizardStep } from '@sharpit/server/lib/onboarding/wizard/wizard-steps';
 
 export function useOnboardingWizardSportsFlow(
   sports: PracticedSportId[],

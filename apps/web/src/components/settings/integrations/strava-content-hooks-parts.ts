@@ -9,11 +9,11 @@ import {
   runStravaBackfill,
   runStravaSync,
   stravaBackfillSummary,
-} from '@/lib/integrations/shared/client-sync';
+} from '@sharpit/server/lib/integrations/shared/client-sync';
 import { invalidateAfterProviderSync } from '@/client/query/invalidate-after-provider-sync';
 import { disconnectStrava } from '@/client/query/fetchers';
 import { queryKeys } from '@/client/query/keys';
-import type { RecordChange } from '@/lib/training/records/records';
+import type { RecordChange } from '@sharpit/server/lib/training/records/records';
 
 export function useStravaSync(onUpdated?: () => void, onSyncStart?: () => void) {
   const router = useRouter();

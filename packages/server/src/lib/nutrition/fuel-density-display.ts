@@ -1,0 +1,35 @@
+import type { FuelFeatureSet } from '@sharpit/core/features/types';
+import type { NutritionFuelDensity } from '@sharpit/server/presentation/nutrition-view-model';
+import { formatWeightKgDisplay } from '@sharpit/server/lib/health/body-composition';
+
+import { isSet } from '@sharpit/shared/value';
+
+export function fuelFeatureSetToDensity(fuel: FuelFeatureSet): NutritionFuelDensity | null {
+  if (!fuel.logged) {
+    return null;
+  }
+  if (!isSet(fuel.referenceWeightKg) || fuel.referenceWeightKg <= 0) {
+    return null;
+  }
+  if (!isSet(fuel.proteinGPerKg) && !isSet(fuel.carbohydratesGPerKg)) {
+    return null;
+  }
+
+  return {
+    proteinGPerKg: fuel.proteinGPerKg ?? 0,
+    carbohydratesGPerKg: fuel.carbohydratesGPerKg ?? 0,
+    referenceWeightKg: fuel.referenceWeightKg,
+  };
+}
+
+export function formatMacroGPerKg(value: number): string {
+  return value.toLocaleString('fr-FR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}
+
+export function formatFuelDensityReference(weightKg: number): string {
+  const display = formatWeightKgDisplay(weightKg).replace('.', ',');
+  return `Réf. ${display} kg · dernière pesée`;
+}

@@ -3,14 +3,14 @@
 import { useMemo } from 'react';
 import type { SessionIntensity } from '@prisma/client';
 import { useAthleteProfile } from '@/hooks/use-data';
-import { enduranceSportFromActivityType } from '@/lib/planned-session/endurance/endurance-prescription';
-import { effectiveEndurancePrescription } from '@/lib/planned-session/endurance/endurance-session';
+import { enduranceSportFromActivityType } from '@sharpit/server/lib/planned-session/endurance/endurance-prescription';
+import { effectiveEndurancePrescription } from '@sharpit/server/lib/planned-session/endurance/endurance-session';
 import {
   garminPushStaleness,
   parsePushedThresholds,
   type GarminThresholdChange,
-} from '@/lib/planned-session/endurance/endurance-staleness';
-import type { AthleteThresholds } from '@/lib/planned-session/endurance/endurance-targets';
+} from '@sharpit/server/lib/planned-session/endurance/endurance-staleness';
+import type { AthleteThresholds } from '@sharpit/server/lib/planned-session/endurance/endurance-targets';
 
 const THRESHOLD_LABEL_FR: Record<keyof AthleteThresholds, string> = {
   runThresholdPaceSecPerKm: 'allure seuil',

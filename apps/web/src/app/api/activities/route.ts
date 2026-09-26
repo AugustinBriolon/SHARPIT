@@ -1,16 +1,16 @@
 import { NextRequest, NextResponse, after } from 'next/server';
 import { ActivityType } from '@prisma/client';
 import { sportSupportsOutdoorContext } from '@sharpit/core/planned-session/defaults';
-import { enrichActivityObservedContext } from '@/lib/activity/detail/enrich-observed-context';
-import { buildActivityCreateData } from '@/lib/activity/activity-service';
-import { runActivityNarrativeAnalysis } from '@/lib/activity/narrative/activity-narrative';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { isDemoSession } from '@/lib/demo/demo-session';
-import { syncManualActivityObservations } from '@/lib/observation/manual-observation-sync';
-import { createActivity, getActivitiesList } from '@/lib/queries';
+import { enrichActivityObservedContext } from '@sharpit/server/lib/activity/detail/enrich-observed-context';
+import { buildActivityCreateData } from '@sharpit/server/lib/activity/activity-service';
+import { runActivityNarrativeAnalysis } from '@sharpit/server/lib/activity/narrative/activity-narrative';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
+import { isDemoSession } from '@sharpit/server/lib/demo/demo-session';
+import { syncManualActivityObservations } from '@sharpit/server/lib/observation/manual-observation-sync';
+import { createActivity, getActivitiesList } from '@sharpit/server/lib/queries';
 import { prisma } from '@sharpit/db/client';
-import { updateRecordsForTypesSafe } from '@/lib/training/records/records';
-import { createActivitySchema } from '@/lib/validators/activity';
+import { updateRecordsForTypesSafe } from '@sharpit/server/lib/training/records/records';
+import { createActivitySchema } from '@sharpit/server/lib/validators/activity';
 
 export async function GET(request: NextRequest) {
   // Read search params before try so Cache Components prerender interrupts propagate.
@@ -100,14 +100,15 @@ export async function POST(request: NextRequest) {
       let plannedSessionIdsToAnalyze: string[] = [];
       try {
         const { autoLinkActivities } =
-          await import('@/lib/planned-session/linking/session-linking');
+          await import('@sharpit/server/lib/planned-session/linking/session-linking');
         plannedSessionIdsToAnalyze = (await autoLinkActivities(athleteId, [activityId])).sessionIds;
       } catch (error) {
         console.error('[activities/POST] auto-link', error);
       }
 
       try {
-        const { scheduleBackgroundTasks } = await import('@/lib/athlete-state/background');
+        const { scheduleBackgroundTasks } =
+          await import('@sharpit/server/lib/athlete-state/background');
         scheduleBackgroundTasks({
           athleteId,
           activityIds: [activityId],

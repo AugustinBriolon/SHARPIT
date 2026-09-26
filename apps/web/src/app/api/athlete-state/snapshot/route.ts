@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { getOrBuildAthleteSnapshot } from '@/lib/athlete-state/snapshot-service';
-import { trainingDayIdNow } from '@/lib/athlete-state/freshness-service';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
+import { getOrBuildAthleteSnapshot } from '@sharpit/server/lib/athlete-state/snapshot-service';
+import { trainingDayIdNow } from '@sharpit/server/lib/athlete-state/freshness-service';
 
 /**
  * GET /api/athlete-state/snapshot?trainingDayId=YYYY-MM-DD

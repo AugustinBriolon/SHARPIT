@@ -2,10 +2,13 @@
 
 import { Check, Layers } from 'lucide-react';
 import { ActivityTypeIndicator } from '@/components/ui/instruments/activity-type-indicator';
-import { activityTypeLabels } from '@/lib/format';
-import { formatPlannedDuration, intensityLabels } from '@/lib/planned-session/sessions';
-import type { BrickLegSummary } from '@/lib/planned-session/brick/brick-sessions';
-import { cn } from '@/lib/utils';
+import { activityTypeLabels } from '@sharpit/server/lib/format';
+import {
+  formatPlannedDuration,
+  intensityLabels,
+} from '@sharpit/server/lib/planned-session/sessions';
+import type { BrickLegSummary } from '@sharpit/server/lib/planned-session/brick/brick-sessions';
+import { cn } from '@sharpit/server/lib/utils';
 import { NavArrowRight } from '@/components/icons/nav-arrows';
 
 /**

@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
 import {
   getMorningWellnessCheckin,
   hasMorningWellnessCheckin,
   submitMorningWellnessCheckin,
   todayTrainingDayId,
-} from '@/lib/journal/wellness-checkin';
-import { wellnessCheckinSchema } from '@/lib/validators/wellness-checkin';
+} from '@sharpit/server/lib/journal/wellness-checkin';
+import { wellnessCheckinSchema } from '@sharpit/server/lib/validators/wellness-checkin';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);

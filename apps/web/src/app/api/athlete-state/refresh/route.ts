@@ -1,12 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
 import {
   refreshAthleteState,
   shouldSkipTodayPresentationRebuild,
-} from '@/lib/athlete-state/orchestrator';
-import { computeFreshnessSnapshot, trainingDayIdNow } from '@/lib/athlete-state/freshness-service';
-import { buildTodayPresentationViewModel } from '@/lib/presentation/today/today';
-import { ensureMorningRecalibration } from '@/lib/morning-recalibration/service';
+} from '@sharpit/server/lib/athlete-state/orchestrator';
+import {
+  computeFreshnessSnapshot,
+  trainingDayIdNow,
+} from '@sharpit/server/lib/athlete-state/freshness-service';
+import { buildTodayPresentationViewModel } from '@sharpit/server/lib/presentation/today/today';
+import { ensureMorningRecalibration } from '@sharpit/server/lib/morning-recalibration/service';
 
 export const maxDuration = 120;
 

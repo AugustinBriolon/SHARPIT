@@ -2,7 +2,7 @@
 
 import { InstrumentListChip } from '@/components/ui/instruments/instrument-list-chip';
 import { useHikeTrips } from '@/hooks/use-data';
-import { buildHikeTripListMeta } from '@/lib/activity/hike/hike-trip-summary';
+import { buildHikeTripListMeta } from '@sharpit/server/lib/activity/hike/hike-trip-summary';
 
 const PREVIEW_LIMIT = 3;
 

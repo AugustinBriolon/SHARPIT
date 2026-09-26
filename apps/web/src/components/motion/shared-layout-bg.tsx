@@ -21,8 +21,8 @@ import {
   useId,
   useState,
 } from 'react';
-import { SPRING_LAYOUT } from '@/lib/ease';
-import { cn } from '@/lib/utils';
+import { SPRING_LAYOUT } from '@sharpit/server/lib/ease';
+import { cn } from '@sharpit/server/lib/utils';
 
 export interface SharedLayoutBgProps extends Omit<HTMLAttributes<HTMLElement>, 'children'> {
   children: ReactNode;

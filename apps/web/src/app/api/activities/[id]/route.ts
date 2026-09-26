@@ -1,15 +1,15 @@
 import { NextRequest, NextResponse, after } from 'next/server';
-import { buildActivityUpdateData } from '@/lib/activity/activity-service';
-import { onWellnessSubmitted } from '@/lib/athlete-state/orchestrator';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
+import { buildActivityUpdateData } from '@sharpit/server/lib/activity/activity-service';
+import { onWellnessSubmitted } from '@sharpit/server/lib/athlete-state/orchestrator';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
 import {
   removeManualActivityObservations,
   syncManualActivityObservations,
-} from '@/lib/observation/manual-observation-sync';
-import { deleteActivity, getActivityById, updateActivity } from '@/lib/queries';
-import { updateRecordsForTypesSafe } from '@/lib/training/records/records';
+} from '@sharpit/server/lib/observation/manual-observation-sync';
+import { deleteActivity, getActivityById, updateActivity } from '@sharpit/server/lib/queries';
+import { updateRecordsForTypesSafe } from '@sharpit/server/lib/training/records/records';
 import { computeTrainingDayId } from '@sharpit/core/training/training-day';
-import { updateActivitySchema } from '@/lib/validators/activity';
+import { updateActivitySchema } from '@sharpit/server/lib/validators/activity';
 
 type RouteContext = { params: Promise<{ id: string }> };
 

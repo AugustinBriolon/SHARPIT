@@ -6,9 +6,12 @@ import {
   DEMO_SESSION_LINK_ACTIVITY_NARRATIVE,
   DEMO_SESSION_LINK_SESSION_ANALYSIS,
 } from '@/client/demo/demo-session-link-reading';
-import { markDemoSessionLinked, readDemoSessionLinks } from '@/lib/demo/demo-session-link-state';
+import {
+  markDemoSessionLinked,
+  readDemoSessionLinks,
+} from '@sharpit/server/lib/demo/demo-session-link-state';
 import { queryKeys } from '@/client/query/keys';
-import type { ClientActivity, ClientPlannedSession } from '@/lib/query/types';
+import type { ClientActivity, ClientPlannedSession } from '@sharpit/server/lib/query/types';
 
 function seedDemoSessionStorage() {
   markDemoSessionLinked('ps-1', 'act-1', {

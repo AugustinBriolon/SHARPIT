@@ -4,11 +4,11 @@ import { StickyHeader } from '@/components/layout/header/sticky-header';
 import { EquipmentPanel } from '@/components/settings/equipment';
 import { SettingsDemoBlock } from '@/components/settings/settings-demo-block';
 import { Skeleton } from '@/components/ui/skeleton';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { isDemoSession } from '@/lib/demo/demo-session';
-import { normalizeAthleteEquipment } from '@/lib/equipment/parse';
-import { normalizeAthletePracticedSports } from '@/lib/practiced-sports';
-import { getAthleteProfile } from '@/lib/queries';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
+import { isDemoSession } from '@sharpit/server/lib/demo/demo-session';
+import { normalizeAthleteEquipment } from '@sharpit/server/lib/equipment/parse';
+import { normalizeAthletePracticedSports } from '@sharpit/server/lib/practiced-sports';
+import { getAthleteProfile } from '@sharpit/server/lib/queries';
 
 function EquipmentPanelSkeleton() {
   return (

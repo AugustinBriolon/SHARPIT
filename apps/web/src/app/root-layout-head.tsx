@@ -1,4 +1,4 @@
-import { THEME_INIT_SCRIPT } from '@/lib/theme/theme';
+import { THEME_INIT_SCRIPT } from '@sharpit/server/lib/theme/theme';
 
 export function RootLayoutHead() {
   return (

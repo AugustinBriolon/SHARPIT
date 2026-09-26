@@ -1,7 +1,7 @@
 import { OnboardingCredentialDialog } from '@/components/onboarding/gate/onboarding-credential-dialog';
-import type { DataClassId } from '@/lib/integrations/provider-catalog';
-import type { IntegrationId } from '@/lib/integrations/shared/client-sync';
-import type { IntegrationSourcePrefs } from '@/lib/integrations/source-prefs';
+import type { DataClassId } from '@sharpit/server/lib/integrations/provider-catalog';
+import type { IntegrationId } from '@sharpit/server/lib/integrations/shared/client-sync';
+import type { IntegrationSourcePrefs } from '@sharpit/server/lib/integrations/source-prefs';
 
 type CredentialProvider = Extract<IntegrationId, 'garmin' | 'renpho' | 'myfitnesspal'>;
 

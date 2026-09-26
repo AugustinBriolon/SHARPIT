@@ -1,6 +1,6 @@
-import type { CorpsTone } from '@/lib/ui/metric-tone';
-import { CORPS_TONE_DOT } from '@/lib/ui/metric-tone';
-import { cn } from '@/lib/utils';
+import type { CorpsTone } from '@sharpit/server/lib/ui/metric-tone';
+import { CORPS_TONE_DOT } from '@sharpit/server/lib/ui/metric-tone';
+import { cn } from '@sharpit/server/lib/utils';
 import { EyebrowLabel } from '@/components/ui/eyebrow-label';
 import { SkeletonDataValue } from '@/components/ui/skeleton-data-value';
 import {

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { buildPhysicalHealthPresentationViewModel } from '@/lib/presentation/physical-health/physical-health';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
+import { buildPhysicalHealthPresentationViewModel } from '@sharpit/server/lib/presentation/physical-health/physical-health';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);

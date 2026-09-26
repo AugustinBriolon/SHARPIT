@@ -1,7 +1,7 @@
 import type { SessionIntensity } from '@prisma/client';
-import { cn } from '@/lib/utils';
-import { intensityTextColors } from '@/lib/planned-session/sessions';
-import type { RearrangePreviewSession } from '@/lib/today/rich/rearrange-preview';
+import { cn } from '@sharpit/server/lib/utils';
+import { intensityTextColors } from '@sharpit/server/lib/planned-session/sessions';
+import type { RearrangePreviewSession } from '@sharpit/server/lib/today/rich/rearrange-preview';
 
 const TONE_SURFACE: Record<RearrangePreviewSession['tone'], string> = {
   tension: 'border-signal-caution/45 bg-signal-caution/10',

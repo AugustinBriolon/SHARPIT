@@ -13,7 +13,7 @@ import {
 import { resolveApprovalCardContentProps } from '@/components/coach/kit/approval-card/approval-card-props';
 import type { ApprovalCardStatus } from './types';
 import type { ApprovalCardProps } from './types';
-import { cn } from '@/lib/utils';
+import { cn } from '@sharpit/server/lib/utils';
 
 type ApprovalCardState = ReturnType<typeof import('./use-approval-card').useApprovalCard>;
 

@@ -3,13 +3,13 @@
 import { useMemo } from 'react';
 import type { SessionIntensity } from '@prisma/client';
 import { useAthleteProfile } from '@/hooks/use-data';
-import { enduranceSportFromActivityType } from '@/lib/planned-session/endurance/endurance-prescription';
+import { enduranceSportFromActivityType } from '@sharpit/server/lib/planned-session/endurance/endurance-prescription';
 import {
   previewEnduranceSteps,
   type EndurancePreviewStep,
-} from '@/lib/planned-session/endurance/endurance-preview';
-import { effectiveEndurancePrescription } from '@/lib/planned-session/endurance/endurance-session';
-import type { AthleteThresholds } from '@/lib/planned-session/endurance/endurance-targets';
+} from '@sharpit/server/lib/planned-session/endurance/endurance-preview';
+import { effectiveEndurancePrescription } from '@sharpit/server/lib/planned-session/endurance/endurance-session';
+import type { AthleteThresholds } from '@sharpit/server/lib/planned-session/endurance/endurance-targets';
 
 export type EndurancePreview = {
   steps: EndurancePreviewStep[];

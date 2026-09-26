@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { isProviderConnectable } from '@/lib/integrations/provider-catalog';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
+import { isProviderConnectable } from '@sharpit/server/lib/integrations/provider-catalog';
 import {
   filterRecordChangesByActivities,
   recomputeRecordGroups,
-} from '@/lib/training/records/records';
-import { backfillActivityStreams } from '@/lib/streams/stream-backfill';
-import { getStravaAccount } from '@/lib/integrations/strava/strava-sync';
+} from '@sharpit/server/lib/training/records/records';
+import { backfillActivityStreams } from '@sharpit/server/lib/streams/stream-backfill';
+import { getStravaAccount } from '@sharpit/server/lib/integrations/strava/strava-sync';
 
 export const maxDuration = 120;
 

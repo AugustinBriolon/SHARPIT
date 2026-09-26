@@ -1,7 +1,7 @@
 import { clerkClient } from '@clerk/nextjs/server';
 import { AthleteTierToggle } from '@/components/admin/athlete-tier-toggle';
-import { listAthletesForAdmin } from '@/lib/admin/queries';
-import { isDevClerkBypass } from '@/lib/dev/dev-auth';
+import { listAthletesForAdmin } from '@sharpit/server/lib/admin/queries';
+import { isDevClerkBypass } from '@sharpit/server/lib/dev/dev-auth';
 
 async function emailsByClerkId(clerkUserIds: string[]): Promise<Map<string, string>> {
   if (isDevClerkBypass() || clerkUserIds.length === 0) {

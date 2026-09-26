@@ -30,13 +30,13 @@ vi.mock('@clerk/nextjs/server', async (importOriginal) => {
   };
 });
 
-vi.mock('@/lib/rate-limit', () => ({
+vi.mock('@sharpit/server/lib/rate-limit', () => ({
   checkRateLimit: vi.fn().mockResolvedValue({ ok: true }),
   rateLimiters: { apiGeneral: {} },
   rateLimitResponseBody: vi.fn(),
 }));
 
-vi.mock('@/lib/dev/dev-auth', () => ({ isDevClerkBypass: () => false }));
+vi.mock('@sharpit/server/lib/dev/dev-auth', () => ({ isDevClerkBypass: () => false }));
 
 async function run(url: string, cookie?: string) {
   const { default: proxy } = await import('./proxy');

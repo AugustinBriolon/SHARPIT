@@ -1,0 +1,195 @@
+import {
+  addDays,
+  addWeeks,
+  differenceInCalendarDays,
+  endOfWeek,
+  format,
+  startOfDay,
+} from 'date-fns';
+import { fr } from 'date-fns/locale';
+import { isSet } from '@sharpit/shared/value';
+import type { ClientPlannedSession } from '@sharpit/server/lib/query/types';
+
+type PlannedSessionLike = Pick<ClientPlannedSession, 'date' | 'completed' | 'activityId'>;
+type PlannedScheduleLike = {
+  date: Date | string;
+  startTime?: string | null;
+};
+
+const WEEK_OPTS = { weekStartsOn: 1 as const };
+
+/** Parse `HH:mm` onto the training calendar day (local). */
+export function parsePlannedStart(
+  trainingDay: Date,
+  startTime: string | null | undefined,
+): Date | null {
+  if (!startTime?.trim()) {
+    return null;
+  }
+  const match = /^(\d{1,2}):(\d{2})$/.exec(startTime.trim());
+  if (!match) {
+    return null;
+  }
+  const hours = Number(match[1]);
+  const minutes = Number(match[2]);
+  if (Number.isNaN(hours) || Number.isNaN(minutes)) {
+    return null;
+  }
+  const d = startOfDay(trainingDay);
+  d.setHours(hours, minutes, 0, 0);
+  return d;
+}
+
+/**
+ * Chronological order for planned sessions: calendar day, then startTime.
+ * Untimed sessions sort after timed ones on the same day (soonest first).
+ */
+export function comparePlannedSessionsBySchedule(
+  a: PlannedScheduleLike,
+  b: PlannedScheduleLike,
+): number {
+  const dayA = startOfDay(new Date(a.date)).getTime();
+  const dayB = startOfDay(new Date(b.date)).getTime();
+  if (dayA !== dayB) {
+    return dayA - dayB;
+  }
+  const ta = parsePlannedStart(new Date(a.date), a.startTime)?.getTime() ?? Number.MAX_SAFE_INTEGER;
+  const tb = parsePlannedStart(new Date(b.date), b.startTime)?.getTime() ?? Number.MAX_SAFE_INTEGER;
+  return ta - tb;
+}
+
+/** Séance non réalisée dont la date est aujourd'hui ou plus tard (comparaison calendaire). */
+export function isUpcomingPlannedSession(
+  session: PlannedSessionLike,
+  ref: Date = new Date(),
+): boolean {
+  if (session.completed || session.activityId) {
+    return false;
+  }
+  const sessionDay = startOfDay(new Date(session.date));
+  const refDay = startOfDay(ref);
+  return sessionDay.getTime() >= refDay.getTime();
+}
+
+export function filterUpcomingPlannedSessions<T extends PlannedSessionLike & PlannedScheduleLike>(
+  sessions: T[],
+  ref: Date = new Date(),
+  options?: { horizonDays?: number },
+): T[] {
+  const horizonDays = options?.horizonDays;
+  const horizonEnd = isSet(horizonDays) ? startOfDay(addDays(startOfDay(ref), horizonDays)) : null;
+
+  return sessions
+    .filter((s) => {
+      if (!isUpcomingPlannedSession(s, ref)) {
+        return false;
+      }
+      if (horizonEnd === undefined || horizonEnd === null) {
+        return true;
+      }
+      return startOfDay(new Date(s.date)).getTime() <= horizonEnd.getTime();
+    })
+    .sort(comparePlannedSessionsBySchedule);
+}
+
+function partitionUpcomingByWeek<T extends PlannedSessionLike>(
+  upcoming: T[],
+  ref: Date,
+): { remainingThisWeek: T[]; nextWeek: T[] } {
+  const thisWeekEnd = startOfDay(endOfWeek(ref, WEEK_OPTS));
+  const nextWeekEnd = startOfDay(endOfWeek(addWeeks(ref, 1), WEEK_OPTS));
+  const remainingThisWeek: T[] = [];
+  const nextWeek: T[] = [];
+
+  for (const session of upcoming) {
+    const day = startOfDay(new Date(session.date)).getTime();
+    if (day <= thisWeekEnd.getTime()) {
+      remainingThisWeek.push(session);
+    } else if (day <= nextWeekEnd.getTime()) {
+      nextWeek.push(session);
+    }
+  }
+
+  return { remainingThisWeek, nextWeek };
+}
+
+function fillPreviewToLimit<T extends PlannedSessionLike>(
+  selected: T[],
+  upcoming: T[],
+  limit: number,
+): T[] {
+  if (selected.length >= limit) {
+    return selected;
+  }
+  const selectedSet = new Set(selected);
+  const filled = [...selected];
+  for (const session of upcoming) {
+    if (filled.length >= limit) {
+      break;
+    }
+    if (selectedSet.has(session)) {
+      continue;
+    }
+    filled.push(session);
+    selectedSet.add(session);
+  }
+  return filled;
+}
+
+/**
+ * Preview selection for "Prochaines séances": keeps chronological order but
+ * always reserves slots for next week when sessions exist there — otherwise a
+ * full remaining current week fills the limit and hides the week ahead.
+ *
+ * Small previews (limit < 4) stay strictly chronological so responsive
+ * truncation keeps the nearest sessions (top of the desktop grid), not the
+ * next-week reserve that sits on the second row.
+ */
+export function selectUpcomingPlannedPreview<T extends PlannedSessionLike>(
+  sessions: T[],
+  ref: Date = new Date(),
+  limit = 4,
+): T[] {
+  const upcoming = filterUpcomingPlannedSessions(sessions, ref);
+  if (upcoming.length <= limit) {
+    return upcoming;
+  }
+  if (limit < 4) {
+    return upcoming.slice(0, limit);
+  }
+
+  const { remainingThisWeek, nextWeek } = partitionUpcomingByWeek(upcoming, ref);
+
+  if (nextWeek.length === 0) {
+    return upcoming.slice(0, limit);
+  }
+
+  const reservedForNextWeek = Math.min(nextWeek.length, Math.max(2, Math.ceil(limit / 2)));
+  const thisWeekBudget = Math.max(0, limit - reservedForNextWeek);
+  const fromThisWeek = remainingThisWeek.slice(0, thisWeekBudget);
+  const fromNextWeek = nextWeek.slice(0, limit - fromThisWeek.length);
+  const selected = fillPreviewToLimit([...fromThisWeek, ...fromNextWeek], upcoming, limit);
+
+  return selected.sort(comparePlannedSessionsBySchedule);
+}
+
+/** Libellé relatif basé sur les jours calendaires (pas la durée horaire). */
+export function formatPlannedSessionRelativeDay(
+  sessionDate: Date | string,
+  ref: Date = new Date(),
+): string {
+  const day = startOfDay(new Date(sessionDate));
+  const today = startOfDay(ref);
+  const diff = differenceInCalendarDays(day, today);
+
+  if (diff === 0) {
+    return "Aujourd'hui";
+  }
+  if (diff === 1) {
+    return 'Demain';
+  }
+  if (diff < 7) {
+    return `dans ${diff} jours`;
+  }
+  return format(day, 'EEEE d MMMM', { locale: fr });
+}

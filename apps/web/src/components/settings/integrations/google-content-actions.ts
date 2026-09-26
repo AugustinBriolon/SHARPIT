@@ -1,7 +1,7 @@
 import type { QueryClient } from '@tanstack/react-query';
 import type { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
 import { invalidateAfterProviderSync } from '@/client/query/invalidate-after-provider-sync';
-import { runGoogleSync } from '@/lib/integrations/shared/client-sync';
+import { runGoogleSync } from '@sharpit/server/lib/integrations/shared/client-sync';
 import { toast } from '@/components/ui/toast';
 import {
   disconnectGoogle,

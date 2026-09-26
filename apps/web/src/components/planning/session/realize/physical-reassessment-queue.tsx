@@ -5,7 +5,7 @@ import {
   PhysicalReassessmentCard,
   type PhysicalReassessment,
 } from '@/components/planning/session/realize/physical-reassessment-card';
-import { clampReassessmentIndex } from '@/lib/physical-health/reassessment-pager';
+import { clampReassessmentIndex } from '@sharpit/server/lib/physical-health/reassessment-pager';
 import {
   InjuryStepStrip,
   useReassessmentSwipeHandlers,

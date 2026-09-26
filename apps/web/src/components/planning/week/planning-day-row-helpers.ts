@@ -1,7 +1,7 @@
 import type { InstrumentListChipMeta } from '@/components/ui/instruments/instrument-list-chip';
-import type { ClientPlannedSession } from '@/lib/query/types';
-import { groupPlannedSessions } from '@/lib/planned-session/brick/brick-sessions';
-import { formatPlannedDuration } from '@/lib/planned-session/sessions';
+import type { ClientPlannedSession } from '@sharpit/server/lib/query/types';
+import { groupPlannedSessions } from '@sharpit/server/lib/planned-session/brick/brick-sessions';
+import { formatPlannedDuration } from '@sharpit/server/lib/planned-session/sessions';
 
 export function firstOpenPlannedSessionId(
   groups: ReturnType<typeof groupPlannedSessions>,

@@ -14,8 +14,8 @@ import {
 } from '@/components/settings/integrations/garmin-browser-sso-parts';
 import { IntegrationLogo } from '@/components/settings/integrations/logos';
 import { useIosIframeFocusZoomGuard } from '@/hooks/use-ios-iframe-focus-zoom-guard';
-import { buildGarminBrowserSsoUrl } from '@/lib/integrations/garmin/garmin-browser-sso-shared';
-import { cn } from '@/lib/utils';
+import { buildGarminBrowserSsoUrl } from '@sharpit/server/lib/integrations/garmin/garmin-browser-sso-shared';
+import { cn } from '@sharpit/server/lib/utils';
 
 const SUCCESS_HOLD_MS = 900;
 const DEFAULT_BACK = '/settings/integrations';

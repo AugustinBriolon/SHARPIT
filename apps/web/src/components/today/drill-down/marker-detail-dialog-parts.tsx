@@ -1,6 +1,6 @@
 'use client';
 
-import { cn } from '@/lib/utils';
+import { cn } from '@sharpit/server/lib/utils';
 import {
   BAND_START_PCT,
   BAND_WIDTH_PCT,

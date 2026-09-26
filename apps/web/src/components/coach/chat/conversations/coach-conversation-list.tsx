@@ -8,7 +8,7 @@ import {
   conversationListSelectedId,
 } from '@/components/coach/chat/conversations/coach-conversation-list-helpers';
 import type { ClientConversationSummary } from '@/client/query/fetchers';
-import { cn } from '@/lib/utils';
+import { cn } from '@sharpit/server/lib/utils';
 
 export function CoachConversationList({
   activeId,

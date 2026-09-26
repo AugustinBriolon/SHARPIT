@@ -1,6 +1,6 @@
 'use client';
 
-import type { ClientPlannedSession } from '@/lib/query/types';
+import type { ClientPlannedSession } from '@sharpit/server/lib/query/types';
 import {
   CompletedSessionStoryContent,
   parseActivityNarrative,

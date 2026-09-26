@@ -1,15 +1,15 @@
 'use client';
 
 import { Plus } from 'lucide-react';
-import type { ClientActivity } from '@/lib/query/types';
+import type { ClientActivity } from '@sharpit/server/lib/query/types';
 import { ActivityHistoryVirtualList } from '@/components/training/hub/activity-history-virtual-list';
 import { HistoryFilters } from '@/components/training/hub/history-filters';
 import { ActivitySourceEmptyActions } from '@/components/integrations/connect-source-cta';
 import { Button } from '@/components/ui/button';
 import { InkEmptyState } from '@/components/ui/ink-empty-state';
 import { LinkButton } from '@/components/ui/link-button';
-import { type TrainingHistoryFilters } from '@/lib/training/periodization/history-filters';
-import type { ActivityRoutePreviews } from '@/lib/streams/route-previews';
+import { type TrainingHistoryFilters } from '@sharpit/server/lib/training/periodization/history-filters';
+import type { ActivityRoutePreviews } from '@sharpit/server/lib/streams/route-previews';
 import { FilterX, Link2, MoreHorizontal, X } from 'lucide-react';
 import {
   DropdownMenu,

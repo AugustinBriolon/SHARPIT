@@ -1,15 +1,15 @@
 import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
 import {
   GARMIN_SSO_STATE_COOKIE,
   isGarminSsoTicket,
   parseGarminSsoState,
-} from '@/lib/integrations/garmin/garmin-browser-sso';
-import { exchangeServiceTicketForDiTokens } from '@/lib/integrations/garmin/garmin-di-oauth';
-import { importGarminDiTokenStore } from '@/lib/integrations/garmin/garmin-sync';
-import { redirectAfterIntegrationConnect } from '@/lib/integrations/oauth-return';
+} from '@sharpit/server/lib/integrations/garmin/garmin-browser-sso';
+import { exchangeServiceTicketForDiTokens } from '@sharpit/server/lib/integrations/garmin/garmin-di-oauth';
+import { importGarminDiTokenStore } from '@sharpit/server/lib/integrations/garmin/garmin-sync';
+import { redirectAfterIntegrationConnect } from '@sharpit/server/lib/integrations/oauth-return';
 
 export const maxDuration = 60;
 

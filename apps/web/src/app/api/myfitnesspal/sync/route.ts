@@ -1,7 +1,11 @@
 import { NextResponse } from 'next/server';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { syncMfpNutrition } from '@/lib/integrations/myfitnesspal/myfitnesspal-sync';
-import { checkRateLimit, rateLimitJsonResponse, rateLimiters } from '@/lib/rate-limit';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
+import { syncMfpNutrition } from '@sharpit/server/lib/integrations/myfitnesspal/myfitnesspal-sync';
+import {
+  checkRateLimit,
+  rateLimitJsonResponse,
+  rateLimiters,
+} from '@sharpit/server/lib/rate-limit';
 
 export async function POST() {
   try {

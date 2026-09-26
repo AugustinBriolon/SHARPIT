@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { getDayJournalEntry, upsertDayJournalEntryDb } from '@/lib/journal/day-journal-service';
-import { awaitRequest } from '@/lib/next/await-request';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
+import {
+  getDayJournalEntry,
+  upsertDayJournalEntryDb,
+} from '@sharpit/server/lib/journal/day-journal-service';
+import { awaitRequest } from '@sharpit/server/lib/next/await-request';
 import { prisma } from '@sharpit/db/client';
 
 const factorStateSchema = z.enum(['unset', 'no', 'yes']);

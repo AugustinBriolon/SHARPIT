@@ -9,7 +9,7 @@ import {
   shouldRefreshHomeLocation,
   writeHomeLocationEverGranted,
   writeLastHomeLocationRefreshMs,
-} from '@/lib/geocoding/home-location-refresh';
+} from '@sharpit/server/lib/geocoding/home-location-refresh';
 import { invalidateAfterAthleteProfileSave } from '@/client/query/invalidate-after-athlete-profile-save';
 import { postAthleteHomeLocation } from '@/client/query/fetchers';
 import { beginGeolocationRequest } from '@/components/today/dashboard/use-device-location-helpers';

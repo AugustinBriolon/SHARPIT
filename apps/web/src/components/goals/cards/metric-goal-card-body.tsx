@@ -7,12 +7,12 @@ import {
   metricGoalSubtitle,
 } from '@/components/goals/cards/goal-card-format';
 import { CardContent, CardTitle } from '@/components/ui/card';
-import { computeGoalProgress, daysUntil, formatRemaining } from '@/lib/goals/goals';
+import { computeGoalProgress, daysUntil, formatRemaining } from '@sharpit/server/lib/goals/goals';
 import {
   describeMetricGoal,
   formatGoalDisplayValue,
   parseGoalMetricConfig,
-} from '@/lib/goals/goal-metric-config';
+} from '@sharpit/server/lib/goals/goal-metric-config';
 import { AchievedStatus, GoalProgressTrack } from '@/components/goals/cards/goal-cards-parts';
 
 function formatValue(value: number | null, unit: string | null, metricKey?: string | null): string {

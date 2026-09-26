@@ -3,7 +3,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { fetchActivity } from '@/client/query/fetchers';
 import { queryKeys } from '@/client/query/keys';
-import type { ClientActivityDetail } from '@/lib/query/types';
+import type { ClientActivityDetail } from '@sharpit/server/lib/query/types';
 
 const ACTIVITY_DETAIL_STALE_MS = 10 * 60_000;
 

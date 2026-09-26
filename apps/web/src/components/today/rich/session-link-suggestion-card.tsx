@@ -2,7 +2,7 @@
 
 import { ActivityTypeIndicator } from '@/components/ui/instruments/activity-type-indicator';
 import { useDisplayMode } from '@/providers/display-mode-provider';
-import { cn } from '@/lib/utils';
+import { cn } from '@sharpit/server/lib/utils';
 import { useEffect, useId, useRef } from 'react';
 import { NavArrowRight } from '@/components/icons/nav-arrows';
 import {

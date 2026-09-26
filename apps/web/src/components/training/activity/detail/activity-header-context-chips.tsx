@@ -5,10 +5,10 @@ import { ActivityFeelingPrompt } from '@/components/training/activity/detail/act
 import { ActivityPlannedSessionChip } from '@/components/training/activity/detail/activity-planned-session-chip';
 import { ActivityWeatherChip } from '@/components/training/activity/detail/activity-weather-chip';
 import { useActivityHeaderEvaluations } from '@/components/training/activity/detail/use-activity-header-evaluations';
-import type { PlannedSessionSummary } from '@/lib/activity/detail/types';
+import type { PlannedSessionSummary } from '@sharpit/server/lib/activity/detail/types';
 import type { ActivityType } from '@prisma/client';
-import { isIndoorActivitySession } from '@/lib/activity/location/indoor-activity';
-import { parseActivityWeather } from '@/lib/activity/weather/activity-weather';
+import { isIndoorActivitySession } from '@sharpit/server/lib/activity/location/indoor-activity';
+import { parseActivityWeather } from '@sharpit/server/lib/activity/weather/activity-weather';
 
 function resolveWeatherChipVisibility({
   activityType,

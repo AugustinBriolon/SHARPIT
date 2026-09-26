@@ -8,9 +8,9 @@ import { BrickAnalysisPanel } from '@/components/planning/brick/brick-analysis-p
 import { SessionRealization } from '@/components/planning/session/realize/session-realization';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import type { ClientPlannedSession } from '@/lib/query/types';
-import { activityTypeLabels } from '@/lib/format';
-import { intensityAccent } from '@/lib/planned-session/sessions';
+import type { ClientPlannedSession } from '@sharpit/server/lib/query/types';
+import { activityTypeLabels } from '@sharpit/server/lib/format';
+import { intensityAccent } from '@sharpit/server/lib/planned-session/sessions';
 import { NavArrowRight } from '@/components/icons/nav-arrows';
 
 export { BrickChipHeader } from '@/components/planning/brick/brick-chip-header';

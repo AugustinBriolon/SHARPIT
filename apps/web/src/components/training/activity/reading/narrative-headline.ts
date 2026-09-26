@@ -1,4 +1,4 @@
-import type { ActivityNarrative } from '@/lib/validators/coach';
+import type { ActivityNarrative } from '@sharpit/server/lib/validators/coach';
 
 /** Extract coach headline from stored narrative JSON without throwing. */
 export function readNarrativeHeadline(raw: unknown): string | null {

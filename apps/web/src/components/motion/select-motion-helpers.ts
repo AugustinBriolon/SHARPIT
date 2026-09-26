@@ -1,5 +1,5 @@
 import type { Transition } from 'motion/react';
-import { EASE_OUT } from '@/lib/ease';
+import { EASE_OUT } from '@sharpit/server/lib/ease';
 
 export const SELECT_INSTANT_TRANSITION: Transition = { duration: 0 };
 

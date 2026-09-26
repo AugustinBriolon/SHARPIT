@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { cn } from '@/lib/utils';
+import { cn } from '@sharpit/server/lib/utils';
 import { NavArrowDown } from '@/components/icons/nav-arrows';
 
 const READ_MAX_COLLAPSED_CLASS = 'max-h-40';

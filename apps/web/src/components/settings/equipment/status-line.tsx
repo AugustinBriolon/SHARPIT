@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import type { StrengthVenue } from '@/lib/equipment/catalog';
+import type { StrengthVenue } from '@sharpit/server/lib/equipment/catalog';
 
 export function EquipmentStatusLine({
   error,

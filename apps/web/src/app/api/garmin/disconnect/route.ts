@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { clearProviderFromSourcePrefs } from '@/lib/integrations/clear-provider-prefs';
-import { disconnectGarmin } from '@/lib/integrations/garmin/garmin-sync';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
+import { clearProviderFromSourcePrefs } from '@sharpit/server/lib/integrations/clear-provider-prefs';
+import { disconnectGarmin } from '@sharpit/server/lib/integrations/garmin/garmin-sync';
 
 export async function POST() {
   try {

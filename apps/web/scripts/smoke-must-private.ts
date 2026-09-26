@@ -10,7 +10,7 @@
  * read from the environment only — never pass it as an argument, never paste it in logs.
  */
 
-import { runMustPrivateSmoke, type SmokeResult } from '../src/lib/ops/must-private-smoke';
+import { runMustPrivateSmoke, type SmokeResult } from '@sharpit/server/lib/ops/must-private-smoke';
 
 const DEFAULT_ORIGINS = ['https://sharpit.app'];
 

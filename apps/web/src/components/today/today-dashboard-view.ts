@@ -1,5 +1,5 @@
-import type { TodayViewModel } from '@/presentation/today-view-model';
-import type { PersistedSnapshotEntry } from '@/lib/pwa/snapshot-store-validation';
+import type { TodayViewModel } from '@sharpit/server/presentation/today-view-model';
+import type { PersistedSnapshotEntry } from '@sharpit/server/lib/pwa/snapshot-store-validation';
 
 export type TodayDashboardView =
   | { kind: 'offline'; entry: PersistedSnapshotEntry }

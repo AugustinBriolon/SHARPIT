@@ -4,9 +4,9 @@ import { Check } from 'lucide-react';
 import { AdaptationTrigger } from '@/components/coach/plan/adaptation-trigger';
 import { GateFindingsList, GateStatusBadge } from '@/components/coach/plan/gate-status-badge';
 import type { AdaptChange } from '@/hooks/use-coach';
-import type { ClientPlannedSession } from '@/lib/query/types';
-import type { GateSessionResult } from '@/lib/plan-gate/types';
-import { cn } from '@/lib/utils';
+import type { ClientPlannedSession } from '@sharpit/server/lib/query/types';
+import type { GateSessionResult } from '@sharpit/server/lib/plan-gate/types';
+import { cn } from '@sharpit/server/lib/utils';
 import {
   formatChangeDate,
   changeFieldsSummary,

@@ -17,8 +17,8 @@ import {
   type RecordCategory,
   type RecordEntry,
   type RecordSportTab,
-} from '@/lib/training/records/records';
-import { cn } from '@/lib/utils';
+} from '@sharpit/server/lib/training/records/records';
+import { cn } from '@sharpit/server/lib/utils';
 import { differenceInCalendarDays, format, formatDistanceToNowStrict } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Bike, Footprints, Waves } from 'lucide-react';
@@ -214,7 +214,7 @@ function PrGrid({ categories }: { categories: RecordCategory[] }) {
 function GpsAnalysisSection({
   powerCurve,
 }: {
-  powerCurve: import('@/lib/training/records/records').PowerCurvePoint[];
+  powerCurve: import('@sharpit/server/lib/training/records/records').PowerCurvePoint[];
 }) {
   if (powerCurve.length === 0) {
     return null;

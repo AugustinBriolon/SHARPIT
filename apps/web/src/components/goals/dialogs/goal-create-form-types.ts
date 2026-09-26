@@ -1,5 +1,5 @@
 import type { GoalPayload } from '@/hooks/use-data';
-import type { PracticedSportId } from '@/lib/practiced-sports';
+import type { PracticedSportId } from '@sharpit/server/lib/practiced-sports';
 
 export type GoalCreateFormProps = {
   submitLabel?: string;

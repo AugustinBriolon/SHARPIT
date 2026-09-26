@@ -1,7 +1,7 @@
 'use client';
 
 import { useId, type KeyboardEvent } from 'react';
-import { cn } from '@/lib/utils';
+import { cn } from '@sharpit/server/lib/utils';
 
 /**
  * One grammar for every subjective capture — morning wellness and session

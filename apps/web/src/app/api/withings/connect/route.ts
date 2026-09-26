@@ -5,13 +5,13 @@ import {
   publicOriginFromRequest,
   redirectIfBindHost,
   setIntegrationReturnTo,
-} from '@/lib/integrations/oauth-return';
+} from '@sharpit/server/lib/integrations/oauth-return';
 import {
   buildWithingsAuthorizeUrl,
   getWithingsRedirectUri,
   isWithingsConfigured,
-} from '@/lib/integrations/withings/withings';
-import { gateProviderConnect } from '@/lib/privacy/gate-provider-connect';
+} from '@sharpit/server/lib/integrations/withings/withings';
+import { gateProviderConnect } from '@sharpit/server/lib/privacy/gate-provider-connect';
 
 export async function GET(request: NextRequest) {
   const bindRedirect = redirectIfBindHost(request);

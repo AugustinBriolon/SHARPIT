@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { verifyCronSecret } from '@/lib/cron/verify-cron-secret';
-import { buildOpsSmokeReport } from '@/lib/ops/ops-smoke';
+import { verifyCronSecret } from '@sharpit/server/lib/cron/verify-cron-secret';
+import { buildOpsSmokeReport } from '@sharpit/server/lib/ops/ops-smoke';
 
 function unauthorized() {
   return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

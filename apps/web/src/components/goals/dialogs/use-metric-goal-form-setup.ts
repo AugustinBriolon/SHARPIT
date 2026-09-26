@@ -10,8 +10,8 @@ import {
 } from '@/components/goals/dialogs/metric-goal-form-logic';
 import { useAllowedMetricSports } from '@/components/goals/dialogs/use-allowed-metric-sports';
 import { useMetricGoalFormState } from '@/components/goals/dialogs/use-metric-goal-form-state';
-import type { GoalMetricTemplate } from '@/lib/goals/goal-metric-config';
-import type { PracticedSportId } from '@/lib/practiced-sports';
+import type { GoalMetricTemplate } from '@sharpit/server/lib/goals/goal-metric-config';
+import type { PracticedSportId } from '@sharpit/server/lib/practiced-sports';
 import type { MetricGoalFormResult } from '@/components/goals/dialogs/metric-goal-form';
 
 type MetricGoalFormSetupInput = {

@@ -2,19 +2,22 @@ import { Suspense } from 'react';
 import { JournalAnalysesScreen } from '@/components/journal/analyses/journal-analyses-screen';
 import { MobileDrillDownHeader } from '@/components/layout/header/mobile-drill-down-header';
 import { Skeleton } from '@/components/ui/skeleton';
-import { hasProAccess } from '@/lib/access/tier';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { buildJournalAnalysesViewModel } from '@/lib/journal/journal-analyses-view-model';
-import { loadJournalHabitFindings } from '@/lib/journal/journal-habit-analysis-load';
-import { loadJournalHabitExperiments } from '@/lib/journal/journal-habit-experiment-load';
+import { hasProAccess } from '@sharpit/server/lib/access/tier';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
+import { buildJournalAnalysesViewModel } from '@sharpit/server/lib/journal/journal-analyses-view-model';
+import { loadJournalHabitFindings } from '@sharpit/server/lib/journal/journal-habit-analysis-load';
+import { loadJournalHabitExperiments } from '@sharpit/server/lib/journal/journal-habit-experiment-load';
 import {
   testedFactorIds,
   toHabitExperimentView,
-} from '@/lib/journal/journal-habit-experiment-view';
-import { buildJournalHabitReading } from '@/lib/journal/journal-habit-reading';
-import { JOURNAL_ANALYSIS_MIN_DAYS, isJournalAnalysisReady } from '@/lib/journal/journal-limits';
+} from '@sharpit/server/lib/journal/journal-habit-experiment-view';
+import { buildJournalHabitReading } from '@sharpit/server/lib/journal/journal-habit-reading';
+import {
+  JOURNAL_ANALYSIS_MIN_DAYS,
+  isJournalAnalysisReady,
+} from '@sharpit/server/lib/journal/journal-limits';
 import { prisma } from '@sharpit/db/client';
-import { getAthleteProfile } from '@/lib/queries';
+import { getAthleteProfile } from '@sharpit/server/lib/queries';
 import { trainingDayIdForNow } from '@sharpit/core/training/training-day';
 
 function JournalAnalysesSkeleton() {

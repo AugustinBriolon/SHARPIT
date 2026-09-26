@@ -3,8 +3,8 @@
 import {
   buildMorningProposalCompareRows,
   type MorningProposalCompareInput,
-} from '@/lib/today/rich/morning-proposal-compare';
-import { cn } from '@/lib/utils';
+} from '@sharpit/server/lib/today/rich/morning-proposal-compare';
+import { cn } from '@sharpit/server/lib/utils';
 
 function DerouleCompare({
   structureChanged,

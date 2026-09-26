@@ -5,7 +5,7 @@ import { usePlanningIntelligence } from '@/components/planning/view/use-planning
 import { usePlanningViewQueries } from '@/components/planning/view/use-planning-view-queries';
 import { usePlanningWeekState } from '@/components/planning/view/use-planning-week-state';
 import { prefetchPlannedSessionDetail } from '@/client/query/prefetch-planned-session-detail';
-import type { ClientPlannedSession } from '@/lib/query/types';
+import type { ClientPlannedSession } from '@sharpit/server/lib/query/types';
 import { useSearchParams } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 

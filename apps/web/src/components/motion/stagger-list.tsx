@@ -3,7 +3,7 @@
 import { motion, useReducedMotion, type HTMLMotionProps } from 'motion/react';
 import { staggerContainer, staggerItem, staggerItemReduced } from '@/client/motion/variants';
 import { useShouldAnimate } from '@/client/motion/hooks';
-import { cn } from '@/lib/utils';
+import { cn } from '@sharpit/server/lib/utils';
 
 type StaggerListProps = {
   children: React.ReactNode;

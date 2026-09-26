@@ -1,7 +1,7 @@
 'use client';
 
-import { cn } from '@/lib/utils';
-import type { GeocodedPlace } from '@/lib/geocoding/types';
+import { cn } from '@sharpit/server/lib/utils';
+import type { GeocodedPlace } from '@sharpit/server/lib/geocoding/types';
 import type { LocationPlaceValue } from '@/components/ui/location-place-picker';
 
 export function LocationPlaceResults({

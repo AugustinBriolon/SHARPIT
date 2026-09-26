@@ -4,8 +4,8 @@ import { StickyHeader } from '@/components/layout/header/sticky-header';
 import { AppearanceThemePicker } from '@/components/settings/appearance';
 import { SettingsDemoBlock } from '@/components/settings/settings-demo-block';
 import { Skeleton } from '@/components/ui/skeleton';
-import { isDemoSession } from '@/lib/demo/demo-session';
-import { MOI_HUB_PATH, MOI_PERSONALIZATION_PATH } from '@/lib/moi/paths';
+import { isDemoSession } from '@sharpit/server/lib/demo/demo-session';
+import { MOI_HUB_PATH, MOI_PERSONALIZATION_PATH } from '@sharpit/server/lib/moi/paths';
 import Link from 'next/link';
 
 function ThemePickerSkeleton() {

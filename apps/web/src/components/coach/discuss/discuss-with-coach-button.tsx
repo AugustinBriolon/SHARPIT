@@ -8,9 +8,9 @@ import { usePlannedSessionNavDismiss } from '@/components/planning/session/plann
 import {
   coachDiscussHref,
   type CoachDiscussTarget,
-} from '@/lib/coach/chat/discuss/coach-discuss-href';
+} from '@sharpit/server/lib/coach/chat/discuss/coach-discuss-href';
 import { useAppModalOptional } from '@/providers/app-modal-provider';
-import { cn } from '@/lib/utils';
+import { cn } from '@sharpit/server/lib/utils';
 
 type ButtonVariant = VariantProps<typeof buttonVariants>;
 

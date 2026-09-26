@@ -10,7 +10,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { prisma } from '@sharpit/db/client';
-import { importGarminDiTokenStore } from '@/lib/integrations/garmin/garmin-sync';
+import { importGarminDiTokenStore } from '@sharpit/server/lib/integrations/garmin/garmin-sync';
 
 async function main() {
   const [, , fileArg, athleteArg] = process.argv;

@@ -9,10 +9,10 @@ import {
   buildCapStatDetail,
   type CapStatDetail,
   type CapStatKind,
-} from '@/lib/goals/goal-cap-stat-detail';
-import type { GoalCapStatsView } from '@/lib/goals/goal-cap-stats';
-import type { GoalPositionAuditView } from '@/lib/goals/goal-position-audit';
-import { cn } from '@/lib/utils';
+} from '@sharpit/server/lib/goals/goal-cap-stat-detail';
+import type { GoalCapStatsView } from '@sharpit/server/lib/goals/goal-cap-stats';
+import type { GoalPositionAuditView } from '@sharpit/server/lib/goals/goal-position-audit';
+import { cn } from '@sharpit/server/lib/utils';
 
 function StatInstrumentTrigger({
   hint,

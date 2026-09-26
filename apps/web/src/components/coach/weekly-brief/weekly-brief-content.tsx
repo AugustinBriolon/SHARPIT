@@ -1,6 +1,6 @@
 import type { useWeeklyCoachingBriefViewModel } from '@/hooks/use-data';
-import { formatTrainingLoad } from '@/lib/preferences/display-mode';
-import type { DisplayMode } from '@/lib/preferences/display-mode';
+import { formatTrainingLoad } from '@sharpit/server/lib/preferences/display-mode';
+import type { DisplayMode } from '@sharpit/server/lib/preferences/display-mode';
 import { Section } from './weekly-brief-section';
 
 type WeeklyBriefVm = NonNullable<ReturnType<typeof useWeeklyCoachingBriefViewModel>['data']>;

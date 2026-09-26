@@ -1,7 +1,10 @@
 import { NextResponse } from 'next/server';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { projectV1SyncStatus } from '@/lib/presentation/v1/sync-status';
-import { connectedProviderSet, loadAthleteSyncContext } from '@/lib/sync/athlete-provider-sync';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
+import { projectV1SyncStatus } from '@sharpit/server/lib/presentation/v1/sync-status';
+import {
+  connectedProviderSet,
+  loadAthleteSyncContext,
+} from '@sharpit/server/lib/sync/athlete-provider-sync';
 
 /** When each connected provider was last pulled, so the native app knows whether to sync. */
 export async function GET() {

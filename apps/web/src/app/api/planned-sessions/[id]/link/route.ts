@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse, after } from 'next/server';
-import { isCoachConfigured } from '@/lib/ai';
-import { enrichActivityObservedContext } from '@/lib/activity/detail/enrich-observed-context';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { analyzePlannedSession } from '@/lib/coach/plan/coach-analysis';
+import { isCoachConfigured } from '@sharpit/server/lib/ai';
+import { enrichActivityObservedContext } from '@sharpit/server/lib/activity/detail/enrich-observed-context';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
+import { analyzePlannedSession } from '@sharpit/server/lib/coach/plan/coach-analysis';
 import { prisma } from '@sharpit/db/client';
 import {
   getPlannedSessionById,
   linkPlannedSessionActivity,
   setPlannedSessionAnalysis,
-} from '@/lib/queries';
+} from '@sharpit/server/lib/queries';
 
 type RouteContext = { params: Promise<{ id: string }> };
 

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { clearProviderFromSourcePrefs } from '@/lib/integrations/clear-provider-prefs';
-import { disconnectMfp } from '@/lib/integrations/myfitnesspal/myfitnesspal-sync';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
+import { clearProviderFromSourcePrefs } from '@sharpit/server/lib/integrations/clear-provider-prefs';
+import { disconnectMfp } from '@sharpit/server/lib/integrations/myfitnesspal/myfitnesspal-sync';
 
 export async function POST() {
   try {

@@ -1,8 +1,8 @@
 import type { AdaptChange } from '@/hooks/use-coach';
 import type { PlannedSessionBatchOp, PlannedSessionPayload } from '@/hooks/use-data';
-import type { ClientPlannedSession } from '@/lib/query/types';
-import { resolveEnduranceFieldsForPersist } from '@/lib/planned-session/endurance/coach-endurance-prescription';
-import { resolveStrengthFieldsForPersist } from '@/lib/planned-session/strength/strength-prescription';
+import type { ClientPlannedSession } from '@sharpit/server/lib/query/types';
+import { resolveEnduranceFieldsForPersist } from '@sharpit/server/lib/planned-session/endurance/coach-endurance-prescription';
+import { resolveStrengthFieldsForPersist } from '@sharpit/server/lib/planned-session/strength/strength-prescription';
 
 function applyScalarModifyFields(change: AdaptChange, data: Partial<PlannedSessionPayload>): void {
   if (change.type) {

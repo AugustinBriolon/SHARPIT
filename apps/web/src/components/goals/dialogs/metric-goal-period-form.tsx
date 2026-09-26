@@ -11,15 +11,15 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { activityTypeLabels } from '@/lib/format';
+import { activityTypeLabels } from '@sharpit/server/lib/format';
 import {
   measureLabels,
   periodLabels,
   type GoalPeriod,
   type PeriodMeasure,
-} from '@/lib/goals/goal-metric-config';
+} from '@sharpit/server/lib/goals/goal-metric-config';
 import type { GoalForEdit } from '@/components/goals/dialogs/goal-dialog';
-import type { PeriodSportOption } from '@/lib/practiced-sports';
+import type { PeriodSportOption } from '@sharpit/server/lib/practiced-sports';
 
 const ALL_SPORTS = 'ALL';
 const periodOptions: GoalPeriod[] = ['WEEK', 'MONTH', 'YEAR'];

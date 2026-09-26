@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { getActivityRoutePreviews } from '@/lib/streams/route-previews';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
+import { getActivityRoutePreviews } from '@sharpit/server/lib/streams/route-previews';
 
 /**
  * Batch GPS previews for the Activité hub — cache-only, no provider fetch.

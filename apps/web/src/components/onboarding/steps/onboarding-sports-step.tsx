@@ -3,7 +3,7 @@
 import { OnboardingContinueButton } from '@/components/onboarding/steps/onboarding-step-actions';
 import { OnboardingStepShell } from '@/components/onboarding/steps/onboarding-step-shell';
 import { PracticedSportsPicker } from '@/components/practiced-sports/practiced-sports-picker';
-import { hasCorePracticedSport, type PracticedSportId } from '@/lib/practiced-sports';
+import { hasCorePracticedSport, type PracticedSportId } from '@sharpit/server/lib/practiced-sports';
 
 export function OnboardingSportsStep({
   sports,

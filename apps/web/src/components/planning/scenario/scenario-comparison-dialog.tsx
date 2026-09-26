@@ -11,9 +11,9 @@ import {
 } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/components/ui/toast';
-import type { ScenarioComparisonViewModel } from '@/presentation/scenario-comparison-view-model';
+import type { ScenarioComparisonViewModel } from '@sharpit/server/presentation/scenario-comparison-view-model';
 import { useApplyScenarioComparison } from '@/hooks/use-apply-scenario-comparison';
-import { cn } from '@/lib/utils';
+import { cn } from '@sharpit/server/lib/utils';
 import { GitCompare, Sparkles } from 'lucide-react';
 import { useState } from 'react';
 

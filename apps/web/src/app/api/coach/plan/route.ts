@@ -1,58 +1,65 @@
 import { addDays, format, startOfDay } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { NextResponse } from 'next/server';
-import { isCoachConfigured } from '@/lib/ai';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { recordAiUsage } from '@/lib/ai/usage';
+import { isCoachConfigured } from '@sharpit/server/lib/ai';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
+import { recordAiUsage } from '@sharpit/server/lib/ai/usage';
 import {
   RETRY_AFTER_HEADER,
   aiBudgetResponseBody,
   ensureFreeAiBudget,
   withAiBudgetWarningHeader,
-} from '@/lib/access/ai-budget';
-import { requireAiProcessingConsent } from '@/lib/privacy/consent-store';
-import { checkRateLimit, rateLimitJsonResponse, rateLimiters } from '@/lib/rate-limit';
+} from '@sharpit/server/lib/access/ai-budget';
+import { requireAiProcessingConsent } from '@sharpit/server/lib/privacy/consent-store';
+import {
+  checkRateLimit,
+  rateLimitJsonResponse,
+  rateLimiters,
+} from '@sharpit/server/lib/rate-limit';
 import {
   buildCoachContext,
   formatCoachContext,
   type CoachContext,
-} from '@/lib/coach/context/coach-context';
+} from '@sharpit/server/lib/coach/context/coach-context';
 import {
   COACH_PROGRESS_HEADERS,
   encodeCoachProgressEvent,
   type CoachProgressEvent,
-} from '@/lib/coach/chat/transcript/coach-progress-stream';
-import { runStructuredCoachStream } from '@/lib/coach/stream-structured-generation';
-import { withCoachTrace } from '@/lib/ai/coach-trace';
-import { buildBusySummary } from '@/lib/coach/plan/calendar-availability';
-import { getGoalById } from '@/lib/queries';
+} from '@sharpit/server/lib/coach/chat/transcript/coach-progress-stream';
+import { runStructuredCoachStream } from '@sharpit/server/lib/coach/stream-structured-generation';
+import { withCoachTrace } from '@sharpit/server/lib/ai/coach-trace';
+import { buildBusySummary } from '@sharpit/server/lib/coach/plan/calendar-availability';
+import { getGoalById } from '@sharpit/server/lib/queries';
 import {
   coachPlanGenerationSchema,
   coachPlanRequestSchema,
   type CoachPlan,
-} from '@/lib/validators/coach';
+} from '@sharpit/server/lib/validators/coach';
 import type { z } from 'zod';
-import { buildGateContext } from '@/lib/plan-gate/build-context';
-import { evaluatePlan } from '@/lib/plan-gate/evaluate-plan';
-import type { GateProposal } from '@/lib/plan-gate/types';
+import { buildGateContext } from '@sharpit/server/lib/plan-gate/build-context';
+import { evaluatePlan } from '@sharpit/server/lib/plan-gate/evaluate-plan';
+import type { GateProposal } from '@sharpit/server/lib/plan-gate/types';
 import { computeTrainingDayId } from '@sharpit/core/training/training-day';
-import { buildDecisionSnapshotContext } from '@/lib/decision-memory/build-snapshot-context';
-import { createCoachingDecision } from '@/lib/decision-memory/repository';
-import { formatStrengthSessionRules } from '@/lib/planned-session/strength/strength-session-template';
+import { buildDecisionSnapshotContext } from '@sharpit/server/lib/decision-memory/build-snapshot-context';
+import { createCoachingDecision } from '@sharpit/server/lib/decision-memory/repository';
+import { formatStrengthSessionRules } from '@sharpit/server/lib/planned-session/strength/strength-session-template';
 import {
   formatSensitiveZoneRules,
   sensitiveZonesFrom,
-} from '@/lib/physical-health/sensitive-zones';
+} from '@sharpit/server/lib/physical-health/sensitive-zones';
 import {
   formatTravelConstraintPromptRule,
   resolvePlanTargetUnderTravel,
-} from '@/lib/travel-context/training-constraint';
-import { COACH_COPY_DASH_RULE, sanitizeCoachCopy } from '@/lib/coach/sanitize-coach-copy';
-import { normalizeCoachPlanGeneration } from '@/lib/coach/plan/normalize-plan-generation';
+} from '@sharpit/server/lib/travel-context/training-constraint';
+import {
+  COACH_COPY_DASH_RULE,
+  sanitizeCoachCopy,
+} from '@sharpit/server/lib/coach/sanitize-coach-copy';
+import { normalizeCoachPlanGeneration } from '@sharpit/server/lib/coach/plan/normalize-plan-generation';
 import {
   coachGenerationErrorDetails,
   planGenerationErrorMessage,
-} from '@/lib/coach/plan/plan-generation-errors';
+} from '@sharpit/server/lib/coach/plan/plan-generation-errors';
 
 // Same long-running reasoning generation as adapt — see maxDuration comment there.
 export const maxDuration = 300;

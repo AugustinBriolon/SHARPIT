@@ -15,9 +15,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/components/ui/toast';
-import type { DataClassId } from '@/lib/integrations/provider-catalog';
-import type { IntegrationId } from '@/lib/integrations/shared/client-sync';
-import type { IntegrationSourcePrefs } from '@/lib/integrations/source-prefs';
+import type { DataClassId } from '@sharpit/server/lib/integrations/provider-catalog';
+import type { IntegrationId } from '@sharpit/server/lib/integrations/shared/client-sync';
+import type { IntegrationSourcePrefs } from '@sharpit/server/lib/integrations/source-prefs';
 import {
   connectMyFitnessPal,
   connectRenpho,

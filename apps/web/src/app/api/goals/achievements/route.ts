@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { getRecentGoalAchievements } from '@/lib/goals/goal-achievements';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
+import { getRecentGoalAchievements } from '@sharpit/server/lib/goals/goal-achievements';
 
 export async function GET(request: Request) {
   // Read search params before try so Cache Components prerender interrupts propagate.

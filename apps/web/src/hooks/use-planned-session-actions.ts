@@ -5,7 +5,7 @@ import { fr } from 'date-fns/locale';
 import { useCallback } from 'react';
 import { toast } from '@/components/ui/toast';
 import { usePlannedSessionMutations } from '@/hooks/use-planned-sessions';
-import type { ClientPlannedSession } from '@/lib/query/types';
+import type { ClientPlannedSession } from '@sharpit/server/lib/query/types';
 import {
   easeSession,
   plannedDayKey,
@@ -13,7 +13,7 @@ import {
   shiftByOneDay,
   undoOf,
   type SessionAdjustment,
-} from '@/lib/training/thread/session-adjust';
+} from '@sharpit/server/lib/training/thread/session-adjust';
 
 /**
  * Adjusting a session without leaving the thread.

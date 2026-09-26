@@ -1,18 +1,23 @@
 import { Bike, Footprints, Timer, Waves } from 'lucide-react';
 import { ActivityType } from '@prisma/client';
-import { formatDistance, formatDuration, formatPace, formatSwimPace } from '@/lib/format';
+import {
+  formatDistance,
+  formatDuration,
+  formatPace,
+  formatSwimPace,
+} from '@sharpit/server/lib/format';
 import {
   legDisplayDurationSec,
   totalTransitionSec,
   type MultisportLeg,
   type MultisportLegKind,
-} from '@/lib/activity/multisport';
+} from '@sharpit/server/lib/activity/multisport';
 import {
   SPORT_IDENTITY_PANEL,
   SPORT_IDENTITY_SURFACE,
   SPORT_IDENTITY_TEXT,
-} from '@/lib/activity/sport-identity';
-import { cn } from '@/lib/utils';
+} from '@sharpit/server/lib/activity/sport-identity';
+import { cn } from '@sharpit/server/lib/utils';
 
 const kindIcon: Record<MultisportLegKind, typeof Waves> = {
   swim: Waves,

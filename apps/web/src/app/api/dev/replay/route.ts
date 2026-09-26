@@ -1,4 +1,4 @@
-import { getDevTools, isDevToolsAccessAllowed } from '@/lib/dev/dev-tools';
+import { getDevTools, isDevToolsAccessAllowed } from '@sharpit/server/lib/dev/dev-tools';
 import { NextRequest, NextResponse } from 'next/server';
 
 type ReplayRequestBody = {

@@ -1,4 +1,4 @@
-import { EASE_OUT, SPRING_PANEL } from '@/lib/ease';
+import { EASE_OUT, SPRING_PANEL } from '@sharpit/server/lib/ease';
 import type { Align, Side } from '@/components/motion/popover-morph-types';
 
 export function resolveMorphPopoverPosition({

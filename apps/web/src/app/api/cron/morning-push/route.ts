@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
-import { verifyCronSecret } from '@/lib/cron/verify-cron-secret';
-import { isApnsConfigured } from '@/lib/push/apns';
-import { sendMorningVerdictPushes } from '@/lib/push/morning-push';
+import { verifyCronSecret } from '@sharpit/server/lib/cron/verify-cron-secret';
+import { isApnsConfigured } from '@sharpit/server/lib/push/apns';
+import { sendMorningVerdictPushes } from '@sharpit/server/lib/push/morning-push';
 
 export const maxDuration = 300;
 

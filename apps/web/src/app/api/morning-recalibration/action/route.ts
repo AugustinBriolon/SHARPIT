@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
 import {
   acceptMorningRecalibration,
   rejectMorningRecalibration,
-} from '@/lib/morning-recalibration/service';
+} from '@sharpit/server/lib/morning-recalibration/service';
 
 const schema = z.object({
   decisionId: z.string().min(1),

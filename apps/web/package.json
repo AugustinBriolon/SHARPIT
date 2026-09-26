@@ -66,6 +66,7 @@
     "@serwist/next": "^9.5.11",
     "@sharpit/core": "workspace:*",
     "@sharpit/db": "workspace:*",
+    "@sharpit/server": "workspace:*",
     "@sharpit/shared": "workspace:*",
     "@tanstack/react-query": "^5.101.2",
     "@tanstack/react-virtual": "^3.14.11",

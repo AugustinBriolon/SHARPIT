@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { useAthleteSnapshot } from '@/hooks/use-athlete-snapshot';
-import { saveSnapshot, clearSnapshot } from '@/lib/pwa/snapshot-store';
+import { saveSnapshot, clearSnapshot } from '@sharpit/server/lib/pwa/snapshot-store';
 
 /**
  * Invisible, root-mounted. The single source of what gets persisted for offline

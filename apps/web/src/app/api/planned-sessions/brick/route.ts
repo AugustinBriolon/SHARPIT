@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { pushBrickToGoogleInBackground } from '@/lib/integrations/google/google-sync';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { chainBrickLegStartTimes } from '@/lib/planned-session/brick/brick-schedule';
-import { createBrickSessions, getPlannedSessionById } from '@/lib/queries';
-import { createBrickSchema } from '@/lib/validators/planned-session';
+import { pushBrickToGoogleInBackground } from '@sharpit/server/lib/integrations/google/google-sync';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
+import { chainBrickLegStartTimes } from '@sharpit/server/lib/planned-session/brick/brick-schedule';
+import { createBrickSessions, getPlannedSessionById } from '@sharpit/server/lib/queries';
+import { createBrickSchema } from '@sharpit/server/lib/validators/planned-session';
 
 export async function POST(request: NextRequest) {
   try {

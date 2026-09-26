@@ -5,7 +5,7 @@ import {
   MetricGoalForm,
   type MetricGoalFormResult,
 } from '@/components/goals/dialogs/metric-goal-form';
-import type { PracticedSportId } from '@/lib/practiced-sports';
+import type { PracticedSportId } from '@sharpit/server/lib/practiced-sports';
 
 export function GoalCreateMetricSection({
   variant,

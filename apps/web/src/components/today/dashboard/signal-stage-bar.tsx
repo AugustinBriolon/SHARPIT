@@ -1,5 +1,5 @@
-import type { SleepStageKey } from '@/lib/today/dashboard/signal-previews';
-import { cn } from '@/lib/utils';
+import type { SleepStageKey } from '@sharpit/server/lib/today/dashboard/signal-previews';
+import { cn } from '@sharpit/server/lib/utils';
 
 const STAGE_COLOR: Record<SleepStageKey, string> = {
   deep: 'bg-[var(--color-signal-recovery)]',

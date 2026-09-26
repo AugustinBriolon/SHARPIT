@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@sharpit/db/client';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { createTravelMemoryEntry, listCoachMemoryEntries } from '@/lib/coach-memory/core/service';
-import { applyTravelContextToUpcomingSessions } from '@/lib/travel-context/service';
-import { refreshAndPersistPlannedSessionContext } from '@/lib/planned-session/resolve-context';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
+import {
+  createTravelMemoryEntry,
+  listCoachMemoryEntries,
+} from '@sharpit/server/lib/coach-memory/core/service';
+import { applyTravelContextToUpcomingSessions } from '@sharpit/server/lib/travel-context/service';
+import { refreshAndPersistPlannedSessionContext } from '@sharpit/server/lib/planned-session/resolve-context';
 
 const travelDisciplineSchema = z.enum(['RUN', 'BIKE', 'SWIM', 'STRENGTH', 'MOBILITY']);
 

@@ -7,7 +7,7 @@ import {
   SessionPreviewMetrics,
   type SessionPreviewMetric,
 } from '@/components/ui/instruments/session-preview-parts';
-import { cn } from '@/lib/utils';
+import { cn } from '@sharpit/server/lib/utils';
 
 function plannedDensityClass(density: 'solo' | 'compact'): string {
   if (density === 'solo') {

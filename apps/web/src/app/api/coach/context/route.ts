@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { getAthleteProfile, upsertAthleteProfile } from '@/lib/queries';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
+import { getAthleteProfile, upsertAthleteProfile } from '@sharpit/server/lib/queries';
 
 const schema = z.object({
   context: z.string().max(4000).nullable(),

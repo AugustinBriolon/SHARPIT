@@ -1,4 +1,4 @@
-import type { ClientActivity, ClientActivityDetail } from '@/lib/query/types';
+import type { ClientActivity, ClientActivityDetail } from '@sharpit/server/lib/query/types';
 import { fetchJson, type Serialized, toDate, toDateOrNull } from './shared';
 
 export async function fetchActivities(): Promise<ClientActivity[]> {

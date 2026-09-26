@@ -15,7 +15,7 @@
  *   yarn db:recompute:session-features
  */
 import { PrismaClient } from '@prisma/client';
-import { featureEngine } from '../src/lib/engines/feature-engine';
+import { featureEngine } from '@sharpit/server/lib/engines/feature-engine';
 
 const prisma = new PrismaClient();
 const dryRun = process.argv.includes('--dry-run');

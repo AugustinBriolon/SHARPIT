@@ -6,7 +6,7 @@ import {
   type GoalEndMode,
   type GoalPeriod,
   type PeriodMeasure,
-} from '@/lib/goals/goal-metric-config';
+} from '@sharpit/server/lib/goals/goal-metric-config';
 import { ActivityType } from '@prisma/client';
 import type { MetricGoalFormResult } from '@/components/goals/dialogs/metric-goal-form';
 

@@ -1,8 +1,8 @@
 import type { ProductInsightBundle } from '@sharpit/core/product-insight/types';
-import type { GlobalDecisionContext } from '@/presentation/global-decision-context';
-import type { SleepNightStatus } from '@/presentation/sleep-view-model';
-import type { SleepCoachView } from '@/lib/sleep/sleep';
-import type { SleepScoreBreakdown } from '@/lib/sleep/sleep-scoring';
+import type { GlobalDecisionContext } from '@sharpit/server/presentation/global-decision-context';
+import type { SleepNightStatus } from '@sharpit/server/presentation/sleep-view-model';
+import type { SleepCoachView } from '@sharpit/server/lib/sleep/sleep';
+import type { SleepScoreBreakdown } from '@sharpit/server/lib/sleep/sleep-scoring';
 
 export type SleepBarPoint = { date: string; minutes: number | null; fill: string };
 

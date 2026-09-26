@@ -1,18 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Prisma } from '@prisma/client';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { getAthleteProfile, upsertAthleteProfile } from '@/lib/queries';
-import { athleteProfileSchema, type AthleteProfileInput } from '@/lib/validators/athlete-profile';
-import { invalidateCoachContext } from '@/lib/coach/context/coach-context';
-import { normalizeAthleteEquipment } from '@/lib/equipment/parse';
-import { sanitizePracticedSportsForPersist } from '@/lib/practiced-sports';
-import { sanitizeTrainingAvailabilityForPersist } from '@/lib/training-availability/parse';
-import { DEFAULT_DISPLAY_MODE } from '@/lib/preferences/display-mode';
-import { accessTierSetCookieValue } from '@/lib/access/tier-cookie';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
+import { getAthleteProfile, upsertAthleteProfile } from '@sharpit/server/lib/queries';
+import {
+  athleteProfileSchema,
+  type AthleteProfileInput,
+} from '@sharpit/server/lib/validators/athlete-profile';
+import { invalidateCoachContext } from '@sharpit/server/lib/coach/context/coach-context';
+import { normalizeAthleteEquipment } from '@sharpit/server/lib/equipment/parse';
+import { sanitizePracticedSportsForPersist } from '@sharpit/server/lib/practiced-sports';
+import { sanitizeTrainingAvailabilityForPersist } from '@sharpit/server/lib/training-availability/parse';
+import { DEFAULT_DISPLAY_MODE } from '@sharpit/server/lib/preferences/display-mode';
+import { accessTierSetCookieValue } from '@sharpit/server/lib/access/tier-cookie';
 import {
   mergeNotificationPrefs,
   resolveNotificationPrefs,
-} from '@/lib/notifications/notification-prefs';
+} from '@sharpit/server/lib/notifications/notification-prefs';
 
 function withAccessTierCookie(response: NextResponse, tier: 'FREE' | 'PRO') {
   response.headers.append('Set-Cookie', accessTierSetCookieValue(tier));

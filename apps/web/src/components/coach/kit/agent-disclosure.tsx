@@ -2,8 +2,8 @@
 
 import { motion, type HTMLMotionProps, useReducedMotion } from 'motion/react';
 import type { CSSProperties } from 'react';
-import { EASE_OUT } from '@/lib/ease';
-import { cn } from '@/lib/utils';
+import { EASE_OUT } from '@sharpit/server/lib/ease';
+import { cn } from '@sharpit/server/lib/utils';
 
 function disclosureTransitionDuration(reduce: boolean, open: boolean): number {
   if (reduce) {

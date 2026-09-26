@@ -6,7 +6,7 @@ import {
 } from '@/components/recovery/blocks/recovery-mini-sparkline';
 import { ChartTooltipCard } from '@/components/ui/charts/chart-tooltip';
 import { ChartFigure } from '@/components/ui/charts/chart-figure';
-import { CHART_CAUTION_STROKE, CHART_RECOVERY_STROKE } from '@/lib/theme/chart-theme';
+import { CHART_CAUTION_STROKE, CHART_RECOVERY_STROKE } from '@sharpit/server/lib/theme/chart-theme';
 import { LineChart, Line, XAxis, YAxis, Tooltip } from 'recharts';
 
 function DualSparkline({

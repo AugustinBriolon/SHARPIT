@@ -1,7 +1,7 @@
 import type { QueryClient } from '@tanstack/react-query';
 import { isSet } from '@sharpit/shared/value';
 import { queryKeys } from '@/client/query/keys';
-import type { ClientPlannedSession } from '@/lib/query/types';
+import type { ClientPlannedSession } from '@sharpit/server/lib/query/types';
 
 /**
  * Lightweight fields we may already have (e.g. activity detail chip) when the

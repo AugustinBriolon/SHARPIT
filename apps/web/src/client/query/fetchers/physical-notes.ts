@@ -1,4 +1,4 @@
-import type { ClientPhysicalNote } from '@/lib/query/types';
+import type { ClientPhysicalNote } from '@sharpit/server/lib/query/types';
 import { fetchJson, type Serialized, toDate, toDateOrNull } from './shared';
 
 export async function fetchPhysicalNotes(): Promise<ClientPhysicalNote[]> {

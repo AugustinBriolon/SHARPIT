@@ -1,5 +1,5 @@
-import type { ProgramWeek } from '@/lib/activity/list/activity-consistency';
-import { cn } from '@/lib/utils';
+import type { ProgramWeek } from '@sharpit/server/lib/activity/list/activity-consistency';
+import { cn } from '@sharpit/server/lib/utils';
 
 export function programWeekBarClassName(week: ProgramWeek, filled: boolean): string {
   return cn(

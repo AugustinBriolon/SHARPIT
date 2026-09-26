@@ -2,7 +2,7 @@
 
 import { motion } from 'motion/react';
 import { ThinkingShimmer } from '@/components/coach/kit/loading-states/thinking-shimmer';
-import { SPRING_SWAP } from '@/lib/ease';
+import { SPRING_SWAP } from '@sharpit/server/lib/ease';
 import type { AgentActivityProps } from './types';
 import { NavArrowDown } from '@/components/icons/nav-arrows';
 

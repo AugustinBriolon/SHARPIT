@@ -5,7 +5,7 @@ import dynamic from 'next/dynamic';
 import { useGoals } from '@/hooks/use-data';
 import { usePlanHubModel } from '@/hooks/use-plan-hub-model';
 import { PlanCoachMenuDropdown } from '@/components/plan/hub/plan-coach-menu-dropdown';
-import type { PlanCoachStepId } from '@/lib/plan/hub/plan-coach-offer';
+import type { PlanCoachStepId } from '@sharpit/server/lib/plan/hub/plan-coach-offer';
 
 const MacroPlanDialog = dynamic(
   () =>

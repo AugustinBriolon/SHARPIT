@@ -1,5 +1,5 @@
 import { EyebrowLabel } from '@/components/ui/eyebrow-label';
-import { cn } from '@/lib/utils';
+import { cn } from '@sharpit/server/lib/utils';
 
 /**
  * Section title on a drill-down page. Renders as a real `h2` so the page has a

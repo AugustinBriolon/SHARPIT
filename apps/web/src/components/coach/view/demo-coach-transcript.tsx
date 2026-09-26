@@ -3,7 +3,7 @@
 import { CoachMessage } from '@/components/coach/chat/transcript/coach-message';
 import { coachBeuiTheme } from '@/components/coach/beui/coach-beui-theme';
 import { LinkButton } from '@/components/ui/link-button';
-import type { DemoTranscriptMessage } from '@/lib/demo/demo-coach-transcript';
+import type { DemoTranscriptMessage } from '@sharpit/server/lib/demo/demo-coach-transcript';
 export type { DemoTranscriptMessage };
 
 /**

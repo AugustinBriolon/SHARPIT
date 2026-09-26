@@ -1,16 +1,16 @@
-import type { TodayViewModel } from '@/presentation/today-view-model';
+import type { TodayViewModel } from '@sharpit/server/presentation/today-view-model';
 import {
   filterDaySummaryForLinkExclusions,
   idsExcludedByLinkSuggestions,
   mergeLinkExclusions,
-} from '@/lib/today/rich/session-link-suggestions';
+} from '@sharpit/server/lib/today/rich/session-link-suggestions';
 
 type LinkExclusions = { activityIds: Set<string>; plannedSessionIds: Set<string> };
-import { filterDismissedSessionLinkSuggestions } from '@/lib/today/rich/session-link-dismissals';
+import { filterDismissedSessionLinkSuggestions } from '@sharpit/server/lib/today/rich/session-link-dismissals';
 import {
   filterDemoLinkedSessionSuggestions,
   readDemoSessionLinks,
-} from '@/lib/demo/demo-session-link-state';
+} from '@sharpit/server/lib/demo/demo-session-link-state';
 
 export type DemoSessionLink = { plannedSessionId: string; activityId: string };
 

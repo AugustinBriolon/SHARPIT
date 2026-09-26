@@ -19,19 +19,19 @@ import { invalidateCompletedCoachTools } from '@/components/coach/chat/tools/coa
 import { useOfflineGuard } from '@/hooks/use-offline-guard';
 import { useSaveConversation, useCreateConversation } from '@/hooks/use-coach';
 import { usePlannedSessions } from '@/hooks/use-data';
-import { lastStepApprovalResponseFingerprint } from '@/lib/coach/chat/shell/coach-chat-auto-send';
-import { coachApprovalReason } from '@/lib/coach/plan/coach-approval-reason';
-import { buildKnownSessions } from '@/lib/coach/chat/conversations/coach-chat-known-sessions';
+import { lastStepApprovalResponseFingerprint } from '@sharpit/server/lib/coach/chat/shell/coach-chat-auto-send';
+import { coachApprovalReason } from '@sharpit/server/lib/coach/plan/coach-approval-reason';
+import { buildKnownSessions } from '@sharpit/server/lib/coach/chat/conversations/coach-chat-known-sessions';
 import {
   coachMessagesFingerprint,
   hasPersistableAssistant,
-} from '@/lib/coach/chat/shell/coach-chat-persist';
+} from '@sharpit/server/lib/coach/chat/shell/coach-chat-persist';
 import {
   abortChatFetch,
   endAutoReply,
   replaceChatFetchSignal,
   tryBeginAutoReply,
-} from '@/lib/coach/chat/shell/coach-chat-request-lock';
+} from '@sharpit/server/lib/coach/chat/shell/coach-chat-request-lock';
 import {
   invalidateAfterCoachToolApproval,
   invalidatePlannedSessionsAfterCoachTurn,
@@ -39,9 +39,12 @@ import {
 import {
   readCoachInputDraft,
   writeCoachInputDraft,
-} from '@/lib/coach/chat/composer/coach-input-draft';
-import type { CoachDiscussContext } from '@/lib/coach/chat/discuss/coach-discuss-context';
-import { AI_BUDGET_WARNING_HEADER, RETRY_AFTER_HEADER } from '@/lib/access/ai-budget-shared';
+} from '@sharpit/server/lib/coach/chat/composer/coach-input-draft';
+import type { CoachDiscussContext } from '@sharpit/server/lib/coach/chat/discuss/coach-discuss-context';
+import {
+  AI_BUDGET_WARNING_HEADER,
+  RETRY_AFTER_HEADER,
+} from '@sharpit/server/lib/access/ai-budget-shared';
 
 function coachInputPlaceholder(guardDisabled: boolean, hasPendingApprovals: boolean): string {
   if (guardDisabled) {

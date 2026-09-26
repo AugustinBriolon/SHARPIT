@@ -10,10 +10,10 @@ import { HikeTripInkBand } from '@/components/training/trip/hike-trip-ink-band';
 import { HikeTripTimeline } from '@/components/training/trip/hike-trip-timeline';
 import { HikeTripWaypoints } from '@/components/training/trip/hike-trip-waypoints';
 import { Skeleton } from '@/components/ui/skeleton';
-import { buildHikeTripElevationProfile } from '@/lib/activity/hike/hike-trip-elevation';
-import { buildHikeTripSummary } from '@/lib/activity/hike/hike-trip-summary';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { getHikeTripById } from '@/lib/queries';
+import { buildHikeTripElevationProfile } from '@sharpit/server/lib/activity/hike/hike-trip-elevation';
+import { buildHikeTripSummary } from '@sharpit/server/lib/activity/hike/hike-trip-summary';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
+import { getHikeTripById } from '@sharpit/server/lib/queries';
 
 type PageProps = { params: Promise<{ id: string }> };
 

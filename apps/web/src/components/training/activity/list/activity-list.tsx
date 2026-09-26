@@ -10,7 +10,7 @@ import { useRouter } from 'next/navigation';
 import { ActivityChip } from '@/components/training/activity/list/activity-list-chip';
 import { ActivityRow } from '@/components/training/activity/list/activity-list-row';
 import type { ActivityListItem } from '@/components/training/activity/list/activity-list-types';
-import { navStack } from '@/lib/navigation/nav-stack';
+import { navStack } from '@sharpit/server/lib/navigation/nav-stack';
 
 function ActivityListEmpty({ emptyLabel }: { emptyLabel?: string }) {
   const description = emptyLabel

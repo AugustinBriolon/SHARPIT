@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { DietChipList } from '@/components/nutrition/diet-chip-list';
-import { DIET_PREFERENCES_HREF } from '@/lib/nutrition/analysis/nutrition-reading-display';
+import { DIET_PREFERENCES_HREF } from '@sharpit/server/lib/nutrition/analysis/nutrition-reading-display';
 
 /** Declared diet under the hero — edited where it lives, in the journal preferences. */
 export function NutritionDietTags({ labels }: { labels: string[] }) {

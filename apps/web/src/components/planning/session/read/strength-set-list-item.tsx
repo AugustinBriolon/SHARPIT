@@ -5,12 +5,12 @@ import {
   ExerciseMediaCaption,
   ExerciseVisual,
 } from '@/components/planning/session/exercise-visual';
-import { resolveStrengthSetMedia } from '@/lib/exercises';
+import { resolveStrengthSetMedia } from '@sharpit/server/lib/exercises';
 import {
   strengthSetWatchCompat,
   type StrengthPrescriptionSet,
-} from '@/lib/planned-session/strength/strength-prescription';
-import { cn } from '@/lib/utils';
+} from '@sharpit/server/lib/planned-session/strength/strength-prescription';
+import { cn } from '@sharpit/server/lib/utils';
 
 function strengthSetVolumeLabel(set: StrengthPrescriptionSet): string {
   if (set.durationSec && set.durationSec > 0 && set.reps <= 0) {

@@ -1,10 +1,13 @@
 import { cookies } from 'next/headers';
 import { NextRequest } from 'next/server';
-import { emailFromIdToken, exchangeCodeForToken } from '@/lib/integrations/google/google';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { redirectAfterIntegrationConnect } from '@/lib/integrations/oauth-return';
+import {
+  emailFromIdToken,
+  exchangeCodeForToken,
+} from '@sharpit/server/lib/integrations/google/google';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
+import { redirectAfterIntegrationConnect } from '@sharpit/server/lib/integrations/oauth-return';
 import { prisma } from '@sharpit/db/client';
-import { encryptSecret } from '@/lib/secret-box';
+import { encryptSecret } from '@sharpit/server/lib/secret-box';
 
 function readOAuthParams(searchParams: URLSearchParams) {
   return {

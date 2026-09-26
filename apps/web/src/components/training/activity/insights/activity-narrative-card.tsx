@@ -1,7 +1,7 @@
 import type { ActivityType } from '@prisma/client';
 import type { ReactNode } from 'react';
-import type { ActivityNarrative } from '@/lib/validators/coach';
-import type { DisplayMode } from '@/lib/preferences/display-mode';
+import type { ActivityNarrative } from '@sharpit/server/lib/validators/coach';
+import type { DisplayMode } from '@sharpit/server/lib/preferences/display-mode';
 import {
   dedupeHeadlineAgainstTitle,
   presentNarrativeBody,

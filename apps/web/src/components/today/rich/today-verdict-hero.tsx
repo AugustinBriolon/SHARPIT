@@ -1,6 +1,6 @@
 'use client';
 
-import type { TodayViewModel } from '@/presentation/today-view-model';
+import type { TodayViewModel } from '@sharpit/server/presentation/today-view-model';
 import { FadeIn } from '@/components/motion';
 import { confidenceBarsFromPct } from '@/components/ui/instruments/confidence-bars';
 import {
@@ -14,7 +14,7 @@ import { deriveVerdictHeroDisplay } from '@/components/today/rich/today-verdict-
 import { TodayReliabilityPanel } from '@/components/today/rich/today-reliability-panel';
 import { fadeUpTransition, fadeUpVariants } from '@/client/motion/variants';
 import { motionTokens } from '@/client/motion/tokens';
-import { cn } from '@/lib/utils';
+import { cn } from '@sharpit/server/lib/utils';
 
 export function TodayVerdictHero({
   loading = false,

@@ -3,7 +3,7 @@
 import { useIsDemoMode } from '@/hooks/use-is-demo-mode';
 import { usePlannedSessionMutations } from '@/hooks/use-data';
 import { useOfflineGuard } from '@/hooks/use-offline-guard';
-import type { ClientPlannedSession } from '@/lib/query/types';
+import type { ClientPlannedSession } from '@sharpit/server/lib/query/types';
 import { toast } from '@/components/ui/toast';
 import {
   clearAnalysisPollTimedOut,

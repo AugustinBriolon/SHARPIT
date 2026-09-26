@@ -3,7 +3,7 @@ import { GoalsCapViewSkeleton } from '@/components/goals/cap/goals-cap-view';
 import { MobileBackLink } from '@/components/layout/header/mobile-back-link';
 import { StickyHeader } from '@/components/layout/header/sticky-header';
 import { MoiObjectifsToolbar, MoiSectionContent } from '@/components/shell/moi-section-content';
-import { MOI_HUB_PATH } from '@/lib/moi/paths';
+import { MOI_HUB_PATH } from '@sharpit/server/lib/moi/paths';
 
 /**
  * Cap surface — primary goal follow-up + trajectory, then inventory.

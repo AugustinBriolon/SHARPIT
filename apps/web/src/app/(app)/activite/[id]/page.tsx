@@ -16,17 +16,21 @@ import { ActivityStrengthExercises } from '@/components/training/activity/detail
 import { ActivityGoalValidationsCard } from '@/components/goals/cards/activity-goal-validations-card';
 import { ActivityDetailInsights } from '@/components/training/activity/insights/activity-detail-insights';
 import { ActivityNarrativeSection } from '@/components/training/activity/insights/activity-narrative-section';
-import { isEligibleForActivityNarrative } from '@/lib/activity/narrative/activity-narrative-config';
-import { activityDetailExpectsMap } from '@/lib/activity/detail/activity-detail-skeleton-layout';
-import { buildHikeOvernightSummary } from '@/lib/activity/hike/hike-overnight-summary';
-import { canGenerateNarrativeForActivity } from '@/lib/access/narrative-trial';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { getActivityById, getBrickSessions, getMultisportLegsForActivity } from '@/lib/queries';
-import { resolveBrickSiblingActivityLinks } from '@/lib/planned-session/brick/brick-sessions';
+import { isEligibleForActivityNarrative } from '@sharpit/server/lib/activity/narrative/activity-narrative-config';
+import { activityDetailExpectsMap } from '@sharpit/server/lib/activity/detail/activity-detail-skeleton-layout';
+import { buildHikeOvernightSummary } from '@sharpit/server/lib/activity/hike/hike-overnight-summary';
+import { canGenerateNarrativeForActivity } from '@sharpit/server/lib/access/narrative-trial';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
+import {
+  getActivityById,
+  getBrickSessions,
+  getMultisportLegsForActivity,
+} from '@sharpit/server/lib/queries';
+import { resolveBrickSiblingActivityLinks } from '@sharpit/server/lib/planned-session/brick/brick-sessions';
 import { ActivityBrickSiblingNav } from '@/components/training/activity/detail/activity-brick-sibling-nav';
-import { getGoalAchievementsForActivity } from '@/lib/goals/goal-achievements';
-import { isCoachConfigured } from '@/lib/ai';
-import { getPerformanceRecordsForActivity } from '@/lib/training/records/records';
+import { getGoalAchievementsForActivity } from '@sharpit/server/lib/goals/goal-achievements';
+import { isCoachConfigured } from '@sharpit/server/lib/ai';
+import { getPerformanceRecordsForActivity } from '@sharpit/server/lib/training/records/records';
 import { HikeTripMemberLink } from '@/components/training/trip/hike-trip-member-link';
 import { ActivityType } from '@prisma/client';
 

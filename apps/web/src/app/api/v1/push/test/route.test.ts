@@ -1,25 +1,25 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { NextRequest } from 'next/server';
 import { POST } from './route';
-import * as authModule from '@/lib/auth/current-athlete';
-import * as apnsModule from '@/lib/push/apns';
-import * as morningPushModule from '@/lib/push/morning-push';
+import * as authModule from '@sharpit/server/lib/auth/current-athlete';
+import * as apnsModule from '@sharpit/server/lib/push/apns';
+import * as morningPushModule from '@sharpit/server/lib/push/morning-push';
 
-vi.mock('@/lib/auth/current-athlete', () => ({
+vi.mock('@sharpit/server/lib/auth/current-athlete', () => ({
   getCurrentAthleteId: vi.fn(),
 }));
 
-vi.mock('@/lib/rate-limit', () => ({
+vi.mock('@sharpit/server/lib/rate-limit', () => ({
   rateLimiters: { apiGeneral: {} },
   checkRateLimit: vi.fn().mockResolvedValue({ ok: true }),
   rateLimitJsonResponse: vi.fn(),
 }));
 
-vi.mock('@/lib/push/apns', () => ({
+vi.mock('@sharpit/server/lib/push/apns', () => ({
   isApnsConfigured: vi.fn(),
 }));
 
-vi.mock('@/lib/push/morning-push', () => ({
+vi.mock('@sharpit/server/lib/push/morning-push', () => ({
   sendMorningPushForAthlete: vi.fn(),
 }));
 

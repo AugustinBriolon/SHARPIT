@@ -1,12 +1,12 @@
 'use client';
 
 import { CorpsStatCard } from '@/components/corps/corps-ui';
-import { CORPS_TONE_DOT } from '@/lib/ui/metric-tone';
-import { cn } from '@/lib/utils';
+import { CORPS_TONE_DOT } from '@sharpit/server/lib/ui/metric-tone';
+import { cn } from '@sharpit/server/lib/utils';
 import { HeartPulse } from 'lucide-react';
 import Link from 'next/link';
 import { Skeleton } from '@/components/ui/skeleton';
-import type { PhysicalHealthConditionCard } from '@/presentation/physical-health-view-model';
+import type { PhysicalHealthConditionCard } from '@sharpit/server/presentation/physical-health-view-model';
 import { PhysicalHealthConditionCardView } from '@/components/physical-health/cards/condition-card';
 import { CorpsEmptyState, CorpsDivider } from '@/components/corps/corps-ui';
 

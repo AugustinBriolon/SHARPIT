@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse, after } from 'next/server';
 import { format } from 'date-fns';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { prepareNutritionCoachReading } from '@/lib/nutrition/analysis/nutrition-analysis';
-import { buildNutritionViewModel } from '@/lib/presentation/nutrition/nutrition';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
+import { prepareNutritionCoachReading } from '@sharpit/server/lib/nutrition/analysis/nutrition-analysis';
+import { buildNutritionViewModel } from '@sharpit/server/lib/presentation/nutrition/nutrition';
 
 /** Generation runs in `after()`; the coach model answers in ~10–20 s. */
 export const maxDuration = 60;

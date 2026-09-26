@@ -2,9 +2,9 @@
 
 import Link from 'next/link';
 import { ActivityTypeIndicator } from '@/components/ui/instruments/activity-type-indicator';
-import { activityTypeLabels } from '@/lib/format';
-import type { BrickSiblingActivityLink } from '@/lib/planned-session/brick/brick-sessions';
-import { TWIN_DRILL_DOWN } from '@/lib/today/navigation/today-twin-navigation';
+import { activityTypeLabels } from '@sharpit/server/lib/format';
+import type { BrickSiblingActivityLink } from '@sharpit/server/lib/planned-session/brick/brick-sessions';
+import { TWIN_DRILL_DOWN } from '@sharpit/server/lib/today/navigation/today-twin-navigation';
 import { NavArrowRight } from '@/components/icons/nav-arrows';
 
 /**

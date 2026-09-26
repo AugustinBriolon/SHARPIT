@@ -1,7 +1,7 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import type { ScenarioComparisonViewModel } from '@/presentation/scenario-comparison-view-model';
+import type { ScenarioComparisonViewModel } from '@sharpit/server/presentation/scenario-comparison-view-model';
 
 const PlanGenerator = dynamic(
   () => import('@/components/coach/plan/plan-generator').then((mod) => mod.PlanGenerator),

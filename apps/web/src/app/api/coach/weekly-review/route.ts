@@ -1,16 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { isCoachConfigured } from '@/lib/ai';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { checkRateLimit, rateLimitJsonResponse, rateLimiters } from '@/lib/rate-limit';
-import { hasProAccess } from '@/lib/access/tier';
-import { getAthleteProfile } from '@/lib/queries';
+import { isCoachConfigured } from '@sharpit/server/lib/ai';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
+import {
+  checkRateLimit,
+  rateLimitJsonResponse,
+  rateLimiters,
+} from '@sharpit/server/lib/rate-limit';
+import { hasProAccess } from '@sharpit/server/lib/access/tier';
+import { getAthleteProfile } from '@sharpit/server/lib/queries';
 import {
   generateAndStoreWeeklyReview,
   getLatestWeeklyReview,
   getWeeklyReview,
-} from '@/lib/coach/weekly-review';
-import { requireAiProcessingConsent } from '@/lib/privacy/consent-store';
-import { withCoachTrace } from '@/lib/ai/coach-trace';
+} from '@sharpit/server/lib/coach/weekly-review';
+import { requireAiProcessingConsent } from '@sharpit/server/lib/privacy/consent-store';
+import { withCoachTrace } from '@sharpit/server/lib/ai/coach-trace';
 
 export const maxDuration = 60;
 

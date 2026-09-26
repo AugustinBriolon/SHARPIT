@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { createConversation, listConversations } from '@/lib/coach/conversations';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
+import { createConversation, listConversations } from '@sharpit/server/lib/coach/conversations';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
 
 export async function GET() {
   try {

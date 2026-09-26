@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
 import {
   BODY_METRIC_KEYS,
   isBodyMetricKey,
   isBodySeriesRange,
   projectV1BodySeries,
-} from '@/lib/body/body-v1';
-import { loadBodySeriesInputs } from '@/lib/body/body-v1-data';
+} from '@sharpit/server/lib/body/body-v1';
+import { loadBodySeriesInputs } from '@sharpit/server/lib/body/body-v1-data';
 
 /** One Corps metric over 30 d / 90 d / 1 an / Tout, oldest first (metric drawer). */
 export async function GET(request: NextRequest) {

@@ -1,6 +1,6 @@
-import type { PhysicalHealthViewModel } from '@/presentation/physical-health-view-model';
-import { corpsToneFromPhysicalSeverity } from '@/lib/health/health-status';
-import type { CorpsTone } from '@/lib/ui/metric-tone';
+import type { PhysicalHealthViewModel } from '@sharpit/server/presentation/physical-health-view-model';
+import { corpsToneFromPhysicalSeverity } from '@sharpit/server/lib/health/health-status';
+import type { CorpsTone } from '@sharpit/server/lib/ui/metric-tone';
 
 export function confidenceToneClass(tone: string): 'ok' | 'watch' | 'neutral' {
   if (tone === 'good') {

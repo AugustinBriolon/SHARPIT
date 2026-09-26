@@ -4,7 +4,7 @@ import { StickyHeader } from '@/components/layout/header/sticky-header';
 import { SettingsMaintenancePanel } from '@/components/settings/maintenance';
 import { SettingsDemoBlock } from '@/components/settings/settings-demo-block';
 import { Skeleton } from '@/components/ui/skeleton';
-import { isDemoSession } from '@/lib/demo/demo-session';
+import { isDemoSession } from '@sharpit/server/lib/demo/demo-session';
 
 function MaintenanceSkeleton() {
   return <Skeleton className="h-48 w-full rounded-xl" aria-busy />;

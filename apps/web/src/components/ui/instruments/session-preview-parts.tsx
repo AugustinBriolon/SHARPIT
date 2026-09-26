@@ -4,9 +4,9 @@ import Link from 'next/link';
 import type { ReactNode } from 'react';
 import type { ActivityType } from '@prisma/client';
 import { ActivityTypeIndicator } from '@/components/ui/instruments/activity-type-indicator';
-import { SPORT_IDENTITY_PANEL } from '@/lib/activity/sport-identity';
-import { cn } from '@/lib/utils';
-import type { SessionPreviewMetric } from '@/lib/today/rich/planned-session-metrics';
+import { SPORT_IDENTITY_PANEL } from '@sharpit/server/lib/activity/sport-identity';
+import { cn } from '@sharpit/server/lib/utils';
+import type { SessionPreviewMetric } from '@sharpit/server/lib/today/rich/planned-session-metrics';
 export type { SessionPreviewMetric };
 
 function metricValueClass(compact: boolean): string {

@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { syncWithingsHealth } from '@/lib/integrations/withings/withings-sync';
-import { checkRateLimit, rateLimitJsonResponse, rateLimiters } from '@/lib/rate-limit';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
+import { syncWithingsHealth } from '@sharpit/server/lib/integrations/withings/withings-sync';
+import {
+  checkRateLimit,
+  rateLimitJsonResponse,
+  rateLimiters,
+} from '@sharpit/server/lib/rate-limit';
 
 export const maxDuration = 300;
 

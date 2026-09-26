@@ -2,9 +2,9 @@
 
 import type { ReactNode } from 'react';
 import { MotionExpand } from '@/components/motion';
-import type { AxisPosition, AxisTick } from '@/lib/journal/journal-habit-axis';
-import type { DumbbellRowModel } from '@/lib/journal/journal-analyses-view-model';
-import { cn } from '@/lib/utils';
+import type { AxisPosition, AxisTick } from '@sharpit/server/lib/journal/journal-habit-axis';
+import type { DumbbellRowModel } from '@sharpit/server/lib/journal/journal-analyses-view-model';
+import { cn } from '@sharpit/server/lib/utils';
 import {
   DUMBBELL_DELTA_CELL,
   DUMBBELL_GRID,

@@ -10,9 +10,9 @@ import { GoalAchievementsHistory } from '@/components/goals/cards/goal-achieveme
 import { GoalsViewSkeleton } from '@/components/goals/goals-view-skeleton';
 import { InkEmptyState } from '@/components/ui/ink-empty-state';
 import { toEditGoal, useGoalCapModel } from '@/hooks/use-goal-cap-model';
-import type { GoalCapHeroView } from '@/lib/goals/goal-cap';
-import type { GoalCapStatsView } from '@/lib/goals/goal-cap-stats';
-import type { GoalPositionAuditView } from '@/lib/goals/goal-position-audit';
+import type { GoalCapHeroView } from '@sharpit/server/lib/goals/goal-cap';
+import type { GoalCapStatsView } from '@sharpit/server/lib/goals/goal-cap-stats';
+import type { GoalPositionAuditView } from '@sharpit/server/lib/goals/goal-position-audit';
 
 function useGoalHashScroll(ready: boolean) {
   useEffect(() => {

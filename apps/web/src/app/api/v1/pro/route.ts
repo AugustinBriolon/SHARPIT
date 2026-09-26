@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
-import { projectV1Pro } from '@/lib/access/pro-v1';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { awaitRequest } from '@/lib/next/await-request';
-import { loadProState } from '@/lib/billing/subscription-store';
+import { projectV1Pro } from '@sharpit/server/lib/access/pro-v1';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
+import { awaitRequest } from '@sharpit/server/lib/next/await-request';
+import { loadProState } from '@sharpit/server/lib/billing/subscription-store';
 
 /** The athlete's SharpIt Pro page: tier, perks, subscription (ADR-040). */
 export async function GET() {

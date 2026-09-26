@@ -4,18 +4,22 @@ import type { z } from 'zod';
 import {
   deleteSessionFromGoogle,
   pushSessionToGoogle,
-} from '@/lib/integrations/google/google-sync';
-import { deletePlannedSession, getPlannedSessionById, updatePlannedSession } from '@/lib/queries';
-import { refreshAndPersistPlannedSessionContext } from '@/lib/planned-session/resolve-context';
-import { updatePlannedSessionSchema } from '@/lib/validators/planned-session';
+} from '@sharpit/server/lib/integrations/google/google-sync';
+import {
+  deletePlannedSession,
+  getPlannedSessionById,
+  updatePlannedSession,
+} from '@sharpit/server/lib/queries';
+import { refreshAndPersistPlannedSessionContext } from '@sharpit/server/lib/planned-session/resolve-context';
+import { updatePlannedSessionSchema } from '@sharpit/server/lib/validators/planned-session';
 import {
   findCoachingDecisionById,
   findDecisionForPlannedSession,
   recordDecisionAction,
-} from '@/lib/decision-memory/repository';
-import { garminPushClearOnSessionChange } from '@/lib/integrations/garmin/garmin-workout-push-state';
-import { enduranceSportFromActivityType } from '@/lib/planned-session/endurance/endurance-prescription';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
+} from '@sharpit/server/lib/decision-memory/repository';
+import { garminPushClearOnSessionChange } from '@sharpit/server/lib/integrations/garmin/garmin-workout-push-state';
+import { enduranceSportFromActivityType } from '@sharpit/server/lib/planned-session/endurance/endurance-prescription';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
 
 type RouteContext = { params: Promise<{ id: string }> };
 

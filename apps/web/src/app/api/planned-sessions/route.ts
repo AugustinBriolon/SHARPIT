@@ -1,18 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { defaultExposureForActivityType } from '@sharpit/core/planned-session/defaults';
-import { pushSessionToGoogle } from '@/lib/integrations/google/google-sync';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
+import { pushSessionToGoogle } from '@sharpit/server/lib/integrations/google/google-sync';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
 import {
   createPlannedSession,
   getAthleteProfile,
   getPlannedSessionById,
   getPlannedSessions,
-} from '@/lib/queries';
-import { buildPlannedSessionSteps } from '@/lib/planned-session/session-steps';
+} from '@sharpit/server/lib/queries';
+import { buildPlannedSessionSteps } from '@sharpit/server/lib/planned-session/session-steps';
 import type { PlannedSession } from '@prisma/client';
-import { refreshAndPersistPlannedSessionContext } from '@/lib/planned-session/resolve-context';
-import { createPlannedSessionSchema } from '@/lib/validators/planned-session';
-import { findCoachingDecisionById, recordDecisionAction } from '@/lib/decision-memory/repository';
+import { refreshAndPersistPlannedSessionContext } from '@sharpit/server/lib/planned-session/resolve-context';
+import { createPlannedSessionSchema } from '@sharpit/server/lib/validators/planned-session';
+import {
+  findCoachingDecisionById,
+  recordDecisionAction,
+} from '@sharpit/server/lib/decision-memory/repository';
 
 async function assertDecisionNotRejected(athleteId: string, decisionId: string) {
   const decision = await findCoachingDecisionById(athleteId, decisionId);

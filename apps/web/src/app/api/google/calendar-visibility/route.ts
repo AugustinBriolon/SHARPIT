@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { getGoogleAccount, setHiddenCalendars } from '@/lib/integrations/google/google-sync';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
+import {
+  getGoogleAccount,
+  setHiddenCalendars,
+} from '@sharpit/server/lib/integrations/google/google-sync';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
 
 const schema = z.object({
   hiddenCalendarIds: z.array(z.string()),

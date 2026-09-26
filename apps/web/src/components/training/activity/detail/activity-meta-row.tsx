@@ -2,7 +2,10 @@
 
 import { ActivityContextChips } from './activity-context-chips';
 import { useDemoActivityPlannedSession } from '@/hooks/use-demo-session-link-overlay';
-import type { ActivityDetail, ActivityPerformanceRecordChip } from '@/lib/activity/detail/types';
+import type {
+  ActivityDetail,
+  ActivityPerformanceRecordChip,
+} from '@sharpit/server/lib/activity/detail/types';
 
 const EMPTY_RECORDS: ActivityPerformanceRecordChip[] = [];
 

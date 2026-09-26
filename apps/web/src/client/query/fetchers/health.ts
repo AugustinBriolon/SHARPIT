@@ -1,5 +1,8 @@
 import { isSet } from '@sharpit/shared/value';
-import type { ClientBodyCompositionEntry, ClientHealthEntry } from '@/lib/query/types';
+import type {
+  ClientBodyCompositionEntry,
+  ClientHealthEntry,
+} from '@sharpit/server/lib/query/types';
 import { fetchJson, type Serialized, toDate } from './shared';
 
 export async function fetchHealthEntries(

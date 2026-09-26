@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import { seedDemoAthlete } from '../src/lib/demo/seed-demo-data';
+import { seedDemoAthlete } from '@sharpit/server/lib/demo/seed-demo-data';
 
 const prisma = new PrismaClient();
 

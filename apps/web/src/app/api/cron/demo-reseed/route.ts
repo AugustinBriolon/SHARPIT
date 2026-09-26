@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@sharpit/db/client';
-import { seedDemoAthlete } from '@/lib/demo/seed-demo-data';
-import { verifyCronSecret } from '@/lib/cron/verify-cron-secret';
+import { seedDemoAthlete } from '@sharpit/server/lib/demo/seed-demo-data';
+import { verifyCronSecret } from '@sharpit/server/lib/cron/verify-cron-secret';
 
 export const maxDuration = 60;
 

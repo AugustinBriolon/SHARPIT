@@ -11,8 +11,8 @@ import {
 import { Plus, X } from 'lucide-react';
 import { motion, useReducedMotion } from 'motion/react';
 import { PromptSubmitIcon } from '@/components/coach/kit/prompt-input-submit-icon';
-import type { CoachDiscussContext } from '@/lib/coach/chat/discuss/coach-discuss-context';
-import { cn } from '@/lib/utils';
+import type { CoachDiscussContext } from '@sharpit/server/lib/coach/chat/discuss/coach-discuss-context';
+import { cn } from '@sharpit/server/lib/utils';
 import { handlePromptBarKeyDown } from '@/components/coach/chat/composer/coach-prompt-bar-keyboard';
 
 export const PROMPT_BAR_EASE_OUT = 'cubic-bezier(0.23, 1, 0.32, 1)';

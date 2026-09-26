@@ -3,7 +3,7 @@
 import { Check, Loader2, X } from 'lucide-react';
 import { AnimatePresence, motion, useReducedMotion, type Variants } from 'motion/react';
 import { type ReactNode, useLayoutEffect, useRef, useState } from 'react';
-import { EASE_OUT, SPRING_SWAP } from '@/lib/ease';
+import { EASE_OUT, SPRING_SWAP } from '@sharpit/server/lib/ease';
 
 export type ButtonState = 'idle' | 'loading' | 'success' | 'error';
 

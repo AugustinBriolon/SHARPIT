@@ -3,8 +3,8 @@ import { Check, ClipboardCheck, ListChecks, LoaderCircle, X } from 'lucide-react
 import { motion } from 'motion/react';
 import { ActionSwapRollText } from '@/components/motion/action-swap-roll';
 import { Button } from '@/components/motion/button';
-import { SPRING_SWAP } from '@/lib/ease';
-import { cn } from '@/lib/utils';
+import { SPRING_SWAP } from '@sharpit/server/lib/ease';
+import { cn } from '@sharpit/server/lib/utils';
 import { NavArrowLeft, NavArrowRight } from '@/components/icons/nav-arrows';
 import {
   getApprovalStatusBadgeClass,

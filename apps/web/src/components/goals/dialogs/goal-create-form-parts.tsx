@@ -15,7 +15,7 @@ import { GoalCreateMetricSection } from '@/components/goals/dialogs/goal-create-
 import type { MetricGoalFormResult } from '@/components/goals/dialogs/metric-goal-form';
 import { GoalKind } from '@prisma/client';
 import type { GoalPayload } from '@/hooks/use-data';
-import type { PracticedSportId } from '@/lib/practiced-sports';
+import type { PracticedSportId } from '@sharpit/server/lib/practiced-sports';
 
 export function useGoalCreateSubmitHandlers(
   onSubmit: (payload: GoalPayload) => void | Promise<void>,

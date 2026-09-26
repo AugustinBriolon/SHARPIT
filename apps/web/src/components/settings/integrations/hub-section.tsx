@@ -4,8 +4,8 @@ import {
   loadIntegrationAccounts,
   type IntegrationsSearchParams,
 } from '@/components/settings/integrations/hub-section-load';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { loadResolvedSourcePrefs } from '@/lib/integrations/source-prefs-store';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
+import { loadResolvedSourcePrefs } from '@sharpit/server/lib/integrations/source-prefs-store';
 
 const statusMessages: Record<string, string> = {
   connected: 'Compte Strava connecté.',

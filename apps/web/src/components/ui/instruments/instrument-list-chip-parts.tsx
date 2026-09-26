@@ -3,7 +3,7 @@ import type { ActivityType } from '@prisma/client';
 import { CheckCircle2 } from 'lucide-react';
 import { NavArrowRight } from '@/components/icons/nav-arrows';
 import { ActivityTypeIndicator } from '@/components/ui/instruments/activity-type-indicator';
-import { cn } from '@/lib/utils';
+import { cn } from '@sharpit/server/lib/utils';
 import type { InstrumentListChipMeta } from '@/components/ui/instruments/instrument-list-chip';
 
 function metaText(item: InstrumentListChipMeta): string {

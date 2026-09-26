@@ -5,7 +5,7 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { guardedActionLabel, useOfflineGuard } from '@/hooks/use-offline-guard';
 import { useIsDemoMode } from '@/hooks/use-is-demo-mode';
 import { motionTokens } from '@/client/motion/tokens';
-import { cn } from '@/lib/utils';
+import { cn } from '@sharpit/server/lib/utils';
 import {
   integrationConnectBody,
   integrationConnectCta,

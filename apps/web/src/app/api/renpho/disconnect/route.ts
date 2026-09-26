@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { clearProviderFromSourcePrefs } from '@/lib/integrations/clear-provider-prefs';
-import { disconnectRenpho } from '@/lib/integrations/renpho/renpho-sync';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
+import { clearProviderFromSourcePrefs } from '@sharpit/server/lib/integrations/clear-provider-prefs';
+import { disconnectRenpho } from '@sharpit/server/lib/integrations/renpho/renpho-sync';
 
 export async function POST() {
   const athleteId = await getCurrentAthleteId();

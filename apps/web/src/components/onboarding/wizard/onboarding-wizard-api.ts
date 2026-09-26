@@ -1,13 +1,13 @@
 'use client';
 
-import type { IntegrationId } from '@/lib/integrations/shared/client-sync';
-import type { IntegrationSourcePrefs } from '@/lib/integrations/source-prefs';
-import type { DataClassId } from '@/lib/integrations/provider-catalog';
+import type { IntegrationId } from '@sharpit/server/lib/integrations/shared/client-sync';
+import type { IntegrationSourcePrefs } from '@sharpit/server/lib/integrations/source-prefs';
+import type { DataClassId } from '@sharpit/server/lib/integrations/provider-catalog';
 import { toast } from '@/components/ui/toast';
-import { providersForClass } from '@/lib/integrations/provider-catalog';
-import type { OnboardingWizardStep } from '@/lib/onboarding/wizard/wizard-steps';
-import type { PracticedSportId } from '@/lib/practiced-sports';
-import type { TrainingAvailability } from '@/lib/training-availability/types';
+import { providersForClass } from '@sharpit/server/lib/integrations/provider-catalog';
+import type { OnboardingWizardStep } from '@sharpit/server/lib/onboarding/wizard/wizard-steps';
+import type { PracticedSportId } from '@sharpit/server/lib/practiced-sports';
+import type { TrainingAvailability } from '@sharpit/server/lib/training-availability/types';
 import {
   completeOnboarding as completeOnboardingFetcher,
   patchAthleteProfile,

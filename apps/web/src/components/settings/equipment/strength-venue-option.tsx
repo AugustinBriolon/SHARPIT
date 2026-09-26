@@ -1,7 +1,7 @@
 'use client';
 
-import { cn } from '@/lib/utils';
-import type { StrengthVenue } from '@/lib/equipment/catalog';
+import { cn } from '@sharpit/server/lib/utils';
+import type { StrengthVenue } from '@sharpit/server/lib/equipment/catalog';
 
 export function StrengthVenueOption({
   title,

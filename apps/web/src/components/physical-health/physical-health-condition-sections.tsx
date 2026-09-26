@@ -1,6 +1,6 @@
 'use client';
 
-import type { PhysicalHealthViewModel } from '@/presentation/physical-health-view-model';
+import type { PhysicalHealthViewModel } from '@sharpit/server/presentation/physical-health-view-model';
 import {
   PhysicalHealthActiveSection,
   PhysicalHealthEmptySection,

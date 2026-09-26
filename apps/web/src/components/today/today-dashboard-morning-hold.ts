@@ -1,5 +1,5 @@
-import type { TodayViewModel } from '@/presentation/today-view-model';
-import { sessionChoiceLabel } from '@/lib/today/rich/morning-orientation';
+import type { TodayViewModel } from '@sharpit/server/presentation/today-view-model';
+import { sessionChoiceLabel } from '@sharpit/server/lib/today/rich/morning-orientation';
 
 function primaryPlannedSessionId(vm: TodayViewModel): string | undefined {
   const line = vm.actionRow.daySummaryLines.find((l) => l.kind === 'planned');

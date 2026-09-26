@@ -3,12 +3,12 @@
 import { useState } from 'react';
 import type { ActivityType } from '@prisma/client';
 import { Check, Loader2, X } from 'lucide-react';
-import { activityTypeLabels } from '@/lib/format';
+import { activityTypeLabels } from '@sharpit/server/lib/format';
 import {
   failureHintForPart,
   failureLabelForPart,
   humanizeToolErrorMessage,
-} from '@/lib/coach/chat/tools/coach-tool-display';
+} from '@sharpit/server/lib/coach/chat/tools/coach-tool-display';
 import { coachBeuiCopy } from '@/components/coach/beui/coach-beui-copy';
 import {
   buildApprovalPreview,
@@ -19,7 +19,7 @@ import {
 } from '@/components/coach/beui/coach-tool-approval-helpers';
 import { ApprovalSessionPreview } from '@/components/coach/beui/coach-tool-approval-props';
 import type { KnownSession } from '@/components/coach/chat/tools/tool-activity';
-import { cn } from '@/lib/utils';
+import { cn } from '@sharpit/server/lib/utils';
 
 type ToolMeta = {
   label: string;

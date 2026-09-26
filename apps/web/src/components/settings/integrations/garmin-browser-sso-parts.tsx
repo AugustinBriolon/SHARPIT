@@ -6,10 +6,13 @@ import { buttonVariants } from '@/components/ui/button';
 import {
   GARMIN_SSO_MESSAGE_ORIGIN,
   parseGarminSsoPostMessage,
-} from '@/lib/integrations/garmin/garmin-browser-sso-shared';
+} from '@sharpit/server/lib/integrations/garmin/garmin-browser-sso-shared';
 import { exchangeGarminSsoTicket } from '@/client/query/fetchers';
-import { RISK_TONE, STATUS_SURFACE } from '@/lib/presentation/coaching/status-surface';
-import { cn } from '@/lib/utils';
+import {
+  RISK_TONE,
+  STATUS_SURFACE,
+} from '@sharpit/server/lib/presentation/coaching/status-surface';
+import { cn } from '@sharpit/server/lib/utils';
 
 export type GarminSsoPhase = 'form' | 'connecting' | 'success' | 'error';
 

@@ -1,7 +1,7 @@
 'use client';
 
-import { type TrainingHistoryFilters } from '@/lib/training/periodization/history-filters';
-import { cn } from '@/lib/utils';
+import { type TrainingHistoryFilters } from '@sharpit/server/lib/training/periodization/history-filters';
+import { cn } from '@sharpit/server/lib/utils';
 import { Drawer } from '@base-ui/react/drawer';
 import { ActivityType } from '@prisma/client';
 import { X } from 'lucide-react';

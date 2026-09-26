@@ -4,8 +4,11 @@ import Link from 'next/link';
 import { Microscope } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useDisplayMode } from '@/providers/display-mode-provider';
-import { MOI_PERSONALIZATION_DENSITY_HASH, MOI_PERSONALIZATION_PATH } from '@/lib/moi/paths';
-import { cn } from '@/lib/utils';
+import {
+  MOI_PERSONALIZATION_DENSITY_HASH,
+  MOI_PERSONALIZATION_PATH,
+} from '@sharpit/server/lib/moi/paths';
+import { cn } from '@sharpit/server/lib/utils';
 
 /**
  * Silent indicator that the current page shows technical detail the

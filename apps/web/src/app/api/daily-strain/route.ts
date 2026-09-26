@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { featureEngine } from '@/lib/engines/feature-engine';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
+import { featureEngine } from '@sharpit/server/lib/engines/feature-engine';
 import { prisma } from '@sharpit/db/client';
-import { computeDailyStrain } from '@/lib/training/load/daily-strain';
+import { computeDailyStrain } from '@sharpit/server/lib/training/load/daily-strain';
 import {
   activityMatchesTrainingDay,
   approximateTrainingDayUtcRange,

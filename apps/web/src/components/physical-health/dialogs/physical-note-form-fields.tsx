@@ -12,7 +12,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import type { ClientPhysicalNote } from '@/lib/query/types';
+import type { ClientPhysicalNote } from '@sharpit/server/lib/query/types';
 import {
   categoryLabels,
   categoryOrder,
@@ -20,7 +20,7 @@ import {
   sideOrder,
   statusLabels,
   statusOrder,
-} from '@/lib/physical-health/physical';
+} from '@sharpit/server/lib/physical-health/physical';
 import type { BodySide, PhysicalCategory, PhysicalStatus } from '@prisma/client';
 
 const BODY_PART_NONE = '__none__';

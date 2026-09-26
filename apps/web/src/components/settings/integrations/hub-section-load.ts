@@ -7,22 +7,25 @@ import {
   buildStravaPayloadSection,
   buildWithingsPayloadSection,
 } from '@/components/settings/integrations/hub-payload-helpers';
-import { getGarminAccount } from '@/lib/integrations/garmin/garmin-sync';
-import { isGoogleConfigured } from '@/lib/integrations/google/google';
-import { getGoogleAccount, isGoogleConnected } from '@/lib/integrations/google/google-sync';
-import { getMfpAccount } from '@/lib/integrations/myfitnesspal/myfitnesspal-sync';
-import { isMfpConfigured } from '@/lib/integrations/myfitnesspal/myfitnesspal';
-import { getRenphoAccount } from '@/lib/integrations/renpho/renpho-sync';
-import { isStravaConfigured } from '@/lib/integrations/strava/strava';
-import { getStravaAccount } from '@/lib/integrations/strava/strava-sync';
-import { isWithingsConfigured } from '@/lib/integrations/withings/withings';
-import { getWithingsAccount } from '@/lib/integrations/withings/withings-sync';
+import { getGarminAccount } from '@sharpit/server/lib/integrations/garmin/garmin-sync';
+import { isGoogleConfigured } from '@sharpit/server/lib/integrations/google/google';
+import {
+  getGoogleAccount,
+  isGoogleConnected,
+} from '@sharpit/server/lib/integrations/google/google-sync';
+import { getMfpAccount } from '@sharpit/server/lib/integrations/myfitnesspal/myfitnesspal-sync';
+import { isMfpConfigured } from '@sharpit/server/lib/integrations/myfitnesspal/myfitnesspal';
+import { getRenphoAccount } from '@sharpit/server/lib/integrations/renpho/renpho-sync';
+import { isStravaConfigured } from '@sharpit/server/lib/integrations/strava/strava';
+import { getStravaAccount } from '@sharpit/server/lib/integrations/strava/strava-sync';
+import { isWithingsConfigured } from '@sharpit/server/lib/integrations/withings/withings';
+import { getWithingsAccount } from '@sharpit/server/lib/integrations/withings/withings-sync';
 import {
   isGarminAccountConnected,
   isMfpAccountConnected,
   isOAuthAccountConnected,
   isRenphoAccountConnected,
-} from '@/lib/integrations/shared/connection-status';
+} from '@sharpit/server/lib/integrations/shared/connection-status';
 
 export type IntegrationsSearchParams = {
   strava?: string;

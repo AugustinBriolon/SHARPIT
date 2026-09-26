@@ -4,8 +4,8 @@ import { NextRequest } from 'next/server';
 const getCurrentAthleteId = vi.fn();
 const athleteEntryPath = vi.fn();
 
-vi.mock('@/lib/auth/current-athlete', () => ({ getCurrentAthleteId }));
-vi.mock('@/lib/onboarding/entry', () => ({ athleteEntryPath }));
+vi.mock('@sharpit/server/lib/auth/current-athlete', () => ({ getCurrentAthleteId }));
+vi.mock('@sharpit/server/lib/onboarding/entry', () => ({ athleteEntryPath }));
 
 describe('GET /start', () => {
   beforeEach(() => {

@@ -1,6 +1,6 @@
 import { ClinicalAnnotation } from '@/components/ui/instruments/clinical-annotation';
-import { MEDICAL_DISCLAIMER_V0 } from '@/lib/copy/medical-disclaimer';
-import { cn } from '@/lib/utils';
+import { MEDICAL_DISCLAIMER_V0 } from '@sharpit/server/lib/copy/medical-disclaimer';
+import { cn } from '@sharpit/server/lib/utils';
 
 /**
  * Medical disclaimer — ClinicalAnnotation note for Settings (À propos), not coaching UI.

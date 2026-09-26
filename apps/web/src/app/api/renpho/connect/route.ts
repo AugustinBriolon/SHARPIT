@@ -1,15 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { sanitizeDataClass } from '@/lib/integrations/oauth-public-origin';
-import { connectRenpho, syncRenphoHealth } from '@/lib/integrations/renpho/renpho-sync';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
+import { sanitizeDataClass } from '@sharpit/server/lib/integrations/oauth-public-origin';
+import {
+  connectRenpho,
+  syncRenphoHealth,
+} from '@sharpit/server/lib/integrations/renpho/renpho-sync';
 import {
   enableProviderForAllCoveredClasses,
   enableProviderForClass,
-} from '@/lib/integrations/source-prefs';
-import { persistSourcePrefsMutation } from '@/lib/integrations/source-prefs-store';
-import { gateProviderConnect } from '@/lib/privacy/gate-provider-connect';
-import { logSafeError } from '@/lib/privacy/safe-log';
+} from '@sharpit/server/lib/integrations/source-prefs';
+import { persistSourcePrefsMutation } from '@sharpit/server/lib/integrations/source-prefs-store';
+import { gateProviderConnect } from '@sharpit/server/lib/privacy/gate-provider-connect';
+import { logSafeError } from '@sharpit/server/lib/privacy/safe-log';
 
 import { renphoConnectSchema } from './schema';
 

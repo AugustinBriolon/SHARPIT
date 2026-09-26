@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { getActivityStreams } from '@/lib/streams/streams';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
+import { getActivityStreams } from '@sharpit/server/lib/streams/streams';
 
 type RouteContext = { params: Promise<{ id: string }> };
 

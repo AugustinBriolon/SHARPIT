@@ -1,26 +1,26 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { NextRequest } from 'next/server';
 
-vi.mock('@/lib/queries', () => ({
+vi.mock('@sharpit/server/lib/queries', () => ({
   getPlannedSessionById: vi.fn(),
   updatePlannedSession: vi.fn(),
   deletePlannedSession: vi.fn(),
 }));
 
-vi.mock('@/lib/auth/current-athlete', () => ({
+vi.mock('@sharpit/server/lib/auth/current-athlete', () => ({
   getCurrentAthleteId: vi.fn().mockResolvedValue('default'),
 }));
 
-vi.mock('@/lib/integrations/google/google-sync', () => ({
+vi.mock('@sharpit/server/lib/integrations/google/google-sync', () => ({
   pushSessionToGoogle: vi.fn().mockResolvedValue(undefined),
   deleteSessionFromGoogle: vi.fn().mockResolvedValue(undefined),
 }));
 
-vi.mock('@/lib/planned-session/resolve-context', () => ({
+vi.mock('@sharpit/server/lib/planned-session/resolve-context', () => ({
   refreshAndPersistPlannedSessionContext: vi.fn().mockResolvedValue(undefined),
 }));
 
-vi.mock('@/lib/decision-memory/repository', () => ({
+vi.mock('@sharpit/server/lib/decision-memory/repository', () => ({
   recordDecisionAction: vi.fn().mockResolvedValue({ id: 'action-1' }),
   findDecisionForPlannedSession: vi.fn().mockResolvedValue(null),
   findCoachingDecisionById: vi.fn().mockResolvedValue(null),
@@ -53,7 +53,7 @@ describe('GET /api/planned-sessions/[id]', () => {
 
   it('returns 404 when the session does not exist', async () => {
     const { GET } = await importRoute();
-    const { getPlannedSessionById } = await import('@/lib/queries');
+    const { getPlannedSessionById } = await import('@sharpit/server/lib/queries');
     vi.mocked(getPlannedSessionById).mockResolvedValue(null);
 
     const res = await GET(new NextRequest('http://localhost/api/planned-sessions/missing'), {
@@ -64,7 +64,7 @@ describe('GET /api/planned-sessions/[id]', () => {
 
   it('returns the session payload', async () => {
     const { GET } = await importRoute();
-    const { getPlannedSessionById } = await import('@/lib/queries');
+    const { getPlannedSessionById } = await import('@sharpit/server/lib/queries');
     vi.mocked(getPlannedSessionById).mockResolvedValue(EXISTING as never);
 
     const res = await GET(new NextRequest('http://localhost/api/planned-sessions/session-1'), {
@@ -81,9 +81,10 @@ describe('PATCH /api/planned-sessions/[id]', () => {
   });
 
   it('records ACCEPTED when decisionId is given (athlete applying an adapt proposal)', async () => {
-    const { getPlannedSessionById, updatePlannedSession } = await import('@/lib/queries');
+    const { getPlannedSessionById, updatePlannedSession } =
+      await import('@sharpit/server/lib/queries');
     const { recordDecisionAction, findDecisionForPlannedSession } =
-      await import('@/lib/decision-memory/repository');
+      await import('@sharpit/server/lib/decision-memory/repository');
     vi.mocked(getPlannedSessionById).mockResolvedValue(EXISTING as never);
     vi.mocked(updatePlannedSession).mockResolvedValue({ ...EXISTING, load: 20 } as never);
 
@@ -103,9 +104,10 @@ describe('PATCH /api/planned-sessions/[id]', () => {
   });
 
   it('rejects the write with 422 and never updates the session when the decision was Gate-REJECTED', async () => {
-    const { updatePlannedSession, getPlannedSessionById } = await import('@/lib/queries');
+    const { updatePlannedSession, getPlannedSessionById } =
+      await import('@sharpit/server/lib/queries');
     const { findCoachingDecisionById, recordDecisionAction } =
-      await import('@/lib/decision-memory/repository');
+      await import('@sharpit/server/lib/decision-memory/repository');
     vi.mocked(getPlannedSessionById).mockResolvedValue(EXISTING as never);
     vi.mocked(findCoachingDecisionById).mockResolvedValueOnce({
       id: 'decision-1',
@@ -123,9 +125,10 @@ describe('PATCH /api/planned-sessions/[id]', () => {
   });
 
   it('records OVERRIDDEN when a session-defining field changes without decisionId and a prior decision exists', async () => {
-    const { getPlannedSessionById, updatePlannedSession } = await import('@/lib/queries');
+    const { getPlannedSessionById, updatePlannedSession } =
+      await import('@sharpit/server/lib/queries');
     const { recordDecisionAction, findDecisionForPlannedSession } =
-      await import('@/lib/decision-memory/repository');
+      await import('@sharpit/server/lib/decision-memory/repository');
     vi.mocked(getPlannedSessionById).mockResolvedValue(EXISTING as never);
     vi.mocked(updatePlannedSession).mockResolvedValue({ ...EXISTING, load: 70 } as never);
     vi.mocked(findDecisionForPlannedSession).mockResolvedValue({ id: 'decision-2' } as never);
@@ -146,9 +149,10 @@ describe('PATCH /api/planned-sessions/[id]', () => {
   });
 
   it('does not look up a decision when the edit touches no session-defining field', async () => {
-    const { getPlannedSessionById, updatePlannedSession } = await import('@/lib/queries');
+    const { getPlannedSessionById, updatePlannedSession } =
+      await import('@sharpit/server/lib/queries');
     const { recordDecisionAction, findDecisionForPlannedSession } =
-      await import('@/lib/decision-memory/repository');
+      await import('@sharpit/server/lib/decision-memory/repository');
     vi.mocked(getPlannedSessionById).mockResolvedValue(EXISTING as never);
     vi.mocked(updatePlannedSession).mockResolvedValue({ ...EXISTING, title: 'Renamed' } as never);
 
@@ -163,9 +167,10 @@ describe('PATCH /api/planned-sessions/[id]', () => {
   });
 
   it('does not record OVERRIDDEN when the session never came from a coaching decision', async () => {
-    const { getPlannedSessionById, updatePlannedSession } = await import('@/lib/queries');
+    const { getPlannedSessionById, updatePlannedSession } =
+      await import('@sharpit/server/lib/queries');
     const { recordDecisionAction, findDecisionForPlannedSession } =
-      await import('@/lib/decision-memory/repository');
+      await import('@sharpit/server/lib/decision-memory/repository');
     vi.mocked(getPlannedSessionById).mockResolvedValue(EXISTING as never);
     vi.mocked(updatePlannedSession).mockResolvedValue({ ...EXISTING, load: 70 } as never);
     vi.mocked(findDecisionForPlannedSession).mockResolvedValue(null);

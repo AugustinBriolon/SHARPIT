@@ -4,8 +4,8 @@ import {
   getConversation,
   renameConversation,
   saveConversationMessages,
-} from '@/lib/coach/conversations';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
+} from '@sharpit/server/lib/coach/conversations';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
 
 type RouteContext = { params: Promise<{ id: string }> };
 

@@ -1,7 +1,7 @@
 'use client';
 
 import { Skeleton } from '@/components/ui/skeleton';
-import { cn } from '@/lib/utils';
+import { cn } from '@sharpit/server/lib/utils';
 import { partitionWeightedInstruments } from './weighted-instruments-helpers';
 
 export type WeightedInstrumentSlot = {

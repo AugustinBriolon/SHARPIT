@@ -11,10 +11,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { coachDiscussHref } from '@/lib/coach/chat/discuss/coach-discuss-href';
-import { MOI_CALIBRATION_PATH } from '@/lib/moi/paths';
-import { PLAN_COACH_INTENTION, type PlanCoachStepId } from '@/lib/plan/hub/plan-coach-offer';
-import { cn } from '@/lib/utils';
+import { coachDiscussHref } from '@sharpit/server/lib/coach/chat/discuss/coach-discuss-href';
+import { MOI_CALIBRATION_PATH } from '@sharpit/server/lib/moi/paths';
+import {
+  PLAN_COACH_INTENTION,
+  type PlanCoachStepId,
+} from '@sharpit/server/lib/plan/hub/plan-coach-offer';
+import { cn } from '@sharpit/server/lib/utils';
 
 /** Compact overflow labels — verbs only, no section chrome. */
 const MENU_STEPS = [

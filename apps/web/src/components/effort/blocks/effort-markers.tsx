@@ -1,10 +1,10 @@
 'use client';
 
 import { MarkerCardGrid, type MarkerSpec } from '@/components/today/drill-down/marker-card-grid';
-import { ACWR_SWEET_SPOT } from '@/lib/effort/load-reading';
-import { TWIN_DRILL_DOWN } from '@/lib/today/navigation/today-twin-navigation';
-import { GLOSSARY } from '@/lib/glossary';
-import { observedRange } from '@/lib/today/dashboard/marker-series';
+import { ACWR_SWEET_SPOT } from '@sharpit/server/lib/effort/load-reading';
+import { TWIN_DRILL_DOWN } from '@sharpit/server/lib/today/navigation/today-twin-navigation';
+import { GLOSSARY } from '@sharpit/server/lib/glossary';
+import { observedRange } from '@sharpit/server/lib/today/dashboard/marker-series';
 
 /**
  * All three readings are computed from the athlete's thresholds, so all three

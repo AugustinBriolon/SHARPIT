@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { athleteEntryPath } from '@/lib/onboarding/entry';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
+import { athleteEntryPath } from '@sharpit/server/lib/onboarding/entry';
 
 /**
  * After sign-in / sign-up: resolves (or provisions, for a brand-new account) the

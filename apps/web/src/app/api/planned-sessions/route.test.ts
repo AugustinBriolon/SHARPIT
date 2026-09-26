@@ -1,25 +1,25 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { NextRequest } from 'next/server';
 
-vi.mock('@/lib/queries', () => ({
+vi.mock('@sharpit/server/lib/queries', () => ({
   createPlannedSession: vi.fn(),
   getPlannedSessionById: vi.fn(),
   getPlannedSessions: vi.fn(),
 }));
 
-vi.mock('@/lib/auth/current-athlete', () => ({
+vi.mock('@sharpit/server/lib/auth/current-athlete', () => ({
   getCurrentAthleteId: vi.fn().mockResolvedValue('default'),
 }));
 
-vi.mock('@/lib/integrations/google/google-sync', () => ({
+vi.mock('@sharpit/server/lib/integrations/google/google-sync', () => ({
   pushSessionToGoogle: vi.fn().mockResolvedValue(undefined),
 }));
 
-vi.mock('@/lib/planned-session/resolve-context', () => ({
+vi.mock('@sharpit/server/lib/planned-session/resolve-context', () => ({
   refreshAndPersistPlannedSessionContext: vi.fn().mockResolvedValue(undefined),
 }));
 
-vi.mock('@/lib/decision-memory/repository', () => ({
+vi.mock('@sharpit/server/lib/decision-memory/repository', () => ({
   recordDecisionAction: vi.fn().mockResolvedValue({ id: 'action-1' }),
   findCoachingDecisionById: vi.fn().mockResolvedValue(null),
 }));
@@ -43,8 +43,9 @@ describe('POST /api/planned-sessions', () => {
   });
 
   it('creates a session and does not touch Decision Memory when no decisionId is given', async () => {
-    const { createPlannedSession, getPlannedSessionById } = await import('@/lib/queries');
-    const { recordDecisionAction } = await import('@/lib/decision-memory/repository');
+    const { createPlannedSession, getPlannedSessionById } =
+      await import('@sharpit/server/lib/queries');
+    const { recordDecisionAction } = await import('@sharpit/server/lib/decision-memory/repository');
     vi.mocked(createPlannedSession).mockResolvedValue({ id: 'session-1' } as never);
     vi.mocked(getPlannedSessionById).mockResolvedValue({ id: 'session-1' } as never);
 
@@ -61,8 +62,9 @@ describe('POST /api/planned-sessions', () => {
   });
 
   it('records an ACCEPTED action linked to the new session when decisionId is given', async () => {
-    const { createPlannedSession, getPlannedSessionById } = await import('@/lib/queries');
-    const { recordDecisionAction } = await import('@/lib/decision-memory/repository');
+    const { createPlannedSession, getPlannedSessionById } =
+      await import('@sharpit/server/lib/queries');
+    const { recordDecisionAction } = await import('@sharpit/server/lib/decision-memory/repository');
     vi.mocked(createPlannedSession).mockResolvedValue({ id: 'session-2' } as never);
     vi.mocked(getPlannedSessionById).mockResolvedValue({ id: 'session-2' } as never);
 
@@ -84,7 +86,8 @@ describe('POST /api/planned-sessions', () => {
   });
 
   it('does not send decisionId to session validation — it must not leak into PlannedSession fields', async () => {
-    const { createPlannedSession, getPlannedSessionById } = await import('@/lib/queries');
+    const { createPlannedSession, getPlannedSessionById } =
+      await import('@sharpit/server/lib/queries');
     vi.mocked(createPlannedSession).mockResolvedValue({ id: 'session-3' } as never);
     vi.mocked(getPlannedSessionById).mockResolvedValue({ id: 'session-3' } as never);
 
@@ -101,9 +104,9 @@ describe('POST /api/planned-sessions', () => {
   });
 
   it('rejects the write with 422 and never creates the session when the decision was Gate-REJECTED', async () => {
-    const { createPlannedSession } = await import('@/lib/queries');
+    const { createPlannedSession } = await import('@sharpit/server/lib/queries');
     const { findCoachingDecisionById, recordDecisionAction } =
-      await import('@/lib/decision-memory/repository');
+      await import('@sharpit/server/lib/decision-memory/repository');
     vi.mocked(findCoachingDecisionById).mockResolvedValueOnce({
       id: 'decision-1',
       gateResult: { status: 'REJECTED' },
@@ -123,8 +126,9 @@ describe('POST /api/planned-sessions', () => {
   });
 
   it('still returns 201 even when recordDecisionAction rejects — the audit hook is best-effort', async () => {
-    const { createPlannedSession, getPlannedSessionById } = await import('@/lib/queries');
-    const { recordDecisionAction } = await import('@/lib/decision-memory/repository');
+    const { createPlannedSession, getPlannedSessionById } =
+      await import('@sharpit/server/lib/queries');
+    const { recordDecisionAction } = await import('@sharpit/server/lib/decision-memory/repository');
     vi.mocked(createPlannedSession).mockResolvedValue({ id: 'session-4' } as never);
     vi.mocked(getPlannedSessionById).mockResolvedValue({ id: 'session-4' } as never);
     vi.mocked(recordDecisionAction).mockRejectedValue(new Error('db down'));

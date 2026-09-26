@@ -2,8 +2,8 @@
 
 import { AnimatePresence, motion } from 'motion/react';
 import { AgentDisclosure } from '@/components/coach/kit/agent-disclosure';
-import { EASE_OUT, SPRING_LAYOUT } from '@/lib/ease';
-import { cn } from '@/lib/utils';
+import { EASE_OUT, SPRING_LAYOUT } from '@sharpit/server/lib/ease';
+import { cn } from '@sharpit/server/lib/utils';
 import { ActivityRow } from './activity-row';
 import type { AgentActivityItem } from './types';
 

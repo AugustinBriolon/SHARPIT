@@ -1,19 +1,19 @@
 import { describe, expect, it, vi, beforeEach, beforeAll } from 'vitest';
-import { consumeCoachProgressStream } from '@/lib/coach/chat/transcript/coach-progress-stream';
+import { consumeCoachProgressStream } from '@sharpit/server/lib/coach/chat/transcript/coach-progress-stream';
 import type { PlanPayload } from './route';
-import { decisionState, physicalHealthData } from '@/lib/plan-gate/test-fixtures';
+import { decisionState, physicalHealthData } from '@sharpit/server/lib/plan-gate/test-fixtures';
 
-vi.mock('@/lib/ai', () => ({
+vi.mock('@sharpit/server/lib/ai', () => ({
   COACH_MODEL: 'mock-model',
   coachGatewayOptions: {},
   isCoachConfigured: () => true,
 }));
 
-vi.mock('@/lib/auth/current-athlete', () => ({
+vi.mock('@sharpit/server/lib/auth/current-athlete', () => ({
   getCurrentAthleteId: vi.fn().mockResolvedValue('default'),
 }));
 
-vi.mock('@/lib/rate-limit', () => ({
+vi.mock('@sharpit/server/lib/rate-limit', () => ({
   checkRateLimit: vi.fn().mockResolvedValue({ ok: true }),
   rateLimitJsonResponse: vi.fn((result) => ({
     body: { error: 'limited', retryAfterSeconds: result.retryAfterSeconds },
@@ -22,21 +22,21 @@ vi.mock('@/lib/rate-limit', () => ({
   rateLimiters: { coachPlan: {} },
 }));
 
-vi.mock('@/lib/coach/stream-structured-generation', () => ({
+vi.mock('@sharpit/server/lib/coach/stream-structured-generation', () => ({
   runStructuredCoachStream: vi.fn(),
 }));
 
-vi.mock('@/lib/coach/context/coach-context', () => ({
+vi.mock('@sharpit/server/lib/coach/context/coach-context', () => ({
   buildCoachContext: vi.fn().mockResolvedValue({}),
   formatCoachContext: () => 'mock coach context',
 }));
 
-vi.mock('@/lib/integrations/google/google-sync', () => ({
+vi.mock('@sharpit/server/lib/integrations/google/google-sync', () => ({
   getUpcomingBusy: vi.fn().mockResolvedValue([]),
   getGoogleAccount: vi.fn().mockResolvedValue(null),
 }));
 
-vi.mock('@/lib/queries', () => ({
+vi.mock('@sharpit/server/lib/queries', () => ({
   getGoalById: vi.fn().mockResolvedValue(null),
   getActivitiesList: vi.fn().mockResolvedValue([]),
   getPlannedSessions: vi.fn().mockResolvedValue([]),
@@ -44,23 +44,23 @@ vi.mock('@/lib/queries', () => ({
   getAthleteProfile: vi.fn().mockResolvedValue(null),
 }));
 
-vi.mock('@/lib/training/pmc/pmc-server', () => ({
+vi.mock('@sharpit/server/lib/training/pmc/pmc-server', () => ({
   loadAthletePmcAnchor: vi.fn().mockResolvedValue(null),
   loadDailyTrainingStressEntries: vi.fn().mockResolvedValue([]),
 }));
 
-vi.mock('@/lib/athlete-state/snapshot-service', () => ({
+vi.mock('@sharpit/server/lib/athlete-state/snapshot-service', () => ({
   getOrBuildAthleteSnapshot: vi.fn(),
 }));
 
-vi.mock('@/lib/decision-memory/repository', () => ({
+vi.mock('@sharpit/server/lib/decision-memory/repository', () => ({
   createCoachingDecision: vi.fn().mockResolvedValue({ id: 'mock-decision-id' }),
 }));
 
 // Mocked wholesale — ai-budget.ts imports @/lib/prisma, which must not run here.
 // withAiBudgetWarningHeader/aiBudgetResponseBody are trivial, so re-implementing
 // them stays truthful without importActual pulling prisma init back in.
-vi.mock('@/lib/access/ai-budget', () => ({
+vi.mock('@sharpit/server/lib/access/ai-budget', () => ({
   ensureFreeAiBudget: vi
     .fn()
     .mockResolvedValue({ allowed: true, isPro: false, warning: false, retryAfterSeconds: null }),
@@ -73,7 +73,7 @@ vi.mock('@/lib/access/ai-budget', () => ({
   RETRY_AFTER_HEADER: 'Retry-After',
 }));
 
-vi.mock('@/lib/privacy/consent-store', () => ({
+vi.mock('@sharpit/server/lib/privacy/consent-store', () => ({
   requireAiProcessingConsent: vi.fn().mockResolvedValue(null),
   athleteHasAiProcessingConsent: vi.fn().mockResolvedValue(true),
 }));
@@ -85,7 +85,8 @@ async function importRoute() {
 describe('POST /api/coach/plan', () => {
   beforeEach(async () => {
     vi.clearAllMocks();
-    const { requireAiProcessingConsent } = await import('@/lib/privacy/consent-store');
+    const { requireAiProcessingConsent } =
+      await import('@sharpit/server/lib/privacy/consent-store');
     vi.mocked(requireAiProcessingConsent).mockResolvedValue(null);
   });
 
@@ -94,8 +95,10 @@ describe('POST /api/coach/plan', () => {
   });
 
   it('includes a gate field reflecting a REJECTED verdict when the proposed session conflicts with DecisionState', async () => {
-    const { runStructuredCoachStream } = await import('@/lib/coach/stream-structured-generation');
-    const { getOrBuildAthleteSnapshot } = await import('@/lib/athlete-state/snapshot-service');
+    const { runStructuredCoachStream } =
+      await import('@sharpit/server/lib/coach/stream-structured-generation');
+    const { getOrBuildAthleteSnapshot } =
+      await import('@sharpit/server/lib/athlete-state/snapshot-service');
 
     vi.mocked(runStructuredCoachStream).mockResolvedValue({
       output: {
@@ -147,8 +150,10 @@ describe('POST /api/coach/plan', () => {
   });
 
   it('accepts a session when nothing in the context conflicts with it', async () => {
-    const { runStructuredCoachStream } = await import('@/lib/coach/stream-structured-generation');
-    const { getOrBuildAthleteSnapshot } = await import('@/lib/athlete-state/snapshot-service');
+    const { runStructuredCoachStream } =
+      await import('@sharpit/server/lib/coach/stream-structured-generation');
+    const { getOrBuildAthleteSnapshot } =
+      await import('@sharpit/server/lib/athlete-state/snapshot-service');
 
     vi.mocked(runStructuredCoachStream).mockResolvedValue({
       output: {
@@ -193,9 +198,11 @@ describe('POST /api/coach/plan', () => {
   });
 
   it('carries the near-limit warning header when the budget check flags one', async () => {
-    const { ensureFreeAiBudget } = await import('@/lib/access/ai-budget');
-    const { runStructuredCoachStream } = await import('@/lib/coach/stream-structured-generation');
-    const { getOrBuildAthleteSnapshot } = await import('@/lib/athlete-state/snapshot-service');
+    const { ensureFreeAiBudget } = await import('@sharpit/server/lib/access/ai-budget');
+    const { runStructuredCoachStream } =
+      await import('@sharpit/server/lib/coach/stream-structured-generation');
+    const { getOrBuildAthleteSnapshot } =
+      await import('@sharpit/server/lib/athlete-state/snapshot-service');
 
     vi.mocked(ensureFreeAiBudget).mockResolvedValueOnce({
       allowed: true,
@@ -228,7 +235,7 @@ describe('POST /api/coach/plan', () => {
   });
 
   it('answers 402 with a Retry-After header once the budget is exhausted', async () => {
-    const { ensureFreeAiBudget } = await import('@/lib/access/ai-budget');
+    const { ensureFreeAiBudget } = await import('@sharpit/server/lib/access/ai-budget');
 
     vi.mocked(ensureFreeAiBudget).mockResolvedValueOnce({
       allowed: false,
@@ -252,9 +259,12 @@ describe('POST /api/coach/plan', () => {
   });
 
   it('carries an authored endurance structure through to the proposal', async () => {
-    const { runStructuredCoachStream } = await import('@/lib/coach/stream-structured-generation');
-    const { getOrBuildAthleteSnapshot } = await import('@/lib/athlete-state/snapshot-service');
-    const { createCoachingDecision } = await import('@/lib/decision-memory/repository');
+    const { runStructuredCoachStream } =
+      await import('@sharpit/server/lib/coach/stream-structured-generation');
+    const { getOrBuildAthleteSnapshot } =
+      await import('@sharpit/server/lib/athlete-state/snapshot-service');
+    const { createCoachingDecision } =
+      await import('@sharpit/server/lib/decision-memory/repository');
 
     vi.mocked(runStructuredCoachStream).mockResolvedValue({
       output: {
@@ -314,9 +324,12 @@ describe('POST /api/coach/plan', () => {
   });
 
   it('persists a CoachingDecision with the exact proposal, gate result, and frozen snapshot context', async () => {
-    const { runStructuredCoachStream } = await import('@/lib/coach/stream-structured-generation');
-    const { getOrBuildAthleteSnapshot } = await import('@/lib/athlete-state/snapshot-service');
-    const { createCoachingDecision } = await import('@/lib/decision-memory/repository');
+    const { runStructuredCoachStream } =
+      await import('@sharpit/server/lib/coach/stream-structured-generation');
+    const { getOrBuildAthleteSnapshot } =
+      await import('@sharpit/server/lib/athlete-state/snapshot-service');
+    const { createCoachingDecision } =
+      await import('@sharpit/server/lib/decision-memory/repository');
 
     vi.mocked(runStructuredCoachStream).mockResolvedValue({
       output: {
@@ -369,9 +382,11 @@ describe('POST /api/coach/plan', () => {
   });
 
   it('generates against the loose schema and recovers invented strength enums', async () => {
-    const { runStructuredCoachStream } = await import('@/lib/coach/stream-structured-generation');
-    const { getOrBuildAthleteSnapshot } = await import('@/lib/athlete-state/snapshot-service');
-    const { coachPlanGenerationSchema } = await import('@/lib/validators/coach');
+    const { runStructuredCoachStream } =
+      await import('@sharpit/server/lib/coach/stream-structured-generation');
+    const { getOrBuildAthleteSnapshot } =
+      await import('@sharpit/server/lib/athlete-state/snapshot-service');
+    const { coachPlanGenerationSchema } = await import('@sharpit/server/lib/validators/coach');
 
     vi.mocked(runStructuredCoachStream).mockResolvedValue({
       output: {
@@ -432,7 +447,8 @@ describe('POST /api/coach/plan', () => {
   });
 
   it('streams a precise FR error when structured generation fails the schema', async () => {
-    const { runStructuredCoachStream } = await import('@/lib/coach/stream-structured-generation');
+    const { runStructuredCoachStream } =
+      await import('@sharpit/server/lib/coach/stream-structured-generation');
     vi.mocked(runStructuredCoachStream).mockRejectedValue(
       new Error('No object generated: response did not match schema.'),
     );

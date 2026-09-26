@@ -12,24 +12,27 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import type { PhysicalHealthConditionCard } from '@/presentation/physical-health-view-model';
-import { CORPS_TONE_TEXT, type CorpsTone } from '@/lib/ui/metric-tone';
-import { corpsToneFromPhysicalSeverity } from '@/lib/health/health-status';
+import type { PhysicalHealthConditionCard } from '@sharpit/server/presentation/physical-health-view-model';
+import { CORPS_TONE_TEXT, type CorpsTone } from '@sharpit/server/lib/ui/metric-tone';
+import { corpsToneFromPhysicalSeverity } from '@sharpit/server/lib/health/health-status';
 import { usePhysicalNotes } from '@/hooks/use-physical';
-import { reassessmentDue, type ReassessmentDue } from '@/lib/physical-health/reassessment-due';
+import {
+  reassessmentDue,
+  type ReassessmentDue,
+} from '@sharpit/server/lib/physical-health/reassessment-due';
 import { usePlannedSessions } from '@/hooks/use-planned-sessions';
 import {
   auditUpcomingSessions,
   countSessionsLoadingZone,
   zoneAuditLabel,
-} from '@/lib/physical-health/sensitive-zone-audit';
+} from '@sharpit/server/lib/physical-health/sensitive-zone-audit';
 import {
   sensitiveZonesFrom,
   unmappedSensitiveZones,
   type SensitiveZone,
-} from '@/lib/physical-health/sensitive-zones';
+} from '@sharpit/server/lib/physical-health/sensitive-zones';
 import { useClientNow } from '@/hooks/use-client-now';
-import { cn } from '@/lib/utils';
+import { cn } from '@sharpit/server/lib/utils';
 
 function TrendIcon({ trend }: { trend: string }) {
   if (trend === 'IMPROVING') {

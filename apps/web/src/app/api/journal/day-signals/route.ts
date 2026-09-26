@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { buildJournalDaySignals } from '@/lib/journal/journal-day-signals';
-import { awaitRequest } from '@/lib/next/await-request';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
+import { buildJournalDaySignals } from '@sharpit/server/lib/journal/journal-day-signals';
+import { awaitRequest } from '@sharpit/server/lib/next/await-request';
 import { prisma } from '@sharpit/db/client';
 
 export async function GET(request: NextRequest) {

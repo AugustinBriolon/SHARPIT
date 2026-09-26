@@ -10,8 +10,8 @@ import {
   type IntegrationsPayload,
 } from '@/components/settings/integrations/types';
 import { useHubSyncAll } from '@/components/settings/integrations/hub-hooks-parts';
-import type { IntegrationId } from '@/lib/integrations/shared/client-sync';
-import type { IntegrationSourcePrefs } from '@/lib/integrations/source-prefs';
+import type { IntegrationId } from '@sharpit/server/lib/integrations/shared/client-sync';
+import type { IntegrationSourcePrefs } from '@sharpit/server/lib/integrations/source-prefs';
 
 export function useIntegrationsHub(
   payload: IntegrationsPayload,

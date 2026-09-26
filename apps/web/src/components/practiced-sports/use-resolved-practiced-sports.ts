@@ -2,7 +2,10 @@
 
 import { useMemo } from 'react';
 import { useAthleteProfile } from '@/hooks/use-data';
-import { normalizeAthletePracticedSports, type PracticedSportId } from '@/lib/practiced-sports';
+import {
+  normalizeAthletePracticedSports,
+  type PracticedSportId,
+} from '@sharpit/server/lib/practiced-sports';
 
 /** Prefer explicit override (onboarding), else profile, else all-core default. */
 export function useResolvedPracticedSports(

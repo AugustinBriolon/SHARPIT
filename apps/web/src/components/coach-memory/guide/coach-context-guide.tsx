@@ -1,4 +1,4 @@
-import { COACH_CONTEXT_GUIDE_AXES } from '@/lib/coach-memory/guide/context-guide';
+import { COACH_CONTEXT_GUIDE_AXES } from '@sharpit/server/lib/coach-memory/guide/context-guide';
 
 /**
  * What belongs in the free-text context.

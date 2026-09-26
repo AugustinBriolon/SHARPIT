@@ -3,7 +3,7 @@
 import { Share, Smartphone, X } from 'lucide-react';
 import { useInstallPrompt } from '@/hooks/use-install-prompt';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
+import { cn } from '@sharpit/server/lib/utils';
 
 /**
  * Athlete-initiated install entry point — lives only in Settings, never as a

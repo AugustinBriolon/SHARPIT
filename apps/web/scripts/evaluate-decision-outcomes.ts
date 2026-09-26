@@ -11,8 +11,8 @@ import {
   expireDecision,
   findDecisionsPendingOutcomeEvaluation,
   findStalePresentedDecisions,
-} from '../src/lib/decision-memory/repository';
-import { evaluateAndSaveDecisionOutcome } from '../src/lib/decision-memory/evaluate-decision-outcome';
+} from '@sharpit/server/lib/decision-memory/repository';
+import { evaluateAndSaveDecisionOutcome } from '@sharpit/server/lib/decision-memory/evaluate-decision-outcome';
 
 const prisma = new PrismaClient();
 const dryRun = process.argv.includes('--dry-run');

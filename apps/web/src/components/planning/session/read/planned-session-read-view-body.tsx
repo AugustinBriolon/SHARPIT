@@ -1,7 +1,7 @@
 'use client';
 
-import type { ClientPlannedSession } from '@/lib/query/types';
-import type { MorningProposalCompareInput } from '@/lib/today/rich/morning-proposal-compare';
+import type { ClientPlannedSession } from '@sharpit/server/lib/query/types';
+import type { MorningProposalCompareInput } from '@sharpit/server/lib/today/rich/morning-proposal-compare';
 import {
   PlannedSessionRealizedView,
   PlannedSessionUpcomingView,

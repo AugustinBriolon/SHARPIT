@@ -1,8 +1,8 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { NextRequest } from 'next/server';
 
-vi.mock('@/lib/queries', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/lib/queries')>();
+vi.mock('@sharpit/server/lib/queries', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@sharpit/server/lib/queries')>();
   return {
     ...actual,
     getHikeTripById: vi.fn(),
@@ -11,7 +11,7 @@ vi.mock('@/lib/queries', async (importOriginal) => {
   };
 });
 
-vi.mock('@/lib/auth/current-athlete', () => ({
+vi.mock('@sharpit/server/lib/auth/current-athlete', () => ({
   getCurrentAthleteId: vi.fn().mockResolvedValue('default'),
 }));
 
@@ -35,7 +35,7 @@ describe('GET /api/hike-trips/[id]', () => {
   });
 
   it('returns 404 when the trip does not exist', async () => {
-    const { getHikeTripById } = await import('@/lib/queries');
+    const { getHikeTripById } = await import('@sharpit/server/lib/queries');
     vi.mocked(getHikeTripById).mockResolvedValue(null);
 
     const { GET } = await importRoute();
@@ -49,7 +49,7 @@ describe('GET /api/hike-trips/[id]', () => {
   });
 
   it('returns the trip when it exists', async () => {
-    const { getHikeTripById } = await import('@/lib/queries');
+    const { getHikeTripById } = await import('@sharpit/server/lib/queries');
     vi.mocked(getHikeTripById).mockResolvedValue(TRIP);
 
     const { GET } = await importRoute();
@@ -73,7 +73,7 @@ describe('PATCH /api/hike-trips/[id]', () => {
   });
 
   it('updates the trip and returns 200', async () => {
-    const { updateHikeTrip } = await import('@/lib/queries');
+    const { updateHikeTrip } = await import('@sharpit/server/lib/queries');
     vi.mocked(updateHikeTrip).mockResolvedValue({ ...TRIP, name: 'Renommé' });
 
     const { PATCH } = await importRoute();
@@ -90,7 +90,7 @@ describe('PATCH /api/hike-trips/[id]', () => {
   });
 
   it('returns 400 for an empty patch', async () => {
-    const { updateHikeTrip } = await import('@/lib/queries');
+    const { updateHikeTrip } = await import('@sharpit/server/lib/queries');
 
     const { PATCH } = await importRoute();
     const response = await PATCH(
@@ -106,7 +106,7 @@ describe('PATCH /api/hike-trips/[id]', () => {
   });
 
   it('returns 404 when the trip does not exist', async () => {
-    const { updateHikeTrip, HikeTripValidationError } = await import('@/lib/queries');
+    const { updateHikeTrip, HikeTripValidationError } = await import('@sharpit/server/lib/queries');
     vi.mocked(updateHikeTrip).mockRejectedValue(new HikeTripValidationError('Dossier introuvable'));
 
     const { PATCH } = await importRoute();
@@ -122,7 +122,7 @@ describe('PATCH /api/hike-trips/[id]', () => {
   });
 
   it('returns 409 on membership conflict', async () => {
-    const { updateHikeTrip, HikeTripConflictError } = await import('@/lib/queries');
+    const { updateHikeTrip, HikeTripConflictError } = await import('@sharpit/server/lib/queries');
     vi.mocked(updateHikeTrip).mockRejectedValue(
       new HikeTripConflictError(
         'Une activité appartient déjà à un autre séjour',
@@ -155,7 +155,7 @@ describe('DELETE /api/hike-trips/[id]', () => {
   });
 
   it('deletes the trip and returns 204', async () => {
-    const { deleteHikeTrip } = await import('@/lib/queries');
+    const { deleteHikeTrip } = await import('@sharpit/server/lib/queries');
     vi.mocked(deleteHikeTrip).mockResolvedValue(undefined);
 
     const { DELETE } = await importRoute();
@@ -169,7 +169,7 @@ describe('DELETE /api/hike-trips/[id]', () => {
   });
 
   it('returns 404 when the trip does not exist', async () => {
-    const { deleteHikeTrip, HikeTripValidationError } = await import('@/lib/queries');
+    const { deleteHikeTrip, HikeTripValidationError } = await import('@sharpit/server/lib/queries');
     vi.mocked(deleteHikeTrip).mockRejectedValue(new HikeTripValidationError('Dossier introuvable'));
 
     const { DELETE } = await importRoute();

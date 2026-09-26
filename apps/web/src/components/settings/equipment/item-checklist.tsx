@@ -1,6 +1,6 @@
 import { Checkbox } from '@/components/ui/checkbox';
-import type { EquipmentCatalogItem, EquipmentItemId } from '@/lib/equipment/catalog';
-import { cn } from '@/lib/utils';
+import type { EquipmentCatalogItem, EquipmentItemId } from '@sharpit/server/lib/equipment/catalog';
+import { cn } from '@sharpit/server/lib/utils';
 
 export function EquipmentItemChecklist({
   items,

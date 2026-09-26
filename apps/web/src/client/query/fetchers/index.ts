@@ -1,4 +1,4 @@
-/** Client TanStack fetchers — nest by resource; import from `@/lib/query/fetchers`. */
+/** Client TanStack fetchers — nest by resource; import from `@/client/query/fetchers`. */
 export * from './planned-sessions';
 export * from './activities';
 export * from './health';

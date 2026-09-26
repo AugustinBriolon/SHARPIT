@@ -1,5 +1,5 @@
-import { formatPlannedDuration } from '@/lib/planned-session/sessions';
-import { formatTrainingLoad, type DisplayMode } from '@/lib/preferences/display-mode';
+import { formatPlannedDuration } from '@sharpit/server/lib/planned-session/sessions';
+import { formatTrainingLoad, type DisplayMode } from '@sharpit/server/lib/preferences/display-mode';
 
 type SessionSide = {
   durationMin: number | null;

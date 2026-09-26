@@ -19,7 +19,7 @@ import {
   syncThemeCookie,
   type ResolvedTheme,
   type ThemePreference,
-} from '@/lib/theme/theme';
+} from '@sharpit/server/lib/theme/theme';
 
 type ThemeContextValue = {
   preference: ThemePreference;

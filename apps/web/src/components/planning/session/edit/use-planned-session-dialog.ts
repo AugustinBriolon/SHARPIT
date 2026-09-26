@@ -10,8 +10,8 @@ import {
   useSessionRationalePresentation,
   useTrainingPlan,
 } from '@/hooks/use-data';
-import type { ClientGoal, ClientPlannedSession } from '@/lib/query/types';
-import type { MorningProposalCompareInput } from '@/lib/today/rich/morning-proposal-compare';
+import type { ClientGoal, ClientPlannedSession } from '@sharpit/server/lib/query/types';
+import type { MorningProposalCompareInput } from '@sharpit/server/lib/today/rich/morning-proposal-compare';
 import { useQueryClient } from '@tanstack/react-query';
 import { usePlannedSessionLinkableGoals } from '@/components/planning/session/edit/use-planned-session-dialog-effects';
 import { useConfirmDialog } from '@/components/ui/confirm-dialog';

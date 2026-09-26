@@ -5,8 +5,8 @@ import {
   DiscussWithCoachButton,
 } from '@/components/coach/discuss/discuss-with-coach-button';
 import { LinkButton } from '@/components/ui/link-button';
-import { coachDiscussHref } from '@/lib/coach/chat/discuss/coach-discuss-href';
-import { cn } from '@/lib/utils';
+import { coachDiscussHref } from '@sharpit/server/lib/coach/chat/discuss/coach-discuss-href';
+import { cn } from '@sharpit/server/lib/utils';
 
 /**
  * Activity / planning toolbar entry that resolves a discuss target, then uses

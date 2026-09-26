@@ -1,15 +1,15 @@
 import { describe, expect, it, vi, beforeEach, beforeAll } from 'vitest';
-import { baseProposal } from '@/lib/plan-gate/test-fixtures';
+import { baseProposal } from '@sharpit/server/lib/plan-gate/test-fixtures';
 
-vi.mock('@/lib/queries', () => ({
+vi.mock('@sharpit/server/lib/queries', () => ({
   getPlannedSessionById: vi.fn(),
 }));
 
-vi.mock('@/lib/auth/current-athlete', () => ({
+vi.mock('@sharpit/server/lib/auth/current-athlete', () => ({
   getCurrentAthleteId: vi.fn().mockResolvedValue('default'),
 }));
 
-vi.mock('@/lib/decision-memory/repository', () => ({
+vi.mock('@sharpit/server/lib/decision-memory/repository', () => ({
   findDecisionForPlannedSession: vi.fn(),
   findDecisionWithHistory: vi.fn(),
 }));
@@ -80,7 +80,7 @@ describe('GET /api/presentation/session-rationale/[plannedSessionId]', () => {
   });
 
   it('returns 404 when the planned session does not exist', async () => {
-    const { getPlannedSessionById } = await import('@/lib/queries');
+    const { getPlannedSessionById } = await import('@sharpit/server/lib/queries');
     vi.mocked(getPlannedSessionById).mockResolvedValue(null as never);
 
     const { GET } = await importRoute();
@@ -92,9 +92,9 @@ describe('GET /api/presentation/session-rationale/[plannedSessionId]', () => {
   });
 
   it('full happy path: generated plan -> accepted session -> completed activity -> EVALUATED outcome', async () => {
-    const { getPlannedSessionById } = await import('@/lib/queries');
+    const { getPlannedSessionById } = await import('@sharpit/server/lib/queries');
     const { findDecisionForPlannedSession, findDecisionWithHistory } =
-      await import('@/lib/decision-memory/repository');
+      await import('@sharpit/server/lib/decision-memory/repository');
     vi.mocked(getPlannedSessionById).mockResolvedValue(SESSION as never);
     vi.mocked(findDecisionForPlannedSession).mockResolvedValue({ id: 'decision-1' } as never);
     vi.mocked(findDecisionWithHistory).mockResolvedValue(
@@ -132,9 +132,9 @@ describe('GET /api/presentation/session-rationale/[plannedSessionId]', () => {
   });
 
   it('modified/overridden session shows the right action-history entry', async () => {
-    const { getPlannedSessionById } = await import('@/lib/queries');
+    const { getPlannedSessionById } = await import('@sharpit/server/lib/queries');
     const { findDecisionForPlannedSession, findDecisionWithHistory } =
-      await import('@/lib/decision-memory/repository');
+      await import('@sharpit/server/lib/decision-memory/repository');
     vi.mocked(getPlannedSessionById).mockResolvedValue(SESSION as never);
     vi.mocked(findDecisionForPlannedSession).mockResolvedValue({ id: 'decision-1' } as never);
     vi.mocked(findDecisionWithHistory).mockResolvedValue(
@@ -173,9 +173,9 @@ describe('GET /api/presentation/session-rationale/[plannedSessionId]', () => {
   });
 
   it('insufficient-data outcome renders INCONCLUSIVE wording', async () => {
-    const { getPlannedSessionById } = await import('@/lib/queries');
+    const { getPlannedSessionById } = await import('@sharpit/server/lib/queries');
     const { findDecisionForPlannedSession, findDecisionWithHistory } =
-      await import('@/lib/decision-memory/repository');
+      await import('@sharpit/server/lib/decision-memory/repository');
     vi.mocked(getPlannedSessionById).mockResolvedValue(SESSION as never);
     vi.mocked(findDecisionForPlannedSession).mockResolvedValue({ id: 'decision-1' } as never);
     vi.mocked(findDecisionWithHistory).mockResolvedValue(
@@ -203,9 +203,9 @@ describe('GET /api/presentation/session-rationale/[plannedSessionId]', () => {
   });
 
   it('renders the manual degraded state when the session has no origin decision', async () => {
-    const { getPlannedSessionById } = await import('@/lib/queries');
+    const { getPlannedSessionById } = await import('@sharpit/server/lib/queries');
     const { findDecisionForPlannedSession, findDecisionWithHistory } =
-      await import('@/lib/decision-memory/repository');
+      await import('@sharpit/server/lib/decision-memory/repository');
     vi.mocked(getPlannedSessionById).mockResolvedValue(SESSION as never);
     vi.mocked(findDecisionForPlannedSession).mockResolvedValue(null);
 

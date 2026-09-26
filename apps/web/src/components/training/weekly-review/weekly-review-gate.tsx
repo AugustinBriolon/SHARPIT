@@ -1,6 +1,6 @@
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { getAthleteProfile } from '@/lib/queries';
-import { hasProAccess } from '@/lib/access/tier';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
+import { getAthleteProfile } from '@sharpit/server/lib/queries';
+import { hasProAccess } from '@sharpit/server/lib/access/tier';
 import { WeeklyReviewClient } from '@/components/training/weekly-review/weekly-review-client';
 import { WeeklyReviewLocked } from '@/components/training/weekly-review/weekly-review-locked';
 

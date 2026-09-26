@@ -1,7 +1,7 @@
 'use client';
 
 import { useQueryClient, type QueryClient } from '@tanstack/react-query';
-import type { ClientPlannedSession } from '@/lib/query/types';
+import type { ClientPlannedSession } from '@sharpit/server/lib/query/types';
 import type { usePlannedSessionFormState } from '@/components/planning/session/edit/use-planned-session-form-state';
 import type { usePlannedSessionLocationQueries } from '@/components/planning/session/edit/use-planned-session-dialog-effects';
 import type { usePlannedSessionMutations } from '@/hooks/use-data';
@@ -19,8 +19,8 @@ import type {
   BrickLegForm,
 } from '@/components/planning/session/edit/planned-session-dialog-helpers';
 import type { StrengthPrescriptionDraftRow } from '@/components/planning/session/edit/strength-prescription-editor';
-import type { EnduranceDraftBlock } from '@/lib/planned-session/endurance/endurance-draft';
-import type { EquipmentItemId } from '@/lib/equipment/catalog';
+import type { EnduranceDraftBlock } from '@sharpit/server/lib/planned-session/endurance/endurance-draft';
+import type { EquipmentItemId } from '@sharpit/server/lib/equipment/catalog';
 import { ActivityType, SessionIntensity } from '@prisma/client';
 
 type FormState = ReturnType<typeof usePlannedSessionFormState>;

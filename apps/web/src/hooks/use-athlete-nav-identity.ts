@@ -1,7 +1,11 @@
 'use client';
 
 import { useUser } from '@clerk/nextjs';
-import { DEMO_IDENTITY, initialsFromName, shortLabelFromName } from '@/lib/auth/athlete-identity';
+import {
+  DEMO_IDENTITY,
+  initialsFromName,
+  shortLabelFromName,
+} from '@sharpit/server/lib/auth/athlete-identity';
 import { useIsDemoMode } from '@/hooks/use-is-demo-mode';
 
 export type AthleteNavIdentity = {

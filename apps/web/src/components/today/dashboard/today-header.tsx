@@ -1,6 +1,6 @@
 'use client';
 
-import { toLocalCalendarDate } from '@/lib/date/day-key';
+import { toLocalCalendarDate } from '@sharpit/server/lib/date/day-key';
 import { TodayHeaderWeatherLine } from '@/components/today/dashboard/today-header-weather';
 
 type TodayHeaderWeather = {

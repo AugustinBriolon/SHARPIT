@@ -1,17 +1,17 @@
 import { startOfDay } from 'date-fns';
 import { NextResponse } from 'next/server';
-import { loadAthletePmcAnchor } from '@/lib/training/pmc/pmc-server';
-import { generateMacroPlan } from '@/lib/training/periodization';
+import { loadAthletePmcAnchor } from '@sharpit/server/lib/training/pmc/pmc-server';
+import { generateMacroPlan } from '@sharpit/server/lib/training/periodization';
 import { prisma } from '@sharpit/db/client';
-import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
 import {
   archiveActiveTrainingPlans,
   createTrainingPlan,
   getActiveTrainingPlan,
   getGoalById,
-} from '@/lib/queries';
-import { listTravelContexts } from '@/lib/travel-context/service';
-import { applyTravelConstraintsToMacroWeeks } from '@/lib/travel-context/training-constraint';
+} from '@sharpit/server/lib/queries';
+import { listTravelContexts } from '@sharpit/server/lib/travel-context/service';
+import { applyTravelConstraintsToMacroWeeks } from '@sharpit/server/lib/travel-context/training-constraint';
 import { z } from 'zod';
 
 const createPlanSchema = z.object({
