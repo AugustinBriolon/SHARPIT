@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { guardedActionLabel, useOfflineGuard } from '@/hooks/use-offline-guard';
 import { useIsDemoMode } from '@/hooks/use-is-demo-mode';
-import { motionTokens } from '@/lib/motion/tokens';
+import { motionTokens } from '@/client/motion/tokens';
 import { cn } from '@/lib/utils';
 import {
   integrationConnectBody,

@@ -32,8 +32,8 @@ import {
   subscribeActivityStatus,
   todayIsoDate,
 } from '@/lib/health/activity-status';
-import { queryKeys } from '@/lib/query/keys';
-import { fetchTravelContext } from '@/lib/query/fetchers';
+import { queryKeys } from '@/client/query/keys';
+import { fetchTravelContext } from '@/client/query/fetchers';
 import { cn } from '@/lib/utils';
 
 export const STATUS_ICON = {

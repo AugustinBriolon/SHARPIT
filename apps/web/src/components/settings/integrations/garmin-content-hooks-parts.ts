@@ -6,8 +6,8 @@ import { useState } from 'react';
 import { notifyIntegrationSyncStarted } from '@/components/settings/integrations/modal-sync-start';
 import { toast } from '@/components/ui/toast';
 import { runGarminSync } from '@/lib/integrations/shared/client-sync';
-import { disconnectGarmin, importGarminTokens } from '@/lib/query/fetchers';
-import { invalidateAfterProviderSync } from '@/lib/query/invalidate-after-provider-sync';
+import { disconnectGarmin, importGarminTokens } from '@/client/query/fetchers';
+import { invalidateAfterProviderSync } from '@/client/query/invalidate-after-provider-sync';
 import type { RecordChange } from '@/lib/training/records/records';
 
 export function useGarminImportTokens(onUpdated?: () => void) {

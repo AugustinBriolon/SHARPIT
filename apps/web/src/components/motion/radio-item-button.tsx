@@ -2,7 +2,7 @@
 
 import { motion, useReducedMotion } from 'motion/react';
 import { SPRING_PRESS } from '@/lib/ease';
-import { motionTokens } from '@/lib/motion/tokens';
+import { motionTokens } from '@/client/motion/tokens';
 import { cn } from '@/lib/utils';
 import { RadioDot } from '@/components/motion/radio-dot';
 

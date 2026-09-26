@@ -9,9 +9,9 @@ import {
   type AthletePracticedSports,
   type PracticedSportId,
 } from '@/lib/practiced-sports';
-import { invalidateAfterAthleteProfileSave } from '@/lib/query/invalidate-after-athlete-profile-save';
-import { patchAthleteProfile } from '@/lib/query/fetchers';
-import { queryKeys } from '@/lib/query/keys';
+import { invalidateAfterAthleteProfileSave } from '@/client/query/invalidate-after-athlete-profile-save';
+import { patchAthleteProfile } from '@/client/query/fetchers';
+import { queryKeys } from '@/client/query/keys';
 
 const SAVE_DEBOUNCE_MS = 450;
 

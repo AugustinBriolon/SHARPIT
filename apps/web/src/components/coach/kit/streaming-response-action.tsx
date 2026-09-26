@@ -3,7 +3,7 @@
 import { motion, useReducedMotion } from 'motion/react';
 import type { ReactNode } from 'react';
 import { SPRING_PRESS } from '@/lib/ease';
-import { motionTokens } from '@/lib/motion/tokens';
+import { motionTokens } from '@/client/motion/tokens';
 import { cn } from '@/lib/utils';
 
 export function ResponseAction({

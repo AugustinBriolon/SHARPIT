@@ -6,9 +6,9 @@ import { useState } from 'react';
 import { notifyIntegrationSyncStarted } from '@/components/settings/integrations/modal-sync-start';
 import { toast } from '@/components/ui/toast';
 import { runRenphoSync } from '@/lib/integrations/shared/client-sync';
-import { connectRenpho, disconnectRenpho } from '@/lib/query/fetchers';
-import { invalidateAfterProviderSync } from '@/lib/query/invalidate-after-provider-sync';
-import { queryKeys } from '@/lib/query/keys';
+import { connectRenpho, disconnectRenpho } from '@/client/query/fetchers';
+import { invalidateAfterProviderSync } from '@/client/query/invalidate-after-provider-sync';
+import { queryKeys } from '@/client/query/keys';
 
 export function useRenphoConnect(onUpdated?: () => void) {
   const router = useRouter();

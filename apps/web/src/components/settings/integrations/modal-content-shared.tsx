@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { IntegrationLogo } from '@/components/settings/integrations/logos';
 import type { IntegrationDefinition } from '@/components/settings/integrations/types';
-import type { GoogleCalendarInfo } from '@/lib/query/fetchers';
+import type { GoogleCalendarInfo } from '@/client/query/fetchers';
 import type { RecordChange } from '@/lib/training/records/records';
 
 export type IntegrationContentProps = {

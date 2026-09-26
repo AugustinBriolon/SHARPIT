@@ -1,7 +1,7 @@
 import { WITHINGS_MEASURE } from '@/lib/integrations/withings/withings-measures';
 import { isSet } from '@sharpit/shared/value';
 import type { CompositionMetricId } from '@/lib/health/composition-metric-guides';
-import type { CorpsTone } from '@/components/corps/corps-ui';
+import type { CorpsTone } from '@/lib/ui/metric-tone';
 
 /** Détail d'une classification ECG Withings (Body Scan / Scan Monitor). */
 export interface WithingsEcgClassification {

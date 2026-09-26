@@ -6,7 +6,7 @@ import { useLayoutEffect } from 'react';
 import {
   ensureShellAthleteRefresh,
   SHELL_REFRESH_MIN_INTERVAL_MS,
-} from '@/lib/athlete-state/shell-refresh-seed';
+} from '@/client/athlete-state/shell-refresh-seed';
 
 /**
  * Silent athlete-state refresh on app open + return to foreground.

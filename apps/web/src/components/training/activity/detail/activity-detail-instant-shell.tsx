@@ -11,15 +11,15 @@ import { ActivityDetailInsights } from '@/components/training/activity/insights/
 import { buildStrengthStats } from '@/components/training/activity/detail/activity-detail-helpers';
 import { useActivities } from '@/hooks/use-data';
 import { useActivityDetail } from '@/hooks/use-activity-detail';
-import { fetchActivityStream } from '@/lib/query/fetchers';
-import { queryKeys } from '@/lib/query/keys';
+import { fetchActivityStream } from '@/client/query/fetchers';
+import { queryKeys } from '@/client/query/keys';
 import {
   activityDetailToDetailShell,
   activityDetailToHeaderActivity,
   clientActivityToDetailShell,
 } from '@/lib/activity/detail/activity-detail-cache';
 import { activityDetailExpectsMap } from '@/lib/activity/detail/activity-detail-skeleton-layout';
-import type { ActivityDetail } from '@/components/training/activity/detail/types';
+import type { ActivityDetail } from '@/lib/activity/detail/types';
 import type { ClientActivity } from '@/lib/query/types';
 
 function InstantShellFrame({ children }: { children: React.ReactNode }) {

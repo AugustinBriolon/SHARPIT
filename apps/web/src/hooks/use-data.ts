@@ -10,10 +10,10 @@ import {
   fetchThresholdHistory,
   fetchThresholdPreview,
   fetchTrainingPlan,
-} from '@/lib/query/fetchers';
-import { queryKeys } from '@/lib/query/keys';
+} from '@/client/query/fetchers';
+import { queryKeys } from '@/client/query/keys';
 import type { ThresholdField } from '@/lib/threshold/threshold-estimates';
-import { sendJson } from '@/lib/query/send-json';
+import { sendJson } from '@/client/query/send-json';
 
 export {
   useAnalyzeBrick,

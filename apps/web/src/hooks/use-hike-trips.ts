@@ -4,10 +4,10 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { isSet } from '@sharpit/shared/value';
 import { toast } from '@/components/ui/toast';
 import { buildHikeTripSummary } from '@/lib/activity/hike/hike-trip-summary';
-import { fetchHikeTrip, fetchHikeTrips, hydrateHikeTrip } from '@/lib/query/fetchers';
-import { queryKeys } from '@/lib/query/keys';
-import { formatApiErrorMessage, parseApiErrorBody } from '@/lib/query/api-error';
-import { sendJson } from '@/lib/query/send-json';
+import { fetchHikeTrip, fetchHikeTrips, hydrateHikeTrip } from '@/client/query/fetchers';
+import { queryKeys } from '@/client/query/keys';
+import { formatApiErrorMessage, parseApiErrorBody } from '@/client/query/api-error';
+import { sendJson } from '@/client/query/send-json';
 import type { ClientActivity, ClientHikeTrip, ClientHikeTripListItem } from '@/lib/query/types';
 import type { CreateHikeTripInput, PatchHikeTripInput } from '@/lib/validators/hike-trip';
 

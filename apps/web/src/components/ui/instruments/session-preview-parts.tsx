@@ -6,12 +6,8 @@ import type { ActivityType } from '@prisma/client';
 import { ActivityTypeIndicator } from '@/components/ui/instruments/activity-type-indicator';
 import { SPORT_IDENTITY_PANEL } from '@/lib/activity/sport-identity';
 import { cn } from '@/lib/utils';
-
-export type SessionPreviewMetric = {
-  label: string;
-  value: string;
-  unit: string;
-};
+import type { SessionPreviewMetric } from '@/lib/today/rich/planned-session-metrics';
+export type { SessionPreviewMetric };
 
 function metricValueClass(compact: boolean): string {
   return compact

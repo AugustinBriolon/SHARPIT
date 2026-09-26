@@ -21,7 +21,7 @@ vi.mock('@/components/planning/session/edit/planned-session-dialog', () => ({
     }),
 }));
 
-vi.mock('@/lib/query/prefetch-planned-session-detail', () => ({
+vi.mock('@/client/query/prefetch-planned-session-detail', () => ({
   prefetchPlannedSessionDetail: vi.fn(),
 }));
 

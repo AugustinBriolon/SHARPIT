@@ -1,6 +1,6 @@
 import type { ClientActivity } from '@/lib/query/types';
-import type { ActivityDetailHeaderActivity } from '@/components/training/activity/detail/activity-detail-header-content';
-import type { ActivityDetail } from '@/components/training/activity/detail/types';
+import type { ActivityDetailHeaderActivity } from '@/lib/activity/detail/types';
+import type { ActivityDetail } from '@/lib/activity/detail/types';
 
 /** Map list-cache row → header props (hikeTrip relation absent in list select). */
 export function clientActivityToHeaderActivity(

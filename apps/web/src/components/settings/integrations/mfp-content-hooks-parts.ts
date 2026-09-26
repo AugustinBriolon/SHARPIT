@@ -6,8 +6,8 @@ import { useState } from 'react';
 import { notifyIntegrationSyncStarted } from '@/components/settings/integrations/modal-sync-start';
 import { toast } from '@/components/ui/toast';
 import { runMfpSync } from '@/lib/integrations/shared/client-sync';
-import { connectMyFitnessPal, disconnectMyFitnessPal } from '@/lib/query/fetchers';
-import { queryKeys } from '@/lib/query/keys';
+import { connectMyFitnessPal, disconnectMyFitnessPal } from '@/client/query/fetchers';
+import { queryKeys } from '@/client/query/keys';
 
 export function useMfpSync(onUpdated?: () => void, onSyncStart?: () => void) {
   const router = useRouter();

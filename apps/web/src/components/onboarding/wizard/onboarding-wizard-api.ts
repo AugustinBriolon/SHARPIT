@@ -12,7 +12,7 @@ import {
   completeOnboarding as completeOnboardingFetcher,
   patchAthleteProfile,
   patchIntegrationSourcePrefs,
-} from '@/lib/query/fetchers';
+} from '@/client/query/fetchers';
 
 const OAUTH_STATUS_LABELS: Record<string, string> = {
   connected: 'connecté',

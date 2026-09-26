@@ -2,8 +2,8 @@
 
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
-import { fetchBodyCompositionEntries, fetchHealthEntries } from '@/lib/query/fetchers';
-import { queryKeys } from '@/lib/query/keys';
+import { fetchBodyCompositionEntries, fetchHealthEntries } from '@/client/query/fetchers';
+import { queryKeys } from '@/client/query/keys';
 
 // 90 days cover dashboard trends (7–30d) and Recovery curves (60d).
 // Fetching 365d was oversized (network + parsing).

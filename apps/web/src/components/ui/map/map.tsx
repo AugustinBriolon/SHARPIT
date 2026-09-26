@@ -20,12 +20,12 @@ import {
 import { createPortal } from 'react-dom';
 import { X, Minus, Plus, Locate, Maximize, Loader2 } from 'lucide-react';
 
-import { motionConfig, revealDurationMs } from '@/lib/motion/config';
-import { isRevealComplete, revealedPointCount } from '@/lib/motion/route-reveal';
+import { motionConfig, revealDurationMs } from '@/client/motion/config';
+import { isRevealComplete, revealedPointCount } from '@/client/motion/route-reveal';
 import {
   ROUTE_REVEAL_VISIBILITY_RATIO,
   shouldStartRouteReveal,
-} from '@/lib/motion/route-reveal-visibility';
+} from '@/client/motion/route-reveal-visibility';
 import { cn } from '@/lib/utils';
 import {
   requestMapLocation,

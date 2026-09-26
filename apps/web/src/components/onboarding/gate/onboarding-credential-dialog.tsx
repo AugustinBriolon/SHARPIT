@@ -23,7 +23,7 @@ import {
   connectRenpho,
   fetchIntegrationSourcePrefs,
   postPrivacyConsent,
-} from '@/lib/query/fetchers';
+} from '@/client/query/fetchers';
 
 type CredentialProvider = Extract<IntegrationId, 'garmin' | 'renpho' | 'myfitnesspal'>;
 

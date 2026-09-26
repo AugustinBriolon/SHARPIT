@@ -1,5 +1,5 @@
 import type { UseQueryResult } from '@tanstack/react-query';
-import { fetchNutritionPresentation } from '@/lib/query/presentation-fetchers';
+import { fetchNutritionPresentation } from '@/client/query/presentation-fetchers';
 
 const ZERO_DAY = {
   calories: 0,

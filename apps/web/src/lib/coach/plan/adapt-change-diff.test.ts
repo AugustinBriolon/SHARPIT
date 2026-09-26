@@ -1,7 +1,7 @@
 import { ActivityType, SessionIntensity } from '@prisma/client';
 import { describe, expect, it } from 'vitest';
 import { buildAdaptChangeDiff } from '@/lib/coach/plan/adapt-change-diff';
-import type { AdaptChange } from '@/hooks/use-coach';
+import type { AdaptChange } from '@/lib/coach/plan/adapt-types';
 import type { ClientPlannedSession } from '@/lib/query/types';
 
 function session(overrides: Partial<ClientPlannedSession> = {}): ClientPlannedSession {

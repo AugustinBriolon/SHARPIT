@@ -1,6 +1,5 @@
 import type { UIMessage } from 'ai';
 import { format } from 'date-fns';
-import type { KnownSession } from '@/components/coach/chat/tools/tool-activity';
 import type { ToolPartLite } from '@/lib/coach/chat/tools/coach-tool-parts';
 import type { ActivityType } from '@prisma/client';
 
@@ -62,3 +61,10 @@ export function buildKnownSessions(
 
   return known;
 }
+
+export type KnownSession = {
+  id: string;
+  title?: string | null;
+  date?: string | null;
+  type?: ActivityType | null;
+};

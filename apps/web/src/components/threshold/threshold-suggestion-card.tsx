@@ -6,8 +6,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { StaggerList } from '@/components/motion/stagger-list';
 import { ThresholdChangeRow } from '@/components/threshold/threshold-change-row';
-import { useSafeMotion, useShouldAnimate } from '@/lib/motion/hooks';
-import { motionTokens, springs } from '@/lib/motion/tokens';
+import { useSafeMotion, useShouldAnimate } from '@/client/motion/hooks';
+import { motionTokens, springs } from '@/client/motion/tokens';
 import type { ThresholdApplyPreview, ThresholdField } from '@/lib/threshold/threshold-estimates';
 import { cn } from '@/lib/utils';
 

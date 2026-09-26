@@ -13,8 +13,8 @@ import {
   useState,
 } from 'react';
 import { EASE_OUT, SPRING_PRESS } from '@/lib/ease';
-import { useHoverCapable } from '@/lib/hooks/use-hover-capable';
-import { motionTokens } from '@/lib/motion/tokens';
+import { useHoverCapable } from '@/client/hooks/use-hover-capable';
+import { motionTokens } from '@/client/motion/tokens';
 import { cn } from '@/lib/utils';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'outline';

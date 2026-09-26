@@ -12,7 +12,7 @@ import {
   fetchPhysicalNotes,
   fetchPlannedSessions,
   fetchTrainingPlan,
-} from '@/lib/query/fetchers';
+} from '@/client/query/fetchers';
 import { selectPlanHubStreamPrefetchIds } from '@/lib/plan/week/plan-week-previews';
 import type { ClientActivity } from '@/lib/query/types';
 import {
@@ -23,8 +23,8 @@ import {
   fetchRecoveryPresentation,
   fetchSleepPresentation,
   fetchTodayPresentation,
-} from '@/lib/query/presentation-fetchers';
-import { queryKeys } from '@/lib/query/keys';
+} from '@/client/query/presentation-fetchers';
+import { queryKeys } from '@/client/query/keys';
 
 const PREFETCH_STALE = 5 * 60_000;
 

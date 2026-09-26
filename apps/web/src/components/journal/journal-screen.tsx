@@ -60,8 +60,8 @@ import {
   type JournalPrefs,
 } from '@/lib/journal/journal-prefs';
 import { journalTrackableById } from '@/lib/journal/journal-trackables';
-import { fetchJournalDaySignals } from '@/lib/query/fetchers';
-import { queryKeys } from '@/lib/query/keys';
+import { fetchJournalDaySignals } from '@/client/query/fetchers';
+import { queryKeys } from '@/client/query/keys';
 import { trainingDayIdForNow } from '@sharpit/core/training/training-day';
 import {
   JOURNAL_RECOVERY_CALLOUT,

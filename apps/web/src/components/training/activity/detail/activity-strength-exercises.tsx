@@ -11,7 +11,7 @@ import {
 } from '@/components/planning/session/exercise-visual';
 import { toast } from '@/components/ui/toast';
 import { resolveStrengthSetMedia } from '@/lib/exercises';
-import type { ActivityDetail } from '@/components/training/activity/detail/types';
+import type { ActivityDetail } from '@/lib/activity/detail/types';
 import {
   formatStrengthSetDetail,
   sendActivityStrengthToGarmin,

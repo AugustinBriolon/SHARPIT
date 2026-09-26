@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { DailyStrainData } from '@/hooks/use-today';
+import type { DailyStrainData } from '@/athlete-state/today-state';
 import { buildEffortStrainComposition } from './effort-strain-composition';
 
 function makeStrain(overrides: Partial<DailyStrainData> = {}): DailyStrainData {

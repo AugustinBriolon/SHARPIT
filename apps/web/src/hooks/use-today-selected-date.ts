@@ -16,7 +16,7 @@ import { useIsDemoMode } from '@/hooks/use-is-demo-mode';
 import {
   getClientTrainingDayIdSnapshot,
   subscribeTrainingDayChange,
-} from '@/lib/date/subscribe-training-day';
+} from '@/client/date/subscribe-training-day';
 import { trainingDayIdToDate } from '@sharpit/core/training/training-day';
 
 /** How far back a demo visitor can navigate — keeps them inside the window

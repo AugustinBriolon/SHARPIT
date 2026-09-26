@@ -12,13 +12,13 @@ import {
 import dynamic from 'next/dynamic';
 import { useQueryClient } from '@tanstack/react-query';
 import { useGoals, usePlannedSessions } from '@/hooks/use-data';
-import { fetchPlannedSessionById } from '@/lib/query/fetchers';
-import { prefetchPlannedSessionDetail } from '@/lib/query/prefetch-planned-session-detail';
-import { queryKeys } from '@/lib/query/keys';
+import { fetchPlannedSessionById } from '@/client/query/fetchers';
+import { prefetchPlannedSessionDetail } from '@/client/query/prefetch-planned-session-detail';
+import { queryKeys } from '@/client/query/keys';
 import {
   seedPlannedSessionIntoCache,
   type PlannedSessionCacheSeed,
-} from '@/lib/query/seed-planned-session-cache';
+} from '@/client/query/seed-planned-session-cache';
 import type { ClientPlannedSession } from '@/lib/query/types';
 import type { MorningProposalCompareInput } from '@/lib/today/rich/morning-proposal-compare';
 import { EMPTY_GOALS } from '@/components/planning/session/session-defaults';

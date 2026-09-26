@@ -7,8 +7,8 @@ import {
 } from '@/components/today/dashboard/today-nutrition-card-body';
 import { resolveNutritionLinkTitle } from '@/components/today/dashboard/today-nutrition-card-helpers';
 import { useTodayNutritionDay } from '@/components/today/dashboard/nutrition-day-resolver';
-import { fetchNutritionPresentation } from '@/lib/query/presentation-fetchers';
-import { queryKeys } from '@/lib/query/keys';
+import { fetchNutritionPresentation } from '@/client/query/presentation-fetchers';
+import { queryKeys } from '@/client/query/keys';
 import { trainingDayIdForNow } from '@sharpit/core/training/training-day';
 
 export { TodayNutritionCardSkeleton };

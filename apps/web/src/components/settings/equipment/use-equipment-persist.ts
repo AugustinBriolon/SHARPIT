@@ -2,9 +2,9 @@
 
 import type { AthleteEquipment } from '@/lib/equipment/types';
 import { normalizeAthleteEquipment } from '@/lib/equipment/parse';
-import { invalidateAfterAthleteProfileSave } from '@/lib/query/invalidate-after-athlete-profile-save';
-import { patchAthleteProfile, patchAthleteProfileKeepalive } from '@/lib/query/fetchers';
-import { queryKeys } from '@/lib/query/keys';
+import { invalidateAfterAthleteProfileSave } from '@/client/query/invalidate-after-athlete-profile-save';
+import { patchAthleteProfile, patchAthleteProfileKeepalive } from '@/client/query/fetchers';
+import { queryKeys } from '@/client/query/keys';
 import { useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';

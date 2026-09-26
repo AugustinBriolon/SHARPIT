@@ -12,7 +12,7 @@ import {
   overlayDemoLinkOnPlannedSession,
   resolveDemoLinkedPlannedSessionForActivity,
 } from '@/lib/demo/demo-session-link-overlay';
-import type { ActivityDetail } from '@/components/training/activity/detail/types';
+import type { ActivityDetail } from '@/lib/activity/detail/types';
 
 function useDemoSessionLinks() {
   useSyncExternalStore(subscribeDemoSessionLinks, getDemoSessionLinksSnapshot, () => '');

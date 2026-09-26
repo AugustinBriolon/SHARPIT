@@ -9,12 +9,12 @@ import {
   plannedSessionChipLabel,
   plannedSessionChipValue,
 } from '@/lib/activity/planned-session/activity-planned-session-display';
-import { fetchPlannedSessionById } from '@/lib/query/fetchers';
-import { patchPlannedSessionAnalysisInCaches } from '@/lib/query/patch-planned-session-analysis-cache';
-import { prefetchPlannedSessionDetail } from '@/lib/query/prefetch-planned-session-detail';
+import { fetchPlannedSessionById } from '@/client/query/fetchers';
+import { patchPlannedSessionAnalysisInCaches } from '@/client/query/patch-planned-session-analysis-cache';
+import { prefetchPlannedSessionDetail } from '@/client/query/prefetch-planned-session-detail';
 import { parseSessionAnalysis } from '@/lib/planned-session/display/session-analysis-display';
 import { cn } from '@/lib/utils';
-import type { PlannedSessionSummary } from './types';
+import type { PlannedSessionSummary } from '@/lib/activity/detail/types';
 
 const POLL_MS = 3_000;
 const POLL_MAX_MS = 120_000;

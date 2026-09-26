@@ -5,7 +5,7 @@ import { MorningOrientationProposal } from '@/components/today/rich/morning-orie
 import { resolveMorningOrientationProposal } from '@/components/today/rich/morning-orientation-actions-helpers';
 import { useMorningOrientationActions } from '@/components/today/rich/use-morning-orientation-actions';
 import type { TodayViewModel } from '@/presentation/today-view-model';
-import { prefetchPlannedSessionDetail } from '@/lib/query/prefetch-planned-session-detail';
+import { prefetchPlannedSessionDetail } from '@/client/query/prefetch-planned-session-detail';
 import { useOfflineGuard } from '@/hooks/use-offline-guard';
 import { useAppModal } from '@/providers/app-modal-provider';
 import { useDisplayMode } from '@/providers/display-mode-provider';

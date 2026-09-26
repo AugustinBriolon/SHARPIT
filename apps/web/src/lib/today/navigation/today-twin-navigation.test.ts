@@ -5,7 +5,7 @@ import {
   TWIN_DRILL_DOWN,
   twinDimensionFromHref,
 } from './today-twin-navigation';
-import type { DecisionData } from '@/hooks/use-today';
+import type { DecisionData } from '@/athlete-state/today-state';
 
 function decision(partial: Partial<DecisionData>): DecisionData {
   return {

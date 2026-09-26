@@ -19,9 +19,9 @@ import {
   fetchSleepPresentation,
   fetchBodyPresentation,
   fetchNutritionPresentation,
-} from '@/lib/query/presentation-fetchers';
-import { queryKeys } from '@/lib/query/keys';
-import { peekShellAthleteRefreshInFlight } from '@/lib/athlete-state/shell-refresh-seed';
+} from '@/client/query/presentation-fetchers';
+import { queryKeys } from '@/client/query/keys';
+import { peekShellAthleteRefreshInFlight } from '@/client/athlete-state/shell-refresh-seed';
 import { nutritionReadingPollInterval } from '@/lib/nutrition/analysis/nutrition-reading-poll';
 
 /** Cold start or date-change placeholder — skeleton values, never prior-day figures. */

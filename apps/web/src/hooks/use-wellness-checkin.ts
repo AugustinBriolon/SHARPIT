@@ -4,7 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { useCallback } from 'react';
 import type { MorningWellnessEntry } from '@/lib/journal/morning-wellness-entry';
-import { queryKeys } from '@/lib/query/keys';
+import { queryKeys } from '@/client/query/keys';
 
 type WellnessCheckinQuery = {
   completed: boolean;

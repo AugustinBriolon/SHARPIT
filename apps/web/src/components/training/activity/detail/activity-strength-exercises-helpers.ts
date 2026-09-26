@@ -1,7 +1,7 @@
 import { toast } from '@/components/ui/toast';
 import { formatClockDuration } from '@/lib/format';
-import type { ActivityDetail } from '@/components/training/activity/detail/types';
-import { createGarminWorkoutFromActivity } from '@/lib/query/fetchers';
+import type { ActivityDetail } from '@/lib/activity/detail/types';
+import { createGarminWorkoutFromActivity } from '@/client/query/fetchers';
 
 export function formatStrengthSetDetail(set: ActivityDetail['strengthSets'][number]): string {
   if (set.durationSec && set.durationSec > 0 && !set.weightKg) {

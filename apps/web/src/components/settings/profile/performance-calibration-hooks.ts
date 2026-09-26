@@ -23,9 +23,9 @@ import {
 } from '@/hooks/use-data';
 import { useOfflineGuard } from '@/hooks/use-offline-guard';
 import { shouldHydrateProfileForm } from '@/lib/profile/map-athlete-profile';
-import { invalidateAfterAthleteProfileSave } from '@/lib/query/invalidate-after-athlete-profile-save';
-import { importGarminAthleteProfile, patchAthleteProfile } from '@/lib/query/fetchers';
-import { queryKeys } from '@/lib/query/keys';
+import { invalidateAfterAthleteProfileSave } from '@/client/query/invalidate-after-athlete-profile-save';
+import { importGarminAthleteProfile, patchAthleteProfile } from '@/client/query/fetchers';
+import { queryKeys } from '@/client/query/keys';
 import type { ThresholdApplyPreview, ThresholdField } from '@/lib/threshold/threshold-estimates';
 
 export interface GarminImportResult {

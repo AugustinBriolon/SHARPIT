@@ -18,7 +18,7 @@ import {
   setPrimaryForClass,
   type IntegrationSourcePrefs,
 } from '@/lib/integrations/source-prefs';
-import { patchIntegrationSourcePrefsStrict } from '@/lib/query/fetchers';
+import { patchIntegrationSourcePrefsStrict } from '@/client/query/fetchers';
 import type { RowSyncState } from '@/components/settings/integrations/hub-sync';
 
 function syncLabel(lastSyncAt: string | null): string {

@@ -9,7 +9,7 @@ import {
 } from '@/lib/athlete-state/snapshot-phase';
 import { applyTruthfulnessOverlay } from '@/lib/athlete-state/snapshot-truthfulness';
 import { activityMatchesTrainingDay } from '@sharpit/core/training/training-day';
-import type { TodayState } from '@/hooks/use-today';
+import type { TodayState } from '@/athlete-state/today-state';
 import {
   decisionVerdict,
   isAdviceActionableFromDecision,

@@ -1,6 +1,6 @@
 import type { ActivityType, SessionIntensity } from '@prisma/client';
 import type { ClientActivity, ClientPlannedSession } from '@/lib/query/types';
-import type { ActivityDetail } from '@/components/training/activity/detail/types';
+import type { ActivityDetail } from '@/lib/activity/detail/types';
 import {
   readDemoSessionLinks,
   type DemoSessionLinkReading,

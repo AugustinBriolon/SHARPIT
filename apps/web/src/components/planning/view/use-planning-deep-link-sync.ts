@@ -5,7 +5,7 @@ import { useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { isSameDay, startOfWeek } from 'date-fns';
 import type { ClientPlannedSession } from '@/lib/query/types';
-import { prefetchPlannedSessionDetail } from '@/lib/query/prefetch-planned-session-detail';
+import { prefetchPlannedSessionDetail } from '@/client/query/prefetch-planned-session-detail';
 
 const WEEK_OPTS = { weekStartsOn: 1 as const };
 

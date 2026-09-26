@@ -1,5 +1,3 @@
-import type { DemoTranscriptMessage } from '@/components/coach/view/demo-coach-transcript';
-
 function isTextPart(part: unknown): part is { type: 'text'; text: string } {
   return (
     typeof part === 'object' &&
@@ -45,3 +43,9 @@ export function parseDemoTranscriptMessages(raw: unknown): DemoTranscriptMessage
     .map(parseTranscriptMessage)
     .filter((message): message is DemoTranscriptMessage => message !== null);
 }
+
+export type DemoTranscriptMessage = {
+  id: string;
+  role: 'user' | 'assistant';
+  text: string;
+};

@@ -1,13 +1,13 @@
 import type { QueryClient } from '@tanstack/react-query';
 import type { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
-import { invalidateAfterProviderSync } from '@/lib/query/invalidate-after-provider-sync';
+import { invalidateAfterProviderSync } from '@/client/query/invalidate-after-provider-sync';
 import { runGoogleSync } from '@/lib/integrations/shared/client-sync';
 import { toast } from '@/components/ui/toast';
 import {
   disconnectGoogle,
   selectGoogleCalendar,
   type GoogleCalendarInfo,
-} from '@/lib/query/fetchers';
+} from '@/client/query/fetchers';
 
 export function googleSyncErrorDescription(err: unknown): string | undefined {
   if (!(err instanceof Error)) {

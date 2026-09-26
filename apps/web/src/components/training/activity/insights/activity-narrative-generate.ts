@@ -1,7 +1,7 @@
 'use client';
 
 import { toast } from '@/components/ui/toast';
-import { applyDemoSessionLinkReading } from '@/lib/demo/demo-session-link-reading';
+import { applyDemoSessionLinkReading } from '@/client/demo/demo-session-link-reading';
 import {
   clearNarrativeTimedOut,
   generateActivityNarrative,

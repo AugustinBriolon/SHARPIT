@@ -5,7 +5,7 @@ import { formatTrainingLoad, type DisplayMode } from '@/lib/preferences/display-
 import { ActivityType } from '@prisma/client';
 import type { LucideIcon } from 'lucide-react';
 import { Bike, Dumbbell, Footprints, Medal, Mountain, Shapes, Waves } from 'lucide-react';
-import type { ActivityDetail, ActivityStat, ChipTone } from './types';
+import type { ActivityDetail, ActivityStat, ChipTone } from '@/lib/activity/detail/types';
 
 export const sportIcon: Record<ActivityType, LucideIcon> = {
   RUN: Footprints,

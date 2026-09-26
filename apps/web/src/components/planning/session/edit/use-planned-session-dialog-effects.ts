@@ -6,8 +6,8 @@ import { resolveDefaultPlanGoalId, selectableDatedGoalIds } from '@/lib/planned-
 import { NO_GOAL } from '@/components/planning/session/edit/planned-session-dialog-helpers';
 import type { usePlannedSessionFormState } from '@/components/planning/session/edit/use-planned-session-form-state';
 import { useQuery } from '@tanstack/react-query';
-import { queryKeys } from '@/lib/query/keys';
-import { fetchGeocodingHome, fetchTravelContext } from '@/lib/query/fetchers';
+import { queryKeys } from '@/client/query/keys';
+import { fetchGeocodingHome, fetchTravelContext } from '@/client/query/fetchers';
 import { usePlannedSessionMutations } from '@/hooks/use-data';
 import {
   shouldApplyTravelLocationToSession,

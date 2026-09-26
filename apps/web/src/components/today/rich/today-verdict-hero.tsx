@@ -12,8 +12,8 @@ import {
 } from '@/components/today/rich/today-verdict-hero-parts';
 import { deriveVerdictHeroDisplay } from '@/components/today/rich/today-verdict-hero-helpers';
 import { TodayReliabilityPanel } from '@/components/today/rich/today-reliability-panel';
-import { fadeUpTransition, fadeUpVariants } from '@/lib/motion/variants';
-import { motionTokens } from '@/lib/motion/tokens';
+import { fadeUpTransition, fadeUpVariants } from '@/client/motion/variants';
+import { motionTokens } from '@/client/motion/tokens';
 import { cn } from '@/lib/utils';
 
 export function TodayVerdictHero({

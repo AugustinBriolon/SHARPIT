@@ -2,8 +2,8 @@
 
 import { useQuery } from '@tanstack/react-query';
 import type { TodayJournalHabitBridge } from '@/lib/journal/journal-habit-today-bridge';
-import { fetchJournalHabitBridge } from '@/lib/query/fetchers';
-import { queryKeys } from '@/lib/query/keys';
+import { fetchJournalHabitBridge } from '@/client/query/fetchers';
+import { queryKeys } from '@/client/query/keys';
 
 type HabitBridgeResponse = {
   bridge: TodayJournalHabitBridge | null;

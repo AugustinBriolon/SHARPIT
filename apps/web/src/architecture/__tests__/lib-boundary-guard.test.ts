@@ -12,55 +12,30 @@ const LIB_ROOT = path.join(REPO_ROOT, 'src', 'lib');
 
 type Violation = {
   file: string;
-  kind: 'components' | 'inference';
+  kind: 'ui' | 'inference';
   specifier: string;
 };
 
 /**
- * Grandfather allowlist — file → pinned `@/components/*` specifiers only.
- * A file on this list cannot add a new components import without updating the pin.
- * Do not add entries without an ADR or INTENT_MAP note. Prefer deleting over growing.
+ * The server tree becomes `@sharpit/server` (monorepo phase 2, ADR-048): it must not reach
+ * the app's UI — components, hooks, the app router, providers, or browser-only helpers
+ * (`src/client`). Types the UI and the server share live on the server side.
  */
-const ALLOWED_LIB_TO_COMPONENTS: ReadonlyMap<string, ReadonlySet<string>> = new Map([
-  [
-    'src/lib/demo/demo-session-link-overlay.ts',
-    new Set(['@/components/training/activity/detail/types']),
-  ],
-  [
-    'src/lib/demo/demo-coach-transcript.ts',
-    new Set(['@/components/coach/view/demo-coach-transcript']),
-  ],
-  [
-    'src/lib/activity/detail/activity-detail-cache.ts',
-    new Set([
-      '@/components/training/activity/detail/activity-detail-header-content',
-      '@/components/training/activity/detail/types',
-    ]),
-  ],
-  [
-    'src/lib/activity/planned-session/activity-planned-session-display.ts',
-    new Set(['@/components/training/activity/detail/types']),
-  ],
-  [
-    'src/lib/planned-session/strength/strength-prescription.test.ts',
-    new Set(['@/components/planning/session/edit/strength-prescription-editor']),
-  ],
-  [
-    'src/lib/integrations/withings/withings-ecg-display.ts',
-    new Set(['@/components/corps/corps-ui']),
-  ],
-  ['src/lib/health/composition-metric-guides.ts', new Set(['@/components/corps/corps-ui'])],
-  [
-    'src/lib/coach/chat/conversations/coach-chat-known-sessions.ts',
-    new Set(['@/components/coach/chat/tools/tool-activity']),
-  ],
-  ['src/lib/query/optimistic.ts', new Set(['@/components/ui/toast'])],
-  ['src/lib/query/optimistic.test.ts', new Set(['@/components/ui/toast'])],
-  [
-    'src/lib/today/rich/planned-session-metrics.ts',
-    new Set(['@/components/ui/instruments/session-preview-parts']),
-  ],
-]);
+const SERVER_TREE = ['lib', 'infrastructure', 'adapters', 'presentation', 'athlete-state', 'data'];
+const UI_ROOTS = ['components', 'hooks', 'app', 'providers', 'client'];
+
+function uiRootOf(filePath: string, specifier: string): string | null {
+  let target: string;
+  if (specifier.startsWith('@/')) {
+    target = specifier.slice(2);
+  } else if (specifier.startsWith('.')) {
+    const abs = path.resolve(path.dirname(filePath), specifier);
+    target = path.relative(path.join(REPO_ROOT, 'src'), abs).replaceAll(path.sep, '/');
+  } else {
+    return null;
+  }
+  return UI_ROOTS.find((root) => target === root || target.startsWith(`${root}/`)) ?? null;
+}
 
 /**
  * Grandfather allowlist — file → pinned `@sharpit/core/inference/*` specifiers only.
@@ -214,28 +189,22 @@ function isAllowed(
 }
 
 describe('Lib boundary guard (P2+P3)', () => {
-  it('blocks new lib → components imports outside the pinned allowlist', () => {
+  it('keeps the server tree free of UI imports', () => {
     const violations: Violation[] = [];
 
-    for (const filePath of collectTsFiles(LIB_ROOT)) {
-      const rel = path.relative(REPO_ROOT, filePath).replaceAll(path.sep, '/');
-      for (const specifier of collectImportSpecifiers(filePath)) {
-        if (!matchesPrefix(specifier, '@/components')) {
-          continue;
+    for (const root of SERVER_TREE) {
+      for (const filePath of collectTsFiles(path.join(REPO_ROOT, 'src', root))) {
+        const rel = path.relative(REPO_ROOT, filePath).replaceAll(path.sep, '/');
+        for (const specifier of collectImportSpecifiers(filePath)) {
+          if (uiRootOf(filePath, specifier)) {
+            violations.push({ file: rel, kind: 'ui', specifier });
+          }
         }
-        if (isAllowed(ALLOWED_LIB_TO_COMPONENTS, rel, specifier)) {
-          continue;
-        }
-        violations.push({ file: rel, kind: 'components', specifier });
       }
     }
 
-    if (violations.length > 0) {
-      const message = violations.map((v) => `${v.file}: ${v.specifier}`).join('\n');
-      expect(violations, `New lib→components imports:\n${message}`).toHaveLength(0);
-    }
-
-    expect(violations).toHaveLength(0);
+    const message = violations.map((v) => `${v.file}: ${v.specifier}`).join('\n');
+    expect(violations, `Server tree → UI imports:\n${message}`).toHaveLength(0);
   });
 
   it('blocks new lib → core/inference imports outside engines + pinned allowlist', () => {

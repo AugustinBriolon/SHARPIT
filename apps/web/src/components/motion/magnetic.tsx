@@ -3,7 +3,7 @@
 import { motion, useMotionValue, useReducedMotion, useSpring } from 'motion/react';
 import { useRef, type ReactNode } from 'react';
 import { SPRING_MOUSE } from '@/lib/ease';
-import { useHoverCapable } from '@/lib/hooks/use-hover-capable';
+import { useHoverCapable } from '@/client/hooks/use-hover-capable';
 import { cn } from '@/lib/utils';
 
 export interface MagneticProps {

@@ -1,7 +1,7 @@
 import { ActivityType } from '@prisma/client';
 import { activityNarrativeSchema, type ActivityNarrative } from '@/lib/validators/coach';
 import { sanitizeCoachCopy } from '@/lib/coach/sanitize-coach-copy';
-import { fetchActivityNarrativeFields, postActivityNarrative } from '@/lib/query/fetchers';
+import { fetchActivityNarrativeFields, postActivityNarrative } from '@/client/query/fetchers';
 
 export const NARRATIVE_POLL_MS = 3_000;
 export const NARRATIVE_POLL_MAX_MS = 120_000;

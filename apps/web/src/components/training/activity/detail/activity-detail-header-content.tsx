@@ -12,27 +12,11 @@ import {
   formatActivityDetailMeta,
   sportIcon,
 } from './activity-detail-helpers';
-import type { ActivityDetail } from './types';
+import type { ActivityDetail } from '@/lib/activity/detail/types';
 import { useDisplayMode } from '@/providers/display-mode-provider';
-import type { PlannedSessionSummary } from './types';
-
-export type ActivityDetailHeaderActivity = Pick<
-  ActivityDetail,
-  | 'id'
-  | 'type'
-  | 'title'
-  | 'date'
-  | 'source'
-  | 'garminId'
-  | 'stravaId'
-  | 'duration'
-  | 'load'
-  | 'rpe'
-  | 'feeling'
-  | 'weather'
-  | 'hikeTrip'
-  | 'plannedSession'
->;
+import type { PlannedSessionSummary } from '@/lib/activity/detail/types';
+import type { ActivityDetailHeaderActivity } from '@/lib/activity/detail/types';
+export type { ActivityDetailHeaderActivity };
 
 function ActivityDetailHeaderToolbar({
   activity,

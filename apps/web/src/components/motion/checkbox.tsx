@@ -3,7 +3,7 @@
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { useId } from 'react';
 import { EASE_OUT, SPRING_PRESS } from '@/lib/ease';
-import { motionTokens } from '@/lib/motion/tokens';
+import { motionTokens } from '@/client/motion/tokens';
 import { cn } from '@/lib/utils';
 
 const CHECK_PATH = 'M5 13l4 4L19 7';

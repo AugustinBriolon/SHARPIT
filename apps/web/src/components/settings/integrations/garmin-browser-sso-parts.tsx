@@ -7,7 +7,7 @@ import {
   GARMIN_SSO_MESSAGE_ORIGIN,
   parseGarminSsoPostMessage,
 } from '@/lib/integrations/garmin/garmin-browser-sso-shared';
-import { exchangeGarminSsoTicket } from '@/lib/query/fetchers';
+import { exchangeGarminSsoTicket } from '@/client/query/fetchers';
 import { RISK_TONE, STATUS_SURFACE } from '@/lib/presentation/coaching/status-surface';
 import { cn } from '@/lib/utils';
 

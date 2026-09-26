@@ -6,10 +6,6 @@ import {
   resolveStrengthFieldsForPersist,
   strengthPrescriptionSchema,
 } from '@/lib/planned-session/strength/strength-prescription';
-import {
-  draftFromStrengthPrescription,
-  strengthPrescriptionFromDraft,
-} from '@/components/planning/session/edit/strength-prescription-editor';
 
 describe('strengthPrescriptionSchema', () => {
   it('accepts a valid v1 prescription', () => {
@@ -193,29 +189,5 @@ describe('resolveStrengthFieldsForPersist', () => {
       'Clamshell avec élastique',
       'Squat avec haltère',
     ]);
-  });
-});
-
-describe('strengthPrescriptionFromDraft', () => {
-  it('round-trips draft rows with Lap rest by default', () => {
-    const draft = draftFromStrengthPrescription({
-      version: 1,
-      sets: [{ exercise: 'Curl', sets: 3, reps: 10, restMode: 'lap', order: 0 }],
-    });
-    const back = strengthPrescriptionFromDraft(draft);
-    expect(back?.sets).toHaveLength(1);
-    expect(back?.sets[0]).toMatchObject({
-      exercise: 'Curl',
-      sets: 3,
-      reps: 10,
-      restMode: 'lap',
-      restSec: null,
-    });
-  });
-
-  it('drops blank exercise rows', () => {
-    const draft = draftFromStrengthPrescription(null);
-    draft[0].exercise = '';
-    expect(strengthPrescriptionFromDraft(draft)).toBeNull();
   });
 });

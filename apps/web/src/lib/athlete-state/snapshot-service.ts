@@ -13,7 +13,7 @@ import {
   saveAthleteSnapshot,
 } from '@/infrastructure/athlete-state/snapshot-repository';
 import { loadTodayState } from '@/lib/today/navigation/today-state-server';
-import type { TodayState } from '@/hooks/use-today';
+import type { TodayState } from '@/athlete-state/today-state';
 import { enrichGoalsWithProgress } from '@/lib/goals/goal-achievements';
 import {
   getActivitiesForSnapshotPhase,

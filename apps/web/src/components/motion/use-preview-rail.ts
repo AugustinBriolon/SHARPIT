@@ -1,9 +1,9 @@
 'use client';
 
 import { useCallback, useId, useRef, useState } from 'react';
-import { useDismiss } from '@/lib/hooks/use-dismiss';
-import { useHoverGesture } from '@/lib/hooks/use-hover-gesture';
-import { useTapGesture } from '@/lib/hooks/use-tap-gesture';
+import { useDismiss } from '@/client/hooks/use-dismiss';
+import { useHoverGesture } from '@/client/hooks/use-hover-gesture';
+import { useTapGesture } from '@/client/hooks/use-tap-gesture';
 import { previewRailHighlightedId, previewRailSelectedId } from './preview-rail-state-helpers';
 import type { PreviewRailItem } from './preview-rail';
 

@@ -1,4 +1,4 @@
-import type { DailyStrainData } from '@/hooks/use-today';
+import type { DailyStrainData } from '@/athlete-state/today-state';
 
 export type EffortStrainContributorKey = 'training' | 'cardiovascular' | 'movement';
 

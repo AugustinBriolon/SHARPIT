@@ -5,7 +5,7 @@ import {
 } from '@/lib/athlete-state/snapshot-truthfulness';
 import { isAdviceActionableFromDecision } from '@/lib/decision/projection';
 import { mockDailyPhase, mockPhaseNarrative } from '@/lib/daily-phase/test-fixtures';
-import type { DecisionData } from '@/hooks/use-today';
+import type { DecisionData } from '@/athlete-state/today-state';
 
 function decision(partial: Partial<DecisionData>): DecisionData {
   return {

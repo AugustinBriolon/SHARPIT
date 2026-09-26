@@ -8,8 +8,8 @@ import {
   type DataDaysLookup,
   type DayRange,
 } from '@/lib/presentation/data-days/data-days-chunks';
-import { fetchDataDays } from '@/lib/query/presentation-fetchers';
-import { queryKeys } from '@/lib/query/keys';
+import { fetchDataDays } from '@/client/query/presentation-fetchers';
+import { queryKeys } from '@/client/query/keys';
 
 /** Which days carry data for `domain`, across every requested range. Unknown until loaded. */
 export function useDataDays(domain: DataDaysDomain, ranges: readonly DayRange[]): DataDaysLookup {

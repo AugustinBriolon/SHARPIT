@@ -12,8 +12,8 @@ import {
   useThresholdPreview,
   useTrainingPlan,
 } from '@/hooks/use-data';
-import { fetchActivityStream } from '@/lib/query/fetchers';
-import { queryKeys } from '@/lib/query/keys';
+import { fetchActivityStream } from '@/client/query/fetchers';
+import { queryKeys } from '@/client/query/keys';
 import { readPlanHubNow, rememberPlanHubNow } from '@/lib/plan/hub/plan-hub-clock';
 import { selectPlanHubStreamPrefetchIds } from '@/lib/plan/week/plan-week-previews';
 import { resolveCalibrationConfidence } from '@/lib/plan/trajectory/plan-calibration-confidence';

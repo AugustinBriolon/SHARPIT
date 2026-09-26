@@ -1,13 +1,13 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { fetchGoalAchievements, fetchGoals } from '@/lib/query/fetchers';
-import { queryKeys } from '@/lib/query/keys';
-import { listOptimistic, tempId } from '@/lib/query/optimistic';
-import { sendJson } from '@/lib/query/send-json';
+import { fetchGoalAchievements, fetchGoals } from '@/client/query/fetchers';
+import { queryKeys } from '@/client/query/keys';
+import { listOptimistic, tempId } from '@/client/query/optimistic';
+import { sendJson } from '@/client/query/send-json';
 import type { ClientGoal } from '@/lib/query/types';
 import type { GoalHorizon, GoalPriority } from '@prisma/client';
-import { nullishFields } from '@/lib/query/nullish-fields';
+import { nullishFields } from '@/client/query/nullish-fields';
 
 export function useGoals() {
   return useQuery({

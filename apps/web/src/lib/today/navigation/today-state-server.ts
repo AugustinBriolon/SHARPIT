@@ -32,7 +32,7 @@ import type {
   PhysicalHealthData,
   EnvironmentSnapshotData,
   TodayState,
-} from '@/hooks/use-today';
+} from '@/athlete-state/today-state';
 import { prisma } from '@/lib/prisma';
 
 function readStateComputedAt(state: unknown): Date | null {

@@ -1,5 +1,5 @@
 import type { MouseEvent, PointerEvent } from 'react';
-import type { useTapGesture } from '@/lib/hooks/use-tap-gesture';
+import type { useTapGesture } from '@/client/hooks/use-tap-gesture';
 import type { PreviewRailItem } from './preview-rail';
 
 export function handlePreviewRailSelect(options: {

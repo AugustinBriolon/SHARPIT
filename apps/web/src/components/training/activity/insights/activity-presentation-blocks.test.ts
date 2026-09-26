@@ -1,7 +1,7 @@
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
-import type { ActivityDetail } from '../detail/types';
+import type { ActivityDetail } from '@/lib/activity/detail/types';
 import { RhythmSplits } from '../reading/rhythm-splits';
 import { ActivitySpecsNotes } from '../detail/activity-specs-notes';
 

@@ -10,7 +10,7 @@ import {
   type OverallVerdict,
 } from '@/lib/today/dashboard/today-mapping';
 import { CAPACITY_LABELS } from '@/lib/presentation/physical-health/physical-health';
-import type { TrainingCapacity } from '@/hooks/use-today';
+import type { TrainingCapacity } from '@/athlete-state/today-state';
 import type { DecisionSnapshotContext } from '@/lib/decision-memory/types';
 
 const CONFIDENCE_TIER_LABEL: Record<string, string> = {

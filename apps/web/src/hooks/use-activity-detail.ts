@@ -1,8 +1,8 @@
 'use client';
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { fetchActivity } from '@/lib/query/fetchers';
-import { queryKeys } from '@/lib/query/keys';
+import { fetchActivity } from '@/client/query/fetchers';
+import { queryKeys } from '@/client/query/keys';
 import type { ClientActivityDetail } from '@/lib/query/types';
 
 const ACTIVITY_DETAIL_STALE_MS = 10 * 60_000;

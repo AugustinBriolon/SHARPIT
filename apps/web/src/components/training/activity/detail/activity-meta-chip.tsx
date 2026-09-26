@@ -3,7 +3,7 @@ import { cn } from '@/lib/utils';
 import type { LucideIcon } from 'lucide-react';
 import Link from 'next/link';
 import { chipDot, chipIconTone, chipLinkSurface } from './activity-detail-helpers';
-import type { ChipTone } from './types';
+import type { ChipTone } from '@/lib/activity/detail/types';
 
 const DEFAULT_LINK_SURFACE =
   'border-analysis-border/80 bg-analysis-surface-alt/50 hover:border-primary/35 hover:bg-analysis-surface-alt';

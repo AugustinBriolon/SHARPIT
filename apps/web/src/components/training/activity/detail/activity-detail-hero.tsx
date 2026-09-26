@@ -3,7 +3,7 @@ import { TriathlonHeroCards } from './triathlon-hero-cards';
 import { WeightedInstruments } from '@/components/training/activity/reading/weighted-instruments';
 import type { MultisportLeg } from '@/lib/activity/multisport';
 import { toHeroActivity } from './activity-detail-helpers';
-import type { ActivityDetail, ActivityStat } from './types';
+import type { ActivityDetail, ActivityStat } from '@/lib/activity/detail/types';
 
 export function ActivityDetailHero({
   activity,

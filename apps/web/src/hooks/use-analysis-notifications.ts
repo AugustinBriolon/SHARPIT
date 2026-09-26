@@ -12,8 +12,8 @@ import {
   selectRunsToNotify,
   type AnalysisRunView,
 } from '@/lib/analysis/analysis-run';
-import { fetchAnalysisRuns } from '@/lib/query/fetchers';
-import { queryKeys } from '@/lib/query/keys';
+import { fetchAnalysisRuns } from '@/client/query/fetchers';
+import { queryKeys } from '@/client/query/keys';
 
 const WATERMARK_STORAGE_KEY = 'sharpit.analysis-notified-at';
 

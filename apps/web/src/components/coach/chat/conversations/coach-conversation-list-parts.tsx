@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { SkeletonDataValue } from '@/components/ui/skeleton-data-value';
 import { cn } from '@/lib/utils';
-import type { ClientConversationSummary } from '@/lib/query/fetchers';
+import type { ClientConversationSummary } from '@/client/query/fetchers';
 import {
   CoachConversationMobilePicker,
   conversationLabel,

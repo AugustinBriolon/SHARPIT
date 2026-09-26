@@ -9,7 +9,7 @@ import type {
   OverallVerdict,
   PhysicalHealthData,
   RecoveryData,
-} from '@/hooks/use-today';
+} from '@/athlete-state/today-state';
 
 /**
  * Decision-first projection of AthleteSnapshot for client hooks and legacy adapters.

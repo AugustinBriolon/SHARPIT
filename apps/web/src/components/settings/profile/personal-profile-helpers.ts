@@ -7,7 +7,7 @@ import {
 } from '@/components/settings/profile/profile-save';
 import { changedProfileFields } from '@/lib/profile/profile-patch';
 import { birthDateToInput } from '@/lib/profile/athlete-profile-utils';
-import { patchAthleteProfile } from '@/lib/query/fetchers';
+import { patchAthleteProfile } from '@/client/query/fetchers';
 import type { QueryClient } from '@tanstack/react-query';
 import type { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
 

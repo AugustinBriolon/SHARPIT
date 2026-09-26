@@ -17,7 +17,7 @@ import {
   journalPrefsDeepLinkFilter,
   type JournalFilterId,
 } from '@/lib/journal/journal-trackables';
-import { queryKeys } from '@/lib/query/keys';
+import { queryKeys } from '@/client/query/keys';
 import {
   JournalPrefsDrawerPanel,
   JournalPrefsOpenButton,

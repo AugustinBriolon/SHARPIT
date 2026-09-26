@@ -1,7 +1,7 @@
 'use client';
 
 import { AnimatePresence, motion } from 'motion/react';
-import { fadeTransition, fadeVariants } from '@/lib/motion/variants';
+import { fadeTransition, fadeVariants } from '@/client/motion/variants';
 import {
   useBootstrapLineCycle,
   BOOTSTRAP_LINES,

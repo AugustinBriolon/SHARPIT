@@ -3,12 +3,8 @@
 import { CoachMessage } from '@/components/coach/chat/transcript/coach-message';
 import { coachBeuiTheme } from '@/components/coach/beui/coach-beui-theme';
 import { LinkButton } from '@/components/ui/link-button';
-
-export type DemoTranscriptMessage = {
-  id: string;
-  role: 'user' | 'assistant';
-  text: string;
-};
+import type { DemoTranscriptMessage } from '@/lib/demo/demo-coach-transcript';
+export type { DemoTranscriptMessage };
 
 /**
  * Read-only rendering of the seeded demo conversation (see

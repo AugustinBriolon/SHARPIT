@@ -7,7 +7,7 @@ import { CoachConversationList } from '@/components/coach/chat/conversations/coa
 import { Dialog, DialogClose, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { NavArrowLeft } from '@/components/icons/nav-arrows';
 import { useRouter } from 'next/navigation';
-import type { ClientConversationSummary } from '@/lib/query/fetchers';
+import type { ClientConversationSummary } from '@/client/query/fetchers';
 import { cn } from '@/lib/utils';
 
 function CoachHeaderBackButton() {

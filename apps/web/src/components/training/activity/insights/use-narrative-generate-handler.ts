@@ -3,7 +3,7 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useCallback } from 'react';
 import { executeNarrativeGenerate } from '@/components/training/activity/insights/activity-narrative-generate-action';
-import { queryKeys } from '@/lib/query/keys';
+import { queryKeys } from '@/client/query/keys';
 
 export function useNarrativeGenerateHandler({
   activityId,

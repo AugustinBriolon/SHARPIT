@@ -1,6 +1,6 @@
 import { toast } from '@/components/ui/toast';
 import { writeClientMorningHold } from '@/components/today/rich/morning-orientation-hold';
-import { postMorningRecalibrationAction } from '@/lib/query/fetchers';
+import { postMorningRecalibrationAction } from '@/client/query/fetchers';
 
 export async function postMorningRecalibration({
   action,

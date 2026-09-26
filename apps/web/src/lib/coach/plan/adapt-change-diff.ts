@@ -2,7 +2,7 @@
  * Pure helpers — visual before→after labels for PlanAdapter change rows.
  */
 
-import type { AdaptChange } from '@/hooks/use-coach';
+import type { AdaptChange } from '@/lib/coach/plan/adapt-types';
 import type { ClientPlannedSession } from '@/lib/query/types';
 import { activityTypeLabels, formatDate } from '@/lib/format';
 import { formatPlannedDuration, intensityLabels } from '@/lib/planned-session/sessions';

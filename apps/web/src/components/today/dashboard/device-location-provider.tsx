@@ -10,8 +10,8 @@ import {
   writeHomeLocationEverGranted,
   writeLastHomeLocationRefreshMs,
 } from '@/lib/geocoding/home-location-refresh';
-import { invalidateAfterAthleteProfileSave } from '@/lib/query/invalidate-after-athlete-profile-save';
-import { postAthleteHomeLocation } from '@/lib/query/fetchers';
+import { invalidateAfterAthleteProfileSave } from '@/client/query/invalidate-after-athlete-profile-save';
+import { postAthleteHomeLocation } from '@/client/query/fetchers';
 import { beginGeolocationRequest } from '@/components/today/dashboard/use-device-location-helpers';
 import type { DeviceLocationState } from '@/components/today/dashboard/use-device-location-types';
 

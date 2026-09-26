@@ -3,8 +3,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { CoachMemoryEntry } from '@/lib/coach-memory/core/types';
 import { toast } from '@/components/ui/toast';
-import { isTempId, tempId } from '@/lib/query/optimistic';
-import { queryKeys } from '@/lib/query/keys';
+import { isTempId, tempId } from '@/client/query/optimistic';
+import { queryKeys } from '@/client/query/keys';
 
 export type CoachMemoryResponse = {
   entries: CoachMemoryEntry[];

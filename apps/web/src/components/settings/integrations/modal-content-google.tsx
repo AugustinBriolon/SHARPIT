@@ -18,7 +18,7 @@ import {
   googleOAuthLocalConnectHref,
   isGoogleOAuthBlockedOnCurrentHost,
 } from '@/lib/integrations/google/google-oauth-hint';
-import type { GoogleCalendarInfo } from '@/lib/query/fetchers';
+import type { GoogleCalendarInfo } from '@/client/query/fetchers';
 import { Label } from '@/components/ui/label';
 import {
   Select,

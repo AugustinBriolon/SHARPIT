@@ -3,9 +3,9 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createContext, useCallback, useContext, useEffect, useMemo, type ReactNode } from 'react';
 import { useAthleteProfile } from '@/hooks/use-data';
-import type { AthleteProfilePayload } from '@/lib/query/fetchers';
-import { queryKeys } from '@/lib/query/keys';
-import { sendJson } from '@/lib/query/send-json';
+import type { AthleteProfilePayload } from '@/client/query/fetchers';
+import { queryKeys } from '@/client/query/keys';
+import { sendJson } from '@/client/query/send-json';
 import { syncAccessTierCookie } from '@/lib/access/tier-cookie';
 import {
   DEFAULT_DISPLAY_MODE,

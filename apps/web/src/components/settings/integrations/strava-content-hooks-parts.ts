@@ -10,9 +10,9 @@ import {
   runStravaSync,
   stravaBackfillSummary,
 } from '@/lib/integrations/shared/client-sync';
-import { invalidateAfterProviderSync } from '@/lib/query/invalidate-after-provider-sync';
-import { disconnectStrava } from '@/lib/query/fetchers';
-import { queryKeys } from '@/lib/query/keys';
+import { invalidateAfterProviderSync } from '@/client/query/invalidate-after-provider-sync';
+import { disconnectStrava } from '@/client/query/fetchers';
+import { queryKeys } from '@/client/query/keys';
 import type { RecordChange } from '@/lib/training/records/records';
 
 export function useStravaSync(onUpdated?: () => void, onSyncStart?: () => void) {

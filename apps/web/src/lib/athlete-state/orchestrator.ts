@@ -1,7 +1,7 @@
 import type { AthleteSnapshot } from '@/athlete-state/snapshot';
 import type { DataProvider } from '@/athlete-state/events';
 import { createEventId, createTraceId, type AthleteStateEvent } from '@/athlete-state/events';
-import type { TodayState } from '@/hooks/use-today';
+import type { TodayState } from '@/athlete-state/today-state';
 import { scheduleBackgroundTasks } from '@/lib/athlete-state/background';
 import {
   computeFreshnessSnapshot,

@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import type { IntegrationDefinition } from '@/components/settings/integrations/types';
 import { toast } from '@/components/ui/toast';
-import { invalidateAfterProviderSync } from '@/lib/query/invalidate-after-provider-sync';
+import { invalidateAfterProviderSync } from '@/client/query/invalidate-after-provider-sync';
 import {
   syncAllConnectedIntegrations,
   type RowSyncState,

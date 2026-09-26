@@ -1,8 +1,8 @@
 'use client';
 
 import { motion, useReducedMotion } from 'motion/react';
-import { collapseVariants } from '@/lib/motion/variants';
-import { motionTokens } from '@/lib/motion/tokens';
+import { collapseVariants } from '@/client/motion/variants';
+import { motionTokens } from '@/client/motion/tokens';
 import { cn } from '@/lib/utils';
 
 type MotionExpandProps = {

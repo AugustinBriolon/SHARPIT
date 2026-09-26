@@ -3,8 +3,11 @@
 import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { useCallback } from 'react';
-import { queryKeys } from '@/lib/query/keys';
-import { fetchAthleteSnapshot, refreshAthleteSnapshot } from '@/lib/query/athlete-snapshot-fetch';
+import { queryKeys } from '@/client/query/keys';
+import {
+  fetchAthleteSnapshot,
+  refreshAthleteSnapshot,
+} from '@/client/query/athlete-snapshot-fetch';
 import { snapshotToProductView } from '@/lib/athlete-state/product-view';
 import type { AthleteSnapshotProductView } from '@/lib/athlete-state/product-view';
 

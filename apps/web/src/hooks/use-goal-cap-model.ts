@@ -22,7 +22,7 @@ import { buildGoalRealizationLabels } from '@/lib/goals/goal-realization-labels'
 import { buildMacroPhaseRail } from '@/lib/plan/trajectory/plan-macro-rail';
 import { selectPlanGoal, type PlanGoalView } from '@/lib/plan/trajectory/plan-goal';
 import type { ClientActivity, ClientGoal, ClientPlannedSession } from '@/lib/query/types';
-import type { AthleteProfilePayload } from '@/lib/query/fetchers/athlete-profile';
+import type { AthleteProfilePayload } from '@/client/query/fetchers/athlete-profile';
 import type { PlanPhaseSource } from '@/lib/plan/trajectory/plan-phase';
 import type { RecordsPayload } from '@/lib/training/records/records';
 

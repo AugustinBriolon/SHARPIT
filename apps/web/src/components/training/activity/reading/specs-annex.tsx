@@ -2,7 +2,7 @@
 
 import { filterByAudience } from '@/lib/preferences/display-mode';
 import { useDisplayMode } from '@/providers/display-mode-provider';
-import type { ActivityDetail, ActivitySpec } from '@/components/training/activity/detail/types';
+import type { ActivityDetail, ActivitySpec } from '@/lib/activity/detail/types';
 
 export function SpecsAnnex({
   activity,

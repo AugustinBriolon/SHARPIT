@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { queryKeys } from '@/lib/query/keys';
+import { queryKeys } from '@/client/query/keys';
 import type { CoachMemoryResponse } from '@/hooks/use-coach-memory';
 
 export function useCoachContext() {

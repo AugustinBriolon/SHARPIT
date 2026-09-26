@@ -2,28 +2,28 @@
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from '@/components/ui/toast';
-import { hydratePlannedSession } from '@/lib/query/fetchers';
-import { queryKeys } from '@/lib/query/keys';
+import { hydratePlannedSession } from '@/client/query/fetchers';
+import { queryKeys } from '@/client/query/keys';
 import { demoteBrickLegsAfterRemoval } from '@/lib/planned-session/brick/brick-demotion';
-import { listOptimistic, tempId } from '@/lib/query/optimistic';
+import { listOptimistic, tempId } from '@/client/query/optimistic';
 import {
   applyPlannedSessionBatchOps,
   optimisticPlannedSession,
   plannedSessionBatchSuccessMessage,
   type PlannedSessionBatchOp,
-} from '@/lib/query/planned-session-batch';
-import { sendJson } from '@/lib/query/send-json';
+} from '@/client/query/planned-session-batch';
+import { sendJson } from '@/client/query/send-json';
 import type { ClientActivity, ClientPlannedSession } from '@/lib/query/types';
 import {
   applyActivityPlannedSessionLinkOptimistic,
   applyPlannedSessionLinkOptimistic,
   resolvePreviousLinkedActivityId,
-} from '@/lib/query/planned-session-link-optimistic';
+} from '@/client/query/planned-session-link-optimistic';
 import {
   beginPlannedSessionReanalysis,
   rollbackPlannedSessionReanalysis,
-} from '@/lib/query/begin-planned-session-reanalysis';
-import { patchPlannedSessionAnalysisInCaches } from '@/lib/query/patch-planned-session-analysis-cache';
+} from '@/client/query/begin-planned-session-reanalysis';
+import { patchPlannedSessionAnalysisInCaches } from '@/client/query/patch-planned-session-analysis-cache';
 import type { TodayViewModel } from '@/presentation/today-view-model';
 import type { QueryClient } from '@tanstack/react-query';
 import { hasDemoCookieValue } from '@/hooks/use-is-demo-mode';
@@ -32,7 +32,7 @@ import {
   applyDemoSessionLinkReading,
   cancelDemoSessionLinkReadingSchedule,
   scheduleDemoSessionLinkReading,
-} from '@/lib/demo/demo-session-link-reading';
+} from '@/client/demo/demo-session-link-reading';
 import type {
   CreateBrickPayload,
   PlannedSessionPayload,

@@ -4,7 +4,7 @@ import { usePlanningDeepLinkSync } from '@/components/planning/view/use-planning
 import { usePlanningIntelligence } from '@/components/planning/view/use-planning-intelligence';
 import { usePlanningViewQueries } from '@/components/planning/view/use-planning-view-queries';
 import { usePlanningWeekState } from '@/components/planning/view/use-planning-week-state';
-import { prefetchPlannedSessionDetail } from '@/lib/query/prefetch-planned-session-detail';
+import { prefetchPlannedSessionDetail } from '@/client/query/prefetch-planned-session-detail';
 import type { ClientPlannedSession } from '@/lib/query/types';
 import { useSearchParams } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';

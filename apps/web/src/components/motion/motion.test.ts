@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { fadeTransition, fadeVariants } from '@/lib/motion/variants';
-import { motionTokens } from '@/lib/motion/tokens';
+import { fadeTransition, fadeVariants } from '@/client/motion/variants';
+import { motionTokens } from '@/client/motion/tokens';
 
 describe('motion primitives contracts', () => {
   it('fade variants are opacity-only', () => {

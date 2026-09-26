@@ -10,7 +10,7 @@ import type {
   AdaptationDimensionVm,
 } from '@/presentation/adaptation-view-model';
 import type { ProductInsightBundle } from '@sharpit/core/product-insight/types';
-import type { DimensionResult } from '@/hooks/use-today';
+import type { DimensionResult } from '@/athlete-state/today-state';
 
 const ADAPTATION_VERDICT_DISPLAY: Record<string, { label: string; colorClass: string }> = {
   INCREASE_LOAD: { label: 'Augmenter la charge', colorClass: 'text-primary' },

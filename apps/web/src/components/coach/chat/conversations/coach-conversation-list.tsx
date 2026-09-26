@@ -7,7 +7,7 @@ import {
   conversationListSelected,
   conversationListSelectedId,
 } from '@/components/coach/chat/conversations/coach-conversation-list-helpers';
-import type { ClientConversationSummary } from '@/lib/query/fetchers';
+import type { ClientConversationSummary } from '@/client/query/fetchers';
 import { cn } from '@/lib/utils';
 
 export function CoachConversationList({

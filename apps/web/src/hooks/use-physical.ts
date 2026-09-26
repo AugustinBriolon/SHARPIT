@@ -2,9 +2,9 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { BodySide, FunctionalImpact, PhysicalCategory, PhysicalStatus } from '@prisma/client';
-import { fetchPhysicalNotes } from '@/lib/query/fetchers';
-import { queryKeys } from '@/lib/query/keys';
-import { listOptimistic, tempId } from '@/lib/query/optimistic';
+import { fetchPhysicalNotes } from '@/client/query/fetchers';
+import { queryKeys } from '@/client/query/keys';
+import { listOptimistic, tempId } from '@/client/query/optimistic';
 import type { ClientPhysicalCheckin, ClientPhysicalNote } from '@/lib/query/types';
 
 export interface PhysicalNotePayload {

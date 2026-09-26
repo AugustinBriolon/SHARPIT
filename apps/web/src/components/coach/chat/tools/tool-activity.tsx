@@ -20,13 +20,8 @@ import {
   ToolActivityResultChip,
   ToolActivityStaleChip,
 } from '@/components/coach/chat/tools/tool-activity-views';
-
-export type KnownSession = {
-  id: string;
-  title?: string | null;
-  date?: string | null;
-  type?: ActivityType | null;
-};
+import type { KnownSession } from '@/lib/coach/chat/conversations/coach-chat-known-sessions';
+export type { KnownSession };
 
 type ToolPart = {
   type: string;

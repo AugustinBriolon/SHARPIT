@@ -1,4 +1,4 @@
-import { formatApiErrorMessage, parseApiErrorBody } from '@/lib/query/api-error';
+import { formatApiErrorMessage, parseApiErrorBody } from '@/client/query/api-error';
 import { coachBeuiCopy } from '@/components/coach/beui/coach-beui-copy';
 
 function shouldUseTransportFallback(raw: string | undefined): boolean {

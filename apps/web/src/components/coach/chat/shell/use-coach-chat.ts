@@ -35,7 +35,7 @@ import {
 import {
   invalidateAfterCoachToolApproval,
   invalidatePlannedSessionsAfterCoachTurn,
-} from '@/lib/coach/chat/shell/coach-chat-cache';
+} from '@/client/coach/chat/shell/coach-chat-cache';
 import {
   readCoachInputDraft,
   writeCoachInputDraft,

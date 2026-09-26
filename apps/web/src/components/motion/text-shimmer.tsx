@@ -4,7 +4,7 @@ import {
   TEXT_SHIMMER_CLASS_NAME,
   TEXT_SHIMMER_KEYFRAMES,
   textShimmerStyle,
-} from '@/lib/text-shimmer';
+} from '@/client/text-shimmer';
 
 export interface TextShimmerProps {
   children: ReactNode;

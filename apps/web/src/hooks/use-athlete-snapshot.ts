@@ -7,8 +7,11 @@ import { useCallback, useSyncExternalStore } from 'react';
 import type { AthleteSnapshot } from '@/athlete-state/snapshot';
 import { snapshotHasDisplayableContent } from '@/athlete-state/snapshot';
 import { shouldRefreshSnapshotForPhaseDrift } from '@/lib/athlete-state/snapshot-phase';
-import { fetchAthleteSnapshot, refreshAthleteSnapshot } from '@/lib/query/athlete-snapshot-fetch';
-import { queryKeys } from '@/lib/query/keys';
+import {
+  fetchAthleteSnapshot,
+  refreshAthleteSnapshot,
+} from '@/client/query/athlete-snapshot-fetch';
+import { queryKeys } from '@/client/query/keys';
 
 const RECOMMENDATION_REFRESH_INTERVAL_MS = 12_000;
 const PHASE_DRIFT_REFRESH_INTERVAL_MS = 60_000;

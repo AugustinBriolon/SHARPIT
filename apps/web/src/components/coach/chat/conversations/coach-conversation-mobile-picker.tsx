@@ -11,7 +11,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
-import type { ClientConversationSummary } from '@/lib/query/fetchers';
+import type { ClientConversationSummary } from '@/client/query/fetchers';
 
 function conversationLabel(c: ClientConversationSummary): string {
   const title = c.title.trim();

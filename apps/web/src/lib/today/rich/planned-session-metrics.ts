@@ -3,7 +3,6 @@ import { isSet } from '@sharpit/shared/value';
 import { resolveSessionAccessories } from '@/lib/planned-session/accessories/session-accessories';
 import { intensityLabels } from '@/lib/planned-session/sessions';
 import { parseStrengthPrescription } from '@/lib/planned-session/strength/strength-prescription';
-import type { SessionPreviewMetric } from '@/components/ui/instruments/session-preview-parts';
 
 const MAX_METRICS = 3;
 
@@ -198,3 +197,9 @@ export function buildBrickSessionMetrics(source: BrickSessionMetricSource): Sess
   pushMetric(metrics, goalMetric(source.goalTitle));
   return metrics;
 }
+
+export type SessionPreviewMetric = {
+  label: string;
+  value: string;
+  unit: string;
+};

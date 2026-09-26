@@ -5,7 +5,7 @@ import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { type ReactNode, useCallback, useId, useState } from 'react';
 import { AgentDisclosure } from '@/components/coach/kit/agent-disclosure';
 import { EASE_OUT, SPRING_LAYOUT, SPRING_SWAP } from '@/lib/ease';
-import { useFavicon } from '@/lib/hooks/use-favicon';
+import { useFavicon } from '@/client/hooks/use-favicon';
 import { cn } from '@/lib/utils';
 import { NavArrowDown } from '@/components/icons/nav-arrows';
 

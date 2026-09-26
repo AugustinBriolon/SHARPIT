@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import type { GeocodedPlace } from '@/lib/geocoding/types';
 import type { LocationPlaceValue } from '@/components/ui/location-place-picker';
-import { fetchGeocodingSearch } from '@/lib/query/fetchers';
+import { fetchGeocodingSearch } from '@/client/query/fetchers';
 
 export function useLocationPlaceSearch({
   disabled,

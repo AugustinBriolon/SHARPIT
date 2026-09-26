@@ -3,8 +3,8 @@
 import type { MouseEvent, PointerEvent, ReactNode } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { SPRING_LAYOUT } from '@/lib/ease';
-import type { useHoverGesture } from '@/lib/hooks/use-hover-gesture';
-import type { useTapGesture } from '@/lib/hooks/use-tap-gesture';
+import type { useHoverGesture } from '@/client/hooks/use-hover-gesture';
+import type { useTapGesture } from '@/client/hooks/use-tap-gesture';
 import { cn } from '@/lib/utils';
 import { DefaultPreview } from './preview-rail-default';
 import {

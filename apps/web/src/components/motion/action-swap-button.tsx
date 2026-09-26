@@ -10,7 +10,7 @@ import {
 import { ActionSwapButtonContent } from '@/components/motion/action-swap-button-parts';
 import { SIZE_CLASS, VARIANT_CLASS } from '@/components/motion/action-swap-styles';
 import { SPRING_PRESS } from '@/lib/ease';
-import { motionTokens } from '@/lib/motion/tokens';
+import { motionTokens } from '@/client/motion/tokens';
 import { cn } from '@/lib/utils';
 import type { ActionSwapButtonProps } from './action-swap';
 

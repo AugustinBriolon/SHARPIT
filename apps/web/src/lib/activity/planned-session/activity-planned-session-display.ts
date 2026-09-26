@@ -1,6 +1,6 @@
 import { activityTypeLabels } from '@/lib/format';
 import { parseSessionAnalysis } from '@/lib/planned-session/display/session-analysis-display';
-import type { PlannedSessionSummary } from '@/components/training/activity/detail/types';
+import type { PlannedSessionSummary } from '@/lib/activity/detail/types';
 
 export function plannedSessionChipValue(
   planned: PlannedSessionSummary,

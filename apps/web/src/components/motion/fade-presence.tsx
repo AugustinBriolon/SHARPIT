@@ -1,8 +1,8 @@
 'use client';
 
 import { AnimatePresence, motion, type HTMLMotionProps } from 'motion/react';
-import { fadeTransition, fadeVariants } from '@/lib/motion/variants';
-import { useShouldAnimate } from '@/lib/motion/hooks';
+import { fadeTransition, fadeVariants } from '@/client/motion/variants';
+import { useShouldAnimate } from '@/client/motion/hooks';
 import { cn } from '@/lib/utils';
 
 type FadePresenceProps = {

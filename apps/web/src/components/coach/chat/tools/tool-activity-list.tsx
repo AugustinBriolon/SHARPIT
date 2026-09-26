@@ -9,8 +9,8 @@ import {
   type ToolDisplayEntry,
 } from '@/lib/coach/chat/tools/coach-tool-display';
 import type { ToolPartLite } from '@/lib/coach/chat/tools/coach-tool-parts';
-import { useSafeMotion, useShouldAnimate } from '@/lib/motion/hooks';
-import { fadeTransition } from '@/lib/motion/variants';
+import { useSafeMotion, useShouldAnimate } from '@/client/motion/hooks';
+import { fadeTransition } from '@/client/motion/variants';
 
 function entryKey(entry: ToolDisplayEntry, index: number): string {
   if (entry.kind === 'single') {

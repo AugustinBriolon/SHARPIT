@@ -1,13 +1,13 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { fetchPlannedSessions } from '@/lib/query/fetchers';
-import { queryKeys } from '@/lib/query/keys';
+import { fetchPlannedSessions } from '@/client/query/fetchers';
+import { queryKeys } from '@/client/query/keys';
 import {
   fetchPlannedSessionPresentation,
   fetchSessionRationalePresentation,
   fetchWeeklyCoachingBriefPresentation,
-} from '@/lib/query/presentation-fetchers';
+} from '@/client/query/presentation-fetchers';
 
 export function usePlannedSessions() {
   return useQuery({

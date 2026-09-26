@@ -1,4 +1,4 @@
-import type { ClientConversationSummary } from '@/lib/query/fetchers';
+import type { ClientConversationSummary } from '@/client/query/fetchers';
 
 export function conversationListIsDraft(
   activeDraft: boolean,

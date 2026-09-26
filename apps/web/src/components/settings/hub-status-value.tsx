@@ -2,8 +2,8 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { isIntegrationsAttentionLabel, type SettingsHubStatus } from '@/lib/settings/hub-status';
-import { queryKeys } from '@/lib/query/keys';
-import { fetchSettingsHubPresentation } from '@/lib/query/presentation-fetchers';
+import { queryKeys } from '@/client/query/keys';
+import { fetchSettingsHubPresentation } from '@/client/query/presentation-fetchers';
 import { cn } from '@/lib/utils';
 
 export function HubStatusValue({ statusKey }: { statusKey: keyof SettingsHubStatus }) {

@@ -5,7 +5,7 @@ import type { ClientPlannedSession } from '@/lib/query/types';
 import type { usePlannedSessionFormState } from '@/components/planning/session/edit/use-planned-session-form-state';
 import type { usePlannedSessionLocationQueries } from '@/components/planning/session/edit/use-planned-session-dialog-effects';
 import type { usePlannedSessionMutations } from '@/hooks/use-data';
-import { queryKeys } from '@/lib/query/keys';
+import { queryKeys } from '@/client/query/keys';
 import {
   buildBrickCreatePayload,
   buildSessionCreateData,

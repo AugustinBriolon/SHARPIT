@@ -1,4 +1,4 @@
-import { DEMO_SESSION_LINK_READING_DELAY_MS } from '@/lib/demo/demo-session-link-reading';
+import { DEMO_SESSION_LINK_READING_DELAY_MS } from '@/client/demo/demo-session-link-reading';
 
 export type LinkPhase = 'idle' | 'linking' | 'analyzing' | 'done';
 

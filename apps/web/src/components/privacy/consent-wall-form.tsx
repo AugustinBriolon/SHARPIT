@@ -13,7 +13,7 @@ import {
   parseConsentWallReason,
   type ConsentWallReason,
 } from '@/lib/privacy/consent-withdraw-ux';
-import { postPrivacyConsent } from '@/lib/query/fetchers';
+import { postPrivacyConsent } from '@/client/query/fetchers';
 
 export function ConsentWallForm({ reason }: { reason?: ConsentWallReason | null } = {}) {
   const searchParams = useSearchParams();

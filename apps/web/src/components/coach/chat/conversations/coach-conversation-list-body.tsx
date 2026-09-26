@@ -6,7 +6,7 @@ import {
   DesktopListLoadingRows,
   conversationLabel,
 } from '@/components/coach/chat/conversations/coach-conversation-list-parts';
-import type { ClientConversationSummary } from '@/lib/query/fetchers';
+import type { ClientConversationSummary } from '@/client/query/fetchers';
 
 function ConversationListEmptyHint({ show }: { show: boolean }) {
   if (!show) {

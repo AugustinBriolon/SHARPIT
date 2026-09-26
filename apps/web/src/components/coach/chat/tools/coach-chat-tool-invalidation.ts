@@ -1,7 +1,7 @@
 import type { QueryClient } from '@tanstack/react-query';
 import type { UIMessage } from 'ai';
 import { CALENDAR_MUTATION_TOOL_TYPES } from '@/lib/coach/chat/tools/coach-tool-parts';
-import { invalidateAfterCoachTools } from '@/lib/coach/chat/shell/coach-chat-cache';
+import { invalidateAfterCoachTools } from '@/client/coach/chat/shell/coach-chat-cache';
 
 function isCompletedCalendarToolPart(part: {
   type: string;

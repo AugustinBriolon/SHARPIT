@@ -5,8 +5,8 @@ import {
   fetchLatestWeeklyReview,
   fetchWeeklyReview,
   type ClientWeeklyReview,
-} from '@/lib/query/fetchers';
-import { queryKeys } from '@/lib/query/keys';
+} from '@/client/query/fetchers';
+import { queryKeys } from '@/client/query/keys';
 
 export function useWeeklyReview(date: string) {
   return useQuery({

@@ -1,7 +1,7 @@
 import type { useQueryClient } from '@tanstack/react-query';
 import type { useRouter } from 'next/navigation';
-import { invalidateAfterAthleteProfileSave } from '@/lib/query/invalidate-after-athlete-profile-save';
-import { queryKeys } from '@/lib/query/keys';
+import { invalidateAfterAthleteProfileSave } from '@/client/query/invalidate-after-athlete-profile-save';
+import { queryKeys } from '@/client/query/keys';
 
 export function saveProfilePatch(
   queryClient: ReturnType<typeof useQueryClient>,

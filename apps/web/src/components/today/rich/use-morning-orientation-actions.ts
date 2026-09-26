@@ -4,8 +4,8 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useState, useTransition } from 'react';
 import { toast } from '@/components/ui/toast';
 import { postMorningRecalibration } from '@/components/today/rich/morning-orientation-recalibration';
-import { refreshAthleteSnapshot } from '@/lib/query/athlete-snapshot-fetch';
-import { queryKeys } from '@/lib/query/keys';
+import { refreshAthleteSnapshot } from '@/client/query/athlete-snapshot-fetch';
+import { queryKeys } from '@/client/query/keys';
 
 export function useMorningOrientationActions({
   trainingDayId,

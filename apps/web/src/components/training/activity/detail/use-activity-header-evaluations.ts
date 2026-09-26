@@ -3,7 +3,7 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useActivities } from '@/hooks/use-data';
 import { useActivityDetail } from '@/hooks/use-activity-detail';
-import { queryKeys } from '@/lib/query/keys';
+import { queryKeys } from '@/client/query/keys';
 import type { ClientActivity, ClientActivityDetail } from '@/lib/query/types';
 
 function firstPresent<T>(candidates: Array<T | null | undefined>, fallback: T): T {

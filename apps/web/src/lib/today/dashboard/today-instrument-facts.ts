@@ -4,7 +4,7 @@
  */
 
 import type { AthleteSnapshot } from '@/athlete-state/snapshot';
-import type { DecisionData, LimitingFactor } from '@/hooks/use-today';
+import type { DecisionData, LimitingFactor } from '@/athlete-state/today-state';
 
 export type TodayFactRow = {
   label: string;

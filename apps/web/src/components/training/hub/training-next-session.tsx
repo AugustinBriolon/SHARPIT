@@ -10,7 +10,7 @@ import { InkEmptyState } from '@/components/ui/ink-empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
 import { activityTypeLabels } from '@/lib/format';
 import { buildPlannedSessionPreview } from '@/lib/today/rich/planned-session-metrics';
-import { prefetchPlannedSessionDetail } from '@/lib/query/prefetch-planned-session-detail';
+import { prefetchPlannedSessionDetail } from '@/client/query/prefetch-planned-session-detail';
 import {
   brickLegSummaries,
   groupPlannedSessions,

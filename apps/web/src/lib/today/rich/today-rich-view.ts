@@ -1,4 +1,4 @@
-import type { AdaptationData, TopAction } from '@/hooks/use-today';
+import type { AdaptationData, TopAction } from '@/athlete-state/today-state';
 import { isSet } from '@sharpit/shared/value';
 import type { DailyPhase } from '@/lib/daily-phase/types';
 import { isForwardAdvicePhase } from '@/lib/daily-phase/resolve';

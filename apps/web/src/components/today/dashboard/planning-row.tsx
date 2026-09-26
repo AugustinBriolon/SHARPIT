@@ -3,7 +3,7 @@
 import { selectUpcomingPlannedPreview } from '@/lib/planned-session/planned-session-dates';
 import { resolvePlannedSessionDisplay } from '@/lib/planned-session/display/planned-session-display';
 import { forecastBadgeFromContext } from '@/lib/planned-session/forecast/forecast-badge';
-import { prefetchPlannedSessionDetail } from '@/lib/query/prefetch-planned-session-detail';
+import { prefetchPlannedSessionDetail } from '@/client/query/prefetch-planned-session-detail';
 import type { ClientPlannedSession } from '@/lib/query/types';
 import { useQueryClient } from '@tanstack/react-query';
 import {

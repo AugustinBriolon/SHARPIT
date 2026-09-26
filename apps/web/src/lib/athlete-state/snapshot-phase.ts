@@ -15,7 +15,7 @@ import type { ClientGoal } from '@/lib/query/types';
 import { resolveTodayGoalContext } from '@/lib/daily-phase/goal-context';
 import { pickTomorrowSessionHint } from '@/lib/daily-phase/evening-context';
 import { formatLimitingFactorMessage } from '@/lib/athlete-state/snapshot-truthfulness';
-import type { TodayState } from '@/hooks/use-today';
+import type { TodayState } from '@/athlete-state/today-state';
 import {
   decisionTopAction,
   decisionVerdict,

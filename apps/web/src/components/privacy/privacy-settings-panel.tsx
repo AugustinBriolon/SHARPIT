@@ -17,7 +17,7 @@ import {
   deletePrivacyAccount,
   downloadPrivacyExport,
   postPrivacyConsent,
-} from '@/lib/query/fetchers';
+} from '@/client/query/fetchers';
 
 type ConsentState = {
   termsAcceptedAt: string | null;

@@ -1,4 +1,4 @@
-import type { PlannedSessionSummary } from '@/components/training/activity/detail/types';
+import type { PlannedSessionSummary } from '@/lib/activity/detail/types';
 import { ActivityType } from '@prisma/client';
 
 export type ActivityListItem = {

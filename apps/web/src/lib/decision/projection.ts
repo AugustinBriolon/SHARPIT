@@ -11,7 +11,7 @@ import type {
   LimitingFactor,
   TodayState,
   TopAction,
-} from '@/hooks/use-today';
+} from '@/athlete-state/today-state';
 import type { DailyPhaseWhyFocus } from '@/lib/daily-phase/types';
 import { resolve, resolveCode } from '@/lib/french';
 import { TWIN_DRILL_DOWN } from '@/lib/today/navigation/today-twin-navigation';

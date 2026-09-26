@@ -17,7 +17,7 @@ import { useActivities } from '@/hooks/use-activities';
 import {
   getClientTrainingDayIdSnapshot,
   subscribeTrainingDayChange,
-} from '@/lib/date/subscribe-training-day';
+} from '@/client/date/subscribe-training-day';
 
 /** Prerender-safe placeholder — Suspense fallback / SSR never freezes wall-clock day. */
 const SERVER_TRAINING_DAY_ID = '0000-00-00';

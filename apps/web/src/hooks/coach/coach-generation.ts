@@ -8,6 +8,8 @@ import type { CoachEndurancePrescription } from '@/lib/planned-session/endurance
 import type { GateResult } from '@/lib/plan-gate/types';
 // The shape the coach actually returns — mirroring it by hand let it drift.
 import type { CoachStrengthPrescription } from '@/lib/planned-session/strength/strength-prescription';
+import type { AdaptAction, AdaptChange, AdaptPlanResult } from '@/lib/coach/plan/adapt-types';
+export type { AdaptAction, AdaptChange, AdaptPlanResult };
 
 export interface GeneratedSession {
   dayOffset: number;
@@ -111,29 +113,4 @@ export async function postCoachGeneration<TResult>({
       onProgress?.({ reasoning, partialCount });
     },
   });
-}
-
-export type AdaptAction = 'MODIFY' | 'REMOVE' | 'ADD';
-
-export interface AdaptChange {
-  action: AdaptAction;
-  sessionId: string | null;
-  date: string | null;
-  type: ActivityType | null;
-  intensity: SessionIntensity | null;
-  title: string | null;
-  description: string | null;
-  strengthPrescription?: CoachStrengthPrescription | null;
-  endurancePrescription?: CoachEndurancePrescription | null;
-  durationMin: number | null;
-  load: number | null;
-  reason: string;
-  /** Origin CoachingDecision id — null for REMOVE changes and non-gated proposals. */
-  decisionId: string | null;
-}
-
-export interface AdaptPlanResult {
-  summary: string;
-  changes: AdaptChange[];
-  gate: GateResult;
 }

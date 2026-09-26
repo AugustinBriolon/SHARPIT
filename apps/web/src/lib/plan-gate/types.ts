@@ -13,7 +13,7 @@ import type { ActivityType, GoalHorizon, PlanPhase, SessionIntensity } from '@pr
 import type { CoachEndurancePrescription } from '@/lib/planned-session/endurance/coach-endurance-prescription';
 import type { CoachStrengthPrescription } from '@/lib/planned-session/strength/strength-prescription';
 import type { SerializedDecisionState } from '@sharpit/core/decision/adapters';
-import type { PhysicalHealthData, TrainingCapacity } from '@/hooks/use-today';
+import type { PhysicalHealthData, TrainingCapacity } from '@/athlete-state/today-state';
 import type { PracticedSportId } from '@/lib/practiced-sports';
 
 /** Minimal, deterministic input the Gate needs — built once at the API boundary, never fetched by the Gate itself. */

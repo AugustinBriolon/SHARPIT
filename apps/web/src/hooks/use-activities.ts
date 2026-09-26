@@ -7,19 +7,19 @@ import {
   fetchActivityRoutePreviews,
   fetchActivityStream,
   fetchMultisportStreams,
-} from '@/lib/query/fetchers';
-import { queryKeys } from '@/lib/query/keys';
-import { listOptimistic, tempId, isTempId } from '@/lib/query/optimistic';
+} from '@/client/query/fetchers';
+import { queryKeys } from '@/client/query/keys';
+import { listOptimistic, tempId, isTempId } from '@/client/query/optimistic';
 import {
   invalidateTodayPresentationCaches,
   patchTodayPostSessionLoopAfterFeeling,
-} from '@/lib/query/patch-post-session-loop';
-import { patchActivityAthleteCaptureInPlannedSessions } from '@/lib/query/patch-activity-athlete-capture';
-import { sendJson } from '@/lib/query/send-json';
+} from '@/client/query/patch-post-session-loop';
+import { patchActivityAthleteCaptureInPlannedSessions } from '@/client/query/patch-activity-athlete-capture';
+import { sendJson } from '@/client/query/send-json';
 import type { QueryClient } from '@tanstack/react-query';
 import type { ClientActivity, ClientActivityDetail } from '@/lib/query/types';
 import type { createActivitySchema } from '@/lib/validators/activity';
-import { nullishFields } from '@/lib/query/nullish-fields';
+import { nullishFields } from '@/client/query/nullish-fields';
 import type { z } from 'zod';
 
 export function useActivities() {

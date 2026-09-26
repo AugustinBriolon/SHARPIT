@@ -8,11 +8,11 @@ import {
   AthleteNavAvatar,
   AthleteNavAvatarSkeleton,
 } from '@/components/layout/nav/athlete-nav-avatar';
-import { bottomNavItems, moiNavItem, type AppNavItem } from '@/lib/app-navigation';
+import { bottomNavItems, moiNavItem, type AppNavItem } from '@/client/app-navigation';
 import { useAthleteNavIdentity } from '@/hooks/use-athlete-nav-identity';
 import { usePrefetchNavQuery } from '@/hooks/use-prefetch-nav';
 import { PAGE_CONTENT_MAX_CLASS, PAGE_GUTTER } from '@/lib/ui/page-gutter';
-import { springs } from '@/lib/motion/tokens';
+import { springs } from '@/client/motion/tokens';
 import { cn } from '@/lib/utils';
 import { OfflineBanner } from '@/components/pwa/offline-banner';
 import { SyncingIndicator } from '@/components/ui/syncing-indicator';

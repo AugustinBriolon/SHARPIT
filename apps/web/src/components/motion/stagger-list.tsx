@@ -1,8 +1,8 @@
 'use client';
 
 import { motion, useReducedMotion, type HTMLMotionProps } from 'motion/react';
-import { staggerContainer, staggerItem, staggerItemReduced } from '@/lib/motion/variants';
-import { useShouldAnimate } from '@/lib/motion/hooks';
+import { staggerContainer, staggerItem, staggerItemReduced } from '@/client/motion/variants';
+import { useShouldAnimate } from '@/client/motion/hooks';
 import { cn } from '@/lib/utils';
 
 type StaggerListProps = {

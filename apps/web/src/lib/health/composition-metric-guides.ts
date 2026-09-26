@@ -1,4 +1,4 @@
-import type { CorpsTone } from '@/components/corps/corps-ui';
+import type { CorpsTone } from '@/lib/ui/metric-tone';
 import { isSet } from '@sharpit/shared/value';
 import { corpsToneFromAgeDelta, maxCorpsTone } from './health-status';
 import {

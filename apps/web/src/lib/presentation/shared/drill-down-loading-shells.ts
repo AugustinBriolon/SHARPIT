@@ -1,5 +1,5 @@
 import { EMPTY_GLOBAL_DECISION } from '@/presentation/global-decision-context';
-import type { DimensionResult } from '@/hooks/use-today';
+import type { DimensionResult } from '@/athlete-state/today-state';
 import { buildEffortStrainComposition } from '@/lib/presentation/effort/effort-strain-composition';
 
 const EMPTY_DIM: DimensionResult = { score: null, status: 'PENDING', available: false };

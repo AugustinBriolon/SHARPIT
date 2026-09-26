@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { buildAthleteSnapshot } from '@/lib/athlete-state/snapshot-builder';
-import type { TodayState } from '@/hooks/use-today';
+import type { TodayState } from '@/athlete-state/today-state';
 
 const baseFreshness = {
   athleteId: 'default',

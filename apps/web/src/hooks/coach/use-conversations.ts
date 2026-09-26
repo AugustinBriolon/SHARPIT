@@ -7,8 +7,8 @@ import {
   fetchConversations,
   type ClientConversation,
   type ClientConversationSummary,
-} from '@/lib/query/fetchers';
-import { queryKeys } from '@/lib/query/keys';
+} from '@/client/query/fetchers';
+import { queryKeys } from '@/client/query/keys';
 
 let createConversationPromise: Promise<ClientConversation> | null = null;
 

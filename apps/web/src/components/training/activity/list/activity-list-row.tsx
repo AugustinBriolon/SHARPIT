@@ -11,8 +11,8 @@ import {
 import { isIndoorActivitySession } from '@/lib/activity/location/indoor-activity';
 import { activityTypeLabels, formatDate, formatDuration } from '@/lib/format';
 import { parseSessionAnalysis } from '@/lib/planned-session/display/session-analysis-display';
-import { isTempId } from '@/lib/query/optimistic';
-import { prefetchActivityDetail } from '@/lib/query/prefetch-activity-detail';
+import { isTempId } from '@/client/query/optimistic';
+import { prefetchActivityDetail } from '@/client/query/prefetch-activity-detail';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { useQueryClient } from '@tanstack/react-query';
