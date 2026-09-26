@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { apiFetch, apiRequest, navigateToConnect } from './api-fetch';
 
 function signIn(token: string | null) {
-  vi.stubGlobal('Clerk', { session: token ? { getToken: async () => token } : null });
+  vi.stubGlobal('Clerk', { loaded: true, session: token ? { getToken: async () => token } : null });
 }
 
 describe('apiRequest', () => {
@@ -28,16 +28,29 @@ describe('apiRequest', () => {
     expect(init.credentials).toBe('omit');
   });
 
-  it('stays same-origin when the switch is off (rollback)', async () => {
+  it('stays relative without an api origin (tests)', async () => {
     vi.stubEnv('NEXT_PUBLIC_API_ORIGIN', '');
     expect((await apiRequest('/api/goals')).url).toBe('/api/goals');
   });
 
-  it('stays same-origin without a Clerk session (anonymous demo)', async () => {
+  it('still goes to api. without a session — api. answers the 401', async () => {
     signIn(null);
     const { url, init } = await apiRequest('/api/goals');
-    expect(url).toBe('/api/goals');
+    expect(url).toBe('https://api.sharpit.app/api/goals');
     expect(new Headers(init.headers).has('authorization')).toBe(false);
+  });
+
+  it('waits for Clerk to load before asking for the token', async () => {
+    const clerk: { loaded: boolean; session: { getToken(): Promise<string> } } = {
+      loaded: false,
+      session: { getToken: async () => 'late' },
+    };
+    vi.stubGlobal('Clerk', clerk);
+    setTimeout(() => {
+      clerk.loaded = true;
+    }, 120);
+    const { init } = await apiRequest('/api/goals');
+    expect(new Headers(init.headers).get('authorization')).toBe('Bearer late');
   });
 
   it('leaves anything but /api alone', async () => {
