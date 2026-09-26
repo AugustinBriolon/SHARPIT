@@ -14,7 +14,6 @@ import { apiProxy, rateLimitApiUser } from '@sharpit/server/lib/hosts/api-proxy'
 
 // Routes accessibles sans session Clerk :
 // - pages de connexion/inscription
-// - le cron Vercel (protégé par CRON_SECRET, pas par une session)
 // - l'entrée et la sortie du mode démo, qui posent/effacent le cookie avant
 //   toute session — listées explicitement (pas de wildcard `/api/demo(.*)`)
 //   pour ne jamais exposer d'autre route sous /api/demo sans session.
@@ -25,7 +24,6 @@ const isPublicRoute = createRouteMatcher([
   '/welcome(.*)',
   '/privacy',
   '/terms',
-  '/api/cron(.*)',
   '/~offline',
   // iOS fetches apple-touch-startup-image without a session cookie.
   '/apple-splash(.*)',

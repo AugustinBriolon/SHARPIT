@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync, statSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
@@ -32,9 +32,17 @@ describe('api route mounts', () => {
 
   // Until the web stops serving these routes (phase 3, ADR-048), both apps mount the same handler
   // with the same segment config: a route cannot drift between api. and the web.
-  it.each(mounts.map((file) => relative(API_ROUTES, file)))('%s matches the web mount', (path) => {
+  const shared = mounts
+    .map((file) => relative(API_ROUTES, file))
+    .filter((path) => existsSync(join(WEB_ROUTES, path)));
+
+  it.each(shared)('%s matches the web mount', (path) => {
     const web = join(WEB_ROUTES, path);
     expect(readFileSync(join(API_ROUTES, path), 'utf8')).toBe(readFileSync(web, 'utf8'));
+  });
+
+  it('is the only app mounting the crons', () => {
+    expect(existsSync(join(WEB_ROUTES, 'cron'))).toBe(false);
   });
 
   it('mounts every native route the web mounts', () => {

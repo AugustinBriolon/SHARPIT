@@ -160,16 +160,3 @@ describe('buildFreshGarminClient auth hardening', () => {
     expect(refreshDiGarminTokens).not.toHaveBeenCalled();
   });
 });
-
-describe('cron sync must not import SSO login', () => {
-  it('api/cron/sync does not reference loginWithCredentials or connectGarmin', async () => {
-    const fs = await import('node:fs/promises');
-    const path = await import('node:path');
-    const routePath = path.join(process.cwd(), 'src/app/api/cron/sync/route.ts');
-    const source = await fs.readFile(routePath, 'utf8');
-    expect(source).not.toMatch(/loginWithCredentials/);
-    expect(source).not.toMatch(/connectGarmin/);
-    expect(source).not.toMatch(/loginGarminWidget/);
-    expect(source).not.toMatch(/loginGarminMobile/);
-  });
-});
