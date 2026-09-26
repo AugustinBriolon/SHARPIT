@@ -5,10 +5,7 @@
  */
 
 import type { PrismaClient } from '@prisma/client';
-import {
-  OUTCOMES,
-  type JournalOutcomeKey,
-} from '@sharpit/server/lib/journal/journal-habit-analysis';
+import { OUTCOMES, type JournalOutcomeKey } from '@sharpit/app/lib/journal/journal-habit-analysis';
 import {
   HEALTH_ROW_SELECT,
   parseRecordedFactors,
@@ -21,7 +18,7 @@ import {
   type EvaluatedExperiment,
   type ExperimentEvidence,
   type ExperimentRecord,
-} from '@sharpit/server/lib/journal/journal-habit-experiment';
+} from '@sharpit/app/lib/journal/journal-habit-experiment';
 import { addTrainingDays } from '@sharpit/core/training/training-day';
 
 /** One running test plus a short history is all the page shows. */

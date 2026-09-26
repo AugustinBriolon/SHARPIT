@@ -26,7 +26,9 @@
     "db:up": "docker compose up -d",
     "db:migrate-neon": "bash scripts/migrate-to-neon.sh",
     "garmin:login": "python3 scripts/garmin-login.py",
-    "garmin:import-tokens": "tsx scripts/import-garmin-tokens.ts"
+    "garmin:import-tokens": "tsx scripts/import-garmin-tokens.ts",
+    "smoke:must-private": "tsx scripts/smoke-must-private.ts",
+    "smoke:api-host": "tsx scripts/smoke-api-host.ts"
   },
   "prisma": {
     "schema": "../../packages/db/prisma/schema.prisma"
@@ -34,6 +36,7 @@
   "dependencies": {
     "@clerk/nextjs": "^7.5.9",
     "@prisma/client": "^6.19.3",
+    "@sharpit/app": "workspace:*",
     "@sharpit/db": "workspace:*",
     "@sharpit/server": "workspace:*",
     "next": "16.3.0",

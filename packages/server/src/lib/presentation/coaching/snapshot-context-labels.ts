@@ -8,10 +8,10 @@ import {
   mapVerdictToDisplay,
   mapFatigueCapacityLabel,
   type OverallVerdict,
-} from '@sharpit/server/lib/today/dashboard/today-mapping';
+} from '@sharpit/app/lib/today/dashboard/today-mapping';
 import { CAPACITY_LABELS } from '@sharpit/server/lib/presentation/physical-health/physical-health';
-import type { TrainingCapacity } from '@sharpit/server/athlete-state/today-state';
-import type { DecisionSnapshotContext } from '@sharpit/server/lib/decision-memory/types';
+import type { TrainingCapacity } from '@sharpit/app/athlete-state/today-state';
+import type { DecisionSnapshotContext } from '@sharpit/app/lib/decision-memory/types';
 
 const CONFIDENCE_TIER_LABEL: Record<string, string> = {
   HIGH: 'Confiance élevée',

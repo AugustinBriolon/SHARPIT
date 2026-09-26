@@ -1,7 +1,7 @@
 'use client';
 
-import type { EndurancePreviewStep } from '@sharpit/server/lib/planned-session/endurance/endurance-preview';
-import { cn } from '@sharpit/server/lib/utils';
+import type { EndurancePreviewStep } from '@sharpit/app/lib/planned-session/endurance/endurance-preview';
+import { cn } from '@sharpit/app/lib/utils';
 
 /**
  * The session as the watch will read it, one line per step.

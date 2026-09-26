@@ -1,21 +1,15 @@
-import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
-import { dirname, join, relative } from 'node:path';
+import { readdirSync, readFileSync, statSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 /**
- * ADR-048 phase 3f: the web reads and writes through `api.` only. This follows every
- * `@sharpit/server` import of the web app (transitively, type-only imports excluded) and
- * fails on any web file that reaches the database client.
+ * ADR-048 phase 3f / ADR-050: the web reads and writes through `api.`, and takes its shared code
+ * from `@sharpit/app`. It never imports the server package or the database — not even a type.
  */
-const WEB_SRC = 'src';
-const SERVER_SRC = join('..', '..', 'packages', 'server', 'src');
-const SERVER_EXPORTS: Record<string, string> = JSON.parse(
-  readFileSync(join('..', '..', 'packages', 'server', 'package.json'), 'utf8'),
-).exports;
-const IMPORT =
-  /(?:import|export)\s[^'"]*?from\s+['"]([^'"]+)['"]|import\(\s*['"]([^'"]+)['"]\s*\)/g;
-const TYPE_ONLY = /(?:import|export) type[^;]*;/g;
-const REACHES_DATABASE = /from ['"]@sharpit\/db\/client['"]/;
+const ROOTS = ['src', 'scripts', 'e2e'];
+const SPECIFIER =
+  /(?:import|export)\s[^'"]*?from\s+['"]([^'"]+)['"]|import\(\s*['"]([^'"]+)['"]\s*\)|vi\.mock\(\s*['"]([^'"]+)['"]/g;
+const FORBIDDEN = /^@sharpit\/(server|db)(\/|$)/;
 
 function sourceFiles(dir: string): string[] {
   return readdirSync(dir).flatMap((entry) => {
@@ -23,70 +17,34 @@ function sourceFiles(dir: string): string[] {
     if (statSync(path).isDirectory()) {
       return sourceFiles(path);
     }
-    return /\.tsx?$/.test(entry) && !/\.test\.tsx?$/.test(entry) ? [path] : [];
+    return /\.(tsx?|mjs)$/.test(entry) ? [path] : [];
   });
 }
 
-function resolveServer(specifier: string, from: string): string | null {
-  let base: string;
-  if (specifier.startsWith('@sharpit/server/')) {
-    const subpath = specifier.slice('@sharpit/server/'.length);
-    const exported = SERVER_EXPORTS[`./${subpath}`];
-    if (exported) {
-      return join(SERVER_SRC, '..', exported);
-    }
-    base = join(SERVER_SRC, subpath);
-  } else if (specifier.startsWith('.') && from.startsWith(SERVER_SRC)) {
-    base = join(dirname(from), specifier);
-  } else {
-    return null;
-  }
-  const candidates = [base, `${base}.ts`, `${base}.tsx`, join(base, 'index.ts')];
-  return candidates.find((path) => existsSync(path) && statSync(path).isFile()) ?? null;
-}
-
-const reaches = new Map<string, boolean>();
-
-function reachesDatabase(file: string, visiting = new Set<string>()): boolean {
-  const known = reaches.get(file);
-  if (known !== undefined) {
-    return known;
-  }
-  if (visiting.has(file)) {
-    return false;
-  }
-  visiting.add(file);
-  const source = readFileSync(file, 'utf8').replace(TYPE_ONLY, '');
-  const result =
-    REACHES_DATABASE.test(source) ||
-    [...source.matchAll(IMPORT)].some((match) => {
-      const target = resolveServer(match[1] ?? match[2], file);
-      return target !== null && reachesDatabase(target, visiting);
-    });
-  reaches.set(file, result);
-  return result;
-}
-
-describe('web without a database', () => {
-  const offenders = sourceFiles(WEB_SRC)
-    .filter((file) => {
-      const source = readFileSync(file, 'utf8').replace(TYPE_ONLY, '');
-      return [...source.matchAll(IMPORT)].some((match) => {
-        const target = resolveServer(match[1] ?? match[2], file);
-        return target !== null && reachesDatabase(target);
-      });
+describe('web without the server', () => {
+  it('imports neither @sharpit/server nor @sharpit/db', () => {
+    const offenders = ROOTS.filter((root) => {
+      try {
+        return statSync(root).isDirectory();
+      } catch {
+        return false;
+      }
     })
-    .map((file) => relative(WEB_SRC, file))
-    .sort();
-
-  it('no web page, component or route reaches the database', () => {
+      .flatMap(sourceFiles)
+      .flatMap((file) =>
+        [...readFileSync(file, 'utf8').matchAll(SPECIFIER)]
+          .map((match) => match[1] ?? match[2] ?? match[3])
+          .filter((specifier) => FORBIDDEN.test(specifier))
+          .map((specifier) => `${file} → ${specifier}`),
+      );
     expect(offenders).toEqual([]);
   });
 
-  it('does not even depend on the database package', () => {
+  it('does not depend on them either', () => {
     const manifest = JSON.parse(readFileSync('package.json', 'utf8')) as {
       dependencies?: Record<string, string>;
     };
-    expect(manifest.dependencies).not.toHaveProperty('@sharpit/db');
+    expect(Object.keys(manifest.dependencies ?? {})).not.toContain('@sharpit/server');
+    expect(Object.keys(manifest.dependencies ?? {})).not.toContain('@sharpit/db');
   });
 });

@@ -1,6 +1,6 @@
 import type { GeneratedSession } from '@/hooks/use-coach';
-import { resolveEnduranceFieldsForPersist } from '@sharpit/server/lib/planned-session/endurance/coach-endurance-prescription';
-import { resolveStrengthFieldsForPersist } from '@sharpit/server/lib/planned-session/strength/strength-prescription';
+import { resolveEnduranceFieldsForPersist } from '@sharpit/app/lib/planned-session/endurance/coach-endurance-prescription';
+import { resolveStrengthFieldsForPersist } from '@sharpit/app/lib/planned-session/strength/strength-prescription';
 
 export function buildPlanInsertPayloads(
   sessions: GeneratedSession[],

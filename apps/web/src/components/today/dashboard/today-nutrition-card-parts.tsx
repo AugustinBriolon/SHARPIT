@@ -1,15 +1,15 @@
 'use client';
 
 import { Beef, Droplet, Wheat, type LucideIcon } from 'lucide-react';
-import { formatRemainingCalories } from '@sharpit/server/lib/nutrition/goals-progress';
+import { formatRemainingCalories } from '@sharpit/app/lib/nutrition/goals-progress';
 import {
   CALORIE_RING,
   MACRO_CSS_COLOR,
   MACRO_COLORS,
   MACRO_LABELS,
   type MacroKind,
-} from '@sharpit/server/lib/nutrition/macro-colors';
-import { cn } from '@sharpit/server/lib/utils';
+} from '@sharpit/app/lib/nutrition/macro-colors';
+import { cn } from '@sharpit/app/lib/utils';
 
 const MACRO_ICONS: Record<MacroKind, LucideIcon> = {
   protein: Beef,

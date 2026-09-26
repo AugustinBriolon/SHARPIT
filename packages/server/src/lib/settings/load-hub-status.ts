@@ -26,7 +26,7 @@ import {
   integrationsStatusLabel,
   memoryStatusLabel,
   type SettingsHubStatus,
-} from '@sharpit/server/lib/settings/hub-status';
+} from '@sharpit/app/lib/settings/hub-status';
 
 const APP_VERSION = '0.1.0';
 

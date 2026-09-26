@@ -2,7 +2,7 @@ import { Suspense } from 'react';
 import { JournalAnalysesScreen } from '@/components/journal/analyses/journal-analyses-screen';
 import { MobileDrillDownHeader } from '@/components/layout/header/mobile-drill-down-header';
 import { Skeleton } from '@/components/ui/skeleton';
-import type { JournalAnalysesPayload } from '@sharpit/server/lib/web/journal-analyses';
+import type { JournalAnalysesPayload } from '@sharpit/app/lib/web/payloads';
 import { cachedServerApiJson } from '@/server/api-client';
 
 function JournalAnalysesSkeleton() {

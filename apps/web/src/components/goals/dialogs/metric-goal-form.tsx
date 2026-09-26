@@ -9,8 +9,8 @@ import {
 } from '@/components/goals/dialogs/metric-goal-form-logic';
 import { useMetricGoalFormSetup } from '@/components/goals/dialogs/use-metric-goal-form-setup';
 import { GoalHorizon } from '@prisma/client';
-import type { GoalMetricTemplate } from '@sharpit/server/lib/goals/goal-metric-config';
-import type { PracticedSportId } from '@sharpit/server/lib/practiced-sports';
+import type { GoalMetricTemplate } from '@sharpit/app/lib/goals/goal-metric-config';
+import type { PracticedSportId } from '@sharpit/app/lib/practiced-sports';
 
 export interface MetricGoalFormResult {
   title: string;

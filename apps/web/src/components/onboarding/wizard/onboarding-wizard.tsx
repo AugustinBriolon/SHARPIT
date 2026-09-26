@@ -4,9 +4,9 @@ import { OnboardingCredentialHost } from '@/components/onboarding/gate/onboardin
 import { OnboardingBootstrapScreen } from '@/components/onboarding/gate/onboarding-bootstrap-screen';
 import { OnboardingWizardShell } from '@/components/onboarding/wizard/onboarding-wizard-steps';
 import { useOnboardingWizard } from '@/components/onboarding/wizard/use-onboarding-wizard';
-import type { IntegrationId } from '@sharpit/server/lib/integrations/shared/client-sync';
-import type { IntegrationSourcePrefs } from '@sharpit/server/lib/integrations/source-prefs';
-import type { AthleteEquipment } from '@sharpit/server/lib/equipment/types';
+import type { IntegrationId } from '@sharpit/app/lib/integrations/shared/client-sync';
+import type { IntegrationSourcePrefs } from '@sharpit/app/lib/integrations/source-prefs';
+import type { AthleteEquipment } from '@sharpit/app/lib/equipment/types';
 
 export function OnboardingWizard({
   initiallyConnected,

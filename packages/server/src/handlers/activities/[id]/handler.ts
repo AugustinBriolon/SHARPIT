@@ -9,7 +9,7 @@ import {
 import { deleteActivity, getActivityById, updateActivity } from '@sharpit/server/lib/queries';
 import { updateRecordsForTypesSafe } from '@sharpit/server/lib/training/records/records';
 import { computeTrainingDayId } from '@sharpit/core/training/training-day';
-import { updateActivitySchema } from '@sharpit/server/lib/validators/activity';
+import { updateActivitySchema } from '@sharpit/app/lib/validators/activity';
 
 type RouteContext = { params: Promise<{ id: string }> };
 

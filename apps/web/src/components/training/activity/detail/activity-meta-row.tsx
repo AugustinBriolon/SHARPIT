@@ -5,7 +5,7 @@ import { useDemoActivityPlannedSession } from '@/hooks/use-demo-session-link-ove
 import type {
   ActivityDetail,
   ActivityPerformanceRecordChip,
-} from '@sharpit/server/lib/activity/detail/types';
+} from '@sharpit/app/lib/activity/detail/types';
 
 const EMPTY_RECORDS: ActivityPerformanceRecordChip[] = [];
 

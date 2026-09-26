@@ -4,7 +4,7 @@ import {
   analyzeActivityStreams,
   resolveThresholds,
   type ActivityAnalysis,
-} from '@sharpit/server/lib/activity/detail/activity-analysis';
+} from '@sharpit/app/lib/activity/detail/activity-analysis';
 import {
   fetchGarminActivityStreams,
   rawStreamsHaveSignal,
@@ -23,47 +23,22 @@ import {
   legKindToActivityType,
   sportLegsOnly,
   type MultisportLeg,
-} from '@sharpit/server/lib/activity/multisport';
+} from '@sharpit/app/lib/activity/multisport';
 
 export type { RawStreams };
 
-export interface StreamSample {
-  t: number; // temps (s)
-  d: number; // distance cumulée (m)
-  alt: number | null;
-  hr: number | null;
-  watts: number | null;
-  cadence: number | null;
-  speed: number | null; // m/s
-}
-
-export interface ActivityStreamPayload {
-  available: boolean;
-  path: [number, number][] | null;
-  samples: StreamSample[];
-  has: {
-    distance: boolean;
-    altitude: boolean;
-    hr: boolean;
-    watts: boolean;
-    cadence: boolean;
-    speed: boolean;
-  };
-  stats: {
-    avgHr: number | null;
-    maxHr: number | null;
-    avgWatts: number | null;
-    maxWatts: number | null;
-    avgCadence: number | null;
-    maxSpeed: number | null; // m/s
-    avgSpeed: number | null; // m/s
-    totalDistance: number | null; // m
-    totalAscent: number | null; // m
-    minAlt: number | null;
-    maxAlt: number | null;
-  } | null;
-  analysis: ActivityAnalysis | null;
-}
+export type {
+  ActivityStreamPayload,
+  MultisportLegStream,
+  MultisportStreamsPayload,
+  StreamSample,
+} from '@sharpit/app/lib/streams/stream-types';
+import type {
+  ActivityStreamPayload,
+  MultisportLegStream,
+  MultisportStreamsPayload,
+  StreamSample,
+} from '@sharpit/app/lib/streams/stream-types';
 
 const MAX_SAMPLES = 500;
 const MAX_PATH_POINTS = 800;
@@ -387,16 +362,6 @@ const UNAVAILABLE: ActivityStreamPayload = {
   stats: null,
   analysis: null,
 };
-
-export interface MultisportLegStream {
-  leg: MultisportLeg;
-  type: ActivityType;
-  stream: ActivityStreamPayload;
-}
-
-export interface MultisportStreamsPayload {
-  legs: MultisportLegStream[];
-}
 
 async function fetchGarminLegRaw(athleteId: string, garminId: string): Promise<RawStreams | null> {
   try {

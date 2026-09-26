@@ -6,7 +6,7 @@ import {
   extractActivityWeatherSnapshot,
   formatActivityWeatherNarrative,
   serializeActivityWeather,
-} from '@sharpit/server/lib/activity/weather/activity-weather';
+} from '@sharpit/app/lib/activity/weather/activity-weather';
 import { fetchForecastPredictions } from '@sharpit/server/lib/planned-session/forecast/forecast-fetch';
 import { computeTrainingDayId } from '@sharpit/core/training/training-day';
 

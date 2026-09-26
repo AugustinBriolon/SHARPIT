@@ -1,7 +1,7 @@
 'use client';
 
 import { SlidersHorizontal } from 'lucide-react';
-import { cn } from '@sharpit/server/lib/utils';
+import { cn } from '@sharpit/app/lib/utils';
 
 export function HistoryFilterTrigger({
   activeCount,

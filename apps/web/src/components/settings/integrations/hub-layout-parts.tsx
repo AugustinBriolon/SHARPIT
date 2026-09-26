@@ -19,10 +19,10 @@ import { Skeleton } from '@/components/ui/skeleton';
 import {
   DATA_CLASSES,
   visibleProvidersForClass,
-} from '@sharpit/server/lib/integrations/provider-catalog';
-import type { IntegrationId } from '@sharpit/server/lib/integrations/shared/client-sync';
-import type { IntegrationSourcePrefs } from '@sharpit/server/lib/integrations/source-prefs';
-import { cn } from '@sharpit/server/lib/utils';
+} from '@sharpit/app/lib/integrations/provider-catalog';
+import type { IntegrationId } from '@sharpit/app/lib/integrations/shared/client-sync';
+import type { IntegrationSourcePrefs } from '@sharpit/app/lib/integrations/source-prefs';
+import { cn } from '@sharpit/app/lib/utils';
 
 const IntegrationModalContent = dynamic(
   () =>

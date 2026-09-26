@@ -1,7 +1,7 @@
 'use client';
 
 import { forwardRef } from 'react';
-import { cn } from '@sharpit/server/lib/utils';
+import { cn } from '@sharpit/app/lib/utils';
 
 type MotionInputControlProps = React.InputHTMLAttributes<HTMLInputElement> & {
   id: string;

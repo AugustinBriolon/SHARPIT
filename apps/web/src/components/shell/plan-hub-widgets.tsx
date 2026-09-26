@@ -15,11 +15,11 @@ import { PlanWeekThread } from '@/components/plan/week/plan-week-thread';
 import { usePlanHubModel } from '@/hooks/use-plan-hub-model';
 import { useProjectedAthleteViewModel } from '@/hooks/use-projected-athlete-view-model';
 import { useWeeklyCoachingBriefViewModel } from '@/hooks/use-data';
-import { shouldGateHardIntensities } from '@sharpit/server/lib/plan/trajectory/intensity-gate';
+import { shouldGateHardIntensities } from '@sharpit/app/lib/plan/trajectory/intensity-gate';
 import {
   buildWeekDecision,
   type WeekDecision,
-} from '@sharpit/server/lib/plan/week/plan-week-decision';
+} from '@sharpit/app/lib/plan/week/plan-week-decision';
 
 const WEEK_OPTS = { weekStartsOn: 1 as const };
 

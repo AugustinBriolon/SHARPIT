@@ -1,12 +1,9 @@
 import type { AthleteTravelContext } from '@prisma/client';
-import type {
-  CoachMemoryEntry,
-  CoachMemoryType,
-} from '@sharpit/server/lib/coach-memory/core/types';
-import { isCoachMemorySource } from '@sharpit/server/lib/coach-memory/core/types';
-import { toUtcDateOnly } from '@sharpit/server/lib/travel-context/calendar-date';
-import { normalizeTravelDisciplines } from '@sharpit/server/lib/travel-context/disciplines';
-import { isTravelTrainingConstraint } from '@sharpit/server/lib/travel-context/training-constraint';
+import type { CoachMemoryEntry, CoachMemoryType } from '@sharpit/app/lib/coach-memory/core/types';
+import { isCoachMemorySource } from '@sharpit/app/lib/coach-memory/core/types';
+import { toUtcDateOnly } from '@sharpit/app/lib/travel-context/calendar-date';
+import { normalizeTravelDisciplines } from '@sharpit/app/lib/travel-context/disciplines';
+import { isTravelTrainingConstraint } from '@sharpit/app/lib/travel-context/training-constraint';
 
 export function travelContextToMemoryEntry(
   travel: AthleteTravelContext,

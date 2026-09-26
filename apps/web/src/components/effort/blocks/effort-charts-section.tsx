@@ -8,7 +8,7 @@ import {
   CHART_COUNTER_STROKE,
   CHART_REFERENCE_LINE,
   CHART_TICK_COLOR,
-} from '@sharpit/server/lib/theme/chart-theme';
+} from '@sharpit/app/lib/theme/chart-theme';
 import {
   LineChart,
   Line,

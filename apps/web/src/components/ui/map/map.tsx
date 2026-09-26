@@ -26,7 +26,7 @@ import {
   ROUTE_REVEAL_VISIBILITY_RATIO,
   shouldStartRouteReveal,
 } from '@/client/motion/route-reveal-visibility';
-import { cn } from '@sharpit/server/lib/utils';
+import { cn } from '@sharpit/app/lib/utils';
 import {
   requestMapLocation,
   startRouteRevealAnimation,

@@ -2,10 +2,10 @@
 
 import type { MouseEvent, PointerEvent, ReactNode } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
-import { SPRING_LAYOUT } from '@sharpit/server/lib/ease';
+import { SPRING_LAYOUT } from '@sharpit/app/lib/ease';
 import type { useHoverGesture } from '@/client/hooks/use-hover-gesture';
 import type { useTapGesture } from '@/client/hooks/use-tap-gesture';
-import { cn } from '@sharpit/server/lib/utils';
+import { cn } from '@sharpit/app/lib/utils';
 import { DefaultPreview } from './preview-rail-default';
 import {
   handlePreviewRailSelect,

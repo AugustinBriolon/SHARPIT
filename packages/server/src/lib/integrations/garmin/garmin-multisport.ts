@@ -4,7 +4,7 @@ import {
   legKindLabel,
   mapGarminChildTypeToKind,
   type MultisportLeg,
-} from '@sharpit/server/lib/activity/multisport';
+} from '@sharpit/app/lib/activity/multisport';
 
 type GCClient = InstanceType<typeof GarminConnect>;
 

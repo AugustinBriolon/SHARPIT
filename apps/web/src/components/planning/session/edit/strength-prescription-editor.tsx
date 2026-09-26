@@ -16,9 +16,9 @@ import {
   strengthSetWatchCompat,
   type StrengthPrescription,
   type StrengthRestMode,
-} from '@sharpit/server/lib/planned-session/strength/strength-prescription';
-import { resolveGarminExerciseMatch } from '@sharpit/server/lib/integrations/garmin/garmin-exercise-map';
-import { createClientId } from '@sharpit/server/lib/client-id';
+} from '@sharpit/app/lib/planned-session/strength/strength-prescription';
+import { resolveGarminExerciseMatch } from '@sharpit/app/lib/integrations/garmin/garmin-exercise-map';
+import { createClientId } from '@sharpit/app/lib/client-id';
 
 export type StrengthPrescriptionDraftRow = {
   key: string;

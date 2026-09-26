@@ -1,6 +1,6 @@
 'use client';
 
-import { cn } from '@sharpit/server/lib/utils';
+import { cn } from '@sharpit/app/lib/utils';
 import { coachBeuiCopy } from '@/components/coach/beui/coach-beui-copy';
 
 /** Static pulse loading — no shimmer (DESIGN_LANGUAGE). */

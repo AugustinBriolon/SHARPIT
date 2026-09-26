@@ -7,9 +7,9 @@ import { PlanVivantBand } from '@/components/today/rich/plan-vivant-band';
 import {
   planVivantProgress,
   planVivantReading,
-} from '@sharpit/server/lib/today/rich/plan-vivant-reading';
-import type { GoalAdvancementView } from '@sharpit/server/lib/today/rich/goal-advancement';
-import type { TodayViewModel } from '@sharpit/server/presentation/today-view-model';
+} from '@sharpit/app/lib/today/rich/plan-vivant-reading';
+import type { GoalAdvancementView } from '@sharpit/app/lib/today/rich/goal-advancement';
+import type { TodayViewModel } from '@sharpit/app/presentation/today-view-model';
 
 const PlanAdapter = dynamic(
   () => import('@/components/coach/plan/plan-adapter').then((mod) => mod.PlanAdapter),

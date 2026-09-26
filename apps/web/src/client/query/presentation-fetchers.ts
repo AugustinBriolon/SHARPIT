@@ -1,15 +1,15 @@
-import type { PlannedSessionViewModel } from '@sharpit/server/presentation/planned-session-view-model';
-import type { SessionRationaleViewModel } from '@sharpit/server/presentation/session-rationale-view-model';
-import type { WeeklyCoachingBriefViewModel } from '@sharpit/server/presentation/weekly-coaching-brief-view-model';
-import type { AdaptationViewModel } from '@sharpit/server/presentation/adaptation-view-model';
-import type { EffortViewModel } from '@sharpit/server/presentation/effort-view-model';
-import type { RecoveryViewModel } from '@sharpit/server/presentation/recovery-view-model';
-import type { TodayViewModel } from '@sharpit/server/presentation/today-view-model';
-import type { SleepViewModel } from '@sharpit/server/presentation/sleep-view-model';
-import type { BodyViewModel } from '@sharpit/server/presentation/body-view-model';
-import type { PhysicalHealthViewModel } from '@sharpit/server/presentation/physical-health-view-model';
-import type { NutritionViewModel } from '@sharpit/server/presentation/nutrition-view-model';
-import type { DataDaysDomain } from '@sharpit/server/lib/presentation/data-days/data-days';
+import type { PlannedSessionViewModel } from '@sharpit/app/presentation/planned-session-view-model';
+import type { SessionRationaleViewModel } from '@sharpit/app/presentation/session-rationale-view-model';
+import type { WeeklyCoachingBriefViewModel } from '@sharpit/app/presentation/weekly-coaching-brief-view-model';
+import type { AdaptationViewModel } from '@sharpit/app/presentation/adaptation-view-model';
+import type { EffortViewModel } from '@sharpit/app/presentation/effort-view-model';
+import type { RecoveryViewModel } from '@sharpit/app/presentation/recovery-view-model';
+import type { TodayViewModel } from '@sharpit/app/presentation/today-view-model';
+import type { SleepViewModel } from '@sharpit/app/presentation/sleep-view-model';
+import type { BodyViewModel } from '@sharpit/app/presentation/body-view-model';
+import type { PhysicalHealthViewModel } from '@sharpit/app/presentation/physical-health-view-model';
+import type { NutritionViewModel } from '@sharpit/app/presentation/nutrition-view-model';
+import type { DataDaysDomain } from '@sharpit/app/lib/presentation/data-days/data-days';
 import { apiFetch } from '@/client/query/api-fetch';
 
 async function fetchJson<T>(url: string): Promise<T> {
@@ -115,14 +115,14 @@ export async function fetchProjectedAthletePresentation(
   horizonDays: number,
   trainingDayId?: string,
 ): Promise<
-  import('@sharpit/server/presentation/projected-athlete-view-model').ProjectedAthleteCardViewModel
+  import('@sharpit/app/presentation/projected-athlete-view-model').ProjectedAthleteCardViewModel
 > {
   const params = new URLSearchParams({ horizon: String(horizonDays) });
   if (trainingDayId) {
     params.set('trainingDayId', trainingDayId);
   }
   const { viewModel } = await fetchJson<{
-    viewModel: import('@sharpit/server/presentation/projected-athlete-view-model').ProjectedAthleteCardViewModel;
+    viewModel: import('@sharpit/app/presentation/projected-athlete-view-model').ProjectedAthleteCardViewModel;
   }>(`/api/presentation/projected-athlete?${params.toString()}`);
   return viewModel;
 }
@@ -131,14 +131,14 @@ export async function fetchScenarioComparisonPresentation(
   horizonDays: number,
   trainingDayId?: string,
 ): Promise<
-  import('@sharpit/server/presentation/scenario-comparison-view-model').ScenarioComparisonViewModel
+  import('@sharpit/app/presentation/scenario-comparison-view-model').ScenarioComparisonViewModel
 > {
   const params = new URLSearchParams({ horizon: String(horizonDays) });
   if (trainingDayId) {
     params.set('trainingDayId', trainingDayId);
   }
   const { viewModel } = await fetchJson<{
-    viewModel: import('@sharpit/server/presentation/scenario-comparison-view-model').ScenarioComparisonViewModel;
+    viewModel: import('@sharpit/app/presentation/scenario-comparison-view-model').ScenarioComparisonViewModel;
   }>(`/api/presentation/scenario-comparison?${params.toString()}`);
   return viewModel;
 }
@@ -154,7 +154,7 @@ export async function fetchDataDays(
 }
 
 export async function fetchSettingsHubPresentation(): Promise<
-  import('@sharpit/server/lib/settings/hub-status').SettingsHubStatus
+  import('@sharpit/app/lib/settings/hub-status').SettingsHubStatus
 > {
   return fetchJson('/api/presentation/settings-hub');
 }

@@ -1,14 +1,14 @@
 'use client';
 
 import { useCallback } from 'react';
-import type { IntegrationId } from '@sharpit/server/lib/integrations/shared/client-sync';
+import type { IntegrationId } from '@sharpit/app/lib/integrations/shared/client-sync';
 import {
   disableProviderForClass,
   enableProviderForClass,
   setPrimaryForClass,
   type IntegrationSourcePrefs,
-} from '@sharpit/server/lib/integrations/source-prefs';
-import type { DataClassId } from '@sharpit/server/lib/integrations/provider-catalog';
+} from '@sharpit/app/lib/integrations/source-prefs';
+import type { DataClassId } from '@sharpit/app/lib/integrations/provider-catalog';
 import { patchOnboardingPrefs } from '@/components/onboarding/wizard/onboarding-wizard-api';
 
 export function useOnboardingWizardPrefs(

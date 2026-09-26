@@ -9,15 +9,15 @@ import {
   findRunningExperiment,
   loadJournalHabitExperiments,
 } from '@sharpit/server/lib/journal/journal-habit-experiment-load';
-import { toHabitExperimentView } from '@sharpit/server/lib/journal/journal-habit-experiment-view';
+import { toHabitExperimentView } from '@sharpit/app/lib/journal/journal-habit-experiment-view';
 import {
   buildTodayJournalHabitBridge,
   resolveTodayJournalHabitCallout,
-} from '@sharpit/server/lib/journal/journal-habit-today-bridge';
+} from '@sharpit/app/lib/journal/journal-habit-today-bridge';
 import {
   buildHabitCoachingSignal,
   type HabitCoachingSignal,
-} from '@sharpit/server/lib/today/rich/habit-coaching-signal';
+} from '@sharpit/app/lib/today/rich/habit-coaching-signal';
 
 const EMPTY_SIGNAL: HabitCoachingSignal = { callout: null };
 

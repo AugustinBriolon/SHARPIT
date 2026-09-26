@@ -3,8 +3,8 @@
 import { PlannedSessionNavDismissProvider } from '@/components/planning/session/planned-session-nav-dismiss';
 import { usePlannedSessionDialog } from '@/components/planning/session/edit/use-planned-session-dialog';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import type { ClientGoal, ClientPlannedSession } from '@sharpit/server/lib/query/types';
-import type { MorningProposalCompareInput } from '@sharpit/server/lib/today/rich/morning-proposal-compare';
+import type { ClientGoal, ClientPlannedSession } from '@sharpit/app/lib/query/types';
+import type { MorningProposalCompareInput } from '@sharpit/app/lib/today/rich/morning-proposal-compare';
 import {
   EMPTY_GOALS,
   type CreateMode,
@@ -14,7 +14,7 @@ import { BrickAnalysisPanel } from '@/components/planning/brick/brick-analysis-p
 import { PlannedSessionReadView } from '@/components/planning/session/read/planned-session-read-view';
 import { PlannedSessionEditForm } from '@/components/planning/session/edit/planned-session-edit-form';
 import { Layers } from 'lucide-react';
-import { cn } from '@sharpit/server/lib/utils';
+import { cn } from '@sharpit/app/lib/utils';
 
 interface PlannedSessionDialogProps {
   session?: ClientPlannedSession | null;

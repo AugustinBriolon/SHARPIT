@@ -1,4 +1,4 @@
-import type { GateContext, GateProposal } from './types';
+import type { GateContext, GateProposal } from '@sharpit/app/lib/plan-gate/types';
 
 export const NOW = new Date('2026-07-15T08:00:00.000Z');
 

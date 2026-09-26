@@ -23,8 +23,8 @@ import { useOfflineGuard } from '@/hooks/use-offline-guard';
 import {
   formatActivityWeatherNarrative,
   parseActivityWeather,
-} from '@sharpit/server/lib/activity/weather/activity-weather';
-import { createActivitySchema } from '@sharpit/server/lib/validators/activity';
+} from '@sharpit/app/lib/activity/weather/activity-weather';
+import { createActivitySchema } from '@sharpit/app/lib/validators/activity';
 
 function useActivityFormLocationState(initialData: ActivityFormProps['initialData']) {
   const [location, setLocation] = useState<LocationPlaceValue>(() =>

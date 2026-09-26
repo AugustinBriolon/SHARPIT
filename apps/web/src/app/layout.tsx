@@ -10,9 +10,9 @@ import { Toaster } from '@/components/ui/toast';
 import { QueryProvider } from '@/providers/query-provider';
 import { AppModalProvider } from '@/providers/app-modal-provider';
 import { DeviceLocationProvider } from '@/components/today/dashboard/device-location-provider';
-import { THEME_DARK_COLOR, THEME_LIGHT_COLOR } from '@sharpit/server/lib/theme/theme';
+import { THEME_DARK_COLOR, THEME_LIGHT_COLOR } from '@sharpit/app/lib/theme/theme';
 import { RootLayoutHead } from '@/app/root-layout-head';
-import { cn } from '@sharpit/server/lib/utils';
+import { cn } from '@sharpit/app/lib/utils';
 import './globals.css';
 
 const syne = Syne({

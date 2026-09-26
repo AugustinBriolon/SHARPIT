@@ -9,7 +9,7 @@
 
 import { addHours } from 'date-fns';
 import { prisma } from '@sharpit/db/client';
-import type { GateProposal, GateSessionResult } from '@sharpit/server/lib/plan-gate/types';
+import type { GateProposal, GateSessionResult } from '@sharpit/app/lib/plan-gate/types';
 import { canRecordAction } from './lifecycle';
 import type {
   CoachingDecisionActionRecord,
@@ -24,7 +24,7 @@ import type {
   SafetySignal,
   ShortTermRecoveryResponse,
   SubjectiveResponse,
-} from './types';
+} from '@sharpit/app/lib/decision-memory/types';
 
 /** A PRESENTED decision with no athlete action after this many hours is treated as EXPIRED. */
 export const PRESENTED_EXPIRY_HOURS = 48;

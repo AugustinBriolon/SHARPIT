@@ -1,7 +1,7 @@
 'use client';
 
 import { Switch as SwitchPrimitive } from '@base-ui/react/switch';
-import { cn } from '@sharpit/server/lib/utils';
+import { cn } from '@sharpit/app/lib/utils';
 
 function Switch({ className, ...props }: SwitchPrimitive.Root.Props) {
   return (

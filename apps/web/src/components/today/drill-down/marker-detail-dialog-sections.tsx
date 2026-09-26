@@ -5,7 +5,7 @@ import {
   MarkerHistoryChart,
   type MarkerHistoryPoint,
 } from '@/components/today/drill-down/marker-history-chart';
-import { cn } from '@sharpit/server/lib/utils';
+import { cn } from '@sharpit/app/lib/utils';
 
 export function MarkerDetailHistorySection({
   series,

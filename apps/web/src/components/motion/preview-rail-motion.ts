@@ -1,4 +1,4 @@
-import { EASE_OUT } from '@sharpit/server/lib/ease';
+import { EASE_OUT } from '@sharpit/app/lib/ease';
 
 export function previewRailCardMotion(reduce: boolean) {
   return {

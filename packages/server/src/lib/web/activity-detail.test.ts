@@ -17,7 +17,7 @@ vi.mock('@sharpit/server/lib/access/narrative-trial', () => ({
   canGenerateNarrativeForActivity: async () => ({ isPro: false, allowed: true }),
 }));
 vi.mock('@sharpit/server/lib/ai', () => ({ isCoachConfigured: () => true }));
-vi.mock('@sharpit/server/lib/planned-session/brick/brick-sessions', () => ({
+vi.mock('@sharpit/app/lib/planned-session/brick/brick-sessions', () => ({
   resolveBrickSiblingActivityLinks: (legs: unknown[]) => legs,
 }));
 

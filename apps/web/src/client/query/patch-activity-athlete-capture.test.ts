@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { QueryClient } from '@tanstack/react-query';
 import { ActivityType } from '@prisma/client';
 import { queryKeys } from '@/client/query/keys';
-import type { ClientActivity, ClientPlannedSession } from '@sharpit/server/lib/query/types';
+import type { ClientActivity, ClientPlannedSession } from '@sharpit/app/lib/query/types';
 import {
   patchActivityAthleteCaptureInPlannedSessions,
   resolveLinkedActivity,

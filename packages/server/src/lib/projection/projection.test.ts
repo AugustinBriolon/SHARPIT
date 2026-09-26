@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { projectPmcForward } from '@sharpit/server/lib/projection/pmc-forward';
-import { pmcTsb, stepPmc } from '@sharpit/server/lib/training/pmc/pmc';
+import { pmcTsb, stepPmc } from '@sharpit/app/lib/training/pmc/pmc';
 import {
   projectAdaptationIndex,
   projectFatigueIndex,

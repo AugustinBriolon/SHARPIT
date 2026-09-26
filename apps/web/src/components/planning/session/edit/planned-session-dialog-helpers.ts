@@ -1,6 +1,6 @@
 import type { LocationPlaceValue } from '@/components/ui/location-place-picker';
-import { activityTypeLabels } from '@sharpit/server/lib/format';
-import type { ClientPlannedSession } from '@sharpit/server/lib/query/types';
+import { activityTypeLabels } from '@sharpit/app/lib/format';
+import type { ClientPlannedSession } from '@sharpit/app/lib/query/types';
 import { ActivityType, SessionIntensity } from '@prisma/client';
 
 export type LocationSource = 'home' | 'travel' | 'custom';

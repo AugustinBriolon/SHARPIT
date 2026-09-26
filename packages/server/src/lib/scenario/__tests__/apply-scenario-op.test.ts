@@ -4,7 +4,7 @@ import {
   buildScenarioApplyOp,
   optimisticSessionFieldsForKind,
   stepDownIntensity,
-} from '@sharpit/server/lib/scenario/apply-scenario-op';
+} from '@sharpit/app/lib/scenario/apply-scenario-op';
 
 function slice(
   partial: Partial<ScenarioSessionSlice> & Pick<ScenarioSessionSlice, 'sessionId'>,

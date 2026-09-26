@@ -1,7 +1,7 @@
 import { AlertTriangle } from 'lucide-react';
 import { DrillDownSectionCard } from '@/components/today/drill-down/section-card';
 import { DrillDownSectionLabel } from '@/components/today/drill-down/section-label';
-import { cn } from '@sharpit/server/lib/utils';
+import { cn } from '@sharpit/app/lib/utils';
 
 export type AlertTone = 'caution' | 'risk';
 

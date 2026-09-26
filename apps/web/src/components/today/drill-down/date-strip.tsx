@@ -1,8 +1,8 @@
 'use client';
 
 import type { KeyboardEvent } from 'react';
-import { cn } from '@sharpit/server/lib/utils';
-import type { DataDaysLookup } from '@sharpit/server/lib/presentation/data-days/data-days-chunks';
+import { cn } from '@sharpit/app/lib/utils';
+import type { DataDaysLookup } from '@sharpit/app/lib/presentation/data-days/data-days-chunks';
 import { DataDayDot } from '@/components/today/drill-down/data-day-dot';
 import {
   stripArrowDirection,

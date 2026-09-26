@@ -4,13 +4,13 @@ import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import type { ClientThresholdSnapshot } from '@sharpit/server/lib/query/types';
+import type { ClientThresholdSnapshot } from '@sharpit/app/lib/query/types';
 import { NavArrowDown } from '@/components/icons/nav-arrows';
 import {
   dedupeThresholdHistory,
   describeThresholdChanges,
-} from '@sharpit/server/lib/threshold/threshold-history';
-import { cn } from '@sharpit/server/lib/utils';
+} from '@sharpit/app/lib/threshold/threshold-history';
+import { cn } from '@sharpit/app/lib/utils';
 
 const THRESHOLD_SOURCE_LABELS: Record<string, string> = {
   estimated: 'estimé',

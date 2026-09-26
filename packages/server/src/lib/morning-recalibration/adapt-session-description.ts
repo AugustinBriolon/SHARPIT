@@ -1,5 +1,5 @@
 import type { ActivityType } from '@prisma/client';
-import { isStrengthLikeMorningSport } from '@sharpit/server/lib/morning-recalibration/sport-intensity-labels';
+import { isStrengthLikeMorningSport } from '@sharpit/app/lib/morning-recalibration/sport-intensity-labels';
 
 export type DescriptionAdaptDirection = 'DOWN' | 'UP';
 

@@ -14,8 +14,8 @@ import {
   TEASER_PRIMARY_CTA,
   TEASER_SCREENS,
   TEASER_SECONDARY_CTA,
-} from '@sharpit/server/lib/teaser/screens';
-import { cn } from '@sharpit/server/lib/utils';
+} from '@sharpit/app/lib/teaser/screens';
+import { cn } from '@sharpit/app/lib/utils';
 
 /**
  * Public promise funnel (2–3 screens). Outside the auth app shell.

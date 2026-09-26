@@ -6,7 +6,7 @@ import {
   runStravaSync,
   runWithingsSync,
   type IntegrationId,
-} from '@sharpit/server/lib/integrations/shared/client-sync';
+} from '@sharpit/app/lib/integrations/shared/client-sync';
 import type { IntegrationDefinition } from '@/components/settings/integrations/types';
 
 export type RowSyncState = 'running' | 'done' | 'error';

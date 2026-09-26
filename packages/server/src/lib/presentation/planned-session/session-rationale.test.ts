@@ -4,7 +4,7 @@ import { baseProposal } from '@sharpit/server/lib/plan-gate/test-fixtures';
 import type {
   CoachingDecisionWithHistory,
   DecisionSnapshotContext,
-} from '@sharpit/server/lib/decision-memory/types';
+} from '@sharpit/app/lib/decision-memory/types';
 
 const NOW = new Date('2026-07-15T12:00:00.000Z');
 

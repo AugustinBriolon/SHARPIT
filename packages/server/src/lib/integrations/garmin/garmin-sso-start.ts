@@ -8,7 +8,7 @@ import {
   CONNECT_GARMIN_CALLBACK_PATH,
   type GarminHandoffStatus,
   garminHandoffCallbackPath,
-} from '@sharpit/server/lib/integrations/garmin/garmin-connect-handoff';
+} from '@sharpit/app/lib/integrations/garmin/garmin-connect-handoff';
 import { getGarminAccount } from '@sharpit/server/lib/integrations/garmin/garmin-sync';
 import {
   beginIntegrationConnect,

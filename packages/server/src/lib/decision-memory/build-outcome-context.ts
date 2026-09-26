@@ -8,8 +8,8 @@
 import { addTrainingDays, computeTrainingDayId } from '@sharpit/core/training/training-day';
 import { prisma } from '@sharpit/db/client';
 import { getPlannedSessionById } from '@sharpit/server/lib/queries';
-import { parseSessionAnalysis } from '@sharpit/server/lib/planned-session/display/session-analysis-display';
-import type { OutcomeEvaluationInput } from './types';
+import { parseSessionAnalysis } from '@sharpit/app/lib/planned-session/display/session-analysis-display';
+import type { OutcomeEvaluationInput } from '@sharpit/app/lib/decision-memory/types';
 
 const RECOVERY_WINDOW_DAYS = [1, 2, 3];
 

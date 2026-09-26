@@ -1,7 +1,7 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import type { ObservationPolarity } from '@sharpit/server/lib/journal/journal-habit-analysis';
-import type { AxisPosition, AxisTick } from '@sharpit/server/lib/journal/journal-habit-axis';
-import { cn } from '@sharpit/server/lib/utils';
+import type { ObservationPolarity } from '@sharpit/app/lib/journal/journal-habit-analysis';
+import type { AxisPosition, AxisTick } from '@sharpit/app/lib/journal/journal-habit-axis';
+import { cn } from '@sharpit/app/lib/utils';
 import { DUMBBELL_TRACK_BOX } from './dumbbell-grid';
 
 /** The gap's colour codes polarity only: sage when favourable, amber when not. */

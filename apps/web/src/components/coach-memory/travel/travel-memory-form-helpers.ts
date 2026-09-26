@@ -1,8 +1,5 @@
 import type { LocationPlaceValue } from '@/components/ui/location-place-picker';
-import type {
-  CoachMemoryType,
-  TravelDiscipline,
-} from '@sharpit/server/lib/coach-memory/core/types';
+import type { CoachMemoryType, TravelDiscipline } from '@sharpit/app/lib/coach-memory/core/types';
 import type { TravelMemoryPayload } from '@/hooks/use-coach-memory';
 
 function travelLocationFields(isTravel: boolean, place: LocationPlaceValue) {

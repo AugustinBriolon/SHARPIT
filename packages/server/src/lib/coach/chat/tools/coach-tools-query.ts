@@ -6,13 +6,13 @@ import {
   getUpcomingBusy,
 } from '@sharpit/server/lib/integrations/google/google-sync';
 import { getPlannedSessions } from '@sharpit/server/lib/queries';
-import { dayKeyFromDate } from '@sharpit/server/lib/date/day-key';
-import { suggestGarminTaxonomy } from '@sharpit/server/lib/integrations/garmin/garmin-exercise-taxonomy';
+import { dayKeyFromDate } from '@sharpit/app/lib/date/day-key';
+import { suggestGarminTaxonomy } from '@sharpit/app/lib/integrations/garmin/garmin-exercise-taxonomy';
 import {
   formatScenarioComparisonForCoach,
   loadScenarioComparisonForCoach,
 } from '@sharpit/server/lib/presentation/scenario/scenario-comparison';
-import { parseStrengthPrescription } from '@sharpit/server/lib/planned-session/strength/strength-prescription';
+import { parseStrengthPrescription } from '@sharpit/app/lib/planned-session/strength/strength-prescription';
 
 function buildListPlannedSessionsTool(athleteId: string) {
   return tool({

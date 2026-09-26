@@ -422,8 +422,7 @@ async function processStravaActivityPage(
 }
 
 export async function syncStravaActivities(athleteId: string): Promise<SyncResult> {
-  const { isProviderEnabledForClass } =
-    await import('@sharpit/server/lib/integrations/source-prefs');
+  const { isProviderEnabledForClass } = await import('@sharpit/app/lib/integrations/source-prefs');
   const { loadResolvedSourcePrefs } =
     await import('@sharpit/server/lib/integrations/source-prefs-store');
   const prefs = await loadResolvedSourcePrefs(athleteId);

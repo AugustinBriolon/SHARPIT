@@ -16,7 +16,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { activityTypeLabels, formatDateTimeLocal } from '@sharpit/server/lib/format';
+import { activityTypeLabels, formatDateTimeLocal } from '@sharpit/app/lib/format';
 
 export function ActivityFormGeneralCard(
   state: Pick<

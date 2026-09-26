@@ -1,7 +1,7 @@
 import { ActivityType } from '@prisma/client';
 import type { LocationPlaceValue } from '@/components/ui/location-place-picker';
 import { sportSupportsOutdoorContext } from '@sharpit/core/planned-session/defaults';
-import { createActivitySchema } from '@sharpit/server/lib/validators/activity';
+import { createActivitySchema } from '@sharpit/app/lib/validators/activity';
 import { z } from 'zod';
 
 export type ActivityFormValues = z.input<typeof createActivitySchema>;
@@ -42,7 +42,7 @@ export const defaultStrengthSet = {
   notes: '',
 };
 
-export { ACTIVITY_FEELING_OPTIONS } from '@sharpit/server/lib/activity/feeling/activity-feeling-scale';
+export { ACTIVITY_FEELING_OPTIONS } from '@sharpit/app/lib/activity/feeling/activity-feeling-scale';
 
 export function strengthSetsForForm(initialData: ActivityWithRelations) {
   if (initialData.type !== ActivityType.STRENGTH) {

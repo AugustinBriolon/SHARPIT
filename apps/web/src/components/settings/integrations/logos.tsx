@@ -1,6 +1,6 @@
 import Image from 'next/image';
-import { cn } from '@sharpit/server/lib/utils';
-import type { IntegrationId } from '@sharpit/server/lib/integrations/shared/client-sync';
+import { cn } from '@sharpit/app/lib/utils';
+import type { IntegrationId } from '@sharpit/app/lib/integrations/shared/client-sync';
 
 const LOGO_PATHS: Record<IntegrationId, string> = {
   strava: '/images/strava.png',

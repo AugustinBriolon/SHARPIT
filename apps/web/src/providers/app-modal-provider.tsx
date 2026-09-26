@@ -19,8 +19,8 @@ import {
   seedPlannedSessionIntoCache,
   type PlannedSessionCacheSeed,
 } from '@/client/query/seed-planned-session-cache';
-import type { ClientPlannedSession } from '@sharpit/server/lib/query/types';
-import type { MorningProposalCompareInput } from '@sharpit/server/lib/today/rich/morning-proposal-compare';
+import type { ClientPlannedSession } from '@sharpit/app/lib/query/types';
+import type { MorningProposalCompareInput } from '@sharpit/app/lib/today/rich/morning-proposal-compare';
 import { EMPTY_GOALS } from '@/components/planning/session/session-defaults';
 
 const PlannedSessionDialog = dynamic(

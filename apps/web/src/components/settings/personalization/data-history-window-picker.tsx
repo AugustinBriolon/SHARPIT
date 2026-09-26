@@ -11,7 +11,7 @@ import {
   type DataHistoryYears,
   readDataHistoryYearsFromStorage,
   writeDataHistoryYearsToStorage,
-} from '@sharpit/server/lib/preferences/data-history-window';
+} from '@sharpit/app/lib/preferences/data-history-window';
 
 const OPTIONS: readonly PreferenceOption<`${DataHistoryYears}`>[] = DATA_HISTORY_YEARS.map(
   (years) => ({

@@ -9,7 +9,13 @@ const nextConfig: NextConfig = {
   cacheComponents: true,
   poweredByHeader: false,
   outputFileTracingRoot: path.join(__dirname, '../../'),
-  transpilePackages: ['@sharpit/core', '@sharpit/db', '@sharpit/server', '@sharpit/shared'],
+  transpilePackages: [
+    '@sharpit/app',
+    '@sharpit/core',
+    '@sharpit/db',
+    '@sharpit/server',
+    '@sharpit/shared',
+  ],
   async headers() {
     return [
       {

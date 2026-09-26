@@ -1,12 +1,12 @@
 import { z } from 'zod';
-import { parseBirthDateInput } from '@sharpit/server/lib/profile/athlete-profile-utils';
-import { EQUIPMENT_ITEM_IDS, STRENGTH_VENUES } from '@sharpit/server/lib/equipment/catalog';
-import { DISPLAY_MODES } from '@sharpit/server/lib/preferences/display-mode';
-import { PRACTICED_SPORTS } from '@sharpit/server/lib/practiced-sports';
+import { parseBirthDateInput } from '@sharpit/app/lib/profile/athlete-profile-utils';
+import { EQUIPMENT_ITEM_IDS, STRENGTH_VENUES } from '@sharpit/app/lib/equipment/catalog';
+import { DISPLAY_MODES } from '@sharpit/app/lib/preferences/display-mode';
+import { PRACTICED_SPORTS } from '@sharpit/app/lib/practiced-sports';
 import {
   MAX_SESSIONS_PER_WEEK,
   MIN_SESSIONS_PER_WEEK,
-} from '@sharpit/server/lib/training-availability/types';
+} from '@sharpit/app/lib/training-availability/types';
 import { notificationPrefsPatchSchema } from '@sharpit/server/lib/notifications/notification-prefs';
 
 export const ATHLETE_SEXES = ['female', 'male', 'other'] as const;

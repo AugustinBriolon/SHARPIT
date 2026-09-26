@@ -4,8 +4,8 @@ import { CoachView } from '@/components/coach/view/coach-view';
 import { CoachHubSkeleton } from '@/components/coach/view/coach-hub-skeleton';
 import { DemoCoachTranscript } from '@/components/coach/view/demo-coach-transcript';
 import { DemoExitButton } from '@/components/demo/demo-exit';
-import { isDemoSession } from '@sharpit/server/lib/demo/demo-session';
-import type { DemoCoachTranscriptPayload } from '@sharpit/server/lib/web/demo-coach-transcript';
+import { isDemoSession } from '@sharpit/app/lib/demo/demo-session';
+import type { DemoCoachTranscriptPayload } from '@sharpit/app/lib/web/payloads';
 import { cachedServerApiJson } from '@/server/api-client';
 
 async function CoachDemoDisabled() {

@@ -4,7 +4,7 @@ import {
   CHART_INK_STROKE,
   CHART_PRIMARY_STROKE,
   CHART_TICK_COLOR,
-} from '@sharpit/server/lib/theme/chart-theme';
+} from '@sharpit/app/lib/theme/chart-theme';
 
 export function resolveHikeElevationChartTheme(onInk: boolean) {
   return {

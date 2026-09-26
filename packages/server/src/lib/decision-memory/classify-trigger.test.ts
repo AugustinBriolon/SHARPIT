@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { classifyAdaptTrigger } from './classify-trigger';
+import { classifyAdaptTrigger } from '@sharpit/app/lib/decision-memory/classify-trigger';
 import { baseProposal } from '@sharpit/server/lib/plan-gate/test-fixtures';
-import type { GateSessionResult, RuleFinding } from '@sharpit/server/lib/plan-gate/types';
+import type { GateSessionResult, RuleFinding } from '@sharpit/app/lib/plan-gate/types';
 
 function finding(ruleCode: string, severity: RuleFinding['severity'] = 'WARNING'): RuleFinding {
   return { ruleCode, severity, rationale: 'x', evidenceRefs: [] };

@@ -1,5 +1,5 @@
 import { format, parseISO, subDays } from 'date-fns';
-import type { RecoveryViewModel } from '@sharpit/server/presentation/recovery-view-model';
+import type { RecoveryViewModel } from '@sharpit/app/presentation/recovery-view-model';
 
 /**
  * Tones the native client can render. The web view model only carries Tailwind classes,

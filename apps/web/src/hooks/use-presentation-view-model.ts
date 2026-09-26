@@ -2,14 +2,14 @@
 
 import { keepPreviousData, useQuery, type UseQueryResult } from '@tanstack/react-query';
 import { isSet } from '@sharpit/shared/value';
-import type { RecoveryViewModel } from '@sharpit/server/presentation/recovery-view-model';
-import type { SleepViewModel } from '@sharpit/server/presentation/sleep-view-model';
-import type { EffortViewModel } from '@sharpit/server/presentation/effort-view-model';
-import type { AdaptationViewModel } from '@sharpit/server/presentation/adaptation-view-model';
-import type { TodayViewModel } from '@sharpit/server/presentation/today-view-model';
-import type { BodyViewModel } from '@sharpit/server/presentation/body-view-model';
-import type { NutritionViewModel } from '@sharpit/server/presentation/nutrition-view-model';
-import type { PhysicalHealthViewModel } from '@sharpit/server/presentation/physical-health-view-model';
+import type { RecoveryViewModel } from '@sharpit/app/presentation/recovery-view-model';
+import type { SleepViewModel } from '@sharpit/app/presentation/sleep-view-model';
+import type { EffortViewModel } from '@sharpit/app/presentation/effort-view-model';
+import type { AdaptationViewModel } from '@sharpit/app/presentation/adaptation-view-model';
+import type { TodayViewModel } from '@sharpit/app/presentation/today-view-model';
+import type { BodyViewModel } from '@sharpit/app/presentation/body-view-model';
+import type { NutritionViewModel } from '@sharpit/app/presentation/nutrition-view-model';
+import type { PhysicalHealthViewModel } from '@sharpit/app/presentation/physical-health-view-model';
 import {
   fetchAdaptationPresentation,
   fetchEffortPresentation,
@@ -22,7 +22,7 @@ import {
 } from '@/client/query/presentation-fetchers';
 import { queryKeys } from '@/client/query/keys';
 import { peekShellAthleteRefreshInFlight } from '@/client/athlete-state/shell-refresh-seed';
-import { nutritionReadingPollInterval } from '@sharpit/server/lib/nutrition/analysis/nutrition-reading-poll';
+import { nutritionReadingPollInterval } from '@sharpit/app/lib/nutrition/analysis/nutrition-reading-poll';
 
 /** Cold start or date-change placeholder — skeleton values, never prior-day figures. */
 export function isPresentationValuesLoading(

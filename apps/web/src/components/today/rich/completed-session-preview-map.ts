@@ -6,7 +6,7 @@ import { useActivityStream } from '@/hooks/use-data';
 import {
   readRememberedHubRoute,
   rememberHubRoute,
-} from '@sharpit/server/lib/plan/hub/plan-hub-preview-paths';
+} from '@sharpit/app/lib/plan/hub/plan-hub-preview-paths';
 import {
   activityMayHaveRoutePath,
   isPreviewMapPending,

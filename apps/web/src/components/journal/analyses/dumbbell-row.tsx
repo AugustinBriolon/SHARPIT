@@ -2,9 +2,9 @@
 
 import { ChevronDown } from 'lucide-react';
 import { useId, useState, type ReactNode } from 'react';
-import type { AxisTick } from '@sharpit/server/lib/journal/journal-habit-axis';
-import type { DumbbellRowModel } from '@sharpit/server/lib/journal/journal-analyses-view-model';
-import { cn } from '@sharpit/server/lib/utils';
+import type { AxisTick } from '@sharpit/app/lib/journal/journal-habit-axis';
+import type { DumbbellRowModel } from '@sharpit/app/lib/journal/journal-analyses-view-model';
+import { cn } from '@sharpit/app/lib/utils';
 import { DistributionStrips } from './distribution-strips';
 import {
   DUMBBELL_DELTA_CELL,

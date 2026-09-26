@@ -2,7 +2,7 @@
 
 import { useClerk } from '@clerk/nextjs';
 import { Button } from '@/components/ui/button';
-import { cn } from '@sharpit/server/lib/utils';
+import { cn } from '@sharpit/app/lib/utils';
 
 /** Leaving the demo signs out of the shared demo account and lands on sign-in. */
 export const DEMO_EXIT_REDIRECT = '/sign-in';

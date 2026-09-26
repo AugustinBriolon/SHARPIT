@@ -5,12 +5,12 @@ import {
   isSelfAuthenticatedPath,
   screenApiHostRequest,
   sealApiHostResponse,
-} from '@sharpit/server/lib/hosts/api-host';
+} from '@sharpit/app/lib/hosts/api-host';
 import {
   DEMO_READ_ONLY_ERROR,
   isDemoBlockedRequest,
   isDemoClerkUser,
-} from '@sharpit/server/lib/demo/demo-identity';
+} from '@sharpit/app/lib/demo/demo-identity';
 import {
   checkRateLimit,
   rateLimiters,

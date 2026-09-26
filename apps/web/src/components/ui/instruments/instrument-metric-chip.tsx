@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
-import { cn } from '@sharpit/server/lib/utils';
+import { cn } from '@sharpit/app/lib/utils';
 
 export type InstrumentMetricItem = {
   label: string;

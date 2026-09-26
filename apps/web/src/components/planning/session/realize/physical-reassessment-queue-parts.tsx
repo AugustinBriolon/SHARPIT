@@ -6,8 +6,8 @@ import {
   clampReassessmentIndex,
   reassessmentChipLabel,
   reassessmentRemainingLabel,
-} from '@sharpit/server/lib/physical-health/reassessment-pager';
-import { cn } from '@sharpit/server/lib/utils';
+} from '@sharpit/app/lib/physical-health/reassessment-pager';
+import { cn } from '@sharpit/app/lib/utils';
 
 function InjuryStepChip({
   item,

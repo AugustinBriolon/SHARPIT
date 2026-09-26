@@ -5,7 +5,7 @@ import {
   demoTrainingDayIdDaysAgo,
   isDemoHealthDateCurrent,
 } from '@sharpit/server/lib/demo/demo-calendar';
-import { dayKeyFromDate } from '@sharpit/server/lib/date/day-key';
+import { dayKeyFromDate } from '@sharpit/app/lib/date/day-key';
 import { computeTrainingDayId } from '@sharpit/core/training/training-day';
 
 describe('demoCalendar', () => {

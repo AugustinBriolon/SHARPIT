@@ -7,8 +7,8 @@ import type {
   DomainSectionModel,
   DumbbellRowModel,
   JournalAnalysesViewModel,
-} from '@sharpit/server/lib/journal/journal-analyses-view-model';
-import { cn } from '@sharpit/server/lib/utils';
+} from '@sharpit/app/lib/journal/journal-analyses-view-model';
+import { cn } from '@sharpit/app/lib/utils';
 import { DUMBBELL_GRID, DUMBBELL_LABEL_CELL, DUMBBELL_TRACK_CELL } from './dumbbell-grid';
 import { DumbbellRow } from './dumbbell-row';
 import { AxisTicks } from './dumbbell-track';

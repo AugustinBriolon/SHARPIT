@@ -1,8 +1,8 @@
 'use client';
 
-import { filterByAudience } from '@sharpit/server/lib/preferences/display-mode';
+import { filterByAudience } from '@sharpit/app/lib/preferences/display-mode';
 import { useDisplayMode } from '@/providers/display-mode-provider';
-import type { ActivityDetail, ActivitySpec } from '@sharpit/server/lib/activity/detail/types';
+import type { ActivityDetail, ActivitySpec } from '@sharpit/app/lib/activity/detail/types';
 
 export function SpecsAnnex({
   activity,

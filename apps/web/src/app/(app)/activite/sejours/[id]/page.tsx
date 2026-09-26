@@ -10,9 +10,9 @@ import { HikeTripInkBand } from '@/components/training/trip/hike-trip-ink-band';
 import { HikeTripTimeline } from '@/components/training/trip/hike-trip-timeline';
 import { HikeTripWaypoints } from '@/components/training/trip/hike-trip-waypoints';
 import { Skeleton } from '@/components/ui/skeleton';
-import { buildHikeTripElevationProfile } from '@sharpit/server/lib/activity/hike/hike-trip-elevation';
-import { buildHikeTripSummary } from '@sharpit/server/lib/activity/hike/hike-trip-summary';
-import type { getHikeTripById } from '@sharpit/server/lib/queries';
+import { buildHikeTripElevationProfile } from '@sharpit/app/lib/activity/hike/hike-trip-elevation';
+import { buildHikeTripSummary } from '@sharpit/app/lib/activity/hike/hike-trip-summary';
+import type { ClientHikeTrip } from '@sharpit/app/lib/query/types';
 import { cachedServerApiJson } from '@/server/api-client';
 
 type PageProps = { params: Promise<{ id: string }> };
@@ -56,7 +56,7 @@ function HikeTripDetailSkeleton() {
 
 async function HikeTripDetail({ params }: PageProps) {
   const { id } = await params;
-  const trip = await cachedServerApiJson<Awaited<ReturnType<typeof getHikeTripById>>>(
+  const trip = await cachedServerApiJson<ClientHikeTrip>(
     `/api/hike-trips/${encodeURIComponent(id)}`,
     true,
   );

@@ -1,10 +1,10 @@
 import { ActivityType } from '@prisma/client';
 import { isSet } from '@sharpit/shared/value';
-import { resolveExerciseCatalogId } from '@sharpit/server/lib/exercises';
+import { resolveExerciseCatalogId } from '@sharpit/app/lib/exercises';
 import type {
   CreateActivityInput,
   UpdateActivityInput,
-} from '@sharpit/server/lib/validators/activity';
+} from '@sharpit/app/lib/validators/activity';
 
 function cleanMetrics<T extends Record<string, unknown>>(metrics?: T | null) {
   if (!metrics) {

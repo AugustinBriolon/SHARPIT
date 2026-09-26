@@ -2,8 +2,8 @@
 
 import { usePathname, useSearchParams } from 'next/navigation';
 import { useSyncExternalStore } from 'react';
-import { navStack } from '@sharpit/server/lib/navigation/nav-stack';
-import { resolveRouteFallback } from '@sharpit/server/lib/navigation/route-registry';
+import { navStack } from '@sharpit/app/lib/navigation/nav-stack';
+import { resolveRouteFallback } from '@sharpit/app/lib/navigation/route-registry';
 
 export type BackTarget = { href: string; label: string };
 

@@ -31,7 +31,7 @@ import {
   STROKE_LABEL_FR,
   formatDurationLabel,
   formatTargetLabel,
-} from '@sharpit/server/lib/planned-session/endurance/endurance-preview';
+} from '@sharpit/app/lib/planned-session/endurance/endurance-preview';
 import {
   endurancePlannedMeters,
   endurancePlannedSeconds,
@@ -41,12 +41,12 @@ import {
   type EnduranceSport,
   type EnduranceStep,
   type EnduranceStepKind,
-} from '@sharpit/server/lib/planned-session/endurance/endurance-prescription';
+} from '@sharpit/app/lib/planned-session/endurance/endurance-prescription';
 import {
   resolveEnduranceTarget,
   type AthleteThresholds,
   type ResolvedTarget,
-} from '@sharpit/server/lib/planned-session/endurance/endurance-targets';
+} from '@sharpit/app/lib/planned-session/endurance/endurance-targets';
 import { isSet } from '@sharpit/shared/value';
 
 const SPORT_BY_KEY: Record<EnduranceSport, GarminSportTypeDto> = {

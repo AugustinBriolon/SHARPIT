@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { deriveVerdictHeroDisplay } from '@/components/today/rich/today-verdict-hero-helpers';
-import type { TodayViewModel } from '@sharpit/server/presentation/today-view-model';
+import type { TodayViewModel } from '@sharpit/app/presentation/today-view-model';
 
 function heroFixture(overrides: Partial<TodayViewModel['hero']> = {}): TodayViewModel['hero'] {
   return {

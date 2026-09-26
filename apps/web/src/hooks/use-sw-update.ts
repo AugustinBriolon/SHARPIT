@@ -4,7 +4,7 @@ import { useEffect, useReducer, useRef } from 'react';
 import {
   reduceServiceWorkerUpdateState,
   type ServiceWorkerUpdateState,
-} from '@sharpit/server/lib/pwa/sw-update-state';
+} from '@sharpit/app/lib/pwa/sw-update-state';
 
 export interface UseServiceWorkerUpdateResult {
   updateAvailable: boolean;

@@ -1,7 +1,7 @@
 'use client';
 
-import { formatBudgetRetryEta } from '@sharpit/server/lib/access/ai-budget-shared';
-import { cn } from '@sharpit/server/lib/utils';
+import { formatBudgetRetryEta } from '@sharpit/app/lib/access/ai-budget-shared';
+import { cn } from '@sharpit/app/lib/utils';
 
 /**
  * Persistent tag above the composer, mirroring CoachContextChip's shape in

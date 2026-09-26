@@ -7,7 +7,7 @@ import {
   TodayDashboardLoadingView,
   TodayDashboardOfflineView,
 } from '@/components/today/today-dashboard-views';
-import type { ClientActivity } from '@sharpit/server/lib/query/types';
+import type { ClientActivity } from '@sharpit/app/lib/query/types';
 
 export function TodayDashboardResolvedView({
   view,

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   formatActivityMatchLabel,
   scorePlannedActivityMatch,
-} from '@sharpit/server/lib/planned-session/linking/session-link-match-score';
+} from '@sharpit/app/lib/planned-session/linking/session-link-match-score';
 
 describe('scorePlannedActivityMatch', () => {
   const sessionDay = new Date('2026-07-07T08:00:00');

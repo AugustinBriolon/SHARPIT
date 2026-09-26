@@ -1,17 +1,17 @@
-import type { AthleteSnapshot } from '@sharpit/server/athlete-state/snapshot';
+import type { AthleteSnapshot } from '@sharpit/app/athlete-state/snapshot';
 import {
   EMPTY_GLOBAL_DECISION,
   type GlobalDecisionContext,
   type GlobalDecisionDomainRole,
-} from '@sharpit/server/presentation/global-decision-context';
-import { resolveCode } from '@sharpit/server/lib/french';
-import { mapVerdictToDisplay } from '@sharpit/server/lib/today/dashboard/today-mapping';
-import { buildTopActionLine } from '@sharpit/server/lib/today/rich/today-rich-view';
+} from '@sharpit/app/presentation/global-decision-context';
+import { resolveCode } from '@sharpit/app/lib/french';
+import { mapVerdictToDisplay } from '@sharpit/app/lib/today/dashboard/today-mapping';
+import { buildTopActionLine } from '@sharpit/app/lib/today/rich/today-rich-view';
 import {
   decisionTopAction,
   decisionVerdict,
   isAdviceActionableFromDecision,
-} from '@sharpit/server/lib/decision/projection';
+} from '@sharpit/app/lib/decision/projection';
 
 export type DrillDownDomain =
   'RECOVERY' | 'FATIGUE' | 'ADAPTATION' | 'SLEEP' | 'PHYSICAL_HEALTH' | 'BODY';

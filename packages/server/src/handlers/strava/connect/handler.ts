@@ -5,7 +5,7 @@ import {
   publicOriginFromRequest,
   redirectIfBindHost,
 } from '@sharpit/server/lib/integrations/oauth-return';
-import { isProviderConnectable } from '@sharpit/server/lib/integrations/provider-catalog';
+import { isProviderConnectable } from '@sharpit/app/lib/integrations/provider-catalog';
 import {
   buildAuthorizeUrl,
   getStravaRedirectUri,

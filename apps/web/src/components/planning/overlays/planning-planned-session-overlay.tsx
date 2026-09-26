@@ -1,7 +1,7 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import type { ClientGoal, ClientPlannedSession } from '@sharpit/server/lib/query/types';
+import type { ClientGoal, ClientPlannedSession } from '@sharpit/app/lib/query/types';
 
 const PlannedSessionDialog = dynamic(
   () =>

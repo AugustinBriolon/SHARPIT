@@ -1,4 +1,4 @@
-import type { GeocodedPlace } from '@sharpit/server/lib/geocoding/types';
+import type { GeocodedPlace } from '@sharpit/app/lib/geocoding/types';
 import type { LocationPlaceValue } from '@/components/ui/location-place-picker';
 
 export function handleLocationDraftChange({

@@ -13,15 +13,15 @@ import { Skeleton } from '@/components/ui/skeleton';
 import {
   brickLegSummaries,
   groupPlannedSessions,
-} from '@sharpit/server/lib/planned-session/brick/brick-sessions';
-import { activityTypeLabels } from '@sharpit/server/lib/format';
-import { planningDayKey } from '@sharpit/server/lib/plan/planning-day-selection';
-import { buildCompletedSessionMetrics } from '@sharpit/server/lib/today/rich/completed-session-metrics';
-import { planningSessionMode } from '@sharpit/server/lib/plan/planning-day-display';
-import type { ClientActivity, ClientPlannedSession } from '@sharpit/server/lib/query/types';
-import { buildPlannedSessionPreview } from '@sharpit/server/lib/today/rich/planned-session-metrics';
-import { TWIN_DRILL_DOWN } from '@sharpit/server/lib/today/navigation/today-twin-navigation';
-import { cn } from '@sharpit/server/lib/utils';
+} from '@sharpit/app/lib/planned-session/brick/brick-sessions';
+import { activityTypeLabels } from '@sharpit/app/lib/format';
+import { planningDayKey } from '@sharpit/app/lib/plan/planning-day-selection';
+import { buildCompletedSessionMetrics } from '@sharpit/app/lib/today/rich/completed-session-metrics';
+import { planningSessionMode } from '@sharpit/app/lib/plan/planning-day-display';
+import type { ClientActivity, ClientPlannedSession } from '@sharpit/app/lib/query/types';
+import { buildPlannedSessionPreview } from '@sharpit/app/lib/today/rich/planned-session-metrics';
+import { TWIN_DRILL_DOWN } from '@sharpit/app/lib/today/navigation/today-twin-navigation';
+import { cn } from '@sharpit/app/lib/utils';
 
 function PlannedDayPreview({
   session,

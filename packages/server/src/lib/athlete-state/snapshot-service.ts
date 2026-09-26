@@ -1,14 +1,11 @@
-import type {
-  AthleteSnapshot,
-  AthleteSnapshotBriefing,
-} from '@sharpit/server/athlete-state/snapshot';
+import type { AthleteSnapshot, AthleteSnapshotBriefing } from '@sharpit/app/athlete-state/snapshot';
 import {
   buildAthleteSnapshot,
   type SnapshotBuildInput,
 } from '@sharpit/server/lib/athlete-state/snapshot-builder';
 import { computeFreshnessSnapshot } from '@sharpit/server/lib/athlete-state/freshness-service';
-import { shouldRefreshSnapshotForPhaseDrift } from '@sharpit/server/lib/athlete-state/snapshot-phase';
-import { isForwardAdvicePhase } from '@sharpit/server/lib/daily-phase/resolve';
+import { shouldRefreshSnapshotForPhaseDrift } from '@sharpit/app/lib/athlete-state/snapshot-phase';
+import { isForwardAdvicePhase } from '@sharpit/app/lib/daily-phase/resolve';
 import { getDailyBriefing } from '@sharpit/server/lib/briefing/daily-briefing';
 import {
   getLatestAthleteSnapshot,
@@ -16,7 +13,7 @@ import {
   saveAthleteSnapshot,
 } from '@sharpit/server/infrastructure/athlete-state/snapshot-repository';
 import { loadTodayState } from '@sharpit/server/lib/today/navigation/today-state-server';
-import type { TodayState } from '@sharpit/server/athlete-state/today-state';
+import type { TodayState } from '@sharpit/app/athlete-state/today-state';
 import { enrichGoalsWithProgress } from '@sharpit/server/lib/goals/goal-achievements';
 import {
   getActivitiesForSnapshotPhase,
@@ -25,7 +22,7 @@ import {
   getHealthEntries,
   getPlannedSessions,
 } from '@sharpit/server/lib/queries';
-import { analyzeSleep, toSleepEntryInputs } from '@sharpit/server/lib/sleep/sleep';
+import { analyzeSleep, toSleepEntryInputs } from '@sharpit/app/lib/sleep/sleep';
 import { addDays, startOfDay } from 'date-fns';
 import { prisma } from '@sharpit/db/client';
 

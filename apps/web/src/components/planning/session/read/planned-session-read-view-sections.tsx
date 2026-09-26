@@ -7,13 +7,13 @@ import { MorningProposalCompare } from '@/components/planning/session/read/morni
 import { SessionAccessoriesSection } from '../accessories/session-accessories-section';
 import { SessionRealization } from '../realize/session-realization';
 import type { SessionRealizationAnalysisState } from '../realize/session-realization';
-import type { ClientPlannedSession } from '@sharpit/server/lib/query/types';
-import type { MorningProposalCompareInput } from '@sharpit/server/lib/today/rich/morning-proposal-compare';
+import type { ClientPlannedSession } from '@sharpit/app/lib/query/types';
+import type { MorningProposalCompareInput } from '@sharpit/app/lib/today/rich/morning-proposal-compare';
 import { PlanSectionHeading } from '@/components/plan/hub/plan-section-heading';
 import { PlannedSessionReadHeader } from '@/components/planning/session/read/planned-session-read-header';
 import type { PlannedSessionHeaderActions } from '@/components/planning/session/read/planned-session-read-actions-menu';
 import { SensitiveZoneWarning } from '@/components/planning/session/read/planned-session-read-sensitive-zone';
-import { MOI_OBJECTIFS_PATH } from '@sharpit/server/lib/moi/paths';
+import { MOI_OBJECTIFS_PATH } from '@sharpit/app/lib/moi/paths';
 
 function GoalLink({ title }: { title: string }) {
   return (

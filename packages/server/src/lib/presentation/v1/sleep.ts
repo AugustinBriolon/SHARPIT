@@ -1,10 +1,7 @@
 import { format, parseISO, subDays } from 'date-fns';
-import type { RecoveryTone } from '@sharpit/server/lib/recovery/recovery';
-import type {
-  SleepNightStatus,
-  SleepViewModel,
-} from '@sharpit/server/presentation/sleep-view-model';
-import type { SleepAdequacySignal } from '@sharpit/server/lib/today/dashboard/today-mapping';
+import type { RecoveryTone } from '@sharpit/app/lib/recovery/recovery';
+import type { SleepNightStatus, SleepViewModel } from '@sharpit/app/presentation/sleep-view-model';
+import type { SleepAdequacySignal } from '@sharpit/app/lib/today/dashboard/today-mapping';
 import { sleepAdequacySignalForNight } from '@sharpit/server/lib/presentation/sleep/sleep';
 
 export type V1SleepSource = Pick<

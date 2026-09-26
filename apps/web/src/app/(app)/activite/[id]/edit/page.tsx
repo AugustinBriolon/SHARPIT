@@ -2,14 +2,14 @@ import { notFound } from 'next/navigation';
 import { MobileBackLink } from '@/components/layout/header/mobile-back-link';
 import { StickyHeader } from '@/components/layout/header/sticky-header';
 import { ActivityForm } from '@/components/training/activity/form/activity-form';
-import type { getActivityById } from '@sharpit/server/lib/queries';
+import type { ClientActivityDetail } from '@sharpit/app/lib/query/types';
 import { cachedServerApiJson } from '@/server/api-client';
 
 type PageProps = { params: Promise<{ id: string }> };
 
 export default async function EditActivityPage({ params }: PageProps) {
   const { id } = await params;
-  const activity = await cachedServerApiJson<Awaited<ReturnType<typeof getActivityById>>>(
+  const activity = await cachedServerApiJson<ClientActivityDetail>(
     `/api/activities/${encodeURIComponent(id)}`,
     true,
   );

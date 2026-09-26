@@ -1,6 +1,6 @@
 'use client';
 
-import { cn } from '@sharpit/server/lib/utils';
+import { cn } from '@sharpit/app/lib/utils';
 
 /**
  * One physiological marker, read in a single sweep.

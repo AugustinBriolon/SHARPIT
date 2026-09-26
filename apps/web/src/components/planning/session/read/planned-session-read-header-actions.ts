@@ -1,5 +1,5 @@
 import type { PlannedSessionHeaderActions } from '@/components/planning/session/read/planned-session-read-actions-menu';
-import type { ClientPlannedSession } from '@sharpit/server/lib/query/types';
+import type { ClientPlannedSession } from '@sharpit/app/lib/query/types';
 import type { SessionRealizationAnalysisState } from '@/components/planning/session/realize/session-realization';
 
 function resolveHeaderActivityId(

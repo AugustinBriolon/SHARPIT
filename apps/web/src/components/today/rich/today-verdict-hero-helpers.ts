@@ -1,4 +1,4 @@
-import type { TodayViewModel } from '@sharpit/server/presentation/today-view-model';
+import type { TodayViewModel } from '@sharpit/app/presentation/today-view-model';
 
 function contextLabelFromHero(hero: TodayViewModel['hero']): string {
   return hero.postureLabel?.trim() || 'Ce matin';

@@ -7,7 +7,7 @@ import {
   type ProPerk,
 } from '@/components/settings/pro/pro-perks';
 import { getViewer } from '@/server/viewer';
-import { cn } from '@sharpit/server/lib/utils';
+import { cn } from '@sharpit/app/lib/utils';
 
 const STATUS_LABEL: Record<ProPerk['status'], string> = {
   pro: 'Pro',

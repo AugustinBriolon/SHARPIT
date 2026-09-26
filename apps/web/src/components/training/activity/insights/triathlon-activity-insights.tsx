@@ -8,9 +8,9 @@ import {
   ActivityPerformanceSkeleton,
 } from '@/components/training/activity/detail/activity-detail-skeleton';
 import { useMultisportStreams } from '@/hooks/use-data';
-import type { MultisportLegKind } from '@sharpit/server/lib/activity/multisport';
-import type { MultisportLegStream } from '@sharpit/server/lib/streams/streams';
-import { cn } from '@sharpit/server/lib/utils';
+import type { MultisportLegKind } from '@sharpit/app/lib/activity/multisport';
+import type { MultisportLegStream } from '@sharpit/app/lib/streams/stream-types';
+import { cn } from '@sharpit/app/lib/utils';
 import { SportLegInsights } from '@/components/training/activity/insights/sport-leg-insights';
 import { sportHeader } from '@/components/training/activity/insights/sport-leg-insights-shared';
 

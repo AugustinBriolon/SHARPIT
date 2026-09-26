@@ -1,10 +1,10 @@
 import { SignIn } from '@clerk/nextjs';
 import { redirect } from 'next/navigation';
 import { AuthShell } from '@/components/auth/auth-shell';
-import { authAppearance } from '@sharpit/server/lib/theme/clerk-appearance';
+import { authAppearance } from '@sharpit/app/lib/theme/clerk-appearance';
 import { buttonVariants } from '@/components/ui/button';
-import { isDevClerkBypass } from '@sharpit/server/lib/dev/dev-auth';
-import { cn } from '@sharpit/server/lib/utils';
+import { isDevClerkBypass } from '@sharpit/app/lib/dev/dev-auth';
+import { cn } from '@sharpit/app/lib/utils';
 
 function DemoCallout() {
   return (

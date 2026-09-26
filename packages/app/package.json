@@ -1,0 +1,43 @@
+{
+  "name": "@sharpit/app",
+  "version": "0.0.0",
+  "private": true,
+  "exports": {
+    "./data/exercises-catalog.json": "./src/data/exercises-catalog.json",
+    "./data/garmin-exercise-taxonomy.json": "./src/data/garmin-exercise-taxonomy.json",
+    "./data/movement-taxonomy.json": "./src/data/movement-taxonomy.json",
+    "./lib/exercises": "./src/lib/exercises/index.ts",
+    "./lib/practiced-sports": "./src/lib/practiced-sports/index.ts",
+    "./lib/training/periodization": "./src/lib/training/periodization/index.ts",
+    "./lib/ui/brand-icon-canvas": "./src/lib/ui/brand-icon-canvas.tsx",
+    "./*": "./src/*.ts"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint"
+  },
+  "dependencies": {
+    "@clerk/nextjs": "^7.5.9",
+    "@clerk/themes": "2.4.57",
+    "@prisma/client": "^6.19.3",
+    "@sharpit/core": "workspace:*",
+    "@sharpit/shared": "workspace:*",
+    "ai": "7.0.32",
+    "clsx": "^2.1.1",
+    "date-fns": "^4.4.0",
+    "lucide-react": "^1.21.0",
+    "next": "16.3.0",
+    "react": "19.2.4",
+    "tailwind-merge": "^3.6.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@sharpit/eslint-config": "workspace:*",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "eslint": "^9",
+    "typescript": "^5",
+    "vitest": "^4.1.9"
+  }
+}

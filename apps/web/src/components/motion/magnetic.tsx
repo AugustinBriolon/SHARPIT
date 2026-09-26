@@ -2,9 +2,9 @@
 
 import { motion, useMotionValue, useReducedMotion, useSpring } from 'motion/react';
 import { useRef, type ReactNode } from 'react';
-import { SPRING_MOUSE } from '@sharpit/server/lib/ease';
+import { SPRING_MOUSE } from '@sharpit/app/lib/ease';
 import { useHoverCapable } from '@/client/hooks/use-hover-capable';
-import { cn } from '@sharpit/server/lib/utils';
+import { cn } from '@sharpit/app/lib/utils';
 
 export interface MagneticProps {
   children: ReactNode;

@@ -5,7 +5,7 @@ import {
 import {
   ATYPICAL_RECOVERY_SIGNAL_PREFIX,
   ILLNESS_SYMPTOM_ADVICE_FR,
-} from '@sharpit/server/lib/copy/medical-disclaimer';
+} from '@sharpit/app/lib/copy/medical-disclaimer';
 
 /**
  * Only what breaks the routine.

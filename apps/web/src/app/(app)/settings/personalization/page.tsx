@@ -6,8 +6,8 @@ import { DataHistoryWindowPicker } from '@/components/settings/personalization/d
 import { SurfaceModulesPanel } from '@/components/settings/personalization/surface-modules-panel';
 import { SettingsDemoBlock } from '@/components/settings/settings-demo-block';
 import { Skeleton } from '@/components/ui/skeleton';
-import { isDemoSession } from '@sharpit/server/lib/demo/demo-session';
-import { MOI_HUB_PATH } from '@sharpit/server/lib/moi/paths';
+import { isDemoSession } from '@sharpit/app/lib/demo/demo-session';
+import { MOI_HUB_PATH } from '@sharpit/app/lib/moi/paths';
 
 function ExpertModeSectionSkeleton() {
   return (

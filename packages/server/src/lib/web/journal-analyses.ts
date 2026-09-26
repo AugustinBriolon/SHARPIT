@@ -1,22 +1,23 @@
+import type { JournalAnalysesPayload } from '@sharpit/app/lib/web/payloads';
 import { prisma } from '@sharpit/db/client';
 import { trainingDayIdForNow } from '@sharpit/core/training/training-day';
-import { hasProAccess } from '@sharpit/server/lib/access/tier';
-import { buildJournalAnalysesViewModel } from '@sharpit/server/lib/journal/journal-analyses-view-model';
+import { hasProAccess } from '@sharpit/app/lib/access/tier';
+import { buildJournalAnalysesViewModel } from '@sharpit/app/lib/journal/journal-analyses-view-model';
 import { loadJournalHabitFindings } from '@sharpit/server/lib/journal/journal-habit-analysis-load';
 import { loadJournalHabitExperiments } from '@sharpit/server/lib/journal/journal-habit-experiment-load';
 import {
   testedFactorIds,
   toHabitExperimentView,
-} from '@sharpit/server/lib/journal/journal-habit-experiment-view';
-import { buildJournalHabitReading } from '@sharpit/server/lib/journal/journal-habit-reading';
+} from '@sharpit/app/lib/journal/journal-habit-experiment-view';
+import { buildJournalHabitReading } from '@sharpit/app/lib/journal/journal-habit-reading';
 import {
   isJournalAnalysisReady,
   JOURNAL_ANALYSIS_MIN_DAYS,
-} from '@sharpit/server/lib/journal/journal-limits';
+} from '@sharpit/app/lib/journal/journal-limits';
 import { getAthleteProfile } from '@sharpit/server/lib/queries';
 
 /** The journal analyses screen, read and computed on `api.` (ADR-048 phase 3f). */
-export async function loadJournalAnalyses(athleteId: string) {
+export async function loadJournalAnalyses(athleteId: string): Promise<JournalAnalysesPayload> {
   const [profile, { daysWithSignal, daysInSpan, findings }, experiments] = await Promise.all([
     getAthleteProfile(athleteId).catch(() => null),
     loadJournalHabitFindings(prisma, athleteId),
@@ -42,4 +43,4 @@ export async function loadJournalAnalyses(athleteId: string) {
   };
 }
 
-export type JournalAnalysesPayload = Awaited<ReturnType<typeof loadJournalAnalyses>>;
+export type { JournalAnalysesPayload };

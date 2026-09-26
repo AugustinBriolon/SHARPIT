@@ -21,8 +21,8 @@ import type {
   PlanGateRule,
   PlanLevelGateRule,
   RuleFinding,
-} from './types';
-import { GATE_STATUS_SEVERITY_ORDER } from './types';
+} from '@sharpit/app/lib/plan-gate/types';
+import { GATE_STATUS_SEVERITY_ORDER } from '@sharpit/app/lib/plan-gate/types';
 
 /** Fixed, declared order — deterministic for a given GateContext + proposal set. */
 const RULES: readonly PlanGateRule[] = [

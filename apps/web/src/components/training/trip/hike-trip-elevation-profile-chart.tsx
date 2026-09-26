@@ -2,13 +2,13 @@
 
 import { Area, AreaChart, ReferenceDot, ReferenceLine, XAxis, YAxis } from 'recharts';
 import { ResponsiveChartFrame } from '@/components/ui/charts/responsive-chart-frame';
-import { CHART_PRIMARY_STROKE } from '@sharpit/server/lib/theme/chart-theme';
+import { CHART_PRIMARY_STROKE } from '@sharpit/app/lib/theme/chart-theme';
 import {
   formatRelativeGain,
   type HikeTripElevationProfile as Profile,
-} from '@sharpit/server/lib/activity/hike/hike-trip-elevation';
+} from '@sharpit/app/lib/activity/hike/hike-trip-elevation';
 import { resolveHikeElevationChartTheme } from '@/components/training/trip/hike-trip-elevation-chart-theme';
-import { cn } from '@sharpit/server/lib/utils';
+import { cn } from '@sharpit/app/lib/utils';
 
 /**
  * Trip elevation signature — cumulative *relative* gain, one tooth per step.

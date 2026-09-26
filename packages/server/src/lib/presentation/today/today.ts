@@ -1,11 +1,11 @@
-import type { AthleteSnapshot } from '@sharpit/server/athlete-state/snapshot';
+import type { AthleteSnapshot } from '@sharpit/app/athlete-state/snapshot';
 import { isSet } from '@sharpit/shared/value';
-import type { DailyPhase } from '@sharpit/server/lib/daily-phase/types';
-import type { MorningOrientationResolved } from '@sharpit/server/lib/today/rich/morning-orientation';
-import { snapshotHasDisplayableContent } from '@sharpit/server/athlete-state/snapshot';
-import type { TodayViewModel } from '@sharpit/server/presentation/today-view-model';
+import type { DailyPhase } from '@sharpit/app/lib/daily-phase/types';
+import type { MorningOrientationResolved } from '@sharpit/app/lib/today/rich/morning-orientation';
+import { snapshotHasDisplayableContent } from '@sharpit/app/athlete-state/snapshot';
+import type { TodayViewModel } from '@sharpit/app/presentation/today-view-model';
 import { getOrBuildAthleteSnapshot } from '@sharpit/server/lib/athlete-state/snapshot-service';
-import { pickAdaptationReminders } from '@sharpit/server/lib/daily-phase/narrative';
+import { pickAdaptationReminders } from '@sharpit/app/lib/daily-phase/narrative';
 import {
   getActivitiesList,
   getAthleteProfile,
@@ -14,50 +14,50 @@ import {
   getPlannedSessions,
 } from '@sharpit/server/lib/queries';
 import { SLEEP_TARGET_MIN } from '@sharpit/core/sleep/targets';
-import { computeSharpitSleepScoreForDay } from '@sharpit/server/lib/sleep/sleep-scoring';
-import { activityTypeLabels } from '@sharpit/server/lib/format';
+import { computeSharpitSleepScoreForDay } from '@sharpit/app/lib/sleep/sleep-scoring';
+import { activityTypeLabels } from '@sharpit/app/lib/format';
 import { buildPostSessionLoop } from '@sharpit/server/lib/today/rich/post-session-loop';
-import { buildFeedbackRearrangeProposal } from '@sharpit/server/lib/today/rich/feedback-rearrange-proposal';
+import { buildFeedbackRearrangeProposal } from '@sharpit/app/lib/today/rich/feedback-rearrange-proposal';
 import {
   buildHabitRearrangeProposal,
   mergeRearrangeProposals,
   type HabitCoachingSignal,
-} from '@sharpit/server/lib/today/rich/habit-coaching-signal';
+} from '@sharpit/app/lib/today/rich/habit-coaching-signal';
 import { loadTodayHabitCoachingSignal } from '@sharpit/server/lib/presentation/today/today-habit-coaching';
 import { buildTodayHeroReliability } from '@sharpit/server/lib/science/reliability/today-hero-reliability';
-import { buildTodayDaySummary } from '@sharpit/server/lib/today/dashboard/today-day-summary';
+import { buildTodayDaySummary } from '@sharpit/app/lib/today/dashboard/today-day-summary';
 import { prisma } from '@sharpit/db/client';
 import { addDays } from 'date-fns';
 import {
   findSessionLinkSuggestions,
   type SessionLinkSuggestion,
-} from '@sharpit/server/lib/today/rich/session-link-suggestions';
+} from '@sharpit/app/lib/today/rich/session-link-suggestions';
 import {
   mapConfidenceToTier,
   mapVerdictToDisplay,
   resolveVisibleConfidenceLabel,
-} from '@sharpit/server/lib/today/dashboard/today-mapping';
+} from '@sharpit/app/lib/today/dashboard/today-mapping';
 import {
   actionRowLabels,
   buildTopActionLine,
   shouldShowForwardTrainingCopy,
-} from '@sharpit/server/lib/today/rich/today-rich-view';
+} from '@sharpit/app/lib/today/rich/today-rich-view';
 import {
   resolveMorningOrientation,
   type MorningRecalibrationInput,
-} from '@sharpit/server/lib/today/rich/morning-orientation';
+} from '@sharpit/app/lib/today/rich/morning-orientation';
 import {
   decisionTopAction,
   decisionVerdict,
   resolveConfidenceHrefFromDecision,
   resolveLimitingFactorHrefFromDecision,
-} from '@sharpit/server/lib/decision/projection';
+} from '@sharpit/app/lib/decision/projection';
 import { buildTodayLimitingFacts } from '@sharpit/server/lib/today/dashboard/today-instrument-facts';
-import { buildTodayGoalAnchor } from '@sharpit/server/lib/today/rich/today-goal-anchor';
-import { TWIN_DRILL_DOWN } from '@sharpit/server/lib/today/navigation/today-twin-navigation';
-import { buildSignalPreviews } from '@sharpit/server/lib/today/dashboard/signal-previews';
+import { buildTodayGoalAnchor } from '@sharpit/app/lib/today/rich/today-goal-anchor';
+import { TWIN_DRILL_DOWN } from '@sharpit/app/lib/today/navigation/today-twin-navigation';
+import { buildSignalPreviews } from '@sharpit/app/lib/today/dashboard/signal-previews';
 import { endOfDay, startOfDay } from 'date-fns';
-import type { ClientActivity, ClientPlannedSession } from '@sharpit/server/lib/query/types';
+import type { ClientActivity, ClientPlannedSession } from '@sharpit/app/lib/query/types';
 import type { SessionIntensity } from '@prisma/client';
 import { getGarminAccount } from '@sharpit/server/lib/integrations/garmin/garmin-sync';
 import { getGoogleAccount } from '@sharpit/server/lib/integrations/google/google-sync';
@@ -762,7 +762,7 @@ function assembleTodayHeroGoalFields(ctx: ReturnType<typeof prepareTodayViewMode
 function assembleTodayHero(ctx: ReturnType<typeof prepareTodayViewModelContext>) {
   const reliabilityBundle = buildTodayHeroReliability(
     ctx.effectiveSnapshot,
-    ctx.verdict as import('@sharpit/server/athlete-state/today-state').OverallVerdict | null,
+    ctx.verdict as import('@sharpit/app/athlete-state/today-state').OverallVerdict | null,
   );
   const headline = reliabilityBundle.effectiveHeadlineOverride ?? ctx.effectiveHeadline;
   const { displayVerdict } = reliabilityBundle;

@@ -6,8 +6,8 @@ import { PlanVivantBand } from '@/components/today/rich/plan-vivant-band';
 import {
   HABIT_SESSION_TENSION_CAPTION,
   habitLeverChipLabel,
-} from '@sharpit/server/lib/today/rich/habit-coaching-signal';
-import type { PlanLivingCalloutView } from '@sharpit/server/lib/plan/hub/plan-living-callout';
+} from '@sharpit/app/lib/today/rich/habit-coaching-signal';
+import type { PlanLivingCalloutView } from '@sharpit/app/lib/plan/hub/plan-living-callout';
 
 /**
  * Hub Plan — Plan vivant tension. The same band as Today, so the athlete reads

@@ -4,7 +4,7 @@ import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
 import {
   GARMIN_SSO_EMBED_SERVICE,
   isGarminSsoTicket,
-} from '@sharpit/server/lib/integrations/garmin/garmin-browser-sso-shared';
+} from '@sharpit/app/lib/integrations/garmin/garmin-browser-sso-shared';
 import { exchangeServiceTicketForDiTokens } from '@sharpit/server/lib/integrations/garmin/garmin-di-oauth';
 import { importGarminDiTokenStore } from '@sharpit/server/lib/integrations/garmin/garmin-sync';
 import { redirectAfterIntegrationConnect } from '@sharpit/server/lib/integrations/oauth-return';

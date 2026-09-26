@@ -1,4 +1,4 @@
-import { cn } from '@sharpit/server/lib/utils';
+import { cn } from '@sharpit/app/lib/utils';
 
 function sectionPaddingClass(padding: 'default' | 'none' | 'hero'): string {
   if (padding === 'none') {

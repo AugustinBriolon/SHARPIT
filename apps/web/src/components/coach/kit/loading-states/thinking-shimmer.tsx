@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { TextShimmer } from '@/components/motion/text-shimmer';
-import { cn } from '@sharpit/server/lib/utils';
+import { cn } from '@sharpit/app/lib/utils';
 
 export interface ThinkingShimmerProps {
   /** Loading message shown to the user. */

@@ -4,7 +4,7 @@ import type {
   ClientActivity,
   ClientActivityDetail,
   ClientPlannedSession,
-} from '@sharpit/server/lib/query/types';
+} from '@sharpit/app/lib/query/types';
 import { seedPlannedSessionIntoCache } from '@/client/query/seed-planned-session-cache';
 
 type AnalysisPatch = {

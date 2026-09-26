@@ -1,9 +1,9 @@
-import type { DailyPhaseResolution } from '@sharpit/server/lib/daily-phase/types';
-import type { PhaseNarrative } from '@sharpit/server/lib/daily-phase/narrative';
+import type { DailyPhaseResolution } from '@sharpit/app/lib/daily-phase/types';
+import type { PhaseNarrative } from '@sharpit/app/lib/daily-phase/narrative';
 import {
   DAILY_PHASE_PRIMARY_QUESTION,
   DAILY_PHASE_WHY_FOCUS,
-} from '@sharpit/server/lib/daily-phase/types';
+} from '@sharpit/app/lib/daily-phase/types';
 
 export function mockDailyPhase(
   overrides: Partial<DailyPhaseResolution> = {},

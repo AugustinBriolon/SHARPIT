@@ -8,7 +8,7 @@ import {
   type ScenarioKind,
   type ScenarioSessionSlice,
 } from '@sharpit/core/scenario/types';
-import { stepDownIntensity } from '@sharpit/server/lib/scenario/apply-scenario-op';
+import { stepDownIntensity } from '@sharpit/app/lib/scenario/apply-scenario-op';
 import { addTrainingDays } from '@sharpit/core/training/training-day';
 import { localDateLabel } from '@sharpit/server/lib/projection/build-projection-input';
 

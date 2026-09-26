@@ -10,8 +10,8 @@ import {
   isPresentationValuesLoading,
   useAdaptationViewModel,
 } from '@/hooks/use-presentation-view-model';
-import { adaptationLoadingShell } from '@sharpit/server/lib/presentation/shared/drill-down-loading-shells';
-import { TWIN_ADAPTATION_READING } from '@sharpit/server/lib/plan/hub/plan-coach-offer';
+import { adaptationLoadingShell } from '@sharpit/app/lib/presentation/shared/drill-down-loading-shells';
+import { TWIN_ADAPTATION_READING } from '@sharpit/app/lib/plan/hub/plan-coach-offer';
 
 function adaptationEmptyDescription(viewModel: ReturnType<typeof useAdaptationViewModel>['data']) {
   return (

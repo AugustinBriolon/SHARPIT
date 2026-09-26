@@ -1,8 +1,9 @@
 import { clerkClient } from '@clerk/nextjs/server';
-import { type AdminAthleteRow, listAthletesForAdmin } from '@sharpit/server/lib/admin/queries';
-import { isDevClerkBypass } from '@sharpit/server/lib/dev/dev-auth';
+import { listAthletesForAdmin } from '@sharpit/server/lib/admin/queries';
+import type { AdminAthleteView } from '@sharpit/app/lib/web/payloads';
+import { isDevClerkBypass } from '@sharpit/app/lib/dev/dev-auth';
 
-export type AdminAthleteView = AdminAthleteRow & { email: string | null };
+export type { AdminAthleteView };
 
 async function emailsByClerkId(clerkUserIds: string[]): Promise<Map<string, string>> {
   if (isDevClerkBypass() || clerkUserIds.length === 0) {

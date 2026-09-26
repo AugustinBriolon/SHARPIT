@@ -1,4 +1,4 @@
-import type { ClientHikeTrip, ClientHikeTripListItem } from '@sharpit/server/lib/query/types';
+import type { ClientHikeTrip, ClientHikeTripListItem } from '@sharpit/app/lib/query/types';
 import { fetchJson, type Serialized, toDate } from './shared';
 
 function hydrateHikeTripActivity(

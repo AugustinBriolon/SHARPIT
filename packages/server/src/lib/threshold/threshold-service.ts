@@ -6,16 +6,13 @@ import {
   upsertAthleteProfile,
 } from '@sharpit/server/lib/queries';
 import { getStoredRecords } from '@sharpit/server/lib/training/records/records';
-import {
-  SWIM_CSS_MIN_DISTANCE_M,
-  type SwimCssSample,
-} from '@sharpit/server/lib/threshold/swim-css';
+import { SWIM_CSS_MIN_DISTANCE_M, type SwimCssSample } from '@sharpit/app/lib/threshold/swim-css';
 import {
   computeThresholdEstimates,
   previewThresholdApply,
   resolveAcceptedFields,
   type ThresholdField,
-} from './threshold-estimates';
+} from '@sharpit/app/lib/threshold/threshold-estimates';
 
 /**
  * Realised pool sessions long enough for their average pace to mean something.

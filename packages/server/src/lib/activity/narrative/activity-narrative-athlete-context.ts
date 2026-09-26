@@ -2,16 +2,16 @@ import type { ActivityType } from '@prisma/client';
 import { isSet } from '@sharpit/shared/value';
 import { differenceInCalendarDays, format, startOfDay } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { pmcTsb, type PmcState } from '@sharpit/server/lib/training/pmc/pmc';
+import { pmcTsb, type PmcState } from '@sharpit/app/lib/training/pmc/pmc';
 import {
   formatActivityWeatherNarrative,
   parseActivityWeather,
-} from '@sharpit/server/lib/activity/weather/activity-weather';
+} from '@sharpit/app/lib/activity/weather/activity-weather';
 import {
   categoryLabels,
   sideLabels,
   statusLabels,
-} from '@sharpit/server/lib/physical-health/physical';
+} from '@sharpit/app/lib/physical-health/physical';
 import { computeTrainingLoad } from '@sharpit/server/lib/training/load/training-load';
 
 const SLEEP_TARGET_MIN = 390; // 6h30 — seuil récupération (cf. alerts.ts)

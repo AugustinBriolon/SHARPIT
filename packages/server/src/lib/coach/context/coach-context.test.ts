@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { normalizeAthleteEquipment } from '@sharpit/server/lib/equipment/parse';
+import { normalizeAthleteEquipment } from '@sharpit/app/lib/equipment/parse';
 import { normalizeTrainingAvailability } from '@sharpit/server/lib/training-availability/parse';
 import {
   formatConstraintsSection,

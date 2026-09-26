@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { ActivityType } from '@prisma/client';
 import { derivePostSessionLoop } from '@/components/today/rich/today-action-row-derived-helpers';
-import type { TodayViewModel } from '@sharpit/server/presentation/today-view-model';
+import type { TodayViewModel } from '@sharpit/app/presentation/today-view-model';
 
 function baseVm(overrides: {
   postSessionLoop: TodayViewModel['postSessionLoop'];

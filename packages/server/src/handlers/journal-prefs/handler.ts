@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import type { Prisma } from '@prisma/client';
-import { hasProAccess } from '@sharpit/server/lib/access/tier';
+import { hasProAccess } from '@sharpit/app/lib/access/tier';
 import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
 import {
   defaultJournalPrefs,
   parseJournalPrefs,
   sanitizeJournalPrefsForPersist,
-} from '@sharpit/server/lib/journal/journal-prefs';
-import { awaitRequest } from '@sharpit/server/lib/next/await-request';
+} from '@sharpit/app/lib/journal/journal-prefs';
+import { awaitRequest } from '@sharpit/app/lib/next/await-request';
 import { prisma } from '@sharpit/db/client';
 
 export async function GET() {

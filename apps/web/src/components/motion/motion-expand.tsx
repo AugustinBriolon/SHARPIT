@@ -3,7 +3,7 @@
 import { motion, useReducedMotion } from 'motion/react';
 import { collapseVariants } from '@/client/motion/variants';
 import { motionTokens } from '@/client/motion/tokens';
-import { cn } from '@sharpit/server/lib/utils';
+import { cn } from '@sharpit/app/lib/utils';
 
 type MotionExpandProps = {
   open: boolean;

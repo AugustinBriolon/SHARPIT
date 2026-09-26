@@ -6,7 +6,7 @@ import { InputFieldShell } from '@/components/motion/input-field-shell';
 import { MotionInputControl } from '@/components/motion/motion-input-control';
 import type { InputProps } from '@/components/motion/input-types';
 import { forwardRef } from 'react';
-import { cn } from '@sharpit/server/lib/utils';
+import { cn } from '@sharpit/app/lib/utils';
 
 function MotionInputLabel({
   id,

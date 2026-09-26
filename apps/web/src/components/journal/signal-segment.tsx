@@ -3,9 +3,9 @@
 import { useId } from 'react';
 import { motion, useReducedMotion } from 'motion/react';
 import { Check, Minus, X } from 'lucide-react';
-import { SPRING_LAYOUT } from '@sharpit/server/lib/ease';
-import type { DayJournalFactorState } from '@sharpit/server/lib/journal/day-journal';
-import { cn } from '@sharpit/server/lib/utils';
+import { SPRING_LAYOUT } from '@sharpit/app/lib/ease';
+import type { DayJournalFactorState } from '@sharpit/app/lib/journal/day-journal';
+import { cn } from '@sharpit/app/lib/utils';
 
 const SIGNAL_OPTIONS = [
   {

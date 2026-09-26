@@ -11,10 +11,10 @@ import { addDays, format } from 'date-fns';
 import { isSet } from '@sharpit/shared/value';
 import { fr } from 'date-fns/locale';
 import type { ActivityType, GoalHorizon, PlanPhase, SessionIntensity } from '@prisma/client';
-import { activityTypeLabels } from '@sharpit/server/lib/format';
-import { intensityLabels } from '@sharpit/server/lib/planned-session/sessions';
-import { phaseLabels } from '@sharpit/server/lib/training/periodization';
-import { horizonLabels } from '@sharpit/server/lib/goals/goals';
+import { activityTypeLabels } from '@sharpit/app/lib/format';
+import { intensityLabels } from '@sharpit/app/lib/planned-session/sessions';
+import { phaseLabels } from '@sharpit/app/lib/training/periodization';
+import { horizonLabels } from '@sharpit/app/lib/goals/goals';
 import {
   computeTrainingLoad,
   ACWR_THRESHOLDS,
@@ -25,12 +25,12 @@ import type {
   WeeklyBriefKeySession,
   WeeklyBriefLearningFeedbackItem,
   WeeklyCoachingBriefViewModel,
-} from '@sharpit/server/presentation/weekly-coaching-brief-view-model';
+} from '@sharpit/app/presentation/weekly-coaching-brief-view-model';
 import type {
   CoachingDecisionRecord,
   DecisionSnapshotContext,
-} from '@sharpit/server/lib/decision-memory/types';
-import { dayKeyFromDate } from '@sharpit/server/lib/date/day-key';
+} from '@sharpit/app/lib/decision-memory/types';
+import { dayKeyFromDate } from '@sharpit/app/lib/date/day-key';
 
 const KEY_INTENSITIES = new Set<SessionIntensity>(['THRESHOLD', 'VO2MAX', 'RACE']);
 const WEEK_DAYS = 7;

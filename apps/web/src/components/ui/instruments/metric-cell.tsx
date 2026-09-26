@@ -1,5 +1,5 @@
-import type { CorpsTone, MetricTone } from '@sharpit/server/lib/ui/metric-tone';
-import { CORPS_TONE_TEXT } from '@sharpit/server/lib/ui/metric-tone';
+import type { CorpsTone, MetricTone } from '@sharpit/app/lib/ui/metric-tone';
+import { CORPS_TONE_TEXT } from '@sharpit/app/lib/ui/metric-tone';
 import { MetricCellCard } from '@/components/ui/instruments/metric-cell-card';
 import {
   MetricCellCompact,

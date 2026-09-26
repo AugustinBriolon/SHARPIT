@@ -1,5 +1,5 @@
 import type { AccessTier } from '@prisma/client';
-import { ALL_PRO_PERKS } from '@sharpit/server/lib/access/pro-perks';
+import { ALL_PRO_PERKS } from '@sharpit/app/lib/access/pro-perks';
 
 export type V1ProSubscription = {
   status: 'active' | 'grace_period' | 'billing_retry' | 'expired' | 'revoked';

@@ -2,10 +2,10 @@ import { describe, expect, it } from 'vitest';
 import {
   MIN_ADVICE_CONFIDENCE,
   applyTruthfulnessOverlay,
-} from '@sharpit/server/lib/athlete-state/snapshot-truthfulness';
-import { isAdviceActionableFromDecision } from '@sharpit/server/lib/decision/projection';
+} from '@sharpit/app/lib/athlete-state/snapshot-truthfulness';
+import { isAdviceActionableFromDecision } from '@sharpit/app/lib/decision/projection';
 import { mockDailyPhase, mockPhaseNarrative } from '@sharpit/server/lib/daily-phase/test-fixtures';
-import type { DecisionData } from '@sharpit/server/athlete-state/today-state';
+import type { DecisionData } from '@sharpit/app/athlete-state/today-state';
 
 function decision(partial: Partial<DecisionData>): DecisionData {
   return {

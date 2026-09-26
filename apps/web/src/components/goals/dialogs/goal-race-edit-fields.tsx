@@ -10,11 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import {
-  priorityDescriptions,
-  priorityLabels,
-  priorityOrder,
-} from '@sharpit/server/lib/goals/goals';
+import { priorityDescriptions, priorityLabels, priorityOrder } from '@sharpit/app/lib/goals/goals';
 import type { GoalForEdit } from '@/components/goals/dialogs/goal-dialog';
 import {
   GoalRaceDateLocationFields,

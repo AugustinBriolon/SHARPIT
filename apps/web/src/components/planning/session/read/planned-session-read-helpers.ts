@@ -1,18 +1,18 @@
 import { sportSupportsOutdoorContext } from '@sharpit/core/planned-session/defaults';
-import { formatDate } from '@sharpit/server/lib/format';
-import { formatPlannedSessionLocationDisplay } from '@sharpit/server/lib/planned-session/display/planned-session-display';
+import { formatDate } from '@sharpit/app/lib/format';
+import { formatPlannedSessionLocationDisplay } from '@sharpit/app/lib/planned-session/display/planned-session-display';
 import {
   attachGarminRefsToPrescription,
   extractStrengthSessionIntent,
   parseStrengthPrescription,
-} from '@sharpit/server/lib/planned-session/strength/strength-prescription';
-import { resolveStrengthSetMedia } from '@sharpit/server/lib/exercises';
-import type { ClientPlannedSession } from '@sharpit/server/lib/query/types';
-import { exposureLabels, intensityLabels } from '@sharpit/server/lib/planned-session/sessions';
-import { formatTrainingLoad } from '@sharpit/server/lib/preferences/display-mode';
-import type { DisplayMode } from '@sharpit/server/lib/preferences/display-mode';
-import type { SessionRationaleViewModel } from '@sharpit/server/presentation/session-rationale-view-model';
-import type { PlannedSessionViewModel } from '@sharpit/server/presentation/planned-session-view-model';
+} from '@sharpit/app/lib/planned-session/strength/strength-prescription';
+import { resolveStrengthSetMedia } from '@sharpit/app/lib/exercises';
+import type { ClientPlannedSession } from '@sharpit/app/lib/query/types';
+import { exposureLabels, intensityLabels } from '@sharpit/app/lib/planned-session/sessions';
+import { formatTrainingLoad } from '@sharpit/app/lib/preferences/display-mode';
+import type { DisplayMode } from '@sharpit/app/lib/preferences/display-mode';
+import type { SessionRationaleViewModel } from '@sharpit/app/presentation/session-rationale-view-model';
+import type { PlannedSessionViewModel } from '@sharpit/app/presentation/planned-session-view-model';
 import { ActivityType } from '@prisma/client';
 
 export type PlannedSessionKeyChip = { label: string; value: string; valueClassName?: string };

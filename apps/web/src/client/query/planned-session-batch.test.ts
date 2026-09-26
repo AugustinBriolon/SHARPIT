@@ -4,7 +4,7 @@ import {
   plannedSessionBatchSuccessMessage,
   type PlannedSessionBatchOp,
 } from '@/client/query/planned-session-batch';
-import type { ClientPlannedSession } from '@sharpit/server/lib/query/types';
+import type { ClientPlannedSession } from '@sharpit/app/lib/query/types';
 import { isTempId } from '@/client/query/optimistic';
 
 function session(partial: Partial<ClientPlannedSession> & { id: string }): ClientPlannedSession {

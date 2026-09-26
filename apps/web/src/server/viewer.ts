@@ -1,6 +1,6 @@
 import 'server-only';
 
-import type { WebViewer } from '@sharpit/server/lib/web/viewer';
+import type { WebViewer } from '@sharpit/app/lib/web/payloads';
 import { cachedServerApiJson } from '@/server/api-client';
 
 /** The signed-in visitor's routing context, read once per render from `api.`. */

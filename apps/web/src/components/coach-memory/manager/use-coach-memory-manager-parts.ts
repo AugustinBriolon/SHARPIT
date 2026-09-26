@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { toast } from '@/components/ui/toast';
 import { useResetWhenHidden } from '@/hooks/use-reset-when-hidden';
-import type { CoachMemoryEntry } from '@sharpit/server/lib/coach-memory/core/types';
+import type { CoachMemoryEntry } from '@sharpit/app/lib/coach-memory/core/types';
 import type { TravelMemoryPayload } from '@/hooks/use-coach-memory';
 
 export function useCoachMemoryFocusScroll(

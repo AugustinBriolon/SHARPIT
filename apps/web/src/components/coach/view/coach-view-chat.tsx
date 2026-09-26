@@ -3,8 +3,8 @@ import type { ReactNode } from 'react';
 import { CoachChat } from '@/components/coach/chat/shell/coach-chat';
 import { CoachChatPanelShell } from '@/components/coach/chat/shell/coach-chat-panel-shell';
 import { OfflineSnapshotSummary } from '@/components/pwa/offline-snapshot-summary';
-import type { CoachDiscussContext } from '@sharpit/server/lib/coach/chat/discuss/coach-discuss-context';
-import type { PersistedSnapshotEntry } from '@sharpit/server/lib/pwa/snapshot-store-validation';
+import type { CoachDiscussContext } from '@sharpit/app/lib/coach/chat/discuss/coach-discuss-context';
+import type { PersistedSnapshotEntry } from '@sharpit/app/lib/pwa/snapshot-store-validation';
 
 type CoachChatPaneProps = {
   selectedId: string;

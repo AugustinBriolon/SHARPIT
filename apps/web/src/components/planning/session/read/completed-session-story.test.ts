@@ -5,7 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ActivityType } from '@prisma/client';
 
 import { CompletedSessionStory } from './completed-session-story';
-import type { ClientPlannedSession } from '@sharpit/server/lib/query/types';
+import type { ClientPlannedSession } from '@sharpit/app/lib/query/types';
 
 function renderWithQuery(ui: React.ReactElement) {
   const client = new QueryClient({

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
-import { canRunHealthDerivedAthleteRefresh } from '@sharpit/server/lib/privacy/consent-withdraw-ux';
+import { canRunHealthDerivedAthleteRefresh } from '@sharpit/app/lib/privacy/consent-withdraw-ux';
 import { projectV1SyncStatus } from '@sharpit/server/lib/presentation/v1/sync-status';
 import {
   checkRateLimit,

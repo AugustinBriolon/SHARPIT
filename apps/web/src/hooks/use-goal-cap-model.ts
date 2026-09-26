@@ -15,24 +15,24 @@ import {
   buildGoalCapHero,
   partitionGoalsForCap,
   type GoalCapHeroView,
-} from '@sharpit/server/lib/goals/goal-cap';
-import { buildGoalCapStats, type GoalCapStatsView } from '@sharpit/server/lib/goals/goal-cap-stats';
+} from '@sharpit/app/lib/goals/goal-cap';
+import { buildGoalCapStats, type GoalCapStatsView } from '@sharpit/app/lib/goals/goal-cap-stats';
 import {
   buildGoalPositionAudit,
   type GoalPositionAuditView,
-} from '@sharpit/server/lib/goals/goal-position-audit';
-import { buildRaceFinishProjection } from '@sharpit/server/lib/goals/goal-race-projection';
-import { buildGoalRealizationLabels } from '@sharpit/server/lib/goals/goal-realization-labels';
-import { buildMacroPhaseRail } from '@sharpit/server/lib/plan/trajectory/plan-macro-rail';
-import { selectPlanGoal, type PlanGoalView } from '@sharpit/server/lib/plan/trajectory/plan-goal';
+} from '@sharpit/app/lib/goals/goal-position-audit';
+import { buildRaceFinishProjection } from '@sharpit/app/lib/goals/goal-race-projection';
+import { buildGoalRealizationLabels } from '@sharpit/app/lib/goals/goal-realization-labels';
+import { buildMacroPhaseRail } from '@sharpit/app/lib/plan/trajectory/plan-macro-rail';
+import { selectPlanGoal, type PlanGoalView } from '@sharpit/app/lib/plan/trajectory/plan-goal';
 import type {
   ClientActivity,
   ClientGoal,
   ClientPlannedSession,
-} from '@sharpit/server/lib/query/types';
+} from '@sharpit/app/lib/query/types';
 import type { AthleteProfilePayload } from '@/client/query/fetchers/athlete-profile';
-import type { PlanPhaseSource } from '@sharpit/server/lib/plan/trajectory/plan-phase';
-import type { RecordsPayload } from '@sharpit/server/lib/training/records/records';
+import type { PlanPhaseSource } from '@sharpit/app/lib/plan/trajectory/plan-phase';
+import type { RecordsPayload } from '@sharpit/app/lib/training/records/record-types';
 
 function toGoalItem(goal: ClientGoal): GoalItem {
   return {

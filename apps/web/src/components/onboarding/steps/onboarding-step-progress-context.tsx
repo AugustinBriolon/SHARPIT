@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useContext, useMemo, type ReactNode } from 'react';
-import type { OnboardingWizardStep } from '@sharpit/server/lib/onboarding/wizard/wizard-steps';
+import type { OnboardingWizardStep } from '@sharpit/app/lib/onboarding/wizard/wizard-steps';
 
 /**
  * Lets the step shell render the progress rail as a sticky band above the

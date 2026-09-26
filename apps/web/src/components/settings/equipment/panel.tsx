@@ -4,8 +4,8 @@ import { PracticedSportsPicker } from '@/components/practiced-sports/practiced-s
 import { usePracticedSportsPersist } from '@/components/practiced-sports/use-practiced-sports-persist';
 import { EquipmentInventory } from '@/components/settings/equipment/inventory';
 import { EquipmentStatusLine } from '@/components/settings/equipment/status-line';
-import type { AthleteEquipment } from '@sharpit/server/lib/equipment/types';
-import type { AthletePracticedSports } from '@sharpit/server/lib/practiced-sports';
+import type { AthleteEquipment } from '@sharpit/app/lib/equipment/types';
+import type { AthletePracticedSports } from '@sharpit/app/lib/practiced-sports';
 
 export function EquipmentPanel({
   initial,

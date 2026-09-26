@@ -1,4 +1,9 @@
-import type { GateContext, GateProposal, PlanGateRule, RuleFinding } from '../types';
+import type {
+  GateContext,
+  GateProposal,
+  PlanGateRule,
+  RuleFinding,
+} from '@sharpit/app/lib/plan-gate/types';
 
 function toMinutes(hhmm: string): number {
   const [h, m] = hhmm.split(':').map(Number);

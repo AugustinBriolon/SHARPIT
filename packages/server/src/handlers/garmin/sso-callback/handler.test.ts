@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { GARMIN_SSO_EMBED_SERVICE } from '@sharpit/server/lib/integrations/garmin/garmin-browser-sso-shared';
+import { GARMIN_SSO_EMBED_SERVICE } from '@sharpit/app/lib/integrations/garmin/garmin-browser-sso-shared';
 
 const exchangeServiceTicketForDiTokens = vi.fn();
 const importGarminDiTokenStore = vi.fn();

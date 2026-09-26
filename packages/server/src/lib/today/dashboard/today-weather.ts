@@ -24,7 +24,7 @@ import {
   inferActivityWeatherCondition,
   readWeatherMeasurements,
   type ActivityWeatherCondition,
-} from '@sharpit/server/lib/activity/weather/activity-weather';
+} from '@sharpit/app/lib/activity/weather/activity-weather';
 import { resolveDefaultActivityLocation } from '@sharpit/server/lib/geocoding/default-activity-location';
 import { fetchForecastPredictions } from '@sharpit/server/lib/planned-session/forecast/forecast-fetch';
 import { prisma } from '@sharpit/db/client';

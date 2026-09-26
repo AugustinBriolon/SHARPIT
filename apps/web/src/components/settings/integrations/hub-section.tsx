@@ -3,7 +3,7 @@ import {
   assembleIntegrationsPayload,
   type IntegrationsSearchParams,
 } from '@/components/settings/integrations/hub-section-load';
-import type { IntegrationsHubPayload } from '@sharpit/server/lib/web/integrations-hub';
+import type { IntegrationsHubPayload } from '@sharpit/app/lib/web/payloads';
 import { cachedServerApiJson } from '@/server/api-client';
 
 const statusMessages: Record<string, string> = {

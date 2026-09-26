@@ -8,7 +8,7 @@ import {
   collectDataDays,
   dataDaysSourcesFor,
   type DataDaysRequest,
-} from '@sharpit/server/lib/presentation/data-days/data-days';
+} from '@sharpit/app/lib/presentation/data-days/data-days';
 
 /** Days in `[from, to]` that carry data for the requested drill-down domain. */
 export async function loadDataDays(

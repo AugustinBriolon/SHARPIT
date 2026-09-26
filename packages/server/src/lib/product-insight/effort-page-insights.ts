@@ -2,11 +2,8 @@ import { buildEffortInsightBundle } from '@sharpit/core/product-insight/effort-i
 import {
   mapFatigueCapacityLabel,
   mapFatigueTypeToLabel,
-} from '@sharpit/server/lib/today/dashboard/today-mapping';
-import type {
-  FatigueType,
-  TrainingCapacity,
-} from '@sharpit/server/lib/today/dashboard/today-mapping';
+} from '@sharpit/app/lib/today/dashboard/today-mapping';
+import type { FatigueType, TrainingCapacity } from '@sharpit/app/lib/today/dashboard/today-mapping';
 
 export function buildEffortPageInsights(params: {
   strainScore: number | null;

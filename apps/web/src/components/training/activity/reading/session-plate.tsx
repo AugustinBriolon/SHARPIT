@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { cn } from '@sharpit/server/lib/utils';
+import { cn } from '@sharpit/app/lib/utils';
 
 /**
  * Session plate — first viewport thesis for the activity reading logbook.

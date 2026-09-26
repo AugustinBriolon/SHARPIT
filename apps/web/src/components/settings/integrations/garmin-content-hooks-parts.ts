@@ -5,10 +5,10 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { notifyIntegrationSyncStarted } from '@/components/settings/integrations/modal-sync-start';
 import { toast } from '@/components/ui/toast';
-import { runGarminSync } from '@sharpit/server/lib/integrations/shared/client-sync';
+import { runGarminSync } from '@sharpit/app/lib/integrations/shared/client-sync';
 import { disconnectGarmin, importGarminTokens } from '@/client/query/fetchers';
 import { invalidateAfterProviderSync } from '@/client/query/invalidate-after-provider-sync';
-import type { RecordChange } from '@sharpit/server/lib/training/records/records';
+import type { RecordChange } from '@sharpit/app/lib/training/records/record-types';
 
 export function useGarminImportTokens(onUpdated?: () => void) {
   const router = useRouter();

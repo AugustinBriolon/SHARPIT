@@ -9,8 +9,8 @@ import {
   isActivityStatus,
   resolveActivityStatusStore,
   todayIsoDate,
-} from '@sharpit/server/lib/health/activity-status';
-import { toUtcDateOnly } from '@sharpit/server/lib/travel-context/calendar-date';
+} from '@sharpit/app/lib/health/activity-status';
+import { toUtcDateOnly } from '@sharpit/app/lib/travel-context/calendar-date';
 
 function isoDateFromDb(value: Date | null | undefined): string | null {
   if (!value) {

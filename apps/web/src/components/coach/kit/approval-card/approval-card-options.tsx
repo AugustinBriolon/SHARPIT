@@ -3,7 +3,7 @@
 import { Checkbox } from '@/components/motion/checkbox';
 import { Input } from '@/components/motion/input';
 import { RadioGroup, RadioGroupItem } from '@/components/motion/radio';
-import { cn } from '@sharpit/server/lib/utils';
+import { cn } from '@sharpit/app/lib/utils';
 import type { ApprovalCardAnswer, ApprovalCardQuestion } from './types';
 
 const OPTION_ROW_CLASS = 'min-h-11 rounded-lg px-1.5 py-1';

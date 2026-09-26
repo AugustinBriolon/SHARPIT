@@ -8,7 +8,7 @@ import {
   EMPTY_TRAINING_AVAILABILITY,
   orderWeekdays,
   weekdayLabels,
-} from '@sharpit/server/lib/training-availability/types';
+} from '@sharpit/app/lib/training-availability/types';
 
 describe('normalizeTrainingAvailability', () => {
   it('reads a declared rhythm', () => {

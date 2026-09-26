@@ -1,8 +1,8 @@
 'use client';
 
 import { useIsDemoMode } from '@/hooks/use-is-demo-mode';
-import { isDemoSessionLinkActivityTitle } from '@sharpit/server/lib/demo/demo-session-link-markers';
-import { findDemoSessionLinkByActivityId } from '@sharpit/server/lib/demo/demo-session-link-state';
+import { isDemoSessionLinkActivityTitle } from '@sharpit/app/lib/demo/demo-session-link-markers';
+import { findDemoSessionLinkByActivityId } from '@sharpit/app/lib/demo/demo-session-link-state';
 import { useActivities } from '@/hooks/use-data';
 import { useDemoSessionLinksSnapshot } from '@/hooks/use-demo-session-link-overlay';
 

@@ -3,8 +3,8 @@ import { ConnectGarminHeader } from '@/components/integrations/connect-garmin/co
 import {
   CONNECT_GARMIN_START_PATH,
   garminHandoffCallbackPath,
-} from '@sharpit/server/lib/integrations/garmin/garmin-connect-handoff';
-import { cn } from '@sharpit/server/lib/utils';
+} from '@sharpit/app/lib/integrations/garmin/garmin-connect-handoff';
+import { cn } from '@sharpit/app/lib/utils';
 
 const STEPS = [
   'Garmin s’ouvre — ton mot de passe reste chez Garmin.',

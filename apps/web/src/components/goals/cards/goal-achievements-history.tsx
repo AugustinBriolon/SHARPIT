@@ -8,7 +8,7 @@ import {
   formatAchievementPeriodKey,
   formatGoalDisplayValue,
   parseGoalMetricConfig,
-} from '@sharpit/server/lib/goals/goal-metric-config';
+} from '@sharpit/app/lib/goals/goal-metric-config';
 import { useGoalAchievements } from '@/hooks/use-data';
 
 export function GoalAchievementsHistory() {

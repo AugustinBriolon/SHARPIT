@@ -3,7 +3,7 @@
  * Uses freshness domains + recovery dimensions; never invents certainty.
  */
 
-import type { AthleteSnapshot } from '@sharpit/server/athlete-state/snapshot';
+import type { AthleteSnapshot } from '@sharpit/app/athlete-state/snapshot';
 import type { PackInputSignals } from '@sharpit/core/science/pack-tier';
 import { isHardVerdictRequiringFull } from '@sharpit/core/science/pack-tier';
 

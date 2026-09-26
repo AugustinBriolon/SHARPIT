@@ -7,12 +7,12 @@ import {
   type AthleteProfileInput,
 } from '@sharpit/server/lib/validators/athlete-profile';
 import { invalidateCoachContext } from '@sharpit/server/lib/coach/context/coach-context';
-import { normalizeAthleteEquipment } from '@sharpit/server/lib/equipment/parse';
-import { sanitizePracticedSportsForPersist } from '@sharpit/server/lib/practiced-sports';
+import { normalizeAthleteEquipment } from '@sharpit/app/lib/equipment/parse';
+import { sanitizePracticedSportsForPersist } from '@sharpit/app/lib/practiced-sports';
 import { sanitizeTrainingAvailabilityForPersist } from '@sharpit/server/lib/training-availability/parse';
-import { DEFAULT_DISPLAY_MODE } from '@sharpit/server/lib/preferences/display-mode';
-import { accessTierSetCookieValue } from '@sharpit/server/lib/access/tier-cookie';
-import { hasBearer } from '@sharpit/server/lib/hosts/api-host';
+import { DEFAULT_DISPLAY_MODE } from '@sharpit/app/lib/preferences/display-mode';
+import { accessTierSetCookieValue } from '@sharpit/app/lib/access/tier-cookie';
+import { hasBearer } from '@sharpit/app/lib/hosts/api-host';
 import {
   mergeNotificationPrefs,
   resolveNotificationPrefs,

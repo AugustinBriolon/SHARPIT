@@ -1,10 +1,10 @@
 import { type NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
-import { createSignInTicket } from '@sharpit/server/lib/auth/sign-in-ticket';
+import { createSignInTicket } from '@sharpit/app/lib/auth/sign-in-ticket';
 import {
   GARMIN_HANDOFF_ORIGIN,
   garminHandoffEntryUrl,
-} from '@sharpit/server/lib/integrations/garmin/garmin-connect-handoff';
+} from '@sharpit/app/lib/integrations/garmin/garmin-connect-handoff';
 
 const NO_STORE = { 'Cache-Control': 'private, no-store' };
 

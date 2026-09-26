@@ -4,9 +4,9 @@ import {
   submitCoachChatMessage,
   type CoachChatSubmitOptions,
 } from '@/components/coach/chat/composer/coach-chat-submit';
-import { describeCoachDiscussContext } from '@sharpit/server/lib/coach/chat/discuss/coach-discuss-context';
+import { describeCoachDiscussContext } from '@sharpit/app/lib/coach/chat/discuss/coach-discuss-context';
 
-vi.mock('@sharpit/server/lib/coach/chat/composer/coach-input-draft', () => ({
+vi.mock('@sharpit/app/lib/coach/chat/composer/coach-input-draft', () => ({
   clearCoachInputDraft: vi.fn(),
 }));
 

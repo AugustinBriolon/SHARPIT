@@ -5,7 +5,7 @@ import {
   PLANNED_PERKS as PLANNED_DATA,
   PRO_ONLY_PERKS as PRO_ONLY_DATA,
   type ProPerkData,
-} from '@sharpit/server/lib/access/pro-perks';
+} from '@sharpit/app/lib/access/pro-perks';
 
 /** A perk as the web Pro page shows it: the shared copy plus its icon. */
 export type ProPerk = ProPerkData & { icon: LucideIcon };

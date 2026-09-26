@@ -1,5 +1,5 @@
 import { GateRedirect } from '@/components/navigation/gate-redirect';
-import { GARMIN_SSO_PAGE_PATH } from '@sharpit/server/lib/integrations/garmin/garmin-browser-sso-shared';
+import { GARMIN_SSO_PAGE_PATH } from '@sharpit/app/lib/integrations/garmin/garmin-browser-sso-shared';
 import { getViewer } from '@/server/viewer';
 
 /**

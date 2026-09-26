@@ -1,11 +1,11 @@
 'use client';
 
 import { useEffect, useMemo, useRef } from 'react';
-import type { ClientGoal, ClientPlannedSession } from '@sharpit/server/lib/query/types';
+import type { ClientGoal, ClientPlannedSession } from '@sharpit/app/lib/query/types';
 import {
   resolveDefaultPlanGoalId,
   selectableDatedGoalIds,
-} from '@sharpit/server/lib/planned-session/plan-goal';
+} from '@sharpit/app/lib/planned-session/plan-goal';
 import { NO_GOAL } from '@/components/planning/session/edit/planned-session-dialog-helpers';
 import type { usePlannedSessionFormState } from '@/components/planning/session/edit/use-planned-session-form-state';
 import { useQuery } from '@tanstack/react-query';
@@ -16,7 +16,7 @@ import {
   shouldApplyTravelLocationToSession,
   travelLocationPatch,
   type ActiveTravelLocation,
-} from '@sharpit/server/lib/planned-session/travel-location-sync';
+} from '@sharpit/app/lib/planned-session/travel-location-sync';
 
 type FormState = ReturnType<typeof usePlannedSessionFormState>;
 

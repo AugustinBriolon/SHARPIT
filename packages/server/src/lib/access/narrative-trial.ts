@@ -1,6 +1,6 @@
 import { startOfDay } from 'date-fns';
 import { prisma } from '@sharpit/db/client';
-import { hasProAccess } from '@sharpit/server/lib/access/tier';
+import { hasProAccess } from '@sharpit/app/lib/access/tier';
 
 /**
  * FREE athletes get a taste of session analysis, not a spendable pool:

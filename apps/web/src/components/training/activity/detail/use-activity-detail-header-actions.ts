@@ -8,7 +8,7 @@ import { useActivityMutations } from '@/hooks/use-data';
 import { useResetWhenHidden } from '@/hooks/use-reset-when-hidden';
 import { useDemoActivityPlannedSession } from '@/hooks/use-demo-session-link-overlay';
 import type { ActivityDetailHeaderActivity } from '@/components/training/activity/detail/activity-detail-header-content';
-import { navStack } from '@sharpit/server/lib/navigation/nav-stack';
+import { navStack } from '@sharpit/app/lib/navigation/nav-stack';
 
 export function useActivityDetailHeaderActions(activity: ActivityDetailHeaderActivity) {
   const router = useRouter();

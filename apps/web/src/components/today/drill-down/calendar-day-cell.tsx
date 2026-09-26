@@ -1,6 +1,6 @@
 'use client';
 
-import type { DataDayStatus } from '@sharpit/server/lib/presentation/data-days/data-days-chunks';
+import type { DataDayStatus } from '@sharpit/app/lib/presentation/data-days/data-days-chunks';
 import {
   calendarDayCellClassName,
   calendarDayCellProps,

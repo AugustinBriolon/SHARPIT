@@ -3,7 +3,7 @@ import { prisma } from '@sharpit/db/client';
 import {
   parseMorningWellnessEntry,
   type MorningWellnessEntry,
-} from '@sharpit/server/lib/journal/morning-wellness-entry';
+} from '@sharpit/app/lib/journal/morning-wellness-entry';
 import type { WellnessCheckinPayload } from '@sharpit/server/lib/validators/wellness-checkin';
 import { onWellnessSubmitted } from '@sharpit/server/lib/athlete-state/orchestrator';
 import { trainingDayIdForNow } from '@sharpit/core/training/training-day';

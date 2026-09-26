@@ -1,5 +1,5 @@
 import type { ActivityType } from '@prisma/client';
-import type { MovementIntent } from '@sharpit/server/lib/exercises/movement-taxonomy';
+import type { MovementIntent } from '@sharpit/app/lib/exercises/movement-taxonomy';
 import { prisma } from '@sharpit/db/client';
 import { findTravelSessionViolation } from '@sharpit/server/lib/travel-context/session-compatibility';
 import {

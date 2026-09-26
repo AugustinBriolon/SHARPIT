@@ -17,7 +17,7 @@ vi.mock('@clerk/nextjs/server', () => ({
 
 vi.mock('server-only', () => ({}));
 
-vi.mock('@sharpit/server/lib/demo/demo-identity', async (importOriginal) => ({
+vi.mock('@sharpit/app/lib/demo/demo-identity', async (importOriginal) => ({
   ...(await importOriginal<object>()),
   isDemoClerkUser: async (userId: string) => userId === 'user_demo',
 }));

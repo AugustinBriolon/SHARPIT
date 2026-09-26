@@ -1,10 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
-import {
-  connectNavigation,
-  webOriginFor,
-} from '@sharpit/server/lib/integrations/oauth-public-origin';
-import type { IntegrationId } from '@sharpit/server/lib/integrations/shared/client-sync';
+import { connectNavigation, webOriginFor } from '@sharpit/app/lib/integrations/oauth-public-origin';
+import type { IntegrationId } from '@sharpit/app/lib/integrations/shared/client-sync';
 import { requireProviderConnectConsent } from '@sharpit/server/lib/privacy/consent-store';
 
 /**

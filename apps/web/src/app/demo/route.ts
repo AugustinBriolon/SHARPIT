@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { createSignInTicket, ticketSignInUrl } from '@sharpit/server/lib/auth/sign-in-ticket';
-import { ensureDemoClerkUser } from '@sharpit/server/lib/demo/demo-identity';
-import { awaitRequest } from '@sharpit/server/lib/next/await-request';
+import { createSignInTicket, ticketSignInUrl } from '@sharpit/app/lib/auth/sign-in-ticket';
+import { ensureDemoClerkUser } from '@sharpit/app/lib/demo/demo-identity';
+import { awaitRequest } from '@sharpit/app/lib/next/await-request';
 
 /**
  * Public demo entry (ADR-048 phase 3f): signs the visitor in to the shared, read-only demo

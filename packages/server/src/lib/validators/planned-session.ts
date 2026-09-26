@@ -1,9 +1,9 @@
 import { ActivityType, SessionIntensity } from '@prisma/client';
 import { z } from 'zod';
 import { isSet } from '@sharpit/shared/value';
-import { isEquipmentItemId } from '@sharpit/server/lib/equipment/catalog';
-import { endurancePrescriptionSchema } from '@sharpit/server/lib/planned-session/endurance/endurance-prescription';
-import { strengthPrescriptionSchema } from '@sharpit/server/lib/planned-session/strength/strength-prescription';
+import { isEquipmentItemId } from '@sharpit/app/lib/equipment/catalog';
+import { endurancePrescriptionSchema } from '@sharpit/app/lib/planned-session/endurance/endurance-prescription';
+import { strengthPrescriptionSchema } from '@sharpit/app/lib/planned-session/strength/strength-prescription';
 
 const optionalNumber = z.coerce.number().optional().nullable();
 const optionalString = z

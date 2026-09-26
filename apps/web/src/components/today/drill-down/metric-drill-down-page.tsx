@@ -1,7 +1,7 @@
-import type { MetricTone } from '@sharpit/server/lib/ui/metric-tone';
-import { metricToneClass } from '@sharpit/server/lib/ui/metric-tone';
+import type { MetricTone } from '@sharpit/app/lib/ui/metric-tone';
+import { metricToneClass } from '@sharpit/app/lib/ui/metric-tone';
 import { SkeletonDataValue } from '@/components/ui/skeleton-data-value';
-import { cn } from '@sharpit/server/lib/utils';
+import { cn } from '@sharpit/app/lib/utils';
 
 /**
  * Shared physio drill-down column.

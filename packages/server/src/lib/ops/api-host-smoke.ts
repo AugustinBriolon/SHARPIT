@@ -1,4 +1,4 @@
-import { API_ALLOWED_ORIGIN } from '@sharpit/server/lib/hosts/api-host';
+import { API_ALLOWED_ORIGIN } from '@sharpit/app/lib/hosts/api-host';
 import {
   expectContentType,
   expectStatus,

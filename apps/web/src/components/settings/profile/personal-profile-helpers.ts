@@ -5,8 +5,8 @@ import {
   rollbackProfilePatch,
   saveProfilePatch,
 } from '@/components/settings/profile/profile-save';
-import { changedProfileFields } from '@sharpit/server/lib/profile/profile-patch';
-import { birthDateToInput } from '@sharpit/server/lib/profile/athlete-profile-utils';
+import { changedProfileFields } from '@sharpit/app/lib/profile/profile-patch';
+import { birthDateToInput } from '@sharpit/app/lib/profile/athlete-profile-utils';
 import { patchAthleteProfile } from '@/client/query/fetchers';
 import type { QueryClient } from '@tanstack/react-query';
 import type { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';

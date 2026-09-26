@@ -1,5 +1,5 @@
 import { Skeleton } from '@/components/ui/skeleton';
-import { cn } from '@sharpit/server/lib/utils';
+import { cn } from '@sharpit/app/lib/utils';
 
 /** Replaces a numeric / short verdict while chrome labels stay mounted. */
 export function SkeletonDataValue({

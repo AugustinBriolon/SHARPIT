@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef } from 'react';
-import { STRENGTH_VENUE_OPTIONS, type StrengthVenue } from '@sharpit/server/lib/equipment/catalog';
+import { STRENGTH_VENUE_OPTIONS, type StrengthVenue } from '@sharpit/app/lib/equipment/catalog';
 import {
   StrengthVenueOption,
   strengthVenueTabIndex,

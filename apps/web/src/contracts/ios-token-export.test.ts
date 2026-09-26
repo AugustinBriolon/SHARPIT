@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { BRAND } from '@sharpit/server/lib/brand/brand-tokens';
+import { BRAND } from '@sharpit/app/lib/brand/brand-tokens';
 import {
   EXPORTED_COLORS,
   parseColor,
@@ -9,7 +9,7 @@ import {
   renderIosTokens,
   resolveVar,
   type Rgba,
-} from '@sharpit/server/lib/brand/ios-token-export';
+} from '@sharpit/app/lib/brand/ios-token-export';
 
 const GLOBALS_CSS = readFileSync(resolve(process.cwd(), 'src/app/globals.css'), 'utf8');
 

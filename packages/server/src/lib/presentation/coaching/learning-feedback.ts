@@ -4,10 +4,10 @@
  * Never a simplistic coach score — states the pattern and the evidence count.
  */
 
-import { activityTypeLabels } from '@sharpit/server/lib/format';
-import { intensityLabels } from '@sharpit/server/lib/planned-session/sessions';
+import { activityTypeLabels } from '@sharpit/app/lib/format';
+import { intensityLabels } from '@sharpit/app/lib/planned-session/sessions';
 import type { LearningFeedbackItem } from '@sharpit/server/lib/decision-memory/learning-feedback';
-import type { WeeklyBriefLearningFeedbackItem } from '@sharpit/server/presentation/weekly-coaching-brief-view-model';
+import type { WeeklyBriefLearningFeedbackItem } from '@sharpit/app/presentation/weekly-coaching-brief-view-model';
 
 function categoryLabel(item: LearningFeedbackItem): string {
   if (!item.type) {

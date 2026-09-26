@@ -1,10 +1,10 @@
 import { cache } from 'react';
 import { auth, clerkClient } from '@clerk/nextjs/server';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
-import { DEMO_CLERK_USER_ID, isDemoSession } from '@sharpit/server/lib/demo/demo-session';
+import { DEMO_CLERK_USER_ID, isDemoSession } from '@sharpit/app/lib/demo/demo-session';
 import { ensureDemoSeedFresh } from '@sharpit/server/lib/demo/seed-demo-data';
 import { prisma } from '@sharpit/db/client';
-import { isDevClerkBypass } from '@sharpit/server/lib/dev/dev-auth';
+import { isDevClerkBypass } from '@sharpit/app/lib/dev/dev-auth';
 import { eraseAthleteData } from '@sharpit/server/lib/privacy/account-deletion';
 
 const DEACTIVATED_ACCOUNT_ERROR = 'Compte supprimé';

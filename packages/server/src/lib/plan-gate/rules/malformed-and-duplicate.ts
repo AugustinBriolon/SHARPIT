@@ -1,6 +1,11 @@
 import { startOfDay } from 'date-fns';
 import { isSet } from '@sharpit/shared/value';
-import type { GateContext, GateProposal, PlanGateRule, RuleFinding } from '../types';
+import type {
+  GateContext,
+  GateProposal,
+  PlanGateRule,
+  RuleFinding,
+} from '@sharpit/app/lib/plan-gate/types';
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 

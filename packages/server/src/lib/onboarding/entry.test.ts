@@ -44,8 +44,7 @@ describe('athleteEntryPath', () => {
     state.profile = {
       termsAcceptedAt: new Date(),
       privacyAcceptedAt: new Date(),
-      privacyVersion: (await import('@sharpit/server/lib/privacy/constants'))
-        .CURRENT_PRIVACY_VERSION,
+      privacyVersion: (await import('@sharpit/app/lib/privacy/constants')).CURRENT_PRIVACY_VERSION,
       healthDataConsentAt: null,
     };
     const { athleteEntryPath } = await import('./entry');

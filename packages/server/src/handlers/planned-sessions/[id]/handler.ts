@@ -18,7 +18,7 @@ import {
   recordDecisionAction,
 } from '@sharpit/server/lib/decision-memory/repository';
 import { garminPushClearOnSessionChange } from '@sharpit/server/lib/integrations/garmin/garmin-workout-push-state';
-import { enduranceSportFromActivityType } from '@sharpit/server/lib/planned-session/endurance/endurance-prescription';
+import { enduranceSportFromActivityType } from '@sharpit/app/lib/planned-session/endurance/endurance-prescription';
 import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
 
 type RouteContext = { params: Promise<{ id: string }> };

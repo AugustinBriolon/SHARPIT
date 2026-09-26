@@ -6,12 +6,12 @@ import { PersonalProfilePanel } from '@/components/settings/profile';
 import { SettingsDemoBlock } from '@/components/settings/settings-demo-block';
 import { SettingsSignOut } from '@/components/settings/settings-sign-out';
 import { Skeleton } from '@/components/ui/skeleton';
-import { isDemoSession } from '@sharpit/server/lib/demo/demo-session';
-import { MOI_HUB_PATH } from '@sharpit/server/lib/moi/paths';
-import { isHangingPromiseRejection } from '@sharpit/server/lib/next/hanging-promise';
-import { mapAthleteProfileToFormData } from '@sharpit/server/lib/profile/map-athlete-profile';
+import { isDemoSession } from '@sharpit/app/lib/demo/demo-session';
+import { MOI_HUB_PATH } from '@sharpit/app/lib/moi/paths';
+import { isHangingPromiseRejection } from '@sharpit/app/lib/next/hanging-promise';
+import { mapAthleteProfileToFormData } from '@sharpit/app/lib/profile/map-athlete-profile';
 import { getAthleteProfileRow, getConsentSnapshot } from '@/server/athlete-profile';
-import { CONTROLLER_EMAIL } from '@sharpit/server/lib/privacy/constants';
+import { CONTROLLER_EMAIL } from '@sharpit/app/lib/privacy/constants';
 
 function ProfileIdentityFallback() {
   return (

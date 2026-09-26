@@ -3,7 +3,7 @@ import { join } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { BRAND } from '@sharpit/server/lib/brand/brand-tokens';
+import { BRAND } from '@sharpit/app/lib/brand/brand-tokens';
 
 const globalsCss = readFileSync(join(process.cwd(), 'src/app/globals.css'), 'utf8');
 

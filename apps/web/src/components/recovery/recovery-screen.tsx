@@ -9,8 +9,8 @@ import {
   isPresentationValuesLoading,
   useRecoveryViewModel,
 } from '@/hooks/use-presentation-view-model';
-import { recoveryLoadingShell } from '@sharpit/server/lib/presentation/shared/drill-down-loading-shells';
-import type { RecoveryViewModel } from '@sharpit/server/presentation/recovery-view-model';
+import { recoveryLoadingShell } from '@sharpit/app/lib/presentation/shared/drill-down-loading-shells';
+import type { RecoveryViewModel } from '@sharpit/app/presentation/recovery-view-model';
 
 export function RecoveryScreen({ backHref, backLabel }: { backHref?: string; backLabel?: string }) {
   const { date, isToday, maxDate, minDate, setDate, goToNextDay, goToPreviousDay } =

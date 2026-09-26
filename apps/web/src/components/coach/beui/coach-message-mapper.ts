@@ -1,6 +1,6 @@
 import type { UIMessage } from 'ai';
-import { reasoningTextOf } from '@sharpit/server/lib/coach/chat/transcript/coach-reasoning';
-import type { ToolPartLite } from '@sharpit/server/lib/coach/chat/tools/coach-tool-parts';
+import { reasoningTextOf } from '@sharpit/app/lib/coach/chat/transcript/coach-reasoning';
+import type { ToolPartLite } from '@sharpit/app/lib/coach/chat/tools/coach-tool-parts';
 
 export type CoachMappedUserRow = {
   kind: 'user';

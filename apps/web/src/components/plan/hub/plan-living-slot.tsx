@@ -11,9 +11,9 @@ import { useAdaptAppliedSettled } from '@/hooks/use-adapt-applied-settled';
 import {
   resolveTodayJournalHabitCallout,
   type TodayJournalHabitCallout,
-} from '@sharpit/server/lib/journal/journal-habit-today-bridge';
-import { buildPlanLivingCallout } from '@sharpit/server/lib/plan/hub/plan-living-callout';
-import { upcomingRemaining } from '@sharpit/server/lib/plan/week/plan-week-decision';
+} from '@sharpit/app/lib/journal/journal-habit-today-bridge';
+import { buildPlanLivingCallout } from '@sharpit/app/lib/plan/hub/plan-living-callout';
+import { upcomingRemaining } from '@sharpit/app/lib/plan/week/plan-week-decision';
 
 const PlanAdapter = dynamic(
   () => import('@/components/coach/plan/plan-adapter').then((mod) => mod.PlanAdapter),

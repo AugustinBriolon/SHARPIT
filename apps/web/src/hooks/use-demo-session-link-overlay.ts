@@ -2,17 +2,17 @@
 
 import { useSyncExternalStore } from 'react';
 import { useActivities, usePlannedSessions } from '@/hooks/use-data';
-import type { ClientPlannedSession } from '@sharpit/server/lib/query/types';
+import type { ClientPlannedSession } from '@sharpit/app/lib/query/types';
 import {
   getDemoSessionLinksSnapshot,
   readDemoSessionLinks,
   subscribeDemoSessionLinks,
-} from '@sharpit/server/lib/demo/demo-session-link-state';
+} from '@sharpit/app/lib/demo/demo-session-link-state';
 import {
   overlayDemoLinkOnPlannedSession,
   resolveDemoLinkedPlannedSessionForActivity,
-} from '@sharpit/server/lib/demo/demo-session-link-overlay';
-import type { ActivityDetail } from '@sharpit/server/lib/activity/detail/types';
+} from '@sharpit/app/lib/demo/demo-session-link-overlay';
+import type { ActivityDetail } from '@sharpit/app/lib/activity/detail/types';
 
 function useDemoSessionLinks() {
   useSyncExternalStore(subscribeDemoSessionLinks, getDemoSessionLinksSnapshot, () => '');

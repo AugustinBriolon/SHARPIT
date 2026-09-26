@@ -6,13 +6,13 @@ import { useAthleteProfile } from '@/hooks/use-data';
 import type { AthleteProfilePayload } from '@/client/query/fetchers';
 import { queryKeys } from '@/client/query/keys';
 import { sendJson } from '@/client/query/send-json';
-import { syncAccessTierCookie } from '@sharpit/server/lib/access/tier-cookie';
+import { syncAccessTierCookie } from '@sharpit/app/lib/access/tier-cookie';
 import {
   DEFAULT_DISPLAY_MODE,
   isExpertMode,
   toDisplayMode,
   type DisplayMode,
-} from '@sharpit/server/lib/preferences/display-mode';
+} from '@sharpit/app/lib/preferences/display-mode';
 
 type DisplayModeContextValue = {
   mode: DisplayMode;

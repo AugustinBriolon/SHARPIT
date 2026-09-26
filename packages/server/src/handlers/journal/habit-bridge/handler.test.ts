@@ -8,7 +8,7 @@ vi.mock('@sharpit/server/lib/journal/journal-habit-analysis-load', () => ({
   loadJournalHabitFindings: vi.fn(),
 }));
 
-vi.mock('@sharpit/server/lib/journal/journal-habit-today-bridge', () => ({
+vi.mock('@sharpit/app/lib/journal/journal-habit-today-bridge', () => ({
   buildTodayJournalHabitBridge: vi.fn(),
 }));
 
@@ -16,7 +16,7 @@ vi.mock('@sharpit/db/client', () => ({
   prisma: {},
 }));
 
-vi.mock('@sharpit/server/lib/next/await-request', () => ({
+vi.mock('@sharpit/app/lib/next/await-request', () => ({
   awaitRequest: vi.fn().mockResolvedValue(undefined),
 }));
 
@@ -33,7 +33,7 @@ describe('GET /api/journal/habit-bridge', () => {
     const { loadJournalHabitFindings } =
       await import('@sharpit/server/lib/journal/journal-habit-analysis-load');
     const { buildTodayJournalHabitBridge } =
-      await import('@sharpit/server/lib/journal/journal-habit-today-bridge');
+      await import('@sharpit/app/lib/journal/journal-habit-today-bridge');
     vi.mocked(loadJournalHabitFindings).mockResolvedValue({
       daysWithSignal: 14,
       findings: [],
@@ -66,7 +66,7 @@ describe('GET /api/journal/habit-bridge', () => {
     const { loadJournalHabitFindings } =
       await import('@sharpit/server/lib/journal/journal-habit-analysis-load');
     const { buildTodayJournalHabitBridge } =
-      await import('@sharpit/server/lib/journal/journal-habit-today-bridge');
+      await import('@sharpit/app/lib/journal/journal-habit-today-bridge');
     vi.mocked(loadJournalHabitFindings).mockResolvedValue({
       daysWithSignal: 2,
       findings: [],

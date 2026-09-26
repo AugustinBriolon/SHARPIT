@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
-import { awaitRequest } from '@sharpit/server/lib/next/await-request';
+import { awaitRequest } from '@sharpit/app/lib/next/await-request';
 import { loadIntegrationsHub } from '@sharpit/server/lib/web/integrations-hub';
 
 export async function GET() {

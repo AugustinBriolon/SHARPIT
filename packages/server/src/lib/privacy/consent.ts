@@ -1,4 +1,4 @@
-import { PRIVACY_PURGE_DELAY_DAYS } from '@sharpit/server/lib/privacy/constants';
+import { PRIVACY_PURGE_DELAY_DAYS } from '@sharpit/app/lib/privacy/constants';
 
 export type LegalConsentSnapshot = {
   termsAcceptedAt: Date | null;

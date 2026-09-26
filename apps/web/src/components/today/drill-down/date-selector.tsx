@@ -16,11 +16,11 @@ import {
   initialStripStart,
 } from '@/components/today/drill-down/date-strip-helpers';
 import { useDataDays } from '@/hooks/use-data-days';
-import type { DataDaysDomain } from '@sharpit/server/lib/presentation/data-days/data-days';
+import type { DataDaysDomain } from '@sharpit/app/lib/presentation/data-days/data-days';
 import {
   dataDaysChunkRanges,
   mergeDayRanges,
-} from '@sharpit/server/lib/presentation/data-days/data-days-chunks';
+} from '@sharpit/app/lib/presentation/data-days/data-days-chunks';
 
 /** Oldest rendered day grows as the athlete scrolls back, and never skips the selected date. */
 function useStripDays(date: Date, maxDate: Date, minDate?: Date) {

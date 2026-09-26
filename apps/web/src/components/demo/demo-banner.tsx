@@ -1,7 +1,7 @@
 import { Eye } from 'lucide-react';
 import { DemoExitTextLink } from '@/components/demo/demo-exit';
-import { isDemoSession } from '@sharpit/server/lib/demo/demo-session';
-import { awaitRequest } from '@sharpit/server/lib/next/await-request';
+import { isDemoSession } from '@sharpit/app/lib/demo/demo-session';
+import { awaitRequest } from '@sharpit/app/lib/next/await-request';
 
 /** Tells a public demo visitor they're on seeded, read-only data. Mirrors
  * OfflineBanner's placement in AppShell, passed down as a server-rendered

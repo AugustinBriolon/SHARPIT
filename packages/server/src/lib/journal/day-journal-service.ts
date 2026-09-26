@@ -3,11 +3,11 @@ import {
   emptyDayJournalEntry,
   type DayJournalEntry,
   type DayJournalFactorState,
-} from '@sharpit/server/lib/journal/day-journal';
+} from '@sharpit/app/lib/journal/day-journal';
 import {
   isDayContextFactorId,
   type DayContextFactorId,
-} from '@sharpit/server/lib/journal/day-context-factors';
+} from '@sharpit/app/lib/journal/day-context-factors';
 
 export type DayJournalWriteInput = {
   trainingDayId: string;

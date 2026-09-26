@@ -1,12 +1,12 @@
 import { ActivityType } from '@prisma/client';
 import { isSet } from '@sharpit/shared/value';
 import { format } from 'date-fns';
-import { dayKeyFromDate, shortDayFromDate } from '@sharpit/server/lib/date/day-key';
+import { dayKeyFromDate, shortDayFromDate } from '@sharpit/app/lib/date/day-key';
 import { ensureGarminExerciseLabelsFr } from '@sharpit/server/lib/integrations/garmin/garmin-exercise-labels';
 import {
   invertGarminExerciseLabelsFr,
   resolveGarminExerciseRef,
-} from '@sharpit/server/lib/integrations/garmin/garmin-exercise-map';
+} from '@sharpit/app/lib/integrations/garmin/garmin-exercise-map';
 import {
   buildStrengthWorkoutPayload,
   type StrengthWorkoutMappedStep,
@@ -20,7 +20,7 @@ import {
   formatStrengthPrescriptionSummary,
   attachGarminRefsToPrescription,
   parseStrengthPrescription,
-} from '@sharpit/server/lib/planned-session/strength/strength-prescription';
+} from '@sharpit/app/lib/planned-session/strength/strength-prescription';
 import { prisma } from '@sharpit/db/client';
 
 export type PushStrengthWorkoutResult = {

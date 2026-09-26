@@ -5,8 +5,8 @@ import type { ReactNode } from 'react';
 import { ExpertOnly } from '@/components/display-mode';
 import { MemoizedRouteMap as RouteMap } from '@/components/training/activity/insights/route-map';
 import { ActivityInsightsZoneSection } from '@/components/training/activity/insights/activity-insights-zone-section';
-import type { ZoneBucket } from '@sharpit/server/lib/activity/detail/activity-analysis';
-import { cn } from '@sharpit/server/lib/utils';
+import type { ZoneBucket } from '@sharpit/app/lib/activity/detail/activity-analysis';
+import { cn } from '@sharpit/app/lib/utils';
 
 /**
  * Evidence stage: coach reading leads; map is the spatial proof beside/below.

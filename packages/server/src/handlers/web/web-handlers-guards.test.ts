@@ -2,9 +2,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const state = vi.hoisted(() => ({ admin: false, demo: false }));
 
-vi.mock('@sharpit/server/lib/next/await-request', () => ({ awaitRequest: async () => {} }));
-vi.mock('@sharpit/server/lib/auth/admin', () => ({ isCurrentUserAdmin: async () => state.admin }));
-vi.mock('@sharpit/server/lib/demo/demo-session', () => ({ isDemoSession: async () => state.demo }));
+vi.mock('@sharpit/app/lib/next/await-request', () => ({ awaitRequest: async () => {} }));
+vi.mock('@sharpit/app/lib/auth/admin', () => ({ isCurrentUserAdmin: async () => state.admin }));
+vi.mock('@sharpit/app/lib/demo/demo-session', () => ({ isDemoSession: async () => state.demo }));
 vi.mock('@sharpit/server/lib/auth/current-athlete', () => ({
   getCurrentAthleteId: async () => 'ath-demo',
 }));

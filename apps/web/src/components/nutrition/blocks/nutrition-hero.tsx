@@ -1,8 +1,8 @@
 'use client';
 
 import { PhysioDrillDownHero } from '@/components/today/drill-down/physio-drill-down-hero';
-import type { NutritionDaySummary } from '@sharpit/server/presentation/nutrition-view-model';
-import { buildNutritionDayReading } from '@sharpit/server/lib/nutrition/day-reading';
+import type { NutritionDaySummary } from '@sharpit/app/presentation/nutrition-view-model';
+import { buildNutritionDayReading } from '@sharpit/app/lib/nutrition/day-reading';
 
 function confidencePctForDay(day: NutritionDaySummary | null): number | null {
   if (!day) {

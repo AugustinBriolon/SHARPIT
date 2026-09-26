@@ -6,7 +6,7 @@ import {
   computePerformanceBest,
   type ActivityRow,
 } from '@sharpit/server/lib/goals/goal-activity-progress';
-import { isGoalReached } from '@sharpit/server/lib/goals/goals';
+import { isGoalReached } from '@sharpit/app/lib/goals/goals';
 
 function runActivity(
   partial: Omit<Partial<ActivityRow>, 'date'> & {

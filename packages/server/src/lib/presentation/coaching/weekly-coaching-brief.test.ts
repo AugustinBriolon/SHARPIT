@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { buildWeeklyCoachingBriefViewModel } from './weekly-coaching-brief';
 import { baseProposal } from '@sharpit/server/lib/plan-gate/test-fixtures';
-import type { CoachingDecisionRecord } from '@sharpit/server/lib/decision-memory/types';
+import type { CoachingDecisionRecord } from '@sharpit/app/lib/decision-memory/types';
 
 const WEEK_START = new Date('2026-07-13T00:00:00.000Z'); // Monday
 const NOW = new Date('2026-07-15T12:00:00.000Z');

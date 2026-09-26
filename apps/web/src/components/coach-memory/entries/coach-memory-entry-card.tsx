@@ -3,15 +3,15 @@
 import { MapPin, Pencil, Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { formatEntryDateRange } from '@sharpit/server/lib/coach-memory/summary/memory-summary';
+import { formatEntryDateRange } from '@sharpit/app/lib/coach-memory/summary/memory-summary';
 import {
   coachMemorySourceLabel,
   coachMemoryTypeLabel,
   travelDisciplineLabels,
   travelTrainingConstraintLabel,
   type CoachMemoryEntry,
-} from '@sharpit/server/lib/coach-memory/core/types';
-import { cn } from '@sharpit/server/lib/utils';
+} from '@sharpit/app/lib/coach-memory/core/types';
+import { cn } from '@sharpit/app/lib/utils';
 
 /**
  * A dated constraint. Only two states are possible here — the API keeps current

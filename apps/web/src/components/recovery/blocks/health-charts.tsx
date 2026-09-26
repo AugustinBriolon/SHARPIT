@@ -1,7 +1,7 @@
 'use client';
 
 import { Skeleton } from '@/components/ui/skeleton';
-import { cn } from '@sharpit/server/lib/utils';
+import { cn } from '@sharpit/app/lib/utils';
 import { CartesianGrid, Line, LineChart, Tooltip, XAxis, YAxis } from 'recharts';
 import { CorpsPanel } from '@/components/corps/corps-ui';
 import { ChartFigure } from '@/components/ui/charts/chart-figure';
@@ -9,7 +9,7 @@ import {
   CHART_ACTIVE_DOT_FILL,
   CHART_GRID_COLOR,
   CHART_TICK_COLOR,
-} from '@sharpit/server/lib/theme/chart-theme';
+} from '@sharpit/app/lib/theme/chart-theme';
 
 function formatMetricValue(value: number): string {
   return Number.isInteger(value) ? String(value) : value.toFixed(2).replace(/\.?0+$/, '');

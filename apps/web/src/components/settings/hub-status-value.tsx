@@ -4,10 +4,10 @@ import { useQuery } from '@tanstack/react-query';
 import {
   isIntegrationsAttentionLabel,
   type SettingsHubStatus,
-} from '@sharpit/server/lib/settings/hub-status';
+} from '@sharpit/app/lib/settings/hub-status';
 import { queryKeys } from '@/client/query/keys';
 import { fetchSettingsHubPresentation } from '@/client/query/presentation-fetchers';
-import { cn } from '@sharpit/server/lib/utils';
+import { cn } from '@sharpit/app/lib/utils';
 
 export function HubStatusValue({ statusKey }: { statusKey: keyof SettingsHubStatus }) {
   const { data, isLoading } = useQuery({

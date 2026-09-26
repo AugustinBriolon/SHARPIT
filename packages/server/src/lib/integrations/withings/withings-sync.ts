@@ -11,7 +11,7 @@ import {
   refreshWithingsToken,
   type WithingsParsedMeasurement,
 } from '@sharpit/server/lib/integrations/withings/withings';
-import { enrichMeasurementsWithHeartEcg } from '@sharpit/server/lib/integrations/withings/withings-measures';
+import { enrichMeasurementsWithHeartEcg } from '@sharpit/app/lib/integrations/withings/withings-measures';
 import { backfillBodyCompositionObservationsFromMeasurements } from '@sharpit/server/lib/integrations/shared/body-composition-observation-backfill';
 import {
   syncSinceFromLastSync,

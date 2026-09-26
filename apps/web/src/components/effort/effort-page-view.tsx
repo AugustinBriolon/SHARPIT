@@ -12,11 +12,8 @@ import {
   type MetricTone,
 } from '@/components/today/drill-down/metric-drill-down-page';
 import { Skeleton } from '@/components/ui/skeleton';
-import type { EffortStrainCompositionView } from '@sharpit/server/lib/presentation/effort/effort-strain-composition';
-import type {
-  FatigueType,
-  TrainingCapacity,
-} from '@sharpit/server/lib/today/dashboard/today-mapping';
+import type { EffortStrainCompositionView } from '@sharpit/app/lib/presentation/effort/effort-strain-composition';
+import type { FatigueType, TrainingCapacity } from '@sharpit/app/lib/today/dashboard/today-mapping';
 import type { DimensionResult } from '@/hooks/use-today';
 import dynamic from 'next/dynamic';
 import { ExpertOnly } from '@/components/display-mode';

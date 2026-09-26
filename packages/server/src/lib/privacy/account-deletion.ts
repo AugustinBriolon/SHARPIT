@@ -3,7 +3,7 @@ import { deleteLangfuseTracesForAthlete } from '@sharpit/server/lib/ai/langfuse-
 import { revokeAllProviderAccess } from '@sharpit/server/lib/integrations/provider-revocation';
 import { prisma } from '@sharpit/db/client';
 import { purgeEligibleBefore } from '@sharpit/server/lib/privacy/consent';
-import { PRIVACY_PURGE_DELAY_DAYS } from '@sharpit/server/lib/privacy/constants';
+import { PRIVACY_PURGE_DELAY_DAYS } from '@sharpit/app/lib/privacy/constants';
 import { logSafeError } from '@sharpit/server/lib/privacy/safe-log';
 
 export type AccountDeletionResult = {

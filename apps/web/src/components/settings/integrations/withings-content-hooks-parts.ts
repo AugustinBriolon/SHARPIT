@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { notifyIntegrationSyncStarted } from '@/components/settings/integrations/modal-sync-start';
 import { toast } from '@/components/ui/toast';
-import { runWithingsSync } from '@sharpit/server/lib/integrations/shared/client-sync';
+import { runWithingsSync } from '@sharpit/app/lib/integrations/shared/client-sync';
 import { disconnectWithings } from '@/client/query/fetchers';
 import { invalidateAfterProviderSync } from '@/client/query/invalidate-after-provider-sync';
 

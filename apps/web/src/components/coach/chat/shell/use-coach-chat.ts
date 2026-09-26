@@ -20,19 +20,19 @@ import { invalidateCompletedCoachTools } from '@/components/coach/chat/tools/coa
 import { useOfflineGuard } from '@/hooks/use-offline-guard';
 import { useSaveConversation, useCreateConversation } from '@/hooks/use-coach';
 import { usePlannedSessions } from '@/hooks/use-data';
-import { lastStepApprovalResponseFingerprint } from '@sharpit/server/lib/coach/chat/shell/coach-chat-auto-send';
-import { coachApprovalReason } from '@sharpit/server/lib/coach/plan/coach-approval-reason';
-import { buildKnownSessions } from '@sharpit/server/lib/coach/chat/conversations/coach-chat-known-sessions';
+import { lastStepApprovalResponseFingerprint } from '@sharpit/app/lib/coach/chat/shell/coach-chat-auto-send';
+import { coachApprovalReason } from '@sharpit/app/lib/coach/plan/coach-approval-reason';
+import { buildKnownSessions } from '@sharpit/app/lib/coach/chat/conversations/coach-chat-known-sessions';
 import {
   coachMessagesFingerprint,
   hasPersistableAssistant,
-} from '@sharpit/server/lib/coach/chat/shell/coach-chat-persist';
+} from '@sharpit/app/lib/coach/chat/shell/coach-chat-persist';
 import {
   abortChatFetch,
   endAutoReply,
   replaceChatFetchSignal,
   tryBeginAutoReply,
-} from '@sharpit/server/lib/coach/chat/shell/coach-chat-request-lock';
+} from '@sharpit/app/lib/coach/chat/shell/coach-chat-request-lock';
 import {
   invalidateAfterCoachToolApproval,
   invalidatePlannedSessionsAfterCoachTurn,
@@ -40,12 +40,12 @@ import {
 import {
   readCoachInputDraft,
   writeCoachInputDraft,
-} from '@sharpit/server/lib/coach/chat/composer/coach-input-draft';
-import type { CoachDiscussContext } from '@sharpit/server/lib/coach/chat/discuss/coach-discuss-context';
+} from '@sharpit/app/lib/coach/chat/composer/coach-input-draft';
+import type { CoachDiscussContext } from '@sharpit/app/lib/coach/chat/discuss/coach-discuss-context';
 import {
   AI_BUDGET_WARNING_HEADER,
   RETRY_AFTER_HEADER,
-} from '@sharpit/server/lib/access/ai-budget-shared';
+} from '@sharpit/app/lib/access/ai-budget-shared';
 
 function coachInputPlaceholder(guardDisabled: boolean, hasPendingApprovals: boolean): string {
   if (guardDisabled) {

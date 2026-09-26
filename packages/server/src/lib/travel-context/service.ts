@@ -9,12 +9,12 @@ import {
   type TravelTrainingConstraint,
 } from '@prisma/client';
 import { geocodePlaceLabel } from '@sharpit/server/lib/geocoding/nominatim';
-import { toUtcDateOnly } from '@sharpit/server/lib/travel-context/calendar-date';
+import { toUtcDateOnly } from '@sharpit/app/lib/travel-context/calendar-date';
 import {
   deriveTravelTrainingConstraint,
   normalizeTravelDisciplines,
-} from '@sharpit/server/lib/travel-context/disciplines';
-import { isTravelTrainingConstraint } from '@sharpit/server/lib/travel-context/training-constraint';
+} from '@sharpit/app/lib/travel-context/disciplines';
+import { isTravelTrainingConstraint } from '@sharpit/app/lib/travel-context/training-constraint';
 
 export type TravelContextInput = {
   /** Defaults to TRAVEL. CONSTRAINT entries have no location. */

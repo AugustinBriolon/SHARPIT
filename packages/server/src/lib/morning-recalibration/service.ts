@@ -4,7 +4,7 @@
  */
 
 import { endOfDay, startOfDay } from 'date-fns';
-import type { GateProposal, GateSessionResult } from '@sharpit/server/lib/plan-gate/types';
+import type { GateProposal, GateSessionResult } from '@sharpit/app/lib/plan-gate/types';
 import { buildDecisionSnapshotContext } from '@sharpit/server/lib/decision-memory/build-snapshot-context';
 import {
   createCoachingDecision,
@@ -13,7 +13,7 @@ import {
   findMorningRecalibrationDecision,
   recordDecisionAction,
 } from '@sharpit/server/lib/decision-memory/repository';
-import type { DecisionSnapshotContext } from '@sharpit/server/lib/decision-memory/types';
+import type { DecisionSnapshotContext } from '@sharpit/app/lib/decision-memory/types';
 import {
   evaluateMorningSessionRecalibration,
   isStrengthLikeMorningSport,
@@ -23,7 +23,7 @@ import { getOrBuildAthleteSnapshot } from '@sharpit/server/lib/athlete-state/sna
 import { hasMorningWellnessCheckin } from '@sharpit/server/lib/journal/wellness-checkin';
 import { prisma } from '@sharpit/db/client';
 import { updatePlannedSession } from '@sharpit/server/lib/queries';
-import { dayKeyFromDate } from '@sharpit/server/lib/date/day-key';
+import { dayKeyFromDate } from '@sharpit/app/lib/date/day-key';
 
 export type MorningRecalibrationPresentation = {
   decisionId: string;

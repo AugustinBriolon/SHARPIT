@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { buildEnduranceWorkoutPayload } from '@sharpit/server/lib/integrations/garmin/garmin-endurance-workout-payload';
 import { SWIM_STROKE_BY_KEY } from '@sharpit/server/lib/integrations/garmin/garmin-workout-enums';
-import type { EndurancePrescription } from '@sharpit/server/lib/planned-session/endurance/endurance-prescription';
-import type { AthleteThresholds } from '@sharpit/server/lib/planned-session/endurance/endurance-targets';
+import type { EndurancePrescription } from '@sharpit/app/lib/planned-session/endurance/endurance-prescription';
+import type { AthleteThresholds } from '@sharpit/app/lib/planned-session/endurance/endurance-targets';
 
 const THRESHOLDS: AthleteThresholds = {
   runThresholdPaceSecPerKm: 240,

@@ -1,6 +1,6 @@
-import type { DisplayMode } from '@sharpit/server/lib/preferences/display-mode';
+import type { DisplayMode } from '@sharpit/app/lib/preferences/display-mode';
 import { compareMeta } from '@/components/today/rich/morning-orientation-helpers';
-import { cn } from '@sharpit/server/lib/utils';
+import { cn } from '@sharpit/app/lib/utils';
 
 type Proposal = {
   why?: string | null;

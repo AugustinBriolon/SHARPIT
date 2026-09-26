@@ -1,5 +1,5 @@
 import type { LucideIcon } from 'lucide-react';
-import { cn } from '@sharpit/server/lib/utils';
+import { cn } from '@sharpit/app/lib/utils';
 
 type InkEmptyStateProps = {
   title: string;

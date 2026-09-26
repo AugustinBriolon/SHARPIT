@@ -1,6 +1,6 @@
 import { format, isSameWeek, startOfWeek } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import type { ClientActivity } from '@sharpit/server/lib/query/types';
+import type { ClientActivity } from '@sharpit/app/lib/query/types';
 
 export type ActivityWeekGroup = {
   key: string;

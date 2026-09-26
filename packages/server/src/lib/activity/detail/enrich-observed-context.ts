@@ -2,20 +2,20 @@ import { startOfDay, addDays } from 'date-fns';
 import { isSet } from '@sharpit/shared/value';
 import type { PrismaClient } from '@prisma/client';
 import { type ActivityType } from '@prisma/client';
-import { isActivityToday } from '@sharpit/server/lib/activity/list/activity-day';
+import { isActivityToday } from '@sharpit/app/lib/activity/list/activity-day';
 import { backfillActivityObservedLocation } from '@sharpit/server/lib/activity/location/observed-location';
 import { activityWeatherWindow } from '@sharpit/server/lib/activity/weather/activity-weather-window';
 import {
   extractActivityWeatherSnapshot,
   needsWeatherEnrichment,
   serializeActivityWeather,
-} from '@sharpit/server/lib/activity/weather/activity-weather';
-import { isIndoorActivitySession } from '@sharpit/server/lib/activity/location/indoor-activity';
+} from '@sharpit/app/lib/activity/weather/activity-weather';
+import { isIndoorActivitySession } from '@sharpit/app/lib/activity/location/indoor-activity';
 import { runActivityNarrativeAnalysis } from '@sharpit/server/lib/activity/narrative/activity-narrative';
 import { fetchForecastPredictions } from '@sharpit/server/lib/planned-session/forecast/forecast-fetch';
 import { computeTrainingDayId } from '@sharpit/core/training/training-day';
 
-export { isActivityToday } from '@sharpit/server/lib/activity/list/activity-day';
+export { isActivityToday } from '@sharpit/app/lib/activity/list/activity-day';
 
 const OUTDOOR_TYPES = new Set<ActivityType>(['RUN', 'BIKE', 'SWIM', 'TRIATHLON']);
 

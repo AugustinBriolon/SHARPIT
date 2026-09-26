@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import sharp from 'sharp';
-import { BRAND_ICON_LIGHT, BRAND_ICON_PATH } from '@sharpit/server/lib/brand/brand-icon';
+import { BRAND_ICON_LIGHT, BRAND_ICON_PATH } from '@sharpit/app/lib/brand/brand-icon';
 
 /**
  * iOS splash screens (`apple-touch-startup-image`) — not a Next.js special-file

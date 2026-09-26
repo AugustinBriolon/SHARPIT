@@ -1,3 +1,8 @@
+import type {
+  IntegrationAccountView,
+  IntegrationProviderView,
+  IntegrationsHubPayload,
+} from '@sharpit/app/lib/web/payloads';
 import { getGarminAccount } from '@sharpit/server/lib/integrations/garmin/garmin-sync';
 import { isGoogleConfigured } from '@sharpit/server/lib/integrations/google/google';
 import {
@@ -19,18 +24,7 @@ import { getStravaAccount } from '@sharpit/server/lib/integrations/strava/strava
 import { isWithingsConfigured } from '@sharpit/server/lib/integrations/withings/withings';
 import { getWithingsAccount } from '@sharpit/server/lib/integrations/withings/withings-sync';
 
-/** What the integrations hub shows of an account — never a token, encrypted or not. */
-export type IntegrationAccountView = {
-  displayName?: string | null;
-  lastSyncAt?: Date | null;
-  email?: string | null;
-  firstName?: string | null;
-  lastName?: string | null;
-  avatarUrl?: string | null;
-  fullName?: string | null;
-  targetCalendarId?: string | null;
-  targetCalendarName?: string | null;
-};
+export type { IntegrationAccountView, IntegrationsHubPayload };
 
 const DISPLAY_FIELDS = [
   'displayName',
@@ -54,9 +48,10 @@ export function toAccountView(account: object | null | undefined): IntegrationAc
   ) as IntegrationAccountView;
 }
 
-type ProviderView = { account: IntegrationAccountView | null; needsReconnect: boolean };
-
-function providerView<T>(account: T | null, isConnected: (account: T) => boolean): ProviderView {
+function providerView<T>(
+  account: T | null,
+  isConnected: (account: T) => boolean,
+): IntegrationProviderView {
   return {
     account: toAccountView(account as object | null),
     needsReconnect: account !== null && !isConnected(account),
@@ -64,7 +59,7 @@ function providerView<T>(account: T | null, isConnected: (account: T) => boolean
 }
 
 /** The integrations hub's accounts and source prefs, read on `api.` (ADR-048 phase 3f). */
-export async function loadIntegrationsHub(athleteId: string) {
+export async function loadIntegrationsHub(athleteId: string): Promise<IntegrationsHubPayload> {
   const [strava, garmin, renpho, withings, google, mfp, prefs] = await Promise.all([
     getStravaAccount(athleteId),
     getGarminAccount(athleteId),
@@ -87,5 +82,3 @@ export async function loadIntegrationsHub(athleteId: string) {
     prefs,
   };
 }
-
-export type IntegrationsHubPayload = Awaited<ReturnType<typeof loadIntegrationsHub>>;

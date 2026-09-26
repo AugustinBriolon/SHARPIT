@@ -1,9 +1,9 @@
-import { APPLE_TEAM_ID_PLACEHOLDER } from '@sharpit/server/lib/apple-app-site-association';
+import { APPLE_TEAM_ID_PLACEHOLDER } from '@sharpit/app/lib/apple-app-site-association';
 import {
   CONNECT_GARMIN_CALLBACK_PATH,
   CONNECT_GARMIN_PATH,
   garminHandoffCallbackPath,
-} from '@sharpit/server/lib/integrations/garmin/garmin-connect-handoff';
+} from '@sharpit/app/lib/integrations/garmin/garmin-connect-handoff';
 
 /**
  * Live smoke for the private "Must": the Garmin Safari + universal-link handoff on a

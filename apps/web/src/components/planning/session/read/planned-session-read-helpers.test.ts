@@ -4,7 +4,7 @@ import {
   buildPlannedSessionChips,
   buildPlannedSessionIntentLine,
 } from '@/components/planning/session/read/planned-session-read-helpers';
-import type { ClientPlannedSession } from '@sharpit/server/lib/query/types';
+import type { ClientPlannedSession } from '@sharpit/app/lib/query/types';
 
 function session(overrides: Partial<ClientPlannedSession> = {}): ClientPlannedSession {
   return {

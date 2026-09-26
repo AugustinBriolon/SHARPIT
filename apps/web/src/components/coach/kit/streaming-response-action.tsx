@@ -2,9 +2,9 @@
 
 import { motion, useReducedMotion } from 'motion/react';
 import type { ReactNode } from 'react';
-import { SPRING_PRESS } from '@sharpit/server/lib/ease';
+import { SPRING_PRESS } from '@sharpit/app/lib/ease';
 import { motionTokens } from '@/client/motion/tokens';
-import { cn } from '@sharpit/server/lib/utils';
+import { cn } from '@sharpit/app/lib/utils';
 
 export function ResponseAction({
   label,

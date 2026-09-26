@@ -6,13 +6,13 @@ import {
   subscribeMorningHold,
 } from '@/components/today/rich/morning-orientation-hold';
 import { MorningOrientationReadyActions } from '@/components/today/rich/morning-orientation-ready-actions';
-import type { TodayViewModel } from '@sharpit/server/presentation/today-view-model';
+import type { TodayViewModel } from '@sharpit/app/presentation/today-view-model';
 import {
   activityStatusOption,
   getActivityStatusServerSnapshot,
   getActivityStatusSnapshot,
   subscribeActivityStatus,
-} from '@sharpit/server/lib/health/activity-status';
+} from '@sharpit/app/lib/health/activity-status';
 
 export {
   morningHoldStorageKey,

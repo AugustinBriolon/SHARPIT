@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { buildGlobalDecisionContext } from '@sharpit/server/lib/decision/global-decision-context';
-import type { AthleteSnapshot } from '@sharpit/server/athlete-state/snapshot';
+import type { AthleteSnapshot } from '@sharpit/app/athlete-state/snapshot';
 import { mockDailyPhase, mockPhaseNarrative } from '@sharpit/server/lib/daily-phase/test-fixtures';
 
 function minimalSnapshot(decision: AthleteSnapshot['decision']): AthleteSnapshot {

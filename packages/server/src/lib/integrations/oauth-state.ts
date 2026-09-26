@@ -1,5 +1,5 @@
-import type { IntegrationId } from '@sharpit/server/lib/integrations/shared/client-sync';
-import type { DataClassId } from '@sharpit/server/lib/integrations/provider-catalog';
+import type { IntegrationId } from '@sharpit/app/lib/integrations/shared/client-sync';
+import type { DataClassId } from '@sharpit/app/lib/integrations/provider-catalog';
 import { readSignedToken, signToken } from '@sharpit/server/lib/signed-token';
 
 /**

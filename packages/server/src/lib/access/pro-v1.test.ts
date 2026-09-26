@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { projectV1Pro } from '@sharpit/server/lib/access/pro-v1';
-import { ALL_PRO_PERKS } from '@sharpit/server/lib/access/pro-perks';
+import { ALL_PRO_PERKS } from '@sharpit/app/lib/access/pro-perks';
 
 describe('projectV1Pro', () => {
   it('serves every perk from pro-perks.ts, by stable id, without web-only fields', () => {

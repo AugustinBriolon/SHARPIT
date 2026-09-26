@@ -4,9 +4,9 @@
  * which silently shifts the seeded day west of UTC.
  */
 
-import { dayKeyFromDate } from '@sharpit/server/lib/date/day-key';
+import { dayKeyFromDate } from '@sharpit/app/lib/date/day-key';
 import { addTrainingDays, trainingDayIdForNow } from '@sharpit/core/training/training-day';
-import { toUtcDateOnly } from '@sharpit/server/lib/travel-context/calendar-date';
+import { toUtcDateOnly } from '@sharpit/app/lib/travel-context/calendar-date';
 
 /** Today's training day for the demo athlete (Paris, local-midnight default). */
 export function demoAnchorTrainingDayId(now: Date = new Date()): string {

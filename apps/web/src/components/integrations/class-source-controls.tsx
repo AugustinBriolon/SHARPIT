@@ -1,7 +1,7 @@
 'use client';
 
 import { Check, X } from 'lucide-react';
-import { cn } from '@sharpit/server/lib/utils';
+import { cn } from '@sharpit/app/lib/utils';
 
 function pillClass(active: 'off' | 'on' | 'primary'): string {
   return cn(

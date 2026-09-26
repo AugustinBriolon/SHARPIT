@@ -7,8 +7,8 @@ import type { usePlanningViewData } from '@/components/planning/view/use-plannin
 import {
   planningDayKey,
   resolveSelectedPlanningDayId,
-} from '@sharpit/server/lib/plan/planning-day-selection';
-import type { ClientActivity } from '@sharpit/server/lib/query/types';
+} from '@sharpit/app/lib/plan/planning-day-selection';
+import type { ClientActivity } from '@sharpit/app/lib/query/types';
 
 export function PlanningDaysPanel({
   data,

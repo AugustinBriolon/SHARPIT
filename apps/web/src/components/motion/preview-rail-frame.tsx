@@ -4,7 +4,7 @@ import { motion } from 'motion/react';
 import { type ReactNode } from 'react';
 import { PreviewRailNav, PreviewRailPreviewOverlay } from '@/components/motion/preview-rail-layout';
 import type { usePreviewRailState } from '@/components/motion/use-preview-rail';
-import { cn } from '@sharpit/server/lib/utils';
+import { cn } from '@sharpit/app/lib/utils';
 import type { PreviewRailItem } from './preview-rail';
 
 export function PreviewRailFrame({

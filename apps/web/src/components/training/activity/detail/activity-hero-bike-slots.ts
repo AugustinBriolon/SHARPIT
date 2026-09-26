@@ -1,4 +1,4 @@
-import { formatDistance, formatDuration } from '@sharpit/server/lib/format';
+import { formatDistance, formatDuration } from '@sharpit/app/lib/format';
 import type { HeroActivity } from '@/components/training/activity/detail/activity-hero-stats';
 import type { HeroStatSlot } from '@/components/training/activity/detail/activity-hero-run-slots';
 

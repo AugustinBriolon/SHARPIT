@@ -3,28 +3,28 @@ import type {
   BodyMetricExplainerVm,
   BodyTrendWindowId,
   BodyViewModel,
-} from '@sharpit/server/presentation/body-view-model';
-import { athleteCompositionContext } from '@sharpit/server/lib/profile/athlete-profile-utils';
+} from '@sharpit/app/presentation/body-view-model';
+import { athleteCompositionContext } from '@sharpit/app/lib/profile/athlete-profile-utils';
 import { isSet } from '@sharpit/shared/value';
 import {
   buildCompositionSeries,
   computeCompositionTrend,
   formatCompositionDelta,
   formatWeightKgDisplay,
-} from '@sharpit/server/lib/health/body-composition';
+} from '@sharpit/app/lib/health/body-composition';
 import {
   getGuide,
   metricScalePosition,
   type CompositionContext,
   type CompositionMetricId,
-} from '@sharpit/server/lib/health/composition-metric-guides';
+} from '@sharpit/app/lib/health/composition-metric-guides';
 import {
   buildWeeklyDeltaPresentation,
   resolveMetricValueTone,
-} from '@sharpit/server/lib/health/health-status';
+} from '@sharpit/app/lib/health/health-status';
 import { buildBodyPageInsights } from '@sharpit/server/lib/product-insight/body-page-insights';
 import { getAthleteProfile, getBodyCompositionMeasurements } from '@sharpit/server/lib/queries';
-import { parseWithingsEcgStats } from '@sharpit/server/lib/integrations/withings/withings-ecg-display';
+import { parseWithingsEcgStats } from '@sharpit/app/lib/integrations/withings/withings-ecg-display';
 
 const TREND_WINDOWS = [
   { id: '14d', label: '14 j', days: 14 },

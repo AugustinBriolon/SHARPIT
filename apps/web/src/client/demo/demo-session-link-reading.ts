@@ -1,13 +1,13 @@
 import type { QueryClient } from '@tanstack/react-query';
-import type { ActivityNarrative, SessionAnalysis } from '@sharpit/server/lib/validators/coach';
+import type { ActivityNarrative, SessionAnalysis } from '@sharpit/app/lib/validators/coach';
 import { queryKeys } from '@/client/query/keys';
-import type { ClientActivity, ClientPlannedSession } from '@sharpit/server/lib/query/types';
+import type { ClientActivity, ClientPlannedSession } from '@sharpit/app/lib/query/types';
 import {
   readDemoSessionLinks,
   updateDemoSessionLinkReading,
   type DemoSessionLinkReading,
-} from '@sharpit/server/lib/demo/demo-session-link-state';
-import { plannedSessionSummaryFromClient } from '@sharpit/server/lib/demo/demo-session-link-overlay';
+} from '@sharpit/app/lib/demo/demo-session-link-state';
+import { plannedSessionSummaryFromClient } from '@sharpit/app/lib/demo/demo-session-link-overlay';
 
 /** Aligns with SessionLinkSuggestionCard demo shimmer duration. */
 export const DEMO_SESSION_LINK_READING_DELAY_MS = 1400;

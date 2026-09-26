@@ -7,7 +7,7 @@ import {
 import {
   DEMO_LINK_ACTIVITY_TITLE,
   DEMO_SESSION_LINK_PLANNED_TITLE,
-} from '@sharpit/server/lib/demo/demo-session-link-markers';
+} from '@sharpit/app/lib/demo/demo-session-link-markers';
 
 function metricsForRun() {
   return {

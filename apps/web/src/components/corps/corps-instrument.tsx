@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { cn } from '@sharpit/server/lib/utils';
+import { cn } from '@sharpit/app/lib/utils';
 
 /**
  * Corps instrument column — one causal stack, not a collage of hubs.

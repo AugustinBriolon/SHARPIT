@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { EvaluatedExperiment } from '@sharpit/server/lib/journal/journal-habit-experiment';
+import type { EvaluatedExperiment } from '@sharpit/app/lib/journal/journal-habit-experiment';
 
-vi.mock('@sharpit/server/lib/next/await-request', () => ({ awaitRequest: vi.fn() }));
+vi.mock('@sharpit/app/lib/next/await-request', () => ({ awaitRequest: vi.fn() }));
 vi.mock('@sharpit/server/lib/auth/current-athlete', () => ({
   getCurrentAthleteId: vi.fn().mockResolvedValue('athlete-1'),
 }));
@@ -100,7 +100,7 @@ describe('/api/journal/habit-experiments', () => {
     } as Awaited<ReturnType<typeof prisma.journalHabitExperiment.findFirst>>);
     const { POST } = await import('./handler');
     const { ONE_TEST_AT_A_TIME_MESSAGE } =
-      await import('@sharpit/server/lib/journal/journal-habit-experiment');
+      await import('@sharpit/app/lib/journal/journal-habit-experiment');
 
     const response = await POST(
       jsonRequest('http://localhost/api/journal/habit-experiments', 'POST', {

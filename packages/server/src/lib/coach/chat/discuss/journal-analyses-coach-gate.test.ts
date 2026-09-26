@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { formatJournalAnalysesCoachBlock } from '@sharpit/server/lib/coach/chat/discuss/journal-analyses-coach-gate';
-import type { JournalHabitReading } from '@sharpit/server/lib/journal/journal-habit-reading';
+import type { JournalHabitReading } from '@sharpit/app/lib/journal/journal-habit-reading';
 
 function reading(overrides: Partial<JournalHabitReading> = {}): JournalHabitReading {
   return {

@@ -1,11 +1,11 @@
 import type {
   GarminExerciseRef,
   GarminMatchConfidence,
-} from '@sharpit/server/lib/integrations/garmin/garmin-exercise-map';
-import { canonicalizeGarminExerciseRef } from '@sharpit/server/lib/integrations/garmin/garmin-exercise-map';
+} from '@sharpit/app/lib/integrations/garmin/garmin-exercise-map';
+import { canonicalizeGarminExerciseRef } from '@sharpit/app/lib/integrations/garmin/garmin-exercise-map';
 import { isSet } from '@sharpit/shared/value';
-import { getGarminTaxonomyEntry } from '@sharpit/server/lib/integrations/garmin/garmin-exercise-taxonomy';
-import type { StrengthRestMode } from '@sharpit/server/lib/planned-session/strength/strength-prescription';
+import { getGarminTaxonomyEntry } from '@sharpit/app/lib/integrations/garmin/garmin-exercise-taxonomy';
+import type { StrengthRestMode } from '@sharpit/app/lib/planned-session/strength/strength-prescription';
 import {
   ITERATIONS_CONDITION,
   LAP_BUTTON_CONDITION,

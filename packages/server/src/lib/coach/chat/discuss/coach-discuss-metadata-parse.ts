@@ -4,7 +4,7 @@
  * unknown kind or malformed target yields `null` (an ordinary conversation).
  */
 
-import type { CoachDiscussMetadata } from '@sharpit/server/lib/coach/chat/discuss/coach-discuss-context';
+import type { CoachDiscussMetadata } from '@sharpit/app/lib/coach/chat/discuss/coach-discuss-context';
 
 type DiscussKind = CoachDiscussMetadata['discussKind'];
 type RawObject = Record<string, unknown>;

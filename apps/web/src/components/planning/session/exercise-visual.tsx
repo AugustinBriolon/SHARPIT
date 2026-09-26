@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import type { ResolvedExerciseMedia } from '@sharpit/server/lib/exercises';
-import { cn } from '@sharpit/server/lib/utils';
+import type { ResolvedExerciseMedia } from '@sharpit/app/lib/exercises';
+import { cn } from '@sharpit/app/lib/utils';
 
 /**
  * Exercise movement visuals, shared by the realized activity detail and the

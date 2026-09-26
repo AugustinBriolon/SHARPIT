@@ -12,7 +12,7 @@ import {
   type GoalEndMode,
   type GoalPeriod,
   type PeriodMeasure,
-} from '@sharpit/server/lib/goals/goal-metric-config';
+} from '@sharpit/app/lib/goals/goal-metric-config';
 
 const ALL_SPORTS = 'ALL';
 

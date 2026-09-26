@@ -1,4 +1,4 @@
-import { COACH_COPY_DASH_RULE } from '@sharpit/server/lib/coach/sanitize-coach-copy';
+import { COACH_COPY_DASH_RULE } from '@sharpit/app/lib/coach/sanitize-coach-copy';
 import type { NutritionAnalysisFacts } from './nutrition-analysis-facts';
 
 export const NUTRITION_ANALYSIS_SYSTEM = `Tu es le coach nutrition de SHARPIT, une application d'entraînement d'endurance. Tu lis UNE journée alimentaire d'un athlète et tu rédiges une lecture courte en français, en tutoyant.

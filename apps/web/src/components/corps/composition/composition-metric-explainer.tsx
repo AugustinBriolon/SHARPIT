@@ -8,9 +8,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import type { BodyMetricExplainerVm } from '@sharpit/server/presentation/body-view-model';
-import { CORPS_TONE_BADGE, CORPS_TONE_SCALE } from '@sharpit/server/lib/ui/metric-tone';
-import { cn } from '@sharpit/server/lib/utils';
+import type { BodyMetricExplainerVm } from '@sharpit/app/presentation/body-view-model';
+import { CORPS_TONE_BADGE, CORPS_TONE_SCALE } from '@sharpit/app/lib/ui/metric-tone';
+import { cn } from '@sharpit/app/lib/utils';
 
 function MetricScale({
   zones,

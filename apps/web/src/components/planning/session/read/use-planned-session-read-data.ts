@@ -4,8 +4,8 @@ import { useSessionRationalePresentation } from '@/hooks/use-data';
 import { useGarminPushStaleness } from '@/hooks/use-garmin-push-staleness';
 import { useEndurancePreview } from '@/hooks/use-endurance-preview';
 import { useGarminWorkoutPush } from '@/hooks/use-garmin-workout-push';
-import type { PlannedSessionViewModel } from '@sharpit/server/presentation/planned-session-view-model';
-import type { ClientGoal, ClientPlannedSession } from '@sharpit/server/lib/query/types';
+import type { PlannedSessionViewModel } from '@sharpit/app/presentation/planned-session-view-model';
+import type { ClientGoal, ClientPlannedSession } from '@sharpit/app/lib/query/types';
 import { useDisplayMode } from '@/providers/display-mode-provider';
 import {
   buildPlannedSessionContextMeta,

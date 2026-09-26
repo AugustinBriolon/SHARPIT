@@ -1,9 +1,9 @@
-import type { IntegrationId } from '@sharpit/server/lib/integrations/shared/client-sync';
+import type { IntegrationId } from '@sharpit/app/lib/integrations/shared/client-sync';
 import {
   parseSourcePrefs,
   resolveSourcePrefs,
   type IntegrationSourcePrefs,
-} from '@sharpit/server/lib/integrations/source-prefs';
+} from '@sharpit/app/lib/integrations/source-prefs';
 import { prisma } from '@sharpit/db/client';
 import { Prisma } from '@prisma/client';
 

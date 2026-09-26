@@ -6,10 +6,10 @@
  * compliance is measured on the work itself — which exercises were done, and how
  * much volume — and this score is the floor the AI verdict may not go under.
  */
-import { parseExercisePhrase } from '@sharpit/server/lib/exercises/lexicon';
+import { parseExercisePhrase } from '@sharpit/app/lib/exercises/lexicon';
 import { isSet } from '@sharpit/shared/value';
-import type { SessionAnalysis } from '@sharpit/server/lib/validators/coach';
-import { normalizeExerciseKey } from '@sharpit/server/lib/exercises/normalize';
+import type { SessionAnalysis } from '@sharpit/app/lib/validators/coach';
+import { normalizeExerciseKey } from '@sharpit/app/lib/exercises/normalize';
 
 export type ComparableStrengthSet = {
   exercise: string;

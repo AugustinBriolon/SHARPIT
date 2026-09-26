@@ -1,7 +1,7 @@
 import { addDays, startOfDay } from 'date-fns';
 import { isCoachConfigured } from '@sharpit/server/lib/ai';
 import { analyzePlannedSession } from '@sharpit/server/lib/coach/plan/coach-analysis';
-import { scorePlannedActivityMatch } from '@sharpit/server/lib/planned-session/linking/session-link-match-score';
+import { scorePlannedActivityMatch } from '@sharpit/app/lib/planned-session/linking/session-link-match-score';
 import {
   linkPlannedSessionActivity,
   setPlannedSessionAnalysis,
@@ -9,7 +9,7 @@ import {
 import { prisma } from '@sharpit/db/client';
 import { withAnalysisRun } from '@sharpit/server/lib/analysis/analysis-run-store';
 
-export { scorePlannedActivityMatch } from '@sharpit/server/lib/planned-session/linking/session-link-match-score';
+export { scorePlannedActivityMatch } from '@sharpit/app/lib/planned-session/linking/session-link-match-score';
 
 async function autoLinkOneActivity(
   athleteId: string,

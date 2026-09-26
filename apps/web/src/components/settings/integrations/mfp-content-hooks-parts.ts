@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { notifyIntegrationSyncStarted } from '@/components/settings/integrations/modal-sync-start';
 import { toast } from '@/components/ui/toast';
-import { runMfpSync } from '@sharpit/server/lib/integrations/shared/client-sync';
+import { runMfpSync } from '@sharpit/app/lib/integrations/shared/client-sync';
 import { connectMyFitnessPal, disconnectMyFitnessPal } from '@/client/query/fetchers';
 import { queryKeys } from '@/client/query/keys';
 

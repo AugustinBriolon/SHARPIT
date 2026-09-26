@@ -1,9 +1,9 @@
-import type { RecordsPayload } from '@sharpit/server/lib/training/records/records';
-import type { ActivityRoutePreviews } from '@sharpit/server/lib/streams/route-previews';
+import type { RecordsPayload } from '@sharpit/app/lib/training/records/record-types';
+import type { ActivityRoutePreviews } from '@sharpit/app/lib/streams/stream-types';
 import type {
   ActivityStreamPayload,
   MultisportStreamsPayload,
-} from '@sharpit/server/lib/streams/streams';
+} from '@sharpit/app/lib/streams/stream-types';
 import { fetchJson } from './shared';
 
 export async function fetchActivityStream(id: string): Promise<ActivityStreamPayload> {

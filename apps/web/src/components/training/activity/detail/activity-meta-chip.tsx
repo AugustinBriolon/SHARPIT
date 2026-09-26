@@ -1,9 +1,9 @@
 import type { ReactNode } from 'react';
-import { cn } from '@sharpit/server/lib/utils';
+import { cn } from '@sharpit/app/lib/utils';
 import type { LucideIcon } from 'lucide-react';
 import Link from 'next/link';
 import { chipDot, chipIconTone, chipLinkSurface } from './activity-detail-helpers';
-import type { ChipTone } from '@sharpit/server/lib/activity/detail/types';
+import type { ChipTone } from '@sharpit/app/lib/activity/detail/types';
 
 const DEFAULT_LINK_SURFACE =
   'border-analysis-border/80 bg-analysis-surface-alt/50 hover:border-primary/35 hover:bg-analysis-surface-alt';

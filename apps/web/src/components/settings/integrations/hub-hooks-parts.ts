@@ -10,7 +10,7 @@ import {
   syncAllConnectedIntegrations,
   type RowSyncState,
 } from '@/components/settings/integrations/hub-sync';
-import type { IntegrationId } from '@sharpit/server/lib/integrations/shared/client-sync';
+import type { IntegrationId } from '@sharpit/app/lib/integrations/shared/client-sync';
 
 function reportHubSyncResults(results: string[], errors: string[]) {
   if (results.length > 0) {

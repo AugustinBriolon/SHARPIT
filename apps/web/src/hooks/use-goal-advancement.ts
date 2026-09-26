@@ -8,20 +8,20 @@ import {
   parseCoachingAdvancementLedgerSnapshot,
   subscribeCoachingAdvancementLedger,
   type CoachingAdvancementEntry,
-} from '@sharpit/server/lib/plan/coaching-advancement-ledger';
-import { selectPlanGoal } from '@sharpit/server/lib/plan/trajectory/plan-goal';
-import { buildMacroPhaseRail } from '@sharpit/server/lib/plan/trajectory/plan-macro-rail';
-import { buildPlanWeek } from '@sharpit/server/lib/plan/week/plan-week';
+} from '@sharpit/app/lib/plan/coaching-advancement-ledger';
+import { selectPlanGoal } from '@sharpit/app/lib/plan/trajectory/plan-goal';
+import { buildMacroPhaseRail } from '@sharpit/app/lib/plan/trajectory/plan-macro-rail';
+import { buildPlanWeek } from '@sharpit/app/lib/plan/week/plan-week';
 import {
   buildGoalAdvancement,
   type GoalAdvancementView,
-} from '@sharpit/server/lib/today/rich/goal-advancement';
+} from '@sharpit/app/lib/today/rich/goal-advancement';
 import type {
   ClientActivity,
   ClientGoal,
   ClientPlannedSession,
-} from '@sharpit/server/lib/query/types';
-import type { PlanPhaseSource } from '@sharpit/server/lib/plan/trajectory/plan-phase';
+} from '@sharpit/app/lib/query/types';
+import type { PlanPhaseSource } from '@sharpit/app/lib/plan/trajectory/plan-phase';
 
 /** The periodisation blocks toward the goal — built once, read twice. */
 function macroPhases(

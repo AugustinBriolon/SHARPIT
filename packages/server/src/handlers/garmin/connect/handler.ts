@@ -4,8 +4,8 @@ import {
   garminConnectSchema,
   SSO_DISABLED_MESSAGE,
 } from '@sharpit/server/handlers/garmin/connect/connect-shared';
-import { GARMIN_SSO_PAGE_PATH } from '@sharpit/server/lib/integrations/garmin/garmin-browser-sso-shared';
-import { CONNECT_GARMIN_CALLBACK_PATH } from '@sharpit/server/lib/integrations/garmin/garmin-connect-handoff';
+import { GARMIN_SSO_PAGE_PATH } from '@sharpit/app/lib/integrations/garmin/garmin-browser-sso-shared';
+import { CONNECT_GARMIN_CALLBACK_PATH } from '@sharpit/app/lib/integrations/garmin/garmin-connect-handoff';
 import {
   garminSsoPageUrl,
   startGarminHandoff,

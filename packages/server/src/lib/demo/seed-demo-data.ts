@@ -13,7 +13,7 @@ import {
   type PrismaClient,
 } from '@prisma/client';
 import { ensureDemoSessionLinkStory } from '@sharpit/server/lib/demo/demo-session-link-seed';
-import { DEMO_SESSION_LINK_PLANNED_TITLE } from '@sharpit/server/lib/demo/demo-session-link-markers';
+import { DEMO_SESSION_LINK_PLANNED_TITLE } from '@sharpit/app/lib/demo/demo-session-link-markers';
 import { seedDemoJournalAnalyses } from '@sharpit/server/lib/demo/demo-journal-seed';
 import {
   demoAnchorTrainingDayId,

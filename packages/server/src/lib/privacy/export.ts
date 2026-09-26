@@ -2,7 +2,7 @@ import { prisma } from '@sharpit/db/client';
 import {
   CURRENT_PRIVACY_VERSION,
   PRIVACY_PURGE_DELAY_DAYS,
-} from '@sharpit/server/lib/privacy/constants';
+} from '@sharpit/app/lib/privacy/constants';
 import { ANALYSIS_EVIDENCE_RETENTION } from '@sharpit/server/lib/science/reliability/analysis-evidence';
 import { listAnalysisEvidenceForExport } from '@sharpit/server/lib/science/reliability/analysis-evidence-store';
 

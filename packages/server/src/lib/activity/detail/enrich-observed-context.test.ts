@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isActivityToday } from '@sharpit/server/lib/activity/list/activity-day';
+import { isActivityToday } from '@sharpit/app/lib/activity/list/activity-day';
 import { shouldRefreshActivityNarrative } from '@sharpit/server/lib/activity/detail/enrich-observed-context';
 
 describe('isActivityToday', () => {

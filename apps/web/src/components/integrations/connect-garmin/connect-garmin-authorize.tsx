@@ -10,12 +10,12 @@ import {
   type GarminSsoPhase,
 } from '@/components/settings/integrations/garmin-browser-sso-parts';
 import { useIosIframeFocusZoomGuard } from '@/hooks/use-ios-iframe-focus-zoom-guard';
-import { buildGarminBrowserSsoUrl } from '@sharpit/server/lib/integrations/garmin/garmin-browser-sso-shared';
+import { buildGarminBrowserSsoUrl } from '@sharpit/app/lib/integrations/garmin/garmin-browser-sso-shared';
 import {
   garminHandoffCallbackPath,
   parseGarminHandoffStatus,
-} from '@sharpit/server/lib/integrations/garmin/garmin-connect-handoff';
-import { cn } from '@sharpit/server/lib/utils';
+} from '@sharpit/app/lib/integrations/garmin/garmin-connect-handoff';
+import { cn } from '@sharpit/app/lib/utils';
 
 /**
  * A full navigation, never a client-side one: the iOS ASWebAuthenticationSession only

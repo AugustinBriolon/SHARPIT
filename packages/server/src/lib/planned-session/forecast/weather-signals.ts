@@ -1,6 +1,6 @@
 import type { EnvironmentalPrediction } from '@sharpit/core/environment';
 import type { PlannedSessionWeatherSignals } from '@sharpit/core/planned-session/types';
-import { readWeatherMeasurements } from '@sharpit/server/lib/activity/weather/activity-weather';
+import { readWeatherMeasurements } from '@sharpit/app/lib/activity/weather/activity-weather';
 
 import { isSet } from '@sharpit/shared/value';
 

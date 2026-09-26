@@ -3,7 +3,7 @@
 import type { ReactNode } from 'react';
 import { CoachComposerChrome } from '@/components/coach/chat/shell/coach-composer-chrome';
 import { coachBeuiTheme } from '@/components/coach/beui/coach-beui-theme';
-import { cn } from '@sharpit/server/lib/utils';
+import { cn } from '@sharpit/app/lib/utils';
 
 /** Panel chrome only — no empty-state copy (avoids duplicating CoachChat landing UI). */
 export function CoachChatPanelShell({

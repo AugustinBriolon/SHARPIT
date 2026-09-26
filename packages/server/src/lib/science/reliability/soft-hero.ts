@@ -12,7 +12,7 @@ import {
   type PackTier,
   type PackTierResult,
 } from '@sharpit/core/science/pack-tier';
-import type { OverallVerdict } from '@sharpit/server/athlete-state/today-state';
+import type { OverallVerdict } from '@sharpit/app/athlete-state/today-state';
 
 export type SoftHeroPresentation = {
   readonly packTier: PackTier;

@@ -4,15 +4,11 @@ import { prisma } from '@sharpit/db/client';
 import {
   clearedBrickMetadata,
   shouldDemoteBrick,
-} from '@sharpit/server/lib/planned-session/brick/brick-demotion';
+} from '@sharpit/app/lib/planned-session/brick/brick-demotion';
 import {
-  activityInclude,
   plannedSessionCoachSelect,
-} from '@sharpit/server/lib/queries/activity-include';
-
-const plannedSessionInclude = {
-  activity: { include: activityInclude },
-};
+  plannedSessionInclude,
+} from '@sharpit/app/lib/query/activity-include';
 
 export async function getPlannedSessions(athleteId: string, params?: { from?: Date; to?: Date }) {
   return prisma.plannedSession.findMany({

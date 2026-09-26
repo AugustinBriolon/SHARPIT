@@ -1,4 +1,4 @@
-import type { ClientGoal } from '@sharpit/server/lib/query/types';
+import type { ClientGoal } from '@sharpit/app/lib/query/types';
 import { fetchJson, type Serialized, toDate, toDateOrNull } from './shared';
 
 export async function fetchGoals(): Promise<ClientGoal[]> {

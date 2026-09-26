@@ -7,7 +7,7 @@ import {
   shouldSuppressRearrangeAfterApply,
   subscribeAdaptAppliedAck,
   type AdaptAppliedAck,
-} from '@sharpit/server/lib/plan/adapt-applied-ack';
+} from '@sharpit/app/lib/plan/adapt-applied-ack';
 import { useClientNow } from '@/hooks/use-client-now';
 
 /**

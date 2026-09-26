@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import {
   CONNECT_GARMIN_CALLBACK_PATH,
   garminHandoffCallbackPath,
-} from '@sharpit/server/lib/integrations/garmin/garmin-connect-handoff';
+} from '@sharpit/app/lib/integrations/garmin/garmin-connect-handoff';
 import { serverApiFetch } from '@/server/api-client';
 
 /**

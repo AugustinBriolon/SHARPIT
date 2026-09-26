@@ -31,19 +31,16 @@ import {
 } from '@/components/settings/settings-appearance-status';
 import { SettingsAdminEntry } from '@/components/settings/settings-admin-entry';
 import type { SettingsEntry } from '@/components/settings/settings-home';
-import { hasProAccess } from '@sharpit/server/lib/access/tier';
-import { isAccessTier, ACCESS_TIER_COOKIE } from '@sharpit/server/lib/access/tier-cookie';
+import { hasProAccess } from '@sharpit/app/lib/access/tier';
+import { isAccessTier, ACCESS_TIER_COOKIE } from '@sharpit/app/lib/access/tier-cookie';
 import {
   MOI_CALIBRATION_PATH,
   MOI_CORPS_PATH,
   MOI_OBJECTIFS_PATH,
   MOI_PERSONALIZATION_PATH,
   MOI_PRO_PATH,
-} from '@sharpit/server/lib/moi/paths';
-import {
-  FEEDBACK_BUG_MAILTO,
-  FEEDBACK_FEATURE_MAILTO,
-} from '@sharpit/server/lib/moi/feedback-mailto';
+} from '@sharpit/app/lib/moi/paths';
+import { FEEDBACK_BUG_MAILTO, FEEDBACK_FEATURE_MAILTO } from '@sharpit/app/lib/moi/feedback-mailto';
 import { getViewer } from '@/server/viewer';
 
 type HubEntry =

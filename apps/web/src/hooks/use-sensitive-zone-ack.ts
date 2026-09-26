@@ -8,7 +8,7 @@ import {
   parseSensitiveZoneAckSnapshot,
   recordSensitiveZoneAck,
   subscribeSensitiveZoneAcks,
-} from '@sharpit/server/lib/physical-health/sensitive-zone-ack';
+} from '@sharpit/app/lib/physical-health/sensitive-zone-ack';
 
 /**
  * Whether the athlete has accepted this session's sensitive-zone warning as

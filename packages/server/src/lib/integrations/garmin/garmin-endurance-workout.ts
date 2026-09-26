@@ -1,6 +1,6 @@
 import { Prisma } from '@prisma/client';
 import { isSet } from '@sharpit/shared/value';
-import { dayKeyFromDate, shortDayFromDate } from '@sharpit/server/lib/date/day-key';
+import { dayKeyFromDate, shortDayFromDate } from '@sharpit/app/lib/date/day-key';
 import {
   buildEnduranceWorkoutPayload,
   type EnduranceWorkoutMappedStep,
@@ -12,9 +12,9 @@ import {
 import {
   enduranceSportFromActivityType,
   type EnduranceSport,
-} from '@sharpit/server/lib/planned-session/endurance/endurance-prescription';
-import { effectiveEndurancePrescription } from '@sharpit/server/lib/planned-session/endurance/endurance-session';
-import { type AthleteThresholds } from '@sharpit/server/lib/planned-session/endurance/endurance-targets';
+} from '@sharpit/app/lib/planned-session/endurance/endurance-prescription';
+import { effectiveEndurancePrescription } from '@sharpit/app/lib/planned-session/endurance/endurance-session';
+import { type AthleteThresholds } from '@sharpit/app/lib/planned-session/endurance/endurance-targets';
 import { prisma } from '@sharpit/db/client';
 
 const SPORT_LABEL_FR: Record<EnduranceSport, string> = {

@@ -1,6 +1,6 @@
 import { ActivityType } from '@prisma/client';
-import { isEligibleForActivityNarrative } from '@sharpit/server/lib/activity/narrative/activity-narrative-config';
-import { isActivityToday } from '@sharpit/server/lib/activity/list/activity-day';
+import { isEligibleForActivityNarrative } from '@sharpit/app/lib/activity/narrative/activity-narrative-config';
+import { isActivityToday } from '@sharpit/app/lib/activity/list/activity-day';
 import {
   NARRATIVE_TYPES,
   parseNarrative,

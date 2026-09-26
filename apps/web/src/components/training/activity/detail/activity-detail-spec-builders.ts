@@ -1,4 +1,4 @@
-import type { ActivityDetail, ActivitySpec } from '@sharpit/server/lib/activity/detail/types';
+import type { ActivityDetail, ActivitySpec } from '@sharpit/app/lib/activity/detail/types';
 import { ActivityType } from '@prisma/client';
 
 type MetricAudience = ActivitySpec['audience'];

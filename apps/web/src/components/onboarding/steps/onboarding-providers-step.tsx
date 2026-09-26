@@ -1,11 +1,8 @@
 'use client';
 
-import type { IntegrationId } from '@sharpit/server/lib/integrations/shared/client-sync';
-import type { IntegrationSourcePrefs } from '@sharpit/server/lib/integrations/source-prefs';
-import type {
-  CatalogProvider,
-  DataClassId,
-} from '@sharpit/server/lib/integrations/provider-catalog';
+import type { IntegrationId } from '@sharpit/app/lib/integrations/shared/client-sync';
+import type { IntegrationSourcePrefs } from '@sharpit/app/lib/integrations/source-prefs';
+import type { CatalogProvider, DataClassId } from '@sharpit/app/lib/integrations/provider-catalog';
 import {
   continueButtonLabel,
   OnboardingProvidersClassList,

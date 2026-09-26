@@ -2,7 +2,7 @@
 
 import { WifiOff } from 'lucide-react';
 import { useOnlineStatus } from '@/hooks/use-online-status';
-import { cn } from '@sharpit/server/lib/utils';
+import { cn } from '@sharpit/app/lib/utils';
 
 export function OfflineBanner() {
   const online = useOnlineStatus();

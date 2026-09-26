@@ -7,7 +7,7 @@ import type {
   DomainFreshness,
   FreshnessLevel,
   ProviderFreshness,
-} from '@sharpit/server/athlete-state/freshness';
+} from '@sharpit/app/athlete-state/freshness';
 import { prisma } from '@sharpit/db/client';
 import {
   pickPrimaryProductMessage,

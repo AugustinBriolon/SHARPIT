@@ -13,7 +13,7 @@ import {
 } from '@/components/onboarding/wizard/use-onboarding-wizard-progression';
 import type { useOnboardingWizardState } from '@/components/onboarding/wizard/use-onboarding-wizard-state';
 import type { useGoalMutations } from '@/hooks/use-data';
-import { previousOnboardingStep } from '@sharpit/server/lib/onboarding/wizard/wizard-steps';
+import { previousOnboardingStep } from '@sharpit/app/lib/onboarding/wizard/wizard-steps';
 
 export function useOnboardingWizardHandlers(
   wizard: ReturnType<typeof useOnboardingWizardState>,

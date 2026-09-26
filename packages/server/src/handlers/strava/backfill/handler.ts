@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
-import { isProviderConnectable } from '@sharpit/server/lib/integrations/provider-catalog';
+import { isProviderConnectable } from '@sharpit/app/lib/integrations/provider-catalog';
 import {
   filterRecordChangesByActivities,
   recomputeRecordGroups,

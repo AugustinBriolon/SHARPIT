@@ -7,7 +7,7 @@ import { RenphoContent } from '@/components/settings/integrations/modal-content-
 import { StravaContent } from '@/components/settings/integrations/modal-content-strava';
 import { WithingsContent } from '@/components/settings/integrations/modal-content-withings';
 import type { IntegrationDefinition } from '@/components/settings/integrations/types';
-import type { IntegrationId } from '@sharpit/server/lib/integrations/shared/client-sync';
+import type { IntegrationId } from '@sharpit/app/lib/integrations/shared/client-sync';
 
 export function IntegrationModalContent({
   integration,

@@ -14,8 +14,8 @@ import type { ActivityType } from '@prisma/client';
 import type { ReactNode } from 'react';
 import dynamic from 'next/dynamic';
 import { Skeleton } from '@/components/ui/skeleton';
-import type { ActivityAnalysis } from '@sharpit/server/lib/activity/detail/activity-analysis';
-import { normalizeStreamChartData } from '@sharpit/server/lib/streams/stream-chart-data';
+import type { ActivityAnalysis } from '@sharpit/app/lib/activity/detail/activity-analysis';
+import { normalizeStreamChartData } from '@sharpit/app/lib/streams/stream-chart-data';
 import { useMemo } from 'react';
 
 const ActivityStreamChart = dynamic(

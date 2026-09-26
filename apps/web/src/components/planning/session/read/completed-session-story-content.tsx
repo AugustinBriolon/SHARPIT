@@ -1,8 +1,8 @@
 'use client';
 
-import { parseSessionAnalysis } from '@sharpit/server/lib/planned-session/display/session-analysis-display';
-import { activityNarrativeSchema } from '@sharpit/server/lib/validators/coach';
-import { sanitizeCoachCopy } from '@sharpit/server/lib/coach/sanitize-coach-copy';
+import { parseSessionAnalysis } from '@sharpit/app/lib/planned-session/display/session-analysis-display';
+import { activityNarrativeSchema } from '@sharpit/app/lib/validators/coach';
+import { sanitizeCoachCopy } from '@sharpit/app/lib/coach/sanitize-coach-copy';
 
 function parseActivityNarrative(raw: unknown) {
   const parsed = activityNarrativeSchema.safeParse(raw);

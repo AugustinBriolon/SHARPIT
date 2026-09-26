@@ -22,14 +22,14 @@ import {
   useThresholdPreview,
 } from '@/hooks/use-data';
 import { useOfflineGuard } from '@/hooks/use-offline-guard';
-import { shouldHydrateProfileForm } from '@sharpit/server/lib/profile/map-athlete-profile';
+import { shouldHydrateProfileForm } from '@sharpit/app/lib/profile/map-athlete-profile';
 import { invalidateAfterAthleteProfileSave } from '@/client/query/invalidate-after-athlete-profile-save';
 import { importGarminAthleteProfile, patchAthleteProfile } from '@/client/query/fetchers';
 import { queryKeys } from '@/client/query/keys';
 import type {
   ThresholdApplyPreview,
   ThresholdField,
-} from '@sharpit/server/lib/threshold/threshold-estimates';
+} from '@sharpit/app/lib/threshold/threshold-estimates';
 
 export interface GarminImportResult {
   imported: boolean;

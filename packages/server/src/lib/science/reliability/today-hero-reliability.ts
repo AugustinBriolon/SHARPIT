@@ -2,10 +2,10 @@
  * Assemble Science Sport reliability block for Today hero presentation.
  */
 
-import type { AthleteSnapshot } from '@sharpit/server/athlete-state/snapshot';
-import type { OverallVerdict } from '@sharpit/server/athlete-state/today-state';
+import type { AthleteSnapshot } from '@sharpit/app/athlete-state/snapshot';
+import type { OverallVerdict } from '@sharpit/app/athlete-state/today-state';
 import type { PackTier } from '@sharpit/core/science/pack-tier';
-import { resolveCode } from '@sharpit/server/lib/french';
+import { resolveCode } from '@sharpit/app/lib/french';
 import { buildPackInputsFromSnapshot } from '@sharpit/server/lib/science/reliability/pack-inputs-from-snapshot';
 import {
   buildReliabilityProvenance,

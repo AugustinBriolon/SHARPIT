@@ -1,6 +1,6 @@
 'use client';
 
-import type { ZoneBucket } from '@sharpit/server/lib/activity/detail/activity-analysis';
+import type { ZoneBucket } from '@sharpit/app/lib/activity/detail/activity-analysis';
 
 function formatZoneTime(seconds: number): string {
   const m = Math.floor(seconds / 60);

@@ -28,7 +28,7 @@ const nextConfig: NextConfig = {
   // so tracing starts there or the deployed functions miss them.
   outputFileTracingRoot: path.join(__dirname, '../../'),
   // Workspace packages ship TypeScript sources (ADR-048); Next compiles them with the app.
-  transpilePackages: ['@sharpit/core', '@sharpit/server', '@sharpit/shared'],
+  transpilePackages: ['@sharpit/app', '@sharpit/core', '@sharpit/shared'],
   allowedDevOrigins: loadAllowedDevOrigins(),
   images: {
     remotePatterns: [

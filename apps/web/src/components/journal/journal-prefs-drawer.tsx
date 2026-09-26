@@ -10,13 +10,13 @@ import {
   readJournalPrefsCache,
   writeJournalPrefsCache,
   type JournalPrefs,
-} from '@sharpit/server/lib/journal/journal-prefs';
+} from '@sharpit/app/lib/journal/journal-prefs';
 import {
   JOURNAL_BUILTIN_TRACKABLES,
   JOURNAL_PREFS_DEEP_LINK_PARAM,
   journalPrefsDeepLinkFilter,
   type JournalFilterId,
-} from '@sharpit/server/lib/journal/journal-trackables';
+} from '@sharpit/app/lib/journal/journal-trackables';
 import { queryKeys } from '@/client/query/keys';
 import {
   JournalPrefsDrawerPanel,

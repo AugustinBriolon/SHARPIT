@@ -1,7 +1,7 @@
 import 'server-only';
 
-import type { mapAthleteProfileToFormData } from '@sharpit/server/lib/profile/map-athlete-profile';
-import type { ConsentSnapshot } from '@sharpit/server/lib/privacy/consent-serialize';
+import type { mapAthleteProfileToFormData } from '@sharpit/app/lib/profile/map-athlete-profile';
+import type { ConsentSnapshot } from '@sharpit/app/lib/privacy/consent-serialize';
 import { cachedServerApiJson } from '@/server/api-client';
 
 type ProfileRow = NonNullable<Parameters<typeof mapAthleteProfileToFormData>[0]> & {

@@ -13,7 +13,7 @@ import {
   distancePresetsForSport,
   performanceEndModeLabels,
   type GoalEndMode,
-} from '@sharpit/server/lib/goals/goal-metric-config';
+} from '@sharpit/app/lib/goals/goal-metric-config';
 import { ActivityType } from '@prisma/client';
 
 export function PerformanceMetricDistanceFields({

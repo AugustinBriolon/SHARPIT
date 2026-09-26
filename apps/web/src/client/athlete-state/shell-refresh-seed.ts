@@ -1,5 +1,5 @@
 import type { QueryClient } from '@tanstack/react-query';
-import type { TodayViewModel } from '@sharpit/server/presentation/today-view-model';
+import type { TodayViewModel } from '@sharpit/app/presentation/today-view-model';
 import { queryKeys } from '@/client/query/keys';
 import { apiFetch } from '@/client/query/api-fetch';
 

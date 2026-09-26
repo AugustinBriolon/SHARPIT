@@ -15,7 +15,7 @@ import { PipelineInspector } from '@sharpit/core/dev/pipeline-inspector';
 import { FeatureExplorer } from '@sharpit/core/dev/feature-explorer';
 import { globalMetrics } from '@sharpit/core/dev/metrics';
 import { prisma } from '@sharpit/db/client';
-import { isCurrentUserAdmin } from '@sharpit/server/lib/auth/admin';
+import { isCurrentUserAdmin } from '@sharpit/app/lib/auth/admin';
 
 export const isDevToolsEnabled =
   process.env.DEV_TOOLS_ENABLED === 'true' || process.env.NODE_ENV === 'development';

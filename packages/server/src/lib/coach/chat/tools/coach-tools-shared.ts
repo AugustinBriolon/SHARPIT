@@ -4,15 +4,15 @@ import { getActiveTrainingPlan, getGoalById, getGoals } from '@sharpit/server/li
 import {
   resolveDefaultPlanGoalId,
   selectableDatedGoalIds,
-} from '@sharpit/server/lib/planned-session/plan-goal';
+} from '@sharpit/app/lib/planned-session/plan-goal';
 import {
   coachStrengthPrescriptionSchema,
   resolveStrengthFieldsForPersist,
-} from '@sharpit/server/lib/planned-session/strength/strength-prescription';
+} from '@sharpit/app/lib/planned-session/strength/strength-prescription';
 import {
   coachEndurancePrescriptionSchema,
   resolveEnduranceFieldsForPersist,
-} from '@sharpit/server/lib/planned-session/endurance/coach-endurance-prescription';
+} from '@sharpit/app/lib/planned-session/endurance/coach-endurance-prescription';
 import { refreshAndPersistPlannedSessionContext } from '@sharpit/server/lib/planned-session/resolve-context';
 import {
   coachActivityTypesForPracticed,
@@ -20,8 +20,8 @@ import {
   travelDisciplinesForPracticed,
   type CoachActivityType,
   type PracticedSportId,
-} from '@sharpit/server/lib/practiced-sports';
-import type { TravelDiscipline } from '@sharpit/server/lib/travel-context/disciplines';
+} from '@sharpit/app/lib/practiced-sports';
+import type { TravelDiscipline } from '@sharpit/app/lib/travel-context/disciplines';
 
 export function scheduleSessionContextRefresh(athleteId: string, sessionId: string) {
   after(async () => {

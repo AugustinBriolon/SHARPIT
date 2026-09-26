@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach, beforeAll } from 'vitest';
-import { consumeCoachProgressStream } from '@sharpit/server/lib/coach/chat/transcript/coach-progress-stream';
+import { consumeCoachProgressStream } from '@sharpit/app/lib/coach/chat/transcript/coach-progress-stream';
 import type { PlanPayload } from './handler';
 import { decisionState, physicalHealthData } from '@sharpit/server/lib/plan-gate/test-fixtures';
 
@@ -386,7 +386,7 @@ describe('POST /api/coach/plan', () => {
       await import('@sharpit/server/lib/coach/stream-structured-generation');
     const { getOrBuildAthleteSnapshot } =
       await import('@sharpit/server/lib/athlete-state/snapshot-service');
-    const { coachPlanGenerationSchema } = await import('@sharpit/server/lib/validators/coach');
+    const { coachPlanGenerationSchema } = await import('@sharpit/app/lib/validators/coach');
 
     vi.mocked(runStructuredCoachStream).mockResolvedValue({
       output: {

@@ -5,7 +5,7 @@ import {
   PreferenceRadioGroup,
   type PreferenceOption,
 } from '@/components/settings/preference-radio-group';
-import type { DisplayMode } from '@sharpit/server/lib/preferences/display-mode';
+import type { DisplayMode } from '@sharpit/app/lib/preferences/display-mode';
 import { useDisplayMode } from '@/providers/display-mode-provider';
 
 const OPTIONS: readonly PreferenceOption<DisplayMode>[] = [

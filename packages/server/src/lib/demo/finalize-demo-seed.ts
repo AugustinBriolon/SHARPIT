@@ -3,7 +3,7 @@ import { generateAthleteSnapshot } from '@sharpit/server/lib/athlete-state/snaps
 import { demoAnchorTrainingDayId } from '@sharpit/server/lib/demo/demo-calendar';
 import { backfillBodyCompositionObservationsFromMeasurements } from '@sharpit/server/lib/integrations/shared/body-composition-observation-backfill';
 import { backfillHealthObservationsFromDailyHealth } from '@sharpit/server/lib/integrations/shared/health-observation-backfill';
-import { activityDetailInclude } from '@sharpit/server/lib/queries/activity-include';
+import { activityDetailInclude } from '@sharpit/app/lib/query/activity-include';
 import { syncManualActivityObservations } from '@sharpit/server/lib/observation/manual-observation-sync';
 
 /** Purge derived inference state so a reseed never inherits stale twin/features. */

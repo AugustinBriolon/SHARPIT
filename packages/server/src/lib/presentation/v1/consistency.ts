@@ -16,7 +16,7 @@ import {
   buildConsistencyDayWindow,
   buildProgramWeeks,
   type ActivityForConsistency,
-} from '@sharpit/server/lib/activity/list/activity-consistency';
+} from '@sharpit/app/lib/activity/list/activity-consistency';
 
 export type V1TodayConsistencyDay = {
   /** `yyyy-MM-dd`. */

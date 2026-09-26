@@ -10,7 +10,7 @@ import {
   type ActivityWeekGroup,
 } from '@/components/training/hub/training-list-logbook';
 import { resolveHubPreviewRoute } from '@/components/today/rich/completed-session-preview-helpers';
-import type { ActivityRoutePreviews } from '@sharpit/server/lib/streams/route-previews';
+import type { ActivityRoutePreviews } from '@sharpit/app/lib/streams/stream-types';
 
 const MAIN_SCROLL_ID = 'main-content';
 const ROW_GAP_PX = 10;

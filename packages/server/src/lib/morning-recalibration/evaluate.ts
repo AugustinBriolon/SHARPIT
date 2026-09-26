@@ -14,8 +14,8 @@ import {
   isEnduranceMorningSport,
   isStrengthLikeMorningSport,
   morningIntensityLabel,
-} from '@sharpit/server/lib/morning-recalibration/sport-intensity-labels';
-import { intensityOrder } from '@sharpit/server/lib/planned-session/sessions';
+} from '@sharpit/app/lib/morning-recalibration/sport-intensity-labels';
+import { intensityOrder } from '@sharpit/app/lib/planned-session/sessions';
 
 export type MorningRecalibrationDirection = 'DOWN' | 'UP';
 
@@ -465,4 +465,4 @@ export {
   isEnduranceMorningSport,
   isStrengthLikeMorningSport,
   morningIntensityLabel,
-} from '@sharpit/server/lib/morning-recalibration/sport-intensity-labels';
+} from '@sharpit/app/lib/morning-recalibration/sport-intensity-labels';

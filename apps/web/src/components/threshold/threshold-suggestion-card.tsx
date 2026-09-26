@@ -11,8 +11,8 @@ import { motionTokens, springs } from '@/client/motion/tokens';
 import type {
   ThresholdApplyPreview,
   ThresholdField,
-} from '@sharpit/server/lib/threshold/threshold-estimates';
-import { cn } from '@sharpit/server/lib/utils';
+} from '@sharpit/app/lib/threshold/threshold-estimates';
+import { cn } from '@sharpit/app/lib/utils';
 
 function thresholdApplyLabel(
   applyLabel: string,

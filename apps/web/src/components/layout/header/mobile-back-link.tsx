@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useBackTarget } from '@/hooks/use-back-target';
 import { ChromeGlass } from '@/components/chrome/chrome-glass';
-import { cn } from '@sharpit/server/lib/utils';
+import { cn } from '@sharpit/app/lib/utils';
 import { NavArrowLeft } from '@/components/icons/nav-arrows';
 
 function canUseHistoryBack(): boolean {

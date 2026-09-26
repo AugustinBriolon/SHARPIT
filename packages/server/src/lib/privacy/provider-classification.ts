@@ -1,8 +1,8 @@
-import type { IntegrationId } from '@sharpit/server/lib/integrations/shared/client-sync';
+import type { IntegrationId } from '@sharpit/app/lib/integrations/shared/client-sync';
 import {
   getCatalogProviderByIntegration,
   type DataClassId,
-} from '@sharpit/server/lib/integrations/provider-catalog';
+} from '@sharpit/app/lib/integrations/provider-catalog';
 
 /** Art. 9 health-related data classes (eng brief §2). */
 export const HEALTH_DATA_CLASSES: readonly DataClassId[] = [

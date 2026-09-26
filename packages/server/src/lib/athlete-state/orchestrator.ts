@@ -1,11 +1,11 @@
-import type { AthleteSnapshot } from '@sharpit/server/athlete-state/snapshot';
+import type { AthleteSnapshot } from '@sharpit/app/athlete-state/snapshot';
 import type { DataProvider } from '@sharpit/server/athlete-state/events';
 import {
   createEventId,
   createTraceId,
   type AthleteStateEvent,
 } from '@sharpit/server/athlete-state/events';
-import type { TodayState } from '@sharpit/server/athlete-state/today-state';
+import type { TodayState } from '@sharpit/app/athlete-state/today-state';
 import { scheduleBackgroundTasks } from '@sharpit/server/lib/athlete-state/background';
 import {
   computeFreshnessSnapshot,

@@ -13,40 +13,40 @@ import {
   loadAthletePmcAnchor,
   loadDailyTrainingStressEntries,
 } from '@sharpit/server/lib/training/pmc/pmc-server';
-import { pmcTsb } from '@sharpit/server/lib/training/pmc/pmc';
+import { pmcTsb } from '@sharpit/app/lib/training/pmc/pmc';
 import {
   categoryLabels,
   sideLabels,
   statusLabels,
-} from '@sharpit/server/lib/physical-health/physical';
+} from '@sharpit/app/lib/physical-health/physical';
 import { getOrBuildAthleteSnapshot } from '@sharpit/server/lib/athlete-state/snapshot-service';
 import { prisma } from '@sharpit/db/client';
 import { listTravelContexts } from '@sharpit/server/lib/travel-context/service';
-import { toUtcDateOnly } from '@sharpit/server/lib/travel-context/calendar-date';
-import { travelTrainingConstraintLabel } from '@sharpit/server/lib/travel-context/training-constraint';
-import { travelDisciplineLabels } from '@sharpit/server/lib/travel-context/disciplines';
-import { buildTopActionLine } from '@sharpit/server/lib/today/rich/today-rich-view';
-import { decisionVerdict } from '@sharpit/server/lib/decision/projection';
-import { resolve, resolveCode } from '@sharpit/server/lib/french';
+import { toUtcDateOnly } from '@sharpit/app/lib/travel-context/calendar-date';
+import { travelTrainingConstraintLabel } from '@sharpit/app/lib/travel-context/training-constraint';
+import { travelDisciplineLabels } from '@sharpit/app/lib/travel-context/disciplines';
+import { buildTopActionLine } from '@sharpit/app/lib/today/rich/today-rich-view';
+import { decisionVerdict } from '@sharpit/app/lib/decision/projection';
+import { resolve, resolveCode } from '@sharpit/app/lib/french';
 import { computeTrainingLoad } from '@sharpit/server/lib/training/load/training-load';
 import { buildEnvironmentPresentationContext } from '@sharpit/server/lib/presentation/environment/environment';
 import {
   formatScenarioComparisonForCoach,
   loadScenarioComparisonForCoach,
 } from '@sharpit/server/lib/presentation/scenario/scenario-comparison';
-import { formatEquipmentForCoach } from '@sharpit/server/lib/equipment/format';
-import { normalizeAthleteEquipment } from '@sharpit/server/lib/equipment/parse';
+import { formatEquipmentForCoach } from '@sharpit/app/lib/equipment/format';
+import { normalizeAthleteEquipment } from '@sharpit/app/lib/equipment/parse';
 import {
   formatPracticedSportsForCoach,
   normalizeAthletePracticedSports,
-} from '@sharpit/server/lib/practiced-sports';
+} from '@sharpit/app/lib/practiced-sports';
 import { normalizeTrainingAvailability } from '@sharpit/server/lib/training-availability/parse';
 import {
   WEEKDAY_LABELS_FR,
   weekdayLabels,
   type TrainingAvailability,
-} from '@sharpit/server/lib/training-availability/types';
-import { dayKeyFromDate, toLocalCalendarDate } from '@sharpit/server/lib/date/day-key';
+} from '@sharpit/app/lib/training-availability/types';
+import { dayKeyFromDate, toLocalCalendarDate } from '@sharpit/app/lib/date/day-key';
 
 async function loadNutritionSummary(
   athleteId: string,

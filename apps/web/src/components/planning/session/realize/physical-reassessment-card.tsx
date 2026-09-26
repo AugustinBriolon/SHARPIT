@@ -2,8 +2,8 @@
 
 import { startOfDay } from 'date-fns';
 import { usePhysicalNotes } from '@/hooks/use-physical';
-import type { ClientPhysicalNote } from '@sharpit/server/lib/query/types';
-import type { SessionAnalysis } from '@sharpit/server/lib/validators/coach';
+import type { ClientPhysicalNote } from '@sharpit/app/lib/query/types';
+import type { SessionAnalysis } from '@sharpit/app/lib/validators/coach';
 import { PhysicalReassessmentEditor } from '@/components/planning/session/realize/physical-reassessment-editor';
 
 export type PhysicalReassessment = NonNullable<SessionAnalysis['physicalReassessments']>[number];

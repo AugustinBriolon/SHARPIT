@@ -18,11 +18,11 @@ import { useOfflineGuard } from '@/hooks/use-offline-guard';
 import {
   seedMorningWellnessForm,
   type MorningWellnessEntry,
-} from '@sharpit/server/lib/journal/morning-wellness-entry';
+} from '@sharpit/app/lib/journal/morning-wellness-entry';
 import {
   mapSorenessUiToDomain,
   type WellnessUiScore,
-} from '@sharpit/server/lib/journal/morning-wellness-scale';
+} from '@sharpit/app/lib/journal/morning-wellness-scale';
 
 type WellnessOption = ScaleOption<WellnessUiScore>;
 

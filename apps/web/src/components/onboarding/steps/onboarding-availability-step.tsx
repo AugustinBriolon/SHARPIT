@@ -13,8 +13,8 @@ import {
   weekdayLabel,
   type TrainingAvailability,
   type Weekday,
-} from '@sharpit/server/lib/training-availability/types';
-import { cn } from '@sharpit/server/lib/utils';
+} from '@sharpit/app/lib/training-availability/types';
+import { cn } from '@sharpit/app/lib/utils';
 
 /**
  * Declared rhythm: days the athlete can train.

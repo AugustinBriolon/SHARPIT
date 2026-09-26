@@ -1,5 +1,5 @@
 import { AthleteTierToggle } from '@/components/admin/athlete-tier-toggle';
-import type { AdminAthleteView } from '@sharpit/server/lib/web/admin-athletes';
+import type { AdminAthleteView } from '@sharpit/app/lib/web/payloads';
 import { cachedServerApiJson } from '@/server/api-client';
 
 export default async function AdminPage() {

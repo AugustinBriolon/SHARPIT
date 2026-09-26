@@ -1,8 +1,8 @@
 'use client';
 
-import type { PlannedSessionViewModel } from '@sharpit/server/presentation/planned-session-view-model';
-import type { ClientGoal, ClientPlannedSession } from '@sharpit/server/lib/query/types';
-import type { MorningProposalCompareInput } from '@sharpit/server/lib/today/rich/morning-proposal-compare';
+import type { PlannedSessionViewModel } from '@sharpit/app/presentation/planned-session-view-model';
+import type { ClientGoal, ClientPlannedSession } from '@sharpit/app/lib/query/types';
+import type { MorningProposalCompareInput } from '@sharpit/app/lib/today/rich/morning-proposal-compare';
 import { SensitiveZoneWarning } from '@/components/planning/session/read/planned-session-read-sensitive-zone';
 import { usePlannedSessionReadPanels } from '@/components/planning/session/read/use-planned-session-read-panels';
 import { PlannedSessionReadViewBody } from '@/components/planning/session/read/planned-session-read-view-body';

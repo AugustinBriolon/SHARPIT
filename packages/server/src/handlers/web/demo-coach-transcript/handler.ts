@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
-import { isDemoSession } from '@sharpit/server/lib/demo/demo-session';
-import { awaitRequest } from '@sharpit/server/lib/next/await-request';
+import { isDemoSession } from '@sharpit/app/lib/demo/demo-session';
+import { awaitRequest } from '@sharpit/app/lib/next/await-request';
 import { loadDemoCoachTranscript } from '@sharpit/server/lib/web/demo-coach-transcript';
 
 /** The demo account's seeded coach conversation; 404 for anyone else or when there is none. */

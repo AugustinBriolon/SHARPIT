@@ -2,9 +2,9 @@ import { GoalPriority } from '@prisma/client';
 import { Calendar, MapPin } from 'lucide-react';
 import { CardDescription, CardTitle } from '@/components/ui/card';
 import type { GoalItem } from '@/components/goals/cards/goal-cards';
-import { daysUntil, priorityDescriptions, priorityLabels } from '@sharpit/server/lib/goals/goals';
-import { horizonLabels } from '@sharpit/server/lib/goals/goals';
-import { cn } from '@sharpit/server/lib/utils';
+import { daysUntil, priorityDescriptions, priorityLabels } from '@sharpit/app/lib/goals/goals';
+import { horizonLabels } from '@sharpit/app/lib/goals/goals';
+import { cn } from '@sharpit/app/lib/utils';
 
 export function formatLongDate(value: string | Date): string {
   return new Intl.DateTimeFormat('fr-FR', {

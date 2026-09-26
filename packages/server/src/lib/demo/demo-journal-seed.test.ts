@@ -7,7 +7,7 @@ import {
   demoJournalNightOutcomes,
   demoJournalPrefs,
 } from '@sharpit/server/lib/demo/demo-journal-seed';
-import { isJournalAnalysisReady } from '@sharpit/server/lib/journal/journal-limits';
+import { isJournalAnalysisReady } from '@sharpit/app/lib/journal/journal-limits';
 
 describe('demoJournalSeed', () => {
   it('covers enough days to unlock analyses', () => {

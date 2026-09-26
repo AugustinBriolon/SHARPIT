@@ -2,7 +2,7 @@
 
 import { Wrench } from 'lucide-react';
 import type { ActivityType } from '@prisma/client';
-import { resolveSessionAccessories } from '@sharpit/server/lib/planned-session/accessories/session-accessories';
+import { resolveSessionAccessories } from '@sharpit/app/lib/planned-session/accessories/session-accessories';
 
 export function SessionAccessoriesSection({
   type,

@@ -7,7 +7,7 @@ import {
   IntegrationsHubToolbar,
 } from '@/components/settings/integrations/hub-layout-parts';
 import type { IntegrationsPayload } from '@/components/settings/integrations/types';
-import type { IntegrationSourcePrefs } from '@sharpit/server/lib/integrations/source-prefs';
+import type { IntegrationSourcePrefs } from '@sharpit/app/lib/integrations/source-prefs';
 
 export function IntegrationsHub({
   payload,

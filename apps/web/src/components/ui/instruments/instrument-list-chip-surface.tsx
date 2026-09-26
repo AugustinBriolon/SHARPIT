@@ -6,8 +6,8 @@ import {
   InstrumentListChipMetaRow,
   InstrumentListChipTrailing,
 } from '@/components/ui/instruments/instrument-list-chip-parts';
-import { cn } from '@sharpit/server/lib/utils';
-import { STATUS_SURFACE } from '@sharpit/server/lib/presentation/coaching/status-surface';
+import { cn } from '@sharpit/app/lib/utils';
+import { STATUS_SURFACE } from '@sharpit/app/lib/presentation/coaching/status-surface';
 
 const chipClassName = (done: boolean, className?: string) =>
   cn(

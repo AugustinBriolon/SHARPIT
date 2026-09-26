@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import { cacheLife } from 'next/cache';
-import { CURRENT_PRIVACY_VERSION } from '@sharpit/server/lib/privacy/constants';
+import { CURRENT_PRIVACY_VERSION } from '@sharpit/app/lib/privacy/constants';
 
 const LEGAL_FILES = {
   privacy: 'PRIVACY_PAGE_FR_V0.md',

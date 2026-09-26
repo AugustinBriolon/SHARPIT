@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { buildLearningFeedback } from './learning-feedback';
-import type { OutcomeEvaluation } from './types';
+import type { OutcomeEvaluation } from '@sharpit/app/lib/decision-memory/types';
 
 function evaluatedOutcome(overrides: Partial<OutcomeEvaluation> = {}): OutcomeEvaluation {
   return {

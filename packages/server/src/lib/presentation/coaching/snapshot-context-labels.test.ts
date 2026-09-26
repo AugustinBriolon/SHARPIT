@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { describeSnapshotContext } from './snapshot-context-labels';
-import type { DecisionSnapshotContext } from '@sharpit/server/lib/decision-memory/types';
+import type { DecisionSnapshotContext } from '@sharpit/app/lib/decision-memory/types';
 
 function baseContext(overrides: Partial<DecisionSnapshotContext> = {}): DecisionSnapshotContext {
   return {

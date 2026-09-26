@@ -4,8 +4,8 @@ import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { type ReactNode } from 'react';
 import { StreamingResponseActions } from '@/components/coach/kit/streaming-response-actions';
 import { useStreamingResponseState } from '@/components/coach/kit/use-streaming-response';
-import { EASE_OUT } from '@sharpit/server/lib/ease';
-import { cn } from '@sharpit/server/lib/utils';
+import { EASE_OUT } from '@sharpit/app/lib/ease';
+import { cn } from '@sharpit/app/lib/utils';
 import type { StreamingResponseProps } from './streaming-response';
 
 function StreamingResponseContent({

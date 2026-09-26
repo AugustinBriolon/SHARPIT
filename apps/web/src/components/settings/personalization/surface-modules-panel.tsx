@@ -9,8 +9,8 @@ import {
   type SurfaceModulesPrefs,
   readSurfaceModulesFromStorage,
   writeSurfaceModulesToStorage,
-} from '@sharpit/server/lib/preferences/surface-modules';
-import { cn } from '@sharpit/server/lib/utils';
+} from '@sharpit/app/lib/preferences/surface-modules';
+import { cn } from '@sharpit/app/lib/utils';
 
 /**
  * Local toggles for which optional surfaces the athlete wants in chrome.

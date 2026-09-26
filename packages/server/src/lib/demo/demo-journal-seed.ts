@@ -10,9 +10,9 @@ import {
   demoDateFromTrainingDayId,
   demoTrainingDayIdDaysAgo,
 } from '@sharpit/server/lib/demo/demo-calendar';
-import { defaultJournalPrefs, type JournalPrefs } from '@sharpit/server/lib/journal/journal-prefs';
-import type { JournalBuiltinTrackableId } from '@sharpit/server/lib/journal/journal-trackables';
-import { JOURNAL_BUILTIN_TRACKABLE_IDS } from '@sharpit/server/lib/journal/journal-trackables';
+import { defaultJournalPrefs, type JournalPrefs } from '@sharpit/app/lib/journal/journal-prefs';
+import type { JournalBuiltinTrackableId } from '@sharpit/app/lib/journal/journal-trackables';
+import { JOURNAL_BUILTIN_TRACKABLE_IDS } from '@sharpit/app/lib/journal/journal-trackables';
 
 export const DEMO_JOURNAL_DAYS = 14;
 

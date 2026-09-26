@@ -1,6 +1,6 @@
 import type { RefObject } from 'react';
 import { useEffect } from 'react';
-import { attachIosIframeFocusZoomGuard } from '@sharpit/server/lib/integrations/garmin/ios-iframe-focus-zoom';
+import { attachIosIframeFocusZoomGuard } from '@sharpit/app/lib/integrations/garmin/ios-iframe-focus-zoom';
 
 /**
  * Temporarily caps maximum-scale while the athlete types in the cross-origin

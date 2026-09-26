@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { useUser } from '@clerk/nextjs';
-import { loadSnapshot } from '@sharpit/server/lib/pwa/snapshot-store';
-import type { PersistedSnapshotEntry } from '@sharpit/server/lib/pwa/snapshot-store-validation';
+import { loadSnapshot } from '@sharpit/app/lib/pwa/snapshot-store';
+import type { PersistedSnapshotEntry } from '@sharpit/app/lib/pwa/snapshot-store-validation';
 
 export interface UseOfflineSnapshotResult {
   entry: PersistedSnapshotEntry | null;

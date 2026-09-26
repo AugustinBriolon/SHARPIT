@@ -1,6 +1,6 @@
 import { describe, expect, it, vi, beforeEach, beforeAll } from 'vitest';
 import { decisionState, physicalHealthData } from '@sharpit/server/lib/plan-gate/test-fixtures';
-import { consumeCoachProgressStream } from '@sharpit/server/lib/coach/chat/transcript/coach-progress-stream';
+import { consumeCoachProgressStream } from '@sharpit/app/lib/coach/chat/transcript/coach-progress-stream';
 import type { AdaptPayload } from './handler';
 
 vi.mock('@sharpit/server/lib/ai', () => ({

@@ -2,7 +2,7 @@
 
 import { Toast as ToastPrimitive } from '@base-ui/react/toast';
 import { CircleCheckIcon, CircleXIcon, InfoIcon, LoaderIcon, XIcon } from 'lucide-react';
-import { cn } from '@sharpit/server/lib/utils';
+import { cn } from '@sharpit/app/lib/utils';
 
 /**
  * Manager global : permet de déclencher des toasts depuis n'importe où, y

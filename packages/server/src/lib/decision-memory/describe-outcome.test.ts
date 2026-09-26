@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { describeOutcome } from './describe-outcome';
-import type { OutcomeEvaluation } from './types';
+import type { OutcomeEvaluation } from '@sharpit/app/lib/decision-memory/types';
 
 const COMPLIANCE_WORDS = ['bien exécuté', 'bien exécutée', 'respecté', 'respectée', 'correctement'];
 

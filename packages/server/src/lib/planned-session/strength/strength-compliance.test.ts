@@ -4,7 +4,7 @@ import {
   computeStrengthCompliance,
   formatStrengthCompliance,
 } from '@sharpit/server/lib/planned-session/strength/strength-compliance';
-import type { SessionAnalysis } from '@sharpit/server/lib/validators/coach';
+import type { SessionAnalysis } from '@sharpit/app/lib/validators/coach';
 
 const PRESCRIBED = [
   { exercise: 'Pont fessier avec élastique', sets: 3, reps: 15 },

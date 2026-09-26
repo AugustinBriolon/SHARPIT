@@ -2,12 +2,12 @@
 
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import type { NutritionCoachReadingView } from '@sharpit/server/presentation/nutrition-view-model';
+import type { NutritionCoachReadingView } from '@sharpit/app/presentation/nutrition-view-model';
 import {
   nutritionReadingJobLabel,
   nutritionReadingToneClass,
-} from '@sharpit/server/lib/nutrition/analysis/nutrition-reading-display';
-import { cn } from '@sharpit/server/lib/utils';
+} from '@sharpit/app/lib/nutrition/analysis/nutrition-reading-display';
+import { cn } from '@sharpit/app/lib/utils';
 
 type ReadyReading = Extract<NutritionCoachReadingView, { state: 'ready' }>;
 

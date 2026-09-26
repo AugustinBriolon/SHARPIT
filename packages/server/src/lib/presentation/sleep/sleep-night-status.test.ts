@@ -3,8 +3,8 @@ import {
   resolveSleepNightStatus,
   sleepAdequacySignalForNight,
 } from '@sharpit/server/lib/presentation/sleep/sleep';
-import { mapSleepScoreToAdequacy } from '@sharpit/server/lib/sleep/sleep-scoring';
-import { mapSleepAdequacySignalToDisplay } from '@sharpit/server/lib/today/dashboard/today-mapping';
+import { mapSleepScoreToAdequacy } from '@sharpit/app/lib/sleep/sleep-scoring';
+import { mapSleepAdequacySignalToDisplay } from '@sharpit/app/lib/today/dashboard/today-mapping';
 
 describe('resolveSleepNightStatus', () => {
   it('is present when tonight has sleep minutes', () => {

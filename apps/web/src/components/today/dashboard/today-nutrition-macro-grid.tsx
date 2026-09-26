@@ -1,4 +1,4 @@
-import type { MacroKind } from '@sharpit/server/lib/nutrition/macro-colors';
+import type { MacroKind } from '@sharpit/app/lib/nutrition/macro-colors';
 import { MacroRingCell } from '@/components/today/dashboard/today-nutrition-card-parts';
 
 type MacroGoals = {

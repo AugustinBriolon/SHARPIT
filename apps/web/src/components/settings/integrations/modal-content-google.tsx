@@ -17,7 +17,7 @@ import {
   GOOGLE_OAUTH_LAN_HINT,
   googleOAuthLocalConnectHref,
   isGoogleOAuthBlockedOnCurrentHost,
-} from '@sharpit/server/lib/integrations/google/google-oauth-hint';
+} from '@sharpit/app/lib/integrations/google/google-oauth-hint';
 import type { GoogleCalendarInfo } from '@/client/query/fetchers';
 import { Label } from '@/components/ui/label';
 import {

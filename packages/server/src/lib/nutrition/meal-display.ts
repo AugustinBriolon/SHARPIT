@@ -1,7 +1,7 @@
 import type {
   NutritionFoodEntry,
   NutritionMealSummary,
-} from '@sharpit/server/presentation/nutrition-view-model';
+} from '@sharpit/app/presentation/nutrition-view-model';
 
 const MEAL_LABELS: Record<string, string> = {
   breakfast: 'Petit-déjeuner',

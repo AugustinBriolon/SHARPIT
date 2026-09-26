@@ -2960,6 +2960,7 @@ __metadata:
   dependencies:
     "@clerk/nextjs": "npm:^7.5.9"
     "@prisma/client": "npm:^6.19.3"
+    "@sharpit/app": "workspace:*"
     "@sharpit/db": "workspace:*"
     "@sharpit/eslint-config": "workspace:*"
     "@sharpit/server": "workspace:*"
@@ -2973,6 +2974,32 @@ __metadata:
     tsx: "npm:^4.22.4"
     typescript: "npm:^5"
     vitest: "npm:^4.1.9"
+  languageName: unknown
+  linkType: soft
+
+"@sharpit/app@workspace:*, @sharpit/app@workspace:packages/app":
+  version: 0.0.0-use.local
+  resolution: "@sharpit/app@workspace:packages/app"
+  dependencies:
+    "@clerk/nextjs": "npm:^7.5.9"
+    "@clerk/themes": "npm:2.4.57"
+    "@prisma/client": "npm:^6.19.3"
+    "@sharpit/core": "workspace:*"
+    "@sharpit/eslint-config": "workspace:*"
+    "@sharpit/shared": "workspace:*"
+    "@types/node": "npm:^20"
+    "@types/react": "npm:^19"
+    ai: "npm:7.0.32"
+    clsx: "npm:^2.1.1"
+    date-fns: "npm:^4.4.0"
+    eslint: "npm:^9"
+    lucide-react: "npm:^1.21.0"
+    next: "npm:16.3.0"
+    react: "npm:19.2.4"
+    tailwind-merge: "npm:^3.6.0"
+    typescript: "npm:^5"
+    vitest: "npm:^4.1.9"
+    zod: "npm:^4.4.3"
   languageName: unknown
   linkType: soft
 
@@ -3037,6 +3064,7 @@ __metadata:
     "@langfuse/vercel-ai-sdk": "npm:^5.11.1"
     "@opentelemetry/sdk-node": "npm:^0.222.0"
     "@prisma/client": "npm:^6.19.3"
+    "@sharpit/app": "workspace:*"
     "@sharpit/core": "workspace:*"
     "@sharpit/db": "workspace:*"
     "@sharpit/eslint-config": "workspace:*"
@@ -3087,9 +3115,9 @@ __metadata:
     "@prisma/client": "npm:^6.19.3"
     "@serwist/cli": "npm:^9.5.11"
     "@serwist/next": "npm:^9.5.11"
+    "@sharpit/app": "workspace:*"
     "@sharpit/core": "workspace:*"
     "@sharpit/eslint-config": "workspace:*"
-    "@sharpit/server": "workspace:*"
     "@sharpit/shared": "workspace:*"
     "@tailwindcss/postcss": "npm:^4"
     "@tanstack/react-query": "npm:^5.101.2"

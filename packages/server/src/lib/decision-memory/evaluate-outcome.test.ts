@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { evaluateOutcome } from './evaluate-outcome';
-import type { OutcomeEvaluation, OutcomeEvaluationInput } from './types';
+import type {
+  OutcomeEvaluation,
+  OutcomeEvaluationInput,
+} from '@sharpit/app/lib/decision-memory/types';
 
 const SESSION_DATE = new Date('2026-07-10T08:00:00.000Z');
 const NOW = new Date('2026-07-13T12:00:00.000Z'); // ~76h later — window has elapsed

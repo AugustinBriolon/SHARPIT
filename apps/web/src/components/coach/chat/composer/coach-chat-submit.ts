@@ -2,14 +2,14 @@ import type { UIMessage } from 'ai';
 import {
   dismissUnresolvedCalendarTools,
   hasUnresolvedCalendarTools,
-} from '@sharpit/server/lib/coach/chat/tools/coach-tool-parts';
-import { clearCoachInputDraft } from '@sharpit/server/lib/coach/chat/composer/coach-input-draft';
-import { createClientId } from '@sharpit/server/lib/client-id';
+} from '@sharpit/app/lib/coach/chat/tools/coach-tool-parts';
+import { clearCoachInputDraft } from '@sharpit/app/lib/coach/chat/composer/coach-input-draft';
+import { createClientId } from '@sharpit/app/lib/client-id';
 import {
   coachDiscussMetadata,
   type CoachDiscussContext,
   type CoachDiscussMetadata,
-} from '@sharpit/server/lib/coach/chat/discuss/coach-discuss-context';
+} from '@sharpit/app/lib/coach/chat/discuss/coach-discuss-context';
 
 type SendCoachMessage = (args: { text: string; metadata?: CoachDiscussMetadata }) => void;
 

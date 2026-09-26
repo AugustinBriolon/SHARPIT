@@ -8,9 +8,9 @@ import { useQuery } from '@tanstack/react-query';
 import { LinkButton } from '@/components/ui/link-button';
 import { queryKeys } from '@/client/query/keys';
 import { fetchTravelContext } from '@/client/query/fetchers';
-import { asLocalCalendarDate } from '@sharpit/server/lib/travel-context/calendar-date';
-import { filterTravelsOverlappingRange } from '@sharpit/server/lib/travel-context/overlap';
-import { cn } from '@sharpit/server/lib/utils';
+import { asLocalCalendarDate } from '@sharpit/app/lib/travel-context/calendar-date';
+import { filterTravelsOverlappingRange } from '@sharpit/app/lib/travel-context/overlap';
+import { cn } from '@sharpit/app/lib/utils';
 
 type TravelContextItem = {
   id: string;

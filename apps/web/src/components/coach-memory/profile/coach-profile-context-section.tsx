@@ -14,8 +14,8 @@ import { useOfflineGuard } from '@/hooks/use-offline-guard';
 import {
   parseDurablePreferences,
   shouldRenderAsBullets,
-} from '@sharpit/server/lib/coach-memory/summary/memory-summary';
-import { cn } from '@sharpit/server/lib/utils';
+} from '@sharpit/app/lib/coach-memory/summary/memory-summary';
+import { cn } from '@sharpit/app/lib/utils';
 
 const PLACEHOLDER = `Ex. :
 - En télétravail le lundi et le jeudi → plus de dispo pour les grosses séances ou les bricks ces jours-là.

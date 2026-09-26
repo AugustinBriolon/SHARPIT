@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { coachDiscussHref } from '@sharpit/server/lib/coach/chat/discuss/coach-discuss-href';
+import { coachDiscussHref } from '@sharpit/app/lib/coach/chat/discuss/coach-discuss-href';
 import {
   coachDiscussMetadata,
   describeCoachDiscussContext,
-} from '@sharpit/server/lib/coach/chat/discuss/coach-discuss-context';
+} from '@sharpit/app/lib/coach/chat/discuss/coach-discuss-context';
 
 describe('journal analyses discuss', () => {
   it('builds href and chip label without composer prefill', () => {

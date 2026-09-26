@@ -4,13 +4,13 @@ import { useEffect, useRef, useState } from 'react';
 import { LoaderIcon, RefreshCw } from 'lucide-react';
 import { useServiceWorkerUpdate } from '@/hooks/use-sw-update';
 import { toast } from '@/components/ui/toast';
-import { cn } from '@sharpit/server/lib/utils';
+import { cn } from '@sharpit/app/lib/utils';
 import {
   SW_UPDATE_APPLY_LABEL,
   SW_UPDATE_APPLYING_LABEL,
   SW_UPDATE_AVAILABLE_TITLE,
   buildApplyingUpdateToastOptions,
-} from '@sharpit/server/lib/pwa/sw-update-feedback';
+} from '@sharpit/app/lib/pwa/sw-update-feedback';
 
 /**
  * Never activates automatically — the athlete must tap Update. Until then, the

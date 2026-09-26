@@ -1,6 +1,6 @@
-import { formatClock, formatDuration, type SleepCoachView } from '@sharpit/server/lib/sleep/sleep';
+import { formatClock, formatDuration, type SleepCoachView } from '@sharpit/app/lib/sleep/sleep';
 import { buildSleepInsightBundle } from '@sharpit/core/product-insight/sleep-insights';
-import type { SleepNightStatus } from '@sharpit/server/presentation/sleep-view-model';
+import type { SleepNightStatus } from '@sharpit/app/presentation/sleep-view-model';
 
 export function buildSleepPageInsights(params: {
   sleepScore: number | null;

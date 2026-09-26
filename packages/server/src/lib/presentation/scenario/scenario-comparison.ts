@@ -5,13 +5,13 @@
 import type {
   ScenarioComparisonRow,
   ScenarioComparisonViewModel,
-} from '@sharpit/server/presentation/scenario-comparison-view-model';
+} from '@sharpit/app/presentation/scenario-comparison-view-model';
 import type { ScenarioComparison } from '@sharpit/core/scenario/types';
 import { isSet } from '@sharpit/shared/value';
 import type { ProjectionHorizonDays } from '@sharpit/core/projection/types';
 import { limitingFactorLabel } from '@sharpit/server/lib/projection/project-athlete-state';
 import { runScenarioComparison } from '@sharpit/server/lib/scenario/scenario-engine';
-import { mapVerdictToDisplay } from '@sharpit/server/lib/today/dashboard/today-mapping';
+import { mapVerdictToDisplay } from '@sharpit/app/lib/today/dashboard/today-mapping';
 
 const ENV_LABELS: Record<string, string> = {
   NONE: 'Faible',

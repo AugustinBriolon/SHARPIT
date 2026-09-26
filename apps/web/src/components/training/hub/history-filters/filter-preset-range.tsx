@@ -1,11 +1,11 @@
 'use client';
 
-import { cn } from '@sharpit/server/lib/utils';
+import { cn } from '@sharpit/app/lib/utils';
 import {
   presetsInScope,
   rangeToPresetSelections,
   togglePresetSelection,
-} from '@sharpit/server/lib/training/periodization/history-filters';
+} from '@sharpit/app/lib/training/periodization/history-filters';
 
 type VisualState = 'selected' | 'in-scope' | 'idle';
 

@@ -3,7 +3,7 @@ import {
   activeDietIds,
   activeDietLabels,
   parseJournalPrefs,
-} from '@sharpit/server/lib/journal/journal-prefs';
+} from '@sharpit/app/lib/journal/journal-prefs';
 import { getLatestBodyWeightKg } from '@sharpit/server/lib/nutrition/body-weight-for-fuel';
 import { normalizeStoredMeals } from '@sharpit/server/lib/nutrition/meal-display';
 import { getAthleteProfile } from '@sharpit/server/lib/queries';

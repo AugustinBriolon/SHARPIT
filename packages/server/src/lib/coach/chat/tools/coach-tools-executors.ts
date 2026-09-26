@@ -22,9 +22,9 @@ import { chainBrickLegStartTimes } from '@sharpit/server/lib/planned-session/bri
 import {
   parseStrengthPrescription,
   resolveStrengthFieldsForPersist,
-} from '@sharpit/server/lib/planned-session/strength/strength-prescription';
-import { resolveEnduranceFieldsForPersist } from '@sharpit/server/lib/planned-session/endurance/coach-endurance-prescription';
-import { dayKeyFromDate } from '@sharpit/server/lib/date/day-key';
+} from '@sharpit/app/lib/planned-session/strength/strength-prescription';
+import { resolveEnduranceFieldsForPersist } from '@sharpit/app/lib/planned-session/endurance/coach-endurance-prescription';
+import { dayKeyFromDate } from '@sharpit/app/lib/date/day-key';
 import { garminPushClearOnSessionChange } from '@sharpit/server/lib/integrations/garmin/garmin-workout-push-state';
 import { auditStrengthPrescription } from '@sharpit/server/lib/planned-session/strength/strength-session-template';
 import {

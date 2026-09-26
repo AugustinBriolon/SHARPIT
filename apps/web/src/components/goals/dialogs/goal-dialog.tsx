@@ -6,7 +6,7 @@ import { GoalDialogBody } from '@/components/goals/dialogs/goal-dialog-body';
 import { GoalDialogHeader } from '@/components/goals/dialogs/goal-dialog-header';
 import { useGoalDialogActions } from '@/components/goals/dialogs/use-goal-dialog-actions';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
-import { parseGoalMetricConfig } from '@sharpit/server/lib/goals/goal-metric-config';
+import { parseGoalMetricConfig } from '@sharpit/app/lib/goals/goal-metric-config';
 
 type GoalFormVariant = 'race' | 'performance' | 'period' | 'legacy';
 

@@ -4,8 +4,8 @@ import { Suspense, type CSSProperties, type ReactNode } from 'react';
 import { BottomNav } from './mobile-shell';
 import { OfflineBanner } from '@/components/pwa/offline-banner';
 import { SyncingIndicator } from '@/components/ui/syncing-indicator';
-import { PAGE_CONTENT_MAX_CLASS } from '@sharpit/server/lib/ui/page-gutter';
-import { cn } from '@sharpit/server/lib/utils';
+import { PAGE_CONTENT_MAX_CLASS } from '@sharpit/app/lib/ui/page-gutter';
+import { cn } from '@sharpit/app/lib/utils';
 import { usePathname } from 'next/navigation';
 import { useIsMobile } from '@/hooks/use-viewport';
 

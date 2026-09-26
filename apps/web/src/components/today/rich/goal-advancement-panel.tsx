@@ -5,9 +5,9 @@ import { PlanVivantBand } from '@/components/today/rich/plan-vivant-band';
 import {
   planVivantProgress,
   planVivantReading,
-} from '@sharpit/server/lib/today/rich/plan-vivant-reading';
-import type { GoalAdvancementView } from '@sharpit/server/lib/today/rich/goal-advancement';
-import { cn } from '@sharpit/server/lib/utils';
+} from '@sharpit/app/lib/today/rich/plan-vivant-reading';
+import type { GoalAdvancementView } from '@sharpit/app/lib/today/rich/goal-advancement';
+import { cn } from '@sharpit/app/lib/utils';
 
 function weekStatusLine(view: GoalAdvancementView): string | null {
   if (view.weekSegments.length === 0) {

@@ -1,7 +1,7 @@
 'use client';
 
 import { ArrowUp, Square } from 'lucide-react';
-import { cn } from '@sharpit/server/lib/utils';
+import { cn } from '@sharpit/app/lib/utils';
 
 export function PromptSubmitIcon({ loading, className }: { loading: boolean; className?: string }) {
   if (loading) {

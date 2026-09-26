@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { addDays, startOfWeek, subDays } from 'date-fns';
 import { getActiveTrainingPlan, getGoals, getPlannedSessions } from '@sharpit/server/lib/queries';
-import { findPlanWeekForDate } from '@sharpit/server/lib/training/periodization';
+import { findPlanWeekForDate } from '@sharpit/app/lib/training/periodization';
 import {
   findDecisionForPlannedSession,
   findRecentEvaluatedOutcomes,
@@ -14,7 +14,7 @@ import { computeTrainingDayId } from '@sharpit/core/training/training-day';
 import { buildWeeklyCoachingBriefViewModel } from '@sharpit/server/lib/presentation/coaching/weekly-coaching-brief';
 import { loadDailyTrainingStressEntries } from '@sharpit/server/lib/training/pmc/pmc-server';
 import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
-import type { CoachingDecisionRecord } from '@sharpit/server/lib/decision-memory/types';
+import type { CoachingDecisionRecord } from '@sharpit/app/lib/decision-memory/types';
 
 const WEEK_OPTS = { weekStartsOn: 1 as const };
 const LEARNING_FEEDBACK_WINDOW_DAYS = 90;

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import type { AthleteSnapshot } from '@sharpit/server/athlete-state/snapshot';
+import type { AthleteSnapshot } from '@sharpit/app/athlete-state/snapshot';
 import { withDemoSnapshotFreshness } from '@sharpit/server/lib/demo/demo-presentation';
-import { resolveMorningOrientation } from '@sharpit/server/lib/today/rich/morning-orientation';
+import { resolveMorningOrientation } from '@sharpit/app/lib/today/rich/morning-orientation';
 
 function awaitingSleepSnapshot(): AthleteSnapshot {
   return {

@@ -29,7 +29,7 @@ import { useActivities, useHikeTripMutations } from '@/hooks/use-data';
 import { useDesktopAutofocus } from '@/hooks/use-desktop-autofocus';
 import { useResetWhenHidden } from '@/hooks/use-reset-when-hidden';
 import { buildHikeTripMemberMeta } from '@/components/training/trip/hike-trip-timeline';
-import { cn } from '@sharpit/server/lib/utils';
+import { cn } from '@sharpit/app/lib/utils';
 
 /** Rename / delete menu. Rendered inside the ink band, so it inherits ink colors. */
 export function HikeTripActionsMenu({ tripId, tripName }: { tripId: string; tripName: string }) {

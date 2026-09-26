@@ -16,11 +16,11 @@ import {
   intensityLabels,
   intensityOrder,
   exposureLabels,
-} from '@sharpit/server/lib/planned-session/sessions';
+} from '@sharpit/app/lib/planned-session/sessions';
 import type { SessionIntensity } from '@prisma/client';
 import { NO_GOAL } from '@/components/planning/session/edit/planned-session-dialog-helpers';
 import { LocationPlacePicker } from '@/components/ui/location-place-picker';
-import { cn } from '@sharpit/server/lib/utils';
+import { cn } from '@sharpit/app/lib/utils';
 
 export function PlannedSessionSingleFields({
   dialog,

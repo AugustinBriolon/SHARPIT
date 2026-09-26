@@ -6,7 +6,7 @@ import {
   rateLimitJsonResponse,
   rateLimiters,
 } from '@sharpit/server/lib/rate-limit';
-import { hasProAccess } from '@sharpit/server/lib/access/tier';
+import { hasProAccess } from '@sharpit/app/lib/access/tier';
 import { getAthleteProfile } from '@sharpit/server/lib/queries';
 import {
   generateAndStoreWeeklyReview,

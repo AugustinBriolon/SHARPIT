@@ -5,8 +5,8 @@ import { Mountain } from 'lucide-react';
 import { buildHikeTripMemberMeta } from '@/components/training/trip/hike-trip-timeline';
 import { InkEmptyState } from '@/components/ui/ink-empty-state';
 import { InstrumentListChip } from '@/components/ui/instruments/instrument-list-chip';
-import type { ClientActivity } from '@sharpit/server/lib/query/types';
-import { cn } from '@sharpit/server/lib/utils';
+import type { ClientActivity } from '@sharpit/app/lib/query/types';
+import { cn } from '@sharpit/app/lib/utils';
 
 function toHikeMemberMeta(activity: ClientActivity) {
   return buildHikeTripMemberMeta({

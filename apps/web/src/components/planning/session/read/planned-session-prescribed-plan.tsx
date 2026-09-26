@@ -3,8 +3,8 @@
 import type { ReactNode } from 'react';
 import { ClipboardList } from 'lucide-react';
 import { SessionAccessoriesSection } from '../accessories/session-accessories-section';
-import type { ClientPlannedSession } from '@sharpit/server/lib/query/types';
-import { intensityLabels } from '@sharpit/server/lib/planned-session/sessions';
+import type { ClientPlannedSession } from '@sharpit/app/lib/query/types';
+import { intensityLabels } from '@sharpit/app/lib/planned-session/sessions';
 import { CollapsibleSection } from '@/components/ui/collapsible-section';
 import { SensitiveZoneWarning } from '@/components/planning/session/read/planned-session-read-sensitive-zone';
 

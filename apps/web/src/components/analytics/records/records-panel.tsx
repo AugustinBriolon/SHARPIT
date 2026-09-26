@@ -15,13 +15,13 @@ import {
   recordCategoryAnchorId,
   recordSportTabFromCategory,
   type RecordSportTab,
-} from '@sharpit/server/lib/training/records/record-links';
+} from '@sharpit/app/lib/training/records/record-links';
 import type {
   PowerCurvePoint,
   RecordCategory,
   RecordEntry,
-} from '@sharpit/server/lib/training/records/records';
-import { cn } from '@sharpit/server/lib/utils';
+} from '@sharpit/app/lib/training/records/record-types';
+import { cn } from '@sharpit/app/lib/utils';
 import { differenceInCalendarDays, format, formatDistanceToNowStrict } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Bike, Footprints, Waves } from 'lucide-react';

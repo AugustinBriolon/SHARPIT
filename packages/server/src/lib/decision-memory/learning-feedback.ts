@@ -7,7 +7,7 @@
 
 import type { ActivityType, SessionIntensity } from '@prisma/client';
 import { isSet } from '@sharpit/shared/value';
-import type { OutcomeEvaluation } from './types';
+import type { OutcomeEvaluation } from '@sharpit/app/lib/decision-memory/types';
 
 /** Below this sample count in a category, there's nothing honest to say about it yet. */
 const MIN_SAMPLES = 3;

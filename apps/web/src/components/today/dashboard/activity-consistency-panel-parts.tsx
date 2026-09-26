@@ -14,8 +14,8 @@ import {
   type ConsistencyDayCell,
   type ConsistencyDayLayout,
   resolveConsistencyDayLayout,
-} from '@sharpit/server/lib/activity/list/activity-consistency';
-import { cn } from '@sharpit/server/lib/utils';
+} from '@sharpit/app/lib/activity/list/activity-consistency';
+import { cn } from '@sharpit/app/lib/utils';
 
 const LOADING_ANCHOR = new Date('2026-01-01T12:00:00');
 

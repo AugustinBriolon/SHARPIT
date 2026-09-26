@@ -11,11 +11,11 @@
  */
 
 import type { ActivityType, SessionIntensity } from '@prisma/client';
-import { enduranceSportFromActivityType } from '@sharpit/server/lib/planned-session/endurance/endurance-prescription';
-import { previewEnduranceSteps } from '@sharpit/server/lib/planned-session/endurance/endurance-preview';
-import { effectiveEndurancePrescription } from '@sharpit/server/lib/planned-session/endurance/endurance-session';
-import type { AthleteThresholds } from '@sharpit/server/lib/planned-session/endurance/endurance-targets';
-import { parseStrengthPrescription } from '@sharpit/server/lib/planned-session/strength/strength-prescription';
+import { enduranceSportFromActivityType } from '@sharpit/app/lib/planned-session/endurance/endurance-prescription';
+import { previewEnduranceSteps } from '@sharpit/app/lib/planned-session/endurance/endurance-preview';
+import { effectiveEndurancePrescription } from '@sharpit/app/lib/planned-session/endurance/endurance-session';
+import type { AthleteThresholds } from '@sharpit/app/lib/planned-session/endurance/endurance-targets';
+import { parseStrengthPrescription } from '@sharpit/app/lib/planned-session/strength/strength-prescription';
 
 export type PlannedSessionStep = {
   /** Stable within one session, so a client can key a list on it. */

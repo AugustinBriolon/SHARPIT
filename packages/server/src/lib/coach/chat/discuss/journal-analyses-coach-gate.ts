@@ -6,16 +6,16 @@
  */
 
 import type { PrismaClient } from '@prisma/client';
-import { confidenceLabel } from '@sharpit/server/lib/journal/journal-habit-finding-copy';
+import { confidenceLabel } from '@sharpit/app/lib/journal/journal-habit-finding-copy';
 import { loadJournalHabitFindings } from '@sharpit/server/lib/journal/journal-habit-analysis-load';
 import {
   buildJournalHabitReading,
   type JournalHabitReading,
-} from '@sharpit/server/lib/journal/journal-habit-reading';
+} from '@sharpit/app/lib/journal/journal-habit-reading';
 import {
   JOURNAL_ANALYSIS_MIN_DAYS,
   isJournalAnalysisReady,
-} from '@sharpit/server/lib/journal/journal-limits';
+} from '@sharpit/app/lib/journal/journal-limits';
 
 export const JOURNAL_ANALYSES_PRO_REQUIRED_ERROR =
   'La lecture coach du journal est réservée à Pro.';

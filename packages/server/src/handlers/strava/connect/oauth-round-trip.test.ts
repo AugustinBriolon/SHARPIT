@@ -16,7 +16,7 @@ vi.mock('@sharpit/server/lib/integrations/source-prefs-store', () => ({
   persistSourcePrefsMutation: (...args: unknown[]) => persistSourcePrefsMutation(...args),
 }));
 // Strava is off in the catalog today; the flow is what is under test.
-vi.mock('@sharpit/server/lib/integrations/provider-catalog', async (importOriginal) => ({
+vi.mock('@sharpit/app/lib/integrations/provider-catalog', async (importOriginal) => ({
   ...(await importOriginal<object>()),
   isProviderConnectable: () => true,
 }));

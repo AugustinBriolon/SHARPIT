@@ -1,20 +1,21 @@
 import { cache } from 'react';
 import { isSet } from '@sharpit/shared/value';
 import { after } from 'next/server';
-import { dedupeBodyCompositionByDay } from '@sharpit/server/lib/health/body-composition';
-import { isMultisportLegArray, type MultisportLeg } from '@sharpit/server/lib/activity/multisport';
+import { dedupeBodyCompositionByDay } from '@sharpit/app/lib/health/body-composition';
+import { isMultisportLegArray, type MultisportLeg } from '@sharpit/app/lib/activity/multisport';
 import {
   activityInclude,
   activityDetailInclude,
   activityListSelect,
   activityCoachSelect,
   activityPmcSelect,
-} from '@sharpit/server/lib/queries/activity-include';
+} from '@sharpit/app/lib/query/activity-include';
+import { physicalNoteInclude, planWeekInclude } from '@sharpit/app/lib/query/activity-include';
 import { linkPlannedSessionActivity } from '@sharpit/server/lib/queries/planned-sessions';
 import { ActivityType, type AthleteSex, FunctionalImpact, Prisma } from '@prisma/client';
 import { addDays, endOfDay, startOfDay } from 'date-fns';
 import { prisma } from '@sharpit/db/client';
-import type { DisplayMode } from '@sharpit/server/lib/preferences/display-mode';
+import type { DisplayMode } from '@sharpit/app/lib/preferences/display-mode';
 
 export {
   createBrickSessions,
@@ -362,8 +363,7 @@ export async function getNextRace(athleteId: string) {
 }
 
 export async function getHealthEntries(athleteId: string, days = 90, refDate: Date = new Date()) {
-  const { isProviderEnabledForClass } =
-    await import('@sharpit/server/lib/integrations/source-prefs');
+  const { isProviderEnabledForClass } = await import('@sharpit/app/lib/integrations/source-prefs');
   const { loadResolvedSourcePrefs } =
     await import('@sharpit/server/lib/integrations/source-prefs-store');
   const prefs = await loadResolvedSourcePrefs(athleteId);
@@ -409,10 +409,6 @@ export async function getBodyCompositionMeasurements(athleteId: string, days?: n
   });
   return dedupeBodyCompositionByDay(rows, prefs.classes.body);
 }
-
-const physicalNoteInclude = {
-  checkins: { orderBy: { date: 'desc' as const } },
-};
 
 export async function getPhysicalNotes(athleteId: string) {
   return prisma.physicalNote.findMany({
@@ -681,8 +677,6 @@ export async function getThresholdSnapshots(athleteId: string, limit = 12) {
     take: limit,
   });
 }
-
-const planWeekInclude = { weeks: { orderBy: { weekIndex: 'asc' as const } } };
 
 export async function getActiveTrainingPlan(athleteId: string) {
   return prisma.trainingPlan.findFirst({

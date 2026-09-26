@@ -1,7 +1,7 @@
 import { useId, type ReactNode } from 'react';
 import { FadeIn } from '@/components/motion';
-import type { JournalHabitReading } from '@sharpit/server/lib/journal/journal-habit-reading';
-import { cn } from '@sharpit/server/lib/utils';
+import type { JournalHabitReading } from '@sharpit/app/lib/journal/journal-habit-reading';
+import { cn } from '@sharpit/app/lib/utils';
 
 function TakeawayStrengths({ reading }: { reading: JournalHabitReading }) {
   if (reading.strengths.length === 0) {

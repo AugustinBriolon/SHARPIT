@@ -6,7 +6,7 @@ import {
   classifyInstallPrompt,
   shouldShowInstallCard,
   type InstallPromptKind,
-} from '@sharpit/server/lib/pwa/install-prompt-state';
+} from '@sharpit/app/lib/pwa/install-prompt-state';
 import { useStandalone } from '@/hooks/use-standalone';
 
 const DISMISSED_AT_STORAGE_KEY = 'sharpit:install-prompt-dismissed-at';

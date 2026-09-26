@@ -10,13 +10,13 @@ import {
   ExerciseVisual,
 } from '@/components/planning/session/exercise-visual';
 import { toast } from '@/components/ui/toast';
-import { resolveStrengthSetMedia } from '@sharpit/server/lib/exercises';
-import type { ActivityDetail } from '@sharpit/server/lib/activity/detail/types';
+import { resolveStrengthSetMedia } from '@sharpit/app/lib/exercises';
+import type { ActivityDetail } from '@sharpit/app/lib/activity/detail/types';
 import {
   formatStrengthSetDetail,
   sendActivityStrengthToGarmin,
 } from '@/components/training/activity/detail/activity-strength-exercises-helpers';
-import { cn } from '@sharpit/server/lib/utils';
+import { cn } from '@sharpit/app/lib/utils';
 
 /** Narrow client payload — id + strength sets only. */
 export type ActivityStrengthExercisesActivity = Pick<ActivityDetail, 'id' | 'strengthSets'>;

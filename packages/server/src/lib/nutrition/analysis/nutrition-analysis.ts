@@ -1,14 +1,14 @@
 import { format } from 'date-fns';
 import { generateText, Output } from 'ai';
-import type { NutritionCoachReadingView } from '@sharpit/server/presentation/nutrition-view-model';
+import type { NutritionCoachReadingView } from '@sharpit/app/presentation/nutrition-view-model';
 import {
   COACH_MODEL,
   coachAnalysisGatewayOptions,
   isCoachConfigured,
 } from '@sharpit/server/lib/ai';
 import { recordAiUsage } from '@sharpit/server/lib/ai/usage';
-import { sanitizeCoachCopy } from '@sharpit/server/lib/coach/sanitize-coach-copy';
-import { isDemoSession } from '@sharpit/server/lib/demo/demo-session';
+import { sanitizeCoachCopy } from '@sharpit/app/lib/coach/sanitize-coach-copy';
+import { isDemoSession } from '@sharpit/app/lib/demo/demo-session';
 import { athleteHasAiProcessingConsent } from '@sharpit/server/lib/privacy/consent-store';
 import {
   buildNutritionAnalysisFacts,

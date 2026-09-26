@@ -5,7 +5,7 @@ import type { RawObservation } from '@sharpit/core/observation/types';
 import type { GarminDailyHealth } from '@sharpit/server/lib/integrations/garmin/garmin';
 import { observationEngine } from '@sharpit/server/lib/engines/observation-engine';
 import { prisma } from '@sharpit/db/client';
-import { dayKeyFromDate } from '@sharpit/server/lib/date/day-key';
+import { dayKeyFromDate } from '@sharpit/app/lib/date/day-key';
 
 export type HealthObservationBackfillResult = {
   scanned: number;

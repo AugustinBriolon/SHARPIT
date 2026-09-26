@@ -6,8 +6,8 @@ import { NavArrowUp, NavArrowDown } from '@/components/icons/nav-arrows';
 import {
   classifyAdaptTrigger,
   type AdaptTriggerCategory,
-} from '@sharpit/server/lib/decision-memory/classify-trigger';
-import type { GateSessionResult } from '@sharpit/server/lib/plan-gate/types';
+} from '@sharpit/app/lib/decision-memory/classify-trigger';
+import type { GateSessionResult } from '@sharpit/app/lib/plan-gate/types';
 
 const TRIGGER_LABEL: Record<AdaptTriggerCategory, string> = {
   PHYSIOLOGICAL_STATE: 'ton état physiologique actuel (fatigue, récupération, charge)',

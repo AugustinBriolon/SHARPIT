@@ -6,24 +6,21 @@ import {
   isCoachConfigured,
 } from '@sharpit/server/lib/ai';
 import { canGenerateNarrativeForActivity } from '@sharpit/server/lib/access/narrative-trial';
-import { isActivityToday } from '@sharpit/server/lib/activity/list/activity-day';
+import { isActivityToday } from '@sharpit/app/lib/activity/list/activity-day';
 import {
   isEligibleForActivityNarrative,
   NARRATIVE_ANALYSIS_SINCE,
-} from '@sharpit/server/lib/activity/narrative/activity-narrative-config';
+} from '@sharpit/app/lib/activity/narrative/activity-narrative-config';
 import { buildActivityNarrativeFacts } from '@sharpit/server/lib/activity/narrative/activity-narrative-facts';
 import { withAnalysisRun } from '@sharpit/server/lib/analysis/analysis-run-store';
 import { mapWithConcurrency } from '@sharpit/server/lib/async/map-with-concurrency';
 import { recordAiUsage } from '@sharpit/server/lib/ai/usage';
 import { prisma } from '@sharpit/db/client';
-import {
-  activityNarrativeSchema,
-  type ActivityNarrative,
-} from '@sharpit/server/lib/validators/coach';
+import { activityNarrativeSchema, type ActivityNarrative } from '@sharpit/app/lib/validators/coach';
 import {
   COACH_COPY_DASH_RULE,
   sanitizeCoachCopy,
-} from '@sharpit/server/lib/coach/sanitize-coach-copy';
+} from '@sharpit/app/lib/coach/sanitize-coach-copy';
 
 /** Parallel LLM narratives after multi-activity import — keep low to avoid gateway bursts. */
 const NARRATIVE_CONCURRENCY = 3;

@@ -1,5 +1,5 @@
-import type { AthleteSnapshot } from '@sharpit/server/athlete-state/snapshot';
-import type { DecisionSnapshotContext } from './types';
+import type { AthleteSnapshot } from '@sharpit/app/athlete-state/snapshot';
+import type { DecisionSnapshotContext } from '@sharpit/app/lib/decision-memory/types';
 
 function readDecisionField<T>(value: T | null | undefined): T | null {
   return value ?? null;

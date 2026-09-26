@@ -11,7 +11,7 @@ import { isSet } from '@sharpit/shared/value';
 import type {
   CoachStrengthPrescription,
   StrengthPrescription,
-} from '@sharpit/server/lib/planned-session/strength/strength-prescription';
+} from '@sharpit/app/lib/planned-session/strength/strength-prescription';
 
 export type StrengthBlockRole = 'ACTIVATION' | 'PREHAB' | 'STRENGTH' | 'CORE' | 'STRETCH';
 

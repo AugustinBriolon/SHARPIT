@@ -1,4 +1,5 @@
-import { normalizeAthleteEquipment } from '@sharpit/server/lib/equipment/parse';
+import type { OnboardingPayload } from '@sharpit/app/lib/web/payloads';
+import { normalizeAthleteEquipment } from '@sharpit/app/lib/equipment/parse';
 import {
   loadConnectedIntegrationIds,
   loadResolvedSourcePrefs,
@@ -7,7 +8,7 @@ import { getAthleteConsentRow } from '@sharpit/server/lib/privacy/consent-store'
 import { getAthleteProfile } from '@sharpit/server/lib/queries';
 
 /** The onboarding wizard's starting state, read on `api.` (ADR-048 phase 3f). */
-export async function loadOnboarding(athleteId: string) {
+export async function loadOnboarding(athleteId: string): Promise<OnboardingPayload> {
   const [connected, prefs, profile, consents] = await Promise.all([
     loadConnectedIntegrationIds(athleteId),
     loadResolvedSourcePrefs(athleteId),
@@ -22,4 +23,4 @@ export async function loadOnboarding(athleteId: string) {
   };
 }
 
-export type OnboardingPayload = Awaited<ReturnType<typeof loadOnboarding>>;
+export type { OnboardingPayload };

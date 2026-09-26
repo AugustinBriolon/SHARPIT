@@ -3,20 +3,17 @@
 import { CompositionMetricCard } from '@/components/corps/composition/composition-metric-card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SkeletonDataValue } from '@/components/ui/skeleton-data-value';
-import type {
-  BodyChartPoint,
-  BodyMetricCardVm,
-} from '@sharpit/server/presentation/body-view-model';
-import { filterCompositionSeriesByDays } from '@sharpit/server/lib/health/body-composition';
-import type { CompositionMetricId } from '@sharpit/server/lib/health/composition-metric-guides';
+import type { BodyChartPoint, BodyMetricCardVm } from '@sharpit/app/presentation/body-view-model';
+import { filterCompositionSeriesByDays } from '@sharpit/app/lib/health/body-composition';
+import type { CompositionMetricId } from '@sharpit/app/lib/health/composition-metric-guides';
 import {
   CHART_BASE_STROKE,
   CHART_RECOVERY_STROKE,
   CHART_TEMPO_STROKE,
   CHART_THRESHOLD_STROKE,
-} from '@sharpit/server/lib/theme/chart-theme';
-import { CORPS_TONE_DOT } from '@sharpit/server/lib/ui/metric-tone';
-import { cn } from '@sharpit/server/lib/utils';
+} from '@sharpit/app/lib/theme/chart-theme';
+import { CORPS_TONE_DOT } from '@sharpit/app/lib/ui/metric-tone';
+import { cn } from '@sharpit/app/lib/utils';
 import dynamic from 'next/dynamic';
 import { CorpsDisclaimer } from '@/components/corps/corps-ui';
 

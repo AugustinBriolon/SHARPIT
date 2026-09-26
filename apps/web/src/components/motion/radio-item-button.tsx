@@ -1,9 +1,9 @@
 'use client';
 
 import { motion, useReducedMotion } from 'motion/react';
-import { SPRING_PRESS } from '@sharpit/server/lib/ease';
+import { SPRING_PRESS } from '@sharpit/app/lib/ease';
 import { motionTokens } from '@/client/motion/tokens';
-import { cn } from '@sharpit/server/lib/utils';
+import { cn } from '@sharpit/app/lib/utils';
 import { RadioDot } from '@/components/motion/radio-dot';
 
 export function RadioItemButton({

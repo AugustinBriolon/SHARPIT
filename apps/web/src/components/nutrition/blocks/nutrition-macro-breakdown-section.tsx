@@ -4,13 +4,13 @@ import { format, parseISO, subDays } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useState } from 'react';
 import { CursorFollowHint, type CursorHintState } from '@/components/ui/cursor-follow-hint';
-import type { NutritionDaySummary } from '@sharpit/server/presentation/nutrition-view-model';
+import type { NutritionDaySummary } from '@sharpit/app/presentation/nutrition-view-model';
 import {
   MACRO_COLORS,
   MACRO_LABELS,
   type MacroKind,
-} from '@sharpit/server/lib/nutrition/macro-colors';
-import { cn } from '@sharpit/server/lib/utils';
+} from '@sharpit/app/lib/nutrition/macro-colors';
+import { cn } from '@sharpit/app/lib/utils';
 
 const WEEKDAY_LETTER = ['D', 'L', 'M', 'M', 'J', 'V', 'S'] as const;
 const DAY_TRACK_PX = 40;

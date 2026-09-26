@@ -1,4 +1,4 @@
-import { cn } from '@sharpit/server/lib/utils';
+import { cn } from '@sharpit/app/lib/utils';
 
 /**
  * Mobile chrome shared by every header button that floats over content — the

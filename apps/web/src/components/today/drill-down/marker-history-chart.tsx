@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { buildSparkPaths } from '@/components/today/dashboard/sparkline';
-import { cn } from '@sharpit/server/lib/utils';
+import { cn } from '@sharpit/app/lib/utils';
 import {
   MARKER_HISTORY_VIEW,
   nearestReadable,

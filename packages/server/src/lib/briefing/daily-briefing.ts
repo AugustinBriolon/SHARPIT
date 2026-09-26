@@ -6,8 +6,8 @@ import {
   resolveBriefingPhase,
   resolveBriefingPhaseFromDailyPhase,
 } from '@sharpit/server/lib/briefing/briefing-phase';
-import { buildDailyPhaseDayContext } from '@sharpit/server/lib/daily-phase/day-context';
-import { resolveDailyPhase } from '@sharpit/server/lib/daily-phase/resolve';
+import { buildDailyPhaseDayContext } from '@sharpit/app/lib/daily-phase/day-context';
+import { resolveDailyPhase } from '@sharpit/app/lib/daily-phase/resolve';
 import {
   buildDeterministicBriefingFallback,
   validateBriefingContent,
@@ -22,7 +22,7 @@ import {
 import {
   COACH_COPY_DASH_RULE,
   sanitizeCoachCopy,
-} from '@sharpit/server/lib/coach/sanitize-coach-copy';
+} from '@sharpit/app/lib/coach/sanitize-coach-copy';
 import { recordAiUsage } from '@sharpit/server/lib/ai/usage';
 import { athleteHasAiProcessingConsent } from '@sharpit/server/lib/privacy/consent-store';
 import { prisma } from '@sharpit/db/client';

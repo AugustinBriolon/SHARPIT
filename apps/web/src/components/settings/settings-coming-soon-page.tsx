@@ -1,6 +1,6 @@
 import { MobileBackLink } from '@/components/layout/header/mobile-back-link';
 import { StickyHeader } from '@/components/layout/header/sticky-header';
-import { MOI_HUB_PATH } from '@sharpit/server/lib/moi/paths';
+import { MOI_HUB_PATH } from '@sharpit/app/lib/moi/paths';
 
 /** Shared chrome for Réglages destinations that are not wired yet. */
 export function SettingsComingSoonPage({

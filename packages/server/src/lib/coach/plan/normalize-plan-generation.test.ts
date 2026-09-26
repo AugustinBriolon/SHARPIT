@@ -3,7 +3,7 @@ import {
   normalizeCoachPlanGeneration,
   normalizePlanStartTime,
 } from '@sharpit/server/lib/coach/plan/normalize-plan-generation';
-import { coachPlanGenerationSchema } from '@sharpit/server/lib/validators/coach';
+import { coachPlanGenerationSchema } from '@sharpit/app/lib/validators/coach';
 
 describe('normalizePlanStartTime', () => {
   it('pads single-digit hours', () => {

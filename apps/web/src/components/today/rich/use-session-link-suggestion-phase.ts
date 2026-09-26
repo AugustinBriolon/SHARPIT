@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useIsDemoMode } from '@/hooks/use-is-demo-mode';
 import { usePlannedSessionMutations } from '@/hooks/use-data';
-import { dismissSessionLinkSuggestion } from '@sharpit/server/lib/today/rich/session-link-dismissals';
+import { dismissSessionLinkSuggestion } from '@sharpit/app/lib/today/rich/session-link-dismissals';
 import {
   demoAnalyzingDelayMs,
   linkErrorMessage,

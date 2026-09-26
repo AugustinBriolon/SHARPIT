@@ -1,6 +1,9 @@
 import { Prisma, type AnalysisKind } from '@prisma/client';
 import { prisma } from '@sharpit/db/client';
-import { ANALYSIS_RUN_STALE_MS, type AnalysisRunView } from './analysis-run';
+import {
+  ANALYSIS_RUN_STALE_MS,
+  type AnalysisRunView,
+} from '@sharpit/app/lib/analysis/analysis-run';
 
 /** Runs older than this are not worth reporting to the client. */
 const RECENT_WINDOW_MS = 60 * 60_000;

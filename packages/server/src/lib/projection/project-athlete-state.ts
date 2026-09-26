@@ -27,7 +27,7 @@ import {
   synthesizeProjectedRecovery,
 } from '@sharpit/server/lib/projection/score-projection';
 import { addTrainingDays } from '@sharpit/core/training/training-day';
-import { resolve } from '@sharpit/server/lib/french';
+import { resolve } from '@sharpit/app/lib/french';
 
 function projectionHeadlineFromTsb(tsbEnd: number): string {
   if (tsbEnd >= 5) {

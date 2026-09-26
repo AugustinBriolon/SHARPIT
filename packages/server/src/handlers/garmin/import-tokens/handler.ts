@@ -8,11 +8,11 @@ import {
   syncGarminHealth,
 } from '@sharpit/server/lib/integrations/garmin/garmin-sync';
 import { GarminTokenStoreError } from '@sharpit/server/lib/integrations/garmin/garmin-tokenstore';
-import { sanitizeDataClass } from '@sharpit/server/lib/integrations/oauth-public-origin';
+import { sanitizeDataClass } from '@sharpit/app/lib/integrations/oauth-public-origin';
 import {
   enableProviderForAllCoveredClasses,
   enableProviderForClass,
-} from '@sharpit/server/lib/integrations/source-prefs';
+} from '@sharpit/app/lib/integrations/source-prefs';
 import { persistSourcePrefsMutation } from '@sharpit/server/lib/integrations/source-prefs-store';
 import { updateRecordsForTypes } from '@sharpit/server/lib/training/records/records';
 import { gateProviderConnect } from '@sharpit/server/lib/privacy/gate-provider-connect';

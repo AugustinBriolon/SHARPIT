@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { buildAthleteSnapshot } from '@sharpit/server/lib/athlete-state/snapshot-builder';
-import type { TodayState } from '@sharpit/server/athlete-state/today-state';
+import type { TodayState } from '@sharpit/app/athlete-state/today-state';
 
 const baseFreshness = {
   athleteId: 'default',

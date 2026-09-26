@@ -30,35 +30,35 @@ import {
 import {
   resolveDefaultPlanGoalId,
   selectableDatedGoalIds,
-} from '@sharpit/server/lib/planned-session/plan-goal';
-import { intensityLabels } from '@sharpit/server/lib/planned-session/sessions';
+} from '@sharpit/app/lib/planned-session/plan-goal';
+import { intensityLabels } from '@sharpit/app/lib/planned-session/sessions';
 import { formatStrengthSessionRules } from '@sharpit/server/lib/planned-session/strength/strength-session-template';
 import {
   formatSensitiveZoneRules,
   sensitiveZonesFrom,
-} from '@sharpit/server/lib/physical-health/sensitive-zones';
+} from '@sharpit/app/lib/physical-health/sensitive-zones';
 import {
   adaptPlanGenerationSchema,
   adaptPlanSchema,
   adaptRequestSchema,
   type AdaptPlan,
-} from '@sharpit/server/lib/validators/coach';
+} from '@sharpit/app/lib/validators/coach';
 import {
   COACH_COPY_DASH_RULE,
   sanitizeCoachCopy,
-} from '@sharpit/server/lib/coach/sanitize-coach-copy';
+} from '@sharpit/app/lib/coach/sanitize-coach-copy';
 import { buildGateContext } from '@sharpit/server/lib/plan-gate/build-context';
 import { evaluatePlan } from '@sharpit/server/lib/plan-gate/evaluate-plan';
-import type { GateProposal, GateResult } from '@sharpit/server/lib/plan-gate/types';
+import type { GateProposal, GateResult } from '@sharpit/app/lib/plan-gate/types';
 import { computeTrainingDayId } from '@sharpit/core/training/training-day';
 import { buildDecisionSnapshotContext } from '@sharpit/server/lib/decision-memory/build-snapshot-context';
 import { createCoachingDecision } from '@sharpit/server/lib/decision-memory/repository';
-import { dayKeyFromDate } from '@sharpit/server/lib/date/day-key';
+import { dayKeyFromDate } from '@sharpit/app/lib/date/day-key';
 import {
   COACH_PROGRESS_HEADERS,
   encodeCoachProgressEvent,
   type CoachProgressEvent,
-} from '@sharpit/server/lib/coach/chat/transcript/coach-progress-stream';
+} from '@sharpit/app/lib/coach/chat/transcript/coach-progress-stream';
 
 type AdaptChange = AdaptPlan['changes'][number];
 type UpcomingSession = Awaited<ReturnType<typeof getPlannedSessionsForCoach>>[number];

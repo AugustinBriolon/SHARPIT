@@ -4,8 +4,8 @@ import { StickyHeader } from '@/components/layout/header/sticky-header';
 import { PerformanceCalibrationPanel } from '@/components/settings/profile/performance-calibration-panel';
 import { SettingsDemoBlock } from '@/components/settings/settings-demo-block';
 import { Skeleton } from '@/components/ui/skeleton';
-import { isDemoSession } from '@sharpit/server/lib/demo/demo-session';
-import { mapAthleteProfileToFormData } from '@sharpit/server/lib/profile/map-athlete-profile';
+import { isDemoSession } from '@sharpit/app/lib/demo/demo-session';
+import { mapAthleteProfileToFormData } from '@sharpit/app/lib/profile/map-athlete-profile';
 import { getAthleteProfileRow } from '@/server/athlete-profile';
 
 function CalibrationPanelSkeleton() {

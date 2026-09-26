@@ -1,8 +1,9 @@
+import type { ActivityDetailPayload } from '@sharpit/app/lib/web/payloads';
 import { ActivityType } from '@prisma/client';
 import { canGenerateNarrativeForActivity } from '@sharpit/server/lib/access/narrative-trial';
 import { isCoachConfigured } from '@sharpit/server/lib/ai';
 import { getGoalAchievementsForActivity } from '@sharpit/server/lib/goals/goal-achievements';
-import { resolveBrickSiblingActivityLinks } from '@sharpit/server/lib/planned-session/brick/brick-sessions';
+import { resolveBrickSiblingActivityLinks } from '@sharpit/app/lib/planned-session/brick/brick-sessions';
 import {
   getActivityById,
   getBrickSessions,
@@ -14,7 +15,10 @@ import { getPerformanceRecordsForActivity } from '@sharpit/server/lib/training/r
  * Everything the web's activity page reads, in one `api.` call (ADR-048 phase 3f); the page
  * builds its view (specs, hero, coach panel) from it without touching the database.
  */
-export async function loadActivityDetail(athleteId: string, id: string) {
+export async function loadActivityDetail(
+  athleteId: string,
+  id: string,
+): Promise<ActivityDetailPayload | null> {
   const [activity, goalValidations, performanceRecords] = await Promise.all([
     getActivityById(athleteId, id),
     getGoalAchievementsForActivity(id),
@@ -42,4 +46,4 @@ export async function loadActivityDetail(athleteId: string, id: string) {
   };
 }
 
-export type ActivityDetailPayload = NonNullable<Awaited<ReturnType<typeof loadActivityDetail>>>;
+export type { ActivityDetailPayload };

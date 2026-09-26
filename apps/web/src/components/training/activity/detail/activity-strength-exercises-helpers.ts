@@ -1,6 +1,6 @@
 import { toast } from '@/components/ui/toast';
-import { formatClockDuration } from '@sharpit/server/lib/format';
-import type { ActivityDetail } from '@sharpit/server/lib/activity/detail/types';
+import { formatClockDuration } from '@sharpit/app/lib/format';
+import type { ActivityDetail } from '@sharpit/app/lib/activity/detail/types';
 import { createGarminWorkoutFromActivity } from '@/client/query/fetchers';
 
 export function formatStrengthSetDetail(set: ActivityDetail['strengthSets'][number]): string {

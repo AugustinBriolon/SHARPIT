@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import type { ClientPlannedSession } from '@sharpit/server/lib/query/types';
-import type { SessionAnalysis } from '@sharpit/server/lib/validators/coach';
+import type { ClientPlannedSession } from '@sharpit/app/lib/query/types';
+import type { SessionAnalysis } from '@sharpit/app/lib/validators/coach';
 
 const ANALYSIS_TIMEOUT_STORAGE_PREFIX = 'sharpit.analysis-poll-timeout.';
 

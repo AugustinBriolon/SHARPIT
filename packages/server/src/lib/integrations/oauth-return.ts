@@ -7,19 +7,19 @@ import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
 import {
   enableProviderForAllCoveredClasses,
   enableProviderForClass,
-} from '@sharpit/server/lib/integrations/source-prefs';
+} from '@sharpit/app/lib/integrations/source-prefs';
 import { persistSourcePrefsMutation } from '@sharpit/server/lib/integrations/source-prefs-store';
 import {
   DEFAULT_INTEGRATION_RETURN_PATH,
   sanitizeDataClass,
   sanitizeIntegrationReturnTo,
   webOriginFor,
-} from '@sharpit/server/lib/integrations/oauth-public-origin';
+} from '@sharpit/app/lib/integrations/oauth-public-origin';
 import {
   type ConnectState,
   createConnectState,
 } from '@sharpit/server/lib/integrations/oauth-state';
-import type { IntegrationId } from '@sharpit/server/lib/integrations/shared/client-sync';
+import type { IntegrationId } from '@sharpit/app/lib/integrations/shared/client-sync';
 
 export {
   connectNavigation,
@@ -30,7 +30,7 @@ export {
   sanitizeDataClass,
   sanitizeIntegrationReturnTo,
   webOriginFor,
-} from '@sharpit/server/lib/integrations/oauth-public-origin';
+} from '@sharpit/app/lib/integrations/oauth-public-origin';
 
 /**
  * Starts a provider connect for the signed-in athlete: the signed `state` that carries the

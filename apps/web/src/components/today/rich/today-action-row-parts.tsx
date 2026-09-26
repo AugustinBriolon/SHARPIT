@@ -9,7 +9,7 @@ import { SessionLinkSuggestionCard } from '@/components/today/rich/session-link-
 import { ActivityFeelingPrompt } from '@/components/training/activity/detail/activity-feeling-prompt';
 import { TodayDaySummaryLine } from '@/components/today/rich/today-day-summary-line';
 import { SkeletonDataValue } from '@/components/ui/skeleton-data-value';
-import type { TodayViewModel } from '@sharpit/server/presentation/today-view-model';
+import type { TodayViewModel } from '@sharpit/app/presentation/today-view-model';
 
 /**
  * Row controls are 44px tall on touch and compact from `lg`: the header sits on

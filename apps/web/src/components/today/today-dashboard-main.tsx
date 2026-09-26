@@ -6,8 +6,8 @@ import { TodayUnderstandSection } from '@/components/today/dashboard/today-under
 import { TodayActionRow } from '@/components/today/rich/today-action-row';
 import { TodayPlanVivantSlot } from '@/components/today/rich/today-plan-vivant-slot';
 import { TodayVerdictHero } from '@/components/today/rich/today-verdict-hero';
-import type { TodayViewModel } from '@sharpit/server/presentation/today-view-model';
-import type { ClientActivity } from '@sharpit/server/lib/query/types';
+import type { TodayViewModel } from '@sharpit/app/presentation/today-view-model';
+import type { ClientActivity } from '@sharpit/app/lib/query/types';
 
 function TodayCriticalStatus({
   content,

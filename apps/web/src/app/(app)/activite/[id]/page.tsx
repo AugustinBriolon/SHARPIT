@@ -16,11 +16,11 @@ import { ActivityStrengthExercises } from '@/components/training/activity/detail
 import { ActivityGoalValidationsCard } from '@/components/goals/cards/activity-goal-validations-card';
 import { ActivityDetailInsights } from '@/components/training/activity/insights/activity-detail-insights';
 import { ActivityNarrativeSection } from '@/components/training/activity/insights/activity-narrative-section';
-import { isEligibleForActivityNarrative } from '@sharpit/server/lib/activity/narrative/activity-narrative-config';
-import { activityDetailExpectsMap } from '@sharpit/server/lib/activity/detail/activity-detail-skeleton-layout';
-import { buildHikeOvernightSummary } from '@sharpit/server/lib/activity/hike/hike-overnight-summary';
+import { isEligibleForActivityNarrative } from '@sharpit/app/lib/activity/narrative/activity-narrative-config';
+import { activityDetailExpectsMap } from '@sharpit/app/lib/activity/detail/activity-detail-skeleton-layout';
+import { buildHikeOvernightSummary } from '@sharpit/app/lib/activity/hike/hike-overnight-summary';
 import { ActivityBrickSiblingNav } from '@/components/training/activity/detail/activity-brick-sibling-nav';
-import type { ActivityDetailPayload } from '@sharpit/server/lib/web/activity-detail';
+import type { ActivityDetailPayload } from '@sharpit/app/lib/web/payloads';
 import { cachedServerApiJson } from '@/server/api-client';
 import { HikeTripMemberLink } from '@/components/training/trip/hike-trip-member-link';
 import { ActivityType } from '@prisma/client';

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { ActivityAnalysis } from '@sharpit/server/lib/activity/detail/activity-analysis';
+import type { ActivityAnalysis } from '@sharpit/app/lib/activity/detail/activity-analysis';
 import {
   buildTechnicalSessionFacts,
   DECOUPLING_NOTEWORTHY_PCT,

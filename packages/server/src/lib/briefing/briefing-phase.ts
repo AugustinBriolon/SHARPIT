@@ -1,5 +1,5 @@
-import type { DailyPhase } from '@sharpit/server/lib/daily-phase/types';
-import { DAILY_PHASE_BRIEFING_BUCKET } from '@sharpit/server/lib/daily-phase/types';
+import type { DailyPhase } from '@sharpit/app/lib/daily-phase/types';
+import { DAILY_PHASE_BRIEFING_BUCKET } from '@sharpit/app/lib/daily-phase/types';
 
 export type BriefingPhase = 'morning' | 'midday' | 'afternoon' | 'evening';
 

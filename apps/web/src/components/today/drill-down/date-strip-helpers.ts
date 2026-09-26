@@ -12,12 +12,12 @@ import {
   subDays,
 } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { cn } from '@sharpit/server/lib/utils';
+import { cn } from '@sharpit/app/lib/utils';
 import {
   DATA_DAYS_CHUNK_DAYS,
   type DataDaysLookup,
   type DataDayStatus,
-} from '@sharpit/server/lib/presentation/data-days/data-days-chunks';
+} from '@sharpit/app/lib/presentation/data-days/data-days-chunks';
 
 /** Days of context kept before the selected date when the strip first renders. */
 const SELECTED_DAY_LEAD_DAYS = 7;

@@ -1,4 +1,4 @@
-import { cn } from '@sharpit/server/lib/utils';
+import { cn } from '@sharpit/app/lib/utils';
 import type { ElementType, ReactNode } from 'react';
 import {
   TEXT_SHIMMER_CLASS_NAME,

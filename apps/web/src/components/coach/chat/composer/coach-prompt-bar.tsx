@@ -25,9 +25,9 @@ import {
   SourcesMenu,
   type SourceRow,
 } from '@/components/coach/chat/composer/coach-prompt-bar-parts';
-import { buildCoachContextPresets } from '@sharpit/server/lib/coach/chat/discuss/coach-context-presets';
-import { describeCoachDiscussContext } from '@sharpit/server/lib/coach/chat/discuss/coach-discuss-context';
-import type { CoachDiscussContext } from '@sharpit/server/lib/coach/chat/discuss/coach-discuss-context';
+import { buildCoachContextPresets } from '@sharpit/app/lib/coach/chat/discuss/coach-context-presets';
+import { describeCoachDiscussContext } from '@sharpit/app/lib/coach/chat/discuss/coach-discuss-context';
+import type { CoachDiscussContext } from '@sharpit/app/lib/coach/chat/discuss/coach-discuss-context';
 import { useActivities, useGoals } from '@/hooks/use-data';
 import { usePhysicalNotes } from '@/hooks/use-physical';
 

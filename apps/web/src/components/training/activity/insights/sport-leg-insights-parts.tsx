@@ -1,9 +1,9 @@
 'use client';
 
-import type { MultisportLegKind } from '@sharpit/server/lib/activity/multisport';
-import type { MultisportLegStream } from '@sharpit/server/lib/streams/streams';
-import { formatDistance, formatDuration } from '@sharpit/server/lib/format';
-import { cn } from '@sharpit/server/lib/utils';
+import type { MultisportLegKind } from '@sharpit/app/lib/activity/multisport';
+import type { MultisportLegStream } from '@sharpit/app/lib/streams/stream-types';
+import { formatDistance, formatDuration } from '@sharpit/app/lib/format';
+import { cn } from '@sharpit/app/lib/utils';
 import {
   PerformanceMetrics,
   ThresholdsHint,
@@ -11,7 +11,7 @@ import {
 import { ExpertOnly } from '@/components/display-mode';
 import { ActivityInsightsZoneSection } from '@/components/training/activity/insights/activity-insights-zone-section';
 import { RhythmSplits } from '@/components/training/activity/reading/rhythm-splits';
-import type { ZoneBucket } from '@sharpit/server/lib/activity/detail/activity-analysis';
+import type { ZoneBucket } from '@sharpit/app/lib/activity/detail/activity-analysis';
 import { sportHeader } from '@/components/training/activity/insights/sport-leg-insights-shared';
 
 export function SportLegHeader({ entry }: { entry: MultisportLegStream }) {

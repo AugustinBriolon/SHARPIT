@@ -1,5 +1,10 @@
 import { auditStrengthPrescription } from '@sharpit/server/lib/planned-session/strength/strength-session-template';
-import type { GateContext, GateProposal, PlanGateRule, RuleFinding } from '../types';
+import type {
+  GateContext,
+  GateProposal,
+  PlanGateRule,
+  RuleFinding,
+} from '@sharpit/app/lib/plan-gate/types';
 
 /**
  * A strength session must carry a prescription that fills its slot.

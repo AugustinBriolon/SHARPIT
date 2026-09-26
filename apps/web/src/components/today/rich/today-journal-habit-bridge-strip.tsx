@@ -7,8 +7,8 @@ import type {
   TodayJournalHabitBridge,
   TodayJournalHabitCallout,
   TodayJournalHabitExperimentBridge,
-} from '@sharpit/server/lib/journal/journal-habit-today-bridge';
-import { journalTrackableById } from '@sharpit/server/lib/journal/journal-trackables';
+} from '@sharpit/app/lib/journal/journal-habit-today-bridge';
+import { journalTrackableById } from '@sharpit/app/lib/journal/journal-trackables';
 
 /** Lime icon-well glyph — same chrome as sleep / regularity / nutrition. */
 function HabitInstrumentIcon({ factorId }: { factorId: string }) {

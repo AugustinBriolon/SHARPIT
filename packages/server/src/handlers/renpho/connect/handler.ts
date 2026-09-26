@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
-import { sanitizeDataClass } from '@sharpit/server/lib/integrations/oauth-public-origin';
+import { sanitizeDataClass } from '@sharpit/app/lib/integrations/oauth-public-origin';
 import {
   connectRenpho,
   syncRenphoHealth,
@@ -9,7 +9,7 @@ import {
 import {
   enableProviderForAllCoveredClasses,
   enableProviderForClass,
-} from '@sharpit/server/lib/integrations/source-prefs';
+} from '@sharpit/app/lib/integrations/source-prefs';
 import { persistSourcePrefsMutation } from '@sharpit/server/lib/integrations/source-prefs-store';
 import { gateProviderConnect } from '@sharpit/server/lib/privacy/gate-provider-connect';
 import { logSafeError } from '@sharpit/server/lib/privacy/safe-log';

@@ -2,9 +2,9 @@
 
 import { CorpsDisclaimer } from '@/components/corps/corps-ui';
 import { useState } from 'react';
-import type { PhysicalHealthViewModel } from '@sharpit/server/presentation/physical-health-view-model';
+import type { PhysicalHealthViewModel } from '@sharpit/app/presentation/physical-health-view-model';
 import { usePhysicalNotes } from '@/hooks/use-physical';
-import type { ClientPhysicalNote } from '@sharpit/server/lib/query/types';
+import type { ClientPhysicalNote } from '@sharpit/app/lib/query/types';
 import { PhysicalNoteDialog } from './dialogs/physical-note-dialog';
 import { aggregateDisplayValues } from '@/components/physical-health/physical-health-page-helpers';
 import { PhysicalHealthPageHeader } from '@/components/physical-health/physical-health-page-header';

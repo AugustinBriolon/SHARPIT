@@ -14,18 +14,15 @@ import {
   formatMetricGoalLine,
   legacyPhysicalTrend,
 } from '@sharpit/server/lib/coach/context/coach-context';
-import { planningHorizonLabel } from '@sharpit/server/lib/coach/chat/discuss/coach-discuss-context';
-import { toLocalCalendarDate } from '@sharpit/server/lib/date/day-key';
-import { activityTypeLabels } from '@sharpit/server/lib/format';
+import { planningHorizonLabel } from '@sharpit/app/lib/coach/chat/discuss/coach-discuss-context';
+import { toLocalCalendarDate } from '@sharpit/app/lib/date/day-key';
+import { activityTypeLabels } from '@sharpit/app/lib/format';
 import {
   categoryLabels,
   sideLabels,
   statusLabels,
-} from '@sharpit/server/lib/physical-health/physical';
-import {
-  formatPlannedDuration,
-  intensityLabels,
-} from '@sharpit/server/lib/planned-session/sessions';
+} from '@sharpit/app/lib/physical-health/physical';
+import { formatPlannedDuration, intensityLabels } from '@sharpit/app/lib/planned-session/sessions';
 import {
   getActivityForCoach,
   getGoalById,

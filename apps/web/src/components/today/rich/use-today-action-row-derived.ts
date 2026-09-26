@@ -1,14 +1,14 @@
 import { useEffect, useMemo, useSyncExternalStore } from 'react';
-import type { TodayViewModel } from '@sharpit/server/presentation/today-view-model';
+import type { TodayViewModel } from '@sharpit/app/presentation/today-view-model';
 import {
   getDismissedSessionLinkIdsSnapshot,
   subscribeSessionLinkDismissals,
-} from '@sharpit/server/lib/today/rich/session-link-dismissals';
+} from '@sharpit/app/lib/today/rich/session-link-dismissals';
 import {
   getDemoSessionLinksSnapshot,
   subscribeDemoSessionLinks,
-} from '@sharpit/server/lib/demo/demo-session-link-state';
-import { hydrateActivityStatusFromServer } from '@sharpit/server/lib/health/activity-status';
+} from '@sharpit/app/lib/demo/demo-session-link-state';
+import { hydrateActivityStatusFromServer } from '@sharpit/app/lib/health/activity-status';
 import {
   deriveLinkContext,
   derivePostSessionLoop,

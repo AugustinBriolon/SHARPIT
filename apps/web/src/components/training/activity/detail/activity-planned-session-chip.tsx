@@ -8,13 +8,13 @@ import { useAppModal } from '@/providers/app-modal-provider';
 import {
   plannedSessionChipLabel,
   plannedSessionChipValue,
-} from '@sharpit/server/lib/activity/planned-session/activity-planned-session-display';
+} from '@sharpit/app/lib/activity/planned-session/activity-planned-session-display';
 import { fetchPlannedSessionById } from '@/client/query/fetchers';
 import { patchPlannedSessionAnalysisInCaches } from '@/client/query/patch-planned-session-analysis-cache';
 import { prefetchPlannedSessionDetail } from '@/client/query/prefetch-planned-session-detail';
-import { parseSessionAnalysis } from '@sharpit/server/lib/planned-session/display/session-analysis-display';
-import { cn } from '@sharpit/server/lib/utils';
-import type { PlannedSessionSummary } from '@sharpit/server/lib/activity/detail/types';
+import { parseSessionAnalysis } from '@sharpit/app/lib/planned-session/display/session-analysis-display';
+import { cn } from '@sharpit/app/lib/utils';
+import type { PlannedSessionSummary } from '@sharpit/app/lib/activity/detail/types';
 
 const POLL_MS = 3_000;
 const POLL_MAX_MS = 120_000;

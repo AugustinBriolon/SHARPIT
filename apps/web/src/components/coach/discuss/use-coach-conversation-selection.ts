@@ -6,7 +6,7 @@ import { useConversation, useConversations } from '@/hooks/use-coach';
 import { useOfflineSnapshot } from '@/hooks/use-offline-snapshot';
 import { isSet } from '@sharpit/shared/value';
 import type { ProjectionHorizonDays } from '@sharpit/core/projection/types';
-import { createClientId } from '@sharpit/server/lib/client-id';
+import { createClientId } from '@sharpit/app/lib/client-id';
 
 function createEphemeralId(): string {
   return createClientId();

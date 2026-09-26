@@ -8,17 +8,17 @@ import { PlannedSessionPreview } from '@/components/today/rich/planned-session-p
 import { DrillDownSectionLabel } from '@/components/today/drill-down/section-label';
 import { InkEmptyState } from '@/components/ui/ink-empty-state';
 import { Skeleton } from '@/components/ui/skeleton';
-import { activityTypeLabels } from '@sharpit/server/lib/format';
-import { buildPlannedSessionPreview } from '@sharpit/server/lib/today/rich/planned-session-metrics';
+import { activityTypeLabels } from '@sharpit/app/lib/format';
+import { buildPlannedSessionPreview } from '@sharpit/app/lib/today/rich/planned-session-metrics';
 import { prefetchPlannedSessionDetail } from '@/client/query/prefetch-planned-session-detail';
 import {
   brickLegSummaries,
   groupPlannedSessions,
   type DayPlannedItem,
-} from '@sharpit/server/lib/planned-session/brick/brick-sessions';
-import { comparePlannedSessionsBySchedule } from '@sharpit/server/lib/planned-session/planned-session-dates';
-import { formatPlannedDuration } from '@sharpit/server/lib/planned-session/sessions';
-import type { ClientPlannedSession } from '@sharpit/server/lib/query/types';
+} from '@sharpit/app/lib/planned-session/brick/brick-sessions';
+import { comparePlannedSessionsBySchedule } from '@sharpit/app/lib/planned-session/planned-session-dates';
+import { formatPlannedDuration } from '@sharpit/app/lib/planned-session/sessions';
+import type { ClientPlannedSession } from '@sharpit/app/lib/query/types';
 import { useAppModal } from '@/providers/app-modal-provider';
 import { usePlannedSessions } from '@/hooks/use-data';
 

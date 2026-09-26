@@ -5,7 +5,7 @@ import {
   getActivityStatusStoreDb,
   setActivityStatusDb,
 } from '@sharpit/server/lib/health/activity-status-service';
-import { awaitRequest } from '@sharpit/server/lib/next/await-request';
+import { awaitRequest } from '@sharpit/app/lib/next/await-request';
 import { prisma } from '@sharpit/db/client';
 
 const putSchema = z.object({

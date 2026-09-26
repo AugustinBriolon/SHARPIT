@@ -1,7 +1,7 @@
 'use client';
 
-import { SPORT_IDENTITY_SURFACE } from '@sharpit/server/lib/activity/sport-identity';
-import { activityTypeLabels } from '@sharpit/server/lib/format';
+import { SPORT_IDENTITY_SURFACE } from '@sharpit/app/lib/activity/sport-identity';
+import { activityTypeLabels } from '@sharpit/app/lib/format';
 import {
   DISTANCE_PRESETS_KM,
   DURATION_PRESETS,
@@ -10,8 +10,8 @@ import {
   rangeToPresetSelections,
   togglePresetSelection,
   type TrainingHistoryFilters,
-} from '@sharpit/server/lib/training/periodization/history-filters';
-import { cn } from '@sharpit/server/lib/utils';
+} from '@sharpit/app/lib/training/periodization/history-filters';
+import { cn } from '@sharpit/app/lib/utils';
 import { ActivityType } from '@prisma/client';
 import { Bike, Dumbbell, Footprints, Mountain, Trophy, Waves, Zap } from 'lucide-react';
 import { FilterPresetRange } from './filter-preset-range';

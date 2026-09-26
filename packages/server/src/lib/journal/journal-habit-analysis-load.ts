@@ -3,16 +3,16 @@
  */
 
 import type { Prisma, PrismaClient } from '@prisma/client';
-import { parseDayJournalEntry } from '@sharpit/server/lib/journal/day-journal';
+import { parseDayJournalEntry } from '@sharpit/app/lib/journal/day-journal';
 import {
   buildJournalHabitFindings,
   recordedFactorValue,
   type JournalAnalysisDay,
   type JournalHabitFinding,
   type RecordedFactor,
-} from '@sharpit/server/lib/journal/journal-habit-analysis';
-import { dayHasJournalSignal } from '@sharpit/server/lib/journal/journal-limits';
-import { toUtcDateOnly } from '@sharpit/server/lib/travel-context/calendar-date';
+} from '@sharpit/app/lib/journal/journal-habit-analysis';
+import { dayHasJournalSignal } from '@sharpit/app/lib/journal/journal-limits';
+import { toUtcDateOnly } from '@sharpit/app/lib/travel-context/calendar-date';
 
 export function trainingDayIdFromDate(date: Date): string {
   return toUtcDateOnly(date).toISOString().slice(0, 10);

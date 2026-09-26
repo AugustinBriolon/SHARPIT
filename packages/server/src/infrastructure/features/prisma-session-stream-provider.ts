@@ -7,7 +7,7 @@ import {
   analyzeActivityStreams,
   resolveThresholds,
   type AthleteThresholds,
-} from '@sharpit/server/lib/activity/detail/activity-analysis';
+} from '@sharpit/app/lib/activity/detail/activity-analysis';
 import type { RawStreams } from '@sharpit/server/lib/streams/streams';
 
 const SPORT_TO_ACTIVITY_TYPE: Partial<Record<SessionObservation['sportType'], ActivityType>> = {

@@ -1,24 +1,21 @@
 import { createHash } from 'node:crypto';
-import type { AthleteFreshnessSnapshot } from '@sharpit/server/athlete-state/freshness';
-import type {
-  AthleteSnapshot,
-  AthleteSnapshotBriefing,
-} from '@sharpit/server/athlete-state/snapshot';
+import type { AthleteFreshnessSnapshot } from '@sharpit/app/athlete-state/freshness';
+import type { AthleteSnapshot, AthleteSnapshotBriefing } from '@sharpit/app/athlete-state/snapshot';
 import {
   buildSnapshotDailyPhase,
   type SnapshotActivityInput,
   type SnapshotPhaseBuildParams,
   type SnapshotPlannedSessionInput,
-} from '@sharpit/server/lib/athlete-state/snapshot-phase';
-import { applyTruthfulnessOverlay } from '@sharpit/server/lib/athlete-state/snapshot-truthfulness';
+} from '@sharpit/app/lib/athlete-state/snapshot-phase';
+import { applyTruthfulnessOverlay } from '@sharpit/app/lib/athlete-state/snapshot-truthfulness';
 import { activityMatchesTrainingDay } from '@sharpit/core/training/training-day';
-import type { TodayState } from '@sharpit/server/athlete-state/today-state';
+import type { TodayState } from '@sharpit/app/athlete-state/today-state';
 import {
   decisionVerdict,
   isAdviceActionableFromDecision,
   limitingFactorFromDecision,
   resolveRecommendationFromDecision,
-} from '@sharpit/server/lib/decision/projection';
+} from '@sharpit/app/lib/decision/projection';
 
 export type SnapshotBuildInput = {
   athleteId: string;

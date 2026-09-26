@@ -1,6 +1,6 @@
-import type { ClientGoal } from '@sharpit/server/lib/query/types';
+import type { ClientGoal } from '@sharpit/app/lib/query/types';
 import { format, isSameDay } from 'date-fns';
-import { resolvePlanningWeek } from '@sharpit/server/lib/planned-session/planning';
+import { resolvePlanningWeek } from '@sharpit/app/lib/planned-session/planning';
 
 export function findNextRace(goals: ClientGoal[]) {
   return goals

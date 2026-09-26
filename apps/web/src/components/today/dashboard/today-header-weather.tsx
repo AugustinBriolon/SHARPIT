@@ -5,13 +5,13 @@ import {
   activityWeatherIcon,
   activityWeatherIconClassName,
   type ActivityWeatherCondition,
-} from '@sharpit/server/lib/activity/weather/activity-weather';
+} from '@sharpit/app/lib/activity/weather/activity-weather';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   useDeviceLocation,
   type DeviceLocationState,
 } from '@/components/today/dashboard/use-device-location';
-import { cn } from '@sharpit/server/lib/utils';
+import { cn } from '@sharpit/app/lib/utils';
 
 type TodayHeaderWeather = {
   city: string;

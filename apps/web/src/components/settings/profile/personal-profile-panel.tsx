@@ -23,7 +23,7 @@ import { guardedActionLabel, useOfflineGuard } from '@/hooks/use-offline-guard';
 import {
   mapAthleteProfileToFormData,
   shouldHydrateProfileForm,
-} from '@sharpit/server/lib/profile/map-athlete-profile';
+} from '@sharpit/app/lib/profile/map-athlete-profile';
 
 function usePersonalProfileForm(resolvedInitial: ProfileData | null | undefined) {
   const baseline = useMemo(() => personalProfileBaseline(resolvedInitial), [resolvedInitial]);

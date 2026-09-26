@@ -3,7 +3,7 @@
  * Used for A/B recalc replay — never LLM-authored.
  */
 
-import type { AthleteSnapshot } from '@sharpit/server/athlete-state/snapshot';
+import type { AthleteSnapshot } from '@sharpit/app/athlete-state/snapshot';
 import { computePackTier, type PackTierResult } from '@sharpit/core/science/pack-tier';
 import { buildPackInputsFromSnapshot } from '@sharpit/server/lib/science/reliability/pack-inputs-from-snapshot';
 import { persistAnalysisEvidence } from '@sharpit/server/lib/science/reliability/analysis-evidence-store';
@@ -12,7 +12,7 @@ import {
   getLatestAthleteSnapshot,
   saveAthleteSnapshot,
 } from '@sharpit/server/infrastructure/athlete-state/snapshot-repository';
-import { canPersistAnalysisEvidence } from '@sharpit/server/lib/privacy/consent-withdraw-ux';
+import { canPersistAnalysisEvidence } from '@sharpit/app/lib/privacy/consent-withdraw-ux';
 
 function packResultFromSnapshot(snapshot: AthleteSnapshot): PackTierResult {
   return computePackTier(buildPackInputsFromSnapshot(snapshot));

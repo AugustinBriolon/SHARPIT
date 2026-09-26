@@ -1,5 +1,5 @@
-import { JOURNAL_CATEGORY_ICON } from '@sharpit/server/lib/journal/journal-category-surface';
-import { cn } from '@sharpit/server/lib/utils';
+import { JOURNAL_CATEGORY_ICON } from '@sharpit/app/lib/journal/journal-category-surface';
+import { cn } from '@sharpit/app/lib/utils';
 
 /** Declared diet chips — same look in the journal and on the nutrition page. */
 export function DietChipList({ labels, className }: { labels: string[]; className?: string }) {

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
-import { parseDataDaysRequest } from '@sharpit/server/lib/presentation/data-days/data-days';
+import { parseDataDaysRequest } from '@sharpit/app/lib/presentation/data-days/data-days';
 import { loadDataDays } from '@sharpit/server/lib/presentation/data-days/data-days-server';
 
 export async function GET(request: NextRequest) {

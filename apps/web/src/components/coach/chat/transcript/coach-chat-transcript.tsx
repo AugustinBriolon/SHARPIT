@@ -12,8 +12,8 @@ import { CoachProvenanceChips } from '@/components/coach/chat/transcript/coach-p
 import { CoachReasoning } from '@/components/coach/chat/transcript/coach-reasoning';
 import { ToolActivityList } from '@/components/coach/chat/tools/tool-activity-list';
 import type { CoachMappedRow } from '@/components/coach/beui/coach-message-mapper';
-import type { ToolPartLite } from '@sharpit/server/lib/coach/chat/tools/coach-tool-parts';
-import { cn } from '@sharpit/server/lib/utils';
+import type { ToolPartLite } from '@sharpit/app/lib/coach/chat/tools/coach-tool-parts';
+import { cn } from '@sharpit/app/lib/utils';
 
 function AssistantAnswerBody({ live, text }: { live: boolean; text: string }) {
   if (text) {

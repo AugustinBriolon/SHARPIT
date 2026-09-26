@@ -1,15 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
-import { DATA_CLASSES, type DataClassId } from '@sharpit/server/lib/integrations/provider-catalog';
-import type { IntegrationId } from '@sharpit/server/lib/integrations/shared/client-sync';
-import { catalogIntegrationIds } from '@sharpit/server/lib/integrations/source-prefs';
+import { DATA_CLASSES, type DataClassId } from '@sharpit/app/lib/integrations/provider-catalog';
+import type { IntegrationId } from '@sharpit/app/lib/integrations/shared/client-sync';
+import { catalogIntegrationIds } from '@sharpit/app/lib/integrations/source-prefs';
 import {
   disableProviderForClass,
   enableProviderForClass,
   setPrimaryForClass,
   type IntegrationSourcePrefs,
-} from '@sharpit/server/lib/integrations/source-prefs';
+} from '@sharpit/app/lib/integrations/source-prefs';
 import {
   loadConnectedIntegrationIds,
   loadResolvedSourcePrefs,

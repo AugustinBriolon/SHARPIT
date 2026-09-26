@@ -3,7 +3,12 @@ import {
   computeTrainingLoad,
   ACWR_THRESHOLDS,
 } from '@sharpit/server/lib/training/load/training-load';
-import type { GateContext, GateProposal, PlanLevelGateRule, RuleFinding } from '../types';
+import type {
+  GateContext,
+  GateProposal,
+  PlanLevelGateRule,
+  RuleFinding,
+} from '@sharpit/app/lib/plan-gate/types';
 
 export const WEEKLY_TARGET_TOLERANCE = 1.1;
 const WEEK_OPTS = { weekStartsOn: 1 as const };

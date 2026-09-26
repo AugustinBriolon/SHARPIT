@@ -15,7 +15,7 @@ import {
   pmcTsb,
   stepPmc,
   type PmcState,
-} from '@sharpit/server/lib/training/pmc/pmc';
+} from '@sharpit/app/lib/training/pmc/pmc';
 
 export { PMC_ATL_TAU, PMC_CTL_TAU };
 

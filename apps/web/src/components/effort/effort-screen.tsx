@@ -12,7 +12,7 @@ import {
   isPresentationValuesLoading,
   useEffortViewModel,
 } from '@/hooks/use-presentation-view-model';
-import { effortLoadingShell } from '@sharpit/server/lib/presentation/shared/drill-down-loading-shells';
+import { effortLoadingShell } from '@sharpit/app/lib/presentation/shared/drill-down-loading-shells';
 
 function EffortEmptyView({
   viewModel,

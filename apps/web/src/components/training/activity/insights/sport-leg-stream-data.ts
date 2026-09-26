@@ -1,5 +1,5 @@
-import type { ActivityAnalysis } from '@sharpit/server/lib/activity/detail/activity-analysis';
-import type { MultisportLegStream } from '@sharpit/server/lib/streams/streams';
+import type { ActivityAnalysis } from '@sharpit/app/lib/activity/detail/activity-analysis';
+import type { MultisportLegStream } from '@sharpit/app/lib/streams/stream-types';
 
 function splitsFromAnalysis(analysis: ActivityAnalysis) {
   return {

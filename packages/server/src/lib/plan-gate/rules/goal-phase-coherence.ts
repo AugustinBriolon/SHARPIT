@@ -1,6 +1,11 @@
 import { startOfWeek } from 'date-fns';
 import { isSet } from '@sharpit/shared/value';
-import type { GateContext, GateProposal, PlanGateRule, RuleFinding } from '../types';
+import type {
+  GateContext,
+  GateProposal,
+  PlanGateRule,
+  RuleFinding,
+} from '@sharpit/app/lib/plan-gate/types';
 
 const WEEK_OPTS = { weekStartsOn: 1 as const };
 

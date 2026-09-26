@@ -1,5 +1,5 @@
-import { TWIN_DRILL_DOWN } from '@sharpit/server/lib/today/navigation/today-twin-navigation';
-import { isDemoSessionLinkActivityTitle } from '@sharpit/server/lib/demo/demo-session-link-markers';
+import { TWIN_DRILL_DOWN } from '@sharpit/app/lib/today/navigation/today-twin-navigation';
+import { isDemoSessionLinkActivityTitle } from '@sharpit/app/lib/demo/demo-session-link-markers';
 
 export type PostSessionLoopInput = {
   phase: string;

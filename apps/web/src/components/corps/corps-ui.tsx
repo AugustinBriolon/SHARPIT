@@ -2,9 +2,9 @@ import { ClinicalAnnotation } from '@/components/ui/instruments/clinical-annotat
 import { EyebrowLabel } from '@/components/ui/eyebrow-label';
 import { InkEmptyState } from '@/components/ui/ink-empty-state';
 import { MetricCell } from '@/components/ui/instruments/metric-cell';
-import type { CorpsTone } from '@sharpit/server/lib/ui/metric-tone';
-import { CORPS_TONE_DOT, CORPS_TONE_TEXT } from '@sharpit/server/lib/ui/metric-tone';
-import { cn } from '@sharpit/server/lib/utils';
+import type { CorpsTone } from '@sharpit/app/lib/ui/metric-tone';
+import { CORPS_TONE_DOT, CORPS_TONE_TEXT } from '@sharpit/app/lib/ui/metric-tone';
+import { cn } from '@sharpit/app/lib/utils';
 
 export type { CorpsTone };
 

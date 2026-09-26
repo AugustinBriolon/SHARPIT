@@ -1,13 +1,10 @@
 import { type NextFetchEvent, type NextRequest, NextResponse } from 'next/server';
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
-import { afterAuthPath } from '@sharpit/server/lib/auth/after-auth-redirect';
-import { ENTRY_PATH } from '@sharpit/server/lib/onboarding/entry-path';
-import {
-  describeClerkConfigIssues,
-  diagnoseClerkConfig,
-} from '@sharpit/server/lib/auth/clerk-config';
-import { recoverFromHandshakeFailure } from '@sharpit/server/lib/auth/handshake-recovery';
-import { isDevClerkBypass } from '@sharpit/server/lib/dev/dev-auth';
+import { afterAuthPath } from '@sharpit/app/lib/auth/after-auth-redirect';
+import { ENTRY_PATH } from '@sharpit/app/lib/onboarding/entry-path';
+import { describeClerkConfigIssues, diagnoseClerkConfig } from '@sharpit/app/lib/auth/clerk-config';
+import { recoverFromHandshakeFailure } from '@sharpit/app/lib/auth/handshake-recovery';
+import { isDevClerkBypass } from '@sharpit/app/lib/dev/dev-auth';
 
 // Routes accessibles sans session Clerk :
 // - pages de connexion/inscription

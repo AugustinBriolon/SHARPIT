@@ -1,6 +1,6 @@
 'use client';
 
-import type { TodayViewModel } from '@sharpit/server/presentation/today-view-model';
+import type { TodayViewModel } from '@sharpit/app/presentation/today-view-model';
 import { ActivityConsistencyPanel } from '@/components/today/dashboard/activity-consistency-panel';
 import {
   TodayNutritionCard,
@@ -8,8 +8,8 @@ import {
 } from '@/components/today/dashboard/today-nutrition-card';
 import { TodaySignalStrip } from '@/components/today/dashboard/today-signal-strip';
 import { TodayJournalHabitBridgeFooter } from '@/components/today/rich/today-journal-habit-bridge-footer';
-import type { ClientActivity } from '@sharpit/server/lib/query/types';
-import { cn } from '@sharpit/server/lib/utils';
+import type { ClientActivity } from '@sharpit/app/lib/query/types';
+import { cn } from '@sharpit/app/lib/utils';
 
 type MetricsRow = TodayViewModel['hero']['metricsRow'];
 type SignalPreviews = TodayViewModel['hero']['signalPreviews'];

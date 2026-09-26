@@ -1,4 +1,4 @@
-import type { PlannedSessionSummary } from '@sharpit/server/lib/activity/detail/types';
+import type { PlannedSessionSummary } from '@sharpit/app/lib/activity/detail/types';
 import { ActivityType } from '@prisma/client';
 
 export type ActivityListItem = {

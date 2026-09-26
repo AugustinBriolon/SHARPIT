@@ -12,10 +12,10 @@ import {
   useRef,
   useState,
 } from 'react';
-import { EASE_OUT, SPRING_PRESS } from '@sharpit/server/lib/ease';
+import { EASE_OUT, SPRING_PRESS } from '@sharpit/app/lib/ease';
 import { useHoverCapable } from '@/client/hooks/use-hover-capable';
 import { motionTokens } from '@/client/motion/tokens';
-import { cn } from '@sharpit/server/lib/utils';
+import { cn } from '@sharpit/app/lib/utils';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'outline';
 export type ButtonSize = 'sm' | 'md' | 'lg' | 'icon';

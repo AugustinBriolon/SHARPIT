@@ -9,13 +9,13 @@ import {
   movementPatternSchema,
   type MovementIntent,
   type MovementPattern,
-} from '@sharpit/server/lib/exercises/movement-taxonomy';
+} from '@sharpit/app/lib/exercises/movement-taxonomy';
 import {
   swimStrokeSchema,
   type SwimStroke,
-} from '@sharpit/server/lib/planned-session/endurance/endurance-prescription';
-import { strengthRestModeSchema } from '@sharpit/server/lib/planned-session/strength/strength-prescription';
-import { coachPlanSchema, type CoachPlan } from '@sharpit/server/lib/validators/coach';
+} from '@sharpit/app/lib/planned-session/endurance/endurance-prescription';
+import { strengthRestModeSchema } from '@sharpit/app/lib/planned-session/strength/strength-prescription';
+import { coachPlanSchema, type CoachPlan } from '@sharpit/app/lib/validators/coach';
 
 function roundInt(value: unknown, fallback: number): number {
   const n = typeof value === 'number' ? value : Number(value);

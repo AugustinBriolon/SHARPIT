@@ -2,8 +2,8 @@ import { DrillDownSectionCard } from '@/components/today/drill-down/section-card
 import { TermInfo } from '@/components/ui/term-info';
 import { DrillDownSectionLabel } from '@/components/today/drill-down/section-label';
 import { SkeletonDataValue } from '@/components/ui/skeleton-data-value';
-import type { EffortStrainCompositionView } from '@sharpit/server/lib/presentation/effort/effort-strain-composition';
-import { cn } from '@sharpit/server/lib/utils';
+import type { EffortStrainCompositionView } from '@sharpit/app/lib/presentation/effort/effort-strain-composition';
+import { cn } from '@sharpit/app/lib/utils';
 
 function StrainContributorValue({
   loading,

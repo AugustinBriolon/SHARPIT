@@ -1,4 +1,4 @@
-import type { AthleteStateDomain, FreshnessLevel } from '@sharpit/server/athlete-state/freshness';
+import type { AthleteStateDomain, FreshnessLevel } from '@sharpit/app/athlete-state/freshness';
 import { isSet } from '@sharpit/shared/value';
 
 const MESSAGES: Record<FreshnessLevel, Partial<Record<AthleteStateDomain, string>>> = {

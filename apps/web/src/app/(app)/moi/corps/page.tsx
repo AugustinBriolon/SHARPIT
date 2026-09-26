@@ -4,7 +4,7 @@ import { StickyHeader } from '@/components/layout/header/sticky-header';
 import { CorpsInstrument, CorpsInstrumentBlock } from '@/components/corps/corps-instrument';
 import { MoiSectionContent } from '@/components/shell/moi-section-content';
 import { Skeleton } from '@/components/ui/skeleton';
-import { MOI_HUB_PATH } from '@sharpit/server/lib/moi/paths';
+import { MOI_HUB_PATH } from '@sharpit/app/lib/moi/paths';
 
 function CorpsFallback() {
   return (

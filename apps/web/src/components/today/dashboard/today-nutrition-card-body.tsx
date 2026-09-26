@@ -8,8 +8,8 @@ import {
 import { TodayNutritionCardHeader } from '@/components/today/dashboard/today-nutrition-card-header';
 import { NutritionFooterLink } from '@/components/today/dashboard/today-nutrition-card-footer';
 import { NutritionMacroGrid } from '@/components/today/dashboard/today-nutrition-macro-grid';
-import { CALORIE_RING } from '@sharpit/server/lib/nutrition/macro-colors';
-import { cn } from '@sharpit/server/lib/utils';
+import { CALORIE_RING } from '@sharpit/app/lib/nutrition/macro-colors';
+import { cn } from '@sharpit/app/lib/utils';
 
 const EMPTY_DAY = {
   calories: 0,

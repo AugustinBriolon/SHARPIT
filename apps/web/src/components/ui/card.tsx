@@ -1,6 +1,6 @@
 import * as React from 'react';
 
-import { cn } from '@sharpit/server/lib/utils';
+import { cn } from '@sharpit/app/lib/utils';
 
 function Card({
   className,

@@ -1,9 +1,9 @@
 import type { ActivityType } from '@prisma/client';
 import type { V1TodayConsistency } from '@sharpit/server/lib/presentation/v1/consistency';
-import type { PresentationEmptyState } from '@sharpit/server/presentation/types';
-import type { TodayViewModel } from '@sharpit/server/presentation/today-view-model';
-import { activityTypeLabels } from '@sharpit/server/lib/format';
-import { CONNECT_GARMIN_PATH } from '@sharpit/server/lib/integrations/garmin/garmin-connect-handoff';
+import type { PresentationEmptyState } from '@sharpit/app/presentation/types';
+import type { TodayViewModel } from '@sharpit/app/presentation/today-view-model';
+import { activityTypeLabels } from '@sharpit/app/lib/format';
+import { CONNECT_GARMIN_PATH } from '@sharpit/app/lib/integrations/garmin/garmin-connect-handoff';
 
 export type V1TodayPackTier = 'FULL' | 'PARTIAL' | 'LOW' | 'INSUFFICIENT';
 

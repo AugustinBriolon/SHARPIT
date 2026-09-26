@@ -6,9 +6,9 @@ import { LinkButton } from '@/components/ui/link-button';
 import {
   selectHubDoneEntries,
   selectHubRemainingEntries,
-} from '@sharpit/server/lib/plan/week/plan-week-previews';
-import { upcomingRemaining } from '@sharpit/server/lib/plan/week/plan-week-decision';
-import type { PlanWeek } from '@sharpit/server/lib/plan/week/plan-week';
+} from '@sharpit/app/lib/plan/week/plan-week-previews';
+import { upcomingRemaining } from '@sharpit/app/lib/plan/week/plan-week-decision';
+import type { PlanWeek } from '@sharpit/app/lib/plan/week/plan-week';
 
 export function PlanWeekThread({
   now,

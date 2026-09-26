@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import { ConnectGarminOutcome } from '@/components/integrations/connect-garmin/connect-garmin-outcome';
-import { parseGarminHandoffStatus } from '@sharpit/server/lib/integrations/garmin/garmin-connect-handoff';
+import { parseGarminHandoffStatus } from '@sharpit/app/lib/integrations/garmin/garmin-connect-handoff';
 
 export const metadata: Metadata = { title: 'Garmin · SHARPIT' };
 

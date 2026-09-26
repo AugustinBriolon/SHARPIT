@@ -1,4 +1,9 @@
-import type { GateContext, GateProposal, PlanGateRule, RuleFinding } from '../types';
+import type {
+  GateContext,
+  GateProposal,
+  PlanGateRule,
+  RuleFinding,
+} from '@sharpit/app/lib/plan-gate/types';
 
 const PRECISION_SENSITIVE = new Set(['THRESHOLD', 'VO2MAX']);
 

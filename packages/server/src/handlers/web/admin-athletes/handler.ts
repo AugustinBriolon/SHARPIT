@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
-import { isCurrentUserAdmin } from '@sharpit/server/lib/auth/admin';
-import { awaitRequest } from '@sharpit/server/lib/next/await-request';
+import { isCurrentUserAdmin } from '@sharpit/app/lib/auth/admin';
+import { awaitRequest } from '@sharpit/app/lib/next/await-request';
 import { loadAdminAthletes } from '@sharpit/server/lib/web/admin-athletes';
 
 /** The /admin athlete list — 404 for anyone but an admin, like the tier toggle. */

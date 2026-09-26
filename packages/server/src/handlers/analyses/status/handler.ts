@@ -1,8 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
-import { pendingAnalysisRuns } from '@sharpit/server/lib/analysis/analysis-run';
+import { pendingAnalysisRuns } from '@sharpit/app/lib/analysis/analysis-run';
 import { listRecentAnalysisRuns } from '@sharpit/server/lib/analysis/analysis-run-store';
-import { awaitRequest } from '@sharpit/server/lib/next/await-request';
+import { awaitRequest } from '@sharpit/app/lib/next/await-request';
 
 /**
  * What the athlete is waiting on, and what just landed (ADR-036).

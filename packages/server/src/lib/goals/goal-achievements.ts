@@ -1,4 +1,5 @@
 import type { Goal } from '@prisma/client';
+import type { EnrichedGoal } from '@sharpit/app/lib/goals/enriched-goal';
 import { isSet } from '@sharpit/shared/value';
 import {
   inferPerformanceEndMode,
@@ -6,7 +7,7 @@ import {
   parseGoalMetricConfig,
   type GoalMetricConfig,
   type PerformanceMetricConfig,
-} from '@sharpit/server/lib/goals/goal-metric-config';
+} from '@sharpit/app/lib/goals/goal-metric-config';
 import { prisma } from '@sharpit/db/client';
 import {
   computeMetricCurrentValue,
@@ -203,13 +204,6 @@ export async function getLatestAchievementForGoal(goalId: string) {
     },
   });
 }
-
-type EnrichedGoal<T extends Goal> = T & {
-  currentValue: number | null;
-  achieved: boolean;
-  validatingActivityId: string | null;
-  lastAchievedAt: Date | null;
-};
 
 function selectGoalActivities(
   config: GoalMetricConfig,

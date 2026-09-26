@@ -14,7 +14,7 @@ import {
   type GoalMetricConfig,
   type GoalPeriod,
   type PeriodMeasure,
-} from '@sharpit/server/lib/goals/goal-metric-config';
+} from '@sharpit/app/lib/goals/goal-metric-config';
 import { prisma } from '@sharpit/db/client';
 
 const WEEK_OPTS = { weekStartsOn: 1 as const };

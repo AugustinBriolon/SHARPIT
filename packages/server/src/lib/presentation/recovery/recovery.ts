@@ -1,15 +1,15 @@
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import type { AthleteSnapshot } from '@sharpit/server/athlete-state/snapshot';
-import type { RecoveryViewModel } from '@sharpit/server/presentation/recovery-view-model';
+import type { AthleteSnapshot } from '@sharpit/app/athlete-state/snapshot';
+import type { RecoveryViewModel } from '@sharpit/app/presentation/recovery-view-model';
 import { getOrBuildAthleteSnapshot } from '@sharpit/server/lib/athlete-state/snapshot-service';
 import { getHealthEntries } from '@sharpit/server/lib/queries';
 import {
   buildDailyWindowSeries,
   getIndexedHealthEntry,
   indexHealthEntriesByDay,
-} from '@sharpit/server/lib/health/health';
-import { resolve } from '@sharpit/server/lib/french';
+} from '@sharpit/app/lib/health/health';
+import { resolve } from '@sharpit/app/lib/french';
 
 type DailyHealthRow = Awaited<ReturnType<typeof getHealthEntries>>[number];
 import {
@@ -25,10 +25,10 @@ import {
   type ReadinessCategory,
   type RecommendedIntensity,
   type SubjectiveWellness,
-} from '@sharpit/server/lib/today/dashboard/today-mapping';
+} from '@sharpit/app/lib/today/dashboard/today-mapping';
 import { buildRecoveryPageInsights } from '@sharpit/server/lib/product-insight/recovery-page-insights';
 import { buildGlobalDecisionContext } from '@sharpit/server/lib/decision/global-decision-context';
-import { EMPTY_GLOBAL_DECISION } from '@sharpit/server/presentation/global-decision-context';
+import { EMPTY_GLOBAL_DECISION } from '@sharpit/app/presentation/global-decision-context';
 
 const PRIMARY_LIMITER_LABEL: Record<string, string> = {
   autonomic: 'Système nerveux autonome',

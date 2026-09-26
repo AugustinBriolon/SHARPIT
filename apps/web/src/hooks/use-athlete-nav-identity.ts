@@ -5,7 +5,7 @@ import {
   DEMO_IDENTITY,
   initialsFromName,
   shortLabelFromName,
-} from '@sharpit/server/lib/auth/athlete-identity';
+} from '@sharpit/app/lib/auth/athlete-identity';
 import { useIsDemoMode } from '@/hooks/use-is-demo-mode';
 
 export type AthleteNavIdentity = {

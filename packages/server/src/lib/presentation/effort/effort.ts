@@ -3,30 +3,30 @@ import {
   computeTrainingLoad,
   enrichFatigueLoadDimension,
 } from '@sharpit/server/lib/training/load/training-load';
-import { slicePmcWindow } from '@sharpit/server/lib/training/pmc/pmc';
-import type { PmcPoint } from '@sharpit/server/lib/training/pmc/pmc-history';
+import { slicePmcWindow } from '@sharpit/app/lib/training/pmc/pmc';
+import type { PmcPoint } from '@sharpit/app/lib/training/pmc/pmc-history';
 import {
   loadAthletePmcPoints,
   loadDailyTrainingStressEntries,
 } from '@sharpit/server/lib/training/pmc/pmc-server';
-import { resolve } from '@sharpit/server/lib/french';
+import { resolve } from '@sharpit/app/lib/french';
 import {
   mapConfidenceToTier,
   mapFatigueTypeToLabel,
   type FatigueType,
-} from '@sharpit/server/lib/today/dashboard/today-mapping';
+} from '@sharpit/app/lib/today/dashboard/today-mapping';
 import { buildEffortPageInsights } from '@sharpit/server/lib/product-insight/effort-page-insights';
 import { buildGlobalDecisionContext } from '@sharpit/server/lib/decision/global-decision-context';
-import { EMPTY_GLOBAL_DECISION } from '@sharpit/server/presentation/global-decision-context';
-import type { EffortViewModel } from '@sharpit/server/presentation/effort-view-model';
-import { buildEffortStrainComposition } from '@sharpit/server/lib/presentation/effort/effort-strain-composition';
+import { EMPTY_GLOBAL_DECISION } from '@sharpit/app/presentation/global-decision-context';
+import type { EffortViewModel } from '@sharpit/app/presentation/effort-view-model';
+import { buildEffortStrainComposition } from '@sharpit/app/lib/presentation/effort/effort-strain-composition';
 import {
   CHART_CAUTION_STROKE,
   CHART_RISK_STROKE,
   CHART_TEMPO_STROKE,
   CHART_TICK_COLOR,
   CHART_VO2_STROKE,
-} from '@sharpit/server/lib/theme/chart-theme';
+} from '@sharpit/app/lib/theme/chart-theme';
 
 const OVERREACHING_RISK_DISPLAY: Record<string, { label: string; colorClass: string } | undefined> =
   {

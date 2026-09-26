@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 import {
   coachDiscussMetadata,
   describeCoachDiscussContext,
-} from '@sharpit/server/lib/coach/chat/discuss/coach-discuss-context';
-import type { CoachDiscussTarget } from '@sharpit/server/lib/coach/chat/discuss/coach-discuss-href';
+} from '@sharpit/app/lib/coach/chat/discuss/coach-discuss-context';
+import type { CoachDiscussTarget } from '@sharpit/app/lib/coach/chat/discuss/coach-discuss-href';
 import {
   lastCoachDiscussMetadata,
   parseCoachDiscussMetadata,

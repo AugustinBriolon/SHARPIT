@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useState } from 'react';
-import { getFaviconUrl } from '@sharpit/server/lib/favicon';
+import { getFaviconUrl } from '@sharpit/app/lib/favicon';
 
 /**
  * Resolves a site favicon and drops it once it is known to be unusable, so

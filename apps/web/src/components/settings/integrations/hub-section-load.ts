@@ -7,7 +7,7 @@ import {
   buildStravaPayloadSection,
   buildWithingsPayloadSection,
 } from '@/components/settings/integrations/hub-payload-helpers';
-import type { IntegrationsHubPayload } from '@sharpit/server/lib/web/integrations-hub';
+import type { IntegrationsHubPayload } from '@sharpit/app/lib/web/payloads';
 
 export type IntegrationsSearchParams = {
   strava?: string;

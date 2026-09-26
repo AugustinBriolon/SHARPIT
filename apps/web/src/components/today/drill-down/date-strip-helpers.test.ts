@@ -13,7 +13,7 @@ import { calendarDayCellProps } from '@/components/today/drill-down/date-selecto
 import type {
   DataDaysLookup,
   DataDayStatus,
-} from '@sharpit/server/lib/presentation/data-days/data-days-chunks';
+} from '@sharpit/app/lib/presentation/data-days/data-days-chunks';
 
 const TODAY = new Date(2026, 8, 11); // Friday
 

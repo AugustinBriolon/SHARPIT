@@ -29,7 +29,7 @@ import {
 import {
   resolveExerciseCatalogId,
   enrichStrengthExerciseVisuals,
-} from '@sharpit/server/lib/exercises';
+} from '@sharpit/app/lib/exercises';
 import { mapWithConcurrency } from '@sharpit/server/lib/async/map-with-concurrency';
 import { prisma } from '@sharpit/db/client';
 import { observationEngine } from '@sharpit/server/lib/engines/observation-engine';
@@ -643,8 +643,7 @@ export async function syncGarminActivities(
     full?: boolean;
   },
 ): Promise<GarminActivitySyncResult> {
-  const { isProviderEnabledForClass } =
-    await import('@sharpit/server/lib/integrations/source-prefs');
+  const { isProviderEnabledForClass } = await import('@sharpit/app/lib/integrations/source-prefs');
   const { loadResolvedSourcePrefs } =
     await import('@sharpit/server/lib/integrations/source-prefs-store');
   const prefs = await loadResolvedSourcePrefs(athleteId);

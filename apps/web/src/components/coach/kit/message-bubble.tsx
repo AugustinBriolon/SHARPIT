@@ -15,8 +15,8 @@ import {
   useId,
   useState,
 } from 'react';
-import { EASE_OUT, SPRING_LAYOUT, SPRING_SWAP } from '@sharpit/server/lib/ease';
-import { cn } from '@sharpit/server/lib/utils';
+import { EASE_OUT, SPRING_LAYOUT, SPRING_SWAP } from '@sharpit/app/lib/ease';
+import { cn } from '@sharpit/app/lib/utils';
 import { MessageSideContext } from '@/components/coach/kit/message-context';
 import {
   bubbleAlignClass,

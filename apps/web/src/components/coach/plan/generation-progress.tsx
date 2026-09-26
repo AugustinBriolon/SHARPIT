@@ -3,7 +3,7 @@
 import { Loader2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { CoachGenerationProgress } from '@/hooks/use-coach';
-import { coachGenerationStatusCopy } from '@sharpit/server/lib/coach/plan/generation-status-copy';
+import { coachGenerationStatusCopy } from '@sharpit/app/lib/coach/plan/generation-status-copy';
 
 /**
  * What the athlete watches while a plan or an adaptation is being generated.

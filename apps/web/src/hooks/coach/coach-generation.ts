@@ -1,22 +1,22 @@
 'use client';
 
-import { consumeCoachProgressStream } from '@sharpit/server/lib/coach/chat/transcript/coach-progress-stream';
+import { consumeCoachProgressStream } from '@sharpit/app/lib/coach/chat/transcript/coach-progress-stream';
 import {
   AI_BUDGET_WARNING_HEADER,
   aiBudgetWarningMessage,
-} from '@sharpit/server/lib/access/ai-budget-shared';
+} from '@sharpit/app/lib/access/ai-budget-shared';
 import { toast } from '@/components/ui/toast';
 import type { ActivityType, SessionIntensity } from '@prisma/client';
-import type { CoachEndurancePrescription } from '@sharpit/server/lib/planned-session/endurance/coach-endurance-prescription';
-import type { GateResult } from '@sharpit/server/lib/plan-gate/types';
+import type { CoachEndurancePrescription } from '@sharpit/app/lib/planned-session/endurance/coach-endurance-prescription';
+import type { GateResult } from '@sharpit/app/lib/plan-gate/types';
 import { apiFetch } from '@/client/query/api-fetch';
 // The shape the coach actually returns — mirroring it by hand let it drift.
-import type { CoachStrengthPrescription } from '@sharpit/server/lib/planned-session/strength/strength-prescription';
+import type { CoachStrengthPrescription } from '@sharpit/app/lib/planned-session/strength/strength-prescription';
 import type {
   AdaptAction,
   AdaptChange,
   AdaptPlanResult,
-} from '@sharpit/server/lib/coach/plan/adapt-types';
+} from '@sharpit/app/lib/coach/plan/adapt-types';
 export type { AdaptAction, AdaptChange, AdaptPlanResult };
 
 export interface GeneratedSession {

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { sensitiveZoneRule } from './sensitive-zone';
 import { baseContext, baseProposal, physicalHealthData } from '../test-fixtures';
-import type { GateContext } from '../types';
+import type { GateContext } from '@sharpit/app/lib/plan-gate/types';
 
 /** The coach declares what each movement does; the rule judges the declaration. */
 const UPPER_LEGS_EXERCISE = {

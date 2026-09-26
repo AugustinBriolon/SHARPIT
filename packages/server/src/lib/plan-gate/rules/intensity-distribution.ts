@@ -1,4 +1,9 @@
-import type { GateContext, GateProposal, PlanLevelGateRule, RuleFinding } from '../types';
+import type {
+  GateContext,
+  GateProposal,
+  PlanLevelGateRule,
+  RuleFinding,
+} from '@sharpit/app/lib/plan-gate/types';
 import { isSet } from '@sharpit/shared/value';
 import { PLAN_GATE_HIGH_INTENSITY } from '@sharpit/server/lib/plan-gate/high-intensity';
 

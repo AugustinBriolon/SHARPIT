@@ -1,11 +1,11 @@
 import type {
   ThresholdChangeDirection,
   ThresholdField,
-} from '@sharpit/server/lib/threshold/threshold-estimates';
+} from '@sharpit/app/lib/threshold/threshold-estimates';
 import { Minus, TrendingDown, TrendingUp } from 'lucide-react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { StaggerItem } from '@/components/motion/stagger-list';
-import { cn } from '@sharpit/server/lib/utils';
+import { cn } from '@sharpit/app/lib/utils';
 
 export const DIRECTION_META: Record<
   ThresholdChangeDirection,

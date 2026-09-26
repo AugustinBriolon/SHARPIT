@@ -6,20 +6,20 @@ import {
   SPORT_IDENTITY_PANEL,
   SPORT_IDENTITY_SURFACE,
   SPORT_IDENTITY_TEXT,
-} from '@sharpit/server/lib/activity/sport-identity';
+} from '@sharpit/app/lib/activity/sport-identity';
 import {
   formatDistance,
   formatDuration,
   formatPace,
   formatSwimPace,
-} from '@sharpit/server/lib/format';
+} from '@sharpit/app/lib/format';
 import {
   legDisplayDurationSec,
   totalTransitionSec,
   transitionLegs,
   type MultisportLeg,
-} from '@sharpit/server/lib/activity/multisport';
-import { cn } from '@sharpit/server/lib/utils';
+} from '@sharpit/app/lib/activity/multisport';
+import { cn } from '@sharpit/app/lib/utils';
 
 const kindIcon: Record<'swim' | 'bike' | 'run', typeof Waves> = {
   swim: Waves,

@@ -6,9 +6,9 @@ import { Markdown } from '@/components/coach/chat/transcript/markdown';
 import type {
   CoachMessageBlock,
   CoachMetricItem,
-} from '@sharpit/server/lib/coach/chat/transcript/coach-message-structure';
-import { parseCoachMessage } from '@sharpit/server/lib/coach/chat/transcript/coach-message-structure';
-import { cn } from '@sharpit/server/lib/utils';
+} from '@sharpit/app/lib/coach/chat/transcript/coach-message-structure';
+import { parseCoachMessage } from '@sharpit/app/lib/coach/chat/transcript/coach-message-structure';
+import { cn } from '@sharpit/app/lib/utils';
 
 const BLOCK_EASE = [0.23, 1, 0.32, 1] as const;
 const BLOCK_STAGGER_S = 0.05;

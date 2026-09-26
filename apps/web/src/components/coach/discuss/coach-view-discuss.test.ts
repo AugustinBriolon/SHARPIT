@@ -5,7 +5,7 @@ import {
   isDiscussBootstrapPending,
   isDiscussDataReady,
 } from '@/components/coach/discuss/coach-view-discuss';
-import { coachDiscussMetadata } from '@sharpit/server/lib/coach/chat/discuss/coach-discuss-context';
+import { coachDiscussMetadata } from '@sharpit/app/lib/coach/chat/discuss/coach-discuss-context';
 
 const NO_INTENT = {
   discussToday: false,

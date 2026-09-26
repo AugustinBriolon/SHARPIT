@@ -4,9 +4,9 @@ import { useCallback, useEffect, useState } from 'react';
 import { isSet } from '@sharpit/shared/value';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from '@/components/ui/toast';
-import { buildPushToastDescription } from '@sharpit/server/lib/integrations/garmin/garmin-push-summary';
+import { buildPushToastDescription } from '@sharpit/app/lib/integrations/garmin/garmin-push-summary';
 import { queryKeys } from '@/client/query/keys';
-import type { ClientPlannedSession } from '@sharpit/server/lib/query/types';
+import type { ClientPlannedSession } from '@sharpit/app/lib/query/types';
 import { apiFetch } from '@/client/query/api-fetch';
 
 export type GarminWatchPushState = {

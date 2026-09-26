@@ -6,7 +6,7 @@ import type { RecoveryState } from '@sharpit/core/digital-twin/types';
 import type {
   ProjectedAthleteCardViewModel,
   ProjectedAthleteCaution,
-} from '@sharpit/server/presentation/projected-athlete-view-model';
+} from '@sharpit/app/presentation/projected-athlete-view-model';
 import type { ProjectionHorizonDays, ProjectedAthleteState } from '@sharpit/core/projection/types';
 import {
   buildProjectedAthleteInput,

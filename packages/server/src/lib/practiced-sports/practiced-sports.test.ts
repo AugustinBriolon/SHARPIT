@@ -13,7 +13,7 @@ import {
   togglePracticedSport,
   travelDisciplinesForPracticed,
   type PracticedSportId,
-} from './index';
+} from '@sharpit/app/lib/practiced-sports/index';
 
 describe('togglePracticedSport — independent selection', () => {
   it('checking triathlon does not add run, bike or swim', () => {

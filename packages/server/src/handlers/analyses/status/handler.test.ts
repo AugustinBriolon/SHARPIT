@@ -4,7 +4,7 @@ vi.mock('@sharpit/server/lib/auth/current-athlete', () => ({
   getCurrentAthleteId: vi.fn().mockResolvedValue('athlete-1'),
 }));
 
-vi.mock('@sharpit/server/lib/next/await-request', () => ({
+vi.mock('@sharpit/app/lib/next/await-request', () => ({
   awaitRequest: vi.fn().mockResolvedValue(undefined),
 }));
 

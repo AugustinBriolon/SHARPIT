@@ -1,5 +1,10 @@
-import { isCoachActivityTypeAllowed } from '@sharpit/server/lib/practiced-sports';
-import type { GateContext, GateProposal, PlanGateRule, RuleFinding } from '../types';
+import { isCoachActivityTypeAllowed } from '@sharpit/app/lib/practiced-sports';
+import type {
+  GateContext,
+  GateProposal,
+  PlanGateRule,
+  RuleFinding,
+} from '@sharpit/app/lib/plan-gate/types';
 
 /**
  * Reject ADD of a sport the athlete does not practice.

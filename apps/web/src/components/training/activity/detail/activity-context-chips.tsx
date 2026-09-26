@@ -1,11 +1,11 @@
 import type { ReactNode } from 'react';
 import { Trophy } from 'lucide-react';
-import { recordCategoryHref } from '@sharpit/server/lib/training/records/record-links';
+import { recordCategoryHref } from '@sharpit/app/lib/training/records/record-links';
 import { ActivityMetaChip } from './activity-meta-chip';
 import type {
   ActivityDetail,
   ActivityPerformanceRecordChip,
-} from '@sharpit/server/lib/activity/detail/types';
+} from '@sharpit/app/lib/activity/detail/types';
 
 /** Stable empty default — avoids a new [] identity every render when records is omitted. */
 const EMPTY_RECORDS: ActivityPerformanceRecordChip[] = [];

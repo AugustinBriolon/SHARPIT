@@ -6,7 +6,7 @@ import {
   SkeletonText,
   SkeletonTitle,
 } from '@/components/ui/skeleton-patterns';
-import { MOI_HUB_PATH } from '@sharpit/server/lib/moi/paths';
+import { MOI_HUB_PATH } from '@sharpit/app/lib/moi/paths';
 
 export default function SettingsAccountLoading() {
   return (

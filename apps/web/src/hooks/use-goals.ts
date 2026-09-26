@@ -5,7 +5,7 @@ import { fetchGoalAchievements, fetchGoals } from '@/client/query/fetchers';
 import { queryKeys } from '@/client/query/keys';
 import { listOptimistic, tempId } from '@/client/query/optimistic';
 import { sendJson } from '@/client/query/send-json';
-import type { ClientGoal } from '@sharpit/server/lib/query/types';
+import type { ClientGoal } from '@sharpit/app/lib/query/types';
 import type { GoalHorizon, GoalPriority } from '@prisma/client';
 import { nullishFields } from '@/client/query/nullish-fields';
 

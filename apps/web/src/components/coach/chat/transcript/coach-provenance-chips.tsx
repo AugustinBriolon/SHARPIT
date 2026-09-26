@@ -2,10 +2,10 @@
 
 import { useMemo } from 'react';
 import { motion, useReducedMotion } from 'motion/react';
-import { buildCoachProvenanceChips } from '@sharpit/server/lib/coach/chat/transcript/coach-provenance';
+import { buildCoachProvenanceChips } from '@sharpit/app/lib/coach/chat/transcript/coach-provenance';
 import { trainingDayIdForNow } from '@sharpit/core/training/training-day';
 import { useTodayPresentationViewModel } from '@/hooks/use-presentation-view-model';
-import { cn } from '@sharpit/server/lib/utils';
+import { cn } from '@sharpit/app/lib/utils';
 
 /**
  * Streaming Text « sources » row — hairline provenance under the latest reply.

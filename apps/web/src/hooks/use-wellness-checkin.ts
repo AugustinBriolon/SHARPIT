@@ -3,7 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { useCallback } from 'react';
-import type { MorningWellnessEntry } from '@sharpit/server/lib/journal/morning-wellness-entry';
+import type { MorningWellnessEntry } from '@sharpit/app/lib/journal/morning-wellness-entry';
 import { queryKeys } from '@/client/query/keys';
 import { apiFetch } from '@/client/query/api-fetch';
 

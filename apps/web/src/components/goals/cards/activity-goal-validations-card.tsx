@@ -5,7 +5,7 @@ import {
   formatAchievementPeriodKey,
   formatGoalDisplayValue,
   parseGoalMetricConfig,
-} from '@sharpit/server/lib/goals/goal-metric-config';
+} from '@sharpit/app/lib/goals/goal-metric-config';
 
 export interface ActivityGoalValidation {
   id: string;

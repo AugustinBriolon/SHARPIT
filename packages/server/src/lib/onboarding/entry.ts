@@ -1,5 +1,5 @@
 import { athleteNeedsOnboarding } from '@sharpit/server/lib/onboarding/status/status';
-import { CURRENT_PRIVACY_VERSION } from '@sharpit/server/lib/privacy/constants';
+import { CURRENT_PRIVACY_VERSION } from '@sharpit/app/lib/privacy/constants';
 import {
   athleteNeedsLegalConsent,
   getAthleteConsentRow,
@@ -7,9 +7,9 @@ import {
 import {
   consentWallHrefAfterHealthWithdraw,
   resolveConsentWallReason,
-} from '@sharpit/server/lib/privacy/consent-withdraw-ux';
+} from '@sharpit/app/lib/privacy/consent-withdraw-ux';
 
-export { ENTRY_PATH } from '@sharpit/server/lib/onboarding/entry-path';
+export { ENTRY_PATH } from '@sharpit/app/lib/onboarding/entry-path';
 
 /** The consent wall this athlete must pass, or null when their consents are current. */
 export async function consentWallHref(athleteId: string): Promise<string | null> {

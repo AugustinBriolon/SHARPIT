@@ -7,7 +7,7 @@ import {
   summarizeCronSyncResults,
   type CronAthleteSyncResult,
 } from '@sharpit/server/lib/cron/sync-summary';
-import { canRunHealthDerivedAthleteRefresh } from '@sharpit/server/lib/privacy/consent-withdraw-ux';
+import { canRunHealthDerivedAthleteRefresh } from '@sharpit/app/lib/privacy/consent-withdraw-ux';
 import {
   backfillStreamsIfNeeded,
   emptyAthleteResult,

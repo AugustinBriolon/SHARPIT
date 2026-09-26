@@ -2,8 +2,8 @@
 
 import { MarkerCardGrid, type MarkerSpec } from '@/components/today/drill-down/marker-card-grid';
 import type { MarkerHistoryPoint } from '@/components/today/drill-down/marker-history-chart';
-import { GLOSSARY } from '@sharpit/server/lib/glossary';
-import { observedRange } from '@sharpit/server/lib/today/dashboard/marker-series';
+import { GLOSSARY } from '@sharpit/app/lib/glossary';
+import { observedRange } from '@sharpit/app/lib/today/dashboard/marker-series';
 
 /** `date` arrives already formatted for reading ("21 août"), not as a day key. */
 type Series = { date: string; value: number | null }[];

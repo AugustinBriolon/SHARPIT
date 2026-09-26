@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import type { TodayJournalHabitBridge } from '@sharpit/server/lib/journal/journal-habit-today-bridge';
+import type { TodayJournalHabitBridge } from '@sharpit/app/lib/journal/journal-habit-today-bridge';
 import { fetchJournalHabitBridge } from '@/client/query/fetchers';
 import { queryKeys } from '@/client/query/keys';
 

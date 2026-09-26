@@ -22,8 +22,8 @@ import {
 import { SettingsAdminEntry } from '@/components/settings/settings-admin-entry';
 import { SettingsHomeExtras } from '@/components/settings/settings-home-extras';
 import { SettingsSignOut } from '@/components/settings/settings-sign-out';
-import type { SettingsHubStatus } from '@sharpit/server/lib/settings/hub-status';
-import { cn } from '@sharpit/server/lib/utils';
+import type { SettingsHubStatus } from '@sharpit/app/lib/settings/hub-status';
+import { cn } from '@sharpit/app/lib/utils';
 
 export type SettingsEntry = {
   href: string;

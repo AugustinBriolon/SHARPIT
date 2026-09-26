@@ -8,8 +8,8 @@
  * athlete's data nor unlock a Pro block.
  */
 
-import { hasProAccess } from '@sharpit/server/lib/access/tier';
-import type { CoachDiscussMetadata } from '@sharpit/server/lib/coach/chat/discuss/coach-discuss-context';
+import { hasProAccess } from '@sharpit/app/lib/access/tier';
+import type { CoachDiscussMetadata } from '@sharpit/app/lib/coach/chat/discuss/coach-discuss-context';
 import { lastCoachDiscussMetadata } from '@sharpit/server/lib/coach/chat/discuss/coach-discuss-metadata-parse';
 import {
   formatPlanningDiscussBlock,

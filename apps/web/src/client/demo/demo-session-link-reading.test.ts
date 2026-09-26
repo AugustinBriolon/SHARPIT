@@ -9,9 +9,9 @@ import {
 import {
   markDemoSessionLinked,
   readDemoSessionLinks,
-} from '@sharpit/server/lib/demo/demo-session-link-state';
+} from '@sharpit/app/lib/demo/demo-session-link-state';
 import { queryKeys } from '@/client/query/keys';
-import type { ClientActivity, ClientPlannedSession } from '@sharpit/server/lib/query/types';
+import type { ClientActivity, ClientPlannedSession } from '@sharpit/app/lib/query/types';
 
 function seedDemoSessionStorage() {
   markDemoSessionLinked('ps-1', 'act-1', {

@@ -1,5 +1,5 @@
 import type { InputProps } from '@/components/motion/input-types';
-import { cn } from '@sharpit/server/lib/utils';
+import { cn } from '@sharpit/app/lib/utils';
 
 export function resolveInputFieldState(
   hasError: boolean,

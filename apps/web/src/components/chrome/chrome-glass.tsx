@@ -3,7 +3,7 @@
 import { useEffect, useState, useSyncExternalStore } from 'react';
 import dynamic from 'next/dynamic';
 import { useReducedMotion } from 'motion/react';
-import { cn } from '@sharpit/server/lib/utils';
+import { cn } from '@sharpit/app/lib/utils';
 
 /**
  * Liquid Glass chrome wrapper — tab bar, floating back, etc.

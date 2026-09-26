@@ -12,9 +12,9 @@ import {
   getUpcomingBusy,
 } from '@sharpit/server/lib/integrations/google/google-sync';
 import { loadDailyTrainingStressEntries } from '@sharpit/server/lib/training/pmc/pmc-server';
-import type { AthleteSnapshot } from '@sharpit/server/athlete-state/snapshot';
-import { normalizeAthletePracticedSports } from '@sharpit/server/lib/practiced-sports';
-import type { GateContext, GateProposal } from './types';
+import type { AthleteSnapshot } from '@sharpit/app/athlete-state/snapshot';
+import { normalizeAthletePracticedSports } from '@sharpit/app/lib/practiced-sports';
+import type { GateContext, GateProposal } from '@sharpit/app/lib/plan-gate/types';
 
 const WINDOW_PADDING_DAYS = 7; // for recovery-spacing / duplicate checks near the proposal window edges
 

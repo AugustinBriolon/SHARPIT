@@ -1,6 +1,6 @@
-import type { AthleteSnapshot } from '@sharpit/server/athlete-state/snapshot';
-import type { FreshnessLevel } from '@sharpit/server/athlete-state/freshness';
-import { DEMO_CLERK_USER_ID } from '@sharpit/server/lib/demo/demo-session';
+import type { AthleteSnapshot } from '@sharpit/app/athlete-state/snapshot';
+import type { FreshnessLevel } from '@sharpit/app/athlete-state/freshness';
+import { DEMO_CLERK_USER_ID } from '@sharpit/app/lib/demo/demo-session';
 
 export { DEMO_CLERK_USER_ID };
 

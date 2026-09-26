@@ -1,12 +1,12 @@
 'use client';
 
 import { useMemo } from 'react';
-import { performanceSports } from '@sharpit/server/lib/goals/goal-metric-config';
+import { performanceSports } from '@sharpit/app/lib/goals/goal-metric-config';
 import {
   performanceSportsForPracticed,
   periodSportOptionsForPracticed,
   type PracticedSportId,
-} from '@sharpit/server/lib/practiced-sports';
+} from '@sharpit/app/lib/practiced-sports';
 import { useResolvedPracticedSports } from '@/components/practiced-sports/use-resolved-practiced-sports';
 
 export function useAllowedMetricSports(practicedSports?: readonly PracticedSportId[]) {

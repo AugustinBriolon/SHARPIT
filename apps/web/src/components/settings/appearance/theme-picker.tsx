@@ -5,7 +5,7 @@ import {
   PreferenceRadioGroup,
   type PreferenceOption,
 } from '@/components/settings/preference-radio-group';
-import type { ThemePreference } from '@sharpit/server/lib/theme/theme';
+import type { ThemePreference } from '@sharpit/app/lib/theme/theme';
 import { useThemePreference } from '@/providers/theme-provider';
 
 const OPTIONS: readonly PreferenceOption<ThemePreference>[] = [

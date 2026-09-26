@@ -1,4 +1,4 @@
-import { cn } from '@sharpit/server/lib/utils';
+import { cn } from '@sharpit/app/lib/utils';
 
 /**
  * Semantic eyebrow — defaults to `text-label`.

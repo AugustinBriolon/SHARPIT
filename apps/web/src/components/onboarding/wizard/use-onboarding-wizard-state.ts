@@ -1,19 +1,19 @@
 'use client';
 
 import { useCallback, useState } from 'react';
-import type { AthleteEquipment } from '@sharpit/server/lib/equipment/types';
-import type { IntegrationId } from '@sharpit/server/lib/integrations/shared/client-sync';
-import type { IntegrationSourcePrefs } from '@sharpit/server/lib/integrations/source-prefs';
-import type { DataClassId } from '@sharpit/server/lib/integrations/provider-catalog';
+import type { AthleteEquipment } from '@sharpit/app/lib/equipment/types';
+import type { IntegrationId } from '@sharpit/app/lib/integrations/shared/client-sync';
+import type { IntegrationSourcePrefs } from '@sharpit/app/lib/integrations/source-prefs';
+import type { DataClassId } from '@sharpit/app/lib/integrations/provider-catalog';
 import {
   parseOnboardingStepParam,
   type OnboardingWizardStep,
-} from '@sharpit/server/lib/onboarding/wizard/wizard-steps';
-import type { PracticedSportId } from '@sharpit/server/lib/practiced-sports';
+} from '@sharpit/app/lib/onboarding/wizard/wizard-steps';
+import type { PracticedSportId } from '@sharpit/app/lib/practiced-sports';
 import {
   EMPTY_TRAINING_AVAILABILITY,
   type TrainingAvailability,
-} from '@sharpit/server/lib/training-availability/types';
+} from '@sharpit/app/lib/training-availability/types';
 import type { CredentialProvider } from '@/components/onboarding/wizard/use-onboarding-wizard';
 
 export function useOnboardingWizardState(

@@ -1,4 +1,7 @@
-import type { OutcomeEvaluation, OutcomeEvaluationInput } from './types';
+import type {
+  OutcomeEvaluation,
+  OutcomeEvaluationInput,
+} from '@sharpit/app/lib/decision-memory/types';
 import { isSet } from '@sharpit/shared/value';
 
 const MIN_RECOVERY_DAYS_WITH_DATA = 2;

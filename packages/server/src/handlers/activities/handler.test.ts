@@ -14,7 +14,7 @@ vi.mock('@sharpit/server/lib/auth/current-athlete', () => ({
 }));
 
 const isDemoSessionMock = vi.fn();
-vi.mock('@sharpit/server/lib/demo/demo-session', () => ({
+vi.mock('@sharpit/app/lib/demo/demo-session', () => ({
   isDemoSession: isDemoSessionMock,
 }));
 

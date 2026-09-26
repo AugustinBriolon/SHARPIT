@@ -5,12 +5,12 @@ import { enrichActivityObservedContext } from '@sharpit/server/lib/activity/deta
 import { buildActivityCreateData } from '@sharpit/server/lib/activity/activity-service';
 import { runActivityNarrativeAnalysis } from '@sharpit/server/lib/activity/narrative/activity-narrative';
 import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
-import { isDemoSession } from '@sharpit/server/lib/demo/demo-session';
+import { isDemoSession } from '@sharpit/app/lib/demo/demo-session';
 import { syncManualActivityObservations } from '@sharpit/server/lib/observation/manual-observation-sync';
 import { createActivity, getActivitiesList } from '@sharpit/server/lib/queries';
 import { prisma } from '@sharpit/db/client';
 import { updateRecordsForTypesSafe } from '@sharpit/server/lib/training/records/records';
-import { createActivitySchema } from '@sharpit/server/lib/validators/activity';
+import { createActivitySchema } from '@sharpit/app/lib/validators/activity';
 
 export async function GET(request: NextRequest) {
   // Read search params before try so Cache Components prerender interrupts propagate.

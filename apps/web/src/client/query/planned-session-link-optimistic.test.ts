@@ -4,7 +4,7 @@ import {
   applyPlannedSessionLinkOptimistic,
   resolvePreviousLinkedActivityId,
 } from '@/client/query/planned-session-link-optimistic';
-import type { ClientActivity, ClientPlannedSession } from '@sharpit/server/lib/query/types';
+import type { ClientActivity, ClientPlannedSession } from '@sharpit/app/lib/query/types';
 
 function session(overrides: Partial<ClientPlannedSession> & { id: string }): ClientPlannedSession {
   return {

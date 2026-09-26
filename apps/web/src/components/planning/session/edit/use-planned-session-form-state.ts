@@ -7,12 +7,12 @@ import {
 import {
   enduranceSportFromActivityType,
   parseEndurancePrescription,
-} from '@sharpit/server/lib/planned-session/endurance/endurance-prescription';
+} from '@sharpit/app/lib/planned-session/endurance/endurance-prescription';
 import {
   type EnduranceDraftBlock,
   draftFromEndurancePrescription,
-} from '@sharpit/server/lib/planned-session/endurance/endurance-draft';
-import type { ClientPlannedSession } from '@sharpit/server/lib/query/types';
+} from '@sharpit/app/lib/planned-session/endurance/endurance-draft';
+import type { ClientPlannedSession } from '@sharpit/app/lib/query/types';
 import { ActivityType, SessionIntensity } from '@prisma/client';
 import { useState } from 'react';
 import type { LocationPlaceValue } from '@/components/ui/location-place-picker';
@@ -30,9 +30,9 @@ import {
   initialLocationSource,
   NO_GOAL,
 } from '@/components/planning/session/edit/planned-session-dialog-helpers';
-import type { EquipmentItemId } from '@sharpit/server/lib/equipment/catalog';
-import { parseSessionAccessories } from '@sharpit/server/lib/planned-session/accessories/session-accessories';
-import { parseStrengthPrescription } from '@sharpit/server/lib/planned-session/strength/strength-prescription';
+import type { EquipmentItemId } from '@sharpit/app/lib/equipment/catalog';
+import { parseSessionAccessories } from '@sharpit/app/lib/planned-session/accessories/session-accessories';
+import { parseStrengthPrescription } from '@sharpit/app/lib/planned-session/strength/strength-prescription';
 
 export function usePlannedSessionFormState(
   session?: ClientPlannedSession | null,

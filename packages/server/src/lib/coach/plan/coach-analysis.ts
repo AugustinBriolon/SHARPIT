@@ -12,14 +12,14 @@ import {
   categoryLabels,
   sideLabels,
   statusLabels,
-} from '@sharpit/server/lib/physical-health/physical';
+} from '@sharpit/app/lib/physical-health/physical';
 import {
   getActivePhysicalNotes,
   getAthleteProfile,
   getBrickSessions,
   getPlannedSessionById,
 } from '@sharpit/server/lib/queries';
-import { intensityLabels } from '@sharpit/server/lib/planned-session/sessions';
+import { intensityLabels } from '@sharpit/app/lib/planned-session/sessions';
 import {
   applyStrengthScoringGuards,
   computeStrengthCompliance,
@@ -27,7 +27,7 @@ import {
   type ComparableStrengthSet,
   type StrengthCompliance,
 } from '@sharpit/server/lib/planned-session/strength/strength-compliance';
-import { parseStrengthPrescription } from '@sharpit/server/lib/planned-session/strength/strength-prescription';
+import { parseStrengthPrescription } from '@sharpit/app/lib/planned-session/strength/strength-prescription';
 import { fetchActivityDetail } from '@sharpit/server/lib/integrations/strava/strava';
 import { getValidAccessToken } from '@sharpit/server/lib/integrations/strava/strava-sync';
 import { prisma } from '@sharpit/db/client';
@@ -36,11 +36,11 @@ import {
   sessionAnalysisSchema,
   type BrickAnalysis,
   type SessionAnalysis,
-} from '@sharpit/server/lib/validators/coach';
+} from '@sharpit/app/lib/validators/coach';
 import {
   COACH_COPY_DASH_RULE,
   sanitizeCoachCopy,
-} from '@sharpit/server/lib/coach/sanitize-coach-copy';
+} from '@sharpit/app/lib/coach/sanitize-coach-copy';
 
 /** Prefer local notes when long enough — skip Strava round-trip. */
 export const LOCAL_DESCRIPTION_MIN_CHARS = 40;

@@ -1,7 +1,7 @@
 import { Suspense } from 'react';
 import { MobileDrillDownHeader } from '@/components/layout/header/mobile-drill-down-header';
 import { AdaptationScreen } from '@/components/adaptation/adaptation-screen';
-import { TWIN_ADAPTATION_READING } from '@sharpit/server/lib/plan/hub/plan-coach-offer';
+import { TWIN_ADAPTATION_READING } from '@sharpit/app/lib/plan/hub/plan-coach-offer';
 
 /**
  * The drill-down reads the selected day from the URL, so it streams. The header

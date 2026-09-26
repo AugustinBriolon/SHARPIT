@@ -14,8 +14,8 @@ import { CoachPromptBar } from '@/components/coach/chat/composer/coach-prompt-ba
 import { useCoachChat } from '@/components/coach/chat/shell/use-coach-chat';
 import { Button } from '@/components/ui/button';
 import type { UIMessage } from 'ai';
-import type { CoachDiscussContext } from '@sharpit/server/lib/coach/chat/discuss/coach-discuss-context';
-import { cn } from '@sharpit/server/lib/utils';
+import type { CoachDiscussContext } from '@sharpit/app/lib/coach/chat/discuss/coach-discuss-context';
+import { cn } from '@sharpit/app/lib/utils';
 
 type ChatState = ReturnType<typeof useCoachChat>;
 

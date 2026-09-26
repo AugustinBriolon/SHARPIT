@@ -1,5 +1,10 @@
 import { startOfDay } from 'date-fns';
-import type { GateContext, GateProposal, PlanGateRule, RuleFinding } from '../types';
+import type {
+  GateContext,
+  GateProposal,
+  PlanGateRule,
+  RuleFinding,
+} from '@sharpit/app/lib/plan-gate/types';
 
 /** A completed session is an immutable historical record — never modified, never silently replaced. */
 export const completedConflictRule: PlanGateRule = (

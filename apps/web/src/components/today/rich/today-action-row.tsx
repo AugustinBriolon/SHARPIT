@@ -6,7 +6,7 @@ import {
   TodayActionRowSessionLists,
 } from '@/components/today/rich/today-action-row-parts';
 import { useTodayActionRowDerived } from '@/components/today/rich/use-today-action-row-derived';
-import type { TodayViewModel } from '@sharpit/server/presentation/today-view-model';
+import type { TodayViewModel } from '@sharpit/app/presentation/today-view-model';
 import { useAppModal } from '@/providers/app-modal-provider';
 
 export function TodayActionRow({

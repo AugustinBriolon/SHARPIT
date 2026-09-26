@@ -9,9 +9,9 @@
 
 import type { ActivityType, SessionIntensity } from '@prisma/client';
 import { isSet } from '@sharpit/shared/value';
-import { activityTypeLabels } from '@sharpit/server/lib/format';
-import { formatDate } from '@sharpit/server/lib/format';
-import { intensityLabels } from '@sharpit/server/lib/planned-session/sessions';
+import { activityTypeLabels } from '@sharpit/app/lib/format';
+import { formatDate } from '@sharpit/app/lib/format';
+import { intensityLabels } from '@sharpit/app/lib/planned-session/sessions';
 import { deriveSessionExecutionState } from '@sharpit/server/lib/decision-memory/session-execution';
 import { describeOutcome } from '@sharpit/server/lib/decision-memory/describe-outcome';
 import { describeSnapshotContext } from '@sharpit/server/lib/presentation/coaching/snapshot-context-labels';
@@ -23,8 +23,8 @@ import type {
   SessionRationaleOutcome,
   SessionRationaleSuggested,
   SessionRationaleViewModel,
-} from '@sharpit/server/presentation/session-rationale-view-model';
-import type { CoachingDecisionWithHistory } from '@sharpit/server/lib/decision-memory/types';
+} from '@sharpit/app/presentation/session-rationale-view-model';
+import type { CoachingDecisionWithHistory } from '@sharpit/app/lib/decision-memory/types';
 
 const EXECUTION_STATE_LABEL: Record<string, string> = {
   NOT_SCHEDULED: 'Pas encore planifiée',

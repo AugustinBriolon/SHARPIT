@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { resolveGarminExerciseFallback } from '@sharpit/server/lib/integrations/garmin/garmin-exercise-fallback';
-import { resolveGarminExerciseMatch } from '@sharpit/server/lib/integrations/garmin/garmin-exercise-map';
+import { resolveGarminExerciseFallback } from '@sharpit/app/lib/integrations/garmin/garmin-exercise-fallback';
+import { resolveGarminExerciseMatch } from '@sharpit/app/lib/integrations/garmin/garmin-exercise-map';
 import { buildStrengthWorkoutPayload } from '@sharpit/server/lib/integrations/garmin/garmin-strength-workout-payload';
-import { attachGarminRefsToPrescription } from '@sharpit/server/lib/planned-session/strength/strength-prescription';
+import { attachGarminRefsToPrescription } from '@sharpit/app/lib/planned-session/strength/strength-prescription';
 
 /**
  * Real prehab session pushed to the watch: 6 exercises prescribed, only 2 arrived.

@@ -25,7 +25,7 @@ import {
   COACH_PROGRESS_HEADERS,
   encodeCoachProgressEvent,
   type CoachProgressEvent,
-} from '@sharpit/server/lib/coach/chat/transcript/coach-progress-stream';
+} from '@sharpit/app/lib/coach/chat/transcript/coach-progress-stream';
 import { runStructuredCoachStream } from '@sharpit/server/lib/coach/stream-structured-generation';
 import { withCoachTrace } from '@sharpit/server/lib/ai/coach-trace';
 import { buildBusySummary } from '@sharpit/server/lib/coach/plan/calendar-availability';
@@ -34,11 +34,11 @@ import {
   coachPlanGenerationSchema,
   coachPlanRequestSchema,
   type CoachPlan,
-} from '@sharpit/server/lib/validators/coach';
+} from '@sharpit/app/lib/validators/coach';
 import type { z } from 'zod';
 import { buildGateContext } from '@sharpit/server/lib/plan-gate/build-context';
 import { evaluatePlan } from '@sharpit/server/lib/plan-gate/evaluate-plan';
-import type { GateProposal } from '@sharpit/server/lib/plan-gate/types';
+import type { GateProposal } from '@sharpit/app/lib/plan-gate/types';
 import { computeTrainingDayId } from '@sharpit/core/training/training-day';
 import { buildDecisionSnapshotContext } from '@sharpit/server/lib/decision-memory/build-snapshot-context';
 import { createCoachingDecision } from '@sharpit/server/lib/decision-memory/repository';
@@ -46,15 +46,15 @@ import { formatStrengthSessionRules } from '@sharpit/server/lib/planned-session/
 import {
   formatSensitiveZoneRules,
   sensitiveZonesFrom,
-} from '@sharpit/server/lib/physical-health/sensitive-zones';
+} from '@sharpit/app/lib/physical-health/sensitive-zones';
 import {
   formatTravelConstraintPromptRule,
   resolvePlanTargetUnderTravel,
-} from '@sharpit/server/lib/travel-context/training-constraint';
+} from '@sharpit/app/lib/travel-context/training-constraint';
 import {
   COACH_COPY_DASH_RULE,
   sanitizeCoachCopy,
-} from '@sharpit/server/lib/coach/sanitize-coach-copy';
+} from '@sharpit/app/lib/coach/sanitize-coach-copy';
 import { normalizeCoachPlanGeneration } from '@sharpit/server/lib/coach/plan/normalize-plan-generation';
 import {
   coachGenerationErrorDetails,

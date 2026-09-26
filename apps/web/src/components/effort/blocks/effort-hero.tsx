@@ -1,7 +1,7 @@
 'use client';
 
 import { PhysioDrillDownHero } from '@/components/today/drill-down/physio-drill-down-hero';
-import { isExpertMode } from '@sharpit/server/lib/preferences/display-mode';
+import { isExpertMode } from '@sharpit/app/lib/preferences/display-mode';
 import { useDisplayMode } from '@/providers/display-mode-provider';
 
 function effortFreshnessLine(estimatedDaysToFresh: number | null): string | null {

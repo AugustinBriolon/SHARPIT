@@ -10,7 +10,7 @@ import {
   getPlannedSessionById,
   updatePlannedSession,
 } from '@sharpit/server/lib/queries';
-import { buildScenarioApplyOp } from '@sharpit/server/lib/scenario/apply-scenario-op';
+import { buildScenarioApplyOp } from '@sharpit/app/lib/scenario/apply-scenario-op';
 import { generateScenariosFromDecision } from '@sharpit/server/lib/scenario/generate-from-decision';
 
 export type ApplyScenarioComparisonResult =

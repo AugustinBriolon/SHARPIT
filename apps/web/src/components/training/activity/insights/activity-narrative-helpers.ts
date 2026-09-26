@@ -1,9 +1,6 @@
 import { ActivityType } from '@prisma/client';
-import {
-  activityNarrativeSchema,
-  type ActivityNarrative,
-} from '@sharpit/server/lib/validators/coach';
-import { sanitizeCoachCopy } from '@sharpit/server/lib/coach/sanitize-coach-copy';
+import { activityNarrativeSchema, type ActivityNarrative } from '@sharpit/app/lib/validators/coach';
+import { sanitizeCoachCopy } from '@sharpit/app/lib/coach/sanitize-coach-copy';
 import { fetchActivityNarrativeFields, postActivityNarrative } from '@/client/query/fetchers';
 
 export const NARRATIVE_POLL_MS = 3_000;

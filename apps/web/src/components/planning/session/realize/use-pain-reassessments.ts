@@ -1,15 +1,15 @@
 'use client';
 
 import { useMemo } from 'react';
-import type { ClientPhysicalNote } from '@sharpit/server/lib/query/types';
+import type { ClientPhysicalNote } from '@sharpit/app/lib/query/types';
 import { usePhysicalNotes } from '@/hooks/use-physical';
-import type { SessionAnalysis } from '@sharpit/server/lib/validators/coach';
+import type { SessionAnalysis } from '@sharpit/app/lib/validators/coach';
 import { isReassessmentAnswered } from '@/components/planning/session/realize/physical-reassessment-card';
 import {
   dueReassessments,
   reassessmentQuestion,
   type ReassessmentDue,
-} from '@sharpit/server/lib/physical-health/reassessment-due';
+} from '@sharpit/app/lib/physical-health/reassessment-due';
 
 type Reassessment = NonNullable<SessionAnalysis['physicalReassessments']>[number];
 

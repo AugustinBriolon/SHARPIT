@@ -1,7 +1,7 @@
 import type { HeroActivity } from './activity-hero-stats';
-import { SPORT_IDENTITY_SURFACE } from '@sharpit/server/lib/activity/sport-identity';
-import { activityTypeLabels, formatDate, formatDuration } from '@sharpit/server/lib/format';
-import { formatTrainingLoad, type DisplayMode } from '@sharpit/server/lib/preferences/display-mode';
+import { SPORT_IDENTITY_SURFACE } from '@sharpit/app/lib/activity/sport-identity';
+import { activityTypeLabels, formatDate, formatDuration } from '@sharpit/app/lib/format';
+import { formatTrainingLoad, type DisplayMode } from '@sharpit/app/lib/preferences/display-mode';
 import { ActivityType } from '@prisma/client';
 import type { LucideIcon } from 'lucide-react';
 import { Bike, Dumbbell, Footprints, Medal, Mountain, Shapes, Waves } from 'lucide-react';
@@ -9,7 +9,7 @@ import type {
   ActivityDetail,
   ActivityStat,
   ChipTone,
-} from '@sharpit/server/lib/activity/detail/types';
+} from '@sharpit/app/lib/activity/detail/types';
 
 export const sportIcon: Record<ActivityType, LucideIcon> = {
   RUN: Footprints,
@@ -21,7 +21,7 @@ export const sportIcon: Record<ActivityType, LucideIcon> = {
   OTHER: Shapes,
 };
 
-/** @deprecated Prefer `SPORT_IDENTITY_SURFACE` from `@sharpit/server/lib/activity/sport-identity`. */
+/** @deprecated Prefer `SPORT_IDENTITY_SURFACE` from `@sharpit/app/lib/activity/sport-identity`. */
 export const sportIconWrap = SPORT_IDENTITY_SURFACE;
 
 export const chipDot: Record<ChipTone, string> = {

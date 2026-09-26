@@ -2,7 +2,7 @@
  * Planned Session — presentation mapping (product expression, not raw weather).
  */
 
-import type { PlannedSessionViewModel } from '@sharpit/server/presentation/planned-session-view-model';
+import type { PlannedSessionViewModel } from '@sharpit/app/presentation/planned-session-view-model';
 import { isSet } from '@sharpit/shared/value';
 import type {
   PlannedSessionContext,

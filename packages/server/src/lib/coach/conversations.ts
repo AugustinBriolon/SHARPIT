@@ -1,6 +1,6 @@
 import type { Prisma } from '@prisma/client';
 import { isSet } from '@sharpit/shared/value';
-import { sanitizeCoachCopy } from '@sharpit/server/lib/coach/sanitize-coach-copy';
+import { sanitizeCoachCopy } from '@sharpit/app/lib/coach/sanitize-coach-copy';
 import { prisma } from '@sharpit/db/client';
 
 const DEFAULT_TITLE = 'Nouvelle conversation';

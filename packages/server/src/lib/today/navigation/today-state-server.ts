@@ -32,7 +32,7 @@ import type {
   PhysicalHealthData,
   EnvironmentSnapshotData,
   TodayState,
-} from '@sharpit/server/athlete-state/today-state';
+} from '@sharpit/app/athlete-state/today-state';
 import { prisma } from '@sharpit/db/client';
 
 function readStateComputedAt(state: unknown): Date | null {

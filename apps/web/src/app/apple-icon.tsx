@@ -1,5 +1,5 @@
 import { ImageResponse } from 'next/og';
-import { BrandIconCanvas } from '@sharpit/server/lib/ui/brand-icon-canvas';
+import { BrandIconCanvas } from '@sharpit/app/lib/ui/brand-icon-canvas';
 
 export const contentType = 'image/png';
 

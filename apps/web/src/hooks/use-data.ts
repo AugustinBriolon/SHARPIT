@@ -12,7 +12,7 @@ import {
   fetchTrainingPlan,
 } from '@/client/query/fetchers';
 import { queryKeys } from '@/client/query/keys';
-import type { ThresholdField } from '@sharpit/server/lib/threshold/threshold-estimates';
+import type { ThresholdField } from '@sharpit/app/lib/threshold/threshold-estimates';
 import { sendJson } from '@/client/query/send-json';
 
 export {

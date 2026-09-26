@@ -12,7 +12,7 @@ import { isSet } from '@sharpit/shared/value';
 import { PrismaEnvironmentalObservationRepository } from '@sharpit/server/infrastructure/environment/prisma-environment-observation-repository';
 import { resolveAthleteGeoLocation } from '@sharpit/server/lib/environment/athlete-location';
 import { activityWeatherWindow } from '@sharpit/server/lib/activity/weather/activity-weather-window';
-import { isIndoorActivitySession } from '@sharpit/server/lib/activity/location/indoor-activity';
+import { isIndoorActivitySession } from '@sharpit/app/lib/activity/location/indoor-activity';
 import { prisma } from '@sharpit/db/client';
 import { computeTrainingDayId } from '@sharpit/core/training/training-day';
 

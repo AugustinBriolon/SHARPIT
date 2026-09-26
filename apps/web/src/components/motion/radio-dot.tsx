@@ -1,7 +1,7 @@
 'use client';
 
 import { motion, useReducedMotion } from 'motion/react';
-import { SPRING_LAYOUT } from '@sharpit/server/lib/ease';
+import { SPRING_LAYOUT } from '@sharpit/app/lib/ease';
 
 export function RadioDot({ layoutId, selected }: { layoutId: string; selected: boolean }) {
   const reduce = useReducedMotion();

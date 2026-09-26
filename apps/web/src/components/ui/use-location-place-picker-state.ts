@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import type { GeocodedPlace } from '@sharpit/server/lib/geocoding/types';
+import type { GeocodedPlace } from '@sharpit/app/lib/geocoding/types';
 import {
   handleLocationDraftChange,
   toLocationPlaceValue,

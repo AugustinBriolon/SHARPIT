@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { countDaysInSpan } from '@sharpit/server/lib/journal/journal-habit-analysis-load';
-import type { JournalAnalysisDay } from '@sharpit/server/lib/journal/journal-habit-analysis';
+import type { JournalAnalysisDay } from '@sharpit/app/lib/journal/journal-habit-analysis';
 
 function day(trainingDayId: string): JournalAnalysisDay {
   return { trainingDayId, factors: {}, sleepMinutes: null, recoveryScore: null, bodyBattery: null };

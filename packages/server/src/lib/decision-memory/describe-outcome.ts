@@ -7,9 +7,13 @@
  * simplistic score. INCONCLUSIVE is always stated explicitly, never silently hidden.
  */
 
-import { SESSION_VERDICT_LABELS } from '@sharpit/server/lib/planned-session/display/session-analysis-display';
+import { SESSION_VERDICT_LABELS } from '@sharpit/app/lib/planned-session/display/session-analysis-display';
 import { isSet } from '@sharpit/shared/value';
-import type { OutcomeEvaluation, ExecutionMatch, ShortTermRecoveryResponse } from './types';
+import type {
+  OutcomeEvaluation,
+  ExecutionMatch,
+  ShortTermRecoveryResponse,
+} from '@sharpit/app/lib/decision-memory/types';
 
 const INCONCLUSIVE_WORDING = 'Preuves encore insuffisantes pour conclure.';
 

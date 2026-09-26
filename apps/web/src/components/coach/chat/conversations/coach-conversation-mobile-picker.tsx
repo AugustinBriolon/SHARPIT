@@ -10,7 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { cn } from '@sharpit/server/lib/utils';
+import { cn } from '@sharpit/app/lib/utils';
 import type { ClientConversationSummary } from '@/client/query/fetchers';
 
 function conversationLabel(c: ClientConversationSummary): string {

@@ -9,9 +9,9 @@ import {
 import { useCoachPlan, type CoachGenerationProgress } from '@/hooks/use-coach';
 import { useGoals, usePlannedSessionMutations, useTrainingPlan } from '@/hooks/use-data';
 import { useOfflineGuard } from '@/hooks/use-offline-guard';
-import { warmCoachContext } from '@sharpit/server/lib/coach/warm-coach-context';
-import { resolveDefaultPlanGoalId } from '@sharpit/server/lib/planned-session/plan-goal';
-import { phaseLabels } from '@sharpit/server/lib/training/periodization';
+import { warmCoachContext } from '@sharpit/app/lib/coach/warm-coach-context';
+import { resolveDefaultPlanGoalId } from '@sharpit/app/lib/planned-session/plan-goal';
+import { phaseLabels } from '@sharpit/app/lib/training/periodization';
 
 const WEEK_OPTS = { weekStartsOn: 1 as const };
 const NO_GOAL = 'none';

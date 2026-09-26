@@ -5,7 +5,7 @@ import {
   getDayJournalEntry,
   upsertDayJournalEntryDb,
 } from '@sharpit/server/lib/journal/day-journal-service';
-import { awaitRequest } from '@sharpit/server/lib/next/await-request';
+import { awaitRequest } from '@sharpit/app/lib/next/await-request';
 import { prisma } from '@sharpit/db/client';
 
 const factorStateSchema = z.enum(['unset', 'no', 'yes']);

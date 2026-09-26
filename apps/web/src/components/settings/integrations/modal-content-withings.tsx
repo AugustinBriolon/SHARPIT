@@ -16,7 +16,7 @@ import {
   integrationConnectCta,
 } from '@/components/settings/integrations/types';
 import { buttonVariants } from '@/components/ui/button';
-import { cn } from '@sharpit/server/lib/utils';
+import { cn } from '@sharpit/app/lib/utils';
 import { ConnectLink } from '@/components/settings/integrations/connect-link';
 
 function WithingsNotConfigured({ integration }: IntegrationContentProps) {

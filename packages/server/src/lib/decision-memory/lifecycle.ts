@@ -7,7 +7,10 @@
  * docs/adr/ADR-006-decision-memory-aggregate.md.
  */
 
-import type { CoachingDecisionActionType, CoachingDecisionStatus } from './types';
+import type {
+  CoachingDecisionActionType,
+  CoachingDecisionStatus,
+} from '@sharpit/app/lib/decision-memory/types';
 
 const VALID_STATUS_TRANSITIONS: Record<CoachingDecisionStatus, readonly CoachingDecisionStatus[]> =
   {

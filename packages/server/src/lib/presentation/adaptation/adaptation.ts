@@ -1,16 +1,16 @@
 import { getOrBuildAthleteSnapshot } from '@sharpit/server/lib/athlete-state/snapshot-service';
-import { resolve } from '@sharpit/server/lib/french';
-import { mapConfidenceToTier } from '@sharpit/server/lib/today/dashboard/today-mapping';
-import { ADAPTATION_STATUS_SIGNAL } from '@sharpit/server/lib/today/dashboard/today-dashboard-labels';
+import { resolve } from '@sharpit/app/lib/french';
+import { mapConfidenceToTier } from '@sharpit/app/lib/today/dashboard/today-mapping';
+import { ADAPTATION_STATUS_SIGNAL } from '@sharpit/app/lib/today/dashboard/today-dashboard-labels';
 import { buildAdaptationPageInsights } from '@sharpit/server/lib/product-insight/adaptation-page-insights';
 import { buildGlobalDecisionContext } from '@sharpit/server/lib/decision/global-decision-context';
-import { EMPTY_GLOBAL_DECISION } from '@sharpit/server/presentation/global-decision-context';
+import { EMPTY_GLOBAL_DECISION } from '@sharpit/app/presentation/global-decision-context';
 import type {
   AdaptationViewModel,
   AdaptationDimensionVm,
-} from '@sharpit/server/presentation/adaptation-view-model';
+} from '@sharpit/app/presentation/adaptation-view-model';
 import type { ProductInsightBundle } from '@sharpit/core/product-insight/types';
-import type { DimensionResult } from '@sharpit/server/athlete-state/today-state';
+import type { DimensionResult } from '@sharpit/app/athlete-state/today-state';
 
 const ADAPTATION_VERDICT_DISPLAY: Record<string, { label: string; colorClass: string }> = {
   INCREASE_LOAD: { label: 'Augmenter la charge', colorClass: 'text-primary' },

@@ -6,7 +6,7 @@ import {
   orderWeekdays,
   type TrainingAvailability,
   type Weekday,
-} from '@sharpit/server/lib/training-availability/types';
+} from '@sharpit/app/lib/training-availability/types';
 
 /** Out-of-range or non-integer counts read as "not declared", never as a clamp. */
 function parseSessionsPerWeek(raw: unknown): number | null {

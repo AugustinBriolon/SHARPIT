@@ -2,9 +2,9 @@
 
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { useId } from 'react';
-import { EASE_OUT, SPRING_PRESS } from '@sharpit/server/lib/ease';
+import { EASE_OUT, SPRING_PRESS } from '@sharpit/app/lib/ease';
 import { motionTokens } from '@/client/motion/tokens';
-import { cn } from '@sharpit/server/lib/utils';
+import { cn } from '@sharpit/app/lib/utils';
 
 const CHECK_PATH = 'M5 13l4 4L19 7';
 const INDETERMINATE_PATH = 'M6 12h12';

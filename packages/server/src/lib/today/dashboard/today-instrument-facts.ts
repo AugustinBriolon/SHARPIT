@@ -3,8 +3,8 @@
  * Never restate twin scores already shown in the hero (sleep / recovery / effort / adaptation).
  */
 
-import type { AthleteSnapshot } from '@sharpit/server/athlete-state/snapshot';
-import type { DecisionData, LimitingFactor } from '@sharpit/server/athlete-state/today-state';
+import type { AthleteSnapshot } from '@sharpit/app/athlete-state/snapshot';
+import type { DecisionData, LimitingFactor } from '@sharpit/app/athlete-state/today-state';
 
 export type TodayFactRow = {
   label: string;

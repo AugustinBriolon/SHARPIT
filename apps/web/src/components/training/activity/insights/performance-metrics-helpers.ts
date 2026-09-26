@@ -1,4 +1,4 @@
-import type { ActivityAnalysis } from '@sharpit/server/lib/activity/detail/activity-analysis';
+import type { ActivityAnalysis } from '@sharpit/app/lib/activity/detail/activity-analysis';
 
 export type PerformanceRow = {
   label: string;

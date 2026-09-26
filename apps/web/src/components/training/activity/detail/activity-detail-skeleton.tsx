@@ -7,8 +7,8 @@ import {
   SkeletonText,
   SkeletonTitle,
 } from '@/components/ui/skeleton-patterns';
-import type { ActivityDetailSkeletonLayout } from '@sharpit/server/lib/activity/detail/activity-detail-skeleton-layout';
-import { cn } from '@sharpit/server/lib/utils';
+import type { ActivityDetailSkeletonLayout } from '@sharpit/app/lib/activity/detail/activity-detail-skeleton-layout';
+import { cn } from '@sharpit/app/lib/utils';
 
 /** KPI strip — mirrors WeightedInstruments primary row (3 fields). */
 export function ActivityMetricStripSkeleton({ count = 3 }: { count?: number }) {

@@ -1,4 +1,4 @@
-import { cn } from '@sharpit/server/lib/utils';
+import { cn } from '@sharpit/app/lib/utils';
 
 /** DESIGN_LANGUAGE §11.4 — three stacked bars; filled = tier, empty = opacity-20. */
 export function ConfidenceBars({

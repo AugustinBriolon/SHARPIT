@@ -2,7 +2,7 @@
 
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import type { ProjectionHorizonDays } from '@sharpit/core/projection/types';
-import type { ScenarioComparisonViewModel } from '@sharpit/server/presentation/scenario-comparison-view-model';
+import type { ScenarioComparisonViewModel } from '@sharpit/app/presentation/scenario-comparison-view-model';
 import { fetchScenarioComparisonPresentation } from '@/client/query/presentation-fetchers';
 import { queryKeys } from '@/client/query/keys';
 

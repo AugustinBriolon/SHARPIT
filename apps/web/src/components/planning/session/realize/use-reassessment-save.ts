@@ -5,7 +5,7 @@ import { usePhysicalNoteMutations } from '@/hooks/use-physical';
 import {
   impactToFunctionalImpact,
   type ImpactChoice,
-} from '@sharpit/server/lib/physical-health/reassessment-input';
+} from '@sharpit/app/lib/physical-health/reassessment-input';
 import type { PhysicalReassessment } from '@/components/planning/session/realize/physical-reassessment-card';
 
 export function useReassessmentSave(

@@ -17,14 +17,14 @@ import {
 import {
   formatActivityWeatherNarrative,
   parseActivityWeather,
-} from '@sharpit/server/lib/activity/weather/activity-weather';
-import { isIndoorActivitySession } from '@sharpit/server/lib/activity/location/indoor-activity';
+} from '@sharpit/app/lib/activity/weather/activity-weather';
+import { isIndoorActivitySession } from '@sharpit/app/lib/activity/location/indoor-activity';
 import { resolveActivityEnvironmentPresentation } from '@sharpit/server/lib/environment/activity-environment';
-import { formatDistance, formatDuration } from '@sharpit/server/lib/format';
+import { formatDistance, formatDuration } from '@sharpit/app/lib/format';
 import {
   formatGoalDisplayValue,
   parseGoalMetricConfig,
-} from '@sharpit/server/lib/goals/goal-metric-config';
+} from '@sharpit/app/lib/goals/goal-metric-config';
 import { resolveEnvironmentalExplanation } from '@sharpit/server/lib/presentation/environment/environment';
 import { getActivePhysicalNotes, getAthleteProfile } from '@sharpit/server/lib/queries';
 import { buildTechnicalSessionFacts } from '@sharpit/server/lib/activity/narrative/activity-narrative-technical-facts';

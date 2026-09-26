@@ -12,12 +12,12 @@ import {
   setTrackableEnabled,
   type JournalCustomItem,
   type JournalPrefs,
-} from '@sharpit/server/lib/journal/journal-prefs';
-import { canEnableAnotherTrackable } from '@sharpit/server/lib/journal/journal-limits';
+} from '@sharpit/app/lib/journal/journal-prefs';
+import { canEnableAnotherTrackable } from '@sharpit/app/lib/journal/journal-limits';
 import {
   JOURNAL_CATEGORY_ICON,
   JOURNAL_FILTER_CHIP,
-} from '@sharpit/server/lib/journal/journal-category-surface';
+} from '@sharpit/app/lib/journal/journal-category-surface';
 import {
   CUSTOM_FACTOR_ICON,
   JOURNAL_FILTER_IDS,
@@ -25,8 +25,8 @@ import {
   type JournalBuiltinTrackable,
   type JournalBuiltinTrackableId,
   type JournalFilterId,
-} from '@sharpit/server/lib/journal/journal-trackables';
-import { cn } from '@sharpit/server/lib/utils';
+} from '@sharpit/app/lib/journal/journal-trackables';
+import { cn } from '@sharpit/app/lib/utils';
 import { LinkButton } from '@/components/ui/link-button';
 
 export type PrefsPatcher = (updater: (prev: JournalPrefs) => JournalPrefs) => void;

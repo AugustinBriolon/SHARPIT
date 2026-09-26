@@ -1,4 +1,4 @@
-import { getCatalogProviderByIntegration } from '@sharpit/server/lib/integrations/provider-catalog';
+import { getCatalogProviderByIntegration } from '@sharpit/app/lib/integrations/provider-catalog';
 import {
   isGarminAccountConnected,
   isMfpAccountConnected,

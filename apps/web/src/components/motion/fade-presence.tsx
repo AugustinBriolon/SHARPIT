@@ -3,7 +3,7 @@
 import { AnimatePresence, motion, type HTMLMotionProps } from 'motion/react';
 import { fadeTransition, fadeVariants } from '@/client/motion/variants';
 import { useShouldAnimate } from '@/client/motion/hooks';
-import { cn } from '@sharpit/server/lib/utils';
+import { cn } from '@sharpit/app/lib/utils';
 
 type FadePresenceProps = {
   show: boolean;

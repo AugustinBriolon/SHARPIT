@@ -4,7 +4,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from '@/components/ui/toast';
 import { hydratePlannedSession } from '@/client/query/fetchers';
 import { queryKeys } from '@/client/query/keys';
-import { demoteBrickLegsAfterRemoval } from '@sharpit/server/lib/planned-session/brick/brick-demotion';
+import { demoteBrickLegsAfterRemoval } from '@sharpit/app/lib/planned-session/brick/brick-demotion';
 import { listOptimistic, tempId } from '@/client/query/optimistic';
 import {
   applyPlannedSessionBatchOps,
@@ -13,7 +13,7 @@ import {
   type PlannedSessionBatchOp,
 } from '@/client/query/planned-session-batch';
 import { sendJson } from '@/client/query/send-json';
-import type { ClientActivity, ClientPlannedSession } from '@sharpit/server/lib/query/types';
+import type { ClientActivity, ClientPlannedSession } from '@sharpit/app/lib/query/types';
 import {
   applyActivityPlannedSessionLinkOptimistic,
   applyPlannedSessionLinkOptimistic,
@@ -24,13 +24,13 @@ import {
   rollbackPlannedSessionReanalysis,
 } from '@/client/query/begin-planned-session-reanalysis';
 import { patchPlannedSessionAnalysisInCaches } from '@/client/query/patch-planned-session-analysis-cache';
-import type { TodayViewModel } from '@sharpit/server/presentation/today-view-model';
+import type { TodayViewModel } from '@sharpit/app/presentation/today-view-model';
 import type { QueryClient } from '@tanstack/react-query';
 import { isBrowserDemoAccount } from '@/hooks/use-is-demo-mode';
 import {
   clearDemoSessionLink,
   markDemoSessionLinked,
-} from '@sharpit/server/lib/demo/demo-session-link-state';
+} from '@sharpit/app/lib/demo/demo-session-link-state';
 import {
   applyDemoSessionLinkReading,
   cancelDemoSessionLinkReadingSchedule,

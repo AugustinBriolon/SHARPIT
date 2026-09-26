@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { ClinicalAnnotation } from '@/components/ui/instruments/clinical-annotation';
 import { useCoachContext } from '@/hooks/use-coach';
 import { useAthleteProfile } from '@/hooks/use-data';
-import { getProfileCompleteness } from '@sharpit/server/lib/profile/profile-completeness';
+import { getProfileCompleteness } from '@sharpit/app/lib/profile/profile-completeness';
 
 export function ProfileContextBanner() {
   const { data: profile, isPending: profilePending } = useAthleteProfile();

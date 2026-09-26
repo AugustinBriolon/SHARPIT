@@ -3,7 +3,7 @@
 import type { ReactNode } from 'react';
 import { CoachPromptBar } from '@/components/coach/chat/composer/coach-prompt-bar';
 import { coachBeuiCopy } from '@/components/coach/beui/coach-beui-copy';
-import { cn } from '@sharpit/server/lib/utils';
+import { cn } from '@sharpit/app/lib/utils';
 
 /**
  * Shared footer shell for the coach composer — live chat and skeletons must
@@ -42,8 +42,7 @@ export function CoachComposerChrome({
   placeholder?: string;
   value?: string;
   attachedContext?:
-    | import('@sharpit/server/lib/coach/chat/discuss/coach-discuss-context').CoachDiscussContext
-    | null;
+    import('@sharpit/app/lib/coach/chat/discuss/coach-discuss-context').CoachDiscussContext | null;
   /** @deprecated chips live inside CoachPromptBar */
   contextSlot?: ReactNode;
 }) {

@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import Link from 'next/link';
-import { requireAdmin } from '@sharpit/server/lib/auth/admin';
+import { requireAdmin } from '@sharpit/app/lib/auth/admin';
 
 /**
  * Deliberately outside the `(app)` route group: no athlete shell, no

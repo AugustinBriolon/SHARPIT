@@ -3,36 +3,17 @@ import { isSet } from '@sharpit/shared/value';
 import {
   buildHikeTripSummary,
   type HikeTripSummary,
-} from '@sharpit/server/lib/activity/hike/hike-trip-summary';
+} from '@sharpit/app/lib/activity/hike/hike-trip-summary';
 import { prisma } from '@sharpit/db/client';
 import { ActivityType, Prisma } from '@prisma/client';
 
-const hikeTripActivitySelect = {
-  id: true,
-  type: true,
-  date: true,
-  title: true,
-  duration: true,
-  load: true,
-  observedLocationLabel: true,
-  hikeMetrics: {
-    select: { distanceM: true, elevationM: true, elevationLossM: true },
-  },
-} satisfies Prisma.ActivitySelect;
+import {
+  hikeTripActivitySelect,
+  type HikeTripListItem,
+  type HikeTripWithActivities,
+} from '@sharpit/app/lib/query/hike-trip-types';
 
-type HikeTripActivity = Prisma.ActivityGetPayload<{ select: typeof hikeTripActivitySelect }>;
-
-export type HikeTripWithActivities = {
-  id: string;
-  name: string;
-  createdAt: Date;
-  updatedAt: Date;
-  activities: HikeTripActivity[];
-};
-
-export type HikeTripListItem = HikeTripWithActivities & {
-  summary: HikeTripSummary;
-};
+export type { HikeTripListItem, HikeTripWithActivities };
 
 export class HikeTripValidationError extends Error {
   constructor(message: string) {

@@ -1,4 +1,4 @@
-import type { SessionExecutionState } from './types';
+import type { SessionExecutionState } from '@sharpit/app/lib/decision-memory/types';
 
 const SKIPPED_AFTER_HOURS = 72;
 

@@ -1,7 +1,7 @@
 'use client';
 
-import type { AthleteEquipment } from '@sharpit/server/lib/equipment/types';
-import { normalizeAthleteEquipment } from '@sharpit/server/lib/equipment/parse';
+import type { AthleteEquipment } from '@sharpit/app/lib/equipment/types';
+import { normalizeAthleteEquipment } from '@sharpit/app/lib/equipment/parse';
 import { invalidateAfterAthleteProfileSave } from '@/client/query/invalidate-after-athlete-profile-save';
 import { patchAthleteProfile, patchAthleteProfileKeepalive } from '@/client/query/fetchers';
 import { queryKeys } from '@/client/query/keys';

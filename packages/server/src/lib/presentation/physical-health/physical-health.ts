@@ -6,7 +6,7 @@
 import { format } from 'date-fns';
 import { isSet } from '@sharpit/shared/value';
 import { fr } from 'date-fns/locale';
-import type { PhysicalHealthViewModel } from '@sharpit/server/presentation/physical-health-view-model';
+import type { PhysicalHealthViewModel } from '@sharpit/app/presentation/physical-health-view-model';
 import { isActiveCondition } from '@sharpit/core/inference/physical-health/scoring';
 import { buildConditionTimeline } from '@sharpit/core/physical-health/timeline';
 import type {
@@ -16,10 +16,10 @@ import type {
   FunctionalCapacity,
 } from '@sharpit/core/physical-health/types';
 import { getOrBuildAthleteSnapshot } from '@sharpit/server/lib/athlete-state/snapshot-service';
-import { corpsToneFromPhysicalSeverity } from '@sharpit/server/lib/health/health-status';
-import { mapConfidenceToTier } from '@sharpit/server/lib/today/dashboard/today-mapping';
+import { corpsToneFromPhysicalSeverity } from '@sharpit/app/lib/health/health-status';
+import { mapConfidenceToTier } from '@sharpit/app/lib/today/dashboard/today-mapping';
 import { buildGlobalDecisionContext } from '@sharpit/server/lib/decision/global-decision-context';
-import { EMPTY_GLOBAL_DECISION } from '@sharpit/server/presentation/global-decision-context';
+import { EMPTY_GLOBAL_DECISION } from '@sharpit/app/presentation/global-decision-context';
 import { prisma } from '@sharpit/db/client';
 
 const TYPE_LABELS: Record<string, string> = {

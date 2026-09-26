@@ -15,9 +15,9 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useGoalMutations } from '@/hooks/use-data';
-import { coachDiscussHref } from '@sharpit/server/lib/coach/chat/discuss/coach-discuss-href';
-import type { GoalCapHeroView } from '@sharpit/server/lib/goals/goal-cap';
-import { goalDomId } from '@sharpit/server/lib/today/rich/today-goal-anchor';
+import { coachDiscussHref } from '@sharpit/app/lib/coach/chat/discuss/coach-discuss-href';
+import type { GoalCapHeroView } from '@sharpit/app/lib/goals/goal-cap';
+import { goalDomId } from '@sharpit/app/lib/today/rich/today-goal-anchor';
 
 const GoalDialog = dynamic(
   () => import('@/components/goals/dialogs/goal-dialog').then((mod) => mod.GoalDialog),

@@ -7,8 +7,8 @@ import { useDisplayMode } from '@/providers/display-mode-provider';
 import {
   MOI_PERSONALIZATION_DENSITY_HASH,
   MOI_PERSONALIZATION_PATH,
-} from '@sharpit/server/lib/moi/paths';
-import { cn } from '@sharpit/server/lib/utils';
+} from '@sharpit/app/lib/moi/paths';
+import { cn } from '@sharpit/app/lib/utils';
 
 /**
  * Silent indicator that the current page shows technical detail the

@@ -1,9 +1,9 @@
 'use client';
 
-import type { EquipmentItemId } from '@sharpit/server/lib/equipment/catalog';
-import { accessoryOptionsForActivityType } from '@sharpit/server/lib/planned-session/accessories/session-accessories';
+import type { EquipmentItemId } from '@sharpit/app/lib/equipment/catalog';
+import { accessoryOptionsForActivityType } from '@sharpit/app/lib/planned-session/accessories/session-accessories';
 import type { ActivityType } from '@prisma/client';
-import { cn } from '@sharpit/server/lib/utils';
+import { cn } from '@sharpit/app/lib/utils';
 
 export function SessionAccessoriesPicker({
   type,

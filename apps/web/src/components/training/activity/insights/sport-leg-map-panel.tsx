@@ -1,8 +1,8 @@
 'use client';
 
 import { MemoizedRouteMap as RouteMap } from '@/components/training/activity/insights/route-map';
-import type { MultisportLegStream } from '@sharpit/server/lib/streams/streams';
-import { sportIdentityHex } from '@sharpit/server/lib/activity/sport-identity';
+import type { MultisportLegStream } from '@sharpit/app/lib/streams/stream-types';
+import { sportIdentityHex } from '@sharpit/app/lib/activity/sport-identity';
 
 export function SportLegMapPanel({ entry }: { entry: MultisportLegStream }) {
   const { leg, type, stream } = entry;

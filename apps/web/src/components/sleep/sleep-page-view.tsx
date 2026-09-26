@@ -7,7 +7,7 @@ import { SleepStatsStrip } from '@/components/sleep/blocks/sleep-stats-strip';
 import type { SleepPageViewProps } from '@/components/sleep/types';
 import { MetricDrillDownPage } from '@/components/today/drill-down/metric-drill-down-page';
 import { Skeleton } from '@/components/ui/skeleton';
-import { formatClock, formatDuration } from '@sharpit/server/lib/sleep/sleep';
+import { formatClock, formatDuration } from '@sharpit/app/lib/sleep/sleep';
 import dynamic from 'next/dynamic';
 
 const SleepTrendSection = dynamic(

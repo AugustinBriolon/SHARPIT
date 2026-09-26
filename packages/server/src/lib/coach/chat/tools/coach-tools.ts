@@ -1,7 +1,7 @@
 import {
   DEFAULT_CORE_PRACTICED_SPORTS,
   type PracticedSportId,
-} from '@sharpit/server/lib/practiced-sports';
+} from '@sharpit/app/lib/practiced-sports';
 import { buildContextCoachTools } from './coach-tools-context';
 import { buildQueryCoachTools } from './coach-tools-query';
 import { buildSessionCoachTools } from './coach-tools-sessions';

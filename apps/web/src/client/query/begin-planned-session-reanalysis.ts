@@ -5,7 +5,7 @@ import type {
   ClientActivity,
   ClientActivityDetail,
   ClientPlannedSession,
-} from '@sharpit/server/lib/query/types';
+} from '@sharpit/app/lib/query/types';
 
 export type PlannedSessionAnalysisSnapshot = {
   analysis: ClientPlannedSession['analysis'];

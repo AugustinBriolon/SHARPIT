@@ -5,7 +5,7 @@
 import type { PlannedSessionContext } from '@sharpit/core/planned-session/types';
 import type { TrainingEnvironmentalImpact } from '@sharpit/core/inference/environment/types';
 import type { ScenarioSessionSlice } from '@sharpit/core/scenario/types';
-import { estimatePlannedLoad } from '@sharpit/server/lib/planned-session/planning';
+import { estimatePlannedLoad } from '@sharpit/app/lib/planned-session/planning';
 import { computeTrainingDayId } from '@sharpit/core/training/training-day';
 import type { PlannedSessionExposureSetting } from '@sharpit/core/planned-session/types';
 import type { ActivityType, SessionIntensity } from '@prisma/client';

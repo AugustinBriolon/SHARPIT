@@ -1,5 +1,5 @@
 import type { SVGProps } from 'react';
-import { cn } from '@sharpit/server/lib/utils';
+import { cn } from '@sharpit/app/lib/utils';
 
 type NavArrowProps = SVGProps<SVGSVGElement> & {
   /** Default 1.25 — thinner than Lucide’s 2. */

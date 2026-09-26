@@ -17,7 +17,7 @@ import {
 import {
   COACH_COPY_DASH_RULE,
   sanitizeCoachCopy,
-} from '@sharpit/server/lib/coach/sanitize-coach-copy';
+} from '@sharpit/app/lib/coach/sanitize-coach-copy';
 import { recordAiUsage } from '@sharpit/server/lib/ai/usage';
 import { prisma } from '@sharpit/db/client';
 import {
@@ -31,13 +31,13 @@ import {
   formatClock,
   formatDuration,
   type SleepEntryInput,
-} from '@sharpit/server/lib/sleep/sleep';
+} from '@sharpit/app/lib/sleep/sleep';
 import { loadDailyTrainingStressEntries } from '@sharpit/server/lib/training/pmc/pmc-server';
 import {
   isExpertMode,
   toDisplayMode,
   type DisplayMode,
-} from '@sharpit/server/lib/preferences/display-mode';
+} from '@sharpit/app/lib/preferences/display-mode';
 
 const TYPE_FR: Record<string, string> = {
   RUN: 'Course',
@@ -127,35 +127,8 @@ function buildDailySeries<T>(
   return buckets.map((values) => (values.length ? reduce(values) : null));
 }
 
-export interface WeeklyStats {
-  weekStart: string;
-  weekEnd: string;
-  sessionsDone: number;
-  sessionsPlanned: number;
-  sessionsCompleted: number;
-  totalLoad: number;
-  totalDurationMin: number;
-  prevTotalLoad: number;
-  /** 7 points lundi→dimanche, pour illustrer la section "Bilan d'entraînement". */
-  dailyLoad: (number | null)[];
-  /** 7 points lundi→dimanche, pour illustrer la section "Sommeil & récupération". */
-  dailySleepScore: (number | null)[];
-  byType: { type: string; count: number; durationMin: number }[];
-  avgComplianceScore: number | null;
-  sleep: {
-    avgDurationMin: number | null;
-    avgScore: number | null;
-    avgDeepPct: number | null;
-    avgRemPct: number | null;
-    regularityMin: number | null;
-    recommendedBedtimeMin: number | null;
-  };
-  recovery: {
-    avgReadiness: number | null;
-    avgHrv: number | null;
-    avgRestingHr: number | null;
-  };
-}
+export type { WeeklyStats } from '@sharpit/app/lib/coach/weekly-stats';
+import type { WeeklyStats } from '@sharpit/app/lib/coach/weekly-stats';
 
 /** Construit les statistiques de la semaine [weekStart, weekStart+6]. */
 async function buildWeeklyStats(athleteId: string, weekStart: Date): Promise<WeeklyStats> {

@@ -7,15 +7,15 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import type { CapStatDetail } from '@sharpit/server/lib/goals/goal-cap-stat-detail';
-import type { GoalCapSportShare } from '@sharpit/server/lib/goals/goal-cap-stats';
+import type { CapStatDetail } from '@sharpit/app/lib/goals/goal-cap-stat-detail';
+import type { GoalCapSportShare } from '@sharpit/app/lib/goals/goal-cap-stats';
 import type {
   GoalPositionAuditView,
   GoalPositionLeg,
   GoalPositionLegKind,
-} from '@sharpit/server/lib/goals/goal-position-audit';
-import { SPORT_IDENTITY_HEX } from '@sharpit/server/lib/activity/sport-identity';
-import { cn } from '@sharpit/server/lib/utils';
+} from '@sharpit/app/lib/goals/goal-position-audit';
+import { SPORT_IDENTITY_HEX } from '@sharpit/app/lib/activity/sport-identity';
+import { cn } from '@sharpit/app/lib/utils';
 
 function DetailFacts({ facts }: { facts: CapStatDetail['facts'] }) {
   if (facts.length === 0) {

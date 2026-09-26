@@ -36,7 +36,7 @@ import {
   rateLimitJsonResponse,
   rateLimiters,
 } from '@sharpit/server/lib/rate-limit';
-import { COACH_COPY_DASH_RULE } from '@sharpit/server/lib/coach/sanitize-coach-copy';
+import { COACH_COPY_DASH_RULE } from '@sharpit/app/lib/coach/sanitize-coach-copy';
 import { resolveCoachDiscussServerContext } from '@sharpit/server/lib/coach/chat/discuss/coach-discuss-server-context';
 import { withCoachTrace } from '@sharpit/server/lib/ai/coach-trace';
 

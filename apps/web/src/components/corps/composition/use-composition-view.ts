@@ -6,7 +6,7 @@ import {
   windowDeltaDisplay,
   type TrendWindowId,
 } from '@/components/corps/composition/composition-view-parts';
-import type { CompositionMetricId } from '@sharpit/server/lib/health/composition-metric-guides';
+import type { CompositionMetricId } from '@sharpit/app/lib/health/composition-metric-guides';
 import {
   isPresentationValuesLoading,
   useBodyPresentationViewModel,

@@ -1,8 +1,8 @@
 'use client';
 
 import { TermInfo } from '@/components/ui/term-info';
-import type { EffortDailySignals } from '@sharpit/server/lib/presentation/effort/effort-strain-composition';
-import type { GlossaryKey } from '@sharpit/server/lib/glossary';
+import type { EffortDailySignals } from '@sharpit/app/lib/presentation/effort/effort-strain-composition';
+import type { GlossaryKey } from '@sharpit/app/lib/glossary';
 
 type SignalCard = {
   key: GlossaryKey;

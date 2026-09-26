@@ -2,9 +2,9 @@
 
 import { Brain } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { parseDurablePreferences } from '@sharpit/server/lib/coach-memory/summary/memory-summary';
-import type { CoachMemoryEntry } from '@sharpit/server/lib/coach-memory/core/types';
-import { cn } from '@sharpit/server/lib/utils';
+import { parseDurablePreferences } from '@sharpit/app/lib/coach-memory/summary/memory-summary';
+import type { CoachMemoryEntry } from '@sharpit/app/lib/coach-memory/core/types';
+import { cn } from '@sharpit/app/lib/utils';
 
 type BandCounter = { label: string; value: number; accent?: boolean };
 

@@ -1,12 +1,12 @@
 import type { ActivityType } from '@prisma/client';
-import type { MovementIntent } from '@sharpit/server/lib/exercises/movement-taxonomy';
-import { travelRangesOverlap } from '@sharpit/server/lib/travel-context/overlap';
+import type { MovementIntent } from '@sharpit/app/lib/exercises/movement-taxonomy';
+import { travelRangesOverlap } from '@sharpit/app/lib/travel-context/overlap';
 import {
   activityTypeToTravelDiscipline,
   travelDisciplineLabels,
   type TravelDiscipline,
-} from '@sharpit/server/lib/travel-context/disciplines';
-import type { TravelTrainingConstraint } from '@sharpit/server/lib/travel-context/training-constraint';
+} from '@sharpit/app/lib/travel-context/disciplines';
+import type { TravelTrainingConstraint } from '@sharpit/app/lib/travel-context/training-constraint';
 
 /** A travel or temporary constraint window, reduced to what session validation reads. */
 export type TrainingRestriction = {

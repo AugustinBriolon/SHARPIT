@@ -1,15 +1,15 @@
-import type { CoachDiscussContext } from '@sharpit/server/lib/coach/chat/discuss/coach-discuss-context';
+import type { CoachDiscussContext } from '@sharpit/app/lib/coach/chat/discuss/coach-discuss-context';
 import {
   describeCoachDiscussContext,
   enrichDiscussContextWithActivityStatus,
-} from '@sharpit/server/lib/coach/chat/discuss/coach-discuss-context';
-import type { CoachDiscussTarget } from '@sharpit/server/lib/coach/chat/discuss/coach-discuss-href';
+} from '@sharpit/app/lib/coach/chat/discuss/coach-discuss-context';
+import type { CoachDiscussTarget } from '@sharpit/app/lib/coach/chat/discuss/coach-discuss-href';
 import {
   ACTIVITY_STATUS_DEFAULT,
   readActivityStatusStore,
-} from '@sharpit/server/lib/health/activity-status';
+} from '@sharpit/app/lib/health/activity-status';
 import type { ProjectionHorizonDays } from '@sharpit/core/projection/types';
-import type { RecordCategory } from '@sharpit/server/lib/training/records/records';
+import type { RecordCategory } from '@sharpit/app/lib/training/records/record-types';
 
 const RECORD_SPORT_LABEL = { run: 'course', bike: 'vélo', swim: 'natation' } as const;
 

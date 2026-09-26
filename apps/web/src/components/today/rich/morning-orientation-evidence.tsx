@@ -3,7 +3,7 @@
 import { RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { guardedActionLabel } from '@/hooks/use-offline-guard';
-import { cn } from '@sharpit/server/lib/utils';
+import { cn } from '@sharpit/app/lib/utils';
 
 export function MorningEvidencePending({
   evidenceLine,

@@ -3,10 +3,10 @@
 import Link from 'next/link';
 import { ActivityTypeIndicator } from '@/components/ui/instruments/activity-type-indicator';
 import { Button } from '@/components/ui/button';
-import type { ClientPlannedSession } from '@sharpit/server/lib/query/types';
-import { activityTypeLabels, formatDate, formatDuration } from '@sharpit/server/lib/format';
+import type { ClientPlannedSession } from '@sharpit/app/lib/query/types';
+import { activityTypeLabels, formatDate, formatDuration } from '@sharpit/app/lib/format';
 import { LinkAnalysisStatus } from '@/components/planning/session/link-analysis-status';
-import { formatActivityMatchLabel } from '@sharpit/server/lib/planned-session/linking/session-link-match-score';
+import { formatActivityMatchLabel } from '@sharpit/app/lib/planned-session/linking/session-link-match-score';
 import { Link2 } from 'lucide-react';
 import type { SessionCandidate } from '@/components/planning/session/realize/use-session-realization-state';
 

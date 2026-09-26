@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { NutritionDaySummary } from '@sharpit/server/presentation/nutrition-view-model';
+import type { NutritionDaySummary } from '@sharpit/app/presentation/nutrition-view-model';
 import {
   macroColumnFillPx,
   macroDayReadout,

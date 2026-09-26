@@ -3,7 +3,7 @@
 import { Flag, Repeat, Timer } from 'lucide-react';
 import { useRef } from 'react';
 import { handleVariantKeyDown } from '@/components/goals/dialogs/goal-create-form-keyboard';
-import { cn } from '@sharpit/server/lib/utils';
+import { cn } from '@sharpit/app/lib/utils';
 
 type GoalFormVariant = 'race' | 'performance' | 'period';
 

@@ -30,7 +30,7 @@ vi.mock('@clerk/nextjs/server', async (importOriginal) => {
   };
 });
 
-vi.mock('@sharpit/server/lib/dev/dev-auth', () => ({ isDevClerkBypass: () => false }));
+vi.mock('@sharpit/app/lib/dev/dev-auth', () => ({ isDevClerkBypass: () => false }));
 
 async function run(url: string, cookie?: string, method = 'GET') {
   const { default: proxy } = await import('./proxy');

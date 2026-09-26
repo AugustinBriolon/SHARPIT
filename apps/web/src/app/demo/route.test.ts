@@ -4,12 +4,12 @@ import { NextRequest } from 'next/server';
 const ensureDemoClerkUser = vi.fn();
 const createSignInTicket = vi.fn();
 
-vi.mock('@sharpit/server/lib/next/await-request', () => ({ awaitRequest: async () => {} }));
-vi.mock('@sharpit/server/lib/demo/demo-identity', () => ({
+vi.mock('@sharpit/app/lib/next/await-request', () => ({ awaitRequest: async () => {} }));
+vi.mock('@sharpit/app/lib/demo/demo-identity', () => ({
   ensureDemoClerkUser: () => ensureDemoClerkUser(),
 }));
-vi.mock('@sharpit/server/lib/auth/sign-in-ticket', async () => ({
-  ...(await import('@sharpit/server/lib/auth/ticket-sign-in-url')),
+vi.mock('@sharpit/app/lib/auth/sign-in-ticket', async () => ({
+  ...(await import('@sharpit/app/lib/auth/ticket-sign-in-url')),
   createSignInTicket: (userId: string) => createSignInTicket(userId),
 }));
 

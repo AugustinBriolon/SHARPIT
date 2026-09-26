@@ -7,8 +7,8 @@ import {
   buildToolDisplayEntries,
   condensedFailureLabel,
   type ToolDisplayEntry,
-} from '@sharpit/server/lib/coach/chat/tools/coach-tool-display';
-import type { ToolPartLite } from '@sharpit/server/lib/coach/chat/tools/coach-tool-parts';
+} from '@sharpit/app/lib/coach/chat/tools/coach-tool-display';
+import type { ToolPartLite } from '@sharpit/app/lib/coach/chat/tools/coach-tool-parts';
 import { useSafeMotion, useShouldAnimate } from '@/client/motion/hooks';
 import { fadeTransition } from '@/client/motion/variants';
 

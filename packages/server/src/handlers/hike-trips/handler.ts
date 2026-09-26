@@ -6,7 +6,7 @@ import {
   HikeTripValidationError,
   listHikeTrips,
 } from '@sharpit/server/lib/queries';
-import { createHikeTripSchema } from '@sharpit/server/lib/validators/hike-trip';
+import { createHikeTripSchema } from '@sharpit/app/lib/validators/hike-trip';
 
 function isTripNotFoundMessage(message: string): boolean {
   return message.includes('Dossier introuvable');

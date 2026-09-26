@@ -5,7 +5,7 @@ import type { BodySide, FunctionalImpact, PhysicalCategory, PhysicalStatus } fro
 import { fetchPhysicalNotes } from '@/client/query/fetchers';
 import { queryKeys } from '@/client/query/keys';
 import { listOptimistic, tempId } from '@/client/query/optimistic';
-import type { ClientPhysicalCheckin, ClientPhysicalNote } from '@sharpit/server/lib/query/types';
+import type { ClientPhysicalCheckin, ClientPhysicalNote } from '@sharpit/app/lib/query/types';
 import { apiFetch } from '@/client/query/api-fetch';
 
 export interface PhysicalNotePayload {

@@ -1,6 +1,6 @@
 'use client';
 
-import type { ClientPhysicalNote } from '@sharpit/server/lib/query/types';
+import type { ClientPhysicalNote } from '@sharpit/app/lib/query/types';
 import { usePhysicalNoteMutations } from '@/hooks/use-physical';
 import { useOfflineGuard } from '@/hooks/use-offline-guard';
 import { useConfirmDialog } from '@/components/ui/confirm-dialog';

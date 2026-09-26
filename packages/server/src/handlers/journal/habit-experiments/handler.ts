@@ -5,10 +5,10 @@ import {
   EXPERIMENT_WINDOW_DAYS,
   ONE_TEST_AT_A_TIME_MESSAGE,
   isExperimentFactorId,
-} from '@sharpit/server/lib/journal/journal-habit-experiment';
+} from '@sharpit/app/lib/journal/journal-habit-experiment';
 import { loadJournalHabitExperiments } from '@sharpit/server/lib/journal/journal-habit-experiment-load';
-import { toHabitExperimentView } from '@sharpit/server/lib/journal/journal-habit-experiment-view';
-import { awaitRequest } from '@sharpit/server/lib/next/await-request';
+import { toHabitExperimentView } from '@sharpit/app/lib/journal/journal-habit-experiment-view';
+import { awaitRequest } from '@sharpit/app/lib/next/await-request';
 import { prisma } from '@sharpit/db/client';
 import { addTrainingDays, trainingDayIdForNow } from '@sharpit/core/training/training-day';
 

@@ -4,9 +4,9 @@ import { BookOpenText, ExternalLink, Globe2 } from 'lucide-react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { type ReactNode, useCallback, useId, useState } from 'react';
 import { AgentDisclosure } from '@/components/coach/kit/agent-disclosure';
-import { EASE_OUT, SPRING_LAYOUT, SPRING_SWAP } from '@sharpit/server/lib/ease';
+import { EASE_OUT, SPRING_LAYOUT, SPRING_SWAP } from '@sharpit/app/lib/ease';
 import { useFavicon } from '@/client/hooks/use-favicon';
-import { cn } from '@sharpit/server/lib/utils';
+import { cn } from '@sharpit/app/lib/utils';
 import { NavArrowDown } from '@/components/icons/nav-arrows';
 
 export interface CitationItem {

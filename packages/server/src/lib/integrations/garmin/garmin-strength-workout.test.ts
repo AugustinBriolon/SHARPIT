@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   invertGarminExerciseLabelsFr,
   resolveGarminExerciseRef,
-} from '@sharpit/server/lib/integrations/garmin/garmin-exercise-map';
+} from '@sharpit/app/lib/integrations/garmin/garmin-exercise-map';
 import { buildStrengthWorkoutPayload } from '@sharpit/server/lib/integrations/garmin/garmin-strength-workout-payload';
 
 describe('resolveGarminExerciseRef', () => {

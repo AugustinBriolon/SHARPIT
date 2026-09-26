@@ -6,7 +6,7 @@ import type {
   NutritionGoalsProgress,
   NutritionFuelDensity,
   NutritionViewModel,
-} from '@sharpit/server/presentation/nutrition-view-model';
+} from '@sharpit/app/presentation/nutrition-view-model';
 import { featureEngine } from '@sharpit/server/lib/engines/feature-engine';
 import {
   getLiveNutrientGoals,
@@ -16,8 +16,8 @@ import {
   getLatestBodyWeightKg,
   macroGPerKg,
 } from '@sharpit/server/lib/nutrition/body-weight-for-fuel';
-import { buildGoalsProgress } from '@sharpit/server/lib/nutrition/goals-progress';
-import { fuelFeatureSetToDensity } from '@sharpit/server/lib/nutrition/fuel-density-display';
+import { buildGoalsProgress } from '@sharpit/app/lib/nutrition/goals-progress';
+import { fuelFeatureSetToDensity } from '@sharpit/app/lib/nutrition/fuel-density-display';
 import { normalizeStoredMeals } from '@sharpit/server/lib/nutrition/meal-display';
 import { loadDeclaredDiet } from '@sharpit/server/lib/nutrition/analysis/nutrition-analysis-inputs';
 import { prisma } from '@sharpit/db/client';

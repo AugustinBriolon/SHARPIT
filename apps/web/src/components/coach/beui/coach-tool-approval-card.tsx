@@ -1,6 +1,6 @@
 'use client';
 
-import type { ToolPartLite } from '@sharpit/server/lib/coach/chat/tools/coach-tool-parts';
+import type { ToolPartLite } from '@sharpit/app/lib/coach/chat/tools/coach-tool-parts';
 import type { KnownSession } from '@/components/coach/chat/tools/tool-activity';
 import { useState } from 'react';
 import { ApprovalCard } from '@/components/coach/kit/approval-card';

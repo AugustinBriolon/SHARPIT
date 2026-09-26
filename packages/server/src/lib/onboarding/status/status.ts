@@ -1,6 +1,6 @@
 import { prisma } from '@sharpit/db/client';
-import { DEMO_CLERK_USER_ID, isDemoSession } from '@sharpit/server/lib/demo/demo-session';
-import { isDevClerkBypass } from '@sharpit/server/lib/dev/dev-auth';
+import { DEMO_CLERK_USER_ID, isDemoSession } from '@sharpit/app/lib/demo/demo-session';
+import { isDevClerkBypass } from '@sharpit/app/lib/dev/dev-auth';
 import { needsOnboardingFromProfile } from '@sharpit/server/lib/onboarding/status/needs-onboarding';
 
 /** True when the athlete must finish `/onboarding` before using the app. */

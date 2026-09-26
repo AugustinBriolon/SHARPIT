@@ -1,9 +1,9 @@
 'use client';
 
 import { Card, CardHeader } from '@/components/ui/card';
-import type { PhysicalHealthConditionCard } from '@sharpit/server/presentation/physical-health-view-model';
-import { corpsToneFromPhysicalSeverity } from '@sharpit/server/lib/health/health-status';
-import { cn } from '@sharpit/server/lib/utils';
+import type { PhysicalHealthConditionCard } from '@sharpit/app/presentation/physical-health-view-model';
+import { corpsToneFromPhysicalSeverity } from '@sharpit/app/lib/health/health-status';
+import { cn } from '@sharpit/app/lib/utils';
 import {
   ConditionCardActions,
   ConditionCardHeader,

@@ -7,7 +7,7 @@ import {
   HikeTripValidationError,
   updateHikeTrip,
 } from '@sharpit/server/lib/queries';
-import { patchHikeTripSchema } from '@sharpit/server/lib/validators/hike-trip';
+import { patchHikeTripSchema } from '@sharpit/app/lib/validators/hike-trip';
 
 type RouteContext = { params: Promise<{ id: string }> };
 

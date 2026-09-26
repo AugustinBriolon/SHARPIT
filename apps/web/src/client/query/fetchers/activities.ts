@@ -1,4 +1,4 @@
-import type { ClientActivity, ClientActivityDetail } from '@sharpit/server/lib/query/types';
+import type { ClientActivity, ClientActivityDetail } from '@sharpit/app/lib/query/types';
 import { fetchJson, type Serialized, toDate, toDateOrNull } from './shared';
 import { apiFetch } from '@/client/query/api-fetch';
 

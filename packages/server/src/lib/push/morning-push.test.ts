@@ -5,7 +5,7 @@ import {
   sendMorningPushForAthlete,
   sendMorningVerdictPushes,
 } from './morning-push';
-import type { AthleteSnapshot } from '@sharpit/server/athlete-state/snapshot';
+import type { AthleteSnapshot } from '@sharpit/app/athlete-state/snapshot';
 import { prisma } from '@sharpit/db/client';
 import * as apnsModule from '@sharpit/server/lib/push/apns';
 import * as snapshotRepo from '@sharpit/server/infrastructure/athlete-state/snapshot-repository';

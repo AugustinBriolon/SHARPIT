@@ -6,8 +6,8 @@ import {
   CHART_TEMPO_STROKE,
   CHART_THRESHOLD_STROKE,
   CHART_VO2_STROKE,
-} from '@sharpit/server/lib/theme/chart-theme';
-import { formatAltitudeMeters } from '@sharpit/server/lib/streams/stream-chart-data';
+} from '@sharpit/app/lib/theme/chart-theme';
+import { formatAltitudeMeters } from '@sharpit/app/lib/streams/stream-chart-data';
 
 export type StreamMetricOption = {
   key: 'alt' | 'hr' | 'watts' | 'cadence' | 'speed' | 'pace';

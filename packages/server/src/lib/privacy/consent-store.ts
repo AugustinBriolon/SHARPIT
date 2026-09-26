@@ -9,11 +9,11 @@ import {
   AI_CONSENT_REQUIRED_MESSAGE,
   CURRENT_PRIVACY_VERSION,
   PROVIDER_CONSENT_REQUIRED_MESSAGE,
-} from '@sharpit/server/lib/privacy/constants';
+} from '@sharpit/app/lib/privacy/constants';
 import { providerConnectRequirements } from '@sharpit/server/lib/privacy/provider-classification';
-import type { IntegrationId } from '@sharpit/server/lib/integrations/shared/client-sync';
-import { DEMO_CLERK_USER_ID, isDemoSession } from '@sharpit/server/lib/demo/demo-session';
-import { isDevClerkBypass } from '@sharpit/server/lib/dev/dev-auth';
+import type { IntegrationId } from '@sharpit/app/lib/integrations/shared/client-sync';
+import { DEMO_CLERK_USER_ID, isDemoSession } from '@sharpit/app/lib/demo/demo-session';
+import { isDevClerkBypass } from '@sharpit/app/lib/dev/dev-auth';
 import { logSafeError } from '@sharpit/server/lib/privacy/safe-log';
 
 const CONSENT_SELECT = {

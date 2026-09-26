@@ -9,8 +9,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { GLOSSARY, type GlossaryKey } from '@sharpit/server/lib/glossary';
-import { cn } from '@sharpit/server/lib/utils';
+import { GLOSSARY, type GlossaryKey } from '@sharpit/app/lib/glossary';
+import { cn } from '@sharpit/app/lib/utils';
 
 /**
  * The definition, one tap from the word itself.

@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
 import { loadJournalHabitExperiments } from '@sharpit/server/lib/journal/journal-habit-experiment-load';
-import { toHabitExperimentView } from '@sharpit/server/lib/journal/journal-habit-experiment-view';
-import { awaitRequest } from '@sharpit/server/lib/next/await-request';
+import { toHabitExperimentView } from '@sharpit/app/lib/journal/journal-habit-experiment-view';
+import { awaitRequest } from '@sharpit/app/lib/next/await-request';
 import { prisma } from '@sharpit/db/client';
 import { trainingDayIdForNow } from '@sharpit/core/training/training-day';
 

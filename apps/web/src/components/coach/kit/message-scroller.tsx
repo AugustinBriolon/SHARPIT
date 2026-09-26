@@ -5,7 +5,7 @@ import { useReducedMotion } from 'motion/react';
 import { type ComponentPropsWithRef, type Ref } from 'react';
 import { PreviewRail, type PreviewRailItem } from '@/components/motion/preview-rail';
 import { useMessageScrollerRail } from '@/components/coach/kit/use-message-scroller';
-import { cn } from '@sharpit/server/lib/utils';
+import { cn } from '@sharpit/app/lib/utils';
 
 export interface MessageScrollerProps extends ComponentPropsWithRef<'div'> {
   /** Keep streamed output pinned while the reader remains near the end. */

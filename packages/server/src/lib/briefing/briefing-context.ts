@@ -8,9 +8,9 @@ import {
   resolveBriefingPhaseFromDailyPhase,
   type BriefingPhase,
 } from '@sharpit/server/lib/briefing/briefing-phase';
-import type { DailyPhase } from '@sharpit/server/lib/daily-phase/types';
+import type { DailyPhase } from '@sharpit/app/lib/daily-phase/types';
 import { getActivities, getPlannedSessions } from '@sharpit/server/lib/queries';
-import { intensityLabels } from '@sharpit/server/lib/planned-session/sessions';
+import { intensityLabels } from '@sharpit/app/lib/planned-session/sessions';
 
 const TYPE_FR: Record<string, string> = {
   RUN: 'Course',

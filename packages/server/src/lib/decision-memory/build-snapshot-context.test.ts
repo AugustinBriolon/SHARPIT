@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { buildDecisionSnapshotContext } from './build-snapshot-context';
-import type { AthleteSnapshot } from '@sharpit/server/athlete-state/snapshot';
+import type { AthleteSnapshot } from '@sharpit/app/athlete-state/snapshot';
 
 function minimalSnapshot(overrides: Partial<AthleteSnapshot> = {}): AthleteSnapshot {
   return {

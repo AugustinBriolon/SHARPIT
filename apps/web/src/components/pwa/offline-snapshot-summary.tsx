@@ -6,9 +6,9 @@ import { WifiOff } from 'lucide-react';
 import {
   mapVerdictToDisplay,
   type OverallVerdict,
-} from '@sharpit/server/lib/today/dashboard/today-mapping';
-import { resolve } from '@sharpit/server/lib/french';
-import type { PersistedSnapshotEntry } from '@sharpit/server/lib/pwa/snapshot-store-validation';
+} from '@sharpit/app/lib/today/dashboard/today-mapping';
+import { resolve } from '@sharpit/app/lib/french';
+import type { PersistedSnapshotEntry } from '@sharpit/app/lib/pwa/snapshot-store-validation';
 
 /**
  * Minimal, deliberately smaller than Today: Today's normal rendering pipeline

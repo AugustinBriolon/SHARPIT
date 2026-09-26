@@ -1,8 +1,8 @@
 import type { ActivityType, SessionIntensity } from '@prisma/client';
 import type { KnownSession } from '@/components/coach/chat/tools/tool-activity';
 import type { coachBeuiCopy } from '@/components/coach/beui/coach-beui-copy';
-import { activityTypeLabels } from '@sharpit/server/lib/format';
-import { intensityLabels } from '@sharpit/server/lib/planned-session/sessions';
+import { activityTypeLabels } from '@sharpit/app/lib/format';
+import { intensityLabels } from '@sharpit/app/lib/planned-session/sessions';
 
 type EnduranceStepInput = {
   kind?: string;

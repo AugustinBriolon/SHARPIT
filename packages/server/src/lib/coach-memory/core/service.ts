@@ -1,9 +1,6 @@
 import type { PrismaClient } from '@prisma/client';
 import { memoryEntriesFromTravelContexts } from '@sharpit/server/lib/coach-memory/summary/present';
-import type {
-  CoachMemoryEntry,
-  TravelMemoryInput,
-} from '@sharpit/server/lib/coach-memory/core/types';
+import type { CoachMemoryEntry, TravelMemoryInput } from '@sharpit/app/lib/coach-memory/core/types';
 import { getAthleteProfile } from '@sharpit/server/lib/queries';
 import {
   createTravelContext,

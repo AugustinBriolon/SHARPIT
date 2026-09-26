@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { Menu as MenuPrimitive } from '@base-ui/react/menu';
 
-import { cn } from '@sharpit/server/lib/utils';
+import { cn } from '@sharpit/app/lib/utils';
 import { CheckIcon } from 'lucide-react';
 import { NavArrowRight } from '@/components/icons/nav-arrows';
 

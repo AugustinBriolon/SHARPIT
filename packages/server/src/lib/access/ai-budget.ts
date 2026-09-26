@@ -1,12 +1,12 @@
 import { addHours, subHours } from 'date-fns';
 import { prisma } from '@sharpit/db/client';
-import { hasProAccess } from '@sharpit/server/lib/access/tier';
+import { hasProAccess } from '@sharpit/app/lib/access/tier';
 import {
   AI_BUDGET_WARNING_HEADER,
   RETRY_AFTER_HEADER,
   aiBudgetWarningMessage,
   formatRetryDuration,
-} from '@sharpit/server/lib/access/ai-budget-shared';
+} from '@sharpit/app/lib/access/ai-budget-shared';
 
 /**
  * Global cost ceiling for the coach conversation surface (chat/plan/adapt),

@@ -1,8 +1,8 @@
 'use client';
 
-import type { ActivityAnalysis } from '@sharpit/server/lib/activity/detail/activity-analysis';
+import type { ActivityAnalysis } from '@sharpit/app/lib/activity/detail/activity-analysis';
 import { ClinicalAnnotation } from '@/components/ui/instruments/clinical-annotation';
-import { cn } from '@sharpit/server/lib/utils';
+import { cn } from '@sharpit/app/lib/utils';
 import Link from 'next/link';
 import {
   buildPerformanceRows,

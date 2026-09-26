@@ -1,7 +1,7 @@
 'use client';
 
 import { useUser } from '@clerk/nextjs';
-import { DEMO_EXTERNAL_ID } from '@sharpit/server/lib/demo/demo-identity-shared';
+import { DEMO_EXTERNAL_ID } from '@sharpit/app/lib/demo/demo-identity-shared';
 
 /**
  * Same rule as server `isDemoSession()`: the signed-in Clerk user is the shared demo account.

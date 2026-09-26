@@ -3,8 +3,8 @@
 import { useState } from 'react';
 import { MotionExpand } from '@/components/motion';
 import { ColoredMacroPills } from '@/components/nutrition/nutrition-macro-display';
-import type { NutritionMealSummary } from '@sharpit/server/presentation/nutrition-view-model';
-import { cn } from '@sharpit/server/lib/utils';
+import type { NutritionMealSummary } from '@sharpit/app/presentation/nutrition-view-model';
+import { cn } from '@sharpit/app/lib/utils';
 import { NavArrowDown } from '@/components/icons/nav-arrows';
 
 function MealCard({ meal }: { meal: NutritionMealSummary }) {

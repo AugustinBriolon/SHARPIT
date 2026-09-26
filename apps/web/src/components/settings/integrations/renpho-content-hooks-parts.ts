@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { notifyIntegrationSyncStarted } from '@/components/settings/integrations/modal-sync-start';
 import { toast } from '@/components/ui/toast';
-import { runRenphoSync } from '@sharpit/server/lib/integrations/shared/client-sync';
+import { runRenphoSync } from '@sharpit/app/lib/integrations/shared/client-sync';
 import { connectRenpho, disconnectRenpho } from '@/client/query/fetchers';
 import { invalidateAfterProviderSync } from '@/client/query/invalidate-after-provider-sync';
 import { queryKeys } from '@/client/query/keys';

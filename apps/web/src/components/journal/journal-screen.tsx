@@ -30,7 +30,7 @@ import { SignalSegment } from '@/components/journal/signal-segment';
 import { MobileDrillDownHeader } from '@/components/layout/header/mobile-drill-down-header';
 import { Button } from '@/components/ui/button';
 import { LinkButton } from '@/components/ui/link-button';
-import { DAY_CONTEXT_FACTORS } from '@sharpit/server/lib/journal/day-context-factors';
+import { DAY_CONTEXT_FACTORS } from '@sharpit/app/lib/journal/day-context-factors';
 import {
   emptyDayJournalEntry,
   loadDayJournalEntry,
@@ -40,26 +40,26 @@ import {
   type DayJournalFactorState,
   upsertDayJournalEntry,
   writeDayJournalStore,
-} from '@sharpit/server/lib/journal/day-journal';
-import { splitJournalFactorIdsForScreen } from '@sharpit/server/lib/journal/journal-screen-sections';
+} from '@sharpit/app/lib/journal/day-journal';
+import { splitJournalFactorIdsForScreen } from '@sharpit/app/lib/journal/journal-screen-sections';
 import {
   flushDayJournalPersist,
   scheduleDayJournalPersist,
-} from '@sharpit/server/lib/journal/day-journal-persist';
-import type { JournalDaySignals } from '@sharpit/server/lib/journal/journal-day-signals';
+} from '@sharpit/app/lib/journal/day-journal-persist';
+import type { JournalDaySignals } from '@sharpit/app/lib/journal/journal-day-signals';
 import {
   JOURNAL_CATEGORY_HEADER,
   JOURNAL_METRIC_ICON,
   journalCategoryIcon,
-} from '@sharpit/server/lib/journal/journal-category-surface';
+} from '@sharpit/app/lib/journal/journal-category-surface';
 import {
   enabledFactorIds,
   showAutoChecklist,
   showDayBasics,
   showNutritionPanel,
   type JournalPrefs,
-} from '@sharpit/server/lib/journal/journal-prefs';
-import { journalTrackableById } from '@sharpit/server/lib/journal/journal-trackables';
+} from '@sharpit/app/lib/journal/journal-prefs';
+import { journalTrackableById } from '@sharpit/app/lib/journal/journal-trackables';
 import { fetchJournalDaySignals } from '@/client/query/fetchers';
 import { queryKeys } from '@/client/query/keys';
 import { trainingDayIdForNow } from '@sharpit/core/training/training-day';
@@ -67,9 +67,9 @@ import {
   JOURNAL_RECOVERY_CALLOUT,
   isJournalFieldWeightedInRecoveryV1,
   journalWeightBadgeLabel,
-} from '@sharpit/server/lib/journal/reliability-weighting';
-import { STATUS_SURFACE } from '@sharpit/server/lib/presentation/coaching/status-surface';
-import { cn } from '@sharpit/server/lib/utils';
+} from '@sharpit/app/lib/journal/reliability-weighting';
+import { STATUS_SURFACE } from '@sharpit/app/lib/presentation/coaching/status-surface';
+import { cn } from '@sharpit/app/lib/utils';
 
 const MorningWellnessDialog = dynamic(
   () =>

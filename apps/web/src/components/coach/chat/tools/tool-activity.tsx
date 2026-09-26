@@ -12,7 +12,7 @@ import {
   PencilLine,
   Search,
 } from 'lucide-react';
-import { isStaleCalendarToolPart } from '@sharpit/server/lib/coach/chat/tools/coach-tool-parts';
+import { isStaleCalendarToolPart } from '@sharpit/app/lib/coach/chat/tools/coach-tool-parts';
 import {
   ToolActivityAcceptedChip,
   ToolActivityApprovalRequest,
@@ -20,7 +20,7 @@ import {
   ToolActivityResultChip,
   ToolActivityStaleChip,
 } from '@/components/coach/chat/tools/tool-activity-views';
-import type { KnownSession } from '@sharpit/server/lib/coach/chat/conversations/coach-chat-known-sessions';
+import type { KnownSession } from '@sharpit/app/lib/coach/chat/conversations/coach-chat-known-sessions';
 export type { KnownSession };
 
 type ToolPart = {

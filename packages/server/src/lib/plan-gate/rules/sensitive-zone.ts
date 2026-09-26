@@ -1,4 +1,4 @@
-import { exerciseLoadProfile } from '@sharpit/server/lib/physical-health/exercise-load-profile';
+import { exerciseLoadProfile } from '@sharpit/app/lib/physical-health/exercise-load-profile';
 import {
   bySeverityDesc,
   describeZone,
@@ -6,8 +6,13 @@ import {
   sensitiveZonesFrom,
   sportZoneConflicts,
   type SensitiveZone,
-} from '@sharpit/server/lib/physical-health/sensitive-zones';
-import type { GateContext, GateProposal, PlanGateRule, RuleFinding } from '../types';
+} from '@sharpit/app/lib/physical-health/sensitive-zones';
+import type {
+  GateContext,
+  GateProposal,
+  PlanGateRule,
+  RuleFinding,
+} from '@sharpit/app/lib/plan-gate/types';
 
 /** `exercise: null` means the sport itself loads the zone, not one movement in it. */
 type FlaggedExercise = { exercise: string | null; zone: SensitiveZone };

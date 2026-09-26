@@ -5,13 +5,13 @@ import { PlanVivantBand } from '@/components/today/rich/plan-vivant-band';
 import {
   planVivantProgress,
   planVivantReading,
-} from '@sharpit/server/lib/today/rich/plan-vivant-reading';
+} from '@sharpit/app/lib/today/rich/plan-vivant-reading';
 import {
   adaptAppliedHeadline,
   adaptAppliedWhy,
   type AdaptAppliedAck,
-} from '@sharpit/server/lib/plan/adapt-applied-ack';
-import type { GoalAdvancementView } from '@sharpit/server/lib/today/rich/goal-advancement';
+} from '@sharpit/app/lib/plan/adapt-applied-ack';
+import type { GoalAdvancementView } from '@sharpit/app/lib/today/rich/goal-advancement';
 
 /** The week reading once suivi is loaded, else the goal the ack names. */
 function appliedReading(

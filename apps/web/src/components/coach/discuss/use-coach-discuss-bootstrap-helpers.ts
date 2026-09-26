@@ -13,7 +13,7 @@ import { useActivities, useGoals, usePlannedSessions, useRecords } from '@/hooks
 import { usePhysicalNotes } from '@/hooks/use-physical';
 import { useTodayPresentationViewModel } from '@/hooks/use-presentation-view-model';
 import { useProjectedAthleteViewModel } from '@/hooks/use-projected-athlete-view-model';
-import type { CoachDiscussContext } from '@sharpit/server/lib/coach/chat/discuss/coach-discuss-context';
+import type { CoachDiscussContext } from '@sharpit/app/lib/coach/chat/discuss/coach-discuss-context';
 import type { ProjectionHorizonDays } from '@sharpit/core/projection/types';
 
 export type CoachDiscussParams = {

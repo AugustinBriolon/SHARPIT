@@ -13,8 +13,8 @@ import {
 import {
   mapVerdictToDisplay,
   type OverallVerdict,
-} from '@sharpit/server/lib/today/dashboard/today-mapping';
-import type { AthleteSnapshot } from '@sharpit/server/athlete-state/snapshot';
+} from '@sharpit/app/lib/today/dashboard/today-mapping';
+import type { AthleteSnapshot } from '@sharpit/app/athlete-state/snapshot';
 
 export type MorningPushPayload = {
   title: string;

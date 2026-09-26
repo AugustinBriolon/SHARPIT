@@ -3,7 +3,7 @@
 import type { ReactNode } from 'react';
 import { PreviewRailNavItem, PreviewRailPreviewCell } from '@/components/motion/preview-rail-parts';
 import type { usePreviewRailState } from '@/components/motion/use-preview-rail';
-import { cn } from '@sharpit/server/lib/utils';
+import { cn } from '@sharpit/app/lib/utils';
 import type { PreviewRailItem } from './preview-rail';
 
 export function PreviewRailNav({

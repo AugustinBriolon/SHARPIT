@@ -1,9 +1,9 @@
 'use client';
 
 import { memo } from 'react';
-import type { SplitRow } from '@sharpit/server/lib/activity/detail/activity-analysis';
-import { formatPace } from '@sharpit/server/lib/format';
-import { cn } from '@sharpit/server/lib/utils';
+import type { SplitRow } from '@sharpit/app/lib/activity/detail/activity-analysis';
+import { formatPace } from '@sharpit/app/lib/format';
+import { cn } from '@sharpit/app/lib/utils';
 import { formatSplitDeltaAccessible, splitPaceBarPercent } from './rhythm-splits-helpers';
 
 function paceDelta(pace: number, ref: number | null): { pct: number; faster: boolean } | null {

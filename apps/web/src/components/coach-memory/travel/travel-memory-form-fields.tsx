@@ -8,18 +8,15 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import type {
-  CoachMemoryType,
-  TravelDiscipline,
-} from '@sharpit/server/lib/coach-memory/core/types';
+import type { CoachMemoryType, TravelDiscipline } from '@sharpit/app/lib/coach-memory/core/types';
 import {
   TRAVEL_DISCIPLINE_LABELS,
   TRAVEL_DISCIPLINES,
   travelTrainingConstraintLabel,
-} from '@sharpit/server/lib/coach-memory/core/types';
-import type { TravelTrainingConstraint } from '@sharpit/server/lib/coach-memory/core/types';
+} from '@sharpit/app/lib/coach-memory/core/types';
+import type { TravelTrainingConstraint } from '@sharpit/app/lib/coach-memory/core/types';
 import { handleRadioGroupKeyDown } from '@/components/goals/dialogs/goal-radio-keyboard';
-import { cn } from '@sharpit/server/lib/utils';
+import { cn } from '@sharpit/app/lib/utils';
 
 const ENTRY_TYPE_OPTIONS: { type: CoachMemoryType; label: string }[] = [
   { type: 'TRAVEL', label: 'Déplacement' },

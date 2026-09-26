@@ -2,7 +2,7 @@ import Link from 'next/link';
 import type { LucideIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { NavArrowRight } from '@/components/icons/nav-arrows';
-import { cn } from '@sharpit/server/lib/utils';
+import { cn } from '@sharpit/app/lib/utils';
 
 export type ShellHubRowProps = {
   title: string;

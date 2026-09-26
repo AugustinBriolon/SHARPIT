@@ -8,7 +8,7 @@ import {
 } from '@sharpit/server/lib/integrations/strava/strava-sync';
 import { revokeWithingsAuthorization } from '@sharpit/server/lib/integrations/withings/withings';
 import { getWithingsAccount } from '@sharpit/server/lib/integrations/withings/withings-sync';
-import type { IntegrationId } from '@sharpit/server/lib/integrations/shared/client-sync';
+import type { IntegrationId } from '@sharpit/app/lib/integrations/shared/client-sync';
 import { logSafeError } from '@sharpit/server/lib/privacy/safe-log';
 
 /**

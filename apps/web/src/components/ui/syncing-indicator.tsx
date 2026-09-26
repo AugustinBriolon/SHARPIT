@@ -1,7 +1,7 @@
 'use client';
 
 import { useIsMutating } from '@tanstack/react-query';
-import { cn } from '@sharpit/server/lib/utils';
+import { cn } from '@sharpit/app/lib/utils';
 
 /**
  * Subtle background-sync affordance while Instant mutations are in flight.

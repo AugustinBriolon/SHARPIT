@@ -5,16 +5,16 @@ import type { ReactNode } from 'react';
 import { InkEmptyState } from '@/components/ui/ink-empty-state';
 import { LinkButton } from '@/components/ui/link-button';
 import { useJournalHabitExperiments } from '@/hooks/use-journal-habit-experiments';
-import type { JournalAnalysesViewModel } from '@sharpit/server/lib/journal/journal-analyses-view-model';
-import type { ObservationPolarity } from '@sharpit/server/lib/journal/journal-habit-analysis';
-import { experimentIntentForPolarity } from '@sharpit/server/lib/journal/journal-habit-experiment';
+import type { JournalAnalysesViewModel } from '@sharpit/app/lib/journal/journal-analyses-view-model';
+import type { ObservationPolarity } from '@sharpit/app/lib/journal/journal-habit-analysis';
+import { experimentIntentForPolarity } from '@sharpit/app/lib/journal/journal-habit-experiment';
 import {
   splitExperimentViews,
   type HabitExperimentView,
-} from '@sharpit/server/lib/journal/journal-habit-experiment-view';
-import { canBeHabitPriorityLever } from '@sharpit/server/lib/journal/journal-habit-priors';
-import type { JournalHabitReading } from '@sharpit/server/lib/journal/journal-habit-reading';
-import type { DumbbellRowModel } from '@sharpit/server/lib/journal/journal-analyses-view-model';
+} from '@sharpit/app/lib/journal/journal-habit-experiment-view';
+import { canBeHabitPriorityLever } from '@sharpit/app/lib/journal/journal-habit-priors';
+import type { JournalHabitReading } from '@sharpit/app/lib/journal/journal-habit-reading';
+import type { DumbbellRowModel } from '@sharpit/app/lib/journal/journal-analyses-view-model';
 import { AssociationPanel } from './association-panel';
 import { CoachReadingCta } from './coach-reading-cta';
 import { RunningExperimentBanner } from './experiments-panel';

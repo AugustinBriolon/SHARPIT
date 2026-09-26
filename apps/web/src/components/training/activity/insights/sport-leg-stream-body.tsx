@@ -5,8 +5,8 @@ import { useMemo } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SportLegStreamSections } from '@/components/training/activity/insights/sport-leg-stream-sections';
 import { deriveSportLegStreamData } from '@/components/training/activity/insights/sport-leg-stream-data';
-import type { MultisportLegStream } from '@sharpit/server/lib/streams/streams';
-import { normalizeStreamChartData } from '@sharpit/server/lib/streams/stream-chart-data';
+import type { MultisportLegStream } from '@sharpit/app/lib/streams/stream-types';
+import { normalizeStreamChartData } from '@sharpit/app/lib/streams/stream-chart-data';
 
 const ActivityStreamChart = dynamic(
   () => import('./activity-stream-chart').then((mod) => mod.ActivityStreamChart),

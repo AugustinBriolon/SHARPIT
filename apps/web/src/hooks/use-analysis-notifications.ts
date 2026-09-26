@@ -11,7 +11,7 @@ import {
   analysisRunHref,
   selectRunsToNotify,
   type AnalysisRunView,
-} from '@sharpit/server/lib/analysis/analysis-run';
+} from '@sharpit/app/lib/analysis/analysis-run';
 import { fetchAnalysisRuns } from '@/client/query/fetchers';
 import { queryKeys } from '@/client/query/keys';
 

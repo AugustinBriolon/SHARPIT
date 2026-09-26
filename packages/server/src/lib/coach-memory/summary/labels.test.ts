@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   coachMemorySourceLabel,
   isCoachMemorySource,
-} from '@sharpit/server/lib/coach-memory/core/types';
+} from '@sharpit/app/lib/coach-memory/core/types';
 
 describe('coachMemorySourceLabel', () => {
   it('covers Prisma enum values USER and COACH; only COACH gets a badge', () => {

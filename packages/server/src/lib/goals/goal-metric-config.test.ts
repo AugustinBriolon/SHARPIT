@@ -7,8 +7,8 @@ import {
   parseChronoInput,
   parseGoalMetricConfig,
   serializeGoalMetricConfig,
-} from '@sharpit/server/lib/goals/goal-metric-config';
-import { computeGoalProgress } from '@sharpit/server/lib/goals/goals';
+} from '@sharpit/app/lib/goals/goal-metric-config';
+import { computeGoalProgress } from '@sharpit/app/lib/goals/goals';
 
 describe('goal-metric-config', () => {
   it('parse et sérialise la config période', () => {

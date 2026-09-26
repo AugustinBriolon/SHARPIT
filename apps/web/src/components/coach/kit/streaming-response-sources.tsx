@@ -3,7 +3,7 @@
 import { motion, useReducedMotion } from 'motion/react';
 import { type CitationItem, CitationList, CitationStack } from '@/components/coach/kit/citations';
 import { AgentDisclosure } from '@/components/coach/kit/agent-disclosure';
-import { SPRING_SWAP } from '@sharpit/server/lib/ease';
+import { SPRING_SWAP } from '@sharpit/app/lib/ease';
 import { NavArrowDown } from '@/components/icons/nav-arrows';
 
 export function StreamingSourcesToggle({

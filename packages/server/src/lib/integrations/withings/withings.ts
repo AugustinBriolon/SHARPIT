@@ -1,6 +1,6 @@
 import { createHmac } from 'node:crypto';
 import { ProviderAuthError } from '@sharpit/server/lib/integrations/shared/connection-status';
-import { normalizeOAuthPublicOrigin } from '@sharpit/server/lib/integrations/oauth-public-origin';
+import { normalizeOAuthPublicOrigin } from '@sharpit/app/lib/integrations/oauth-public-origin';
 
 const WITHINGS_OAUTH_AUTHORIZE = 'https://account.withings.com/oauth2_user/authorize2';
 const WITHINGS_OAUTH_TOKEN = 'https://wbsapi.withings.net/v2/oauth2';
@@ -175,19 +175,19 @@ import {
   WITHINGS_BODY_SCAN_MEASTYPES,
   type WithingsHeartRecord,
   type WithingsParsedMeasurement,
-} from '@sharpit/server/lib/integrations/withings/withings-measures';
+} from '@sharpit/app/lib/integrations/withings/withings-measures';
 
 export type {
   WithingsParsedMeasurement,
   WithingsExtras,
-} from '@sharpit/server/lib/integrations/withings/withings-measures';
+} from '@sharpit/app/lib/integrations/withings/withings-measures';
 export {
   decodeWithingsValue,
   enrichMeasurementsWithHeartEcg,
   parseWithingsMeasureGroup,
   WITHINGS_BODY_SCAN_MEASTYPES,
-} from '@sharpit/server/lib/integrations/withings/withings-measures';
-export type { WithingsHeartRecord } from '@sharpit/server/lib/integrations/withings/withings-measures';
+} from '@sharpit/app/lib/integrations/withings/withings-measures';
+export type { WithingsHeartRecord } from '@sharpit/app/lib/integrations/withings/withings-measures';
 
 import { isSet } from '@sharpit/shared/value';
 

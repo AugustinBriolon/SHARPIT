@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import type { AccessTier } from '@prisma/client';
 import { useAthleteProfile } from '@/hooks/use-data';
-import { syncAccessTierCookie } from '@sharpit/server/lib/access/tier-cookie';
+import { syncAccessTierCookie } from '@sharpit/app/lib/access/tier-cookie';
 
 /**
  * Keeps the access-tier cookie aligned with the cached athlete profile so

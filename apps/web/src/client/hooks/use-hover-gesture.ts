@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useRef } from 'react';
-import { isHoveringPointer } from '@sharpit/server/lib/touch';
+import { isHoveringPointer } from '@sharpit/app/lib/touch';
 
 interface BoundaryEvent {
   pointerId: number;

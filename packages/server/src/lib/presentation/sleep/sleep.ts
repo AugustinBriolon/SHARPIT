@@ -8,14 +8,14 @@ import {
   getIndexedHealthEntry,
   indexHealthEntriesByDay,
   effectiveSleepMinutes,
-} from '@sharpit/server/lib/health/health';
+} from '@sharpit/app/lib/health/health';
 
 type DailyHealthRow = Awaited<ReturnType<typeof getHealthEntries>>[number];
-import { analyzeSleep, toSleepEntryInputs } from '@sharpit/server/lib/sleep/sleep';
+import { analyzeSleep, toSleepEntryInputs } from '@sharpit/app/lib/sleep/sleep';
 import {
   buildSleepScoreBreakdown,
   mapSleepScoreToAdequacy,
-} from '@sharpit/server/lib/sleep/sleep-scoring';
+} from '@sharpit/app/lib/sleep/sleep-scoring';
 import { SLEEP_TARGET_MIN } from '@sharpit/core/sleep/targets';
 import {
   mapRecoveryToSignal,
@@ -23,14 +23,11 @@ import {
   mapConfidenceToTier,
   type ReadinessCategory,
   type SleepAdequacySignal,
-} from '@sharpit/server/lib/today/dashboard/today-mapping';
+} from '@sharpit/app/lib/today/dashboard/today-mapping';
 import { buildSleepPageInsights } from '@sharpit/server/lib/product-insight/sleep-page-insights';
 import { buildGlobalDecisionContext } from '@sharpit/server/lib/decision/global-decision-context';
-import { EMPTY_GLOBAL_DECISION } from '@sharpit/server/presentation/global-decision-context';
-import type {
-  SleepNightStatus,
-  SleepViewModel,
-} from '@sharpit/server/presentation/sleep-view-model';
+import { EMPTY_GLOBAL_DECISION } from '@sharpit/app/presentation/global-decision-context';
+import type { SleepNightStatus, SleepViewModel } from '@sharpit/app/presentation/sleep-view-model';
 
 const CONFIDENCE_TONE = {
   high: 'good',

@@ -7,7 +7,7 @@ import { MorningWellnessDialog } from '@/components/today/dashboard/morning-well
 import { SnapshotStatusBanner } from '@/components/today/dashboard/today-dashboard-states';
 import { Button } from '@/components/ui/button';
 import { useWellnessCheckin } from '@/hooks/use-wellness-checkin';
-import { cn } from '@sharpit/server/lib/utils';
+import { cn } from '@sharpit/app/lib/utils';
 
 /**
  * What the athlete sees when the Digital Twin has nothing to say yet.

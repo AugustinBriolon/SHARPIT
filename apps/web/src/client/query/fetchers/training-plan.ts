@@ -1,4 +1,4 @@
-import type { ClientPlanWeek, ClientTrainingPlan } from '@sharpit/server/lib/query/types';
+import type { ClientPlanWeek, ClientTrainingPlan } from '@sharpit/app/lib/query/types';
 import { fetchJson, type Serialized, toDate } from './shared';
 
 export async function fetchTrainingPlan(): Promise<ClientTrainingPlan | null> {

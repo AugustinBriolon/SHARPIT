@@ -7,8 +7,8 @@ import {
   startOfDay,
 } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { cn } from '@sharpit/server/lib/utils';
-import type { DataDayStatus } from '@sharpit/server/lib/presentation/data-days/data-days-chunks';
+import { cn } from '@sharpit/app/lib/utils';
+import type { DataDayStatus } from '@sharpit/app/lib/presentation/data-days/data-days-chunks';
 import { dataStatusLabel } from '@/components/today/drill-down/date-strip-helpers';
 
 export function calendarDayCellProps({

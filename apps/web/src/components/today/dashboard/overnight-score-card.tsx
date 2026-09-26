@@ -13,7 +13,7 @@ import { TodayInstrumentCard } from '@/components/today/dashboard/today-instrume
 import { OVERNIGHT_GAUGE_STAGGER_MS } from '@/components/today/dashboard/overnight-gauge-geometry';
 import { TickSemicircle } from '@/components/today/dashboard/overnight-score-gauge';
 import { useOvernightGaugeReveal } from '@/components/today/dashboard/use-overnight-gauge-reveal';
-import { cn } from '@sharpit/server/lib/utils';
+import { cn } from '@sharpit/app/lib/utils';
 
 /** Re-export for existing tests. */
 export { overnightTickStroke as tickStroke } from '@/components/today/dashboard/overnight-gauge-geometry';

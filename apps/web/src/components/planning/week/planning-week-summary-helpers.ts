@@ -1,6 +1,6 @@
-import type { ClientPlanWeek } from '@sharpit/server/lib/query/types';
-import { formatTrainingLoad } from '@sharpit/server/lib/preferences/display-mode';
-import type { DisplayMode } from '@sharpit/server/lib/preferences/display-mode';
+import type { ClientPlanWeek } from '@sharpit/app/lib/query/types';
+import { formatTrainingLoad } from '@sharpit/app/lib/preferences/display-mode';
+import type { DisplayMode } from '@sharpit/app/lib/preferences/display-mode';
 
 function weeksToRaceLabel(weeksToRace: number): string {
   return weeksToRace === 0 ? 'Semaine course' : `S-${weeksToRace}`;

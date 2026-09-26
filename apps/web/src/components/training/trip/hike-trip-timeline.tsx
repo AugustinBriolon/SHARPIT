@@ -8,10 +8,10 @@ import { Button } from '@/components/ui/button';
 import { useConfirmDialog } from '@/components/ui/confirm-dialog';
 import { HikeStepSparkline } from '@/components/training/trip/hike-trip-elevation-profile-chart';
 import { useHikeTripMutations } from '@/hooks/use-data';
-import { buildHikeStepSparkline } from '@sharpit/server/lib/activity/hike/hike-trip-elevation';
-import { formatDate, formatDistance, formatDuration } from '@sharpit/server/lib/format';
-import type { ClientHikeTrip } from '@sharpit/server/lib/query/types';
-import { cn } from '@sharpit/server/lib/utils';
+import { buildHikeStepSparkline } from '@sharpit/app/lib/activity/hike/hike-trip-elevation';
+import { formatDate, formatDistance, formatDuration } from '@sharpit/app/lib/format';
+import type { ClientHikeTrip } from '@sharpit/app/lib/query/types';
+import { cn } from '@sharpit/app/lib/utils';
 
 export type HikeTripMember = ClientHikeTrip['activities'][number];
 

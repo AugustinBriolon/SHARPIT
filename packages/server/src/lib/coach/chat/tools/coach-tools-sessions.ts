@@ -1,6 +1,6 @@
 import { tool } from 'ai';
 import { z } from 'zod';
-import type { PracticedSportId } from '@sharpit/server/lib/practiced-sports';
+import type { PracticedSportId } from '@sharpit/app/lib/practiced-sports';
 import {
   coachToolFailure,
   coachTypeEnumForSports,

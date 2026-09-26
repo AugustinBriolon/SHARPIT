@@ -7,7 +7,7 @@ const state = vi.hoisted(() => ({
   deletedAt: null as Date | null,
 }));
 
-vi.mock('@sharpit/server/lib/demo/demo-session', () => ({ isDemoSession: async () => false }));
+vi.mock('@sharpit/app/lib/demo/demo-session', () => ({ isDemoSession: async () => false }));
 vi.mock('@sharpit/server/lib/onboarding/entry', () => ({
   consentWallHref: async () => state.wall,
 }));

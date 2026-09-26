@@ -2,7 +2,7 @@
 
 import type { ReactElement } from 'react';
 import { ResponsiveChartFrame } from '@/components/ui/charts/responsive-chart-frame';
-import { describeChart, type ChartSeries } from '@sharpit/server/lib/ui/chart-description';
+import { describeChart, type ChartSeries } from '@sharpit/app/lib/ui/chart-description';
 
 /**
  * A chart with a text alternative.

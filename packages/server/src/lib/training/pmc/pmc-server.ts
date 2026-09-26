@@ -1,13 +1,13 @@
 import { featureRepository } from '@sharpit/server/lib/engines/feature-engine';
 import { getActivitiesForPmc } from '@sharpit/server/lib/queries';
-import { toTrainingDayId, type PmcDayPoint } from '@sharpit/server/lib/training/pmc/pmc';
+import { toTrainingDayId, type PmcDayPoint } from '@sharpit/app/lib/training/pmc/pmc';
 import {
   aggregateDailyTssPreferringCore,
   computeAthletePmc,
   type CoreSessionTss,
   type PmcPoint,
   toPmcPoints,
-} from '@sharpit/server/lib/training/pmc/pmc-history';
+} from '@sharpit/app/lib/training/pmc/pmc-history';
 
 /**
  * The athlete's PMC series, computed from the Core's Training Stress.

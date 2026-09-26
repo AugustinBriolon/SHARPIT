@@ -2,7 +2,7 @@
 
 import type { ReactElement } from 'react';
 import { ResponsiveContainer } from 'recharts';
-import { cn } from '@sharpit/server/lib/utils';
+import { cn } from '@sharpit/app/lib/utils';
 
 /** Conteneur Recharts avec dimensions explicites (évite width/height 0). */
 export function ResponsiveChartFrame({

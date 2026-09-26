@@ -3,7 +3,8 @@ import { prisma } from '@sharpit/db/client';
 /** Compact enough for hub cards; detail page still loads full streams. */
 export const ROUTE_PREVIEW_MAX_POINTS = 48;
 
-export type ActivityRoutePreviews = Record<string, [number, number][]>;
+export type { ActivityRoutePreviews } from '@sharpit/app/lib/streams/stream-types';
+import type { ActivityRoutePreviews } from '@sharpit/app/lib/streams/stream-types';
 
 type LatLng = [number, number];
 

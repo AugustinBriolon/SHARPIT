@@ -3,7 +3,7 @@
 import { useOnboardingStepProgress } from '@/components/onboarding/steps/onboarding-step-progress-context';
 import { OnboardingStepProgressRail } from '@/components/onboarding/steps/onboarding-step-progress-rail';
 import { DockedActionBar } from '@/components/ui/docked-action-bar';
-import { cn } from '@sharpit/server/lib/utils';
+import { cn } from '@sharpit/app/lib/utils';
 
 /**
  * Shared anatomy for every wizard step: sticky progress, content, docked actions.
