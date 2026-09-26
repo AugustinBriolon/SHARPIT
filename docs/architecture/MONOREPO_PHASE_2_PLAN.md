@@ -1,6 +1,6 @@
 # Monorepo phase 2 — `packages/db`, `packages/server`, `apps/api` on its own Vercel project
 
-**Status:** Approved 2026-09-26 — steps 2a, 2b and 2c-i done · **Date:** 2026-09-26 · **Parent:** [ADR-048](../adr/ADR-048-web-repository-becomes-a-monorepo.md)
+**Status:** Approved 2026-09-26 — steps 2a to 2c done · **Date:** 2026-09-26 · **Parent:** [ADR-048](../adr/ADR-048-web-repository-becomes-a-monorepo.md)
 
 Goal: `api.sharpit.app` served by a new Vercel project `sharpit-api` built from `apps/api`, holding the
 server secrets, with its own crons — while the web keeps working unchanged until phase 3. The iOS app
@@ -79,7 +79,13 @@ public URL before step 2f.
   read app files (routes, pages, `globals.css`, `proxy.ts`, scripts) moved to `apps/web/src/contracts/`;
   `load-legal-page` stayed in the app (`src/legal/`). The app scripts' relative `../src/lib/…` imports — one
   of them broken since 2b, unchecked because scripts are not typechecked — now use the packages.
-- **2c-ii (next):** route handlers into `packages/server/src/handlers/`.
+- **2c-ii done (2026-09-26):** 139 handlers moved to `packages/server/src/handlers/<route path>/handler.ts` with
+  their helpers and tests; every `apps/web/src/app/api/**/route.ts` is now its literal `maxDuration` plus
+  `export { GET, … } from '@sharpit/server/handlers/…/handler'`; the 30 `/api/v1` twins point at the same handler.
+- **Found and fixed on the way:** `/api/v1/athlete-profile` set the web UI's `sharpit.access-tier` cookie for
+  Bearer clients too, so `api.sharpit.app` answered the iOS app with a `Set-Cookie` the proxy cannot strip. The
+  cookie contract only read the v1 route file, which re-exported the twin, so it never saw it. The handler now
+  sets it for non-Bearer requests only (handler test), and the contract follows every re-export to its handler.
 - **Exit:** identical behaviour; every test green in its new workspace.
 
 ### 2d — `apps/api` (≈ ½ day)
