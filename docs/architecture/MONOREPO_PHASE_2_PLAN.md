@@ -1,6 +1,6 @@
 # Monorepo phase 2 — `packages/db`, `packages/server`, `apps/api` on its own Vercel project
 
-**Status:** Approved 2026-09-26 — steps 2a to 2c done · **Date:** 2026-09-26 · **Parent:** [ADR-048](../adr/ADR-048-web-repository-becomes-a-monorepo.md)
+**Status:** Approved 2026-09-26 — steps 2a to 2d done; 2e needs your secrets · **Date:** 2026-09-26 · **Parent:** [ADR-048](../adr/ADR-048-web-repository-becomes-a-monorepo.md)
 
 Goal: `api.sharpit.app` served by a new Vercel project `sharpit-api` built from `apps/api`, holding the
 server secrets, with its own crons — while the web keeps working unchanged until phase 3. The iOS app
@@ -97,6 +97,12 @@ public URL before step 2f.
   `yarn build` (no migrations — decision 2).
 - Local dev: `turbo dev` runs web on 3000 and api on 3001.
 - **Exit:** `apps/api` builds; its route tests pass; `smoke:api-host` passes against `next start` locally.
+- **Done (2026-09-26):** 51 mounts (44 `/api/v1`, `coach/chat`, 6 crons), each identical to the web's
+  (`src/contracts/route-mounts.test.ts`). The `api.` proxy is `@sharpit/server/lib/hosts/api-proxy`, shared with
+  the web app's `api.` host branch; crons are allowed on `api.` and skip Clerk (their route checks `CRON_SECRET`).
+  Langfuse telemetry moved to `@sharpit/server/lib/ai/telemetry`, registered by both apps. The ignored build step
+  is `git diff HEAD^ HEAD --quiet -- . ../../packages …`. Locally: build + `next start` + `smoke:api-host
+http://localhost:3001` → 5/5; a cron with a wrong secret reaches its route and gets its 401.
 
 ### 2e — Vercel project `sharpit-api` (≈ 1 h + your secret entry)
 
