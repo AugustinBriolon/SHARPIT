@@ -1,6 +1,6 @@
 # Monorepo phase 3 — the web calls `api.` and loses its database
 
-**Status:** Accepted — 3a–3d shipped 2026-09-26; 3e waits for the manual actions (§4), 3f for the demo decision (§6) · **Date:** 2026-09-26 · **Parent:** [ADR-048](../adr/ADR-048-web-repository-becomes-a-monorepo.md)
+**Status:** Done 2026-09-26 except removing the web project's server variables (manual, §7) · **Date:** 2026-09-26 · **Parent:** [ADR-048](../adr/ADR-048-web-repository-becomes-a-monorepo.md)
 
 Goal: `web.sharpit.app` (and the apex pages the web project still serves) read and write everything through
 `api.sharpit.app` with a Clerk Bearer. `apps/web` stops depending on the database, and the `sharpit-webapp` Vercel project
@@ -118,3 +118,22 @@ visitors keep the same-origin path (`apiFetch` falls back without a Clerk sessio
 **Also for 3f:** the 10 server-rendered pages, `/start`, `/demo`, `/connect/garmin/start` and 9 components
 that reach `@sharpit/db` move to `api.` calls (server-side `auth().getToken()`), then the web routes and the
 web's database variables go.
+
+## 7. Done (2026-09-26)
+
+- **3e:** `NEXT_PUBLIC_API_ORIGIN=https://api.sharpit.app` on `sharpit-webapp`; redirect URIs moved (Withings, Google),
+  App Store notifications on `api.`.
+- **Demo:** a shared read-only Clerk account ([ADR-049](../adr/ADR-049-demo-is-a-shared-clerk-account.md)).
+- **3f:** every web page reads through `api.` (`/api/web/*` payloads, `apps/web/src/server/api-client.ts`); the web's
+  117 `/api` mounts, `@sharpit/db`, its AI telemetry and rate limit are gone; database scripts live in `apps/api`.
+  Contracts: the web serves no `/api` route, reaches no database module, depends on no `@sharpit/db`, and has no
+  unreachable file.
+- **Clean-up:** legacy URLs are `next.config` redirects; 57 dead web files and 24 dead server modules deleted; each
+  Vercel project rebuilds only for its app, the packages and the root manifests.
+- **Left to the owner:** removing the server variables from `sharpit-webapp` (writing to the secret store is theirs):
+  `AI_GATEWAY_API_KEY COACH_MODEL DATABASE_URL DIRECT_URL GOOGLE_CLIENT_ID GOOGLE_CLIENT_SECRET LANGFUSE_BASE_URL
+LANGFUSE_PUBLIC_KEY LANGFUSE_SECRET_KEY NEXT_PUBLIC_APP_URL SECRET_ENCRYPTION_KEY UPSTASH_REDIS_REST_TOKEN
+UPSTASH_REDIS_REST_URL WITHINGS_CLIENT_ID WITHINGS_CLIENT_SECRET WITHINGS_REDIRECT_URI`. `FEATURE_ENGINE_ENABLED`
+  and `SHARPIT_DEFAULT_LATITUDE/LONGITUDE` are read by the server but missing on `sharpit-api`: copy them there first
+  if their values matter, then remove them from the web. The web keeps Clerk, `NEXT_PUBLIC_API_ORIGIN`,
+  `APPLE_TEAM_ID`, `ADMIN_EMAILS`.
