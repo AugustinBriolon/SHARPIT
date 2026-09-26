@@ -56,4 +56,31 @@ inputs: [keys used], computedAt }`.
   reading.
 - The minimum data window.
 
+## Method proposal v1 (researched 2026-09-27, to accept)
+
+The NTNU fitness calculator (Nes et al.) does not publish its fitness-age algorithm, so v1 uses
+the published reference data it rests on instead:
+
+- **Reference:** mean VO₂max by sex and decade in healthy adults, HUNT3 Fitness Study — Loe H,
+  Rognmo Ø, Saltin B, Wisløff U. _Aerobic Capacity Reference Data in 3816 Healthy Men and Women
+  20–90 Years._ PLoS ONE 2013;8(5):e64319.
+
+  | Age   | Women (mL·kg⁻¹·min⁻¹) | Men |
+  | ----- | --------------------- | --- |
+  | 20–29 | 43                    | 54  |
+  | 30–39 | 40                    | 49  |
+  | 40–49 | 38                    | 47  |
+  | 50–59 | 34                    | 42  |
+  | 60–69 | 31                    | 39  |
+  | 70+   | 27                    | 34  |
+
+- **Fitness age:** the age at which the reference mean equals the athlete's VO₂max, by linear
+  interpolation between decade midpoints (25, 35, … 75), clamped to 20–80. Method key
+  `fitness-age-hunt3-loe-2013-v1`.
+- **No adjustment in v1.** Resting HR, HRV and body-fat norms have no source chosen yet; each
+  would add a table to justify. They come in a v2 with their own sources, still capped.
+- **Confidence:** `high` when VO₂max is under 30 days old, `medium` under 90, else null.
+- Garmin's own « fitness age », when present, is shown as a separate attributed reading, never
+  blended — like the Withings `bodyAgeScale`.
+
 Until this ADR is accepted, the server returns `biologicalAge: null` and the app hides the slot.
