@@ -112,6 +112,10 @@ Every mutation that modifies a list should use `listOptimistic()`. Every mutatio
 
 > Since ADR-048 phase 0 the app lives in `apps/web` of a Yarn workspaces + Turborepo monorepo; the paths
 > below are relative to `apps/web`. Legal page sources moved from `docs/legal` to `apps/web/content/legal`.
+> Since phase 1, `src/core/*` is the `@sharpit/core` package (`packages/core/src/*`), except
+> `core/presentation` → `src/presentation`, `core/adapters` → `src/adapters`, `core/athlete-state` →
+> `src/athlete-state` and `core/architecture` → `src/architecture`, which depend on app modules.
+> `lib/util/value` is `@sharpit/shared/value`.
 
 ```
 src/

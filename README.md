@@ -36,10 +36,19 @@ The Next.js app lives in `apps/web`; every `src/…` path below is relative to i
 scripts run with `yarn web <script>`. Repository documentation (`docs/`, `knowledge/`) stays at the root.
 
 ```
-apps/web/     Next.js app (src/, prisma/, scripts/, e2e/, content/legal/, public/)
-docs/         ADRs, architecture, product and design documentation
-knowledge/    Domain and science notes
+apps/web/                Next.js app (src/, prisma/, scripts/, e2e/, content/legal/, public/)
+packages/core/           Pure domain: observation, features, inference, digital twin, decision… (@sharpit/core)
+packages/shared/         Framework-free helpers shared by every workspace (@sharpit/shared)
+packages/eslint-config/  The lint rules every workspace extends
+docs/                    ADRs, architecture, product and design documentation
+knowledge/               Domain and science notes
 ```
+
+`@sharpit/core` imports nothing from the app — no Prisma client, React or Next (only Prisma's enum
+types). The view models (`src/presentation`), provider adapters (`src/adapters`) and the Today
+athlete state (`src/athlete-state`) stay in the app: they depend on app modules. Domain packages are
+TypeScript sources compiled by the app (`transpilePackages`). Run a package's scripts with
+`yarn core <script>` (for example `yarn core benchmark`).
 
 ## Architecture
 
@@ -48,17 +57,17 @@ SHARPIT is a Next.js application with a layered intelligence system:
 ```
 Sync Layer        Garmin / Strava / Renpho / Sleep — batch ingestion
       │
-Observation       Raw data normalization and validation (src/core/observation/)
+Observation       Raw data normalization and validation (packages/core/src/observation/)
       │
-Feature Engine    Structured feature extraction per training day (src/core/features/)
+Feature Engine    Structured feature extraction per training day (packages/core/src/features/)
       │
-Intelligence      Scientific inference models (src/core/inference/)
+Intelligence      Scientific inference models (packages/core/src/inference/)
   ├── Recovery v1    readiness · sleep · HRV · accumulation
   ├── Fatigue v1     load · neuromuscular · metabolic · cumulative · psychological
   ├── Adaptation v1  load progression · neuromuscular efficiency · autonomic · recovery quality
   └── Reasoning v1   cross-model synthesis — OverallVerdict, conflicts, opportunities (reads Digital Twin)
       │
-Digital Twin      Persistent athlete state — updated after each inference (src/core/digital-twin/)
+Digital Twin      Persistent athlete state — updated after each inference (packages/core/src/digital-twin/)
       │
 Decision Layer    AI coach context + training recommendations (src/lib/coach/coach-context.ts)
 ```
@@ -174,9 +183,9 @@ yarn web test:e2e               # Playwright, production build — prefetched sh
 yarn web test:e2e:dev           # Playwright, against a running `yarn dev` — structural specs
 
 # Scientific benchmark suites (CI deployment gates)
-yarn web benchmark              # run all model benchmarks, human-readable output
-yarn web benchmark:json         # JSON output for CI parsing
-yarn web benchmark:compare      # compare v1 vs v2 model versions
+yarn core benchmark              # run all model benchmarks, human-readable output
+yarn core benchmark:json         # JSON output for CI parsing
+yarn core benchmark:compare      # compare v1 vs v2 model versions
 ```
 
 Scientific benchmarks gate intelligence model deployment. All four models (Recovery, Fatigue, Adaptation, Reasoning) must score **100/100 scientific regression score** and **1.0 safety score** to pass.
