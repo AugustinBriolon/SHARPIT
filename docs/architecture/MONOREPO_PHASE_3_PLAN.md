@@ -1,6 +1,6 @@
 # Monorepo phase 3 — the web calls `api.` and loses its database
 
-**Status:** Proposed · **Date:** 2026-09-26 · **Parent:** [ADR-048](../adr/ADR-048-web-repository-becomes-a-monorepo.md)
+**Status:** Accepted — 3a–3d shipped 2026-09-26; 3e waits for the manual actions (§4), 3f for the demo decision (§6) · **Date:** 2026-09-26 · **Parent:** [ADR-048](../adr/ADR-048-web-repository-becomes-a-monorepo.md)
 
 Goal: `web.sharpit.app` (and the apex pages the web project still serves) read and write everything through
 `api.sharpit.app` with a Clerk Bearer. `apps/web` stops depending on the database, and the `sharpit` Vercel project
@@ -96,3 +96,25 @@ Each step is its own commit (or small branch) → `main`, with `yarn test`, `yar
 - **CORS on the apex** (decision 3): widened only for `https://sharpit.app`, removed in phase 4.
 - **Latency:** one extra hop for the web only; measured in 3e, escape hatch documented.
 - **Size:** 3a–3c touch ~200 files, mostly mechanical; each step deploys on its own and the switch (3e) is reversible.
+
+## 6. As shipped (2026-09-26) and what 3f still needs
+
+- **3a/3b shipped:** `api.` serves every `/api/*` handler; provider callbacks and App Store notifications are
+  its only Bearer-less paths (`isSelfAuthenticatedPath`). Connects carry a signed state
+  (`lib/integrations/oauth-state.ts`, `lib/signed-token.ts`); no handler reachable from `api.` writes a cookie
+  (contract follows helpers transitively). Demo exit stays web-only.
+- **3c shipped (client side):** `client/query/api-fetch.ts` + `ConnectLink` / `navigateToConnect`. Server
+  components still read the database directly — harmless while the web has it, but they block 3f.
+- **3d shipped:** migrations run in the `sharpit-api` build; one-owner contract.
+- **CI fix found on the way:** `sharpit-api`'s ignore step diffed only `HEAD^`; the shared
+  `scripts/ci/vercel-ignore-build.mjs --scope …` now covers every pushed commit.
+
+**Blocking 3f — the anonymous demo.** `/demo` gives a visitor a cookie, no Clerk session; every demo read goes
+to the web's own routes and database. `api.` is Bearer-only. Options: (a) a shared Clerk demo user signed in
+through a sign-in token (like the Garmin handoff), writes refused server-side for that athlete; (b) keep a
+read-only demo database role on the web; (c) drop the web demo. Recommended: (a). Until decided, demo
+visitors keep the same-origin path (`apiFetch` falls back without a Clerk session).
+
+**Also for 3f:** the 10 server-rendered pages, `/start`, `/demo`, `/connect/garmin/start` and 9 components
+that reach `@sharpit/db` move to `api.` calls (server-side `auth().getToken()`), then the web routes and the
+web's database variables go.
