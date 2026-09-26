@@ -1,5 +1,10 @@
 # Apex hub cutover (ADR-051)
 
+**Done 2026-09-27.** Kept as the record and the rollback path. Lesson: Vercel refuses to remove the apex from a
+project while another of its domains redirects to it (`sharpit.vercel.app`) — clear that redirect first
+(`PATCH …/domains/sharpit.vercel.app` with `redirect: null`); the web's `next.config.ts` still sends that host to
+the apex.
+
 The apex contract (AASA, `/connect/garmin/*`, `/privacy`, `/terms`) must answer at every step.
 
 ## 1. Before (owner)

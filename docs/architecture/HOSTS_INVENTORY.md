@@ -21,7 +21,12 @@ Re-run `yarn smoke:must-private https://sharpit.app https://web.sharpit.app` aft
 
 ## 2. Hosts
 
-Since 2026-09-26, `api.sharpit.app` belongs to project `sharpit-api` (`apps/api`, region `lhr1`); `sharpit.app`, `www.` and `web.` stay on `sharpit-webapp` (`apps/web`, `lhr1`; named `sharpit` until 2026-09-26, same project id).
+Three projects, three apps (ADR-048, ADR-051), all in `lhr1`:
+
+- `sharpit.app` (and `www.`, redirected to it) → `sharpit-hub` (`apps/hub`, since 2026-09-27): AASA, `/connect/garmin/*`, `/privacy`, `/terms`, `/sign-in` for the handoff ticket; every other path redirects to `web.`.
+- `web.sharpit.app` → `sharpit-webapp` (`apps/web`; named `sharpit` until 2026-09-26): the UI, no database; `/privacy`, `/terms`, `/connect/*`, `/.well-known/*` redirect to the apex.
+- `api.sharpit.app` → `sharpit-api` (`apps/api`): every route handler, crons, migrations.
+
 `sharpit-webapp.vercel.app` (and the former `sharpit.vercel.app`) redirect to `https://sharpit.app` (`next.config.ts`).
 
 | Route                                     | `sharpit.app`                            | `web.sharpit.app` | `api.sharpit.app` | Target                                   |
@@ -50,7 +55,7 @@ Since 2026-09-26, `api.sharpit.app` belongs to project `sharpit-api` (`apps/api`
 
 ---
 
-## 4. Environment variables (Vercel project `sharpit-webapp`)
+## 4. Environment variables (Vercel project `sharpit-webapp`; `sharpit-hub` holds the Clerk keys, `NEXT_PUBLIC_API_ORIGIN` and `APPLE_TEAM_ID` only)
 
 | Name                                                                                   | Environments        | Class           | Used by                 |
 | -------------------------------------------------------------------------------------- | ------------------- | --------------- | ----------------------- |

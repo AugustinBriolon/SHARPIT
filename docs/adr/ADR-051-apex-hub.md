@@ -1,6 +1,6 @@
 # ADR-051: The apex is served by its own app, `apps/hub`
 
-**Status:** Accepted — cutover pending the hub's Clerk secret (2026-09-27)  
+**Status:** Accepted — cut over 2026-09-27  
 **Date:** 2026-09-27  
 **Author:** Augustin Briolon (with Claude Code)  
 **Supersedes:** N/A (phase 4 of [ADR-048](./ADR-048-web-repository-becomes-a-monorepo.md))
