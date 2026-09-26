@@ -31,13 +31,13 @@ Performance operating system for endurance athletes — training load management
 ## Repository layout
 
 The repository is a Yarn workspaces + Turborepo monorepo ([ADR-048](docs/adr/ADR-048-web-repository-becomes-a-monorepo.md)).
-The Next.js app lives in `apps/web`; the server code it runs lives in `packages/server` (`@sharpit/server/lib/…`, formerly `@/lib/…`). `src/lib/…` paths below are relative to `packages/server`, other `src/…` paths to `apps/web`. Root commands
-(`yarn dev`, `yarn build`, `yarn test`, `yarn typecheck`, `yarn lint`) run through Turbo; app-only
-scripts run with `yarn web <script>`. Repository documentation (`docs/`, `knowledge/`) stays at the root.
+The web UI lives in `apps/web` (pages only, no database: it reads and writes through `api.` with a Clerk Bearer); `apps/api` serves every route handler and owns the database; the server code lives in `packages/server` (`@sharpit/server/lib/…`, formerly `@/lib/…`). `src/lib/…` paths below are relative to `packages/server`, other `src/…` paths to `apps/web`. Root commands
+(`yarn dev` starts both apps, `yarn build`, `yarn test`, `yarn typecheck`, `yarn lint`) run through Turbo; app-only
+scripts run with `yarn web <script>` or `yarn api <script>` (database scripts: `yarn api db:…`). Repository documentation (`docs/`, `knowledge/`) stays at the root.
 
 ```
-apps/web/                Next.js app (src/, prisma/, scripts/, e2e/, content/legal/, public/)
-apps/api/                api.sharpit.app: route handlers only — /api/v1, the coach stream, crons (port 3001)
+apps/web/                web.sharpit.app + the apex pages: Next.js pages only, no database (src/, scripts/, e2e/, content/legal/, public/)
+apps/api/                api.sharpit.app: every route handler — /api/v1, the web's /api routes, crons, migrations, db scripts (port 3001)
 packages/core/           Pure domain: observation, features, inference, digital twin, decision… (@sharpit/core)
 packages/shared/         Framework-free helpers shared by every workspace (@sharpit/shared)
 packages/db/             Prisma schema, migrations and client (@sharpit/db/client)
@@ -110,7 +110,7 @@ Moved documents leave a redirect stub at their old path.
 # Create a project at neon.tech, copy the connection string to DATABASE_URL in .env
 
 # Option B — Docker
-yarn web db:up
+yarn api db:up
 
 # Option C — Local PostgreSQL (macOS)
 brew install postgresql@16
@@ -125,8 +125,8 @@ createuser sharpit --createdb 2>/dev/null; \
 ```bash
 cp apps/web/.env.example apps/web/.env   # fill in required values (see Environment variables below)
 yarn install
-yarn web db:migrate        # run all migrations
-yarn web db:seed           # optional demo data
+yarn api db:migrate        # run all migrations
+yarn api db:seed           # optional demo data
 yarn dev
 ```
 
@@ -212,12 +212,12 @@ record and nothing that can expire.
 | `yarn web lint:fix`                                  | Auto-fix lint errors                                                                                                     |
 | `yarn format`                                        | Prettier write                                                                                                           |
 | `yarn typecheck`                                     | TypeScript check without emitting                                                                                        |
-| `yarn web db:migrate`                                | Run Prisma migrations (dev)                                                                                              |
-| `yarn web db:push`                                   | Sync schema without migration                                                                                            |
-| `yarn web db:studio`                                 | Open Prisma Studio                                                                                                       |
-| `yarn web db:seed`                                   | Seed demo data                                                                                                           |
-| `yarn web db:backfill:body-composition-observations` | Backfill `BODY_COMPOSITION` observations from stored Withings/Renpho measurements                                        |
-| `yarn web db:recompute:fuel-features`                | Recompute FUEL feature sets for days with nutrition data (after weight backfill)                                         |
+| `yarn api db:migrate`                                | Run Prisma migrations (dev)                                                                                              |
+| `yarn api db:push`                                   | Sync schema without migration                                                                                            |
+| `yarn api db:studio`                                 | Open Prisma Studio                                                                                                       |
+| `yarn api db:seed`                                   | Seed demo data                                                                                                           |
+| `yarn api db:backfill:body-composition-observations` | Backfill `BODY_COMPOSITION` observations from stored Withings/Renpho measurements                                        |
+| `yarn api db:recompute:fuel-features`                | Recompute FUEL feature sets for days with nutrition data (after weight backfill)                                         |
 | `yarn web tokens:ios`                                | Regenerate the native client's Swift design tokens ([ADR-041](docs/adr/ADR-041-ios-design-tokens-generated-from-web.md)) |
 | `yarn web tokens:ios:check`                          | Fail if the committed Swift tokens are stale                                                                             |
 | `yarn web smoke:must-private [origin…]`              | Live smoke of the private Must: AASA, Garmin handoff entry/callback, Today with `SHARPIT_SMOKE_BEARER` (env only)        |
