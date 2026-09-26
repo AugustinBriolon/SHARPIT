@@ -4,6 +4,7 @@ import { NextRequest } from 'next/server';
 const ensureDemoClerkUser = vi.fn();
 const createSignInTicket = vi.fn();
 
+vi.mock('@sharpit/server/lib/next/await-request', () => ({ awaitRequest: async () => {} }));
 vi.mock('@sharpit/server/lib/demo/demo-identity', () => ({
   ensureDemoClerkUser: () => ensureDemoClerkUser(),
 }));

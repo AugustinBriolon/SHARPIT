@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { createSignInTicket, ticketSignInUrl } from '@sharpit/server/lib/auth/sign-in-ticket';
 import { ensureDemoClerkUser } from '@sharpit/server/lib/demo/demo-identity';
+import { awaitRequest } from '@sharpit/server/lib/next/await-request';
 
 /**
  * Public demo entry (ADR-048 phase 3f): signs the visitor in to the shared, read-only demo
@@ -8,6 +9,8 @@ import { ensureDemoClerkUser } from '@sharpit/server/lib/demo/demo-identity';
  * web calls `api.` with a Bearer. The demo data is (re)seeded by `api.` on the first read.
  */
 export async function GET(request: NextRequest) {
+  // A fresh ticket per visit: never prerendered.
+  await awaitRequest();
   try {
     const ticket = await createSignInTicket(await ensureDemoClerkUser());
     return NextResponse.redirect(ticketSignInUrl(request.nextUrl.origin, ticket, '/'));
