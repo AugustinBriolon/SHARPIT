@@ -1,5 +1,5 @@
 import { isSameDay, startOfDay } from 'date-fns';
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 import type { ActivityType } from '@prisma/client';
 import type { ClientActivity, ClientPlannedSession } from '@/lib/query/types';
 import {

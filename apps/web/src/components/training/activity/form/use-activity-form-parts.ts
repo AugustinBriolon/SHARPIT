@@ -17,7 +17,7 @@ import {
   resolveWatchedRpe,
   sanitizeActivityPayload,
 } from '@/components/training/activity/form/activity-form-helpers';
-import { sportSupportsOutdoorContext } from '@/core/planned-session/defaults';
+import { sportSupportsOutdoorContext } from '@sharpit/core/planned-session/defaults';
 import type { useActivityMutations } from '@/hooks/use-data';
 import { useOfflineGuard } from '@/hooks/use-offline-guard';
 import {

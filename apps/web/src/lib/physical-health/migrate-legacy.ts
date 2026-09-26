@@ -1,4 +1,4 @@
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 /**
  * Phase 1 legacy migration — pure transforms.
  * Produces insert payloads without side effects (testable, reviewable).
@@ -9,7 +9,7 @@ import type {
   ConditionEpisode,
   ConditionObservation,
   FunctionalCapacity,
-} from '@/core/physical-health/types';
+} from '@sharpit/core/physical-health/types';
 import {
   inferFunctionalImpactFromLegacySeverity,
   inferSymptomPresentFromLegacySeverity,
@@ -22,7 +22,7 @@ import {
   resolveLegacyCheckinContext,
   type LegacyPhysicalCategory,
   type LegacyPhysicalStatus,
-} from '@/core/physical-health/legacy-mapping';
+} from '@sharpit/core/physical-health/legacy-mapping';
 
 function legacyConfidenceFromCheckins(count: number): number {
   if (count >= 3) {

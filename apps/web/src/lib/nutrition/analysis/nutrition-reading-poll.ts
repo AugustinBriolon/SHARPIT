@@ -1,4 +1,4 @@
-import type { NutritionCoachReadingView } from '@/core/presentation/nutrition-view-model';
+import type { NutritionCoachReadingView } from '@/presentation/nutrition-view-model';
 
 /** Poll cadence while the coach reading is being generated in the background. */
 export const NUTRITION_READING_POLL_MS = 4_000;

@@ -1,5 +1,5 @@
 import { format, subDays } from 'date-fns';
-import { mfpDayToNutritionObservation } from '@/core/adapters/myfitnesspal-adapter';
+import { mfpDayToNutritionObservation } from '@/adapters/myfitnesspal-adapter';
 import { observationEngine } from '@/lib/engines/observation-engine';
 import { prisma } from '@/lib/prisma';
 import { decryptSecret, encryptSecret, isSecretAuthenticityFailure } from '@/lib/secret-box';

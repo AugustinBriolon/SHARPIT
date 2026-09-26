@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { AthleteSnapshot } from '@/core/athlete-state/snapshot';
+import type { AthleteSnapshot } from '@/athlete-state/snapshot';
 import { withDemoSnapshotFreshness } from '@/lib/demo/demo-presentation';
 import { resolveMorningOrientation } from '@/lib/today/rich/morning-orientation';
 

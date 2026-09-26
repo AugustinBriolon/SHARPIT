@@ -6,7 +6,7 @@ import {
   isDemoHealthDateCurrent,
 } from '@/lib/demo/demo-calendar';
 import { dayKeyFromDate } from '@/lib/date/day-key';
-import { computeTrainingDayId } from '@/lib/training/periodization/training-day';
+import { computeTrainingDayId } from '@sharpit/core/training/training-day';
 
 describe('demoCalendar', () => {
   it('anchors today on the Paris training day, not server-local startOfDay', () => {

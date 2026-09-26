@@ -5,7 +5,7 @@
  * @see docs/product/SCENARIO_ENGINE.md
  */
 
-import type { ScenarioDecisionDelta, ScenarioDecisionSnapshot } from '@/core/scenario/types';
+import type { ScenarioDecisionDelta, ScenarioDecisionSnapshot } from '@sharpit/core/scenario/types';
 import { verdictRiskRank } from '@/lib/scenario/decision-snapshot';
 
 /** Public comparison contract — no hidden weights. */

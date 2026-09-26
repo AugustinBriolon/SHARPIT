@@ -1,5 +1,5 @@
 import type { OutcomeEvaluation, OutcomeEvaluationInput } from './types';
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 
 const MIN_RECOVERY_DAYS_WITH_DATA = 2;
 const RECOVERY_WINDOW_DAYS = 3;

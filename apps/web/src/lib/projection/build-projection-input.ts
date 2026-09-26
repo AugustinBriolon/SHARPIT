@@ -2,10 +2,10 @@
  * Build projection input from current athlete state + planned sessions.
  */
 
-import type { SerializedDecisionState } from '@/core/decision/adapters';
-import type { EnvironmentalDecisionSnapshot } from '@/core/inference/environment/types';
-import type { ProjectionHorizonDays, ProjectedAthleteInput } from '@/core/projection/types';
-import type { ScenarioSessionSlice } from '@/core/scenario/types';
+import type { SerializedDecisionState } from '@sharpit/core/decision/adapters';
+import type { EnvironmentalDecisionSnapshot } from '@sharpit/core/inference/environment/types';
+import type { ProjectionHorizonDays, ProjectedAthleteInput } from '@sharpit/core/projection/types';
+import type { ScenarioSessionSlice } from '@sharpit/core/scenario/types';
 import { loadAthletePmcAnchor } from '@/lib/training/pmc/pmc-server';
 import { adaptationEngine } from '@/lib/engines/adaptation-engine';
 import { fatigueEngine } from '@/lib/engines/fatigue-engine';
@@ -14,10 +14,10 @@ import { recoveryEngine } from '@/lib/engines/recovery-engine';
 import { aggregatePlanningMaps, slicePlannedSessions } from '@/lib/projection/planning-maps';
 import { getPlannedSessions } from '@/lib/queries';
 import { loadTodayState } from '@/lib/today/navigation/today-state-server';
-import { addTrainingDays, trainingDayIdForNow } from '@/lib/training/periodization/training-day';
+import { addTrainingDays, trainingDayIdForNow } from '@sharpit/core/training/training-day';
 import { addDays, startOfDay } from 'date-fns';
 
-export { localDateLabel, trainingDayIdToDate } from '@/lib/training/periodization/training-day';
+export { localDateLabel, trainingDayIdToDate } from '@sharpit/core/training/training-day';
 
 async function loadTwinState<TOutput, TState>(
   loader: {

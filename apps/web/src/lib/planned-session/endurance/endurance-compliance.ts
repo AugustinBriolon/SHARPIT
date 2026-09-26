@@ -11,7 +11,7 @@
  * into a failed session.
  */
 import type { EndurancePrescription } from '@/lib/planned-session/endurance/endurance-prescription';
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 import type { StepSegment } from '@/lib/planned-session/endurance/endurance-segmentation';
 import { segmentEnduranceActivity } from '@/lib/planned-session/endurance/endurance-segmentation';
 import {

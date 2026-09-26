@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { AthleteSnapshot } from '@/core/athlete-state/snapshot';
+import type { AthleteSnapshot } from '@/athlete-state/snapshot';
 import { SNAPSHOT_MAX_POLLS, snapshotRefetchIntervalMs } from './use-athlete-snapshot';
 
 /**

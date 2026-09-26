@@ -1,5 +1,5 @@
 import type { GateContext, GateProposal, PlanLevelGateRule, RuleFinding } from '../types';
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 import { PLAN_GATE_HIGH_INTENSITY } from '@/lib/plan-gate/high-intensity';
 
 const HIGH_INTENSITY = PLAN_GATE_HIGH_INTENSITY;

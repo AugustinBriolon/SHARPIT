@@ -1,5 +1,5 @@
 import type { Prisma, PrismaClient } from '@prisma/client';
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 import { reverseGeocode } from '@/lib/geocoding/nominatim';
 import { resolveAthleteGeoLocation } from '@/lib/environment/athlete-location';
 import { midpointFromLatLng } from '@/lib/geo/midpoint';

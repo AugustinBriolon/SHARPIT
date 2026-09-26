@@ -1,4 +1,4 @@
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 /**
  * Presentation helpers for effort load reading — turn ACWR / TSB / capacity
  * into short explained facts (numbers + meaning), not generic coach slogans.

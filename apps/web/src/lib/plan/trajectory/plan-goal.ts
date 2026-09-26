@@ -7,7 +7,7 @@
  */
 
 import { GoalKind } from '@prisma/client';
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 import { daysUntil } from '@/lib/goals/goals';
 import { selectTodayGoals } from '@/lib/today/dashboard/today-goals-summary';
 import type { ClientGoal } from '@/lib/query/types';

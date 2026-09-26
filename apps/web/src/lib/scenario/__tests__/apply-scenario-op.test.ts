@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { ScenarioDefinition, ScenarioSessionSlice } from '@/core/scenario/types';
+import type { ScenarioDefinition, ScenarioSessionSlice } from '@sharpit/core/scenario/types';
 import {
   buildScenarioApplyOp,
   optimisticSessionFieldsForKind,

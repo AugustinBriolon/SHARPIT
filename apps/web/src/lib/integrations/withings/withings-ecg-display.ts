@@ -1,5 +1,5 @@
 import { WITHINGS_MEASURE } from '@/lib/integrations/withings/withings-measures';
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 import type { CompositionMetricId } from '@/lib/health/composition-metric-guides';
 import type { CorpsTone } from '@/components/corps/corps-ui';
 

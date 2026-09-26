@@ -1,5 +1,5 @@
 import type { StreamSample } from '@/lib/streams/streams';
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 
 export interface NormalizedStreamChartPoint {
   xDistanceKm: number;

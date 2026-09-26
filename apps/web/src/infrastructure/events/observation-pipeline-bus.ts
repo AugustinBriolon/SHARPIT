@@ -1,5 +1,5 @@
-import type { DomainEventBus } from '@/core/observation/events';
-import { FeatureEngine } from '@/core/features';
+import type { DomainEventBus } from '@sharpit/core/observation/events';
+import { FeatureEngine } from '@sharpit/core/features';
 import {
   createFeatureEngineBus,
   InProcessEventBus,

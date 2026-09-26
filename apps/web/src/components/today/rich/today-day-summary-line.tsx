@@ -3,7 +3,7 @@
 import { BrickOverviewCard } from '@/components/planning/brick/brick-overview-card';
 import { CompletedSessionPreview } from '@/components/today/rich/completed-session-preview';
 import { PlannedSessionPreview } from '@/components/today/rich/planned-session-preview';
-import type { TodayViewModel } from '@/core/presentation/today-view-model';
+import type { TodayViewModel } from '@/presentation/today-view-model';
 import { daySummaryOpenPlanned } from '@/components/today/rich/today-day-summary-line-helpers';
 
 type DaySummaryLine = TodayViewModel['actionRow']['daySummaryLines'][number];

@@ -1,4 +1,4 @@
-import type { AthleteSnapshot } from '@/core/athlete-state/snapshot';
+import type { AthleteSnapshot } from '@/athlete-state/snapshot';
 import { prisma } from '@/lib/prisma';
 
 export async function getLatestAthleteSnapshot(params: {

@@ -1,5 +1,5 @@
 import { startOfDay, addDays } from 'date-fns';
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 import type { PrismaClient } from '@prisma/client';
 import { type ActivityType } from '@prisma/client';
 import { isActivityToday } from '@/lib/activity/list/activity-day';
@@ -13,7 +13,7 @@ import {
 import { isIndoorActivitySession } from '@/lib/activity/location/indoor-activity';
 import { runActivityNarrativeAnalysis } from '@/lib/activity/narrative/activity-narrative';
 import { fetchForecastPredictions } from '@/lib/planned-session/forecast/forecast-fetch';
-import { computeTrainingDayId } from '@/lib/training/periodization/training-day';
+import { computeTrainingDayId } from '@sharpit/core/training/training-day';
 
 export { isActivityToday } from '@/lib/activity/list/activity-day';
 

@@ -1,4 +1,4 @@
-import { defaultExposureForActivityType } from '@/core/planned-session/defaults';
+import { defaultExposureForActivityType } from '@sharpit/core/planned-session/defaults';
 import { formatEndurancePrescriptionSummary } from '@/lib/planned-session/endurance/coach-endurance-prescription';
 import {
   endurancePrescriptionFromDraft,

@@ -6,7 +6,7 @@
  * @see docs/design/confidence-brief-v0.md
  */
 
-import type { PackGapCode, PackTier, PackTierResult } from '@/core/science/pack-tier';
+import type { PackGapCode, PackTier, PackTierResult } from '@sharpit/core/science/pack-tier';
 
 export type ProvenanceSeriesKey = 'sleep' | 'hrv' | 'baseline' | 'load' | 'sport' | 'journal';
 

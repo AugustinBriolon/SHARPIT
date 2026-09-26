@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 
 const API_BASE = 'https://cloud.renpho.com';
 const ENCRYPTION_SECRET = 'ed*wijdi$h6fe3ew';

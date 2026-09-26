@@ -1,5 +1,5 @@
 /** Parse une date ISO `YYYY-MM-DD` en Date UTC (sans décalage fuseau). */
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 
 export function parseBirthDateInput(value: string | null | undefined): Date | null {
   if (!value?.trim()) {

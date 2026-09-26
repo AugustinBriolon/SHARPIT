@@ -2,12 +2,12 @@
  * Presentation mapping for environmental decision snapshot (Phase 3).
  */
 
-import type { EnvironmentalDecisionSnapshot } from '@/core/inference/environment/types';
-import { isSet } from '@/lib/util/value';
+import type { EnvironmentalDecisionSnapshot } from '@sharpit/core/inference/environment/types';
+import { isSet } from '@sharpit/shared/value';
 import type {
   TrainingEnvironmentalImpact,
   ThermalStressLevel,
-} from '@/core/inference/environment/types';
+} from '@sharpit/core/inference/environment/types';
 
 export type EnvironmentPresentationContext = {
   readonly visible: boolean;

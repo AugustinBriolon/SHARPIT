@@ -3,8 +3,8 @@
  * Used for A/B recalc replay — never LLM-authored.
  */
 
-import type { AthleteSnapshot } from '@/core/athlete-state/snapshot';
-import { computePackTier, type PackTierResult } from '@/core/science/pack-tier';
+import type { AthleteSnapshot } from '@/athlete-state/snapshot';
+import { computePackTier, type PackTierResult } from '@sharpit/core/science/pack-tier';
 import { buildPackInputsFromSnapshot } from '@/lib/science/reliability/pack-inputs-from-snapshot';
 import { persistAnalysisEvidence } from '@/lib/science/reliability/analysis-evidence-store';
 import { runAnalysisRecalcWithRollback } from '@/lib/science/reliability/analysis-evidence';

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { buildGlobalDecisionContext } from '@/lib/decision/global-decision-context';
-import type { AthleteSnapshot } from '@/core/athlete-state/snapshot';
+import type { AthleteSnapshot } from '@/athlete-state/snapshot';
 import { mockDailyPhase, mockPhaseNarrative } from '@/lib/daily-phase/test-fixtures';
 
 function minimalSnapshot(decision: AthleteSnapshot['decision']): AthleteSnapshot {

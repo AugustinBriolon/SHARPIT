@@ -1,8 +1,8 @@
 import { ActivityType, type PrismaClient } from '@prisma/client';
-import { isSet } from '@/lib/util/value';
-import type { ExtractionContext } from '@/core/features/context';
-import type { SessionStreamProvider } from '@/core/features/engine';
-import type { SessionObservation } from '@/core/observation/types';
+import { isSet } from '@sharpit/shared/value';
+import type { ExtractionContext } from '@sharpit/core/features/context';
+import type { SessionStreamProvider } from '@sharpit/core/features/engine';
+import type { SessionObservation } from '@sharpit/core/observation/types';
 import {
   analyzeActivityStreams,
   resolveThresholds,

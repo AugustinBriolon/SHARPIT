@@ -189,7 +189,7 @@ export {
 } from '@/lib/integrations/withings/withings-measures';
 export type { WithingsHeartRecord } from '@/lib/integrations/withings/withings-measures';
 
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 
 function appendUnixParam(
   params: Record<string, string>,

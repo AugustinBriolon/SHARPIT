@@ -5,10 +5,13 @@
  * sync happened: a run from yesterday enriched today always hits the archive.
  */
 
-import { openMeteoEnvironmentalAdapter } from '@/core/adapters/environment/open-meteo-adapter';
-import type { GeoLocation, EnvironmentalPrediction } from '@/core/environment';
-import { createProviderSnapshot } from '@/core/environment/record';
-import { aggregateFieldQuality, confidenceFromFieldQualities } from '@/core/environment/quality';
+import { openMeteoEnvironmentalAdapter } from '@/adapters/environment/open-meteo-adapter';
+import type { GeoLocation, EnvironmentalPrediction } from '@sharpit/core/environment';
+import { createProviderSnapshot } from '@sharpit/core/environment/record';
+import {
+  aggregateFieldQuality,
+  confidenceFromFieldQualities,
+} from '@sharpit/core/environment/quality';
 import { createOpenMeteoForecastProvider } from '@/infrastructure/environment/open-meteo-forecast-provider';
 import { createOpenMeteoEnvironmentalProvider } from '@/infrastructure/environment/open-meteo-provider';
 

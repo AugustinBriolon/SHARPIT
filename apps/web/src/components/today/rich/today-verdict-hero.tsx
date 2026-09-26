@@ -1,6 +1,6 @@
 'use client';
 
-import type { TodayViewModel } from '@/core/presentation/today-view-model';
+import type { TodayViewModel } from '@/presentation/today-view-model';
 import { FadeIn } from '@/components/motion';
 import { confidenceBarsFromPct } from '@/components/ui/instruments/confidence-bars';
 import {

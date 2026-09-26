@@ -1,5 +1,5 @@
-import type { AthleteSnapshot } from '@/core/athlete-state/snapshot';
-import { isSet } from '@/lib/util/value';
+import type { AthleteSnapshot } from '@/athlete-state/snapshot';
+import { isSet } from '@sharpit/shared/value';
 import type { DecisionData, TodayState } from '@/hooks/use-today';
 import { isForwardAdvicePhase } from '@/lib/daily-phase/resolve';
 import { isAdviceActionableFromDecision } from '@/lib/decision/projection';

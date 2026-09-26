@@ -1,5 +1,5 @@
-import type { DataProvider } from '@/core/athlete-state/events';
-import { isSet } from '@/lib/util/value';
+import type { DataProvider } from '@/athlete-state/events';
+import { isSet } from '@sharpit/shared/value';
 import {
   isGarminAccountConnected,
   isOAuthAccountConnected,

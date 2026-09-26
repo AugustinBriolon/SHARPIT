@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 import { toast } from '@/components/ui/toast';
 import { buildHikeTripSummary } from '@/lib/activity/hike/hike-trip-summary';
 import { fetchHikeTrip, fetchHikeTrips, hydrateHikeTrip } from '@/lib/query/fetchers';

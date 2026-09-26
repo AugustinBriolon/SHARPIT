@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 import { PlannedSessionDeroulePanel } from '@/components/planning/session/read/planned-session-deroule-panel';
 import { PlannedSessionReadSecondaryDetails } from '@/components/planning/session/read/planned-session-read-secondary';
 import { buildPlannedSessionHeaderActions } from '@/components/planning/session/read/planned-session-read-header-actions';
-import type { PlannedSessionViewModel } from '@/core/presentation/planned-session-view-model';
+import type { PlannedSessionViewModel } from '@/presentation/planned-session-view-model';
 import type { ClientGoal, ClientPlannedSession } from '@/lib/query/types';
 import type { MorningProposalCompareInput } from '@/lib/today/rich/morning-proposal-compare';
 import { usePlannedSessionReadData } from '@/components/planning/session/read/use-planned-session-read-data';

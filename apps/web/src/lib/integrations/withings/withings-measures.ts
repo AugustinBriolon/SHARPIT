@@ -1,4 +1,4 @@
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 /**
  * Types de mesure Withings — Body Scan & balances compatibles.
  * @see https://developer.withings.com/developer-guide/v3/integration-guide/onsite-mode/data-api/all-available-health-data-body-scan/

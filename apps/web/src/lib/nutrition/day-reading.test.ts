@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { buildGoalsProgress } from '@/lib/nutrition/goals-progress';
 import { buildNutritionDayReading } from '@/lib/nutrition/day-reading';
-import type { NutritionDaySummary } from '@/core/presentation/nutrition-view-model';
+import type { NutritionDaySummary } from '@/presentation/nutrition-view-model';
 
 function day(
   partial: Partial<NutritionDaySummary> & Pick<NutritionDaySummary, 'meals'>,

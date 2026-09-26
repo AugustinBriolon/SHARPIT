@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma';
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 import {
   analyzeActivityStreams,
   resolveThresholds,

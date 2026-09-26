@@ -30,7 +30,7 @@ import {
   getPerformanceRecordPodium,
   getPerformanceRecordsForActivity,
 } from '@/lib/training/records/records';
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 
 type Line = string | null | false | undefined;
 

@@ -1,11 +1,11 @@
 'use client';
 
 import { keepPreviousData, useQuery, useQueryClient } from '@tanstack/react-query';
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 import { format } from 'date-fns';
 import { useCallback, useSyncExternalStore } from 'react';
-import type { AthleteSnapshot } from '@/core/athlete-state/snapshot';
-import { snapshotHasDisplayableContent } from '@/core/athlete-state/snapshot';
+import type { AthleteSnapshot } from '@/athlete-state/snapshot';
+import { snapshotHasDisplayableContent } from '@/athlete-state/snapshot';
 import { shouldRefreshSnapshotForPhaseDrift } from '@/lib/athlete-state/snapshot-phase';
 import { fetchAthleteSnapshot, refreshAthleteSnapshot } from '@/lib/query/athlete-snapshot-fetch';
 import { queryKeys } from '@/lib/query/keys';

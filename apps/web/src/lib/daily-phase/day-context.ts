@@ -5,7 +5,7 @@ import {
   comparePlannedSessionsBySchedule,
   parsePlannedStart,
 } from '@/lib/planned-session/planned-session-dates';
-import { activityMatchesTrainingDay } from '@/lib/training/periodization/training-day';
+import { activityMatchesTrainingDay } from '@sharpit/core/training/training-day';
 
 export { parsePlannedStart } from '@/lib/planned-session/planned-session-dates';
 

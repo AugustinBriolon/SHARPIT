@@ -2,9 +2,9 @@
  * Scenario Engine — orchestrates multiple projection runs.
  */
 
-import type { ProjectionHorizonDays } from '@/core/projection/types';
-import { isSet } from '@/lib/util/value';
-import type { ScenarioComparison, ScenarioDefinition } from '@/core/scenario/types';
+import type { ProjectionHorizonDays } from '@sharpit/core/projection/types';
+import { isSet } from '@sharpit/shared/value';
+import type { ScenarioComparison, ScenarioDefinition } from '@sharpit/core/scenario/types';
 import {
   buildProjectionBaseContext,
   buildProjectedInputFromBase,

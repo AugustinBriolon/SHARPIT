@@ -4,8 +4,8 @@ import { useSearchParams } from 'next/navigation';
 import { useEffect, useRef, useState, type Dispatch, type SetStateAction } from 'react';
 import { useConversation, useConversations } from '@/hooks/use-coach';
 import { useOfflineSnapshot } from '@/hooks/use-offline-snapshot';
-import { isSet } from '@/lib/util/value';
-import type { ProjectionHorizonDays } from '@/core/projection/types';
+import { isSet } from '@sharpit/shared/value';
+import type { ProjectionHorizonDays } from '@sharpit/core/projection/types';
 import { createClientId } from '@/lib/client-id';
 
 function createEphemeralId(): string {

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { defaultExposureForActivityType } from '@/core/planned-session/defaults';
+import { defaultExposureForActivityType } from '@sharpit/core/planned-session/defaults';
 import { pushSessionToGoogle } from '@/lib/integrations/google/google-sync';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import {

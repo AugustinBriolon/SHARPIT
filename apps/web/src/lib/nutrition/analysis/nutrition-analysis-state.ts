@@ -6,7 +6,7 @@
  * concurrent requests and a failed attempt is not retried for an hour.
  */
 
-import type { NutritionCoachReadingView } from '@/core/presentation/nutrition-view-model';
+import type { NutritionCoachReadingView } from '@/presentation/nutrition-view-model';
 import { nutritionDayReadingSchema, type NutritionDayReading } from './nutrition-analysis-schema';
 
 /** A claim older than this is presumed dead (the generation takes ~10–20 s). */

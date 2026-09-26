@@ -2,12 +2,12 @@
  * Projected Athlete State — presentation mapping.
  */
 
-import type { RecoveryState } from '@/core/digital-twin/types';
+import type { RecoveryState } from '@sharpit/core/digital-twin/types';
 import type {
   ProjectedAthleteCardViewModel,
   ProjectedAthleteCaution,
-} from '@/core/presentation/projected-athlete-view-model';
-import type { ProjectionHorizonDays, ProjectedAthleteState } from '@/core/projection/types';
+} from '@/presentation/projected-athlete-view-model';
+import type { ProjectionHorizonDays, ProjectedAthleteState } from '@sharpit/core/projection/types';
 import {
   buildProjectedAthleteInput,
   localDateLabel,

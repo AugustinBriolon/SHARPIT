@@ -1,4 +1,4 @@
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 /**
  * Presentation helpers for adaptation drill-down — numbers + meaning,
  * not generic rationale slogans.

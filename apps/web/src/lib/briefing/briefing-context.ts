@@ -1,5 +1,5 @@
 import { differenceInCalendarDays, format, isSameDay, startOfDay, subDays } from 'date-fns';
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 import { fr } from 'date-fns/locale';
 import {
   BRIEFING_PHASE_LABELS,

@@ -13,7 +13,7 @@ import {
   isSecretDecryptFailure,
   isSecretMalformedFailure,
 } from '@/lib/secret-box';
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 
 // ---------------------------------------------------------------------------
 // Auth error

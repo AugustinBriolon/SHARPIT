@@ -1,5 +1,5 @@
 import { isSameDay, startOfDay } from 'date-fns';
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 import { ActivityType } from '@prisma/client';
 import type { TodayDaySummary } from '@/lib/today/dashboard/today-day-summary';
 import { activityTypeLabels } from '@/lib/format';

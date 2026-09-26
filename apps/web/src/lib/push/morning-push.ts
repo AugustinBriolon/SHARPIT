@@ -7,7 +7,7 @@ import { prisma } from '@/lib/prisma';
 import { wantsMorningVerdict } from '@/lib/notifications/notification-prefs';
 import { isTokenExpiredOrInvalid, sendApnsNotification, type ApnsPayload } from '@/lib/push/apns';
 import { mapVerdictToDisplay, type OverallVerdict } from '@/lib/today/dashboard/today-mapping';
-import type { AthleteSnapshot } from '@/core/athlete-state/snapshot';
+import type { AthleteSnapshot } from '@/athlete-state/snapshot';
 
 export type MorningPushPayload = {
   title: string;

@@ -1,4 +1,4 @@
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 export type ThresholdSnapshotLike = {
   id: string;
   createdAt: Date | string;

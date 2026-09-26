@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
-import type { AthleteFreshnessSnapshot } from '@/core/athlete-state/freshness';
-import type { AthleteSnapshot, AthleteSnapshotBriefing } from '@/core/athlete-state/snapshot';
+import type { AthleteFreshnessSnapshot } from '@/athlete-state/freshness';
+import type { AthleteSnapshot, AthleteSnapshotBriefing } from '@/athlete-state/snapshot';
 import {
   buildSnapshotDailyPhase,
   type SnapshotActivityInput,
@@ -8,7 +8,7 @@ import {
   type SnapshotPlannedSessionInput,
 } from '@/lib/athlete-state/snapshot-phase';
 import { applyTruthfulnessOverlay } from '@/lib/athlete-state/snapshot-truthfulness';
-import { activityMatchesTrainingDay } from '@/lib/training/periodization/training-day';
+import { activityMatchesTrainingDay } from '@sharpit/core/training/training-day';
 import type { TodayState } from '@/hooks/use-today';
 import {
   decisionVerdict,

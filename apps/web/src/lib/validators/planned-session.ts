@@ -1,6 +1,6 @@
 import { ActivityType, SessionIntensity } from '@prisma/client';
 import { z } from 'zod';
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 import { isEquipmentItemId } from '@/lib/equipment/catalog';
 import { endurancePrescriptionSchema } from '@/lib/planned-session/endurance/endurance-prescription';
 import { strengthPrescriptionSchema } from '@/lib/planned-session/strength/strength-prescription';

@@ -3,7 +3,7 @@ import type {
   GarminMatchConfidence,
 } from '@/lib/integrations/garmin/garmin-exercise-map';
 import { canonicalizeGarminExerciseRef } from '@/lib/integrations/garmin/garmin-exercise-map';
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 import { getGarminTaxonomyEntry } from '@/lib/integrations/garmin/garmin-exercise-taxonomy';
 import type { StrengthRestMode } from '@/lib/planned-session/strength/strength-prescription';
 import {

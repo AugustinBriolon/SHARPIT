@@ -2,12 +2,12 @@
  * Post-session comparison — planned vs observed environmental context.
  */
 
-import type { ActivityEnvironmentalCorrection } from '@/core/environment';
-import { isSet } from '@/lib/util/value';
+import type { ActivityEnvironmentalCorrection } from '@sharpit/core/environment';
+import { isSet } from '@sharpit/shared/value';
 import type {
   PlannedSessionCompletionComparison,
   PlannedSessionContext,
-} from '@/core/planned-session/types';
+} from '@sharpit/core/planned-session/types';
 
 const THERMAL_LABELS: Record<string, string> = {
   LOW: 'conditions fraîches',

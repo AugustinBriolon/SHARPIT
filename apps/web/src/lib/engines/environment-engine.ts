@@ -2,7 +2,7 @@
  * Environmental Context Engine — singleton (Phase 2).
  */
 
-import { EnvironmentInferenceOrchestrator } from '@/core/inference/environment-orchestrator';
+import { EnvironmentInferenceOrchestrator } from '@sharpit/core/inference/environment-orchestrator';
 import { PrismaDigitalTwinRepository } from '@/infrastructure/digital-twin/prisma-digital-twin-repository';
 import { PrismaDecisionRecordRepository } from '@/infrastructure/inference/prisma-decision-record-repository';
 import { PrismaEnvironmentalObservationRepository } from '@/infrastructure/environment/prisma-environment-observation-repository';

@@ -1,5 +1,5 @@
 import { BodyCompositionSource, Prisma } from '@prisma/client';
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 import {
   isCredentialFailure,
   isDecryptMalformedSoftFailure,
@@ -14,7 +14,7 @@ import {
 } from '@/lib/integrations/renpho/renpho';
 import { decryptSecret, encryptSecret, isSecretAuthenticityFailure } from '@/lib/secret-box';
 import { observationEngine } from '@/lib/engines/observation-engine';
-import { renphoMeasurementToBodyComposition } from '@/core/adapters/renpho-adapter';
+import { renphoMeasurementToBodyComposition } from '@/adapters/renpho-adapter';
 import { backfillBodyCompositionObservationsFromMeasurements } from '@/lib/integrations/shared/body-composition-observation-backfill';
 import { withingsWeighInDayKeys } from '@/lib/integrations/withings/withings-sync';
 import { syncSinceFromLastSync, syncWindowDays } from '@/lib/integrations/shared/sync-since';

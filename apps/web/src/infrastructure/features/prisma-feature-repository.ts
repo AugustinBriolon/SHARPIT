@@ -13,8 +13,8 @@
 
 import { Prisma, type PrismaClient } from '@prisma/client';
 
-import { FUEL_BODY_WEIGHT_LOOKBACK_DAYS } from '@/core/features/extractors/fuel-extractor';
-import type { FeatureRepository } from '@/core/features/repository';
+import { FUEL_BODY_WEIGHT_LOOKBACK_DAYS } from '@sharpit/core/features/extractors/fuel-extractor';
+import type { FeatureRepository } from '@sharpit/core/features/repository';
 import type {
   BodyFeatureSet,
   BodyFeatureSetRecord,
@@ -31,7 +31,7 @@ import type {
   RecoveryFeatureSetRecord,
   SessionFeatureSet,
   SessionFeatureSetRecord,
-} from '@/core/features/types';
+} from '@sharpit/core/features/types';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Prisma row → Domain type mapping

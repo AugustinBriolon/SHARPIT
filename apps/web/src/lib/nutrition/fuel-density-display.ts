@@ -1,8 +1,8 @@
-import type { FuelFeatureSet } from '@/core/features/types';
-import type { NutritionFuelDensity } from '@/core/presentation/nutrition-view-model';
+import type { FuelFeatureSet } from '@sharpit/core/features/types';
+import type { NutritionFuelDensity } from '@/presentation/nutrition-view-model';
 import { formatWeightKgDisplay } from '@/lib/health/body-composition';
 
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 
 export function fuelFeatureSetToDensity(fuel: FuelFeatureSet): NutritionFuelDensity | null {
   if (!fuel.logged) {

@@ -3,9 +3,9 @@ import type {
   BodyMetricExplainerVm,
   BodyTrendWindowId,
   BodyViewModel,
-} from '@/core/presentation/body-view-model';
+} from '@/presentation/body-view-model';
 import { athleteCompositionContext } from '@/lib/profile/athlete-profile-utils';
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 import {
   buildCompositionSeries,
   computeCompositionTrend,

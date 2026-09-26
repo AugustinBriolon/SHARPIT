@@ -4,22 +4,22 @@
  */
 
 import { format } from 'date-fns';
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 import { fr } from 'date-fns/locale';
-import type { PhysicalHealthViewModel } from '@/core/presentation/physical-health-view-model';
-import { isActiveCondition } from '@/core/inference/physical-health/scoring';
-import { buildConditionTimeline } from '@/core/physical-health/timeline';
+import type { PhysicalHealthViewModel } from '@/presentation/physical-health-view-model';
+import { isActiveCondition } from '@sharpit/core/inference/physical-health/scoring';
+import { buildConditionTimeline } from '@sharpit/core/physical-health/timeline';
 import type {
   Condition,
   ConditionEpisode,
   ConditionObservation,
   FunctionalCapacity,
-} from '@/core/physical-health/types';
+} from '@sharpit/core/physical-health/types';
 import { getOrBuildAthleteSnapshot } from '@/lib/athlete-state/snapshot-service';
 import { corpsToneFromPhysicalSeverity } from '@/lib/health/health-status';
 import { mapConfidenceToTier } from '@/lib/today/dashboard/today-mapping';
 import { buildGlobalDecisionContext } from '@/lib/decision/global-decision-context';
-import { EMPTY_GLOBAL_DECISION } from '@/core/presentation/global-decision-context';
+import { EMPTY_GLOBAL_DECISION } from '@/presentation/global-decision-context';
 import { prisma } from '@/lib/prisma';
 
 const TYPE_LABELS: Record<string, string> = {
@@ -275,7 +275,7 @@ function buildConditionCard(
     estimatedRecoveryDays: state.estimatedRecoveryDays,
     affectsTraining: row.affectsTraining,
     isActive: isActiveCondition(
-      state.status as import('@/core/physical-health/types').ConditionStatus,
+      state.status as import('@sharpit/core/physical-health/types').ConditionStatus,
     ),
     observationCount: row.observationCount,
     sparkline,

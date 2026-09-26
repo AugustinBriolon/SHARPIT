@@ -15,6 +15,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "web": "yarn workspace @sharpit/web",
+    "core": "yarn workspace @sharpit/core",
     "prepare": "node -e \"process.exit(process.env.CI||process.env.VERCEL?0:1)\" || husky"
   },
   "devDependencies": {

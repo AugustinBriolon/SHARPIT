@@ -8,7 +8,7 @@
  */
 
 import type { ActivityAnalysis, ZoneBucket } from '@/lib/activity/detail/activity-analysis';
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 
 export type TechnicalSport = 'RUN' | 'BIKE' | 'SWIM';
 

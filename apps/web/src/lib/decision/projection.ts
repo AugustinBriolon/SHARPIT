@@ -15,7 +15,7 @@ import type {
 import type { DailyPhaseWhyFocus } from '@/lib/daily-phase/types';
 import { resolve, resolveCode } from '@/lib/french';
 import { TWIN_DRILL_DOWN } from '@/lib/today/navigation/today-twin-navigation';
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 import type { OverallVerdict } from '@/lib/today/dashboard/today-mapping';
 
 /** Minimum decision confidence before any training advice is emitted. */

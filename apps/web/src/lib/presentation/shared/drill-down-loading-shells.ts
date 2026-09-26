@@ -1,4 +1,4 @@
-import { EMPTY_GLOBAL_DECISION } from '@/core/presentation/global-decision-context';
+import { EMPTY_GLOBAL_DECISION } from '@/presentation/global-decision-context';
 import type { DimensionResult } from '@/hooks/use-today';
 import { buildEffortStrainComposition } from '@/lib/presentation/effort/effort-strain-composition';
 

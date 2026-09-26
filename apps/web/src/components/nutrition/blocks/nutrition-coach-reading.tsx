@@ -2,7 +2,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import type { NutritionCoachReadingView } from '@/core/presentation/nutrition-view-model';
+import type { NutritionCoachReadingView } from '@/presentation/nutrition-view-model';
 import {
   nutritionReadingJobLabel,
   nutritionReadingToneClass,

@@ -1,19 +1,16 @@
 import { subDays } from 'date-fns';
-import type { AthleteSnapshot } from '@/core/athlete-state/snapshot';
+import type { AthleteSnapshot } from '@/athlete-state/snapshot';
 import {
   buildDailyWindowSeries,
   effectiveSleepMinutes,
   getIndexedHealthEntry,
   indexHealthEntriesByDay,
 } from '@/lib/health/health';
-import {
-  computeSharpitSleepScoreForDay,
-  formatSleepDuration,
-  SLEEP_TARGET_MIN,
-} from '@/lib/sleep/sleep-scoring';
+import { computeSharpitSleepScoreForDay, formatSleepDuration } from '@/lib/sleep/sleep-scoring';
+import { SLEEP_TARGET_MIN } from '@sharpit/core/sleep/targets';
 import { ADAPTATION_STATUS_SIGNAL } from '@/lib/today/dashboard/today-dashboard-labels';
 import type { ReadinessCategory } from '@/lib/today/dashboard/today-mapping';
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 
 export type SignalPreviewKey = 'sleep' | 'recovery' | 'adaptation' | 'effort';
 

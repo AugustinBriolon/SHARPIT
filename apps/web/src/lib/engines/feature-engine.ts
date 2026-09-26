@@ -16,7 +16,7 @@
  *   await featureEngine.getDayFeatures(athleteId, trainingDayId)
  */
 
-import { FeatureEngine } from '@/core/features';
+import { FeatureEngine } from '@sharpit/core/features';
 import { PrismaFeatureRepository } from '@/infrastructure/features/prisma-feature-repository';
 import { AthleteContextProvider } from '@/infrastructure/features/athlete-context-provider';
 import { PrismaSessionStreamProvider } from '@/infrastructure/features/prisma-session-stream-provider';

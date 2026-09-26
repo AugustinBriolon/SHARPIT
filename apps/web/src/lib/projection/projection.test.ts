@@ -8,13 +8,13 @@ import {
   projectionConfidenceForDay,
 } from '@/lib/projection/score-projection';
 import { projectAthleteState } from '@/lib/projection/project-athlete-state';
-import type { ProjectedAthleteInput } from '@/core/projection/types';
+import type { ProjectedAthleteInput } from '@sharpit/core/projection/types';
 import type {
   RecoveryState,
   FatigueState,
   AdaptationState,
   DimensionResult,
-} from '@/core/digital-twin/types';
+} from '@sharpit/core/digital-twin/types';
 
 function dim(score: number | null, available = score !== null): DimensionResult {
   return { score, status: available ? 'OK' : 'UNAVAILABLE', available };

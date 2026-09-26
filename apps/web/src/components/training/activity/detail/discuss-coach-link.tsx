@@ -1,4 +1,4 @@
-import type { ProjectionHorizonDays } from '@/core/projection/types';
+import type { ProjectionHorizonDays } from '@sharpit/core/projection/types';
 import {
   COACH_DISCUSS_LABEL,
   CoachDiscussIcon,

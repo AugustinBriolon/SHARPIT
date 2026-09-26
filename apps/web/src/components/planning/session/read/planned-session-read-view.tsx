@@ -1,6 +1,6 @@
 'use client';
 
-import type { PlannedSessionViewModel } from '@/core/presentation/planned-session-view-model';
+import type { PlannedSessionViewModel } from '@/presentation/planned-session-view-model';
 import type { ClientGoal, ClientPlannedSession } from '@/lib/query/types';
 import type { MorningProposalCompareInput } from '@/lib/today/rich/morning-proposal-compare';
 import { SensitiveZoneWarning } from '@/components/planning/session/read/planned-session-read-sensitive-zone';

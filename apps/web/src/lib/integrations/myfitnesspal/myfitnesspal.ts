@@ -1,4 +1,4 @@
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 
 const MFP_BASE = 'https://www.myfitnesspal.com';
 const SESSION_COOKIE_NAME = '__Secure-next-auth.session-token';

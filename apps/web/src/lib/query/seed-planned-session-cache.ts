@@ -1,5 +1,5 @@
 import type { QueryClient } from '@tanstack/react-query';
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 import { queryKeys } from '@/lib/query/keys';
 import type { ClientPlannedSession } from '@/lib/query/types';
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { resolveSoftHeroPresentation } from './soft-hero';
-import type { PackInputSignals } from '@/core/science/pack-tier';
+import type { PackInputSignals } from '@sharpit/core/science/pack-tier';
 
 function pack(overrides: Partial<PackInputSignals> = {}): PackInputSignals {
   return {

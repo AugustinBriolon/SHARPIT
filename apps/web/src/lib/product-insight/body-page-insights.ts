@@ -1,4 +1,4 @@
-import { buildBodyInsightBundle } from '@/core/product-insight/body-insights';
+import { buildBodyInsightBundle } from '@sharpit/core/product-insight/body-insights';
 
 export function buildBodyPageInsights(params: {
   latestWeightKg: number | null;

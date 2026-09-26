@@ -1,5 +1,5 @@
 import { GoalKind } from '@prisma/client';
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 import { format } from 'date-fns';
 import { daysUntil } from '@/lib/goals/goals';
 import { isGoalExpired } from '@/lib/goals/goal-metric-config';

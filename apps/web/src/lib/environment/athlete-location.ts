@@ -13,13 +13,13 @@
 export type AthleteLocationSource =
   'activity-gps' | 'activity-observed' | 'travel' | 'home' | 'default';
 
-import type { GeoLocation } from '@/core/environment';
+import type { GeoLocation } from '@sharpit/core/environment';
 import type { PrismaClient } from '@prisma/client';
-import { approximateTrainingDayUtcRange } from '@/lib/training/periodization/training-day';
+import { approximateTrainingDayUtcRange } from '@sharpit/core/training/training-day';
 import { midpointFromLatLng } from '@/lib/geo/midpoint';
 
 import { resolveDefaultActivityLocation } from '@/lib/geocoding/default-activity-location';
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 
 type RecentActivityLocation = {
   observedLocationLat: number | null;

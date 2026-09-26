@@ -1,14 +1,14 @@
-import type { PlannedSessionViewModel } from '@/core/presentation/planned-session-view-model';
-import type { SessionRationaleViewModel } from '@/core/presentation/session-rationale-view-model';
-import type { WeeklyCoachingBriefViewModel } from '@/core/presentation/weekly-coaching-brief-view-model';
-import type { AdaptationViewModel } from '@/core/presentation/adaptation-view-model';
-import type { EffortViewModel } from '@/core/presentation/effort-view-model';
-import type { RecoveryViewModel } from '@/core/presentation/recovery-view-model';
-import type { TodayViewModel } from '@/core/presentation/today-view-model';
-import type { SleepViewModel } from '@/core/presentation/sleep-view-model';
-import type { BodyViewModel } from '@/core/presentation/body-view-model';
-import type { PhysicalHealthViewModel } from '@/core/presentation/physical-health-view-model';
-import type { NutritionViewModel } from '@/core/presentation/nutrition-view-model';
+import type { PlannedSessionViewModel } from '@/presentation/planned-session-view-model';
+import type { SessionRationaleViewModel } from '@/presentation/session-rationale-view-model';
+import type { WeeklyCoachingBriefViewModel } from '@/presentation/weekly-coaching-brief-view-model';
+import type { AdaptationViewModel } from '@/presentation/adaptation-view-model';
+import type { EffortViewModel } from '@/presentation/effort-view-model';
+import type { RecoveryViewModel } from '@/presentation/recovery-view-model';
+import type { TodayViewModel } from '@/presentation/today-view-model';
+import type { SleepViewModel } from '@/presentation/sleep-view-model';
+import type { BodyViewModel } from '@/presentation/body-view-model';
+import type { PhysicalHealthViewModel } from '@/presentation/physical-health-view-model';
+import type { NutritionViewModel } from '@/presentation/nutrition-view-model';
 import type { DataDaysDomain } from '@/lib/presentation/data-days/data-days';
 
 async function fetchJson<T>(url: string): Promise<T> {
@@ -113,15 +113,13 @@ export async function fetchWeeklyCoachingBriefPresentation(
 export async function fetchProjectedAthletePresentation(
   horizonDays: number,
   trainingDayId?: string,
-): Promise<
-  import('@/core/presentation/projected-athlete-view-model').ProjectedAthleteCardViewModel
-> {
+): Promise<import('@/presentation/projected-athlete-view-model').ProjectedAthleteCardViewModel> {
   const params = new URLSearchParams({ horizon: String(horizonDays) });
   if (trainingDayId) {
     params.set('trainingDayId', trainingDayId);
   }
   const { viewModel } = await fetchJson<{
-    viewModel: import('@/core/presentation/projected-athlete-view-model').ProjectedAthleteCardViewModel;
+    viewModel: import('@/presentation/projected-athlete-view-model').ProjectedAthleteCardViewModel;
   }>(`/api/presentation/projected-athlete?${params.toString()}`);
   return viewModel;
 }
@@ -129,15 +127,13 @@ export async function fetchProjectedAthletePresentation(
 export async function fetchScenarioComparisonPresentation(
   horizonDays: number,
   trainingDayId?: string,
-): Promise<
-  import('@/core/presentation/scenario-comparison-view-model').ScenarioComparisonViewModel
-> {
+): Promise<import('@/presentation/scenario-comparison-view-model').ScenarioComparisonViewModel> {
   const params = new URLSearchParams({ horizon: String(horizonDays) });
   if (trainingDayId) {
     params.set('trainingDayId', trainingDayId);
   }
   const { viewModel } = await fetchJson<{
-    viewModel: import('@/core/presentation/scenario-comparison-view-model').ScenarioComparisonViewModel;
+    viewModel: import('@/presentation/scenario-comparison-view-model').ScenarioComparisonViewModel;
   }>(`/api/presentation/scenario-comparison?${params.toString()}`);
   return viewModel;
 }

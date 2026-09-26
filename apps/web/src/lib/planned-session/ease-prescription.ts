@@ -3,7 +3,7 @@ import type {
   EndurancePrescription,
 } from '@/lib/planned-session/endurance/endurance-prescription';
 import type { StrengthPrescription } from '@/lib/planned-session/strength/strength-prescription';
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 
 /**
  * Easing the workout itself, not just the figures above it.

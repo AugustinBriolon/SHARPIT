@@ -10,10 +10,10 @@
 import { PrismaObservationRepository } from '@/infrastructure/observation/prisma-observation-repository';
 import { PrismaFeatureRepository } from '@/infrastructure/features/prisma-feature-repository';
 import { AthleteContextProvider } from '@/infrastructure/features/athlete-context-provider';
-import { ReplayEngine } from '@/core/dev/replay-engine';
-import { PipelineInspector } from '@/core/dev/pipeline-inspector';
-import { FeatureExplorer } from '@/core/dev/feature-explorer';
-import { globalMetrics } from '@/core/dev/metrics';
+import { ReplayEngine } from '@sharpit/core/dev/replay-engine';
+import { PipelineInspector } from '@sharpit/core/dev/pipeline-inspector';
+import { FeatureExplorer } from '@sharpit/core/dev/feature-explorer';
+import { globalMetrics } from '@sharpit/core/dev/metrics';
 import { prisma } from '@/lib/prisma';
 import { isCurrentUserAdmin } from '@/lib/auth/admin';
 

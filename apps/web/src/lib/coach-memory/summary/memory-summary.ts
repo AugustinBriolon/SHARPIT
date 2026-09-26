@@ -1,5 +1,5 @@
 import { format, parseISO } from 'date-fns';
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 import { fr } from 'date-fns/locale';
 import {
   coachMemoryTypeLabel,

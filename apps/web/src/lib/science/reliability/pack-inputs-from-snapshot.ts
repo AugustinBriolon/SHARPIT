@@ -3,9 +3,9 @@
  * Uses freshness domains + recovery dimensions; never invents certainty.
  */
 
-import type { AthleteSnapshot } from '@/core/athlete-state/snapshot';
-import type { PackInputSignals } from '@/core/science/pack-tier';
-import { isHardVerdictRequiringFull } from '@/core/science/pack-tier';
+import type { AthleteSnapshot } from '@/athlete-state/snapshot';
+import type { PackInputSignals } from '@sharpit/core/science/pack-tier';
+import { isHardVerdictRequiringFull } from '@sharpit/core/science/pack-tier';
 
 function hoursSince(iso: string | null | undefined, now: Date): number | null {
   if (!iso) {

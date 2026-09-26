@@ -1,8 +1,8 @@
 import { startOfDay, subDays } from 'date-fns';
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 
-import { bodyCompositionMeasurementToObservation } from '@/core/adapters/body-composition-measurement-adapter';
-import type { RawObservation } from '@/core/observation/types';
+import { bodyCompositionMeasurementToObservation } from '@/adapters/body-composition-measurement-adapter';
+import type { RawObservation } from '@sharpit/core/observation/types';
 import { observationEngine } from '@/lib/engines/observation-engine';
 import { prisma } from '@/lib/prisma';
 

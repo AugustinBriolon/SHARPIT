@@ -4,7 +4,7 @@
 
 import { isGoalReached } from '@/lib/goals/goals';
 import { formatGoalDisplayValue, parseGoalMetricConfig } from '@/lib/goals/goal-metric-config';
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 
 export type GoalRealizationLabels = {
   readonly currentLabel: string | null;

@@ -58,7 +58,7 @@ export type {
   AdaptationTrend,
   AdaptationData,
   TodayState,
-} from '@/core/athlete-state/today-state';
+} from '@/athlete-state/today-state';
 
 const EMPTY_PRODUCT_VIEW: AthleteSnapshotProductView = {
   decision: null,

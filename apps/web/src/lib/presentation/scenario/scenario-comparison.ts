@@ -5,10 +5,10 @@
 import type {
   ScenarioComparisonRow,
   ScenarioComparisonViewModel,
-} from '@/core/presentation/scenario-comparison-view-model';
-import type { ScenarioComparison } from '@/core/scenario/types';
-import { isSet } from '@/lib/util/value';
-import type { ProjectionHorizonDays } from '@/core/projection/types';
+} from '@/presentation/scenario-comparison-view-model';
+import type { ScenarioComparison } from '@sharpit/core/scenario/types';
+import { isSet } from '@sharpit/shared/value';
+import type { ProjectionHorizonDays } from '@sharpit/core/projection/types';
 import { limitingFactorLabel } from '@/lib/projection/project-athlete-state';
 import { runScenarioComparison } from '@/lib/scenario/scenario-engine';
 import { mapVerdictToDisplay } from '@/lib/today/dashboard/today-mapping';

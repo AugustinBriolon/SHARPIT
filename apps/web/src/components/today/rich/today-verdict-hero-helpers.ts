@@ -1,4 +1,4 @@
-import type { TodayViewModel } from '@/core/presentation/today-view-model';
+import type { TodayViewModel } from '@/presentation/today-view-model';
 
 function contextLabelFromHero(hero: TodayViewModel['hero']): string {
   return hero.postureLabel?.trim() || 'Ce matin';

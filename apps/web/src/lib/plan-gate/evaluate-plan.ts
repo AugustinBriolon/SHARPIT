@@ -1,5 +1,5 @@
 import { decisionCompatibilityRule } from './rules/decision-compatibility';
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 import { physicalHealthRule } from './rules/physical-health';
 import { malformedAndDuplicateRule } from './rules/malformed-and-duplicate';
 import { completedConflictRule } from './rules/completed-conflict';

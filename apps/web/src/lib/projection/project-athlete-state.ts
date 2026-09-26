@@ -5,16 +5,16 @@
  * @see docs/product/PROJECTED_ATHLETE_STATE.md
  */
 
-import { runProjectedDecision } from '@/core/decision/projected-decision';
-import { isSet } from '@/lib/util/value';
+import { runProjectedDecision } from '@sharpit/core/decision/projected-decision';
+import { isSet } from '@sharpit/shared/value';
 import type {
   ProjectionAssumption,
   ProjectedAthleteState,
   ProjectedAthleteInput,
   ProjectedDayState,
   ProjectedAthleteSummary,
-} from '@/core/projection/types';
-import { PROJECTION_MODEL_ID } from '@/core/projection/types';
+} from '@sharpit/core/projection/types';
+import { PROJECTION_MODEL_ID } from '@sharpit/core/projection/types';
 import { localDateLabel } from '@/lib/projection/build-projection-input';
 import { projectPmcForward } from '@/lib/projection/pmc-forward';
 import {
@@ -26,7 +26,7 @@ import {
   synthesizeProjectedFatigue,
   synthesizeProjectedRecovery,
 } from '@/lib/projection/score-projection';
-import { addTrainingDays } from '@/lib/training/periodization/training-day';
+import { addTrainingDays } from '@sharpit/core/training/training-day';
 import { resolve } from '@/lib/french';
 
 function projectionHeadlineFromTsb(tsbEnd: number): string {

@@ -1,5 +1,5 @@
 import { ActivityType } from '@prisma/client';
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 import { resolveExerciseCatalogId } from '@/lib/exercises';
 import type { CreateActivityInput, UpdateActivityInput } from '@/lib/validators/activity';
 

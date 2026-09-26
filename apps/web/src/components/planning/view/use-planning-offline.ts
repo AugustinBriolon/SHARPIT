@@ -3,7 +3,7 @@
 import { useActivities, useGoals, usePlannedSessions } from '@/hooks/use-data';
 import { useOfflineSnapshot } from '@/hooks/use-offline-snapshot';
 import { useOnlineStatus } from '@/hooks/use-online-status';
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 
 /**
  * Offline gate for the week.

@@ -1,5 +1,5 @@
 import type { CorpsTone } from '@/components/corps/corps-ui';
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 import { corpsToneFromAgeDelta, maxCorpsTone } from './health-status';
 import {
   getAfibInterpretation,

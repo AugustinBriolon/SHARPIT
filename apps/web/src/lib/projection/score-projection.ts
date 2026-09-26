@@ -9,7 +9,7 @@ import type {
   FatigueState,
   ReadinessCategory,
   RecoveryState,
-} from '@/core/digital-twin/types';
+} from '@sharpit/core/digital-twin/types';
 
 function clamp(n: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, n));

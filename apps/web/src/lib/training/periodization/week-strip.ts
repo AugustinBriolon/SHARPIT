@@ -1,5 +1,5 @@
 import { endOfWeek, format, startOfWeek, subWeeks } from 'date-fns';
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 
 const WEEK_OPTS = { weekStartsOn: 1 as const };
 

@@ -1,7 +1,7 @@
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import type { AthleteSnapshot } from '@/core/athlete-state/snapshot';
-import type { RecoveryViewModel } from '@/core/presentation/recovery-view-model';
+import type { AthleteSnapshot } from '@/athlete-state/snapshot';
+import type { RecoveryViewModel } from '@/presentation/recovery-view-model';
 import { getOrBuildAthleteSnapshot } from '@/lib/athlete-state/snapshot-service';
 import { getHealthEntries } from '@/lib/queries';
 import {
@@ -28,7 +28,7 @@ import {
 } from '@/lib/today/dashboard/today-mapping';
 import { buildRecoveryPageInsights } from '@/lib/product-insight/recovery-page-insights';
 import { buildGlobalDecisionContext } from '@/lib/decision/global-decision-context';
-import { EMPTY_GLOBAL_DECISION } from '@/core/presentation/global-decision-context';
+import { EMPTY_GLOBAL_DECISION } from '@/presentation/global-decision-context';
 
 const PRIMARY_LIMITER_LABEL: Record<string, string> = {
   autonomic: 'Système nerveux autonome',

@@ -5,7 +5,7 @@ import { GoalAdvancementPanel } from '@/components/today/rich/goal-advancement-p
 import { TodayRearrangeProposal } from '@/components/today/rich/today-rearrange-proposal';
 import { useAdaptAppliedSettled } from '@/hooks/use-adapt-applied-settled';
 import { useGoalAdvancement } from '@/hooks/use-goal-advancement';
-import type { TodayViewModel } from '@/core/presentation/today-view-model';
+import type { TodayViewModel } from '@/presentation/today-view-model';
 
 /**
  * Which of the three mutually exclusive states the slot is in, resolved before

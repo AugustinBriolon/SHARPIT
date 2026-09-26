@@ -1,6 +1,6 @@
-import type { EnvironmentalPrediction } from '@/core/environment';
-import { isSet } from '@/lib/util/value';
-import type { WeatherMeasurements } from '@/core/environment/types';
+import type { EnvironmentalPrediction } from '@sharpit/core/environment';
+import { isSet } from '@sharpit/shared/value';
+import type { WeatherMeasurements } from '@sharpit/core/environment/types';
 import type { LucideIcon } from 'lucide-react';
 import { Cloud, CloudDrizzle, CloudFog, CloudRain, CloudSun, Sun } from 'lucide-react';
 

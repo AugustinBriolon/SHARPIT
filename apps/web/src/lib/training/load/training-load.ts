@@ -1,6 +1,6 @@
 import { format as formatDate } from 'date-fns';
-import { isSet } from '@/lib/util/value';
-import { addTrainingDays, computeTrainingDayId } from '../periodization/training-day';
+import { isSet } from '@sharpit/shared/value';
+import { addTrainingDays, computeTrainingDayId } from '@sharpit/core/training/training-day';
 
 /**
  * Calcul de la charge d'entraînement via le ratio Acute:Chronic Workload Ratio (ACWR).

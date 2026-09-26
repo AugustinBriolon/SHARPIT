@@ -1,5 +1,5 @@
 import type { GarminConnect } from '@flow-js/garmin-connect';
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 import type { IActivity } from '@flow-js/garmin-connect/dist/garmin/types/activity';
 import { ActivityType, Prisma } from '@prisma/client';
 import { garminFeelLabel, garminRpeToScale } from '@/lib/integrations/garmin/garmin-feel';

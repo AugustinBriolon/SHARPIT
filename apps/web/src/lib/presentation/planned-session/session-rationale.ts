@@ -8,7 +8,7 @@
  */
 
 import type { ActivityType, SessionIntensity } from '@prisma/client';
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 import { activityTypeLabels } from '@/lib/format';
 import { formatDate } from '@/lib/format';
 import { intensityLabels } from '@/lib/planned-session/sessions';
@@ -23,7 +23,7 @@ import type {
   SessionRationaleOutcome,
   SessionRationaleSuggested,
   SessionRationaleViewModel,
-} from '@/core/presentation/session-rationale-view-model';
+} from '@/presentation/session-rationale-view-model';
 import type { CoachingDecisionWithHistory } from '@/lib/decision-memory/types';
 
 const EXECUTION_STATE_LABEL: Record<string, string> = {

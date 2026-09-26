@@ -1,7 +1,4 @@
-import type {
-  NutritionFoodEntry,
-  NutritionMealSummary,
-} from '@/core/presentation/nutrition-view-model';
+import type { NutritionFoodEntry, NutritionMealSummary } from '@/presentation/nutrition-view-model';
 
 const MEAL_LABELS: Record<string, string> = {
   breakfast: 'Petit-déjeuner',

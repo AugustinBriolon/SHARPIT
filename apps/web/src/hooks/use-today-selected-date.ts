@@ -17,7 +17,7 @@ import {
   getClientTrainingDayIdSnapshot,
   subscribeTrainingDayChange,
 } from '@/lib/date/subscribe-training-day';
-import { trainingDayIdToDate } from '@/lib/training/periodization/training-day';
+import { trainingDayIdToDate } from '@sharpit/core/training/training-day';
 
 /** How far back a demo visitor can navigate — keeps them inside the window
  * the seed actually refreshes daily (see seed-demo-data.ts / ADR-026). */

@@ -1,4 +1,4 @@
-import { buildEffortInsightBundle } from '@/core/product-insight/effort-insights';
+import { buildEffortInsightBundle } from '@sharpit/core/product-insight/effort-insights';
 import {
   mapFatigueCapacityLabel,
   mapFatigueTypeToLabel,

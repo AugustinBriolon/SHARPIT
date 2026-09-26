@@ -7,7 +7,11 @@
 
 import { randomUUID } from 'node:crypto';
 import type { PrismaClient } from '@prisma/client';
-import type { DecisionRecordRepository, DecisionRecord, ModelId } from '@/core/inference/types';
+import type {
+  DecisionRecordRepository,
+  DecisionRecord,
+  ModelId,
+} from '@sharpit/core/inference/types';
 
 export class PrismaDecisionRecordRepository implements DecisionRecordRepository {
   constructor(private readonly prisma: PrismaClient) {}

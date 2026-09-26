@@ -6,7 +6,7 @@ import { TodayDashboardShell } from '@/components/today/today-dashboard-shell';
 import { TodayDashboardMain } from '@/components/today/today-dashboard-main';
 import type { TodayDashboardView } from '@/components/today/today-dashboard-view';
 import type { PersistedSnapshotEntry } from '@/lib/pwa/snapshot-store-validation';
-import type { TodayViewModel } from '@/core/presentation/today-view-model';
+import type { TodayViewModel } from '@/presentation/today-view-model';
 import type { ClientActivity } from '@/lib/query/types';
 
 export function TodayDashboardOfflineView({ entry }: { entry: PersistedSnapshotEntry }) {

@@ -7,7 +7,7 @@
  * much volume — and this score is the floor the AI verdict may not go under.
  */
 import { parseExercisePhrase } from '@/lib/exercises/lexicon';
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 import type { SessionAnalysis } from '@/lib/validators/coach';
 import { normalizeExerciseKey } from '@/lib/exercises/normalize';
 

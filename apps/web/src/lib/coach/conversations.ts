@@ -1,5 +1,5 @@
 import type { Prisma } from '@prisma/client';
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 import { sanitizeCoachCopy } from '@/lib/coach/sanitize-coach-copy';
 import { prisma } from '@/lib/prisma';
 

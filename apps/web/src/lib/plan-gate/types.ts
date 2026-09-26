@@ -12,7 +12,7 @@
 import type { ActivityType, GoalHorizon, PlanPhase, SessionIntensity } from '@prisma/client';
 import type { CoachEndurancePrescription } from '@/lib/planned-session/endurance/coach-endurance-prescription';
 import type { CoachStrengthPrescription } from '@/lib/planned-session/strength/strength-prescription';
-import type { SerializedDecisionState } from '@/core/decision/adapters';
+import type { SerializedDecisionState } from '@sharpit/core/decision/adapters';
 import type { PhysicalHealthData, TrainingCapacity } from '@/hooks/use-today';
 import type { PracticedSportId } from '@/lib/practiced-sports';
 

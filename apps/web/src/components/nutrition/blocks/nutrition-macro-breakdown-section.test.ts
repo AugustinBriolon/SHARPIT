@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { NutritionDaySummary } from '@/core/presentation/nutrition-view-model';
+import type { NutritionDaySummary } from '@/presentation/nutrition-view-model';
 import {
   macroColumnFillPx,
   macroDayReadout,

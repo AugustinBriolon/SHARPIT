@@ -1,11 +1,10 @@
 import { isSameDay, subDays } from 'date-fns';
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 import {
   mapRestorativeSleepRatioToRaw,
   sleepDebtModifier,
-} from '@/core/inference/recovery/scoring';
-
-export const SLEEP_TARGET_MIN = 450; // 7h 30m
+} from '@sharpit/core/inference/recovery/scoring';
+import { SLEEP_TARGET_MIN } from '@sharpit/core/sleep/targets';
 
 const DURATION_WEIGHT = 0.55;
 const ARCHITECTURE_WEIGHT = 0.45;

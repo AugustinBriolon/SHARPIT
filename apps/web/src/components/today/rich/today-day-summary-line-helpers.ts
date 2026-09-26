@@ -2,7 +2,7 @@ import {
   splitInstrumentMeta,
   type InstrumentListChipMeta,
 } from '@/components/ui/instruments/instrument-list-chip';
-import type { TodayViewModel } from '@/core/presentation/today-view-model';
+import type { TodayViewModel } from '@/presentation/today-view-model';
 
 type DaySummaryLine = TodayViewModel['actionRow']['daySummaryLines'][number];
 

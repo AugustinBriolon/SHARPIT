@@ -1,8 +1,8 @@
-import type { EnvironmentalPrediction } from '@/core/environment';
-import type { PlannedSessionWeatherSignals } from '@/core/planned-session/types';
+import type { EnvironmentalPrediction } from '@sharpit/core/environment';
+import type { PlannedSessionWeatherSignals } from '@sharpit/core/planned-session/types';
 import { readWeatherMeasurements } from '@/lib/activity/weather/activity-weather';
 
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 
 function mergeMinTemperature(acc: PlannedSessionWeatherSignals, airTemperatureC: number): number {
   return isSet(acc.minTemperatureC)

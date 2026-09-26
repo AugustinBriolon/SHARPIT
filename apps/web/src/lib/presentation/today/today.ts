@@ -1,9 +1,9 @@
-import type { AthleteSnapshot } from '@/core/athlete-state/snapshot';
-import { isSet } from '@/lib/util/value';
+import type { AthleteSnapshot } from '@/athlete-state/snapshot';
+import { isSet } from '@sharpit/shared/value';
 import type { DailyPhase } from '@/lib/daily-phase/types';
 import type { MorningOrientationResolved } from '@/lib/today/rich/morning-orientation';
-import { snapshotHasDisplayableContent } from '@/core/athlete-state/snapshot';
-import type { TodayViewModel } from '@/core/presentation/today-view-model';
+import { snapshotHasDisplayableContent } from '@/athlete-state/snapshot';
+import type { TodayViewModel } from '@/presentation/today-view-model';
 import { getOrBuildAthleteSnapshot } from '@/lib/athlete-state/snapshot-service';
 import { pickAdaptationReminders } from '@/lib/daily-phase/narrative';
 import {
@@ -13,7 +13,8 @@ import {
   getHealthEntries,
   getPlannedSessions,
 } from '@/lib/queries';
-import { computeSharpitSleepScoreForDay, SLEEP_TARGET_MIN } from '@/lib/sleep/sleep-scoring';
+import { SLEEP_TARGET_MIN } from '@sharpit/core/sleep/targets';
+import { computeSharpitSleepScoreForDay } from '@/lib/sleep/sleep-scoring';
 import { activityTypeLabels } from '@/lib/format';
 import { buildPostSessionLoop } from '@/lib/today/rich/post-session-loop';
 import { buildFeedbackRearrangeProposal } from '@/lib/today/rich/feedback-rearrange-proposal';
@@ -758,7 +759,7 @@ function assembleTodayHeroGoalFields(ctx: ReturnType<typeof prepareTodayViewMode
 function assembleTodayHero(ctx: ReturnType<typeof prepareTodayViewModelContext>) {
   const reliabilityBundle = buildTodayHeroReliability(
     ctx.effectiveSnapshot,
-    ctx.verdict as import('@/core/athlete-state/today-state').OverallVerdict | null,
+    ctx.verdict as import('@/athlete-state/today-state').OverallVerdict | null,
   );
   const headline = reliabilityBundle.effectiveHeadlineOverride ?? ctx.effectiveHeadline;
   const { displayVerdict } = reliabilityBundle;

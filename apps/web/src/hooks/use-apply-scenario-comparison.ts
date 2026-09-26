@@ -1,8 +1,8 @@
 'use client';
 
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import type { ScenarioKind } from '@/core/scenario/types';
-import type { ProjectionHorizonDays } from '@/core/projection/types';
+import type { ScenarioKind } from '@sharpit/core/scenario/types';
+import type { ProjectionHorizonDays } from '@sharpit/core/projection/types';
 import { queryKeys } from '@/lib/query/keys';
 import { listOptimistic } from '@/lib/query/optimistic';
 import { sendJson } from '@/lib/query/send-json';

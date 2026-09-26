@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { briefHubLine } from '@/lib/plan/week/plan-brief-line';
-import type { WeeklyCoachingBriefViewModel } from '@/core/presentation/weekly-coaching-brief-view-model';
+import type { WeeklyCoachingBriefViewModel } from '@/presentation/weekly-coaching-brief-view-model';
 
 function brief(partial: Partial<WeeklyCoachingBriefViewModel>): WeeklyCoachingBriefViewModel {
   return {

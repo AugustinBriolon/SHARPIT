@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { ScenarioSessionSlice } from '@/core/scenario/types';
+import type { ScenarioSessionSlice } from '@sharpit/core/scenario/types';
 import { applyScenarioModification } from '@/lib/scenario/apply-modification';
 import {
   compareDecisionSnapshots,
@@ -11,9 +11,9 @@ import {
   generateScenariosFromDecision,
   resolveAnchorDecisionDomain,
 } from '@/lib/scenario/generate-from-decision';
-import type { SerializedDecisionState } from '@/core/decision/adapters';
-import type { ProjectedAthleteState } from '@/core/projection/types';
-import { PROJECTION_MODEL_ID } from '@/core/projection/types';
+import type { SerializedDecisionState } from '@sharpit/core/decision/adapters';
+import type { ProjectedAthleteState } from '@sharpit/core/projection/types';
+import { PROJECTION_MODEL_ID } from '@sharpit/core/projection/types';
 
 const FUTURE_DAYS = ['2026-07-11', '2026-07-12', '2026-07-13'];
 

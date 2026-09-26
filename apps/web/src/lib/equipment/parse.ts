@@ -6,7 +6,7 @@ import {
   type StrengthVenue,
 } from '@/lib/equipment/catalog';
 import { EMPTY_ATHLETE_EQUIPMENT, type AthleteEquipment } from '@/lib/equipment/types';
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 
 function uniqueOwned(ids: EquipmentItemId[]): EquipmentItemId[] {
   return [...new Set(ids)];

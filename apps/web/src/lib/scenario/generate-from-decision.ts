@@ -4,9 +4,13 @@
  * Alternatives are proposed from the anchor DecisionState — not generic heuristics.
  */
 
-import type { SerializedDecisionState } from '@/core/decision/adapters';
-import type { DecisionDomain } from '@/core/decision/decision-state';
-import type { ScenarioDefinition, ScenarioKind, ScenarioSessionSlice } from '@/core/scenario/types';
+import type { SerializedDecisionState } from '@sharpit/core/decision/adapters';
+import type { DecisionDomain } from '@sharpit/core/decision/decision-state';
+import type {
+  ScenarioDefinition,
+  ScenarioKind,
+  ScenarioSessionSlice,
+} from '@sharpit/core/scenario/types';
 import { buildScenarioDefinition, pickFocusSession } from '@/lib/scenario/apply-modification';
 
 const DOMAIN_SCENARIO_KINDS: Record<DecisionDomain, readonly ScenarioKind[]> = {

@@ -1,5 +1,5 @@
 import type { AdaptationData, TopAction } from '@/hooks/use-today';
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 import type { DailyPhase } from '@/lib/daily-phase/types';
 import { isForwardAdvicePhase } from '@/lib/daily-phase/resolve';
 import { resolveCode } from '@/lib/french';

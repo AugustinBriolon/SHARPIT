@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import type { RecoveryState } from '@/core/digital-twin/types';
-import { PROJECTION_MODEL_ID, type ProjectedAthleteState } from '@/core/projection/types';
+import type { RecoveryState } from '@sharpit/core/digital-twin/types';
+import { PROJECTION_MODEL_ID, type ProjectedAthleteState } from '@sharpit/core/projection/types';
 import {
   buildProjectedAthleteViewModel,
   buildProjectionCaution,

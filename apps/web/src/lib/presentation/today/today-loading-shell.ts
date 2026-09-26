@@ -1,4 +1,4 @@
-import type { TodayViewModel } from '@/core/presentation/today-view-model';
+import type { TodayViewModel } from '@/presentation/today-view-model';
 import type { DailyPhase } from '@/lib/daily-phase/types';
 import { TWIN_DRILL_DOWN } from '@/lib/today/navigation/today-twin-navigation';
 import { actionRowLabels } from '@/lib/today/rich/today-rich-view';

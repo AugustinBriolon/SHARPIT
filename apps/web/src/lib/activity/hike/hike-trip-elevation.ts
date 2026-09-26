@@ -1,5 +1,5 @@
 import type { HikeTripMemberInput } from '@/lib/activity/hike/hike-trip-summary';
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 
 /**
  * Relative elevation profile for a hike trip.

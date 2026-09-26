@@ -4,7 +4,7 @@
  * this file is a thin I/O wrapper around it.
  */
 
-import type { AthleteSnapshot } from '@/core/athlete-state/snapshot';
+import type { AthleteSnapshot } from '@/athlete-state/snapshot';
 import {
   OFFLINE_SNAPSHOT_SCHEMA_VERSION,
   validatePersistedSnapshot,

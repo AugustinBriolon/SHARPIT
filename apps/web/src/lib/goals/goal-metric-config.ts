@@ -1,5 +1,5 @@
 import { ActivityType, GoalHorizon } from '@prisma/client';
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 import { activityTypeLabels } from '@/lib/format';
 
 export type GoalMetricTemplate = 'performance' | 'period';

@@ -1,5 +1,5 @@
 import type { ActivityType, SessionIntensity } from '@prisma/client';
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 import { resolveSessionAccessories } from '@/lib/planned-session/accessories/session-accessories';
 import { intensityLabels } from '@/lib/planned-session/sessions';
 import { parseStrengthPrescription } from '@/lib/planned-session/strength/strength-prescription';

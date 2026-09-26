@@ -2,9 +2,9 @@ import type {
   AthleteSnapshot,
   SnapshotActivityInput,
   SnapshotPlannedSessionInput,
-} from '@/core/athlete-state/snapshot';
+} from '@/athlete-state/snapshot';
 import type { PhaseNarrative } from '@/lib/daily-phase/narrative';
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 import { buildPhaseNarrative } from '@/lib/daily-phase/narrative';
 import { buildDailyPhaseDayContext, minutesBetween } from '@/lib/daily-phase/day-context';
 import { resolveDailyPhase, isForwardAdvicePhase } from '@/lib/daily-phase/resolve';
@@ -21,7 +21,7 @@ import {
   decisionVerdict,
   limitingFactorFromDecision,
 } from '@/lib/decision/projection';
-import { activityMatchesTrainingDay } from '@/lib/training/periodization/training-day';
+import { activityMatchesTrainingDay } from '@sharpit/core/training/training-day';
 import type { SleepCoachView } from '@/lib/sleep/sleep';
 
 export type { SnapshotActivityInput, SnapshotPlannedSessionInput };

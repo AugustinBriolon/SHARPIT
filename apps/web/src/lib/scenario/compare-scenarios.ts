@@ -4,16 +4,16 @@
  * No product scoring. No arbitration. Orchestration + explanation only.
  */
 
-import type { TrainingEnvironmentalImpact } from '@/core/inference/environment/types';
-import type { DecisionDomain } from '@/core/decision/decision-state';
-import type { ProjectedAthleteState } from '@/core/projection/types';
+import type { TrainingEnvironmentalImpact } from '@sharpit/core/inference/environment/types';
+import type { DecisionDomain } from '@sharpit/core/decision/decision-state';
+import type { ProjectedAthleteState } from '@sharpit/core/projection/types';
 import {
   SCENARIO_MODEL_ID,
   type ScenarioComparison,
   type ScenarioComparisonEntry,
   type ScenarioDefinition,
   type ScenarioOutcomeMetrics,
-} from '@/core/scenario/types';
+} from '@sharpit/core/scenario/types';
 import {
   buildDecisionTradeOffs,
   buildPreferabilityExplanation,

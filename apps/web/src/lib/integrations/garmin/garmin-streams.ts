@@ -1,5 +1,5 @@
 import type { GarminConnect } from '@flow-js/garmin-connect';
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 
 type GCClient = InstanceType<typeof GarminConnect>;
 

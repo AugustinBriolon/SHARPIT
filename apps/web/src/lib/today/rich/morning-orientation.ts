@@ -3,9 +3,9 @@
  * Evidence pending → Orientation ready → Post-choice (on session, not hero).
  */
 
-import type { AthleteSnapshot } from '@/core/athlete-state/snapshot';
-import { isSet } from '@/lib/util/value';
-import type { FreshnessLevel } from '@/core/athlete-state/freshness';
+import type { AthleteSnapshot } from '@/athlete-state/snapshot';
+import { isSet } from '@sharpit/shared/value';
+import type { FreshnessLevel } from '@/athlete-state/freshness';
 import { isForwardAdvicePhase } from '@/lib/daily-phase/resolve';
 import type { DailyPhase } from '@/lib/daily-phase/types';
 import { morningIntensityLabel } from '@/lib/morning-recalibration/sport-intensity-labels';

@@ -13,7 +13,7 @@ vi.mock('@/lib/science/reliability/analysis-evidence-store', () => ({
   persistAnalysisEvidence: (...args: unknown[]) => persistAnalysisEvidence(...args),
 }));
 
-vi.mock('@/core/science/pack-tier', () => ({
+vi.mock('@sharpit/core/science/pack-tier', () => ({
   computePackTier: (...args: unknown[]) => computePackTier(...args),
 }));
 

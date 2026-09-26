@@ -1,5 +1,5 @@
 import { ActivityType } from '@prisma/client';
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 import { addDays, format, startOfDay } from 'date-fns';
 import {
   parsePlannedStart,

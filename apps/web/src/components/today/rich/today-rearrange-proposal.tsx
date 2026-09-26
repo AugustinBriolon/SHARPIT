@@ -6,7 +6,7 @@ import { FadeIn } from '@/components/motion/fade-presence';
 import { PlanVivantBand } from '@/components/today/rich/plan-vivant-band';
 import { planVivantProgress, planVivantReading } from '@/lib/today/rich/plan-vivant-reading';
 import type { GoalAdvancementView } from '@/lib/today/rich/goal-advancement';
-import type { TodayViewModel } from '@/core/presentation/today-view-model';
+import type { TodayViewModel } from '@/presentation/today-view-model';
 
 const PlanAdapter = dynamic(
   () => import('@/components/coach/plan/plan-adapter').then((mod) => mod.PlanAdapter),

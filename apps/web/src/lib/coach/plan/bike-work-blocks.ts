@@ -1,5 +1,5 @@
 import type { SessionIntensity } from '@prisma/client';
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 
 /** Intensities where whole-session avg/NP are diluted by warm-up & recovery. */
 const QUALITY_INTENSITIES = new Set<SessionIntensity>(['TEMPO', 'THRESHOLD', 'VO2MAX', 'RACE']);

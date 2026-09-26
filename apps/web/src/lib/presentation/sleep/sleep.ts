@@ -1,5 +1,5 @@
 import { parseISO, format, isSameDay } from 'date-fns';
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 import { fr } from 'date-fns/locale';
 import { getAthleteProfile, getHealthEntries } from '@/lib/queries';
 import { getOrBuildAthleteSnapshot } from '@/lib/athlete-state/snapshot-service';
@@ -12,11 +12,8 @@ import {
 
 type DailyHealthRow = Awaited<ReturnType<typeof getHealthEntries>>[number];
 import { analyzeSleep, toSleepEntryInputs } from '@/lib/sleep/sleep';
-import {
-  buildSleepScoreBreakdown,
-  mapSleepScoreToAdequacy,
-  SLEEP_TARGET_MIN,
-} from '@/lib/sleep/sleep-scoring';
+import { buildSleepScoreBreakdown, mapSleepScoreToAdequacy } from '@/lib/sleep/sleep-scoring';
+import { SLEEP_TARGET_MIN } from '@sharpit/core/sleep/targets';
 import {
   mapRecoveryToSignal,
   mapSleepAdequacySignalToDisplay,
@@ -26,8 +23,8 @@ import {
 } from '@/lib/today/dashboard/today-mapping';
 import { buildSleepPageInsights } from '@/lib/product-insight/sleep-page-insights';
 import { buildGlobalDecisionContext } from '@/lib/decision/global-decision-context';
-import { EMPTY_GLOBAL_DECISION } from '@/core/presentation/global-decision-context';
-import type { SleepNightStatus, SleepViewModel } from '@/core/presentation/sleep-view-model';
+import { EMPTY_GLOBAL_DECISION } from '@/presentation/global-decision-context';
+import type { SleepNightStatus, SleepViewModel } from '@/presentation/sleep-view-model';
 
 const CONFIDENCE_TONE = {
   high: 'good',

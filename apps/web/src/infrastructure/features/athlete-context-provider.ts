@@ -10,8 +10,8 @@
 
 import type { PrismaClient } from '@prisma/client';
 
-import type { ExtractionContextProvider } from '@/core/features/engine';
-import type { ExtractionContext } from '@/core/features/context';
+import type { ExtractionContextProvider } from '@sharpit/core/features/engine';
+import type { ExtractionContext } from '@sharpit/core/features/context';
 
 function optionalProfileField<T>(value: T | null | undefined): T | undefined {
   return value ?? undefined;

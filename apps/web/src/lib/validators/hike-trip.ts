@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 
 export const createHikeTripSchema = z
   .object({

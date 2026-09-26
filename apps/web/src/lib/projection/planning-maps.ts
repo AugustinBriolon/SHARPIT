@@ -2,12 +2,12 @@
  * Aggregate planned sessions into projection maps.
  */
 
-import type { PlannedSessionContext } from '@/core/planned-session/types';
-import type { TrainingEnvironmentalImpact } from '@/core/inference/environment/types';
-import type { ScenarioSessionSlice } from '@/core/scenario/types';
+import type { PlannedSessionContext } from '@sharpit/core/planned-session/types';
+import type { TrainingEnvironmentalImpact } from '@sharpit/core/inference/environment/types';
+import type { ScenarioSessionSlice } from '@sharpit/core/scenario/types';
 import { estimatePlannedLoad } from '@/lib/planned-session/planning';
-import { computeTrainingDayId } from '@/lib/training/periodization/training-day';
-import type { PlannedSessionExposureSetting } from '@/core/planned-session/types';
+import { computeTrainingDayId } from '@sharpit/core/training/training-day';
+import type { PlannedSessionExposureSetting } from '@sharpit/core/planned-session/types';
 import type { ActivityType, SessionIntensity } from '@prisma/client';
 
 const IMPACT_RANK: Record<TrainingEnvironmentalImpact, number> = {

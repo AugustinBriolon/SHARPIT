@@ -1,5 +1,5 @@
 import { startOfWeek } from 'date-fns';
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 import type { ClientActivity, ClientPlannedSession } from '@/lib/query/types';
 import { activityTypeLabels } from '@/lib/format';
 import { dayKeyFromDate } from '@/lib/date/day-key';

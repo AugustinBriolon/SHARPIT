@@ -1,5 +1,5 @@
 import { ActivityType } from '@prisma/client';
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 import { startOfDay, subDays } from 'date-fns';
 
 // ─── Preset values ────────────────────────────────────────────────────────────

@@ -3,7 +3,7 @@
 import { PlanningCoachOverlays } from '@/components/planning/coach/planning-coach-overlays';
 import { PlanningPlannedSessionOverlay } from '@/components/planning/overlays/planning-planned-session-overlay';
 import type { ClientGoal, ClientPlannedSession } from '@/lib/query/types';
-import type { ScenarioComparisonViewModel } from '@/core/presentation/scenario-comparison-view-model';
+import type { ScenarioComparisonViewModel } from '@/presentation/scenario-comparison-view-model';
 
 type PlanningViewOverlaysProps = {
   adapterOpen: boolean;

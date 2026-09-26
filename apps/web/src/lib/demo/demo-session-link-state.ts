@@ -2,7 +2,7 @@ const STORAGE_KEY = 'sharpit:demo-session-links';
 const CHANGE_EVENT = 'sharpit:demo-session-links';
 
 import type { DemoLinkPlannedSnapshot } from '@/lib/demo/demo-session-link-overlay';
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 import type { ActivityNarrative, SessionAnalysis } from '@/lib/validators/coach';
 
 export type DemoSessionLinkReading = {

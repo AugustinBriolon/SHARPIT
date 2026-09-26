@@ -6,7 +6,7 @@ import {
   PlannedSessionContextPanelSkeleton,
 } from '@/components/planning/session/read/planned-session-context-panel';
 import { CollapsibleSection } from '@/components/ui/collapsible-section';
-import type { PlannedSessionViewModel } from '@/core/presentation/planned-session-view-model';
+import type { PlannedSessionViewModel } from '@/presentation/planned-session-view-model';
 import { Brain, MapPin } from 'lucide-react';
 
 function RationaleCollapsible({

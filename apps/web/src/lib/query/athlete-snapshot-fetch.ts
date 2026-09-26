@@ -1,4 +1,4 @@
-import type { AthleteSnapshot } from '@/core/athlete-state/snapshot';
+import type { AthleteSnapshot } from '@/athlete-state/snapshot';
 
 export async function fetchAthleteSnapshot(
   trainingDayId: string,

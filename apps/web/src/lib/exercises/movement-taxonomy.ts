@@ -15,7 +15,7 @@
  * one-rep-max estimate (`centrality: 0`).
  */
 import taxonomyJson from '@/data/movement-taxonomy.json';
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 import { EXERCISE_ALIASES } from '@/lib/exercises/aliases';
 import { normalizeExerciseKey } from '@/lib/exercises/normalize';
 import { getExerciseMediaByCatalogId } from '@/lib/exercises/resolve';

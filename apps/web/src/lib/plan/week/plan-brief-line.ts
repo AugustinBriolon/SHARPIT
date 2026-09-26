@@ -1,4 +1,4 @@
-import type { WeeklyCoachingBriefViewModel } from '@/core/presentation/weekly-coaching-brief-view-model';
+import type { WeeklyCoachingBriefViewModel } from '@/presentation/weekly-coaching-brief-view-model';
 
 /**
  * One sentence for the hub. The full brief lives on `/plan/bilan`.

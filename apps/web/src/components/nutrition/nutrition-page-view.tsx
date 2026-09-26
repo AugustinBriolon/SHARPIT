@@ -8,7 +8,7 @@ import { NutritionHero } from '@/components/nutrition/blocks/nutrition-hero';
 import { NutritionMealsSection } from '@/components/nutrition/blocks/nutrition-meals-section';
 import { NutritionMacroBreakdownSection } from '@/components/nutrition/blocks/nutrition-macro-breakdown-section';
 import { MetricDrillDownPage } from '@/components/today/drill-down/metric-drill-down-page';
-import type { NutritionViewModel } from '@/core/presentation/nutrition-view-model';
+import type { NutritionViewModel } from '@/presentation/nutrition-view-model';
 
 function pickSelectedDayFields(selectedDay: NutritionViewModel['selectedDay']) {
   if (!selectedDay) {

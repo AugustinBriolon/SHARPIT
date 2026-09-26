@@ -7,7 +7,7 @@
 import type { ActivityType } from '@prisma/client';
 import { dayKeyFromDate } from '@/lib/date/day-key';
 import { activityTypeLabels, formatDuration } from '@/lib/format';
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 
 export type GoalCapStatsSession = {
   readonly id: string;

@@ -1,7 +1,7 @@
 'use client';
 
 import { CloudSun, MapPin, ThermometerSun } from 'lucide-react';
-import type { PlannedSessionViewModel } from '@/core/presentation/planned-session-view-model';
+import type { PlannedSessionViewModel } from '@/presentation/planned-session-view-model';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';

@@ -1,4 +1,4 @@
-import type { AthleteSnapshot } from '@/core/athlete-state/snapshot';
+import type { AthleteSnapshot } from '@/athlete-state/snapshot';
 import type { DecisionSnapshotContext } from './types';
 
 function readDecisionField<T>(value: T | null | undefined): T | null {

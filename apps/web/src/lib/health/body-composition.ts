@@ -1,5 +1,5 @@
 import { BodyCompositionSource, type BodyCompositionMeasurement } from '@prisma/client';
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 import { addDays, format, startOfDay } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import type { IntegrationId } from '@/lib/integrations/shared/client-sync';

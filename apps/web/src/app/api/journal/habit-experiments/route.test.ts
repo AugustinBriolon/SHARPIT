@@ -5,8 +5,8 @@ vi.mock('@/lib/next/await-request', () => ({ awaitRequest: vi.fn() }));
 vi.mock('@/lib/auth/current-athlete', () => ({
   getCurrentAthleteId: vi.fn().mockResolvedValue('athlete-1'),
 }));
-vi.mock('@/lib/training/periodization/training-day', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@/lib/training/periodization/training-day')>()),
+vi.mock('@sharpit/core/training/training-day', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@sharpit/core/training/training-day')>()),
   trainingDayIdForNow: () => '2026-09-10',
 }));
 vi.mock('@/lib/prisma', () => ({

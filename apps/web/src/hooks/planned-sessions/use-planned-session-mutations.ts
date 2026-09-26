@@ -24,7 +24,7 @@ import {
   rollbackPlannedSessionReanalysis,
 } from '@/lib/query/begin-planned-session-reanalysis';
 import { patchPlannedSessionAnalysisInCaches } from '@/lib/query/patch-planned-session-analysis-cache';
-import type { TodayViewModel } from '@/core/presentation/today-view-model';
+import type { TodayViewModel } from '@/presentation/today-view-model';
 import type { QueryClient } from '@tanstack/react-query';
 import { hasDemoCookieValue } from '@/hooks/use-is-demo-mode';
 import { clearDemoSessionLink, markDemoSessionLinked } from '@/lib/demo/demo-session-link-state';

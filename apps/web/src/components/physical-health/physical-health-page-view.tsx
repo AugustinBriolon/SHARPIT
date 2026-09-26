@@ -2,7 +2,7 @@
 
 import { CorpsDisclaimer } from '@/components/corps/corps-ui';
 import { useState } from 'react';
-import type { PhysicalHealthViewModel } from '@/core/presentation/physical-health-view-model';
+import type { PhysicalHealthViewModel } from '@/presentation/physical-health-view-model';
 import { usePhysicalNotes } from '@/hooks/use-physical';
 import type { ClientPhysicalNote } from '@/lib/query/types';
 import { PhysicalNoteDialog } from './dialogs/physical-note-dialog';

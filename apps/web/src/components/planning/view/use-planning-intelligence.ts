@@ -1,6 +1,6 @@
 'use client';
 
-import type { ProjectionHorizonDays } from '@/core/projection/types';
+import type { ProjectionHorizonDays } from '@sharpit/core/projection/types';
 import { useProjectedAthleteViewModel } from '@/hooks/use-projected-athlete-view-model';
 import { useScenarioComparisonViewModel } from '@/hooks/use-scenario-comparison-view-model';
 import { format } from 'date-fns';

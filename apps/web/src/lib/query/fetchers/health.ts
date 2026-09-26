@@ -1,4 +1,4 @@
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 import type { ClientBodyCompositionEntry, ClientHealthEntry } from '../types';
 import { fetchJson, type Serialized, toDate } from './shared';
 

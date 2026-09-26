@@ -11,8 +11,8 @@ import {
   type PackInputSignals,
   type PackTier,
   type PackTierResult,
-} from '@/core/science/pack-tier';
-import type { OverallVerdict } from '@/core/athlete-state/today-state';
+} from '@sharpit/core/science/pack-tier';
+import type { OverallVerdict } from '@/athlete-state/today-state';
 
 export type SoftHeroPresentation = {
   readonly packTier: PackTier;

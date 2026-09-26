@@ -8,7 +8,7 @@
  */
 
 import { SESSION_VERDICT_LABELS } from '@/lib/planned-session/display/session-analysis-display';
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 import type { OutcomeEvaluation, ExecutionMatch, ShortTermRecoveryResponse } from './types';
 
 const INCONCLUSIVE_WORDING = 'Preuves encore insuffisantes pour conclure.';

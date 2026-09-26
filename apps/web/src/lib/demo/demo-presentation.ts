@@ -1,5 +1,5 @@
-import type { AthleteSnapshot } from '@/core/athlete-state/snapshot';
-import type { FreshnessLevel } from '@/core/athlete-state/freshness';
+import type { AthleteSnapshot } from '@/athlete-state/snapshot';
+import type { FreshnessLevel } from '@/athlete-state/freshness';
 import { DEMO_CLERK_USER_ID } from '@/lib/demo/demo-session';
 
 export { DEMO_CLERK_USER_ID };

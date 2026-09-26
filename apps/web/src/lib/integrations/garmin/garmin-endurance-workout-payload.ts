@@ -47,7 +47,7 @@ import {
   type AthleteThresholds,
   type ResolvedTarget,
 } from '@/lib/planned-session/endurance/endurance-targets';
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 
 const SPORT_BY_KEY: Record<EnduranceSport, GarminSportTypeDto> = {
   RUN: SPORT_RUNNING,

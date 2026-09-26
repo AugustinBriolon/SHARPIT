@@ -1,5 +1,5 @@
-import type { NutritionGoalsProgress } from '@/core/presentation/nutrition-view-model';
-import { isSet } from '@/lib/util/value';
+import type { NutritionGoalsProgress } from '@/presentation/nutrition-view-model';
+import { isSet } from '@sharpit/shared/value';
 
 export function buildGoalsProgress(input: {
   consumedCalories: number;

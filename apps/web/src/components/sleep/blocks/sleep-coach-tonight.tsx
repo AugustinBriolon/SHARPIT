@@ -1,6 +1,6 @@
 import { DrillDownSectionCard } from '@/components/today/drill-down/section-card';
 import { DrillDownSectionLabel } from '@/components/today/drill-down/section-label';
-import type { SleepNightStatus } from '@/core/presentation/sleep-view-model';
+import type { SleepNightStatus } from '@/presentation/sleep-view-model';
 import { formatClock, formatDuration, type SleepCoachView } from '@/lib/sleep/sleep';
 import { tonightReason } from '@/lib/sleep/tonight-reason';
 import { cn } from '@/lib/utils';

@@ -4,7 +4,7 @@ import { useSessionRationalePresentation } from '@/hooks/use-data';
 import { useGarminPushStaleness } from '@/hooks/use-garmin-push-staleness';
 import { useEndurancePreview } from '@/hooks/use-endurance-preview';
 import { useGarminWorkoutPush } from '@/hooks/use-garmin-workout-push';
-import type { PlannedSessionViewModel } from '@/core/presentation/planned-session-view-model';
+import type { PlannedSessionViewModel } from '@/presentation/planned-session-view-model';
 import type { ClientGoal, ClientPlannedSession } from '@/lib/query/types';
 import { useDisplayMode } from '@/providers/display-mode-provider';
 import {

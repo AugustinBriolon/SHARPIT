@@ -1,4 +1,4 @@
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 /**
  * Pick the Body Battery level that matches Garmin Connect’s “current” reading.
  *

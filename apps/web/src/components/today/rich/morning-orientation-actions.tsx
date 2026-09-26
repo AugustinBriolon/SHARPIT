@@ -6,7 +6,7 @@ import {
   subscribeMorningHold,
 } from '@/components/today/rich/morning-orientation-hold';
 import { MorningOrientationReadyActions } from '@/components/today/rich/morning-orientation-ready-actions';
-import type { TodayViewModel } from '@/core/presentation/today-view-model';
+import type { TodayViewModel } from '@/presentation/today-view-model';
 import {
   activityStatusOption,
   getActivityStatusServerSnapshot,

@@ -1,6 +1,6 @@
 import { ActivityType } from '@prisma/client';
 import type { LocationPlaceValue } from '@/components/ui/location-place-picker';
-import { sportSupportsOutdoorContext } from '@/core/planned-session/defaults';
+import { sportSupportsOutdoorContext } from '@sharpit/core/planned-session/defaults';
 import { createActivitySchema } from '@/lib/validators/activity';
 import { z } from 'zod';
 

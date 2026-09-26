@@ -3,7 +3,7 @@
 import { CompositionMetricCard } from '@/components/corps/composition/composition-metric-card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { SkeletonDataValue } from '@/components/ui/skeleton-data-value';
-import type { BodyChartPoint, BodyMetricCardVm } from '@/core/presentation/body-view-model';
+import type { BodyChartPoint, BodyMetricCardVm } from '@/presentation/body-view-model';
 import { filterCompositionSeriesByDays } from '@/lib/health/body-composition';
 import type { CompositionMetricId } from '@/lib/health/composition-metric-guides';
 import {

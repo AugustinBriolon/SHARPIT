@@ -6,8 +6,8 @@
  * what the existing snapshot endpoint already serves. See ADR-008.
  */
 
-import type { AthleteSnapshot } from '@/core/athlete-state/snapshot';
-import { isSet } from '@/lib/util/value';
+import type { AthleteSnapshot } from '@/athlete-state/snapshot';
+import { isSet } from '@sharpit/shared/value';
 
 /** Bump when AthleteSnapshot's shape changes incompatibly with older persisted entries. */
 export const OFFLINE_SNAPSHOT_SCHEMA_VERSION = 1;

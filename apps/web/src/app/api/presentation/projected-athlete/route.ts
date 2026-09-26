@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import type { ProjectionHorizonDays } from '@/core/projection/types';
+import type { ProjectionHorizonDays } from '@sharpit/core/projection/types';
 import { buildProjectedAthletePresentationViewModel } from '@/lib/presentation/projected-athlete/projected-athlete';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 

@@ -35,7 +35,7 @@ import type { z } from 'zod';
 import { buildGateContext } from '@/lib/plan-gate/build-context';
 import { evaluatePlan } from '@/lib/plan-gate/evaluate-plan';
 import type { GateProposal } from '@/lib/plan-gate/types';
-import { computeTrainingDayId } from '@/lib/training/periodization/training-day';
+import { computeTrainingDayId } from '@sharpit/core/training/training-day';
 import { buildDecisionSnapshotContext } from '@/lib/decision-memory/build-snapshot-context';
 import { createCoachingDecision } from '@/lib/decision-memory/repository';
 import { formatStrengthSessionRules } from '@/lib/planned-session/strength/strength-session-template';

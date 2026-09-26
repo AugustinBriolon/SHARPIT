@@ -8,7 +8,7 @@ import {
   approximateTrainingDayUtcRange,
   DEFAULT_TRAINING_DAY_START_HOUR,
   DEFAULT_TRAINING_DAY_TIMEZONE,
-} from '@/lib/training/periodization/training-day';
+} from '@sharpit/core/training/training-day';
 
 function isValidTrainingDayId(trainingDayId: string | null): trainingDayId is string {
   return Boolean(trainingDayId && /^\d{4}-\d{2}-\d{2}$/.test(trainingDayId));

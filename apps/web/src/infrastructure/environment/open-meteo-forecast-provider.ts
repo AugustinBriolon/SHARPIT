@@ -7,7 +7,7 @@ import type {
   EnvironmentalProvider,
   EnvironmentalProviderResult,
   ProviderAvailabilityContext,
-} from '@/core/environment/provider';
+} from '@sharpit/core/environment/provider';
 
 const OPEN_METEO_FORECAST = 'https://api.open-meteo.com/v1/forecast';
 

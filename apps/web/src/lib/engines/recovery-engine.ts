@@ -9,8 +9,8 @@
  *   const result = await recoveryEngine.run(athleteId, trainingDayId)
  */
 
-import { RecoveryInferenceOrchestrator } from '@/core/inference/orchestrator';
-import type { WearableEnergySignals } from '@/core/inference/recovery/types';
+import { RecoveryInferenceOrchestrator } from '@sharpit/core/inference/orchestrator';
+import type { WearableEnergySignals } from '@sharpit/core/inference/recovery/types';
 import { PrismaDigitalTwinRepository } from '@/infrastructure/digital-twin/prisma-digital-twin-repository';
 import { PrismaDecisionRecordRepository } from '@/infrastructure/inference/prisma-decision-record-repository';
 import { featureEngine } from '@/lib/engines/feature-engine';

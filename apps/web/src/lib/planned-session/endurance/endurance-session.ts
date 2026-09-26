@@ -7,7 +7,7 @@
  * a structured one, and both must be able to go stale.
  */
 import type { SessionIntensity } from '@prisma/client';
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 import {
   NO_TARGET,
   parseEndurancePrescription,

@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import type { UseFormReturn } from 'react-hook-form';
 import type { LocationPlaceValue } from '@/components/ui/location-place-picker';
 import type { ActivityFormValues } from '@/components/training/activity/form/activity-form-helpers';
-import { sportSupportsOutdoorContext } from '@/core/planned-session/defaults';
+import { sportSupportsOutdoorContext } from '@sharpit/core/planned-session/defaults';
 import { fetchGeocodingHome, postActivityWeatherPreview } from '@/lib/query/fetchers';
 
 async function fetchWeatherPreview({

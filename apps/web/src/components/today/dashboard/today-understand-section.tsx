@@ -1,6 +1,6 @@
 'use client';
 
-import type { TodayViewModel } from '@/core/presentation/today-view-model';
+import type { TodayViewModel } from '@/presentation/today-view-model';
 import { ActivityConsistencyPanel } from '@/components/today/dashboard/activity-consistency-panel';
 import {
   TodayNutritionCard,

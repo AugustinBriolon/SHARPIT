@@ -8,7 +8,7 @@ import type {
   EnvironmentalFetchRequest,
   EnvironmentalProviderResult,
   ProviderAvailabilityContext,
-} from '@/core/environment/provider';
+} from '@sharpit/core/environment/provider';
 
 const OPEN_METEO_ARCHIVE = 'https://archive-api.open-meteo.com/v1/archive';
 

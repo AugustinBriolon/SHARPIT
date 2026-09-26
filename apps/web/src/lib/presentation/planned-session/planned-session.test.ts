@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { buildPlannedSessionViewModel } from '@/lib/presentation/planned-session/planned-session';
-import type { PlannedSessionContext } from '@/core/planned-session/types';
+import type { PlannedSessionContext } from '@sharpit/core/planned-session/types';
 import type { PlannedSessionRecord } from '@/lib/planned-session/resolve-context';
 
 function session(partial: Partial<PlannedSessionRecord> = {}): PlannedSessionRecord {

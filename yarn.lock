@@ -2967,6 +2967,51 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@sharpit/core@workspace:*, @sharpit/core@workspace:packages/core":
+  version: 0.0.0-use.local
+  resolution: "@sharpit/core@workspace:packages/core"
+  dependencies:
+    "@prisma/client": "npm:^6.19.3"
+    "@sharpit/eslint-config": "workspace:*"
+    "@sharpit/shared": "workspace:*"
+    "@types/node": "npm:^20"
+    eslint: "npm:^9"
+    tsx: "npm:^4.22.4"
+    typescript: "npm:^5"
+    vitest: "npm:^4.1.9"
+  languageName: unknown
+  linkType: soft
+
+"@sharpit/eslint-config@workspace:*, @sharpit/eslint-config@workspace:packages/eslint-config":
+  version: 0.0.0-use.local
+  resolution: "@sharpit/eslint-config@workspace:packages/eslint-config"
+  dependencies:
+    "@eslint/compat": "npm:^2.1.0"
+    "@eslint/js": "npm:^9.39.0"
+    "@next/eslint-plugin-next": "npm:16.3.0"
+    "@typescript-eslint/eslint-plugin": "npm:^8.62.1"
+    "@typescript-eslint/parser": "npm:^8.62.1"
+    eslint-config-prettier: "npm:^10.1.8"
+    eslint-plugin-prettier: "npm:^5.5.6"
+    eslint-plugin-react: "npm:^7.37.5"
+    eslint-plugin-react-hooks: "npm:^7.1.1"
+  peerDependencies:
+    eslint: ^9
+  languageName: unknown
+  linkType: soft
+
+"@sharpit/shared@workspace:*, @sharpit/shared@workspace:packages/shared":
+  version: 0.0.0-use.local
+  resolution: "@sharpit/shared@workspace:packages/shared"
+  dependencies:
+    "@sharpit/eslint-config": "workspace:*"
+    "@types/node": "npm:^20"
+    eslint: "npm:^9"
+    typescript: "npm:^5"
+    vitest: "npm:^4.1.9"
+  languageName: unknown
+  linkType: soft
+
 "@sharpit/web@workspace:apps/web":
   version: 0.0.0-use.local
   resolution: "@sharpit/web@workspace:apps/web"
@@ -2977,15 +3022,12 @@ __metadata:
     "@clerk/localizations": "npm:^4.11.0"
     "@clerk/nextjs": "npm:^7.5.9"
     "@clerk/themes": "npm:2.4.57"
-    "@eslint/compat": "npm:^2.1.0"
-    "@eslint/js": "npm:^9.39.0"
     "@flow-js/garmin-connect": "npm:^1.6.17"
     "@hookform/resolvers": "npm:^5.4.0"
     "@langfuse/client": "npm:^5.11.1"
     "@langfuse/otel": "npm:^5.11.1"
     "@langfuse/tracing": "npm:^5.11.1"
     "@langfuse/vercel-ai-sdk": "npm:^5.11.1"
-    "@next/eslint-plugin-next": "npm:16.3.0"
     "@next/playwright": "npm:16.3.0"
     "@opentelemetry/api": "npm:^1.9.1"
     "@opentelemetry/core": "npm:^2.11.0"
@@ -2997,6 +3039,9 @@ __metadata:
     "@prisma/client": "npm:^6.19.3"
     "@serwist/cli": "npm:^9.5.11"
     "@serwist/next": "npm:^9.5.11"
+    "@sharpit/core": "workspace:*"
+    "@sharpit/eslint-config": "workspace:*"
+    "@sharpit/shared": "workspace:*"
     "@tailwindcss/postcss": "npm:^4"
     "@tanstack/react-query": "npm:^5.101.2"
     "@tanstack/react-virtual": "npm:^3.14.11"
@@ -3004,8 +3049,6 @@ __metadata:
     "@types/node": "npm:^20"
     "@types/react": "npm:^19"
     "@types/react-dom": "npm:^19"
-    "@typescript-eslint/eslint-plugin": "npm:^8.62.1"
-    "@typescript-eslint/parser": "npm:^8.62.1"
     "@upstash/ratelimit": "npm:^2.0.8"
     "@upstash/redis": "npm:^1.38.2"
     ai: "npm:7.0.32"
@@ -3014,10 +3057,6 @@ __metadata:
     date-fns: "npm:^4.4.0"
     eslint: "npm:^9"
     eslint-config-next: "npm:16.3.0"
-    eslint-config-prettier: "npm:^10.1.8"
-    eslint-plugin-prettier: "npm:^5.5.6"
-    eslint-plugin-react: "npm:^7.37.5"
-    eslint-plugin-react-hooks: "npm:^7.1.1"
     fake-indexeddb: "npm:^6.2.5"
     liquid-glass-react: "npm:1.1.1"
     lucide-react: "npm:^1.21.0"

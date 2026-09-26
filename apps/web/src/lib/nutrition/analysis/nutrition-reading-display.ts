@@ -1,7 +1,7 @@
 import type {
   NutritionCoachReadingJob,
   NutritionCoachReadingTone,
-} from '@/core/presentation/nutrition-view-model';
+} from '@/presentation/nutrition-view-model';
 import { CAUTION_TONE, ELEVATED_TONE } from '@/lib/presentation/coaching/status-surface';
 
 /** Off-track is a warm "elevated" read, never the risk red — nutrition coaching does not shame. */

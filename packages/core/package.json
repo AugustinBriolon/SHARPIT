@@ -1,0 +1,31 @@
+{
+  "name": "@sharpit/core",
+  "version": "0.0.0",
+  "private": true,
+  "exports": {
+    "./environment": "./src/environment/index.ts",
+    "./features": "./src/features/index.ts",
+    "./observation": "./src/observation/index.ts",
+    "./*": "./src/*.ts"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "benchmark": "tsx src/benchmarks/cli.ts",
+    "benchmark:json": "tsx src/benchmarks/cli.ts --json",
+    "benchmark:compare": "tsx src/benchmarks/cli.ts v1 v2",
+    "lint": "eslint"
+  },
+  "dependencies": {
+    "@sharpit/shared": "workspace:*"
+  },
+  "devDependencies": {
+    "@prisma/client": "^6.19.3",
+    "@sharpit/eslint-config": "workspace:*",
+    "@types/node": "^20",
+    "eslint": "^9",
+    "tsx": "^4.22.4",
+    "typescript": "^5",
+    "vitest": "^4.1.9"
+  }
+}

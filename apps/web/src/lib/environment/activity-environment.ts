@@ -6,15 +6,15 @@ import {
   buildActivityEnvironment,
   type ActivityEnvironmentalCorrection,
   type EnvironmentalApplicability,
-} from '@/core/environment';
+} from '@sharpit/core/environment';
 import type { ActivityType } from '@prisma/client';
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 import { PrismaEnvironmentalObservationRepository } from '@/infrastructure/environment/prisma-environment-observation-repository';
 import { resolveAthleteGeoLocation } from '@/lib/environment/athlete-location';
 import { activityWeatherWindow } from '@/lib/activity/weather/activity-weather-window';
 import { isIndoorActivitySession } from '@/lib/activity/location/indoor-activity';
 import { prisma } from '@/lib/prisma';
-import { computeTrainingDayId } from '@/lib/training/periodization/training-day';
+import { computeTrainingDayId } from '@sharpit/core/training/training-day';
 
 export type ActivityEnvironmentPresentation = {
   readonly applicability: EnvironmentalApplicability;

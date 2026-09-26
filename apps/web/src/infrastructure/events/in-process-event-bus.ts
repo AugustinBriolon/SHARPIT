@@ -12,9 +12,9 @@
  * the same DomainEventBus interface — the engines remain unchanged.
  */
 
-import type { DomainEventBus, ObservationDomainEvent } from '@/core/observation/events';
-import type { Observation } from '@/core/observation/types';
-import type { FeatureEngine } from '@/core/features/engine';
+import type { DomainEventBus, ObservationDomainEvent } from '@sharpit/core/observation/events';
+import type { Observation } from '@sharpit/core/observation/types';
+import type { FeatureEngine } from '@sharpit/core/features/engine';
 
 type EventHandler = (event: ObservationDomainEvent) => void | Promise<void>;
 

@@ -1,4 +1,4 @@
-import type { PlannedSessionContext } from '@/core/planned-session/types';
+import type { PlannedSessionContext } from '@sharpit/core/planned-session/types';
 
 export type PlannedSessionForecastBadge = {
   tone: 'ok' | 'caution' | 'neutral';

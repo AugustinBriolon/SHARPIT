@@ -1,5 +1,5 @@
 import type { QueryClient } from '@tanstack/react-query';
-import type { TodayViewModel } from '@/core/presentation/today-view-model';
+import type { TodayViewModel } from '@/presentation/today-view-model';
 import { queryKeys } from '@/lib/query/keys';
 
 export type ShellRefreshSeed = {
@@ -29,7 +29,7 @@ export function peekShellAthleteRefreshInFlight(): Promise<ShellRefreshSeed | nu
   return inFlight;
 }
 
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 
 function resolveTodayPresentation(
   queryClient: QueryClient,

@@ -11,7 +11,7 @@ import {
   type StravaActivity,
 } from '@/lib/integrations/strava/strava';
 import { observationEngine } from '@/lib/engines/observation-engine';
-import { stravaActivityToSession } from '@/core/adapters/strava-adapter';
+import { stravaActivityToSession } from '@/adapters/strava-adapter';
 import { mapWithConcurrency } from '@/lib/async/map-with-concurrency';
 import { encryptSecret } from '@/lib/secret-box';
 

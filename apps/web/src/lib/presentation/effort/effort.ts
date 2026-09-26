@@ -14,8 +14,8 @@ import {
 } from '@/lib/today/dashboard/today-mapping';
 import { buildEffortPageInsights } from '@/lib/product-insight/effort-page-insights';
 import { buildGlobalDecisionContext } from '@/lib/decision/global-decision-context';
-import { EMPTY_GLOBAL_DECISION } from '@/core/presentation/global-decision-context';
-import type { EffortViewModel } from '@/core/presentation/effort-view-model';
+import { EMPTY_GLOBAL_DECISION } from '@/presentation/global-decision-context';
+import type { EffortViewModel } from '@/presentation/effort-view-model';
 import { buildEffortStrainComposition } from '@/lib/presentation/effort/effort-strain-composition';
 import {
   CHART_CAUTION_STROKE,

@@ -1,5 +1,5 @@
 import { toUtcDateOnly } from '@/lib/travel-context/calendar-date';
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 
 export type TravelDateRange = {
   startDate: Date | string;

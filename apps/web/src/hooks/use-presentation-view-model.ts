@@ -1,15 +1,15 @@
 'use client';
 
 import { keepPreviousData, useQuery, type UseQueryResult } from '@tanstack/react-query';
-import { isSet } from '@/lib/util/value';
-import type { RecoveryViewModel } from '@/core/presentation/recovery-view-model';
-import type { SleepViewModel } from '@/core/presentation/sleep-view-model';
-import type { EffortViewModel } from '@/core/presentation/effort-view-model';
-import type { AdaptationViewModel } from '@/core/presentation/adaptation-view-model';
-import type { TodayViewModel } from '@/core/presentation/today-view-model';
-import type { BodyViewModel } from '@/core/presentation/body-view-model';
-import type { NutritionViewModel } from '@/core/presentation/nutrition-view-model';
-import type { PhysicalHealthViewModel } from '@/core/presentation/physical-health-view-model';
+import { isSet } from '@sharpit/shared/value';
+import type { RecoveryViewModel } from '@/presentation/recovery-view-model';
+import type { SleepViewModel } from '@/presentation/sleep-view-model';
+import type { EffortViewModel } from '@/presentation/effort-view-model';
+import type { AdaptationViewModel } from '@/presentation/adaptation-view-model';
+import type { TodayViewModel } from '@/presentation/today-view-model';
+import type { BodyViewModel } from '@/presentation/body-view-model';
+import type { NutritionViewModel } from '@/presentation/nutrition-view-model';
+import type { PhysicalHealthViewModel } from '@/presentation/physical-health-view-model';
 import {
   fetchAdaptationPresentation,
   fetchEffortPresentation,

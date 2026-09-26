@@ -17,8 +17,8 @@
  * name is still a reading.
  */
 import { endOfDay, startOfDay } from 'date-fns';
-import { isSet } from '@/lib/util/value';
-import type { EnvironmentalPrediction } from '@/core/environment';
+import { isSet } from '@sharpit/shared/value';
+import type { EnvironmentalPrediction } from '@sharpit/core/environment';
 import {
   formatCityFromLocationLabel,
   inferActivityWeatherCondition,
@@ -28,7 +28,7 @@ import {
 import { resolveDefaultActivityLocation } from '@/lib/geocoding/default-activity-location';
 import { fetchForecastPredictions } from '@/lib/planned-session/forecast/forecast-fetch';
 import { prisma } from '@/lib/prisma';
-import { approximateTrainingDayUtcRange } from '@/lib/training/periodization/training-day';
+import { approximateTrainingDayUtcRange } from '@sharpit/core/training/training-day';
 
 export type TodayWeather = {
   city: string;

@@ -1,7 +1,7 @@
 import type { ActivityType } from '@prisma/client';
 import type { V1TodayConsistency } from '@/lib/presentation/v1/consistency';
-import type { PresentationEmptyState } from '@/core/presentation/types';
-import type { TodayViewModel } from '@/core/presentation/today-view-model';
+import type { PresentationEmptyState } from '@/presentation/types';
+import type { TodayViewModel } from '@/presentation/today-view-model';
 import { activityTypeLabels } from '@/lib/format';
 import { CONNECT_GARMIN_PATH } from '@/lib/integrations/garmin/garmin-connect-handoff';
 

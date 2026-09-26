@@ -1,7 +1,7 @@
 import 'fake-indexeddb/auto';
 import { describe, expect, it } from 'vitest';
 import { saveSnapshot, loadSnapshot, clearSnapshot } from './snapshot-store';
-import type { AthleteSnapshot } from '@/core/athlete-state/snapshot';
+import type { AthleteSnapshot } from '@/athlete-state/snapshot';
 
 const NOW = new Date('2026-07-15T12:00:00.000Z');
 

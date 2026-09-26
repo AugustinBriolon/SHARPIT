@@ -1,5 +1,5 @@
 import type { SessionAnalysis } from '@/lib/validators/coach';
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 import { intensityLabels } from '@/lib/planned-session/sessions';
 
 const VERDICT_FR: Record<SessionAnalysis['verdict'], string> = {

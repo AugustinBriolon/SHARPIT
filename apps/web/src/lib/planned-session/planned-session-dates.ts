@@ -7,7 +7,7 @@ import {
   startOfDay,
 } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 import type { ClientPlannedSession } from '@/lib/query/types';
 
 type PlannedSessionLike = Pick<ClientPlannedSession, 'date' | 'completed' | 'activityId'>;

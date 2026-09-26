@@ -10,7 +10,7 @@ import type {
   EnduranceStep,
 } from '@/lib/planned-session/endurance/endurance-prescription';
 import type { AthleteThresholds } from '@/lib/planned-session/endurance/endurance-targets';
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 
 function hrThresholdKeys(
   ref: EnduranceStep['target']['hrRef'] | undefined,

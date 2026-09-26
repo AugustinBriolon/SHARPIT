@@ -5,7 +5,7 @@ import {
   computeSleepEfficiencyPct,
   mapSleepDurationToRaw,
 } from './sleep-scoring';
-import { mapRestorativeSleepRatioToRaw } from '@/core/inference/recovery/scoring';
+import { mapRestorativeSleepRatioToRaw } from '@sharpit/core/inference/recovery/scoring';
 
 describe('computeSleepEfficiencyPct', () => {
   it('uses bedtime → wake window when available', () => {

@@ -3,9 +3,9 @@
  */
 
 import type { PrismaClient } from '@prisma/client';
-import type { ConditionRepository } from '@/core/physical-health/repository';
-import type { ConditionInferenceInput } from '@/core/inference/physical-health/types';
-import type { FunctionalImpact } from '@/core/physical-health/types';
+import type { ConditionRepository } from '@sharpit/core/physical-health/repository';
+import type { ConditionInferenceInput } from '@sharpit/core/inference/physical-health/types';
+import type { FunctionalImpact } from '@sharpit/core/physical-health/types';
 
 function subtractDays(trainingDayId: string, days: number): string {
   const [year, month, day] = trainingDayId.split('-').map(Number);

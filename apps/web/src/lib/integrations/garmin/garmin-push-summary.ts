@@ -3,7 +3,7 @@
  * Pure so the wording stays testable outside the hook.
  */
 
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 
 export type GarminPushSummaryInput = {
   workoutName?: string;

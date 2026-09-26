@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { ActivityType } from '@prisma/client';
-import type { SessionFeatureSet } from '@/core/features/types';
+import type { SessionFeatureSet } from '@sharpit/core/features/types';
 import { computeDailyStrain, dailyTssToStrainScore } from './daily-strain';
 
 function makeSessionFeature(overrides: Partial<SessionFeatureSet> = {}): SessionFeatureSet {

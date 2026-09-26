@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildPlannedSessionAdvisories } from '@/core/decision/planned-session-advisory';
+import { buildPlannedSessionAdvisories } from '@sharpit/core/decision/planned-session-advisory';
 import { forecastBadgeFromContext } from '@/lib/planned-session/forecast/forecast-badge';
 
 describe('planned-session weather advisories', () => {

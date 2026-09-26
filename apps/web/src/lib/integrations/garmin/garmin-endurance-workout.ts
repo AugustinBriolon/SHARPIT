@@ -1,5 +1,5 @@
 import { Prisma } from '@prisma/client';
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 import { dayKeyFromDate, shortDayFromDate } from '@/lib/date/day-key';
 import {
   buildEnduranceWorkoutPayload,

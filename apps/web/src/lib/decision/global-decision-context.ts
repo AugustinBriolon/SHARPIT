@@ -1,9 +1,9 @@
-import type { AthleteSnapshot } from '@/core/athlete-state/snapshot';
+import type { AthleteSnapshot } from '@/athlete-state/snapshot';
 import {
   EMPTY_GLOBAL_DECISION,
   type GlobalDecisionContext,
   type GlobalDecisionDomainRole,
-} from '@/core/presentation/global-decision-context';
+} from '@/presentation/global-decision-context';
 import { resolveCode } from '@/lib/french';
 import { mapVerdictToDisplay } from '@/lib/today/dashboard/today-mapping';
 import { buildTopActionLine } from '@/lib/today/rich/today-rich-view';

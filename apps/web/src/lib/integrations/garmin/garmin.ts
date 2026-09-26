@@ -1,5 +1,5 @@
 import { GarminConnect, type IGarminTokens } from '@flow-js/garmin-connect';
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 import { format } from 'date-fns';
 import { pickCurrentBodyBattery } from '@/lib/integrations/garmin/garmin-body-battery';
 import {

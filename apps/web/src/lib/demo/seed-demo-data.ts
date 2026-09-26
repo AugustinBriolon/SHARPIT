@@ -21,7 +21,7 @@ import {
   demoTrainingDayIdDaysAgo,
   isDemoHealthDateCurrent,
 } from '@/lib/demo/demo-calendar';
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 import { finalizeDemoSeed, purgeDemoDerivedState } from '@/lib/demo/finalize-demo-seed';
 import { addDays, subDays } from 'date-fns';
 

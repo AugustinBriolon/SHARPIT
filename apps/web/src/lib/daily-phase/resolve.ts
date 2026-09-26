@@ -6,7 +6,7 @@ import {
   REST_DAY_PREP_SNAPSHOT_AGE_MINUTES,
 } from '@/lib/daily-phase/constants';
 import { isAccomplishmentWindow, isPreSessionWindow } from '@/lib/daily-phase/session-window';
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 import {
   DAILY_PHASE_BRIEFING_BUCKET,
   DAILY_PHASE_LABEL,

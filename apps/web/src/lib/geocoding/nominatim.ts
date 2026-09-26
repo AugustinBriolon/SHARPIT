@@ -1,5 +1,5 @@
 import type { GeocodedPlace } from './types';
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 
 const NOMINATIM_BASE = 'https://nominatim.openstreetmap.org';
 const USER_AGENT = 'SHARPIT/1.0 (training-app; contact@sharpit.local)';

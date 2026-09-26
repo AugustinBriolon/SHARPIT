@@ -8,7 +8,7 @@
  */
 
 import type { ActivityType, SessionIntensity } from '@prisma/client';
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 import { adaptMorningSessionDescription } from '@/lib/morning-recalibration/adapt-session-description';
 import {
   isEnduranceMorningSport,

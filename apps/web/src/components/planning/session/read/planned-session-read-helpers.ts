@@ -1,4 +1,4 @@
-import { sportSupportsOutdoorContext } from '@/core/planned-session/defaults';
+import { sportSupportsOutdoorContext } from '@sharpit/core/planned-session/defaults';
 import { formatDate } from '@/lib/format';
 import { formatPlannedSessionLocationDisplay } from '@/lib/planned-session/display/planned-session-display';
 import {
@@ -11,8 +11,8 @@ import type { ClientPlannedSession } from '@/lib/query/types';
 import { exposureLabels, intensityLabels } from '@/lib/planned-session/sessions';
 import { formatTrainingLoad } from '@/lib/preferences/display-mode';
 import type { DisplayMode } from '@/lib/preferences/display-mode';
-import type { SessionRationaleViewModel } from '@/core/presentation/session-rationale-view-model';
-import type { PlannedSessionViewModel } from '@/core/presentation/planned-session-view-model';
+import type { SessionRationaleViewModel } from '@/presentation/session-rationale-view-model';
+import type { PlannedSessionViewModel } from '@/presentation/planned-session-view-model';
 import { ActivityType } from '@prisma/client';
 
 export type PlannedSessionKeyChip = { label: string; value: string; valueClassName?: string };

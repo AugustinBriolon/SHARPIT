@@ -1,5 +1,5 @@
 import { format } from 'date-fns';
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 import { currentTokens, type GarminTokens } from '@/lib/integrations/garmin/garmin';
 import { encryptGarminToken, getGarminClient } from '@/lib/integrations/garmin/garmin-sync';
 import {

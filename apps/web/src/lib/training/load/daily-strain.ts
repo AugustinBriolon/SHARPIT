@@ -1,6 +1,6 @@
 import type { ActivityType } from '@prisma/client';
-import { isSet } from '@/lib/util/value';
-import type { SessionFeatureSet } from '@/core/features/types';
+import { isSet } from '@sharpit/shared/value';
+import type { SessionFeatureSet } from '@sharpit/core/features/types';
 
 export const DAILY_STRAIN_MAX = 21;
 const DAILY_TSS_UPPER_REFERENCE = 300;

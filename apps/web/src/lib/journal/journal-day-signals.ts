@@ -13,7 +13,7 @@ import {
 import {
   activityMatchesTrainingDay,
   approximateTrainingDayUtcRange,
-} from '@/lib/training/periodization/training-day';
+} from '@sharpit/core/training/training-day';
 import { toUtcDateOnly } from '@/lib/travel-context/calendar-date';
 
 export type JournalNutritionSummary = {

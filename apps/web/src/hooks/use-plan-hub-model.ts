@@ -28,7 +28,7 @@ import {
 import { getProfileCompleteness } from '@/lib/profile/profile-completeness';
 import { mapVerdictToDisplay, type OverallVerdict } from '@/lib/today/dashboard/today-mapping';
 import type { ClientActivity, ClientPlannedSession } from '@/lib/query/types';
-import type { AthleteSnapshot } from '@/core/athlete-state/snapshot';
+import type { AthleteSnapshot } from '@/athlete-state/snapshot';
 
 const emptySubscribe = () => () => {};
 

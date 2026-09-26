@@ -9,7 +9,7 @@ import {
   usePhysicalHealthViewModel,
 } from '@/hooks/use-presentation-view-model';
 import { useTodaySelectedDate } from '@/hooks/use-today-selected-date';
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 
 export function useProgressHubOffline() {
   const online = useOnlineStatus();

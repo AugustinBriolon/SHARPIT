@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import type { ProjectionHorizonDays } from '@/core/projection/types';
+import type { ProjectionHorizonDays } from '@sharpit/core/projection/types';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { applyScenarioComparisonChoice } from '@/lib/scenario/apply-scenario';
 

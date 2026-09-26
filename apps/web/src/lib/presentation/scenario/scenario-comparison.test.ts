@@ -3,8 +3,8 @@ import {
   buildScenarioComparisonViewModel,
   isGenericEquivalentExplanation,
 } from '@/lib/presentation/scenario/scenario-comparison';
-import type { ScenarioComparison, ScenarioComparisonEntry } from '@/core/scenario/types';
-import { SCENARIO_MODEL_ID } from '@/core/scenario/types';
+import type { ScenarioComparison, ScenarioComparisonEntry } from '@sharpit/core/scenario/types';
+import { SCENARIO_MODEL_ID } from '@sharpit/core/scenario/types';
 
 const EQUIVALENT_NOTE = 'Équivalent au plan actuel sur les sorties Decision Engine comparées.';
 

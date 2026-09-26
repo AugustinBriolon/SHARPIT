@@ -8,7 +8,7 @@
  */
 
 import { addDays, format } from 'date-fns';
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 import { fr } from 'date-fns/locale';
 import type { ActivityType, GoalHorizon, PlanPhase, SessionIntensity } from '@prisma/client';
 import { activityTypeLabels } from '@/lib/format';
@@ -22,7 +22,7 @@ import type {
   WeeklyBriefKeySession,
   WeeklyBriefLearningFeedbackItem,
   WeeklyCoachingBriefViewModel,
-} from '@/core/presentation/weekly-coaching-brief-view-model';
+} from '@/presentation/weekly-coaching-brief-view-model';
 import type { CoachingDecisionRecord, DecisionSnapshotContext } from '@/lib/decision-memory/types';
 import { dayKeyFromDate } from '@/lib/date/day-key';
 

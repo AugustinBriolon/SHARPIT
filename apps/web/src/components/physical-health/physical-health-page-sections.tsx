@@ -6,7 +6,7 @@ import { cn } from '@/lib/utils';
 import { HeartPulse } from 'lucide-react';
 import Link from 'next/link';
 import { Skeleton } from '@/components/ui/skeleton';
-import type { PhysicalHealthConditionCard } from '@/core/presentation/physical-health-view-model';
+import type { PhysicalHealthConditionCard } from '@/presentation/physical-health-view-model';
 import { PhysicalHealthConditionCardView } from '@/components/physical-health/cards/condition-card';
 import { CorpsEmptyState, CorpsDivider } from '@/components/corps/corps-ui';
 

@@ -8,7 +8,7 @@
  *   const result = await adaptationEngine.run(athleteId, trainingDayId)
  */
 
-import { AdaptationInferenceOrchestrator } from '@/core/inference/adaptation-orchestrator';
+import { AdaptationInferenceOrchestrator } from '@sharpit/core/inference/adaptation-orchestrator';
 import { PrismaDigitalTwinRepository } from '@/infrastructure/digital-twin/prisma-digital-twin-repository';
 import { PrismaDecisionRecordRepository } from '@/infrastructure/inference/prisma-decision-record-repository';
 import { featureEngine } from '@/lib/engines/feature-engine';

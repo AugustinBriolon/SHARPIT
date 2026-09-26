@@ -1,4 +1,4 @@
-import type { PhysicalHealthViewModel } from '@/core/presentation/physical-health-view-model';
+import type { PhysicalHealthViewModel } from '@/presentation/physical-health-view-model';
 import { corpsToneFromPhysicalSeverity } from '@/lib/health/health-status';
 import type { CorpsTone } from '@/lib/ui/metric-tone';
 

@@ -3,7 +3,7 @@
  * Never restate twin scores already shown in the hero (sleep / recovery / effort / adaptation).
  */
 
-import type { AthleteSnapshot } from '@/core/athlete-state/snapshot';
+import type { AthleteSnapshot } from '@/athlete-state/snapshot';
 import type { DecisionData, LimitingFactor } from '@/hooks/use-today';
 
 export type TodayFactRow = {

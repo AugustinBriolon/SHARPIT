@@ -1,6 +1,6 @@
 import { format, parseISO, subDays } from 'date-fns';
 import type { RecoveryTone } from '@/lib/recovery/recovery';
-import type { SleepNightStatus, SleepViewModel } from '@/core/presentation/sleep-view-model';
+import type { SleepNightStatus, SleepViewModel } from '@/presentation/sleep-view-model';
 import type { SleepAdequacySignal } from '@/lib/today/dashboard/today-mapping';
 import { sleepAdequacySignalForNight } from '@/lib/presentation/sleep/sleep';
 

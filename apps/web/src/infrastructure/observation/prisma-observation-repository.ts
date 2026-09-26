@@ -22,8 +22,8 @@ import type {
   ObservationQuality,
   ObservationSource,
   QualityFlag,
-} from '@/core/observation';
-import type { ObservationRepository } from '@/core/observation/repository';
+} from '@sharpit/core/observation';
+import type { ObservationRepository } from '@sharpit/core/observation/repository';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Quality ordering (for qualityMin filtering)

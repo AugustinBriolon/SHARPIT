@@ -1,5 +1,5 @@
 import type { ClientActivity, ClientPlannedSession } from '@/lib/query/types';
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 
 export type PlannedSessionLinkVars = {
   id: string;

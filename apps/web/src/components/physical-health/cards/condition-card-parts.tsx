@@ -12,7 +12,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
-import type { PhysicalHealthConditionCard } from '@/core/presentation/physical-health-view-model';
+import type { PhysicalHealthConditionCard } from '@/presentation/physical-health-view-model';
 import { CORPS_TONE_TEXT, type CorpsTone } from '@/lib/ui/metric-tone';
 import { corpsToneFromPhysicalSeverity } from '@/lib/health/health-status';
 import { usePhysicalNotes } from '@/hooks/use-physical';

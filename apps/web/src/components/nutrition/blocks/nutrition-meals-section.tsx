@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { MotionExpand } from '@/components/motion';
 import { ColoredMacroPills } from '@/components/nutrition/nutrition-macro-display';
-import type { NutritionMealSummary } from '@/core/presentation/nutrition-view-model';
+import type { NutritionMealSummary } from '@/presentation/nutrition-view-model';
 import { cn } from '@/lib/utils';
 import { NavArrowDown } from '@/components/icons/nav-arrows';
 

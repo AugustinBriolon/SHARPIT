@@ -2,10 +2,10 @@
  * Extract Decision Engine snapshots from projected athlete state.
  */
 
-import type { OverallVerdict } from '@/core/digital-twin/types';
-import type { DecisionDomain } from '@/core/decision/decision-state';
-import type { ScenarioDecisionSnapshot } from '@/core/scenario/types';
-import type { ProjectedAthleteState } from '@/core/projection/types';
+import type { OverallVerdict } from '@sharpit/core/digital-twin/types';
+import type { DecisionDomain } from '@sharpit/core/decision/decision-state';
+import type { ScenarioDecisionSnapshot } from '@sharpit/core/scenario/types';
+import type { ProjectedAthleteState } from '@sharpit/core/projection/types';
 
 const RISK_VERDICTS = new Set<OverallVerdict>(['RECOVER', 'CAUTION', 'INSUFFICIENT_DATA']);
 

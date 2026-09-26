@@ -1,5 +1,5 @@
 import { ActivityType } from '@prisma/client';
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 import { format } from 'date-fns';
 import { dayKeyFromDate, shortDayFromDate } from '@/lib/date/day-key';
 import { ensureGarminExerciseLabelsFr } from '@/lib/integrations/garmin/garmin-exercise-labels';

@@ -1,5 +1,5 @@
-import { trainingDayIdForNow } from '@/lib/training/periodization/training-day';
-import { isSet } from '@/lib/util/value';
+import { trainingDayIdForNow } from '@sharpit/core/training/training-day';
+import { isSet } from '@sharpit/shared/value';
 import { resolveBriefingPhase } from '@/lib/briefing/briefing-phase';
 import type {
   AthleteFreshnessSnapshot,
@@ -7,7 +7,7 @@ import type {
   DomainFreshness,
   FreshnessLevel,
   ProviderFreshness,
-} from '@/core/athlete-state/freshness';
+} from '@/athlete-state/freshness';
 import { prisma } from '@/lib/prisma';
 import {
   pickPrimaryProductMessage,

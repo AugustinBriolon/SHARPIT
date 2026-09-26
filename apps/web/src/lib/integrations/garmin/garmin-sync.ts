@@ -1,5 +1,5 @@
 import { Prisma } from '@prisma/client';
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 import { format, startOfDay, subDays } from 'date-fns';
 import { prisma } from '@/lib/prisma';
 import { syncSinceFromLastSync, syncWindowDays } from '@/lib/integrations/shared/sync-since';
@@ -20,7 +20,7 @@ import {
 } from '@/lib/integrations/garmin/garmin';
 import { mapPythonGarminconnectTokenStore } from '@/lib/integrations/garmin/garmin-tokenstore';
 import { observationEngine } from '@/lib/engines/observation-engine';
-import { garminHealthToObservations } from '@/core/adapters/garmin-health-adapter';
+import { garminHealthToObservations } from '@/adapters/garmin-health-adapter';
 import {
   isCredentialFailure,
   isGarminAccountConnected,

@@ -1,4 +1,4 @@
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 /**
  * Shape of a strength / prehab session: how many exercises a duration actually
  * holds, and which blocks must be present.

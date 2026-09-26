@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse, after } from 'next/server';
 import { ActivityType } from '@prisma/client';
-import { sportSupportsOutdoorContext } from '@/core/planned-session/defaults';
+import { sportSupportsOutdoorContext } from '@sharpit/core/planned-session/defaults';
 import { enrichActivityObservedContext } from '@/lib/activity/detail/enrich-observed-context';
 import { buildActivityCreateData } from '@/lib/activity/activity-service';
 import { runActivityNarrativeAnalysis } from '@/lib/activity/narrative/activity-narrative';

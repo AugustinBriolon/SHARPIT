@@ -1,5 +1,5 @@
-import { EMPTY_GLOBAL_DECISION } from '@/core/presentation/global-decision-context';
-import type { PhysicalHealthViewModel } from '@/core/presentation/physical-health-view-model';
+import { EMPTY_GLOBAL_DECISION } from '@/presentation/global-decision-context';
+import type { PhysicalHealthViewModel } from '@/presentation/physical-health-view-model';
 
 /** Stable suivi physique chrome for cold-start / placeholder micro-skeletons. */
 export function physicalHealthLoadingShell(): PhysicalHealthViewModel {

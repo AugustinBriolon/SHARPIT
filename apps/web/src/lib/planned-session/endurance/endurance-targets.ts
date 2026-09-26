@@ -1,5 +1,5 @@
 import type { SessionIntensity } from '@prisma/client';
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 import type {
   EnduranceSport,
   EnduranceTarget,

@@ -1,6 +1,6 @@
 'use client';
 
-import { trainingDayIdForNow } from '@/lib/training/periodization/training-day';
+import { trainingDayIdForNow } from '@sharpit/core/training/training-day';
 
 const POLL_MS = 30_000;
 

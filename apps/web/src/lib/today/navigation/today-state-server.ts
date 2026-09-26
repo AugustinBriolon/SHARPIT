@@ -1,13 +1,13 @@
-import type { AdaptationInferenceResult } from '@/core/inference/adaptation-orchestrator';
-import { isSet } from '@/lib/util/value';
-import type { FatigueInferenceResult } from '@/core/inference/fatigue-orchestrator';
-import type { RecoveryInferenceResult } from '@/core/inference/orchestrator';
-import type { ReasoningInferenceResult } from '@/core/inference/reasoning-orchestrator';
-import { serializeDecisionState } from '@/core/decision/adapters';
-import type { PhysicalHealthInferenceResult } from '@/core/inference/physical-health-orchestrator';
-import type { EnvironmentInferenceResult } from '@/core/inference/environment-orchestrator';
-import type { EnvironmentalDecisionSnapshot } from '@/core/inference/environment/types';
-import { buildEnvironmentalDecisionSnapshot } from '@/core/inference/environment/snapshot';
+import type { AdaptationInferenceResult } from '@sharpit/core/inference/adaptation-orchestrator';
+import { isSet } from '@sharpit/shared/value';
+import type { FatigueInferenceResult } from '@sharpit/core/inference/fatigue-orchestrator';
+import type { RecoveryInferenceResult } from '@sharpit/core/inference/orchestrator';
+import type { ReasoningInferenceResult } from '@sharpit/core/inference/reasoning-orchestrator';
+import { serializeDecisionState } from '@sharpit/core/decision/adapters';
+import type { PhysicalHealthInferenceResult } from '@sharpit/core/inference/physical-health-orchestrator';
+import type { EnvironmentInferenceResult } from '@sharpit/core/inference/environment-orchestrator';
+import type { EnvironmentalDecisionSnapshot } from '@sharpit/core/inference/environment/types';
+import { buildEnvironmentalDecisionSnapshot } from '@sharpit/core/inference/environment/snapshot';
 import { adaptationEngine } from '@/lib/engines/adaptation-engine';
 import { environmentEngine } from '@/lib/engines/environment-engine';
 import { physicalHealthEngine } from '@/lib/engines/physical-health-engine';
@@ -21,7 +21,7 @@ import {
   approximateTrainingDayUtcRange,
   DEFAULT_TRAINING_DAY_START_HOUR,
   DEFAULT_TRAINING_DAY_TIMEZONE,
-} from '@/lib/training/periodization/training-day';
+} from '@sharpit/core/training/training-day';
 import type {
   AdaptationData,
   DailyStrainData,

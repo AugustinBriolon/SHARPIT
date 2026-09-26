@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import type { FuelFeatureSet } from '@/core/features/types';
+import type { FuelFeatureSet } from '@sharpit/core/features/types';
 
 import {
   formatFuelDensityReference,

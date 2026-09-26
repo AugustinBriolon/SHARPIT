@@ -1,5 +1,5 @@
-import type { GeoLocation } from '@/core/environment';
-import { isSet } from '@/lib/util/value';
+import type { GeoLocation } from '@sharpit/core/environment';
+import { isSet } from '@sharpit/shared/value';
 import type { PrismaClient } from '@prisma/client';
 
 const DEFAULT_HOME: GeoLocation = {

@@ -1,4 +1,4 @@
-import type { TodayViewModel } from '@/core/presentation/today-view-model';
+import type { TodayViewModel } from '@/presentation/today-view-model';
 import type { PersistedSnapshotEntry } from '@/lib/pwa/snapshot-store-validation';
 
 export type TodayDashboardView =

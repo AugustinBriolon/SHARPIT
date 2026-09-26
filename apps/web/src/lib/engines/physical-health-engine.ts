@@ -2,7 +2,7 @@
  * PHYSICAL HEALTH ENGINE — Singleton
  */
 
-import { PhysicalHealthInferenceOrchestrator } from '@/core/inference/physical-health-orchestrator';
+import { PhysicalHealthInferenceOrchestrator } from '@sharpit/core/inference/physical-health-orchestrator';
 import { PrismaDigitalTwinRepository } from '@/infrastructure/digital-twin/prisma-digital-twin-repository';
 import { PrismaDecisionRecordRepository } from '@/infrastructure/inference/prisma-decision-record-repository';
 import { PrismaConditionRepository } from '@/infrastructure/physical-health/prisma-condition-repository';

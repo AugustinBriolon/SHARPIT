@@ -2,9 +2,9 @@
  * Production environmental provider registry.
  */
 
-import { openMeteoEnvironmentalAdapter } from '@/core/adapters/environment/open-meteo-adapter';
-import { manualEnvironmentalAdapter } from '@/core/adapters/environment/manual-adapter';
-import type { EnvironmentalProviderRegistry } from '@/core/environment/provider';
+import { openMeteoEnvironmentalAdapter } from '@/adapters/environment/open-meteo-adapter';
+import { manualEnvironmentalAdapter } from '@/adapters/environment/manual-adapter';
+import type { EnvironmentalProviderRegistry } from '@sharpit/core/environment/provider';
 import { createOpenMeteoEnvironmentalProvider } from '@/infrastructure/environment/open-meteo-provider';
 import { randomUUID } from 'node:crypto';
 

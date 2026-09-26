@@ -1,6 +1,6 @@
-import type { ProductInsightBundle } from '@/core/product-insight/types';
-import type { GlobalDecisionContext } from '@/core/presentation/global-decision-context';
-import type { SleepNightStatus } from '@/core/presentation/sleep-view-model';
+import type { ProductInsightBundle } from '@sharpit/core/product-insight/types';
+import type { GlobalDecisionContext } from '@/presentation/global-decision-context';
+import type { SleepNightStatus } from '@/presentation/sleep-view-model';
 import type { SleepCoachView } from '@/lib/sleep/sleep';
 import type { SleepScoreBreakdown } from '@/lib/sleep/sleep-scoring';
 

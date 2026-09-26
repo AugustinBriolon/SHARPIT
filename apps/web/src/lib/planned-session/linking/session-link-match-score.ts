@@ -1,5 +1,5 @@
 import { differenceInCalendarDays, startOfDay } from 'date-fns';
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 
 /**
  * Auto-link only on the same calendar day.

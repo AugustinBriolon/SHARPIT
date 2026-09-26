@@ -2,13 +2,13 @@
  * Planned Session — presentation mapping (product expression, not raw weather).
  */
 
-import type { PlannedSessionViewModel } from '@/core/presentation/planned-session-view-model';
-import { isSet } from '@/lib/util/value';
+import type { PlannedSessionViewModel } from '@/presentation/planned-session-view-model';
+import { isSet } from '@sharpit/shared/value';
 import type {
   PlannedSessionContext,
   PlannedSessionCompletionComparison,
-} from '@/core/planned-session/types';
-import { needsExposureConfirmation } from '@/core/planned-session/defaults';
+} from '@sharpit/core/planned-session/types';
+import { needsExposureConfirmation } from '@sharpit/core/planned-session/defaults';
 import type { PlannedSessionRecord } from '@/lib/planned-session/resolve-context';
 
 const ADVISORY_HEADLINES: Record<string, string> = {

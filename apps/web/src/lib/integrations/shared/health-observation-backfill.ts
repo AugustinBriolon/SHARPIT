@@ -1,7 +1,7 @@
 import { startOfDay, subDays } from 'date-fns';
 import type { DailyHealth } from '@prisma/client';
-import { garminHealthToObservations } from '@/core/adapters/garmin-health-adapter';
-import type { RawObservation } from '@/core/observation/types';
+import { garminHealthToObservations } from '@/adapters/garmin-health-adapter';
+import type { RawObservation } from '@sharpit/core/observation/types';
 import type { GarminDailyHealth } from '@/lib/integrations/garmin/garmin';
 import { observationEngine } from '@/lib/engines/observation-engine';
 import { prisma } from '@/lib/prisma';

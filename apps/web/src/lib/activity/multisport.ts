@@ -1,4 +1,4 @@
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 export type MultisportLegKind = 'swim' | 'bike' | 'run' | 'transition';
 
 export interface MultisportLeg {

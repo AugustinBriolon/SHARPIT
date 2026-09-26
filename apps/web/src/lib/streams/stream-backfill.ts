@@ -1,5 +1,5 @@
 import { ActivityType } from '@prisma/client';
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 import { prisma } from '@/lib/prisma';
 import { rawStreamsHaveSignal } from '@/lib/integrations/garmin/garmin-streams';
 import { fetchAndCacheActivityStreams } from '@/lib/streams/streams';

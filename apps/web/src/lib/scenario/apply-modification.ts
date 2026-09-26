@@ -7,9 +7,9 @@ import {
   type ScenarioDefinition,
   type ScenarioKind,
   type ScenarioSessionSlice,
-} from '@/core/scenario/types';
+} from '@sharpit/core/scenario/types';
 import { stepDownIntensity } from '@/lib/scenario/apply-scenario-op';
-import { addTrainingDays } from '@/lib/training/periodization/training-day';
+import { addTrainingDays } from '@sharpit/core/training/training-day';
 import { localDateLabel } from '@/lib/projection/build-projection-input';
 
 function sessionLabel(session: ScenarioSessionSlice): string {

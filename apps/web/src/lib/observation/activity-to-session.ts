@@ -1,4 +1,4 @@
-import type { RawSessionObservation, SportType } from '@/core/observation/types';
+import type { RawSessionObservation, SportType } from '@sharpit/core/observation/types';
 
 /**
  * Maps a stored Activity row to a SESSION observation.

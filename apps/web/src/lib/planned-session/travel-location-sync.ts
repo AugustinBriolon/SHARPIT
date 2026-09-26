@@ -1,4 +1,4 @@
-import { sportSupportsOutdoorContext } from '@/core/planned-session/defaults';
+import { sportSupportsOutdoorContext } from '@sharpit/core/planned-session/defaults';
 import type { ClientPlannedSession } from '@/lib/query/types';
 
 export type ActiveTravelLocation = {

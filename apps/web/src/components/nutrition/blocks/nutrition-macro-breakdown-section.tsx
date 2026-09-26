@@ -4,7 +4,7 @@ import { format, parseISO, subDays } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { useState } from 'react';
 import { CursorFollowHint, type CursorHintState } from '@/components/ui/cursor-follow-hint';
-import type { NutritionDaySummary } from '@/core/presentation/nutrition-view-model';
+import type { NutritionDaySummary } from '@/presentation/nutrition-view-model';
 import { MACRO_COLORS, MACRO_LABELS, type MacroKind } from '@/lib/nutrition/macro-colors';
 import { cn } from '@/lib/utils';
 

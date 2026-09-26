@@ -3,7 +3,7 @@
 import {
   sportSupportsOutdoorContext,
   defaultExposureForActivityType,
-} from '@/core/planned-session/defaults';
+} from '@sharpit/core/planned-session/defaults';
 import {
   enduranceSportFromActivityType,
   parseEndurancePrescription,

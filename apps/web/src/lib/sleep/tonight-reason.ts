@@ -1,4 +1,4 @@
-import type { SleepNightStatus } from '@/core/presentation/sleep-view-model';
+import type { SleepNightStatus } from '@/presentation/sleep-view-model';
 import { formatDuration } from '@/lib/sleep/sleep';
 import { formatSleepDuration } from '@/lib/sleep/sleep-scoring';
 
@@ -23,7 +23,7 @@ function pendingNightReason(nightStatus: SleepNightStatus): string | null {
   return null;
 }
 
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 
 function debtNightReason(debt7Min: number | null): string | null {
   if (isSet(debt7Min) && debt7Min > 30) {

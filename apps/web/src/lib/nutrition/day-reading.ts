@@ -1,8 +1,8 @@
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 import type {
   NutritionDaySummary,
   NutritionGoalsProgress,
-} from '@/core/presentation/nutrition-view-model';
+} from '@/presentation/nutrition-view-model';
 
 export type NutritionDayReading = {
   headline: string;

@@ -1,4 +1,4 @@
-import { buildAdaptationInsightBundle } from '@/core/product-insight/adaptation-insights';
+import { buildAdaptationInsightBundle } from '@sharpit/core/product-insight/adaptation-insights';
 
 export function buildAdaptationPageInsights(params: {
   adaptationIndex: number | null;

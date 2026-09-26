@@ -6,7 +6,7 @@ import {
 } from '@/lib/journal/morning-wellness-entry';
 import type { WellnessCheckinPayload } from '@/lib/validators/wellness-checkin';
 import { onWellnessSubmitted } from '@/lib/athlete-state/orchestrator';
-import { trainingDayIdForNow } from '@/lib/training/periodization/training-day';
+import { trainingDayIdForNow } from '@sharpit/core/training/training-day';
 
 export type { MorningWellnessEntry };
 

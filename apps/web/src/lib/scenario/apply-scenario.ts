@@ -2,8 +2,8 @@
  * Persist a chosen Scenario Engine alternative onto PlannedSession rows.
  */
 
-import type { ProjectionHorizonDays } from '@/core/projection/types';
-import type { ScenarioKind } from '@/core/scenario/types';
+import type { ProjectionHorizonDays } from '@sharpit/core/projection/types';
+import type { ScenarioKind } from '@sharpit/core/scenario/types';
 import { buildProjectionBaseContext } from '@/lib/projection/build-projection-input';
 import { deletePlannedSession, getPlannedSessionById, updatePlannedSession } from '@/lib/queries';
 import { buildScenarioApplyOp } from '@/lib/scenario/apply-scenario-op';

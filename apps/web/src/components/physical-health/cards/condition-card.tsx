@@ -1,7 +1,7 @@
 'use client';
 
 import { Card, CardHeader } from '@/components/ui/card';
-import type { PhysicalHealthConditionCard } from '@/core/presentation/physical-health-view-model';
+import type { PhysicalHealthConditionCard } from '@/presentation/physical-health-view-model';
 import { corpsToneFromPhysicalSeverity } from '@/lib/health/health-status';
 import { cn } from '@/lib/utils';
 import {

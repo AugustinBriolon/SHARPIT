@@ -3,13 +3,13 @@
  */
 
 import type { PrismaClient } from '@prisma/client';
-import type { EnvironmentalObservationRepository } from '@/core/inference/environment/repository';
-import type { EnvironmentalObservationRecord } from '@/core/environment';
-import { isRecordActive } from '@/core/environment';
+import type { EnvironmentalObservationRepository } from '@sharpit/core/inference/environment/repository';
+import type { EnvironmentalObservationRecord } from '@sharpit/core/environment';
+import { isRecordActive } from '@sharpit/core/environment';
 import {
   deserializeEnvironmentalObservationRecord,
   serializeEnvironmentalObservationRecord,
-} from '@/core/inference/environment/serialize';
+} from '@sharpit/core/inference/environment/serialize';
 
 export class PrismaEnvironmentalObservationRepository implements EnvironmentalObservationRepository {
   constructor(private readonly prisma: PrismaClient) {}

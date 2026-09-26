@@ -4,12 +4,12 @@ import { mapConfidenceToTier } from '@/lib/today/dashboard/today-mapping';
 import { ADAPTATION_STATUS_SIGNAL } from '@/lib/today/dashboard/today-dashboard-labels';
 import { buildAdaptationPageInsights } from '@/lib/product-insight/adaptation-page-insights';
 import { buildGlobalDecisionContext } from '@/lib/decision/global-decision-context';
-import { EMPTY_GLOBAL_DECISION } from '@/core/presentation/global-decision-context';
+import { EMPTY_GLOBAL_DECISION } from '@/presentation/global-decision-context';
 import type {
   AdaptationViewModel,
   AdaptationDimensionVm,
-} from '@/core/presentation/adaptation-view-model';
-import type { ProductInsightBundle } from '@/core/product-insight/types';
+} from '@/presentation/adaptation-view-model';
+import type { ProductInsightBundle } from '@sharpit/core/product-insight/types';
 import type { DimensionResult } from '@/hooks/use-today';
 
 const ADAPTATION_VERDICT_DISPLAY: Record<string, { label: string; colorClass: string }> = {

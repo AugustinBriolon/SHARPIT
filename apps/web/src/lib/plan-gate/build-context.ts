@@ -1,5 +1,5 @@
 import { addDays, min as minDate, max as maxDate } from 'date-fns';
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 import { getOrBuildAthleteSnapshot } from '@/lib/athlete-state/snapshot-service';
 import {
   getAthleteProfile,
@@ -9,7 +9,7 @@ import {
 } from '@/lib/queries';
 import { getGoogleAccount, getUpcomingBusy } from '@/lib/integrations/google/google-sync';
 import { loadDailyTrainingStressEntries } from '@/lib/training/pmc/pmc-server';
-import type { AthleteSnapshot } from '@/core/athlete-state/snapshot';
+import type { AthleteSnapshot } from '@/athlete-state/snapshot';
 import { normalizeAthletePracticedSports } from '@/lib/practiced-sports';
 import type { GateContext, GateProposal } from './types';
 

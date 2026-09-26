@@ -1,5 +1,5 @@
 import { birthDateToInput } from '@/lib/profile/athlete-profile-utils';
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 
 /** Shape consumed by settings / progression profile forms. */
 export type AthleteProfileFormData = {

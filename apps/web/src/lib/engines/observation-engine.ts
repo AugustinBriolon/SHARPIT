@@ -14,7 +14,7 @@
  *   await observationEngine.ingest(athleteId, rawObservation)
  */
 
-import { ObservationEngine } from '@/core/observation';
+import { ObservationEngine } from '@sharpit/core/observation';
 import { PrismaObservationRepository } from '@/infrastructure/observation/prisma-observation-repository';
 import { createObservationPipelineBus } from '@/infrastructure/events/observation-pipeline-bus';
 import { prisma } from '@/lib/prisma';

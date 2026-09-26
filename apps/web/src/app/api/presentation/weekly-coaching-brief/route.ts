@@ -10,7 +10,7 @@ import { buildLearningFeedback } from '@/lib/decision-memory/learning-feedback';
 import { buildLearningFeedbackViewModel } from '@/lib/presentation/coaching/learning-feedback';
 import { buildDecisionSnapshotContext } from '@/lib/decision-memory/build-snapshot-context';
 import { getOrBuildAthleteSnapshot } from '@/lib/athlete-state/snapshot-service';
-import { computeTrainingDayId } from '@/lib/training/periodization/training-day';
+import { computeTrainingDayId } from '@sharpit/core/training/training-day';
 import { buildWeeklyCoachingBriefViewModel } from '@/lib/presentation/coaching/weekly-coaching-brief';
 import { loadDailyTrainingStressEntries } from '@/lib/training/pmc/pmc-server';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';

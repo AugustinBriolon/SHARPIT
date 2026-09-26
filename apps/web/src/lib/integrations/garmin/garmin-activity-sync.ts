@@ -1,5 +1,5 @@
 import { ActivityType, Prisma } from '@prisma/client';
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { syncSinceFromLastSync } from '@/lib/integrations/shared/sync-since';
 import { findMatchingActivity } from '@/lib/activity/list/activity-dedup';
@@ -33,7 +33,7 @@ import { observationEngine } from '@/lib/engines/observation-engine';
 import {
   garminActivityToSession,
   garminEvaluationToSubjective,
-} from '@/core/adapters/garmin-activity-adapter';
+} from '@/adapters/garmin-activity-adapter';
 
 /** Parallel per-activity fetch/eval — keep modest (shared Garmin client + rate limits). */
 export const GARMIN_ACTIVITY_CONCURRENCY = 4;

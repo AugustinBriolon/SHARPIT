@@ -5,7 +5,7 @@ import {
   sendMorningPushForAthlete,
   sendMorningVerdictPushes,
 } from './morning-push';
-import type { AthleteSnapshot } from '@/core/athlete-state/snapshot';
+import type { AthleteSnapshot } from '@/athlete-state/snapshot';
 import { prisma } from '@/lib/prisma';
 import * as apnsModule from '@/lib/push/apns';
 import * as snapshotRepo from '@/infrastructure/athlete-state/snapshot-repository';

@@ -13,7 +13,7 @@ import type {
   SessionPaceData,
   SessionPowerData,
   SportType,
-} from '@/core/observation';
+} from '@sharpit/core/observation';
 
 function manualActivityExternalId(activityId: string): string {
   return `manual:activity:${activityId}`;

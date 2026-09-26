@@ -1,5 +1,5 @@
 import { GoalKind, GoalPriority } from '@prisma/client';
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 import { computeGoalProgress, daysUntil } from '@/lib/goals/goals';
 import {
   formatGoalDisplayValue,

@@ -1,12 +1,12 @@
 import { format, parseISO, subDays } from 'date-fns';
-import { isSet } from '@/lib/util/value';
-import type { FuelFeatureSet } from '@/core/features/types';
+import { isSet } from '@sharpit/shared/value';
+import type { FuelFeatureSet } from '@sharpit/core/features/types';
 import type {
   NutritionDaySummary,
   NutritionGoalsProgress,
   NutritionFuelDensity,
   NutritionViewModel,
-} from '@/core/presentation/nutrition-view-model';
+} from '@/presentation/nutrition-view-model';
 import { featureEngine } from '@/lib/engines/feature-engine';
 import {
   getLiveNutrientGoals,

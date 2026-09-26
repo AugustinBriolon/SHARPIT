@@ -9,7 +9,7 @@
  */
 
 import type { PrismaClient } from '@prisma/client';
-import type { DigitalTwinRepository } from '@/core/digital-twin/repository';
+import type { DigitalTwinRepository } from '@sharpit/core/digital-twin/repository';
 import type {
   DigitalTwin,
   AthleteState,
@@ -19,11 +19,11 @@ import type {
   ReasoningState,
   PhysicalHealthState,
   EnvironmentalTwinState,
-} from '@/core/digital-twin/types';
+} from '@sharpit/core/digital-twin/types';
 import {
   deserializeEnvironmentalTwinMeta,
   serializeEnvironmentalTwinMeta,
-} from '@/core/inference/environment/serialize';
+} from '@sharpit/core/inference/environment/serialize';
 
 export class PrismaDigitalTwinRepository implements DigitalTwinRepository {
   constructor(private readonly prisma: PrismaClient) {}
@@ -317,7 +317,7 @@ export class PrismaDigitalTwinRepository implements DigitalTwinRepository {
     const conditions = Array.isArray(raw.conditions)
       ? (raw.conditions as Record<string, unknown>[]).map((c) => ({
           ...(c as Omit<
-            import('@/core/inference/physical-health/types').InferredConditionView,
+            import('@sharpit/core/inference/physical-health/types').InferredConditionView,
             'computedAt'
           >),
           computedAt: new Date(c.computedAt as string),

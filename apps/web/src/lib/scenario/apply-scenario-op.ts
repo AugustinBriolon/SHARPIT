@@ -4,14 +4,14 @@
  */
 
 import type { SessionIntensity } from '@prisma/client';
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 import {
   INTENSITY_REDUCTION_TSS_FACTOR,
   type ScenarioDefinition,
   type ScenarioKind,
-} from '@/core/scenario/types';
-import { trainingDayIdToDate } from '@/lib/training/periodization/training-day';
-import type { PlannedSessionExposureSetting } from '@/core/planned-session/types';
+} from '@sharpit/core/scenario/types';
+import { trainingDayIdToDate } from '@sharpit/core/training/training-day';
+import type { PlannedSessionExposureSetting } from '@sharpit/core/planned-session/types';
 
 export type ScenarioApplyUpdateData = {
   date?: Date;

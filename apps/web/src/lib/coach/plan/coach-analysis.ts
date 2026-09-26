@@ -1,5 +1,5 @@
 import { generateText, Output } from 'ai';
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 import { COACH_MODEL, coachAnalysisGatewayOptions } from '@/lib/ai';
 import { recordAiUsage } from '@/lib/ai/usage';
 import {

@@ -8,7 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import type { BodyMetricExplainerVm } from '@/core/presentation/body-view-model';
+import type { BodyMetricExplainerVm } from '@/presentation/body-view-model';
 import { CORPS_TONE_BADGE, CORPS_TONE_SCALE } from '@/lib/ui/metric-tone';
 import { cn } from '@/lib/utils';
 

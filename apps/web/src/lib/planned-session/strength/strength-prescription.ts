@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 import { resolveGarminExerciseMatch } from '@/lib/integrations/garmin/garmin-exercise-map';
 import {
   movementIntentSchema,

@@ -2,9 +2,9 @@
  * Assemble Science Sport reliability block for Today hero presentation.
  */
 
-import type { AthleteSnapshot } from '@/core/athlete-state/snapshot';
-import type { OverallVerdict } from '@/core/athlete-state/today-state';
-import type { PackTier } from '@/core/science/pack-tier';
+import type { AthleteSnapshot } from '@/athlete-state/snapshot';
+import type { OverallVerdict } from '@/athlete-state/today-state';
+import type { PackTier } from '@sharpit/core/science/pack-tier';
 import { resolveCode } from '@/lib/french';
 import { buildPackInputsFromSnapshot } from '@/lib/science/reliability/pack-inputs-from-snapshot';
 import {

@@ -3,19 +3,19 @@
  */
 
 import type { ActivityType, PlannedSession, SessionIntensity } from '@prisma/client';
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 import {
   buildForecastEnvironment,
   isEnvironmentApplicable,
   resolveEnvironmentalApplicability,
   type GeoLocation,
   type EnvironmentalDataCompleteness,
-} from '@/core/environment';
+} from '@sharpit/core/environment';
 import {
   buildPlannedSessionAdvisories,
   buildPlannedSessionPreparation,
-} from '@/core/decision/planned-session-advisory';
-import { buildEnvironmentalDecisionSnapshotFromParts } from '@/core/inference/environment/snapshot';
+} from '@sharpit/core/decision/planned-session-advisory';
+import { buildEnvironmentalDecisionSnapshotFromParts } from '@sharpit/core/inference/environment/snapshot';
 import type {
   PlannedSessionContext,
   PlannedSessionEnvironmentalProjection,
@@ -23,8 +23,8 @@ import type {
   PlannedSessionIntention,
   PlannedSessionLocationType,
   PlannedSessionWeatherSignals,
-} from '@/core/planned-session/types';
-import { defaultExposureForActivityType } from '@/core/planned-session/defaults';
+} from '@sharpit/core/planned-session/types';
+import { defaultExposureForActivityType } from '@sharpit/core/planned-session/defaults';
 
 function indoorFlagFromExposure(exposure: PlannedSessionIntention['exposure']): boolean | null {
   if (exposure === 'INDOOR') {
@@ -51,7 +51,7 @@ import { resolveAthleteGeoLocation } from '@/lib/environment/athlete-location';
 import { getActiveTravelContext } from '@/lib/travel-context/service';
 import { extractSessionWeatherSignals } from '@/lib/planned-session/forecast/weather-signals';
 import { prisma } from '@/lib/prisma';
-import { computeTrainingDayId } from '@/lib/training/periodization/training-day';
+import { computeTrainingDayId } from '@sharpit/core/training/training-day';
 import { fetchForecastPredictions } from '@/lib/planned-session/forecast/forecast-fetch';
 
 const CONTEXT_STALE_MS = 3 * 60 * 60 * 1000;

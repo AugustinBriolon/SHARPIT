@@ -6,7 +6,7 @@
  */
 
 import type { ActivityType, SessionIntensity } from '@prisma/client';
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 import type { OutcomeEvaluation } from './types';
 
 /** Below this sample count in a category, there's nothing honest to say about it yet. */

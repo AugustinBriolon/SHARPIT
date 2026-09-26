@@ -62,7 +62,7 @@ import {
 import { journalTrackableById } from '@/lib/journal/journal-trackables';
 import { fetchJournalDaySignals } from '@/lib/query/fetchers';
 import { queryKeys } from '@/lib/query/keys';
-import { trainingDayIdForNow } from '@/lib/training/periodization/training-day';
+import { trainingDayIdForNow } from '@sharpit/core/training/training-day';
 import {
   JOURNAL_RECOVERY_CALLOUT,
   isJournalFieldWeightedInRecoveryV1,

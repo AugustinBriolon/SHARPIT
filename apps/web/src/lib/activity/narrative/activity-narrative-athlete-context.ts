@@ -1,5 +1,5 @@
 import type { ActivityType } from '@prisma/client';
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 import { differenceInCalendarDays, format, startOfDay } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { pmcTsb, type PmcState } from '@/lib/training/pmc/pmc';

@@ -1,5 +1,5 @@
 import type { BriefingDayContext } from '@/lib/briefing/briefing-context';
-import { isSet } from '@/lib/util/value';
+import { isSet } from '@sharpit/shared/value';
 import type { CoachContext } from '@/lib/coach/context/coach-context';
 
 const SPORT_PATTERNS: Array<{ key: string; patterns: RegExp[] }> = [

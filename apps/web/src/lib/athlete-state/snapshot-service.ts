@@ -1,4 +1,4 @@
-import type { AthleteSnapshot, AthleteSnapshotBriefing } from '@/core/athlete-state/snapshot';
+import type { AthleteSnapshot, AthleteSnapshotBriefing } from '@/athlete-state/snapshot';
 import {
   buildAthleteSnapshot,
   type SnapshotBuildInput,

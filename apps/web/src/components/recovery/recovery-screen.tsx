@@ -10,7 +10,7 @@ import {
   useRecoveryViewModel,
 } from '@/hooks/use-presentation-view-model';
 import { recoveryLoadingShell } from '@/lib/presentation/shared/drill-down-loading-shells';
-import type { RecoveryViewModel } from '@/core/presentation/recovery-view-model';
+import type { RecoveryViewModel } from '@/presentation/recovery-view-model';
 
 export function RecoveryScreen({ backHref, backLabel }: { backHref?: string; backLabel?: string }) {
   const { date, isToday, maxDate, minDate, setDate, goToNextDay, goToPreviousDay } =
