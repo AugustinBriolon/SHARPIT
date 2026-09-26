@@ -13,6 +13,7 @@ describe('planEnvCopy', () => {
           type: 'encrypted',
           target: production,
           value: 'postgres://x',
+          decrypted: true,
         },
         { id: '2', key: 'COACH_MODEL', type: 'plain', target: production, value: 'model' },
       ],
@@ -28,7 +29,16 @@ describe('planEnvCopy', () => {
   it('keeps a multi-line value byte for byte', () => {
     const pem = '-----BEGIN PRIVATE KEY-----\nabc\n-----END PRIVATE KEY-----';
     const plan = planEnvCopy(
-      [{ id: '1', key: 'APNS_PRIVATE_KEY', type: 'encrypted', target: production, value: pem }],
+      [
+        {
+          id: '1',
+          key: 'APNS_PRIVATE_KEY',
+          type: 'encrypted',
+          target: production,
+          value: pem,
+          decrypted: true,
+        },
+      ],
       ['APNS_PRIVATE_KEY'],
       new Set(),
     );
@@ -40,7 +50,14 @@ describe('planEnvCopy', () => {
       [
         { id: '1', key: 'CLERK_SECRET_KEY', type: 'sensitive', target: production },
         { id: '2', key: 'PREVIEW_ONLY', type: 'encrypted', target: ['preview'], value: 'x' },
-        { id: '3', key: 'DIRECT_URL', type: 'encrypted', target: production, value: 'y' },
+        {
+          id: '3',
+          key: 'DIRECT_URL',
+          type: 'encrypted',
+          target: production,
+          value: 'y',
+          decrypted: true,
+        },
       ],
       ['CLERK_SECRET_KEY', 'PREVIEW_ONLY', 'DIRECT_URL', 'NOPE'],
       new Set(['DIRECT_URL']),
@@ -51,5 +68,24 @@ describe('planEnvCopy', () => {
       missing: ['PREVIEW_ONLY', 'NOPE'],
       present: ['DIRECT_URL'],
     });
+  });
+
+  it('never copies an encrypted value Vercel did not decrypt (its ciphertext)', () => {
+    const plan = planEnvCopy(
+      [
+        {
+          id: '1',
+          key: 'UPSTASH_REDIS_REST_URL',
+          type: 'encrypted',
+          target: production,
+          value: 'eyJ2IjoidjIi…ciphertext',
+          decrypted: false,
+        },
+      ],
+      ['UPSTASH_REDIS_REST_URL'],
+      new Set(),
+    );
+    expect(plan.copy).toEqual([]);
+    expect(plan.sensitive).toEqual(['UPSTASH_REDIS_REST_URL']);
   });
 });

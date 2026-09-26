@@ -5,13 +5,26 @@
  * Run it yourself — it moves secrets:
  *   node apps/api/scripts/copy-vercel-env.mjs sharpit sharpit-api NAME [NAME…]
  *
- * Variables Vercel stores as "sensitive" cannot be read back; they are listed so you add them
+ * Variables Vercel stores as "sensitive", or does not decrypt, cannot be read back; they are listed so you add them
  * by hand (`vercel env add <NAME> production` in apps/api).
  */
 import { execFileSync } from 'node:child_process';
 
 /**
- * @param {Array<{ key: string; type: string; target?: string[]; value?: string; id: string }>} sourceEnv
+ * A value is copied only when Vercel says it decrypted it: an encrypted variable it did not
+ * decrypt comes back as its ciphertext, which must never be written as the new value.
+ *
+ * @param {{ type: string; value?: string; decrypted?: boolean }} entry
+ */
+function isReadable(entry) {
+  if (typeof entry.value !== 'string') {
+    return false;
+  }
+  return entry.type === 'plain' || entry.decrypted === true;
+}
+
+/**
+ * @param {Array<{ key: string; type: string; target?: string[]; value?: string; decrypted?: boolean; id: string }>} sourceEnv
  * @param {string[]} names
  * @param {Set<string>} alreadyOnTarget
  */
@@ -28,7 +41,7 @@ export function planEnvCopy(sourceEnv, names, alreadyOnTarget) {
     );
     if (!entry) {
       plan.missing.push(name);
-    } else if (entry.type === 'sensitive' || typeof entry.value !== 'string') {
+    } else if (entry.type === 'sensitive' || !isReadable(entry)) {
       plan.sensitive.push(name);
     } else {
       plan.copy.push({
