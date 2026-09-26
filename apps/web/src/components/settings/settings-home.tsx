@@ -103,7 +103,7 @@ const GROUPS: SettingsGroup[] = [
         statusKey: 'appearance',
       },
       {
-        href: '/settings/appearance/expert-mode',
+        href: '/settings/personalization#densite',
         title: 'Mode Expert',
         description: 'Densité de lecture: révèle ou masque la couche technique.',
         icon: Microscope,

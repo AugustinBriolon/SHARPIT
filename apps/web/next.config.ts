@@ -84,6 +84,14 @@ const nextConfig: NextConfig = {
   },
   async redirects() {
     return [
+      // Legacy URLs kept as deep links — one line each, no page file (`lib/moi/paths.ts`).
+      ...[
+        ['/settings/privacy', '/settings/account#confidentialite'],
+        ['/settings/feedback', '/moi'],
+        ['/settings/appearance/expert-mode', '/settings/personalization#densite'],
+        // Old OAuth bounce: callbacks land on the integrations settings directly now.
+        ['/integrations/connected', '/settings/integrations'],
+      ].map(([source, destination]) => ({ source, destination, permanent: true })),
       // The project's own *.vercel.app hosts (renamed from `sharpit` to `sharpit-webapp`).
       ...['sharpit.vercel.app', 'sharpit-webapp.vercel.app'].map((host) => ({
         source: '/:path*',

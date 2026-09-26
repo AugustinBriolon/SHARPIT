@@ -6,8 +6,8 @@
  * Corps owns composition + suivi (living body signals).
  * Profil (`/settings/account`) owns identity + session + confidentialité (consents / export / delete).
  * Apparence owns theme. Personnalisation owns Mode Expert densite (`#densite`), data window, modules.
- * `/settings/appearance/expert-mode` redirects to Personnalisation.
- * `/settings/privacy` redirects to Profil `#confidentialite`.
+ * Legacy `/settings/appearance/expert-mode`, `/settings/privacy`, `/settings/feedback` are
+ * redirects in `apps/web/next.config.ts`.
  * Legal walls `/consent` `/privacy` `/terms` stay outside the shell.
  */
 

@@ -1760,19 +1760,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@langfuse/client@npm:^5.11.1":
-  version: 5.11.1
-  resolution: "@langfuse/client@npm:5.11.1"
-  dependencies:
-    "@langfuse/core": "npm:^5.11.1"
-    "@langfuse/tracing": "npm:^5.11.1"
-    mustache: "npm:^4.2.0"
-  peerDependencies:
-    "@opentelemetry/api": ^1.9.0
-  checksum: 10c0/22d47ad562c3a233ff4db1e9d18c5ee0ed1bfaa655723d1e507fb9235cdb7718f610104085bd171b03b573d98c4851e63a0ec5ab9a6ee66446c08979e99ccb1d
-  languageName: node
-  linkType: hard
-
 "@langfuse/core@npm:^5.11.1":
   version: 5.11.1
   resolution: "@langfuse/core@npm:5.11.1"
@@ -2100,7 +2087,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@opentelemetry/api@npm:1.9.1, @opentelemetry/api@npm:^1.3.0, @opentelemetry/api@npm:^1.9.1":
+"@opentelemetry/api@npm:1.9.1, @opentelemetry/api@npm:^1.3.0":
   version: 1.9.1
   resolution: "@opentelemetry/api@npm:1.9.1"
   checksum: 10c0/c608485fc8b5a91e1f7e05e843b45b509307456b31cd2ad365933d90813e40ebfedf179f1451c762037e82d7c76aa8500e95d2da3609f640a1206cde5322cd14
@@ -2128,7 +2115,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@opentelemetry/core@npm:2.11.0, @opentelemetry/core@npm:^2.11.0":
+"@opentelemetry/core@npm:2.11.0":
   version: 2.11.0
   resolution: "@opentelemetry/core@npm:2.11.0"
   dependencies:
@@ -2248,7 +2235,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@opentelemetry/exporter-trace-otlp-http@npm:0.222.0, @opentelemetry/exporter-trace-otlp-http@npm:^0.222.0":
+"@opentelemetry/exporter-trace-otlp-http@npm:0.222.0":
   version: 0.222.0
   resolution: "@opentelemetry/exporter-trace-otlp-http@npm:0.222.0"
   dependencies:
@@ -2440,7 +2427,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@opentelemetry/sdk-trace-base@npm:2.11.0, @opentelemetry/sdk-trace-base@npm:^2.11.0":
+"@opentelemetry/sdk-trace-base@npm:2.11.0":
   version: 2.11.0
   resolution: "@opentelemetry/sdk-trace-base@npm:2.11.0"
   dependencies:
@@ -3090,25 +3077,13 @@ __metadata:
   resolution: "@sharpit/web@workspace:apps/web"
   dependencies:
     "@ai-sdk/react": "npm:4.0.35"
-    "@apple/app-store-server-library": "npm:3.1.0"
     "@base-ui/react": "npm:^1.6.0"
     "@clerk/localizations": "npm:^4.11.0"
     "@clerk/nextjs": "npm:^7.5.9"
     "@clerk/themes": "npm:2.4.57"
-    "@flow-js/garmin-connect": "npm:^1.6.17"
     "@hookform/resolvers": "npm:^5.4.0"
-    "@langfuse/client": "npm:^5.11.1"
-    "@langfuse/otel": "npm:^5.11.1"
-    "@langfuse/tracing": "npm:^5.11.1"
-    "@langfuse/vercel-ai-sdk": "npm:^5.11.1"
     "@next/playwright": "npm:16.3.0"
-    "@opentelemetry/api": "npm:^1.9.1"
-    "@opentelemetry/core": "npm:^2.11.0"
-    "@opentelemetry/exporter-trace-otlp-http": "npm:^0.222.0"
-    "@opentelemetry/sdk-node": "npm:^0.222.0"
-    "@opentelemetry/sdk-trace-base": "npm:^2.11.0"
     "@playwright/test": "npm:^1.51.1"
-    "@prisma/adapter-neon": "npm:^6.19.3"
     "@prisma/client": "npm:^6.19.3"
     "@serwist/cli": "npm:^9.5.11"
     "@serwist/next": "npm:^9.5.11"
@@ -3123,8 +3098,6 @@ __metadata:
     "@types/node": "npm:^20"
     "@types/react": "npm:^19"
     "@types/react-dom": "npm:^19"
-    "@upstash/ratelimit": "npm:^2.0.8"
-    "@upstash/redis": "npm:^1.38.2"
     ai: "npm:7.0.32"
     class-variance-authority: "npm:^0.7.1"
     clsx: "npm:^2.1.1"
@@ -9510,15 +9483,6 @@ __metadata:
   version: 1.0.0
   resolution: "murmurhash-js@npm:1.0.0"
   checksum: 10c0/f8569e16db0ba6f953bf88286e97cf737f1efe97b224e537c9308566ab963a067c7eca5b636fb473d6413c4cc3b79690b78ff7ab0f290e75db91c6fde0df92b4
-  languageName: node
-  linkType: hard
-
-"mustache@npm:^4.2.0":
-  version: 4.2.0
-  resolution: "mustache@npm:4.2.0"
-  bin:
-    mustache: bin/mustache
-  checksum: 10c0/1f8197e8a19e63645a786581d58c41df7853da26702dbc005193e2437c98ca49b255345c173d50c08fe4b4dbb363e53cb655ecc570791f8deb09887248dd34a2
   languageName: node
   linkType: hard
 

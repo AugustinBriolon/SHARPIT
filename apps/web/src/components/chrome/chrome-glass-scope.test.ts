@@ -27,7 +27,6 @@ const FORBIDDEN_DIR_PREFIXES = [
   'src/app/privacy/',
   'src/app/terms/',
   'src/app/welcome/',
-  'src/app/(app)/settings/privacy/',
   'src/components/privacy/',
   'src/components/teaser/',
 ];

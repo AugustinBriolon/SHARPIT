@@ -106,7 +106,6 @@ describe('route-registry', () => {
       expect(resolveRouteFallback('/settings/integrations')).toEqual(MOI);
       expect(resolveRouteFallback('/settings/equipment')).toEqual(MOI);
       expect(resolveRouteFallback('/settings/privacy')).toEqual(MOI);
-      expect(resolveRouteFallback('/settings/appearance/expert-mode')).toEqual(MOI);
     });
 
     it('sends remaining /today drill-downs and nutrition back to Résumé', () => {
