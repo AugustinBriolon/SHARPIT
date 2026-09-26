@@ -1,6 +1,6 @@
 # Monorepo phase 2 — `packages/db`, `packages/server`, `apps/api` on its own Vercel project
 
-**Status:** Approved 2026-09-26 — steps 2a and 2b done · **Date:** 2026-09-26 · **Parent:** [ADR-048](../adr/ADR-048-web-repository-becomes-a-monorepo.md)
+**Status:** Approved 2026-09-26 — steps 2a, 2b and 2c-i done · **Date:** 2026-09-26 · **Parent:** [ADR-048](../adr/ADR-048-web-repository-becomes-a-monorepo.md)
 
 Goal: `api.sharpit.app` served by a new Vercel project `sharpit-api` built from `apps/api`, holding the
 server secrets, with its own crons — while the web keeps working unchanged until phase 3. The iOS app
@@ -74,6 +74,12 @@ public URL before step 2f.
 - Route handlers move to `packages/server/src/handlers/<same path>`; the web's `route.ts` files keep their
   segment config and re-export the handlers. Route tests move with the handlers.
 - The web adds `@sharpit/server` to `transpilePackages`.
+- **2c-i done (2026-09-26):** the six server roots moved (1,085 files); `@/lib/…` → `@sharpit/server/lib/…` in
+  1,631 files, the package importing itself by name so its internal relative imports did not change. Tests that
+  read app files (routes, pages, `globals.css`, `proxy.ts`, scripts) moved to `apps/web/src/contracts/`;
+  `load-legal-page` stayed in the app (`src/legal/`). The app scripts' relative `../src/lib/…` imports — one
+  of them broken since 2b, unchecked because scripts are not typechecked — now use the packages.
+- **2c-ii (next):** route handlers into `packages/server/src/handlers/`.
 - **Exit:** identical behaviour; every test green in its new workspace.
 
 ### 2d — `apps/api` (≈ ½ day)

@@ -31,7 +31,7 @@ Performance operating system for endurance athletes — training load management
 ## Repository layout
 
 The repository is a Yarn workspaces + Turborepo monorepo ([ADR-048](docs/adr/ADR-048-web-repository-becomes-a-monorepo.md)).
-The Next.js app lives in `apps/web`; every `src/…` path below is relative to it. Root commands
+The Next.js app lives in `apps/web`; the server code it runs lives in `packages/server` (`@sharpit/server/lib/…`, formerly `@/lib/…`). `src/lib/…` paths below are relative to `packages/server`, other `src/…` paths to `apps/web`. Root commands
 (`yarn dev`, `yarn build`, `yarn test`, `yarn typecheck`, `yarn lint`) run through Turbo; app-only
 scripts run with `yarn web <script>`. Repository documentation (`docs/`, `knowledge/`) stays at the root.
 
@@ -40,6 +40,7 @@ apps/web/                Next.js app (src/, prisma/, scripts/, e2e/, content/leg
 packages/core/           Pure domain: observation, features, inference, digital twin, decision… (@sharpit/core)
 packages/shared/         Framework-free helpers shared by every workspace (@sharpit/shared)
 packages/db/             Prisma schema, migrations and client (@sharpit/db/client)
+packages/server/         Server application code: lib, infrastructure, adapters, presentation, athlete-state, data (@sharpit/server)
 packages/eslint-config/  The lint rules every workspace extends
 docs/                    ADRs, architecture, product and design documentation
 knowledge/               Domain and science notes
