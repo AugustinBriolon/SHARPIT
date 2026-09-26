@@ -2,23 +2,51 @@ import { type NextRequest, NextResponse } from 'next/server';
 
 /**
  * `api.sharpit.app` is the JSON + Bearer host of the split (web. = thin UI, apex = AASA,
- * `/connect/*`, landing). While one deployment still serves every host, these guards keep
- * `api.` to its contract: JSON only, Clerk Bearer only, no cookies, no HTML, CORS for the
- * thin web only. Other hosts are untouched.
+ * `/connect/*`, landing). These guards keep `api.` to its contract: JSON only, Clerk Bearer
+ * only, no cookies, no HTML, CORS for Sharpit's own web pages only.
  */
 export const API_HOST = 'api.sharpit.app';
 
-/** The only browser origin allowed to call `api.` — never `*`. */
+/** The thin web — the browser origin `api.` is built for. */
 export const API_ALLOWED_ORIGIN = 'https://web.sharpit.app';
+
+/**
+ * Browser origins allowed to call `api.` — never `*`. The apex stays listed while the web
+ * project still serves signed-in pages there (the Garmin handoff, ADR-048 phase 3); the
+ * local web app only in development.
+ */
+const PRODUCTION_ORIGINS = [API_ALLOWED_ORIGIN, 'https://sharpit.app'];
+const DEVELOPMENT_ORIGINS = ['http://localhost:3000', 'http://127.0.0.1:3000'];
+
+export function apiAllowedOrigins(): readonly string[] {
+  return process.env.NODE_ENV === 'development'
+    ? [...PRODUCTION_ORIGINS, ...DEVELOPMENT_ORIGINS]
+    : PRODUCTION_ORIGINS;
+}
 
 /** Vercel cron invocations, authenticated by `CRON_SECRET` in their route, never by Clerk. */
 const CRON_PATH = /^\/api\/cron\/[a-z-]+$/;
 
-/** What `api.` serves: the native contract, the coach SSE stream kept off `/api/v1`, and crons. */
-const API_HOST_PATHS = [/^\/api\/v1\//, /^\/api\/coach\/chat$/, CRON_PATH];
+/**
+ * Called by a third party that carries no Bearer, and authenticated in the route itself: an
+ * OAuth provider sending the browser back (signed `state`), Apple's server notifications
+ * (signed payload).
+ */
+const PUBLIC_PATHS = [
+  /^\/api\/(strava|withings|google)\/callback$/,
+  /^\/api\/billing\/apple\/notifications$/,
+];
+
+/** What `api.` serves: route handlers under `/api/` — never a page. */
+const API_HOST_PATH = /^\/api\//;
 
 export function isCronPath(pathname: string): boolean {
   return CRON_PATH.test(pathname);
+}
+
+/** No Bearer expected: the route authenticates the caller itself (crons included). */
+export function isSelfAuthenticatedPath(pathname: string): boolean {
+  return isCronPath(pathname) || PUBLIC_PATHS.some((pattern) => pattern.test(pathname));
 }
 
 const ALLOWED_METHODS = 'GET, POST, PUT, PATCH, DELETE, OPTIONS';
@@ -29,7 +57,7 @@ export function isApiHostRequest(req: NextRequest): boolean {
 }
 
 export function isApiHostPath(pathname: string): boolean {
-  return API_HOST_PATHS.some((pattern) => pattern.test(pathname));
+  return API_HOST_PATH.test(pathname);
 }
 
 export function hasBearer(req: NextRequest): boolean {
@@ -37,7 +65,8 @@ export function hasBearer(req: NextRequest): boolean {
 }
 
 function allowedOrigin(req: NextRequest): string | null {
-  return req.headers.get('origin') === API_ALLOWED_ORIGIN ? API_ALLOWED_ORIGIN : null;
+  const origin = req.headers.get('origin');
+  return origin && apiAllowedOrigins().includes(origin) ? origin : null;
 }
 
 /**
@@ -78,8 +107,8 @@ export function apiHostPreflight(req: NextRequest): NextResponse {
 }
 
 /**
- * Everything that can be answered before Clerk runs: unknown paths, preflights and
- * requests with no Bearer at all. Null means "authenticate it".
+ * Everything that can be answered before Clerk runs: pages, preflights and requests with no
+ * Bearer at all (except the public callbacks). Null means "let it through to authentication".
  */
 export function screenApiHostRequest(req: NextRequest): NextResponse | null {
   if (!isApiHostPath(req.nextUrl.pathname)) {
@@ -87,6 +116,9 @@ export function screenApiHostRequest(req: NextRequest): NextResponse | null {
   }
   if (req.method === 'OPTIONS') {
     return apiHostPreflight(req);
+  }
+  if (PUBLIC_PATHS.some((pattern) => pattern.test(req.nextUrl.pathname))) {
+    return null;
   }
   if (!hasBearer(req)) {
     return apiHostError(req, 401, 'Bearer token required');

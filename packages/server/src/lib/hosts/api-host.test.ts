@@ -1,8 +1,10 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { NextRequest, NextResponse } from 'next/server';
 import {
   API_ALLOWED_ORIGIN,
+  apiAllowedOrigins,
   isApiHostPath,
+  isSelfAuthenticatedPath,
   isApiHostRequest,
   screenApiHostRequest,
   sealApiHostResponse,
@@ -19,19 +21,24 @@ describe('api host guards', () => {
     expect(isApiHostRequest(request('https://web.sharpit.app/api/v1/today'))).toBe(false);
   });
 
-  it('serves the native contract, the coach stream and crons, nothing else', () => {
+  it('serves route handlers under /api/, never a page', () => {
     expect(isApiHostPath('/api/v1/today')).toBe(true);
     expect(isApiHostPath('/api/coach/chat')).toBe(true);
-    expect(isApiHostPath('/api/coach/plan')).toBe(false);
+    expect(isApiHostPath('/api/presentation/today')).toBe(true);
     expect(isApiHostPath('/api/cron/sync')).toBe(true);
-    expect(isApiHostPath('/api/cron/sync/extra')).toBe(false);
     expect(isApiHostPath('/.well-known/apple-app-site-association')).toBe(false);
     expect(isApiHostPath('/connect/garmin')).toBe(false);
     expect(isApiHostPath('/')).toBe(false);
   });
 
   it('answers pages and apex-only routes with a JSON 404, never HTML', async () => {
-    for (const path of ['/', '/welcome', '/sign-in', '/.well-known/apple-app-site-association']) {
+    for (const path of [
+      '/',
+      '/welcome',
+      '/sign-in',
+      '/.well-known/apple-app-site-association',
+      '/connect/garmin/start',
+    ]) {
       const response = screenApiHostRequest(request(`https://api.sharpit.app${path}`));
       expect(response?.status).toBe(404);
       expect(response?.headers.get('content-type')).toContain('application/json');
@@ -47,11 +54,32 @@ describe('api host guards', () => {
     expect(response?.headers.get('cache-control')).toBe('private, no-store');
   });
 
+  it('lets provider callbacks and App Store notifications through without a Bearer', () => {
+    for (const path of [
+      '/api/strava/callback',
+      '/api/withings/callback',
+      '/api/google/callback',
+      '/api/billing/apple/notifications',
+    ]) {
+      expect(isSelfAuthenticatedPath(path)).toBe(true);
+      expect(screenApiHostRequest(request(`https://api.sharpit.app${path}`))).toBeNull();
+    }
+    expect(isSelfAuthenticatedPath('/api/strava/connect')).toBe(false);
+    expect(isSelfAuthenticatedPath('/api/strava/callback/extra')).toBe(false);
+  });
+
   it('lets a Bearer request through to authentication', () => {
     const response = screenApiHostRequest(
       request('https://api.sharpit.app/api/v1/today', { headers: { authorization: 'Bearer abc' } }),
     );
     expect(response).toBeNull();
+  });
+
+  it('allows the apex while it serves signed-in pages, and the local web in development only', () => {
+    expect(apiAllowedOrigins()).toEqual([API_ALLOWED_ORIGIN, 'https://sharpit.app']);
+    vi.stubEnv('NODE_ENV', 'development');
+    expect(apiAllowedOrigins()).toContain('http://localhost:3000');
+    vi.unstubAllEnvs();
   });
 
   it('answers preflights for the thin web only', () => {

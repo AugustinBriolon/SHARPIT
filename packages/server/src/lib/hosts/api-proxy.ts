@@ -2,7 +2,7 @@ import { type NextFetchEvent, type NextRequest, NextResponse } from 'next/server
 import { clerkMiddleware } from '@clerk/nextjs/server';
 import {
   apiHostError,
-  isCronPath,
+  isSelfAuthenticatedPath,
   screenApiHostRequest,
   sealApiHostResponse,
 } from '@sharpit/server/lib/hosts/api-host';
@@ -43,18 +43,18 @@ function asNextResponse(response: Response): NextResponse {
 
 /**
  * The `api.` contract as a proxy (ADR-048): JSON only, Bearer only, no cookie, no cached
- * authenticated answer, CORS for the thin web only. `apps/api` runs it on every request; the web
- * app runs it for the `api.sharpit.app` host until that host leaves it.
+ * authenticated answer, CORS for Sharpit's web pages only. `apps/api` runs it on every request.
  *
- * Crons carry `Bearer <CRON_SECRET>`, which is not a Clerk token: they skip Clerk and their
- * route verifies the secret (and refuses everything when it is not configured).
+ * Crons carry `Bearer <CRON_SECRET>`, which is not a Clerk token, and OAuth callbacks and App
+ * Store notifications carry none: they skip Clerk and their route authenticates the caller
+ * (cron secret, signed `state`, signed payload) and refuses everything it cannot verify.
  */
 export async function apiProxy(req: NextRequest, event: NextFetchEvent): Promise<NextResponse> {
   const screened = screenApiHostRequest(req);
   if (screened) {
     return screened;
   }
-  if (isCronPath(req.nextUrl.pathname)) {
+  if (isSelfAuthenticatedPath(req.nextUrl.pathname)) {
     return sealApiHostResponse(req, NextResponse.next());
   }
   const response = (await bearerProxy(req, event)) ?? NextResponse.next();

@@ -63,6 +63,13 @@ describe('apiProxy', () => {
     expect(response.status).toBe(401);
   });
 
+  it('lets a provider callback reach its route without asking Clerk', async () => {
+    const response = await run('https://api.sharpit.app/api/strava/callback?code=c&state=s');
+    expect(response.status).toBe(200);
+    expect(state.authCalls).toBe(0);
+    expect(response.headers.get('cache-control')).toBe('private, no-store');
+  });
+
   it('serves no other path', async () => {
     const response = await run('https://api.sharpit.app/api/cron/sync/../../../welcome', {
       authorization: 'Bearer t',
