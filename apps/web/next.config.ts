@@ -84,17 +84,13 @@ const nextConfig: NextConfig = {
   },
   async redirects() {
     return [
-      {
+      // The project's own *.vercel.app hosts (renamed from `sharpit` to `sharpit-webapp`).
+      ...['sharpit.vercel.app', 'sharpit-webapp.vercel.app'].map((host) => ({
         source: '/:path*',
-        has: [
-          {
-            type: 'host',
-            value: 'sharpit.vercel.app',
-          },
-        ],
+        has: [{ type: 'host' as const, value: host }],
         destination: 'https://sharpit.app/:path*',
         permanent: true,
-      },
+      })),
     ];
   },
 };

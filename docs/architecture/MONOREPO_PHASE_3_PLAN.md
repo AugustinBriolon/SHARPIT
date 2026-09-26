@@ -3,7 +3,7 @@
 **Status:** Accepted — 3a–3d shipped 2026-09-26; 3e waits for the manual actions (§4), 3f for the demo decision (§6) · **Date:** 2026-09-26 · **Parent:** [ADR-048](../adr/ADR-048-web-repository-becomes-a-monorepo.md)
 
 Goal: `web.sharpit.app` (and the apex pages the web project still serves) read and write everything through
-`api.sharpit.app` with a Clerk Bearer. `apps/web` stops depending on the database, and the `sharpit` Vercel project
+`api.sharpit.app` with a Clerk Bearer. `apps/web` stops depending on the database, and the `sharpit-webapp` Vercel project
 keeps only Clerk keys and public configuration. `sharpit-api` becomes the only holder of server secrets and the only
 migration owner. The iOS app sees no change. Every public URL and the `/connect/*` + AASA contract on the apex stay
 as they are.
@@ -19,7 +19,7 @@ as they are.
 | Of the 269 `@sharpit/server/*` modules the web UI imports, 250 are pure (formatting, view models, labels; Prisma **enum values** only, which are browser-safe). 19 reach the database client or `server-only`.                                                                                                                                          | No new package is needed. A contract test forbids the 19 (and anything that reaches `@sharpit/db/client`) from `apps/web`; the pure modules stay where they are. |
 | 23 non-API web files reach those 19 modules: 9 pages (`activite/[id]`, `activite/[id]/edit`, `activite/sejours/[id]`, `coach`, `journal/analyses`, `moi/calibration`, `settings/account`, `settings/equipment`, `admin`), `onboarding/page`, 4 route handlers (`/start`, `/demo`, `/integrations/connected`, `/connect/garmin/start`) and 9 components. | Each one switches to a server-side `api.` call (`auth().getToken()`) or to the client fetchers. Listed one by one in step 3c.                                    |
 | OAuth connects (Strava, Withings, Google, MyFitnessPal) keep their CSRF `state` in a cookie on the web origin and receive the provider callback on the web origin. A browser navigation cannot carry a Bearer, and `api.` never sets cookies.                                                                                                           | Connect and callback move to `api.` with a **signed `state`** (HMAC, athlete id + expiry — the Garmin SSO state already works this way). Redirect URIs change.   |
-| `/api/billing/apple/notifications` is registered in App Store Connect on the apex. Migrations run in the `sharpit` build.                                                                                                                                                                                                                               | Both move to `sharpit-api`; App Store Connect gets the new URL (you change it).                                                                                  |
+| `/api/billing/apple/notifications` is registered in App Store Connect on the apex. Migrations run in the `sharpit-webapp` build.                                                                                                                                                                                                                        | Both move to `sharpit-api`; App Store Connect gets the new URL (you change it).                                                                                  |
 
 ---
 
@@ -64,12 +64,12 @@ Each step is its own commit (or small branch) → `main`, with `yarn test`, `yar
 
 ### 3d — Moves on `sharpit-api`
 
-- `prisma migrate deploy` moves to the `sharpit-api` build (removed from `sharpit` in the same commit).
+- `prisma migrate deploy` moves to the `sharpit-api` build (removed from `sharpit-webapp` in the same commit).
 - App Store notifications served on `api.`; you change the URL in App Store Connect (production + sandbox); the old apex route stays one week, then goes.
 
 ### 3e — Cutover
 
-- Set `NEXT_PUBLIC_API_ORIGIN=https://api.sharpit.app` on `sharpit` (production), redeploy.
+- Set `NEXT_PUBLIC_API_ORIGIN=https://api.sharpit.app` on `sharpit-webapp` (production), redeploy.
 - Checks: must-private 6/6, api-host smoke, web Today / coach / a Strava connect / Garmin connect from iOS; Today first paint compared with before (decision 6).
 - Rollback: unset, redeploy.
 
@@ -77,7 +77,7 @@ Each step is its own commit (or small branch) → `main`, with `yarn test`, `yar
 
 - Delete `apps/web/src/app/api/**` (except what the apex must keep: AASA, `/connect/*`), `@sharpit/db` and the Prisma scripts from `apps/web`.
 - Lint/contract: `@sharpit/db` and `@prisma/client` runtime imports forbidden under `apps/web`.
-- Remove from `sharpit`: `DATABASE_URL`, `DIRECT_URL`, `SECRET_ENCRYPTION_KEY`, `AI_GATEWAY_API_KEY`, `COACH_MODEL`, `LANGFUSE_*`, `UPSTASH_*`, `GOOGLE_*`, `WITHINGS_*`, `STRAVA_*`, `MYFITNESSPAL_*`, `APPLE_TEAM_ID`, `SHARPIT_DEFAULT_*`, `FEATURE_ENGINE_ENABLED`, `ADMIN_EMAILS`. Stays: Clerk keys, `NEXT_PUBLIC_*`.
+- Remove from `sharpit-webapp`: `DATABASE_URL`, `DIRECT_URL`, `SECRET_ENCRYPTION_KEY`, `AI_GATEWAY_API_KEY`, `COACH_MODEL`, `LANGFUSE_*`, `UPSTASH_*`, `GOOGLE_*`, `WITHINGS_*`, `STRAVA_*`, `MYFITNESSPAL_*`, `APPLE_TEAM_ID`, `SHARPIT_DEFAULT_*`, `FEATURE_ENGINE_ENABLED`, `ADMIN_EMAILS`. Stays: Clerk keys, `NEXT_PUBLIC_*`.
 - ADR-048: phase 3 done; `HOSTS_INVENTORY.md`, `HOST_SPLIT_RUNBOOK.md`, README updated.
 
 ---

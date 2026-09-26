@@ -1,7 +1,11 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
-function vercelConfig(app: 'api' | 'web'): { buildCommand?: string; functions?: object } {
+function vercelConfig(app: 'api' | 'web'): {
+  buildCommand?: string;
+  functions?: object;
+  ignoreCommand?: string;
+} {
   const path = app === 'api' ? 'vercel.json' : '../web/vercel.json';
   return JSON.parse(readFileSync(path, 'utf8')) as { buildCommand?: string };
 }
@@ -18,5 +22,11 @@ describe('migration owner', () => {
 
   it('api. gives the long provider routes the durations the web gave them', () => {
     expect(vercelConfig('api').functions).toMatchObject(vercelConfig('web').functions ?? {});
+  });
+
+  it('each project rebuilds only for its own app, the packages and the root manifests', () => {
+    const shared = 'packages,package.json,yarn.lock,turbo.json';
+    expect(vercelConfig('api').ignoreCommand).toContain(`--scope apps/api,${shared}`);
+    expect(vercelConfig('web').ignoreCommand).toContain(`--scope apps/web,${shared}`);
   });
 });

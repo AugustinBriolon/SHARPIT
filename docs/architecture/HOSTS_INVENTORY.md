@@ -21,8 +21,8 @@ Re-run `yarn smoke:must-private https://sharpit.app https://web.sharpit.app` aft
 
 ## 2. Hosts
 
-Since 2026-09-26, `api.sharpit.app` belongs to project `sharpit-api` (`apps/api`, region `lhr1`); `sharpit.app`, `www.` and `web.` stay on `sharpit` (`apps/web`, `lhr1`).
-`sharpit.vercel.app` redirects to `https://sharpit.app` (`next.config.ts`).
+Since 2026-09-26, `api.sharpit.app` belongs to project `sharpit-api` (`apps/api`, region `lhr1`); `sharpit.app`, `www.` and `web.` stay on `sharpit-webapp` (`apps/web`, `lhr1`; named `sharpit` until 2026-09-26, same project id).
+`sharpit-webapp.vercel.app` (and the former `sharpit.vercel.app`) redirect to `https://sharpit.app` (`next.config.ts`).
 
 | Route                                     | `sharpit.app`                            | `web.sharpit.app` | `api.sharpit.app` | Target                                   |
 | ----------------------------------------- | ---------------------------------------- | ----------------- | ----------------- | ---------------------------------------- |
@@ -50,7 +50,7 @@ Since 2026-09-26, `api.sharpit.app` belongs to project `sharpit-api` (`apps/api`
 
 ---
 
-## 4. Environment variables (Vercel project `sharpit`)
+## 4. Environment variables (Vercel project `sharpit-webapp`)
 
 | Name                                                                                   | Environments        | Class           | Used by                 |
 | -------------------------------------------------------------------------------------- | ------------------- | --------------- | ----------------------- |
