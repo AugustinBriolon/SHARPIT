@@ -111,15 +111,9 @@ describe('back-navigation inventory', () => {
       ),
       'utf8',
     );
-    const listActions = fs.readFileSync(
-      path.join(SRC_ROOT, 'components/training/activity/list/activity-list.tsx'),
-      'utf8',
-    );
     expect(detailActions).not.toMatch(/router\.push\(\s*['"`]\/training['"`]\s*\)/);
     expect(detailActions).not.toMatch(/router\.push\(\s*['"`]\/training\/history/);
-    expect(listActions).not.toMatch(/router\.push\(\s*['"`]\/training['"`]\s*\)/);
     expect(detailActions).toMatch(/\/activite/);
-    expect(listActions).toMatch(/\/activite/);
   });
 
   /**

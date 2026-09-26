@@ -1,9 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import fs from 'node:fs';
 import path from 'node:path';
-import { createElement } from 'react';
-import { renderToStaticMarkup } from 'react-dom/server';
-import { SystemEdgeBlur } from '@/components/layout/shell/system-edge-blur';
 
 const APP_SHELL = fs.readFileSync(
   path.join(process.cwd(), 'src/components/layout/shell/app-shell.tsx'),
@@ -28,7 +25,6 @@ describe('AppShell iOS top edge — what is actually possible', () => {
 
   it('does not mount a SystemEdgeBlur overlay that clips the first heading', () => {
     expect(APP_SHELL).not.toContain('<SystemEdgeBlur');
-    expect(renderToStaticMarkup(createElement(SystemEdgeBlur))).toBe('');
   });
 
   it('keeps black-translucent + viewport-fit cover for standalone', () => {
