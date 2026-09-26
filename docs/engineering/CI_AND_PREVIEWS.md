@@ -13,7 +13,7 @@ Three Vercel projects build from this repository: `sharpit-webapp` (`apps/web`),
   [`scripts/ci/affected-apps.mjs`](../../scripts/ci/affected-apps.mjs) lists the apps whose scope changed and the
   workflow calls those projects' Deploy Hooks (secrets `VERCEL_DEPLOY_HOOK_WEB`, `_API`, `_HUB`). A docs-only push
   deploys nothing. Manual run: _Actions → Deploy → Run workflow_ with the apps to deploy.
-- **Vercel's own Git deployments** are turned off once the hooks exist (`git.deploymentEnabled: false` in each
+- **Vercel's own Git deployments** are off since 2026-09-27 (`git.deploymentEnabled: false` in each
   `vercel.json`), so a push creates no deployment at all on the projects it does not touch, and branches build no
   preview.
 - **`ignoreCommand`** stays as a second guard: [`scripts/ci/vercel-ignore-build.mjs`](../../scripts/ci/vercel-ignore-build.mjs)
