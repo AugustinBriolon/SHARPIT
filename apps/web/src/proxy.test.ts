@@ -30,17 +30,6 @@ vi.mock('@clerk/nextjs/server', async (importOriginal) => {
   };
 });
 
-vi.mock('@sharpit/server/lib/rate-limit', () => ({
-  checkRateLimit: vi.fn().mockResolvedValue({ ok: true }),
-  rateLimiters: { apiGeneral: {} },
-  rateLimitResponseBody: vi.fn(),
-}));
-
-vi.mock('@sharpit/server/lib/demo/demo-identity', async (importOriginal) => ({
-  ...(await importOriginal<object>()),
-  isDemoClerkUser: async (userId: string) => userId === 'user_demo',
-}));
-
 vi.mock('@sharpit/server/lib/dev/dev-auth', () => ({ isDevClerkBypass: () => false }));
 
 async function run(url: string, cookie?: string, method = 'GET') {
@@ -104,29 +93,12 @@ describe('proxy', () => {
   it('keeps the AASA and the Garmin callback public', async () => {
     await run('https://sharpit.app/.well-known/apple-app-site-association');
     await run('https://sharpit.app/connect/garmin/callback?garmin=connected');
-    await run('https://sharpit.app/api/billing/apple/notifications');
     expect(state.protect).not.toHaveBeenCalled();
   });
 
   it('no longer lets the old demo cookie in without a session', async () => {
     await run('https://sharpit.app/settings', 'sharpit_demo=1');
     expect(state.protect).toHaveBeenCalled();
-  });
-
-  it('lets the demo account read but never write', async () => {
-    state.userId = 'user_demo';
-    const read = await run('https://sharpit.app/api/goals');
-    const write = await run('https://sharpit.app/api/goals', undefined, 'POST');
-    const connect = await run('https://sharpit.app/api/strava/connect');
-
-    expect(read.status).toBe(200);
-    expect(write.status).toBe(403);
-    expect(connect.status).toBe(403);
-  });
-
-  it('lets a real athlete write', async () => {
-    state.userId = 'user_real';
-    expect((await run('https://sharpit.app/api/goals', undefined, 'POST')).status).toBe(200);
   });
 
   it('points auth.protect at the app’s own sign-in pages', async () => {

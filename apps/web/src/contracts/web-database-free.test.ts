@@ -5,8 +5,7 @@ import { describe, expect, it } from 'vitest';
 /**
  * ADR-048 phase 3f: the web reads and writes through `api.` only. This follows every
  * `@sharpit/server` import of the web app (transitively, type-only imports excluded) and
- * fails on any web file (its own `/api` routes aside, until they go) that reaches the database
- * client.
+ * fails on any web file that reaches the database client.
  */
 const WEB_SRC = 'src';
 const SERVER_SRC = join('..', '..', 'packages', 'server', 'src');
@@ -22,7 +21,7 @@ function sourceFiles(dir: string): string[] {
   return readdirSync(dir).flatMap((entry) => {
     const path = join(dir, entry);
     if (statSync(path).isDirectory()) {
-      return entry === 'api' && dir.endsWith(join('src', 'app')) ? [] : sourceFiles(path);
+      return sourceFiles(path);
     }
     return /\.tsx?$/.test(entry) && !/\.test\.tsx?$/.test(entry) ? [path] : [];
   });
@@ -82,5 +81,12 @@ describe('web without a database', () => {
 
   it('no web page, component or route reaches the database', () => {
     expect(offenders).toEqual([]);
+  });
+
+  it('does not even depend on the database package', () => {
+    const manifest = JSON.parse(readFileSync('package.json', 'utf8')) as {
+      dependencies?: Record<string, string>;
+    };
+    expect(manifest.dependencies).not.toHaveProperty('@sharpit/db');
   });
 });

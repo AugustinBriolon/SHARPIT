@@ -71,7 +71,7 @@ function GarminSignInFrame({
 
 /**
  * Native Garmin handoff, step 3 — Garmin's embedded sign-in. The ticket it posts back is
- * exchanged by `/api/garmin/sso-callback`, which checks the signed state cookie; every
+ * exchanged by `/api/garmin/sso-callback` on `api.` with the signed state this page carries; every
  * outcome then lands on the callback URL.
  */
 export function ConnectGarminAuthorize({ state }: { state: string }) {

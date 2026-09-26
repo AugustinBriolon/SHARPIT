@@ -3113,7 +3113,6 @@ __metadata:
     "@serwist/cli": "npm:^9.5.11"
     "@serwist/next": "npm:^9.5.11"
     "@sharpit/core": "workspace:*"
-    "@sharpit/db": "workspace:*"
     "@sharpit/eslint-config": "workspace:*"
     "@sharpit/server": "workspace:*"
     "@sharpit/shared": "workspace:*"

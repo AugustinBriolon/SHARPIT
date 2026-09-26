@@ -9,7 +9,24 @@
     "start": "next start -p 3001",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "db:migrate": "prisma migrate dev",
+    "db:push": "prisma db push",
+    "db:seed": "tsx prisma/seed.ts",
+    "db:seed:demo": "tsx prisma/seed-demo.ts",
+    "db:clean:activities": "tsx scripts/clean-activities.ts",
+    "db:backfill:narratives": "tsx scripts/backfill-activity-narratives.ts",
+    "db:backfill:session-observations": "tsx scripts/backfill-session-observations.ts",
+    "db:backfill:body-composition-observations": "tsx scripts/backfill-body-composition-observations.ts",
+    "db:recompute:fuel-features": "tsx scripts/recompute-fuel-features.ts",
+    "db:recompute:session-features": "tsx scripts/recompute-session-features.ts",
+    "db:evaluate-decision-outcomes": "tsx scripts/evaluate-decision-outcomes.ts",
+    "db:migrate:physical-health": "tsx scripts/migrate-physical-health-phase1.ts",
+    "db:studio": "prisma studio",
+    "db:up": "docker compose up -d",
+    "db:migrate-neon": "bash scripts/migrate-to-neon.sh",
+    "garmin:login": "python3 scripts/garmin-login.py",
+    "garmin:import-tokens": "tsx scripts/import-garmin-tokens.ts"
   },
   "prisma": {
     "schema": "../../packages/db/prisma/schema.prisma"

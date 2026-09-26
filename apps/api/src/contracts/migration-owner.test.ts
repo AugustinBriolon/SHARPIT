@@ -16,12 +16,16 @@ describe('migration owner', () => {
     expect(vercelConfig('api').buildCommand).toBe('yarn db:migrate:deploy && yarn build');
   });
 
-  it('the web project never migrates', () => {
+  it('the web project never migrates, and has no function of its own to size', () => {
     expect(vercelConfig('web').buildCommand).not.toContain('migrate');
+    expect(vercelConfig('web').functions).toBeUndefined();
   });
 
-  it('api. gives the long provider routes the durations the web gave them', () => {
-    expect(vercelConfig('api').functions).toMatchObject(vercelConfig('web').functions ?? {});
+  it('the long provider routes keep their 300 s on api.', () => {
+    expect(vercelConfig('api').functions).toMatchObject({
+      'src/app/api/garmin/connect/route.ts': { maxDuration: 300 },
+      'src/app/api/coach/plan/route.ts': { maxDuration: 300 },
+    });
   });
 
   it('each project rebuilds only for its own app, the packages and the root manifests', () => {

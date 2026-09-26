@@ -8,12 +8,6 @@ import {
 } from '@sharpit/server/lib/auth/clerk-config';
 import { recoverFromHandshakeFailure } from '@sharpit/server/lib/auth/handshake-recovery';
 import { isDevClerkBypass } from '@sharpit/server/lib/dev/dev-auth';
-import {
-  DEMO_READ_ONLY_ERROR,
-  isDemoBlockedRequest,
-  isDemoClerkUser,
-} from '@sharpit/server/lib/demo/demo-identity';
-import { rateLimitApiUser } from '@sharpit/server/lib/hosts/api-proxy';
 
 // Routes accessibles sans session Clerk :
 // - pages de connexion/inscription
@@ -31,9 +25,6 @@ const isPublicRoute = createRouteMatcher([
   '/demo',
   // Apple's CDN fetches it without a session and refuses redirects (ADR-040).
   '/.well-known/apple-app-site-association',
-  // App Store Server Notifications V2 — Apple calls it with no session; the route
-  // trusts nothing before verifying the payload's signature (ADR-044).
-  '/api/billing/apple/notifications',
   // End of the native Garmin handoff: reads only its query string, and must render
   // even if the web session expired mid-flow.
   '/connect/garmin/callback',
@@ -70,17 +61,6 @@ function redirectStrangerFromToday(req: NextRequest): NextResponse | null {
   return null;
 }
 
-/** The shared demo account reads everything and writes nothing (ADR-048 phase 3f). */
-async function demoReadOnlyResponse(
-  userId: string,
-  req: NextRequest,
-): Promise<NextResponse | null> {
-  if (!isDemoBlockedRequest(req.method, req.nextUrl.pathname) || !(await isDemoClerkUser(userId))) {
-    return null;
-  }
-  return NextResponse.json({ error: DEMO_READ_ONLY_ERROR }, { status: 403 });
-}
-
 // Explicit so `auth.protect()` sends strangers to our pages (with `redirect_url` back to
 // where they were — the Garmin handoff included), never to the hosted Account Portal.
 const AUTH_ROUTES = { signInUrl: '/sign-in', signUpUrl: '/sign-up' };
@@ -92,13 +72,7 @@ const clerkProxy = clerkMiddleware(async (auth, req) => {
 
   const { userId } = await auth();
   if (userId) {
-    // Flooding backstop for every authenticated API call — generous, catches raw
-    // request-hammering regardless of which route.
-    return (
-      redirectSignedIn(req) ??
-      (await demoReadOnlyResponse(userId, req)) ??
-      rateLimitApiUser(userId, req.nextUrl.pathname)
-    );
+    return redirectSignedIn(req);
   }
 
   const early = redirectStrangerFromToday(req);
@@ -133,8 +107,6 @@ export const config = {
   matcher: [
     // Ignore les internes Next.js et les fichiers statiques (sauf si présents en query params)
     '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
-    // Toujours exécuter pour les routes API
-    '/(api|trpc)(.*)',
     // Routes Frontend API spécifiques à Clerk
     '/__clerk/(.*)',
   ],
