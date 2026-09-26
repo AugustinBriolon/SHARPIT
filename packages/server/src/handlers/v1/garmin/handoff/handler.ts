@@ -1,12 +1,10 @@
 import { type NextRequest, NextResponse } from 'next/server';
-import { auth, clerkClient } from '@clerk/nextjs/server';
+import { auth } from '@clerk/nextjs/server';
+import { createSignInTicket } from '@sharpit/server/lib/auth/sign-in-ticket';
 import {
   GARMIN_HANDOFF_ORIGIN,
   garminHandoffEntryUrl,
 } from '@sharpit/server/lib/integrations/garmin/garmin-connect-handoff';
-
-/** Long enough to open the sheet, short enough that a leaked URL is already dead. */
-const TICKET_TTL_SECONDS = 60;
 
 const NO_STORE = { 'Cache-Control': 'private, no-store' };
 
@@ -27,11 +25,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const client = await clerkClient();
-    const { token } = await client.signInTokens.createSignInToken({
-      userId,
-      expiresInSeconds: TICKET_TTL_SECONDS,
-    });
+    const token = await createSignInTicket(userId);
     return NextResponse.json(
       { apiVersion: 1, url: garminHandoffEntryUrl(handoffOrigin(request), token) },
       { headers: NO_STORE },

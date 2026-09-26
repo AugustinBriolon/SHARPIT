@@ -7,15 +7,15 @@ const createMock = vi.fn();
 const findUniqueOrThrowMock = vi.fn();
 const deleteManyMock = vi.fn();
 const getUserMock = vi.fn();
-const cookiesGetMock = vi.fn();
 
 vi.mock('@clerk/nextjs/server', () => ({
   auth: authMock,
-  clerkClient: async () => ({ users: { getUser: getUserMock } }),
-}));
-
-vi.mock('next/headers', () => ({
-  cookies: async () => ({ get: cookiesGetMock }),
+  clerkClient: async () => ({
+    users: {
+      getUser: getUserMock,
+      getUserList: async () => ({ data: [{ id: 'user_demo' }] }),
+    },
+  }),
 }));
 
 vi.mock('@sharpit/server/lib/demo/seed-demo-data', () => ({
@@ -53,14 +53,12 @@ async function importFresh() {
 describe('getCurrentAthleteId', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    cookiesGetMock.mockReturnValue(undefined);
     getUserMock.mockResolvedValue({ id: 'user' });
     deleteManyMock.mockResolvedValue({ count: 1 });
   });
 
-  it('resolves the fixed demo athlete for an anonymous visitor with the demo cookie set', async () => {
-    authMock.mockResolvedValue({ userId: null });
-    cookiesGetMock.mockReturnValue({ value: '1' });
+  it('resolves the fixed demo athlete for the shared demo Clerk user', async () => {
+    authMock.mockResolvedValue({ userId: 'user_demo' });
     findUniqueOrThrowMock.mockResolvedValue({ id: 'athlete_demo', deletedAt: null });
     const { getCurrentAthleteId } = await importFresh();
 
@@ -71,9 +69,8 @@ describe('getCurrentAthleteId', () => {
     });
   });
 
-  it('prefers a real Clerk session over a stray demo cookie', async () => {
+  it('never maps a real athlete to the demo tenant', async () => {
     authMock.mockResolvedValue({ userId: 'user_known' });
-    cookiesGetMock.mockReturnValue({ value: '1' });
     findUniqueMock.mockResolvedValue({ id: 'athlete_123', deletedAt: null });
     const { getCurrentAthleteId } = await importFresh();
 

@@ -9,7 +9,7 @@ import {
 import { useIsDemoMode } from '@/hooks/use-is-demo-mode';
 
 export type AthleteNavIdentity = {
-  /** False until Clerk (and demo cookie) have answered. */
+  /** False until Clerk has answered. */
   isReady: boolean;
   initials: string;
   shortLabel: string;

@@ -1,31 +1,32 @@
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { describe, expect, it } from 'vitest';
-import { DEMO_EXIT_HREF, DemoExitButton, DemoExitTextLink } from '@/components/demo/demo-exit';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-describe('DEMO_EXIT_HREF', () => {
-  it('points at the cookie-clearing exit route that redirects to sign-in', () => {
-    expect(DEMO_EXIT_HREF).toBe('/api/demo/exit');
-  });
-});
+const signOut = vi.fn();
+vi.mock('@clerk/nextjs', () => ({ useClerk: () => ({ signOut }) }));
 
-describe('DemoExitTextLink', () => {
-  it('renders a link to the exit route with the expected label', () => {
-    const html = renderToStaticMarkup(createElement(DemoExitTextLink));
-    expect(html).toContain(`href="${DEMO_EXIT_HREF}"`);
-    expect(html).toContain('Quitter la démo');
+describe('demo exit', () => {
+  beforeEach(() => {
+    signOut.mockReset();
   });
 
-  it('forwards a custom className', () => {
+  it('renders buttons, not a cookie-clearing link', async () => {
+    const { DemoExitButton, DemoExitTextLink } = await import('./demo-exit');
+    for (const component of [DemoExitButton, DemoExitTextLink]) {
+      const html = renderToStaticMarkup(createElement(component));
+      expect(html).toContain('Quitter la démo');
+      expect(html).not.toContain('href=');
+    }
+  });
+
+  it('keeps a caller class on the text link', async () => {
+    const { DemoExitTextLink } = await import('./demo-exit');
     const html = renderToStaticMarkup(createElement(DemoExitTextLink, { className: 'mt-2' }));
     expect(html).toContain('mt-2');
   });
-});
 
-describe('DemoExitButton', () => {
-  it('renders as a link to the exit route with the expected label', () => {
-    const html = renderToStaticMarkup(createElement(DemoExitButton));
-    expect(html).toContain(`href="${DEMO_EXIT_HREF}"`);
-    expect(html).toContain('Quitter la démo');
+  it('leaves the demo by signing out to the sign-in page', async () => {
+    const { DEMO_EXIT_REDIRECT } = await import('./demo-exit');
+    expect(DEMO_EXIT_REDIRECT).toBe('/sign-in');
   });
 });

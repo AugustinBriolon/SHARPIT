@@ -26,7 +26,7 @@ import {
 import { patchPlannedSessionAnalysisInCaches } from '@/client/query/patch-planned-session-analysis-cache';
 import type { TodayViewModel } from '@sharpit/server/presentation/today-view-model';
 import type { QueryClient } from '@tanstack/react-query';
-import { hasDemoCookieValue } from '@/hooks/use-is-demo-mode';
+import { isBrowserDemoAccount } from '@/hooks/use-is-demo-mode';
 import {
   clearDemoSessionLink,
   markDemoSessionLinked,
@@ -63,7 +63,7 @@ function patchTodayPresentationLines(
 }
 
 function isBrowserDemoMode(): boolean {
-  return typeof document !== 'undefined' && hasDemoCookieValue(document.cookie);
+  return isBrowserDemoAccount();
 }
 
 function resolveSessionActivityId(session: ClientPlannedSession | undefined): string | null {
@@ -348,7 +348,7 @@ export function usePlannedSessionMutations() {
 
   const link = useMutation({
     mutationFn: async ({ id, activityId }: { id: string; activityId: string | null }) => {
-      const demoMode = typeof document !== 'undefined' && hasDemoCookieValue(document.cookie);
+      const demoMode = isBrowserDemoAccount();
       if (demoMode) {
         const sessions = queryClient.getQueryData<ClientPlannedSession[]>(key) ?? [];
         const activities = queryClient.getQueryData<ClientActivity[]>(queryKeys.activities);

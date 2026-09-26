@@ -24,7 +24,7 @@ async function resolveDevBypassAthleteId(): Promise<string> {
 }
 
 async function resolveDemoAthleteId(): Promise<string> {
-  // Cookie arrives before background seed — block here so first paint has data.
+  // The first demo read after a reseed window blocks here so first paint has data.
   await ensureDemoSeedFresh(prisma);
   const demoAthlete = await prisma.athleteProfile.findUniqueOrThrow({
     where: { clerkUserId: DEMO_CLERK_USER_ID },
@@ -126,9 +126,8 @@ export const getCurrentAthleteId = cache(async (): Promise<string> => {
     return resolveDevBypassAthleteId();
   }
 
-  // Public read-only demo: isDemoSession() already confirms there is no real
-  // Clerk session, so a signed-in athlete with a stray demo cookie still
-  // resolves to their own profile below, not the demo tenant.
+  // Public read-only demo: the shared demo Clerk user maps to the demo tenant, never to a
+  // profile of its own.
   if (await isDemoSession()) {
     return resolveDemoAthleteId();
   }

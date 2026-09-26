@@ -7,6 +7,11 @@ import {
   sealApiHostResponse,
 } from '@sharpit/server/lib/hosts/api-host';
 import {
+  DEMO_READ_ONLY_ERROR,
+  isDemoBlockedRequest,
+  isDemoClerkUser,
+} from '@sharpit/server/lib/demo/demo-identity';
+import {
   checkRateLimit,
   rateLimiters,
   rateLimitResponseBody,
@@ -33,6 +38,9 @@ const bearerProxy = clerkMiddleware(async (auth, req) => {
   const { userId } = await auth();
   if (!userId) {
     return apiHostError(req, 401, 'Invalid or expired token');
+  }
+  if (isDemoBlockedRequest(req.method, req.nextUrl.pathname) && (await isDemoClerkUser(userId))) {
+    return NextResponse.json({ error: DEMO_READ_ONLY_ERROR }, { status: 403 });
   }
   return rateLimitApiUser(userId, req.nextUrl.pathname);
 });

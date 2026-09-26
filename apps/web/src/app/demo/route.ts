@@ -1,29 +1,20 @@
-import { NextResponse, after, type NextRequest } from 'next/server';
-import { ensureDemoSeedFresh } from '@sharpit/server/lib/demo/seed-demo-data';
-import { DEMO_COOKIE } from '@sharpit/server/lib/demo/demo-session';
-import { prisma } from '@sharpit/db/client';
-
-export const maxDuration = 60;
+import { NextResponse, type NextRequest } from 'next/server';
+import { createSignInTicket, ticketSignInUrl } from '@sharpit/server/lib/auth/sign-in-ticket';
+import { ensureDemoClerkUser } from '@sharpit/server/lib/demo/demo-identity';
 
 /**
- * Public demo entry: set the cookie and redirect immediately so middleware
- * accepts `/`. Seed runs after the response (and again on first demo resolve
- * if still needed) — never block cookie delivery behind a long reseed.
+ * Public demo entry (ADR-048 phase 3f): signs the visitor in to the shared, read-only demo
+ * account with a one-time Clerk ticket, then opens Today. A Clerk session like any other, so the
+ * web calls `api.` with a Bearer. The demo data is (re)seeded by `api.` on the first read.
  */
 export async function GET(request: NextRequest) {
-  const response = NextResponse.redirect(new URL('/', request.url));
-  response.cookies.set(DEMO_COOKIE, '1', {
-    // Not httpOnly — useIsDemoMode() reads it client-side for UI-only
-    // date-range fencing. See demo-cookie.ts for why that's safe.
-    sameSite: 'lax',
-    path: '/',
-  });
-
-  after(() => {
-    void ensureDemoSeedFresh(prisma).catch((error) => {
-      console.error('[demo] background seed failed', error);
+  try {
+    const ticket = await createSignInTicket(await ensureDemoClerkUser());
+    return NextResponse.redirect(ticketSignInUrl(request.nextUrl.origin, ticket, '/'));
+  } catch (error) {
+    console.error('[demo] sign-in ticket failed', {
+      name: error instanceof Error ? error.name : 'Error',
     });
-  });
-
-  return response;
+    return NextResponse.redirect(new URL('/sign-in', request.nextUrl.origin));
+  }
 }

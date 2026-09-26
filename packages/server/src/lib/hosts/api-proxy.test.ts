@@ -15,6 +15,13 @@ vi.mock('@clerk/nextjs/server', () => ({
     },
 }));
 
+vi.mock('server-only', () => ({}));
+
+vi.mock('@sharpit/server/lib/demo/demo-identity', async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  isDemoClerkUser: async (userId: string) => userId === 'user_demo',
+}));
+
 vi.mock('@sharpit/server/lib/rate-limit', () => ({
   checkRateLimit: vi.fn().mockResolvedValue({ ok: true }),
   rateLimiters: { apiGeneral: {} },
@@ -68,6 +75,25 @@ describe('apiProxy', () => {
     expect(response.status).toBe(200);
     expect(state.authCalls).toBe(0);
     expect(response.headers.get('cache-control')).toBe('private, no-store');
+  });
+
+  it('keeps the demo athlete read-only', async () => {
+    state.userId = 'user_demo';
+    const read = await run('https://api.sharpit.app/api/presentation/today', {
+      authorization: 'Bearer t',
+    });
+    const { apiProxy } = await import('./api-proxy');
+    const write = await apiProxy(
+      new NextRequest('https://api.sharpit.app/api/goals', {
+        method: 'POST',
+        headers: { authorization: 'Bearer t' },
+      }),
+      {} as never,
+    );
+
+    expect(read.status).toBe(200);
+    expect(write.status).toBe(403);
+    expect(await write.json()).toEqual({ error: 'Mode démo : lecture seule' });
   });
 
   it('serves no other path', async () => {

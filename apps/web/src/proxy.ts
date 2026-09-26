@@ -8,14 +8,16 @@ import {
 } from '@sharpit/server/lib/auth/clerk-config';
 import { recoverFromHandshakeFailure } from '@sharpit/server/lib/auth/handshake-recovery';
 import { isDevClerkBypass } from '@sharpit/server/lib/dev/dev-auth';
-import { DEMO_COOKIE } from '@sharpit/server/lib/demo/demo-session';
+import {
+  DEMO_READ_ONLY_ERROR,
+  isDemoBlockedRequest,
+  isDemoClerkUser,
+} from '@sharpit/server/lib/demo/demo-identity';
 import { rateLimitApiUser } from '@sharpit/server/lib/hosts/api-proxy';
 
 // Routes accessibles sans session Clerk :
 // - pages de connexion/inscription
-// - l'entrée et la sortie du mode démo, qui posent/effacent le cookie avant
-//   toute session — listées explicitement (pas de wildcard `/api/demo(.*)`)
-//   pour ne jamais exposer d'autre route sous /api/demo sans session.
+// - l'entrée du mode démo, qui connecte le visiteur au compte démo partagé.
 const isPublicRoute = createRouteMatcher([
   '/sign-in(.*)',
   '/sign-up(.*)',
@@ -27,7 +29,6 @@ const isPublicRoute = createRouteMatcher([
   // iOS fetches apple-touch-startup-image without a session cookie.
   '/apple-splash(.*)',
   '/demo',
-  '/api/demo/exit',
   // Apple's CDN fetches it without a session and refuses redirects (ADR-040).
   '/.well-known/apple-app-site-association',
   // App Store Server Notifications V2 — Apple calls it with no session; the route
@@ -37,34 +38,6 @@ const isPublicRoute = createRouteMatcher([
   // even if the web session expired mid-flow.
   '/connect/garmin/callback',
 ]);
-
-// Callbacks OAuth : des GET qui écrivent en base au retour du fournisseur.
-// Une simple règle « bloquer les écritures » sur la méthode ne les voit pas.
-const isDemoMutatingCallback = createRouteMatcher([
-  '/api/strava/callback(.*)',
-  '/api/withings/callback(.*)',
-  '/api/google/callback(.*)',
-  '/api/garmin/sso-callback(.*)',
-]);
-
-function isDemoWriteBlocked(req: NextRequest): boolean {
-  const isWrite = req.method !== 'GET' && req.method !== 'HEAD';
-  if (!req.nextUrl.pathname.startsWith('/api/')) {
-    return false;
-  }
-  return isWrite || isDemoMutatingCallback(req);
-}
-
-function hasDemoCookie(req: NextRequest): boolean {
-  return req.cookies.get(DEMO_COOKIE)?.value === '1';
-}
-
-function demoSessionResponse(req: NextRequest): NextResponse | null {
-  if (!hasDemoCookie(req) || !isDemoWriteBlocked(req)) {
-    return null;
-  }
-  return NextResponse.json({ error: 'Mode démo : lecture seule' }, { status: 403 });
-}
 
 // Signed-out-only pages: the teaser and the auth entry points themselves.
 const isSignedOutOnlyPage = createRouteMatcher(['/welcome(.*)', '/sign-in', '/sign-up']);
@@ -87,7 +60,7 @@ function redirectSignedIn(req: NextRequest): NextResponse | null {
 }
 
 // Strangers hitting `/` (Today) land on the public teaser instead of the Clerk sign-in
-// wall (and its demo callout). Signed-in athletes and demo visitors keep Today at `/`.
+// wall (and its demo callout). Signed-in athletes — the demo one included — keep Today at `/`.
 function redirectStrangerFromToday(req: NextRequest): NextResponse | null {
   if (req.nextUrl.pathname === '/' && req.method === 'GET') {
     const welcome = req.nextUrl.clone();
@@ -97,11 +70,15 @@ function redirectStrangerFromToday(req: NextRequest): NextResponse | null {
   return null;
 }
 
-function signedOutResponse(req: NextRequest): NextResponse | null {
-  if (hasDemoCookie(req)) {
-    return demoSessionResponse(req);
+/** The shared demo account reads everything and writes nothing (ADR-048 phase 3f). */
+async function demoReadOnlyResponse(
+  userId: string,
+  req: NextRequest,
+): Promise<NextResponse | null> {
+  if (!isDemoBlockedRequest(req.method, req.nextUrl.pathname) || !(await isDemoClerkUser(userId))) {
+    return null;
   }
-  return redirectStrangerFromToday(req);
+  return NextResponse.json({ error: DEMO_READ_ONLY_ERROR }, { status: 403 });
 }
 
 // Explicit so `auth.protect()` sends strangers to our pages (with `redirect_url` back to
@@ -113,25 +90,23 @@ const clerkProxy = clerkMiddleware(async (auth, req) => {
     return;
   }
 
-  // A real session always wins over a stray demo cookie left over in the
-  // same browser (e.g. a signed-in athlete who once visited /demo) — otherwise
-  // their own writes would be misread as a demo session and blocked.
   const { userId } = await auth();
   if (userId) {
     // Flooding backstop for every authenticated API call — generous, catches raw
     // request-hammering regardless of which route.
-    return redirectSignedIn(req) ?? rateLimitApiUser(userId, req.nextUrl.pathname);
+    return (
+      redirectSignedIn(req) ??
+      (await demoReadOnlyResponse(userId, req)) ??
+      rateLimitApiUser(userId, req.nextUrl.pathname)
+    );
   }
 
-  const early = signedOutResponse(req);
+  const early = redirectStrangerFromToday(req);
   if (early) {
     return early;
   }
 
-  // A demo visitor carries no Clerk session by design (ADR-026) — mutations
-  // are already 403'd above, so reads are let through the real (app) route
-  // tree instead of being bounced to /sign-in by auth.protect().
-  if (!isPublicRoute(req) && !hasDemoCookie(req)) {
+  if (!isPublicRoute(req)) {
     await auth.protect();
   }
 }, AUTH_ROUTES);

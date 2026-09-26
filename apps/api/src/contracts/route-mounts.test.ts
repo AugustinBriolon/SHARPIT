@@ -5,8 +5,8 @@ import { describe, expect, it } from 'vitest';
 const API_ROUTES = join('src', 'app', 'api');
 const WEB_ROUTES = join('..', 'web', 'src', 'app', 'api');
 
-/** Web session state only: clearing the demo cookie means nothing on a Bearer host. */
-const WEB_ONLY_MOUNTS = new Set([join('demo', 'exit', 'route.ts')]);
+/** Web-only mounts (none since the demo became a Clerk account). */
+const WEB_ONLY_MOUNTS = new Set<string>();
 
 function routeFiles(dir: string): string[] {
   return readdirSync(dir).flatMap((entry) => {

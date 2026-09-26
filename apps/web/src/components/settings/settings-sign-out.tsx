@@ -7,11 +7,7 @@ import { Button } from '@/components/ui/button';
 const clerkBypassEnabled =
   process.env.NEXT_PUBLIC_DEV_BYPASS_CLERK === 'true' && process.env.NODE_ENV === 'development';
 
-/**
- * Ends the Clerk session. Shown only when there is a real signed-in session —
- * not gated on the demo cookie alone, so a leftover `/demo` cookie cannot hide
- * sign-out for a real athlete (SettingsGate already allows that case).
- */
+/** Ends the Clerk session — the demo account's too (ADR-049). */
 function SettingsSignOutWithClerk() {
   const { isLoaded: authLoaded, isSignedIn } = useAuth();
   const { isLoaded: userLoaded, user } = useUser();

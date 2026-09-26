@@ -1,63 +1,38 @@
 'use client';
 
-import { useAuth } from '@clerk/nextjs';
-import { useSyncExternalStore } from 'react';
-import { DEMO_COOKIE } from '@sharpit/server/lib/demo/demo-cookie';
-
-/** Pulled out of the DOM read so it's testable with a plain string — this repo's
- * vitest config runs `.test.ts` files under `environment: 'node'`, no `document`. */
-export function hasDemoCookieValue(cookieString: string): boolean {
-  return cookieString.split('; ').includes(`${DEMO_COOKIE}=1`);
-}
+import { useUser } from '@clerk/nextjs';
+import { DEMO_EXTERNAL_ID } from '@sharpit/server/lib/demo/demo-identity-shared';
 
 /**
- * Same precedence as server `isDemoSession()`: a real Clerk session always wins
- * over a leftover `sharpit_demo` cookie (signed-in athlete who once visited /demo).
+ * Same rule as server `isDemoSession()`: the signed-in Clerk user is the shared demo account.
+ * Until Clerk has loaded, false (hydration-safe; no demo chrome flash for a real athlete).
  */
 export function resolveIsDemoMode(
-  cookieIsDemo: boolean,
-  userId: string | null | undefined,
-  authLoaded: boolean,
+  externalId: string | null | undefined,
+  userLoaded: boolean,
 ): boolean {
-  if (!authLoaded) {
-    return false;
-  }
-  if (userId) {
-    return false;
-  }
-  return cookieIsDemo;
+  return userLoaded && externalId === DEMO_EXTERNAL_ID;
 }
 
-function hasDemoCookie(): boolean {
-  if (typeof document === 'undefined') {
-    return false;
-  }
-  return hasDemoCookieValue(document.cookie);
+/** Outside React (a mutation function): the signed-in Clerk user, read off `window.Clerk`. */
+export function isBrowserDemoAccount(): boolean {
+  const clerk = (globalThis as { Clerk?: { user?: { externalId?: string | null } | null } }).Clerk;
+  return resolveIsDemoMode(clerk?.user?.externalId, Boolean(clerk?.user));
 }
-
-const noopSubscribe = () => () => {};
 
 const clerkBypassEnabled =
   process.env.NEXT_PUBLIC_DEV_BYPASS_CLERK === 'true' && process.env.NODE_ENV === 'development';
 
-/**
- * UI signal for demo-aware client components.
- * Matches server `isDemoSession()`: demo cookie AND no Clerk `userId`.
- * Until Clerk has loaded, returns `false` (hydration-safe; avoids flashing
- * demo chrome for a signed-in athlete with a stray cookie).
- *
- * Cookie is set/cleared via full page loads (`/demo`, `/api/demo/exit`).
- */
 function useIsDemoModeWithClerk(): boolean {
-  const { userId, isLoaded } = useAuth();
-  const cookieIsDemo = useSyncExternalStore(noopSubscribe, hasDemoCookie, () => false);
-  return resolveIsDemoMode(cookieIsDemo, userId, isLoaded);
+  const { user, isLoaded } = useUser();
+  return resolveIsDemoMode(user?.externalId, isLoaded);
 }
 
 function useIsDemoModeBypass(): boolean {
   return false;
 }
 
+/** UI signal for demo-aware client components. */
 export const useIsDemoMode: () => boolean = clerkBypassEnabled
   ? useIsDemoModeBypass
   : useIsDemoModeWithClerk;

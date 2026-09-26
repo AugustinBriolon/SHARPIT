@@ -1,42 +1,35 @@
-import { describe, expect, it } from 'vitest';
-import { hasDemoCookieValue, resolveIsDemoMode } from './use-is-demo-mode';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { isBrowserDemoAccount, resolveIsDemoMode } from './use-is-demo-mode';
 
-describe('hasDemoCookieValue', () => {
-  it('is false for an empty cookie string', () => {
-    expect(hasDemoCookieValue('')).toBe(false);
+describe('resolveIsDemoMode', () => {
+  it('is false until the user has loaded', () => {
+    expect(resolveIsDemoMode('sharpit-demo', false)).toBe(false);
   });
 
-  it('is true when the demo cookie is set to 1', () => {
-    expect(hasDemoCookieValue('sharpit_demo=1')).toBe(true);
+  it('is true for the shared demo account', () => {
+    expect(resolveIsDemoMode('sharpit-demo', true)).toBe(true);
   });
 
-  it('is false for any other cookie value', () => {
-    expect(hasDemoCookieValue('sharpit_demo=maybe')).toBe(false);
-  });
-
-  it('reads correctly alongside unrelated cookies', () => {
-    expect(hasDemoCookieValue('other=1; sharpit_demo=1; another=x')).toBe(true);
-  });
-
-  it('does not match a cookie that merely contains the name as a substring', () => {
-    expect(hasDemoCookieValue('not_sharpit_demo=1')).toBe(false);
+  it('is false for a real athlete or a stranger', () => {
+    expect(resolveIsDemoMode(null, true)).toBe(false);
+    expect(resolveIsDemoMode(undefined, true)).toBe(false);
+    expect(resolveIsDemoMode('someone-else', true)).toBe(false);
   });
 });
 
-describe('resolveIsDemoMode', () => {
-  it('is false until auth has loaded', () => {
-    expect(resolveIsDemoMode(true, null, false)).toBe(false);
+describe('isBrowserDemoAccount', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
   });
 
-  it('is false when a real Clerk session is present, even with the demo cookie', () => {
-    expect(resolveIsDemoMode(true, 'user_abc', true)).toBe(false);
+  it('reads the signed-in Clerk user', () => {
+    vi.stubGlobal('Clerk', { user: { externalId: 'sharpit-demo' } });
+    expect(isBrowserDemoAccount()).toBe(true);
+    vi.stubGlobal('Clerk', { user: { externalId: null } });
+    expect(isBrowserDemoAccount()).toBe(false);
   });
 
-  it('is true for an anonymous visitor with the demo cookie', () => {
-    expect(resolveIsDemoMode(true, null, true)).toBe(true);
-  });
-
-  it('is false without the demo cookie', () => {
-    expect(resolveIsDemoMode(false, null, true)).toBe(false);
+  it('is false before Clerk loads', () => {
+    expect(isBrowserDemoAccount()).toBe(false);
   });
 });

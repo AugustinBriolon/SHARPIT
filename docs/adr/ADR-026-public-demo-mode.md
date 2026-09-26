@@ -4,7 +4,7 @@
 **Date:** 2026-08-24
 **Author:** Principal Architect
 **Supersedes:** N/A
-**Superseded by:** N/A
+**Superseded by:** [ADR-049](./ADR-049-demo-is-a-shared-clerk-account.md) (entry, identity and exit — the cookie is gone)
 
 ---
 

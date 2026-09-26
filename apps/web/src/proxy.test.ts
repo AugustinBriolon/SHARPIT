@@ -36,11 +36,16 @@ vi.mock('@sharpit/server/lib/rate-limit', () => ({
   rateLimitResponseBody: vi.fn(),
 }));
 
+vi.mock('@sharpit/server/lib/demo/demo-identity', async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  isDemoClerkUser: async (userId: string) => userId === 'user_demo',
+}));
+
 vi.mock('@sharpit/server/lib/dev/dev-auth', () => ({ isDevClerkBypass: () => false }));
 
-async function run(url: string, cookie?: string) {
+async function run(url: string, cookie?: string, method = 'GET') {
   const { default: proxy } = await import('./proxy');
-  const req = new NextRequest(url, { headers: cookie ? { cookie } : {} });
+  const req = new NextRequest(url, { method, headers: cookie ? { cookie } : {} });
   return (await proxy(req, {} as never)) ?? NextResponse.next();
 }
 
@@ -103,10 +108,25 @@ describe('proxy', () => {
     expect(state.protect).not.toHaveBeenCalled();
   });
 
-  it('lets a demo visitor read without a session', async () => {
-    const response = await run('https://sharpit.app/', 'sharpit_demo=1');
-    expect(state.protect).not.toHaveBeenCalled();
-    expect(response.headers.get('location')).toBeNull();
+  it('no longer lets the old demo cookie in without a session', async () => {
+    await run('https://sharpit.app/settings', 'sharpit_demo=1');
+    expect(state.protect).toHaveBeenCalled();
+  });
+
+  it('lets the demo account read but never write', async () => {
+    state.userId = 'user_demo';
+    const read = await run('https://sharpit.app/api/goals');
+    const write = await run('https://sharpit.app/api/goals', undefined, 'POST');
+    const connect = await run('https://sharpit.app/api/strava/connect');
+
+    expect(read.status).toBe(200);
+    expect(write.status).toBe(403);
+    expect(connect.status).toBe(403);
+  });
+
+  it('lets a real athlete write', async () => {
+    state.userId = 'user_real';
+    expect((await run('https://sharpit.app/api/goals', undefined, 'POST')).status).toBe(200);
   });
 
   it('points auth.protect at the app’s own sign-in pages', async () => {

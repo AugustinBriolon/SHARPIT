@@ -1,3 +1,5 @@
+import { ticketSignInUrl } from '@sharpit/server/lib/auth/ticket-sign-in-url';
+
 /**
  * Garmin handoff for the native app (ADR-040, direction A): iOS opens
  * `CONNECT_GARMIN_PATH` in an ASWebAuthenticationSession; the web runs the Garmin SSO
@@ -21,10 +23,7 @@ export const GARMIN_HANDOFF_ORIGIN = 'https://sharpit.app';
  * straight to the Garmin SSO. The URL is a credential — never log it.
  */
 export function garminHandoffEntryUrl(origin: string, signInTicket: string): string {
-  const url = new URL('/sign-in', origin);
-  url.searchParams.set('__clerk_ticket', signInTicket);
-  url.searchParams.set('redirect_url', new URL(CONNECT_GARMIN_START_PATH, origin).toString());
-  return url.toString();
+  return ticketSignInUrl(origin, signInTicket, CONNECT_GARMIN_START_PATH);
 }
 
 /** Outcome carried on the callback URL as `?garmin=<status>`. */

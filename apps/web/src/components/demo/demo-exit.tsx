@@ -1,27 +1,38 @@
+'use client';
+
+import { useClerk } from '@clerk/nextjs';
 import { Button } from '@/components/ui/button';
 import { cn } from '@sharpit/server/lib/utils';
 
-/** Full-page load to `/api/demo/exit` — clears the cookie and lands on `/sign-in`. */
-export const DEMO_EXIT_HREF = '/api/demo/exit';
+/** Leaving the demo signs out of the shared demo account and lands on sign-in. */
+export const DEMO_EXIT_REDIRECT = '/sign-in';
+
+function useLeaveDemo(): () => void {
+  const { signOut } = useClerk();
+  return () => {
+    void signOut({ redirectUrl: DEMO_EXIT_REDIRECT });
+  };
+}
 
 /** Inline text link for the demo banner. */
 export function DemoExitTextLink({ className }: { className?: string }) {
+  const leaveDemo = useLeaveDemo();
   return (
-    <a className={cn('underline underline-offset-2', className)} href={DEMO_EXIT_HREF}>
+    <button
+      className={cn('underline underline-offset-2', className)}
+      type="button"
+      onClick={leaveDemo}
+    >
       Quitter la démo
-    </a>
+    </button>
   );
 }
 
 /** Primary CTA for demo dead-ends (Settings, Coach) — returns to sign-in. */
 export function DemoExitButton({ className }: { className?: string }) {
+  const leaveDemo = useLeaveDemo();
   return (
-    <Button
-      className={className}
-      nativeButton={false}
-      render={<a href={DEMO_EXIT_HREF} />}
-      variant="default"
-    >
+    <Button className={className} variant="default" onClick={leaveDemo}>
       Quitter la démo
     </Button>
   );
