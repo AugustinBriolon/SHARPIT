@@ -5,6 +5,7 @@ import { format } from 'date-fns';
 import { useCallback } from 'react';
 import type { MorningWellnessEntry } from '@sharpit/server/lib/journal/morning-wellness-entry';
 import { queryKeys } from '@/client/query/keys';
+import { apiFetch } from '@/client/query/api-fetch';
 
 type WellnessCheckinQuery = {
   completed: boolean;
@@ -37,7 +38,7 @@ type WellnessPayload = {
 };
 
 async function fetchWellnessStatus(trainingDayId: string): Promise<WellnessCheckinQuery> {
-  const res = await fetch(`/api/wellness-checkin?trainingDayId=${trainingDayId}`);
+  const res = await apiFetch(`/api/wellness-checkin?trainingDayId=${trainingDayId}`);
   if (!res.ok) {
     throw new Error('status');
   }
@@ -83,7 +84,7 @@ export function useWellnessCheckin(date: Date = new Date()): WellnessCheckinStat
 
   const mutation = useMutation({
     mutationFn: async (payload: WellnessPayload) => {
-      const res = await fetch('/api/wellness-checkin', {
+      const res = await apiFetch('/api/wellness-checkin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...payload, trainingDayId }),

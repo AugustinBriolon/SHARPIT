@@ -17,6 +17,7 @@ import type {
   CreateHikeTripInput,
   PatchHikeTripInput,
 } from '@sharpit/server/lib/validators/hike-trip';
+import { apiFetch } from '@/client/query/api-fetch';
 
 export type { CreateHikeTripInput, PatchHikeTripInput };
 
@@ -206,7 +207,7 @@ export function useHikeTripMutations() {
 
   const remove = useMutation({
     mutationFn: async (id: string) => {
-      const res = await fetch(`/api/hike-trips/${id}`, { method: 'DELETE' });
+      const res = await apiFetch(`/api/hike-trips/${id}`, { method: 'DELETE' });
       if (!res.ok) {
         const parsed = parseApiErrorBody(await res.json().catch(() => null));
         throw new Error(formatApiErrorMessage(parsed ?? {}));

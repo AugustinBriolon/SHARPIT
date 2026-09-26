@@ -9,6 +9,7 @@ import {
   type ClientConversationSummary,
 } from '@/client/query/fetchers';
 import { queryKeys } from '@/client/query/keys';
+import { apiFetch } from '@/client/query/api-fetch';
 
 let createConversationPromise: Promise<ClientConversation> | null = null;
 
@@ -49,7 +50,7 @@ export function useCreateConversation() {
                 ...(input.messages ? { messages: input.messages } : {}),
               }
             : {};
-        const res = await fetch('/api/coach/conversations', {
+        const res = await apiFetch('/api/coach/conversations', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(body),
@@ -97,7 +98,7 @@ export function useSaveConversation() {
   const queryClient = useQueryClient();
   return useMutation<ClientConversation, Error, { id: string; messages: UIMessage[] }>({
     mutationFn: async ({ id, messages }) => {
-      const res = await fetch(`/api/coach/conversations/${id}`, {
+      const res = await apiFetch(`/api/coach/conversations/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ messages }),
@@ -144,7 +145,7 @@ export function useRenameConversation() {
     { previous: ClientConversationSummary[] | undefined }
   >({
     mutationFn: async ({ id, title }) => {
-      const res = await fetch(`/api/coach/conversations/${id}`, {
+      const res = await apiFetch(`/api/coach/conversations/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ title }),
@@ -195,7 +196,7 @@ export function useDeleteConversation() {
   const queryClient = useQueryClient();
   return useMutation<void, Error, string, { previous: ClientConversationSummary[] | undefined }>({
     mutationFn: async (id) => {
-      const res = await fetch(`/api/coach/conversations/${id}`, {
+      const res = await apiFetch(`/api/coach/conversations/${id}`, {
         method: 'DELETE',
       });
       if (!res.ok) {

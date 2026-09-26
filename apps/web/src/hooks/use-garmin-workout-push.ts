@@ -7,6 +7,7 @@ import { toast } from '@/components/ui/toast';
 import { buildPushToastDescription } from '@sharpit/server/lib/integrations/garmin/garmin-push-summary';
 import { queryKeys } from '@/client/query/keys';
 import type { ClientPlannedSession } from '@sharpit/server/lib/query/types';
+import { apiFetch } from '@/client/query/api-fetch';
 
 export type GarminWatchPushState = {
   workoutId: string | null;
@@ -90,7 +91,7 @@ async function pushPlannedSessionToGarmin(
   sessionId: string,
   force: boolean,
 ): Promise<GarminPushResponse & { ok: boolean; status: number }> {
-  const response = await fetch('/api/garmin/workouts/from-planned-session', {
+  const response = await apiFetch('/api/garmin/workouts/from-planned-session', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ plannedSessionId: sessionId, schedule: true, force }),

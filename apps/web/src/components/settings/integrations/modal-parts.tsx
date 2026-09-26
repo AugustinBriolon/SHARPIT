@@ -12,6 +12,7 @@ import {
   type IntegrationDefinition,
 } from '@/components/settings/integrations/types';
 import { IntegrationLogo } from '@/components/settings/integrations/logos';
+import { ConnectLink } from '@/components/settings/integrations/connect-link';
 
 export function formatIntegrationLastSync(lastSyncAt: string | null | undefined): string {
   return lastSyncAt
@@ -83,9 +84,9 @@ export function IntegrationNotConnectedView({
           Connexion disponible avec un compte personnel — désactivée sur le compte démo partagé.
         </p>
       ) : (
-        <a className={cn(buttonVariants(), 'w-full sm:w-auto')} href={connectHref}>
+        <ConnectLink className={cn(buttonVariants(), 'w-full sm:w-auto')} href={connectHref}>
           {integrationConnectCta(integration)}
-        </a>
+        </ConnectLink>
       )}
       <IntegrationStatusMessage message={integration.statusMessage} assertive />
     </div>

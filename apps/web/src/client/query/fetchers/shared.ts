@@ -1,9 +1,10 @@
+import { apiFetch } from '@/client/query/api-fetch';
 /**
  * Shared JSON fetch + date hydration helpers for client fetchers.
  */
 
 export async function fetchJson<T>(url: string): Promise<T> {
-  const res = await fetch(url);
+  const res = await apiFetch(url);
   if (!res.ok) {
     throw new Error(`Requête échouée (${res.status}) sur ${url}`);
   }

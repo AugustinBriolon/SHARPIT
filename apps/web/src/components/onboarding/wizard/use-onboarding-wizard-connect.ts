@@ -9,6 +9,7 @@ import {
 import type { CredentialProvider } from '@/components/onboarding/wizard/use-onboarding-wizard';
 import { completeOnboarding } from '@/components/onboarding/wizard/onboarding-wizard-api';
 import type { OnboardingWizardStep } from '@sharpit/server/lib/onboarding/wizard/wizard-steps';
+import { navigateToConnect } from '@/client/query/api-fetch';
 
 export function useOnboardingWizardFinish(
   setStep: React.Dispatch<React.SetStateAction<OnboardingWizardStep>>,
@@ -43,7 +44,9 @@ export function useOnboardingWizardConnect(
       }
 
       if (provider.authKind === 'oauth' && provider.oauthPath) {
-        window.location.assign(oauthConnectHref(provider.oauthPath, '/onboarding', dataClass));
+        navigateToConnect(oauthConnectHref(provider.oauthPath, '/onboarding', dataClass)).catch(
+          (error: unknown) => console.error('[onboarding] provider connect failed', error),
+        );
         return;
       }
       if (provider.authKind === 'credentials') {

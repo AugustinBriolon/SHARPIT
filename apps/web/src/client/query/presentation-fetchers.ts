@@ -10,9 +10,10 @@ import type { BodyViewModel } from '@sharpit/server/presentation/body-view-model
 import type { PhysicalHealthViewModel } from '@sharpit/server/presentation/physical-health-view-model';
 import type { NutritionViewModel } from '@sharpit/server/presentation/nutrition-view-model';
 import type { DataDaysDomain } from '@sharpit/server/lib/presentation/data-days/data-days';
+import { apiFetch } from '@/client/query/api-fetch';
 
 async function fetchJson<T>(url: string): Promise<T> {
-  const res = await fetch(url);
+  const res = await apiFetch(url);
   if (!res.ok) {
     throw new Error(`Requête échouée (${res.status}) sur ${url}`);
   }

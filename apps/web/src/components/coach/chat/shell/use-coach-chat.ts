@@ -1,6 +1,7 @@
 'use client';
 
 import { useChat } from '@ai-sdk/react';
+import { apiFetch } from '@/client/query/api-fetch';
 import { useQueryClient } from '@tanstack/react-query';
 import {
   DefaultChatTransport,
@@ -108,7 +109,8 @@ export function useCoachChat({
         api: '/api/coach/chat',
         fetch: async (input, init) => {
           const signal = replaceChatFetchSignal(conversationId, init?.signal);
-          const response = await fetch(input, { ...init, signal });
+          const path = input instanceof Request ? input.url : String(input);
+          const response = await apiFetch(path, { ...init, signal });
           if (response.ok) {
             setBudgetWarning(response.headers.get(AI_BUDGET_WARNING_HEADER) === '1');
             setBudgetBlockedUntil(null);

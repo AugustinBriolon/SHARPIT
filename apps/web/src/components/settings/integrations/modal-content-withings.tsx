@@ -17,6 +17,7 @@ import {
 } from '@/components/settings/integrations/types';
 import { buttonVariants } from '@/components/ui/button';
 import { cn } from '@sharpit/server/lib/utils';
+import { ConnectLink } from '@/components/settings/integrations/connect-link';
 
 function WithingsNotConfigured({ integration }: IntegrationContentProps) {
   return (
@@ -56,12 +57,12 @@ function WithingsNotConnected({ integration }: IntegrationContentProps) {
         OAuth Withings exige une URL de redirection HTTPS (pas localhost). Sur Vercel :{' '}
         <code className="text-xs">https://ton-domaine/api/withings/callback</code>
       </p>
-      <a
+      <ConnectLink
         className={cn(buttonVariants(), 'w-full sm:w-auto')}
         href="/api/withings/connect?returnTo=/settings/integrations"
       >
         {integrationConnectCta(integration)}
-      </a>
+      </ConnectLink>
       {integration.statusMessage && (
         <p aria-live="assertive" className="text-destructive text-sm">
           {integration.statusMessage}

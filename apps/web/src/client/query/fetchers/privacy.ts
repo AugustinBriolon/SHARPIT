@@ -4,13 +4,14 @@
  */
 
 import { sendJson } from '@/client/query/send-json';
+import { apiFetch } from '@/client/query/api-fetch';
 
 export async function postPrivacyConsent(body: Record<string, unknown>): Promise<unknown> {
   return sendJson('/api/privacy/consent', 'POST', body);
 }
 
 export async function downloadPrivacyExport(): Promise<Blob> {
-  const response = await fetch('/api/privacy/export');
+  const response = await apiFetch('/api/privacy/export');
   if (!response.ok) {
     throw new Error('Export impossible');
   }
@@ -18,7 +19,7 @@ export async function downloadPrivacyExport(): Promise<Blob> {
 }
 
 export async function deletePrivacyAccount(): Promise<void> {
-  const response = await fetch('/api/privacy/delete', { method: 'POST' });
+  const response = await apiFetch('/api/privacy/delete', { method: 'POST' });
   if (!response.ok) {
     throw new Error('Suppression impossible');
   }

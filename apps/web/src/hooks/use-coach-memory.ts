@@ -5,6 +5,7 @@ import type { CoachMemoryEntry } from '@sharpit/server/lib/coach-memory/core/typ
 import { toast } from '@/components/ui/toast';
 import { isTempId, tempId } from '@/client/query/optimistic';
 import { queryKeys } from '@/client/query/keys';
+import { apiFetch } from '@/client/query/api-fetch';
 
 export type CoachMemoryResponse = {
   entries: CoachMemoryEntry[];
@@ -59,7 +60,7 @@ function patchTravelEntryOptimistic(
 }
 
 async function fetchCoachMemory(): Promise<CoachMemoryResponse> {
-  const res = await fetch('/api/coach-memory');
+  const res = await apiFetch('/api/coach-memory');
   if (!res.ok) {
     throw new Error('coach memory fetch failed');
   }
@@ -120,7 +121,7 @@ export function useCoachMemoryMutations() {
 
   const create = useMutation({
     mutationFn: async (payload: TravelMemoryPayload) => {
-      const res = await fetch('/api/coach-memory', {
+      const res = await apiFetch('/api/coach-memory', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -181,7 +182,7 @@ export function useCoachMemoryMutations() {
 
   const update = useMutation({
     mutationFn: async ({ id, payload }: { id: string; payload: TravelMemoryPayload }) => {
-      const res = await fetch(`/api/coach-memory/${id}`, {
+      const res = await apiFetch(`/api/coach-memory/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -233,7 +234,7 @@ export function useCoachMemoryMutations() {
 
   const remove = useMutation({
     mutationFn: async (id: string) => {
-      const res = await fetch(`/api/coach-memory/${id}`, { method: 'DELETE' });
+      const res = await apiFetch(`/api/coach-memory/${id}`, { method: 'DELETE' });
       if (!res.ok) {
         const data = (await res.json()) as { error?: string };
         throw new Error(data.error ?? 'Suppression impossible');

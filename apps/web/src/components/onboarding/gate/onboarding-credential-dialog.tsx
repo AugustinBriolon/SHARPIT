@@ -24,6 +24,7 @@ import {
   fetchIntegrationSourcePrefs,
   postPrivacyConsent,
 } from '@/client/query/fetchers';
+import { navigateToConnect } from '@/client/query/api-fetch';
 
 type CredentialProvider = Extract<IntegrationId, 'garmin' | 'renpho' | 'myfitnesspal'>;
 
@@ -52,7 +53,9 @@ function redirectGarminConnect(dataClass: DataClassId | null) {
     returnTo: '/onboarding',
     ...(dataClass ? { dataClass } : {}),
   });
-  window.location.href = `/api/garmin/connect?${params.toString()}`;
+  navigateToConnect(`/api/garmin/connect?${params.toString()}`).catch((error: unknown) => {
+    console.error('[onboarding] Garmin connect failed', error);
+  });
 }
 
 async function postCredentialConnect(

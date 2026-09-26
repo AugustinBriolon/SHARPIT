@@ -3,12 +3,13 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '@/client/query/keys';
 import type { CoachMemoryResponse } from '@/hooks/use-coach-memory';
+import { apiFetch } from '@/client/query/api-fetch';
 
 export function useCoachContext() {
   return useQuery({
     queryKey: queryKeys.coachContext,
     queryFn: async (): Promise<string> => {
-      const res = await fetch('/api/coach/context');
+      const res = await apiFetch('/api/coach/context');
       if (!res.ok) {
         throw new Error('Impossible de charger le contexte.');
       }
@@ -22,7 +23,7 @@ export function useSaveCoachContext() {
   const queryClient = useQueryClient();
   return useMutation<string, Error, string, { previous: string | undefined }>({
     mutationFn: async (context) => {
-      const res = await fetch('/api/coach/context', {
+      const res = await apiFetch('/api/coach/context', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ context }),

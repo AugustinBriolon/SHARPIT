@@ -1,5 +1,6 @@
 import type { ClientActivity, ClientActivityDetail } from '@sharpit/server/lib/query/types';
 import { fetchJson, type Serialized, toDate, toDateOrNull } from './shared';
+import { apiFetch } from '@/client/query/api-fetch';
 
 export async function fetchActivities(): Promise<ClientActivity[]> {
   const data = await fetchJson<Serialized<ClientActivity>[]>('/api/activities');
@@ -72,7 +73,7 @@ export async function postActivityNarrative(
   narrativeAnalyzedAt?: string | null;
   error?: string;
 }> {
-  const res = await fetch(`/api/activities/${encodeURIComponent(activityId)}/narrative`, {
+  const res = await apiFetch(`/api/activities/${encodeURIComponent(activityId)}/narrative`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
@@ -97,7 +98,7 @@ export async function postActivityWeatherPreview(
   options?: { signal?: AbortSignal },
 ): Promise<{ weather?: string | null; summary?: string | null } | null> {
   try {
-    const res = await fetch('/api/activities/weather-preview', {
+    const res = await apiFetch('/api/activities/weather-preview', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),

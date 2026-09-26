@@ -7,6 +7,7 @@ import {
   type ClientWeeklyReview,
 } from '@/client/query/fetchers';
 import { queryKeys } from '@/client/query/keys';
+import { apiFetch } from '@/client/query/api-fetch';
 
 export function useWeeklyReview(date: string) {
   return useQuery({
@@ -27,7 +28,7 @@ export function useGenerateWeeklyReview() {
   const queryClient = useQueryClient();
   return useMutation<ClientWeeklyReview, Error, string>({
     mutationFn: async (date) => {
-      const res = await fetch('/api/coach/weekly-review', {
+      const res = await apiFetch('/api/coach/weekly-review', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ date }),

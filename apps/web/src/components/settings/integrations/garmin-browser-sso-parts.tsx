@@ -13,6 +13,7 @@ import {
   STATUS_SURFACE,
 } from '@sharpit/server/lib/presentation/coaching/status-surface';
 import { cn } from '@sharpit/server/lib/utils';
+import { ConnectLink } from '@/components/settings/integrations/connect-link';
 
 export type GarminSsoPhase = 'form' | 'connecting' | 'success' | 'error';
 
@@ -105,9 +106,9 @@ export function GarminSsoErrorPanel({
         </p>
       </div>
       <div className="flex flex-wrap gap-2">
-        <a className={cn(buttonVariants(), 'w-full sm:w-auto')} href={retryHref}>
+        <ConnectLink className={cn(buttonVariants(), 'w-full sm:w-auto')} href={retryHref}>
           Réessayer
-        </a>
+        </ConnectLink>
         <Link
           className={cn(buttonVariants({ variant: 'outline' }), 'w-full sm:w-auto')}
           href={backHref}

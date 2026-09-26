@@ -1,6 +1,7 @@
 import type { DisplayMode } from '@sharpit/server/lib/preferences/display-mode';
 import { sendJson } from '@/client/query/send-json';
 import { fetchJson } from './shared';
+import { apiFetch } from '@/client/query/api-fetch';
 
 export interface AthleteProfilePayload {
   heightCm: number | null;
@@ -32,7 +33,7 @@ export async function patchAthleteProfile(
 
 /** Fire-and-forget unload save — must use keepalive; do not await JSON. */
 export function patchAthleteProfileKeepalive(patch: Record<string, unknown>): void {
-  void fetch('/api/athlete-profile', {
+  void apiFetch('/api/athlete-profile', {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(patch),
@@ -54,7 +55,7 @@ export type GarminProfileImportResult = {
 };
 
 export async function importGarminAthleteProfile(): Promise<GarminProfileImportResult> {
-  const res = await fetch('/api/athlete-profile/import-garmin', { method: 'POST' });
+  const res = await apiFetch('/api/athlete-profile/import-garmin', { method: 'POST' });
   const data = (await res.json().catch(() => null)) as
     (GarminProfileImportResult & { error?: string }) | null;
   if (!res.ok) {

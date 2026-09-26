@@ -8,6 +8,7 @@ import type { IntegrationId } from '@sharpit/server/lib/integrations/shared/clie
 import type { IntegrationSourcePrefs } from '@sharpit/server/lib/integrations/source-prefs';
 import { sendJson } from '@/client/query/send-json';
 import { fetchJson } from './shared';
+import { apiFetch } from '@/client/query/api-fetch';
 
 export async function fetchIntegrationSourcePrefs(): Promise<IntegrationSourcePrefs | null> {
   try {
@@ -116,7 +117,7 @@ export async function exchangeGarminSsoTicket(
   ticket: string,
   state: string,
 ): Promise<GarminSsoTicketResult> {
-  const response = await fetch('/api/garmin/sso-callback', {
+  const response = await apiFetch('/api/garmin/sso-callback', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ ticket, state }),

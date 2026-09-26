@@ -9,6 +9,7 @@ import { toast } from '@/components/ui/toast';
 import type { ActivityType, SessionIntensity } from '@prisma/client';
 import type { CoachEndurancePrescription } from '@sharpit/server/lib/planned-session/endurance/coach-endurance-prescription';
 import type { GateResult } from '@sharpit/server/lib/plan-gate/types';
+import { apiFetch } from '@/client/query/api-fetch';
 // The shape the coach actually returns — mirroring it by hand let it drift.
 import type { CoachStrengthPrescription } from '@sharpit/server/lib/planned-session/strength/strength-prescription';
 import type {
@@ -93,7 +94,7 @@ export async function postCoachGeneration<TResult>({
   onProgress,
   fallbackError = 'La génération a échoué.',
 }: PostCoachGenerationOptions): Promise<TResult> {
-  const res = await fetch(url, {
+  const res = await apiFetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(params),

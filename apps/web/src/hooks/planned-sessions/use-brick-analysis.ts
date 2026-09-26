@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { queryKeys } from '@/client/query/keys';
 import type { BrickAnalysis } from '@sharpit/server/lib/validators/coach';
+import { apiFetch } from '@/client/query/api-fetch';
 
 export interface ClientBrickAnalysis {
   brickGroupId: string;
@@ -15,7 +16,7 @@ export function useBrickAnalysis(brickGroupId: string | null | undefined) {
     queryKey: queryKeys.brickAnalysis(brickGroupId ?? ''),
     enabled: Boolean(brickGroupId),
     queryFn: async (): Promise<ClientBrickAnalysis | null> => {
-      const res = await fetch(
+      const res = await apiFetch(
         `/api/planned-sessions/brick/analyze?groupId=${encodeURIComponent(brickGroupId!)}`,
       );
       if (!res.ok) {
@@ -31,7 +32,7 @@ export function useAnalyzeBrick() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (brickGroupId: string) => {
-      const res = await fetch('/api/planned-sessions/brick/analyze', {
+      const res = await apiFetch('/api/planned-sessions/brick/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ brickGroupId }),

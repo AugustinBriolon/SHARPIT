@@ -1,4 +1,5 @@
 import { formatApiErrorMessage, parseApiErrorBody } from '@/client/query/api-error';
+import { apiFetch } from '@/client/query/api-fetch';
 
 export type SendJsonOptions = {
   signal?: AbortSignal;
@@ -23,7 +24,7 @@ export async function sendJson(
   body?: unknown,
   options?: SendJsonOptions,
 ) {
-  const res = await fetch(url, {
+  const res = await apiFetch(url, {
     method,
     headers: body !== undefined ? { 'Content-Type': 'application/json' } : undefined,
     body: body !== undefined ? JSON.stringify(body) : undefined,

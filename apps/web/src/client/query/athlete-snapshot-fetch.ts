@@ -1,10 +1,11 @@
 import type { AthleteSnapshot } from '@sharpit/server/athlete-state/snapshot';
+import { apiFetch } from '@/client/query/api-fetch';
 
 export async function fetchAthleteSnapshot(
   trainingDayId: string,
 ): Promise<{ snapshot: AthleteSnapshot; isRefreshing: boolean }> {
   const url = `/api/athlete-state/snapshot?trainingDayId=${trainingDayId}`;
-  const res = await fetch(url);
+  const res = await apiFetch(url);
   if (!res.ok) {
     throw new Error('Impossible de charger ton état. Réessaie.');
   }
@@ -14,7 +15,7 @@ export async function fetchAthleteSnapshot(
 export async function refreshAthleteSnapshot(
   trainingDayId: string,
 ): Promise<{ snapshot: AthleteSnapshot; isRefreshing: boolean }> {
-  const res = await fetch(
+  const res = await apiFetch(
     `/api/athlete-state/refresh?trainingDayId=${trainingDayId}&forceSync=true`,
     {
       method: 'POST',

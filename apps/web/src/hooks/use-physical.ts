@@ -6,6 +6,7 @@ import { fetchPhysicalNotes } from '@/client/query/fetchers';
 import { queryKeys } from '@/client/query/keys';
 import { listOptimistic, tempId } from '@/client/query/optimistic';
 import type { ClientPhysicalCheckin, ClientPhysicalNote } from '@sharpit/server/lib/query/types';
+import { apiFetch } from '@/client/query/api-fetch';
 
 export interface PhysicalNotePayload {
   category: PhysicalCategory;
@@ -29,7 +30,7 @@ export interface CheckinPayload {
 }
 
 async function sendJson(url: string, method: string, body?: unknown) {
-  const res = await fetch(url, {
+  const res = await apiFetch(url, {
     method,
     headers: body ? { 'Content-Type': 'application/json' } : undefined,
     body: body ? JSON.stringify(body) : undefined,

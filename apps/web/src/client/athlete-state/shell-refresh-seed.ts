@@ -1,6 +1,7 @@
 import type { QueryClient } from '@tanstack/react-query';
 import type { TodayViewModel } from '@sharpit/server/presentation/today-view-model';
 import { queryKeys } from '@/client/query/keys';
+import { apiFetch } from '@/client/query/api-fetch';
 
 export type ShellRefreshSeed = {
   trainingDayId: string;
@@ -80,7 +81,7 @@ async function fetchShellRefreshSeed(
   queryClient: QueryClient,
   trainingDayId: string,
 ): Promise<ShellRefreshSeed | null> {
-  const res = await fetch(`/api/athlete-state/refresh?trainingDayId=${trainingDayId}`, {
+  const res = await apiFetch(`/api/athlete-state/refresh?trainingDayId=${trainingDayId}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ source: 'app_shell' }),
