@@ -78,5 +78,6 @@ re-run `yarn smoke:must-private https://sharpit.app` and a universal-link tap af
 ## Step 9 — thin web (needs team validation)
 
 Remove the rich Coach and heavy editing from the web (iOS only); `/welcome` signed-out only.
-Deviation already noticed: a signed-in athlete on `/welcome` goes to `/start`, not `/`
-(`src/proxy.ts`, `redirectSignedIn`). Not changed until the team validates the UX.
+A signed-in athlete on `/welcome` goes to `/start` (`apps/web/src/proxy.ts`, `redirectSignedIn`),
+which lands on `/` (Today) once consent and onboarding are done, and on the missing step otherwise.
+Kept on purpose (2026-09-27): Today is still where a ready athlete ends up, without skipping consent.
