@@ -5,6 +5,9 @@ import { describe, expect, it } from 'vitest';
 const API_ROUTES = join('src', 'app', 'api');
 const WEB_ROUTES = join('..', 'web', 'src', 'app', 'api');
 
+/** Web session state only: clearing the demo cookie means nothing on a Bearer host. */
+const WEB_ONLY_MOUNTS = new Set([join('demo', 'exit', 'route.ts')]);
+
 function routeFiles(dir: string): string[] {
   return readdirSync(dir).flatMap((entry) => {
     const path = join(dir, entry);
@@ -16,29 +19,35 @@ function routeFiles(dir: string): string[] {
 }
 
 describe('api route mounts', () => {
-  const mounts = routeFiles(API_ROUTES);
+  const mounts = routeFiles(API_ROUTES).map((file) => relative(API_ROUTES, file));
+  const webMounts = existsSync(WEB_ROUTES)
+    ? routeFiles(WEB_ROUTES).map((file) => relative(WEB_ROUTES, file))
+    : [];
 
-  it('serves the native contract, the coach stream and the crons — nothing else', () => {
-    const paths = mounts.map((file) => relative(API_ROUTES, file));
-    expect(paths.filter((path) => path.startsWith('v1/')).length).toBeGreaterThan(40);
-    expect(paths).toContain(join('coach', 'chat', 'route.ts'));
-    expect(
-      paths.every(
-        (path) =>
-          path.startsWith(`v1/`) || path.startsWith('cron/') || path === 'coach/chat/route.ts',
-      ),
-    ).toBe(true);
+  it('serves the native contract, the crons and the web routes — nothing else', () => {
+    expect(mounts.filter((path) => path.startsWith('v1/')).length).toBeGreaterThan(40);
+    const unexpected = mounts.filter(
+      (path) => !path.startsWith('v1/') && !path.startsWith('cron/') && !webMounts.includes(path),
+    );
+    expect(unexpected).toEqual([]);
   });
 
-  // A route both apps still mount (the coach stream, for the web's own UI) mounts the same handler
-  // with the same segment config: it cannot drift between api. and the web.
-  const shared = mounts
-    .map((file) => relative(API_ROUTES, file))
-    .filter((path) => existsSync(join(WEB_ROUTES, path)));
+  // ADR-048 phase 3: the web calls `api.` for everything it reads or writes.
+  it('mounts every web route but the web-only ones', () => {
+    const missing = webMounts.filter(
+      (path) => !WEB_ONLY_MOUNTS.has(path) && !mounts.includes(path),
+    );
+    expect(missing).toEqual([]);
+  });
+
+  // A route both apps mount mounts the same handler with the same segment config: it cannot
+  // drift between api. and the web while the web still serves it.
+  const shared = mounts.filter((path) => webMounts.includes(path));
 
   it.each(shared)('%s matches the web mount', (path) => {
-    const web = join(WEB_ROUTES, path);
-    expect(readFileSync(join(API_ROUTES, path), 'utf8')).toBe(readFileSync(web, 'utf8'));
+    expect(readFileSync(join(API_ROUTES, path), 'utf8')).toBe(
+      readFileSync(join(WEB_ROUTES, path), 'utf8'),
+    );
   });
 
   it('is the only app mounting the crons', () => {

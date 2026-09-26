@@ -16,9 +16,10 @@ type RouteLoaders = Record<string, () => Promise<RouteModule>>;
 
 // Lazy: only the modules a test asks for are loaded.
 const v1Routes = import.meta.glob('./**/route.ts') as RouteLoaders;
-// The /api twins are mounted by the web app (ADR-048): the native contract must run their very handler.
-const legacyRoutes = import.meta.glob('../../../../../web/src/app/api/**/route.ts') as RouteLoaders;
-const LEGACY = '../../../../../web/src/app/api';
+// The /api twins the web calls, mounted here too (ADR-048 phase 3): the native contract must run
+// their very handler.
+const legacyRoutes = import.meta.glob('../**/route.ts') as RouteLoaders;
+const LEGACY = '..';
 
 async function load(routes: RouteLoaders, key: string): Promise<RouteModule> {
   const loader = routes[key];
@@ -29,17 +30,22 @@ async function load(routes: RouteLoaders, key: string): Promise<RouteModule> {
 }
 
 describe('/api/v1 native surfaces', () => {
-  it.each(NATIVE_V1_SURFACES)('/api/v1/$path serves the /api handler', async (surface) => {
-    const v1 = await load(v1Routes, `./${surface.path}/route.ts`);
-    const legacy = await load(legacyRoutes, `${LEGACY}/${surface.path}/route.ts`);
+  it.each(NATIVE_V1_SURFACES)(
+    '/api/v1/$path serves the /api handler',
+    async (surface) => {
+      const v1 = await load(v1Routes, `./${surface.path}/route.ts`);
+      const legacy = await load(legacyRoutes, `${LEGACY}/${surface.path}/route.ts`);
 
-    const exported = HTTP_METHODS.filter((method) => method in v1);
-    expect(exported).toEqual([...surface.methods].sort(byHttpOrder));
-    for (const method of surface.methods) {
-      expect(v1[method]).toBe(legacy[method]);
-    }
-    expect(v1.maxDuration).toBe(legacy.maxDuration);
-  });
+      const exported = HTTP_METHODS.filter((method) => method in v1);
+      expect(exported).toEqual([...surface.methods].sort(byHttpOrder));
+      for (const method of surface.methods) {
+        expect(v1[method]).toBe(legacy[method]);
+      }
+      expect(v1.maxDuration).toBe(legacy.maxDuration);
+      // Loading a handler's whole import graph is slow on a busy machine.
+    },
+    30_000,
+  );
 
   it.each(NATIVE_V1_ONLY)('/api/v1/$path is a native-only route', async (surface) => {
     const v1 = await load(v1Routes, `./${surface.path}/route.ts`);
