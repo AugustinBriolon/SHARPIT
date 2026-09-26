@@ -1,12 +1,13 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 
-function vercelConfig(app: 'api' | 'web'): {
+function vercelConfig(app: 'api' | 'web' | 'hub'): {
   buildCommand?: string;
   functions?: object;
   ignoreCommand?: string;
+  git?: { deploymentEnabled?: unknown };
 } {
-  const path = app === 'api' ? 'vercel.json' : '../web/vercel.json';
+  const path = app === 'api' ? 'vercel.json' : `../${app}/vercel.json`;
   return JSON.parse(readFileSync(path, 'utf8')) as { buildCommand?: string };
 }
 
@@ -35,5 +36,10 @@ describe('migration owner', () => {
     expect(vercelConfig('web').ignoreCommand).toBe(
       'node ../../scripts/ci/vercel-ignore-build.mjs --app web',
     );
+  });
+
+  // .github/workflows/deploy.yml deploys the apps a push touches through Deploy Hooks.
+  it.each(['api', 'web', 'hub'] as const)('%s never deploys on its own from a Git push', (app) => {
+    expect(vercelConfig(app).git?.deploymentEnabled).toBe(false);
   });
 });

@@ -4,10 +4,7 @@
   "buildCommand": "yarn build",
   "ignoreCommand": "node ../../scripts/ci/vercel-ignore-build.mjs --app hub",
   "git": {
-    "deploymentEnabled": {
-      "*": false,
-      "main": true
-    }
+    "deploymentEnabled": false
   },
   "github": {
     "autoJobCancelation": true

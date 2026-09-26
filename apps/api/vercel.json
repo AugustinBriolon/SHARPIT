@@ -4,10 +4,7 @@
   "buildCommand": "yarn db:migrate:deploy && yarn build",
   "ignoreCommand": "node ../../scripts/ci/vercel-ignore-build.mjs --app api",
   "git": {
-    "deploymentEnabled": {
-      "*": false,
-      "main": true
-    }
+    "deploymentEnabled": false
   },
   "github": {
     "autoJobCancelation": true
