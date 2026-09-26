@@ -1,7 +1,7 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "installCommand": "corepack enable && HUSKY=0 yarn install --immutable",
-  "buildCommand": "yarn build",
+  "buildCommand": "yarn db:migrate:deploy && yarn build",
   "ignoreCommand": "git diff HEAD^ HEAD --quiet -- . ../../packages ../../package.json ../../yarn.lock ../../turbo.json",
   "git": {
     "deploymentEnabled": {
@@ -53,6 +53,24 @@
       "maxDuration": 60
     },
     "src/app/api/cron/planned-forecast/route.ts": {
+      "maxDuration": 300
+    },
+    "src/app/api/renpho/sync/route.ts": {
+      "maxDuration": 300
+    },
+    "src/app/api/withings/sync/route.ts": {
+      "maxDuration": 300
+    },
+    "src/app/api/myfitnesspal/sync/route.ts": {
+      "maxDuration": 300
+    },
+    "src/app/api/garmin/connect/route.ts": {
+      "maxDuration": 300
+    },
+    "src/app/api/coach/adapt/route.ts": {
+      "maxDuration": 300
+    },
+    "src/app/api/coach/plan/route.ts": {
       "maxDuration": 300
     }
   }

@@ -2983,6 +2983,7 @@ __metadata:
     prisma: "npm:^6.19.3"
     react: "npm:19.2.4"
     react-dom: "npm:19.2.4"
+    tsx: "npm:^4.22.4"
     typescript: "npm:^5"
     vitest: "npm:^4.1.9"
   languageName: unknown
