@@ -30,9 +30,6 @@
     "smoke:must-private": "tsx scripts/smoke-must-private.ts",
     "smoke:api-host": "tsx scripts/smoke-api-host.ts"
   },
-  "prisma": {
-    "schema": "../../packages/db/prisma/schema.prisma"
-  },
   "dependencies": {
     "@clerk/nextjs": "^7.5.9",
     "@prisma/client": "^6.19.3",
@@ -47,6 +44,7 @@
     "@sharpit/eslint-config": "workspace:*",
     "@types/node": "^20",
     "@types/react": "^19",
+    "dotenv": "^16.4.7",
     "eslint": "^9",
     "prisma": "^6.19.3",
     "tsx": "^4.22.4",

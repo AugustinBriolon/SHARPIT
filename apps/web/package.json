@@ -19,9 +19,6 @@
     "test:e2e": "playwright test",
     "test:e2e:dev": "PLAYWRIGHT_BASE_URL=http://localhost:3000 playwright test activity-state navigation-shell pwa-install-card pwa-mobile-demo morning-journey drill-down-date-strip"
   },
-  "prisma": {
-    "schema": "../../packages/db/prisma/schema.prisma"
-  },
   "dependencies": {
     "@ai-sdk/react": "4.0.35",
     "@base-ui/react": "^1.6.0",
