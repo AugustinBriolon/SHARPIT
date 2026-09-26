@@ -9,7 +9,7 @@ import {
   type ClientConversationSummary,
 } from '@/client/query/fetchers';
 import { queryKeys } from '@/client/query/keys';
-import { apiFetch } from '@/client/query/api-fetch';
+import { apiFetch } from '@sharpit/ui/client/query/api-fetch';
 
 let createConversationPromise: Promise<ClientConversation> | null = null;
 

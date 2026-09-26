@@ -83,17 +83,10 @@ describe('proxy', () => {
     expect(response.headers.get('location')).toBe('https://sharpit.app/start');
   });
 
-  it('protects athlete pages, the entry router and the Garmin handoff entry', async () => {
-    await run('https://sharpit.app/connect/garmin');
-    await run('https://sharpit.app/connect/garmin/start');
-    await run('https://sharpit.app/start');
-    expect(state.protect).toHaveBeenCalledTimes(3);
-  });
-
-  it('keeps the AASA and the Garmin callback public', async () => {
-    await run('https://sharpit.app/.well-known/apple-app-site-association');
-    await run('https://sharpit.app/connect/garmin/callback?garmin=connected');
-    expect(state.protect).not.toHaveBeenCalled();
+  it('protects athlete pages and the entry router', async () => {
+    await run('https://web.sharpit.app/settings');
+    await run('https://web.sharpit.app/start');
+    expect(state.protect).toHaveBeenCalledTimes(2);
   });
 
   it('no longer lets the old demo cookie in without a session', async () => {

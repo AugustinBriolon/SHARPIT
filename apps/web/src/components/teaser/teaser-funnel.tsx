@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { Activity } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@sharpit/ui/components/ui/button';
 import { DockedActionBar } from '@/components/ui/docked-action-bar';
 import { EyebrowLabel } from '@/components/ui/eyebrow-label';
 import { LinkButton } from '@/components/ui/link-button';

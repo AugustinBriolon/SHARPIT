@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Dumbbell, Watch } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@sharpit/ui/components/ui/button';
 import {
   ExerciseIndex,
   ExerciseMediaAttribution,

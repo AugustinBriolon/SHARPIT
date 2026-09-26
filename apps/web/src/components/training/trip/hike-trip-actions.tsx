@@ -5,7 +5,7 @@ import { ActivityType } from '@prisma/client';
 import { MoreHorizontal, Mountain, Pencil, Plus, Trash2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useMemo, useRef, useState } from 'react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@sharpit/ui/components/ui/button';
 import { useConfirmDialog } from '@/components/ui/confirm-dialog';
 import {
   Dialog,

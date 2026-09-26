@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@sharpit/ui/components/ui/button';
 import { toast } from '@/components/ui/toast';
 import { useActivityMutations } from '@/hooks/use-data';
 import { NotebookPen } from 'lucide-react';

@@ -16,7 +16,7 @@ import type { usePlannedSessionDialog } from '@/components/planning/session/edit
 import { PlannedSessionSingleFields } from '@/components/planning/session/edit/planned-session-single-fields';
 import { PlannedSessionBrickFields } from '@/components/planning/session/edit/planned-session-brick-fields';
 import { submitButtonLabel } from '@/components/planning/session/edit/planned-session-dialog-helpers';
-import { Button } from '@/components/ui/button';
+import { Button } from '@sharpit/ui/components/ui/button';
 
 export function PlannedSessionEditForm({
   dialog,

@@ -1,7 +1,7 @@
 'use client';
 
 import { ActivityTypeIndicator } from '@/components/ui/instruments/activity-type-indicator';
-import { Button } from '@/components/ui/button';
+import { Button } from '@sharpit/ui/components/ui/button';
 import {
   LinkAnalysisStatus,
   type LinkAnalysisPhase,

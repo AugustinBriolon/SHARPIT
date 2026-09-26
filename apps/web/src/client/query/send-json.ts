@@ -1,5 +1,5 @@
 import { formatApiErrorMessage, parseApiErrorBody } from '@/client/query/api-error';
-import { apiFetch } from '@/client/query/api-fetch';
+import { apiFetch } from '@sharpit/ui/client/query/api-fetch';
 
 export type SendJsonOptions = {
   signal?: AbortSignal;

@@ -10,7 +10,7 @@ import {
   type IntegrationContentProps,
 } from '@/components/settings/integrations/modal-content-shared';
 import { useMfpContentState } from '@/components/settings/integrations/mfp-content-hooks';
-import { Button } from '@/components/ui/button';
+import { Button } from '@sharpit/ui/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 

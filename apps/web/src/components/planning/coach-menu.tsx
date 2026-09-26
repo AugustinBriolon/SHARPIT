@@ -9,7 +9,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Button } from '@/components/ui/button';
+import { Button } from '@sharpit/ui/components/ui/button';
 import { CalendarRange, NotebookText, SlidersHorizontal } from 'lucide-react';
 
 /** Week-chrome tools only — create/manual/bilan/macro live on day + / hub Plan. */

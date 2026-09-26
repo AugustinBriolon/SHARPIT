@@ -14,7 +14,7 @@ import {
   integrationConnectBody,
   integrationConnectCta,
 } from '@/components/settings/integrations/types';
-import { Button } from '@/components/ui/button';
+import { Button } from '@sharpit/ui/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 

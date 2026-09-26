@@ -3,7 +3,7 @@
 import { Check, Loader2 } from 'lucide-react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { useEffect, useMemo, useState } from 'react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@sharpit/ui/components/ui/button';
 import { StaggerList } from '@/components/motion/stagger-list';
 import { ThresholdChangeRow } from '@/components/threshold/threshold-change-row';
 import { useSafeMotion, useShouldAnimate } from '@/client/motion/hooks';

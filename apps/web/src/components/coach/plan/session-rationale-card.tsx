@@ -1,7 +1,7 @@
 'use client';
 
 import { Eye } from 'lucide-react';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Skeleton } from '@sharpit/ui/components/ui/skeleton';
 import { useSessionRationalePresentation } from '@/hooks/use-data';
 import { GateStatusBadge } from '@/components/coach/plan/gate-status-badge';
 

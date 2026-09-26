@@ -1,5 +1,5 @@
 import type { AthleteSnapshot } from '@sharpit/app/athlete-state/snapshot';
-import { apiFetch } from '@/client/query/api-fetch';
+import { apiFetch } from '@sharpit/ui/client/query/api-fetch';
 
 export async function fetchAthleteSnapshot(
   trainingDayId: string,

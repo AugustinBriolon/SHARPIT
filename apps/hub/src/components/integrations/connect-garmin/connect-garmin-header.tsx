@@ -1,4 +1,4 @@
-import { IntegrationLogo } from '@/components/settings/integrations/logos';
+import { IntegrationLogo } from '@sharpit/ui/components/settings/integrations/logos';
 
 export function ConnectGarminHeader({ title, lead }: { title: string; lead?: string }) {
   return (

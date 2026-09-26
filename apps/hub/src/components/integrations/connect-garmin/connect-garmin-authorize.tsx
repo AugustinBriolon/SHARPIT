@@ -2,14 +2,14 @@
 
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { Loader2 } from 'lucide-react';
-import { buttonVariants } from '@/components/ui/button';
+import { buttonVariants } from '@sharpit/ui/components/ui/button';
 import { ConnectGarminHeader } from '@/components/integrations/connect-garmin/connect-garmin-header';
 import {
   createGarminSsoMessageHandler,
   GarminSsoConnectingPlate,
   type GarminSsoPhase,
-} from '@/components/settings/integrations/garmin-browser-sso-parts';
-import { useIosIframeFocusZoomGuard } from '@/hooks/use-ios-iframe-focus-zoom-guard';
+} from '@sharpit/ui/components/settings/integrations/garmin-browser-sso-parts';
+import { useIosIframeFocusZoomGuard } from '@sharpit/ui/hooks/use-ios-iframe-focus-zoom-guard';
 import { buildGarminBrowserSsoUrl } from '@sharpit/app/lib/integrations/garmin/garmin-browser-sso-shared';
 import {
   garminHandoffCallbackPath,

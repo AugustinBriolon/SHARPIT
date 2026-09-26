@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
 import { Activity } from 'lucide-react';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Skeleton } from '@sharpit/ui/components/ui/skeleton';
 
 export function AuthShell({
   children,

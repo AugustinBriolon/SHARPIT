@@ -1,4 +1,4 @@
-import { apiFetch } from '@/client/query/api-fetch';
+import { apiFetch } from '@sharpit/ui/client/query/api-fetch';
 /**
  * Shared JSON fetch + date hydration helpers for client fetchers.
  */

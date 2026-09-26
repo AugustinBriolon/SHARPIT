@@ -3,7 +3,7 @@
 import { Loader2, ListRestart } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ProfileContextBanner } from '@/components/profile/profile-context-banner';
-import { Button } from '@/components/ui/button';
+import { Button } from '@sharpit/ui/components/ui/button';
 import {
   Dialog,
   DialogContent,

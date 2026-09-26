@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 import { Link2Off } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
+import { Button } from '@sharpit/ui/components/ui/button';
 import { useConfirmDialog } from '@/components/ui/confirm-dialog';
 import { HikeStepSparkline } from '@/components/training/trip/hike-trip-elevation-profile-chart';
 import { useHikeTripMutations } from '@/hooks/use-data';

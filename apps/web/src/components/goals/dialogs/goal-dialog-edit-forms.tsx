@@ -6,7 +6,7 @@ import {
   MetricGoalForm,
   type MetricGoalFormResult,
 } from '@/components/goals/dialogs/metric-goal-form';
-import { Button } from '@/components/ui/button';
+import { Button } from '@sharpit/ui/components/ui/button';
 import type { GoalForEdit } from '@/components/goals/dialogs/goal-dialog';
 import { GoalLegacyMetricFields } from '@/components/goals/dialogs/goal-legacy-metric-fields';
 import { GoalRaceEditFields } from '@/components/goals/dialogs/goal-race-edit-fields';

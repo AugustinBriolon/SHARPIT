@@ -9,7 +9,7 @@ import { toast } from '@/components/ui/toast';
 import type { ActivityType, SessionIntensity } from '@prisma/client';
 import type { CoachEndurancePrescription } from '@sharpit/app/lib/planned-session/endurance/coach-endurance-prescription';
 import type { GateResult } from '@sharpit/app/lib/plan-gate/types';
-import { apiFetch } from '@/client/query/api-fetch';
+import { apiFetch } from '@sharpit/ui/client/query/api-fetch';
 // The shape the coach actually returns — mirroring it by hand let it drift.
 import type { CoachStrengthPrescription } from '@sharpit/app/lib/planned-session/strength/strength-prescription';
 import type {

@@ -1,5 +1,5 @@
 import { StickyHeader } from '@/components/layout/header/sticky-header';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Skeleton } from '@sharpit/ui/components/ui/skeleton';
 import {
   SkeletonAnalysisPanelAlt,
   SkeletonCard,

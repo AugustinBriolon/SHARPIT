@@ -1,7 +1,7 @@
 'use client';
 
 import { type ReactNode, useState } from 'react';
-import { navigateToConnect } from '@/client/query/api-fetch';
+import { navigateToConnect } from '@sharpit/ui/client/query/api-fetch';
 
 /**
  * A provider connect link. The connect runs on `api.`, which needs the session as a Bearer a

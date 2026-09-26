@@ -5,7 +5,7 @@ import { AppearanceDisplayModePicker } from '@/components/settings/appearance';
 import { DataHistoryWindowPicker } from '@/components/settings/personalization/data-history-window-picker';
 import { SurfaceModulesPanel } from '@/components/settings/personalization/surface-modules-panel';
 import { SettingsDemoBlock } from '@/components/settings/settings-demo-block';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Skeleton } from '@sharpit/ui/components/ui/skeleton';
 import { isDemoSession } from '@sharpit/app/lib/demo/demo-session';
 import { MOI_HUB_PATH } from '@sharpit/app/lib/moi/paths';
 

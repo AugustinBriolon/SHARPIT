@@ -1,6 +1,6 @@
 import { GoalCapHeroSkeleton } from '@/components/goals/cap/goal-cap-hero';
 import { GoalCapStatsSkeleton } from '@/components/goals/cap/goal-cap-stats';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Skeleton } from '@sharpit/ui/components/ui/skeleton';
 
 /** Cap-first loading shell for `/moi/objectifs`. */
 export function GoalsViewSkeleton({ embedded = false }: { embedded?: boolean } = {}) {

@@ -7,7 +7,7 @@ import { BrickOverviewCard } from '@/components/planning/brick/brick-overview-ca
 import { PlannedSessionPreview } from '@/components/today/rich/planned-session-preview';
 import { DrillDownSectionLabel } from '@/components/today/drill-down/section-label';
 import { InkEmptyState } from '@/components/ui/ink-empty-state';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Skeleton } from '@sharpit/ui/components/ui/skeleton';
 import { activityTypeLabels } from '@sharpit/app/lib/format';
 import { buildPlannedSessionPreview } from '@sharpit/app/lib/today/rich/planned-session-metrics';
 import { prefetchPlannedSessionDetail } from '@/client/query/prefetch-planned-session-detail';

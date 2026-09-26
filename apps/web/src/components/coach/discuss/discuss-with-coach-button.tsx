@@ -2,7 +2,7 @@
 
 import { MessageCircle } from 'lucide-react';
 import type { VariantProps } from 'class-variance-authority';
-import type { buttonVariants } from '@/components/ui/button';
+import type { buttonVariants } from '@sharpit/ui/components/ui/button';
 import { LinkButton } from '@/components/ui/link-button';
 import { usePlannedSessionNavDismiss } from '@/components/planning/session/planned-session-nav-dismiss';
 import {

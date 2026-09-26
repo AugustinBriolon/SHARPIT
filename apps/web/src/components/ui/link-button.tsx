@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { type VariantProps } from 'class-variance-authority';
-import { buttonTapScale, buttonVariants } from '@/components/ui/button';
+import { buttonTapScale, buttonVariants } from '@sharpit/ui/components/ui/button';
 import { cn } from '@sharpit/app/lib/utils';
 
 type LinkButtonProps = React.ComponentProps<typeof Link> &

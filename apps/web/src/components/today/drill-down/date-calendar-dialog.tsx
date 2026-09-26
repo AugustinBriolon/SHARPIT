@@ -11,7 +11,7 @@ import {
 } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { NavArrowLeft, NavArrowRight } from '@/components/icons/nav-arrows';
-import { Button } from '@/components/ui/button';
+import { Button } from '@sharpit/ui/components/ui/button';
 import {
   Dialog,
   DialogContent,

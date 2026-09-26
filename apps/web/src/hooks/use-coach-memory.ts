@@ -5,7 +5,7 @@ import type { CoachMemoryEntry } from '@sharpit/app/lib/coach-memory/core/types'
 import { toast } from '@/components/ui/toast';
 import { isTempId, tempId } from '@/client/query/optimistic';
 import { queryKeys } from '@/client/query/keys';
-import { apiFetch } from '@/client/query/api-fetch';
+import { apiFetch } from '@sharpit/ui/client/query/api-fetch';
 
 export type CoachMemoryResponse = {
   entries: CoachMemoryEntry[];

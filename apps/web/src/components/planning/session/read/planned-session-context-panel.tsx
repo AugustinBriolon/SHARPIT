@@ -1,6 +1,6 @@
 'use client';
 
-import { Skeleton } from '@/components/ui/skeleton';
+import { Skeleton } from '@sharpit/ui/components/ui/skeleton';
 import type { PlannedSessionViewModel } from '@sharpit/app/presentation/planned-session-view-model';
 import { usePlannedSessionMutations } from '@/hooks/use-data';
 import { cn } from '@sharpit/app/lib/utils';

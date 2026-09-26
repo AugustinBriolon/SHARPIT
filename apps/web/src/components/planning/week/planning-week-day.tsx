@@ -8,8 +8,8 @@ import { firstOpenPlannedSessionId } from '@/components/planning/week/planning-d
 import { PlanningSettledRow } from '@/components/planning/week/planning-settled-row';
 import { CompletedSessionPreview } from '@/components/today/rich/completed-session-preview';
 import { PlannedSessionPreview } from '@/components/today/rich/planned-session-preview';
-import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@sharpit/ui/components/ui/button';
+import { Skeleton } from '@sharpit/ui/components/ui/skeleton';
 import {
   brickLegSummaries,
   groupPlannedSessions,

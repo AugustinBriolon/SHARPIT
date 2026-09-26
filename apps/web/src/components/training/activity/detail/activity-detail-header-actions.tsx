@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { Link2, MoreHorizontal, Mountain, Pencil, Trash2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@sharpit/ui/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,

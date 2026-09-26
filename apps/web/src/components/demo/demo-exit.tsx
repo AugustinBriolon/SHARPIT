@@ -1,7 +1,7 @@
 'use client';
 
 import { useClerk } from '@clerk/nextjs';
-import { Button } from '@/components/ui/button';
+import { Button } from '@sharpit/ui/components/ui/button';
 import { cn } from '@sharpit/app/lib/utils';
 
 /** Leaving the demo signs out of the shared demo account and lands on sign-in. */

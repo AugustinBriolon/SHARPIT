@@ -5,7 +5,7 @@ import { format as formatDate, isAfter, isBefore, startOfDay, startOfMonth } fro
 import { fr } from 'date-fns/locale';
 import { CalendarDays } from 'lucide-react';
 import { NavArrowLeft, NavArrowRight } from '@/components/icons/nav-arrows';
-import { Button } from '@/components/ui/button';
+import { Button } from '@sharpit/ui/components/ui/button';
 import { DateCalendarDialog } from '@/components/today/drill-down/date-calendar-dialog';
 import { DateStrip } from '@/components/today/drill-down/date-strip';
 import {

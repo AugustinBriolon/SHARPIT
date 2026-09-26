@@ -9,7 +9,7 @@ import {
 import type { CredentialProvider } from '@/components/onboarding/wizard/use-onboarding-wizard';
 import { completeOnboarding } from '@/components/onboarding/wizard/onboarding-wizard-api';
 import type { OnboardingWizardStep } from '@sharpit/app/lib/onboarding/wizard/wizard-steps';
-import { navigateToConnect } from '@/client/query/api-fetch';
+import { navigateToConnect } from '@sharpit/ui/client/query/api-fetch';
 
 export function useOnboardingWizardFinish(
   setStep: React.Dispatch<React.SetStateAction<OnboardingWizardStep>>,

@@ -9,11 +9,11 @@ import { HikeTripElevationProfile } from '@/components/training/trip/hike-trip-e
 import { HikeTripInkBand } from '@/components/training/trip/hike-trip-ink-band';
 import { HikeTripTimeline } from '@/components/training/trip/hike-trip-timeline';
 import { HikeTripWaypoints } from '@/components/training/trip/hike-trip-waypoints';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Skeleton } from '@sharpit/ui/components/ui/skeleton';
 import { buildHikeTripElevationProfile } from '@sharpit/app/lib/activity/hike/hike-trip-elevation';
 import { buildHikeTripSummary } from '@sharpit/app/lib/activity/hike/hike-trip-summary';
 import type { ClientHikeTrip } from '@sharpit/app/lib/query/types';
-import { cachedServerApiJson } from '@/server/api-client';
+import { cachedServerApiJson } from '@sharpit/ui/server/api-client';
 
 type PageProps = { params: Promise<{ id: string }> };
 

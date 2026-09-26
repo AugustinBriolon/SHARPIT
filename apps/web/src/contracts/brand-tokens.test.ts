@@ -5,7 +5,10 @@ import { describe, expect, it } from 'vitest';
 
 import { BRAND } from '@sharpit/app/lib/brand/brand-tokens';
 
-const globalsCss = readFileSync(join(process.cwd(), 'src/app/globals.css'), 'utf8');
+const globalsCss = readFileSync(
+  join(process.cwd(), '../../packages/ui/src/styles/globals.css'),
+  'utf8',
+);
 
 describe('BRAND tokens (Seed-inspired)', () => {
   it('keeps Forest Depths as ink, not the only interactive color', () => {

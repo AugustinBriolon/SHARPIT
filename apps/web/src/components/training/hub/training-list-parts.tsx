@@ -5,7 +5,7 @@ import type { ClientActivity } from '@sharpit/app/lib/query/types';
 import { ActivityHistoryVirtualList } from '@/components/training/hub/activity-history-virtual-list';
 import { HistoryFilters } from '@/components/training/hub/history-filters';
 import { ActivitySourceEmptyActions } from '@/components/integrations/connect-source-cta';
-import { Button } from '@/components/ui/button';
+import { Button } from '@sharpit/ui/components/ui/button';
 import { InkEmptyState } from '@/components/ui/ink-empty-state';
 import { LinkButton } from '@/components/ui/link-button';
 import { type TrainingHistoryFilters } from '@sharpit/app/lib/training/periodization/history-filters';

@@ -21,7 +21,7 @@ import { activityDetailExpectsMap } from '@sharpit/app/lib/activity/detail/activ
 import { buildHikeOvernightSummary } from '@sharpit/app/lib/activity/hike/hike-overnight-summary';
 import { ActivityBrickSiblingNav } from '@/components/training/activity/detail/activity-brick-sibling-nav';
 import type { ActivityDetailPayload } from '@sharpit/app/lib/web/payloads';
-import { cachedServerApiJson } from '@/server/api-client';
+import { cachedServerApiJson } from '@sharpit/ui/server/api-client';
 import { HikeTripMemberLink } from '@/components/training/trip/hike-trip-member-link';
 import { ActivityType } from '@prisma/client';
 

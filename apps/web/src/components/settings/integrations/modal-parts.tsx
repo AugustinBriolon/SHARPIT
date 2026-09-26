@@ -1,7 +1,7 @@
 import Image from 'next/image';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import type { ReactNode } from 'react';
-import { Button, buttonVariants } from '@/components/ui/button';
+import { Button, buttonVariants } from '@sharpit/ui/components/ui/button';
 import { guardedActionLabel, useOfflineGuard } from '@/hooks/use-offline-guard';
 import { useIsDemoMode } from '@/hooks/use-is-demo-mode';
 import { motionTokens } from '@/client/motion/tokens';
@@ -11,8 +11,8 @@ import {
   integrationConnectCta,
   type IntegrationDefinition,
 } from '@/components/settings/integrations/types';
-import { IntegrationLogo } from '@/components/settings/integrations/logos';
-import { ConnectLink } from '@/components/settings/integrations/connect-link';
+import { IntegrationLogo } from '@sharpit/ui/components/settings/integrations/logos';
+import { ConnectLink } from '@sharpit/ui/components/settings/integrations/connect-link';
 
 export function formatIntegrationLastSync(lastSyncAt: string | null | undefined): string {
   return lastSyncAt

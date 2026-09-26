@@ -2,7 +2,7 @@
 
 import { ArrowLeftRight, Layers, Loader2, RefreshCw, Sparkles } from 'lucide-react';
 import { useMemo, useState } from 'react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@sharpit/ui/components/ui/button';
 import { toast } from '@/components/ui/toast';
 import { activityTypeLabels } from '@sharpit/app/lib/format';
 import { sessionScoreColor } from '@sharpit/app/lib/planned-session/display/session-analysis-display';

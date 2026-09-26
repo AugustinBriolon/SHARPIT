@@ -1,7 +1,7 @@
 'use client';
 
 import { guardedActionLabel } from '@/hooks/use-offline-guard';
-import { Button } from '@/components/ui/button';
+import { Button } from '@sharpit/ui/components/ui/button';
 import { ActivityFormGeneralCard } from '@/components/training/activity/form/activity-form-general-card';
 import { ActivityFormSportCards } from '@/components/training/activity/form/activity-form-sport-cards';
 import type { useActivityForm } from '@/components/training/activity/form/use-activity-form';

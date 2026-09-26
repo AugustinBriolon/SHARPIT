@@ -1,6 +1,6 @@
 'use client';
 
-import { Button } from '@/components/ui/button';
+import { Button } from '@sharpit/ui/components/ui/button';
 import { physicalNoteSubmitLabel } from '@/components/physical-health/dialogs/physical-note-dialog-helpers';
 
 export function PhysicalNoteDialogFooter({

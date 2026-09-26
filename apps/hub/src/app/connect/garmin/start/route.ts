@@ -3,7 +3,7 @@ import {
   CONNECT_GARMIN_CALLBACK_PATH,
   garminHandoffCallbackPath,
 } from '@sharpit/app/lib/integrations/garmin/garmin-connect-handoff';
-import { serverApiFetch } from '@/server/api-client';
+import { serverApiFetch } from '@sharpit/ui/server/api-client';
 
 /**
  * Native Garmin handoff, step 2 (ADR-047) — `api.` arms the SSO state and names the Garmin

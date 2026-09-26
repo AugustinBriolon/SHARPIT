@@ -6,7 +6,7 @@ import {
   activityWeatherIconClassName,
   type ActivityWeatherCondition,
 } from '@sharpit/app/lib/activity/weather/activity-weather';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Skeleton } from '@sharpit/ui/components/ui/skeleton';
 import {
   useDeviceLocation,
   type DeviceLocationState,

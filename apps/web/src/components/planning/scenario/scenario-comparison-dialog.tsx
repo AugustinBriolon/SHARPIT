@@ -1,6 +1,6 @@
 'use client';
 
-import { Button } from '@/components/ui/button';
+import { Button } from '@sharpit/ui/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -9,7 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Skeleton } from '@sharpit/ui/components/ui/skeleton';
 import { toast } from '@/components/ui/toast';
 import type { ScenarioComparisonViewModel } from '@sharpit/app/presentation/scenario-comparison-view-model';
 import { useApplyScenarioComparison } from '@/hooks/use-apply-scenario-comparison';

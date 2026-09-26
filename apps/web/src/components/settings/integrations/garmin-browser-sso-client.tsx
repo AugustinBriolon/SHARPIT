@@ -11,9 +11,9 @@ import {
   GarminSsoErrorPanel,
   GarminSsoSuccessPlate,
   type GarminSsoPhase,
-} from '@/components/settings/integrations/garmin-browser-sso-parts';
-import { IntegrationLogo } from '@/components/settings/integrations/logos';
-import { useIosIframeFocusZoomGuard } from '@/hooks/use-ios-iframe-focus-zoom-guard';
+} from '@sharpit/ui/components/settings/integrations/garmin-browser-sso-parts';
+import { IntegrationLogo } from '@sharpit/ui/components/settings/integrations/logos';
+import { useIosIframeFocusZoomGuard } from '@sharpit/ui/hooks/use-ios-iframe-focus-zoom-guard';
 import { buildGarminBrowserSsoUrl } from '@sharpit/app/lib/integrations/garmin/garmin-browser-sso-shared';
 import { cn } from '@sharpit/app/lib/utils';
 

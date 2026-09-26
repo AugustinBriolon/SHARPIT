@@ -2,8 +2,8 @@ import type { CatalogProvider, DataClassId } from '@sharpit/app/lib/integrations
 import type { IntegrationId } from '@sharpit/app/lib/integrations/shared/client-sync';
 import type { IntegrationSourcePrefs } from '@sharpit/app/lib/integrations/source-prefs';
 import { ClassSourceControls } from '@/components/integrations/class-source-controls';
-import { IntegrationLogo } from '@/components/settings/integrations/logos';
-import { Button } from '@/components/ui/button';
+import { IntegrationLogo } from '@sharpit/ui/components/settings/integrations/logos';
+import { Button } from '@sharpit/ui/components/ui/button';
 import { cn } from '@sharpit/app/lib/utils';
 
 function ProviderConnectAction({

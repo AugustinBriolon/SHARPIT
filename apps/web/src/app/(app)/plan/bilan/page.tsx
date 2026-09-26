@@ -1,7 +1,7 @@
 import { Suspense } from 'react';
 import { MobileBackLink } from '@/components/layout/header/mobile-back-link';
 import { StickyHeader } from '@/components/layout/header/sticky-header';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Skeleton } from '@sharpit/ui/components/ui/skeleton';
 import { WeeklyReviewGate } from '@/components/training/weekly-review/weekly-review-gate';
 
 function WeeklyReviewPageSkeleton() {

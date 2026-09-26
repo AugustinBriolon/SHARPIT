@@ -11,7 +11,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { EXPORTED_COLORS, renderIosTokens } from '@sharpit/app/lib/brand/ios-token-export';
 
-const GLOBALS_CSS = resolve(import.meta.dirname, '../src/app/globals.css');
+const GLOBALS_CSS = resolve(import.meta.dirname, '../../../packages/ui/src/styles/globals.css');
 const DEFAULT_OUTPUT = resolve(
   import.meta.dirname,
   '../../../../SHARPIT-APP/SHARPIT-APP/DesignSystem/SharpitTokens.generated.swift',

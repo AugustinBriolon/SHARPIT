@@ -1,12 +1,12 @@
-import { IntegrationLogo } from '@/components/settings/integrations/logos';
+import { IntegrationLogo } from '@sharpit/ui/components/settings/integrations/logos';
 import {
   DATA_CLASSES,
   visibleProvidersForClass,
   type CatalogProvider,
 } from '@sharpit/app/lib/integrations/provider-catalog';
 import type { IntegrationId } from '@sharpit/app/lib/integrations/shared/client-sync';
-import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@sharpit/ui/components/ui/button';
+import { Skeleton } from '@sharpit/ui/components/ui/skeleton';
 import { SkeletonStatusBadge } from '@/components/ui/skeleton-patterns';
 import { cn } from '@sharpit/app/lib/utils';
 

@@ -4,7 +4,7 @@ import Link from 'next/link';
 import type { ActivityType } from '@prisma/client';
 import { MemoizedRouteMap as RouteMap } from '@/components/training/activity/insights/route-map';
 import { ActivityTypeIndicator } from '@/components/ui/instruments/activity-type-indicator';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Skeleton } from '@sharpit/ui/components/ui/skeleton';
 import { SPORT_IDENTITY_HEX, SPORT_IDENTITY_PANEL } from '@sharpit/app/lib/activity/sport-identity';
 import { cn } from '@sharpit/app/lib/utils';
 import {

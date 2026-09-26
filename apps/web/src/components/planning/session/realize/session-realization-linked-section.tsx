@@ -1,7 +1,7 @@
 'use client';
 
 import { CompletedSessionStory } from '../read/completed-session-story';
-import { Button } from '@/components/ui/button';
+import { Button } from '@sharpit/ui/components/ui/button';
 import type { ClientActivity, ClientPlannedSession } from '@sharpit/app/lib/query/types';
 import { HeartPulse } from 'lucide-react';
 import {

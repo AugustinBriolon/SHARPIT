@@ -12,7 +12,7 @@ import {
   type IntegrationContentProps,
 } from '@/components/settings/integrations/modal-content-shared';
 import { useGarminContentState } from '@/components/settings/integrations/garmin-content-hooks';
-import { Button } from '@/components/ui/button';
+import { Button } from '@sharpit/ui/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 

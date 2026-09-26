@@ -1,6 +1,6 @@
 import type { ClientActivity, ClientActivityDetail } from '@sharpit/app/lib/query/types';
 import { fetchJson, type Serialized, toDate, toDateOrNull } from './shared';
-import { apiFetch } from '@/client/query/api-fetch';
+import { apiFetch } from '@sharpit/ui/client/query/api-fetch';
 
 export async function fetchActivities(): Promise<ClientActivity[]> {
   const data = await fetchJson<Serialized<ClientActivity>[]>('/api/activities');

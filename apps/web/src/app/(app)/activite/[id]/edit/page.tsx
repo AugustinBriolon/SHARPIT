@@ -3,7 +3,7 @@ import { MobileBackLink } from '@/components/layout/header/mobile-back-link';
 import { StickyHeader } from '@/components/layout/header/sticky-header';
 import { ActivityForm } from '@/components/training/activity/form/activity-form';
 import type { ClientActivityDetail } from '@sharpit/app/lib/query/types';
-import { cachedServerApiJson } from '@/server/api-client';
+import { cachedServerApiJson } from '@sharpit/ui/server/api-client';
 
 type PageProps = { params: Promise<{ id: string }> };
 

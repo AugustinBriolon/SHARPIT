@@ -1,7 +1,7 @@
 'use client';
 
 import { FlaskConical } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@sharpit/ui/components/ui/button';
 
 /** Active test chip replacing the start CTA for the lever under test. */
 export function RunningTestStatus({

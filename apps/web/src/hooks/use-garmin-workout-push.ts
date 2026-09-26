@@ -7,7 +7,7 @@ import { toast } from '@/components/ui/toast';
 import { buildPushToastDescription } from '@sharpit/app/lib/integrations/garmin/garmin-push-summary';
 import { queryKeys } from '@/client/query/keys';
 import type { ClientPlannedSession } from '@sharpit/app/lib/query/types';
-import { apiFetch } from '@/client/query/api-fetch';
+import { apiFetch } from '@sharpit/ui/client/query/api-fetch';
 
 export type GarminWatchPushState = {
   workoutId: string | null;

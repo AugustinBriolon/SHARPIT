@@ -8,7 +8,7 @@ import { coachBeuiTheme } from '@/components/coach/beui/coach-beui-theme';
 import { CoachToolApprovalCard } from '@/components/coach/beui/coach-tool-approval-card';
 import { CoachChatEmptyState } from '@/components/coach/chat/transcript/coach-chat-empty-state';
 import { CoachChatTranscriptRows } from '@/components/coach/chat/transcript/coach-chat-transcript';
-import { Button } from '@/components/ui/button';
+import { Button } from '@sharpit/ui/components/ui/button';
 import type { useCoachChat } from '@/components/coach/chat/shell/use-coach-chat';
 
 type CoachChatState = ReturnType<typeof useCoachChat>;

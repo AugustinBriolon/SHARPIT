@@ -6,7 +6,7 @@ import { DemoCoachTranscript } from '@/components/coach/view/demo-coach-transcri
 import { DemoExitButton } from '@/components/demo/demo-exit';
 import { isDemoSession } from '@sharpit/app/lib/demo/demo-session';
 import type { DemoCoachTranscriptPayload } from '@sharpit/app/lib/web/payloads';
-import { cachedServerApiJson } from '@/server/api-client';
+import { cachedServerApiJson } from '@sharpit/ui/server/api-client';
 
 async function CoachDemoDisabled() {
   if (!(await isDemoSession())) {

@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { ActivityTypeIndicator } from '@/components/ui/instruments/activity-type-indicator';
-import { Button } from '@/components/ui/button';
+import { Button } from '@sharpit/ui/components/ui/button';
 import type { ClientPlannedSession } from '@sharpit/app/lib/query/types';
 import { activityTypeLabels, formatDate, formatDuration } from '@sharpit/app/lib/format';
 import { LinkAnalysisStatus } from '@/components/planning/session/link-analysis-status';

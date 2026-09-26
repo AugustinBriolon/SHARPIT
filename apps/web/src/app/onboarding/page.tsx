@@ -1,10 +1,10 @@
 import { Suspense } from 'react';
 import { GateRedirect } from '@/components/navigation/gate-redirect';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Skeleton } from '@sharpit/ui/components/ui/skeleton';
 import { OnboardingWizard } from '@/components/onboarding/wizard/onboarding-wizard';
 import { awaitRequest } from '@sharpit/app/lib/next/await-request';
 import type { OnboardingPayload } from '@sharpit/app/lib/web/payloads';
-import { cachedServerApiJson } from '@/server/api-client';
+import { cachedServerApiJson } from '@sharpit/ui/server/api-client';
 import { getViewer } from '@/server/viewer';
 
 export const metadata = {

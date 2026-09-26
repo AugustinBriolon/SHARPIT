@@ -4,9 +4,9 @@ import { addDays, format, formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Loader2, RefreshCw } from 'lucide-react';
 import { Markdown } from '@/components/coach/chat/transcript/markdown';
-import { Button } from '@/components/ui/button';
+import { Button } from '@sharpit/ui/components/ui/button';
 import { InkEmptyState } from '@/components/ui/ink-empty-state';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Skeleton } from '@sharpit/ui/components/ui/skeleton';
 import { toast } from '@/components/ui/toast';
 import { WeeklyReviewIllustration } from '@/components/training/weekly-review/weekly-review-illustration';
 import {

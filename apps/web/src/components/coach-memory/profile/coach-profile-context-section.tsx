@@ -6,7 +6,7 @@ import { CoachContextGuide } from '@/components/coach-memory/guide/coach-context
 import { CoachProfileContextHeader } from '@/components/coach-memory/profile/coach-profile-context-header';
 import { ContextReadClamp } from '@/components/coach-memory/profile/coach-profile-context-read';
 import { MotionExpand } from '@/components/motion';
-import { Button } from '@/components/ui/button';
+import { Button } from '@sharpit/ui/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useSaveCoachContext } from '@/hooks/use-coach';
 import { useDesktopAutofocus } from '@/hooks/use-desktop-autofocus';

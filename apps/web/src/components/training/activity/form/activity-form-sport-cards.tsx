@@ -4,7 +4,7 @@ import { ActivityType } from '@prisma/client';
 import { ActivityFormField } from '@/components/training/activity/form/activity-form-field';
 import { defaultStrengthSet } from '@/components/training/activity/form/activity-form-helpers';
 import type { useActivityForm } from '@/components/training/activity/form/use-activity-form';
-import { Button } from '@/components/ui/button';
+import { Button } from '@sharpit/ui/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';

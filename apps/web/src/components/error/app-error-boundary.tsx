@@ -2,7 +2,7 @@
 
 import { catchError, type ErrorInfo } from 'next/error';
 import { TriangleAlert } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@sharpit/ui/components/ui/button';
 
 /**
  * Recovery surface for a render that threw — the athlete keeps the app shell

@@ -1,6 +1,6 @@
 'use client';
 
-import { Button } from '@/components/ui/button';
+import { Button } from '@sharpit/ui/components/ui/button';
 import { NavArrowLeft } from '@/components/icons/nav-arrows';
 import {
   ONBOARDING_STEP_COUNT,

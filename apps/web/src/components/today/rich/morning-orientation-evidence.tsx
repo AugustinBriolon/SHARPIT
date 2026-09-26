@@ -1,7 +1,7 @@
 'use client';
 
 import { RefreshCw } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@sharpit/ui/components/ui/button';
 import { guardedActionLabel } from '@/hooks/use-offline-guard';
 import { cn } from '@sharpit/app/lib/utils';
 

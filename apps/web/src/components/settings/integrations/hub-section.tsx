@@ -4,7 +4,7 @@ import {
   type IntegrationsSearchParams,
 } from '@/components/settings/integrations/hub-section-load';
 import type { IntegrationsHubPayload } from '@sharpit/app/lib/web/payloads';
-import { cachedServerApiJson } from '@/server/api-client';
+import { cachedServerApiJson } from '@sharpit/ui/server/api-client';
 
 const statusMessages: Record<string, string> = {
   connected: 'Compte Strava connecté.',

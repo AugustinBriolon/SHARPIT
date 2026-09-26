@@ -2,15 +2,15 @@
 
 import Link from 'next/link';
 import { Check, Loader2 } from 'lucide-react';
-import { buttonVariants } from '@/components/ui/button';
+import { buttonVariants } from '@sharpit/ui/components/ui/button';
 import {
   GARMIN_SSO_MESSAGE_ORIGIN,
   parseGarminSsoPostMessage,
 } from '@sharpit/app/lib/integrations/garmin/garmin-browser-sso-shared';
-import { exchangeGarminSsoTicket } from '@/client/query/fetchers';
+import { exchangeGarminSsoTicket } from '@sharpit/ui/client/query/garmin-sso-ticket';
 import { RISK_TONE, STATUS_SURFACE } from '@sharpit/app/lib/presentation/coaching/status-surface';
 import { cn } from '@sharpit/app/lib/utils';
-import { ConnectLink } from '@/components/settings/integrations/connect-link';
+import { ConnectLink } from '@sharpit/ui/components/settings/integrations/connect-link';
 
 export type GarminSsoPhase = 'form' | 'connecting' | 'success' | 'error';
 

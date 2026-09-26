@@ -6,7 +6,7 @@ import {
   CoachContextTagSkeleton,
 } from '@/components/coach/chat/shell/coach-composer-chrome';
 import { CoachChatPanelShell } from '@/components/coach/chat/shell/coach-chat-panel-shell';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Skeleton } from '@sharpit/ui/components/ui/skeleton';
 import type { CoachDiscussContext } from '@sharpit/app/lib/coach/chat/discuss/coach-discuss-context';
 import { cn } from '@sharpit/app/lib/utils';
 

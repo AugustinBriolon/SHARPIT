@@ -3,7 +3,7 @@
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { PlanGeneratorSessionRow } from '@/components/coach/plan/plan-generator-session-row';
-import { Button } from '@/components/ui/button';
+import { Button } from '@sharpit/ui/components/ui/button';
 import type { ClientGoal } from '@sharpit/app/lib/query/types';
 import { phaseLabels } from '@sharpit/app/lib/training/periodization';
 

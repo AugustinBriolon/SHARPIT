@@ -16,7 +16,7 @@ import {
   type PersonalProfileFormState,
 } from '@/components/settings/profile/personal-profile-helpers';
 import type { ProfileData } from '@/components/settings/profile/profile-types';
-import { Button } from '@/components/ui/button';
+import { Button } from '@sharpit/ui/components/ui/button';
 import { toast } from '@/components/ui/toast';
 import { useAthleteProfile } from '@/hooks/use-data';
 import { guardedActionLabel, useOfflineGuard } from '@/hooks/use-offline-guard';

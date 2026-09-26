@@ -2,7 +2,7 @@
 
 import { NotebookPen, Plus } from 'lucide-react';
 import { CoachMemoryEntryCard } from '@/components/coach-memory/entries/coach-memory-entry-card';
-import { Button } from '@/components/ui/button';
+import { Button } from '@sharpit/ui/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -12,7 +12,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { InkEmptyState } from '@/components/ui/ink-empty-state';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Skeleton } from '@sharpit/ui/components/ui/skeleton';
 import { guardedActionLabel } from '@/hooks/use-offline-guard';
 import type { CoachMemoryEntry } from '@sharpit/app/lib/coach-memory/core/types';
 

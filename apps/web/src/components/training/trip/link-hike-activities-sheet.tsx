@@ -8,7 +8,7 @@ import {
   LinkHikeOtherActivities,
   LinkHikeSeedActivity,
 } from '@/components/training/trip/link-hike-activities-sheet-parts';
-import { Button } from '@/components/ui/button';
+import { Button } from '@sharpit/ui/components/ui/button';
 import { useActivities } from '@/hooks/use-data';
 import { cn } from '@sharpit/app/lib/utils';
 

@@ -11,7 +11,7 @@ import {
   MetricDrillDownPage,
   type MetricTone,
 } from '@/components/today/drill-down/metric-drill-down-page';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Skeleton } from '@sharpit/ui/components/ui/skeleton';
 import type { EffortStrainCompositionView } from '@sharpit/app/lib/presentation/effort/effort-strain-composition';
 import type { FatigueType, TrainingCapacity } from '@sharpit/app/lib/today/dashboard/today-mapping';
 import type { DimensionResult } from '@/hooks/use-today';

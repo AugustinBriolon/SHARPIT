@@ -3,7 +3,7 @@ import { MobileBackLink } from '@/components/layout/header/mobile-back-link';
 import { StickyHeader } from '@/components/layout/header/sticky-header';
 import { EquipmentPanel } from '@/components/settings/equipment';
 import { SettingsDemoBlock } from '@/components/settings/settings-demo-block';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Skeleton } from '@sharpit/ui/components/ui/skeleton';
 import { isDemoSession } from '@sharpit/app/lib/demo/demo-session';
 import { normalizeAthleteEquipment } from '@sharpit/app/lib/equipment/parse';
 import { normalizeAthletePracticedSports } from '@sharpit/app/lib/practiced-sports';

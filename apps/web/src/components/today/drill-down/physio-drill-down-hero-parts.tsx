@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 import { TodayDateSelector } from '@/components/today/drill-down/date-selector';
 import { ConfidenceBars, confidenceBarsFromPct } from '@/components/ui/instruments/confidence-bars';
 import { quickReadBadge } from '@/components/today/drill-down/physio-drill-down-hero-helpers';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Skeleton } from '@sharpit/ui/components/ui/skeleton';
 import { cn } from '@sharpit/app/lib/utils';
 import type { DataDaysDomain } from '@sharpit/app/lib/presentation/data-days/data-days';
 import { format as formatDate } from 'date-fns';

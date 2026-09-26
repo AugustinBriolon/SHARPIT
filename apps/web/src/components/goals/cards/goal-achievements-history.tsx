@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { Trophy } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Skeleton } from '@sharpit/ui/components/ui/skeleton';
 import {
   formatAchievementPeriodKey,
   formatGoalDisplayValue,

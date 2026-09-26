@@ -31,6 +31,7 @@
     "@sharpit/app": "workspace:*",
     "@sharpit/core": "workspace:*",
     "@sharpit/shared": "workspace:*",
+    "@sharpit/ui": "workspace:*",
     "@tanstack/react-query": "^5.101.2",
     "@tanstack/react-virtual": "^3.14.11",
     "ai": "7.0.32",

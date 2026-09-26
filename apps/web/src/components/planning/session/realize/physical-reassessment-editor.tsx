@@ -12,7 +12,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { useState } from 'react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@sharpit/ui/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { severityColor } from '@sharpit/app/lib/physical-health/physical';
 import {

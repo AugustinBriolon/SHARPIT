@@ -1,7 +1,7 @@
 import { Lock } from 'lucide-react';
 import Link from 'next/link';
 import { DemoExitButton } from '@/components/demo/demo-exit';
-import { Button } from '@/components/ui/button';
+import { Button } from '@sharpit/ui/components/ui/button';
 
 /**
  * Reusable "Indisponible en démo" dead-end — one per settings page that

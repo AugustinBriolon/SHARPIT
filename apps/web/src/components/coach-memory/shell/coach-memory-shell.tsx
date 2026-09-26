@@ -1,7 +1,7 @@
 'use client';
 
 import { CoachMemoryInkBand } from '@/components/coach-memory/shell/coach-memory-ink-band';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Skeleton } from '@sharpit/ui/components/ui/skeleton';
 
 const LIST_PULSE_COUNT = 4;
 

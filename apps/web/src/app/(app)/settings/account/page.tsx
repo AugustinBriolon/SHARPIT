@@ -5,7 +5,7 @@ import { PrivacySettingsPanel } from '@/components/privacy/privacy-settings-pane
 import { PersonalProfilePanel } from '@/components/settings/profile';
 import { SettingsDemoBlock } from '@/components/settings/settings-demo-block';
 import { SettingsSignOut } from '@/components/settings/settings-sign-out';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Skeleton } from '@sharpit/ui/components/ui/skeleton';
 import { isDemoSession } from '@sharpit/app/lib/demo/demo-session';
 import { MOI_HUB_PATH } from '@sharpit/app/lib/moi/paths';
 import { isHangingPromiseRejection } from '@sharpit/app/lib/next/hanging-promise';

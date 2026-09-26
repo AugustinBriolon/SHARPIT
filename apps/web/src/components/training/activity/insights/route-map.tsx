@@ -2,7 +2,7 @@
 
 import dynamic from 'next/dynamic';
 import { memo, useEffect, useState } from 'react';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Skeleton } from '@sharpit/ui/components/ui/skeleton';
 import { SPORT_IDENTITY_HEX } from '@sharpit/app/lib/activity/sport-identity';
 import { cn } from '@sharpit/app/lib/utils';
 import {

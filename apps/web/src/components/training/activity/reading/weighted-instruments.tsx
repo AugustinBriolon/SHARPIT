@@ -1,6 +1,6 @@
 'use client';
 
-import { Skeleton } from '@/components/ui/skeleton';
+import { Skeleton } from '@sharpit/ui/components/ui/skeleton';
 import { cn } from '@sharpit/app/lib/utils';
 import { partitionWeightedInstruments } from './weighted-instruments-helpers';
 

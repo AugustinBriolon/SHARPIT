@@ -2,7 +2,7 @@ import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { CompositionView } from '@/components/corps/composition/composition-view';
 import { PhysicalHealthHubView } from '@/components/physical-health/physical-health-hub-view';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Skeleton } from '@sharpit/ui/components/ui/skeleton';
 
 const RecordsPanel = dynamic(
   () => import('@/components/analytics/records/records-panel').then((mod) => mod.RecordsPanel),

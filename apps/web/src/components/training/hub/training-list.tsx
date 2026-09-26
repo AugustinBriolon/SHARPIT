@@ -10,8 +10,8 @@ import {
 } from '@/components/training/hub/training-list-parts';
 import { groupActivitiesByWeek } from '@/components/training/hub/training-list-logbook';
 import type { ClientActivity } from '@sharpit/app/lib/query/types';
-import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@sharpit/ui/components/ui/button';
+import { Skeleton } from '@sharpit/ui/components/ui/skeleton';
 import { SkeletonDataValue } from '@/components/ui/skeleton-data-value';
 import { useActivities, useActivityRoutePreviews, useRecords } from '@/hooks/use-data';
 import type { ActivityRoutePreviews } from '@sharpit/app/lib/streams/stream-types';

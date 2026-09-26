@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { NextRequest } from 'next/server';
 
 const serverApiFetch = vi.fn();
-vi.mock('@/server/api-client', () => ({
+vi.mock('@sharpit/ui/server/api-client', () => ({
   serverApiFetch: (...args: unknown[]) => serverApiFetch(...args),
 }));
 

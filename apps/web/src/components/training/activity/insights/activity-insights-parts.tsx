@@ -3,7 +3,7 @@
 import { MapPin } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Skeleton } from '@sharpit/ui/components/ui/skeleton';
 import { SkeletonCard } from '@/components/ui/skeleton-patterns';
 import {
   ActivityCompositionSkeleton,

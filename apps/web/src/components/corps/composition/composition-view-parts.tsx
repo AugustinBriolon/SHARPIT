@@ -1,7 +1,7 @@
 'use client';
 
 import { CompositionMetricCard } from '@/components/corps/composition/composition-metric-card';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Skeleton } from '@sharpit/ui/components/ui/skeleton';
 import { SkeletonDataValue } from '@/components/ui/skeleton-data-value';
 import type { BodyChartPoint, BodyMetricCardVm } from '@sharpit/app/presentation/body-view-model';
 import { filterCompositionSeriesByDays } from '@sharpit/app/lib/health/body-composition';

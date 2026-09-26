@@ -5,7 +5,7 @@ import { CheckCircle2, MoreHorizontal, Pencil, RotateCcw, Trash2 } from 'lucide-
 import dynamic from 'next/dynamic';
 import { useState } from 'react';
 import type { GoalForEdit } from '@/components/goals/dialogs/goal-dialog';
-import { Button } from '@/components/ui/button';
+import { Button } from '@sharpit/ui/components/ui/button';
 import { DiscussWithCoachButton } from '@/components/coach/discuss/discuss-with-coach-button';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { useConfirmDialog } from '@/components/ui/confirm-dialog';

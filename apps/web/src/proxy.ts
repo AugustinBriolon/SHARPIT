@@ -14,17 +14,10 @@ const isPublicRoute = createRouteMatcher([
   '/sign-up(.*)',
   // Public promise funnel (teaser → signup). Outside auth app shell.
   '/welcome(.*)',
-  '/privacy',
-  '/terms',
   '/~offline',
   // iOS fetches apple-touch-startup-image without a session cookie.
   '/apple-splash(.*)',
   '/demo',
-  // Apple's CDN fetches it without a session and refuses redirects (ADR-040).
-  '/.well-known/apple-app-site-association',
-  // End of the native Garmin handoff: reads only its query string, and must render
-  // even if the web session expired mid-flow.
-  '/connect/garmin/callback',
 ]);
 
 // Signed-out-only pages: the teaser and the auth entry points themselves.

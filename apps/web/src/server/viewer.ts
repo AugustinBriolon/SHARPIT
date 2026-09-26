@@ -1,7 +1,7 @@
 import 'server-only';
 
 import type { WebViewer } from '@sharpit/app/lib/web/payloads';
-import { cachedServerApiJson } from '@/server/api-client';
+import { cachedServerApiJson } from '@sharpit/ui/server/api-client';
 
 /** The signed-in visitor's routing context, read once per render from `api.`. */
 export async function getViewer(): Promise<WebViewer> {

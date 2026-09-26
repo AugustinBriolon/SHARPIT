@@ -1,6 +1,6 @@
 'use client';
 
-import { Skeleton } from '@/components/ui/skeleton';
+import { Skeleton } from '@sharpit/ui/components/ui/skeleton';
 import type { ClientPlanWeek } from '@sharpit/app/lib/query/types';
 import { useDisplayMode } from '@/providers/display-mode-provider';
 import { buildWeekSummarySegments } from '@/components/planning/week/planning-week-summary-helpers';

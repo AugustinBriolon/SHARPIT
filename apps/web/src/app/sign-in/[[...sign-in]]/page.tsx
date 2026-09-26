@@ -1,8 +1,8 @@
 import { SignIn } from '@clerk/nextjs';
 import { redirect } from 'next/navigation';
-import { AuthShell } from '@/components/auth/auth-shell';
+import { AuthShell } from '@sharpit/ui/components/auth/auth-shell';
 import { authAppearance } from '@sharpit/app/lib/theme/clerk-appearance';
-import { buttonVariants } from '@/components/ui/button';
+import { buttonVariants } from '@sharpit/ui/components/ui/button';
 import { isDevClerkBypass } from '@sharpit/app/lib/dev/dev-auth';
 import { cn } from '@sharpit/app/lib/utils';
 

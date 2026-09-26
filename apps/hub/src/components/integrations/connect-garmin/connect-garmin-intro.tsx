@@ -1,4 +1,4 @@
-import { buttonVariants } from '@/components/ui/button';
+import { buttonVariants } from '@sharpit/ui/components/ui/button';
 import { ConnectGarminHeader } from '@/components/integrations/connect-garmin/connect-garmin-header';
 import {
   CONNECT_GARMIN_START_PATH,

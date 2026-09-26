@@ -5,7 +5,7 @@ import { format } from 'date-fns';
 import { useCallback } from 'react';
 import type { MorningWellnessEntry } from '@sharpit/app/lib/journal/morning-wellness-entry';
 import { queryKeys } from '@/client/query/keys';
-import { apiFetch } from '@/client/query/api-fetch';
+import { apiFetch } from '@sharpit/ui/client/query/api-fetch';
 
 type WellnessCheckinQuery = {
   completed: boolean;

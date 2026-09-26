@@ -8,7 +8,7 @@ import {
   PlanGeneratorResults,
 } from '@/components/coach/plan/plan-generator-results';
 import { usePlanGenerator } from '@/components/coach/plan/use-plan-generator';
-import { Button } from '@/components/ui/button';
+import { Button } from '@sharpit/ui/components/ui/button';
 import {
   Dialog,
   DialogContent,

@@ -5,7 +5,7 @@ import { fr } from 'date-fns/locale';
 import { CheckCircle2, CircleDashed, Loader2, Unplug, XCircle } from 'lucide-react';
 import { FadePresence } from '@/components/motion';
 import { ClassSourceControls } from '@/components/integrations/class-source-controls';
-import { IntegrationLogo } from '@/components/settings/integrations/logos';
+import { IntegrationLogo } from '@sharpit/ui/components/settings/integrations/logos';
 import type { IntegrationDefinition } from '@/components/settings/integrations/types';
 import { toast } from '@/components/ui/toast';
 import {

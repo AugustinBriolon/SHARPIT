@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { CalendarPlus, CalendarRange, MoreHorizontal, SlidersHorizontal } from 'lucide-react';
 import { CoachDiscussIcon } from '@/components/coach/discuss/discuss-with-coach-button';
-import { Button } from '@/components/ui/button';
+import { Button } from '@sharpit/ui/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,

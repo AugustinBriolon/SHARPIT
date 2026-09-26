@@ -5,7 +5,7 @@ import { CalendarDays } from 'lucide-react';
 import { PlanSectionHeading } from '@/components/plan/hub/plan-section-heading';
 import { BrickOverviewCard } from '@/components/planning/brick/brick-overview-card';
 import { PlannedSessionPreview } from '@/components/today/rich/planned-session-preview';
-import { Button } from '@/components/ui/button';
+import { Button } from '@sharpit/ui/components/ui/button';
 import { LinkButton } from '@/components/ui/link-button';
 import type {
   WeekDecision,

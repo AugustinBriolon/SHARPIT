@@ -3,7 +3,7 @@
 import type { ReactNode } from 'react';
 import { Drawer } from '@base-ui/react/drawer';
 import { Plus, SlidersHorizontal, Sparkles, Trash2, X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@sharpit/ui/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import {

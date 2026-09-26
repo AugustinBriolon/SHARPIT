@@ -2,7 +2,7 @@
 
 import { MapPin, Pencil, Trash2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { Button } from '@sharpit/ui/components/ui/button';
 import { formatEntryDateRange } from '@sharpit/app/lib/coach-memory/summary/memory-summary';
 import {
   coachMemorySourceLabel,

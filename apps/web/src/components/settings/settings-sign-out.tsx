@@ -2,7 +2,7 @@
 
 import { SignOutButton, useAuth, useUser } from '@clerk/nextjs';
 import { LogOut } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@sharpit/ui/components/ui/button';
 
 const clerkBypassEnabled =
   process.env.NEXT_PUBLIC_DEV_BYPASS_CLERK === 'true' && process.env.NODE_ENV === 'development';

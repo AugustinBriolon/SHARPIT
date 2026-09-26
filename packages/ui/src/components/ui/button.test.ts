@@ -3,9 +3,9 @@ import { join } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { buttonTapScale, buttonVariants } from '@/components/ui/button';
+import { buttonTapScale, buttonVariants } from '@sharpit/ui/components/ui/button';
 
-const globalsCss = readFileSync(join(process.cwd(), 'src/app/globals.css'), 'utf8');
+const globalsCss = readFileSync(join(process.cwd(), 'src/styles/globals.css'), 'utf8');
 
 describe('buttonVariants (Seed ink CTA)', () => {
   it('uses foreground ink for the default filled CTA', () => {

@@ -4,10 +4,10 @@ import dynamic from 'next/dynamic';
 import { RefreshCw } from 'lucide-react';
 import { ClassProviderRow } from '@/components/settings/integrations/hub-parts';
 import { syncAllButtonLabel } from '@/components/settings/integrations/hub-hooks';
-import { IntegrationLogo } from '@/components/settings/integrations/logos';
+import { IntegrationLogo } from '@sharpit/ui/components/settings/integrations/logos';
 import type { RowSyncState } from '@/components/settings/integrations/hub-sync';
 import type { IntegrationDefinition } from '@/components/settings/integrations/types';
-import { Button } from '@/components/ui/button';
+import { Button } from '@sharpit/ui/components/ui/button';
 import {
   Dialog,
   DialogContent,
@@ -15,7 +15,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Skeleton } from '@sharpit/ui/components/ui/skeleton';
 import {
   DATA_CLASSES,
   visibleProvidersForClass,

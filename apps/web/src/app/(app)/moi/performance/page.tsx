@@ -2,7 +2,7 @@ import { Suspense } from 'react';
 import { MobileBackLink } from '@/components/layout/header/mobile-back-link';
 import { StickyHeader } from '@/components/layout/header/sticky-header';
 import { MoiSectionContent } from '@/components/shell/moi-section-content';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Skeleton } from '@sharpit/ui/components/ui/skeleton';
 import { MOI_HUB_PATH } from '@sharpit/app/lib/moi/paths';
 
 function PerformanceFallback() {

@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useId, useState, type ReactNode } from 'react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@sharpit/ui/components/ui/button';
 import { NavArrowLeft, NavArrowRight } from '@/components/icons/nav-arrows';
 import {
   Dialog,

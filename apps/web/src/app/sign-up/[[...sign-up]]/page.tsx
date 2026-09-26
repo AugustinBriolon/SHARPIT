@@ -1,5 +1,5 @@
 import { SignUp } from '@clerk/nextjs';
-import { AuthShell } from '@/components/auth/auth-shell';
+import { AuthShell } from '@sharpit/ui/components/auth/auth-shell';
 import { authAppearance } from '@sharpit/app/lib/theme/clerk-appearance';
 
 export default function SignUpPage() {

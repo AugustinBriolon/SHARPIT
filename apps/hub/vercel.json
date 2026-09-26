@@ -1,0 +1,15 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "installCommand": "corepack enable && HUSKY=0 yarn install --immutable",
+  "buildCommand": "yarn build",
+  "ignoreCommand": "node ../../scripts/ci/vercel-ignore-build.mjs --scope apps/hub,packages/app,packages/core,packages/shared,packages/ui,packages/eslint-config,package.json,yarn.lock,turbo.json",
+  "git": {
+    "deploymentEnabled": {
+      "*": false,
+      "main": true
+    }
+  },
+  "github": {
+    "autoJobCancelation": true
+  }
+}

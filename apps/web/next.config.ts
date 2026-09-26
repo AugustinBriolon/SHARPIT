@@ -28,7 +28,7 @@ const nextConfig: NextConfig = {
   // so tracing starts there or the deployed functions miss them.
   outputFileTracingRoot: path.join(__dirname, '../../'),
   // Workspace packages ship TypeScript sources (ADR-048); Next compiles them with the app.
-  transpilePackages: ['@sharpit/app', '@sharpit/core', '@sharpit/shared'],
+  transpilePackages: ['@sharpit/app', '@sharpit/core', '@sharpit/shared', '@sharpit/ui'],
   allowedDevOrigins: loadAllowedDevOrigins(),
   images: {
     remotePatterns: [
@@ -92,6 +92,13 @@ const nextConfig: NextConfig = {
         // Old OAuth bounce: callbacks land on the integrations settings directly now.
         ['/integrations/connected', '/settings/integrations'],
       ].map(([source, destination]) => ({ source, destination, permanent: true })),
+      // Apex-only pages live on the hub (ADR-051): legal pages and the native Garmin handoff.
+      ...['/privacy', '/terms', '/connect/:path*', '/.well-known/:path*'].map((source) => ({
+        source,
+        has: [{ type: 'host' as const, value: 'web.sharpit.app' }],
+        destination: `https://sharpit.app${source}`,
+        permanent: false,
+      })),
       // The project's own *.vercel.app hosts (renamed from `sharpit` to `sharpit-webapp`).
       ...['sharpit.vercel.app', 'sharpit-webapp.vercel.app'].map((host) => ({
         source: '/:path*',

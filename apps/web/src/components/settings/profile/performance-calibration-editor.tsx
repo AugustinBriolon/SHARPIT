@@ -5,7 +5,7 @@ import type { ClientThresholdSnapshot } from '@sharpit/app/lib/query/types';
 import { ThresholdHistoryPanel } from '@/components/settings/profile/threshold-history-panel';
 import { Vo2maxIndicators } from '@/components/settings/profile/vo2max-indicators';
 import { ThresholdSuggestionCard } from '@/components/threshold/threshold-suggestion-card';
-import { Button } from '@/components/ui/button';
+import { Button } from '@sharpit/ui/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { guardedActionLabel } from '@/hooks/use-offline-guard';

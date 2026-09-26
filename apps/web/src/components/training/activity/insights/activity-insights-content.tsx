@@ -13,7 +13,7 @@ import { ActivityInsightsZoneSection } from '@/components/training/activity/insi
 import type { ActivityType } from '@prisma/client';
 import type { ReactNode } from 'react';
 import dynamic from 'next/dynamic';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Skeleton } from '@sharpit/ui/components/ui/skeleton';
 import type { ActivityAnalysis } from '@sharpit/app/lib/activity/detail/activity-analysis';
 import { normalizeStreamChartData } from '@sharpit/app/lib/streams/stream-chart-data';
 import { useMemo } from 'react';

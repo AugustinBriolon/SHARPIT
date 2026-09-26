@@ -28,7 +28,7 @@ import {
 import { JournalPrefsDrawer, useJournalPrefs } from '@/components/journal/journal-prefs-drawer';
 import { SignalSegment } from '@/components/journal/signal-segment';
 import { MobileDrillDownHeader } from '@/components/layout/header/mobile-drill-down-header';
-import { Button } from '@/components/ui/button';
+import { Button } from '@sharpit/ui/components/ui/button';
 import { LinkButton } from '@/components/ui/link-button';
 import { DAY_CONTEXT_FACTORS } from '@sharpit/app/lib/journal/day-context-factors';
 import {

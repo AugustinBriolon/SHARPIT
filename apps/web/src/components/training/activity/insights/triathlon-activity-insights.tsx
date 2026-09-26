@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Skeleton } from '@sharpit/ui/components/ui/skeleton';
 import {
   ActivityCompositionSkeleton,
   ActivityPerformanceSkeleton,

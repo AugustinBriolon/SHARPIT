@@ -17,7 +17,7 @@ import type {
   CreateHikeTripInput,
   PatchHikeTripInput,
 } from '@sharpit/app/lib/validators/hike-trip';
-import { apiFetch } from '@/client/query/api-fetch';
+import { apiFetch } from '@sharpit/ui/client/query/api-fetch';
 
 export type { CreateHikeTripInput, PatchHikeTripInput };
 

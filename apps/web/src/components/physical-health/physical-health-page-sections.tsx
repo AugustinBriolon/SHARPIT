@@ -5,7 +5,7 @@ import { CORPS_TONE_DOT } from '@sharpit/app/lib/ui/metric-tone';
 import { cn } from '@sharpit/app/lib/utils';
 import { HeartPulse } from 'lucide-react';
 import Link from 'next/link';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Skeleton } from '@sharpit/ui/components/ui/skeleton';
 import type { PhysicalHealthConditionCard } from '@sharpit/app/presentation/physical-health-view-model';
 import { PhysicalHealthConditionCardView } from '@/components/physical-health/cards/condition-card';
 import { CorpsEmptyState, CorpsDivider } from '@/components/corps/corps-ui';

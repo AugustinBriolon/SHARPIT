@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@sharpit/ui/components/ui/button';
 import { NavArrowLeft, NavArrowRight } from '@/components/icons/nav-arrows';
 import {
   Dialog,

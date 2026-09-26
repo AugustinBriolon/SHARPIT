@@ -1,6 +1,6 @@
 'use client';
 
-import { Button } from '@/components/ui/button';
+import { Button } from '@sharpit/ui/components/ui/button';
 import { guardedActionLabel } from '@/hooks/use-offline-guard';
 
 export function MorningOrientationProposalActions({

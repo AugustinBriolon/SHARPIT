@@ -2,7 +2,7 @@
 
 import { Loader2, Lock, Sparkles } from 'lucide-react';
 import { ActivityNarrativeCard } from '@/components/training/activity/insights/activity-narrative-card';
-import { Button } from '@/components/ui/button';
+import { Button } from '@sharpit/ui/components/ui/button';
 import { DemoSignupNudge } from '@/components/demo/demo-signup-nudge';
 import { InkEmptyState } from '@/components/ui/ink-empty-state';
 import { LinkButton } from '@/components/ui/link-button';

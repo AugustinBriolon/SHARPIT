@@ -1,7 +1,7 @@
 'use client';
 
 import { useDisplayMode } from '@/providers/display-mode-provider';
-import { useThemePreference } from '@/providers/theme-provider';
+import { useThemePreference } from '@sharpit/ui/providers/theme-provider';
 
 const THEME_LABELS: Record<string, string> = {
   light: 'Clair',

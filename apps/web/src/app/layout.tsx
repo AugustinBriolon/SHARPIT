@@ -1,8 +1,7 @@
 import { Suspense } from 'react';
 import type { Metadata, Viewport } from 'next';
-import { IBM_Plex_Sans, JetBrains_Mono, Syne } from 'next/font/google';
-import { AppClerkProvider } from '@/providers/clerk-provider';
-import { ThemeProvider } from '@/providers/theme-provider';
+import { AppClerkProvider } from '@sharpit/ui/providers/clerk-provider';
+import { ThemeProvider } from '@sharpit/ui/providers/theme-provider';
 import { SwRegister } from '@/components/pwa/sw-register';
 import { UpdateAvailableToast } from '@/components/pwa/update-available-toast';
 import { SnapshotOfflineSync } from '@/components/pwa/snapshot-offline-sync';
@@ -13,25 +12,8 @@ import { DeviceLocationProvider } from '@/components/today/dashboard/device-loca
 import { THEME_DARK_COLOR, THEME_LIGHT_COLOR } from '@sharpit/app/lib/theme/theme';
 import { RootLayoutHead } from '@/app/root-layout-head';
 import { cn } from '@sharpit/app/lib/utils';
+import { FONT_VARIABLES } from '@sharpit/ui/fonts';
 import './globals.css';
-
-const syne = Syne({
-  variable: '--font-syne',
-  subsets: ['latin'],
-  weight: ['500', '600', '700'],
-});
-
-const ibmPlexSans = IBM_Plex_Sans({
-  variable: '--font-ibm-plex-sans',
-  subsets: ['latin'],
-  weight: ['400', '500', '600'],
-});
-
-const jetBrainsMono = JetBrains_Mono({
-  variable: '--font-jetbrains-mono',
-  subsets: ['latin'],
-  weight: ['400', '500'],
-});
 
 export const metadata: Metadata = {
   title: 'SHARPIT',
@@ -87,13 +69,8 @@ export default function RootLayout({
           instead would make the root layout runtime-dependent, which costs every
           route its prerendered shell. */}
       <html
+        className={cn(...FONT_VARIABLES, 'bg-background h-full antialiased')}
         lang="fr"
-        className={cn(
-          syne.variable,
-          ibmPlexSans.variable,
-          jetBrainsMono.variable,
-          'bg-background h-full antialiased',
-        )}
         suppressHydrationWarning
       >
         <head>

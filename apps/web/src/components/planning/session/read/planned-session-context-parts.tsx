@@ -2,7 +2,7 @@
 
 import { CloudSun, MapPin, ThermometerSun } from 'lucide-react';
 import type { PlannedSessionViewModel } from '@sharpit/app/presentation/planned-session-view-model';
-import { Button } from '@/components/ui/button';
+import { Button } from '@sharpit/ui/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@sharpit/app/lib/utils';
 

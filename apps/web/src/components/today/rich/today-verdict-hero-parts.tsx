@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { ConfidenceBars } from '@/components/ui/instruments/confidence-bars';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Skeleton } from '@sharpit/ui/components/ui/skeleton';
 import { SkeletonDataValue } from '@/components/ui/skeleton-data-value';
 import {
   packTierConfidenceBarsTone,

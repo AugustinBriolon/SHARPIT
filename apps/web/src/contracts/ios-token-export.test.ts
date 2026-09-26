@@ -11,7 +11,10 @@ import {
   type Rgba,
 } from '@sharpit/app/lib/brand/ios-token-export';
 
-const GLOBALS_CSS = readFileSync(resolve(process.cwd(), 'src/app/globals.css'), 'utf8');
+const GLOBALS_CSS = readFileSync(
+  resolve(process.cwd(), '../../packages/ui/src/styles/globals.css'),
+  'utf8',
+);
 
 function toHex({ red, green, blue }: Rgba): string {
   const channel = (value: number) =>

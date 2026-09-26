@@ -2,7 +2,7 @@
 
 import { RecordsSectionHeader } from '@/components/analytics/analytics-cards';
 import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Skeleton } from '@sharpit/ui/components/ui/skeleton';
 import {
   SkeletonCard,
   SkeletonEyebrow,

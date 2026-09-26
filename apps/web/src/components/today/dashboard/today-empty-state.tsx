@@ -5,7 +5,7 @@ import { CalendarPlus, PencilLine, PlugZap, RefreshCw } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { MorningWellnessDialog } from '@/components/today/dashboard/morning-wellness-dialog';
 import { SnapshotStatusBanner } from '@/components/today/dashboard/today-dashboard-states';
-import { Button } from '@/components/ui/button';
+import { Button } from '@sharpit/ui/components/ui/button';
 import { useWellnessCheckin } from '@/hooks/use-wellness-checkin';
 import { cn } from '@sharpit/app/lib/utils';
 

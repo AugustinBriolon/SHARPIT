@@ -4,7 +4,7 @@
  */
 
 import { sendJson } from '@/client/query/send-json';
-import { apiFetch } from '@/client/query/api-fetch';
+import { apiFetch } from '@sharpit/ui/client/query/api-fetch';
 
 export async function postPrivacyConsent(body: Record<string, unknown>): Promise<unknown> {
   return sendJson('/api/privacy/consent', 'POST', body);

@@ -10,7 +10,7 @@ import type { BodyViewModel } from '@sharpit/app/presentation/body-view-model';
 import type { PhysicalHealthViewModel } from '@sharpit/app/presentation/physical-health-view-model';
 import type { NutritionViewModel } from '@sharpit/app/presentation/nutrition-view-model';
 import type { DataDaysDomain } from '@sharpit/app/lib/presentation/data-days/data-days';
-import { apiFetch } from '@/client/query/api-fetch';
+import { apiFetch } from '@sharpit/ui/client/query/api-fetch';
 
 async function fetchJson<T>(url: string): Promise<T> {
   const res = await apiFetch(url);

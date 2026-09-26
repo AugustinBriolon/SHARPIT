@@ -1,7 +1,7 @@
 'use client';
 
-import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@sharpit/ui/components/ui/button';
+import { Skeleton } from '@sharpit/ui/components/ui/skeleton';
 import type { NutritionCoachReadingView } from '@sharpit/app/presentation/nutrition-view-model';
 import {
   nutritionReadingJobLabel,

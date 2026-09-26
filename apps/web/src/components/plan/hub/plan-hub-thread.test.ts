@@ -116,7 +116,7 @@ describe('Plan hub continuous thread', () => {
     expect(decision).not.toContain('athleteVisibleCopy');
     expect(decision).not.toContain('PlanWeekStrip');
     expect(decision).toContain('LinkButton');
-    expect(decision).toContain("from '@/components/ui/button'");
+    expect(decision).toContain("from '@sharpit/ui/components/ui/button'");
     expect(decision).toContain('variant="outline"');
     expect(decision).toContain('size="sm"');
     expect(decision).toContain('decision.secondary');

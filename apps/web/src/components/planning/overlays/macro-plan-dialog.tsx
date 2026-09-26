@@ -6,7 +6,7 @@ import { fr } from 'date-fns/locale';
 import { PlanPhase } from '@prisma/client';
 import { Archive, CalendarRange, Loader2, Target } from 'lucide-react';
 import { useMemo, useState, type ReactNode } from 'react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@sharpit/ui/components/ui/button';
 import { useConfirmDialog } from '@/components/ui/confirm-dialog';
 import {
   Dialog,

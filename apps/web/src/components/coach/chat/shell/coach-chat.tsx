@@ -12,7 +12,7 @@ import {
 import { CoachComposerShell } from '@/components/coach/chat/shell/coach-composer-chrome';
 import { CoachPromptBar } from '@/components/coach/chat/composer/coach-prompt-bar';
 import { useCoachChat } from '@/components/coach/chat/shell/use-coach-chat';
-import { Button } from '@/components/ui/button';
+import { Button } from '@sharpit/ui/components/ui/button';
 import type { UIMessage } from 'ai';
 import type { CoachDiscussContext } from '@sharpit/app/lib/coach/chat/discuss/coach-discuss-context';
 import { cn } from '@sharpit/app/lib/utils';

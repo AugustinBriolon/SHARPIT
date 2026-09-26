@@ -1,0 +1,5 @@
+/* The design system shared with the web app (`@sharpit/ui`, ADR-051). */
+@import '@sharpit/ui/styles/globals.css';
+
+@source '../../../../packages/ui/src';
+@source '../../../../packages/app/src';

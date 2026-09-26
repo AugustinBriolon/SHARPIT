@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Button } from '@/components/ui/button';
+import { Button } from '@sharpit/ui/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
   Dialog,
@@ -24,7 +24,7 @@ import {
   fetchIntegrationSourcePrefs,
   postPrivacyConsent,
 } from '@/client/query/fetchers';
-import { navigateToConnect } from '@/client/query/api-fetch';
+import { navigateToConnect } from '@sharpit/ui/client/query/api-fetch';
 
 type CredentialProvider = Extract<IntegrationId, 'garmin' | 'renpho' | 'myfitnesspal'>;
 

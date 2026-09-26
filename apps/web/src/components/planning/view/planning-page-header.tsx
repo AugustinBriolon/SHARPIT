@@ -1,7 +1,7 @@
 'use client';
 
 import { PageHeader } from '@/components/layout/header/sticky-header';
-import { Skeleton } from '@/components/ui/skeleton';
+import { Skeleton } from '@sharpit/ui/components/ui/skeleton';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
