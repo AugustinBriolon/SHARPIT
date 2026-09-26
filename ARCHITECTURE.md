@@ -115,7 +115,9 @@ Every mutation that modifies a list should use `listOptimistic()`. Every mutatio
 > Since phase 1, `src/core/*` is the `@sharpit/core` package (`packages/core/src/*`), except
 > `core/presentation` → `src/presentation`, `core/adapters` → `src/adapters`, `core/athlete-state` →
 > `src/athlete-state` and `core/architecture` → `src/architecture`, which depend on app modules.
-> `lib/util/value` is `@sharpit/shared/value`.
+> `lib/util/value` is `@sharpit/shared/value`. Browser-only helpers (the React Query layer formerly in
+> `lib/query`, `lib/hooks`, `lib/motion`, …) live in `src/client/`; the server tree (`lib`, `infrastructure`,
+> `adapters`, `presentation`, `athlete-state`, `data`) never imports UI code (`lib-boundary` guard).
 
 ```
 src/

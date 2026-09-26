@@ -1,6 +1,6 @@
 # Monorepo phase 2 — `packages/db`, `packages/server`, `apps/api` on its own Vercel project
 
-**Status:** Proposed — awaiting approval · **Date:** 2026-09-26 · **Parent:** [ADR-048](../adr/ADR-048-web-repository-becomes-a-monorepo.md)
+**Status:** Approved 2026-09-26 — step 2a done · **Date:** 2026-09-26 · **Parent:** [ADR-048](../adr/ADR-048-web-repository-becomes-a-monorepo.md)
 
 Goal: `api.sharpit.app` served by a new Vercel project `sharpit-api` built from `apps/api`, holding the
 server secrets, with its own crons — while the web keeps working unchanged until phase 3. The iOS app
@@ -46,6 +46,13 @@ public URL before step 2f.
 - New guard test: the future server tree imports no `react`, `@tanstack/react-query`, `lucide-react`,
   `components`, `hooks` or `'use client'` module. Replaces the grandfathered allowlist in `lib-boundary-guard`.
 - **Exit:** web behaviour unchanged; guard green.
+- **Done (2026-09-26):** the 26 edges were type imports — the types now live on the server side
+  (`@/athlete-state/today-state`, `lib/activity/detail/types`, `lib/coach/plan/adapt-types`, …) and the UI
+  modules re-export them. Browser-only helpers (`lib/query` minus its `types`, `lib/hooks`, `lib/motion`, the
+  React Query cache helpers, `app-navigation`, `text-shimmer`) moved to `apps/web/src/client/`. The
+  `lib-boundary` guard now forbids any `components`, `hooks`, `app`, `providers` or `client` import from the
+  server tree. Kept on purpose: `lucide-react` icons in `activity-weather` and `journal-trackables` (data
+  tables the server reads) and React's server-side `cache` — library dependencies, not app code.
 
 ### 2b — `packages/db` (≈ ½ day)
 
