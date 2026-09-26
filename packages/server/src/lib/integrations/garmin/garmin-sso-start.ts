@@ -1,44 +1,63 @@
 import 'server-only';
 
-import { cookies } from 'next/headers';
 import type { NextRequest } from 'next/server';
-import { NextResponse } from 'next/server';
+import type { NextResponse } from 'next/server';
 import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
 import {
-  createGarminSsoState,
-  GARMIN_SSO_STATE_COOKIE,
-} from '@sharpit/server/lib/integrations/garmin/garmin-browser-sso';
+  CONNECT_GARMIN_AUTHORIZE_PATH,
+  CONNECT_GARMIN_CALLBACK_PATH,
+  type GarminHandoffStatus,
+  garminHandoffCallbackPath,
+} from '@sharpit/server/lib/integrations/garmin/garmin-connect-handoff';
+import { getGarminAccount } from '@sharpit/server/lib/integrations/garmin/garmin-sync';
 import {
-  publicOriginFromRequest,
+  beginIntegrationConnect,
+  connectNavigation,
   sanitizeIntegrationReturnTo,
-  setIntegrationReturnTo,
+  webOriginFor,
 } from '@sharpit/server/lib/integrations/oauth-return';
-
-const OAUTH_COOKIE_OPTS = {
-  httpOnly: true,
-  sameSite: 'lax' as const,
-  path: '/',
-  maxAge: 600,
-  secure: process.env.NODE_ENV === 'production',
-};
+import { athleteCanConnectProvider } from '@sharpit/server/lib/privacy/consent-store';
 
 /**
- * Arms a Garmin browser SSO: remembers where to land afterwards, sets the signed CSRF
- * state cookie bound to the athlete, then redirects to the page that embeds Garmin's
- * sign-in. `/api/garmin/sso-callback` checks that state before storing any token.
+ * Arms a Garmin browser SSO: the page that embeds Garmin's sign-in, on the web origin the
+ * athlete started from, carrying the signed connect `state` (athlete, return path). The page
+ * posts it back with the ticket; `/api/garmin/sso-callback` checks it before storing any token.
  */
-export async function startGarminBrowserSso(
+export async function garminSsoPageUrl(
   request: NextRequest,
-  options: { returnTo: string | null; dataClass: string | null; pagePath: string },
-): Promise<NextResponse> {
-  const athleteId = await getCurrentAthleteId();
-  await setIntegrationReturnTo(options.returnTo, options.dataClass);
+  pagePath: string,
+  returnTo = request.nextUrl.searchParams.get('returnTo'),
+): Promise<URL> {
+  const state = await beginIntegrationConnect(request, 'garmin', null, returnTo);
+  const target = new URL(pagePath, webOriginFor(request));
+  target.searchParams.set('returnTo', sanitizeIntegrationReturnTo(returnTo));
+  target.searchParams.set('state', state);
+  return target;
+}
 
-  const state = createGarminSsoState({ athleteId });
-  const cookieStore = await cookies();
-  cookieStore.set(GARMIN_SSO_STATE_COOKIE, state, OAUTH_COOKIE_OPTS);
-
-  const target = new URL(options.pagePath, publicOriginFromRequest(request));
-  target.searchParams.set('returnTo', sanitizeIntegrationReturnTo(options.returnTo));
-  return NextResponse.redirect(target);
+/**
+ * Native Garmin handoff (ADR-040/047): arms the SSO for the in-app authentication session.
+ * Every exit lands on the callback URL, so the iOS session always closes with an outcome.
+ */
+export async function startGarminHandoff(request: NextRequest): Promise<NextResponse> {
+  const leave = (status: GarminHandoffStatus) =>
+    connectNavigation(request, new URL(garminHandoffCallbackPath(status), webOriginFor(request)));
+  try {
+    const athleteId = await getCurrentAthleteId();
+    if (await getGarminAccount(athleteId)) {
+      return leave('already_connected');
+    }
+    if (!(await athleteCanConnectProvider(athleteId, 'garmin'))) {
+      return leave('consent_required');
+    }
+    return connectNavigation(
+      request,
+      await garminSsoPageUrl(request, CONNECT_GARMIN_AUTHORIZE_PATH, CONNECT_GARMIN_CALLBACK_PATH),
+    );
+  } catch (error) {
+    console.error('[garmin/handoff] start SSO failed', {
+      name: error instanceof Error ? error.name : 'Error',
+    });
+    return leave('error');
+  }
 }

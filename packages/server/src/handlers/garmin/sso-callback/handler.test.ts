@@ -4,7 +4,7 @@ import { GARMIN_SSO_EMBED_SERVICE } from '@sharpit/server/lib/integrations/garmi
 const exchangeServiceTicketForDiTokens = vi.fn();
 const importGarminDiTokenStore = vi.fn();
 const redirectAfterIntegrationConnect = vi.fn(
-  async (_req: unknown, _provider: string, status: string) =>
+  async (_req: unknown, _state: unknown, _provider: string, status: string) =>
     NextResponseRedirect(`https://app.example.com/settings/integrations?garmin=${status}`),
 );
 const getCurrentAthleteId = vi.fn(async () => 'ath-1');
@@ -12,16 +12,6 @@ const getCurrentAthleteId = vi.fn(async () => 'ath-1');
 function NextResponseRedirect(url: string) {
   return new Response(null, { status: 302, headers: { Location: url } });
 }
-
-const cookieStore = {
-  get: vi.fn(),
-  delete: vi.fn(),
-  set: vi.fn(),
-};
-
-vi.mock('next/headers', () => ({
-  cookies: async () => cookieStore,
-}));
 
 vi.mock('@sharpit/server/lib/auth/current-athlete', () => ({
   getCurrentAthleteId: () => getCurrentAthleteId(),
@@ -37,9 +27,29 @@ vi.mock('@sharpit/server/lib/integrations/garmin/garmin-sync', () => ({
 }));
 
 vi.mock('@sharpit/server/lib/integrations/oauth-return', () => ({
-  redirectAfterIntegrationConnect: (...args: [unknown, string, string]) =>
+  redirectAfterIntegrationConnect: (...args: [unknown, unknown, string, string]) =>
     redirectAfterIntegrationConnect(...args),
 }));
+
+const CONTEXT = {
+  returnTo: '/settings/integrations',
+  dataClass: null,
+  webOrigin: 'https://web.sharpit.app',
+  redirectUri: null,
+};
+
+async function garminState(athleteId: string): Promise<string> {
+  const { createConnectState } = await import('@sharpit/server/lib/integrations/oauth-state');
+  return createConnectState({ ...CONTEXT, provider: 'garmin', athleteId });
+}
+
+function ssoRequest(body: Record<string, unknown>) {
+  return {
+    nextUrl: new URL('https://api.sharpit.app/api/garmin/sso-callback'),
+    url: 'https://api.sharpit.app/api/garmin/sso-callback',
+    json: async () => body,
+  } as never;
+}
 
 describe('/api/garmin/sso-callback', () => {
   beforeEach(() => {
@@ -49,10 +59,7 @@ describe('/api/garmin/sso-callback', () => {
   });
 
   it('POST exchanges ticket with embed service_url and returns redirect JSON', async () => {
-    const { createGarminSsoState, GARMIN_SSO_STATE_COOKIE } =
-      await import('@sharpit/server/lib/integrations/garmin/garmin-browser-sso');
-    const state = createGarminSsoState({ athleteId: 'ath-1' });
-    cookieStore.get.mockReturnValue({ value: state });
+    const state = await garminState('ath-1');
 
     exchangeServiceTicketForDiTokens.mockResolvedValue({
       accessToken: 'access',
@@ -66,7 +73,7 @@ describe('/api/garmin/sso-callback', () => {
     const request = {
       nextUrl: new URL('https://app.example.com/api/garmin/sso-callback'),
       url: 'https://app.example.com/api/garmin/sso-callback',
-      json: async () => ({ ticket: 'ST-abc-123' }),
+      json: async () => ({ ticket: 'ST-abc-123', state }),
     } as never;
 
     const response = await POST(request);
@@ -81,26 +88,41 @@ describe('/api/garmin/sso-callback', () => {
       di_refresh_token: 'refresh-token-long',
       di_client_id: 'GARMIN_CONNECT_MOBILE_ANDROID_DI_2025Q2',
     });
-    expect(cookieStore.delete).toHaveBeenCalledWith(GARMIN_SSO_STATE_COOKIE);
     expect(response.status).toBe(200);
     expect(body.ok).toBe(true);
     expect(body.redirectTo).toContain('garmin=connected');
   });
 
-  it('rejects missing/invalid state without exchanging', async () => {
-    cookieStore.get.mockReturnValue(undefined);
+  it.each([
+    ['missing', undefined],
+    ['forged', 'forged.state'],
+  ])('rejects a %s state without exchanging', async (_label, state) => {
     const { POST } = await import('./handler');
-    const request = {
-      nextUrl: new URL('https://app.example.com/api/garmin/sso-callback'),
-      url: 'https://app.example.com/api/garmin/sso-callback',
-      json: async () => ({ ticket: 'ST-abc' }),
-    } as never;
-
-    const response = await POST(request);
+    const response = await POST(ssoRequest({ ticket: 'ST-abc', state }));
     const body = (await response.json()) as { status: string };
 
     expect(exchangeServiceTicketForDiTokens).not.toHaveBeenCalled();
     expect(body.status).toBe('invalid_state');
     expect(response.status).toBe(400);
+  });
+
+  it('rejects a state issued to another athlete', async () => {
+    const { POST } = await import('./handler');
+    const response = await POST(
+      ssoRequest({ ticket: 'ST-abc', state: await garminState('ath-2') }),
+    );
+
+    expect(exchangeServiceTicketForDiTokens).not.toHaveBeenCalled();
+    expect(((await response.json()) as { status: string }).status).toBe('invalid_state');
+  });
+
+  it('rejects a state issued for another provider', async () => {
+    const { createConnectState } = await import('@sharpit/server/lib/integrations/oauth-state');
+    const state = createConnectState({ ...CONTEXT, provider: 'strava', athleteId: 'ath-1' });
+    const { POST } = await import('./handler');
+    const response = await POST(ssoRequest({ ticket: 'ST-abc', state }));
+
+    expect(exchangeServiceTicketForDiTokens).not.toHaveBeenCalled();
+    expect(((await response.json()) as { status: string }).status).toBe('invalid_state');
   });
 });

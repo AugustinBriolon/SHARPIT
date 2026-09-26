@@ -112,11 +112,14 @@ export type GarminSsoTicketResult =
   { ok: true; redirectTo: string } | { ok: false; status: string | undefined };
 
 /** Browser SSO ticket exchange — keep fetch here (not in components). */
-export async function exchangeGarminSsoTicket(ticket: string): Promise<GarminSsoTicketResult> {
+export async function exchangeGarminSsoTicket(
+  ticket: string,
+  state: string,
+): Promise<GarminSsoTicketResult> {
   const response = await fetch('/api/garmin/sso-callback', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ ticket }),
+    body: JSON.stringify({ ticket, state }),
   });
   const data = (await response.json().catch(() => null)) as {
     redirectTo?: string;

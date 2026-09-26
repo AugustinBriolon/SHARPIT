@@ -1,19 +1,29 @@
-import { readdirSync, readFileSync, statSync } from 'node:fs';
-import { join } from 'node:path';
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
+import { join, relative } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-const HANDLERS_ROOT = join('..', '..', 'packages', 'server', 'src', 'handlers');
-const HANDLER_SPECIFIER = /from '@sharpit\/server\/handlers\/([^']+)'/g;
-const SETS_A_COOKIE = /cookies\(\)\.set|\.cookies\.set\(|['"]set-cookie['"]/i;
+const SERVER_ROOT = join('..', '..', 'packages', 'server', 'src');
+const HANDLERS_ROOT = join(SERVER_ROOT, 'handlers');
+const SERVER_SPECIFIER = /from '@sharpit\/server\/([^']+)'|import\('@sharpit\/server\/([^']+)'\)/g;
+const IMPORTS_NEXT_COOKIES = /import \{[^}]*\bcookies\b[^}]*\} from 'next\/headers'/;
+const WRITES = /\.(set|delete)\(/;
+const WRITES_A_RESPONSE_COOKIE = /\.cookies\.(set|delete)\(|\.(append|set)\(\s*['"]set-cookie['"]/i;
 /**
  * Handlers that set a cookie for the web session only, never for a Bearer request (their own
  * handler test proves it). An entry stays valid only while the file still gates on `hasBearer(`.
  */
 const WEB_SESSION_ONLY_COOKIES = new Set([join(HANDLERS_ROOT, 'athlete-profile', 'handler.ts')]);
 
+function writesACookie(source: string): boolean {
+  return (
+    (IMPORTS_NEXT_COOKIES.test(source) && WRITES.test(source)) ||
+    WRITES_A_RESPONSE_COOKIE.test(source)
+  );
+}
+
 function setsACookieForApiClients(file: string): boolean {
   const source = readFileSync(file, 'utf8');
-  if (!SETS_A_COOKIE.test(source)) {
+  if (!writesACookie(source)) {
     return false;
   }
   return !(WEB_SESSION_ONLY_COOKIES.has(file) && source.includes('hasBearer('));
@@ -29,21 +39,38 @@ function routeFiles(dir: string): string[] {
   });
 }
 
-/** A route file only re-exports its handler (ADR-048): read the handler it points at. */
-function handlerFilesOf(routeFile: string): string[] {
-  return [...readFileSync(routeFile, 'utf8').matchAll(HANDLER_SPECIFIER)].map((match) =>
-    join(HANDLERS_ROOT, `${match[1]}.ts`),
-  );
+function resolveServerModule(specifier: string): string | null {
+  const base = join(SERVER_ROOT, specifier);
+  const candidates = [`${base}.ts`, `${base}.tsx`, join(base, 'index.ts')];
+  return candidates.find((candidate) => existsSync(candidate)) ?? null;
+}
+
+function serverImportsOf(file: string): string[] {
+  const source = readFileSync(file, 'utf8');
+  return [...source.matchAll(SERVER_SPECIFIER)]
+    .map((match) => resolveServerModule(match[1] ?? match[2]))
+    .filter((path): path is string => path !== null);
+}
+
+/** Every `@sharpit/server` module a route reaches: a cookie written by a helper counts too. */
+function closureOf(routeFile: string, seen = new Set<string>()): Set<string> {
+  for (const file of serverImportsOf(routeFile)) {
+    if (!seen.has(file)) {
+      seen.add(file);
+      closureOf(file, seen);
+    }
+  }
+  return seen;
 }
 
 describe('api host contract', () => {
-  it('no /api/v1 route or the coach stream sets a cookie', () => {
-    const routes = [...routeFiles('src/app/api/v1'), 'src/app/api/coach/chat/route.ts'];
-    const sources = routes.flatMap((route) => [route, ...handlerFilesOf(route)]);
-    const offenders = sources.filter(setsACookieForApiClients);
+  it('no route sets a cookie, directly or through a helper', () => {
+    const routes = routeFiles(join('src', 'app', 'api'));
+    const reached = new Set(routes.flatMap((route) => [route, ...closureOf(route)]));
+    const offenders = [...reached].filter(setsACookieForApiClients);
 
-    expect(routes.length).toBeGreaterThan(40);
-    expect(sources.length).toBeGreaterThan(routes.length * 2 - 1);
-    expect(offenders).toEqual([]);
+    expect(routes.length).toBeGreaterThan(150);
+    expect(reached.size).toBeGreaterThan(routes.length * 2);
+    expect(offenders.map((file) => relative(SERVER_ROOT, file))).toEqual([]);
   });
 });

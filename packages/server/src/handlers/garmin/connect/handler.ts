@@ -4,22 +4,31 @@ import {
   garminConnectSchema,
   SSO_DISABLED_MESSAGE,
 } from '@sharpit/server/handlers/garmin/connect/connect-shared';
-import { GARMIN_SSO_PAGE_PATH } from '@sharpit/server/lib/integrations/garmin/garmin-browser-sso';
-import { startGarminBrowserSso } from '@sharpit/server/lib/integrations/garmin/garmin-sso-start';
+import { GARMIN_SSO_PAGE_PATH } from '@sharpit/server/lib/integrations/garmin/garmin-browser-sso-shared';
+import { CONNECT_GARMIN_CALLBACK_PATH } from '@sharpit/server/lib/integrations/garmin/garmin-connect-handoff';
 import {
-  publicOriginFromRequest,
+  garminSsoPageUrl,
+  startGarminHandoff,
+} from '@sharpit/server/lib/integrations/garmin/garmin-sso-start';
+import {
+  connectNavigation,
   redirectIfBindHost,
+  webOriginFor,
 } from '@sharpit/server/lib/integrations/oauth-return';
 import { gateProviderConnect } from '@sharpit/server/lib/privacy/gate-provider-connect';
 
 /**
- * Start browser CAS SSO — sets CSRF state, then opens the Sharpit page that
- * embeds Garmin's SSO iframe (password typed on Garmin, never on Sharpit).
+ * Start browser CAS SSO — opens the Sharpit page that embeds Garmin's SSO iframe (password
+ * typed on Garmin, never on Sharpit), carrying the signed connect state. The native handoff
+ * (return to `/connect/garmin/callback`) has its own exits, all on the callback URL.
  */
 export async function GET(request: NextRequest) {
   const bindRedirect = redirectIfBindHost(request);
   if (bindRedirect) {
     return bindRedirect;
+  }
+  if (request.nextUrl.searchParams.get('returnTo') === CONNECT_GARMIN_CALLBACK_PATH) {
+    return startGarminHandoff(request);
   }
 
   try {
@@ -27,18 +36,14 @@ export async function GET(request: NextRequest) {
     if (consentBlock) {
       return consentBlock;
     }
-
-    return await startGarminBrowserSso(request, {
-      returnTo: request.nextUrl.searchParams.get('returnTo'),
-      dataClass: request.nextUrl.searchParams.get('dataClass'),
-      pagePath: GARMIN_SSO_PAGE_PATH,
-    });
+    return connectNavigation(request, await garminSsoPageUrl(request, GARMIN_SSO_PAGE_PATH));
   } catch (error) {
     console.error('[api/garmin/connect] start SSO failed', {
       name: error instanceof Error ? error.name : 'Error',
     });
-    return NextResponse.redirect(
-      new URL('/settings/integrations?garmin=error', publicOriginFromRequest(request)),
+    return connectNavigation(
+      request,
+      new URL('/settings/integrations?garmin=error', webOriginFor(request)),
     );
   }
 }

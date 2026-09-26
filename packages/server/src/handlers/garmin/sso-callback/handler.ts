@@ -1,32 +1,29 @@
-import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
 import {
-  GARMIN_SSO_STATE_COOKIE,
+  GARMIN_SSO_EMBED_SERVICE,
   isGarminSsoTicket,
-  parseGarminSsoState,
-} from '@sharpit/server/lib/integrations/garmin/garmin-browser-sso';
+} from '@sharpit/server/lib/integrations/garmin/garmin-browser-sso-shared';
 import { exchangeServiceTicketForDiTokens } from '@sharpit/server/lib/integrations/garmin/garmin-di-oauth';
 import { importGarminDiTokenStore } from '@sharpit/server/lib/integrations/garmin/garmin-sync';
 import { redirectAfterIntegrationConnect } from '@sharpit/server/lib/integrations/oauth-return';
+import { readConnectState } from '@sharpit/server/lib/integrations/oauth-state';
 
 const postBodySchema = z.object({
   ticket: z.string().min(1).max(500),
+  state: z.string().min(1).max(2000),
 });
 
 async function completeGarminSso(
   request: NextRequest,
   ticket: string | null,
+  rawState: string | null,
 ): Promise<NextResponse> {
-  const cookieStore = await cookies();
-  const rawState = cookieStore.get(GARMIN_SSO_STATE_COOKIE)?.value;
-  cookieStore.delete(GARMIN_SSO_STATE_COOKIE);
-
-  const state = parseGarminSsoState(rawState);
+  const state = readConnectState(rawState, 'garmin');
   if (!state) {
     console.info('[api/garmin/sso-callback]', { step: 'state', ok: false });
-    return redirectAfterIntegrationConnect(request, 'garmin', 'invalid_state');
+    return redirectAfterIntegrationConnect(request, null, 'garmin', 'invalid_state');
   }
 
   if (!isGarminSsoTicket(ticket)) {
@@ -35,18 +32,18 @@ async function completeGarminSso(
       ok: false,
       hasTicket: Boolean(ticket),
     });
-    return redirectAfterIntegrationConnect(request, 'garmin', 'denied');
+    return redirectAfterIntegrationConnect(request, state, 'garmin', 'denied');
   }
 
   try {
     const athleteId = await getCurrentAthleteId();
     if (athleteId !== state.athleteId) {
       console.info('[api/garmin/sso-callback]', { step: 'athlete', ok: false });
-      return redirectAfterIntegrationConnect(request, 'garmin', 'invalid_state');
+      return redirectAfterIntegrationConnect(request, state, 'garmin', 'invalid_state');
     }
 
     // service_url MUST match the SSO `service` used when minting the ticket (embed).
-    const di = await exchangeServiceTicketForDiTokens(ticket, state.service);
+    const di = await exchangeServiceTicketForDiTokens(ticket, GARMIN_SSO_EMBED_SERVICE);
     await importGarminDiTokenStore(athleteId, {
       di_token: di.accessToken,
       di_refresh_token: di.refreshToken,
@@ -58,42 +55,34 @@ async function completeGarminSso(
       ok: true,
       ticketPresent: true,
     });
-    return redirectAfterIntegrationConnect(request, 'garmin', 'connected');
+    return redirectAfterIntegrationConnect(request, state, 'garmin', 'connected');
   } catch (error) {
     console.error('[api/garmin/sso-callback] exchange failed', {
       name: error instanceof Error ? error.name : 'Error',
       message: error instanceof Error ? error.message.slice(0, 200) : 'unknown',
     });
-    return redirectAfterIntegrationConnect(request, 'garmin', 'error');
+    return redirectAfterIntegrationConnect(request, state, 'garmin', 'error');
   }
 }
 
 /**
- * Legacy CAS redirect callback (third-party `service` URL). Kept for completeness;
- * primary UX posts the ticket from the embed iframe via POST (see below).
- */
-export async function GET(request: NextRequest) {
-  const ticket = request.nextUrl.searchParams.get('ticket');
-  return completeGarminSso(request, ticket);
-}
-
-/**
  * Primary path: client received ST-… via postMessage from sso.garmin.com iframe,
- * then POSTs it here with the signed CSRF cookie. Never logs the ticket.
+ * then POSTs it here with the signed connect state its page URL carried. Never logs the ticket.
  */
 export async function POST(request: NextRequest) {
   let ticket: string | null = null;
+  let state: string | null = null;
   try {
     const json = (await request.json()) as unknown;
     const parsed = postBodySchema.safeParse(json);
     if (parsed.success) {
-      ({ ticket } = parsed.data);
+      ({ ticket, state } = parsed.data);
     }
   } catch {
     ticket = null;
   }
 
-  const result = await completeGarminSso(request, ticket);
+  const result = await completeGarminSso(request, ticket, state);
 
   // Client expects JSON with a redirect URL (fetch cannot follow cross-origin
   // Location to HTML the way we want for SPA navigation).

@@ -2,10 +2,15 @@ import { GarminBrowserSsoClient } from '@/components/settings/integrations/garmi
 import { sanitizeIntegrationReturnTo } from '@sharpit/server/lib/integrations/oauth-public-origin';
 
 type PageProps = {
-  searchParams: Promise<{ returnTo?: string }>;
+  searchParams: Promise<{ returnTo?: string; state?: string }>;
 };
 
 export default async function GarminBrowserSsoPage({ searchParams }: PageProps) {
   const params = await searchParams;
-  return <GarminBrowserSsoClient returnTo={sanitizeIntegrationReturnTo(params.returnTo)} />;
+  return (
+    <GarminBrowserSsoClient
+      returnTo={sanitizeIntegrationReturnTo(params.returnTo)}
+      state={params.state ?? ''}
+    />
+  );
 }

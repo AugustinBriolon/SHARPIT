@@ -3,11 +3,11 @@ import type { DataClassId } from '@sharpit/server/lib/integrations/provider-cata
 import { DATA_CLASSES } from '@sharpit/server/lib/integrations/provider-catalog';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-
-/** Cookie set before OAuth start; consumed when the provider callback finishes. */
-export const INTEGRATION_RETURN_COOKIE = 'integration_return_to';
-/** Optional data-class context for enabling that class after connect (ADR-027). */
-export const INTEGRATION_DATA_CLASS_COOKIE = 'integration_data_class';
+import {
+  API_ALLOWED_ORIGIN,
+  API_HOST,
+  apiAllowedOrigins,
+} from '@sharpit/server/lib/hosts/api-host';
 
 export const DEFAULT_INTEGRATION_RETURN_PATH = '/settings/integrations';
 
@@ -93,4 +93,31 @@ export function publicOriginFromRequest(request: NextRequest): string {
     return normalizeOAuthPublicOrigin(`${proto}://${host}`);
   }
   return normalizeOAuthPublicOrigin(request.nextUrl.origin);
+}
+
+/**
+ * The Sharpit web origin a connect started from, where the athlete lands afterwards: the
+ * calling page's origin when it is one `api.` allows (a cross-origin call from the web), else
+ * this request's own origin — except on `api.` itself, which serves no page (a provider
+ * callback), where it is the thin web.
+ */
+export function webOriginFor(request: NextRequest): string {
+  const origin = request.headers.get('origin');
+  if (origin && apiAllowedOrigins().includes(origin)) {
+    return origin;
+  }
+  const own = publicOriginFromRequest(request);
+  return new URL(own).hostname === API_HOST ? API_ALLOWED_ORIGIN : own;
+}
+
+/**
+ * Where a connect sends the browser next. A web page calling `api.` asks for JSON — a
+ * cross-origin fetch cannot follow the redirect — and navigates itself; a plain navigation
+ * gets the redirect.
+ */
+export function connectNavigation(request: NextRequest, url: string | URL): NextResponse {
+  if (request.headers.get('accept')?.includes('application/json')) {
+    return NextResponse.json({ url: String(url) });
+  }
+  return NextResponse.redirect(url);
 }

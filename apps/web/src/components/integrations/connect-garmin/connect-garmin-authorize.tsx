@@ -74,7 +74,7 @@ function GarminSignInFrame({
  * exchanged by `/api/garmin/sso-callback`, which checks the signed state cookie; every
  * outcome then lands on the callback URL.
  */
-export function ConnectGarminAuthorize() {
+export function ConnectGarminAuthorize({ state }: { state: string }) {
   const [phase, setPhase] = useState<GarminSsoPhase>('form');
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const exchanging = useRef(false);
@@ -90,6 +90,7 @@ export function ConnectGarminAuthorize() {
 
   useEffect(() => {
     const onMessage = createGarminSsoMessageHandler({
+      state,
       exchanging,
       setPhase,
       setErrorStatus: (status) => {
@@ -101,7 +102,7 @@ export function ConnectGarminAuthorize() {
     });
     window.addEventListener('message', onMessage);
     return () => window.removeEventListener('message', onMessage);
-  }, []);
+  }, [state]);
 
   if (phase !== 'form') {
     return <GarminSsoConnectingPlate />;

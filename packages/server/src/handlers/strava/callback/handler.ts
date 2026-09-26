@@ -1,8 +1,7 @@
-import { cookies } from 'next/headers';
 import { NextRequest } from 'next/server';
 import { prisma } from '@sharpit/db/client';
-import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
 import { redirectAfterIntegrationConnect } from '@sharpit/server/lib/integrations/oauth-return';
+import { readConnectState } from '@sharpit/server/lib/integrations/oauth-state';
 import { exchangeCodeForToken } from '@sharpit/server/lib/integrations/strava/strava';
 import { encryptSecret } from '@sharpit/server/lib/secret-box';
 
@@ -41,32 +40,28 @@ async function persistStravaAccount(
   return true;
 }
 
+/** Arrives with no session (ADR-048): the signed `state` names the athlete. */
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
-  const { code, state, error } = readOAuthParams(searchParams);
+  const { code, state: rawState, error } = readOAuthParams(searchParams);
+  const state = readConnectState(rawState, 'strava');
 
   if (error) {
-    return redirectAfterIntegrationConnect(request, 'strava', 'denied');
+    return redirectAfterIntegrationConnect(request, state, 'strava', 'denied');
   }
-
-  const cookieStore = await cookies();
-  const storedState = cookieStore.get('strava_oauth_state')?.value;
-  cookieStore.delete('strava_oauth_state');
-
-  if (!code || !state || state !== storedState) {
-    return redirectAfterIntegrationConnect(request, 'strava', 'invalid_state');
+  if (!code || !state) {
+    return redirectAfterIntegrationConnect(request, state, 'strava', 'invalid_state');
   }
 
   try {
-    const athleteId = await getCurrentAthleteId();
     const token = await exchangeCodeForToken(code);
-    const saved = await persistStravaAccount(athleteId, token);
+    const saved = await persistStravaAccount(state.athleteId, token);
     if (!saved) {
-      return redirectAfterIntegrationConnect(request, 'strava', 'no_athlete');
+      return redirectAfterIntegrationConnect(request, state, 'strava', 'no_athlete');
     }
-    return redirectAfterIntegrationConnect(request, 'strava', 'connected');
+    return redirectAfterIntegrationConnect(request, state, 'strava', 'connected');
   } catch (err) {
     console.error(err);
-    return redirectAfterIntegrationConnect(request, 'strava', 'error');
+    return redirectAfterIntegrationConnect(request, state, 'strava', 'error');
   }
 }

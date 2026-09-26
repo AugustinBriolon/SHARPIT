@@ -1,11 +1,10 @@
-import { cookies } from 'next/headers';
 import { NextRequest } from 'next/server';
 import {
   emailFromIdToken,
   exchangeCodeForToken,
 } from '@sharpit/server/lib/integrations/google/google';
-import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
 import { redirectAfterIntegrationConnect } from '@sharpit/server/lib/integrations/oauth-return';
+import { type ConnectState, readConnectState } from '@sharpit/server/lib/integrations/oauth-state';
 import { prisma } from '@sharpit/db/client';
 import { encryptSecret } from '@sharpit/server/lib/secret-box';
 
@@ -37,49 +36,35 @@ async function persistGoogleAccount(
   });
 }
 
-function isOAuthStateInvalid(code: string | null, state: string | null, storedState?: string) {
-  return !code || !state || state !== storedState;
-}
-
-async function completeGoogleOAuth(
-  request: NextRequest,
-  code: string,
-  storedRedirect: string | undefined,
-) {
-  const athleteId = await getCurrentAthleteId();
-  const token = await exchangeCodeForToken(code, storedRedirect);
+async function completeGoogleOAuth(request: NextRequest, code: string, state: ConnectState) {
+  const token = await exchangeCodeForToken(code, state.redirectUri ?? undefined);
   if (!token.refresh_token) {
-    return redirectAfterIntegrationConnect(request, 'google', 'no_refresh');
+    return redirectAfterIntegrationConnect(request, state, 'google', 'no_refresh');
   }
-  await persistGoogleAccount(athleteId, token);
-  return redirectAfterIntegrationConnect(request, 'google', 'connected');
+  await persistGoogleAccount(state.athleteId, token);
+  return redirectAfterIntegrationConnect(request, state, 'google', 'connected');
 }
 
+/** Arrives with no session (ADR-048): the signed `state` names the athlete. */
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
-  const { code, state, error } = readOAuthParams(searchParams);
+  const { code, state: rawState, error } = readOAuthParams(searchParams);
+  const state = readConnectState(rawState, 'google');
 
   if (error) {
-    return redirectAfterIntegrationConnect(request, 'google', 'denied');
+    return redirectAfterIntegrationConnect(request, state, 'google', 'denied');
   }
-
-  const cookieStore = await cookies();
-  const storedState = cookieStore.get('google_oauth_state')?.value;
-  const storedRedirect = cookieStore.get('google_oauth_redirect')?.value;
-  cookieStore.delete('google_oauth_state');
-  cookieStore.delete('google_oauth_redirect');
-
-  if (isOAuthStateInvalid(code, state, storedState)) {
-    return redirectAfterIntegrationConnect(request, 'google', 'invalid_state');
+  if (!code || !state) {
+    return redirectAfterIntegrationConnect(request, state, 'google', 'invalid_state');
   }
 
   try {
-    return await completeGoogleOAuth(request, code!, storedRedirect);
+    return await completeGoogleOAuth(request, code, state);
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Erreur inconnue';
     console.error('[google/callback]', message, err);
     const extra =
       process.env.NODE_ENV === 'development' ? { googleDetail: message.slice(0, 300) } : undefined;
-    return redirectAfterIntegrationConnect(request, 'google', 'error', extra);
+    return redirectAfterIntegrationConnect(request, state, 'google', 'error', extra);
   }
 }

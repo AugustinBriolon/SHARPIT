@@ -3,6 +3,11 @@ import { ConnectGarminAuthorize } from '@/components/integrations/connect-garmin
 
 export const metadata: Metadata = { title: 'Autoriser Garmin · SHARPIT' };
 
-export default function ConnectGarminAuthorizePage() {
-  return <ConnectGarminAuthorize />;
+type PageProps = {
+  searchParams: Promise<{ state?: string }>;
+};
+
+export default async function ConnectGarminAuthorizePage({ searchParams }: PageProps) {
+  const { state } = await searchParams;
+  return <ConnectGarminAuthorize state={state ?? ''} />;
 }

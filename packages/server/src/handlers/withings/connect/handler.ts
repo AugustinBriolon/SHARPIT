@@ -1,10 +1,9 @@
-import { randomBytes } from 'crypto';
-import { cookies } from 'next/headers';
 import { NextRequest, NextResponse } from 'next/server';
 import {
+  beginIntegrationConnect,
+  connectNavigation,
   publicOriginFromRequest,
   redirectIfBindHost,
-  setIntegrationReturnTo,
 } from '@sharpit/server/lib/integrations/oauth-return';
 import {
   buildWithingsAuthorizeUrl,
@@ -34,29 +33,7 @@ export async function GET(request: NextRequest) {
     return consentBlock;
   }
 
-  const returnTo = request.nextUrl.searchParams.get('returnTo');
-  const dataClass = request.nextUrl.searchParams.get('dataClass');
-  await setIntegrationReturnTo(returnTo, dataClass);
-
-  const state = randomBytes(16).toString('hex');
   const origin = publicOriginFromRequest(request);
-  const redirectUri = getWithingsRedirectUri(origin);
-
-  const cookieStore = await cookies();
-  cookieStore.set('withings_oauth_state', state, {
-    httpOnly: true,
-    sameSite: 'lax',
-    path: '/',
-    maxAge: 600,
-    secure: process.env.NODE_ENV === 'production',
-  });
-  cookieStore.set('withings_oauth_redirect', redirectUri, {
-    httpOnly: true,
-    sameSite: 'lax',
-    path: '/',
-    maxAge: 600,
-    secure: process.env.NODE_ENV === 'production',
-  });
-
-  return NextResponse.redirect(buildWithingsAuthorizeUrl(state, origin));
+  const state = await beginIntegrationConnect(request, 'withings', getWithingsRedirectUri(origin));
+  return connectNavigation(request, buildWithingsAuthorizeUrl(state, origin));
 }

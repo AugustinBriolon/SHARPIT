@@ -17,6 +17,8 @@ import { cn } from '@sharpit/server/lib/utils';
 export type GarminSsoPhase = 'form' | 'connecting' | 'success' | 'error';
 
 export function createGarminSsoMessageHandler(options: {
+  /** The signed connect state this page's URL carried; the exchange proves the athlete with it. */
+  state: string;
   exchanging: React.MutableRefObject<boolean>;
   setPhase: (phase: GarminSsoPhase) => void;
   setErrorStatus: (status: string | undefined) => void;
@@ -36,7 +38,7 @@ export function createGarminSsoMessageHandler(options: {
 
     void (async () => {
       try {
-        const result = await exchangeGarminSsoTicket(ticket);
+        const result = await exchangeGarminSsoTicket(ticket, options.state);
         if (!result.ok) {
           options.setPhase('error');
           options.setErrorStatus(result.status);

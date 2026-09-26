@@ -1,11 +1,10 @@
-import { cookies } from 'next/headers';
 import { NextRequest } from 'next/server';
 import { prisma } from '@sharpit/db/client';
-import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
 import {
   publicOriginFromRequest,
   redirectAfterIntegrationConnect,
 } from '@sharpit/server/lib/integrations/oauth-return';
+import { type ConnectState, readConnectState } from '@sharpit/server/lib/integrations/oauth-state';
 import {
   exchangeWithingsCode,
   getWithingsRedirectUri,
@@ -52,44 +51,33 @@ async function runInitialWithingsSync(athleteId: string) {
   }
 }
 
-function isOAuthStateInvalid(code: string | null, state: string | null, storedState?: string) {
-  return !code || !state || state !== storedState;
-}
-
-async function completeWithingsOAuth(request: NextRequest, code: string, redirectUri: string) {
-  const athleteId = await getCurrentAthleteId();
+async function completeWithingsOAuth(request: NextRequest, code: string, state: ConnectState) {
+  const redirectUri = state.redirectUri ?? getWithingsRedirectUri(publicOriginFromRequest(request));
   const token = await exchangeWithingsCode(code, redirectUri);
-  await persistWithingsAccount(athleteId, token);
-  await runInitialWithingsSync(athleteId);
-  return redirectAfterIntegrationConnect(request, 'withings', 'connected');
+  await persistWithingsAccount(state.athleteId, token);
+  await runInitialWithingsSync(state.athleteId);
+  return redirectAfterIntegrationConnect(request, state, 'withings', 'connected');
 }
 
+/** Arrives with no session (ADR-048): the signed `state` names the athlete. */
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
-  const { code, state, error } = readOAuthParams(searchParams);
+  const { code, state: rawState, error } = readOAuthParams(searchParams);
+  const state = readConnectState(rawState, 'withings');
 
   if (error) {
-    return redirectAfterIntegrationConnect(request, 'withings', 'denied');
+    return redirectAfterIntegrationConnect(request, state, 'withings', 'denied');
   }
-
-  const cookieStore = await cookies();
-  const storedState = cookieStore.get('withings_oauth_state')?.value;
-  const storedRedirectUri = cookieStore.get('withings_oauth_redirect')?.value;
-  cookieStore.delete('withings_oauth_state');
-  cookieStore.delete('withings_oauth_redirect');
-
-  if (isOAuthStateInvalid(code, state, storedState)) {
-    return redirectAfterIntegrationConnect(request, 'withings', 'invalid_state');
+  if (!code || !state) {
+    return redirectAfterIntegrationConnect(request, state, 'withings', 'invalid_state');
   }
-
-  const redirectUri = storedRedirectUri ?? getWithingsRedirectUri(publicOriginFromRequest(request));
 
   try {
-    return await completeWithingsOAuth(request, code!, redirectUri);
+    return await completeWithingsOAuth(request, code, state);
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Erreur inconnue';
     console.error('[withings/callback]', message, err);
-    return redirectAfterIntegrationConnect(request, 'withings', 'error', {
+    return redirectAfterIntegrationConnect(request, state, 'withings', 'error', {
       withingsDetail: message.slice(0, 300),
     });
   }

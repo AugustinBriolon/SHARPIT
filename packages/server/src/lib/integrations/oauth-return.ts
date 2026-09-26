@@ -1,117 +1,96 @@
 import 'server-only';
 
-import { cookies } from 'next/headers';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
-import type { DataClassId } from '@sharpit/server/lib/integrations/provider-catalog';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
 import {
-  INTEGRATION_DATA_CLASS_COOKIE,
-  INTEGRATION_RETURN_COOKIE,
-  publicOriginFromRequest,
+  enableProviderForAllCoveredClasses,
+  enableProviderForClass,
+} from '@sharpit/server/lib/integrations/source-prefs';
+import { persistSourcePrefsMutation } from '@sharpit/server/lib/integrations/source-prefs-store';
+import {
+  DEFAULT_INTEGRATION_RETURN_PATH,
   sanitizeDataClass,
   sanitizeIntegrationReturnTo,
+  webOriginFor,
 } from '@sharpit/server/lib/integrations/oauth-public-origin';
-import { catalogIntegrationIds } from '@sharpit/server/lib/integrations/source-prefs';
+import {
+  type ConnectState,
+  createConnectState,
+} from '@sharpit/server/lib/integrations/oauth-state';
+import type { IntegrationId } from '@sharpit/server/lib/integrations/shared/client-sync';
 
 export {
+  connectNavigation,
   DEFAULT_INTEGRATION_RETURN_PATH,
-  INTEGRATION_DATA_CLASS_COOKIE,
-  INTEGRATION_RETURN_COOKIE,
   normalizeOAuthPublicOrigin,
   publicOriginFromRequest,
   redirectIfBindHost,
   sanitizeDataClass,
   sanitizeIntegrationReturnTo,
+  webOriginFor,
 } from '@sharpit/server/lib/integrations/oauth-public-origin';
 
-const OAUTH_COOKIE_OPTS = {
-  httpOnly: true,
-  sameSite: 'lax' as const,
-  path: '/',
-  maxAge: 600,
-  secure: process.env.NODE_ENV === 'production',
-};
+/**
+ * Starts a provider connect for the signed-in athlete: the signed `state` that carries the
+ * athlete, the return path and the web origin through the provider's sign-in.
+ */
+export async function beginIntegrationConnect(
+  request: NextRequest,
+  provider: IntegrationId,
+  redirectUri: string | null,
+  returnTo = request.nextUrl.searchParams.get('returnTo'),
+): Promise<string> {
+  const { searchParams } = request.nextUrl;
+  return createConnectState({
+    provider,
+    athleteId: await getCurrentAthleteId(),
+    returnTo: sanitizeIntegrationReturnTo(returnTo),
+    dataClass: sanitizeDataClass(searchParams.get('dataClass')),
+    webOrigin: webOriginFor(request),
+    redirectUri,
+  });
+}
 
-export async function setIntegrationReturnTo(
-  returnTo: string | null | undefined,
-  dataClass?: string | null,
-): Promise<void> {
-  const store = await cookies();
-  store.set(INTEGRATION_RETURN_COOKIE, sanitizeIntegrationReturnTo(returnTo), OAUTH_COOKIE_OPTS);
-  const cls = sanitizeDataClass(dataClass);
-  if (cls) {
-    store.set(INTEGRATION_DATA_CLASS_COOKIE, cls, OAUTH_COOKIE_OPTS);
-  } else {
-    store.delete(INTEGRATION_DATA_CLASS_COOKIE);
+async function enableConnectedProvider(state: ConnectState): Promise<void> {
+  try {
+    await persistSourcePrefsMutation(state.athleteId, (prefs) =>
+      state.dataClass
+        ? enableProviderForClass(prefs, state.dataClass, state.provider)
+        : enableProviderForAllCoveredClasses(prefs, state.provider),
+    );
+  } catch (err) {
+    console.error('[oauth-return] failed to apply data-class prefs:', err);
   }
-}
-
-export async function consumeIntegrationReturnTo(): Promise<string> {
-  const store = await cookies();
-  const value = store.get(INTEGRATION_RETURN_COOKIE)?.value;
-  store.delete(INTEGRATION_RETURN_COOKIE);
-  return sanitizeIntegrationReturnTo(value);
-}
-
-export async function consumeIntegrationDataClass(): Promise<DataClassId | null> {
-  const store = await cookies();
-  const value = store.get(INTEGRATION_DATA_CLASS_COOKIE)?.value;
-  store.delete(INTEGRATION_DATA_CLASS_COOKIE);
-  return sanitizeDataClass(value);
 }
 
 /**
- * After a provider OAuth callback: enable the class that started the connect
- * (if any), then redirect to onboarding or settings.
+ * After a provider callback: enable the class that started the connect (if any), then send
+ * the athlete back where they started, on the web. With no trustworthy state (forged,
+ * expired), they land on the integrations settings of the web.
  */
 export async function redirectAfterIntegrationConnect(
   request: NextRequest,
-  provider: string,
+  state: ConnectState | null,
+  provider: IntegrationId,
   status: string,
   extra?: Record<string, string>,
 ): Promise<NextResponse> {
-  const returnTo = await consumeIntegrationReturnTo();
-  const dataClass = await consumeIntegrationDataClass();
-
-  if (status === 'connected' && isIntegrationId(provider)) {
-    try {
-      const { getCurrentAthleteId } = await import('@sharpit/server/lib/auth/current-athlete');
-      const { enableProviderForAllCoveredClasses, enableProviderForClass } =
-        await import('@sharpit/server/lib/integrations/source-prefs');
-      const { persistSourcePrefsMutation } =
-        await import('@sharpit/server/lib/integrations/source-prefs-store');
-      const athleteId = await getCurrentAthleteId();
-      await persistSourcePrefsMutation(athleteId, (prefs) =>
-        dataClass
-          ? enableProviderForClass(prefs, dataClass, provider)
-          : enableProviderForAllCoveredClasses(prefs, provider),
-      );
-    } catch (err) {
-      console.error('[oauth-return] failed to apply data-class prefs:', err);
-    }
+  if (status === 'connected' && state) {
+    await enableConnectedProvider(state);
   }
-
-  const target = new URL(returnTo, publicOriginFromRequest(request));
+  const returnTo = state?.returnTo ?? DEFAULT_INTEGRATION_RETURN_PATH;
+  const target = new URL(returnTo, state?.webOrigin ?? webOriginFor(request));
   target.searchParams.set(provider, status);
-  if (dataClass) {
-    target.searchParams.set('dataClass', dataClass);
+  if (state?.dataClass) {
+    target.searchParams.set('dataClass', state.dataClass);
   }
-  if (extra) {
-    for (const [key, value] of Object.entries(extra)) {
-      target.searchParams.set(key, value);
-    }
+  for (const [key, value] of Object.entries(extra ?? {})) {
+    target.searchParams.set(key, value);
   }
   if (returnTo === '/onboarding') {
     target.searchParams.set('step', 'providers');
   }
   return NextResponse.redirect(target);
-}
-
-const INTEGRATION_IDS = new Set<string>(catalogIntegrationIds());
-
-function isIntegrationId(
-  value: string,
-): value is import('@sharpit/server/lib/integrations/shared/client-sync').IntegrationId {
-  return INTEGRATION_IDS.has(value);
 }

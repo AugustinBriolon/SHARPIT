@@ -49,6 +49,7 @@ function errorCopy(status: string | undefined): { title: string; description: st
 }
 
 function useGarminSsoTicketExchange(
+  state: string,
   setPhase: (phase: GarminSsoPhase) => void,
   setErrorStatus: (status: string | undefined) => void,
 ) {
@@ -66,6 +67,7 @@ function useGarminSsoTicketExchange(
 
   useEffect(() => {
     const onMessage = createGarminSsoMessageHandler({
+      state,
       exchanging,
       setPhase,
       setErrorStatus,
@@ -79,7 +81,7 @@ function useGarminSsoTicketExchange(
 
     window.addEventListener('message', onMessage);
     return () => window.removeEventListener('message', onMessage);
-  }, [router, setErrorStatus, setPhase]);
+  }, [router, setErrorStatus, setPhase, state]);
 }
 
 function GarminSsoForm({
@@ -174,7 +176,13 @@ function GarminSsoPhaseBody({
   );
 }
 
-export function GarminBrowserSsoClient({ returnTo = DEFAULT_BACK }: { returnTo?: string }) {
+export function GarminBrowserSsoClient({
+  returnTo = DEFAULT_BACK,
+  state,
+}: {
+  returnTo?: string;
+  state: string;
+}) {
   const [phase, setPhase] = useState<GarminSsoPhase>('form');
   const [errorStatus, setErrorStatus] = useState<string | undefined>();
   const [iframeReady, setIframeReady] = useState(false);
@@ -192,7 +200,7 @@ export function GarminBrowserSsoClient({ returnTo = DEFAULT_BACK }: { returnTo?:
   const backHref = returnTo === '/onboarding' ? '/onboarding?step=providers' : returnTo;
 
   useIosIframeFocusZoomGuard(iframeRef, phase === 'form' && Boolean(iframeSrc));
-  useGarminSsoTicketExchange(setPhase, setErrorStatus);
+  useGarminSsoTicketExchange(state, setPhase, setErrorStatus);
 
   return (
     <div className="mx-auto w-full max-w-lg space-y-4">
