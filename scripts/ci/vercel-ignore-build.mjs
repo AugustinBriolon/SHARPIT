@@ -1,12 +1,14 @@
 #!/usr/bin/env node
 /**
- * Vercel Ignored Build Step helper.
+ * Vercel Ignored Build Step helper, shared by every app of the monorepo.
  *
- * Exit 0 → skip the build (docs / design screenshots only).
+ * Exit 0 → skip the build (docs / design screenshots only, or nothing in the app's scope).
  * Exit 1 → proceed with the build (app-relevant changes, or unknown range).
  *
- * Keep building when src/, config, lockfiles, env templates, or other
- * non-docs paths change. Invoked via vercel.json `ignoreCommand`.
+ * Compares everything pushed since the last deployment (`VERCEL_GIT_PREVIOUS_SHA`), not only
+ * the last commit. `--scope a,b` limits the build to changes under those repo paths (an app,
+ * the packages it builds from, the root manifests). Invoked via vercel.json `ignoreCommand`
+ * from the app directory: `node ../../scripts/ci/vercel-ignore-build.mjs [--scope …]`.
  */
 
 /**
@@ -27,16 +29,36 @@ export function isIgnorablePath(file) {
 }
 
 /**
- * @param {string[]} files
+ * @param {string} file
+ * @param {string[] | null} scope repo paths the app builds from; null = everything
+ * @returns {boolean}
+ */
+function isInScope(file, scope) {
+  return !scope || scope.some((path) => file === path || file.startsWith(`${path}/`));
+}
+
+/**
+ * @param {string[]} files repo-relative paths
+ * @param {string[] | null} [scope]
  * @returns {boolean} true when the build should be skipped
  */
-export function shouldIgnoreBuild(files) {
+export function shouldIgnoreBuild(files, scope = null) {
   if (!Array.isArray(files) || files.length === 0) {
     // Empty diff: the same commit again — a redeploy someone asked for (to apply
     // changed environment variables, for one). Build it.
     return false;
   }
-  return files.every(isIgnorablePath);
+  return files.every((file) => isIgnorablePath(file) || !isInScope(file, scope));
+}
+
+/**
+ * @param {string[]} argv
+ * @returns {string[] | null}
+ */
+export function parseScope(argv) {
+  const index = argv.indexOf('--scope');
+  const value = index >= 0 ? argv[index + 1] : undefined;
+  return value ? value.split(',').filter(Boolean) : null;
 }
 
 /**
@@ -88,14 +110,15 @@ async function main() {
     process.exit(1);
   }
 
-  if (shouldIgnoreBuild(files)) {
+  const scope = parseScope(process.argv);
+  if (shouldIgnoreBuild(files, scope)) {
     console.log(
-      `Only docs/screenshots (or empty) changed (${files.length} file(s)) — skipping build`,
+      `Only docs/screenshots or paths outside ${scope?.join(', ') ?? 'the app'} changed (${files.length} file(s)) — skipping build`,
     );
     process.exit(0);
   }
 
-  const relevant = files.filter((f) => !isIgnorablePath(f));
+  const relevant = files.filter((f) => !isIgnorablePath(f) && isInScope(f, scope));
   console.log(
     `App-relevant changes detected (${relevant.slice(0, 8).join(', ') || '…'}) — building`,
   );

@@ -7,10 +7,10 @@ secret scanning on code changes.
 
 Configured in [`vercel.json`](../../vercel.json):
 
-| Setting                           | Behaviour                                                                                                                                                                                                                                                                                                                                      |
-| --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ignoreCommand`                   | Runs [`scripts/ci/vercel-ignore-build.mjs`](../../scripts/ci/vercel-ignore-build.mjs). Exit `0` skips the build when **only** `docs/**` (incl. design screenshots) or root agent/architecture markdown changed. Exit `1` builds when `src/`, config, lockfiles, `.env*`, or any other app path changed. Unknown git range → build (fail open). |
-| `github.autoJobCancelation: true` | New pushes on the same Git branch cancel obsolete queued/in-flight preview builds so the latest commit wins.                                                                                                                                                                                                                                   |
+| Setting                           | Behaviour                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `ignoreCommand`                   | Runs [`scripts/ci/vercel-ignore-build.mjs`](../../scripts/ci/vercel-ignore-build.mjs) on everything pushed since the last deployment (`VERCEL_GIT_PREVIOUS_SHA`). Exit `0` skips the build when **only** `docs/**` (incl. design screenshots) or root agent/architecture markdown changed — or, for `sharpit-api` (`--scope apps/api,packages,package.json,yarn.lock,turbo.json`), nothing in its scope. Exit `1` builds when `src/`, config, lockfiles, `.env*`, or any other app path changed. Unknown git range → build (fail open). |
+| `github.autoJobCancelation: true` | New pushes on the same Git branch cancel obsolete queued/in-flight preview builds so the latest commit wins.                                                                                                                                                                                                                                                                                                                                                                                                                            |
 
 ### Local check of the ignore script
 
@@ -20,7 +20,7 @@ git diff --name-only HEAD^ HEAD   # inspect
 node scripts/ci/vercel-ignore-build.mjs; echo $?
 
 # Unit tests for the path rules
-yarn vitest run src/lib/ci/vercel-ignore-build.test.ts
+yarn web vitest run src/contracts/vercel-ignore-build.test.ts
 ```
 
 ## GitHub Actions

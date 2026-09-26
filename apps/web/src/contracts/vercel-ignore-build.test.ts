@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
   isIgnorablePath,
+  parseScope,
   resolveDiffRange,
   shouldIgnoreBuild,
-} from '../../scripts/ci/vercel-ignore-build.mjs';
+} from '../../../../scripts/ci/vercel-ignore-build.mjs';
 
 describe('vercel ignore build helpers', () => {
   it('ignores docs and design screenshot paths', () => {
@@ -31,6 +32,19 @@ describe('vercel ignore build helpers', () => {
     ).toBe(true);
     expect(shouldIgnoreBuild(['docs/adr/ADR-001.md', 'src/lib/foo.ts'])).toBe(false);
     expect(shouldIgnoreBuild(['yarn.lock'])).toBe(false);
+  });
+
+  it('builds an app only for changes in its scope', () => {
+    const api = parseScope(['node', 'x', '--scope', 'apps/api,packages,yarn.lock']);
+    expect(api).toEqual(['apps/api', 'packages', 'yarn.lock']);
+    expect(shouldIgnoreBuild(['apps/web/src/app/page.tsx'], api)).toBe(true);
+    expect(shouldIgnoreBuild(['apps/web/src/app/page.tsx', 'apps/api/vercel.json'], api)).toBe(
+      false,
+    );
+    expect(shouldIgnoreBuild(['packages/server/src/lib/x.ts'], api)).toBe(false);
+    expect(shouldIgnoreBuild(['yarn.lock'], api)).toBe(false);
+    expect(shouldIgnoreBuild(['apps/api-legacy/x.ts'], api)).toBe(true);
+    expect(parseScope(['node', 'x'])).toBeNull();
   });
 
   it('builds a redeploy of the same commit (empty diff), e.g. after an env change', () => {
