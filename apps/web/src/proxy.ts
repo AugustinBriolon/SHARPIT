@@ -9,17 +9,8 @@ import {
 import { recoverFromHandshakeFailure } from '@sharpit/server/lib/auth/handshake-recovery';
 import { isDevClerkBypass } from '@sharpit/server/lib/dev/dev-auth';
 import { DEMO_COOKIE } from '@sharpit/server/lib/demo/demo-session';
-import {
-  checkRateLimit,
-  rateLimiters,
-  rateLimitResponseBody,
-} from '@sharpit/server/lib/rate-limit';
-import {
-  apiHostError,
-  isApiHostRequest,
-  screenApiHostRequest,
-  sealApiHostResponse,
-} from '@sharpit/server/lib/hosts/api-host';
+import { isApiHostRequest } from '@sharpit/server/lib/hosts/api-host';
+import { apiProxy, rateLimitApiUser } from '@sharpit/server/lib/hosts/api-proxy';
 
 // Routes accessibles sans session Clerk :
 // - pages de connexion/inscription
@@ -76,17 +67,6 @@ function demoSessionResponse(req: NextRequest): NextResponse | null {
     return null;
   }
   return NextResponse.json({ error: 'Mode démo : lecture seule' }, { status: 403 });
-}
-
-async function rateLimitApiUser(userId: string, pathname: string): Promise<NextResponse | null> {
-  if (!pathname.startsWith('/api/')) {
-    return null;
-  }
-  const result = await checkRateLimit(rateLimiters.apiGeneral, userId);
-  if (result.ok) {
-    return null;
-  }
-  return NextResponse.json(rateLimitResponseBody(result.retryAfterSeconds), { status: 429 });
 }
 
 // Signed-out-only pages: the teaser and the auth entry points themselves.
@@ -159,27 +139,6 @@ const clerkProxy = clerkMiddleware(async (auth, req) => {
   }
 }, AUTH_ROUTES);
 
-// `api.` authenticates by Bearer only: no page, no sign-in redirect, no handshake — a
-// missing or rejected token is a 401 JSON, never Clerk's 404 rewrite.
-const apiHostProxy = clerkMiddleware(async (auth, req) => {
-  const { userId } = await auth();
-  if (!userId) {
-    return apiHostError(req, 401, 'Invalid or expired token');
-  }
-  return rateLimitApiUser(userId, req.nextUrl.pathname);
-});
-
-async function proxyApiHost(req: NextRequest, event: NextFetchEvent) {
-  const screened = screenApiHostRequest(req);
-  if (screened) {
-    return screened;
-  }
-  const response = (await apiHostProxy(req, event)) ?? NextResponse.next();
-  const sealable =
-    response instanceof NextResponse ? response : new NextResponse(response.body, response);
-  return sealApiHostResponse(req, sealable);
-}
-
 // Printed once per server instance, by rule name only — never a key.
 const clerkConfigIssues = describeClerkConfigIssues(diagnoseClerkConfig());
 if (clerkConfigIssues.length > 0 && !isDevClerkBypass()) {
@@ -188,7 +147,7 @@ if (clerkConfigIssues.length > 0 && !isDevClerkBypass()) {
 
 export default async function proxy(req: NextRequest, event: NextFetchEvent) {
   if (isApiHostRequest(req)) {
-    return proxyApiHost(req, event);
+    return apiProxy(req, event);
   }
   try {
     return await clerkProxy(req, event);

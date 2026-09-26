@@ -19,11 +19,12 @@ describe('api host guards', () => {
     expect(isApiHostRequest(request('https://web.sharpit.app/api/v1/today'))).toBe(false);
   });
 
-  it('serves the native contract and the coach stream, nothing else', () => {
+  it('serves the native contract, the coach stream and crons, nothing else', () => {
     expect(isApiHostPath('/api/v1/today')).toBe(true);
     expect(isApiHostPath('/api/coach/chat')).toBe(true);
     expect(isApiHostPath('/api/coach/plan')).toBe(false);
-    expect(isApiHostPath('/api/cron/sync')).toBe(false);
+    expect(isApiHostPath('/api/cron/sync')).toBe(true);
+    expect(isApiHostPath('/api/cron/sync/extra')).toBe(false);
     expect(isApiHostPath('/.well-known/apple-app-site-association')).toBe(false);
     expect(isApiHostPath('/connect/garmin')).toBe(false);
     expect(isApiHostPath('/')).toBe(false);

@@ -1,0 +1,34 @@
+{
+  "name": "@sharpit/api",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -H 0.0.0.0 -p 3001",
+    "build": "prisma generate && next build",
+    "start": "next start -p 3001",
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "prisma": {
+    "schema": "../../packages/db/prisma/schema.prisma"
+  },
+  "dependencies": {
+    "@clerk/nextjs": "^7.5.9",
+    "@prisma/client": "^6.19.3",
+    "@sharpit/db": "workspace:*",
+    "@sharpit/server": "workspace:*",
+    "next": "16.3.0",
+    "react": "19.2.4",
+    "react-dom": "19.2.4"
+  },
+  "devDependencies": {
+    "@sharpit/eslint-config": "workspace:*",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "eslint": "^9",
+    "prisma": "^6.19.3",
+    "typescript": "^5",
+    "vitest": "^4.1.9"
+  }
+}

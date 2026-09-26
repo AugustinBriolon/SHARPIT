@@ -11,8 +11,15 @@ export const API_HOST = 'api.sharpit.app';
 /** The only browser origin allowed to call `api.` — never `*`. */
 export const API_ALLOWED_ORIGIN = 'https://web.sharpit.app';
 
-/** What `api.` serves: the native contract, plus the coach SSE stream kept off `/api/v1`. */
-const API_HOST_PATHS = [/^\/api\/v1\//, /^\/api\/coach\/chat$/];
+/** Vercel cron invocations, authenticated by `CRON_SECRET` in their route, never by Clerk. */
+const CRON_PATH = /^\/api\/cron\/[a-z-]+$/;
+
+/** What `api.` serves: the native contract, the coach SSE stream kept off `/api/v1`, and crons. */
+const API_HOST_PATHS = [/^\/api\/v1\//, /^\/api\/coach\/chat$/, CRON_PATH];
+
+export function isCronPath(pathname: string): boolean {
+  return CRON_PATH.test(pathname);
+}
 
 const ALLOWED_METHODS = 'GET, POST, PUT, PATCH, DELETE, OPTIONS';
 const ALLOWED_HEADERS = 'Authorization, Content-Type';

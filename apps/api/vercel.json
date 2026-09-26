@@ -1,0 +1,29 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "installCommand": "corepack enable && HUSKY=0 yarn install --immutable",
+  "buildCommand": "yarn build",
+  "ignoreCommand": "git diff HEAD^ HEAD --quiet -- . ../../packages ../../package.json ../../yarn.lock ../../turbo.json",
+  "git": {
+    "deploymentEnabled": {
+      "*": false,
+      "main": true
+    }
+  },
+  "github": {
+    "autoJobCancelation": true
+  },
+  "functions": {
+    "src/app/api/cron/morning-push/route.ts": {
+      "maxDuration": 300
+    },
+    "src/app/api/cron/sync/route.ts": {
+      "maxDuration": 300
+    },
+    "src/app/api/cron/demo-reseed/route.ts": {
+      "maxDuration": 60
+    },
+    "src/app/api/cron/planned-forecast/route.ts": {
+      "maxDuration": 300
+    }
+  }
+}
