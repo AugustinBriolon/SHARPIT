@@ -12,49 +12,7 @@
   "github": {
     "autoJobCancelation": true
   },
-  "crons": [
-    {
-      "path": "/api/cron/sync",
-      "schedule": "30 6 * * *"
-    },
-    {
-      "path": "/api/cron/sync",
-      "schedule": "0 12 * * *"
-    },
-    {
-      "path": "/api/cron/sync",
-      "schedule": "0 21 * * *"
-    },
-    {
-      "path": "/api/cron/planned-forecast",
-      "schedule": "0 7 * * *"
-    },
-    {
-      "path": "/api/cron/demo-reseed",
-      "schedule": "0 4 * * *"
-    },
-    {
-      "path": "/api/cron/morning-push",
-      "schedule": "45 6 * * *"
-    },
-    {
-      "path": "/api/cron/privacy-purge",
-      "schedule": "15 3 * * *"
-    }
-  ],
   "functions": {
-    "src/app/api/cron/morning-push/route.ts": {
-      "maxDuration": 300
-    },
-    "src/app/api/cron/sync/route.ts": {
-      "maxDuration": 300
-    },
-    "src/app/api/cron/demo-reseed/route.ts": {
-      "maxDuration": 60
-    },
-    "src/app/api/cron/planned-forecast/route.ts": {
-      "maxDuration": 300
-    },
     "src/app/api/renpho/sync/route.ts": {
       "maxDuration": 300
     },
