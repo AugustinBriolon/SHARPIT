@@ -1,0 +1,15 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
+import { getBodyCompositionMeasurements } from '@sharpit/server/lib/queries';
+
+export async function GET(request: NextRequest) {
+  const rawDays = request.nextUrl.searchParams.get('days');
+  const parsedDays = rawDays !== null ? Number(rawDays) : undefined;
+  const days =
+    parsedDays !== undefined && Number.isFinite(parsedDays) && parsedDays > 0
+      ? Math.min(parsedDays, 365 * 20)
+      : undefined;
+  const athleteId = await getCurrentAthleteId();
+  const entries = await getBodyCompositionMeasurements(athleteId, days);
+  return NextResponse.json(entries);
+}

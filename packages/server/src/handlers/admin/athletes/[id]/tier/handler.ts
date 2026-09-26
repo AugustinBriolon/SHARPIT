@@ -1,0 +1,31 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { isCurrentUserAdmin } from '@sharpit/server/lib/auth/admin';
+import { setAthleteTier } from '@sharpit/server/lib/admin/queries';
+import { setAthleteTierSchema } from '@sharpit/server/lib/validators/admin';
+
+type RouteContext = { params: Promise<{ id: string }> };
+
+export async function PATCH(request: NextRequest, context: RouteContext) {
+  // Re-checked here independently of the /admin layout guard — this route is
+  // reachable on its own, layout gating alone would not protect it.
+  if (!(await isCurrentUserAdmin())) {
+    return NextResponse.json({ error: 'Introuvable' }, { status: 404 });
+  }
+
+  const body = await request.json().catch(() => null);
+  const parsed = setAthleteTierSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json({ error: 'Palier invalide' }, { status: 400 });
+  }
+
+  try {
+    const { id } = await context.params;
+    const updated = await setAthleteTier(id, parsed.data.tier);
+    // Do not Set-Cookie here — this route mutates another athlete's tier; the
+    // access-tier cookie mirrors the signed-in user's own profile only.
+    return NextResponse.json(updated);
+  } catch (error) {
+    console.error('[admin/athletes/tier]', error);
+    return NextResponse.json({ error: 'Mise à jour du palier impossible' }, { status: 500 });
+  }
+}

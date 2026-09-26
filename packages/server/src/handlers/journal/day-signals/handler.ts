@@ -1,0 +1,26 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
+import { buildJournalDaySignals } from '@sharpit/server/lib/journal/journal-day-signals';
+import { awaitRequest } from '@sharpit/server/lib/next/await-request';
+import { prisma } from '@sharpit/db/client';
+
+export async function GET(request: NextRequest) {
+  // Outside try: Cache Components prerender interrupt must not be swallowed.
+  await awaitRequest();
+
+  try {
+    const athleteId = await getCurrentAthleteId();
+    const trainingDayId = request.nextUrl.searchParams.get('day');
+    if (!trainingDayId || !/^\d{4}-\d{2}-\d{2}$/.test(trainingDayId)) {
+      return NextResponse.json({ error: 'Paramètre day requis (YYYY-MM-DD)' }, { status: 400 });
+    }
+    const signals = await buildJournalDaySignals(prisma, athleteId, trainingDayId);
+    return NextResponse.json(signals);
+  } catch (error) {
+    console.error(error);
+    return NextResponse.json(
+      { error: 'Impossible de charger les signaux du journal' },
+      { status: 500 },
+    );
+  }
+}

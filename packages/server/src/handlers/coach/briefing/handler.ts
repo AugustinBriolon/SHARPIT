@@ -1,0 +1,76 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { isCoachConfigured } from '@sharpit/server/lib/ai';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
+import {
+  checkRateLimit,
+  rateLimitJsonResponse,
+  rateLimiters,
+} from '@sharpit/server/lib/rate-limit';
+import { requireAiProcessingConsent } from '@sharpit/server/lib/privacy/consent-store';
+import {
+  generateAndStoreDailyBriefing,
+  getDailyBriefing,
+} from '@sharpit/server/lib/briefing/daily-briefing';
+import { withCoachTrace } from '@sharpit/server/lib/ai/coach-trace';
+
+/** Parse un paramètre `date` "yyyy-MM-dd" en Date locale (défaut : aujourd'hui). */
+function parseDate(value: string | null): Date {
+  if (!value) {
+    return new Date();
+  }
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (!m) {
+    return new Date();
+  }
+  return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+}
+
+export async function GET(request: NextRequest) {
+  // Read search params before try so Cache Components prerender interrupts propagate.
+  const date = parseDate(request.nextUrl.searchParams.get('date'));
+
+  try {
+    const athleteId = await getCurrentAthleteId();
+    const briefing = await getDailyBriefing(athleteId, date);
+    return NextResponse.json({ briefing: briefing ?? null });
+  } catch (error) {
+    console.error('[coach/briefing] GET', error);
+    return NextResponse.json({ error: 'Erreur serveur' }, { status: 500 });
+  }
+}
+
+export async function POST(request: NextRequest) {
+  if (!isCoachConfigured()) {
+    return NextResponse.json(
+      { error: 'Coach IA non configuré. Ajoute AI_GATEWAY_API_KEY dans .env.' },
+      { status: 503 },
+    );
+  }
+  try {
+    const body = await request.json().catch(() => ({}));
+    const date = parseDate((body as { date?: string }).date ?? null);
+    const athleteId = await getCurrentAthleteId();
+    const aiBlocked = await requireAiProcessingConsent(athleteId);
+    if (aiBlocked) {
+      return aiBlocked;
+    }
+    const rateLimit = await checkRateLimit(rateLimiters.coachReview, athleteId, {
+      failClosed: true,
+    });
+    if (!rateLimit.ok) {
+      const limited = rateLimitJsonResponse(rateLimit);
+      return NextResponse.json(limited.body, {
+        status: limited.status,
+      });
+    }
+    const briefing = await withCoachTrace(
+      { traceName: 'coach-briefing', athleteId, tags: ['briefing'] },
+      () => generateAndStoreDailyBriefing(athleteId, date),
+    );
+    return NextResponse.json({ briefing });
+  } catch (error) {
+    console.error('[coach/briefing] POST', error);
+    const message = error instanceof Error ? error.message : 'Génération impossible';
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}

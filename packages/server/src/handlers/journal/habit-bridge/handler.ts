@@ -1,0 +1,24 @@
+import { NextResponse } from 'next/server';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
+import { loadJournalHabitFindings } from '@sharpit/server/lib/journal/journal-habit-analysis-load';
+import { buildTodayJournalHabitBridge } from '@sharpit/server/lib/journal/journal-habit-today-bridge';
+import { awaitRequest } from '@sharpit/server/lib/next/await-request';
+import { prisma } from '@sharpit/db/client';
+
+/**
+ * Lightweight Today callout for journal habit priority.
+ * Returns `{ bridge: null }` when silent (not ready / no priority).
+ */
+export async function GET() {
+  await awaitRequest();
+
+  try {
+    const athleteId = await getCurrentAthleteId();
+    const { daysWithSignal, findings } = await loadJournalHabitFindings(prisma, athleteId);
+    const bridge = buildTodayJournalHabitBridge(findings, daysWithSignal);
+    return NextResponse.json({ bridge });
+  } catch (error) {
+    console.error(error);
+    return NextResponse.json({ error: 'Impossible de charger le pont journal' }, { status: 500 });
+  }
+}

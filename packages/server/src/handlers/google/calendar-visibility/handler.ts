@@ -1,0 +1,37 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
+import {
+  getGoogleAccount,
+  setHiddenCalendars,
+} from '@sharpit/server/lib/integrations/google/google-sync';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
+
+const schema = z.object({
+  hiddenCalendarIds: z.array(z.string()),
+});
+
+export async function POST(request: NextRequest) {
+  try {
+    const athleteId = await getCurrentAthleteId();
+    const account = await getGoogleAccount(athleteId);
+    if (!account) {
+      return NextResponse.json({ error: 'Compte Google non connecté' }, { status: 400 });
+    }
+
+    const body = await request.json();
+    const parsed = schema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ error: 'Données invalides' }, { status: 400 });
+    }
+
+    await setHiddenCalendars(athleteId, parsed.data.hiddenCalendarIds);
+    return NextResponse.json({
+      success: true,
+      hiddenCalendarIds: parsed.data.hiddenCalendarIds,
+    });
+  } catch (error) {
+    console.error('[google/calendar-visibility]', error);
+    const message = error instanceof Error ? error.message : 'Erreur serveur';
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}

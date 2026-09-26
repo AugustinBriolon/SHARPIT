@@ -1,18 +1,1 @@
-import { NextResponse } from 'next/server';
-import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
-import { awaitRequest } from '@sharpit/server/lib/next/await-request';
-import { getThresholdSnapshots } from '@sharpit/server/lib/queries';
-
-export async function GET() {
-  // Outside try: Cache Components prerender interrupt must not be swallowed.
-  await awaitRequest();
-
-  try {
-    const athleteId = await getCurrentAthleteId();
-    const snapshots = await getThresholdSnapshots(athleteId);
-    return NextResponse.json(snapshots);
-  } catch (error) {
-    console.error('[threshold-history]', error);
-    return NextResponse.json({ error: "Impossible de charger l'historique" }, { status: 500 });
-  }
-}
+export { GET } from '@sharpit/server/handlers/athlete-profile/threshold-history/handler';

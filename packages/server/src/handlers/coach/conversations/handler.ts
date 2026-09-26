@@ -1,0 +1,37 @@
+import { NextResponse } from 'next/server';
+import { createConversation, listConversations } from '@sharpit/server/lib/coach/conversations';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
+
+export async function GET() {
+  try {
+    const athleteId = await getCurrentAthleteId();
+    const conversations = await listConversations(athleteId);
+    return NextResponse.json(conversations);
+  } catch (error) {
+    console.error('[coach/conversations] GET', error);
+    return NextResponse.json({ error: 'Impossible de charger les conversations' }, { status: 500 });
+  }
+}
+
+export async function POST(request: Request) {
+  try {
+    const athleteId = await getCurrentAthleteId();
+    const body = await request.json().catch(() => ({}));
+    const { messages, bootstrapKey } = body as {
+      messages?: unknown;
+      bootstrapKey?: string;
+    };
+    const conversation = await createConversation(
+      athleteId,
+      messages,
+      typeof bootstrapKey === 'string' && bootstrapKey.trim() ? bootstrapKey.trim() : undefined,
+    );
+    return NextResponse.json(conversation, { status: 201 });
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : 'Création de la conversation impossible';
+    const status = message.includes('au moins un message') ? 400 : 500;
+    console.error('[coach/conversations] POST', error);
+    return NextResponse.json({ error: message }, { status });
+  }
+}

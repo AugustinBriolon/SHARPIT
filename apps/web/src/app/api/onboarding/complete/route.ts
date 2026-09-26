@@ -1,14 +1,1 @@
-import { NextResponse } from 'next/server';
-import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
-import { markOnboardingComplete } from '@sharpit/server/lib/onboarding/status/status';
-
-export async function POST() {
-  try {
-    const athleteId = await getCurrentAthleteId();
-    await markOnboardingComplete(athleteId);
-    return NextResponse.json({ ok: true });
-  } catch (error) {
-    console.error('[onboarding/complete]', error);
-    return NextResponse.json({ error: "Impossible de terminer l'onboarding" }, { status: 500 });
-  }
-}
+export { POST } from '@sharpit/server/handlers/onboarding/complete/handler';

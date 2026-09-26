@@ -1,0 +1,125 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
+import { prisma } from '@sharpit/db/client';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
+import {
+  applyTravelContextToUpcomingSessions,
+  createTravelContext,
+  getActiveTravelContext,
+  listActiveTravelContexts,
+  listTravelContexts,
+} from '@sharpit/server/lib/travel-context/service';
+import { refreshAndPersistPlannedSessionContext } from '@sharpit/server/lib/planned-session/resolve-context';
+
+const createSchema = z
+  .object({
+    type: z.enum(['TRAVEL', 'CONSTRAINT']).default('TRAVEL'),
+    label: z.string().optional().nullable(),
+    locationLabel: z.string().optional().nullable(),
+    locationLat: z.number().optional().nullable(),
+    locationLng: z.number().optional().nullable(),
+    startDate: z.coerce.date(),
+    endDate: z.coerce.date(),
+    note: z.string().optional().nullable(),
+    applyToPlannedSessions: z.boolean().optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.type === 'TRAVEL' && (!data.locationLabel || data.locationLabel.trim().length < 2)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['locationLabel'],
+        message: 'Un lieu est requis pour un déplacement.',
+      });
+    }
+  });
+
+export async function GET() {
+  try {
+    const athleteId = await getCurrentAthleteId();
+    const [active, activeList, all] = await Promise.all([
+      getActiveTravelContext(prisma, athleteId),
+      listActiveTravelContexts(prisma, athleteId),
+      listTravelContexts(prisma, athleteId),
+    ]);
+    return NextResponse.json({ active, activeList, contexts: all });
+  } catch (error) {
+    console.error(error);
+    return NextResponse.json(
+      { error: 'Impossible de charger le contexte voyage' },
+      { status: 500 },
+    );
+  }
+}
+
+async function refreshSessionContexts(input: {
+  athleteId: string;
+  startDate: Date;
+  endDate: Date;
+  locationLat: number | null;
+  locationLng: number | null;
+}) {
+  const { athleteId, startDate, endDate, locationLat, locationLng } = input;
+  const sessions = await prisma.plannedSession.findMany({
+    where: {
+      athleteId,
+      date: { gte: startDate, lte: endDate },
+      locationLat,
+      locationLng,
+    },
+    select: { id: true },
+  });
+  for (const session of sessions) {
+    try {
+      await refreshAndPersistPlannedSessionContext(athleteId, session.id);
+    } catch (error) {
+      console.error('[travel-context/refresh]', session.id, error);
+    }
+  }
+}
+
+async function applyTravelToPlannedSessions(
+  athleteId: string,
+  travel: Awaited<ReturnType<typeof createTravelContext>>,
+  applyToPlannedSessions: boolean | undefined,
+) {
+  if (travel.type !== 'TRAVEL' || applyToPlannedSessions === false) {
+    return 0;
+  }
+  const updatedSessions = await applyTravelContextToUpcomingSessions(prisma, athleteId, travel.id);
+  await refreshSessionContexts({
+    athleteId,
+    startDate: travel.startDate,
+    endDate: travel.endDate,
+    locationLat: travel.locationLat,
+    locationLng: travel.locationLng,
+  });
+  return updatedSessions;
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const parsed = createSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'Données invalides', details: parsed.error.flatten() },
+        { status: 400 },
+      );
+    }
+
+    const athleteId = await getCurrentAthleteId();
+    const travel = await createTravelContext(prisma, athleteId, parsed.data);
+    const updatedSessions = await applyTravelToPlannedSessions(
+      athleteId,
+      travel,
+      parsed.data.applyToPlannedSessions,
+    );
+
+    return NextResponse.json({ travel, updatedSessions }, { status: 201 });
+  } catch (error) {
+    console.error(error);
+    const message =
+      error instanceof Error ? error.message : 'Impossible de créer le contexte voyage';
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}

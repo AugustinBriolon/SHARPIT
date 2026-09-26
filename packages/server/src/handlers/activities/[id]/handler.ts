@@ -1,0 +1,102 @@
+import { NextRequest, NextResponse, after } from 'next/server';
+import { buildActivityUpdateData } from '@sharpit/server/lib/activity/activity-service';
+import { onWellnessSubmitted } from '@sharpit/server/lib/athlete-state/orchestrator';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
+import {
+  removeManualActivityObservations,
+  syncManualActivityObservations,
+} from '@sharpit/server/lib/observation/manual-observation-sync';
+import { deleteActivity, getActivityById, updateActivity } from '@sharpit/server/lib/queries';
+import { updateRecordsForTypesSafe } from '@sharpit/server/lib/training/records/records';
+import { computeTrainingDayId } from '@sharpit/core/training/training-day';
+import { updateActivitySchema } from '@sharpit/server/lib/validators/activity';
+
+type RouteContext = { params: Promise<{ id: string }> };
+
+export async function GET(_request: NextRequest, context: RouteContext) {
+  try {
+    const { id } = await context.params;
+    const athleteId = await getCurrentAthleteId();
+    const activity = await getActivityById(athleteId, id);
+
+    if (!activity) {
+      return NextResponse.json({ error: 'Séance introuvable' }, { status: 404 });
+    }
+
+    return NextResponse.json(activity);
+  } catch (error) {
+    console.error(error);
+    return NextResponse.json({ error: 'Impossible de charger la séance' }, { status: 500 });
+  }
+}
+
+export async function PATCH(request: NextRequest, context: RouteContext) {
+  try {
+    const { id } = await context.params;
+    const athleteId = await getCurrentAthleteId();
+    const body = await request.json();
+    const parsed = updateActivitySchema.safeParse(body);
+
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'Données invalides', details: parsed.error.flatten() },
+        { status: 400 },
+      );
+    }
+
+    const existing = await getActivityById(athleteId, id);
+    if (!existing) {
+      return NextResponse.json({ error: 'Séance introuvable' }, { status: 404 });
+    }
+
+    const newType = parsed.data.type ?? existing.type;
+    const updateInput =
+      parsed.data.type !== undefined ? { ...parsed.data, type: newType } : parsed.data;
+    const activity = await updateActivity(
+      athleteId,
+      id,
+      buildActivityUpdateData(updateInput) as Parameters<typeof updateActivity>[2],
+    );
+    if (!activity) {
+      return NextResponse.json({ error: 'Séance introuvable' }, { status: 404 });
+    }
+
+    const touchesSubjective = parsed.data.feeling !== undefined || parsed.data.rpe !== undefined;
+
+    // Instant UX: return the updated row immediately; twin sync must not block PATCH.
+    after(async () => {
+      try {
+        await syncManualActivityObservations(activity);
+        await updateRecordsForTypesSafe(athleteId, [existing.type, newType]);
+        if (touchesSubjective) {
+          const trainingDayId = computeTrainingDayId(new Date(activity.date));
+          await onWellnessSubmitted(athleteId, trainingDayId);
+        }
+      } catch (error) {
+        console.error('[activities/PATCH] background sync', error);
+      }
+    });
+
+    return NextResponse.json(activity);
+  } catch (error) {
+    console.error(error);
+    return NextResponse.json({ error: 'Impossible de mettre à jour la séance' }, { status: 500 });
+  }
+}
+
+export async function DELETE(_request: NextRequest, context: RouteContext) {
+  try {
+    const { id } = await context.params;
+    const athleteId = await getCurrentAthleteId();
+    const existing = await getActivityById(athleteId, id);
+    await deleteActivity(athleteId, id);
+    await removeManualActivityObservations(athleteId, id);
+    if (existing) {
+      await updateRecordsForTypesSafe(athleteId, [existing.type]);
+    }
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error(error);
+    return NextResponse.json({ error: 'Impossible de supprimer la séance' }, { status: 500 });
+  }
+}

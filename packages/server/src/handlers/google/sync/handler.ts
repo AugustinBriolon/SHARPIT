@@ -1,0 +1,36 @@
+import { NextResponse } from 'next/server';
+import { GoogleOAuthError } from '@sharpit/server/lib/integrations/google/google';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
+import { syncFromGoogle } from '@sharpit/server/lib/integrations/google/google-sync';
+import {
+  checkRateLimit,
+  rateLimitJsonResponse,
+  rateLimiters,
+} from '@sharpit/server/lib/rate-limit';
+
+export async function POST() {
+  try {
+    const athleteId = await getCurrentAthleteId();
+    const rateLimit = await checkRateLimit(rateLimiters.providerSync, `${athleteId}:google`, {
+      failClosed: true,
+    });
+    if (!rateLimit.ok) {
+      const limited = rateLimitJsonResponse(rateLimit);
+      return NextResponse.json(limited.body, {
+        status: limited.status,
+      });
+    }
+    const result = await syncFromGoogle(athleteId);
+    return NextResponse.json(result);
+  } catch (error) {
+    console.error(error);
+    if (error instanceof GoogleOAuthError) {
+      return NextResponse.json(
+        { error: error.message, needsReconnect: error.needsReconnect },
+        { status: error.needsReconnect ? 401 : 500 },
+      );
+    }
+    const message = error instanceof Error ? error.message : 'Synchronisation échouée';
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}

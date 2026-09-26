@@ -1,0 +1,34 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
+import { getOrBuildAthleteSnapshot } from '@sharpit/server/lib/athlete-state/snapshot-service';
+import { trainingDayIdNow } from '@sharpit/server/lib/athlete-state/freshness-service';
+
+/**
+ * GET /api/athlete-state/snapshot?trainingDayId=YYYY-MM-DD
+ *
+ * Returns the latest persisted Athlete Snapshot immediately.
+ * Consumers (Today, notifications, widgets) must use this — never recompute inference.
+ */
+export async function GET(request: NextRequest) {
+  const { searchParams } = new URL(request.url);
+  const trainingDayId = searchParams.get('trainingDayId') ?? trainingDayIdNow();
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(trainingDayId)) {
+    return NextResponse.json(
+      { error: 'trainingDayId must be in YYYY-MM-DD format.' },
+      { status: 400 },
+    );
+  }
+
+  try {
+    const athleteId = await getCurrentAthleteId();
+    const snapshot = await getOrBuildAthleteSnapshot(athleteId, trainingDayId);
+    return NextResponse.json({ snapshot, isRefreshing: false });
+  } catch (error) {
+    console.error('[api/athlete-state/snapshot]', error);
+    return NextResponse.json(
+      { error: 'Impossible de charger ton état. Réessaie.' },
+      { status: 500 },
+    );
+  }
+}
