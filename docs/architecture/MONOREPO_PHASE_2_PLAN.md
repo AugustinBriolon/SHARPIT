@@ -1,6 +1,6 @@
 # Monorepo phase 2 — `packages/db`, `packages/server`, `apps/api` on its own Vercel project
 
-**Status:** Approved 2026-09-26 — steps 2a to 2f done; iOS coach to re-check; 2g waits for `CRON_SECRET` on `sharpit-api` · **Date:** 2026-09-26 · **Parent:** [ADR-048](../adr/ADR-048-web-repository-becomes-a-monorepo.md)
+**Status:** Done 2026-09-26 except the last secret shrink on `sharpit` (after a first cron run on `sharpit-api`) · **Date:** 2026-09-26 · **Parent:** [ADR-048](../adr/ADR-048-web-repository-becomes-a-monorepo.md)
 
 Goal: `api.sharpit.app` served by a new Vercel project `sharpit-api` built from `apps/api`, holding the
 server secrets, with its own crons — while the web keeps working unchanged until phase 3. The iOS app
@@ -142,6 +142,13 @@ http://localhost:3001` → 5/5; a cron with a wrong secret reaches its route and
 - After the next scheduled run succeeds on `sharpit-api` (logs), you remove `CRON_SECRET` and `APNS_*` from
   `sharpit`: the public HTML project no longer holds the push key nor the cron secret.
 - **Exit:** runbook step 7 done; ADR-048 phase 2 marked done.
+- **Done (2026-09-26 16:08):** coach confirmed on device after the region fix. One deploy moved the 7 crons (0 on
+  `sharpit`, 7 on `sharpit-api`), dropped the web's `/api/cron/*` and `/api/v1/*` routes and its `api.` proxy branch
+  (the contracts moved to `apps/api`), and iOS Debug now targets the local API on port 3001.
+- **Left:** once a scheduled cron has succeeded on `sharpit-api` (Vercel → sharpit-api → Crons), delete
+  `CRON_SECRET` and `APNS_KEY_ID`, `APNS_TEAM_ID`, `APNS_PRIVATE_KEY`, `APNS_PRODUCTION`, `APNS_BUNDLE_ID` from
+  `sharpit`. Checked: no route the web still mounts reads `APNS_*`; `CRON_SECRET` is read there only as a fallback
+  behind `SECRET_ENCRYPTION_KEY` (secret box, Garmin SSO state), which is set.
 
 ---
 
