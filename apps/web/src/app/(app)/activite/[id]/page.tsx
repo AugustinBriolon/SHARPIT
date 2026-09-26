@@ -19,18 +19,9 @@ import { ActivityNarrativeSection } from '@/components/training/activity/insight
 import { isEligibleForActivityNarrative } from '@sharpit/server/lib/activity/narrative/activity-narrative-config';
 import { activityDetailExpectsMap } from '@sharpit/server/lib/activity/detail/activity-detail-skeleton-layout';
 import { buildHikeOvernightSummary } from '@sharpit/server/lib/activity/hike/hike-overnight-summary';
-import { canGenerateNarrativeForActivity } from '@sharpit/server/lib/access/narrative-trial';
-import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
-import {
-  getActivityById,
-  getBrickSessions,
-  getMultisportLegsForActivity,
-} from '@sharpit/server/lib/queries';
-import { resolveBrickSiblingActivityLinks } from '@sharpit/server/lib/planned-session/brick/brick-sessions';
 import { ActivityBrickSiblingNav } from '@/components/training/activity/detail/activity-brick-sibling-nav';
-import { getGoalAchievementsForActivity } from '@sharpit/server/lib/goals/goal-achievements';
-import { isCoachConfigured } from '@sharpit/server/lib/ai';
-import { getPerformanceRecordsForActivity } from '@sharpit/server/lib/training/records/records';
+import type { ActivityDetailPayload } from '@sharpit/server/lib/web/activity-detail';
+import { cachedServerApiJson } from '@/server/api-client';
 import { HikeTripMemberLink } from '@/components/training/trip/hike-trip-member-link';
 import { ActivityType } from '@prisma/client';
 
@@ -42,7 +33,7 @@ const NARRATIVE_TYPES = new Set<ActivityType>([
   ActivityType.SWIM,
 ]);
 
-type ActivityDetail = NonNullable<Awaited<ReturnType<typeof getActivityById>>>;
+type ActivityDetail = ActivityDetailPayload['activity'];
 
 function buildHikeSummaryForActivity(activity: ActivityDetail) {
   if (activity.type !== ActivityType.HIKE) {
@@ -141,13 +132,13 @@ function ActivityDetailContent({
   isTriathlon: boolean;
   isHike: boolean;
   hikeSummary: ReturnType<typeof buildHikeSummaryForActivity>;
-  multisportLegs: Awaited<ReturnType<typeof getMultisportLegsForActivity>> | null;
-  goalValidations: Awaited<ReturnType<typeof getGoalAchievementsForActivity>>;
-  performanceRecords: Awaited<ReturnType<typeof getPerformanceRecordsForActivity>>;
+  multisportLegs: ActivityDetailPayload['multisportLegs'];
+  goalValidations: ActivityDetailPayload['goalValidations'];
+  performanceRecords: ActivityDetailPayload['performanceRecords'];
   strengthStats: ReturnType<typeof buildStrengthStats>;
   coachPanel: ReturnType<typeof buildCoachNarrativePanel>;
   specs: ReturnType<typeof buildActivitySpecs>;
-  brickSiblings: ReturnType<typeof resolveBrickSiblingActivityLinks>;
+  brickSiblings: ActivityDetailPayload['brickSiblings'];
 }) {
   return (
     <>
@@ -213,35 +204,31 @@ function ActivityDetailContent({
 }
 
 async function ActivityDetailBody({ id }: { id: string }) {
-  const athleteId = await getCurrentAthleteId();
-  const activityPromise = getActivityById(athleteId, id);
-  const goalValidationsPromise = getGoalAchievementsForActivity(id);
-  const performanceRecordsPromise = getPerformanceRecordsForActivity(athleteId, id);
-
-  const activity = await activityPromise;
-  if (!activity) {
+  const detail = await cachedServerApiJson<ActivityDetailPayload>(
+    `/api/web/activity-detail/${encodeURIComponent(id)}`,
+    true,
+  );
+  if (!detail) {
     notFound();
   }
+  const {
+    activity,
+    multisportLegs,
+    goalValidations,
+    performanceRecords,
+    narrativeAccess,
+    brickSiblings,
+    coachEnabled,
+  } = detail;
 
   const isStrength = activity.type === ActivityType.STRENGTH;
   const isTriathlon = activity.type === ActivityType.TRIATHLON;
   const isHike = activity.type === ActivityType.HIKE;
   const hikeSummary = buildHikeSummaryForActivity(activity);
 
-  const brickGroupId = activity.plannedSession?.brickGroupId ?? null;
-  const [multisportLegs, goalValidations, performanceRecords, narrativeAccess, brickLegs] =
-    await Promise.all([
-      isTriathlon ? getMultisportLegsForActivity(athleteId, activity) : Promise.resolve(null),
-      goalValidationsPromise,
-      performanceRecordsPromise,
-      canGenerateNarrativeForActivity(athleteId, activity.date),
-      brickGroupId ? getBrickSessions(athleteId, brickGroupId) : Promise.resolve([]),
-    ]);
-  const coachEnabled = isCoachConfigured();
   const specs = buildActivitySpecs(activity);
   const strengthStats = buildStrengthStats(activity);
   const coachPanel = buildCoachNarrativePanel(activity, coachEnabled, narrativeAccess);
-  const brickSiblings = resolveBrickSiblingActivityLinks(brickLegs, activity.id);
 
   return (
     <ActivityDetailContent

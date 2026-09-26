@@ -6,9 +6,7 @@ import {
   PRO_ONLY_PERKS,
   type ProPerk,
 } from '@/components/settings/pro/pro-perks';
-import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
-import { hasProAccess } from '@sharpit/server/lib/access/tier';
-import { getAthleteProfile } from '@sharpit/server/lib/queries';
+import { getViewer } from '@/server/viewer';
 import { cn } from '@sharpit/server/lib/utils';
 
 const STATUS_LABEL: Record<ProPerk['status'], string> = {
@@ -90,9 +88,7 @@ function PerkGroup({
 /** Server Component — same reasoning as other tier-aware reads: no client
  * round-trip needed for a value that never changes mid-session. */
 export async function ProShowcase() {
-  const athleteId = await getCurrentAthleteId();
-  const profile = await getAthleteProfile(athleteId);
-  const isPro = hasProAccess(profile?.tier ?? 'FREE');
+  const { isPro } = await getViewer();
 
   return (
     <div className="space-y-6">

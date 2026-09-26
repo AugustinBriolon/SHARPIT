@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { Trophy } from 'lucide-react';
-import { recordCategoryHref } from '@sharpit/server/lib/training/records/records';
+import { recordCategoryHref } from '@sharpit/server/lib/training/records/record-links';
 import { ActivityMetaChip } from './activity-meta-chip';
 import type {
   ActivityDetail,

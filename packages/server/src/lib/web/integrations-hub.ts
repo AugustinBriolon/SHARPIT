@@ -1,0 +1,91 @@
+import { getGarminAccount } from '@sharpit/server/lib/integrations/garmin/garmin-sync';
+import { isGoogleConfigured } from '@sharpit/server/lib/integrations/google/google';
+import {
+  getGoogleAccount,
+  isGoogleConnected,
+} from '@sharpit/server/lib/integrations/google/google-sync';
+import { isMfpConfigured } from '@sharpit/server/lib/integrations/myfitnesspal/myfitnesspal';
+import { getMfpAccount } from '@sharpit/server/lib/integrations/myfitnesspal/myfitnesspal-sync';
+import { getRenphoAccount } from '@sharpit/server/lib/integrations/renpho/renpho-sync';
+import {
+  isGarminAccountConnected,
+  isMfpAccountConnected,
+  isOAuthAccountConnected,
+  isRenphoAccountConnected,
+} from '@sharpit/server/lib/integrations/shared/connection-status';
+import { loadResolvedSourcePrefs } from '@sharpit/server/lib/integrations/source-prefs-store';
+import { isStravaConfigured } from '@sharpit/server/lib/integrations/strava/strava';
+import { getStravaAccount } from '@sharpit/server/lib/integrations/strava/strava-sync';
+import { isWithingsConfigured } from '@sharpit/server/lib/integrations/withings/withings';
+import { getWithingsAccount } from '@sharpit/server/lib/integrations/withings/withings-sync';
+
+/** What the integrations hub shows of an account — never a token, encrypted or not. */
+export type IntegrationAccountView = {
+  displayName?: string | null;
+  lastSyncAt?: Date | null;
+  email?: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
+  avatarUrl?: string | null;
+  fullName?: string | null;
+  targetCalendarId?: string | null;
+  targetCalendarName?: string | null;
+};
+
+const DISPLAY_FIELDS = [
+  'displayName',
+  'lastSyncAt',
+  'email',
+  'firstName',
+  'lastName',
+  'avatarUrl',
+  'fullName',
+  'targetCalendarId',
+  'targetCalendarName',
+] as const;
+
+export function toAccountView(account: object | null | undefined): IntegrationAccountView | null {
+  if (!account) {
+    return null;
+  }
+  const source = account as Record<string, unknown>;
+  return Object.fromEntries(
+    DISPLAY_FIELDS.filter((field) => field in source).map((field) => [field, source[field]]),
+  ) as IntegrationAccountView;
+}
+
+type ProviderView = { account: IntegrationAccountView | null; needsReconnect: boolean };
+
+function providerView<T>(account: T | null, isConnected: (account: T) => boolean): ProviderView {
+  return {
+    account: toAccountView(account as object | null),
+    needsReconnect: account !== null && !isConnected(account),
+  };
+}
+
+/** The integrations hub's accounts and source prefs, read on `api.` (ADR-048 phase 3f). */
+export async function loadIntegrationsHub(athleteId: string) {
+  const [strava, garmin, renpho, withings, google, mfp, prefs] = await Promise.all([
+    getStravaAccount(athleteId),
+    getGarminAccount(athleteId),
+    getRenphoAccount(athleteId),
+    getWithingsAccount(athleteId),
+    getGoogleAccount(athleteId).catch(() => null),
+    getMfpAccount(athleteId).catch(() => null),
+    loadResolvedSourcePrefs(athleteId),
+  ]);
+  return {
+    strava: { ...providerView(strava, isOAuthAccountConnected), configured: isStravaConfigured() },
+    garmin: providerView(garmin, isGarminAccountConnected),
+    renpho: providerView(renpho, isRenphoAccountConnected),
+    withings: {
+      ...providerView(withings, isOAuthAccountConnected),
+      configured: isWithingsConfigured(),
+    },
+    google: { ...providerView(google, isGoogleConnected), configured: isGoogleConfigured() },
+    myfitnesspal: { ...providerView(mfp, isMfpAccountConnected), configured: isMfpConfigured() },
+    prefs,
+  };
+}
+
+export type IntegrationsHubPayload = Awaited<ReturnType<typeof loadIntegrationsHub>>;

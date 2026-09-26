@@ -14,9 +14,12 @@ import { useRecords } from '@/hooks/use-data';
 import {
   recordCategoryAnchorId,
   recordSportTabFromCategory,
-  type RecordCategory,
-  type RecordEntry,
   type RecordSportTab,
+} from '@sharpit/server/lib/training/records/record-links';
+import type {
+  PowerCurvePoint,
+  RecordCategory,
+  RecordEntry,
 } from '@sharpit/server/lib/training/records/records';
 import { cn } from '@sharpit/server/lib/utils';
 import { differenceInCalendarDays, format, formatDistanceToNowStrict } from 'date-fns';
@@ -211,11 +214,7 @@ function PrGrid({ categories }: { categories: RecordCategory[] }) {
   );
 }
 
-function GpsAnalysisSection({
-  powerCurve,
-}: {
-  powerCurve: import('@sharpit/server/lib/training/records/records').PowerCurvePoint[];
-}) {
+function GpsAnalysisSection({ powerCurve }: { powerCurve: PowerCurvePoint[] }) {
   if (powerCurve.length === 0) {
     return null;
   }

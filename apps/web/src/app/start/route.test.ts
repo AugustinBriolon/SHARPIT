@@ -1,11 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { NextRequest } from 'next/server';
 
-const getCurrentAthleteId = vi.fn();
-const athleteEntryPath = vi.fn();
+const getViewer = vi.fn();
 
-vi.mock('@sharpit/server/lib/auth/current-athlete', () => ({ getCurrentAthleteId }));
-vi.mock('@sharpit/server/lib/onboarding/entry', () => ({ athleteEntryPath }));
+vi.mock('@/server/viewer', () => ({ getViewer }));
 
 describe('GET /start', () => {
   beforeEach(() => {
@@ -14,8 +12,7 @@ describe('GET /start', () => {
   });
 
   it('redirects straight to the athlete’s next screen, uncached', async () => {
-    getCurrentAthleteId.mockResolvedValue('athlete-1');
-    athleteEntryPath.mockResolvedValue('/onboarding');
+    getViewer.mockResolvedValue({ entryPath: '/onboarding' });
     const { GET } = await import('./route');
 
     const response = await GET(new NextRequest('https://sharpit.app/start'));
@@ -25,7 +22,7 @@ describe('GET /start', () => {
   });
 
   it('falls back to Today when the athlete cannot be resolved', async () => {
-    getCurrentAthleteId.mockRejectedValue(new Error('boom'));
+    getViewer.mockRejectedValue(new Error('api. down'));
     const { GET } = await import('./route');
 
     const response = await GET(new NextRequest('https://sharpit.app/start'));

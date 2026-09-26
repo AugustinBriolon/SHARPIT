@@ -31,7 +31,6 @@ import {
 } from '@/components/settings/settings-appearance-status';
 import { SettingsAdminEntry } from '@/components/settings/settings-admin-entry';
 import type { SettingsEntry } from '@/components/settings/settings-home';
-import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
 import { hasProAccess } from '@sharpit/server/lib/access/tier';
 import { isAccessTier, ACCESS_TIER_COOKIE } from '@sharpit/server/lib/access/tier-cookie';
 import {
@@ -45,7 +44,7 @@ import {
   FEEDBACK_BUG_MAILTO,
   FEEDBACK_FEATURE_MAILTO,
 } from '@sharpit/server/lib/moi/feedback-mailto';
-import { getAthleteProfile } from '@sharpit/server/lib/queries';
+import { getViewer } from '@/server/viewer';
 
 type HubEntry =
   | (Pick<SettingsEntry, 'href' | 'title' | 'icon'> & {
@@ -208,10 +207,7 @@ async function readCachedIsPro(): Promise<boolean> {
 }
 
 async function MoiHubSections() {
-  const athleteId = await getCurrentAthleteId();
-  const profile = await getAthleteProfile(athleteId);
-  const tier = profile?.tier ?? 'FREE';
-  const isPro = hasProAccess(tier);
+  const { tier, isPro } = await getViewer();
 
   return (
     <>

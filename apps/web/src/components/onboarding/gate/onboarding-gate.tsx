@@ -1,8 +1,6 @@
 import { GateRedirect } from '@/components/navigation/gate-redirect';
-import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
 import { GARMIN_SSO_PAGE_PATH } from '@sharpit/server/lib/integrations/garmin/garmin-browser-sso-shared';
-import { consentWallHref } from '@sharpit/server/lib/onboarding/entry';
-import { athleteNeedsOnboarding } from '@sharpit/server/lib/onboarding/status/status';
+import { getViewer } from '@/server/viewer';
 
 /**
  * Pages onboarding itself sends the athlete through: the Garmin sign-in lives under
@@ -21,11 +19,11 @@ const DURING_ONBOARDING = [GARMIN_SSO_PAGE_PATH];
  * seeing `/consent`, then every provider connect was refused.
  */
 export async function OnboardingGate() {
-  const athleteId = await getCurrentAthleteId();
-  if (await consentWallHref(athleteId)) {
+  const viewer = await getViewer();
+  if (viewer.consentWallHref) {
     return null;
   }
-  if (await athleteNeedsOnboarding(athleteId)) {
+  if (viewer.needsOnboarding) {
     return <GateRedirect exempt={DURING_ONBOARDING} href="/onboarding" />;
   }
   return null;

@@ -1162,35 +1162,13 @@ export async function getPerformanceRecordPodium(athleteId: string, category: st
   });
 }
 
-export type RecordSportTab = 'run' | 'bike' | 'swim';
-
-export const RECORDS_PAGE_PATH = '/moi/performance';
-
-/** Identifiant d'ancre DOM pour une catégorie de record (ex. `swim-distance`). */
-export function recordCategoryAnchorId(category: string): string {
-  return category;
-}
-
-/** Onglet sport de la page Performance pour une catégorie de record. */
-export function recordSportTabFromCategory(category: string): RecordSportTab | null {
-  if (category.startsWith('swim-')) {
-    return 'swim';
-  }
-  if (category.startsWith('bike-') || category.startsWith('power-')) {
-    return 'bike';
-  }
-  if (category.startsWith('run-') || category.startsWith('run-best')) {
-    return 'run';
-  }
-  return null;
-}
-
-/** Lien vers la catégorie sur la page Performance (sport + ancre). */
-export function recordCategoryHref(category: string): string {
-  const sport = recordSportTabFromCategory(category);
-  const sportQuery = sport ? `?sport=${sport}` : '';
-  return `${RECORDS_PAGE_PATH}${sportQuery}#${recordCategoryAnchorId(category)}`;
-}
+export {
+  RECORDS_PAGE_PATH,
+  recordCategoryAnchorId,
+  recordCategoryHref,
+  recordSportTabFromCategory,
+  type RecordSportTab,
+} from '@sharpit/server/lib/training/records/record-links';
 
 /** Recalcule uniquement les `groups` ciblés et remplace ces lignes en base. */
 export async function recomputeRecordGroups(

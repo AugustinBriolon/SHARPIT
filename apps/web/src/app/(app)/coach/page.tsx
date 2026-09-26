@@ -4,25 +4,20 @@ import { CoachView } from '@/components/coach/view/coach-view';
 import { CoachHubSkeleton } from '@/components/coach/view/coach-hub-skeleton';
 import { DemoCoachTranscript } from '@/components/coach/view/demo-coach-transcript';
 import { DemoExitButton } from '@/components/demo/demo-exit';
-import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
 import { isDemoSession } from '@sharpit/server/lib/demo/demo-session';
-import { parseDemoTranscriptMessages } from '@sharpit/server/lib/demo/demo-coach-transcript';
-import { prisma } from '@sharpit/db/client';
+import type { DemoCoachTranscriptPayload } from '@sharpit/server/lib/web/demo-coach-transcript';
+import { cachedServerApiJson } from '@/server/api-client';
 
 async function CoachDemoDisabled() {
   if (!(await isDemoSession())) {
     return <CoachView />;
   }
 
-  const athleteId = await getCurrentAthleteId();
-  const conversation = await prisma.conversation.findFirst({
-    where: { athleteId },
-    orderBy: { createdAt: 'asc' },
-  });
-  const messages = conversation ? parseDemoTranscriptMessages(conversation.messages) : [];
-
-  if (conversation && messages.length > 0) {
-    return <DemoCoachTranscript messages={messages} title={conversation.title} />;
+  const transcript = await cachedServerApiJson<DemoCoachTranscriptPayload>(
+    '/api/web/demo-coach-transcript',
+  );
+  if (transcript) {
+    return <DemoCoachTranscript messages={transcript.messages} title={transcript.title} />;
   }
 
   return (

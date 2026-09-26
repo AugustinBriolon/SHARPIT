@@ -1,27 +1,10 @@
-import { clerkClient } from '@clerk/nextjs/server';
 import { AthleteTierToggle } from '@/components/admin/athlete-tier-toggle';
-import { listAthletesForAdmin } from '@sharpit/server/lib/admin/queries';
-import { isDevClerkBypass } from '@sharpit/server/lib/dev/dev-auth';
-
-async function emailsByClerkId(clerkUserIds: string[]): Promise<Map<string, string>> {
-  if (isDevClerkBypass() || clerkUserIds.length === 0) {
-    return new Map();
-  }
-  const client = await clerkClient();
-  const { data } = await client.users.getUserList({
-    userId: clerkUserIds,
-    limit: clerkUserIds.length,
-  });
-  return new Map(
-    data
-      .filter((user) => user.primaryEmailAddress)
-      .map((user) => [user.id, user.primaryEmailAddress!.emailAddress]),
-  );
-}
+import type { AdminAthleteView } from '@sharpit/server/lib/web/admin-athletes';
+import { cachedServerApiJson } from '@/server/api-client';
 
 export default async function AdminPage() {
-  const athletes = await listAthletesForAdmin();
-  const emails = await emailsByClerkId(athletes.map((athlete) => athlete.clerkUserId));
+  const athletes =
+    (await cachedServerApiJson<AdminAthleteView[]>('/api/web/admin-athletes', true)) ?? [];
 
   return (
     <div className="space-y-6">
@@ -41,9 +24,7 @@ export default async function AdminPage() {
             className="flex flex-wrap items-center justify-between gap-3 px-5 py-4"
           >
             <div className="min-w-0">
-              <p className="text-card-title truncate">
-                {emails.get(athlete.clerkUserId) ?? athlete.clerkUserId}
-              </p>
+              <p className="text-card-title truncate">{athlete.email ?? athlete.clerkUserId}</p>
               <p className="text-muted-foreground text-data mt-0.5 text-xs">
                 {athlete.id} · depuis le {athlete.createdAt.toLocaleDateString('fr-FR')}
               </p>

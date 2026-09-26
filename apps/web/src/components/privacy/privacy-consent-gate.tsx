@@ -1,7 +1,5 @@
 import { GateRedirect } from '@/components/navigation/gate-redirect';
-import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
-import { consentWallHref } from '@sharpit/server/lib/onboarding/entry';
-import { getAthleteConsentRow } from '@sharpit/server/lib/privacy/consent-store';
+import { getViewer } from '@/server/viewer';
 
 /**
  * Soft wall: sends athletes missing CGU/Privacy/health accept into `/consent`.
@@ -10,11 +8,9 @@ import { getAthleteConsentRow } from '@sharpit/server/lib/privacy/consent-store'
  * Safety net only: sign-in / sign-up go through `/start`, which routes there directly.
  */
 export async function PrivacyConsentGate() {
-  const athleteId = await getCurrentAthleteId();
-  const profile = await getAthleteConsentRow(athleteId);
-  if (profile?.deletedAt) {
+  const viewer = await getViewer();
+  if (viewer.deleted) {
     return <GateRedirect href="/sign-in" />;
   }
-  const wall = await consentWallHref(athleteId);
-  return wall ? <GateRedirect href={wall} /> : null;
+  return viewer.consentWallHref ? <GateRedirect href={viewer.consentWallHref} /> : null;
 }

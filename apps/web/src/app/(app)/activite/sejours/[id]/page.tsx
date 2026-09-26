@@ -12,8 +12,8 @@ import { HikeTripWaypoints } from '@/components/training/trip/hike-trip-waypoint
 import { Skeleton } from '@/components/ui/skeleton';
 import { buildHikeTripElevationProfile } from '@sharpit/server/lib/activity/hike/hike-trip-elevation';
 import { buildHikeTripSummary } from '@sharpit/server/lib/activity/hike/hike-trip-summary';
-import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
-import { getHikeTripById } from '@sharpit/server/lib/queries';
+import type { getHikeTripById } from '@sharpit/server/lib/queries';
+import { cachedServerApiJson } from '@/server/api-client';
 
 type PageProps = { params: Promise<{ id: string }> };
 
@@ -56,8 +56,10 @@ function HikeTripDetailSkeleton() {
 
 async function HikeTripDetail({ params }: PageProps) {
   const { id } = await params;
-  const athleteId = await getCurrentAthleteId();
-  const trip = await getHikeTripById(athleteId, id);
+  const trip = await cachedServerApiJson<Awaited<ReturnType<typeof getHikeTripById>>>(
+    `/api/hike-trips/${encodeURIComponent(id)}`,
+    true,
+  );
 
   if (!trip) {
     notFound();

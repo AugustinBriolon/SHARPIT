@@ -2,15 +2,17 @@ import { notFound } from 'next/navigation';
 import { MobileBackLink } from '@/components/layout/header/mobile-back-link';
 import { StickyHeader } from '@/components/layout/header/sticky-header';
 import { ActivityForm } from '@/components/training/activity/form/activity-form';
-import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
-import { getActivityById } from '@sharpit/server/lib/queries';
+import type { getActivityById } from '@sharpit/server/lib/queries';
+import { cachedServerApiJson } from '@/server/api-client';
 
 type PageProps = { params: Promise<{ id: string }> };
 
 export default async function EditActivityPage({ params }: PageProps) {
   const { id } = await params;
-  const athleteId = await getCurrentAthleteId();
-  const activity = await getActivityById(athleteId, id);
+  const activity = await cachedServerApiJson<Awaited<ReturnType<typeof getActivityById>>>(
+    `/api/activities/${encodeURIComponent(id)}`,
+    true,
+  );
 
   if (!activity) {
     notFound();

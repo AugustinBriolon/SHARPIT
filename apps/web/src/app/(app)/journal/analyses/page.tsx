@@ -2,23 +2,8 @@ import { Suspense } from 'react';
 import { JournalAnalysesScreen } from '@/components/journal/analyses/journal-analyses-screen';
 import { MobileDrillDownHeader } from '@/components/layout/header/mobile-drill-down-header';
 import { Skeleton } from '@/components/ui/skeleton';
-import { hasProAccess } from '@sharpit/server/lib/access/tier';
-import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
-import { buildJournalAnalysesViewModel } from '@sharpit/server/lib/journal/journal-analyses-view-model';
-import { loadJournalHabitFindings } from '@sharpit/server/lib/journal/journal-habit-analysis-load';
-import { loadJournalHabitExperiments } from '@sharpit/server/lib/journal/journal-habit-experiment-load';
-import {
-  testedFactorIds,
-  toHabitExperimentView,
-} from '@sharpit/server/lib/journal/journal-habit-experiment-view';
-import { buildJournalHabitReading } from '@sharpit/server/lib/journal/journal-habit-reading';
-import {
-  JOURNAL_ANALYSIS_MIN_DAYS,
-  isJournalAnalysisReady,
-} from '@sharpit/server/lib/journal/journal-limits';
-import { prisma } from '@sharpit/db/client';
-import { getAthleteProfile } from '@sharpit/server/lib/queries';
-import { trainingDayIdForNow } from '@sharpit/core/training/training-day';
+import type { JournalAnalysesPayload } from '@sharpit/server/lib/web/journal-analyses';
+import { cachedServerApiJson } from '@/server/api-client';
 
 function JournalAnalysesSkeleton() {
   return (
@@ -31,33 +16,11 @@ function JournalAnalysesSkeleton() {
 
 /** Athlete-scoped reads live under Suspense so the shell prerenders (Cache Components). */
 async function JournalAnalysesWithData() {
-  const athleteId = await getCurrentAthleteId();
-  const [profile, { daysWithSignal, daysInSpan, findings }, experiments] = await Promise.all([
-    getAthleteProfile(athleteId).catch(() => null),
-    loadJournalHabitFindings(prisma, athleteId),
-    loadJournalHabitExperiments(prisma, athleteId, trainingDayIdForNow()),
-  ]);
-  const reading = isJournalAnalysisReady(daysWithSignal)
-    ? buildJournalHabitReading(findings, daysWithSignal)
-    : null;
-  const viewModel = reading
-    ? buildJournalAnalysesViewModel({
-        findings,
-        reading,
-        daysInSpan,
-        testedFactorIds: testedFactorIds(experiments),
-      })
-    : null;
-
-  return (
-    <JournalAnalysesScreen
-      analysis={reading && viewModel ? { reading, viewModel } : null}
-      daysWithSignal={daysWithSignal}
-      experiments={experiments.map(toHabitExperimentView)}
-      isPro={hasProAccess(profile?.tier ?? 'FREE')}
-      minDays={JOURNAL_ANALYSIS_MIN_DAYS}
-    />
-  );
+  const payload = await cachedServerApiJson<JournalAnalysesPayload>('/api/web/journal-analyses');
+  if (!payload) {
+    throw new Error('api. has no journal analyses for this session');
+  }
+  return <JournalAnalysesScreen {...payload} />;
 }
 
 export default function JournalAnalysesPage() {

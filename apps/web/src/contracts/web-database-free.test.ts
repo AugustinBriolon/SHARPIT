@@ -5,8 +5,8 @@ import { describe, expect, it } from 'vitest';
 /**
  * ADR-048 phase 3f: the web reads and writes through `api.` only. This follows every
  * `@sharpit/server` import of the web app (transitively, type-only imports excluded) and
- * lists the web files that still reach the database client. The list only shrinks; empty,
- * `@sharpit/db` leaves `apps/web`.
+ * fails on any web file (its own `/api` routes aside, until they go) that reaches the database
+ * client.
  */
 const WEB_SRC = 'src';
 const SERVER_SRC = join('..', '..', 'packages', 'server', 'src');
@@ -17,31 +17,6 @@ const IMPORT =
   /(?:import|export)\s[^'"]*?from\s+['"]([^'"]+)['"]|import\(\s*['"]([^'"]+)['"]\s*\)/g;
 const TYPE_ONLY = /(?:import|export) type[^;]*;/g;
 const REACHES_DATABASE = /from ['"]@sharpit\/db\/client['"]/;
-
-/** Web files still reading the database directly — to move onto `api.`. */
-const STILL_ON_THE_DATABASE = new Set<string>([
-  'app/(app)/activite/[id]/edit/page.tsx',
-  'app/(app)/activite/[id]/page.tsx',
-  'app/(app)/activite/sejours/[id]/page.tsx',
-  'app/(app)/coach/page.tsx',
-  'app/(app)/journal/analyses/page.tsx',
-  'app/(app)/moi/calibration/page.tsx',
-  'app/(app)/settings/account/page.tsx',
-  'app/(app)/settings/equipment/page.tsx',
-  'app/admin/page.tsx',
-  'app/connect/garmin/start/route.ts',
-  'app/onboarding/page.tsx',
-  'app/start/route.ts',
-  'components/analytics/records/records-panel.tsx',
-  'components/onboarding/gate/onboarding-gate.tsx',
-  'components/privacy/privacy-consent-gate.tsx',
-  'components/settings/integrations/hub-section-load.ts',
-  'components/settings/integrations/hub-section.tsx',
-  'components/settings/pro/pro-showcase.tsx',
-  'components/shell/moi-hub.tsx',
-  'components/training/activity/detail/activity-context-chips.tsx',
-  'components/training/weekly-review/weekly-review-gate.tsx',
-]);
 
 function sourceFiles(dir: string): string[] {
   return readdirSync(dir).flatMap((entry) => {
@@ -105,7 +80,7 @@ describe('web without a database', () => {
     .map((file) => relative(WEB_SRC, file))
     .sort();
 
-  it('lists exactly the web files still reading the database', () => {
-    expect(offenders).toEqual([...STILL_ON_THE_DATABASE].sort());
+  it('no web page, component or route reaches the database', () => {
+    expect(offenders).toEqual([]);
   });
 });

@@ -1,16 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
-import { athleteEntryPath } from '@sharpit/server/lib/onboarding/entry';
+import { getViewer } from '@/server/viewer';
 
 /**
  * After sign-in / sign-up: resolves (or provisions, for a brand-new account) the
- * athlete, then sends them to their next screen in one redirect. An existing athlete
- * signing up again through an OAuth provider lands here too and simply goes to Today.
+ * athlete on `api.`, then sends them to their next screen in one redirect. An existing
+ * athlete signing up again through an OAuth provider lands here too and simply goes to Today.
  */
 export async function GET(request: NextRequest) {
   let destination = '/';
   try {
-    destination = await athleteEntryPath(await getCurrentAthleteId());
+    destination = (await getViewer()).entryPath;
   } catch (error) {
     console.error('[start]', { name: error instanceof Error ? error.name : 'Error' });
   }

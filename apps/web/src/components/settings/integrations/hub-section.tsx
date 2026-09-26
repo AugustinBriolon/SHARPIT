@@ -1,11 +1,10 @@
 import { IntegrationsHub } from '@/components/settings/integrations/hub';
 import {
   assembleIntegrationsPayload,
-  loadIntegrationAccounts,
   type IntegrationsSearchParams,
 } from '@/components/settings/integrations/hub-section-load';
-import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
-import { loadResolvedSourcePrefs } from '@sharpit/server/lib/integrations/source-prefs-store';
+import type { IntegrationsHubPayload } from '@sharpit/server/lib/web/integrations-hub';
+import { cachedServerApiJson } from '@/server/api-client';
 
 const statusMessages: Record<string, string> = {
   connected: 'Compte Strava connecté.',
@@ -38,26 +37,20 @@ const garminStatusMessages: Record<string, string> = {
   error: 'Une erreur est survenue lors de la connexion à Garmin.',
 };
 
-async function buildIntegrationsPayload(params: IntegrationsSearchParams) {
-  const athleteId = await getCurrentAthleteId();
-  const accounts = await loadIntegrationAccounts(athleteId);
-  return assembleIntegrationsPayload(accounts, params, {
-    strava: statusMessages,
-    google: googleStatusMessages,
-    withings: withingsStatusMessages,
-    garmin: garminStatusMessages,
-  });
-}
-
 export async function IntegrationsHubSection({
   searchParams,
 }: {
   searchParams: IntegrationsSearchParams;
 }) {
-  const athleteId = await getCurrentAthleteId();
-  const [payload, prefs] = await Promise.all([
-    buildIntegrationsPayload(searchParams),
-    loadResolvedSourcePrefs(athleteId),
-  ]);
-  return <IntegrationsHub initialPrefs={prefs} payload={payload} />;
+  const hub = await cachedServerApiJson<IntegrationsHubPayload>('/api/web/integrations-hub', true);
+  if (!hub) {
+    throw new Error('api. has no integrations hub for this session');
+  }
+  const payload = assembleIntegrationsPayload(hub, searchParams, {
+    strava: statusMessages,
+    google: googleStatusMessages,
+    withings: withingsStatusMessages,
+    garmin: garminStatusMessages,
+  });
+  return <IntegrationsHub initialPrefs={hub.prefs} payload={payload} />;
 }

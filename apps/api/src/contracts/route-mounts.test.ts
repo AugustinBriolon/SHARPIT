@@ -24,10 +24,13 @@ describe('api route mounts', () => {
     ? routeFiles(WEB_ROUTES).map((file) => relative(WEB_ROUTES, file))
     : [];
 
-  it('serves the native contract, the crons and the web routes — nothing else', () => {
+  // `web/`: what the web's server components read in place of the database (phase 3f).
+  it('serves the native contract, the crons, the web routes and the web pages’ reads — nothing else', () => {
     expect(mounts.filter((path) => path.startsWith('v1/')).length).toBeGreaterThan(40);
     const unexpected = mounts.filter(
-      (path) => !path.startsWith('v1/') && !path.startsWith('cron/') && !webMounts.includes(path),
+      (path) =>
+        !['v1/', 'cron/', 'web/'].some((prefix) => path.startsWith(prefix)) &&
+        !webMounts.includes(path),
     );
     expect(unexpected).toEqual([]);
   });
@@ -52,6 +55,10 @@ describe('api route mounts', () => {
 
   it('is the only app mounting the crons', () => {
     expect(existsSync(join(WEB_ROUTES, 'cron'))).toBe(false);
+  });
+
+  it('is the only app serving the web pages’ reads', () => {
+    expect(existsSync(join(WEB_ROUTES, 'web'))).toBe(false);
   });
 
   it('is the only app serving the native contract', () => {

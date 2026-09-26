@@ -1,18 +1,11 @@
 import { Suspense } from 'react';
 import { GateRedirect } from '@/components/navigation/gate-redirect';
 import { Skeleton } from '@/components/ui/skeleton';
-import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
-import { consentWallHref } from '@sharpit/server/lib/onboarding/entry';
-import { athleteNeedsOnboarding } from '@sharpit/server/lib/onboarding/status/status';
 import { OnboardingWizard } from '@/components/onboarding/wizard/onboarding-wizard';
-import {
-  loadConnectedIntegrationIds,
-  loadResolvedSourcePrefs,
-} from '@sharpit/server/lib/integrations/source-prefs-store';
 import { awaitRequest } from '@sharpit/server/lib/next/await-request';
-import { normalizeAthleteEquipment } from '@sharpit/server/lib/equipment/parse';
-import { getAthleteProfile } from '@sharpit/server/lib/queries';
-import { getAthleteConsentRow } from '@sharpit/server/lib/privacy/consent-store';
+import type { OnboardingPayload } from '@sharpit/server/lib/web/onboarding';
+import { cachedServerApiJson } from '@/server/api-client';
+import { getViewer } from '@/server/viewer';
 
 export const metadata = {
   title: 'Bienvenue — SharpIt',
@@ -52,29 +45,18 @@ function OnboardingStepSkeleton() {
 
 async function OnboardingPageContent() {
   await awaitRequest();
-  const athleteId = await getCurrentAthleteId();
   // Consents come first; a finished athlete belongs on Today. Client-side redirects:
   // this runs inside a streamed Suspense boundary, where `redirect()` aborts the render.
-  const consent = await consentWallHref(athleteId);
-  if (consent) {
-    return <GateRedirect href={consent} />;
+  const viewer = await getViewer();
+  if (viewer.consentWallHref) {
+    return <GateRedirect href={viewer.consentWallHref} />;
   }
-  if (!(await athleteNeedsOnboarding(athleteId))) {
+  if (!viewer.needsOnboarding) {
     return <GateRedirect href="/" />;
   }
-
-  const [connected, prefs, profile, consents] = await Promise.all([
-    loadConnectedIntegrationIds(athleteId),
-    loadResolvedSourcePrefs(athleteId),
-    getAthleteProfile(athleteId).catch(() => null),
-    getAthleteConsentRow(athleteId),
-  ]);
-  return (
-    <OnboardingWizard
-      initialEquipment={normalizeAthleteEquipment(profile?.equipment ?? null)}
-      initiallyConnected={connected}
-      initialPrefs={prefs}
-      unofficialAcknowledged={Boolean(consents?.unofficialProvidersAckAt)}
-    />
-  );
+  const onboarding = await cachedServerApiJson<OnboardingPayload>('/api/web/onboarding');
+  if (!onboarding) {
+    throw new Error('api. has no onboarding for this session');
+  }
+  return <OnboardingWizard {...onboarding} />;
 }

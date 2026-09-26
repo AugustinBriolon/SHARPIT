@@ -6,14 +6,11 @@ import { PersonalProfilePanel } from '@/components/settings/profile';
 import { SettingsDemoBlock } from '@/components/settings/settings-demo-block';
 import { SettingsSignOut } from '@/components/settings/settings-sign-out';
 import { Skeleton } from '@/components/ui/skeleton';
-import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
 import { isDemoSession } from '@sharpit/server/lib/demo/demo-session';
 import { MOI_HUB_PATH } from '@sharpit/server/lib/moi/paths';
 import { isHangingPromiseRejection } from '@sharpit/server/lib/next/hanging-promise';
-import { serializeConsentRow } from '@sharpit/server/lib/privacy/consent-serialize';
-import { getAthleteConsentRow } from '@sharpit/server/lib/privacy/consent-store';
 import { mapAthleteProfileToFormData } from '@sharpit/server/lib/profile/map-athlete-profile';
-import { getAthleteProfile } from '@sharpit/server/lib/queries';
+import { getAthleteProfileRow, getConsentSnapshot } from '@/server/athlete-profile';
 import { CONTROLLER_EMAIL } from '@sharpit/server/lib/privacy/constants';
 
 function ProfileIdentityFallback() {
@@ -43,8 +40,7 @@ async function ProfileIdentityPanel() {
   let loadError: string | null = null;
   let athleteProfile = null;
   try {
-    const athleteId = await getCurrentAthleteId();
-    athleteProfile = await getAthleteProfile(athleteId);
+    athleteProfile = await getAthleteProfileRow();
   } catch (error) {
     if (isHangingPromiseRejection(error)) {
       throw error;
@@ -69,9 +65,7 @@ async function PrivacyPanelWithData() {
     );
   }
 
-  const athleteId = await getCurrentAthleteId();
-  const row = await getAthleteConsentRow(athleteId);
-  const initial = row ? serializeConsentRow(row) : null;
+  const initial = await getConsentSnapshot();
 
   return <PrivacySettingsPanel initial={initial} compact />;
 }
