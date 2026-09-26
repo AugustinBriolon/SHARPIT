@@ -72,8 +72,8 @@ Location resolution order:
 
 1. Session lat/lng + label
 2. Athlete geo from activity GPS (same day)
-3. `SHARPIT_DEFAULT_LATITUDE/LONGITUDE`
-4. Paris default
+3. Athlete home (profile)
+4. Hard-coded default (Colombes)
 
 ---
 

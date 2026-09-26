@@ -66,7 +66,7 @@ Since 2026-09-26, `api.sharpit.app` belongs to project `sharpit-api` (`apps/api`
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`                                             | Production, Preview | secret          | Google integration      |
 | `WITHINGS_CLIENT_ID`, `WITHINGS_CLIENT_SECRET`, `WITHINGS_REDIRECT_URI`                | Production, Preview | secret          | Withings                |
 | `ADMIN_EMAILS`                                                                         | Production          | PII             | admin gate              |
-| `FEATURE_ENGINE_ENABLED`, `SHARPIT_DEFAULT_LATITUDE`, `SHARPIT_DEFAULT_LONGITUDE`      | Production, Preview | config          | —                       |
+| `FEATURE_ENGINE_ENABLED` (`sharpit-api` only)                                          | Production, Preview | config          | —                       |
 
 **Also set in Production:** `NEXT_PUBLIC_APP_URL` (`https://web.sharpit.app`: absolute links handed to iOS
 open the thin web), `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`, `LANGFUSE_BASE_URL`,

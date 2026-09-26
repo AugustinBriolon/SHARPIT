@@ -11,15 +11,6 @@ const DEFAULT_HOME: GeoLocation = {
 /** Where a resolved home location actually came from. */
 export type HomeLocationSource = 'profile' | 'default';
 
-export function homeLocationFromEnv(): GeoLocation {
-  const latitude = Number(process.env.SHARPIT_DEFAULT_LATITUDE);
-  const longitude = Number(process.env.SHARPIT_DEFAULT_LONGITUDE);
-  if (Number.isFinite(latitude) && Number.isFinite(longitude)) {
-    return { latitude, longitude, label: 'Colombes, France' };
-  }
-  return DEFAULT_HOME;
-}
-
 /**
  * The athlete's home, and whether we actually know it.
  *
@@ -50,5 +41,5 @@ export async function resolveHomeLocation(
     };
   }
 
-  return { ...homeLocationFromEnv(), source: 'default' };
+  return { ...DEFAULT_HOME, source: 'default' };
 }
