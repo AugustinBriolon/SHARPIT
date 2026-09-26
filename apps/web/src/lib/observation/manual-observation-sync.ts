@@ -4,7 +4,7 @@ import type {
 } from '@prisma/client';
 import type { getActivityById, getPhysicalNoteById } from '@/lib/queries';
 import { observationEngine } from '@/lib/engines/observation-engine';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 import type {
   RawPhysicalConditionObservation,
   RawSessionObservation,

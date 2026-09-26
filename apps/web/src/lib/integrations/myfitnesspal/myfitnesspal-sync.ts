@@ -1,7 +1,7 @@
 import { format, subDays } from 'date-fns';
 import { mfpDayToNutritionObservation } from '@/adapters/myfitnesspal-adapter';
 import { observationEngine } from '@/lib/engines/observation-engine';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 import { decryptSecret, encryptSecret, isSecretAuthenticityFailure } from '@/lib/secret-box';
 import {
   isDecryptMalformedSoftFailure,

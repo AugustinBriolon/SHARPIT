@@ -1,7 +1,7 @@
 import { parseISO, subDays } from 'date-fns';
 
 import { FUEL_BODY_WEIGHT_LOOKBACK_DAYS } from '@sharpit/core/features/extractors/fuel-extractor';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 
 export { FUEL_BODY_WEIGHT_LOOKBACK_DAYS };
 

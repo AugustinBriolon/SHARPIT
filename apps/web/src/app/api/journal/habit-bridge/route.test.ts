@@ -12,7 +12,7 @@ vi.mock('@/lib/journal/journal-habit-today-bridge', () => ({
   buildTodayJournalHabitBridge: vi.fn(),
 }));
 
-vi.mock('@/lib/prisma', () => ({
+vi.mock('@sharpit/db/client', () => ({
   prisma: {},
 }));
 

@@ -7,7 +7,7 @@ import {
   ProviderAuthError,
 } from '@/lib/integrations/shared/connection-status';
 import { format, startOfDay, subDays } from 'date-fns';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 import {
   type RenphoMeasurement,
   renphoClientFromCredentials,

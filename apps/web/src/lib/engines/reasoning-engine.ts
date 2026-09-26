@@ -12,7 +12,7 @@
 import { ReasoningInferenceOrchestrator } from '@sharpit/core/inference/reasoning-orchestrator';
 import { PrismaDigitalTwinRepository } from '@/infrastructure/digital-twin/prisma-digital-twin-repository';
 import { PrismaDecisionRecordRepository } from '@/infrastructure/inference/prisma-decision-record-repository';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 
 function createReasoningEngine(): ReasoningInferenceOrchestrator {
   const digitalTwinRepo = new PrismaDigitalTwinRepository(prisma);

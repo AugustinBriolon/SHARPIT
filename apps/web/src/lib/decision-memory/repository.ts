@@ -8,7 +8,7 @@
  */
 
 import { addHours } from 'date-fns';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 import type { GateProposal, GateSessionResult } from '@/lib/plan-gate/types';
 import { canRecordAction } from './lifecycle';
 import type {

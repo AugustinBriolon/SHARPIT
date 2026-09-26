@@ -7,7 +7,7 @@ import {
   type GarminPushBlockReason,
   type GarminPushReceipt,
 } from '@/lib/integrations/garmin/garmin-workout-push-state';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 
 export type GarminClient = Awaited<ReturnType<typeof getGarminClient>>;
 

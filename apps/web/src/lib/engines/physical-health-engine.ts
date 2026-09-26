@@ -6,7 +6,7 @@ import { PhysicalHealthInferenceOrchestrator } from '@sharpit/core/inference/phy
 import { PrismaDigitalTwinRepository } from '@/infrastructure/digital-twin/prisma-digital-twin-repository';
 import { PrismaDecisionRecordRepository } from '@/infrastructure/inference/prisma-decision-record-repository';
 import { PrismaConditionRepository } from '@/infrastructure/physical-health/prisma-condition-repository';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 
 function createPhysicalHealthEngine(): PhysicalHealthInferenceOrchestrator {
   return new PhysicalHealthInferenceOrchestrator({

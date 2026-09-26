@@ -27,7 +27,7 @@ import {
 } from '@/lib/activity/weather/activity-weather';
 import { resolveDefaultActivityLocation } from '@/lib/geocoding/default-activity-location';
 import { fetchForecastPredictions } from '@/lib/planned-session/forecast/forecast-fetch';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 import { approximateTrainingDayUtcRange } from '@sharpit/core/training/training-day';
 
 export type TodayWeather = {

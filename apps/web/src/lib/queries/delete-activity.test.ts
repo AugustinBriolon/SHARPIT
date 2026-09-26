@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('@/lib/prisma', () => ({
+vi.mock('@sharpit/db/client', () => ({
   prisma: {
     plannedSession: {
       findFirst: vi.fn(),
@@ -41,7 +41,7 @@ describe('deleteActivity', () => {
   });
 
   it('unlinks the planned session before deleting the activity', async () => {
-    const { prisma } = await import('@/lib/prisma');
+    const { prisma } = await import('@sharpit/db/client');
     const { linkPlannedSessionActivity } = await import('@/lib/queries/planned-sessions');
     const { deleteActivity } = await import('@/lib/queries/index');
 
@@ -61,7 +61,7 @@ describe('deleteActivity', () => {
   });
 
   it('deletes the activity without unlink when nothing is linked', async () => {
-    const { prisma } = await import('@/lib/prisma');
+    const { prisma } = await import('@sharpit/db/client');
     const { linkPlannedSessionActivity } = await import('@/lib/queries/planned-sessions');
     const { deleteActivity } = await import('@/lib/queries/index');
 

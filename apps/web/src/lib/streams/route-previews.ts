@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 
 /** Compact enough for hub cards; detail page still loads full streams. */
 export const ROUTE_PREVIEW_MAX_POINTS = 48;

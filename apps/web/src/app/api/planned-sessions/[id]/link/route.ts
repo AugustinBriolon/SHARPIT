@@ -3,7 +3,7 @@ import { isCoachConfigured } from '@/lib/ai';
 import { enrichActivityObservedContext } from '@/lib/activity/detail/enrich-observed-context';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { analyzePlannedSession } from '@/lib/coach/plan/coach-analysis';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 import {
   getPlannedSessionById,
   linkPlannedSessionActivity,

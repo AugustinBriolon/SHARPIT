@@ -1,7 +1,7 @@
 import { ActivityType } from '@prisma/client';
 import { isSet } from '@sharpit/shared/value';
 import { differenceInCalendarDays, startOfDay, subDays } from 'date-fns';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 import {
   buildEnvironmentFacts,
   buildPhysicalConditionFacts,

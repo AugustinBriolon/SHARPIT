@@ -15,7 +15,7 @@ const queries = vi.hoisted(() => ({
 }));
 
 vi.mock('next/server', () => ({ after: vi.fn() }));
-vi.mock('@/lib/prisma', () => ({ prisma: {} }));
+vi.mock('@sharpit/db/client', () => ({ prisma: {} }));
 vi.mock('@/lib/travel-context/service', () => service);
 vi.mock('@/lib/queries', () => ({
   ...queries,

@@ -1,7 +1,7 @@
 import { ActivityType } from '@prisma/client';
 import { isSet } from '@sharpit/shared/value';
 import { NEUROMUSCULAR_EFFICIENCY_LOOKBACK_DAYS } from '@sharpit/core/inference/adaptation/constants';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 import { fetchAndCacheActivityStreams } from '@/lib/streams/streams';
 import {
   addTrainingDays,

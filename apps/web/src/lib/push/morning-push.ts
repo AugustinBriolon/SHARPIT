@@ -3,7 +3,7 @@ import { mapWithConcurrency } from '@/lib/async/map-with-concurrency';
 import { trainingDayIdNow } from '@/lib/athlete-state/freshness-service';
 import { refreshAthleteState } from '@/lib/athlete-state/orchestrator';
 import { getLatestAthleteSnapshot } from '@/infrastructure/athlete-state/snapshot-repository';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 import { wantsMorningVerdict } from '@/lib/notifications/notification-prefs';
 import { isTokenExpiredOrInvalid, sendApnsNotification, type ApnsPayload } from '@/lib/push/apns';
 import { mapVerdictToDisplay, type OverallVerdict } from '@/lib/today/dashboard/today-mapping';

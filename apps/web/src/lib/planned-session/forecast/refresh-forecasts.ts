@@ -1,5 +1,5 @@
 import { addDays, startOfDay } from 'date-fns';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 import { refreshAndPersistPlannedSessionContext } from '@/lib/planned-session/resolve-context';
 
 export async function refreshPlannedSessionForecastsForDate(targetDate: Date): Promise<{

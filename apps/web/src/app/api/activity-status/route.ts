@@ -6,7 +6,7 @@ import {
   setActivityStatusDb,
 } from '@/lib/health/activity-status-service';
 import { awaitRequest } from '@/lib/next/await-request';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 
 const putSchema = z.object({
   status: z.enum(['active', 'paused', 'injured', 'sick']),

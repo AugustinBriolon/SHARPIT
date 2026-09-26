@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 import { isSet } from '@sharpit/shared/value';
 import {
   analyzeActivityStreams,

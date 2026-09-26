@@ -4,7 +4,7 @@ import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { loadJournalHabitExperiments } from '@/lib/journal/journal-habit-experiment-load';
 import { toHabitExperimentView } from '@/lib/journal/journal-habit-experiment-view';
 import { awaitRequest } from '@/lib/next/await-request';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 import { trainingDayIdForNow } from '@sharpit/core/training/training-day';
 
 type RouteContext = { params: Promise<{ id: string }> };

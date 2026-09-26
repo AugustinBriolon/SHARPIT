@@ -6,7 +6,7 @@ import {
   regenerateAthleteSnapshotAfterInference,
 } from '@/lib/athlete-state/snapshot-service';
 import { trainingDayIdNow } from '@/lib/athlete-state/freshness-service';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 
 /**
  * Background path — never blocks the fast inference response.

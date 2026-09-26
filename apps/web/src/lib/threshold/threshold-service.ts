@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 import { isSet } from '@sharpit/shared/value';
 import { createThresholdSnapshot, getAthleteProfile, upsertAthleteProfile } from '@/lib/queries';
 import { getStoredRecords } from '@/lib/training/records/records';

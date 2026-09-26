@@ -6,7 +6,7 @@
  */
 
 import { addTrainingDays, computeTrainingDayId } from '@sharpit/core/training/training-day';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 import { getPlannedSessionById } from '@/lib/queries';
 import { parseSessionAnalysis } from '@/lib/planned-session/display/session-analysis-display';
 import type { OutcomeEvaluationInput } from './types';

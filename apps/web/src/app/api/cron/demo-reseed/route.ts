@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 import { seedDemoAthlete } from '@/lib/demo/seed-demo-data';
 import { verifyCronSecret } from '@/lib/cron/verify-cron-secret';
 

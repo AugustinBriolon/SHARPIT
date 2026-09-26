@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('@/lib/prisma', () => ({ prisma: {} }));
+vi.mock('@sharpit/db/client', () => ({ prisma: {} }));
 
 vi.mock('@/lib/queries', () => ({
   getAthleteProfile: vi.fn(),

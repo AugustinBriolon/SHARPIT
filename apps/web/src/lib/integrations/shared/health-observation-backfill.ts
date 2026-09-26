@@ -4,7 +4,7 @@ import { garminHealthToObservations } from '@/adapters/garmin-health-adapter';
 import type { RawObservation } from '@sharpit/core/observation/types';
 import type { GarminDailyHealth } from '@/lib/integrations/garmin/garmin';
 import { observationEngine } from '@/lib/engines/observation-engine';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 import { dayKeyFromDate } from '@/lib/date/day-key';
 
 export type HealthObservationBackfillResult = {

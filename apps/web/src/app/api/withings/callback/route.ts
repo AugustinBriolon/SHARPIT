@@ -1,6 +1,6 @@
 import { cookies } from 'next/headers';
 import { NextRequest } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import {
   publicOriginFromRequest,

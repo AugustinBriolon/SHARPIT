@@ -1,6 +1,6 @@
 import { ActivityType, Prisma } from '@prisma/client';
 import { isSet } from '@sharpit/shared/value';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 
 /**
  * Records & courbes de performance — désormais PERSISTÉS en base.

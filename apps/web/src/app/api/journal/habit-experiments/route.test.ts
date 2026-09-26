@@ -9,7 +9,7 @@ vi.mock('@sharpit/core/training/training-day', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@sharpit/core/training/training-day')>()),
   trainingDayIdForNow: () => '2026-09-10',
 }));
-vi.mock('@/lib/prisma', () => ({
+vi.mock('@sharpit/db/client', () => ({
   prisma: {
     journalHabitExperiment: {
       create: vi.fn(),
@@ -57,7 +57,7 @@ describe('/api/journal/habit-experiments', () => {
   });
 
   it('starts a test today for the signed-in athlete', async () => {
-    const { prisma } = await import('@/lib/prisma');
+    const { prisma } = await import('@sharpit/db/client');
     const { POST } = await import('./route');
 
     const response = await POST(
@@ -92,7 +92,7 @@ describe('/api/journal/habit-experiments', () => {
   });
 
   it('keeps one lever at a time', async () => {
-    const { prisma } = await import('@/lib/prisma');
+    const { prisma } = await import('@sharpit/db/client');
     vi.mocked(prisma.journalHabitExperiment.findFirst).mockResolvedValueOnce({
       id: 'exp-running',
     } as Awaited<ReturnType<typeof prisma.journalHabitExperiment.findFirst>>);
@@ -113,7 +113,7 @@ describe('/api/journal/habit-experiments', () => {
 
   it('stops only a running test of the signed-in athlete', async () => {
     await givenExperiments([running()]);
-    const { prisma } = await import('@/lib/prisma');
+    const { prisma } = await import('@sharpit/db/client');
     const { PATCH } = await import('./[id]/route');
     const context = (id: string) => ({ params: Promise.resolve({ id }) });
 

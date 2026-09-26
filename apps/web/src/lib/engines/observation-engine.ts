@@ -17,7 +17,7 @@
 import { ObservationEngine } from '@sharpit/core/observation';
 import { PrismaObservationRepository } from '@/infrastructure/observation/prisma-observation-repository';
 import { createObservationPipelineBus } from '@/infrastructure/events/observation-pipeline-bus';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 import { featureEngine } from '@/lib/engines/feature-engine';
 
 const globalForEngine = globalThis as unknown as {

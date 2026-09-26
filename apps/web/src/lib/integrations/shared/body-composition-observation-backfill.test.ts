@@ -5,7 +5,7 @@ const mockFindManyMeasurements = vi.fn();
 const mockFindManyObservations = vi.fn();
 const mockIngestBatch = vi.fn();
 
-vi.mock('@/lib/prisma', () => ({
+vi.mock('@sharpit/db/client', () => ({
   prisma: {
     bodyCompositionMeasurement: {
       findMany: (...args: unknown[]) => mockFindManyMeasurements(...args),

@@ -12,7 +12,7 @@ import { FatigueInferenceOrchestrator } from '@sharpit/core/inference/fatigue-or
 import { PrismaDigitalTwinRepository } from '@/infrastructure/digital-twin/prisma-digital-twin-repository';
 import { PrismaDecisionRecordRepository } from '@/infrastructure/inference/prisma-decision-record-repository';
 import { featureEngine } from '@/lib/engines/feature-engine';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 
 function createFatigueEngine(): FatigueInferenceOrchestrator {
   const digitalTwinRepo = new PrismaDigitalTwinRepository(prisma);

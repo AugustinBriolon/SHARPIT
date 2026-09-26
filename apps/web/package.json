@@ -40,6 +40,9 @@
     "test:e2e": "playwright test",
     "test:e2e:dev": "PLAYWRIGHT_BASE_URL=http://localhost:3000 playwright test activity-state navigation-shell pwa-install-card pwa-mobile-demo morning-journey drill-down-date-strip"
   },
+  "prisma": {
+    "schema": "../../packages/db/prisma/schema.prisma"
+  },
   "dependencies": {
     "@ai-sdk/react": "4.0.35",
     "@apple/app-store-server-library": "3.1.0",
@@ -62,6 +65,7 @@
     "@prisma/client": "^6.19.3",
     "@serwist/next": "^9.5.11",
     "@sharpit/core": "workspace:*",
+    "@sharpit/db": "workspace:*",
     "@sharpit/shared": "workspace:*",
     "@tanstack/react-query": "^5.101.2",
     "@tanstack/react-virtual": "^3.14.11",

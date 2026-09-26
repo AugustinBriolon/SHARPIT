@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { getRecentGoalAchievements } from '@/lib/goals/goal-achievements';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 
-vi.mock('@/lib/prisma', () => ({
+vi.mock('@sharpit/db/client', () => ({
   prisma: {
     goalAchievement: {
       findMany: vi.fn(),

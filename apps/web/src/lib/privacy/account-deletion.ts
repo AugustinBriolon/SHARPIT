@@ -1,7 +1,7 @@
 import { clerkClient } from '@clerk/nextjs/server';
 import { deleteLangfuseTracesForAthlete } from '@/lib/ai/langfuse-erasure';
 import { revokeAllProviderAccess } from '@/lib/integrations/provider-revocation';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 import { purgeEligibleBefore } from '@/lib/privacy/consent';
 import { PRIVACY_PURGE_DELAY_DAYS } from '@/lib/privacy/constants';
 import { logSafeError } from '@/lib/privacy/safe-log';

@@ -6,7 +6,7 @@ import {
   linkPlannedSessionActivity,
   setPlannedSessionAnalysis,
 } from '@/lib/queries/planned-sessions';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 import { withAnalysisRun } from '@/lib/analysis/analysis-run-store';
 
 export { scorePlannedActivityMatch } from '@/lib/planned-session/linking/session-link-match-score';

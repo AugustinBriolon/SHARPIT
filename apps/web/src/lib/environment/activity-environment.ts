@@ -13,7 +13,7 @@ import { PrismaEnvironmentalObservationRepository } from '@/infrastructure/envir
 import { resolveAthleteGeoLocation } from '@/lib/environment/athlete-location';
 import { activityWeatherWindow } from '@/lib/activity/weather/activity-weather-window';
 import { isIndoorActivitySession } from '@/lib/activity/location/indoor-activity';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 import { computeTrainingDayId } from '@sharpit/core/training/training-day';
 
 export type ActivityEnvironmentPresentation = {

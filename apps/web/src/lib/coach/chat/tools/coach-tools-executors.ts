@@ -17,7 +17,7 @@ import {
   createTravelContext,
   applyTravelContextToUpcomingSessions,
 } from '@/lib/travel-context/service';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 import { chainBrickLegStartTimes } from '@/lib/planned-session/brick/brick-schedule';
 import {
   parseStrengthPrescription,

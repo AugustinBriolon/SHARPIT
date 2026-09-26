@@ -6,7 +6,7 @@ const prismaMock = vi.hoisted(() => ({
 }));
 const linkPlannedSessionActivity = vi.hoisted(() => vi.fn());
 
-vi.mock('@/lib/prisma', () => ({ prisma: prismaMock }));
+vi.mock('@sharpit/db/client', () => ({ prisma: prismaMock }));
 vi.mock('@/lib/queries/planned-sessions', () => ({
   linkPlannedSessionActivity,
   setPlannedSessionAnalysis: vi.fn(),

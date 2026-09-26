@@ -1,7 +1,7 @@
 import { NextResponse, after, type NextRequest } from 'next/server';
 import { ensureDemoSeedFresh } from '@/lib/demo/seed-demo-data';
 import { DEMO_COOKIE } from '@/lib/demo/demo-session';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 
 export const maxDuration = 60;
 

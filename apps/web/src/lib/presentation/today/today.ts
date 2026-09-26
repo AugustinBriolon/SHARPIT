@@ -26,7 +26,7 @@ import {
 import { loadTodayHabitCoachingSignal } from '@/lib/presentation/today/today-habit-coaching';
 import { buildTodayHeroReliability } from '@/lib/science/reliability/today-hero-reliability';
 import { buildTodayDaySummary } from '@/lib/today/dashboard/today-day-summary';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 import { addDays } from 'date-fns';
 import {
   findSessionLinkSuggestions,

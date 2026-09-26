@@ -71,7 +71,7 @@ vi.mock('@/lib/queries', () => ({
   getGoalById: vi.fn(),
 }));
 
-vi.mock('@/lib/prisma', () => ({ prisma: {} }));
+vi.mock('@sharpit/db/client', () => ({ prisma: {} }));
 
 vi.mock('@/lib/journal/journal-habit-analysis-load', () => ({
   loadJournalHabitFindings: vi.fn().mockResolvedValue({ daysWithSignal: 3, findings: [] }),

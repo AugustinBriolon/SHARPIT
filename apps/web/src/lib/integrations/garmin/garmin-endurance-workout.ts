@@ -15,7 +15,7 @@ import {
 } from '@/lib/planned-session/endurance/endurance-prescription';
 import { effectiveEndurancePrescription } from '@/lib/planned-session/endurance/endurance-session';
 import { type AthleteThresholds } from '@/lib/planned-session/endurance/endurance-targets';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 
 const SPORT_LABEL_FR: Record<EnduranceSport, string> = {
   RUN: 'course',

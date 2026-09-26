@@ -7,7 +7,7 @@ import {
   type GoalMetricConfig,
   type PerformanceMetricConfig,
 } from '@/lib/goals/goal-metric-config';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 import {
   computeMetricCurrentValue,
   computePerformanceBest,

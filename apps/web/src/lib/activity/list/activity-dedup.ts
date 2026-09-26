@@ -1,6 +1,6 @@
 import type { ActivityType, Prisma } from '@prisma/client';
 import { addHours, subHours } from 'date-fns';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 
 /** Écart max sur l'heure de début (Garmin vs Strava peuvent diverger légèrement). */
 const TIME_TOLERANCE_MS = 12 * 60 * 1000;

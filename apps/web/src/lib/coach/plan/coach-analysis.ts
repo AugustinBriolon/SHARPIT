@@ -26,7 +26,7 @@ import {
 import { parseStrengthPrescription } from '@/lib/planned-session/strength/strength-prescription';
 import { fetchActivityDetail } from '@/lib/integrations/strava/strava';
 import { getValidAccessToken } from '@/lib/integrations/strava/strava-sync';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 import {
   brickAnalysisSchema,
   sessionAnalysisSchema,

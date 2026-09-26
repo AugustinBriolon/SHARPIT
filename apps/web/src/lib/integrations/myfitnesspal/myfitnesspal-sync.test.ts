@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('@/lib/prisma', () => ({
+vi.mock('@sharpit/db/client', () => ({
   prisma: {
     myFitnessPalAccount: {
       findUnique: vi.fn(),
@@ -33,7 +33,7 @@ describe('syncMfpNutrition credential resilience', () => {
   });
 
   it('returns quietly when the account is already revoked (empty session)', async () => {
-    const { prisma } = await import('@/lib/prisma');
+    const { prisma } = await import('@sharpit/db/client');
     const { syncMfpNutrition } = await import('@/lib/integrations/myfitnesspal/myfitnesspal-sync');
 
     vi.mocked(prisma.myFitnessPalAccount.findUnique).mockResolvedValue({
@@ -47,7 +47,7 @@ describe('syncMfpNutrition credential resilience', () => {
   });
 
   it('does not revoke when ciphertext fails authenticity (wrong key)', async () => {
-    const { prisma } = await import('@/lib/prisma');
+    const { prisma } = await import('@sharpit/db/client');
     const { syncMfpNutrition } = await import('@/lib/integrations/myfitnesspal/myfitnesspal-sync');
     const { encryptSecret, isSecretAuthenticityFailure } = await import('@/lib/secret-box');
 

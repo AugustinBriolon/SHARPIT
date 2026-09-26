@@ -1,5 +1,5 @@
 import { Prisma, type AnalysisKind } from '@prisma/client';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 import { ANALYSIS_RUN_STALE_MS, type AnalysisRunView } from './analysis-run';
 
 /** Runs older than this are not worth reporting to the client. */

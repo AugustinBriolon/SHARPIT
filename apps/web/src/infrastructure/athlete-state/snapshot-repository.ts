@@ -1,5 +1,5 @@
 import type { AthleteSnapshot } from '@/athlete-state/snapshot';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 
 export async function getLatestAthleteSnapshot(params: {
   athleteId: string;

@@ -6,7 +6,7 @@ vi.mock('server-only', () => ({}));
 const findMany = vi.fn();
 const updateMany = vi.fn();
 const upsert = vi.fn();
-vi.mock('@/lib/prisma', () => ({
+vi.mock('@sharpit/db/client', () => ({
   prisma: {
     subscription: {
       findMany: (...a: unknown[]) => findMany(...a),

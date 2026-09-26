@@ -1,5 +1,5 @@
 import { startOfDay } from 'date-fns';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 import { hasProAccess } from '@/lib/access/tier';
 
 /**

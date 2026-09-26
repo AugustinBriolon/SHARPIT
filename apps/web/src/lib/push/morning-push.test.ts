@@ -6,11 +6,11 @@ import {
   sendMorningVerdictPushes,
 } from './morning-push';
 import type { AthleteSnapshot } from '@/athlete-state/snapshot';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 import * as apnsModule from '@/lib/push/apns';
 import * as snapshotRepo from '@/infrastructure/athlete-state/snapshot-repository';
 
-vi.mock('@/lib/prisma', () => ({
+vi.mock('@sharpit/db/client', () => ({
   prisma: {
     athleteProfile: {
       findUnique: vi.fn(),

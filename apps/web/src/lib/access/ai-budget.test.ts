@@ -4,7 +4,7 @@ const findUniqueMock = vi.fn();
 const aggregateMock = vi.fn();
 const findManyMock = vi.fn();
 
-vi.mock('@/lib/prisma', () => ({
+vi.mock('@sharpit/db/client', () => ({
   prisma: {
     athleteProfile: { findUnique: (...args: unknown[]) => findUniqueMock(...args) },
     aiUsageEvent: {

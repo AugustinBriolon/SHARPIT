@@ -30,7 +30,7 @@ vi.mock('@/lib/integrations/strava/strava-sync', () => ({
   getValidAccessToken: vi.fn(),
 }));
 
-vi.mock('@/lib/prisma', () => ({
+vi.mock('@sharpit/db/client', () => ({
   prisma: {
     activityStream: { findUnique: vi.fn() },
   },

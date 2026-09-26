@@ -2,7 +2,7 @@ import { BodyCompositionSource, Prisma } from '@prisma/client';
 import { isSet } from '@sharpit/shared/value';
 import { resolveOAuthAccessToken } from '@/lib/integrations/shared/oauth-access-token';
 import { format, startOfDay, subDays } from 'date-fns';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 import { observationEngine } from '@/lib/engines/observation-engine';
 import { withingsMeasurementToBodyComposition } from '@/adapters/withings-adapter';
 import {

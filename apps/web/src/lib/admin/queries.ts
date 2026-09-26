@@ -1,5 +1,5 @@
 import type { AccessTier } from '@prisma/client';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 
 export type AdminAthleteRow = {
   id: string;

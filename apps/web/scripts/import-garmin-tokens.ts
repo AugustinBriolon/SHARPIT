@@ -9,7 +9,7 @@
  */
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 import { importGarminDiTokenStore } from '@/lib/integrations/garmin/garmin-sync';
 
 async function main() {

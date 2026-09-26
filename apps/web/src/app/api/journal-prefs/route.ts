@@ -8,7 +8,7 @@ import {
   sanitizeJournalPrefsForPersist,
 } from '@/lib/journal/journal-prefs';
 import { awaitRequest } from '@/lib/next/await-request';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 
 export async function GET() {
   // Outside try: Cache Components prerender interrupt must not be swallowed.

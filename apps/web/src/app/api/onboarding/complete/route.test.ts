@@ -1,6 +1,6 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 
-vi.mock('@/lib/prisma', () => ({
+vi.mock('@sharpit/db/client', () => ({
   prisma: {
     athleteProfile: {
       update: vi.fn(),
@@ -13,7 +13,7 @@ vi.mock('@/lib/auth/current-athlete', () => ({
 }));
 
 import { POST } from '@/app/api/onboarding/complete/route';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 
 describe('POST /api/onboarding/complete', () => {
   beforeEach(() => {

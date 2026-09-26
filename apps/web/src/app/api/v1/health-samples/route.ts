@@ -4,7 +4,7 @@ import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { refreshAthleteState } from '@/lib/athlete-state/orchestrator';
 import { appleHealthPatch } from '@/lib/integrations/apple-health/apple-health-merge';
 import { getGarminAccount } from '@/lib/integrations/garmin/garmin-sync';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 import { athleteHasHealthDataConsent } from '@/lib/privacy/consent-store';
 import { checkRateLimit, rateLimitJsonResponse, rateLimiters } from '@/lib/rate-limit';
 

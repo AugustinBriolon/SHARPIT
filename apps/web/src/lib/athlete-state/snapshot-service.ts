@@ -24,7 +24,7 @@ import {
 } from '@/lib/queries';
 import { analyzeSleep, toSleepEntryInputs } from '@/lib/sleep/sleep';
 import { addDays, startOfDay } from 'date-fns';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 
 function phaseNarrativeNeedsUpgrade(snapshot: AthleteSnapshot): boolean {
   const phase = snapshot.dailyPhase?.phase;

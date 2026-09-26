@@ -5,7 +5,7 @@ const findManyMock = vi.fn();
 const findUniqueMock = vi.fn();
 const listEvidenceMock = vi.fn();
 
-vi.mock('@/lib/prisma', () => ({
+vi.mock('@sharpit/db/client', () => ({
   prisma: {
     athleteProfile: {
       findUniqueOrThrow: (...args: unknown[]) => findUniqueOrThrowMock(...args),

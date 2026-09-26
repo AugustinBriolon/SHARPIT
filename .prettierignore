@@ -10,6 +10,6 @@ apps/web/public/sw.js.map
 yarn.lock
 package-lock.json
 pnpm-lock.yaml
-apps/web/prisma/migrations
+packages/db/prisma/migrations
 .yarn
 .turbo

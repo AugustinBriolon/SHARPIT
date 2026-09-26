@@ -1,5 +1,5 @@
 import { addHours, subHours } from 'date-fns';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 import { hasProAccess } from '@/lib/access/tier';
 import {
   AI_BUDGET_WARNING_HEADER,

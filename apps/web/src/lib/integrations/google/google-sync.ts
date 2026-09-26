@@ -1,7 +1,7 @@
 import type { PlannedSession } from '@prisma/client';
 import { isSet } from '@sharpit/shared/value';
 import { dayKeyFromDate } from '@/lib/date/day-key';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 import {
   createEvent,
   deleteEvent,

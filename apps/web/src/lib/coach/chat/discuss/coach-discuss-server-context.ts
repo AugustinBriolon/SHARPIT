@@ -24,7 +24,7 @@ import {
   JOURNAL_ANALYSES_PRO_REQUIRED_ERROR,
   loadJournalAnalysesCoachBlock,
 } from '@/lib/coach/chat/discuss/journal-analyses-coach-gate';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 import { getAthleteProfile } from '@/lib/queries';
 
 type DiscussKind = CoachDiscussMetadata['discussKind'];

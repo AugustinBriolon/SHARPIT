@@ -15,7 +15,7 @@ import {
   type GoalPeriod,
   type PeriodMeasure,
 } from '@/lib/goals/goal-metric-config';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 
 const WEEK_OPTS = { weekStartsOn: 1 as const };
 const PERFORMANCE_DISTANCE_TOLERANCE = 0.03;

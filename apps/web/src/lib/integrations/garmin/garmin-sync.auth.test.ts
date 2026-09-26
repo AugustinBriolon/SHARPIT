@@ -5,7 +5,7 @@ const refreshDiGarminTokens = vi.fn();
 const clientFromTokens = vi.fn((tokens: GarminTokens) => ({ __client: true, tokens }));
 const loginWithCredentials = vi.fn();
 
-vi.mock('@/lib/prisma', () => ({
+vi.mock('@sharpit/db/client', () => ({
   prisma: {
     garminAccount: {
       findUnique: vi.fn(),
@@ -63,7 +63,7 @@ describe('buildFreshGarminClient auth hardening', () => {
   });
 
   it('refreshes near-expiry DI tokens and never calls SSO login', async () => {
-    const { prisma } = await import('@/lib/prisma');
+    const { prisma } = await import('@sharpit/db/client');
     const { encryptGarminToken, buildFreshGarminClient } =
       await import('@/lib/integrations/garmin/garmin-sync');
 
@@ -88,7 +88,7 @@ describe('buildFreshGarminClient auth hardening', () => {
   });
 
   it('revokes credentials when DI refresh fails (needs reconnect), without SSO', async () => {
-    const { prisma } = await import('@/lib/prisma');
+    const { prisma } = await import('@sharpit/db/client');
     const { encryptGarminToken, buildFreshGarminClient } =
       await import('@/lib/integrations/garmin/garmin-sync');
     const { ProviderAuthError } = await import('@/lib/integrations/shared/connection-status');
@@ -118,7 +118,7 @@ describe('buildFreshGarminClient auth hardening', () => {
   });
 
   it('never calls loginWithCredentials for expired legacy Garth tokens', async () => {
-    const { prisma } = await import('@/lib/prisma');
+    const { prisma } = await import('@sharpit/db/client');
     const { encryptGarminToken, buildFreshGarminClient } =
       await import('@/lib/integrations/garmin/garmin-sync');
     const { ProviderAuthError } = await import('@/lib/integrations/shared/connection-status');

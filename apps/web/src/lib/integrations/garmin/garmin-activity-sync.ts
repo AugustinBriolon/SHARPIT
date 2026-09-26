@@ -28,7 +28,7 @@ import {
 } from '@/lib/integrations/shared/connection-status';
 import { resolveExerciseCatalogId, enrichStrengthExerciseVisuals } from '@/lib/exercises';
 import { mapWithConcurrency } from '@/lib/async/map-with-concurrency';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 import { observationEngine } from '@/lib/engines/observation-engine';
 import {
   garminActivityToSession,

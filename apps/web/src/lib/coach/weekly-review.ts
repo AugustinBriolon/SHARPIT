@@ -13,7 +13,7 @@ import { COACH_MODEL, coachGatewayOptions, isCoachConfigured } from '@/lib/ai';
 import { buildCoachContext, formatCoachContext } from '@/lib/coach/context/coach-context';
 import { COACH_COPY_DASH_RULE, sanitizeCoachCopy } from '@/lib/coach/sanitize-coach-copy';
 import { recordAiUsage } from '@/lib/ai/usage';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 import {
   getActivities,
   getAthleteProfile,

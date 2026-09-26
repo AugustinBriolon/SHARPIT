@@ -1,6 +1,6 @@
 import type { ActivityType } from '@prisma/client';
 import type { MovementIntent } from '@/lib/exercises/movement-taxonomy';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 import { findTravelSessionViolation } from '@/lib/travel-context/session-compatibility';
 import { listRestrictionsOnDay, listTravelsOverlapping } from '@/lib/travel-context/service';
 

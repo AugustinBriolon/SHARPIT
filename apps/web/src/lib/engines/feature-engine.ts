@@ -22,7 +22,7 @@ import { AthleteContextProvider } from '@/infrastructure/features/athlete-contex
 import { PrismaSessionStreamProvider } from '@/infrastructure/features/prisma-session-stream-provider';
 import { PrismaObservationRepository } from '@/infrastructure/observation/prisma-observation-repository';
 import { PrismaConditionRepository } from '@/infrastructure/physical-health/prisma-condition-repository';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 
 const globalForFeatureEngine = globalThis as unknown as {
   featureEngine: FeatureEngine | undefined;

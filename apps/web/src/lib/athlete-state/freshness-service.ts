@@ -8,7 +8,7 @@ import type {
   FreshnessLevel,
   ProviderFreshness,
 } from '@/athlete-state/freshness';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 import {
   pickPrimaryProductMessage,
   productMessageForDomain,

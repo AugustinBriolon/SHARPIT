@@ -13,7 +13,7 @@ import { regenerateAthleteSnapshotAfterInference } from '@/lib/athlete-state/sna
 import { syncProviders, type ProviderSyncResult } from '@/lib/athlete-state/sync-providers';
 import { getLatestAthleteSnapshot } from '@/infrastructure/athlete-state/snapshot-repository';
 import { loadTodayState } from '@/lib/today/navigation/today-state-server';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 import { updateRecordsForTypesSafe } from '@/lib/training/records/records';
 
 export type AthleteStateRefreshResult = {

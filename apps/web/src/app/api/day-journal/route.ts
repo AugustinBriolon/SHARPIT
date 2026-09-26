@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { getDayJournalEntry, upsertDayJournalEntryDb } from '@/lib/journal/day-journal-service';
 import { awaitRequest } from '@/lib/next/await-request';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 
 const factorStateSchema = z.enum(['unset', 'no', 'yes']);
 

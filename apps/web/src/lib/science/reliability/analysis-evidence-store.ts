@@ -6,7 +6,7 @@
  * Retention LOCKED: ANALYSIS_EVIDENCE_RETENTION (N=5 OR 14 days, whichever shorter).
  */
 
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 import {
   ANALYSIS_EVIDENCE_RETENTION,
   selectEvidenceRowsToKeep,

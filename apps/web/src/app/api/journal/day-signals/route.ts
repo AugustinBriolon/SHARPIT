@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { buildJournalDaySignals } from '@/lib/journal/journal-day-signals';
 import { awaitRequest } from '@/lib/next/await-request';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 
 export async function GET(request: NextRequest) {
   // Outside try: Cache Components prerender interrupt must not be swallowed.

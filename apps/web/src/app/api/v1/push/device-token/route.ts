@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 import { checkRateLimit, rateLimitJsonResponse, rateLimiters } from '@/lib/rate-limit';
 
 const cleanHexToken = (val: unknown) =>

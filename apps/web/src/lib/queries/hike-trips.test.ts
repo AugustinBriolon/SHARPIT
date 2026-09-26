@@ -11,7 +11,7 @@ const mockUpdateMany = vi.fn();
 const mockDelete = vi.fn();
 const mockTransaction = vi.fn();
 
-vi.mock('@/lib/prisma', () => ({
+vi.mock('@sharpit/db/client', () => ({
   prisma: {
     activity: {
       findMany: mockFindMany,

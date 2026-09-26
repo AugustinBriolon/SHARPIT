@@ -2,7 +2,7 @@ import 'server-only';
 
 import { BODY_SERIES_RANGES, type BodyInputs, type BodySeriesRange } from '@/lib/body/body-v1';
 import { getGarminAccount } from '@/lib/integrations/garmin/garmin-sync';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 import { getBodyCompositionMeasurements } from '@/lib/queries';
 
 /** HRV / resting HR windows reach 30 days back from the latest reading, with margin. */

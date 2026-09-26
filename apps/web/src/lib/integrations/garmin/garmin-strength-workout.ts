@@ -21,7 +21,7 @@ import {
   attachGarminRefsToPrescription,
   parseStrengthPrescription,
 } from '@/lib/planned-session/strength/strength-prescription';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 
 export type PushStrengthWorkoutResult = {
   workoutId: number | null;

@@ -33,7 +33,7 @@ import type {
   EnvironmentSnapshotData,
   TodayState,
 } from '@/athlete-state/today-state';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 
 function readStateComputedAt(state: unknown): Date | null {
   if (!state || typeof state !== 'object') {

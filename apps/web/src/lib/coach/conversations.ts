@@ -1,7 +1,7 @@
 import type { Prisma } from '@prisma/client';
 import { isSet } from '@sharpit/shared/value';
 import { sanitizeCoachCopy } from '@/lib/coach/sanitize-coach-copy';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 
 const DEFAULT_TITLE = 'Nouvelle conversation';
 const TITLE_MAX = 60;

@@ -19,7 +19,7 @@ import {
 import { COACH_COPY_DASH_RULE, sanitizeCoachCopy } from '@/lib/coach/sanitize-coach-copy';
 import { recordAiUsage } from '@/lib/ai/usage';
 import { athleteHasAiProcessingConsent } from '@/lib/privacy/consent-store';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 import { getActivities, getPlannedSessions } from '@/lib/queries';
 import { startOfDay } from 'date-fns';
 

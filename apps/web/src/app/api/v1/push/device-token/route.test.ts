@@ -1,10 +1,10 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { NextRequest } from 'next/server';
 import { POST, DELETE } from './route';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 import * as authModule from '@/lib/auth/current-athlete';
 
-vi.mock('@/lib/prisma', () => ({
+vi.mock('@sharpit/db/client', () => ({
   prisma: {
     deviceToken: {
       upsert: vi.fn(),

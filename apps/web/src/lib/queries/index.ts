@@ -13,7 +13,7 @@ import {
 import { linkPlannedSessionActivity } from '@/lib/queries/planned-sessions';
 import { ActivityType, type AthleteSex, FunctionalImpact, Prisma } from '@prisma/client';
 import { addDays, endOfDay, startOfDay } from 'date-fns';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 import type { DisplayMode } from '@/lib/preferences/display-mode';
 
 export {

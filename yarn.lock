@@ -2982,6 +2982,21 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@sharpit/db@workspace:*, @sharpit/db@workspace:packages/db":
+  version: 0.0.0-use.local
+  resolution: "@sharpit/db@workspace:packages/db"
+  dependencies:
+    "@prisma/adapter-neon": "npm:^6.19.3"
+    "@prisma/client": "npm:^6.19.3"
+    "@sharpit/eslint-config": "workspace:*"
+    "@types/node": "npm:^20"
+    eslint: "npm:^9"
+    prisma: "npm:^6.19.3"
+    typescript: "npm:^5"
+    vitest: "npm:^4.1.9"
+  languageName: unknown
+  linkType: soft
+
 "@sharpit/eslint-config@workspace:*, @sharpit/eslint-config@workspace:packages/eslint-config":
   version: 0.0.0-use.local
   resolution: "@sharpit/eslint-config@workspace:packages/eslint-config"
@@ -3040,6 +3055,7 @@ __metadata:
     "@serwist/cli": "npm:^9.5.11"
     "@serwist/next": "npm:^9.5.11"
     "@sharpit/core": "workspace:*"
+    "@sharpit/db": "workspace:*"
     "@sharpit/eslint-config": "workspace:*"
     "@sharpit/shared": "workspace:*"
     "@tailwindcss/postcss": "npm:^4"

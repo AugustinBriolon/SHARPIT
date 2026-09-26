@@ -8,7 +8,7 @@ const deleteManyMock = vi.fn();
 const deleteUserMock = vi.fn();
 const order: string[] = [];
 
-vi.mock('@/lib/prisma', () => ({
+vi.mock('@sharpit/db/client', () => ({
   prisma: {
     $transaction: (...args: unknown[]) => transactionMock(...args),
     athleteProfile: {

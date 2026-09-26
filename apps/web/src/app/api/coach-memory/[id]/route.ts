@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { deleteCoachMemoryEntry, updateTravelMemoryEntry } from '@/lib/coach-memory/core/service';
 import { travelContextToMemoryEntry } from '@/lib/coach-memory/summary/present';

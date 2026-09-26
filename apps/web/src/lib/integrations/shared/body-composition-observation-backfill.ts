@@ -4,7 +4,7 @@ import { isSet } from '@sharpit/shared/value';
 import { bodyCompositionMeasurementToObservation } from '@/adapters/body-composition-measurement-adapter';
 import type { RawObservation } from '@sharpit/core/observation/types';
 import { observationEngine } from '@/lib/engines/observation-engine';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 
 export type BodyCompositionObservationBackfillResult = {
   scanned: number;

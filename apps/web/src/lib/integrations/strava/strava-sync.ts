@@ -1,7 +1,7 @@
 import { ActivityType, Prisma } from '@prisma/client';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { findMatchingActivity, mergedSource } from '@/lib/activity/list/activity-dedup';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 import { syncSinceFromLastSync } from '@/lib/integrations/shared/sync-since';
 import { resolveOAuthAccessToken } from '@/lib/integrations/shared/oauth-access-token';
 import {

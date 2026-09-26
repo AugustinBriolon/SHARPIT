@@ -3,7 +3,7 @@ import { auth, clerkClient } from '@clerk/nextjs/server';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import { DEMO_CLERK_USER_ID, isDemoSession } from '@/lib/demo/demo-session';
 import { ensureDemoSeedFresh } from '@/lib/demo/seed-demo-data';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 import { isDevClerkBypass } from '@/lib/dev/dev-auth';
 import { eraseAthleteData } from '@/lib/privacy/account-deletion';
 

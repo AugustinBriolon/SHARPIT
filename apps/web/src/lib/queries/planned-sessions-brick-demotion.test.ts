@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('@/lib/prisma', () => ({
+vi.mock('@sharpit/db/client', () => ({
   prisma: {
     plannedSession: {
       findFirst: vi.fn(),
@@ -21,7 +21,7 @@ describe('deletePlannedSession brick demotion', () => {
   });
 
   it('clears brick metadata on the surviving leg and drops brick analysis', async () => {
-    const { prisma } = await import('@/lib/prisma');
+    const { prisma } = await import('@sharpit/db/client');
     const { deletePlannedSession } = await import('@/lib/queries/planned-sessions');
 
     vi.mocked(prisma.plannedSession.findFirst).mockResolvedValue({
@@ -46,7 +46,7 @@ describe('deletePlannedSession brick demotion', () => {
   });
 
   it('does not demote when two or more legs remain', async () => {
-    const { prisma } = await import('@/lib/prisma');
+    const { prisma } = await import('@sharpit/db/client');
     const { deletePlannedSession } = await import('@/lib/queries/planned-sessions');
 
     vi.mocked(prisma.plannedSession.findFirst).mockResolvedValue({
@@ -67,7 +67,7 @@ describe('deletePlannedSession brick demotion', () => {
   });
 
   it('skips brick logic when deleting a simple session', async () => {
-    const { prisma } = await import('@/lib/prisma');
+    const { prisma } = await import('@sharpit/db/client');
     const { deletePlannedSession } = await import('@/lib/queries/planned-sessions');
 
     vi.mocked(prisma.plannedSession.findFirst).mockResolvedValue({

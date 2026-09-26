@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 import { mapWithConcurrency } from '@/lib/async/map-with-concurrency';
 import { verifyCronSecret } from '@/lib/cron/verify-cron-secret';
 import { DecryptCircuitBreaker } from '@/lib/cron/decrypt-circuit-breaker';

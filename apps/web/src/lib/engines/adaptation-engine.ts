@@ -12,7 +12,7 @@ import { AdaptationInferenceOrchestrator } from '@sharpit/core/inference/adaptat
 import { PrismaDigitalTwinRepository } from '@/infrastructure/digital-twin/prisma-digital-twin-repository';
 import { PrismaDecisionRecordRepository } from '@/infrastructure/inference/prisma-decision-record-repository';
 import { featureEngine } from '@/lib/engines/feature-engine';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 
 function createAdaptationEngine(): AdaptationInferenceOrchestrator {
   const digitalTwinRepo = new PrismaDigitalTwinRepository(prisma);

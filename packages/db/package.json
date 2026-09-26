@@ -1,0 +1,25 @@
+{
+  "name": "@sharpit/db",
+  "version": "0.0.0",
+  "private": true,
+  "exports": {
+    "./client": "./src/client.ts"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint"
+  },
+  "dependencies": {
+    "@prisma/adapter-neon": "^6.19.3",
+    "@prisma/client": "^6.19.3"
+  },
+  "devDependencies": {
+    "@sharpit/eslint-config": "workspace:*",
+    "@types/node": "^20",
+    "eslint": "^9",
+    "prisma": "^6.19.3",
+    "typescript": "^5",
+    "vitest": "^4.1.9"
+  }
+}

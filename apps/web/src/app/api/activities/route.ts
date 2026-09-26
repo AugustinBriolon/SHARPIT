@@ -8,7 +8,7 @@ import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { isDemoSession } from '@/lib/demo/demo-session';
 import { syncManualActivityObservations } from '@/lib/observation/manual-observation-sync';
 import { createActivity, getActivitiesList } from '@/lib/queries';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 import { updateRecordsForTypesSafe } from '@/lib/training/records/records';
 import { createActivitySchema } from '@/lib/validators/activity';
 

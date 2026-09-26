@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 import { DEMO_CLERK_USER_ID, isDemoSession } from '@/lib/demo/demo-session';
 import { isDevClerkBypass } from '@/lib/dev/dev-auth';
 import { needsOnboardingFromProfile } from '@/lib/onboarding/status/needs-onboarding';

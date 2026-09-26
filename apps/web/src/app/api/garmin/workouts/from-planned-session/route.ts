@@ -5,7 +5,7 @@ import { pushEnduranceWorkoutFromPlannedSession } from '@/lib/integrations/garmi
 import { pushStrengthWorkoutFromPlannedSession } from '@/lib/integrations/garmin/garmin-strength-workout';
 import { GarminWorkoutAlreadyPushedError } from '@/lib/integrations/garmin/garmin-workout-push';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 
 const bodySchema = z.object({
   plannedSessionId: z.string().min(1),

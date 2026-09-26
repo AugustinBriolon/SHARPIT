@@ -14,7 +14,7 @@ import { ReplayEngine } from '@sharpit/core/dev/replay-engine';
 import { PipelineInspector } from '@sharpit/core/dev/pipeline-inspector';
 import { FeatureExplorer } from '@sharpit/core/dev/feature-explorer';
 import { globalMetrics } from '@sharpit/core/dev/metrics';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 import { isCurrentUserAdmin } from '@/lib/auth/admin';
 
 export const isDevToolsEnabled =

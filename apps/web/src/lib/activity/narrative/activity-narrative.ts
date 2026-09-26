@@ -11,7 +11,7 @@ import { buildActivityNarrativeFacts } from '@/lib/activity/narrative/activity-n
 import { withAnalysisRun } from '@/lib/analysis/analysis-run-store';
 import { mapWithConcurrency } from '@/lib/async/map-with-concurrency';
 import { recordAiUsage } from '@/lib/ai/usage';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 import { activityNarrativeSchema, type ActivityNarrative } from '@/lib/validators/coach';
 import { COACH_COPY_DASH_RULE, sanitizeCoachCopy } from '@/lib/coach/sanitize-coach-copy';
 

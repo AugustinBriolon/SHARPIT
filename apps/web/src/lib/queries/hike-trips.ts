@@ -1,7 +1,7 @@
 import { cache } from 'react';
 import { isSet } from '@sharpit/shared/value';
 import { buildHikeTripSummary, type HikeTripSummary } from '@/lib/activity/hike/hike-trip-summary';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 import { ActivityType, Prisma } from '@prisma/client';
 
 const hikeTripActivitySelect = {

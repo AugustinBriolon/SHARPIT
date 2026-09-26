@@ -16,7 +16,7 @@ import {
 import { pmcTsb } from '@/lib/training/pmc/pmc';
 import { categoryLabels, sideLabels, statusLabels } from '@/lib/physical-health/physical';
 import { getOrBuildAthleteSnapshot } from '@/lib/athlete-state/snapshot-service';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 import { listTravelContexts } from '@/lib/travel-context/service';
 import { toUtcDateOnly } from '@/lib/travel-context/calendar-date';
 import { travelTrainingConstraintLabel } from '@/lib/travel-context/training-constraint';

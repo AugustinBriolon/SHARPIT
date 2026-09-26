@@ -13,7 +13,7 @@ import {
 } from '@/lib/journal/journal-habit-experiment-view';
 import { buildJournalHabitReading } from '@/lib/journal/journal-habit-reading';
 import { JOURNAL_ANALYSIS_MIN_DAYS, isJournalAnalysisReady } from '@/lib/journal/journal-limits';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 import { getAthleteProfile } from '@/lib/queries';
 import { trainingDayIdForNow } from '@sharpit/core/training/training-day';
 

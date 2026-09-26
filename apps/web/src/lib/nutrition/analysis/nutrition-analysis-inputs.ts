@@ -3,7 +3,7 @@ import { activeDietIds, activeDietLabels, parseJournalPrefs } from '@/lib/journa
 import { getLatestBodyWeightKg } from '@/lib/nutrition/body-weight-for-fuel';
 import { normalizeStoredMeals } from '@/lib/nutrition/meal-display';
 import { getAthleteProfile } from '@/lib/queries';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 import type { NutritionAnalysisInput } from './nutrition-analysis-facts';
 
 /** Nutrition days are stored at UTC midnight. */

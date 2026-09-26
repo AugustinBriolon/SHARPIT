@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 
 export type AiUsageFeature = 'coach' | 'analysis';
 

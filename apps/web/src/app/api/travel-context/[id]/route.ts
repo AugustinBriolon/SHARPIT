@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { deleteTravelContext } from '@/lib/travel-context/service';
 

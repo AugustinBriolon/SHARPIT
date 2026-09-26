@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const revokeGoogleCredentials = vi.fn();
 const refreshAccessToken = vi.fn();
 
-vi.mock('@/lib/prisma', () => ({
+vi.mock('@sharpit/db/client', () => ({
   prisma: {
     googleAccount: {
       findUnique: vi.fn(),
@@ -36,7 +36,7 @@ describe('getValidAccessToken google', () => {
   });
 
   it('tries refresh when accessTokenEnc fails authenticity and does not wipe refresh', async () => {
-    const { prisma } = await import('@/lib/prisma');
+    const { prisma } = await import('@sharpit/db/client');
     const { encryptSecret } = await import('@/lib/secret-box');
     const { getValidAccessToken } = await import('@/lib/integrations/google/google-sync');
 

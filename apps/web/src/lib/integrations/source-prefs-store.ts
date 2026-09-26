@@ -4,7 +4,7 @@ import {
   resolveSourcePrefs,
   type IntegrationSourcePrefs,
 } from '@/lib/integrations/source-prefs';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 import { Prisma } from '@prisma/client';
 
 export async function loadConnectedIntegrationIds(athleteId: string): Promise<IntegrationId[]> {

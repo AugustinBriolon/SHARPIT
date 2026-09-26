@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('@/lib/prisma', () => ({
+vi.mock('@sharpit/db/client', () => ({
   prisma: {
     activity: {
       findFirst: vi.fn(),
@@ -33,7 +33,7 @@ describe('updateActivity', () => {
   });
 
   it('uses activity.update (not updateMany) so nested metric upserts are valid', async () => {
-    const { prisma } = await import('@/lib/prisma');
+    const { prisma } = await import('@sharpit/db/client');
     const { updateActivity } = await import('@/lib/queries/index');
 
     const nestedData = {
@@ -66,7 +66,7 @@ describe('updateActivity', () => {
   });
 
   it('updates swimMetrics via nested upsert without updateMany', async () => {
-    const { prisma } = await import('@/lib/prisma');
+    const { prisma } = await import('@sharpit/db/client');
     const { updateActivity } = await import('@/lib/queries/index');
 
     const nestedData = {
@@ -93,7 +93,7 @@ describe('updateActivity', () => {
   });
 
   it('returns null when the activity is not owned by the athlete (IDOR)', async () => {
-    const { prisma } = await import('@/lib/prisma');
+    const { prisma } = await import('@sharpit/db/client');
     const { updateActivity } = await import('@/lib/queries/index');
 
     vi.mocked(prisma.activity.findFirst).mockResolvedValue(null);

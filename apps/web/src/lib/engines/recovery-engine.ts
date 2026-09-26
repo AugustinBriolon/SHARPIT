@@ -14,7 +14,7 @@ import type { WearableEnergySignals } from '@sharpit/core/inference/recovery/typ
 import { PrismaDigitalTwinRepository } from '@/infrastructure/digital-twin/prisma-digital-twin-repository';
 import { PrismaDecisionRecordRepository } from '@/infrastructure/inference/prisma-decision-record-repository';
 import { featureEngine } from '@/lib/engines/feature-engine';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 
 /** Legacy DailyHealth bridge. */
 async function loadWearableEnergySignals(

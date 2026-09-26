@@ -13,7 +13,7 @@ import {
   isRenphoAccountConnected,
   reconnectProviderNames,
 } from '@/lib/integrations/shared/connection-status';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 import { getAthleteProfile, getGoals } from '@/lib/queries';
 import {
   accountStatusLabel,

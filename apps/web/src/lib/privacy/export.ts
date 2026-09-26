@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 import { CURRENT_PRIVACY_VERSION, PRIVACY_PURGE_DELAY_DAYS } from '@/lib/privacy/constants';
 import { ANALYSIS_EVIDENCE_RETENTION } from '@/lib/science/reliability/analysis-evidence';
 import { listAnalysisEvidenceForExport } from '@/lib/science/reliability/analysis-evidence-store';

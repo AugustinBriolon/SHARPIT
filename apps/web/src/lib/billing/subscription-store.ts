@@ -4,7 +4,7 @@ import { randomUUID } from 'node:crypto';
 import type { AccessTier, Subscription, SubscriptionStatus } from '@prisma/client';
 import type { V1ProSubscription } from '@/lib/access/pro-v1';
 import { subscriptionGrantsPro } from '@/lib/billing/subscription-status';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 
 /**
  * `AthleteProfile.tier` is derived, never set by hand: Pro while any entitlement grants

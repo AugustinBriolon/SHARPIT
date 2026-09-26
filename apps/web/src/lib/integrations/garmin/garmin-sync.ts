@@ -1,7 +1,7 @@
 import { Prisma } from '@prisma/client';
 import { isSet } from '@sharpit/shared/value';
 import { format, startOfDay, subDays } from 'date-fns';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 import { syncSinceFromLastSync, syncWindowDays } from '@/lib/integrations/shared/sync-since';
 import {
   clientFromTokens,

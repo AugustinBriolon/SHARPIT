@@ -35,7 +35,7 @@ vi.mock('@/lib/privacy/consent-store', () => ({
   athleteHasAiProcessingConsent: vi.fn().mockResolvedValue(true),
 }));
 
-vi.mock('@/lib/prisma', () => ({
+vi.mock('@sharpit/db/client', () => ({
   prisma: {
     activity: {
       findFirst: vi.fn().mockResolvedValue({ id: 'activity-1', date: new Date('2026-08-20') }),

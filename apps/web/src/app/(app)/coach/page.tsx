@@ -7,7 +7,7 @@ import { DemoExitButton } from '@/components/demo/demo-exit';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { isDemoSession } from '@/lib/demo/demo-session';
 import { parseDemoTranscriptMessages } from '@/lib/demo/demo-coach-transcript';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 
 async function CoachDemoDisabled() {
   if (!(await isDemoSession())) {

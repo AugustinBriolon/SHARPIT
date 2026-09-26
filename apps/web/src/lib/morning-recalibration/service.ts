@@ -21,7 +21,7 @@ import {
 } from '@/lib/morning-recalibration/evaluate';
 import { getOrBuildAthleteSnapshot } from '@/lib/athlete-state/snapshot-service';
 import { hasMorningWellnessCheckin } from '@/lib/journal/wellness-checkin';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 import { updatePlannedSession } from '@/lib/queries';
 import { dayKeyFromDate } from '@/lib/date/day-key';
 

@@ -6,7 +6,7 @@ import { canGenerateNarrativeForActivity } from '@/lib/access/narrative-trial';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { checkRateLimit, rateLimitJsonResponse, rateLimiters } from '@/lib/rate-limit';
 import { requireAiProcessingConsent } from '@/lib/privacy/consent-store';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 
 type RouteContext = { params: Promise<{ id: string }> };
 

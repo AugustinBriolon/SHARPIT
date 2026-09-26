@@ -17,7 +17,7 @@ import { buildGoalsProgress } from '@/lib/nutrition/goals-progress';
 import { fuelFeatureSetToDensity } from '@/lib/nutrition/fuel-density-display';
 import { normalizeStoredMeals } from '@/lib/nutrition/meal-display';
 import { loadDeclaredDiet } from '@/lib/nutrition/analysis/nutrition-analysis-inputs';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 
 type NutritionRow = {
   date: Date;

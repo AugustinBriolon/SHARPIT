@@ -8,7 +8,7 @@ import { PrismaDecisionRecordRepository } from '@/infrastructure/inference/prism
 import { PrismaEnvironmentalObservationRepository } from '@/infrastructure/environment/prisma-environment-observation-repository';
 import { createEnvironmentalProviderRegistry } from '@/lib/environment/environment-provider-registry';
 import { resolveAthleteGeoLocation } from '@/lib/environment/athlete-location';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 
 function createEnvironmentEngine(): EnvironmentInferenceOrchestrator {
   return new EnvironmentInferenceOrchestrator({

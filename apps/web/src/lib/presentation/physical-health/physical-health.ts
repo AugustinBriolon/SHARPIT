@@ -20,7 +20,7 @@ import { corpsToneFromPhysicalSeverity } from '@/lib/health/health-status';
 import { mapConfidenceToTier } from '@/lib/today/dashboard/today-mapping';
 import { buildGlobalDecisionContext } from '@/lib/decision/global-decision-context';
 import { EMPTY_GLOBAL_DECISION } from '@/presentation/global-decision-context';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 
 const TYPE_LABELS: Record<string, string> = {
   PAIN: 'Douleur',

@@ -22,7 +22,7 @@ vi.mock('@/lib/demo/seed-demo-data', () => ({
   ensureDemoSeedFresh: vi.fn().mockResolvedValue(false),
 }));
 
-vi.mock('@/lib/prisma', () => ({
+vi.mock('@sharpit/db/client', () => ({
   prisma: {
     athleteProfile: {
       findUnique: findUniqueMock,

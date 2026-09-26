@@ -3,7 +3,7 @@ import { NextRequest } from 'next/server';
 import { emailFromIdToken, exchangeCodeForToken } from '@/lib/integrations/google/google';
 import { getCurrentAthleteId } from '@/lib/auth/current-athlete';
 import { redirectAfterIntegrationConnect } from '@/lib/integrations/oauth-return';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 import { encryptSecret } from '@/lib/secret-box';
 
 function readOAuthParams(searchParams: URLSearchParams) {

@@ -50,7 +50,7 @@ import { resolveHomeLocation } from '@/lib/geocoding/home-location';
 import { resolveAthleteGeoLocation } from '@/lib/environment/athlete-location';
 import { getActiveTravelContext } from '@/lib/travel-context/service';
 import { extractSessionWeatherSignals } from '@/lib/planned-session/forecast/weather-signals';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@sharpit/db/client';
 import { computeTrainingDayId } from '@sharpit/core/training/training-day';
 import { fetchForecastPredictions } from '@/lib/planned-session/forecast/forecast-fetch';
 
