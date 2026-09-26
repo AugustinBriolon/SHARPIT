@@ -39,6 +39,7 @@ scripts run with `yarn web <script>`. Repository documentation (`docs/`, `knowle
 apps/web/                Next.js app (src/, prisma/, scripts/, e2e/, content/legal/, public/)
 packages/core/           Pure domain: observation, features, inference, digital twin, decision… (@sharpit/core)
 packages/shared/         Framework-free helpers shared by every workspace (@sharpit/shared)
+packages/db/             Prisma schema, migrations and client (@sharpit/db/client)
 packages/eslint-config/  The lint rules every workspace extends
 docs/                    ADRs, architecture, product and design documentation
 knowledge/               Domain and science notes

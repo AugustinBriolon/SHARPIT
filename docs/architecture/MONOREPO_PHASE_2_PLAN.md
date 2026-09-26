@@ -1,6 +1,6 @@
 # Monorepo phase 2 — `packages/db`, `packages/server`, `apps/api` on its own Vercel project
 
-**Status:** Approved 2026-09-26 — step 2a done · **Date:** 2026-09-26 · **Parent:** [ADR-048](../adr/ADR-048-web-repository-becomes-a-monorepo.md)
+**Status:** Approved 2026-09-26 — steps 2a and 2b done · **Date:** 2026-09-26 · **Parent:** [ADR-048](../adr/ADR-048-web-repository-becomes-a-monorepo.md)
 
 Goal: `api.sharpit.app` served by a new Vercel project `sharpit-api` built from `apps/api`, holding the
 server secrets, with its own crons — while the web keeps working unchanged until phase 3. The iOS app
@@ -61,6 +61,10 @@ public URL before step 2f.
 - The web build command becomes `yarn workspace @sharpit/db migrate:deploy && yarn build` — same effect.
 - **Exit:** a production deploy runs the migrations exactly as before (no pending migration in the log).
 - **Rollback:** revert the commit; the schema itself does not change.
+- **Done (2026-09-26):** `packages/db` holds `prisma/schema.prisma`, `prisma/migrations` and `src/client.ts`
+  (`@sharpit/db/client`, 159 imports and mocks rewritten). The app points the Prisma CLI at it with
+  `package.json#prisma.schema`, so `prisma generate`, `migrate deploy` and the repair script run unchanged with
+  the app's `.env`. The seeds stay in `apps/web/prisma/` (they use app code).
 
 ### 2c — `packages/server` (≈ 1–2 days, the bulk)
 
