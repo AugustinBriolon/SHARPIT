@@ -19,6 +19,8 @@ describe('apex routing', () => {
       '/privacy',
       '/terms',
       '/sign-in',
+      '/api/billing/apple/notifications',
+      '/api/v1/today',
     ]) {
       expect(matches(path), path).toBe(false);
     }
@@ -39,6 +41,28 @@ describe('apex routing', () => {
       source: '/',
       destination: 'https://web.sharpit.app/',
       permanent: false,
+    });
+  });
+
+  it('sends apex API calls to api., method and body kept', async () => {
+    const redirects = (await nextConfig.redirects?.()) ?? [];
+    const apiRedirect = redirects.find((redirect) => redirect.source.startsWith('/api/'));
+    expect(apiRedirect).toMatchObject({
+      destination: 'https://api.sharpit.app/api/:path',
+      permanent: true,
+    });
+    const pattern = /^\/api\/:path\((.+)\)$/.exec(apiRedirect?.source ?? '')?.[1] ?? '';
+    const matches = (path: string) => new RegExp(`^${pattern}$`).test(path);
+    expect(matches('v1/today')).toBe(true);
+    expect(matches('billing/apple/verify')).toBe(true);
+    expect(matches('billing/apple/notifications')).toBe(false);
+  });
+
+  it('proxies App Store notifications to api. instead of redirecting them', async () => {
+    const rewrites = await nextConfig.rewrites?.();
+    expect(rewrites).toContainEqual({
+      source: '/api/billing/apple/notifications',
+      destination: 'https://api.sharpit.app/api/billing/apple/notifications',
     });
   });
 });

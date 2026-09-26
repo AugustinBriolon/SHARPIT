@@ -38,7 +38,7 @@ access, and the app must never be the authority on it.
      JWS with Apple's App Store Server Library, against Apple's root certificates committed in
      `src/lib/billing/apple-root-certificates.ts`. It checks that the purchase belongs to the
      account, upserts the subscription, re-derives the tier and answers with `GET /api/v1/pro`.
-   - `POST /api/billing/apple/notifications` receives App Store Server Notifications V2. The route
+   - `POST /api/billing/apple/notifications` (on `api.`) receives App Store Server Notifications V2. The route
      is public, and nothing in the payload is trusted before its signature is verified. The status
      comes from `data.status`. `REFUND` and `REVOKE` end access.
    - Sandbox transactions (TestFlight, App Review) are honoured and stored with their environment.
@@ -98,8 +98,9 @@ in our database. Moving to RevenueCat later would only replace the writers of `S
 
 - App Store Connect:
   - create the subscription group « SharpIt Pro » (monthly and yearly);
-  - set the **Server Notifications V2 URL** to `https://sharpit.app/api/billing/apple/notifications`
-    for **both** Production and Sandbox.
+  - set the **Server Notifications V2 URL** to `https://api.sharpit.app/api/billing/apple/notifications`
+    for **both** Production and Sandbox. Since the apex moved to `apps/hub` (ADR-051), the apex URL
+    still works: the hub proxies that one path to `api.`.
 - Vercel: set `APPLE_APP_APPLE_ID` (the app's numeric Apple ID, needed to verify production data).
   `APPLE_IAP_BUNDLE_ID` defaults to `app.sharpit.ios`.
 - Apple's root certificates change rarely. If they do, update `apple-root-certificates.ts`.

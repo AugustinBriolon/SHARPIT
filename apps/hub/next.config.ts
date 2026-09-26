@@ -7,10 +7,17 @@ import type { NextConfig } from 'next';
  * a handoff ticket. Every other path belongs to the web app on `web.sharpit.app`.
  */
 const WEB_ORIGIN = 'https://web.sharpit.app';
+const API_ORIGIN = 'https://api.sharpit.app';
 
-/** Paths the hub serves itself; everything else goes to the web, path and query kept. */
+/**
+ * App Store Server Notifications may still be registered on the apex (ADR-044). Apple is not
+ * known to follow redirects, so this one path is proxied to `api.`, which verifies the signature.
+ */
+const APPLE_NOTIFICATIONS_PATH = '/api/billing/apple/notifications';
+
+/** Paths the hub serves or forwards itself; everything else goes to the web, path and query kept. */
 const HUB_PATHS =
-  '\\.well-known|connect|privacy|terms|sign-in|_next|__clerk|favicon\\.ico|icon|apple-icon';
+  '\\.well-known|connect|privacy|terms|sign-in|api/|_next|__clerk|favicon\\.ico|icon|apple-icon';
 
 const csp = [
   "default-src 'self'",
@@ -57,6 +64,17 @@ const nextConfig: NextConfig = {
       },
       // `/:path(...)` needs a segment; the apex root is its own rule.
       { source: '/', destination: `${WEB_ORIGIN}/`, permanent: false },
+      // Clients still calling the apex API (pre-`api.` builds): 308 keeps the method and body.
+      {
+        source: '/api/:path((?!billing/apple/notifications$).*)',
+        destination: `${API_ORIGIN}/api/:path`,
+        permanent: true,
+      },
+    ];
+  },
+  async rewrites() {
+    return [
+      { source: APPLE_NOTIFICATIONS_PATH, destination: `${API_ORIGIN}${APPLE_NOTIFICATIONS_PATH}` },
     ];
   },
 };

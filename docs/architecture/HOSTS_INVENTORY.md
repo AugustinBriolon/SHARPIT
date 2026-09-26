@@ -23,7 +23,7 @@ Re-run `yarn smoke:must-private https://sharpit.app https://web.sharpit.app` aft
 
 Three projects, three apps (ADR-048, ADR-051), all in `lhr1`:
 
-- `sharpit.app` (and `www.`, redirected to it) → `sharpit-hub` (`apps/hub`, since 2026-09-27): AASA, `/connect/garmin/*`, `/privacy`, `/terms`, `/sign-in` for the handoff ticket; every other path redirects to `web.`.
+- `sharpit.app` (and `www.`, redirected to it) → `sharpit-hub` (`apps/hub`, since 2026-09-27): AASA, `/connect/garmin/*`, `/privacy`, `/terms`, `/sign-in` for the handoff ticket; `/api/billing/apple/notifications` is proxied to `api.` and every other `/api/*` answers 308 to `api.` (older iOS builds); every other path redirects to `web.`.
 - `web.sharpit.app` → `sharpit-webapp` (`apps/web`; named `sharpit` until 2026-09-26): the UI, no database; `/privacy`, `/terms`, `/connect/*`, `/.well-known/*` redirect to the apex.
 - `api.sharpit.app` → `sharpit-api` (`apps/api`): every route handler, crons, migrations.
 
@@ -97,7 +97,7 @@ deployment that also serves the public HTML of all four hosts. Step 7 splits it:
 
 | Item                           | Value                                                                                                                                                                      | Where                                                       |
 | ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
-| API origin                     | Release `https://sharpit.app` · Debug `http://127.0.0.1:3000` · Local (gitignored) per machine                                                                             | `Config/*.xcconfig` → `Info-Extra.plist` `SharpitAPIOrigin` |
+| API origin                     | Release `https://api.sharpit.app` (web links: `https://sharpit.app`) · Debug `http://127.0.0.1:3001` · Local (gitignored) per machine                                      | `Config/*.xcconfig` → `Info-Extra.plist` `SharpitAPIOrigin` |
 | Associated Domains             | `applinks:sharpit.app`, `webcredentials:sharpit.app`                                                                                                                       | `SHARPIT.entitlements`                                      |
 | Garmin connect                 | in-app `WebAuthenticationSession` on the apex, entry from `POST /api/v1/garmin/handoff` ([ADR-047](../adr/ADR-047-garmin-connects-in-an-in-app-authentication-session.md)) | `Features/Connections/GarminConnect.swift`                  |
 | Garmin callback universal link | `/connect/garmin/callback` (path-only check, host not checked)                                                                                                             | `App/RootView.swift`                                        |
