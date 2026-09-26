@@ -40,8 +40,9 @@ apps/web/                web.sharpit.app + the apex pages: Next.js pages only, n
 apps/api/                api.sharpit.app: every route handler — /api/v1, the web's /api routes, crons, migrations, db scripts (port 3001)
 packages/core/           Pure domain: observation, features, inference, digital twin, decision… (@sharpit/core)
 packages/shared/         Framework-free helpers shared by every workspace (@sharpit/shared)
+packages/app/            What the web may import: pure modules, view models, api. payload types, Clerk identity helpers (@sharpit/app) — never the server or the database (ADR-050)
 packages/db/             Prisma schema, migrations and client (@sharpit/db/client)
-packages/server/         Server application code: lib, infrastructure, adapters, presentation, athlete-state, data (@sharpit/server)
+packages/server/         Server application code (api. only): queries, integrations, engines, handlers (@sharpit/server)
 packages/eslint-config/  The lint rules every workspace extends
 docs/                    ADRs, architecture, product and design documentation
 knowledge/               Domain and science notes
@@ -220,8 +221,8 @@ record and nothing that can expire.
 | `yarn api db:recompute:fuel-features`                | Recompute FUEL feature sets for days with nutrition data (after weight backfill)                                         |
 | `yarn web tokens:ios`                                | Regenerate the native client's Swift design tokens ([ADR-041](docs/adr/ADR-041-ios-design-tokens-generated-from-web.md)) |
 | `yarn web tokens:ios:check`                          | Fail if the committed Swift tokens are stale                                                                             |
-| `yarn web smoke:must-private [origin…]`              | Live smoke of the private Must: AASA, Garmin handoff entry/callback, Today with `SHARPIT_SMOKE_BEARER` (env only)        |
-| `yarn web smoke:api-host [origin]`                   | Live check of the `api.` contract: 401/404 JSON, no cookie, no-store, CORS for `web.` only                               |
+| `yarn api smoke:must-private [origin…]`              | Live smoke of the private Must: AASA, Garmin handoff entry/callback, Today with `SHARPIT_SMOKE_BEARER` (env only)        |
+| `yarn api smoke:api-host [origin]`                   | Live check of the `api.` contract: 401/404 JSON, no cookie, no-store, CORS for `web.` only                               |
 
 ## Modules
 

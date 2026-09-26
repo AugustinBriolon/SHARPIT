@@ -53,6 +53,7 @@
 | [ADR-047](./ADR-047-garmin-connects-in-an-in-app-authentication-session.md)    | iOS connects Garmin in an in-app authentication session                            | Accepted                          |
 | [ADR-048](./ADR-048-web-repository-becomes-a-monorepo.md)                      | The web repository becomes a monorepo — one app and one Vercel project per host    | Accepted                          |
 | [ADR-049](./ADR-049-demo-is-a-shared-clerk-account.md)                         | The public demo is a shared, read-only Clerk account                               | Accepted                          |
+| [ADR-050](./ADR-050-web-builds-from-an-app-package-not-the-server.md)          | The web builds from `@sharpit/app`, never from the server package                  | Accepted                          |
 
 **Template:** [ADR-template.md](./ADR-template.md)
 

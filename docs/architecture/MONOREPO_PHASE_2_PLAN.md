@@ -130,7 +130,7 @@ http://localhost:3001` → 5/5; a cron with a wrong secret reaches its route and
 ### 2f — Cutover of `api.sharpit.app` (≈ 15 min, at a quiet hour)
 
 - Remove `api.sharpit.app` from `sharpit`, add it to `sharpit-api` (`vercel api`), wait for the certificate.
-- `yarn web smoke:api-host` → all `PASS`; on the iPhone: Today, pull-to-refresh, coach, Garmin connect.
+- `yarn api smoke:api-host` → all `PASS`; on the iPhone: Today, pull-to-refresh, coach, Garmin connect.
 - **Rollback:** move the domain back (same two calls); the web project still serves `/api/v1`.
 - **Done (2026-09-26 11:38):** domain moved in 2 s, `smoke:api-host` 5/5 on `api.sharpit.app`, apex and `web.` 6/6.
   On device: sync and Garmin connect OK; the coach failed until `sharpit-api` moved to `lhr1` (re-check pending).
