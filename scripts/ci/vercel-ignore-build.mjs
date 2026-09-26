@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { DEPLOY_SCOPES } from './deploy-scopes.mjs';
 /**
  * Vercel Ignored Build Step helper, shared by every app of the monorepo.
  *
@@ -6,9 +7,9 @@
  * Exit 1 → proceed with the build (app-relevant changes, or unknown range).
  *
  * Compares everything pushed since the last deployment (`VERCEL_GIT_PREVIOUS_SHA`), not only
- * the last commit. `--scope a,b` limits the build to changes under those repo paths (an app,
- * the packages it builds from, the root manifests). Invoked via vercel.json `ignoreCommand`
- * from the app directory: `node ../../scripts/ci/vercel-ignore-build.mjs [--scope …]`.
+ * the last commit. `--app <name>` limits the build to the app's scope (`deploy-scopes.mjs`).
+ * Invoked via vercel.json `ignoreCommand` from the app directory:
+ * `node ../../scripts/ci/vercel-ignore-build.mjs --app <name>`.
  */
 
 /**
@@ -52,13 +53,34 @@ export function shouldIgnoreBuild(files, scope = null) {
 }
 
 /**
+ * `--app web|api|hub` → that app's scope (`deploy-scopes.mjs`); no flag → everything.
+ *
  * @param {string[]} argv
  * @returns {string[] | null}
  */
 export function parseScope(argv) {
-  const index = argv.indexOf('--scope');
-  const value = index >= 0 ? argv[index + 1] : undefined;
-  return value ? value.split(',').filter(Boolean) : null;
+  const index = argv.indexOf('--app');
+  const app = index >= 0 ? argv[index + 1] : undefined;
+  if (!app) {
+    return null;
+  }
+  const scope = DEPLOY_SCOPES[/** @type {keyof typeof DEPLOY_SCOPES} */ (app)];
+  if (!scope) {
+    throw new Error(`Unknown app "${app}" (known: ${Object.keys(DEPLOY_SCOPES).join(', ')})`);
+  }
+  return scope;
+}
+
+/**
+ * The apps a change touches — what the deploy workflow deploys.
+ *
+ * @param {string[]} files repo-relative paths
+ * @returns {string[]}
+ */
+export function affectedApps(files) {
+  return Object.entries(DEPLOY_SCOPES)
+    .filter(([, scope]) => !shouldIgnoreBuild(files, scope))
+    .map(([app]) => app);
 }
 
 /**

@@ -3,14 +3,29 @@
 Speed up feature-branch CI and Vercel preview deploys **without** weakening
 secret scanning on code changes.
 
-## Vercel previews
+## Deploys: only the apps a push touches
 
-Configured in [`vercel.json`](../../vercel.json):
+Three Vercel projects build from this repository: `sharpit-webapp` (`apps/web`), `sharpit-api` (`apps/api`),
+`sharpit-hub` (`apps/hub`). What each one is built from is listed once, in
+[`scripts/ci/deploy-scopes.mjs`](../../scripts/ci/deploy-scopes.mjs).
 
-| Setting                           | Behaviour                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ignoreCommand`                   | Runs [`scripts/ci/vercel-ignore-build.mjs`](../../scripts/ci/vercel-ignore-build.mjs) on everything pushed since the last deployment (`VERCEL_GIT_PREVIOUS_SHA`). Exit `0` skips the build when **only** `docs/**` (incl. design screenshots) or root agent/architecture markdown changed — or nothing in the app's scope: `sharpit-webapp` builds for `apps/web`, `sharpit-api` for `apps/api`, both for `packages`, `package.json`, `yarn.lock`, `turbo.json` (`--scope …`). Exit `1` builds when `src/`, config, lockfiles, `.env*`, or any other app path changed. Unknown git range → build (fail open). |
-| `github.autoJobCancelation: true` | New pushes on the same Git branch cancel obsolete queued/in-flight preview builds so the latest commit wins.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+- **Deploy workflow** ([`.github/workflows/deploy.yml`](../../.github/workflows/deploy.yml)): on a push to `main`,
+  [`scripts/ci/affected-apps.mjs`](../../scripts/ci/affected-apps.mjs) lists the apps whose scope changed and the
+  workflow calls those projects' Deploy Hooks (secrets `VERCEL_DEPLOY_HOOK_WEB`, `_API`, `_HUB`). A docs-only push
+  deploys nothing. Manual run: _Actions → Deploy → Run workflow_ with the apps to deploy.
+- **Vercel's own Git deployments** are turned off once the hooks exist (`git.deploymentEnabled: false` in each
+  `vercel.json`), so a push creates no deployment at all on the projects it does not touch, and branches build no
+  preview.
+- **`ignoreCommand`** stays as a second guard: [`scripts/ci/vercel-ignore-build.mjs`](../../scripts/ci/vercel-ignore-build.mjs)
+  `--app <name>` skips a build when nothing in the app's scope changed since its last deployment
+  (`VERCEL_GIT_PREVIOUS_SHA`); unknown range → build (fail open).
+
+### Deploy Hooks (one-time, per project)
+
+Vercel → project → Settings → Git → Deploy Hooks → name `github-main`, branch `main` → copy the URL → GitHub → repo →
+Settings → Secrets and variables → Actions → `VERCEL_DEPLOY_HOOK_WEB` (`sharpit-webapp`), `VERCEL_DEPLOY_HOOK_API`
+(`sharpit-api`), `VERCEL_DEPLOY_HOOK_HUB` (`sharpit-hub`). A hook URL deploys the project to whoever has it: keep it
+a secret.
 
 ### Local check of the ignore script
 

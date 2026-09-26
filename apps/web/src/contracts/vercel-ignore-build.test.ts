@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  affectedApps,
   isIgnorablePath,
   parseScope,
   resolveDiffRange,
@@ -35,8 +36,7 @@ describe('vercel ignore build helpers', () => {
   });
 
   it('builds an app only for changes in its scope', () => {
-    const api = parseScope(['node', 'x', '--scope', 'apps/api,packages,yarn.lock']);
-    expect(api).toEqual(['apps/api', 'packages', 'yarn.lock']);
+    const api = parseScope(['node', 'x', '--app', 'api']);
     expect(shouldIgnoreBuild(['apps/web/src/app/page.tsx'], api)).toBe(true);
     expect(shouldIgnoreBuild(['apps/web/src/app/page.tsx', 'apps/api/vercel.json'], api)).toBe(
       false,
@@ -45,6 +45,18 @@ describe('vercel ignore build helpers', () => {
     expect(shouldIgnoreBuild(['yarn.lock'], api)).toBe(false);
     expect(shouldIgnoreBuild(['apps/api-legacy/x.ts'], api)).toBe(true);
     expect(parseScope(['node', 'x'])).toBeNull();
+    expect(() => parseScope(['node', 'x', '--app', 'nope'])).toThrow(/Unknown app/);
+  });
+
+  it('deploys exactly the apps a change touches', () => {
+    expect(affectedApps(['docs/adr/ADR-001.md'])).toEqual([]);
+    expect(affectedApps(['apps/hub/src/app/layout.tsx'])).toEqual(['hub']);
+    expect(affectedApps(['packages/server/src/lib/x.ts'])).toEqual(['api']);
+    expect(affectedApps(['packages/ui/src/components/ui/button.tsx'])).toEqual(['web', 'hub']);
+    expect(affectedApps(['packages/app/src/lib/format.ts'])).toEqual(['web', 'api', 'hub']);
+    expect(affectedApps(['packages/db/prisma/schema.prisma'])).toEqual(['web', 'api']);
+    expect(affectedApps(['packages/db/src/client.ts'])).toEqual(['api']);
+    expect(affectedApps(['yarn.lock'])).toEqual(['web', 'api', 'hub']);
   });
 
   it('builds a redeploy of the same commit (empty diff), e.g. after an env change', () => {

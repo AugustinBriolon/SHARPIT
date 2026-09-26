@@ -28,13 +28,12 @@ describe('migration owner', () => {
     });
   });
 
-  it('each project rebuilds only for what it is built from', () => {
-    const manifests = 'package.json,yarn.lock,turbo.json';
-    expect(vercelConfig('api').ignoreCommand).toContain(`--scope apps/api,packages,${manifests}`);
-    // The web never builds from the server package (ADR-050); it still generates the Prisma
-    // client for enum values, hence the schema.
-    expect(vercelConfig('web').ignoreCommand).toContain(
-      `--scope apps/web,packages/app,packages/core,packages/shared,packages/eslint-config,packages/db/prisma,${manifests}`,
+  it('each project rebuilds only for its own scope (scripts/ci/deploy-scopes.mjs)', () => {
+    expect(vercelConfig('api').ignoreCommand).toBe(
+      'node ../../scripts/ci/vercel-ignore-build.mjs --app api',
+    );
+    expect(vercelConfig('web').ignoreCommand).toBe(
+      'node ../../scripts/ci/vercel-ignore-build.mjs --app web',
     );
   });
 });

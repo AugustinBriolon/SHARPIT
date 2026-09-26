@@ -1,0 +1,71 @@
+name: Deploy
+
+# Vercel's own Git deployments are off (Hobby has no per-app filtering worth the name): this
+# workflow deploys only the apps a push to main touches, through each project's Deploy Hook
+# (scopes: scripts/ci/deploy-scopes.mjs). Hook URLs are secrets: VERCEL_DEPLOY_HOOK_WEB,
+# VERCEL_DEPLOY_HOOK_API, VERCEL_DEPLOY_HOOK_HUB.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      apps:
+        description: 'Apps to deploy, space-separated (web api hub)'
+        required: true
+        default: 'web api hub'
+
+concurrency:
+  group: deploy-main
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Affected apps
+        id: affected
+        env:
+          BASE: ${{ github.event.before }}
+          MANUAL: ${{ github.event.inputs.apps }}
+        run: |
+          if [ -n "$MANUAL" ]; then
+            apps="$MANUAL"
+          else
+            apps=$(node scripts/ci/affected-apps.mjs "$BASE" "$GITHUB_SHA" | tr '\n' ' ')
+          fi
+          echo "apps=$apps" >> "$GITHUB_OUTPUT"
+          echo "Apps to deploy: ${apps:-none}"
+
+      - name: Trigger Deploy Hooks
+        if: steps.affected.outputs.apps != ''
+        env:
+          APPS: ${{ steps.affected.outputs.apps }}
+          HOOK_WEB: ${{ secrets.VERCEL_DEPLOY_HOOK_WEB }}
+          HOOK_API: ${{ secrets.VERCEL_DEPLOY_HOOK_API }}
+          HOOK_HUB: ${{ secrets.VERCEL_DEPLOY_HOOK_HUB }}
+        run: |
+          for app in $APPS; do
+            case "$app" in
+              web) hook="$HOOK_WEB" ;;
+              api) hook="$HOOK_API" ;;
+              hub) hook="$HOOK_HUB" ;;
+              *) echo "::error::unknown app $app"; exit 1 ;;
+            esac
+            if [ -z "$hook" ]; then
+              echo "::error::secret VERCEL_DEPLOY_HOOK_$(echo "$app" | tr a-z A-Z) is not set"
+              exit 1
+            fi
+            curl --fail --silent --show-error -X POST "$hook" > /dev/null
+            echo "Deploy of $app triggered"
+          done
