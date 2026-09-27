@@ -77,6 +77,17 @@ export function getApnsConfig(): ApnsConfig | null {
   };
 }
 
+export type ApnsEnvironment = 'production' | 'sandbox';
+
+/**
+ * The server's APNs config aimed at the environment a token belongs to. A build run from Xcode
+ * holds a sandbox token; TestFlight and the App Store hold production ones.
+ */
+export function apnsConfigFor(environment: string): ApnsConfig | null {
+  const config = getApnsConfig();
+  return config ? { ...config, production: environment !== 'sandbox' } : null;
+}
+
 export function isApnsConfigured(): boolean {
   return getApnsConfig() !== null;
 }

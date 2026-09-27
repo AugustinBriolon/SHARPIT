@@ -421,6 +421,9 @@ model DeviceToken {
   token      String         @unique
   platform   String         @default("ios")
   bundleId   String         @default("app.sharpit.ios")
+  /// APNs environment the token belongs to: `production` (TestFlight, App Store) or `sandbox`
+  /// (a build run from Xcode). Apple refuses a token sent to the other one.
+  environment String        @default("production")
   enabled    Boolean        @default(true)
   lastUsedAt DateTime?
   createdAt  DateTime       @default(now())

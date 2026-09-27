@@ -22,6 +22,8 @@ const registerSchema = z.object({
   ),
   platform: z.string().trim().max(32).default('ios'),
   bundleId: z.string().trim().max(128).default('app.sharpit.ios'),
+  /** A build run from Xcode: its token belongs to the APNs sandbox. */
+  debug: z.boolean().optional(),
 });
 
 const unregisterSchema = z.object({
@@ -52,7 +54,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(limited.body, { status: limited.status });
     }
 
-    const { token, platform, bundleId } = parsed.data;
+    const { token, platform, bundleId, debug } = parsed.data;
+    const environment = debug ? 'sandbox' : 'production';
 
     const device = await prisma.deviceToken.upsert({
       where: { token },
@@ -61,12 +64,14 @@ export async function POST(request: NextRequest) {
         token,
         platform,
         bundleId,
+        environment,
         enabled: true,
       },
       update: {
         athleteId, // reassign to current athlete if device was transferred
         platform,
         bundleId,
+        environment,
         enabled: true,
       },
     });

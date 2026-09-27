@@ -1,6 +1,7 @@
 import { describe, expect, it, beforeEach, afterEach } from 'vitest';
 import crypto from 'node:crypto';
 import {
+  apnsConfigFor,
   getApnsConfig,
   getOrSignApnsToken,
   isApnsConfigured,
@@ -57,6 +58,16 @@ describe('apns', () => {
 
       const config = getApnsConfig();
       expect(config?.teamId).toBe('FALLBACKTEAM');
+    });
+
+    it('aims a sandbox token at the sandbox, whatever the server default', () => {
+      process.env.APNS_KEY_ID = 'KEY1234567';
+      process.env.APNS_TEAM_ID = 'TEAM123456';
+      process.env.APNS_PRIVATE_KEY = privateKeyPem;
+      process.env.APNS_PRODUCTION = 'true';
+
+      expect(apnsConfigFor('sandbox')?.production).toBe(false);
+      expect(apnsConfigFor('production')?.production).toBe(true);
     });
 
     it('decodes base64-encoded private key', () => {

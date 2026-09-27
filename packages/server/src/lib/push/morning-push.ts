@@ -6,6 +6,7 @@ import { getLatestAthleteSnapshot } from '@sharpit/server/infrastructure/athlete
 import { prisma } from '@sharpit/db/client';
 import { wantsMorningVerdict } from '@sharpit/server/lib/notifications/notification-prefs';
 import {
+  apnsConfigFor,
   isTokenExpiredOrInvalid,
   sendApnsNotification,
   type ApnsPayload,
@@ -153,7 +154,7 @@ export async function sendMorningPushForAthlete(
       notificationPrefs: true,
       deviceTokens: {
         where: { enabled: true },
-        select: { id: true, token: true, bundleId: true },
+        select: { id: true, token: true, bundleId: true, environment: true },
       },
     },
   });
@@ -199,6 +200,7 @@ export async function sendMorningPushForAthlete(
     const result = await sendApnsNotification({
       deviceToken: device.token,
       payload: apnsPayload,
+      config: apnsConfigFor(device.environment),
     });
 
     if (result.success) {

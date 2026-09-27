@@ -49,6 +49,7 @@ describe('/api/v1/push/device-token', () => {
         token: '1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
         platform: 'ios',
         bundleId: 'app.sharpit.ios',
+        environment: 'production',
         enabled: true,
         lastUsedAt: null,
         createdAt: new Date(),
@@ -74,14 +75,36 @@ describe('/api/v1/push/device-token', () => {
           token: '1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef',
           platform: 'ios',
           bundleId: 'app.sharpit.ios',
+          environment: 'production',
           enabled: true,
         },
         update: {
           athleteId: 'ath-1',
           platform: 'ios',
           bundleId: 'app.sharpit.ios',
+          environment: 'production',
           enabled: true,
         },
+      });
+    });
+
+    it('files a token from a build run in Xcode under the APNs sandbox', async () => {
+      vi.mocked(authModule.getCurrentAthleteId).mockResolvedValueOnce('ath-1');
+      vi.mocked(prisma.deviceToken.upsert).mockResolvedValueOnce({
+        id: 'tok-2',
+        enabled: true,
+      } as never);
+
+      const token = 'abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890';
+      const req = new NextRequest('https://sharpit.app/api/v1/push/device-token', {
+        method: 'POST',
+        body: JSON.stringify({ token, debug: true }),
+      });
+
+      expect((await POST(req)).status).toBe(200);
+      expect(vi.mocked(prisma.deviceToken.upsert).mock.calls[0]?.[0]).toMatchObject({
+        create: { environment: 'sandbox' },
+        update: { environment: 'sandbox', enabled: true },
       });
     });
   });

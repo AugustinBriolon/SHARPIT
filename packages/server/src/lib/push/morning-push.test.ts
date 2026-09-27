@@ -115,15 +115,20 @@ describe('morning-push', () => {
         id: 'ath-1',
         deletedAt: null,
         lastMorningPushDate: '2026-09-24',
-        deviceTokens: [{ id: 'dev-1', token: 'token123', bundleId: 'app.sharpit.ios' }],
+        deviceTokens: [
+          { id: 'dev-1', token: 'token123', bundleId: 'app.sharpit.ios', environment: 'sandbox' },
+        ],
       } as never);
 
       vi.mocked(snapshotRepo.getLatestAthleteSnapshot).mockResolvedValueOnce(dummySnapshot);
-      vi.spyOn(apnsModule, 'sendApnsNotification').mockResolvedValueOnce({
+      const send = vi.spyOn(apnsModule, 'sendApnsNotification').mockResolvedValueOnce({
         success: true,
         status: 200,
         deviceToken: 'token123',
       });
+      vi.spyOn(apnsModule, 'apnsConfigFor').mockImplementation(
+        (environment) => ({ production: environment !== 'sandbox' }) as never,
+      );
       vi.mocked(prisma.athleteProfile.update).mockResolvedValueOnce({} as never);
 
       const result = await sendMorningPushForAthlete('ath-1', {
@@ -133,6 +138,8 @@ describe('morning-push', () => {
 
       expect(result.sent).toBe(1);
       expect(result.skippedReason).toBeUndefined();
+      // An Xcode build's token goes to the APNs sandbox, not production.
+      expect(send.mock.calls[0]?.[0].config).toMatchObject({ production: false });
       expect(prisma.athleteProfile.update).toHaveBeenCalledWith({
         where: { id: 'ath-1' },
         data: { lastMorningPushDate: '2026-09-24' },
