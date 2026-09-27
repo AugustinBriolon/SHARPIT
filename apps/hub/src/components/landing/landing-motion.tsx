@@ -79,33 +79,6 @@ function animateReveals() {
     onEnter: (batch) =>
       gsap.from(batch, { autoAlpha: 0, y: 32, duration: 1, stagger: 0.1, ease: EASE }),
   });
-
-  gsap.fromTo(
-    '[data-marquee]',
-    { xPercent: 0 },
-    {
-      xPercent: -35,
-      ease: 'none',
-      scrollTrigger: {
-        trigger: '[data-marquee]',
-        start: 'top bottom',
-        end: 'bottom top',
-        scrub: true,
-      },
-    },
-  );
-
-  gsap.from('[data-closing]', {
-    scale: 0.92,
-    borderRadius: 64,
-    ease: 'none',
-    scrollTrigger: {
-      trigger: '[data-closing]',
-      start: 'top bottom',
-      end: 'center center',
-      scrub: true,
-    },
-  });
 }
 
 /**

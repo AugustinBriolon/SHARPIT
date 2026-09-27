@@ -173,29 +173,29 @@ function Pillars() {
 }
 
 function Sources() {
-  const names = [...LANDING_SOURCES.names, ...LANDING_SOURCES.names];
   return (
-    <section aria-label={LANDING_SOURCES.title} className="overflow-hidden py-16">
+    <section aria-label={LANDING_SOURCES.title} className="py-16 sm:py-24">
       <p className="text-label text-muted-foreground" data-reveal>
         {LANDING_SOURCES.title}
       </p>
-      {/* Full bleed: the names run edge to edge, past the reading column. */}
-      <div className="relative left-1/2 mt-8 w-screen -translate-x-1/2 overflow-hidden">
-        <div className="flex w-max gap-12 pl-[8vw] whitespace-nowrap" data-marquee>
-          {names.map((name, i) => (
-            <span
-              key={`${name}-${i}`}
-              aria-hidden={i >= LANDING_SOURCES.names.length}
-              className={cn(
-                HEADING,
-                'text-foreground/80 text-[clamp(2rem,6vw,4.5rem)] leading-none',
-              )}
-            >
-              {name}
-            </span>
-          ))}
-        </div>
-      </div>
+      <ul className="mt-8 flex flex-wrap gap-x-10 gap-y-4">
+        {LANDING_SOURCES.connected.map((name) => (
+          <li
+            key={name}
+            className={cn(HEADING, 'text-[clamp(1.75rem,4.5vw,3.25rem)] leading-none')}
+            data-reveal
+          >
+            {name}
+          </li>
+        ))}
+      </ul>
+      <p
+        className="text-muted-foreground mt-8 flex flex-wrap items-baseline gap-x-4 text-lg"
+        data-reveal
+      >
+        <span className={cn(DATA, 'text-xs uppercase')}>{LANDING_SOURCES.upcomingLabel}</span>
+        {LANDING_SOURCES.upcoming.join(' · ')}
+      </p>
     </section>
   );
 }
@@ -203,7 +203,7 @@ function Sources() {
 function Closing() {
   return (
     <section className="py-16 sm:py-24">
-      <div className="surface-ink px-6 py-20 sm:px-12 sm:py-28" data-closing>
+      <div className="surface-ink px-6 py-20 sm:px-12 sm:py-28" data-reveal>
         <h2 className={cn(HEADING, 'max-w-3xl text-[clamp(2rem,5.5vw,4rem)] leading-[1]')}>
           {LANDING_CLOSING.title}
         </h2>
