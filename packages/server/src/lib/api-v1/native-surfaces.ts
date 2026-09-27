@@ -36,6 +36,7 @@ export const NATIVE_V1_SURFACES = [
   { path: 'onboarding/complete', methods: ['POST'] },
   { path: 'garmin/sync', methods: ['POST'] },
   { path: 'myfitnesspal/connect', methods: ['POST'] },
+  { path: 'myfitnesspal/sync', methods: ['POST'] },
   { path: 'myfitnesspal/disconnect', methods: ['POST'] },
 ] as const;
 

@@ -69,6 +69,15 @@
     },
     "src/app/api/coach/plan/route.ts": {
       "maxDuration": 300
+    },
+    "src/app/api/v1/myfitnesspal/sync/route.ts": {
+      "maxDuration": 300
+    },
+    "src/app/api/v1/myfitnesspal/connect/route.ts": {
+      "maxDuration": 300
+    },
+    "src/app/api/myfitnesspal/connect/route.ts": {
+      "maxDuration": 300
     }
   }
 }
