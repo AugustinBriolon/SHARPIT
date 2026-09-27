@@ -53,6 +53,8 @@ async function loadBodyInputs(options: {
         swimCssSecPer100m: true,
         thresholdsSyncedAt: true,
         updatedAt: true,
+        birthDate: true,
+        sex: true,
       },
     }),
     prisma.athleteThresholdSnapshot.findMany({
@@ -78,6 +80,7 @@ async function loadBodyInputs(options: {
     dailySource: garmin ? 'garmin' : 'apple_health',
     profile,
     snapshots,
+    demographics: profile ? { birthDate: profile.birthDate, sex: profile.sex } : null,
   };
 }
 

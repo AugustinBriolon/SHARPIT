@@ -1,6 +1,6 @@
 # ADR-045: Biological age — a training estimate from VO₂max, adjusted, never a diagnosis
 
-**Status:** Proposed — method to validate before any computation ships
+**Status:** Accepted (2026-09-27) — the « Method proposal v1 » below is what ships; the adjustments of the original decision wait for a v2
 **Date:** 2026-09-24
 **Author:** Augustin Briolon (with Claude Code)
 **Supersedes:** N/A
@@ -16,7 +16,7 @@ metrics (`bodyAgeScale`, `vascularAge`) and never blended into ours.
 
 ---
 
-## Decision (proposed)
+## Original decision (superseded for v1 by the method below)
 
 1. **Core: fitness age from VO₂max.** Use the model of Nes et al. (HUNT Fitness Study, 2013), with
    the athlete's `vo2maxRunning`, else `vo2maxCycling`, and their sex. The fitness age is the age
@@ -56,7 +56,7 @@ inputs: [keys used], computedAt }`.
   reading.
 - The minimum data window.
 
-## Method proposal v1 (researched 2026-09-27, to accept)
+## Method v1 (accepted 2026-09-27)
 
 The NTNU fitness calculator (Nes et al.) does not publish its fitness-age algorithm, so v1 uses
 the published reference data it rests on instead:
@@ -79,8 +79,10 @@ the published reference data it rests on instead:
   `fitness-age-hunt3-loe-2013-v1`.
 - **No adjustment in v1.** Resting HR, HRV and body-fat norms have no source chosen yet; each
   would add a table to justify. They come in a v2 with their own sources, still capped.
-- **Confidence:** `high` when VO₂max is under 30 days old, `medium` under 90, else null.
+- **Confidence:** 0.9 when VO₂max is under 30 days old, 0.6 under 90; older, no estimate.
 - Garmin's own « fitness age », when present, is shown as a separate attributed reading, never
   blended — like the Withings `bodyAgeScale`.
 
-Until this ADR is accepted, the server returns `biologicalAge: null` and the app hides the slot.
+Implemented in `packages/server/src/lib/body/biological-age.ts` and served by `GET /api/v1/body/overview`
+as `{ years, chronologicalYears, method, confidence (0.9 or 0.6), inputs, computedAt }`, null without
+the data it needs. The app hides the slot when it is null.

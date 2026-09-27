@@ -6,8 +6,8 @@ import { loadBodyOverviewInputs } from '@sharpit/server/lib/body/body-v1-data';
 
 /**
  * Every Corps metric in one read for the native app (ADR-040): composition, recovery
- * references and thresholds. A metric without data is absent; `biologicalAge` stays null
- * until its method ADR lands.
+ * references and thresholds. A metric without data is absent; `biologicalAge` is the
+ * ADR-045 estimate, null without the data it needs.
  */
 export async function GET() {
   // Outside try: the Cache Components prerender interrupt must not be swallowed.

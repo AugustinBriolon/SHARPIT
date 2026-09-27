@@ -3,6 +3,8 @@
  * projected without React view models. Pure — the loaders live in `body-v1-data.ts`.
  */
 
+import { estimateBiologicalAge, type BiologicalAge } from '@sharpit/server/lib/body/biological-age';
+
 export const BODY_METRIC_KEYS = [
   'weight',
   'bodyFatPct',
@@ -120,6 +122,8 @@ export type BodyInputs = {
   profile: ProfileThresholds | null;
   /** Any order. */
   snapshots: ThresholdSnapshotRow[];
+  /** What the biological age needs besides VO₂max (ADR-045). */
+  demographics: { birthDate: Date | null; sex: string | null } | null;
 };
 
 // ---- Outputs ------------------------------------------------------------------------
@@ -138,8 +142,8 @@ export type V1BodyMetric = {
 export type V1BodyOverview = {
   apiVersion: 1;
   metrics: V1BodyMetric[];
-  /** Web-owned estimate, not computed yet (method ADR pending). */
-  biologicalAge: null;
+  /** Training estimate from VO₂max (ADR-045); null without the data it needs. */
+  biologicalAge: BiologicalAge | null;
 };
 
 export type V1BodySeries = {
@@ -454,13 +458,29 @@ function sortInputs(inputs: BodyInputs): BodyInputs {
   };
 }
 
+function biologicalAge(inputs: BodyInputs, now: Date): BiologicalAge | null {
+  const { profile, demographics } = inputs;
+  if (!profile || !demographics) {
+    return null;
+  }
+  return estimateBiologicalAge(
+    {
+      ...demographics,
+      vo2maxRunning: profile.vo2maxRunning,
+      vo2maxCycling: profile.vo2maxCycling,
+      vo2maxMeasuredAt: thresholdsMeasuredAt(profile),
+    },
+    now,
+  );
+}
+
 /** Every metric with data, in the app's display order; the rest is absent. */
-export function projectV1BodyOverview(inputs: BodyInputs): V1BodyOverview {
+export function projectV1BodyOverview(inputs: BodyInputs, now = new Date()): V1BodyOverview {
   const sorted = sortInputs(inputs);
   const metrics = BODY_METRIC_KEYS.map((key) => overviewMetric(key, sorted)).filter(
     (metric): metric is V1BodyMetric => metric !== null,
   );
-  return { apiVersion: 1, metrics, biologicalAge: null };
+  return { apiVersion: 1, metrics, biologicalAge: biologicalAge(sorted, now) };
 }
 
 // ---- Series -------------------------------------------------------------------------
