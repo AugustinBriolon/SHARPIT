@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Activity } from 'lucide-react';
+import { BrandMark } from '@sharpit/ui/components/ui/brand-mark';
 import { Button } from '@sharpit/ui/components/ui/button';
 import { DockedActionBar } from '@/components/ui/docked-action-bar';
 import { EyebrowLabel } from '@/components/ui/eyebrow-label';
@@ -30,8 +30,8 @@ export function TeaserFunnel() {
     <div className="bg-background text-foreground flex min-h-dvh flex-col">
       <div className="mx-auto flex w-full max-w-lg flex-1 flex-col px-6 pt-8 pb-6 sm:pt-12">
         <header className="flex items-center gap-2">
-          <div className="icon-well size-8" aria-hidden>
-            <Activity className="size-4" strokeWidth={2.25} />
+          <div className="brand-tile size-8" aria-hidden>
+            <BrandMark className="size-4" />
           </div>
           <p className="text-page-title text-[1.25rem] leading-none tracking-tight">
             {TEASER_BRAND}

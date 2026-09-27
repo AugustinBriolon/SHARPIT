@@ -83,6 +83,13 @@ describe('proxy', () => {
     expect(response.headers.get('location')).toBe('https://sharpit.app/start');
   });
 
+  it('serves the app icons to strangers', async () => {
+    await run('https://web.sharpit.app/icon');
+    await run('https://web.sharpit.app/apple-icon/180');
+    await run('https://web.sharpit.app/apple-splash/iphone-se');
+    expect(state.protect).not.toHaveBeenCalled();
+  });
+
   it('protects athlete pages and the entry router', async () => {
     await run('https://web.sharpit.app/settings');
     await run('https://web.sharpit.app/start');

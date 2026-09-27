@@ -1,11 +1,11 @@
-import { Activity } from 'lucide-react';
+import { BrandMark } from '@sharpit/ui/components/ui/brand-mark';
 import { LinkButton } from '@/components/ui/link-button';
 
 export default function OfflinePage() {
   return (
     <div className="bg-background flex min-h-screen flex-col items-center justify-center gap-6 p-6 text-center">
-      <div className="icon-well size-14">
-        <Activity className="size-7" aria-hidden />
+      <div className="brand-tile size-14">
+        <BrandMark className="size-7" />
       </div>
       <div className="max-w-sm space-y-2">
         <h1 className="text-page-title">Hors connexion</h1>

@@ -769,6 +769,18 @@
   color: var(--color-highlight-foreground);
 }
 
+/* The app icon as a tile — white deepening to grey, as SharpIt.icon draws it — behind
+   BrandMark wherever the brand stands alone (auth, consent, onboarding, teaser, landing). */
+@utility brand-tile {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 22.5%;
+  background-image: linear-gradient(to bottom, #ffffff, #e6e6e6);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.12);
+}
+
 /*
   Auth « lecture critique » — scoped contrast for /sign-in & /sign-up only.
   Does NOT retune app-wide --muted-foreground; atmospheric dark stays intact.

@@ -23,8 +23,8 @@ export default async function AppleIcon({ id }: { id: Promise<string> }) {
   const iconId = await id;
   const config = SIZES.find((s) => s.id === iconId) ?? SIZES[0];
 
-  return new ImageResponse(
-    <BrandIconCanvas markRatio={120 / 180} outerRadius={0} width={config.width} />,
-    { width: config.width, height: config.height },
-  );
+  return new ImageResponse(<BrandIconCanvas outerRadius={0} width={config.width} />, {
+    width: config.width,
+    height: config.height,
+  });
 }

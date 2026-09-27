@@ -44,7 +44,7 @@ Brand primitives live in `src/lib/brand-tokens.ts` (hex) and `src/app/globals.cs
 - Empty / known-nothing: `InkEmptyState` / `surface-ink` / `page-bleed-ink` — not plain muted paragraphs
 - Sport identity colors (`src/lib/activity/sport-identity.ts`): RUN orange · BIKE emerald · SWIM sky · STRENGTH rose · TRIATHLON teal — one hue each; success/done must not reuse them; never Lime Pulse for sport identity
 - Activity detail session content (coach narrative, hero metrics, map route, section accents) uses sport identity tokens (`SPORT_IDENTITY_PANEL` / `TEXT` / `HEX`) — not brand primary / `analysis-panel-alt` green wash; global nav stays Lime Pulse
-- App icons / favicons: single mark (`src/lib/brand-icon.ts` + `BrandIconCanvas`); light SVG + dark SVG + `favicon.ico`; PWA `any` vs `maskable` (80% safe zone) via `yarn icons:pwa` — never legacy emerald `#059669`
+- App icons / favicons / brand mark: the iOS app icon's mark (six dots on a hexagon, green gradient, on a white-to-grey tile) — one geometry and one SVG builder in `@sharpit/app/lib/brand/brand-icon.ts` (`brandIconSvg`, used by `BrandIconCanvas`, the splash route and `yarn icons:pwa`, which regenerates the light and dark favicon SVGs, the PWA `any` and `maskable` (80% safe zone) PNGs and every `favicon.ico`, hub included). Inline, `BrandMark` (`@sharpit/ui`) on a `brand-tile` — never the old activity pulse, never legacy emerald `#059669`
 - Secondary text: Pewter `#666666`
 - Surface elevation: luminosity steps + borders, **NOT shadows**; plates = `analysis-panel` / `analysis-panel-alt`
 - Semantic signals (DATA ONLY — unchanged roles):

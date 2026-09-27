@@ -1,4 +1,4 @@
-import { Activity } from 'lucide-react';
+import { BrandMark } from '@sharpit/ui/components/ui/brand-mark';
 
 export default function OnboardingLayout({ children }: { children: React.ReactNode }) {
   // `overflow-x-clip`, never `hidden`: as soon as one axis stops being `visible`,
@@ -12,8 +12,8 @@ export default function OnboardingLayout({ children }: { children: React.ReactNo
       {/* Flex column so each step can own a docked action bar without viewport math. */}
       <div className="relative z-10 flex w-full max-w-lg flex-1 flex-col gap-5 sm:gap-6">
         <header className="flex items-center gap-2">
-          <div className="icon-well size-7" aria-hidden>
-            <Activity className="size-4" strokeWidth={2.25} />
+          <div className="brand-tile size-7" aria-hidden>
+            <BrandMark className="size-4" />
           </div>
           <p className="text-section-title">SharpIt</p>
         </header>

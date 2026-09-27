@@ -15,8 +15,11 @@ const isPublicRoute = createRouteMatcher([
   // Public promise funnel (teaser → signup). Outside auth app shell.
   '/welcome(.*)',
   '/~offline',
-  // iOS fetches apple-touch-startup-image without a session cookie.
+  // Browsers and iOS fetch the tab icon, the Apple touch icon and the startup image
+  // without a session cookie.
   '/apple-splash(.*)',
+  '/icon(.*)',
+  '/apple-icon(.*)',
   '/demo',
 ]);
 

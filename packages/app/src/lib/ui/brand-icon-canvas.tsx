@@ -1,62 +1,25 @@
 /**
- * Brand mark markup for `next/og` ImageResponse (icon, apple-icon, splash).
- * Colors from `brand-icon.ts` — not the old emerald/teal set.
+ * The app icon for `next/og` ImageResponse (icon, apple-icon): the shared SVG from
+ * `brand-icon.ts`, drawn as an image so every raster matches the iOS icon exactly.
  */
-import { BRAND_ICON_LIGHT, BRAND_ICON_PATH } from '@sharpit/app/lib/brand/brand-icon';
+import { brandIconDataUri } from '@sharpit/app/lib/brand/brand-icon';
 
 type BrandIconCanvasProps = {
   width: number;
-  /** Outer corner radius; 0 for full-bleed splash / square apple touch. */
+  /** Corner radius; 0 for the square Apple touch icon, which iOS rounds itself. */
   outerRadius?: number;
-  /** Inner mark size as fraction of width (default ~0.625 ≈ 320/512). */
-  markRatio?: number;
 };
 
 export function BrandIconCanvas({
   width,
-  outerRadius = Math.round(width * (96 / 512)),
-  markRatio = 320 / 512,
+  outerRadius = Math.round(width * (112 / 512)),
 }: BrandIconCanvasProps) {
-  const markSize = Math.round(width * markRatio);
-  const strokeSize = Math.round(markSize * (180 / 320));
-  const radius = Math.round(markSize * (72 / 320));
-  const border = Math.max(2, Math.round(markSize / 80));
-  const strokeWidth = Math.max(2, Math.round(markSize / 145));
-
   return (
-    <div
-      style={{
-        width: '100%',
-        height: '100%',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        background: `linear-gradient(145deg, ${BRAND_ICON_LIGHT.canvasStart} 0%, ${BRAND_ICON_LIGHT.canvasMid} 55%, ${BRAND_ICON_LIGHT.canvasEnd} 100%)`,
-        borderRadius: outerRadius,
-      }}
-    >
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          width: markSize,
-          height: markSize,
-          borderRadius: radius,
-          background: BRAND_ICON_LIGHT.wellFill,
-          border: `${border}px solid ${BRAND_ICON_LIGHT.wellBorder}`,
-        }}
-      >
-        <svg fill="none" height={strokeSize} viewBox="0 0 24 24" width={strokeSize}>
-          <path
-            d={BRAND_ICON_PATH}
-            stroke={BRAND_ICON_LIGHT.stroke}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={strokeWidth}
-          />
-        </svg>
-      </div>
-    </div>
+    <img
+      alt=""
+      height={width}
+      src={brandIconDataUri({ width, cornerRadius: outerRadius })}
+      width={width}
+    />
   );
 }

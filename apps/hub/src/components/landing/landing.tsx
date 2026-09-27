@@ -1,5 +1,6 @@
 import Link from 'next/link';
-import { Activity, ArrowUpRight } from 'lucide-react';
+import { ArrowUpRight } from 'lucide-react';
+import { BrandMark } from '@sharpit/ui/components/ui/brand-mark';
 import { buttonVariants } from '@sharpit/ui/components/ui/button';
 import {
   LANDING_CHAIN,
@@ -19,8 +20,8 @@ const RULER_TICKS = 49;
 function Brand() {
   return (
     <span className="flex items-center gap-2">
-      <span className="icon-well size-7" aria-hidden>
-        <Activity className="size-3.5" strokeWidth={2.25} />
+      <span className="brand-tile size-7" aria-hidden>
+        <BrandMark className="size-3.5" />
       </span>
       <span className={cn(HEADING, 'text-base tracking-tight')}>SHARPIT</span>
     </span>
