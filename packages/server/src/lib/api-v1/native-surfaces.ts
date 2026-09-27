@@ -33,6 +33,8 @@ export const NATIVE_V1_SURFACES = [
   { path: 'planned-sessions/[id]/link', methods: ['POST'] },
   { path: 'garmin/workouts/from-planned-session', methods: ['POST'] },
   { path: 'privacy/consent', methods: ['GET', 'POST'] },
+  { path: 'privacy/delete', methods: ['POST'] },
+  { path: 'physical-notes', methods: ['GET', 'POST'] },
   { path: 'onboarding/complete', methods: ['POST'] },
   { path: 'garmin/sync', methods: ['POST'] },
   { path: 'myfitnesspal/connect', methods: ['POST'] },
@@ -61,6 +63,7 @@ export const NATIVE_V1_ONLY = [
   { path: 'billing/apple/app-account-token', methods: ['POST'] },
   { path: 'billing/apple/verify', methods: ['POST'] },
   { path: 'garmin/handoff', methods: ['POST'] },
+  { path: 'coach/plan/insert', methods: ['POST'] },
 ] as const;
 
 /**
