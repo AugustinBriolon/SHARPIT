@@ -46,8 +46,11 @@ export type BrandIconOptions = {
   height?: number;
   /** Mark width as a fraction of the shorter side. */
   markRatio?: number;
-  /** `none` draws the dots alone on a transparent ground. */
-  canvas?: 'light' | 'dark' | 'none';
+  /**
+   * `adaptive` follows the viewer's theme (light canvas, dark under `prefers-color-scheme: dark`)
+   * — for favicons, which browsers draw in the tab's theme. `none` draws the dots alone.
+   */
+  canvas?: 'light' | 'dark' | 'adaptive' | 'none';
   /** Corner radius of the canvas; 0 for full-bleed. */
   cornerRadius?: number;
 };
@@ -71,16 +74,21 @@ export function brandIconSvg({
   const x = (width - markWidth) / 2;
   const y = (height - BRAND_MARK.height * scale) / 2;
   const colors = canvas === 'dark' ? BRAND_ICON_DARK : BRAND_ICON_LIGHT;
+  const themeStyle =
+    canvas === 'adaptive'
+      ? `<style>@media (prefers-color-scheme: dark) { .canvas-top { stop-color: ${BRAND_ICON_DARK.canvasTop}; } .canvas-bottom { stop-color: ${BRAND_ICON_DARK.canvasBottom}; } }</style>`
+      : '';
   const background =
     canvas === 'none'
       ? ''
       : `<rect width="${width}" height="${height}" rx="${cornerRadius}" fill="url(#canvas)"/>`;
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
+  ${themeStyle}
   <defs>
     <linearGradient id="canvas" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="${colors.canvasTop}"/>
-      <stop offset="1" stop-color="${colors.canvasBottom}"/>
+      <stop class="canvas-top" offset="0" stop-color="${colors.canvasTop}"/>
+      <stop class="canvas-bottom" offset="1" stop-color="${colors.canvasBottom}"/>
     </linearGradient>
     <linearGradient id="mark" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="${BRAND_MARK.height}">
       <stop offset="0" stop-color="${BRAND_MARK.gradientTop}"/>

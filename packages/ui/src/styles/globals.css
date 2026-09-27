@@ -779,6 +779,12 @@
   border-radius: 22.5%;
   background-image: linear-gradient(to bottom, #ffffff, #e6e6e6);
   box-shadow: 0 1px 2px rgb(0 0 0 / 0.12);
+
+  /* The dark icon: SYNC BRAND_ICON_DARK in brand-icon.ts. */
+  &:is(.dark *) {
+    background-image: linear-gradient(to bottom, #1c2621, var(--color-background));
+    box-shadow: 0 0 0 1px rgb(255 255 255 / 0.06);
+  }
 }
 
 /*

@@ -26,7 +26,6 @@ export default await serwist({
     '.next/static/**/*.{js,css,woff,woff2}',
     'public/icons/*.{png,svg}',
     'public/favicon.svg',
-    'public/favicon-dark.svg',
     'public/favicon.ico',
   ],
   additionalPrecacheEntries: [{ url: '/~offline', revision }],

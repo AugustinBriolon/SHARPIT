@@ -1,8 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64">
+  <style>@media (prefers-color-scheme: dark) { .canvas-top { stop-color: #1c2621; } .canvas-bottom { stop-color: #0f1f0a; } }</style>
   <defs>
     <linearGradient id="canvas" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#ffffff"/>
-      <stop offset="1" stop-color="#e6e6e6"/>
+      <stop class="canvas-top" offset="0" stop-color="#ffffff"/>
+      <stop class="canvas-bottom" offset="1" stop-color="#e6e6e6"/>
     </linearGradient>
     <linearGradient id="mark" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="1232">
       <stop offset="0" stop-color="#95ffb2"/>

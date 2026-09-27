@@ -1,7 +1,7 @@
 /**
  * Generates every raster icon the web ships from the app icon's mark (`brand-icon.ts`):
  *
- * - public/favicon.svg, public/favicon-dark.svg: the tab icon, light and dark
+ * - public/favicon.svg and the hub's app/icon.svg: the tab icon, following the viewer's theme
  * - public/icons/icon-192, icon-512: "any" icons
  * - public/icons/icon-512-maskable: full-bleed canvas, the mark inside the 80% safe zone
  * - favicon.ico (16 + 32, PNG-in-ICO): web's public/ and app/, and the hub's app/
@@ -23,13 +23,13 @@ const iconsDir = join(publicDir, 'icons');
 mkdirSync(iconsDir, { recursive: true });
 
 /** The rounded tab icon; the mark a little larger than on the app icon so it reads at 16 px. */
-const tabIcon = (canvas: 'light' | 'dark') => brandIconSvg({ width: 64, cornerRadius: 14, markRatio: 0.7, canvas });
+const tabIcon = (canvas: 'light' | 'adaptive') => brandIconSvg({ width: 64, cornerRadius: 14, markRatio: 0.7, canvas });
 const appIcon = (width: number) => brandIconSvg({ width, cornerRadius: Math.round(width * (112 / 512)) });
 const maskable = (width: number) =>
   brandIconSvg({ width, markRatio: BRAND_ICON_MARK_RATIO * BRAND_ICON_MASKABLE_CONTENT_RATIO });
 
-writeFileSync(join(publicDir, 'favicon.svg'), tabIcon('light'));
-writeFileSync(join(publicDir, 'favicon-dark.svg'), tabIcon('dark'));
+writeFileSync(join(publicDir, 'favicon.svg'), tabIcon('adaptive'));
+writeFileSync(join(root, '../hub/src/app/icon.svg'), tabIcon('adaptive'));
 
 await Promise.all([
   sharp(Buffer.from(appIcon(192))).png().toFile(join(iconsDir, 'icon-192.png')),

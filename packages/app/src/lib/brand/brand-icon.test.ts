@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  BRAND_ICON_DARK,
   BRAND_ICON_MASKABLE_CONTENT_RATIO,
   BRAND_MARK,
   brandIconSvg,
@@ -24,6 +25,13 @@ describe('brand icon', () => {
 
   it('leaves the ground transparent when asked for the mark alone', () => {
     expect(brandIconSvg({ width: 64, canvas: 'none' })).not.toContain('url(#canvas)"/>');
+  });
+
+  it('follows the viewer theme when adaptive', () => {
+    const svg = brandIconSvg({ width: 64, canvas: 'adaptive' });
+    expect(svg).toContain('@media (prefers-color-scheme: dark)');
+    expect(svg).toContain(BRAND_ICON_DARK.canvasTop);
+    expect(brandIconSvg({ width: 64 })).not.toContain('prefers-color-scheme');
   });
 
   it('keeps maskable content inside the W3C safe zone', () => {

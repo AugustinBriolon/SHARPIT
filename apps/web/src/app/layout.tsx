@@ -30,16 +30,8 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       { url: '/favicon.ico', sizes: '16x16 32x32', type: 'image/x-icon' },
-      {
-        url: '/favicon.svg',
-        type: 'image/svg+xml',
-        media: '(prefers-color-scheme: light)',
-      },
-      {
-        url: '/favicon-dark.svg',
-        type: 'image/svg+xml',
-        media: '(prefers-color-scheme: dark)',
-      },
+      // Follows the viewer's theme itself (an embedded prefers-color-scheme rule).
+      { url: '/favicon.svg', type: 'image/svg+xml' },
     ],
     // apple-icon.tsx generates 180/167/152 via generateImageMetadata —
     // leave `apple` unset so Next.js wires all three <link> tags.
