@@ -38,6 +38,10 @@ import {
 } from '@sharpit/server/lib/rate-limit';
 import { COACH_COPY_DASH_RULE } from '@sharpit/app/lib/coach/sanitize-coach-copy';
 import { resolveCoachDiscussServerContext } from '@sharpit/server/lib/coach/chat/discuss/coach-discuss-server-context';
+import {
+  startCoachChatTiming,
+  type CoachChatTiming,
+} from '@sharpit/server/lib/coach/chat/coach-chat-timing';
 import { withCoachTrace } from '@sharpit/server/lib/ai/coach-trace';
 
 /** Horizon de pré-chargement de l'agenda, aligné sur les séances du contexte. */
@@ -136,14 +140,21 @@ function formatAgendaBlock(busySummary: string | null): string {
 async function buildCoachSystemPrompt(
   athleteId: string,
   loadDiscussBlock: () => Promise<string | null>,
+  timing?: CoachChatTiming,
 ) {
+  const timed = async <T>(key: string, work: Promise<T>): Promise<T> => {
+    const startedAt = performance.now();
+    const value = await work;
+    timing?.note(key, Math.round(performance.now() - startedAt));
+    return value;
+  };
   // The agenda ships with the context rather than behind a tool: a scheduling
   // turn otherwise spent a whole extra step fetching it, resending the entire
   // prefix afterwards. One cheap read here replaces that round trip.
   const [ctx, busySummary, discussBlock] = await Promise.all([
-    buildCoachContext(athleteId),
-    buildBusySummary(athleteId, new Date(), AGENDA_PREFETCH_DAYS),
-    loadDiscussBlock(),
+    timed('contextMs', buildCoachContext(athleteId)),
+    timed('agendaMs', buildBusySummary(athleteId, new Date(), AGENDA_PREFETCH_DAYS)),
+    timed('discussMs', loadDiscussBlock()),
   ]);
   const discussSection = discussBlock ? `\n\n${discussBlock}` : '';
   return {
@@ -158,7 +169,9 @@ async function streamCoachReply(input: {
   messages: UIMessage[];
   practicedSports: Awaited<ReturnType<typeof buildCoachContext>>['practicedSports'];
   budgetWarning: BudgetWarning;
+  timing: CoachChatTiming;
 }): Promise<Response> {
+  const { timing } = input;
   const { athleteId } = input;
   const result = streamText({
     model: COACH_MODEL,
@@ -186,8 +199,18 @@ async function streamCoachReply(input: {
     telemetry: {
       functionId: 'coach-chat',
     },
-    onFinish: ({ totalUsage }) => {
+    onChunk: ({ chunk }) => {
+      if (chunk.type === 'text-delta') {
+        timing.firstText();
+      }
+    },
+    onFinish: ({ totalUsage, steps }) => {
       void recordAiUsage(athleteId, 'coach', totalUsage);
+      timing.note('steps', steps.length);
+      timing.note('inputTokens', totalUsage.inputTokens ?? 0);
+      timing.note('outputTokens', totalUsage.outputTokens ?? 0);
+      timing.note('reasoningTokens', totalUsage.outputTokenDetails?.reasoningTokens ?? 0);
+      console.info('[coach-chat] timing', timing.summary());
     },
   });
 
@@ -207,8 +230,10 @@ export async function POST(req: Request) {
     );
   }
 
+  const timing = startCoachChatTiming();
   const athleteId = await getCurrentAthleteId();
   const guard = await guardCoachChat(athleteId);
+  timing.mark('guard');
   if ('blocked' in guard) {
     return guard.blocked;
   }
@@ -222,7 +247,14 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: discuss.error }, { status: 403 });
   }
 
-  const { system, practicedSports } = await buildCoachSystemPrompt(athleteId, discuss.loadBlock);
+  const { system, practicedSports } = await buildCoachSystemPrompt(
+    athleteId,
+    discuss.loadBlock,
+    timing,
+  );
+  timing.mark('prompt');
+  timing.note('promptChars', system.length);
+  timing.note('messages', messages.length);
   return withCoachTrace({ traceName: 'coach-chat', athleteId, tags: ['chat'] }, () =>
     streamCoachReply({
       athleteId,
@@ -230,6 +262,7 @@ export async function POST(req: Request) {
       messages,
       practicedSports,
       budgetWarning: guard.budgetWarning,
+      timing,
     }),
   );
 }
