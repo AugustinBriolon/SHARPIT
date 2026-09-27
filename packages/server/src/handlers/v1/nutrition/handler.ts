@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse, after } from 'next/server';
-import { hasProAccess } from '@sharpit/app/lib/access/tier';
 import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
-import { prisma } from '@sharpit/db/client';
+import { isProAthlete } from '@sharpit/server/lib/access/is-pro-athlete';
 import { prepareNutritionCoachReading } from '@sharpit/server/lib/nutrition/analysis/nutrition-analysis';
 import { buildNutritionViewModel } from '@sharpit/server/lib/presentation/nutrition/nutrition';
-import { projectV1Nutrition } from '@sharpit/server/lib/presentation/v1/nutrition';
+import {
+  projectV1Nutrition,
+  type V1NutritionCoachReading,
+} from '@sharpit/server/lib/presentation/v1/nutrition';
 
 /** The reading is an extra — a failure there must never take the day down. */
 async function prepareReadingSafely(athleteId: string, dayId: string) {
@@ -16,18 +18,22 @@ async function prepareReadingSafely(athleteId: string, dayId: string) {
   }
 }
 
-async function isProAthlete(athleteId: string): Promise<boolean> {
-  const profile = await prisma.athleteProfile.findUnique({
-    where: { id: athleteId },
-    select: { tier: true },
-  });
-  return hasProAccess(profile?.tier ?? 'FREE');
+/** No log, no reading; below Pro, the reading is announced rather than served. */
+function coachReadingFor(
+  connected: boolean,
+  reading: Awaited<ReturnType<typeof prepareReadingSafely>> | null,
+): V1NutritionCoachReading {
+  if (!connected) {
+    return null;
+  }
+  return reading ? reading.view : { state: 'pro_required' };
 }
 
 /**
  * The day's food log for native clients (ADR-040): intake against goals, meals and entries,
- * the coach's reading, and a week of calories for the day picker. SharpIt Pro only — the
- * gate is here, whatever screen reaches the route.
+ * the coach's reading, and a week of calories for the day picker. The log is the athlete's
+ * own data and open to all; the coach's reading is what SHARPIT adds, so it is SharpIt Pro
+ * — below Pro it is neither generated nor served, only announced as `pro_required`.
  */
 export async function GET(request: NextRequest) {
   const trainingDayId = new URL(request.url).searchParams.get('trainingDayId');
@@ -41,21 +47,16 @@ export async function GET(request: NextRequest) {
 
   try {
     const athleteId = await getCurrentAthleteId();
-    if (!(await isProAthlete(athleteId))) {
-      return NextResponse.json({ error: 'pro_required' }, { status: 403 });
-    }
+    const isPro = await isProAthlete(athleteId);
     const [viewModel, reading] = await Promise.all([
       buildNutritionViewModel(athleteId, trainingDayId),
-      prepareReadingSafely(athleteId, trainingDayId),
+      isPro ? prepareReadingSafely(athleteId, trainingDayId) : null,
     ]);
-    if (reading.generate) {
+    if (reading?.generate) {
       after(reading.generate);
     }
     return NextResponse.json(
-      projectV1Nutrition(
-        { ...viewModel, coachReading: viewModel.connected ? reading.view : null },
-        trainingDayId,
-      ),
+      projectV1Nutrition(viewModel, trainingDayId, coachReadingFor(viewModel.connected, reading)),
     );
   } catch (error) {
     console.error('[api/v1/nutrition]', error);

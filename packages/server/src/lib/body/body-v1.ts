@@ -124,6 +124,8 @@ export type BodyInputs = {
   snapshots: ThresholdSnapshotRow[];
   /** What the biological age needs besides VO₂max (ADR-045). */
   demographics: { birthDate: Date | null; sex: string | null } | null;
+  /** SharpIt Pro: the biological age is computed by SHARPIT, so it is Pro. */
+  isPro: boolean;
 };
 
 // ---- Outputs ------------------------------------------------------------------------
@@ -142,8 +144,10 @@ export type V1BodyMetric = {
 export type V1BodyOverview = {
   apiVersion: 1;
   metrics: V1BodyMetric[];
-  /** Training estimate from VO₂max (ADR-045); null without the data it needs. */
+  /** Training estimate from VO₂max (ADR-045); null without the data it needs, or below Pro. */
   biologicalAge: BiologicalAge | null;
+  /** `pro_required` below SharpIt Pro: SHARPIT computes it, so it is not computed for free. */
+  biologicalAgeAccess: 'granted' | 'pro_required';
 };
 
 export type V1BodySeries = {
@@ -460,7 +464,7 @@ function sortInputs(inputs: BodyInputs): BodyInputs {
 
 function biologicalAge(inputs: BodyInputs, now: Date): BiologicalAge | null {
   const { profile, demographics } = inputs;
-  if (!profile || !demographics) {
+  if (!inputs.isPro || !profile || !demographics) {
     return null;
   }
   return estimateBiologicalAge(
@@ -480,7 +484,12 @@ export function projectV1BodyOverview(inputs: BodyInputs, now = new Date()): V1B
   const metrics = BODY_METRIC_KEYS.map((key) => overviewMetric(key, sorted)).filter(
     (metric): metric is V1BodyMetric => metric !== null,
   );
-  return { apiVersion: 1, metrics, biologicalAge: biologicalAge(sorted, now) };
+  return {
+    apiVersion: 1,
+    metrics,
+    biologicalAge: biologicalAge(sorted, now),
+    biologicalAgeAccess: inputs.isPro ? 'granted' : 'pro_required',
+  };
 }
 
 // ---- Series -------------------------------------------------------------------------

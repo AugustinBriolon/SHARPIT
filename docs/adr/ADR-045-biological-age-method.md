@@ -85,4 +85,6 @@ the published reference data it rests on instead:
 
 Implemented in `packages/server/src/lib/body/biological-age.ts` and served by `GET /api/v1/body/overview`
 as `{ years, chronologicalYears, method, confidence (0.9 or 0.6), inputs, computedAt }`, null without
-the data it needs. The app hides the slot when it is null.
+the data it needs. SHARPIT computes it, so it is SharpIt Pro (perk `biological-age`): below Pro it is
+not computed and the overview says `biologicalAgeAccess: 'pro_required'`; the athlete's own measures,
+VO₂max included, stay open.

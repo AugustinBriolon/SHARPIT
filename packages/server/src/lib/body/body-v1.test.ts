@@ -48,6 +48,7 @@ function inputs(overrides: Partial<BodyInputs>): BodyInputs {
     profile: null,
     snapshots: [],
     demographics: null,
+    isPro: true,
     ...overrides,
   };
 }
@@ -78,11 +79,37 @@ describe('projectV1BodyOverview', () => {
     expect(overview.biologicalAge).toMatchObject({ years: 35, chronologicalYears: 46 });
   });
 
+  it('keeps the biological age for SharpIt Pro, as SHARPIT computes it', () => {
+    const overview = projectV1BodyOverview(
+      inputs({
+        isPro: false,
+        profile: {
+          vo2maxRunning: 49,
+          vo2maxCycling: null,
+          ftpW: null,
+          maxHr: null,
+          lthr: null,
+          runThresholdPaceSecPerKm: null,
+          swimCssSecPer100m: null,
+          thresholdsSyncedAt: new Date('2026-09-20T00:00:00.000Z'),
+          updatedAt: new Date('2026-09-22T00:00:00.000Z'),
+        },
+        demographics: { birthDate: new Date('1980-01-01T00:00:00.000Z'), sex: 'male' },
+      }),
+      new Date('2026-09-27T12:00:00.000Z'),
+    );
+    expect(overview.biologicalAge).toBeNull();
+    expect(overview.biologicalAgeAccess).toBe('pro_required');
+    // The athlete's own measures stay open.
+    expect(overview.metrics.map((metric) => metric.key)).toContain('vo2maxRun');
+  });
+
   it('omits every metric without data', () => {
     expect(projectV1BodyOverview(inputs({}))).toEqual({
       apiVersion: 1,
       metrics: [],
       biologicalAge: null,
+      biologicalAgeAccess: 'granted',
     });
   });
 

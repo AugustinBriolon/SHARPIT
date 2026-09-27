@@ -4,8 +4,8 @@ import { NextRequest } from 'next/server';
 vi.mock('@sharpit/server/lib/auth/current-athlete', () => ({
   getCurrentAthleteId: vi.fn().mockResolvedValue('athlete-1'),
 }));
-const findUnique = vi.fn();
-vi.mock('@sharpit/db/client', () => ({ prisma: { athleteProfile: { findUnique } } }));
+const isProAthlete = vi.fn();
+vi.mock('@sharpit/server/lib/access/is-pro-athlete', () => ({ isProAthlete }));
 const buildNutritionViewModel = vi.fn();
 vi.mock('@sharpit/server/lib/presentation/nutrition/nutrition', () => ({
   buildNutritionViewModel,
@@ -25,7 +25,7 @@ const request = (query: string) =>
 describe('GET /api/v1/nutrition', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    findUnique.mockResolvedValue({ tier: 'PRO' });
+    isProAthlete.mockResolvedValue(true);
     prepareNutritionCoachReading.mockResolvedValue({ view: { state: 'pending' }, generate: null });
     buildNutritionViewModel.mockResolvedValue({
       connected: true,
@@ -44,13 +44,14 @@ describe('GET /api/v1/nutrition', () => {
     expect((await GET(request('?trainingDayId=27-09-2026'))).status).toBe(400);
   });
 
-  it('is SharpIt Pro only', async () => {
-    findUnique.mockResolvedValue({ tier: 'FREE' });
+  it('serves the log to everyone and keeps the coach reading for Pro', async () => {
+    isProAthlete.mockResolvedValue(false);
     const { GET } = await import('./handler');
     const response = await GET(request('?trainingDayId=2026-09-27'));
-    expect(response.status).toBe(403);
-    expect(await response.json()).toEqual({ error: 'pro_required' });
-    expect(buildNutritionViewModel).not.toHaveBeenCalled();
+    expect(response.status).toBe(200);
+    expect(buildNutritionViewModel).toHaveBeenCalledWith('athlete-1', '2026-09-27');
+    expect(prepareNutritionCoachReading).not.toHaveBeenCalled();
+    expect((await response.json()).coachReading).toEqual({ state: 'pro_required' });
   });
 
   it('returns the day with the coach reading for a Pro athlete', async () => {

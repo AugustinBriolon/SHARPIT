@@ -48,6 +48,8 @@ export type V1NutritionDay = {
   }>;
 };
 
+export type V1NutritionCoachReading = NutritionCoachReadingView | { state: 'pro_required' } | null;
+
 export type V1NutritionResponse = {
   apiVersion: 1;
   trainingDayId: string;
@@ -55,7 +57,8 @@ export type V1NutritionResponse = {
   connected: boolean;
   empty: { title: string; message: string | null } | null;
   day: V1NutritionDay | null;
-  coachReading: NutritionCoachReadingView | null;
+  /** `pro_required` below SharpIt Pro: the reading is what SHARPIT adds, the log is not. */
+  coachReading: V1NutritionCoachReading;
   /** Diet declared in the journal, as labels. */
   diet: string[];
   /** Oldest first, one entry per day of the window ending on `trainingDayId`. */
@@ -127,6 +130,7 @@ function projectHistory(
 export function projectV1Nutrition(
   viewModel: NutritionViewModel,
   trainingDayId: string,
+  coachReading: V1NutritionCoachReading = viewModel.coachReading,
 ): V1NutritionResponse {
   const empty = viewModel.emptyState
     ? { title: viewModel.emptyState.title, message: viewModel.emptyState.description || null }
@@ -137,7 +141,7 @@ export function projectV1Nutrition(
     connected: viewModel.connected,
     empty: viewModel.selectedDay ? null : empty,
     day: viewModel.selectedDay ? projectDay(viewModel.selectedDay) : null,
-    coachReading: viewModel.coachReading,
+    coachReading,
     diet: viewModel.diet.labels,
     history: projectHistory(viewModel.history, trainingDayId),
   };

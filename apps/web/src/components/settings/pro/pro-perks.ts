@@ -1,4 +1,4 @@
-import { Activity, Apple, MessagesSquare, NotebookText, Watch } from 'lucide-react';
+import { Activity, Apple, Hourglass, MessagesSquare, NotebookText, Watch } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import {
   INCLUDED_FOR_EVERYONE as INCLUDED_DATA,
@@ -14,7 +14,8 @@ const ICONS: Record<string, LucideIcon> = {
   'weekly-review': NotebookText,
   'session-analysis': Activity,
   'journal-coach-read': MessagesSquare,
-  'nutrition-day': Apple,
+  'nutrition-reading': Apple,
+  'biological-age': Hourglass,
   'watch-push': Watch,
   'extended-coach': MessagesSquare,
 };

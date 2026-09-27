@@ -44,10 +44,17 @@ export const PRO_ONLY_PERKS: ProPerkData[] = [
     href: '/journal/analyses',
   },
   {
-    id: 'nutrition-day',
-    title: 'Suivi nutrition',
+    id: 'nutrition-reading',
+    title: 'Lecture coach · nutrition',
     description:
-      'Ton journal alimentaire jour par jour sur l’iPhone : calories et macros face à tes objectifs, le détail des repas et la lecture du coach.',
+      'Chaque jour, le coach lit ce que tu as mangé face à ton entraînement : carburant, qualité, régime, avec une action concrète. Ton journal alimentaire reste ouvert à tous.',
+    status: 'pro',
+  },
+  {
+    id: 'biological-age',
+    title: 'Âge biologique',
+    description:
+      'Ton âge forme, calculé par SHARPIT à partir de ta VO₂max. Une estimation d’entraînement, pas un diagnostic.',
     status: 'pro',
   },
 ];

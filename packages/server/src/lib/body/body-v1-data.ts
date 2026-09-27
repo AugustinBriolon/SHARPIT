@@ -6,6 +6,7 @@ import {
   type BodySeriesRange,
 } from '@sharpit/server/lib/body/body-v1';
 import { getGarminAccount } from '@sharpit/server/lib/integrations/garmin/garmin-sync';
+import { hasProAccess } from '@sharpit/app/lib/access/tier';
 import { prisma } from '@sharpit/db/client';
 import { getBodyCompositionMeasurements } from '@sharpit/server/lib/queries';
 
@@ -55,6 +56,7 @@ async function loadBodyInputs(options: {
         updatedAt: true,
         birthDate: true,
         sex: true,
+        tier: true,
       },
     }),
     prisma.athleteThresholdSnapshot.findMany({
@@ -81,6 +83,7 @@ async function loadBodyInputs(options: {
     profile,
     snapshots,
     demographics: profile ? { birthDate: profile.birthDate, sex: profile.sex } : null,
+    isPro: hasProAccess(profile?.tier ?? 'FREE'),
   };
 }
 

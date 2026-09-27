@@ -20,6 +20,9 @@ vi.mock('@sharpit/server/lib/nutrition/analysis/nutrition-analysis', () => ({
   prepareNutritionCoachReading: vi.fn(),
 }));
 
+const isProAthlete = vi.fn();
+vi.mock('@sharpit/server/lib/access/is-pro-athlete', () => ({ isProAthlete }));
+
 const VIEW_MODEL = {
   connected: true,
   diet: { ids: [], labels: [] },
@@ -46,6 +49,18 @@ async function mocks() {
 describe('GET /api/presentation/nutrition', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    isProAthlete.mockResolvedValue(true);
+  });
+
+  it('neither generates nor serves the coach reading below Pro', async () => {
+    const { prepare } = await mocks();
+    isProAthlete.mockResolvedValue(false);
+
+    const { GET } = await import('./handler');
+    const response = await GET(request('trainingDayId=2026-09-10'));
+
+    expect(prepare).not.toHaveBeenCalled();
+    expect(await response.json()).toEqual({ viewModel: VIEW_MODEL });
   });
 
   it('answers pending and schedules the generation after the response', async () => {

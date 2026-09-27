@@ -3,6 +3,7 @@ import { format } from 'date-fns';
 import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
 import { prepareNutritionCoachReading } from '@sharpit/server/lib/nutrition/analysis/nutrition-analysis';
 import { buildNutritionViewModel } from '@sharpit/server/lib/presentation/nutrition/nutrition';
+import { isProAthlete } from '@sharpit/server/lib/access/is-pro-athlete';
 
 /** The reading is an extra — a failure there must never take the nutrition page down. */
 async function prepareReadingSafely(athleteId: string, dayId: string) {
@@ -29,15 +30,19 @@ export async function GET(request: NextRequest) {
   try {
     const athleteId = await getCurrentAthleteId();
     const dayId = trainingDayId ?? fallbackDayId;
+    const isPro = await isProAthlete(athleteId);
     const [viewModel, reading] = await Promise.all([
       buildNutritionViewModel(athleteId, dayId),
-      prepareReadingSafely(athleteId, dayId),
+      isPro ? prepareReadingSafely(athleteId, dayId) : null,
     ]);
-    if (reading.generate) {
+    if (reading?.generate) {
       after(reading.generate);
     }
     return NextResponse.json({
-      viewModel: { ...viewModel, coachReading: viewModel.connected ? reading.view : null },
+      viewModel: {
+        ...viewModel,
+        coachReading: viewModel.connected ? (reading?.view ?? null) : null,
+      },
     });
   } catch (error) {
     console.error('[api/presentation/nutrition]', error);
