@@ -1294,32 +1294,71 @@ function formatUpcomingPlannedSection(upcomingPlanned: CoachContext['upcomingPla
   ];
 }
 
-function collectCoachContextLines(ctx: CoachContext): string[] {
+/** The parts of the coach context, so a request can carry only those it needs. */
+export const COACH_CONTEXT_SECTIONS = [
+  'note',
+  'thresholds',
+  'sports',
+  'equipment',
+  'pmc',
+  'fatigue',
+  'adaptation',
+  'decision',
+  'environment',
+  'health',
+  'availability',
+  'goals',
+  'recent',
+  'realized',
+  'physical',
+  'travel',
+  'constraints',
+  'upcoming',
+  'scenario',
+] as const;
+
+export type CoachContextSection = (typeof COACH_CONTEXT_SECTIONS)[number];
+
+function coachContextSections(ctx: CoachContext): Array<[CoachContextSection, string[]]> {
+  return [
+    ['note', formatPersonalNoteSection(ctx.note)],
+    ['thresholds', formatProfileThresholdLines(ctx.profile)],
+    ['sports', [`\n${formatPracticedSportsForCoach(ctx.practicedSports)}`]],
+    ['equipment', [`\n${formatEquipmentForCoach(ctx.equipment)}`]],
+    ['pmc', formatPmcSection(ctx)],
+    ['fatigue', formatFatigueSection(ctx.fatigue)],
+    ['adaptation', formatAdaptationSection(ctx.adaptation)],
+    ['decision', formatDecisionSection(ctx.decision)],
+    ['environment', formatEnvironmentSection(ctx.environment)],
+    ['health', formatHealthSection(ctx.health)],
+    ['availability', formatAvailabilitySection(ctx.trainingAvailability, ctx.availableDays)],
+    ['goals', formatGoalsSection(ctx)],
+    ['recent', formatRecentActivitiesSection(ctx.recent)],
+    ['realized', formatRealizedSessionsSection(ctx.realizedSessions)],
+    ['physical', formatPhysicalSection(ctx.physical)],
+    ['travel', formatTravelSection(ctx.travel)],
+    ['constraints', formatConstraintsSection(ctx.constraints)],
+    ['upcoming', formatUpcomingPlannedSection(ctx.upcomingPlanned)],
+    ['scenario', ctx.scenarioComparison ? [`\n${ctx.scenarioComparison}`] : []],
+  ];
+}
+
+function collectCoachContextLines(
+  ctx: CoachContext,
+  sections?: ReadonlySet<CoachContextSection>,
+): string[] {
   return [
     `# Profil athlète — ${ctx.today}`,
-    ...formatPersonalNoteSection(ctx.note),
-    ...formatProfileThresholdLines(ctx.profile),
-    `\n${formatPracticedSportsForCoach(ctx.practicedSports)}`,
-    `\n${formatEquipmentForCoach(ctx.equipment)}`,
-    ...formatPmcSection(ctx),
-    ...formatFatigueSection(ctx.fatigue),
-    ...formatAdaptationSection(ctx.adaptation),
-    ...formatDecisionSection(ctx.decision),
-    ...formatEnvironmentSection(ctx.environment),
-    ...formatHealthSection(ctx.health),
-    ...formatAvailabilitySection(ctx.trainingAvailability, ctx.availableDays),
-    ...formatGoalsSection(ctx),
-    ...formatRecentActivitiesSection(ctx.recent),
-    ...formatRealizedSessionsSection(ctx.realizedSessions),
-    ...formatPhysicalSection(ctx.physical),
-    ...formatTravelSection(ctx.travel),
-    ...formatConstraintsSection(ctx.constraints),
-    ...formatUpcomingPlannedSection(ctx.upcomingPlanned),
-    ...(ctx.scenarioComparison ? [`\n${ctx.scenarioComparison}`] : []),
+    ...coachContextSections(ctx)
+      .filter(([section]) => !sections || sections.has(section))
+      .flatMap(([, lines]) => lines),
   ];
 }
 
 /** Rend le contexte en markdown compact pour le prompt système. */
-export function formatCoachContext(ctx: CoachContext): string {
-  return collectCoachContextLines(ctx).join('\n');
+export function formatCoachContext(
+  ctx: CoachContext,
+  sections?: ReadonlySet<CoachContextSection>,
+): string {
+  return collectCoachContextLines(ctx, sections).join('\n');
 }

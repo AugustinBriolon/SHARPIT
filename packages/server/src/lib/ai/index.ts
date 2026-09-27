@@ -35,6 +35,12 @@ export const COACH_FALLBACK_MODELS = ['anthropic/claude-haiku-4.5', 'openai/gpt-
  */
 export const COACH_REASONING_LEVEL = {
   conversational: 'low',
+  /**
+   * A chat question that places nothing on the calendar (a session read, a night, a meal):
+   * the athlete waits on the first word, and the context already holds the answer's facts.
+   * Planning turns, which chain tools, keep `conversational`.
+   */
+  answer: 'minimal',
   structured: 'medium',
 } as const;
 

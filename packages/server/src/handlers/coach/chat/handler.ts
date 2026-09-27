@@ -1,7 +1,6 @@
 import {
   convertToModelMessages,
   createUIMessageStreamResponse,
-  smoothStream,
   stepCountIs,
   streamText,
   toUIMessageStream,
@@ -11,7 +10,6 @@ import { NextResponse } from 'next/server';
 import {
   COACH_MAX_OUTPUT_TOKENS,
   COACH_MODEL,
-  COACH_REASONING_LEVEL,
   coachGatewayOptions,
   isCoachConfigured,
 } from '@sharpit/server/lib/ai';
@@ -43,6 +41,14 @@ import {
   type CoachChatTiming,
 } from '@sharpit/server/lib/coach/chat/coach-chat-timing';
 import { withCoachTrace } from '@sharpit/server/lib/ai/coach-trace';
+import { lastCoachDiscussMetadata } from '@sharpit/server/lib/coach/chat/discuss/coach-discuss-metadata-parse';
+import {
+  classifyCoachIntent,
+  coachRequestScope,
+  isPlanningThread,
+  lastUserText,
+  type CoachRequestScope,
+} from '@sharpit/server/lib/coach/chat/coach-request-scope';
 
 /** Horizon de pré-chargement de l'agenda, aligné sur les séances du contexte. */
 const AGENDA_PREFETCH_DAYS = 14;
@@ -131,6 +137,9 @@ async function guardCoachChat(
   return { budgetWarning: budget.warning };
 }
 
+/** Not read for this question: the model knows it can still fetch it before placing a session. */
+const AGENDA_NOT_LOADED = `\n\n## Agenda\nNon chargé pour cette question. Avant de placer ou déplacer une séance, appelle getCalendarAvailability.`;
+
 function formatAgendaBlock(busySummary: string | null): string {
   return busySummary
     ? `\n\n## Agenda — créneaux occupés (${AGENDA_PREFETCH_DAYS} prochains jours)\nPlace chaque séance sur un créneau LIBRE, entre 06:00 et 21:00. Tiens compte de la durée disponible : si le trou est plus court que la séance idéale, raccourcis-la ou déplace-la, et explique-le.\n${busySummary}`
@@ -140,6 +149,7 @@ function formatAgendaBlock(busySummary: string | null): string {
 async function buildCoachSystemPrompt(
   athleteId: string,
   loadDiscussBlock: () => Promise<string | null>,
+  scope: CoachRequestScope,
   timing?: CoachChatTiming,
 ) {
   const timed = async <T>(key: string, work: Promise<T>): Promise<T> => {
@@ -153,14 +163,26 @@ async function buildCoachSystemPrompt(
   // prefix afterwards. One cheap read here replaces that round trip.
   const [ctx, busySummary, discussBlock] = await Promise.all([
     timed('contextMs', buildCoachContext(athleteId)),
-    timed('agendaMs', buildBusySummary(athleteId, new Date(), AGENDA_PREFETCH_DAYS)),
+    // An external calendar read: only when the question may place a session.
+    scope.readsAgenda
+      ? timed('agendaMs', buildBusySummary(athleteId, new Date(), AGENDA_PREFETCH_DAYS))
+      : null,
     timed('discussMs', loadDiscussBlock()),
   ]);
   const discussSection = discussBlock ? `\n\n${discussBlock}` : '';
   return {
     practicedSports: ctx.practicedSports,
-    system: `${SYSTEM_PROMPT}\n\n---\n${formatCoachContext(ctx)}${formatAgendaBlock(busySummary)}${discussSection}`,
+    system: `${SYSTEM_PROMPT}\n\n---\n${formatCoachContext(ctx, scope.sections ?? undefined)}${agendaSection(scope, busySummary)}${discussSection}`,
   };
+}
+
+/** The agenda read for a planning turn; otherwise a pointer to the tool, when the turn has it. */
+function agendaSection(scope: CoachRequestScope, busySummary: string | null): string {
+  if (scope.readsAgenda) {
+    return formatAgendaBlock(busySummary);
+  }
+  const canPlace = scope.tools === null || scope.tools.includes('getCalendarAvailability');
+  return canPlace ? AGENDA_NOT_LOADED : '';
 }
 
 async function streamCoachReply(input: {
@@ -170,14 +192,17 @@ async function streamCoachReply(input: {
   practicedSports: Awaited<ReturnType<typeof buildCoachContext>>['practicedSports'];
   budgetWarning: BudgetWarning;
   timing: CoachChatTiming;
+  scope: CoachRequestScope;
 }): Promise<Response> {
-  const { timing } = input;
+  const { timing, scope } = input;
   const { athleteId } = input;
   const result = streamText({
     model: COACH_MODEL,
     system: input.system,
     messages: await convertToModelMessages(input.messages),
     tools: createCoachTools(athleteId, { practicedSports: input.practicedSports }),
+    // Only the tools this question can use: fewer schemas in every step's prompt.
+    ...(scope.tools ? { activeTools: [...scope.tools] } : {}),
     // Les actions qui modifient le calendrier nécessitent la validation de l'athlète.
     // listPlannedSessions (lecture seule) s'exécute automatiquement.
     toolApproval: {
@@ -189,11 +214,9 @@ async function streamCoachReply(input: {
     },
     // Keep tool loops short — DeepSeek Flash can otherwise re-call list tools and bloat the SSE.
     stopWhen: stepCountIs(4),
-    // The gateway delivers text in large bursts; even the reasoning stream arrives
-    // in clumps. Re-chunking by word gives the transcript a steady typing cadence
-    // instead of paragraphs appearing all at once.
-    experimental_transform: smoothStream({ chunking: 'word', delayInMs: 12 }),
-    reasoning: COACH_REASONING_LEVEL.conversational,
+    // No smoothing: a 12 ms pause per word held a long answer back by seconds, on a screen
+    // the athlete is waiting on. Clients render the stream as it comes.
+    reasoning: scope.reasoning,
     maxOutputTokens: COACH_MAX_OUTPUT_TOKENS.conversational,
     providerOptions: coachGatewayOptions,
     telemetry: {
@@ -232,12 +255,6 @@ export async function POST(req: Request) {
 
   const timing = startCoachChatTiming();
   const athleteId = await getCurrentAthleteId();
-  const guard = await guardCoachChat(athleteId);
-  timing.mark('guard');
-  if ('blocked' in guard) {
-    return guard.blocked;
-  }
-
   const { messages } = (await req.json()) as { messages: UIMessage[] };
 
   // Discuss metadata is client-supplied: entitlements are settled here, before
@@ -247,15 +264,29 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: discuss.error }, { status: 403 });
   }
 
-  const { system, practicedSports } = await buildCoachSystemPrompt(
-    athleteId,
-    discuss.loadBlock,
-    timing,
+  const scope = coachRequestScope(
+    classifyCoachIntent({
+      lastUserText: lastUserText(messages),
+      discussKind: lastCoachDiscussMetadata(messages)?.discussKind ?? null,
+      isPlanningThread: isPlanningThread(messages),
+    }),
   );
+
+  // The guard (consent, rate limit, budget) and the prompt's reads run together: nothing
+  // reaches the model before the guard has passed, but neither waits on the other.
+  const prompt = buildCoachSystemPrompt(athleteId, discuss.loadBlock, scope, timing);
+  prompt.catch(() => undefined);
+  const guard = await guardCoachChat(athleteId);
+  timing.mark('guard');
+  if ('blocked' in guard) {
+    return guard.blocked;
+  }
+  const { system, practicedSports } = await prompt;
   timing.mark('prompt');
   timing.note('promptChars', system.length);
   timing.note('messages', messages.length);
-  return withCoachTrace({ traceName: 'coach-chat', athleteId, tags: ['chat'] }, () =>
+  console.info('[coach-chat] scope', { intent: scope.intent, tools: scope.tools?.length ?? 'all' });
+  return withCoachTrace({ traceName: 'coach-chat', athleteId, tags: ['chat', scope.intent] }, () =>
     streamCoachReply({
       athleteId,
       system,
@@ -263,6 +294,7 @@ export async function POST(req: Request) {
       practicedSports,
       budgetWarning: guard.budgetWarning,
       timing,
+      scope,
     }),
   );
 }
