@@ -5,8 +5,11 @@ import { prepareNutritionCoachReading } from '@sharpit/server/lib/nutrition/anal
 import { buildNutritionViewModel } from '@sharpit/server/lib/presentation/nutrition/nutrition';
 import {
   projectV1Nutrition,
+  V1_NUTRITION_HISTORY_DAYS,
   type V1NutritionCoachReading,
+  type V1NutritionHistoryRow,
 } from '@sharpit/server/lib/presentation/v1/nutrition';
+import { prisma } from '@sharpit/db/client';
 
 /** The reading is an extra — a failure there must never take the day down. */
 async function prepareReadingSafely(athleteId: string, dayId: string) {
@@ -16,6 +19,25 @@ async function prepareReadingSafely(athleteId: string, dayId: string) {
     console.error('[api/v1/nutrition] coach reading', error);
     return { view: null, generate: null };
   }
+}
+
+/** The 14 days the regularity reads, as the food log stored them (stored at UTC midnight). */
+async function loadHistoryRows(
+  athleteId: string,
+  trainingDayId: string,
+): Promise<V1NutritionHistoryRow[]> {
+  const end = new Date(`${trainingDayId}T00:00:00.000Z`);
+  const start = new Date(end.getTime() - (V1_NUTRITION_HISTORY_DAYS - 1) * 24 * 60 * 60 * 1000);
+  const rows = await prisma.dailyNutrition.findMany({
+    where: { athleteId, date: { gte: start, lte: end } },
+    select: { date: true, calories: true, goalCalories: true, exerciseCalories: true },
+  });
+  return rows.map((row) => ({
+    date: row.date.toISOString().slice(0, 10),
+    calories: row.calories,
+    goalCalories: row.goalCalories,
+    exerciseCalories: row.exerciseCalories,
+  }));
 }
 
 /** No log, no reading; below Pro, the reading is announced rather than served. */
@@ -48,15 +70,21 @@ export async function GET(request: NextRequest) {
   try {
     const athleteId = await getCurrentAthleteId();
     const isPro = await isProAthlete(athleteId);
-    const [viewModel, reading] = await Promise.all([
+    const [viewModel, reading, historyRows] = await Promise.all([
       buildNutritionViewModel(athleteId, trainingDayId),
       isPro ? prepareReadingSafely(athleteId, trainingDayId) : null,
+      loadHistoryRows(athleteId, trainingDayId),
     ]);
     if (reading?.generate) {
       after(reading.generate);
     }
     return NextResponse.json(
-      projectV1Nutrition(viewModel, trainingDayId, coachReadingFor(viewModel.connected, reading)),
+      projectV1Nutrition(
+        viewModel,
+        trainingDayId,
+        coachReadingFor(viewModel.connected, reading),
+        historyRows,
+      ),
     );
   } catch (error) {
     console.error('[api/v1/nutrition]', error);

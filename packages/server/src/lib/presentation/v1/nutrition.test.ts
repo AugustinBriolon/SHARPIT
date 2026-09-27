@@ -87,23 +87,22 @@ describe('projectV1Nutrition', () => {
     });
   });
 
-  it('lays a week of calories out, oldest first, gaps included', () => {
-    const result = projectV1Nutrition(
-      viewModel({ history: [day('2026-09-27', 2100), day('2026-09-24', 1800, null)] }),
-      '2026-09-27',
-    );
-    expect(result.history.map((entry) => entry.date)).toEqual([
-      '2026-09-21',
-      '2026-09-22',
-      '2026-09-23',
-      '2026-09-24',
-      '2026-09-25',
-      '2026-09-26',
-      '2026-09-27',
+  it('lays 14 days out, oldest first, gaps included, each read against its goal', () => {
+    const result = projectV1Nutrition(viewModel({}), '2026-09-27', null, [
+      { date: '2026-09-27', calories: 2100, goalCalories: 2400, exerciseCalories: 450 },
+      { date: '2026-09-24', calories: 1800, goalCalories: 2400, exerciseCalories: null },
+      { date: '2026-09-20', calories: 0, goalCalories: 2400, exerciseCalories: null },
     ]);
-    expect(result.history[3]).toEqual({ date: '2026-09-24', calories: 1800, goalCalories: null });
-    expect(result.history[4]).toEqual({ date: '2026-09-25', calories: null, goalCalories: null });
-    expect(result.history[6]).toEqual({ date: '2026-09-27', calories: 2100, goalCalories: 2400 });
+    expect(result.history).toHaveLength(14);
+    expect(result.history[0]?.date).toBe('2026-09-14');
+    expect(result.history[13]).toEqual({
+      date: '2026-09-27',
+      calories: 2100,
+      goalCalories: 2400,
+      adherence: 'under',
+    });
+    expect(result.history.find((day) => day.date === '2026-09-20')?.adherence).toBe('none');
+    expect(result.regularity).toEqual({ days: 14, logged: 2, onTarget: 0 });
   });
 
   it('keeps the empty state only when the day has nothing', () => {

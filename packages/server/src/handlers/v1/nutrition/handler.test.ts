@@ -4,6 +4,9 @@ import { NextRequest } from 'next/server';
 vi.mock('@sharpit/server/lib/auth/current-athlete', () => ({
   getCurrentAthleteId: vi.fn().mockResolvedValue('athlete-1'),
 }));
+vi.mock('@sharpit/db/client', () => ({
+  prisma: { dailyNutrition: { findMany: vi.fn().mockResolvedValue([]) } },
+}));
 const isProAthlete = vi.fn();
 vi.mock('@sharpit/server/lib/access/is-pro-athlete', () => ({ isProAthlete }));
 const buildNutritionViewModel = vi.fn();
@@ -68,6 +71,7 @@ describe('GET /api/v1/nutrition', () => {
       empty: { title: 'Aucune donnée ce jour-là', message: 'Rien ce jour.' },
       coachReading: { state: 'pending' },
     });
-    expect(body.history).toHaveLength(7);
+    expect(body.history).toHaveLength(14);
+    expect(body.regularity).toEqual({ days: 14, logged: 0, onTarget: 0 });
   });
 });

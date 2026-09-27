@@ -1,12 +1,24 @@
 import { format, parseISO, subDays } from 'date-fns';
+import {
+  calorieAdherence,
+  type CalorieAdherence,
+} from '@sharpit/server/lib/nutrition/goal-adherence';
 import type {
   NutritionCoachReadingView,
   NutritionDaySummary,
   NutritionViewModel,
 } from '@sharpit/app/presentation/nutrition-view-model';
 
-/** Days the history strip covers, ending on the selected day (the web page's window). */
-export const V1_NUTRITION_HISTORY_DAYS = 7;
+/** Days the regularity reads, ending on the selected day. */
+export const V1_NUTRITION_HISTORY_DAYS = 14;
+
+/** One day's calories as the food log stored them, for the regularity. */
+export type V1NutritionHistoryRow = {
+  date: string;
+  calories: number;
+  goalCalories: number | null;
+  exerciseCalories: number | null;
+};
 
 type V1Macro = {
   consumed: number;
@@ -61,8 +73,15 @@ export type V1NutritionResponse = {
   coachReading: V1NutritionCoachReading;
   /** Diet declared in the journal, as labels. */
   diet: string[];
-  /** Oldest first, one entry per day of the window ending on `trainingDayId`. */
-  history: Array<{ date: string; calories: number | null; goalCalories: number | null }>;
+  /** Oldest first, one entry per day of the 14 ending on `trainingDayId`. */
+  history: Array<{
+    date: string;
+    calories: number | null;
+    goalCalories: number | null;
+    adherence: CalorieAdherence;
+  }>;
+  /** How many of those days were logged, and how many kept the calorie goal. */
+  regularity: { days: number; logged: number; onTarget: number };
 };
 
 function macro(line: V1Macro): V1Macro {
@@ -110,20 +129,36 @@ function projectDay(day: NutritionDaySummary): V1NutritionDay {
 }
 
 function projectHistory(
-  history: NutritionDaySummary[],
+  rows: V1NutritionHistoryRow[],
   trainingDayId: string,
 ): V1NutritionResponse['history'] {
-  const byDate = new Map(history.map((day) => [day.date, day]));
+  const byDate = new Map(rows.map((row) => [row.date, row]));
   const end = parseISO(trainingDayId);
   return Array.from({ length: V1_NUTRITION_HISTORY_DAYS }, (_, i) => {
     const date = format(subDays(end, V1_NUTRITION_HISTORY_DAYS - 1 - i), 'yyyy-MM-dd');
-    const day = byDate.get(date);
+    const row = byDate.get(date);
+    const calories = row && row.calories > 0 ? row.calories : null;
     return {
       date,
-      calories: day && day.calories > 0 ? day.calories : null,
-      goalCalories: day?.goalsProgress?.calories.goal ?? null,
+      calories,
+      goalCalories: row?.goalCalories ?? null,
+      adherence: calorieAdherence(
+        calories,
+        row?.goalCalories ?? null,
+        row?.exerciseCalories ?? null,
+      ),
     };
   });
+}
+
+function projectRegularity(
+  history: V1NutritionResponse['history'],
+): V1NutritionResponse['regularity'] {
+  return {
+    days: history.length,
+    logged: history.filter((day) => day.adherence !== 'none').length,
+    onTarget: history.filter((day) => day.adherence === 'on_target').length,
+  };
 }
 
 /** Canonical Nutrition payload for native clients — a projection, no new domain logic. */
@@ -131,7 +166,9 @@ export function projectV1Nutrition(
   viewModel: NutritionViewModel,
   trainingDayId: string,
   coachReading: V1NutritionCoachReading = viewModel.coachReading,
+  historyRows: V1NutritionHistoryRow[] = [],
 ): V1NutritionResponse {
+  const history = projectHistory(historyRows, trainingDayId);
   const empty = viewModel.emptyState
     ? { title: viewModel.emptyState.title, message: viewModel.emptyState.description || null }
     : null;
@@ -143,6 +180,7 @@ export function projectV1Nutrition(
     day: viewModel.selectedDay ? projectDay(viewModel.selectedDay) : null,
     coachReading,
     diet: viewModel.diet.labels,
-    history: projectHistory(viewModel.history, trainingDayId),
+    history,
+    regularity: projectRegularity(history),
   };
 }
