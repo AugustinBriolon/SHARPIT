@@ -43,6 +43,13 @@ export const PRO_ONLY_PERKS: ProPerkData[] = [
     status: 'pro',
     href: '/journal/analyses',
   },
+  {
+    id: 'nutrition-day',
+    title: 'Suivi nutrition',
+    description:
+      'Ton journal alimentaire jour par jour sur l’iPhone : calories et macros face à tes objectifs, le détail des repas et la lecture du coach.',
+    status: 'pro',
+  },
 ];
 
 /** Déjà là, gratuit, pour tout le monde — pas encore une raison de payer. */

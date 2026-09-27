@@ -138,6 +138,11 @@ The diet in force is part of the facts, so it is part of the hash. `AthleteProfi
 - **Meals section:** marker + label on flagged entries.
 - **Diet inference card:** one question with two actions ("Déclarer" / "Non merci"). It is never a banner.
 
+**iPhone (since 2026-09-27, SharpIt Pro).** `GET /api/v1/nutrition?trainingDayId=` projects the same
+view model (`projectV1Nutrition`): the day against its goals, meals and entries, the coach reading, the
+declared diet and seven days of calories for the day picker. The route answers `403 { error: 'pro_required' }`
+below Pro, and the Pro perk `nutrition-day` lists it. The web `/nutrition` page is unchanged.
+
 ---
 
 ## Scientific guardrails
