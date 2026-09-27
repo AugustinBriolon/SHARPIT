@@ -45,6 +45,11 @@ yarn web vitest run src/contracts/vercel-ignore-build.test.ts
 [`.github/workflows/presentation-architecture-guard.yml`](../../.github/workflows/presentation-architecture-guard.yml)
 
 - `paths-ignore` for docs / markdown so docs-only PRs skip the heavy install + `yarn test` suite.
+- `yarn test` caps Vitest at 4 workers per package (`turbo run test -- --maxWorkers=4`). Turbo runs every
+  package's suite at once and each Vitest defaults to one worker per core, so the whole run meant ~100 workers
+  on 12 cores: the first test of a file, which pays its dynamic `import()` of a heavy handler graph, went past
+  the 15 s timeout at random. Capped, the run is faster (≈54 s against ≈63 s) and stable. Running `vitest` in
+  one package keeps its full parallelism.
 - `concurrency` with `cancel-in-progress: true` cancels obsolete runs on the same PR/ref.
 - Yarn cache via `actions/setup-node` + `actions/cache` on `node_modules` / `.yarn/cache` keyed by `yarn.lock`.
 
