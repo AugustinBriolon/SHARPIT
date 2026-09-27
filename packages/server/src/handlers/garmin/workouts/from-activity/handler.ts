@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { pushStrengthWorkoutFromActivity } from '@sharpit/server/lib/integrations/garmin/garmin-strength-workout';
 import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
+import { isProAthlete } from '@sharpit/server/lib/access/is-pro-athlete';
 
 const bodySchema = z.object({
   activityId: z.string().min(1),
@@ -25,6 +26,10 @@ export async function POST(request: NextRequest) {
     }
 
     const athleteId = await getCurrentAthleteId();
+    // Sending to the watch is what SHARPIT adds: SharpIt Pro.
+    if (!(await isProAthlete(athleteId))) {
+      return NextResponse.json({ error: 'pro_required' }, { status: 403 });
+    }
     const result = await pushStrengthWorkoutFromActivity(athleteId, parsed.data);
     return NextResponse.json(result);
   } catch (error) {

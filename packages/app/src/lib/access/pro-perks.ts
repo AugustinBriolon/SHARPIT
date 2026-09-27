@@ -57,18 +57,17 @@ export const PRO_ONLY_PERKS: ProPerkData[] = [
       'Ton âge forme, calculé par SHARPIT à partir de ta VO₂max. Une estimation d’entraînement, pas un diagnostic.',
     status: 'pro',
   },
-];
-
-/** Déjà là, gratuit, pour tout le monde — pas encore une raison de payer. */
-export const INCLUDED_FOR_EVERYONE: ProPerkData[] = [
   {
     id: 'watch-push',
     title: 'Envoi vers la montre',
     description: 'Pousse tes séances planifiées directement sur ta montre connectée.',
-    status: 'included',
+    status: 'pro',
     href: '/plan/semaine',
   },
 ];
+
+/** Déjà là, gratuit, pour tout le monde — pas encore une raison de payer. */
+export const INCLUDED_FOR_EVERYONE: ProPerkData[] = [];
 
 /** Sur la feuille de route, rien à montrer encore. */
 export const PLANNED_PERKS: ProPerkData[] = [

@@ -35,6 +35,8 @@ export const NATIVE_V1_SURFACES = [
   { path: 'privacy/consent', methods: ['GET', 'POST'] },
   { path: 'onboarding/complete', methods: ['POST'] },
   { path: 'garmin/sync', methods: ['POST'] },
+  { path: 'myfitnesspal/connect', methods: ['POST'] },
+  { path: 'myfitnesspal/disconnect', methods: ['POST'] },
 ] as const;
 
 /**
@@ -46,6 +48,7 @@ export const NATIVE_V1_ONLY = [
   { path: 'sleep', methods: ['GET'] },
   { path: 'recovery', methods: ['GET'] },
   { path: 'nutrition', methods: ['GET'] },
+  { path: 'data-days', methods: ['GET'] },
   { path: 'sync', methods: ['POST'] },
   { path: 'sync-status', methods: ['GET'] },
   { path: 'health-samples', methods: ['POST'] },

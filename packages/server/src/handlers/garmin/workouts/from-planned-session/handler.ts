@@ -5,6 +5,7 @@ import { pushEnduranceWorkoutFromPlannedSession } from '@sharpit/server/lib/inte
 import { pushStrengthWorkoutFromPlannedSession } from '@sharpit/server/lib/integrations/garmin/garmin-strength-workout';
 import { GarminWorkoutAlreadyPushedError } from '@sharpit/server/lib/integrations/garmin/garmin-workout-push';
 import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
+import { isProAthlete } from '@sharpit/server/lib/access/is-pro-athlete';
 import { prisma } from '@sharpit/db/client';
 
 const bodySchema = z.object({
@@ -48,6 +49,10 @@ function garminPushErrorStatus(message: string) {
 export async function POST(request: NextRequest) {
   try {
     const athleteId = await getCurrentAthleteId();
+    // Sending to the watch is what SHARPIT adds: SharpIt Pro.
+    if (!(await isProAthlete(athleteId))) {
+      return NextResponse.json({ error: 'pro_required' }, { status: 403 });
+    }
     const json = await request.json();
     const parsed = bodySchema.safeParse(json);
     if (!parsed.success) {
