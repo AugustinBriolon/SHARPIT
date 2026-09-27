@@ -4,8 +4,8 @@ import { THEME_LIGHT_COLOR } from '@sharpit/app/lib/theme/theme';
 export default function manifest(): MetadataRoute.Manifest {
   return {
     id: '/',
-    name: 'SHARPIT',
-    short_name: 'SHARPIT',
+    name: 'SharpIt',
+    short_name: 'SharpIt',
     description: 'Intelligence sportive — entraînement, récupération, décision.',
     lang: 'fr',
     start_url: '/',

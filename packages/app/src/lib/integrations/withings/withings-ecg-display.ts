@@ -120,7 +120,7 @@ export function resolveWithingsEcgClassification(code: number): WithingsEcgClass
     label: `Résultat ECG (code ${rounded})`,
     tone: 'neutral',
     meaning:
-      'Withings a renvoyé un code que SHARPIT ne reconnaît pas encore. Le libellé exact est visible dans l’app Withings (section ECG de ta pesée).',
+      'Withings a renvoyé un code que SharpIt ne reconnaît pas encore. Le libellé exact est visible dans l’app Withings (section ECG de ta pesée).',
     action:
       'Ouvre l’app Withings → ta dernière pesée → ECG pour voir le résultat officiel. Dis-nous le libellé affiché si tu veux qu’on ajoute ce code.',
   };

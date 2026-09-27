@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { ConnectGarminIntro } from '@/components/integrations/connect-garmin/connect-garmin-intro';
 
-export const metadata: Metadata = { title: 'Connecter Garmin · SHARPIT' };
+export const metadata: Metadata = { title: 'Connecter Garmin · SharpIt' };
 
 /**
  * Native Garmin handoff, step 1 (ADR-040, direction A). iOS opens this absolute URL on

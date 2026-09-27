@@ -611,7 +611,7 @@ function buildTodayEmptyState(effectiveSnapshot: AthleteSnapshot, statusMessage:
     description:
       effectiveSnapshot.insufficientDataMessage ??
       effectiveSnapshot.primaryProductMessage ??
-      'SHARPIT attend tes premières données physiologiques pour établir ton bilan.',
+      'SharpIt attend tes premières données physiologiques pour établir ton bilan.',
   };
 }
 

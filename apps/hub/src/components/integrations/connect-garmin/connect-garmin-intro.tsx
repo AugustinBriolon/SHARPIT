@@ -8,7 +8,7 @@ import { cn } from '@sharpit/app/lib/utils';
 
 const STEPS = [
   'Garmin s’ouvre — ton mot de passe reste chez Garmin.',
-  'Tu autorises SHARPIT à lire tes données.',
+  'Tu autorises SharpIt à lire tes données.',
   'Tu reviens dans l’app.',
 ] as const;
 

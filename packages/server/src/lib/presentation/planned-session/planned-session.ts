@@ -27,7 +27,7 @@ const ADVISORY_HEADLINES: Record<string, string> = {
 
 const ADVISORY_RATIONALES: Record<string, string> = {
   'planned.advisory.confirmLocation.rationale':
-    'Pour les séances outdoor, SHARPIT a besoin de savoir si tu seras dehors et où, afin d’anticiper l’impact sur ta séance.',
+    'Pour les séances outdoor, SharpIt a besoin de savoir si tu seras dehors et où, afin d’anticiper l’impact sur ta séance.',
   'planned.advisory.indoorProceed.rationale':
     'La météo extérieure n’influence pas l’interprétation physiologique de cette séance.',
   'planned.advisory.noForecast.rationale':

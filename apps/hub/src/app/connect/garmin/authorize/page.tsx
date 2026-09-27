@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import { ConnectGarminAuthorize } from '@/components/integrations/connect-garmin/connect-garmin-authorize';
 
-export const metadata: Metadata = { title: 'Autoriser Garmin · SHARPIT' };
+export const metadata: Metadata = { title: 'Autoriser Garmin · SharpIt' };
 
 type PageProps = {
   searchParams: Promise<{ state?: string }>;

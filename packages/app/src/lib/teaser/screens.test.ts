@@ -44,8 +44,8 @@ describe('teaser screens copy', () => {
     expect(copy).not.toMatch(/–/);
   });
 
-  it('never uses SharpIt camelCase on the public teaser', () => {
-    expect(allCopy()).not.toMatch(/SharpIt/);
+  it('writes the brand SharpIt, never in capitals', () => {
+    expect(allCopy()).not.toMatch(/SHARPIT/);
   });
 
   it('never implies Art. 9 health processing or a private-circle wall', () => {
@@ -55,7 +55,7 @@ describe('teaser screens copy', () => {
     }
   });
 
-  it('keeps brand as SHARPIT on the public surface', () => {
-    expect(TEASER_BRAND).toBe('SHARPIT');
+  it('keeps brand as SharpIt on the public surface', () => {
+    expect(TEASER_BRAND).toBe('SharpIt');
   });
 });

@@ -88,7 +88,7 @@ export function predictionToRaceGoalDefaults(
     kind: 'RACE',
     raceFormat: prediction.label,
     targetPerformance: prediction.displayTime,
-    notes: `Projection SHARPIT · ${prediction.pace} · base ${prediction.referenceLabel}`,
+    notes: `Projection SharpIt · ${prediction.pace} · base ${prediction.referenceLabel}`,
     priority: 'B',
   };
 }

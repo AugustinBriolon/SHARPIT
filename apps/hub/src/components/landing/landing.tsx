@@ -23,7 +23,7 @@ function Brand() {
       <span className="brand-tile size-7" aria-hidden>
         <BrandMark className="size-3.5" />
       </span>
-      <span className={cn(HEADING, 'text-base tracking-tight')}>SHARPIT</span>
+      <span className={cn(HEADING, 'text-base tracking-tight')}>SharpIt</span>
     </span>
   );
 }
@@ -222,7 +222,7 @@ function Closing() {
 function Footer() {
   return (
     <footer className="border-foreground/15 text-muted-foreground flex flex-wrap items-center justify-between gap-4 border-t py-8 text-sm">
-      <span className={DATA}>SHARPIT</span>
+      <span className={DATA}>SharpIt</span>
       <nav className="flex gap-5">
         {LANDING_FOOTER_LINKS.map((link) => (
           <Link key={link.href} className="underline-offset-4 hover:underline" href={link.href}>

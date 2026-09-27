@@ -48,7 +48,7 @@ function clearHandshakeCookies(response: NextResponse): NextResponse {
 
 function unavailablePage(): NextResponse {
   const html =
-    '<!doctype html><html lang="fr"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>SHARPIT</title>' +
+    '<!doctype html><html lang="fr"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>SharpIt</title>' +
     '<body style="font-family:system-ui,sans-serif;max-width:28rem;margin:4rem auto;padding:0 1rem;line-height:1.5">' +
     '<h1 style="font-size:1.25rem">Connexion momentanément indisponible</h1>' +
     '<p>La session n’a pas pu être vérifiée. Réessaie dans une minute.</p></body></html>';

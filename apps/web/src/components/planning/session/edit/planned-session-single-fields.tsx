@@ -191,7 +191,7 @@ export function PlannedSessionOutdoorContextFields({
       ) : null}
 
       <p className="text-muted-foreground text-xs leading-relaxed">
-        SHARPIT utilise le lieu pour anticiper chaleur, pluie et vent avant la séance — sans
+        SharpIt utilise le lieu pour anticiper chaleur, pluie et vent avant la séance — sans
         afficher la météo brute en premier.
       </p>
     </div>

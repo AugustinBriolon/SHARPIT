@@ -49,7 +49,7 @@ function baselinePendingMessage(recovery: TodayState['recovery']): string | null
   if (recovery?.readinessCategory !== 'BASELINE_PENDING') {
     return null;
   }
-  return 'SHARPIT établit encore ta baseline physiologique. Quelques jours de données suffisent pour un premier bilan fiable.';
+  return 'SharpIt établit encore ta baseline physiologique. Quelques jours de données suffisent pour un premier bilan fiable.';
 }
 
 function domainHintMessage(domainMessages: Partial<Record<string, string>>): string | null {
@@ -80,14 +80,14 @@ export function buildInsufficientDataMessage(
 
   const missing = missingSignals(decision);
   if (missing.length > 0 && missing[0] !== 'synthèse du jour') {
-    return `Données manquantes : ${missing.join(', ')}. Synchronise ton appareil ou complète ton check-in du matin — SHARPIT mettra à jour ton bilan dès réception.`;
+    return `Données manquantes : ${missing.join(', ')}. Synchronise ton appareil ou complète ton check-in du matin — SharpIt mettra à jour ton bilan dès réception.`;
   }
 
   if (decision?.dataCompleteness === 'INSUFFICIENT') {
-    return 'Les signaux disponibles ne permettent pas encore une recommandation d’entraînement fiable. SHARPIT attend davantage de données physiologiques.';
+    return 'Les signaux disponibles ne permettent pas encore une recommandation d’entraînement fiable. SharpIt attend davantage de données physiologiques.';
   }
 
-  return 'Les signaux disponibles ne permettent pas encore une recommandation d’entraînement fiable. SHARPIT se mettra à jour dès que tes données de sommeil et de récupération seront complètes.';
+  return 'Les signaux disponibles ne permettent pas encore une recommandation d’entraînement fiable. SharpIt se mettra à jour dès que tes données de sommeil et de récupération seront complètes.';
 }
 
 export function confidenceLabelFor(confidence: number | null): string | null {

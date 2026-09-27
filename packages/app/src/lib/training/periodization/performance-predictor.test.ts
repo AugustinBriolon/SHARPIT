@@ -51,7 +51,7 @@ describe('predictionToRaceGoalDefaults', () => {
       kind: 'RACE',
       raceFormat: '10 km',
       targetPerformance: '42:15',
-      notes: 'Projection SHARPIT · 4:13/km · base 10 km',
+      notes: 'Projection SharpIt · 4:13/km · base 10 km',
       priority: 'B',
     });
   });

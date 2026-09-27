@@ -11,7 +11,7 @@ import { ThemeProvider } from '@sharpit/ui/providers/theme-provider';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'SHARPIT',
+  title: 'SharpIt',
   description: 'Intelligence sportive — entraînement, récupération, décision.',
 };
 

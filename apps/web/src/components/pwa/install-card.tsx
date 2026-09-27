@@ -26,7 +26,7 @@ export function InstallCard() {
           <Smartphone className="size-4" aria-hidden />
         </div>
         <div className="min-w-0 flex-1 pr-10">
-          <p className="text-sm font-medium">Installer SHARPIT</p>
+          <p className="text-sm font-medium">Installer SharpIt</p>
           {kind === 'NATIVE_PROMPT' ? (
             <p className="text-muted-foreground mt-1 text-sm leading-relaxed">
               Accès direct depuis l&apos;écran d&apos;accueil, en plein écran.

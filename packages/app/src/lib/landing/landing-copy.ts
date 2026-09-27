@@ -16,7 +16,7 @@ export const LANDING_LINKS = {
 export const LANDING_HERO = {
   eyebrow: 'Coach d’endurance',
   titleLines: ['Le coach qui te connaît.', 'Et t’amène à ton objectif.'],
-  body: 'SHARPIT se branche sur ta montre, lit chacun de tes entraînements et tient compte de tous tes paramètres pour te mener jusqu’à ta course. Chaque matin, une décision claire.',
+  body: 'SharpIt se branche sur ta montre, lit chacun de tes entraînements et tient compte de tous tes paramètres pour te mener jusqu’à ta course. Chaque matin, une décision claire.',
   primaryCta: { label: 'Créer mon compte', href: LANDING_LINKS.signUp },
   secondaryCta: { label: 'Voir la démo', href: LANDING_LINKS.demo },
   signIn: { label: 'Connexion', href: LANDING_LINKS.signIn },

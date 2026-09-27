@@ -41,7 +41,7 @@ function EmptyStateHeader() {
     <header className="space-y-1.5">
       <h1 className="text-page-title">Rien à afficher</h1>
       <p className="text-muted-foreground text-sm leading-relaxed">
-        SHARPIT n’a pas encore assez de signaux pour lire ta journée. Il lui faut au moins une
+        SharpIt n’a pas encore assez de signaux pour lire ta journée. Il lui faut au moins une
         source connectée, ou une saisie de ta part.
       </p>
     </header>

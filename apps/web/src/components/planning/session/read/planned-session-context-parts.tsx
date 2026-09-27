@@ -36,7 +36,7 @@ export function PlannedSessionLocationConfirmationPanel({
               {proposed ? `Lieu proposé : ${proposed}` : 'Lieu à préciser'}
             </p>
             <p className="text-muted-foreground text-xs leading-relaxed">
-              SHARPIT l’utilise pour anticiper l’impact météo sur ta séance.
+              SharpIt l’utilise pour anticiper l’impact météo sur ta séance.
             </p>
           </div>
         </div>

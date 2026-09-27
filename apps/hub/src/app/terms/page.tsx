@@ -3,8 +3,8 @@ import type { Metadata } from 'next';
 import { LegalDocumentPage } from '@/components/privacy/legal-document-page';
 
 export const metadata: Metadata = {
-  title: "Conditions d'utilisation — SHARPIT",
-  description: "Conditions d'utilisation SHARPIT (FR).",
+  title: "Conditions d'utilisation — SharpIt",
+  description: "Conditions d'utilisation SharpIt (FR).",
 };
 
 export default function TermsPage() {

@@ -95,7 +95,7 @@ describe('projectV1Today', () => {
         hasContent: false,
         emptyState: {
           title: 'Données insuffisantes',
-          description: 'SHARPIT attend tes premières données.',
+          description: 'SharpIt attend tes premières données.',
           action: { label: 'Ouvrir', href: '/moi' },
         },
       }),
@@ -116,13 +116,13 @@ describe('projectV1Today', () => {
     const json = projectV1Today(
       source({
         hasContent: false,
-        emptyState: { title: 'Données insuffisantes', description: 'SHARPIT attend tes données.' },
+        emptyState: { title: 'Données insuffisantes', description: 'SharpIt attend tes données.' },
       }),
       { trainingDayId: '2026-09-15', webOrigin: origin, garminConnected: true },
     );
     expect(json.empty).toEqual({
       title: 'Données insuffisantes',
-      message: 'SHARPIT attend tes données.',
+      message: 'SharpIt attend tes données.',
       code: 'NO_CONTENT',
       webURL: 'https://app.example/connect/garmin',
       actionLabel: null,

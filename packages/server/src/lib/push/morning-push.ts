@@ -69,7 +69,7 @@ export function buildMorningPushPayload(
     snapshot.primaryProductMessage ||
     snapshot.briefing?.content?.split('\n').find((l) => l.trim().length > 0) ||
     snapshot.insufficientDataMessage ||
-    'Tes recommandations du jour sont prêtes dans SHARPIT.';
+    'Tes recommandations du jour sont prêtes dans SharpIt.';
 
   // Cap length cleanly for lock screen presentation
   const body = rawBody.length > 140 ? `${rawBody.slice(0, 137).trim()}…` : rawBody;

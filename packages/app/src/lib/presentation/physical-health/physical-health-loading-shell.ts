@@ -21,7 +21,7 @@ export function physicalHealthLoadingShell(): PhysicalHealthViewModel {
     resolvedConditions: [],
     globalDecision: EMPTY_GLOBAL_DECISION,
     medicalDisclaimer:
-      "SHARPIT estime ton état physique à partir de tes observations. Ce n'est pas un diagnostic médical ni un avis de traitement.",
+      "SharpIt estime ton état physique à partir de tes observations. Ce n'est pas un diagnostic médical ni un avis de traitement.",
     emptyState: null,
     hierarchy: { rootId: 'physical-health', order: [] },
     sections: [],

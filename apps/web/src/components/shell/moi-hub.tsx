@@ -221,7 +221,7 @@ function MoiHubBody({ isPro }: { isPro: boolean }) {
     <>
       {!isPro ? (
         <ShellHubSolo aria-label="Offre Pro">
-          <ShellHubRow href={MOI_PRO_PATH} icon={Gauge} title="SHARPIT Pro" />
+          <ShellHubRow href={MOI_PRO_PATH} icon={Gauge} title="SharpIt Pro" />
         </ShellHubSolo>
       ) : null}
       <HubSectionBlock section={MODELE_SECTION} />

@@ -136,7 +136,7 @@ export function verdictHeadline(verdict: OverallVerdict, adviceActionable: boole
 
 export function canTrainHardAnswer(verdict: OverallVerdict, adviceActionable: boolean): string {
   if (!adviceActionable) {
-    return 'SHARPIT n’a pas encore assez de signaux pour répondre.';
+    return 'SharpIt n’a pas encore assez de signaux pour répondre.';
   }
   switch (verdict) {
     case 'TRAIN_HARD':

@@ -4,7 +4,7 @@ import { AccountDeletedNotice } from '@/components/teaser/account-deleted-notice
 import { TeaserFunnel } from '@/components/teaser/teaser-funnel';
 
 export const metadata: Metadata = {
-  title: 'SHARPIT',
+  title: 'SharpIt',
   description: 'Coach d’endurance avec Digital Twin. Décide le matin, avance le reste du jour.',
   robots: {
     index: true,

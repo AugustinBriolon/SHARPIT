@@ -319,7 +319,7 @@ function emptyViewModel(): PhysicalHealthViewModel {
     resolvedConditions: [],
     globalDecision: EMPTY_GLOBAL_DECISION,
     medicalDisclaimer:
-      "SHARPIT estime ton état physique à partir de tes observations. Ce n'est pas un diagnostic médical ni un avis de traitement.",
+      "SharpIt estime ton état physique à partir de tes observations. Ce n'est pas un diagnostic médical ni un avis de traitement.",
     emptyState: {
       title: 'Aucune condition suivie',
       description:
@@ -429,7 +429,7 @@ function buildPopulatedPhysicalHealthViewModel(input: {
     resolvedConditions: input.resolvedConditions,
     globalDecision: buildGlobalDecisionContext(input.snapshot, 'PHYSICAL_HEALTH'),
     medicalDisclaimer:
-      "SHARPIT estime ton état physique à partir de tes observations. Ce n'est pas un diagnostic médical ni un avis de traitement.",
+      "SharpIt estime ton état physique à partir de tes observations. Ce n'est pas un diagnostic médical ni un avis de traitement.",
     emptyState: hasNoConditions ? emptyViewModel().emptyState : null,
     hierarchy: {
       rootId: 'hero',

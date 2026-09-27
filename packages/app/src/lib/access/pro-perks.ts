@@ -54,7 +54,7 @@ export const PRO_ONLY_PERKS: ProPerkData[] = [
     id: 'biological-age',
     title: 'Âge biologique',
     description:
-      'Ton âge forme, calculé par SHARPIT à partir de ta VO₂max. Une estimation d’entraînement, pas un diagnostic.',
+      'Ton âge forme, calculé par SharpIt à partir de ta VO₂max. Une estimation d’entraînement, pas un diagnostic.',
     status: 'pro',
   },
   {

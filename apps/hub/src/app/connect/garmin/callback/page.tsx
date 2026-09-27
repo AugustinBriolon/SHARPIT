@@ -3,7 +3,7 @@ import { Suspense } from 'react';
 import { ConnectGarminOutcome } from '@/components/integrations/connect-garmin/connect-garmin-outcome';
 import { parseGarminHandoffStatus } from '@sharpit/app/lib/integrations/garmin/garmin-connect-handoff';
 
-export const metadata: Metadata = { title: 'Garmin · SHARPIT' };
+export const metadata: Metadata = { title: 'Garmin · SharpIt' };
 
 type PageProps = {
   searchParams: Promise<{ garmin?: string }>;

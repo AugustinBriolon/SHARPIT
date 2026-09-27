@@ -76,7 +76,7 @@ export function formatEquipmentForCoach(equipment: AthleteEquipment | null | und
 
 function strengthEquipmentHint(equipment: AthleteEquipment): string | null {
   if (equipment.strengthVenue === 'gym' || equipment.strengthVenue === 'both') {
-    return 'Avec une salle, SHARPIT peut proposer du renfo machines / racks / câbles.';
+    return 'Avec une salle, SharpIt peut proposer du renfo machines / racks / câbles.';
   }
   if (equipment.strengthVenue === 'home') {
     return equipment.owned.some((id) => id.startsWith('strength_'))

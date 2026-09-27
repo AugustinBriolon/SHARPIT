@@ -17,7 +17,7 @@ function NarrativeLoadingSection() {
         <div className="space-y-1">
           <p className="font-medium">Synthèse en cours</p>
           <p className="text-muted-foreground text-sm leading-relaxed">
-            SHARPIT prépare une lecture de ta séance. Tu peux quitter — elle sera prête au retour.
+            SharpIt prépare une lecture de ta séance. Tu peux quitter — elle sera prête au retour.
           </p>
         </div>
       </div>

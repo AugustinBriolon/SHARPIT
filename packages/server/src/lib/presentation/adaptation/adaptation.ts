@@ -84,7 +84,7 @@ function emptyAdaptationViewModel(): AdaptationViewModel {
     emptyState: {
       title: 'Adaptation en cours de consolidation',
       description:
-        'SHARPIT construit encore ton historique d’adaptation. Quelques semaines de donnees d’entraînement et de récupération suffisent pour une première lecture fiable.',
+        'SharpIt construit encore ton historique d’adaptation. Quelques semaines de donnees d’entraînement et de récupération suffisent pour une première lecture fiable.',
     },
     hierarchy: { rootId: 'adaptation', order: ['hero', 'decision', 'insights'] },
     sections: [],

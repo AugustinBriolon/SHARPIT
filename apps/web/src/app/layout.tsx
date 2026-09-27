@@ -16,13 +16,13 @@ import { FONT_VARIABLES } from '@sharpit/ui/fonts';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'SHARPIT',
+  title: 'SharpIt',
   description: 'Intelligence sportive — entraînement, récupération, décision.',
-  applicationName: 'SHARPIT',
+  applicationName: 'SharpIt',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
-    title: 'SHARPIT',
+    title: 'SharpIt',
   },
   formatDetection: {
     telephone: false,
