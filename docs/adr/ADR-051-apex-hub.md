@@ -23,7 +23,9 @@ and `www.sharpit.app`:
 
 - `/.well-known/apple-app-site-association` (outside Clerk's proxy), `/connect/garmin`, `/start`, `/authorize`,
   `/callback`, `/privacy`, `/terms`, and `/sign-in` (where the handoff redeems its one-time ticket);
-- every other path, the root included, redirects (307, path and query kept) to `https://web.sharpit.app`.
+- `/` is the public landing (since 2026-09-27, `apps/hub/src/components/landing`, GSAP ScrollTrigger motion,
+  copy in `@sharpit/app/lib/landing/landing-copy.ts` under the teaser's forbidden-copy wall);
+- every other path redirects (307, path and query kept) to `https://web.sharpit.app`.
 
 Shared UI lives in `packages/ui` (`@sharpit/ui`): the design system CSS, fonts, button, skeleton, auth shell,
 providers, the Garmin SSO parts, `apiFetch` and the server-side `api.` client. The web imports it too. The hub,
@@ -68,4 +70,4 @@ redirects `/privacy`, `/terms`, `/connect/*`, `/.well-known/*` on `web.` to the 
 **Negative:**
 
 - One more Vercel project and package; apex visitors of app paths take one redirect.
-- `/docs` and a real landing are not built yet (no content).
+- `/docs` is not built yet (no content).

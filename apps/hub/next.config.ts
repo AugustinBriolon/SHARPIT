@@ -4,7 +4,8 @@ import type { NextConfig } from 'next';
 /**
  * sharpit.app, the apex (ADR-048 phase 4, ADR-051): the Apple app-site association, the native
  * Garmin handoff (`/connect/*`, immutable for iOS), the legal pages and the sign-in that redeems
- * a handoff ticket. Every other path belongs to the web app on `web.sharpit.app`.
+ * a handoff ticket, and the public landing at `/`. Every other path belongs to the web app on
+ * `web.sharpit.app`.
  */
 const WEB_ORIGIN = 'https://web.sharpit.app';
 const API_ORIGIN = 'https://api.sharpit.app';
@@ -58,12 +59,10 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [
       {
-        source: `/:path((?!${HUB_PATHS}).*)`,
+        source: `/:path((?!${HUB_PATHS}).+)`,
         destination: `${WEB_ORIGIN}/:path`,
         permanent: false,
       },
-      // `/:path(...)` needs a segment; the apex root is its own rule.
-      { source: '/', destination: `${WEB_ORIGIN}/`, permanent: false },
       // Clients still calling the apex API (pre-`api.` builds): 308 keeps the method and body.
       {
         source: '/api/:path((?!billing/apple/notifications$).*)',

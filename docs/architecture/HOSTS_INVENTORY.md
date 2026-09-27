@@ -23,7 +23,7 @@ Re-run `yarn smoke:must-private https://sharpit.app https://web.sharpit.app` aft
 
 Three projects, three apps (ADR-048, ADR-051), all in `lhr1`:
 
-- `sharpit.app` (and `www.`, redirected to it) → `sharpit-hub` (`apps/hub`, since 2026-09-27): AASA, `/connect/garmin/*`, `/privacy`, `/terms`, `/sign-in` for the handoff ticket; `/api/billing/apple/notifications` is proxied to `api.` and every other `/api/*` answers 308 to `api.` (older iOS builds); every other path redirects to `web.`.
+- `sharpit.app` (and `www.`, redirected to it) → `sharpit-hub` (`apps/hub`, since 2026-09-27): AASA, `/connect/garmin/*`, `/privacy`, `/terms`, `/sign-in` for the handoff ticket, the landing at `/`; `/api/billing/apple/notifications` is proxied to `api.` and every other `/api/*` answers 308 to `api.` (older iOS builds); every other path redirects to `web.`.
 - `web.sharpit.app` → `sharpit-webapp` (`apps/web`; named `sharpit` until 2026-09-26): the UI, no database; `/privacy`, `/terms`, `/connect/*`, `/.well-known/*` redirect to the apex.
 - `api.sharpit.app` → `sharpit-api` (`apps/api`): every route handler, crons, migrations.
 
@@ -34,7 +34,7 @@ Three projects, three apps (ADR-048, ADR-051), all in `lhr1`:
 | `/.well-known/apple-app-site-association` | 200 JSON, no redirect, real Team ID      | same              | same              | apex only                                |
 | `/connect/garmin` (document)              | 307 → `/sign-in?redirect_url=` same host | same              | same              | apex (+ web.)                            |
 | `/connect/garmin/callback`                | 200 HTML                                 | same              | same              | apex                                     |
-| `/`                                       | 307 → `/welcome`                         | same              | same              | apex: landing · web.: Today · api.: none |
+| `/`                                       | 200 landing (hub)                        | same              | same              | apex: landing · web.: Today · api.: none |
 | `/api/v1/today` no Bearer                 | 404 HTML                                 | same              | same              | api.: 401 JSON                           |
 | Clerk publishable key                     | `pk_live_`                               | `pk_live_`        | `pk_live_`        | one instance                             |
 

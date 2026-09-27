@@ -35,13 +35,11 @@ describe('apex routing', () => {
     expect(redirect.permanent).toBe(false);
   });
 
-  it('sends the apex root to the web too', async () => {
+  it('serves the landing at the apex root instead of redirecting it', async () => {
     const redirects = (await nextConfig.redirects?.()) ?? [];
-    expect(redirects).toContainEqual({
-      source: '/',
-      destination: 'https://web.sharpit.app/',
-      permanent: false,
-    });
+    expect(redirects.some((redirect) => redirect.source === '/')).toBe(false);
+    const { matches } = await webRedirect();
+    expect(matches('/')).toBe(false);
   });
 
   it('sends apex API calls to api., method and body kept', async () => {

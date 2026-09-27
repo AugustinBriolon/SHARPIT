@@ -37,7 +37,7 @@ scripts run with `yarn web <script>` or `yarn api <script>` (database scripts: `
 
 ```
 apps/web/                web.sharpit.app: the UI — Next.js pages only, no database (src/, scripts/, e2e/, public/)
-apps/hub/                sharpit.app: AASA, the native Garmin handoff (/connect/*), /privacy, /terms (content/legal/); /api/* → api.; everything else → web. (ADR-051)
+apps/hub/                sharpit.app: AASA, the native Garmin handoff (/connect/*), /privacy, /terms (content/legal/), the landing at /; /api/* → api.; everything else → web. (ADR-051)
 apps/api/                api.sharpit.app: every route handler — /api/v1, the web's /api routes, crons, migrations, db scripts (port 3001)
 packages/core/           Pure domain: observation, features, inference, digital twin, decision… (@sharpit/core)
 packages/shared/         Framework-free helpers shared by every workspace (@sharpit/shared)

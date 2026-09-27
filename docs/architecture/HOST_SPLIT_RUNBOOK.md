@@ -72,7 +72,7 @@ its contract.
 
 `/` = athlete landing linking privacy (`/privacy`) and terms (`/terms`); `/docs` = curated playbook
 (legal and product only, never `docs/archive` or `docs/audits`); no Connect/Today teaser. The proxy's
-`/` → `/welcome` redirect for strangers becomes the landing. AASA and `/connect/*` stay untouched:
+`/` → `/welcome` redirect for strangers becomes the landing (done 2026-09-27: `apps/hub`, `/docs` still to write). AASA and `/connect/*` stay untouched:
 re-run `yarn smoke:must-private https://sharpit.app` and a universal-link tap after the change.
 
 ## Step 9 — thin web (needs team validation)
