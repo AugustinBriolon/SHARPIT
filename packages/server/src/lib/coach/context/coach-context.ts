@@ -374,7 +374,12 @@ export function legacyPhysicalTrend(
   return 'stable';
 }
 
-function buildPhysicalContext(
+/**
+ * The physical conditions the coach reads. `category` is the French label for the prompt;
+ * `type` keeps the raw kind (PAIN, INJURY…), which `sensitiveZonesFrom` needs to turn a
+ * pain or an injury into a zone the plans must spare — reading the label, it found none.
+ */
+export function buildPhysicalContext(
   athleteSnapshot: Awaited<ReturnType<typeof getOrBuildAthleteSnapshot>>,
   physicalNotes: Awaited<ReturnType<typeof getActivePhysicalNotes>>,
 ) {
@@ -382,6 +387,7 @@ function buildPhysicalContext(
     athleteSnapshot.physicalHealth?.conditions
       .filter((c) => c.affectsTraining && c.status !== 'RESOLVED')
       .map((c) => ({
+        type: c.type as string,
         category: CONDITION_TYPE_LABELS[c.type] ?? c.type,
         status: c.status,
         title: c.label,
@@ -400,6 +406,7 @@ function buildPhysicalContext(
   }
 
   return physicalNotes.map((n) => ({
+    type: n.category as string,
     category: categoryLabels[n.category],
     status: statusLabels[n.status],
     title: n.title,

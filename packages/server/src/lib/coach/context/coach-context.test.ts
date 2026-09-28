@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
+import { sensitiveZonesFrom } from '@sharpit/app/lib/physical-health/sensitive-zones';
 import { normalizeAthleteEquipment } from '@sharpit/app/lib/equipment/parse';
 import { normalizeTrainingAvailability } from '@sharpit/server/lib/training-availability/parse';
 import {
+  buildPhysicalContext,
   formatConstraintsSection,
   formatDecisionSection,
   formatCoachContext,
@@ -269,5 +271,30 @@ describe('formatCoachContext travel contract', () => {
     const text = formatCoachContext(minimalContext({ travel: [] }));
 
     expect(text).not.toContain('contrainte STRICTE');
+  });
+});
+
+describe('physical context', () => {
+  it('keeps the raw kind, so a declared pain becomes a sensitive zone', () => {
+    const physical = buildPhysicalContext(
+      { physicalHealth: null } as never,
+      [
+        {
+          category: 'PAIN',
+          status: 'ACTIVE',
+          title: 'Douleur genou droit',
+          bodyPart: 'Genou',
+          side: 'RIGHT',
+          severity: 5,
+          description: null,
+          checkins: [],
+        },
+      ] as never,
+    );
+
+    expect(physical[0]).toMatchObject({ type: 'PAIN', category: 'Douleur' });
+    const [zone] = sensitiveZonesFrom(physical);
+    expect(zone?.region).toBe('Genou');
+    expect(zone?.groups).toEqual(['upper legs', 'lower legs']);
   });
 });
