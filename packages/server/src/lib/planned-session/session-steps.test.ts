@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { buildPlannedSessionSteps, type PlannedSessionForSteps } from './session-steps';
+import {
+  athleteThresholds,
+  buildPlannedSessionSteps,
+  type PlannedSessionForSteps,
+} from './session-steps';
 
 const thresholds = {
   runThresholdPaceSecPerKm: 240,
@@ -156,5 +160,30 @@ describe('buildPlannedSessionSteps', () => {
     const result = buildPlannedSessionSteps(session({ type: 'STRENGTH' }), thresholds);
 
     expect(result).toEqual({ steps: [], derived: false, warnings: [] });
+  });
+});
+
+describe('athleteThresholds', () => {
+  it('keeps only the references a target is resolved against', () => {
+    expect(
+      athleteThresholds({
+        runThresholdPaceSecPerKm: 245,
+        swimCssSecPer100m: null,
+        ftpW: 260,
+        lthr: 168,
+        maxHr: null,
+        firstName: 'Zoé',
+      } as never),
+    ).toEqual({
+      runThresholdPaceSecPerKm: 245,
+      swimCssSecPer100m: null,
+      ftpW: 260,
+      lthr: 168,
+      maxHr: null,
+    });
+  });
+
+  it('leaves every target unresolved without a profile', () => {
+    expect(Object.values(athleteThresholds(null)).every((value) => value === null)).toBe(true);
   });
 });

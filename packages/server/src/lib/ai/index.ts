@@ -51,6 +51,12 @@ export const COACH_REASONING_LEVEL = {
    */
   answer: 'minimal',
   structured: 'medium',
+  /**
+   * A week of sessions (`plan`). Measured on Gemini 3 Flash: `medium` spent ~12 000 reasoning
+   * tokens — 106 s before the first session, 110 s in all. `low` wrote a valid week in ~50 s
+   * (4/4 once recovered and normalized); `minimal` took 35 s but ignored the usual days.
+   */
+  plan: 'low',
 } as const;
 
 /**

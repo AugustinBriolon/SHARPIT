@@ -39,6 +39,25 @@ export type PlannedSessionBreakdown = {
   warnings: string[];
 };
 
+const NO_THRESHOLDS: AthleteThresholds = {
+  runThresholdPaceSecPerKm: null,
+  swimCssSecPer100m: null,
+  ftpW: null,
+  lthr: null,
+  maxHr: null,
+};
+
+/** The references an endurance target is resolved against. Absent profile → unresolved. */
+export function athleteThresholds(
+  profile: AthleteThresholds | null | undefined,
+): AthleteThresholds {
+  if (!profile) {
+    return NO_THRESHOLDS;
+  }
+  const { runThresholdPaceSecPerKm, swimCssSecPer100m, ftpW, lthr, maxHr } = profile;
+  return { runThresholdPaceSecPerKm, swimCssSecPer100m, ftpW, lthr, maxHr };
+}
+
 const EMPTY: PlannedSessionBreakdown = { steps: [], derived: false, warnings: [] };
 
 export type PlannedSessionForSteps = {

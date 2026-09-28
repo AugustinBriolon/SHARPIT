@@ -8,7 +8,10 @@ import {
   getPlannedSessionById,
   getPlannedSessions,
 } from '@sharpit/server/lib/queries';
-import { buildPlannedSessionSteps } from '@sharpit/server/lib/planned-session/session-steps';
+import {
+  athleteThresholds,
+  buildPlannedSessionSteps,
+} from '@sharpit/server/lib/planned-session/session-steps';
 import type { PlannedSession } from '@prisma/client';
 import { refreshAndPersistPlannedSessionContext } from '@sharpit/server/lib/planned-session/resolve-context';
 import { createPlannedSessionSchema } from '@sharpit/server/lib/validators/planned-session';
@@ -50,25 +53,6 @@ async function runPlannedSessionSideEffects(athleteId: string, session: PlannedS
       console.error('Push Google Calendar échoué', syncError);
     }),
   ]);
-}
-
-type AthleteProfileRow = Awaited<ReturnType<typeof getAthleteProfile>>;
-
-const NO_THRESHOLDS = {
-  runThresholdPaceSecPerKm: null,
-  swimCssSecPer100m: null,
-  ftpW: null,
-  lthr: null,
-  maxHr: null,
-};
-
-/** The references an endurance target is resolved against. Absent profile → unresolved. */
-function athleteThresholds(profile: AthleteProfileRow) {
-  if (!profile) {
-    return NO_THRESHOLDS;
-  }
-  const { runThresholdPaceSecPerKm, swimCssSecPer100m, ftpW, lthr, maxHr } = profile;
-  return { runThresholdPaceSecPerKm, swimCssSecPer100m, ftpW, lthr, maxHr };
 }
 
 export async function GET(request: NextRequest) {

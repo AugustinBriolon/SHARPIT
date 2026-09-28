@@ -230,6 +230,8 @@ type StructuredCoachStreamArgs = {
   onReasoning: (delta: string) => void;
   /** Called with the object rebuilt so far, only when it actually changed. */
   onPartial: (value: unknown) => void;
+  /** How long the model deliberates; `structured` unless the workload was measured apart. */
+  reasoning?: (typeof COACH_REASONING_LEVEL)[keyof typeof COACH_REASONING_LEVEL];
 };
 
 async function runStructuredCoachStreamOnce({
@@ -238,6 +240,7 @@ async function runStructuredCoachStreamOnce({
   prompt,
   onReasoning,
   onPartial,
+  reasoning = COACH_REASONING_LEVEL.structured,
 }: StructuredCoachStreamArgs): Promise<{ output: unknown; usage: LanguageModelUsage }> {
   const result = streamText({
     model: COACH_STRUCTURED_MODEL,
@@ -245,7 +248,7 @@ async function runStructuredCoachStreamOnce({
     system,
     prompt,
     // No maxOutputTokens here on purpose — see COACH_MAX_OUTPUT_TOKENS.
-    reasoning: COACH_REASONING_LEVEL.structured,
+    reasoning,
     providerOptions: coachStructuredGatewayOptions,
     telemetry: {
       functionId: 'coach-structured',

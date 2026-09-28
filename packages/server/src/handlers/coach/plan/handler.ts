@@ -1,7 +1,7 @@
 import { addDays, format, startOfDay } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { NextResponse } from 'next/server';
-import { isCoachConfigured } from '@sharpit/server/lib/ai';
+import { COACH_REASONING_LEVEL, isCoachConfigured } from '@sharpit/server/lib/ai';
 import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
 import { recordAiUsage } from '@sharpit/server/lib/ai/usage';
 import {
@@ -29,7 +29,12 @@ import {
 import { runStructuredCoachStream } from '@sharpit/server/lib/coach/stream-structured-generation';
 import { withCoachTrace } from '@sharpit/server/lib/ai/coach-trace';
 import { buildBusySummary } from '@sharpit/server/lib/coach/plan/calendar-availability';
-import { getGoalById } from '@sharpit/server/lib/queries';
+import { getAthleteProfile, getGoalById } from '@sharpit/server/lib/queries';
+import {
+  athleteThresholds,
+  buildPlannedSessionSteps,
+  type PlannedSessionBreakdown,
+} from '@sharpit/server/lib/planned-session/session-steps';
 import {
   coachPlanGenerationSchema,
   coachPlanRequestSchema,
@@ -318,6 +323,7 @@ export async function generatePlan(
         schema: coachPlanGenerationSchema,
         system: SYSTEM_PROMPT,
         prompt: prepared.prompt,
+        reasoning: COACH_REASONING_LEVEL.plan,
         onReasoning: progress.onReasoning ?? (() => {}),
         onPartial: progress.onPartial,
       }),
@@ -378,6 +384,7 @@ export type PlanPayload = {
     date: string;
     startTime: string | null;
     decisionId: string;
+    breakdown: PlannedSessionBreakdown;
   })[];
   gate: ReturnType<typeof evaluatePlan>;
 };
@@ -455,10 +462,16 @@ async function finalizePlan(
     const keptGate =
       kept.length === proposals.length ? gate : evaluatePlan(gateContext, keptProposals);
 
+    // Resolved like a planned session's, so a proposal opens on the steps it would store.
+    const profile = await getAthleteProfile(athleteId);
+    const thresholds = athleteThresholds(profile);
     const sessionsWithDecisionId = kept.map((index) => {
       const s = sessions[index];
       return {
         ...s,
+        breakdown: buildPlannedSessionSteps(s, thresholds, {
+          defaultPoolLengthM: profile?.defaultPoolLengthM,
+        }),
         title: sanitizeCoachCopy(s.title),
         description: sanitizeCoachCopy(s.description),
         rationale: sanitizeCoachCopy(s.rationale),

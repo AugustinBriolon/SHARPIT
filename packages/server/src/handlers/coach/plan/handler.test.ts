@@ -5,6 +5,7 @@ import { decisionState, physicalHealthData } from '@sharpit/server/lib/plan-gate
 
 vi.mock('@sharpit/server/lib/ai', () => ({
   COACH_MODEL: 'mock-model',
+  COACH_REASONING_LEVEL: { structured: 'medium', plan: 'low' },
   coachGatewayOptions: {},
   isCoachConfigured: () => true,
 }));
@@ -153,6 +154,9 @@ describe('POST /api/coach/plan', () => {
 
     expect(response.status).toBe(200);
     expect(body.sessions.map((session) => session.title)).toEqual(['Footing très facile']);
+    // A proposal opens on the steps it would store, derived here from duration + intensity.
+    expect(body.sessions[0].breakdown.derived).toBe(true);
+    expect(body.sessions[0].breakdown.steps.length).toBeGreaterThan(0);
     expect(body.gate.sessions).toHaveLength(1);
     expect(body.gate.sessions[0].status).not.toBe('REJECTED');
     // Both proposals are remembered, the rejected one included.
