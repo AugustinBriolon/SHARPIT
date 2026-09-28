@@ -5,6 +5,9 @@ import { prisma } from '@sharpit/db/client';
 import { purgeEligibleBefore } from '@sharpit/server/lib/privacy/consent';
 import { PRIVACY_PURGE_DELAY_DAYS } from '@sharpit/app/lib/privacy/constants';
 import { logSafeError } from '@sharpit/server/lib/privacy/safe-log';
+import { accountDeletedEmail } from '@sharpit/app/lib/privacy/account-deleted-email';
+import type { AccountDeletedEmailInput } from '@sharpit/app/lib/privacy/account-deleted-email';
+import { sendTransactionalEmail } from '@sharpit/server/lib/email/transactional-email';
 
 export type AccountDeletionResult = {
   athleteId: string;
@@ -43,6 +46,39 @@ export async function clearAthleteProviderCredentials(athleteId: string): Promis
       data: { sessionTokenEnc: '' },
     }),
   ]);
+}
+
+type DeletionNotice = AccountDeletedEmailInput & { to: string };
+
+/**
+ * Who to tell, and whether a subscription still renews — read before the identity and the
+ * rows are gone. Best effort: no address means no e-mail, never a stopped deletion.
+ */
+async function readDeletionNotice(
+  athleteId: string,
+  clerkUserId: string,
+): Promise<DeletionNotice | null> {
+  try {
+    const [user, renewing] = await Promise.all([
+      (await clerkClient()).users.getUser(clerkUserId),
+      prisma.subscription.findFirst({
+        where: {
+          athleteId,
+          willRenew: true,
+          status: { in: ['active', 'grace_period', 'billing_retry'] },
+        },
+        select: { source: true },
+      }),
+    ]);
+    const to = user.primaryEmailAddress?.emailAddress;
+    if (!to) {
+      return null;
+    }
+    return { to, firstName: user.firstName, renewingSubscription: renewing?.source ?? null };
+  } catch (error) {
+    logSafeError('privacy/delete-notice', error, { athleteId });
+    return null;
+  }
 }
 
 async function deleteClerkIdentity(clerkUserId: string, athleteId: string): Promise<void> {
@@ -102,12 +138,17 @@ export async function deleteAthleteAccount(
     data: { deletedAt: now },
     select: { id: true, clerkUserId: true },
   });
+  const notice = await readDeletionNotice(athleteId, marked.clerkUserId);
   // Needs the credentials, so before they are wiped. Never throws.
   await revokeAllProviderAccess(athleteId);
   await clearAthleteProviderCredentials(athleteId);
   await deleteClerkIdentity(marked.clerkUserId, athleteId);
   await deleteCoachTraces(athleteId);
   await hardDeleteAthleteData(athleteId);
+  // Sent once everything is gone, so it confirms what happened rather than announces it.
+  if (notice) {
+    await sendTransactionalEmail({ to: notice.to, ...accountDeletedEmail(notice) });
+  }
   return { athleteId, deletedAt: now };
 }
 

@@ -15,6 +15,7 @@ export const NATIVE_V1_SURFACES = [
   { path: 'coach/conversations/[id]', methods: ['GET', 'PUT', 'DELETE'] },
   { path: 'coach/plan', methods: ['POST'] },
   { path: 'coach/adapt', methods: ['POST'] },
+  { path: 'coach/weekly-review', methods: ['GET', 'POST'] },
   { path: 'coach/context', methods: ['PUT'] },
   { path: 'coach-memory', methods: ['GET', 'POST'] },
   { path: 'coach-memory/[id]', methods: ['DELETE'] },

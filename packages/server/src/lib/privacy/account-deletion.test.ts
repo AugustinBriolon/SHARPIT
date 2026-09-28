@@ -6,6 +6,9 @@ const transactionMock = vi.fn();
 const findManyMock = vi.fn();
 const deleteManyMock = vi.fn();
 const deleteUserMock = vi.fn();
+const getUserMock = vi.fn();
+const findSubscriptionMock = vi.fn();
+const sendEmailMock = vi.fn();
 const order: string[] = [];
 
 vi.mock('@sharpit/db/client', () => ({
@@ -22,7 +25,12 @@ vi.mock('@sharpit/db/client', () => ({
     withingsAccount: { updateMany: (...args: unknown[]) => updateManyMock(...args) },
     renphoAccount: { updateMany: (...args: unknown[]) => updateManyMock(...args) },
     myFitnessPalAccount: { updateMany: (...args: unknown[]) => updateManyMock(...args) },
+    subscription: { findFirst: (...args: unknown[]) => findSubscriptionMock(...args) },
   },
+}));
+
+vi.mock('@sharpit/server/lib/email/transactional-email', () => ({
+  sendTransactionalEmail: (...args: unknown[]) => sendEmailMock(...args),
 }));
 
 const revokeAllMock = vi.fn();
@@ -36,7 +44,7 @@ vi.mock('@sharpit/server/lib/ai/langfuse-erasure', () => ({
 }));
 
 vi.mock('@clerk/nextjs/server', () => ({
-  clerkClient: vi.fn(async () => ({ users: { deleteUser: deleteUserMock } })),
+  clerkClient: vi.fn(async () => ({ users: { deleteUser: deleteUserMock, getUser: getUserMock } })),
 }));
 
 describe('deleteAthleteAccount', () => {
@@ -69,6 +77,38 @@ describe('deleteAthleteAccount', () => {
       order.push('rows');
       return { count: 1 };
     });
+    getUserMock.mockResolvedValue({
+      firstName: 'Zoé',
+      primaryEmailAddress: { emailAddress: 'zoe@example.com' },
+    });
+    findSubscriptionMock.mockResolvedValue(null);
+    sendEmailMock.mockImplementation(async () => {
+      order.push('email');
+      return true;
+    });
+  });
+
+  it('confirms by e-mail once everything is gone, telling how to stop a renewing Apple subscription', async () => {
+    findSubscriptionMock.mockResolvedValue({ source: 'apple' });
+    const { deleteAthleteAccount } = await import('./account-deletion');
+
+    await deleteAthleteAccount('athlete-1', now);
+
+    expect(order.at(-1)).toBe('email');
+    const [email] = sendEmailMock.mock.calls[0] as [{ to: string; text: string }];
+    expect(email.to).toBe('zoe@example.com');
+    expect(email.text).toContain('Abonnements');
+  });
+
+  it('still deletes everything when the address cannot be read', async () => {
+    getUserMock.mockRejectedValue(new Error('clerk down'));
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    const { deleteAthleteAccount } = await import('./account-deletion');
+
+    await deleteAthleteAccount('athlete-1', now);
+
+    expect(deleteManyMock).toHaveBeenCalled();
+    expect(sendEmailMock).not.toHaveBeenCalled();
   });
 
   it('deletes everything now: mark, provider grants, credentials, identity, Coach traces, then rows', async () => {
@@ -78,7 +118,7 @@ describe('deleteAthleteAccount', () => {
       deletedAt: now,
     });
 
-    expect(order).toEqual(['mark', 'revoke', 'credentials', 'identity', 'traces', 'rows']);
+    expect(order).toEqual(['mark', 'revoke', 'credentials', 'identity', 'traces', 'rows', 'email']);
     expect(updateMock).toHaveBeenCalledWith({
       where: { id: 'athlete-1' },
       data: { deletedAt: now },
