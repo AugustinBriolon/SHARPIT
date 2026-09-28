@@ -62,4 +62,26 @@ describe('projectV1Today sessions', () => {
 
     expect(session.plannedSessionId).toBeNull();
   });
+
+  it("carries a brick line's legs in order, and none on a plain line", () => {
+    const [brick, plain] = projectV1Today(
+      source([
+        {
+          id: 'brick-group',
+          kind: 'planned',
+          primary: 'Brick · Vélo → Course',
+          plannedSessionId: 'ps-bike',
+          brickLegs: [
+            { id: 'ps-bike', type: 'BIKE', title: 'Vélo', durationMin: 60 },
+            { id: 'ps-run', type: 'RUN', title: 'Course', durationMin: 20 },
+          ],
+        },
+        { id: 'ps-2', kind: 'planned', primary: 'Seuil', plannedSessionId: 'ps-2' },
+      ]),
+      input,
+    ).sessions;
+
+    expect(brick.brickLegs?.map((leg) => leg.id)).toEqual(['ps-bike', 'ps-run']);
+    expect(plain.brickLegs).toBeNull();
+  });
 });

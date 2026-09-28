@@ -45,8 +45,17 @@ export type V1TodaySource = {
       activityType?: ActivityType;
       plannedSessionId?: string | null;
       metrics?: Array<{ label: string; value: string; unit: string }> | null;
+      brickLegs?: ReadonlyArray<V1TodayBrickLeg> | null;
     }>;
   };
+};
+
+/** One leg of a brick line, in the order it is done. */
+export type V1TodayBrickLeg = {
+  id: string;
+  type: ActivityType;
+  title: string;
+  durationMin: number | null;
 };
 
 export type V1TodayResponse = {
@@ -88,6 +97,11 @@ export type V1TodayResponse = {
      * brick line is identified by its group, so only this addresses the session itself.
      */
     plannedSessionId: string | null;
+    /**
+     * Set on a brick line: its legs, so a client opens the chain as one session rather
+     * than its first leg alone. Null on any other line.
+     */
+    brickLegs: V1TodayBrickLeg[] | null;
   }>;
   signals: Array<{
     key: 'sleep' | 'recovery' | 'effort' | 'adaptation';
@@ -194,6 +208,13 @@ function projectSessions(
     sport: sportLabel(line.activityType),
     priority: index === 0,
     plannedSessionId: line.plannedSessionId ?? null,
+    brickLegs:
+      line.brickLegs?.map(({ id, type, title, durationMin }) => ({
+        id,
+        type,
+        title,
+        durationMin,
+      })) ?? null,
   }));
 }
 
@@ -285,6 +306,7 @@ function sourceFromViewModel(vm: TodayViewModel): V1TodaySource {
         activityType: line.activityType,
         plannedSessionId: line.plannedSessionId,
         metrics: line.metrics,
+        brickLegs: line.brickLegs,
       })),
     },
   };

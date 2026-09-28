@@ -67,6 +67,14 @@ describe('buildPlannedSessionSteps', () => {
           sport: 'RUN',
           blocks: [
             {
+              kind: 'step',
+              step: {
+                kind: 'warmup',
+                duration: { type: 'time', seconds: 600 },
+                target: { metric: 'none' },
+              },
+            },
+            {
               kind: 'repeat',
               iterations: 4,
               steps: [
@@ -88,8 +96,12 @@ describe('buildPlannedSessionSteps', () => {
       thresholds,
     );
 
-    expect(result.steps).toHaveLength(2);
-    expect(result.steps.every((step) => step.repeat === 4)).toBe(true);
+    const [warmup, ...set] = result.steps;
+    expect(set).toHaveLength(2);
+    expect(set.every((step) => step.repeat === 4)).toBe(true);
+    // The block and its recovery repeat together: one group, apart from the warm-up.
+    expect(set[0].group).toBe(set[1].group);
+    expect(warmup.group).not.toBe(set[0].group);
   });
 
   it('names the stroke beside the kind for a pool session', () => {

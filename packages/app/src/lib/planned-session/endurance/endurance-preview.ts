@@ -76,6 +76,11 @@ export type EndurancePreviewStep = {
   key: string;
   kind: EnduranceStepKind;
   kindLabel: string;
+  /**
+   * The block this step comes from. Steps sharing a group are repeated together — a
+   * 5 × (bloc + récup) is one group of two steps, not two groups of five.
+   */
+  group: string;
   /** Repetitions of the group this step belongs to. 1 for a plain step. */
   repeat: number;
   durationLabel: string;
@@ -106,6 +111,7 @@ export function previewEnduranceSteps(
         key: `${blockIndex}-${stepIndex}`,
         kind: step.kind,
         kindLabel: KIND_LABEL_FR[step.kind],
+        group: `${blockIndex}`,
         repeat,
         durationLabel: formatDurationLabel(step.duration),
         targetLabel: formatTargetLabel(resolved),
@@ -116,4 +122,29 @@ export function previewEnduranceSteps(
   });
 
   return steps;
+}
+
+/** Steps done together, `repeat` times. A plain step is a set of one, done once. */
+export type EndurancePreviewSet = {
+  group: string;
+  repeat: number;
+  steps: EndurancePreviewStep[];
+};
+
+/**
+ * Gather the steps back into what the athlete repeats. Read flat, a 5 × (bloc + récup)
+ * says five blocks then five recoveries; read as sets, it says the block and its
+ * recovery, five times.
+ */
+export function previewStepSets(steps: readonly EndurancePreviewStep[]): EndurancePreviewSet[] {
+  const sets: EndurancePreviewSet[] = [];
+  for (const step of steps) {
+    const current = sets.at(-1);
+    if (current && current.group === step.group) {
+      current.steps.push(step);
+    } else {
+      sets.push({ group: step.group, repeat: step.repeat, steps: [step] });
+    }
+  }
+  return sets;
 }

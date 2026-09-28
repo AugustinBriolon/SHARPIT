@@ -83,6 +83,7 @@ describe('projectV1Today', () => {
         sport: 'Course',
         priority: true,
         plannedSessionId: null,
+        brickLegs: null,
       },
     ]);
     expect(json.signals.map((s) => s.key)).toEqual(['sleep', 'recovery']);

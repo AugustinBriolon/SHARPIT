@@ -26,6 +26,12 @@ export type PlannedSessionStep = {
   detail: string | null;
   /** The resolved band — a pace, a power range, a load. Null when unguided. */
   target: string | null;
+  /**
+   * Steps sharing a group are done together, `repeat` times: a 5 × (bloc + récup) is one
+   * group of two steps. A client that listed them apart would read five blocks, then five
+   * recoveries.
+   */
+  group: string;
   /** Repetitions of the group this step belongs to. 1 for a plain step. */
   repeat: number;
   notes: string | null;
@@ -96,6 +102,7 @@ export function buildPlannedSessionSteps(
     label: step.strokeLabel ? `${step.kindLabel} · ${step.strokeLabel}` : step.kindLabel,
     detail: step.durationLabel,
     target: step.targetLabel,
+    group: step.group,
     repeat: step.repeat,
     notes: step.notes,
   }));
@@ -116,6 +123,7 @@ function strengthBreakdown(raw: unknown): PlannedSessionBreakdown {
       label: set.exercise,
       detail: strengthDetail(set),
       target: set.weightKg ? `${set.weightKg} kg` : null,
+      group: `strength-${index}`,
       repeat: 1,
       notes: set.notes?.trim() || null,
     }));
