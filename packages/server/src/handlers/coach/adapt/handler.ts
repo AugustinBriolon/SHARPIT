@@ -498,6 +498,7 @@ async function finalizeAdapt(input: FinalizeAdaptInput): Promise<AdaptPayload> {
 
     let gate: GateResult = { sessions: [], planLevelFindings: [] };
     const decisionIdByChange = new Map<AdaptChange, string>();
+    const rejected = new Set<AdaptChange>();
     if (proposals.length > 0) {
       const { context: gateContext, snapshot } = await buildGateContext({
         athleteId,
@@ -523,15 +524,24 @@ async function finalizeAdapt(input: FinalizeAdaptInput): Promise<AdaptPayload> {
         ),
       );
       gatedPairs.forEach((pair, i) => decisionIdByChange.set(pair.change, decisions[i].id));
+      gatedPairs.forEach((pair, i) => {
+        if (gate.sessions[i]?.status === 'REJECTED') {
+          rejected.add(pair.change);
+        }
+      });
     }
 
-    const changesWithDecisionId = validated.data.changes.map((change) => ({
-      ...change,
-      title: sanitizeOptionalCoachCopy(change.title),
-      description: sanitizeOptionalCoachCopy(change.description),
-      reason: sanitizeCoachCopy(change.reason),
-      decisionId: decisionIdByChange.get(change) ?? null,
-    }));
+    // As for a generated week: the Gate is the last word before the athlete sees anything, so a
+    // change it rejects is taken out here — its decision still recorded — never shown and refused.
+    const changesWithDecisionId = validated.data.changes
+      .filter((change) => !rejected.has(change))
+      .map((change) => ({
+        ...change,
+        title: sanitizeOptionalCoachCopy(change.title),
+        description: sanitizeOptionalCoachCopy(change.description),
+        reason: sanitizeCoachCopy(change.reason),
+        decisionId: decisionIdByChange.get(change) ?? null,
+      }));
 
     return {
       summary: sanitizeCoachCopy(validated.data.summary),

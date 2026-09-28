@@ -271,9 +271,11 @@ describe('POST /api/coach/adapt', () => {
         (f: { ruleCode: string }) => f.ruleCode === 'FATIGUE_REST_ONLY',
       ),
     ).toBe(true);
-    // A CoachingDecision is persisted for the gated ADD change, and its id is attached
-    // to the matching entry in the response's `changes` array.
-    expect(body.changes[0].decisionId).toBe('mock-decision-id');
+    // The rejected change is taken out before the athlete sees it — its decision still recorded.
+    expect(body.changes).toHaveLength(0);
+    const { createCoachingDecision } =
+      await import('@sharpit/server/lib/decision-memory/repository');
+    expect(vi.mocked(createCoachingDecision)).toHaveBeenCalledTimes(1);
   });
 
   it('resolves a MODIFY proposal by merging the change onto the existing session for date-dependent rules', async () => {
@@ -342,6 +344,8 @@ describe('POST /api/coach/adapt', () => {
   });
 
   it('carries an authored endurance structure onto the gated proposal', async () => {
+    // Ahead of now: a change dated in the past is rejected, and a rejected change is not shown.
+    const inThreeDays = new Date(Date.now() + 3 * 86_400_000).toISOString().slice(0, 10);
     const { runStructuredCoachStream } =
       await import('@sharpit/server/lib/coach/stream-structured-generation');
     const { getOrBuildAthleteSnapshot } =
@@ -357,7 +361,7 @@ describe('POST /api/coach/adapt', () => {
           {
             action: 'ADD',
             sessionId: null,
-            date: '2026-07-20',
+            date: inThreeDays,
             type: 'RUN',
             intensity: 'THRESHOLD',
             title: '5×5 min seuil',
