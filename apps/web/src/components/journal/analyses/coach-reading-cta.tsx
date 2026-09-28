@@ -5,7 +5,7 @@ import {
 } from '@/components/coach/discuss/discuss-with-coach-button';
 import { LinkButton } from '@/components/ui/link-button';
 
-/** « Lecture coach · journal » is Pro — the server re-checks it (ADR-030). */
+/** « Optimisation des habitudes » is Pro — the server re-checks it (ADR-030). */
 export function CoachReadingCta({ isPro }: { isPro: boolean }) {
   if (!isPro) {
     return (

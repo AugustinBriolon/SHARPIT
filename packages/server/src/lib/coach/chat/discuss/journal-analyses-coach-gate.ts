@@ -1,5 +1,5 @@
 /**
- * Server side of the « Lecture coach · journal » Pro perk.
+ * Server side of the « Optimisation des habitudes » Pro perk.
  * A conversation opened from Analyses journal carries `discussKind` in its user
  * message metadata; the discuss registry (`coach-discuss-server-context.ts`)
  * re-checks Pro before loading the findings.
@@ -23,7 +23,7 @@ export const JOURNAL_ANALYSES_PRO_REQUIRED_ERROR =
 const BLOCK_HEADER = '## Analyses journal (conversation ouverte depuis cette page)';
 
 const BLOCK_GUARDRAILS =
-  "Ce sont des associations observées sur les propres jours de l'athlète, pas des causes : n'affirme jamais qu'une habitude « cause » un effet. Priorise les associations nettes, puis propose 1 à 2 expériences concrètes sur 7 jours, un seul levier à la fois.";
+  "Ce sont des associations observées sur les propres jours de l'athlète, pas des causes : n'affirme jamais qu'une habitude « cause » un effet. Ton rôle : analyser ses habitudes pour l'aider à les optimiser. Priorise les associations nettes, puis propose 1 à 2 ajustements concrets à tester sur 7 jours, un seul levier à la fois.";
 
 function formatNotReadyBlock(daysWithSignal: number): string {
   return [

@@ -37,9 +37,9 @@ export const PRO_ONLY_PERKS: ProPerkData[] = [
   },
   {
     id: 'journal-coach-read',
-    title: 'Lecture coach · journal',
+    title: 'Optimisation des habitudes',
     description:
-      'Sur tes analyses journal, le coach priorise les associations nettes et propose 1–2 expériences concrètes sur 7 jours — sans affirmer de causalité.',
+      'Le coach analyse tes habitudes du journal — sommeil, alimentation, récupération — pour repérer celles qui te font progresser, et te propose 1 à 2 ajustements concrets à tester sur 7 jours.',
     status: 'pro',
     href: '/journal/analyses',
   },

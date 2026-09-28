@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { NoObjectGeneratedError } from 'ai';
 
 import {
+  isStructuredOutputFailure,
   progressListLength,
   recoverObjectFromGenerationFailure,
   shouldEmitCoachPartial,
@@ -67,5 +68,26 @@ describe('recoverObjectFromGenerationFailure', () => {
     await expect(
       recoverObjectFromGenerationFailure(error, '{"summary":"streamed","sessions":[]}'),
     ).resolves.toEqual({ summary: 'streamed', sessions: [] });
+  });
+});
+
+describe('isStructuredOutputFailure', () => {
+  it('retries a reply without a valid object, never a transport or quota error', () => {
+    expect(
+      isStructuredOutputFailure(
+        new NoObjectGeneratedError({
+          message: 'No object generated: response did not match schema.',
+          text: '{',
+          response: { id: 'r', timestamp: new Date(0), modelId: 'm' },
+          usage: {} as never,
+          finishReason: 'stop',
+        }),
+      ),
+    ).toBe(true);
+    expect(isStructuredOutputFailure(new Error('Type validation failed: sessions.0.date'))).toBe(
+      true,
+    );
+    expect(isStructuredOutputFailure(new Error('fetch failed'))).toBe(false);
+    expect(isStructuredOutputFailure(new Error('429 rate limit'))).toBe(false);
   });
 });

@@ -213,19 +213,16 @@ async function resolveStructuredOutput(
   }
 }
 
-/**
- * Resolves with the raw model output plus its token usage (for cost logging —
- * see src/lib/ai/usage.ts). Callers re-validate the output with their own
- * narrower schema (the generation schema the model sees is deliberately looser
- * than the one the app persists), so widening to `unknown` here loses nothing.
- */
-export async function runStructuredCoachStream({
-  schema,
-  system,
-  prompt,
-  onReasoning,
-  onPartial,
-}: {
+/** A reply that came back but did not hold a valid object — worth one more try. */
+export function isStructuredOutputFailure(error: unknown): boolean {
+  if (NoObjectGeneratedError.isInstance(error)) {
+    return true;
+  }
+  const message = error instanceof Error ? error.message : String(error);
+  return /No object generated|did not match schema|Type validation failed/i.test(message);
+}
+
+type StructuredCoachStreamArgs = {
   schema: z.ZodType;
   system: string;
   prompt: string;
@@ -233,7 +230,15 @@ export async function runStructuredCoachStream({
   onReasoning: (delta: string) => void;
   /** Called with the object rebuilt so far, only when it actually changed. */
   onPartial: (value: unknown) => void;
-}): Promise<{ output: unknown; usage: LanguageModelUsage }> {
+};
+
+async function runStructuredCoachStreamOnce({
+  schema,
+  system,
+  prompt,
+  onReasoning,
+  onPartial,
+}: StructuredCoachStreamArgs): Promise<{ output: unknown; usage: LanguageModelUsage }> {
   const result = streamText({
     model: COACH_MODEL,
     output: Output.object({ schema }),
@@ -249,4 +254,28 @@ export async function runStructuredCoachStream({
 
   const jsonText = await consumeCoachFullStream(result.fullStream, onReasoning, onPartial);
   return resolveStructuredOutput(result, jsonText);
+}
+
+/**
+ * Resolves with the raw model output plus its token usage (for cost logging —
+ * see src/lib/ai/usage.ts). Callers re-validate the output with their own
+ * narrower schema (the generation schema the model sees is deliberately looser
+ * than the one the app persists), so widening to `unknown` here loses nothing.
+ *
+ * A reply that holds no valid object even after recovery is asked again once: the athlete
+ * used to be told to retry by hand, which usually worked. Each partial is the whole object so
+ * far, so the second attempt's partials simply replace the first's on screen.
+ */
+export async function runStructuredCoachStream(
+  args: StructuredCoachStreamArgs,
+): Promise<{ output: unknown; usage: LanguageModelUsage }> {
+  try {
+    return await runStructuredCoachStreamOnce(args);
+  } catch (error) {
+    if (!isStructuredOutputFailure(error)) {
+      throw error;
+    }
+    console.warn('[coach-structured] invalid object, retrying once');
+    return runStructuredCoachStreamOnce(args);
+  }
 }
