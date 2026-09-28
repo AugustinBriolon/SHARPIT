@@ -65,6 +65,7 @@ export const NATIVE_V1_ONLY = [
   { path: 'billing/apple/verify', methods: ['POST'] },
   { path: 'garmin/handoff', methods: ['POST'] },
   { path: 'coach/plan/insert', methods: ['POST'] },
+  { path: 'coach/adapt/apply', methods: ['POST'] },
   { path: 'coach/plan/jobs', methods: ['GET', 'POST'] },
   { path: 'coach/plan/jobs/[id]', methods: ['GET'] },
 ] as const;

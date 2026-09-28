@@ -1,9 +1,10 @@
 import { runStructuredCoachStream } from '@sharpit/server/lib/coach/stream-structured-generation';
+import { normalizeCoachPrescriptions } from '@sharpit/server/lib/coach/plan/normalize-plan-generation';
 import { withCoachTrace } from '@sharpit/server/lib/ai/coach-trace';
 import { addDays, format, startOfDay } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { NextResponse } from 'next/server';
-import { isCoachConfigured } from '@sharpit/server/lib/ai';
+import { COACH_REASONING_LEVEL, isCoachConfigured } from '@sharpit/server/lib/ai';
 import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
 import { recordAiUsage } from '@sharpit/server/lib/ai/usage';
 import {
@@ -229,15 +230,22 @@ function emptyAdaptResponse(budgetWarning: boolean) {
   );
 }
 
-async function loadAdaptContext(athleteId: string, today: Date, days: number) {
-  const horizon = addDays(today, days);
-  const [ctx, upcoming, activePlan, goals] = await Promise.all([
-    buildCoachContext(athleteId, today, { includeScenario: true }),
-    getPlannedSessionsForCoach(athleteId, { from: today, to: horizon }),
+/** The goal a session the adjustment adds is attached to: the active plan's, else a dated goal. */
+export async function loadAdaptDefaultGoalId(athleteId: string): Promise<string | null> {
+  const [activePlan, goals] = await Promise.all([
     getActiveTrainingPlan(athleteId),
     getGoals(athleteId),
   ]);
-  const defaultGoalId = resolveDefaultPlanGoalId(activePlan?.goalId, selectableDatedGoalIds(goals));
+  return resolveDefaultPlanGoalId(activePlan?.goalId, selectableDatedGoalIds(goals));
+}
+
+async function loadAdaptContext(athleteId: string, today: Date, days: number) {
+  const horizon = addDays(today, days);
+  const [ctx, upcoming, defaultGoalId] = await Promise.all([
+    buildCoachContext(athleteId, today, { includeScenario: true }),
+    getPlannedSessionsForCoach(athleteId, { from: today, to: horizon }),
+    loadAdaptDefaultGoalId(athleteId),
+  ]);
   return { ctx, upcoming, defaultGoalId, horizon };
 }
 
@@ -314,6 +322,10 @@ function createAdaptProgressStream(input: {
               schema: adaptPlanGenerationSchema,
               system: SYSTEM_PROMPT,
               prompt,
+              // Measured: constrained at medium it failed outright or took over a minute; as
+              // JSON at low, 23–30 s.
+              reasoning: COACH_REASONING_LEVEL.plan,
+              schemaInPrompt: true,
               onReasoning: (delta) => send({ type: 'reasoning', delta }),
               onPartial: (value) => send({ type: 'partial', value }),
             }),
@@ -439,10 +451,26 @@ type FinalizeAdaptInput = {
 };
 
 /** Validates the model output, runs the Gate and records the coaching decisions. */
+/** The answer with each change's prescriptions coerced, so one odd step does not void it all. */
+function normalizeAdaptOutput(output: unknown): unknown {
+  const changes = (output as { changes?: unknown })?.changes;
+  if (!Array.isArray(changes)) {
+    return output;
+  }
+  return {
+    ...(output as object),
+    changes: changes.map((change) =>
+      change && typeof change === 'object'
+        ? normalizeCoachPrescriptions(change as Record<string, unknown>)
+        : change,
+    ),
+  };
+}
+
 async function finalizeAdapt(input: FinalizeAdaptInput): Promise<AdaptPayload> {
   const { athleteId, output, upcoming, defaultGoalId, today } = input;
   {
-    const validated = adaptPlanSchema.safeParse(output);
+    const validated = adaptPlanSchema.safeParse(normalizeAdaptOutput(output));
     if (!validated.success) {
       console.error('[coach/adapt] validation', validated.error.flatten());
       throw new Error('Le coach a renvoyé une réponse invalide. Réessaie.');

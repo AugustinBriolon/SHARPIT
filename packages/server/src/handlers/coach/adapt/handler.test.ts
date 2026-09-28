@@ -5,6 +5,7 @@ import type { AdaptPayload } from './handler';
 
 vi.mock('@sharpit/server/lib/ai', () => ({
   COACH_MODEL: 'mock-model',
+  COACH_REASONING_LEVEL: { structured: 'medium', plan: 'low' },
   coachGatewayOptions: {},
   isCoachConfigured: () => true,
 }));

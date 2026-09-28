@@ -208,42 +208,55 @@ async function applyPlannedSessionPatch(
   });
 }
 
+/**
+ * Validates and applies a patch to one of the athlete's planned sessions, with its decision
+ * action and side effects. Shared by PATCH and the coach adjustment's apply route.
+ */
+export async function patchPlannedSessionFromBody(
+  athleteId: string,
+  id: string,
+  body: unknown,
+): Promise<{ response: NextResponse } | { session: unknown }> {
+  const validation = await validatePatchRequest(athleteId, id, body);
+  if (!validation.ok) {
+    return { response: validation.response };
+  }
+
+  const { decisionId, parsed, existing } = validation;
+  const session = await applyPlannedSessionPatch(athleteId, id, parsed, existing);
+  if (!session) {
+    return {
+      response: NextResponse.json({ error: 'Séance planifiée introuvable' }, { status: 404 }),
+    };
+  }
+
+  await recordPlannedSessionDecisionAction({
+    athleteId,
+    sessionId: id,
+    decisionId,
+    existing,
+    patch: parsed,
+  });
+
+  // Context refresh + Google push are independent best-effort side effects.
+  await Promise.all([
+    refreshAndPersistPlannedSessionContext(athleteId, id).catch((ctxError) => {
+      console.error('[planned-sessions/context]', ctxError);
+    }),
+    pushSessionToGoogle(session).catch((syncError) => {
+      console.error('Push Google Calendar échoué', syncError);
+    }),
+  ]);
+
+  return { session: (await getPlannedSessionById(athleteId, id)) ?? session };
+}
+
 export async function PATCH(request: NextRequest, context: RouteContext) {
   try {
     const { id } = await context.params;
     const athleteId = await getCurrentAthleteId();
-    const body = await request.json();
-    const validation = await validatePatchRequest(athleteId, id, body);
-    if (!validation.ok) {
-      return validation.response;
-    }
-
-    const { decisionId, parsed, existing } = validation;
-    const session = await applyPlannedSessionPatch(athleteId, id, parsed, existing);
-    if (!session) {
-      return NextResponse.json({ error: 'Séance planifiée introuvable' }, { status: 404 });
-    }
-
-    await recordPlannedSessionDecisionAction({
-      athleteId,
-      sessionId: id,
-      decisionId,
-      existing,
-      patch: parsed,
-    });
-
-    // Context refresh + Google push are independent best-effort side effects.
-    await Promise.all([
-      refreshAndPersistPlannedSessionContext(athleteId, id).catch((ctxError) => {
-        console.error('[planned-sessions/context]', ctxError);
-      }),
-      pushSessionToGoogle(session).catch((syncError) => {
-        console.error('Push Google Calendar échoué', syncError);
-      }),
-    ]);
-
-    const fresh = await getPlannedSessionById(athleteId, id);
-    return NextResponse.json(fresh ?? session);
+    const patched = await patchPlannedSessionFromBody(athleteId, id, await request.json());
+    return 'response' in patched ? patched.response : NextResponse.json(patched.session);
   } catch (error) {
     console.error(error);
     return NextResponse.json(
@@ -253,22 +266,24 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
   }
 }
 
+/** Deletes one of the athlete's planned sessions and its Google event (best-effort). */
+export async function deletePlannedSessionWithEvent(athleteId: string, id: string) {
+  const existing = await getPlannedSessionById(athleteId, id);
+  if (existing?.googleEventId) {
+    try {
+      await deleteSessionFromGoogle(existing);
+    } catch (syncError) {
+      console.error('Suppression Google Calendar échouée', syncError);
+    }
+  }
+  await deletePlannedSession(athleteId, id);
+}
+
 export async function DELETE(_request: NextRequest, context: RouteContext) {
   try {
     const { id } = await context.params;
     const athleteId = await getCurrentAthleteId();
-
-    // Supprime l'événement Google associé avant de supprimer la séance (best-effort).
-    const existing = await getPlannedSessionById(athleteId, id);
-    if (existing?.googleEventId) {
-      try {
-        await deleteSessionFromGoogle(existing);
-      } catch (syncError) {
-        console.error('Suppression Google Calendar échouée', syncError);
-      }
-    }
-
-    await deletePlannedSession(athleteId, id);
+    await deletePlannedSessionWithEvent(athleteId, id);
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error(error);

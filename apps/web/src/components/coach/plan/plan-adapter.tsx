@@ -26,7 +26,7 @@ import type { GateSessionResult } from '@sharpit/app/lib/plan-gate/types';
 import { useOfflineGuard } from '@/hooks/use-offline-guard';
 import { warmCoachContext } from '@sharpit/app/lib/coach/warm-coach-context';
 import { AdaptChangeRow } from '@/components/coach/plan/adapt-change-row';
-import { buildAdaptBatchOps } from '@/components/coach/plan/plan-adapter-apply';
+import { buildAdaptBatchOps } from '@sharpit/app/lib/coach/plan/adapt-batch-ops';
 import { PlanAdaptAppliedPanel } from '@/components/plan/adapt-applied-panel';
 import {
   recordAdaptAppliedAck,

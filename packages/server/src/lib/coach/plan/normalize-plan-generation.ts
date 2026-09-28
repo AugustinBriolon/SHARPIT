@@ -223,6 +223,22 @@ function normalizeEndurancePrescription(raw: unknown) {
   return result;
 }
 
+/**
+ * The coach's prescriptions on any proposal, coerced as a week's are: an invented step kind
+ * becomes an interval rather than failing the whole answer. A prescription left out stays out
+ * — on an adjustment it means « leave it as it is ».
+ */
+export function normalizeCoachPrescriptions<T extends Record<string, unknown>>(proposal: T): T {
+  const next: Record<string, unknown> = { ...proposal };
+  if (proposal.endurancePrescription !== null && proposal.endurancePrescription !== undefined) {
+    next.endurancePrescription = normalizeEndurancePrescription(proposal.endurancePrescription);
+  }
+  if (proposal.strengthPrescription !== null && proposal.strengthPrescription !== undefined) {
+    next.strengthPrescription = normalizeStrengthPrescription(proposal.strengthPrescription);
+  }
+  return next as T;
+}
+
 const SESSION_TYPES = new Set(['RUN', 'BIKE', 'SWIM', 'STRENGTH']);
 const INTENSITIES = new Set(['RECOVERY', 'ENDURANCE', 'TEMPO', 'THRESHOLD', 'VO2MAX', 'RACE']);
 
