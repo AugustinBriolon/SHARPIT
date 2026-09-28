@@ -123,11 +123,14 @@ export async function GET(request: NextRequest) {
   try {
     const athleteId = await getCurrentAthleteId();
     const profile = await getAthleteProfile(athleteId);
-    // An athlete with no profile row still has a reading density — the default one.
+    // An athlete with no profile row still has a reading density — the default one. And no row
+    // means the first-login wizard was never finished: said explicitly, since a client that
+    // sees no `onboardingCompletedAt` at all must not take the wizard for done.
     const payload = profile ?? {
       id: athleteId,
       displayMode: DEFAULT_DISPLAY_MODE,
       tier: 'FREE' as const,
+      onboardingCompletedAt: null,
     };
     const response = NextResponse.json(withResolvedPrefs(payload));
     return withAccessTierCookie(request, response, payload.tier ?? 'FREE');

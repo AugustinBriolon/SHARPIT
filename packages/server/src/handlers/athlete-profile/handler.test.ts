@@ -34,4 +34,13 @@ describe('GET /api/athlete-profile', () => {
     expect(response.headers.get('set-cookie')).toBeNull();
     expect((await response.json()).tier).toBe('PRO');
   });
+
+  it('says a brand-new athlete, with no profile row yet, still owes the first-login wizard', async () => {
+    const { getAthleteProfile } = await import('@sharpit/server/lib/queries');
+    vi.mocked(getAthleteProfile).mockResolvedValueOnce(null);
+
+    const body = await (await get({ authorization: 'Bearer token' })).json();
+
+    expect(body).toHaveProperty('onboardingCompletedAt', null);
+  });
 });
