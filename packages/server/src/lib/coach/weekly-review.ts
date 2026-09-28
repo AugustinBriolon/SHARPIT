@@ -67,13 +67,16 @@ ${formLine}
 ## Sommeil & récupération
 2-3 phrases sur la qualité du sommeil de la semaine (durée, score, phases profond/REM, régularité des horaires) et son impact sur la récupération (HRV, FC repos, readiness). Sois précis avec les chiffres du sommeil.
 
-## Points forts & points d'attention
-Liste à puces courte (2-4 points) : ce qui a bien marché, ce qui doit être surveillé (fatigue, séances manquées, sommeil insuffisant, charge).
+## Ce qui a bien marché
+Liste à puces de 1 à 3 points, chacun en 12 mots au plus, un fait daté ou chiffré par puce (une séance clé réussie, la régularité, un bon sommeil). Rien d'autre qu'une liste.
+
+## À surveiller
+Liste à puces de 1 à 3 points, chacun en 12 mots au plus : ce qui a moins bien marché ou doit être suivi (séance manquée, fatigue, sommeil court, charge trop haute). Rien d'autre qu'une liste.
 
 ## Plan pour la semaine prochaine
-2-3 recommandations concrètes (orientation des séances, récupération, sommeil) cohérentes avec la forme actuelle et l'objectif.
+Liste à puces de 2 à 3 recommandations concrètes, chacune en 15 mots au plus, cohérentes avec la forme actuelle et l'objectif.
 
-Règles : reste concis (12-18 lignes au total). Appuie-toi sur les chiffres réels, ne les invente pas. Dans "Bilan d'entraînement" et "Sommeil & récupération", mets en **gras** (markdown) les 2-3 chiffres ou notions les plus importants de chaque section — pas plus, sinon plus rien ne ressort à la lecture rapide. Respecte IMPÉRATIVEMENT les douleurs/blessures. Tutoie l'athlète, en français. Sois bienveillant mais honnête.
+Règles : reste concis (12-18 lignes au total). Les trois listes sont lues d'un coup d'œil dans l'app : des faits courts, sans phrase d'introduction. Appuie-toi sur les chiffres réels, ne les invente pas. Dans "Bilan d'entraînement" et "Sommeil & récupération", mets en **gras** (markdown) les 2-3 chiffres ou notions les plus importants de chaque section — pas plus, sinon plus rien ne ressort à la lecture rapide. Respecte IMPÉRATIVEMENT les douleurs/blessures. Tutoie l'athlète, en français. Sois bienveillant mais honnête.
 
 ${COACH_COPY_DASH_RULE}`;
 }
