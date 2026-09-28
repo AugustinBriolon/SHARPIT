@@ -8,7 +8,7 @@ describe('planGenerationErrorMessage', () => {
   it('maps schema failures to a retryable FR message', () => {
     expect(
       planGenerationErrorMessage(new Error('No object generated: response did not match schema.')),
-    ).toMatch(/proposition incomplète/i);
+    ).toMatch(/pas pu terminer ta semaine/i);
   });
 
   it('maps network failures', () => {

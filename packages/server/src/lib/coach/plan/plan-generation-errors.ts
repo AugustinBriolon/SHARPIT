@@ -67,8 +67,7 @@ const ERROR_RULES: Array<{ pattern: RegExp; message: string }> = [
   },
   {
     pattern: /No object generated|did not match schema|schema|validation|Zod/i,
-    message:
-      'Le coach a renvoyé une proposition incomplète. Réessaie — en général ça passe au second essai.',
+    message: 'Le coach n’a pas pu terminer ta semaine. Relance la génération.',
   },
 ];
 

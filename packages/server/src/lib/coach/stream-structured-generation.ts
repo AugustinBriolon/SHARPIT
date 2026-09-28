@@ -122,7 +122,8 @@ function createPartialEmitter(onPartial: (value: unknown) => void) {
   };
 
   const emitPartial = async (force = false) => {
-    const parsed = await parsePartialJson(state.jsonText);
+    // A fenced reply still shows its sessions as they come.
+    const parsed = await parsePartialJson(unwrapJsonReply(state.jsonText));
     if (parsed.state !== 'successful-parse' && parsed.state !== 'repaired-parse') {
       return;
     }
@@ -241,10 +242,24 @@ type StructuredCoachStreamArgs = {
   schemaInPrompt?: boolean;
 };
 
-/** The system prompt with the schema appended, for a reply read as plain JSON. */
+/**
+ * The system prompt with the schema appended, for a reply read as plain JSON. Compact: an
+ * indented reply spent thousands of tokens on spaces — time the athlete waits for.
+ */
 export function withSchemaInstruction(system: string, schema: z.ZodType): string {
   const jsonSchema = JSON.stringify(z.toJSONSchema(schema, { io: 'input' }));
-  return `${system}\n\nRéponds UNIQUEMENT par un objet JSON conforme à ce JSON Schema, sans texte autour :\n${jsonSchema}`;
+  return `${system}\n\nRéponds UNIQUEMENT par un objet JSON compact (sans indentation ni retour à la ligne), conforme à ce JSON Schema, sans bloc de code ni texte autour :\n${jsonSchema}`;
+}
+
+/**
+ * The JSON inside a reply. Gemini wraps it in a ```json fence now and then — a two-week plan
+ * failed twice on it — whatever it is told; the fence is taken off rather than trusted away.
+ */
+export function unwrapJsonReply(text: string): string {
+  return text
+    .trim()
+    .replace(/^```(?:json)?\s*/i, '')
+    .replace(/\s*```$/, '');
 }
 
 const jsonReplyGatewayOptions = {
@@ -256,7 +271,7 @@ async function resolveJsonReply(
   usage: PromiseLike<LanguageModelUsage>,
   jsonText: string,
 ): Promise<{ output: unknown; usage: LanguageModelUsage }> {
-  const output = await recoverObjectFromGenerationFailure(undefined, jsonText);
+  const output = await recoverObjectFromGenerationFailure(undefined, unwrapJsonReply(jsonText));
   if (output === undefined) {
     throw new Error('No object generated: the reply held no JSON object.');
   }

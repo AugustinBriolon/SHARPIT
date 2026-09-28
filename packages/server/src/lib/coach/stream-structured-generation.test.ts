@@ -7,6 +7,7 @@ import {
   progressListLength,
   recoverObjectFromGenerationFailure,
   shouldEmitCoachPartial,
+  unwrapJsonReply,
   withSchemaInstruction,
 } from '@sharpit/server/lib/coach/stream-structured-generation';
 
@@ -136,5 +137,16 @@ describe('coachPlanGenerationSchema', () => {
       ],
     };
     expect(coachPlanGenerationSchema.safeParse(week).success).toBe(true);
+  });
+});
+
+describe('unwrapJsonReply', () => {
+  it('takes the JSON out of a ```json fence', () => {
+    expect(JSON.parse(unwrapJsonReply('```json\n{"a":1}\n```'))).toEqual({ a: 1 });
+  });
+
+  it('leaves a bare reply, and a fence still being written, readable', () => {
+    expect(unwrapJsonReply('{"a":1}')).toBe('{"a":1}');
+    expect(unwrapJsonReply('```json\n{"sessions":[')).toBe('{"sessions":[');
   });
 });

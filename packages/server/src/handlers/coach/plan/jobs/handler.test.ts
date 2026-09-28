@@ -94,7 +94,7 @@ describe('background plan generation', () => {
     await state.afterCallbacks[0]!();
 
     expect(state.updates.at(-1)).toMatchObject({ status: 'failed' });
-    expect(String(state.updates.at(-1)?.error)).toContain('proposition incomplète');
+    expect(String(state.updates.at(-1)?.error)).toContain('pas pu terminer ta semaine');
     expect(state.pushes).toHaveLength(0);
   });
 

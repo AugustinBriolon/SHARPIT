@@ -482,6 +482,8 @@ describe('POST /api/coach/plan', () => {
       }),
     );
 
-    await expect(consumeCoachProgressStream(response)).rejects.toThrow(/proposition incomplète/i);
+    await expect(consumeCoachProgressStream(response)).rejects.toThrow(
+      /pas pu terminer ta semaine/i,
+    );
   });
 });
