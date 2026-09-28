@@ -1,4 +1,7 @@
-import { notifySourcesToReconnect } from '@sharpit/server/lib/push/athlete-notifications';
+import {
+  notifySourcesToReconnect,
+  wakeAppForWidgets,
+} from '@sharpit/server/lib/push/athlete-notifications';
 import { NextResponse } from 'next/server';
 import { prisma } from '@sharpit/db/client';
 import { mapWithConcurrency } from '@sharpit/server/lib/async/map-with-concurrency';
@@ -55,6 +58,10 @@ async function syncOneAthlete(
   // re-reads stored dailyHealth/HRV and would recreate purged evidence.
   if (canRunHealthDerivedAthleteRefresh(hasHealthConsent)) {
     await refreshAthleteBriefing(athleteId, result);
+  }
+  // The day was recomputed: the app's widgets show it without the athlete opening the app.
+  if (result.briefing) {
+    await wakeAppForWidgets(athleteId);
   }
   // Weekly review loads getHealthEntries — require health consent as well as AI.
   if (hasAiConsent && canRunHealthDerivedAthleteRefresh(hasHealthConsent)) {

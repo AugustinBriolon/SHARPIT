@@ -106,3 +106,14 @@ export function reconnectAlert(sources: readonly string[]): { title: string; bod
     body: `Reconnecte-${one ? 'le' : 'les'} dans Sources de données pour que tes données continuent d’arriver.`,
   };
 }
+
+/**
+ * Wakes the athlete's app after a sync so its widgets show what came in: a silent push, no
+ * alert, that the app answers by reading today again. Never throws.
+ */
+export async function wakeAppForWidgets(athleteId: string) {
+  await sendPushToAthlete(athleteId, {
+    aps: { 'content-available': 1 },
+    refresh: 'today',
+  }).catch((error) => console.error('[push] widget refresh', athleteId, error));
+}

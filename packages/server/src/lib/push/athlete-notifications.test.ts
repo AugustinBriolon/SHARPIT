@@ -69,3 +69,15 @@ describe('athlete notifications', () => {
     expect(sendPushToAthlete.mock.calls[0][1].url).toBe(WEEKLY_REVIEW_PATH);
   });
 });
+
+describe('wakeAppForWidgets', () => {
+  it('sends a silent push the app answers by reading today', async () => {
+    const { wakeAppForWidgets } = await import('./athlete-notifications');
+    sendPushToAthlete.mockClear();
+    await wakeAppForWidgets('a1');
+    expect(sendPushToAthlete).toHaveBeenCalledWith('a1', {
+      aps: { 'content-available': 1 },
+      refresh: 'today',
+    });
+  });
+});

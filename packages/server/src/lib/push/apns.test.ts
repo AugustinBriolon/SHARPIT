@@ -146,3 +146,17 @@ describe('apns', () => {
     });
   });
 });
+
+describe('apnsDeliveryHeaders', () => {
+  it('sends a push with nothing to show as a background push, at low priority', async () => {
+    const { apnsDeliveryHeaders } = await import('./apns');
+    expect(apnsDeliveryHeaders({ aps: { 'content-available': 1 } })).toEqual({
+      'apns-push-type': 'background',
+      'apns-priority': '5',
+    });
+    expect(apnsDeliveryHeaders({ aps: { alert: { title: 'T', body: 'B' } } })).toEqual({
+      'apns-push-type': 'alert',
+      'apns-priority': '10',
+    });
+  });
+});

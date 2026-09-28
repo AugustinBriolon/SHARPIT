@@ -14,7 +14,7 @@ import { EXPORTED_COLORS, renderIosTokens } from '@sharpit/app/lib/brand/ios-tok
 const GLOBALS_CSS = resolve(import.meta.dirname, '../../../packages/ui/src/styles/globals.css');
 const DEFAULT_OUTPUT = resolve(
   import.meta.dirname,
-  '../../../../SHARPIT-APP/SHARPIT-APP/DesignSystem/SharpitTokens.generated.swift',
+  '../../../../SHARPIT-APP/SharpItShared/SharpitTokens.generated.swift',
 );
 
 const args = process.argv.slice(2);

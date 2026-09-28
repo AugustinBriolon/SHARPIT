@@ -11,10 +11,13 @@ export type ApnsConfig = {
 
 export type ApnsPayload = {
   aps: {
-    alert: {
+    /** Absent on a silent push, which only wakes the app. */
+    alert?: {
       title: string;
       body: string;
     };
+    /** 1 wakes the app in the background (a silent push when there is no alert). */
+    'content-available'?: 1;
     sound?: string;
     badge?: number;
     'thread-id'?: string;
@@ -25,6 +28,17 @@ export type ApnsPayload = {
   verdict?: string | null;
   [key: string]: unknown;
 };
+
+/**
+ * A push with nothing to show is a background push: APNs wants it typed so, at low priority —
+ * sent as an alert at 10 it is refused, or throttled until the device drops it.
+ */
+export function apnsDeliveryHeaders(payload: ApnsPayload): Record<string, string> {
+  const silent = !payload.aps.alert && payload.aps['content-available'] === 1;
+  return silent
+    ? { 'apns-push-type': 'background', 'apns-priority': '5' }
+    : { 'apns-push-type': 'alert', 'apns-priority': '10' };
+}
 
 export type ApnsSendResult = {
   success: boolean;
@@ -214,8 +228,7 @@ export async function sendApnsNotification(options: {
       [http2.constants.HTTP2_HEADER_PATH]: `/3/device/${options.deviceToken}`,
       authorization: `bearer ${jwt}`,
       'apns-topic': config.bundleId,
-      'apns-push-type': 'alert',
-      'apns-priority': '10',
+      ...apnsDeliveryHeaders(options.payload),
       'apns-expiration': '0',
       'content-type': 'application/json',
       'content-length': Buffer.byteLength(body),

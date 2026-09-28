@@ -80,7 +80,7 @@ describe('morning-push', () => {
       const morning = buildMorningPushPayload(dummySnapshot, 'https://sharpit.app');
       const apns = toApnsPayload(morning);
 
-      expect(apns.aps.alert.title).toBe('Entraîne-toi fort');
+      expect(apns.aps.alert?.title).toBe('Entraîne-toi fort');
       expect(apns.aps.sound).toBe('default');
       expect(apns.aps.badge).toBe(1);
       expect(apns.aps.category).toBe('MORNING_VERDICT');
