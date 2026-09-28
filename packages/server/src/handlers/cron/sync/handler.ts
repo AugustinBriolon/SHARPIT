@@ -1,3 +1,4 @@
+import { notifySourcesToReconnect } from '@sharpit/server/lib/push/athlete-notifications';
 import { NextResponse } from 'next/server';
 import { prisma } from '@sharpit/db/client';
 import { mapWithConcurrency } from '@sharpit/server/lib/async/map-with-concurrency';
@@ -39,6 +40,10 @@ async function syncOneAthlete(
 
   await syncConnectedProviders(athleteId, accounts, result, { hasHealthConsent });
   breaker.recordAthleteProcessed({ authenticityFailure: result.decryptAuthenticity });
+  // The in-app sync shows what to reconnect; only the scheduled one, unseen, needs a push.
+  await notifySourcesToReconnect(athleteId, result.needsReconnect).catch((error) =>
+    console.error('[cron/sync] reconnect push', athleteId, error),
+  );
 
   if (breaker.isTripped()) {
     // Stop further credential-mutating / heavy work for this athlete once tripped mid-flight.

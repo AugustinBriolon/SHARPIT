@@ -30,6 +30,8 @@ import {
   syncStravaActivities,
 } from '@sharpit/server/lib/integrations/strava/strava-sync';
 import { generateAndStoreWeeklyReview, isSunday } from '@sharpit/server/lib/coach/weekly-review';
+import { isProAthlete } from '@sharpit/server/lib/access/is-pro-athlete';
+import { notifyWeeklyReviewReady } from '@sharpit/server/lib/push/athlete-notifications';
 import { isCoachConfigured } from '@sharpit/server/lib/ai';
 import { listConnectedCronProviders } from '@sharpit/server/lib/cron/list-connected-cron-providers';
 import type { CronAthleteSyncResult } from '@sharpit/server/lib/cron/sync-summary';
@@ -281,13 +283,25 @@ export async function refreshAthleteBriefing(athleteId: string, result: AthleteS
   }
 }
 
+/**
+ * Sunday's last sync, once the week is done: the three Sunday runs used to write it three
+ * times, the first before the day's session.
+ */
+export function isWeeklyReviewSlot(now: Date = new Date()): boolean {
+  return isSunday(now) && now.getUTCHours() >= WEEKLY_REVIEW_UTC_HOUR;
+}
+
+const WEEKLY_REVIEW_UTC_HOUR = 18;
+
 export async function generateWeeklyReviewIfSunday(athleteId: string, result: AthleteSyncResult) {
-  if (!isCoachConfigured() || !isSunday()) {
+  // The review is SharpIt Pro: written for an athlete who cannot read it, it was cost only.
+  if (!isCoachConfigured() || !isWeeklyReviewSlot() || !(await isProAthlete(athleteId))) {
     return;
   }
   try {
-    await generateAndStoreWeeklyReview(athleteId, new Date(), { current: true });
+    const review = await generateAndStoreWeeklyReview(athleteId, new Date(), { current: true });
     result.weeklyReview = true;
+    await notifyWeeklyReviewReady(athleteId, review.weekStart.toISOString().slice(0, 10));
   } catch (error) {
     recordSyncError({
       result,
