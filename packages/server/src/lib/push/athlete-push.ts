@@ -31,6 +31,13 @@ export async function sendPushToDevices(
         .catch(() => {});
     } else {
       result.failed += 1;
+      // Status and APNs reason only — never the token. Without it a push that never arrives
+      // leaves nothing to read.
+      console.warn('[push] APNs refused', {
+        environment: device.environment,
+        status: delivery.status,
+        reason: delivery.reason,
+      });
       if (isTokenExpiredOrInvalid(delivery.status, delivery.reason)) {
         result.deactivated += 1;
         await prisma.deviceToken

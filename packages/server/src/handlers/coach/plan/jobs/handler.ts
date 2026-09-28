@@ -31,7 +31,7 @@ function draftSessions(partial: unknown): unknown[] {
 
 async function tellAthleteTheWeekIsReady(athleteId: string, plan: PlanPayload) {
   const count = plan.sessions.length;
-  await sendPushToAthlete(athleteId, {
+  const delivery = await sendPushToAthlete(athleteId, {
     aps: {
       alert: {
         title: 'Ta semaine est prête',
@@ -42,7 +42,11 @@ async function tellAthleteTheWeekIsReady(athleteId: string, plan: PlanPayload) {
       category: 'PLAN_WEEK_READY',
     },
     url: PLAN_READY_PATH,
-  }).catch((error) => console.error('[coach/plan/jobs] push', error));
+  }).catch((error) => {
+    console.error('[coach/plan/jobs] push', error);
+    return null;
+  });
+  console.info('[coach/plan/jobs] week ready push', delivery);
 }
 
 /**
