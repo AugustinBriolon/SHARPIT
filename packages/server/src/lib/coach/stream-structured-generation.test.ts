@@ -1,11 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { NoObjectGeneratedError } from 'ai';
+import { coachPlanGenerationSchema } from '@sharpit/app/lib/validators/coach';
 
 import {
   isStructuredOutputFailure,
   progressListLength,
   recoverObjectFromGenerationFailure,
   shouldEmitCoachPartial,
+  withSchemaInstruction,
 } from '@sharpit/server/lib/coach/stream-structured-generation';
 
 describe('progressListLength', () => {
@@ -89,5 +91,50 @@ describe('isStructuredOutputFailure', () => {
     );
     expect(isStructuredOutputFailure(new Error('fetch failed'))).toBe(false);
     expect(isStructuredOutputFailure(new Error('429 rate limit'))).toBe(false);
+  });
+});
+
+describe('withSchemaInstruction', () => {
+  it('hands the model the schema as text, after the system prompt', () => {
+    const system = withSchemaInstruction('Tu es un entraîneur.', coachPlanGenerationSchema);
+    expect(system.startsWith('Tu es un entraîneur.')).toBe(true);
+    expect(system).toContain('JSON Schema');
+    expect(system).toContain('endurancePrescription');
+  });
+});
+
+describe('coachPlanGenerationSchema', () => {
+  const base = {
+    dayOffset: 1,
+    intensity: 'ENDURANCE',
+    title: 'Footing',
+    durationMin: 45,
+    load: 40,
+    rationale: 'Base aérobie.',
+  };
+
+  it('never takes an endurance session without its steps', () => {
+    const week = { summary: 'S', sessions: [{ ...base, type: 'RUN' }] };
+    expect(coachPlanGenerationSchema.safeParse(week).success).toBe(false);
+  });
+
+  it('takes one with them, and no description', () => {
+    const week = {
+      summary: 'S',
+      sessions: [
+        {
+          ...base,
+          type: 'RUN',
+          endurancePrescription: {
+            blocks: [
+              { steps: [{ kind: 'warmup', minutes: 10, effort: 'RECOVERY' }] },
+              { steps: [{ kind: 'interval', minutes: 30, effort: 'ENDURANCE' }] },
+              { steps: [{ kind: 'cooldown', minutes: 5, effort: 'RECOVERY' }] },
+            ],
+          },
+        },
+      ],
+    };
+    expect(coachPlanGenerationSchema.safeParse(week).success).toBe(true);
   });
 });

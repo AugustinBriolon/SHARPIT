@@ -52,9 +52,10 @@ export const COACH_REASONING_LEVEL = {
   answer: 'minimal',
   structured: 'medium',
   /**
-   * A week of sessions (`plan`). Measured on Gemini 3 Flash: `medium` spent ~12 000 reasoning
-   * tokens — 106 s before the first session, 110 s in all. `low` wrote a valid week in ~50 s
-   * (4/4 once recovered and normalized); `minimal` took 35 s but ignored the usual days.
+   * A week of sessions (`plan`), asked with the schema in the prompt (`schemaInPrompt`).
+   * Measured on Gemini 3 Flash with a constrained schema: `medium` spent ~12 000 reasoning
+   * tokens (110 s); `low` 45–70 s, most of it before the first character. With the schema as
+   * text, `low` writes a valid week in 18–26 s.
    */
   plan: 'low',
 } as const;

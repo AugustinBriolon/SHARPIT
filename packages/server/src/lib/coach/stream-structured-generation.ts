@@ -5,7 +5,7 @@ import {
   streamText,
   type LanguageModelUsage,
 } from 'ai';
-import type { z } from 'zod';
+import { z } from 'zod';
 import {
   COACH_REASONING_LEVEL,
   COACH_STRUCTURED_MODEL,
@@ -232,7 +232,36 @@ type StructuredCoachStreamArgs = {
   onPartial: (value: unknown) => void;
   /** How long the model deliberates; `structured` unless the workload was measured apart. */
   reasoning?: (typeof COACH_REASONING_LEVEL)[keyof typeof COACH_REASONING_LEVEL];
+  /**
+   * Hand the schema to the model as text and ask for JSON, instead of constraining the decoding
+   * with it. Measured on a week (`plan`): the constrained reply took 45–70 s before its first
+   * character, the same week asked this way 18–26 s — valid 4/4 once normalized. The caller's
+   * normalize step stays the authority on shape either way.
+   */
+  schemaInPrompt?: boolean;
 };
+
+/** The system prompt with the schema appended, for a reply read as plain JSON. */
+export function withSchemaInstruction(system: string, schema: z.ZodType): string {
+  const jsonSchema = JSON.stringify(z.toJSONSchema(schema, { io: 'input' }));
+  return `${system}\n\nRéponds UNIQUEMENT par un objet JSON conforme à ce JSON Schema, sans texte autour :\n${jsonSchema}`;
+}
+
+const jsonReplyGatewayOptions = {
+  ...coachStructuredGatewayOptions,
+  google: { ...coachStructuredGatewayOptions.google, responseMimeType: 'application/json' },
+};
+
+async function resolveJsonReply(
+  usage: PromiseLike<LanguageModelUsage>,
+  jsonText: string,
+): Promise<{ output: unknown; usage: LanguageModelUsage }> {
+  const output = await recoverObjectFromGenerationFailure(undefined, jsonText);
+  if (output === undefined) {
+    throw new Error('No object generated: the reply held no JSON object.');
+  }
+  return { output, usage: await usage };
+}
 
 async function runStructuredCoachStreamOnce({
   schema,
@@ -241,22 +270,25 @@ async function runStructuredCoachStreamOnce({
   onReasoning,
   onPartial,
   reasoning = COACH_REASONING_LEVEL.structured,
+  schemaInPrompt = false,
 }: StructuredCoachStreamArgs): Promise<{ output: unknown; usage: LanguageModelUsage }> {
   const result = streamText({
     model: COACH_STRUCTURED_MODEL,
-    output: Output.object({ schema }),
-    system,
+    ...(schemaInPrompt ? {} : { output: Output.object({ schema }) }),
+    system: schemaInPrompt ? withSchemaInstruction(system, schema) : system,
     prompt,
     // No maxOutputTokens here on purpose — see COACH_MAX_OUTPUT_TOKENS.
     reasoning,
-    providerOptions: coachStructuredGatewayOptions,
+    providerOptions: schemaInPrompt ? jsonReplyGatewayOptions : coachStructuredGatewayOptions,
     telemetry: {
       functionId: 'coach-structured',
     },
   });
 
   const jsonText = await consumeCoachFullStream(result.fullStream, onReasoning, onPartial);
-  return resolveStructuredOutput(result, jsonText);
+  return schemaInPrompt
+    ? resolveJsonReply(result.totalUsage, jsonText)
+    : resolveStructuredOutput(result, jsonText);
 }
 
 /**

@@ -143,54 +143,53 @@ export type CoachPlan = z.infer<typeof coachPlanSchema>;
  * Schéma permissif pour la génération IA (floats OK ; enums strength en string).
  * `normalizeCoachPlanGeneration` coerce vers `coachPlanSchema` avant Gate.
  */
+const generatedSessionBaseSchema = z.object({
+  dayOffset: z
+    .number()
+    .min(0)
+    .max(27)
+    .describe('Nombre de jours après la date de début du plan (0 = jour de début).'),
+  startTime: z
+    .string()
+    .nullable()
+    .optional()
+    .describe(
+      "Heure de début 'HH:mm' (ex. 09:00) dans un créneau libre, ou null sans contrainte d'agenda.",
+    ),
+  intensity: planIntensitySchema,
+  title: z.string().describe('Titre court de la séance.'),
+  durationMin: z.number().min(10).max(420),
+  load: z.number().min(0).max(400).describe('Charge / TSS estimé de la séance.'),
+  rationale: z
+    .string()
+    .describe('Une phrase de 15 mots au plus : pourquoi cette séance maintenant.'),
+});
+
+/**
+ * One variant per kind of session, so the model cannot leave the steps out: an endurance
+ * session carries its structure, a strength session its exercises. No prose description — the
+ * server writes it from the steps, and the model spends its time on the session, not on text.
+ */
+const generatedSessionSchema = z.discriminatedUnion('type', [
+  generatedSessionBaseSchema.extend({
+    type: z.enum(['RUN', 'BIKE', 'SWIM']),
+    endurancePrescription: coachEndurancePrescriptionGenerationSchema.describe(
+      'Déroulé : échauffement, corps, retour au calme — même pour une sortie continue.',
+    ),
+  }),
+  generatedSessionBaseSchema.extend({
+    type: z.literal('STRENGTH'),
+    strengthPrescription: coachStrengthPrescriptionGenerationSchema.describe(
+      'Exercices avec séries et répétitions.',
+    ),
+  }),
+]);
+
 export const coachPlanGenerationSchema = z.object({
   summary: z
     .string()
-    .describe(
-      'Résumé en 1-2 phrases de la logique du bloc proposé (phase, intention, ajustement selon la fraîcheur).',
-    ),
-  sessions: z
-    .array(
-      z.object({
-        dayOffset: z
-          .number()
-          .min(0)
-          .max(27)
-          .describe('Nombre de jours après la date de début du plan (0 = jour de début).'),
-        startTime: z
-          .string()
-          .nullable()
-          .optional()
-          .describe(
-            "Heure de début 'HH:mm' (ex. 09:00) dans un créneau libre, ou null sans contrainte d'agenda.",
-          ),
-        type: planSessionTypeSchema,
-        intensity: planIntensitySchema,
-        title: z.string().describe('Titre court de la séance.'),
-        description: z
-          .string()
-          .describe(
-            'Structure détaillée : échauffement, corps de séance (intervalles, allures/zones cibles), récupération. Pour STRENGTH : intention courte uniquement — la liste d’exercices va dans strengthPrescription.',
-          ),
-        strengthPrescription: coachStrengthPrescriptionGenerationSchema
-          .nullable()
-          .optional()
-          .describe(
-            'OBLIGATOIRE si type=STRENGTH (exercices + séries/reps). null pour RUN/BIKE/SWIM.',
-          ),
-        endurancePrescription: coachEndurancePrescriptionGenerationSchema
-          .nullable()
-          .optional()
-          .describe(
-            'Déroulé structuré pour RUN et BIKE dès que la séance a une structure. null pour STRENGTH / SWIM / sortie continue.',
-          ),
-        durationMin: z.number().min(10).max(420),
-        load: z.number().min(0).max(400).describe('Charge / TSS estimé de la séance.'),
-        rationale: z.string().describe('Justification courte : pourquoi cette séance maintenant.'),
-      }),
-    )
-    .min(1)
-    .max(14),
+    .describe('Une phrase de 25 mots au plus : la logique du bloc (phase, intention, fraîcheur).'),
+  sessions: z.array(generatedSessionSchema).min(1).max(14),
 });
 
 /** Paramètres de la requête de génération. */

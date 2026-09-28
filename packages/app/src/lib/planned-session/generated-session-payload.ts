@@ -41,7 +41,8 @@ export function generatedSessionPayload(session: GeneratedSessionInput, goalId: 
     date: new Date(`${session.date}T12:00:00`),
     startTime: session.startTime,
     title: session.title,
-    description: endurance.description,
+    // The coach writes no prose any more; a session without steps still needs a line to store.
+    description: endurance.description ?? session.title,
     strengthPrescription: strength.strengthPrescription,
     endurancePrescription: endurance.endurancePrescription,
     durationMin: session.durationMin,

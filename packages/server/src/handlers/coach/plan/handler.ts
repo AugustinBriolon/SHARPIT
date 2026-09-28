@@ -60,6 +60,7 @@ import {
   COACH_COPY_DASH_RULE,
   sanitizeCoachCopy,
 } from '@sharpit/app/lib/coach/sanitize-coach-copy';
+import { generatedSessionPayload } from '@sharpit/app/lib/planned-session/generated-session-payload';
 import { normalizeCoachPlanGeneration } from '@sharpit/server/lib/coach/plan/normalize-plan-generation';
 import {
   coachGenerationErrorDetails,
@@ -78,7 +79,7 @@ Règles :
 - Respecte les jours d'entraînement habituels ; repos ailleurs. Ne duplique pas ce qui est déjà planifié.
 - 80/20 : majorité d'endurance, 2-3 séances qualité/semaine max, surcharge progressive.
 - Cibles concrètes depuis les seuils (FC via LTHR/FC max, puissance via FTP, allure via allure seuil). Seuil manquant → RPE/zones, et signale-le.
-- TSS réaliste par séance. Description concrète : échauffement, corps (répétitions, durées, zones), récupération.
+- TSS réaliste par séance. Aucun texte de description : le déroulé structuré suffit.
 - Exploite la conformité prévu/réalisé et le ressenti (RPE, feeling).
 
 Sécurité (impératif) :
@@ -90,7 +91,7 @@ ${formatStrengthSessionRules()}
 
 ${COACH_COPY_DASH_RULE}
 
-Sortie : le schéma fait autorité pour les noms de champs, les types et les valeurs d'énumération — jamais ce texte. N'ajoute aucun champ hors schéma. Séance STRENGTH : strengthPrescription obligatoire (noms français, blocs et volume ci-dessus) ; RUN/BIKE/SWIM : null. Séance RUN ou BIKE structurée (fractionné, blocs au seuil, progressif) : remplis endurancePrescription — étapes et groupes répétés avec leur intensité, jamais d'allure ni de watts, l'app les dérive des seuils.`;
+Sortie : le schéma fait autorité pour les noms de champs, les types et les valeurs d'énumération — jamais ce texte. N'ajoute aucun champ hors schéma. Séance STRENGTH : strengthPrescription obligatoire (noms français, blocs et volume ci-dessus) ; RUN/BIKE/SWIM : null. Séance RUN, BIKE ou SWIM, même continue : endurancePrescription obligatoire (échauffement, corps, retour au calme) — étapes et groupes répétés avec leur intensité, jamais d'allure ni de watts, l'app les dérive des seuils. Textes courts : titre, une phrase de justification.`;
 
 function buildGoalBlock(goal: NonNullable<Awaited<ReturnType<typeof getGoalById>>>, start: Date) {
   const daysToGo = goal.targetDate
@@ -324,6 +325,7 @@ export async function generatePlan(
         system: SYSTEM_PROMPT,
         prompt: prepared.prompt,
         reasoning: COACH_REASONING_LEVEL.plan,
+        schemaInPrompt: true,
         onReasoning: progress.onReasoning ?? (() => {}),
         onPartial: progress.onPartial,
       }),
@@ -473,7 +475,8 @@ async function finalizePlan(
           defaultPoolLengthM: profile?.defaultPoolLengthM,
         }),
         title: sanitizeCoachCopy(s.title),
-        description: sanitizeCoachCopy(s.description),
+        // Written from the steps, not by the coach: the model spends no time on prose.
+        description: generatedSessionPayload({ ...s, decisionId: null }, goalId).description,
         rationale: sanitizeCoachCopy(s.rationale),
         decisionId: decisionIds[index],
       };
