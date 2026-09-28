@@ -1,0 +1,55 @@
+import { prisma } from '@sharpit/db/client';
+import {
+  apnsConfigFor,
+  isTokenExpiredOrInvalid,
+  sendApnsNotification,
+  type ApnsPayload,
+} from '@sharpit/server/lib/push/apns';
+
+export type PushDevice = { token: string; environment: string };
+export type PushDeliveryResult = { sent: number; failed: number; deactivated: number };
+
+/**
+ * Sends one payload to each device, each on its own APNs environment. A device APNs says is
+ * gone is switched off; a device that received it has its last use stamped. Never throws.
+ */
+export async function sendPushToDevices(
+  devices: readonly PushDevice[],
+  payload: ApnsPayload,
+): Promise<PushDeliveryResult> {
+  const result: PushDeliveryResult = { sent: 0, failed: 0, deactivated: 0 };
+  for (const device of devices) {
+    const delivery = await sendApnsNotification({
+      deviceToken: device.token,
+      payload,
+      config: apnsConfigFor(device.environment),
+    });
+    if (delivery.success) {
+      result.sent += 1;
+      await prisma.deviceToken
+        .update({ where: { token: device.token }, data: { lastUsedAt: new Date() } })
+        .catch(() => {});
+    } else {
+      result.failed += 1;
+      if (isTokenExpiredOrInvalid(delivery.status, delivery.reason)) {
+        result.deactivated += 1;
+        await prisma.deviceToken
+          .update({ where: { token: device.token }, data: { enabled: false } })
+          .catch(() => {});
+      }
+    }
+  }
+  return result;
+}
+
+/** Every enabled device of the athlete, then `sendPushToDevices`. */
+export async function sendPushToAthlete(
+  athleteId: string,
+  payload: ApnsPayload,
+): Promise<PushDeliveryResult> {
+  const devices = await prisma.deviceToken.findMany({
+    where: { athleteId, enabled: true },
+    select: { token: true, environment: true },
+  });
+  return sendPushToDevices(devices, payload);
+}

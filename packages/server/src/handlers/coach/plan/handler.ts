@@ -260,33 +260,78 @@ async function preparePlanGeneration(
   };
 }
 
-export async function POST(req: Request) {
+type PreparedPlan = Extract<Awaited<ReturnType<typeof preparePlanGeneration>>, { ok: true }>;
+
+/**
+ * Everything checked before the coach is asked: configuration, the request, the AI consent,
+ * the rate limit and the AI budget. Shared by the streamed route and the background job.
+ */
+export async function preparePlanRequest(
+  req: Request,
+): Promise<
+  { ok: false; response: NextResponse } | { ok: true; athleteId: string; prepared: PreparedPlan }
+> {
   if (!isCoachConfigured()) {
-    return NextResponse.json(
-      {
-        error:
-          'Coach IA non configuré. Ajoute une clé AI_GATEWAY_API_KEY dans le fichier .env (Vercel → AI Gateway → API Keys), puis redémarre le serveur.',
-      },
-      { status: 503 },
-    );
+    return {
+      ok: false,
+      response: NextResponse.json(
+        {
+          error:
+            'Coach IA non configuré. Ajoute une clé AI_GATEWAY_API_KEY dans le fichier .env (Vercel → AI Gateway → API Keys), puis redémarre le serveur.',
+        },
+        { status: 503 },
+      ),
+    };
   }
 
   const body = await req.json().catch(() => ({}));
   const parsed = coachPlanRequestSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: 'Paramètres invalides.' }, { status: 400 });
+    return {
+      ok: false,
+      response: NextResponse.json({ error: 'Paramètres invalides.' }, { status: 400 }),
+    };
   }
 
   const athleteId = await getCurrentAthleteId();
   const aiBlocked = await requireAiProcessingConsent(athleteId);
   if (aiBlocked) {
-    return aiBlocked;
+    return { ok: false, response: aiBlocked };
   }
   const prepared = await preparePlanGeneration(athleteId, parsed.data);
   if (!prepared.ok) {
-    return prepared.response;
+    return { ok: false, response: prepared.response };
   }
-  const { start, goalId, prompt, budgetWarning } = prepared;
+  return { ok: true, athleteId, prepared };
+}
+
+/** Asks the coach for the week, then dates it, runs the Gate and records the decisions. */
+export async function generatePlan(
+  athleteId: string,
+  prepared: PreparedPlan,
+  progress: { onPartial: (value: unknown) => void; onReasoning?: (delta: string) => void },
+): Promise<PlanPayload> {
+  const { output, usage } = await withCoachTrace(
+    { traceName: 'coach-plan', athleteId, tags: ['plan'] },
+    () =>
+      runStructuredCoachStream({
+        schema: coachPlanGenerationSchema,
+        system: SYSTEM_PROMPT,
+        prompt: prepared.prompt,
+        onReasoning: progress.onReasoning ?? (() => {}),
+        onPartial: progress.onPartial,
+      }),
+  );
+  void recordAiUsage(athleteId, 'coach', usage);
+  return finalizePlan(athleteId, output, prepared.start, prepared.goalId ?? null);
+}
+
+export async function POST(req: Request) {
+  const request = await preparePlanRequest(req);
+  if (!request.ok) {
+    return request.response;
+  }
+  const { athleteId, prepared } = request;
 
   const encoder = new TextEncoder();
   const stream = new ReadableStream<Uint8Array>({
@@ -305,22 +350,11 @@ export async function POST(req: Request) {
       };
 
       try {
-        const { output, usage } = await withCoachTrace(
-          { traceName: 'coach-plan', athleteId, tags: ['plan'] },
-          () =>
-            runStructuredCoachStream({
-              schema: coachPlanGenerationSchema,
-              system: SYSTEM_PROMPT,
-              prompt,
-              onReasoning: (delta) => send({ type: 'reasoning', delta }),
-              onPartial: (value) => send({ type: 'partial', value }),
-            }),
-        );
-        void recordAiUsage(athleteId, 'coach', usage);
-        send({
-          type: 'result',
-          value: await finalizePlan(athleteId, output, start, goalId ?? null),
+        const value = await generatePlan(athleteId, prepared, {
+          onReasoning: (delta) => send({ type: 'reasoning', delta }),
+          onPartial: (partial) => send({ type: 'partial', value: partial }),
         });
+        send({ type: 'result', value });
       } catch (error) {
         const details = coachGenerationErrorDetails(error);
         console.error('[coach/plan]', error, details ? { zod: details } : undefined);
@@ -333,7 +367,7 @@ export async function POST(req: Request) {
   });
 
   return new Response(stream, {
-    headers: withAiBudgetWarningHeader(COACH_PROGRESS_HEADERS, budgetWarning),
+    headers: withAiBudgetWarningHeader(COACH_PROGRESS_HEADERS, prepared.budgetWarning),
   });
 }
 
@@ -411,19 +445,37 @@ async function finalizePlan(
       ),
     ).then((decisions) => decisions.map((d) => d.id));
 
-    const sessionsWithDecisionId = sessions.map((s, i) => ({
-      ...s,
-      title: sanitizeCoachCopy(s.title),
-      description: sanitizeCoachCopy(s.description),
-      rationale: sanitizeCoachCopy(s.rationale),
-      decisionId: decisionIds[i],
-    }));
+    // The Gate is the last word before the athlete sees anything: a session it rejects is
+    // taken out here — its decision still recorded — rather than shown and refused on « Ajouter ».
+    const kept = gate.sessions
+      .map((result, index) => ({ result, index }))
+      .filter(({ result }) => result.status !== 'REJECTED')
+      .map(({ index }) => index);
+    const keptProposals = kept.map((index) => proposals[index]);
+    const keptGate =
+      kept.length === proposals.length ? gate : evaluatePlan(gateContext, keptProposals);
+
+    const sessionsWithDecisionId = kept.map((index) => {
+      const s = sessions[index];
+      return {
+        ...s,
+        title: sanitizeCoachCopy(s.title),
+        description: sanitizeCoachCopy(s.description),
+        rationale: sanitizeCoachCopy(s.rationale),
+        decisionId: decisionIds[index],
+      };
+    });
+    if (sessionsWithDecisionId.length === 0) {
+      throw new Error(
+        'Aucune séance exploitable : le coach n’a proposé que des séances à éviter pour toi en ce moment. Précise ta demande et réessaie.',
+      );
+    }
 
     return {
       summary: sanitizeCoachCopy(output.summary),
       startDate: format(start, 'yyyy-MM-dd'),
       sessions: sessionsWithDecisionId,
-      gate,
+      gate: keptGate,
     };
   }
 }

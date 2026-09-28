@@ -7,8 +7,8 @@ import {
 } from 'ai';
 import type { z } from 'zod';
 import {
-  COACH_MODEL,
   COACH_REASONING_LEVEL,
+  COACH_STRUCTURED_MODEL,
   coachStructuredGatewayOptions,
 } from '@sharpit/server/lib/ai';
 
@@ -240,7 +240,7 @@ async function runStructuredCoachStreamOnce({
   onPartial,
 }: StructuredCoachStreamArgs): Promise<{ output: unknown; usage: LanguageModelUsage }> {
   const result = streamText({
-    model: COACH_MODEL,
+    model: COACH_STRUCTURED_MODEL,
     output: Output.object({ schema }),
     system,
     prompt,

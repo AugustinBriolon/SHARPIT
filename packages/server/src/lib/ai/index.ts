@@ -10,6 +10,15 @@
 export const COACH_MODEL = process.env.COACH_MODEL ?? 'google/gemini-3-flash';
 
 /**
+ * Modèle des générations structurées (plan, adapt) : il doit savoir respecter un schéma JSON.
+ * Le modèle du chat n'en est pas forcément capable — `deepseek/deepseek-v4-flash`, servi par
+ * Alibaba via le gateway, ne prend pas de JSON Schema : le schéma est glissé dans le prompt
+ * (« compatibility mode », visible dans les logs) et les semaines générées étaient souvent
+ * invalides. D'où un modèle distinct, surchargeable par `COACH_STRUCTURED_MODEL`.
+ */
+export const COACH_STRUCTURED_MODEL = process.env.COACH_STRUCTURED_MODEL ?? 'google/gemini-3-flash';
+
+/**
  * Modèles de repli si le principal est indisponible.
  * Utilisés via providerOptions.gateway.models (failover géré par le gateway).
  */

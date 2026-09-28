@@ -94,11 +94,13 @@ describe('POST /api/coach/plan', () => {
     await importRoute();
   });
 
-  it('includes a gate field reflecting a REJECTED verdict when the proposed session conflicts with DecisionState', async () => {
+  it('takes out a session the Gate rejects before the athlete sees it, keeping its decision', async () => {
     const { runStructuredCoachStream } =
       await import('@sharpit/server/lib/coach/stream-structured-generation');
     const { getOrBuildAthleteSnapshot } =
       await import('@sharpit/server/lib/athlete-state/snapshot-service');
+    const { createCoachingDecision } =
+      await import('@sharpit/server/lib/decision-memory/repository');
 
     vi.mocked(runStructuredCoachStream).mockResolvedValue({
       output: {
@@ -114,6 +116,17 @@ describe('POST /api/coach/plan', () => {
             durationMin: 45,
             load: 70,
             rationale: 'Progression',
+          },
+          {
+            dayOffset: 2,
+            startTime: null,
+            type: 'RUN',
+            intensity: 'RECOVERY',
+            title: 'Footing très facile',
+            description: 'Footing en aisance respiratoire',
+            durationMin: 25,
+            load: 15,
+            rationale: 'Récupérer',
           },
         ],
       },
@@ -139,14 +152,11 @@ describe('POST /api/coach/plan', () => {
     const body = await consumeCoachProgressStream<PlanPayload, unknown>(response);
 
     expect(response.status).toBe(200);
+    expect(body.sessions.map((session) => session.title)).toEqual(['Footing très facile']);
     expect(body.gate.sessions).toHaveLength(1);
-    expect(body.gate.sessions[0].status).toBe('REJECTED');
-    expect(body.gate.sessions[0].findings.length).toBeGreaterThan(0);
-    // Original proposal is preserved untouched in the response.
-    expect(body.sessions[0].intensity).toBe('THRESHOLD');
-    // A CoachingDecision is persisted even for a rejected proposal — the recommendation
-    // was still shown to the athlete, and its id is exposed for the client to reference.
-    expect(body.sessions[0].decisionId).toBe('mock-decision-id');
+    expect(body.gate.sessions[0].status).not.toBe('REJECTED');
+    // Both proposals are remembered, the rejected one included.
+    expect(vi.mocked(createCoachingDecision)).toHaveBeenCalledTimes(2);
   });
 
   it('accepts a session when nothing in the context conflicts with it', async () => {
@@ -419,6 +429,12 @@ describe('POST /api/coach/plan', () => {
       usage: { inputTokens: 1, outputTokens: 1, totalTokens: 2 },
     } as never);
 
+    // A strength session is only proposed to an athlete who practises it (Gate).
+    const { getAthleteProfile } = await import('@sharpit/server/lib/queries');
+    vi.mocked(getAthleteProfile).mockResolvedValue({
+      practicedSports: { version: 1, sports: ['run', 'strength'] },
+    } as never);
+
     vi.mocked(getOrBuildAthleteSnapshot).mockResolvedValue({
       snapshotId: 'snap-loose',
       confidence: 0.8,
@@ -444,6 +460,7 @@ describe('POST /api/coach/plan', () => {
     expect(body.sessions[0].startTime).toBe('09:05');
     expect(body.sessions[0].durationMin).toBe(41);
     expect(body.sessions[0].strengthPrescription?.sets[0]?.pattern).toBeNull();
+    vi.mocked(getAthleteProfile).mockResolvedValue(null);
   });
 
   it('streams a precise FR error when structured generation fails the schema', async () => {

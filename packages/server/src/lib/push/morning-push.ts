@@ -1,3 +1,4 @@
+import { sendPushToDevices } from '@sharpit/server/lib/push/athlete-push';
 import { appOrigin } from '@sharpit/server/lib/app-origin';
 import { mapWithConcurrency } from '@sharpit/server/lib/async/map-with-concurrency';
 import { trainingDayIdNow } from '@sharpit/server/lib/athlete-state/freshness-service';
@@ -5,12 +6,7 @@ import { refreshAthleteState } from '@sharpit/server/lib/athlete-state/orchestra
 import { getLatestAthleteSnapshot } from '@sharpit/server/infrastructure/athlete-state/snapshot-repository';
 import { prisma } from '@sharpit/db/client';
 import { wantsMorningVerdict } from '@sharpit/server/lib/notifications/notification-prefs';
-import {
-  apnsConfigFor,
-  isTokenExpiredOrInvalid,
-  sendApnsNotification,
-  type ApnsPayload,
-} from '@sharpit/server/lib/push/apns';
+import type { ApnsPayload } from '@sharpit/server/lib/push/apns';
 import {
   mapVerdictToDisplay,
   type OverallVerdict,
@@ -192,38 +188,7 @@ export async function sendMorningPushForAthlete(
   const morningPayload = buildMorningPushPayload(snapshot, options?.origin);
   const apnsPayload = toApnsPayload(morningPayload);
 
-  let sent = 0;
-  let failed = 0;
-  let deactivated = 0;
-
-  for (const device of athlete.deviceTokens) {
-    const result = await sendApnsNotification({
-      deviceToken: device.token,
-      payload: apnsPayload,
-      config: apnsConfigFor(device.environment),
-    });
-
-    if (result.success) {
-      sent += 1;
-      try {
-        await prisma.deviceToken.update({
-          where: { token: device.token },
-          data: { lastUsedAt: new Date() },
-        });
-      } catch {}
-    } else {
-      failed += 1;
-      if (isTokenExpiredOrInvalid(result.status, result.reason)) {
-        deactivated += 1;
-        try {
-          await prisma.deviceToken.update({
-            where: { token: device.token },
-            data: { enabled: false },
-          });
-        } catch {}
-      }
-    }
-  }
+  const { sent, failed, deactivated } = await sendPushToDevices(athlete.deviceTokens, apnsPayload);
 
   if (sent > 0) {
     try {

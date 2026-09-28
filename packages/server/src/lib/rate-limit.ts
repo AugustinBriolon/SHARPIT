@@ -1,5 +1,5 @@
 import { Ratelimit } from '@upstash/ratelimit';
-import { Redis } from '@upstash/redis';
+import { redis } from '@sharpit/server/lib/redis';
 
 /**
  * Sliding-window limiters keyed by athlete (and sometimes a sub-resource) —
@@ -17,14 +17,6 @@ import { Redis } from '@upstash/redis';
  *
  * Production must set `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN`.
  */
-
-const redis =
-  process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN
-    ? new Redis({
-        url: process.env.UPSTASH_REDIS_REST_URL,
-        token: process.env.UPSTASH_REDIS_REST_TOKEN,
-      })
-    : null;
 
 if (!redis && process.env.NODE_ENV !== 'development') {
   console.error(
