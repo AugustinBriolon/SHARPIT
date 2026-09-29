@@ -29,6 +29,7 @@ import type {
   RawGarminReadinessObservation,
   RawBodyBatteryObservation,
   RawObservation,
+  ObservationSource,
 } from '@sharpit/core/observation/types';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -247,11 +248,14 @@ function toBodyBatteryObservation(
  * @param health  — The health record from the Garmin API
  * @param calendarDate — The DailyHealth.date (midnight UTC = midnight local by convention)
  * @param receivedAt — When SHARPIT received this data
+ * @param source — Who measured it. A day row filled by Apple Health reads the same way, so the
+ *   shape is shared and only the source differs.
  */
 export function garminHealthToObservations(
   health: GarminDailyHealth,
   calendarDate: Date,
   receivedAt: Date,
+  source: ObservationSource = 'GARMIN',
 ): RawObservation[] {
   const observations: Array<RawObservation | null> = [
     toSleepObservation(health, calendarDate, receivedAt),
@@ -261,5 +265,7 @@ export function garminHealthToObservations(
     toBodyBatteryObservation(health, calendarDate, receivedAt),
   ];
 
-  return observations.filter((o): o is RawObservation => isSet(o));
+  return observations
+    .filter((o): o is RawObservation => isSet(o))
+    .map((o) => (source === 'GARMIN' ? o : { ...o, source }));
 }

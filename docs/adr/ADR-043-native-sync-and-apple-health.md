@@ -58,3 +58,27 @@ stores HRV as SDNN; Garmin reports an overnight RMSSD.
 
 - The provider catalogue's `apple-watch` entry stays `coming_soon` on the web: the source is
   native-only until the web can read it too.
+
+## Update — 2026-09-29: Apple Health alone is enough
+
+The two negatives above are closed, so an athlete with an Apple Watch and no Garmin or Strava
+gets the whole product.
+
+- **Days reach the Core.** `/api/v1/health-samples` turns the days it changed into sleep, HRV and
+  resting-HR observations (`ingestDailyHealthObservations`, source `APPLE_HEALTH`) for the types a
+  day does not hold yet, so readiness no longer depends on a Garmin pull. Apple's HRV is SDNN, not
+  Garmin's overnight RMSSD; the Core reads HRV against the athlete's own baseline, and Apple only
+  fills a day Garmin did not, so the two are not mixed within an athlete who has both.
+- **Workouts become activities.** `/api/v1/health-workouts` takes up to ten workouts per call —
+  summary plus streams (heart rate, distance, altitude, speed, power, cadence, route) aligned on
+  time. Each is stored as an activity (`source: 'apple-health'`), handed to the Core as an activity
+  without a provider id (`storedActivityToSession`), so its load is the Core's tiered TSS, and its
+  streams are persisted like a provider's. A workout already held — same sport, start and
+  duration, the Garmin/Strava fingerprint — is skipped, which also makes sending one twice
+  harmless; no column holds HealthKit's id, so no migration.
+- **Still a gap filler.** Workouts are taken only while neither Garmin nor Strava is connected
+  (`acceptsWorkouts: false` otherwise, and the app stops sending). Connecting Garmin later can merge
+  a Garmin session into an Apple-Health activity by the same fingerprint; the session observation
+  written from Apple Health then stays beside Garmin's for that one session.
+- Both routes share their own limiter (`appleHealth`, 30 calls per 10 minutes): a first import
+  sends a year in batches, which the one-per-two-minutes provider limiter refused.

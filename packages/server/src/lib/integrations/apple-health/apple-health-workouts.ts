@@ -1,0 +1,206 @@
+import { ActivityType, Prisma } from '@prisma/client';
+import { z } from 'zod';
+import { findMatchingActivity } from '@sharpit/server/lib/activity/list/activity-dedup';
+import { prisma } from '@sharpit/db/client';
+import { observationEngine } from '@sharpit/server/lib/engines/observation-engine';
+import { storedActivityToSession } from '@sharpit/server/lib/observation/activity-to-session';
+import { persistStream } from '@sharpit/server/lib/streams/streams';
+import type { RawStreams } from '@sharpit/server/lib/integrations/garmin/garmin-streams';
+
+/**
+ * Apple Health workouts, sent by the native app, as SharpIt activities — what lets an athlete
+ * without Garmin or Strava train with SharpIt on an Apple Watch alone.
+ *
+ * Apple Health stays a gap filler (ADR-043): an athlete with Garmin or Strava connected gets
+ * their sessions from there, so these are only taken when neither is. A workout already held
+ * (same sport, start and duration — the Garmin/Strava fingerprint) is skipped, which also makes
+ * a workout sent twice harmless. The stored row goes to the Core as any activity without a
+ * provider id does (`storedActivityToSession`), so its load is the Core's.
+ */
+
+const MAX_STREAM_POINTS = 8_000;
+
+const series = z.array(z.number().nullable()).max(MAX_STREAM_POINTS);
+
+const streamSchema = z.object({
+  time: z.array(z.number().min(0)).max(MAX_STREAM_POINTS),
+  heartrate: series.optional(),
+  distance: series.optional(),
+  altitude: series.optional(),
+  velocity: series.optional(),
+  watts: series.optional(),
+  cadence: series.optional(),
+  latlng: z
+    .array(z.tuple([z.number(), z.number()]))
+    .max(MAX_STREAM_POINTS)
+    .optional(),
+});
+
+export const appleHealthWorkoutSchema = z.object({
+  /** HealthKit's workout UUID — logged, not stored: the fingerprint deduplicates. */
+  id: z.string().min(1).max(64),
+  type: z.enum(['RUN', 'BIKE', 'SWIM', 'STRENGTH', 'HIKE', 'OTHER']),
+  title: z.string().max(120).nullish(),
+  start: z.string().datetime({ offset: true }),
+  durationSec: z.number().int().min(1).max(86_400),
+  distanceM: z.number().min(0).max(1_000_000).nullish(),
+  energyKcal: z.number().min(0).max(20_000).nullish(),
+  avgHr: z.number().int().min(20).max(250).nullish(),
+  maxHr: z.number().int().min(20).max(250).nullish(),
+  elevationM: z.number().min(0).max(20_000).nullish(),
+  avgPowerW: z.number().min(0).max(3_000).nullish(),
+  avgCadence: z.number().min(0).max(300).nullish(),
+  stream: streamSchema.nullish(),
+});
+
+export type AppleHealthWorkout = z.infer<typeof appleHealthWorkoutSchema>;
+
+type ActivityCreate = Omit<Prisma.ActivityUncheckedCreateInput, 'athleteId'>;
+
+function positive(value: number | null | undefined): number | null {
+  return typeof value === 'number' && Number.isFinite(value) && value > 0 ? value : null;
+}
+
+function rounded(value: number | null | undefined): number | null {
+  const set = positive(value);
+  return set === null ? null : Math.round(set);
+}
+
+function metricsFor(workout: AppleHealthWorkout): Partial<ActivityCreate> {
+  const distanceM = positive(workout.distanceM);
+  const elevationM = positive(workout.elevationM);
+  const calories = rounded(workout.energyKcal);
+  switch (workout.type) {
+    case ActivityType.RUN:
+      return {
+        runMetrics: {
+          create: {
+            distanceM,
+            elevationM,
+            paceSecPerKm: distanceM ? workout.durationSec / (distanceM / 1_000) : null,
+            avgHr: rounded(workout.avgHr),
+            avgPower: positive(workout.avgPowerW),
+            cadence: rounded(workout.avgCadence),
+          },
+        },
+      };
+    case ActivityType.BIKE:
+      return {
+        bikeMetrics: {
+          create: {
+            distanceM,
+            elevationM,
+            calories,
+            avgPower: positive(workout.avgPowerW),
+            avgCadence: rounded(workout.avgCadence),
+          },
+        },
+      };
+    case ActivityType.SWIM:
+      return {
+        swimMetrics: {
+          create: {
+            distanceM,
+            avgPaceSecPer100m: distanceM ? workout.durationSec / (distanceM / 100) : null,
+          },
+        },
+      };
+    case ActivityType.HIKE:
+      return {
+        hikeMetrics: {
+          create: {
+            distanceM,
+            elevationM,
+            calories,
+            avgHr: rounded(workout.avgHr),
+            avgSpeedMps: distanceM ? distanceM / workout.durationSec : null,
+          },
+        },
+      };
+    default:
+      return {};
+  }
+}
+
+/** The activity row a workout becomes, with its sport's metrics. */
+export function appleHealthActivityData(workout: AppleHealthWorkout): ActivityCreate {
+  return {
+    type: workout.type,
+    date: new Date(workout.start),
+    title: workout.title ?? null,
+    duration: workout.durationSec,
+    source: 'apple-health',
+    ...metricsFor(workout),
+  };
+}
+
+/** The streams as SharpIt stores them: every series aligned on `time`, absent ones empty. */
+export function appleHealthRawStreams(workout: AppleHealthWorkout): RawStreams | null {
+  const { stream } = workout;
+  if (!stream || stream.time.length === 0) {
+    return null;
+  }
+  const aligned = (values: (number | null)[] | undefined): number[] =>
+    values && values.length === stream.time.length ? values.map((v) => v ?? 0) : [];
+  return {
+    time: stream.time,
+    heartrate: aligned(stream.heartrate),
+    distance: aligned(stream.distance),
+    altitude: aligned(stream.altitude),
+    velocity: aligned(stream.velocity),
+    watts: aligned(stream.watts),
+    cadence: aligned(stream.cadence),
+    latlng: stream.latlng && stream.latlng.length === stream.time.length ? stream.latlng : [],
+  };
+}
+
+export type AppleHealthWorkoutImport = {
+  imported: number;
+  skipped: number;
+  activityIds: string[];
+};
+
+async function importOne(athleteId: string, workout: AppleHealthWorkout): Promise<string | null> {
+  const data = appleHealthActivityData(workout);
+  const match = await findMatchingActivity(athleteId, {
+    type: workout.type,
+    date: data.date as Date,
+    duration: workout.durationSec,
+  });
+  if (match) {
+    return null;
+  }
+
+  const created = await prisma.activity.create({
+    data: { ...data, athleteId },
+    include: { runMetrics: true, bikeMetrics: true, swimMetrics: true, hikeMetrics: true },
+  });
+  const session = storedActivityToSession(created, {
+    avgHrFromStream: workout.avgHr ?? null,
+    maxHrFromStream: workout.maxHr ?? null,
+  });
+  if (session) {
+    await observationEngine.ingest(athleteId, session);
+  }
+  // After the session: storing the streams re-extracts its features from them.
+  await persistStream(athleteId, created.id, appleHealthRawStreams(workout));
+  return created.id;
+}
+
+export async function importAppleHealthWorkouts(
+  athleteId: string,
+  workouts: AppleHealthWorkout[],
+): Promise<AppleHealthWorkoutImport> {
+  const result: AppleHealthWorkoutImport = { imported: 0, skipped: 0, activityIds: [] };
+  // In order, one at a time: two workouts of one batch can match each other.
+  for (const workout of workouts) {
+    const id = await importOne(athleteId, workout);
+    if (id) {
+      result.imported += 1;
+      result.activityIds.push(id);
+    } else {
+      result.skipped += 1;
+    }
+  }
+  return result;
+}

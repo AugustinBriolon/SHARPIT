@@ -57,6 +57,7 @@ export const NATIVE_V1_ONLY = [
   { path: 'sync', methods: ['POST'] },
   { path: 'sync-status', methods: ['GET'] },
   { path: 'health-samples', methods: ['POST'] },
+  { path: 'health-workouts', methods: ['POST'] },
   { path: 'push/device-token', methods: ['POST', 'DELETE'] },
   { path: 'push/test', methods: ['POST'] },
   { path: 'body/overview', methods: ['GET'] },

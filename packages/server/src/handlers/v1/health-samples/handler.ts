@@ -5,6 +5,8 @@ import { refreshAthleteState } from '@sharpit/server/lib/athlete-state/orchestra
 import { appleHealthPatch } from '@sharpit/server/lib/integrations/apple-health/apple-health-merge';
 import { getGarminAccount } from '@sharpit/server/lib/integrations/garmin/garmin-sync';
 import { prisma } from '@sharpit/db/client';
+import type { DailyHealth } from '@prisma/client';
+import { ingestDailyHealthObservations } from '@sharpit/server/lib/integrations/shared/health-observation-backfill';
 import { athleteHasHealthDataConsent } from '@sharpit/server/lib/privacy/consent-store';
 import {
   checkRateLimit,
@@ -40,13 +42,13 @@ function dayKey(date: string): Date {
   return new Date(`${date}T00:00:00.000Z`);
 }
 
-/** Writes each day's patch; returns how many days changed. */
+/** Writes each day's patch; returns the rows that changed. */
 async function applyAppleHealthDays(
   athleteId: string,
   days: z.infer<typeof daySchema>[],
   garminConnected: boolean,
-): Promise<number> {
-  let updatedDays = 0;
+): Promise<DailyHealth[]> {
+  const updated: DailyHealth[] = [];
   for (const day of days) {
     const date = dayKey(day.date);
     const existing = await prisma.dailyHealth.findUnique({
@@ -56,14 +58,14 @@ async function applyAppleHealthDays(
     if (Object.keys(patch).length === 0) {
       continue;
     }
-    await prisma.dailyHealth.upsert({
+    const row = await prisma.dailyHealth.upsert({
       where: { athleteId_date: { athleteId, date } },
       create: { athleteId, date, ...patch },
       update: patch,
     });
-    updatedDays += 1;
+    updated.push(row);
   }
-  return updatedDays;
+  return updated;
 }
 
 /**
@@ -81,16 +83,22 @@ export async function POST(request: NextRequest) {
     if (!(await athleteHasHealthDataConsent(athleteId))) {
       return NextResponse.json({ error: 'Consentement santé requis' }, { status: 403 });
     }
-    const rateLimit = await checkRateLimit(rateLimiters.providerSync, `${athleteId}:apple-health`);
+    const rateLimit = await checkRateLimit(rateLimiters.appleHealth, `${athleteId}:days`);
     if (!rateLimit.ok) {
       const limited = rateLimitJsonResponse(rateLimit);
       return NextResponse.json(limited.body, { status: limited.status });
     }
 
     const garminConnected = Boolean(await getGarminAccount(athleteId));
-    const updatedDays = await applyAppleHealthDays(athleteId, parsed.data.days, garminConnected);
+    const updatedRows = await applyAppleHealthDays(athleteId, parsed.data.days, garminConnected);
+    const updatedDays = updatedRows.length;
 
     if (updatedDays > 0) {
+      // The Core reads observations, not day rows: without this an athlete on Apple Health
+      // alone would never get a readiness.
+      await ingestDailyHealthObservations(athleteId, updatedRows, 'APPLE_HEALTH').catch((error) => {
+        console.error('[api/v1/health-samples] observations', error);
+      });
       await refreshAthleteState(athleteId, { source: 'today_refresh' }).catch((error) => {
         console.error('[api/v1/health-samples] refresh', error);
       });

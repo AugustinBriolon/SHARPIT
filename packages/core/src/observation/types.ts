@@ -29,7 +29,14 @@ export type ObservationType =
   | 'NUTRITION';
 
 export type ObservationSource =
-  'GARMIN' | 'STRAVA' | 'MANUAL' | 'RENPHO' | 'WITHINGS' | 'GOOGLE_FIT' | 'MYFITNESSPAL';
+  | 'GARMIN'
+  | 'STRAVA'
+  | 'MANUAL'
+  | 'RENPHO'
+  | 'WITHINGS'
+  | 'GOOGLE_FIT'
+  | 'MYFITNESSPAL'
+  | 'APPLE_HEALTH';
 
 export type SportType =
   | 'RUN'

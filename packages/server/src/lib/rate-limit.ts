@@ -45,6 +45,8 @@ export const rateLimiters = {
   sessionAnalyze: limiter(20, '1 h', 'session-analyze'),
   activityNarrative: limiter(1, '10 m', 'activity-narrative'),
   providerSync: limiter(1, '2 m', 'provider-sync'),
+  /** Apple Health is sent by the phone in batches — a first import spans a year. */
+  appleHealth: limiter(30, '10 m', 'apple-health'),
 };
 
 export type RateLimitCause = 'limited' | 'unavailable';

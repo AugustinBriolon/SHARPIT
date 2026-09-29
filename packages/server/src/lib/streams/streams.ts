@@ -473,7 +473,8 @@ async function fetchRawStreams(
   return null;
 }
 
-async function persistStream(
+/** Stores a session's streams and refreshes its features once they are cached. */
+export async function persistStream(
   athleteId: string,
   activityId: string,
   raw: RawStreams | null,

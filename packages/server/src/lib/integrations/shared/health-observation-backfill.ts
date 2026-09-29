@@ -1,7 +1,7 @@
 import { startOfDay, subDays } from 'date-fns';
 import type { DailyHealth } from '@prisma/client';
 import { garminHealthToObservations } from '@sharpit/server/adapters/garmin-health-adapter';
-import type { RawObservation } from '@sharpit/core/observation/types';
+import type { ObservationSource, RawObservation } from '@sharpit/core/observation/types';
 import type { GarminDailyHealth } from '@sharpit/server/lib/integrations/garmin/garmin';
 import { observationEngine } from '@sharpit/server/lib/engines/observation-engine';
 import { prisma } from '@sharpit/db/client';
@@ -68,7 +68,19 @@ export async function backfillHealthObservationsFromDailyHealth(
     where: { athleteId, date: { gte: since } },
     orderBy: { date: 'desc' },
   });
+  return ingestDailyHealthObservations(athleteId, rows);
+}
 
+/**
+ * Turns day rows into the Observations the Core reads (sleep, HRV, resting HR), for the
+ * types a day does not hold yet. Apple Health's days go through here as they arrive, so an
+ * athlete without Garmin still gets a readiness.
+ */
+export async function ingestDailyHealthObservations(
+  athleteId: string,
+  rows: DailyHealth[],
+  source: ObservationSource = 'GARMIN',
+): Promise<HealthObservationBackfillResult> {
   let ingested = 0;
   let skipped = 0;
 
@@ -86,7 +98,7 @@ export async function backfillHealthObservationsFromDailyHealth(
 
     const health = dailyHealthToGarminHealth(row);
     const raws = filterMissingObservations(
-      garminHealthToObservations(health, row.date, row.updatedAt),
+      garminHealthToObservations(health, row.date, row.updatedAt, source),
       existingTypes,
     );
 

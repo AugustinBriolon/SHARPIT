@@ -293,3 +293,50 @@ describe('garminHealthToObservations — full record', () => {
     expect(types).toContain('GARMIN_BATTERY');
   });
 });
+
+describe('garminHealthToObservations source', () => {
+  it('labels a day filled by Apple Health as such', async () => {
+    const { garminHealthToObservations } = await import('./garmin-health-adapter');
+    const day = {
+      date: '2026-09-28',
+      sleepMinutes: 450,
+      napMinutes: null,
+      restingHr: 48,
+      hrv: 62,
+      weightKg: null,
+      readinessScore: null,
+      readinessLevel: null,
+      readinessFeedback: null,
+      readinessFactors: null,
+      hrvStatus: null,
+      hrvBaselineLow: null,
+      hrvBaselineHigh: null,
+      stress: null,
+      bodyBattery: null,
+      totalSteps: null,
+      sleep: {
+        sleepMinutes: 450,
+        napMinutes: null,
+        sleepScore: null,
+        sleepDeepMin: null,
+        sleepLightMin: null,
+        sleepRemMin: null,
+        sleepAwakeMin: null,
+        sleepBedtimeMin: 1_380,
+        sleepWakeMin: 390,
+        sleepRespiration: null,
+        sleepAvgStress: null,
+        sleepScoreFeedback: null,
+      },
+    };
+    const date = new Date('2026-09-28T00:00:00.000Z');
+
+    const observations = garminHealthToObservations(day as never, date, date, 'APPLE_HEALTH');
+
+    expect(observations.map((o) => o.type).sort()).toEqual(['HRV', 'RESTING_HR', 'SLEEP']);
+    expect(new Set(observations.map((o) => o.source))).toEqual(new Set(['APPLE_HEALTH']));
+    expect(
+      garminHealthToObservations(day as never, date, date).every((o) => o.source === 'GARMIN'),
+    ).toBe(true);
+  });
+});
