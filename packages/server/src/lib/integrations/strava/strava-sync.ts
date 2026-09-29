@@ -109,6 +109,7 @@ function attachStravaBikeMetrics(
 ): void {
   base.bikeMetrics = {
     create: {
+      distanceM: strava.distance || null,
       normalizedPower: strava.weighted_average_watts ?? null,
       avgPower: strava.average_watts ?? null,
       avgCadence: strava.average_cadence ? Math.round(strava.average_cadence) : null,
@@ -195,6 +196,7 @@ function enrichStravaRunMetrics(data: Prisma.ActivityUpdateInput, strava: Strava
 
 function stravaBikeEnrichmentCreate(strava: StravaActivity) {
   return {
+    distanceM: strava.distance || null,
     normalizedPower: strava.weighted_average_watts ?? null,
     avgPower: strava.average_watts ?? null,
     avgCadence: strava.average_cadence ? Math.round(strava.average_cadence) : null,
@@ -206,6 +208,7 @@ function stravaBikeEnrichmentCreate(strava: StravaActivity) {
 
 function stravaBikeEnrichmentUpdate(strava: StravaActivity) {
   return {
+    distanceM: strava.distance || undefined,
     normalizedPower: strava.weighted_average_watts ?? undefined,
     avgPower: strava.average_watts ?? undefined,
     avgCadence: strava.average_cadence ? Math.round(strava.average_cadence) : undefined,

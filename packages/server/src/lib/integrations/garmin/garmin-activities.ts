@@ -590,6 +590,7 @@ function attachGarminBikeMetrics(
 ): void {
   base.bikeMetrics = {
     create: {
+      distanceM: activity.distance > 0 ? activity.distance : null,
       normalizedPower: num(activity.normPower as number),
       avgPower: num(activity.avgPower as number),
       avgCadence: num(activity.averageBikingCadenceInRevPerMinute as number)
@@ -704,12 +705,14 @@ function attachGarminEnrichmentBikeMetrics(input: GarminEnrichmentInput): void {
   data.bikeMetrics = {
     upsert: {
       create: {
+        distanceM: activity.distance > 0 ? activity.distance : null,
         avgPower: num(activity.avgPower as number),
         normalizedPower: num(activity.normPower as number),
         elevationM: activity.elevationGain > 0 ? activity.elevationGain : null,
         tss: load,
       },
       update: {
+        distanceM: activity.distance > 0 ? activity.distance : undefined,
         tss: load ?? undefined,
       },
     },

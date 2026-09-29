@@ -644,6 +644,9 @@ model BikeMetrics {
   activityId String   @unique
   activity   Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
 
+  // Distance parcourue (m) — celle que Garmin/Strava résument ; les sorties plus anciennes
+  // l'ont reprise de leur tracé (dernier point du flux distance).
+  distanceM       Float?
   ftpPercent      Float?
   normalizedPower Float?
   intensityFactor Float?
