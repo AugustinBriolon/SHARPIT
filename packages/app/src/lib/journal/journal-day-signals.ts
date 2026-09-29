@@ -30,35 +30,11 @@ export type JournalNutritionSummary = {
   goalFat: number | null;
 } | null;
 
-/**
- * The day's own values, as the devices reported them — what the checklist's verdicts are
- * derived from, sent too so a client can show the numbers and not only the ticks.
- */
-export type JournalDayData = {
-  sleep: {
-    minutes: number | null;
-    score: number | null;
-    /** Minutes after local midnight. */
-    bedtimeMin: number | null;
-    wakeMin: number | null;
-  };
-  napMinutes: number | null;
-  hrv: number | null;
-  restingHr: number | null;
-  /** Garmin Training Readiness, 0–100. */
-  readiness: number | null;
-  steps: number | null;
-  stress: number | null;
-  bodyBattery: number | null;
-  activities: { count: number; minutes: number };
-};
-
 export type JournalDaySignals = {
   trainingDayId: string;
   checklist: JournalAutoChecklistItem[];
   nutrition: JournalNutritionSummary;
   dietLabels: string[];
-  day: JournalDayData;
 };
 
 type DailyHealthRow = {
@@ -67,12 +43,6 @@ type DailyHealthRow = {
   napMinutes: number | null;
   sleepMinutes: number | null;
   bodyBattery: number | null;
-  sleepScore: number | null;
-  sleepBedtimeMin: number | null;
-  sleepWakeMin: number | null;
-  hrv: number | null;
-  restingHr: number | null;
-  recoveryScore: number | null;
 } | null;
 
 type DailyNutritionRow = {
@@ -115,29 +85,6 @@ function buildAutoHealthInput(
     };
   }
   return null;
-}
-
-export function buildJournalDayData(
-  health: DailyHealthRow,
-  activities: { duration: number | null }[],
-): JournalDayData {
-  const seconds = activities.reduce((sum, activity) => sum + (activity.duration ?? 0), 0);
-  return {
-    sleep: {
-      minutes: health?.sleepMinutes ?? null,
-      score: health?.sleepScore ?? null,
-      bedtimeMin: health?.sleepBedtimeMin ?? null,
-      wakeMin: health?.sleepWakeMin ?? null,
-    },
-    napMinutes: health?.napMinutes ?? null,
-    hrv: health?.hrv ?? null,
-    restingHr: health?.restingHr ?? null,
-    readiness: health?.recoveryScore ?? null,
-    steps: health?.totalSteps ?? null,
-    stress: health?.stress ?? null,
-    bodyBattery: health?.bodyBattery ?? null,
-    activities: { count: activities.length, minutes: Math.round(seconds / 60) },
-  };
 }
 
 function buildNutritionSummary(nutrition: NonNullable<DailyNutritionRow>): JournalNutritionSummary {
@@ -187,12 +134,6 @@ export async function buildJournalDaySignals(
         napMinutes: true,
         sleepMinutes: true,
         bodyBattery: true,
-        sleepScore: true,
-        sleepBedtimeMin: true,
-        sleepWakeMin: true,
-        hrv: true,
-        restingHr: true,
-        recoveryScore: true,
       },
     }),
     prisma.activity.findMany({
@@ -244,6 +185,5 @@ export async function buildJournalDaySignals(
     checklist,
     nutrition: nutritionSummary,
     dietLabels: activeDietLabels(journalPrefs),
-    day: buildJournalDayData(health, dayActivities),
   };
 }
