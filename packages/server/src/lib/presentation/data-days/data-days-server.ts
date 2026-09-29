@@ -1,4 +1,5 @@
 import { differenceInCalendarDays, parseISO } from 'date-fns';
+import { prisma } from '@sharpit/db/client';
 import {
   getActivityDatesInRange,
   getHealthEntries,
@@ -20,12 +21,24 @@ export async function loadDataDays(
   const toDate = parseISO(to);
   const spanDays = differenceInCalendarDays(toDate, fromDate) + 1;
 
-  const [health, activityDates, nutrition] = await Promise.all([
+  const [health, activityDates, nutrition, journal] = await Promise.all([
     // getHealthEntries applies the athlete's wearable source preference.
     needs.health ? getHealthEntries(athleteId, spanDays, toDate) : [],
     needs.activities ? getActivityDatesInRange(athleteId, fromDate, toDate) : [],
     needs.nutrition ? getNutritionCaloriesInRange(athleteId, from, to) : [],
+    needs.journal
+      ? prisma.athleteDayJournal.findMany({
+          where: { athleteId, trainingDayId: { gte: from, lte: to } },
+          select: {
+            trainingDayId: true,
+            factors: true,
+            moodLabel: true,
+            hydrationMl: true,
+            caffeineMg: true,
+          },
+        })
+      : [],
   ]);
 
-  return collectDataDays(domain, { health, activityDates, nutrition }, { from, to });
+  return collectDataDays(domain, { health, activityDates, nutrition, journal }, { from, to });
 }

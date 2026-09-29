@@ -15,6 +15,7 @@ export const DATA_DAYS_DOMAINS = [
   'effort',
   'adaptation',
   'nutrition',
+  'journal',
 ] as const;
 
 export type DataDaysDomain = (typeof DATA_DAYS_DOMAINS)[number];
@@ -38,11 +39,21 @@ export interface DataDaysNutritionRow {
   calories: number;
 }
 
+export interface DataDaysJournalRow {
+  trainingDayId: string;
+  factors: unknown;
+  moodLabel: string | null;
+  hydrationMl: number | null;
+  caffeineMg: number | null;
+}
+
 export interface DataDaysSources {
   health: readonly DataDaysHealthRow[];
   /** Activity start instants — mapped to their training day like the PMC does. */
   activityDates: readonly Date[];
   nutrition: readonly DataDaysNutritionRow[];
+  /** Journal days the athlete wrote; absent when the domain does not read them. */
+  journal?: readonly DataDaysJournalRow[];
 }
 
 export interface DataDaysRequest {
@@ -63,12 +74,30 @@ export function dataDaysSourcesFor(domain: DataDaysDomain): {
   health: boolean;
   activities: boolean;
   nutrition: boolean;
+  journal: boolean;
 } {
   return {
     health: domain === 'sleep' || domain === 'recovery' || domain === 'adaptation',
     activities: domain === 'effort' || domain === 'adaptation',
     nutrition: domain === 'nutrition',
+    journal: domain === 'journal',
   };
+}
+
+/**
+ * A journal day counts once something was answered: a factor set to yes or no, a mood, a
+ * caffeine or hydration value. A row whose factors were all reset to « unset » is empty.
+ */
+export function journalDayHasAnswer(row: DataDaysJournalRow): boolean {
+  if (row.moodLabel || (row.hydrationMl ?? 0) > 0 || (row.caffeineMg ?? 0) > 0) {
+    return true;
+  }
+  if (!row.factors || typeof row.factors !== 'object') {
+    return false;
+  }
+  return Object.values(row.factors as Record<string, unknown>).some(
+    (value) => value === 'yes' || value === 'no',
+  );
 }
 
 function hasSleepSignal(row: DataDaysHealthRow): boolean {
@@ -108,6 +137,8 @@ function domainDayKeys(domain: DataDaysDomain, sources: DataDaysSources): string
       return sources.nutrition
         .filter((row) => row.calories > 0)
         .map((row) => dayKeyFromDate(row.date));
+    case 'journal':
+      return (sources.journal ?? []).filter(journalDayHasAnswer).map((row) => row.trainingDayId);
   }
 }
 

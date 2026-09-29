@@ -106,16 +106,19 @@ describe('dataDaysSourcesFor', () => {
       health: true,
       activities: false,
       nutrition: false,
+      journal: false,
     });
     expect(dataDaysSourcesFor('adaptation')).toEqual({
       health: true,
       activities: true,
       nutrition: false,
+      journal: false,
     });
     expect(dataDaysSourcesFor('nutrition')).toEqual({
       health: false,
       activities: false,
       nutrition: true,
+      journal: false,
     });
   });
 });
@@ -147,5 +150,34 @@ describe('parseDataDaysRequest', () => {
 
   it('rejects a range longer than the cap', () => {
     expect(parse('domain=sleep&from=2026-01-01&to=2026-09-28').ok).toBe(false);
+  });
+});
+
+describe('journal data days', () => {
+  const sources = {
+    health: [],
+    activityDates: [],
+    nutrition: [],
+    journal: [
+      { trainingDayId: '2026-09-27', factors: { alcohol: 'yes' }, moodLabel: null, hydrationMl: null, caffeineMg: null },
+      { trainingDayId: '2026-09-28', factors: { alcohol: 'unset' }, moodLabel: null, hydrationMl: null, caffeineMg: null },
+      { trainingDayId: '2026-09-29', factors: {}, moodLabel: null, hydrationMl: 500, caffeineMg: null },
+    ],
+  };
+
+  it('marks the days something was answered, not the rows reset to unset', () => {
+    expect(collectDataDays('journal', sources, { from: '2026-09-01', to: '2026-09-30' })).toEqual([
+      '2026-09-27',
+      '2026-09-29',
+    ]);
+  });
+
+  it('reads only the journal for the journal domain', () => {
+    expect(dataDaysSourcesFor('journal')).toEqual({
+      health: false,
+      activities: false,
+      nutrition: false,
+      journal: true,
+    });
   });
 });
