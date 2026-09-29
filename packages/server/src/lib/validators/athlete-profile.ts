@@ -8,6 +8,7 @@ import {
   MIN_SESSIONS_PER_WEEK,
 } from '@sharpit/app/lib/training-availability/types';
 import { notificationPrefsPatchSchema } from '@sharpit/server/lib/notifications/notification-prefs';
+import { featurePrefsPatchSchema } from '@sharpit/server/lib/features/feature-prefs';
 
 export const ATHLETE_SEXES = ['female', 'male', 'other'] as const;
 
@@ -130,6 +131,7 @@ export const athleteProfileSchema = z
     displayMode: z.enum(DISPLAY_MODES),
     /** Any subset; merged over what is stored. Null resets to the defaults. */
     notificationPrefs: notificationPrefsPatchSchema.nullable(),
+    featurePrefs: featurePrefsPatchSchema.nullable(),
   })
   .partial()
   .refine((data) => Object.keys(data).length > 0, {

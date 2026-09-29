@@ -600,7 +600,8 @@ export const getAthleteProfile = cache(async (athleteId: string) => {
  * availability — which otherwise repeat the same ternary three times.
  */
 function jsonBlobPatch(
-  key: 'equipment' | 'practicedSports' | 'trainingAvailability' | 'notificationPrefs',
+  key:
+    'equipment' | 'practicedSports' | 'trainingAvailability' | 'notificationPrefs' | 'featurePrefs',
   value: Prisma.InputJsonValue | typeof Prisma.JsonNull | null | undefined,
 ): Record<string, Prisma.InputJsonValue | typeof Prisma.JsonNull> {
   if (value === undefined) {
@@ -633,16 +634,25 @@ export async function upsertAthleteProfile(
     practicedSports?: Prisma.InputJsonValue | typeof Prisma.JsonNull | null;
     trainingAvailability?: Prisma.InputJsonValue | typeof Prisma.JsonNull | null;
     notificationPrefs?: Prisma.InputJsonValue | typeof Prisma.JsonNull | null;
+    featurePrefs?: Prisma.InputJsonValue | typeof Prisma.JsonNull | null;
     displayMode?: DisplayMode;
   },
 ) {
-  const { equipment, practicedSports, trainingAvailability, notificationPrefs, ...rest } = data;
+  const {
+    equipment,
+    practicedSports,
+    trainingAvailability,
+    notificationPrefs,
+    featurePrefs,
+    ...rest
+  } = data;
   const payload = {
     ...rest,
     ...jsonBlobPatch('equipment', equipment),
     ...jsonBlobPatch('practicedSports', practicedSports),
     ...jsonBlobPatch('trainingAvailability', trainingAvailability),
     ...jsonBlobPatch('notificationPrefs', notificationPrefs),
+    ...jsonBlobPatch('featurePrefs', featurePrefs),
   };
 
   // Every AthleteProfile row now carries a required clerkUserId — there is no

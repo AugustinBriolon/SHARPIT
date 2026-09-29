@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { Prisma } from '@prisma/client';
 import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
 import { getAthleteProfile, upsertAthleteProfile } from '@sharpit/server/lib/queries';
+import { mergeFeaturePrefs, resolveFeaturePrefs } from '@sharpit/server/lib/features/feature-prefs';
 import {
   athleteProfileSchema,
   type AthleteProfileInput,
@@ -113,10 +114,27 @@ async function notificationPrefsPatch(
   return { notificationPrefs: mergeNotificationPrefs(stored, patch) as Prisma.InputJsonValue };
 }
 
-/** The profile as served: notification prefs always resolved, defaults included. */
+/** Same merge for the features the athlete uses: one toggle never drops the others. */
+async function featurePrefsPatch(
+  athleteId: string,
+  patch: AthleteProfileInput['featurePrefs'],
+): Promise<{ featurePrefs: Prisma.InputJsonValue } | Record<string, never>> {
+  if (patch === undefined) {
+    return {};
+  }
+  const stored = (await getAthleteProfile(athleteId))?.featurePrefs ?? null;
+  return { featurePrefs: mergeFeaturePrefs(stored, patch) as Prisma.InputJsonValue };
+}
+
+/** The profile as served: notification and feature prefs always resolved, defaults included. */
 function withResolvedPrefs<T extends object>(profile: T) {
   const stored = 'notificationPrefs' in profile ? profile.notificationPrefs : null;
-  return { ...profile, notificationPrefs: resolveNotificationPrefs(stored) };
+  const features = 'featurePrefs' in profile ? profile.featurePrefs : null;
+  return {
+    ...profile,
+    notificationPrefs: resolveNotificationPrefs(stored),
+    featurePrefs: resolveFeaturePrefs(features),
+  };
 }
 
 export async function GET(request: NextRequest) {
@@ -161,8 +179,14 @@ export async function PATCH(request: NextRequest) {
   }
 
   try {
-    const { equipment, practicedSports, trainingAvailability, notificationPrefs, ...rest } =
-      parsed.data;
+    const {
+      equipment,
+      practicedSports,
+      trainingAvailability,
+      notificationPrefs,
+      featurePrefs,
+      ...rest
+    } = parsed.data;
     const athleteId = await getCurrentAthleteId();
     const profile = await upsertAthleteProfile(athleteId, {
       ...rest,
@@ -170,6 +194,7 @@ export async function PATCH(request: NextRequest) {
       ...practicedSportsPatch(practicedSports),
       ...trainingAvailabilityPatch(trainingAvailability),
       ...(await notificationPrefsPatch(athleteId, notificationPrefs)),
+      ...(await featurePrefsPatch(athleteId, featurePrefs)),
     });
     // Any profile field can affect coach prompts / twin — clear the 30s cache.
     invalidateCoachContext();
