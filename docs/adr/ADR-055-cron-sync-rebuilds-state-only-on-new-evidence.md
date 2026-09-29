@@ -1,4 +1,4 @@
-# ADR-054: The scheduled sync rebuilds the athlete state only on new evidence or a new training day
+# ADR-055: The scheduled sync rebuilds the athlete state only on new evidence or a new training day
 
 **Status:** Accepted
 **Date:** 2026-09-29

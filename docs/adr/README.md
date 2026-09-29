@@ -56,7 +56,8 @@
 | [ADR-050](./ADR-050-web-builds-from-an-app-package-not-the-server.md)          | The web builds from `@sharpit/app`, never from the server package                        | Accepted                          |
 | [ADR-051](./ADR-051-apex-hub.md)                                               | The apex is served by its own app, `apps/hub`                                            | Accepted                          |
 | [ADR-052](./ADR-052-coach-chat-request-scope.md)                               | Each coach question carries only the context it needs                                    | Accepted                          |
-| [ADR-054](./ADR-054-cron-sync-rebuilds-state-only-on-new-evidence.md)          | The scheduled sync rebuilds the athlete state only on new evidence or a new training day | Accepted                          |
+| [ADR-054](./ADR-054-apple-health-as-a-source-and-class-priority.md)            | Apple Health is a source like the others, and the primary per class is honoured          | Accepted                          |
+| [ADR-055](./ADR-055-cron-sync-rebuilds-state-only-on-new-evidence.md)          | The scheduled sync rebuilds the athlete state only on new evidence or a new training day | Accepted                          |
 
 **Template:** [ADR-template.md](./ADR-template.md)
 

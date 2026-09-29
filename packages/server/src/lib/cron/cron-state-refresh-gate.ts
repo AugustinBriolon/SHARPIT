@@ -11,7 +11,7 @@ export function cronSyncAthleteFilter() {
 /**
  * Rebuilding the athlete state is the cron's heaviest CPU step. It only pays off when the sync
  * brought evidence in, or when today's snapshot does not exist yet — a new training day moves
- * the load curves and the phase even without new data (ADR-054).
+ * the load curves and the phase even without new data (ADR-055).
  */
 export function shouldRefreshAthleteStateAfterCronSync(input: {
   evidenceWrittenDuringSync: boolean;
