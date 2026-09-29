@@ -61,6 +61,7 @@ export const NATIVE_V1_ONLY = [
   { path: 'push/device-token', methods: ['POST', 'DELETE'] },
   { path: 'push/test', methods: ['POST'] },
   { path: 'body/overview', methods: ['GET'] },
+  { path: 'health/overview', methods: ['GET'] },
   { path: 'body/series', methods: ['GET'] },
   { path: 'pro', methods: ['GET'] },
   { path: 'billing/apple/app-account-token', methods: ['POST'] },

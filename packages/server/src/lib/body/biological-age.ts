@@ -65,6 +65,23 @@ export function fitnessAge(vo2max: number, sex: ReferenceSex): number {
   return Math.round(Math.min(MAX_AGE, Math.max(MIN_AGE, age)));
 }
 
+/** The HUNT3 mean VO₂max at `age` for `sex`: linear between decade midpoints, flat beyond. */
+export function referenceVo2max(age: number, sex: ReferenceSex): number {
+  const table = HUNT3_MEAN_VO2MAX[sex];
+  const [[firstAge, firstVo2]] = table;
+  const [lastAge, lastVo2] = table[table.length - 1];
+  if (age <= firstAge) {
+    return firstVo2;
+  }
+  if (age >= lastAge) {
+    return lastVo2;
+  }
+  const end = table.findIndex(([midpoint]) => midpoint >= age);
+  const [ageA, vo2A] = table[end - 1];
+  const [ageB, vo2B] = table[end];
+  return vo2A + ((age - ageA) * (vo2B - vo2A)) / (ageB - ageA);
+}
+
 export function ageInYears(birthDate: Date, now: Date): number {
   let years = now.getUTCFullYear() - birthDate.getUTCFullYear();
   const beforeBirthday =
@@ -99,7 +116,7 @@ function readingConfidence(measuredAt: Date, now: Date): number | null {
   return CONFIDENCE_BY_READING_AGE.find((band) => days <= band.maxDays)?.confidence ?? null;
 }
 
-function isReferenceSex(sex: string | null): sex is ReferenceSex {
+export function isReferenceSex(sex: string | null): sex is ReferenceSex {
   return sex === 'female' || sex === 'male';
 }
 

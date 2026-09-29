@@ -370,7 +370,7 @@ function thresholdsSource(profile: ProfileThresholds): string {
   return profile.thresholdsSyncedAt ? 'garmin' : 'profile';
 }
 
-function thresholdsMeasuredAt(profile: ProfileThresholds): Date {
+export function thresholdsMeasuredAt(profile: ProfileThresholds): Date {
   return profile.thresholdsSyncedAt ?? profile.updatedAt;
 }
 
@@ -462,7 +462,11 @@ function sortInputs(inputs: BodyInputs): BodyInputs {
   };
 }
 
-function biologicalAge(inputs: BodyInputs, now: Date): BiologicalAge | null {
+/** The ADR-045 estimate, Pro only; shared by Corps and Santé. */
+export function biologicalAgeFor(
+  inputs: Pick<BodyInputs, 'isPro' | 'profile' | 'demographics'>,
+  now: Date,
+): BiologicalAge | null {
   const { profile, demographics } = inputs;
   if (!inputs.isPro || !profile || !demographics) {
     return null;
@@ -487,7 +491,7 @@ export function projectV1BodyOverview(inputs: BodyInputs, now = new Date()): V1B
   return {
     apiVersion: 1,
     metrics,
-    biologicalAge: biologicalAge(sorted, now),
+    biologicalAge: biologicalAgeFor(sorted, now),
     biologicalAgeAccess: inputs.isPro ? 'granted' : 'pro_required',
   };
 }
