@@ -51,6 +51,7 @@ export const NATIVE_V1_ONLY = [
   { path: 'today', methods: ['GET'] },
   { path: 'sleep', methods: ['GET'] },
   { path: 'recovery', methods: ['GET'] },
+  { path: 'training-load', methods: ['GET'] },
   { path: 'nutrition', methods: ['GET'] },
   { path: 'data-days', methods: ['GET'] },
   { path: 'sync', methods: ['POST'] },
