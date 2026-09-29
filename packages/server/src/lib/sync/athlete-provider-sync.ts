@@ -318,6 +318,7 @@ export function emptyAthleteResult(athleteId: string): AthleteSyncResult {
     athleteId,
     providerSyncCount: 0,
     briefing: false,
+    briefingSkippedNoChange: false,
     weeklyReview: false,
     errors: [],
     needsReconnect: [],

@@ -44,9 +44,9 @@ export function legacyDefaultsFromConnected(
 }
 
 const CLASS_PRIMARY_PREFERENCE: Partial<Record<DataClassId, IntegrationId[]>> = {
-  activities: ['garmin', 'strava'],
-  wearable_health: ['garmin'],
-  body: ['withings', 'renpho'],
+  activities: ['garmin', 'strava', 'apple-health'],
+  wearable_health: ['garmin', 'apple-health'],
+  body: ['withings', 'renpho', 'apple-health'],
   nutrition: ['myfitnesspal'],
   calendar: ['google'],
 };

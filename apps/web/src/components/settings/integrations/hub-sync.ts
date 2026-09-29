@@ -37,6 +37,9 @@ export async function syncIntegration(id: IntegrationId): Promise<string> {
       const d = await runMfpSync();
       return `${d.synced} jour(s) synchronisé(s)`;
     }
+    case 'apple-health':
+      // Sent by the iPhone app on each of its syncs; nothing to pull from here.
+      return 'Synchronisé depuis l’app iPhone';
   }
 }
 

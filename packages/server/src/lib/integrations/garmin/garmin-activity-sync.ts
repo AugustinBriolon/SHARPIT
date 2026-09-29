@@ -32,6 +32,7 @@ import {
 } from '@sharpit/app/lib/exercises';
 import { mapWithConcurrency } from '@sharpit/server/lib/async/map-with-concurrency';
 import { prisma } from '@sharpit/db/client';
+import { removeManualActivityObservations } from '@sharpit/server/lib/observation/manual-observation-sync';
 import { observationEngine } from '@sharpit/server/lib/engines/observation-engine';
 import {
   garminActivityToSession,
@@ -278,6 +279,11 @@ async function mergeGarminActivityMatch(
   });
   await backfillStrengthSets(match.id, strengthSets);
   await prisma.activityStream.deleteMany({ where: { activityId: match.id } });
+  // A session first sent by Apple Health went to the Core without a provider id; Garmin's own
+  // session replaces it, so the day's load is not counted twice (ADR-054).
+  if (match.source === 'apple-health') {
+    await removeManualActivityObservations(athleteId, match.id);
+  }
   await ingestGarminActivity(athleteId, activity, evaluation, new Date());
   return {
     ...EMPTY_OUTCOME,

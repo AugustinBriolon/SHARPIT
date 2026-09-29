@@ -4,6 +4,8 @@ export type CronAthleteSyncResult = {
   athleteId: string;
   providerSyncCount: number;
   briefing: boolean;
+  /** The sync brought nothing new and today's snapshot already existed: no state rebuild. */
+  briefingSkippedNoChange: boolean;
   weeklyReview: boolean;
   errors: string[];
   needsReconnect: string[];
@@ -15,6 +17,8 @@ export type CronSyncSummary = {
   ok: boolean;
   athletesProcessed: number;
   athletesSkippedByCircuitBreaker: number;
+  /** Athletes whose state rebuild was skipped because the sync brought nothing new. */
+  athletesUnchanged: number;
   errorCount: number;
   needsReconnectCount: number;
   decryptAuthenticityFailureCount: number;
@@ -37,6 +41,7 @@ function accumulateAthlete(
     errorCount: number;
     needsReconnectCount: number;
     skipped: number;
+    unchanged: number;
     sampleAthleteIdsWithErrors: string[];
     sampleAthleteIdsNeedingReconnect: string[];
     sampleErrors: Array<{ athleteId: string; error: string }>;
@@ -44,6 +49,9 @@ function accumulateAthlete(
 ): void {
   if (result.skippedByCircuitBreaker) {
     acc.skipped += 1;
+  }
+  if (result.briefingSkippedNoChange) {
+    acc.unchanged += 1;
   }
   if (result.errors.length > 0) {
     acc.errorCount += result.errors.length;
@@ -76,6 +84,7 @@ export function summarizeCronSyncResults(
     errorCount: 0,
     needsReconnectCount: 0,
     skipped: 0,
+    unchanged: 0,
     sampleAthleteIdsWithErrors: [] as string[],
     sampleAthleteIdsNeedingReconnect: [] as string[],
     sampleErrors: [] as Array<{ athleteId: string; error: string }>,
@@ -88,6 +97,7 @@ export function summarizeCronSyncResults(
     ok: !meta.circuitBreakerTripped && acc.errorCount === 0,
     athletesProcessed: results.length,
     athletesSkippedByCircuitBreaker: acc.skipped,
+    athletesUnchanged: acc.unchanged,
     errorCount: acc.errorCount,
     needsReconnectCount: acc.needsReconnectCount,
     decryptAuthenticityFailureCount: meta.authenticityFailureCount,

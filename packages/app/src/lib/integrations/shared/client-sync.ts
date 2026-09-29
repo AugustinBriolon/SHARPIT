@@ -45,7 +45,15 @@ export type GoogleSyncResult = {
   unlinked: number;
 };
 
-export type IntegrationId = 'strava' | 'garmin' | 'withings' | 'renpho' | 'google' | 'myfitnesspal';
+export type IntegrationId =
+  | 'strava'
+  | 'garmin'
+  | 'withings'
+  | 'renpho'
+  | 'google'
+  | 'myfitnesspal'
+  /** Linked from the iPhone app (no account to connect here); see ADR-043 and ADR-054. */
+  | 'apple-health';
 
 async function parseJson<T>(response: Response, fallbackError: string): Promise<T> {
   const data = await response.json();

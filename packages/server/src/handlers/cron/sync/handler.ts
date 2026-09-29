@@ -13,16 +13,40 @@ import {
 } from '@sharpit/server/lib/cron/sync-summary';
 import { canRunHealthDerivedAthleteRefresh } from '@sharpit/app/lib/privacy/consent-withdraw-ux';
 import {
+  cronSyncAthleteFilter,
+  shouldRefreshAthleteStateAfterCronSync,
+} from '@sharpit/server/lib/cron/cron-state-refresh-gate';
+import { hasEvidenceWrittenSince } from '@sharpit/server/infrastructure/athlete-state/evidence-watermark-repository';
+import { getLatestAthleteSnapshot } from '@sharpit/server/infrastructure/athlete-state/snapshot-repository';
+import { trainingDayIdNow } from '@sharpit/server/lib/athlete-state/freshness-service';
+import {
   backfillStreamsIfNeeded,
   emptyAthleteResult,
   generateWeeklyReviewIfSunday,
   loadAthleteSyncContext,
   refreshAthleteBriefing,
   syncConnectedProviders,
+  type AthleteSyncResult,
 } from '@sharpit/server/lib/sync/athlete-provider-sync';
 
 /** Bounded concurrency across athletes — each provider call is already rate-limit-aware per account. */
 const ATHLETE_CONCURRENCY = 3;
+
+async function athleteStateNeedsRefresh(
+  athleteId: string,
+  syncStartedAt: Date,
+  result: AthleteSyncResult,
+): Promise<boolean> {
+  const [evidenceWrittenDuringSync, todaySnapshot] = await Promise.all([
+    hasEvidenceWrittenSince(athleteId, syncStartedAt),
+    getLatestAthleteSnapshot({ athleteId, trainingDayId: trainingDayIdNow() }),
+  ]);
+  return shouldRefreshAthleteStateAfterCronSync({
+    evidenceWrittenDuringSync,
+    backfilledStreamCount: result.backfilledActivityIds.length,
+    hasSnapshotForTrainingDay: todaySnapshot !== null,
+  });
+}
 
 function unauthorized() {
   return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -41,6 +65,7 @@ async function syncOneAthlete(
 
   const { accounts, hasHealthConsent, hasAiConsent } = await loadAthleteSyncContext(athleteId);
 
+  const syncStartedAt = new Date();
   await syncConnectedProviders(athleteId, accounts, result, { hasHealthConsent });
   breaker.recordAthleteProcessed({ authenticityFailure: result.decryptAuthenticity });
   // The in-app sync shows what to reconnect; only the scheduled one, unseen, needs a push.
@@ -57,7 +82,11 @@ async function syncOneAthlete(
   // Art. 9: without health consent, skip Twin/briefing refresh — skipSync still
   // re-reads stored dailyHealth/HRV and would recreate purged evidence.
   if (canRunHealthDerivedAthleteRefresh(hasHealthConsent)) {
-    await refreshAthleteBriefing(athleteId, result);
+    if (await athleteStateNeedsRefresh(athleteId, syncStartedAt, result)) {
+      await refreshAthleteBriefing(athleteId, result);
+    } else {
+      result.briefingSkippedNoChange = true;
+    }
   }
   // The day was recomputed: the app's widgets show it without the athlete opening the app.
   if (result.briefing) {
@@ -78,7 +107,7 @@ export async function GET(request: Request) {
   }
 
   const athletes = await prisma.athleteProfile.findMany({
-    where: { deletedAt: null },
+    where: cronSyncAthleteFilter(),
     select: { id: true },
   });
   const breaker = new DecryptCircuitBreaker();

@@ -18,6 +18,7 @@ import {
   isOAuthAccountConnected,
   isRenphoAccountConnected,
 } from '@sharpit/server/lib/integrations/shared/connection-status';
+import { prisma } from '@sharpit/db/client';
 import { loadResolvedSourcePrefs } from '@sharpit/server/lib/integrations/source-prefs-store';
 import { isStravaConfigured } from '@sharpit/server/lib/integrations/strava/strava';
 import { getStravaAccount } from '@sharpit/server/lib/integrations/strava/strava-sync';
@@ -60,7 +61,7 @@ function providerView<T>(
 
 /** The integrations hub's accounts and source prefs, read on `api.` (ADR-048 phase 3f). */
 export async function loadIntegrationsHub(athleteId: string): Promise<IntegrationsHubPayload> {
-  const [strava, garmin, renpho, withings, google, mfp, prefs] = await Promise.all([
+  const [strava, garmin, renpho, withings, google, mfp, prefs, profile] = await Promise.all([
     getStravaAccount(athleteId),
     getGarminAccount(athleteId),
     getRenphoAccount(athleteId),
@@ -68,6 +69,10 @@ export async function loadIntegrationsHub(athleteId: string): Promise<Integratio
     getGoogleAccount(athleteId).catch(() => null),
     getMfpAccount(athleteId).catch(() => null),
     loadResolvedSourcePrefs(athleteId),
+    prisma.athleteProfile.findUnique({
+      where: { id: athleteId },
+      select: { appleHealthLinkedAt: true },
+    }),
   ]);
   return {
     strava: { ...providerView(strava, isOAuthAccountConnected), configured: isStravaConfigured() },
@@ -79,6 +84,7 @@ export async function loadIntegrationsHub(athleteId: string): Promise<Integratio
     },
     google: { ...providerView(google, isGoogleConnected), configured: isGoogleConfigured() },
     myfitnesspal: { ...providerView(mfp, isMfpAccountConnected), configured: isMfpConfigured() },
+    appleHealth: { linkedAt: profile?.appleHealthLinkedAt?.toISOString() ?? null },
     prefs,
   };
 }

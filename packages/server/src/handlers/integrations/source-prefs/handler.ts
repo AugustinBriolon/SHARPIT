@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
-import { DATA_CLASSES, type DataClassId } from '@sharpit/app/lib/integrations/provider-catalog';
+import {
+  DATA_CLASSES,
+  visibleProvidersForClass,
+  type DataClassId,
+} from '@sharpit/app/lib/integrations/provider-catalog';
 import type { IntegrationId } from '@sharpit/app/lib/integrations/shared/client-sync';
 import { catalogIntegrationIds } from '@sharpit/app/lib/integrations/source-prefs';
 import {
@@ -38,6 +42,19 @@ const patchSchema = z.discriminatedUnion('action', [
   }),
 ]);
 
+/** Each class and the providers that can feed it, so a client lists them without its own copy. */
+function sourceClasses() {
+  return DATA_CLASSES.map((classDef) => ({
+    id: classDef.id,
+    label: classDef.label,
+    description: classDef.description,
+    providers: visibleProvidersForClass(classDef.id).map((provider) => ({
+      id: provider.integrationId,
+      name: provider.name,
+    })),
+  }));
+}
+
 export async function GET() {
   try {
     const athleteId = await getCurrentAthleteId();
@@ -45,7 +62,7 @@ export async function GET() {
       loadResolvedSourcePrefs(athleteId),
       loadConnectedIntegrationIds(athleteId),
     ]);
-    return NextResponse.json({ prefs, connected });
+    return NextResponse.json({ prefs, connected, classes: sourceClasses() });
   } catch (error) {
     console.error('[source-prefs GET]', error);
     return NextResponse.json({ error: 'Impossible de charger les préférences' }, { status: 500 });

@@ -10,6 +10,7 @@ function athlete(
   return {
     providerSyncCount: 0,
     briefing: false,
+    briefingSkippedNoChange: false,
     weeklyReview: false,
     errors: [],
     needsReconnect: [],
@@ -52,5 +53,18 @@ describe('summarizeCronSyncResults', () => {
     });
     expect(summary.ok).toBe(false);
     expect(summary.circuitBreakerTripped).toBe(true);
+  });
+
+  it('counts athletes whose state rebuild was skipped for lack of new data', () => {
+    const summary = summarizeCronSyncResults(
+      [
+        athlete({ athleteId: 'a1', briefingSkippedNoChange: true }),
+        athlete({ athleteId: 'a2', briefing: true }),
+        athlete({ athleteId: 'a3', briefingSkippedNoChange: true }),
+      ],
+      { circuitBreakerTripped: false, circuitBreakerReason: null, authenticityFailureCount: 0 },
+    );
+    expect(summary.athletesUnchanged).toBe(2);
+    expect(summary.ok).toBe(true);
   });
 });

@@ -87,6 +87,8 @@ export type IntegrationsHubPayload = {
   withings: IntegrationProviderView & { configured: boolean };
   google: IntegrationProviderView & { configured: boolean };
   myfitnesspal: IntegrationProviderView & { configured: boolean };
+  /** Linked from the iPhone app; the web only shows it. */
+  appleHealth: { linkedAt: string | null };
   prefs: IntegrationSourcePrefs;
 };
 

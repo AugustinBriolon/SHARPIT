@@ -22,6 +22,13 @@ import {
   type GarminDailyHealth,
 } from '@sharpit/server/lib/integrations/garmin/garmin';
 import { mapPythonGarminconnectTokenStore } from '@sharpit/server/lib/integrations/garmin/garmin-tokenstore';
+import {
+  garminHealthWrite,
+  restrictGarminHealthUpdate,
+  SHARED_OBSERVATION_TYPES,
+  type GarminHealthWrite,
+} from '@sharpit/server/lib/integrations/garmin/garmin-health-policy';
+import { loadResolvedSourcePrefs } from '@sharpit/server/lib/integrations/source-prefs-store';
 import { observationEngine } from '@sharpit/server/lib/engines/observation-engine';
 import { garminHealthToObservations } from '@sharpit/server/adapters/garmin-health-adapter';
 import {
@@ -74,9 +81,13 @@ async function ingestGarminHealth(
   athleteId: string,
   health: GarminDailyHealth,
   calendarDate: Date,
+  write: GarminHealthWrite,
 ): Promise<void> {
   try {
-    const raws = garminHealthToObservations(health, calendarDate, new Date());
+    // Behind Apple Health, the night and the heart it feeds the Core are Apple's (ADR-054).
+    const raws = garminHealthToObservations(health, calendarDate, new Date()).filter(
+      (raw) => write === 'own' || !SHARED_OBSERVATION_TYPES.has(raw.type),
+    );
     if (raws.length === 0) {
       return;
     }
@@ -446,6 +457,7 @@ async function upsertGarminHealthDay(
   client: Awaited<ReturnType<typeof clientFromTokens>>,
   date: Date,
   weightKg: number | null,
+  write: GarminHealthWrite,
 ): Promise<'updated' | 'empty'> {
   const health = await fetchDailyHealth(client, date, weightKg);
   if (!healthHasData(health)) {
@@ -457,12 +469,20 @@ async function upsertGarminHealthDay(
     ? (health.readinessFactors as unknown as Prisma.InputJsonValue)
     : undefined;
 
+  const existing =
+    write === 'fill'
+      ? await prisma.dailyHealth.findUnique({ where: { athleteId_date: { athleteId, date: day } } })
+      : null;
   await prisma.dailyHealth.upsert({
     where: { athleteId_date: { athleteId, date: day } },
-    create: buildGarminHealthCreateData(athleteId, day, health, factors),
-    update: buildGarminHealthUpdateData(health),
+    create: restrictGarminHealthUpdate(
+      buildGarminHealthCreateData(athleteId, day, health, factors),
+      null,
+      write === 'off' ? 'off' : 'own',
+    ),
+    update: restrictGarminHealthUpdate(buildGarminHealthUpdateData(health), existing, write),
   });
-  await ingestGarminHealth(athleteId, health, day);
+  await ingestGarminHealth(athleteId, health, day, write);
   return 'updated';
 }
 
@@ -495,10 +515,11 @@ async function runGarminHealthSync(
   const client = await buildFreshGarminClient(athleteId, account);
   const { since, days, dates } = buildGarminHealthDateRange(options, account.lastSyncAt);
   const weightMap = await fetchWeightRange(client, since, startOfDay(new Date()));
+  const write = garminHealthWrite(await loadResolvedSourcePrefs(athleteId));
 
   const outcomes = await mapWithConcurrency(dates, GARMIN_HEALTH_DAY_CONCURRENCY, (date) => {
     const weightKg = weightMap.get(format(date, 'yyyy-MM-dd')) ?? null;
-    return upsertGarminHealthDay(athleteId, client, date, weightKg);
+    return upsertGarminHealthDay(athleteId, client, date, weightKg, write);
   });
 
   const updated = outcomes.filter((o) => o === 'updated').length;

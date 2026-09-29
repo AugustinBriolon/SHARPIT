@@ -93,6 +93,8 @@ export type IntegrationsPayload = {
     } | null;
     needsReconnect?: boolean;
   };
+  /** Absent from an older API. */
+  appleHealth?: { linkedAt: string | null };
 };
 
 export { buildIntegrations } from '@/components/settings/integrations/build-integrations';

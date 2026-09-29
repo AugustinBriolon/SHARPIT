@@ -1,7 +1,10 @@
+import type { IntegrationSourcePrefs } from '@sharpit/app/lib/integrations/source-prefs';
+
 /**
- * Apple Health arrives from the native app as one summary per day. It fills gaps and never
- * overwrites: Garmin, Withings and Renpho write richer, provider-native values, and the
- * next provider sync overwrites whatever Apple Health filled in (see docs/adr ADR-043).
+ * Apple Health arrives from the native app as one summary per day. What it may write follows
+ * the athlete's sources per data class (ADR-027, ADR-054): off when Apple Health is not enabled
+ * for the class, filling only the gaps while another source is primary (ADR-043), and owning the
+ * fields when it is the primary itself.
  */
 
 export type AppleHealthDay = {
@@ -32,56 +35,91 @@ const SLEEP_FIELDS = [
   'sleepWakeMin',
 ] as const;
 
-const SCALAR_FIELDS = ['restingHr', 'hrv', 'totalSteps', 'calories', 'weightKg'] as const;
+type ScalarField = 'restingHr' | 'hrv' | 'totalSteps' | 'calories' | 'weightKg';
+const HEALTH_SCALARS = ['restingHr', 'hrv', 'totalSteps', 'calories'] as const;
 
 function isSet(value: number | null | undefined): value is number {
   return value !== null && value !== undefined;
 }
 
-function nightPatch(current: StoredHealthDay, incoming: AppleHealthDay): StoredHealthDay {
-  if (isSet(current.sleepMinutes) || !isSet(incoming.sleepMinutes) || incoming.sleepMinutes <= 0) {
-    return {};
+/** What Apple Health may do with one data class's fields. */
+export type AppleHealthWrite = 'off' | 'fill' | 'own';
+
+export type AppleHealthPolicy = {
+  /** Sleep, resting HR, HRV, steps, active energy — `wearable_health`. */
+  health: AppleHealthWrite;
+  /** The weight — `body`. */
+  body: AppleHealthWrite;
+  /** Garmin also feeds `wearable_health`: its overnight RMSSD cannot share a baseline with
+   * Apple's SDNN, so Apple HRV only goes in when Apple owns the class. */
+  garminHrv: boolean;
+};
+
+function writeFor(
+  prefs: IntegrationSourcePrefs,
+  classId: 'wearable_health' | 'body',
+): AppleHealthWrite {
+  const slot = prefs.classes[classId];
+  if (!slot?.enabled.includes('apple-health')) {
+    return 'off';
   }
-  const patch: StoredHealthDay = {};
-  for (const field of SLEEP_FIELDS) {
-    if (isSet(incoming[field])) {
-      patch[field] = incoming[field];
-    }
-  }
-  return patch;
+  return slot.primary === 'apple-health' ? 'own' : 'fill';
 }
 
-function scalarPatch(
+export function appleHealthPolicy(prefs: IntegrationSourcePrefs): AppleHealthPolicy {
+  return {
+    health: writeFor(prefs, 'wearable_health'),
+    body: writeFor(prefs, 'body'),
+    garminHrv: prefs.classes.wearable_health?.enabled.includes('garmin') ?? false,
+  };
+}
+
+function nightPatch(
   current: StoredHealthDay,
   incoming: AppleHealthDay,
-  garminConnected: boolean,
+  write: AppleHealthWrite,
 ): StoredHealthDay {
-  const fields = SCALAR_FIELDS.filter((field) => !(field === 'hrv' && garminConnected));
+  const hasNight = isSet(incoming.sleepMinutes) && incoming.sleepMinutes > 0;
+  if (write === 'off' || !hasNight || (write === 'fill' && isSet(current.sleepMinutes))) {
+    return {};
+  }
+  // Whole or not at all: stages from one source beside a total from another would not add up,
+  // so owning the night also clears the stages Apple Health did not measure.
+  const patch: StoredHealthDay = {};
+  for (const field of SLEEP_FIELDS) {
+    patch[field] = isSet(incoming[field]) ? incoming[field] : null;
+  }
+  return patch;
+}
+
+function fieldPatch(
+  current: StoredHealthDay,
+  incoming: AppleHealthDay,
+  fields: readonly ScalarField[],
+  write: AppleHealthWrite,
+): StoredHealthDay {
   const patch: StoredHealthDay = {};
   for (const field of fields) {
-    if (!isSet(current[field]) && isSet(incoming[field])) {
+    const takes = write === 'own' || (write === 'fill' && !isSet(current[field]));
+    if (takes && isSet(incoming[field])) {
       patch[field] = incoming[field];
     }
   }
   return patch;
 }
 
-/**
- * The fields Apple Health may write for one day, given what the day already holds.
- *
- * - A night is taken whole or not at all: stages from one source beside a total from
- *   another would not add up.
- * - HRV is skipped while Garmin is connected. Apple Health stores SDNN, Garmin reports an
- *   overnight RMSSD; one baseline cannot hold both.
- */
+/** The fields Apple Health writes for one day, given what the day holds and the policy. */
 export function appleHealthPatch(
   existing: StoredHealthDay | null,
   incoming: AppleHealthDay,
-  options: { garminConnected: boolean },
+  policy: AppleHealthPolicy,
 ): StoredHealthDay {
   const current = existing ?? {};
+  const hrvAllowed = policy.health === 'own' || !policy.garminHrv;
+  const healthFields = HEALTH_SCALARS.filter((field) => field !== 'hrv' || hrvAllowed);
   return {
-    ...nightPatch(current, incoming),
-    ...scalarPatch(current, incoming, options.garminConnected),
+    ...nightPatch(current, incoming, policy.health),
+    ...fieldPatch(current, incoming, healthFields, policy.health),
+    ...fieldPatch(current, incoming, ['weightKg'], policy.body),
   };
 }

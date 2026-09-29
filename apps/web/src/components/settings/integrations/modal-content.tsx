@@ -61,6 +61,7 @@ export function integrationModalTitle(id: IntegrationId): string {
     renpho: 'Renpho Health',
     google: 'Google Calendar',
     myfitnesspal: 'MyFitnessPal',
+    'apple-health': 'Apple Santé',
   };
   return titles[id];
 }

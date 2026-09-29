@@ -118,6 +118,18 @@ function buildMyFitnessPalIntegration(payload: IntegrationsPayload): Integration
   };
 }
 
+/** Linked from the iPhone app: shown here, never connected or synced from the web. */
+function buildAppleHealthIntegration(payload: IntegrationsPayload): IntegrationBase {
+  const linkedAt = payload.appleHealth?.linkedAt ?? null;
+  return {
+    id: 'apple-health',
+    configured: false,
+    connected: linkedAt !== null,
+    needsReconnect: false,
+    account: linkedAt ? { label: 'Depuis l’app iPhone', lastSyncAt: linkedAt } : null,
+  };
+}
+
 function integrationById(
   payload: IntegrationsPayload,
   withingsConnected: boolean,
@@ -129,6 +141,7 @@ function integrationById(
     renpho: buildRenphoIntegration(payload, withingsConnected),
     google: buildGoogleIntegration(payload),
     myfitnesspal: buildMyFitnessPalIntegration(payload),
+    'apple-health': buildAppleHealthIntegration(payload),
   };
 }
 

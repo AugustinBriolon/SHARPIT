@@ -8,13 +8,17 @@ import { prisma } from '@sharpit/db/client';
 import { Prisma } from '@prisma/client';
 
 export async function loadConnectedIntegrationIds(athleteId: string): Promise<IntegrationId[]> {
-  const [garmin, strava, withings, renpho, google, mfp] = await Promise.all([
+  const [garmin, strava, withings, renpho, google, mfp, profile] = await Promise.all([
     prisma.garminAccount.findUnique({ where: { athleteId }, select: { athleteId: true } }),
     prisma.stravaAccount.findUnique({ where: { athleteId }, select: { athleteId: true } }),
     prisma.withingsAccount.findUnique({ where: { athleteId }, select: { athleteId: true } }),
     prisma.renphoAccount.findUnique({ where: { athleteId }, select: { athleteId: true } }),
     prisma.googleAccount.findUnique({ where: { athleteId }, select: { athleteId: true } }),
     prisma.myFitnessPalAccount.findUnique({ where: { athleteId }, select: { athleteId: true } }),
+    prisma.athleteProfile.findUnique({
+      where: { id: athleteId },
+      select: { appleHealthLinkedAt: true },
+    }),
   ]);
 
   const ids: IntegrationId[] = [];
@@ -35,6 +39,9 @@ export async function loadConnectedIntegrationIds(athleteId: string): Promise<In
   }
   if (mfp) {
     ids.push('myfitnesspal');
+  }
+  if (profile?.appleHealthLinkedAt) {
+    ids.push('apple-health');
   }
   return ids;
 }

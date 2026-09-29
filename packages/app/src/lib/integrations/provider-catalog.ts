@@ -151,15 +151,18 @@ export const PROVIDER_CATALOG: CatalogProvider[] = [
     },
   },
   {
-    id: 'apple-watch',
-    name: 'Apple Watch',
-    tagline: 'Santé Apple',
+    id: 'apple-health',
+    name: 'Apple Santé',
+    tagline: 'Depuis l’app iPhone',
+    /** Linked from the iPhone app only: the web shows it, it cannot connect it (ADR-054). */
     status: 'coming_soon',
-    classes: ['activities', 'wearable_health'],
+    classes: ['activities', 'wearable_health', 'body'],
+    integrationId: 'apple-health',
     authKind: 'none',
     dataTypesByClass: {
-      activities: ['Séances'],
-      wearable_health: ['Sommeil', 'Santé'],
+      activities: ['Séances', 'Tracés'],
+      wearable_health: ['Sommeil', 'VFC', 'FC repos', 'Pas'],
+      body: ['Poids'],
     },
   },
 ];

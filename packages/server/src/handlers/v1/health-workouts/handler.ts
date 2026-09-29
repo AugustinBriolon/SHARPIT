@@ -6,8 +6,9 @@ import {
   appleHealthWorkoutSchema,
   importAppleHealthWorkouts,
 } from '@sharpit/server/lib/integrations/apple-health/apple-health-workouts';
-import { getGarminAccount } from '@sharpit/server/lib/integrations/garmin/garmin-sync';
-import { getStravaAccount } from '@sharpit/server/lib/integrations/strava/strava-sync';
+import { isProviderEnabledForClass } from '@sharpit/app/lib/integrations/source-prefs';
+import { linkAppleHealth } from '@sharpit/server/lib/integrations/apple-health/apple-health-link';
+import { loadResolvedSourcePrefs } from '@sharpit/server/lib/integrations/source-prefs-store';
 import { athleteHasHealthDataConsent } from '@sharpit/server/lib/privacy/consent-store';
 import {
   checkRateLimit,
@@ -21,9 +22,9 @@ const bodySchema = z.object({
 });
 
 /**
- * Receives Apple Health workouts from the native app. Taken only when no Garmin or Strava
- * account is connected — those stay the reference for sessions (ADR-043) — so the answer
- * says `acceptsWorkouts: false` and the app stops sending.
+ * Receives Apple Health workouts from the native app, while Apple Health is enabled for
+ * activities in the athlete's sources (ADR-054); `acceptsWorkouts: false` otherwise, and the app
+ * stops sending. A workout another source already holds is skipped by its fingerprint.
  */
 export async function POST(request: NextRequest) {
   const parsed = bodySchema.safeParse(await request.json().catch(() => null));
@@ -42,11 +43,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(limited.body, { status: limited.status });
     }
 
-    const [garmin, strava] = await Promise.all([
-      getGarminAccount(athleteId),
-      getStravaAccount(athleteId),
-    ]);
-    if (garmin || strava) {
+    await linkAppleHealth(athleteId, true);
+    const prefs = await loadResolvedSourcePrefs(athleteId);
+    if (!isProviderEnabledForClass(prefs, 'activities', 'apple-health')) {
       return NextResponse.json({
         apiVersion: 1,
         acceptsWorkouts: false,

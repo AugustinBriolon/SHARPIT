@@ -9,6 +9,7 @@ const LOGO_PATHS: Record<IntegrationId, string> = {
   renpho: '/images/renpho.png',
   google: '/images/googleagenda.png',
   myfitnesspal: '/images/myfitnesspal.png',
+  'apple-health': '/images/applehealth.svg',
 };
 
 export function IntegrationLogo({ id, className }: { id: IntegrationId; className?: string }) {

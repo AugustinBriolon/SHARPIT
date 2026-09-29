@@ -363,11 +363,11 @@ export async function getNextRace(athleteId: string) {
 }
 
 export async function getHealthEntries(athleteId: string, days = 90, refDate: Date = new Date()) {
-  const { isProviderEnabledForClass } = await import('@sharpit/app/lib/integrations/source-prefs');
   const { loadResolvedSourcePrefs } =
     await import('@sharpit/server/lib/integrations/source-prefs-store');
   const prefs = await loadResolvedSourcePrefs(athleteId);
-  if (!isProviderEnabledForClass(prefs, 'wearable_health', 'garmin')) {
+  // Any source enabled for the class feeds the day rows — Garmin, or Apple Health alone.
+  if ((prefs.classes.wearable_health?.enabled.length ?? 0) === 0) {
     return [];
   }
   const end = endOfDay(refDate);

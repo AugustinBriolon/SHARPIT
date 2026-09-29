@@ -2,8 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
 import { refreshAthleteState } from '@sharpit/server/lib/athlete-state/orchestrator';
-import { appleHealthPatch } from '@sharpit/server/lib/integrations/apple-health/apple-health-merge';
-import { getGarminAccount } from '@sharpit/server/lib/integrations/garmin/garmin-sync';
+import {
+  appleHealthPatch,
+  appleHealthPolicy,
+  type AppleHealthPolicy,
+} from '@sharpit/server/lib/integrations/apple-health/apple-health-merge';
+import { linkAppleHealth } from '@sharpit/server/lib/integrations/apple-health/apple-health-link';
+import { loadResolvedSourcePrefs } from '@sharpit/server/lib/integrations/source-prefs-store';
 import { prisma } from '@sharpit/db/client';
 import type { DailyHealth } from '@prisma/client';
 import { ingestDailyHealthObservations } from '@sharpit/server/lib/integrations/shared/health-observation-backfill';
@@ -46,7 +51,7 @@ function dayKey(date: string): Date {
 async function applyAppleHealthDays(
   athleteId: string,
   days: z.infer<typeof daySchema>[],
-  garminConnected: boolean,
+  policy: AppleHealthPolicy,
 ): Promise<DailyHealth[]> {
   const updated: DailyHealth[] = [];
   for (const day of days) {
@@ -54,7 +59,7 @@ async function applyAppleHealthDays(
     const existing = await prisma.dailyHealth.findUnique({
       where: { athleteId_date: { athleteId, date } },
     });
-    const patch = appleHealthPatch(existing, day, { garminConnected });
+    const patch = appleHealthPatch(existing, day, policy);
     if (Object.keys(patch).length === 0) {
       continue;
     }
@@ -69,8 +74,9 @@ async function applyAppleHealthDays(
 }
 
 /**
- * Receives Apple Health day summaries from the native app. Apple Health fills what no
- * provider wrote; it never overwrites. See ADR-043.
+ * Receives Apple Health day summaries from the native app. What it writes follows the
+ * athlete's sources per class: nothing where it is off, the gaps beside a primary source, the
+ * whole day where it is the primary (ADR-043, ADR-054).
  */
 export async function POST(request: NextRequest) {
   const parsed = bodySchema.safeParse(await request.json().catch(() => null));
@@ -89,8 +95,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(limited.body, { status: limited.status });
     }
 
-    const garminConnected = Boolean(await getGarminAccount(athleteId));
-    const updatedRows = await applyAppleHealthDays(athleteId, parsed.data.days, garminConnected);
+    // Sending is linking: an app that sends before it ever said so is linked here.
+    await linkAppleHealth(athleteId, true);
+    const policy = appleHealthPolicy(await loadResolvedSourcePrefs(athleteId));
+    const updatedRows = await applyAppleHealthDays(athleteId, parsed.data.days, policy);
     const updatedDays = updatedRows.length;
 
     if (updatedDays > 0) {
