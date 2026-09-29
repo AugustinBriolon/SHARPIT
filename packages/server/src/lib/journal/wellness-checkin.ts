@@ -23,7 +23,8 @@ async function listMorningSubjectiveRows(athleteId: string, trainingDayId: strin
   });
 }
 
-function isNonSessionSubjective(data: unknown): boolean {
+/** A morning check-in, as opposed to the feeling attached to one session. */
+export function isNonSessionSubjective(data: unknown): boolean {
   if (typeof data !== 'object' || data === null || Array.isArray(data)) {
     return false;
   }

@@ -1,5 +1,6 @@
 import { differenceInCalendarDays, parseISO } from 'date-fns';
 import { prisma } from '@sharpit/db/client';
+import { isNonSessionSubjective } from '@sharpit/server/lib/journal/wellness-checkin';
 import {
   getActivityDatesInRange,
   getHealthEntries,
@@ -21,7 +22,7 @@ export async function loadDataDays(
   const toDate = parseISO(to);
   const spanDays = differenceInCalendarDays(toDate, fromDate) + 1;
 
-  const [health, activityDates, nutrition, journal] = await Promise.all([
+  const [health, activityDates, nutrition, journal, checkins] = await Promise.all([
     // getHealthEntries applies the athlete's wearable source preference.
     needs.health ? getHealthEntries(athleteId, spanDays, toDate) : [],
     needs.activities ? getActivityDatesInRange(athleteId, fromDate, toDate) : [],
@@ -38,7 +39,26 @@ export async function loadDataDays(
           },
         })
       : [],
+    needs.journal
+      ? prisma.observation.findMany({
+          where: {
+            athleteId,
+            type: 'SUBJECTIVE',
+            source: 'MANUAL',
+            trainingDayId: { gte: from, lte: to },
+          },
+          select: { trainingDayId: true, data: true },
+        })
+      : [],
   ]);
 
-  return collectDataDays(domain, { health, activityDates, nutrition, journal }, { from, to });
+  const checkinDays = checkins
+    .filter((row) => row.trainingDayId && isNonSessionSubjective(row.data))
+    .map((row) => row.trainingDayId as string);
+
+  return collectDataDays(
+    domain,
+    { health, activityDates, nutrition, journal, checkinDays },
+    { from, to },
+  );
 }

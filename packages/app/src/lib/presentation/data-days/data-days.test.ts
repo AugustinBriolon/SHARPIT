@@ -172,6 +172,16 @@ describe('journal data days', () => {
     ]);
   });
 
+  it('counts a morning check-in as a journal day — the mood lives there', () => {
+    expect(
+      collectDataDays(
+        'journal',
+        { ...sources, checkinDays: ['2026-09-20', '2026-09-27'] },
+        { from: '2026-09-01', to: '2026-09-30' },
+      ),
+    ).toEqual(['2026-09-20', '2026-09-27', '2026-09-29']);
+  });
+
   it('reads only the journal for the journal domain', () => {
     expect(dataDaysSourcesFor('journal')).toEqual({
       health: false,

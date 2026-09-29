@@ -54,6 +54,8 @@ export interface DataDaysSources {
   nutrition: readonly DataDaysNutritionRow[];
   /** Journal days the athlete wrote; absent when the domain does not read them. */
   journal?: readonly DataDaysJournalRow[];
+  /** Days with a morning check-in — the journal's mood lives there, not on the journal row. */
+  checkinDays?: readonly string[];
 }
 
 export interface DataDaysRequest {
@@ -138,7 +140,10 @@ function domainDayKeys(domain: DataDaysDomain, sources: DataDaysSources): string
         .filter((row) => row.calories > 0)
         .map((row) => dayKeyFromDate(row.date));
     case 'journal':
-      return (sources.journal ?? []).filter(journalDayHasAnswer).map((row) => row.trainingDayId);
+      return [
+        ...(sources.journal ?? []).filter(journalDayHasAnswer).map((row) => row.trainingDayId),
+        ...(sources.checkinDays ?? []),
+      ];
   }
 }
 
