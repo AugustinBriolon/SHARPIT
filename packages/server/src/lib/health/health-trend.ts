@@ -15,6 +15,8 @@ export type HealthTrend = {
   recent: number;
   baseline: number;
   delta: number;
+  /** Within the marker's everyday noise: not a change worth naming. */
+  stable: boolean;
   tone: HealthTone;
 };
 
@@ -58,5 +60,11 @@ export function healthTrend(points: HealthPoint[], now: Date, rule: TrendRule): 
     return null;
   }
   const delta = recent - baseline;
-  return { recent, baseline, delta, tone: toneOf(delta, rule) };
+  return {
+    recent,
+    baseline,
+    delta,
+    stable: Math.abs(delta) < rule.noise,
+    tone: toneOf(delta, rule),
+  };
 }

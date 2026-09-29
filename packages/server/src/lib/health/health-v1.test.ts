@@ -77,7 +77,7 @@ describe('projectV1HealthOverview', () => {
     const [heart] = overview.vitals;
     expect(heart).toMatchObject({ value: 48, unit: 'bpm', basis: 'average7' });
     expect(heart.norm?.band).toBe('athlete');
-    expect(heart.trend?.tone).toBe('neutral');
+    expect(heart.trend).toMatchObject({ tone: 'neutral', stable: true });
     expect(heart.series.length).toBe(30);
     expect(heart.series[0].date < heart.series[29].date).toBe(true);
     expect(overview.vitals[3]).toMatchObject({ value: 56, basis: 'latest' });
@@ -118,6 +118,8 @@ describe('projectV1HealthOverview', () => {
       'musclePct',
     ]);
     expect(overview.body[0]).toMatchObject({ value: 72, target: 70 });
+    // Weight has no better direction: a change is named, never judged.
+    expect(overview.body[0].trend).toMatchObject({ tone: 'neutral', stable: false });
     expect(overview.body[1].norm?.band).toBe('fitness');
     expect(overview.watch).toEqual([
       expect.objectContaining({ key: 'weight', detail: expect.stringContaining('−2 kg') }),
