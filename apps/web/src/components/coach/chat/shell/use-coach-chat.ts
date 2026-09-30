@@ -9,6 +9,8 @@ import {
   type UIMessage,
 } from 'ai';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { queryKeys } from '@/client/query/keys';
+import { serverHistoryRequestBody } from '@sharpit/app/lib/coach/chat/shell/coach-chat-server-history';
 import { coachBeuiCopy } from '@/components/coach/beui/coach-beui-copy';
 import {
   collectPendingApprovals,
@@ -23,10 +25,6 @@ import { usePlannedSessions } from '@/hooks/use-data';
 import { lastStepApprovalResponseFingerprint } from '@sharpit/app/lib/coach/chat/shell/coach-chat-auto-send';
 import { coachApprovalReason } from '@sharpit/app/lib/coach/plan/coach-approval-reason';
 import { buildKnownSessions } from '@sharpit/app/lib/coach/chat/conversations/coach-chat-known-sessions';
-import {
-  coachMessagesFingerprint,
-  hasPersistableAssistant,
-} from '@sharpit/app/lib/coach/chat/shell/coach-chat-persist';
 import {
   abortChatFetch,
   endAutoReply,
@@ -94,7 +92,6 @@ export function useCoachChat({
   const invalidatedToolPartKeys = useRef<Set<string>>(new Set());
   const sentApprovalFingerprints = useRef<Set<string>>(new Set());
   const blockAutoSend = useRef(false);
-  const lastPersistedFingerprint = useRef<string>('');
   const messagesRef = useRef<UIMessage[]>(initialMessages);
   const viewportRef = useRef<HTMLElement>(null);
   const [budgetWarning, setBudgetWarning] = useState(false);
@@ -107,6 +104,15 @@ export function useCoachChat({
     () =>
       new DefaultChatTransport({
         api: '/api/coach/chat',
+        // A stored conversation is the server's: it sends only the new message, and the route reads
+        // the thread and saves the answer. A draft not yet stored still sends its whole thread.
+        ...(isEphemeral
+          ? {}
+          : {
+              prepareSendMessagesRequest: ({ messages: thread, body }) => ({
+                body: serverHistoryRequestBody({ conversationId, thread, body }),
+              }),
+            }),
         fetch: async (input, init) => {
           const signal = replaceChatFetchSignal(conversationId, init?.signal);
           const path = input instanceof Request ? input.url : String(input);
@@ -126,7 +132,7 @@ export function useCoachChat({
           return response;
         },
       }),
-    [conversationId],
+    [conversationId, isEphemeral],
   );
 
   // Server enforces the budget on every request regardless — this only
@@ -151,22 +157,14 @@ export function useCoachChat({
     ? Math.max(1, Math.ceil((budgetBlockedUntil - Date.now()) / 1000))
     : null;
 
-  const persistMessages = useCallback(
-    (all: UIMessage[]) => {
-      if (isEphemeral || !hasPersistableAssistant(all)) {
-        return;
-      }
-      const fingerprint = coachMessagesFingerprint(all);
-      if (fingerprint === lastPersistedFingerprint.current) {
-        return;
-      }
-      lastPersistedFingerprint.current = fingerprint;
-      void saveMessages({ id: conversationId, messages: all }).catch((err) =>
-        console.error('[coach-chat] save', err),
-      );
-    },
-    [conversationId, isEphemeral, saveMessages],
-  );
+  /** The server saved the thread with the answer: read its new title and date. */
+  const refreshSavedConversation = useCallback(() => {
+    if (isEphemeral) {
+      return;
+    }
+    void queryClient.invalidateQueries({ queryKey: queryKeys.conversation(conversationId) });
+    void queryClient.invalidateQueries({ queryKey: queryKeys.conversations });
+  }, [conversationId, isEphemeral, queryClient]);
 
   const chat = useChat({
     id: conversationId,
@@ -189,14 +187,14 @@ export function useCoachChat({
     onError: () => {
       blockAutoSend.current = true;
     },
-    onFinish: ({ messages: all, isError, isAbort }) => {
+    onFinish: ({ isError, isAbort }) => {
       if (isError) {
         return;
       }
       if (isAbort) {
         blockAutoSend.current = true;
       }
-      persistMessages(all);
+      refreshSavedConversation();
       if (!isAbort) {
         invalidatePlannedSessionsAfterCoachTurn(queryClient);
       }
@@ -236,24 +234,16 @@ export function useCoachChat({
     autoReplyStarted.current = false;
     sentApprovalFingerprints.current.clear();
     blockAutoSend.current = false;
-    lastPersistedFingerprint.current = '';
     setShowJumpToLatest(false);
     setBudgetWarning(false);
     setBudgetBlockedUntil(null);
   }, [conversationId]);
 
   useEffect(() => {
-    if (status === 'ready') {
-      persistMessages(messages);
-    }
-  }, [status, messages, persistMessages]);
-
-  useEffect(() => {
     return () => {
-      persistMessages(messagesRef.current);
       abortChatFetch(conversationId);
     };
-  }, [conversationId, persistMessages]);
+  }, [conversationId]);
 
   useEffect(() => {
     if (!autoReply || autoReplyStarted.current || isBusy) {
