@@ -1,5 +1,6 @@
 import { differenceInCalendarDays, format, startOfDay, subDays } from 'date-fns';
 import { isSet } from '@sharpit/shared/value';
+import { createSourceTimer } from '@sharpit/server/lib/coach/context/source-timer';
 import { fr } from 'date-fns/locale';
 import {
   getActivePhysicalNotes,
@@ -648,24 +649,36 @@ type LoadCoachContextSourcesInput = {
 
 async function loadCoachContextSources(input: LoadCoachContextSourcesInput) {
   const { athleteId, today, trainingDayId, includeScenario } = input;
-  return Promise.all([
-    getActivitiesForCoach(athleteId, { limit: 120, sinceDays: 90 }),
-    getHealthEntries(athleteId, 30),
-    getGoals(athleteId),
-    getPlannedSessionsForCoach(athleteId, { from: today, to: subDays(today, -21) }),
-    getPlannedSessionsForCoach(athleteId, { from: subDays(today, 14), to: today }),
-    getAthleteProfile(athleteId),
-    getActivePhysicalNotes(athleteId),
-    getOrBuildAthleteSnapshot(athleteId, trainingDayId),
-    listTravelContexts(prisma, athleteId),
-    loadHomeWeatherHint(athleteId, trainingDayId),
-    includeScenario
-      ? loadScenarioComparisonForCoach(athleteId, { horizonDays: 7 })
-      : Promise.resolve(null),
-    loadAthletePmcAnchor(athleteId, { refDate: today }),
-    loadDailyTrainingStressEntries(athleteId, { refDate: today }),
-    loadNutritionSummary(athleteId, trainingDayId),
+  const timer = createSourceTimer();
+  const sources = await Promise.all([
+    timer.time('activities', getActivitiesForCoach(athleteId, { limit: 120, sinceDays: 90 })),
+    timer.time('health', getHealthEntries(athleteId, 30)),
+    timer.time('goals', getGoals(athleteId)),
+    timer.time(
+      'upcomingPlanned',
+      getPlannedSessionsForCoach(athleteId, { from: today, to: subDays(today, -21) }),
+    ),
+    timer.time(
+      'pastPlanned',
+      getPlannedSessionsForCoach(athleteId, { from: subDays(today, 14), to: today }),
+    ),
+    timer.time('profile', getAthleteProfile(athleteId)),
+    timer.time('physicalNotes', getActivePhysicalNotes(athleteId)),
+    timer.time('snapshot', getOrBuildAthleteSnapshot(athleteId, trainingDayId)),
+    timer.time('travel', listTravelContexts(prisma, athleteId)),
+    timer.time('homeWeather', loadHomeWeatherHint(athleteId, trainingDayId)),
+    timer.time(
+      'scenario',
+      includeScenario
+        ? loadScenarioComparisonForCoach(athleteId, { horizonDays: 7 })
+        : Promise.resolve(null),
+    ),
+    timer.time('pmcAnchor', loadAthletePmcAnchor(athleteId, { refDate: today })),
+    timer.time('dailyStress', loadDailyTrainingStressEntries(athleteId, { refDate: today })),
+    timer.time('nutrition', loadNutritionSummary(athleteId, trainingDayId)),
   ] as const);
+  console.info('[coach-context] sources', timer.durations());
+  return sources;
 }
 
 type CoachContextSources = Awaited<ReturnType<typeof loadCoachContextSources>>;
