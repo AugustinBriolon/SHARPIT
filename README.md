@@ -75,7 +75,7 @@ Intelligence      Scientific inference models (packages/core/src/inference/)
       │
 Digital Twin      Persistent athlete state — updated after each inference (packages/core/src/digital-twin/)
       │
-Decision Layer    AI coach context + training recommendations (src/lib/coach/coach-context.ts)
+Decision Layer    AI coach context + training recommendations (packages/server/src/lib/coach/context/)
 ```
 
 See [`ARCHITECTURE.md`](./ARCHITECTURE.md) (code conventions) and [`docs/domain/DOMAIN.md`](./docs/domain/DOMAIN.md) (domain concepts and pipeline).
