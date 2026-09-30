@@ -3,6 +3,9 @@ import {
   convertToModelMessages,
   createUIMessageStream,
   createUIMessageStreamResponse,
+  InvalidToolInputError,
+  NoSuchToolError,
+  ToolCallRepairError,
   streamText,
   toUIMessageStream,
   type FinishReason,
@@ -60,6 +63,23 @@ import { getConversation, saveConversationMessages } from '@sharpit/server/lib/c
 /** What the athlete reads when the answer breaks mid-stream. */
 export const COACH_STREAM_ERROR_COPY =
   "Le coach n'a pas pu terminer sa réponse. Réessaie dans un instant.";
+
+/** What a proposal card reads when the model's call could not be run (bad input, unknown tool). */
+export const COACH_TOOL_CALL_ERROR_COPY =
+  "Cette action n'a pas pu être préparée par le coach. Redemande-la autrement.";
+
+/**
+ * The words for an error inside the stream. A tool call the model got wrong fails one card, not
+ * the answer, so it does not say the answer broke. Errors a tool throws never get here: they come
+ * back as `{ ok: false }` (`withCoachToolExecution`).
+ */
+export function coachStreamErrorCopy(error: unknown): string {
+  const toolCallError =
+    InvalidToolInputError.isInstance(error) ||
+    NoSuchToolError.isInstance(error) ||
+    ToolCallRepairError.isInstance(error);
+  return toolCallError ? COACH_TOOL_CALL_ERROR_COPY : COACH_STREAM_ERROR_COPY;
+}
 
 /** What the athlete reads when the conversation asked for is not theirs, or no longer exists. */
 export const COACH_CONVERSATION_NOT_FOUND_COPY =
@@ -194,7 +214,7 @@ async function pipeAttempt(
   options: { sendStart?: boolean; sendFinish?: boolean },
 ): Promise<void> {
   // The SDK default is an English « An error occurred. »; the cause is in the logs.
-  const chunks = toUIMessageStream({ stream, onError: () => COACH_STREAM_ERROR_COPY, ...options });
+  const chunks = toUIMessageStream({ stream, onError: coachStreamErrorCopy, ...options });
   const reader = chunks.getReader();
   for (let next = await reader.read(); !next.done; next = await reader.read()) {
     writer.write(next.value);

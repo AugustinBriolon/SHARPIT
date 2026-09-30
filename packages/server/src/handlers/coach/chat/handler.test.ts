@@ -642,3 +642,28 @@ describe('POST /api/coach/chat · continuation after an approval', () => {
     vi.mocked(ai.toUIMessageStream).mockImplementation((() => new ReadableStream()) as never);
   });
 });
+
+describe('coachStreamErrorCopy', () => {
+  it('says a tool call failed, not the answer, when the model got a call wrong', async () => {
+    const { InvalidToolInputError, NoSuchToolError } = await import('ai');
+    const { coachStreamErrorCopy, COACH_TOOL_CALL_ERROR_COPY } = await importRoute();
+
+    expect(
+      coachStreamErrorCopy(
+        new InvalidToolInputError({
+          toolName: 'updatePlannedSession',
+          toolInput: '{}',
+          cause: 'x',
+        }),
+      ),
+    ).toBe(COACH_TOOL_CALL_ERROR_COPY);
+    expect(coachStreamErrorCopy(new NoSuchToolError({ toolName: 'moveSession' }))).toBe(
+      COACH_TOOL_CALL_ERROR_COPY,
+    );
+  });
+
+  it('keeps the broken-answer message for anything else', async () => {
+    const { coachStreamErrorCopy, COACH_STREAM_ERROR_COPY } = await importRoute();
+    expect(coachStreamErrorCopy(new Error('upstream 503'))).toBe(COACH_STREAM_ERROR_COPY);
+  });
+});
