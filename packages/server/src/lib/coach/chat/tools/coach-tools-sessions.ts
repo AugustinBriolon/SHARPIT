@@ -72,7 +72,7 @@ function buildCreateBrickSessionTool(
 ) {
   return tool({
     description:
-      "Crée une séance BRICK / multisport : un enchaînement de plusieurs jambes le même jour (ex. vélo puis course à pied), à utiliser pour le triathlon. Chaque jambe est créée comme une séance autonome (un sport chacune) mais elles sont regroupées : l'athlète pourra ainsi lier l'activité Strava correspondante à CHAQUE jambe et obtenir une analyse par sport. Préfère cet outil à createPlannedSession dès que la séance combine plusieurs sports enchaînés.",
+      "Crée une séance BRICK / multisport : un enchaînement de plusieurs jambes le même jour (ex. vélo puis course à pied), à utiliser pour le triathlon. Chaque jambe est créée comme une séance autonome (un sport chacune) mais elles sont regroupées : l'athlète pourra ainsi lier l'activité Strava correspondante à CHAQUE jambe et obtenir une analyse par sport. Préfère cet outil à createPlannedSession dès que la séance combine plusieurs sports enchaînés. Pour un NOUVEAU brick seulement : un brick déjà planifié se déplace avec updatePlannedSession.",
     inputSchema: z.object({
       date: z.string().describe('Date commune au format yyyy-MM-dd.'),
       startTime: startTimeSchema,
@@ -121,7 +121,7 @@ function buildUpdatePlannedSessionTool(
 ) {
   return tool({
     description:
-      'Modifie une séance planifiée existante (identifiée par son id). Ne renseigne que les champs à changer.',
+      'Modifie une séance planifiée existante (identifiée par son id). Ne renseigne que les champs à changer. Sert aussi à DÉPLACER ou INVERSER des séances (date / startTime) : ne supprime et ne recrée jamais une séance pour la déplacer. Sur une jambe de brick, une nouvelle date ou heure déplace tout le brick (startTime = départ du brick).',
     inputSchema: z.object({
       id: z
         .string()
@@ -160,7 +160,8 @@ function buildUpdatePlannedSessionTool(
 
 function buildDeletePlannedSessionTool(athleteId: string) {
   return tool({
-    description: 'Supprime une séance planifiée (identifiée par son id).',
+    description:
+      "Supprime une séance planifiée (identifiée par son id), quand l'athlète ne veut plus la faire. Pas pour la déplacer : utilise updatePlannedSession.",
     inputSchema: z.object({
       id: z
         .string()
