@@ -28,7 +28,8 @@
     "garmin:login": "python3 scripts/garmin-login.py",
     "garmin:import-tokens": "tsx scripts/import-garmin-tokens.ts",
     "smoke:must-private": "tsx scripts/smoke-must-private.ts",
-    "smoke:api-host": "tsx scripts/smoke-api-host.ts"
+    "smoke:api-host": "tsx scripts/smoke-api-host.ts",
+    "bench:coach-models": "tsx --env-file=.env scripts/bench-coach-models.ts"
   },
   "dependencies": {
     "@clerk/nextjs": "^7.5.9",
