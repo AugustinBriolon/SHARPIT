@@ -8,8 +8,10 @@ import {
 } from '@sharpit/server/lib/ai';
 import { recordAiUsage } from '@sharpit/server/lib/ai/usage';
 import { sanitizeCoachCopy } from '@sharpit/app/lib/coach/sanitize-coach-copy';
-import { isDemoSession } from '@sharpit/app/lib/demo/demo-session';
-import { athleteHasAiProcessingConsent } from '@sharpit/server/lib/privacy/consent-store';
+import {
+  athleteHasAiProcessingConsent,
+  isDemoAthlete,
+} from '@sharpit/server/lib/privacy/consent-store';
 import {
   buildNutritionAnalysisFacts,
   type NutritionAnalysisFacts,
@@ -30,7 +32,7 @@ import {
 
 /** Demo sessions are read-only and must not spend AI budget. */
 async function canGenerateNutritionAnalysis(athleteId: string): Promise<boolean> {
-  if (!isCoachConfigured() || (await isDemoSession())) {
+  if (!isCoachConfigured() || (await isDemoAthlete(athleteId))) {
     return false;
   }
   return athleteHasAiProcessingConsent(athleteId);

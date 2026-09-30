@@ -45,6 +45,15 @@ export async function getAthleteConsentRow(athleteId: string): Promise<AthleteCo
   });
 }
 
+/**
+ * Whether the athlete is the shared demo tenant, read from their profile rather than the session:
+ * a scheduled job has no session, and Clerk's `auth()` throws outside a Clerk request.
+ */
+export async function isDemoAthlete(athleteId: string): Promise<boolean> {
+  const profile = await getAthleteConsentRow(athleteId);
+  return profile?.clerkUserId === DEMO_CLERK_USER_ID;
+}
+
 export async function athleteNeedsLegalConsent(athleteId: string): Promise<boolean> {
   if (await isDemoSession()) {
     return false;
@@ -94,8 +103,12 @@ export async function athleteHasExistingHealthContext(athleteId: string): Promis
   });
 }
 
+/*
+ * The three checks below are keyed by athlete, not by session: they also run in scheduled jobs
+ * (the sync cron), which carry no Clerk session. The demo athlete is recognised by its profile.
+ */
 export async function athleteHasAiProcessingConsent(athleteId: string): Promise<boolean> {
-  if ((await isDemoSession()) || isDevClerkBypass()) {
+  if (isDevClerkBypass()) {
     return true;
   }
   const profile = await getAthleteConsentRow(athleteId);
@@ -106,7 +119,7 @@ export async function athleteHasAiProcessingConsent(athleteId: string): Promise<
 }
 
 export async function athleteHasHealthDataConsent(athleteId: string): Promise<boolean> {
-  if ((await isDemoSession()) || isDevClerkBypass()) {
+  if (isDevClerkBypass()) {
     return true;
   }
   const profile = await getAthleteConsentRow(athleteId);
@@ -134,7 +147,7 @@ export async function athleteCanConnectProvider(
   athleteId: string,
   integrationId: IntegrationId,
 ): Promise<boolean> {
-  if ((await isDemoSession()) || isDevClerkBypass()) {
+  if (isDevClerkBypass()) {
     return true;
   }
   const profile = await getAthleteConsentRow(athleteId);
