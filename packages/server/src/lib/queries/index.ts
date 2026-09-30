@@ -27,6 +27,7 @@ export {
   getPlannedSessions,
   getPlannedSessionsForCoach,
   linkPlannedSessionActivity,
+  rescheduleBrickSessions,
   setBrickAnalysis,
   setPlannedSessionAnalysis,
   updatePlannedSession,

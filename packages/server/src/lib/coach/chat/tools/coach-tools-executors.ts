@@ -10,7 +10,9 @@ import {
   createBrickSessions,
   createPlannedSession,
   deletePlannedSession,
+  getBrickSessions,
   getPlannedSessionById,
+  rescheduleBrickSessions,
   updatePlannedSession,
 } from '@sharpit/server/lib/queries';
 import {
@@ -379,7 +381,9 @@ export async function executeUpdatePlannedSessionTool(
   if (!existing) {
     return { ok: false as const, error: 'Séance introuvable' };
   }
-  const violation = await findUpdatedSessionTravelViolation(athleteId, input, existing);
+  const violation =
+    (await findUpdatedSessionTravelViolation(athleteId, input, existing)) ??
+    (await findMovedBrickTravelViolation(athleteId, input, existing));
   if (violation) {
     return { ok: false as const, error: violation };
   }
@@ -387,14 +391,72 @@ export async function executeUpdatePlannedSessionTool(
   applyScalarPlannedSessionUpdate(input, data);
   applyPrescriptionUpdates(input, existing, data);
 
-  const s = await updatePlannedSession(athleteId, input.id, data);
-  if (!s) {
+  const updated = await updatePlannedSession(athleteId, input.id, data);
+  if (!updated) {
     return { ok: false as const, error: 'Séance introuvable.' };
   }
+  const brickLegs = await moveBrickWithLeg(athleteId, input, existing);
+  const s = brickLegs?.find((leg) => leg.id === updated.id) ?? updated;
   scheduleSessionContextRefresh(athleteId, s.id);
-  pushSessionToGoogleInBackground(s);
+  if (brickLegs) {
+    pushBrickToGoogleInBackground(brickLegs);
+  } else {
+    pushSessionToGoogleInBackground(s);
+  }
 
-  return buildUpdatedSessionResult(s, input.durationMin ?? existing.durationMin);
+  return {
+    ...buildUpdatedSessionResult(s, input.durationMin ?? existing.durationMin),
+    ...(brickLegs ? { brickLegsMoved: brickLegs.map(describeMovedLeg) } : {}),
+  };
+}
+
+type ExistingSession = NonNullable<Awaited<ReturnType<typeof getPlannedSessionById>>>;
+
+function movesBrick(
+  input: { date?: string; startTime?: string },
+  existing: ExistingSession,
+): boolean {
+  return Boolean(existing.brickGroupId && (input.date || input.startTime));
+}
+
+/** A brick moved to a new day must be allowed there for every leg's sport, not only this one's. */
+async function findMovedBrickTravelViolation(
+  athleteId: string,
+  input: { date?: string },
+  existing: ExistingSession,
+): Promise<string | null> {
+  if (!existing.brickGroupId || !input.date) {
+    return null;
+  }
+  const legs = await getBrickSessions(athleteId, existing.brickGroupId);
+  return findBrickTravelViolation(athleteId, { date: input.date, legs });
+}
+
+/**
+ * Changing a leg's day or time moves the whole brick: its legs share one day, and chain from its
+ * start. Null when the session is no brick leg, or neither its day nor its time changes.
+ */
+async function moveBrickWithLeg(
+  athleteId: string,
+  input: { date?: string; startTime?: string },
+  existing: ExistingSession,
+) {
+  if (!movesBrick(input, existing)) {
+    return null;
+  }
+  return rescheduleBrickSessions(athleteId, existing.brickGroupId!, {
+    date: input.date ? toDate(input.date) : undefined,
+    startTime: input.startTime,
+  });
+}
+
+function describeMovedLeg(leg: {
+  id: string;
+  date: Date;
+  startTime: string | null;
+  title: string | null;
+}) {
+  return { id: leg.id, date: dayKeyFromDate(leg.date), startTime: leg.startTime, title: leg.title };
 }
 
 type BrickLegInput = {

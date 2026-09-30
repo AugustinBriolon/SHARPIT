@@ -9,6 +9,7 @@ import {
   plannedSessionCoachSelect,
   plannedSessionInclude,
 } from '@sharpit/app/lib/query/activity-include';
+import { chainBrickLegStartTimes } from '@sharpit/server/lib/planned-session/brick/brick-schedule';
 
 export async function getPlannedSessions(athleteId: string, params?: { from?: Date; to?: Date }) {
   return prisma.plannedSession.findMany({
@@ -123,6 +124,40 @@ export async function getBrickSessions(athleteId: string, brickGroupId: string) 
     where: { brickGroupId, athleteId },
     include: plannedSessionInclude,
     orderBy: { brickOrder: 'asc' },
+  });
+}
+
+/**
+ * Moves every leg of a brick at once: they share one day, and a new start time is the brick's own,
+ * the legs chained end to end from it. Other fields stay leg by leg. In one transaction, so no
+ * leg is left behind on the old day.
+ */
+export async function rescheduleBrickSessions(
+  athleteId: string,
+  brickGroupId: string,
+  schedule: { date?: Date; startTime?: string },
+) {
+  return prisma.$transaction(async (tx) => {
+    const legs = await tx.plannedSession.findMany({
+      where: { athleteId, brickGroupId },
+      orderBy: { brickOrder: 'asc' },
+    });
+    const startTimes = schedule.startTime
+      ? chainBrickLegStartTimes(schedule.startTime, legs)
+      : null;
+    const moved = [];
+    for (const [index, leg] of legs.entries()) {
+      moved.push(
+        await tx.plannedSession.update({
+          where: { id: leg.id },
+          data: {
+            ...(schedule.date ? { date: schedule.date } : {}),
+            ...(startTimes ? { startTime: startTimes[index] } : {}),
+          },
+        }),
+      );
+    }
+    return moved;
   });
 }
 
