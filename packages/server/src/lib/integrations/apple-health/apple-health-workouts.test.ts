@@ -22,7 +22,7 @@ const run = appleHealthWorkoutSchema.parse({
 
 describe('appleHealthActivityData', () => {
   it('stores a run with its pace, from the workout itself', () => {
-    const data = appleHealthActivityData(run);
+    const data = appleHealthActivityData(run, 'Europe/Paris');
 
     expect(data).toMatchObject({
       type: 'RUN',
@@ -30,7 +30,8 @@ describe('appleHealthActivityData', () => {
       duration: 3_000,
       title: 'Course à pied',
     });
-    expect(data.date).toEqual(new Date('2026-09-28T04:30:00.000Z'));
+    // The wall clock, as Garmin stores the same session: 06:30 in Paris.
+    expect(data.date).toEqual(new Date('2026-09-28T06:30:00.000Z'));
     expect(data.runMetrics).toEqual({
       create: {
         distanceM: 10_000,
@@ -44,21 +45,29 @@ describe('appleHealthActivityData', () => {
   });
 
   it('keeps the calories on a ride and names a swim by its pace per 100 m', () => {
-    const ride = appleHealthActivityData({ ...run, type: 'BIKE', distanceM: 40_000 });
+    const ride = appleHealthActivityData(
+      { ...run, type: 'BIKE', distanceM: 40_000 },
+      'Europe/Paris',
+    );
     expect(ride.bikeMetrics).toMatchObject({ create: { distanceM: 40_000, calories: 612 } });
 
-    const swim = appleHealthActivityData({
-      ...run,
-      type: 'SWIM',
-      durationSec: 1_800,
-      distanceM: 1_500,
-    });
+    const swim = appleHealthActivityData(
+      {
+        ...run,
+        type: 'SWIM',
+        durationSec: 1_800,
+        distanceM: 1_500,
+      },
+      'Europe/Paris',
+    );
     expect(swim.swimMetrics).toEqual({ create: { distanceM: 1_500, avgPaceSecPer100m: 120 } });
   });
 
   it('writes no metrics for strength, and none for a zero distance', () => {
-    expect(appleHealthActivityData({ ...run, type: 'STRENGTH' }).runMetrics).toBeUndefined();
-    const treadmill = appleHealthActivityData({ ...run, distanceM: 0 });
+    expect(
+      appleHealthActivityData({ ...run, type: 'STRENGTH' }, 'Europe/Paris').runMetrics,
+    ).toBeUndefined();
+    const treadmill = appleHealthActivityData({ ...run, distanceM: 0 }, 'Europe/Paris');
     expect(treadmill.runMetrics).toMatchObject({ create: { distanceM: null, paceSecPerKm: null } });
   });
 });

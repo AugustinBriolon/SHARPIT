@@ -6,14 +6,16 @@ import { observationEngine } from '@sharpit/server/lib/engines/observation-engin
 import { storedActivityToSession } from '@sharpit/server/lib/observation/activity-to-session';
 import { persistStream } from '@sharpit/server/lib/streams/streams';
 import type { RawStreams } from '@sharpit/server/lib/integrations/garmin/garmin-streams';
+import { appleHealthWallClockStart } from './apple-health-time';
+
+const DEFAULT_ATHLETE_TIME_ZONE = 'Europe/Paris';
 
 /**
  * Apple Health workouts, sent by the native app, as SharpIt activities — what lets an athlete
  * without Garmin or Strava train with SharpIt on an Apple Watch alone.
  *
- * Apple Health stays a gap filler (ADR-043): an athlete with Garmin or Strava connected gets
- * their sessions from there, so these are only taken when neither is. A workout already held
- * (same sport, start and duration — the Garmin/Strava fingerprint) is skipped, which also makes
+ * Taken while Apple Health is enabled for activities (ADR-054). A workout already held
+ * (same sport, start and duration — the Garmin/Strava fingerprint, on the wall-clock start) is skipped, which also makes
  * a workout sent twice harmless. The stored row goes to the Core as any activity without a
  * provider id does (`storedActivityToSession`), so its load is the Core's.
  */
@@ -122,11 +124,18 @@ function metricsFor(workout: AppleHealthWorkout): Partial<ActivityCreate> {
   }
 }
 
-/** The activity row a workout becomes, with its sport's metrics. */
-export function appleHealthActivityData(workout: AppleHealthWorkout): ActivityCreate {
+/**
+ * The activity row a workout becomes, with its sport's metrics. Its start is the athlete's wall
+ * clock written as UTC, as Garmin's are (`appleHealthWallClockStart`); `timeZone` places a start
+ * sent in UTC.
+ */
+export function appleHealthActivityData(
+  workout: AppleHealthWorkout,
+  timeZone: string,
+): ActivityCreate {
   return {
     type: workout.type,
-    date: new Date(workout.start),
+    date: appleHealthWallClockStart(workout.start, timeZone),
     title: workout.title ?? null,
     duration: workout.durationSec,
     source: 'apple-health',
@@ -154,14 +163,27 @@ export function appleHealthRawStreams(workout: AppleHealthWorkout): RawStreams |
   };
 }
 
+/** Where the athlete lives, for a start sent without its offset: the calendar's, else Paris. */
+async function athleteTimeZone(athleteId: string): Promise<string> {
+  const google = await prisma.googleAccount.findUnique({
+    where: { athleteId },
+    select: { timeZone: true },
+  });
+  return google?.timeZone ?? DEFAULT_ATHLETE_TIME_ZONE;
+}
+
 export type AppleHealthWorkoutImport = {
   imported: number;
   skipped: number;
   activityIds: string[];
 };
 
-async function importOne(athleteId: string, workout: AppleHealthWorkout): Promise<string | null> {
-  const data = appleHealthActivityData(workout);
+async function importOne(
+  athleteId: string,
+  workout: AppleHealthWorkout,
+  timeZone: string,
+): Promise<string | null> {
+  const data = appleHealthActivityData(workout, timeZone);
   const match = await findMatchingActivity(athleteId, {
     type: workout.type,
     date: data.date as Date,
@@ -192,9 +214,10 @@ export async function importAppleHealthWorkouts(
   workouts: AppleHealthWorkout[],
 ): Promise<AppleHealthWorkoutImport> {
   const result: AppleHealthWorkoutImport = { imported: 0, skipped: 0, activityIds: [] };
+  const timeZone = await athleteTimeZone(athleteId);
   // In order, one at a time: two workouts of one batch can match each other.
   for (const workout of workouts) {
-    const id = await importOne(athleteId, workout);
+    const id = await importOne(athleteId, workout, timeZone);
     if (id) {
       result.imported += 1;
       result.activityIds.push(id);
