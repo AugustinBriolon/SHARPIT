@@ -2,10 +2,22 @@ import { safeValidateUIMessages, type UIMessage } from 'ai';
 import { dismissUnresolvedCalendarTools } from '@sharpit/app/lib/coach/chat/tools/coach-tool-parts';
 
 /**
- * The conversation a client sends, made safe to hand to the model. Clients own the history
- * (web and iOS each store it), so the route cannot assume its shape.
+ * The conversation a coach turn answers, made safe to hand to the model.
+ *
+ * Two request shapes:
+ * - **server history** — `{ conversationId, message }`: the server reads the stored conversation,
+ *   adds the new message (or the coach message whose proposals the athlete just answered), and
+ *   saves the result when the answer ends. The client sends one message, not the whole thread.
+ * - **client history** — `{ messages }`: the client sends the whole thread, as every client did
+ *   before, and saves it itself. Kept for app versions already installed and for conversations
+ *   that are never stored (a demo, an ephemeral thread).
  */
-export type CoachChatHistory = { ok: true; messages: UIMessage[] } | { ok: false };
+export type CoachChatHistory =
+  | { ok: true; messages: UIMessage[]; conversationId: string | null }
+  | { ok: false; reason: 'malformed' | 'not-found' };
+
+/** Reads the messages of a conversation the athlete owns; null when there is none. */
+export type LoadStoredConversation = (conversationId: string) => Promise<unknown[] | null>;
 
 /**
  * A new question closes the calendar proposals left unanswered, as the web composer already does
@@ -16,12 +28,55 @@ export function closeUnansweredProposals(messages: UIMessage[]): UIMessage[] {
   return messages.at(-1)?.role === 'user' ? dismissUnresolvedCalendarTools(messages) : messages;
 }
 
-/** Reads the request body's messages: a malformed conversation is refused, not sent to the model. */
-export async function readCoachChatHistory(body: unknown): Promise<CoachChatHistory> {
-  const messages = (body as { messages?: unknown } | null)?.messages;
-  const validated = await safeValidateUIMessages({ messages });
-  if (!validated.success) {
-    return { ok: false };
+/**
+ * The stored thread with the client's message. A message already stored takes its place and ends
+ * the thread: a coach message now carrying the athlete's approvals, or a question asked again
+ * (« régénérer »), whose previous answer goes. Anything else is appended.
+ */
+export function withIncomingMessage(stored: UIMessage[], incoming: UIMessage): UIMessage[] {
+  const index = stored.findIndex((message) => message.id === incoming.id);
+  return index === -1 ? [...stored, incoming] : [...stored.slice(0, index), incoming];
+}
+
+async function validated(messages: unknown): Promise<UIMessage[] | null> {
+  const result = await safeValidateUIMessages({ messages });
+  return result.success ? closeUnansweredProposals(result.data) : null;
+}
+
+async function readServerHistory(
+  conversationId: string,
+  message: unknown,
+  loadStored: LoadStoredConversation,
+): Promise<CoachChatHistory> {
+  const [incoming] = (await validated([message])) ?? [];
+  if (!incoming) {
+    return { ok: false, reason: 'malformed' };
   }
-  return { ok: true, messages: closeUnansweredProposals(validated.data) };
+  const stored = await loadStored(conversationId);
+  if (!stored) {
+    return { ok: false, reason: 'not-found' };
+  }
+  // A stored thread that no longer validates is not the athlete's fault: start from the message.
+  const thread = (await validated(stored)) ?? [];
+  const messages = await validated(withIncomingMessage(thread, incoming));
+  return messages ? { ok: true, messages, conversationId } : { ok: false, reason: 'malformed' };
+}
+
+/** Reads a coach chat request body into the thread to answer: a malformed one is refused. */
+export async function readCoachChatHistory(
+  body: unknown,
+  loadStored: LoadStoredConversation,
+): Promise<CoachChatHistory> {
+  const { conversationId, message, messages } = (body ?? {}) as {
+    conversationId?: unknown;
+    message?: unknown;
+    messages?: unknown;
+  };
+  if (typeof conversationId === 'string' && conversationId && message !== undefined) {
+    return readServerHistory(conversationId, message, loadStored);
+  }
+  const thread = await validated(messages);
+  return thread
+    ? { ok: true, messages: thread, conversationId: null }
+    : { ok: false, reason: 'malformed' };
 }

@@ -74,6 +74,11 @@ vi.mock('@sharpit/server/lib/queries', () => ({
 
 vi.mock('@sharpit/db/client', () => ({ prisma: {} }));
 
+vi.mock('@sharpit/server/lib/coach/conversations', () => ({
+  getConversation: vi.fn(),
+  saveConversationMessages: vi.fn(),
+}));
+
 vi.mock('@sharpit/server/lib/journal/journal-habit-analysis-load', () => ({
   loadJournalHabitFindings: vi.fn().mockResolvedValue({ daysWithSignal: 3, findings: [] }),
 }));
@@ -472,5 +477,104 @@ describe('POST /api/coach/chat · guard', () => {
 
     const { POST } = await importRoute();
     expect((await POST(chatRequest())).status).toBe(403);
+  });
+});
+
+describe('POST /api/coach/chat · server-owned conversation', () => {
+  const question = { id: 'u2', role: 'user', parts: [{ type: 'text', text: 'Et vendredi ?' }] };
+  const stored = [
+    { id: 'u1', role: 'user', parts: [{ type: 'text', text: 'Comment était ma nuit ?' }] },
+    { id: 'a1', role: 'assistant', parts: [{ type: 'text', text: 'Courte.' }] },
+  ];
+
+  function serverHistoryRequest(conversationId: string): Request {
+    return new Request('http://localhost/api/coach/chat', {
+      method: 'POST',
+      body: JSON.stringify({ conversationId, message: question }),
+    });
+  }
+
+  beforeEach(async () => {
+    vi.clearAllMocks();
+    const { getConversation } = await import('@sharpit/server/lib/coach/conversations');
+    vi.mocked(getConversation).mockImplementation((async (athleteId: string, id: string) =>
+      athleteId === 'athlete-1' && id === 'c1' ? { id, messages: stored } : null) as never);
+  });
+
+  it('answers the stored thread with the new question', async () => {
+    const { POST } = await importRoute();
+    expect((await POST(serverHistoryRequest('c1'))).status).toBe(200);
+
+    const { convertToModelMessages } = await import('ai');
+    const [sent] = vi.mocked(convertToModelMessages).mock.calls[0]!;
+    expect((sent as unknown as Array<{ id: string }>).map((m) => m.id)).toEqual(['u1', 'a1', 'u2']);
+  });
+
+  it('refuses a conversation that is not the athlete’s', async () => {
+    const { streamText } = await import('ai');
+    const { POST, COACH_CONVERSATION_NOT_FOUND_COPY } = await importRoute();
+
+    const response = await POST(serverHistoryRequest('c-foreign'));
+
+    expect(response.status).toBe(404);
+    expect(await response.json()).toEqual({ error: COACH_CONVERSATION_NOT_FOUND_COPY });
+    expect(streamText).not.toHaveBeenCalled();
+  });
+
+  it('saves the thread with the answer when the stream ends', async () => {
+    const ai = await import('ai');
+    vi.mocked(ai.streamText).mockImplementation(((options: {
+      onEnd: (end: Record<string, unknown>) => void;
+    }) => {
+      options.onEnd({
+        usage: {},
+        finishReason: 'stop',
+        steps: [{ text: 'Vendredi est libre.', toolCalls: [] }],
+        finalStep: { response: { modelId: 'model' } },
+      });
+      return { stream: 'model' };
+    }) as never);
+    vi.mocked(ai.toUIMessageStream).mockImplementation(
+      (() =>
+        new ReadableStream({
+          start(controller) {
+            controller.enqueue({ type: 'start' });
+            controller.enqueue({ type: 'text-start', id: 't1' });
+            controller.enqueue({ type: 'text-delta', id: 't1', delta: 'Vendredi est libre.' });
+            controller.enqueue({ type: 'text-end', id: 't1' });
+            controller.close();
+          },
+        })) as never,
+    );
+    vi.spyOn(console, 'info').mockImplementation(() => undefined);
+
+    const { POST } = await importRoute();
+    await POST(serverHistoryRequest('c1'));
+    const [call] = vi.mocked(ai.createUIMessageStreamResponse).mock.calls;
+    const reader = (call?.[0] as { stream: ReadableStream }).stream.getReader();
+    while (!(await reader.read()).done) {
+      // drain
+    }
+
+    const { saveConversationMessages } = await import('@sharpit/server/lib/coach/conversations');
+    await vi.waitFor(() => expect(saveConversationMessages).toHaveBeenCalled());
+    const [athleteId, id, saved] = vi.mocked(saveConversationMessages).mock.calls[0]!;
+    expect([athleteId, id]).toEqual(['athlete-1', 'c1']);
+    const thread = saved as Array<{ id: string; role: string; parts: Array<{ text?: string }> }>;
+    expect(thread.slice(0, 3).map((m) => m.id)).toEqual(['u1', 'a1', 'u2']);
+    expect(thread[3]).toMatchObject({ role: 'assistant' });
+    expect(thread[3]!.parts.some((p) => p.text === 'Vendredi est libre.')).toBe(true);
+
+    vi.mocked(ai.streamText).mockImplementation((() => ({
+      stream: new ReadableStream(),
+    })) as never);
+    vi.mocked(ai.toUIMessageStream).mockImplementation((() => new ReadableStream()) as never);
+  });
+
+  it('saves nothing for a thread the client owns', async () => {
+    const { POST } = await importRoute();
+    await POST(chatRequest());
+    const { saveConversationMessages } = await import('@sharpit/server/lib/coach/conversations');
+    expect(saveConversationMessages).not.toHaveBeenCalled();
   });
 });

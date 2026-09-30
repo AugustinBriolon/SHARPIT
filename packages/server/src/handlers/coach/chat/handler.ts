@@ -1,4 +1,5 @@
 import {
+  consumeStream,
   convertToModelMessages,
   createUIMessageStream,
   createUIMessageStreamResponse,
@@ -10,7 +11,7 @@ import {
   type UIMessage,
   type UIMessageStreamWriter,
 } from 'ai';
-import { NextResponse } from 'next/server';
+import { after, NextResponse } from 'next/server';
 import {
   COACH_EMPTY_ANSWER_RETRY_MODEL,
   COACH_MODEL,
@@ -54,10 +55,15 @@ import {
 import { buildCoachSystemPrompt } from '@sharpit/server/lib/coach/chat/coach-system-prompt';
 import { coachChatGenerationSettings } from '@sharpit/server/lib/coach/chat/coach-chat-generation';
 import { readCoachChatHistory } from '@sharpit/server/lib/coach/chat/coach-chat-history';
+import { getConversation, saveConversationMessages } from '@sharpit/server/lib/coach/conversations';
 
 /** What the athlete reads when the answer breaks mid-stream. */
 export const COACH_STREAM_ERROR_COPY =
   "Le coach n'a pas pu terminer sa réponse. Réessaie dans un instant.";
+
+/** What the athlete reads when the conversation asked for is not theirs, or no longer exists. */
+export const COACH_CONVERSATION_NOT_FOUND_COPY =
+  'Cette conversation est introuvable. Ouvre une nouvelle conversation.';
 
 /** What the athlete reads when the conversation sent is malformed. */
 export const COACH_UNREADABLE_HISTORY_COPY =
@@ -104,6 +110,8 @@ type CoachReplyInput = {
   budgetWarning: BudgetWarning;
   timing: CoachChatTiming;
   scope: CoachRequestScope;
+  /** Set when the server owns the thread: the answer is saved to it when it ends. */
+  conversationId: string | null;
 };
 
 /** One model call of a coach turn: the first, or the retry of an answer that came back empty. */
@@ -129,7 +137,9 @@ const EMPTY_ANSWER_RETRY: CoachAttempt = {
 async function streamCoachReply(input: CoachReplyInput): Promise<Response> {
   const generate = await coachGenerator(input);
   const stream = createUIMessageStream({
+    originalMessages: input.messages,
     onError: () => COACH_STREAM_ERROR_COPY,
+    onEnd: ({ messages }) => saveServerHistory(input, messages),
     execute: async ({ writer }) => {
       const first = generate({
         name: 'first',
@@ -148,7 +158,30 @@ async function streamCoachReply(input: CoachReplyInput): Promise<Response> {
   return createUIMessageStreamResponse({
     stream,
     headers: withAiBudgetWarningHeader({}, input.budgetWarning),
+    // Read to the end on the server too, kept alive past the response by `after`: an athlete who
+    // closes the screen still finds the answer saved in the conversation.
+    consumeSseStream: ({ stream: copy }) => {
+      after(consumeStream({ stream: copy }));
+    },
   });
+}
+
+async function saveServerHistory(input: CoachReplyInput, messages: UIMessage[]): Promise<void> {
+  if (!input.conversationId) {
+    return;
+  }
+  try {
+    await saveConversationMessages(input.athleteId, input.conversationId, messages);
+  } catch (error) {
+    console.error('[coach-chat] save', describeCoachChatError(error));
+  }
+}
+
+async function loadStoredMessages(athleteId: string, conversationId: string) {
+  const conversation = await getConversation(athleteId, conversationId);
+  return conversation && Array.isArray(conversation.messages)
+    ? (conversation.messages as unknown[])
+    : null;
 }
 
 /**
@@ -243,11 +276,15 @@ export async function POST(req: Request) {
 
   const timing = startCoachChatTiming();
   const athleteId = await getCurrentAthleteId();
-  const history = await readCoachChatHistory(await req.json().catch(() => null));
+  const history = await readCoachChatHistory(await req.json().catch(() => null), (id) =>
+    loadStoredMessages(athleteId, id),
+  );
   if (!history.ok) {
-    return NextResponse.json({ error: COACH_UNREADABLE_HISTORY_COPY }, { status: 400 });
+    return history.reason === 'not-found'
+      ? NextResponse.json({ error: COACH_CONVERSATION_NOT_FOUND_COPY }, { status: 404 })
+      : NextResponse.json({ error: COACH_UNREADABLE_HISTORY_COPY }, { status: 400 });
   }
-  const { messages } = history;
+  const { messages, conversationId } = history;
 
   // Discuss metadata is client-supplied: entitlements are settled here, before
   // any kind-specific data is read or any model call is made.
@@ -287,6 +324,7 @@ export async function POST(req: Request) {
       budgetWarning: guard.budgetWarning,
       timing,
       scope,
+      conversationId,
     }),
   );
 }
