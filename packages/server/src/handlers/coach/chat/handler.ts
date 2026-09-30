@@ -240,6 +240,8 @@ async function coachGenerator(input: CoachReplyInput) {
         void recordAiUsage(athleteId, 'coach', usage);
         timing.note('steps', steps.length);
         timing.note('inputTokens', usage.inputTokens ?? 0);
+        // Read from the provider's prompt cache: whether consecutive turns reuse their prefix.
+        timing.note('cachedInputTokens', usage.inputTokenDetails?.cacheReadTokens ?? 0);
         timing.note('outputTokens', usage.outputTokens ?? 0);
         timing.note('reasoningTokens', usage.outputTokenDetails?.reasoningTokens ?? 0);
         end = { outcome: describeCoachChatOutcome(event), finishReason: event.finishReason };

@@ -235,7 +235,12 @@ describe('POST /api/coach/chat · stream outcome', () => {
   }
 
   function endEvent(text: string) {
-    const usage = { inputTokens: 10, outputTokens: 5, outputTokenDetails: { reasoningTokens: 5 } };
+    const usage = {
+      inputTokens: 10,
+      inputTokenDetails: { cacheReadTokens: 8 },
+      outputTokens: 5,
+      outputTokenDetails: { reasoningTokens: 5 },
+    };
     return {
       usage,
       finishReason: 'length',
@@ -296,7 +301,11 @@ describe('POST /api/coach/chat · stream outcome', () => {
     (await streamTextOptions()).onEnd(endEvent('Ta nuit était courte.'));
     expect(info).toHaveBeenCalledWith(
       '[coach-chat] timing',
-      expect.objectContaining({ emptyAnswer: false, servedModel: 'google/gemini-3-flash' }),
+      expect.objectContaining({
+        emptyAnswer: false,
+        servedModel: 'google/gemini-3-flash',
+        cachedInputTokens: 8,
+      }),
     );
     info.mockRestore();
   });
