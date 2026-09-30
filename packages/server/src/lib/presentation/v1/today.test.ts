@@ -84,6 +84,7 @@ describe('projectV1Today', () => {
         priority: true,
         plannedSessionId: null,
         brickLegs: null,
+        brickTransitionsSec: null,
       },
     ]);
     expect(json.signals.map((s) => s.key)).toEqual(['sleep', 'recovery']);
@@ -137,5 +138,63 @@ describe('projectV1Today', () => {
     );
     expect(json.weather).toBeNull();
     expect(json.sessions).toEqual([]);
+  });
+});
+
+describe('projectV1Today · a brick under way', () => {
+  it('sends each leg’s activity and notes, and the transitions, to the native client', () => {
+    const [session] = projectV1Today(
+      {
+        ...source(),
+        actionRow: {
+          daySummaryLines: [
+            {
+              id: 'brick-1',
+              kind: 'done',
+              primary: 'Brick · Vélo → Course',
+              secondary: '1h50 · 136 TSS · Transition 2 min 04',
+              activityType: 'TRIATHLON',
+              plannedSessionId: 'leg-bike',
+              brickLegs: [
+                {
+                  id: 'leg-bike',
+                  type: 'BIKE',
+                  title: 'Vélo',
+                  durationMin: 85,
+                  completed: true,
+                  activityId: 'act-bike',
+                  actual: { durationSec: 4_815, load: 95, rpe: 6, feeling: 'Bonnes jambes' },
+                },
+                { id: 'leg-run', type: 'RUN', title: 'Course', durationMin: 30 },
+              ],
+              brickTransitionsSec: [null],
+            },
+          ],
+        },
+      },
+      { trainingDayId: '2026-09-30', webOrigin: 'https://web.sharpit.app' },
+    ).sessions;
+
+    expect(session!.brickLegs).toEqual([
+      {
+        id: 'leg-bike',
+        type: 'BIKE',
+        title: 'Vélo',
+        durationMin: 85,
+        completed: true,
+        activityId: 'act-bike',
+        actual: { durationSec: 4_815, load: 95, rpe: 6, feeling: 'Bonnes jambes' },
+      },
+      {
+        id: 'leg-run',
+        type: 'RUN',
+        title: 'Course',
+        durationMin: 30,
+        completed: false,
+        activityId: null,
+        actual: null,
+      },
+    ]);
+    expect(session!.brickTransitionsSec).toEqual([null]);
   });
 });

@@ -228,6 +228,8 @@ export type TodayViewModel = {
       morningChoiceLabel?: string | null;
       /** Set for a brick line — render one card with each leg behind a dropdown. */
       brickLegs?: BrickLegSummary[] | null;
+      /** Set for a brick under way: seconds from each leg's end to the next's start. */
+      brickTransitionsSec?: Array<number | null> | null;
     }>;
     primaryAction?: PresentationAction | null;
     /** Bidirectional morning session adjustment — athlete must confirm. */

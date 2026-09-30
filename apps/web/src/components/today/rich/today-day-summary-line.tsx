@@ -1,5 +1,8 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
+import { TWIN_DRILL_DOWN } from '@sharpit/app/lib/today/navigation/today-twin-navigation';
+
 import { BrickOverviewCard } from '@/components/planning/brick/brick-overview-card';
 import { CompletedSessionPreview } from '@/components/today/rich/completed-session-preview';
 import { PlannedSessionPreview } from '@/components/today/rich/planned-session-preview';
@@ -17,11 +20,14 @@ function BrickDaySummaryLine({
   isPrimary: boolean;
   onOpenPlanned: (sessionId: string) => void;
 }) {
+  const router = useRouter();
   return (
     <BrickOverviewCard
       legs={line.brickLegs!}
       primary={isPrimary}
       subtitle={line.secondary ?? null}
+      transitionsSec={line.brickTransitionsSec}
+      onOpenActivity={(activityId) => router.push(TWIN_DRILL_DOWN.activity(activityId))}
       onOpenLeg={(legId) => onOpenPlanned(legId)}
     />
   );

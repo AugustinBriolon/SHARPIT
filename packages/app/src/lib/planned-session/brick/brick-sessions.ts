@@ -7,6 +7,14 @@ export type DayPlannedItem =
   | { kind: 'single'; session: ClientPlannedSession }
   | { kind: 'brick'; id: string; sessions: ClientPlannedSession[] };
 
+/** What a realized leg actually was, from its activity: the athlete's own notes included. */
+export type BrickLegActual = {
+  durationSec: number | null;
+  load: number | null;
+  rpe: number | null;
+  feeling: string | null;
+};
+
 /** One leg of a brick, reduced to what an overview card needs to render it. */
 export type BrickLegSummary = {
   id: string;
@@ -16,6 +24,16 @@ export type BrickLegSummary = {
   intensity: SessionIntensity | null;
   completed: boolean;
   activityId: string | null;
+  /** Set once the leg is done and its activity is at hand; null while it is only planned. */
+  actual?: BrickLegActual | null;
+};
+
+type BrickLegActivity = {
+  id: string;
+  duration: number | null;
+  load: number | null;
+  rpe: number | null;
+  feeling: string | null;
 };
 
 /** Sibling realized activity in the same brick (not the current one). */
@@ -26,16 +44,38 @@ export type BrickSiblingActivityLink = {
   brickOrder: number;
 };
 
-export function brickLegSummaries(sessions: readonly ClientPlannedSession[]): BrickLegSummary[] {
-  return sessions.map((s) => ({
-    id: s.id,
-    type: s.type,
-    title: s.title?.trim() || activityTypeLabels[s.type],
-    durationMin: s.durationMin,
-    intensity: s.intensity,
-    completed: Boolean(s.completed && s.activityId),
-    activityId: s.activityId,
-  }));
+/**
+ * The legs as a card lists them. With `activityFor`, a leg whose activity is known reads as done
+ * and carries what it actually was.
+ */
+export function brickLegSummaries(
+  sessions: readonly ClientPlannedSession[],
+  activityFor?: (session: ClientPlannedSession) => BrickLegActivity | null,
+): BrickLegSummary[] {
+  return sessions.map((s) => {
+    const activity = activityFor?.(s) ?? null;
+    return {
+      id: s.id,
+      type: s.type,
+      title: s.title?.trim() || activityTypeLabels[s.type],
+      durationMin: s.durationMin,
+      intensity: s.intensity,
+      completed: Boolean(activity) || Boolean(s.completed && s.activityId),
+      activityId: activity?.id ?? s.activityId,
+      ...(activityFor
+        ? {
+            actual: activity
+              ? {
+                  durationSec: activity.duration,
+                  load: activity.load,
+                  rpe: activity.rpe,
+                  feeling: activity.feeling,
+                }
+              : null,
+          }
+        : {}),
+    };
+  });
 }
 
 /**

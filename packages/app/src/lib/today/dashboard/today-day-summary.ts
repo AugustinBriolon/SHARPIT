@@ -16,6 +16,12 @@ import {
   type CompletedSessionMetric,
 } from '@sharpit/app/lib/today/rich/completed-session-metrics';
 import { buildPlannedSessionMetrics } from '@sharpit/app/lib/today/rich/planned-session-metrics';
+import {
+  brickTransitionsSec,
+  collectDoneBricks,
+  formatTransition,
+  type DoneBrick,
+} from '@sharpit/app/lib/today/dashboard/today-brick-lines';
 
 export type DaySummaryLine = {
   id: string;
@@ -29,6 +35,8 @@ export type DaySummaryLine = {
   plannedSession?: ClientPlannedSession;
   /** Set for a brick line — the athlete sees one card with each leg behind a dropdown. */
   brickLegs?: BrickLegSummary[];
+  /** Set for a brick under way: seconds from each leg's end to the next's start, null if unknown. */
+  brickTransitionsSec?: Array<number | null>;
 };
 
 export type TodayDaySummary = {
@@ -71,8 +79,8 @@ function filterTodayPlannedSessions(
     .sort(comparePlannedSessionsBySchedule);
 }
 
-function buildDoneLines(activities: ClientActivity[]): DaySummaryLine[] {
-  return activities.map((a) => ({
+function buildDoneActivityLine(a: ClientActivity): DaySummaryLine {
+  return {
     id: a.id,
     kind: 'done' as const,
     activityType: a.type,
@@ -89,7 +97,62 @@ function buildDoneLines(activities: ClientActivity[]): DaySummaryLine[] {
       hikeMetrics: a.hikeMetrics,
       strengthSets: a.strengthSets ?? [],
     }),
-  }));
+  };
+}
+
+function sumOrNull(values: Array<number | null | undefined>): number | null {
+  const set = values.filter((v): v is number => isSet(v));
+  return set.length ? set.reduce((sum, v) => sum + v, 0) : null;
+}
+
+/** One line for a brick under way: its legs beside their activities, and its transitions. */
+function buildDoneBrickLine(brick: DoneBrick): DaySummaryLine {
+  const done = brick.legs.flatMap((leg) => (leg.activity ? [leg.activity] : []));
+  const pending = brick.legs.filter((leg) => !leg.activity);
+  const transitions = brickTransitionsSec(brick.legs);
+  const firstTransition = transitions.find(isSet);
+  const durationSec = sumOrNull(done.map((a) => a.duration));
+  const load = sumOrNull(done.map((a) => a.load));
+  return {
+    id: brick.brickGroupId,
+    kind: 'done',
+    activityType: 'TRIATHLON',
+    primary: `Brick · ${brick.legs.map((leg) => activityTypeLabels[leg.session.type]).join(' → ')}`,
+    secondary: [
+      durationSec ? formatDuration(durationSec) : null,
+      isSet(load) ? `${Math.round(load)} TSS` : null,
+      isSet(firstTransition) ? `Transition ${formatTransition(firstTransition)}` : null,
+      pending.length
+        ? `${pending.map((leg) => activityTypeLabels[leg.session.type]).join(', ')} à faire`
+        : null,
+    ]
+      .filter(Boolean)
+      .join(' · '),
+    // First leg backs the deep-link id; the card itself renders every leg.
+    plannedSession: brick.legs[0]!.session,
+    brickLegs: brickLegSummaries(
+      brick.legs.map((leg) => leg.session),
+      (session) => brick.legs.find((leg) => leg.session.id === session.id)?.activity ?? null,
+    ),
+    brickTransitionsSec: transitions,
+  };
+}
+
+/** Done sessions in the day's order: activities alone, and bricks as one line each. */
+function buildDoneLines(
+  activities: ClientActivity[],
+  bricks: readonly DoneBrick[],
+): DaySummaryLine[] {
+  const inBrick = new Set(
+    bricks.flatMap((brick) => brick.legs.flatMap((leg) => (leg.activity ? [leg.activity.id] : []))),
+  );
+  const items = [
+    ...activities
+      .filter((a) => !inBrick.has(a.id))
+      .map((a) => ({ at: new Date(a.date).getTime(), line: buildDoneActivityLine(a) })),
+    ...bricks.map((brick) => ({ at: brick.startedAt.getTime(), line: buildDoneBrickLine(brick) })),
+  ];
+  return items.sort((a, b) => a.at - b.at).map((item) => item.line);
 }
 
 /**
@@ -106,8 +169,13 @@ export function buildTodayDaySummary(
   const refDay = startOfDay(date);
   const todayActivities = filterTodayActivities(activities, refDay);
   const linkedPlannedIds = resolveLinkedPlannedIds(activities, plannedSessions);
-  const todayPlanned = filterTodayPlannedSessions(plannedSessions, refDay, linkedPlannedIds);
-  const doneLines = buildDoneLines(todayActivities);
+  const doneBricks = collectDoneBricks(todayActivities, plannedSessions);
+  const bricksUnderWay = new Set(doneBricks.map((brick) => brick.brickGroupId));
+  // A brick under way is one line with its done legs: its remaining legs are not listed apart.
+  const todayPlanned = filterTodayPlannedSessions(plannedSessions, refDay, linkedPlannedIds).filter(
+    (s) => !s.brickGroupId || !bricksUnderWay.has(s.brickGroupId),
+  );
+  const doneLines = buildDoneLines(todayActivities, doneBricks);
   const plannedLines = buildPlannedLines(todayPlanned, goalTitleById);
   const lines = [...doneLines, ...plannedLines];
 

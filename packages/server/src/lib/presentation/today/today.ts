@@ -265,7 +265,8 @@ function buildTodayLimitingSection(input: {
 function daySummaryLineHref(
   line: ReturnType<typeof buildTodayDaySummary>['lines'][number],
 ): string {
-  if (line.kind === 'done') {
+  // A brick line's id is its group: it opens on its first leg, never as an activity.
+  if (line.kind === 'done' && !line.brickLegs?.length) {
     return TWIN_DRILL_DOWN.activity(line.id);
   }
   return TWIN_DRILL_DOWN.plannedSession(line.plannedSession?.id ?? line.id);
@@ -312,6 +313,7 @@ function mapDaySummaryLineForView(
     metrics: daySummaryLineMetrics(line),
     morningChoiceLabel: morningChoiceForLine(plannedId, sessionChoice),
     brickLegs: line.brickLegs ?? null,
+    brickTransitionsSec: line.brickTransitionsSec ?? null,
   };
 }
 

@@ -194,3 +194,106 @@ describe('buildTodayDaySummary', () => {
     expect(summary.lines.map((line) => line.id)).toEqual(['morning', 'evening', 'untimed']);
   });
 });
+
+describe('buildTodayDaySummary · a brick under way', () => {
+  const bikeLeg = planned({
+    id: 'leg-bike',
+    type: 'BIKE',
+    title: 'Vélo',
+    brickGroupId: 'brick-1',
+    brickOrder: 0,
+  });
+  const runLeg = planned({
+    id: 'leg-run',
+    type: 'RUN',
+    title: 'Course',
+    brickGroupId: 'brick-1',
+    brickOrder: 1,
+    durationMin: 30,
+  });
+  const legInfo = (leg: ClientPlannedSession) => ({
+    id: leg.id,
+    title: leg.title,
+    type: leg.type,
+    brickGroupId: 'brick-1',
+    brickOrder: leg.brickOrder,
+  });
+  const bike = activity({
+    id: 'act-bike',
+    type: 'BIKE',
+    date: new Date('2026-07-03T12:23:34'),
+    duration: 4_815,
+    load: 95,
+    rpe: 6,
+    feeling: 'Bonnes jambes',
+    plannedSession: legInfo(bikeLeg),
+  } as never);
+  const run = activity({
+    id: 'act-run',
+    type: 'RUN',
+    date: new Date('2026-07-03T13:45:53'),
+    duration: 1_815,
+    load: 41,
+    rpe: 8,
+    feeling: 'Jambes lourdes au début',
+    plannedSession: legInfo(runLeg),
+  } as never);
+
+  it('keeps the brick as one line, each leg beside its activity and notes', () => {
+    const summary = buildTodayDaySummary(
+      TODAY,
+      [bike, run],
+      [
+        { ...bikeLeg, activityId: 'act-bike', completed: true },
+        { ...runLeg, activityId: 'act-run', completed: true },
+      ],
+    );
+
+    expect(summary.lines).toHaveLength(1);
+    const [line] = summary.lines;
+    expect(line).toMatchObject({ id: 'brick-1', kind: 'done', primary: 'Brick · Vélo → Course' });
+    expect(line!.secondary).toBe('1h50 · 136 TSS · Transition 2 min 04');
+    expect(line!.brickTransitionsSec).toEqual([124]);
+    expect(line!.brickLegs).toEqual([
+      expect.objectContaining({
+        id: 'leg-bike',
+        completed: true,
+        activityId: 'act-bike',
+        actual: { durationSec: 4_815, load: 95, rpe: 6, feeling: 'Bonnes jambes' },
+      }),
+      expect.objectContaining({
+        id: 'leg-run',
+        completed: true,
+        activityId: 'act-run',
+        actual: { durationSec: 1_815, load: 41, rpe: 8, feeling: 'Jambes lourdes au début' },
+      }),
+    ]);
+  });
+
+  it('keeps a half-done brick together, its remaining leg marked to do', () => {
+    const summary = buildTodayDaySummary(
+      TODAY,
+      [bike],
+      [{ ...bikeLeg, activityId: 'act-bike', completed: true }, runLeg],
+    );
+
+    expect(summary.lines).toHaveLength(1);
+    expect(summary.lines[0]!.secondary).toContain('Course à faire');
+    expect(summary.lines[0]!.brickTransitionsSec).toEqual([null]);
+    expect(summary.lines[0]!.brickLegs?.[1]).toMatchObject({ completed: false, actual: null });
+  });
+
+  it('places the brick among the day’s other sessions by its start', () => {
+    const morningRun = activity({ id: 'act-morning', date: new Date('2026-07-03T07:00:00') });
+    const summary = buildTodayDaySummary(
+      TODAY,
+      [run, morningRun, bike],
+      [
+        { ...bikeLeg, activityId: 'act-bike', completed: true },
+        { ...runLeg, activityId: 'act-run', completed: true },
+      ],
+    );
+
+    expect(summary.lines.map((line) => line.id)).toEqual(['act-morning', 'brick-1']);
+  });
+});

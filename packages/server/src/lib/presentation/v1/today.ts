@@ -45,9 +45,22 @@ export type V1TodaySource = {
       activityType?: ActivityType;
       plannedSessionId?: string | null;
       metrics?: Array<{ label: string; value: string; unit: string }> | null;
-      brickLegs?: ReadonlyArray<V1TodayBrickLeg> | null;
+      brickLegs?: ReadonlyArray<BrickLegSource> | null;
+      brickTransitionsSec?: ReadonlyArray<number | null> | null;
     }>;
   };
+};
+
+/** A leg as the view model holds it: the planned leg, and what it was once done. */
+type BrickLegSource = V1TodayBrickLeg & {
+  completed?: boolean;
+  activityId?: string | null;
+  actual?: {
+    durationSec: number | null;
+    load: number | null;
+    rpe: number | null;
+    feeling: string | null;
+  } | null;
 };
 
 /** One leg of a brick line, in the order it is done. */
@@ -56,6 +69,17 @@ export type V1TodayBrickLeg = {
   type: ActivityType;
   title: string;
   durationMin: number | null;
+  /** Added fields — optional, so an app that does not know them still decodes the leg. */
+  completed?: boolean;
+  /** The activity that realized the leg, to open it. */
+  activityId?: string | null;
+  /** What the leg actually was, with the athlete's notes; null while only planned. */
+  actual?: {
+    durationSec: number | null;
+    load: number | null;
+    rpe: number | null;
+    feeling: string | null;
+  } | null;
 };
 
 export type V1TodayResponse = {
@@ -102,6 +126,8 @@ export type V1TodayResponse = {
      * than its first leg alone. Null on any other line.
      */
     brickLegs: V1TodayBrickLeg[] | null;
+    /** Set on a brick under way: seconds from each leg's end to the next's start (T2, …). */
+    brickTransitionsSec?: Array<number | null> | null;
   }>;
   signals: Array<{
     key: 'sleep' | 'recovery' | 'effort' | 'adaptation';
@@ -209,12 +235,16 @@ function projectSessions(
     priority: index === 0,
     plannedSessionId: line.plannedSessionId ?? null,
     brickLegs:
-      line.brickLegs?.map(({ id, type, title, durationMin }) => ({
+      line.brickLegs?.map(({ id, type, title, durationMin, completed, activityId, actual }) => ({
         id,
         type,
         title,
         durationMin,
+        completed: completed ?? false,
+        activityId: activityId ?? null,
+        actual: actual ?? null,
       })) ?? null,
+    brickTransitionsSec: line.brickTransitionsSec ? [...line.brickTransitionsSec] : null,
   }));
 }
 
@@ -307,6 +337,7 @@ function sourceFromViewModel(vm: TodayViewModel): V1TodaySource {
         plannedSessionId: line.plannedSessionId,
         metrics: line.metrics,
         brickLegs: line.brickLegs,
+        brickTransitionsSec: line.brickTransitionsSec,
       })),
     },
   };
