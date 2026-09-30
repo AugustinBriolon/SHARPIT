@@ -507,6 +507,8 @@ function mapUpcomingPlanned(
     durationMin: planned.durationMin,
     startTime: planned.startTime ?? null,
     locationLabel: planned.locationLabel ?? null,
+    brickGroupId: planned.brickGroupId ?? null,
+    brickOrder: planned.brickOrder ?? null,
   };
 }
 

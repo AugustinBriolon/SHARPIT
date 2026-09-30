@@ -516,14 +516,48 @@ function formatRealizedSessionsSection(
   ];
 }
 
+type UpcomingPlanned = CoachContext['upcomingPlanned'][number];
+
+/**
+ * « brick B1 · jambe 1/2 » for each leg of a brick, so the coach sees the legs as one session:
+ * listed alone, they read as unrelated sessions it rebuilt rather than moved. Groups are numbered
+ * in their order of appearance.
+ */
+function brickLabels(upcomingPlanned: readonly UpcomingPlanned[]): Map<string, string> {
+  const legsByGroup = new Map<string, UpcomingPlanned[]>();
+  for (const session of upcomingPlanned) {
+    if (session.brickGroupId) {
+      legsByGroup.set(session.brickGroupId, [
+        ...(legsByGroup.get(session.brickGroupId) ?? []),
+        session,
+      ]);
+    }
+  }
+  const labels = new Map<string, string>();
+  [...legsByGroup.values()].forEach((legs, groupIndex) => {
+    legs.forEach((leg, legIndex) => {
+      const position = (leg.brickOrder ?? legIndex) + 1;
+      labels.set(leg.id, `brick B${groupIndex + 1} · jambe ${position}/${legs.length}`);
+    });
+  });
+  return labels;
+}
+
 function formatUpcomingPlannedSection(upcomingPlanned: CoachContext['upcomingPlanned']): string[] {
   if (!upcomingPlanned.length) {
     return [];
   }
+  const bricks = brickLabels(upcomingPlanned);
   return [
     '\n## Déjà planifié (ne pas dupliquer — utiliser les id ci-dessous)',
+    ...(bricks.size
+      ? [
+          'Les jambes d’un même brick forment une seule séance : pour le déplacer, change la date d’une jambe avec updatePlannedSession, toutes suivent.',
+        ]
+      : []),
     ...upcomingPlanned.map((p) => {
       const extras = [
+        bricks.get(p.id) ? `(${bricks.get(p.id)})` : null,
         p.startTime ? `à ${p.startTime}` : null,
         p.intensity ? `[${p.intensity}]` : null,
         p.durationMin ? `${p.durationMin} min` : null,

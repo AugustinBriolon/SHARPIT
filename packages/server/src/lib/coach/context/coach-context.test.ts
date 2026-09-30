@@ -92,6 +92,8 @@ function minimalContext(overrides: Partial<CoachContext> = {}): CoachContext {
         durationMin: 50,
         startTime: '07:00',
         locationLabel: null,
+        brickGroupId: null,
+        brickOrder: null,
       },
     ],
     travel: [],
@@ -296,5 +298,44 @@ describe('physical context', () => {
     const [zone] = sensitiveZonesFrom(physical);
     expect(zone?.region).toBe('Genou');
     expect(zone?.groups).toEqual(['upper legs', 'lower legs']);
+  });
+});
+
+describe('formatCoachContext bricks', () => {
+  const leg = (id: string, type: string, brickOrder: number) => ({
+    id,
+    date: 'jeu. 1 oct.',
+    dateIso: '2026-10-01',
+    type,
+    title: `${type} enchaîné`,
+    intensity: 'TEMPO' as const,
+    durationMin: 40,
+    startTime: '12:00',
+    locationLabel: null,
+    brickGroupId: 'group-1',
+    brickOrder,
+  });
+
+  it('marks the legs of a brick as one session and says how to move it', () => {
+    const context = {
+      ...minimalContext(),
+      upcomingPlanned: [leg('ps_bike', 'Vélo', 0), leg('ps_run', 'Course', 1)],
+    };
+    const text = formatCoachContext(context);
+
+    expect(text).toContain(
+      'id=ps_bike · 2026-10-01 (jeu. 1 oct.) · Vélo Vélo enchaîné (brick B1 · jambe 1/2)',
+    );
+    expect(text).toContain(
+      'id=ps_run · 2026-10-01 (jeu. 1 oct.) · Course Course enchaîné (brick B1 · jambe 2/2)',
+    );
+    expect(text).toContain(
+      'pour le déplacer, change la date d’une jambe avec updatePlannedSession',
+    );
+  });
+
+  it('adds nothing about bricks when there is none', () => {
+    expect(formatCoachContext(minimalContext())).not.toContain('brick B1');
+    expect(formatCoachContext(minimalContext())).not.toContain('Les jambes d’un même brick');
   });
 });

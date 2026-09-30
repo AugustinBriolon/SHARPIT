@@ -114,6 +114,7 @@ export const plannedSessionCoachSelect = {
   exposureSetting: true,
   locationLabel: true,
   brickGroupId: true,
+  brickOrder: true,
   goalId: true,
 } satisfies Prisma.PlannedSessionSelect;
 
