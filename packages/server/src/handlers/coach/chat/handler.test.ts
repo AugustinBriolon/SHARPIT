@@ -587,3 +587,58 @@ describe('POST /api/coach/chat · server-owned conversation', () => {
     expect(saveConversationMessages).not.toHaveBeenCalled();
   });
 });
+
+describe('POST /api/coach/chat · continuation after an approval', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('continues the coach message under its own id rather than starting a new one', async () => {
+    const ai = await import('ai');
+    vi.mocked(ai.streamText).mockImplementation(((options: {
+      onEnd: (end: Record<string, unknown>) => void;
+    }) => {
+      options.onEnd({
+        usage: {},
+        finishReason: 'stop',
+        steps: [{ text: "C'est fait.", toolCalls: [] }],
+        finalStep: { response: { modelId: 'model' } },
+      });
+      return { stream: 'model' };
+    }) as never);
+    vi.mocked(ai.toUIMessageStream).mockImplementation(
+      (() =>
+        new ReadableStream({
+          start(controller) {
+            controller.enqueue({ type: 'start' });
+            controller.close();
+          },
+        })) as never,
+    );
+    vi.spyOn(console, 'info').mockImplementation(() => undefined);
+
+    const { POST } = await importRoute();
+    await POST(
+      new Request('http://localhost/api/coach/chat', {
+        method: 'POST',
+        body: JSON.stringify({
+          messages: [
+            { id: 'u1', role: 'user', parts: [{ type: 'text', text: 'Décale jeudi' }] },
+            { id: 'a1', role: 'assistant', parts: [{ type: 'text', text: 'Je propose :' }] },
+          ],
+        }),
+      }),
+    );
+    const [call] = vi.mocked(ai.createUIMessageStreamResponse).mock.calls;
+    const reader = (call?.[0] as { stream: ReadableStream }).stream.getReader();
+    const { value: start } = await reader.read();
+
+    // A new id here made the web store every continuation as a separate coach message.
+    expect(start).toMatchObject({ type: 'start', messageId: 'a1' });
+
+    vi.mocked(ai.streamText).mockImplementation((() => ({
+      stream: new ReadableStream(),
+    })) as never);
+    vi.mocked(ai.toUIMessageStream).mockImplementation((() => new ReadableStream()) as never);
+  });
+});
