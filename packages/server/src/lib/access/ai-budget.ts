@@ -76,20 +76,21 @@ export async function ensureFreeAiBudget(athleteId: string): Promise<AiBudgetSta
     return { allowed: true, isPro: true, warning: false, retryAfterSeconds: null };
   }
 
-  const profile = await prisma.athleteProfile.findUnique({
-    where: { id: athleteId },
-    select: { tier: true },
-  });
+  // Both reads at once: the sum is wasted for a Pro athlete, but it is cheap, and a Free athlete
+  // (the one this check exists for) no longer waits for two round trips in a row.
+  const since = subHours(new Date(), BUDGET_WINDOW_HOURS);
+  const [profile, usage] = await Promise.all([
+    prisma.athleteProfile.findUnique({ where: { id: athleteId }, select: { tier: true } }),
+    prisma.aiUsageEvent.aggregate({
+      where: { athleteId, feature: 'coach', createdAt: { gte: since } },
+      _sum: { totalTokens: true },
+    }),
+  ]);
   const isPro = hasProAccess(profile?.tier ?? 'FREE');
   if (isPro) {
     return { allowed: true, isPro: true, warning: false, retryAfterSeconds: null };
   }
 
-  const since = subHours(new Date(), BUDGET_WINDOW_HOURS);
-  const usage = await prisma.aiUsageEvent.aggregate({
-    where: { athleteId, feature: 'coach', createdAt: { gte: since } },
-    _sum: { totalTokens: true },
-  });
   const usedRecently = usage._sum.totalTokens ?? 0;
   const allowed = usedRecently < FREE_DAILY_TOKEN_BUDGET;
 

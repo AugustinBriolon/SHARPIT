@@ -432,3 +432,45 @@ describe('POST /api/coach/chat · empty answer retry', () => {
     info.mockRestore();
   });
 });
+
+describe('POST /api/coach/chat · guard', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('starts the consent, rate limit and budget reads together', async () => {
+    const { requireAiProcessingConsent } =
+      await import('@sharpit/server/lib/privacy/consent-store');
+    const { checkRateLimit } = await import('@sharpit/server/lib/rate-limit');
+    const { ensureFreeAiBudget } = await import('@sharpit/server/lib/access/ai-budget');
+    let grantConsent: (value: null) => void = () => undefined;
+    vi.mocked(requireAiProcessingConsent).mockReturnValueOnce(
+      new Promise((resolve) => {
+        grantConsent = resolve;
+      }),
+    );
+
+    const { POST } = await importRoute();
+    const pending = POST(chatRequest());
+    await vi.waitFor(() => expect(ensureFreeAiBudget).toHaveBeenCalled());
+    expect(checkRateLimit).toHaveBeenCalled();
+
+    grantConsent(null);
+    expect((await pending).status).toBe(200);
+  });
+
+  it('answers a missing consent first, even when the other checks refuse too', async () => {
+    const { requireAiProcessingConsent } =
+      await import('@sharpit/server/lib/privacy/consent-store');
+    const { checkRateLimit } = await import('@sharpit/server/lib/rate-limit');
+    const { ensureFreeAiBudget } = await import('@sharpit/server/lib/access/ai-budget');
+    vi.mocked(requireAiProcessingConsent).mockResolvedValueOnce(
+      new Response(null, { status: 403 }) as never,
+    );
+    vi.mocked(checkRateLimit).mockResolvedValueOnce({ ok: false } as never);
+    vi.mocked(ensureFreeAiBudget).mockResolvedValueOnce({ allowed: false } as never);
+
+    const { POST } = await importRoute();
+    expect((await POST(chatRequest())).status).toBe(403);
+  });
+});

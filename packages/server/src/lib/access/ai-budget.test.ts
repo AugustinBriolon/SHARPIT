@@ -43,16 +43,17 @@ describe('ensureFreeAiBudget', () => {
     expect(aggregateMock).not.toHaveBeenCalled();
   });
 
-  it('is always allowed for Pro athletes, without checking usage', async () => {
+  it('is always allowed for Pro athletes, whatever their usage', async () => {
     vi.stubEnv('NODE_ENV', 'production');
     vi.resetModules();
     findUniqueMock.mockResolvedValue({ tier: 'PRO' });
+    aggregateMock.mockResolvedValue({ _sum: { totalTokens: 10_000_000 } });
     const { ensureFreeAiBudget } = await import('./ai-budget');
 
     const status = await ensureFreeAiBudget('athlete-1');
 
     expect(status).toEqual({ allowed: true, isPro: true, warning: false, retryAfterSeconds: null });
-    expect(aggregateMock).not.toHaveBeenCalled();
+    expect(findManyMock).not.toHaveBeenCalled();
   });
 
   it('allows a FREE athlete under the rolling 24h budget', async () => {

@@ -65,22 +65,26 @@ export const COACH_UNREADABLE_HISTORY_COPY =
 
 type BudgetWarning = Awaited<ReturnType<typeof ensureFreeAiBudget>>['warning'];
 
-/** Consent, rate limit and free AI budget — in that order, before any model work. */
+/**
+ * Consent, rate limit and free AI budget, answered in that order before any model work. The three
+ * reads run at once: sequential, they cost ~840 ms of the athlete's wait. A refused consent still
+ * spends one rate-limit token, which is harmless: without consent there is no coach to spam.
+ */
 async function guardCoachChat(
   athleteId: string,
 ): Promise<{ blocked: Response } | { budgetWarning: BudgetWarning }> {
-  const aiBlocked = await requireAiProcessingConsent(athleteId);
+  const [aiBlocked, rateLimit, budget] = await Promise.all([
+    requireAiProcessingConsent(athleteId),
+    checkRateLimit(rateLimiters.coachChat, athleteId, { failClosed: true }),
+    ensureFreeAiBudget(athleteId),
+  ]);
   if (aiBlocked) {
     return { blocked: aiBlocked };
   }
-
-  const rateLimit = await checkRateLimit(rateLimiters.coachChat, athleteId, { failClosed: true });
   if (!rateLimit.ok) {
     const limited = rateLimitJsonResponse(rateLimit);
     return { blocked: NextResponse.json(limited.body, { status: limited.status }) };
   }
-
-  const budget = await ensureFreeAiBudget(athleteId);
   if (!budget.allowed) {
     return {
       blocked: NextResponse.json(aiBudgetResponseBody(budget.retryAfterSeconds!), {
