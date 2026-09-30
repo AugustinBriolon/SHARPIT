@@ -295,3 +295,43 @@ describe('POST /api/coach/chat · stream outcome', () => {
     info.mockRestore();
   });
 });
+
+describe('POST /api/coach/chat · conversation sent by the client', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('refuses a malformed conversation before any model call', async () => {
+    const { streamText } = await import('ai');
+    const { POST, COACH_UNREADABLE_HISTORY_COPY } = await importRoute();
+
+    const response = await POST(
+      new Request('http://localhost/api/coach/chat', {
+        method: 'POST',
+        body: JSON.stringify({ messages: [{ id: 'm-1', role: 'user' }] }),
+      }),
+    );
+
+    expect(response.status).toBe(400);
+    expect(await response.json()).toEqual({ error: COACH_UNREADABLE_HISTORY_COPY });
+    expect(streamText).not.toHaveBeenCalled();
+  });
+
+  it('refuses a body that is not JSON', async () => {
+    const { POST } = await importRoute();
+    const response = await POST(
+      new Request('http://localhost/api/coach/chat', { method: 'POST', body: 'not json' }),
+    );
+    expect(response.status).toBe(400);
+  });
+
+  it('drops tool calls a cut stream left without result', async () => {
+    const { convertToModelMessages } = await import('ai');
+    const { POST } = await importRoute();
+    await POST(chatRequest());
+
+    expect(convertToModelMessages).toHaveBeenCalledWith(expect.any(Array), {
+      ignoreIncompleteToolCalls: true,
+    });
+  });
+});

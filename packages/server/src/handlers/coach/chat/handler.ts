@@ -44,10 +44,15 @@ import {
 } from '@sharpit/server/lib/coach/chat/coach-request-scope';
 import { buildCoachSystemPrompt } from '@sharpit/server/lib/coach/chat/coach-system-prompt';
 import { coachChatGenerationSettings } from '@sharpit/server/lib/coach/chat/coach-chat-generation';
+import { readCoachChatHistory } from '@sharpit/server/lib/coach/chat/coach-chat-history';
 
 /** What the athlete reads when the answer breaks mid-stream. */
 export const COACH_STREAM_ERROR_COPY =
   "Le coach n'a pas pu terminer sa réponse. Réessaie dans un instant.";
+
+/** What the athlete reads when the conversation sent is malformed. */
+export const COACH_UNREADABLE_HISTORY_COPY =
+  'Cette conversation ne peut pas être relue par le coach. Ouvre une nouvelle conversation.';
 
 type BudgetWarning = Awaited<ReturnType<typeof ensureFreeAiBudget>>['warning'];
 
@@ -92,7 +97,9 @@ async function streamCoachReply(input: {
   const result = streamText({
     model: COACH_MODEL,
     system: input.system,
-    messages: await convertToModelMessages(input.messages),
+    // A tool call a stream left without result (a cut connection) is dropped rather than sent:
+    // the provider would reject the whole request.
+    messages: await convertToModelMessages(input.messages, { ignoreIncompleteToolCalls: true }),
     tools: createCoachTools(athleteId, { practicedSports: input.practicedSports }),
     ...coachChatGenerationSettings(scope),
     telemetry: {
@@ -155,7 +162,11 @@ export async function POST(req: Request) {
 
   const timing = startCoachChatTiming();
   const athleteId = await getCurrentAthleteId();
-  const { messages } = (await req.json()) as { messages: UIMessage[] };
+  const history = await readCoachChatHistory(await req.json().catch(() => null));
+  if (!history.ok) {
+    return NextResponse.json({ error: COACH_UNREADABLE_HISTORY_COPY }, { status: 400 });
+  }
+  const { messages } = history;
 
   // Discuss metadata is client-supplied: entitlements are settled here, before
   // any kind-specific data is read or any model call is made.
