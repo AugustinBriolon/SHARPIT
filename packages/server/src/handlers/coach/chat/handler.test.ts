@@ -1,4 +1,4 @@
-import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('ai', async (importOriginal) => {
   const actual = await importOriginal<typeof import('ai')>();
@@ -15,6 +15,7 @@ vi.mock('ai', async (importOriginal) => {
 
 vi.mock('@sharpit/server/lib/ai', () => ({
   COACH_MODEL: 'mock-model',
+  COACH_EMPTY_ANSWER_RETRY_MODEL: 'mock-retry-model',
   COACH_MAX_OUTPUT_TOKENS: { conversational: 1 },
   COACH_REASONING_LEVEL: { conversational: 'low' },
   coachGatewayOptions: {},
@@ -333,5 +334,101 @@ describe('POST /api/coach/chat · conversation sent by the client', () => {
     expect(convertToModelMessages).toHaveBeenCalledWith(expect.any(Array), {
       ignoreIncompleteToolCalls: true,
     });
+  });
+});
+
+describe('POST /api/coach/chat · empty answer retry', () => {
+  type StreamOptions = {
+    model: string;
+    reasoning: string;
+    onEnd: (end: Record<string, unknown>) => void;
+  };
+
+  function endWith(text: string) {
+    return {
+      usage: { inputTokens: 10, outputTokens: 5 },
+      finishReason: 'stop',
+      rawFinishReason: undefined,
+      steps: [{ text, toolCalls: [] }],
+      finalStep: { response: { modelId: 'model' } },
+    };
+  }
+
+  /** Each model answers with the given text; its UI chunks record the options they were sent with. */
+  async function givenAnswers(textByModel: Record<string, string>) {
+    const ai = await import('ai');
+    vi.mocked(ai.streamText).mockImplementation(((options: StreamOptions) => {
+      options.onEnd(endWith(textByModel[options.model] ?? ''));
+      return { stream: options.model };
+    }) as never);
+    vi.mocked(ai.toUIMessageStream).mockImplementation(
+      ((options: { stream: string; sendStart?: boolean; sendFinish?: boolean }) =>
+        new ReadableStream({
+          start(controller) {
+            controller.enqueue({
+              type: 'data-attempt',
+              data: { model: options.stream, start: options.sendStart, finish: options.sendFinish },
+            });
+            controller.close();
+          },
+        })) as never,
+    );
+  }
+
+  async function chunksSent(): Promise<unknown[]> {
+    const { createUIMessageStreamResponse } = await import('ai');
+    const [call] = vi.mocked(createUIMessageStreamResponse).mock.calls;
+    const reader = (call?.[0] as { stream: ReadableStream }).stream.getReader();
+    const chunks: unknown[] = [];
+    for (let next = await reader.read(); !next.done; next = await reader.read()) {
+      chunks.push(next.value);
+    }
+    return chunks;
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  afterEach(async () => {
+    const ai = await import('ai');
+    vi.mocked(ai.streamText).mockImplementation((() => ({
+      stream: new ReadableStream(),
+    })) as never);
+    vi.mocked(ai.toUIMessageStream).mockImplementation((() => new ReadableStream()) as never);
+  });
+
+  it('asks the retry model, without reasoning, when the answer comes back empty', async () => {
+    await givenAnswers({ 'mock-model': '', 'mock-retry-model': 'Nuit courte.' });
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const { POST } = await importRoute();
+    await POST(chatRequest());
+
+    expect(await chunksSent()).toEqual([
+      { type: 'data-attempt', data: { model: 'mock-model', start: undefined, finish: false } },
+      {
+        type: 'data-attempt',
+        data: { model: 'mock-retry-model', start: false, finish: undefined },
+      },
+    ]);
+    const { streamText } = await import('ai');
+    const retry = vi.mocked(streamText).mock.calls[1]?.[0] as unknown as StreamOptions;
+    expect(retry).toMatchObject({ model: 'mock-retry-model', reasoning: 'none' });
+    warn.mockRestore();
+  });
+
+  it('closes the turn itself when the first answer has text', async () => {
+    await givenAnswers({ 'mock-model': 'Nuit courte.' });
+    const info = vi.spyOn(console, 'info').mockImplementation(() => undefined);
+    const { POST } = await importRoute();
+    await POST(chatRequest());
+
+    expect(await chunksSent()).toEqual([
+      { type: 'data-attempt', data: { model: 'mock-model', start: undefined, finish: false } },
+      { type: 'finish', finishReason: 'stop' },
+    ]);
+    const { streamText } = await import('ai');
+    expect(streamText).toHaveBeenCalledTimes(1);
+    info.mockRestore();
   });
 });

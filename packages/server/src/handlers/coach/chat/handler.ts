@@ -1,12 +1,21 @@
 import {
   convertToModelMessages,
+  createUIMessageStream,
   createUIMessageStreamResponse,
   streamText,
   toUIMessageStream,
+  type FinishReason,
+  type TextStreamPart,
+  type ToolSet,
   type UIMessage,
+  type UIMessageStreamWriter,
 } from 'ai';
 import { NextResponse } from 'next/server';
-import { COACH_MODEL, isCoachConfigured } from '@sharpit/server/lib/ai';
+import {
+  COACH_EMPTY_ANSWER_RETRY_MODEL,
+  COACH_MODEL,
+  isCoachConfigured,
+} from '@sharpit/server/lib/ai';
 import type { buildCoachContext } from '@sharpit/server/lib/coach/context/coach-context';
 import { createCoachTools } from '@sharpit/server/lib/coach/chat/tools/coach-tools';
 import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
@@ -83,7 +92,7 @@ async function guardCoachChat(
   return { budgetWarning: budget.warning };
 }
 
-async function streamCoachReply(input: {
+type CoachReplyInput = {
   athleteId: string;
   system: string;
   messages: UIMessage[];
@@ -91,58 +100,126 @@ async function streamCoachReply(input: {
   budgetWarning: BudgetWarning;
   timing: CoachChatTiming;
   scope: CoachRequestScope;
-}): Promise<Response> {
-  const { timing, scope } = input;
-  const { athleteId } = input;
-  const result = streamText({
-    model: COACH_MODEL,
-    system: input.system,
-    // A tool call a stream left without result (a cut connection) is dropped rather than sent:
-    // the provider would reject the whole request.
-    messages: await convertToModelMessages(input.messages, { ignoreIncompleteToolCalls: true }),
-    tools: createCoachTools(athleteId, { practicedSports: input.practicedSports }),
-    ...coachChatGenerationSettings(scope),
-    telemetry: {
-      functionId: 'coach-chat',
-    },
-    onChunk: ({ chunk }) => {
-      if (chunk.type === 'text-delta') {
-        timing.firstText();
-      }
-    },
-    onError: ({ error }) => {
-      console.error('[coach-chat] stream error', {
-        ...describeCoachChatError(error),
-        ...timing.summary(),
+};
+
+/** One model call of a coach turn: the first, or the retry of an answer that came back empty. */
+type CoachAttempt = {
+  name: 'first' | 'empty-answer-retry';
+  model: string;
+  reasoning: CoachRequestScope['reasoning'] | 'none';
+};
+
+type CoachAttemptEnd = { outcome: CoachChatOutcome; finishReason: FinishReason };
+
+/**
+ * A reasoning model can spend its whole turn thinking and write nothing: measured in production,
+ * 13 s for 1 024 reasoning tokens and no text. The athlete then faced an empty bubble. The retry
+ * asks another model, without reasoning, once; its facts are all in the prompt.
+ */
+const EMPTY_ANSWER_RETRY: CoachAttempt = {
+  name: 'empty-answer-retry',
+  model: COACH_EMPTY_ANSWER_RETRY_MODEL,
+  reasoning: 'none',
+};
+
+async function streamCoachReply(input: CoachReplyInput): Promise<Response> {
+  const generate = await coachGenerator(input);
+  const stream = createUIMessageStream({
+    onError: () => COACH_STREAM_ERROR_COPY,
+    execute: async ({ writer }) => {
+      const first = generate({
+        name: 'first',
+        model: COACH_MODEL,
+        reasoning: input.scope.reasoning,
       });
-    },
-    onAbort: () => {
-      console.info('[coach-chat] aborted', timing.summary());
-    },
-    onEnd: (end) => {
-      const { usage, steps } = end;
-      void recordAiUsage(athleteId, 'coach', usage);
-      timing.note('steps', steps.length);
-      timing.note('inputTokens', usage.inputTokens ?? 0);
-      timing.note('outputTokens', usage.outputTokens ?? 0);
-      timing.note('reasoningTokens', usage.outputTokenDetails?.reasoningTokens ?? 0);
-      logCoachChatEnd(describeCoachChatOutcome(end), timing);
+      await pipeAttempt(writer, first.stream, { sendFinish: false });
+      const end = first.end();
+      if (end?.outcome.emptyAnswer) {
+        await pipeAttempt(writer, generate(EMPTY_ANSWER_RETRY).stream, { sendStart: false });
+        return;
+      }
+      writer.write({ type: 'finish', finishReason: end?.finishReason });
     },
   });
-
   return createUIMessageStreamResponse({
-    stream: toUIMessageStream({
-      stream: result.stream,
-      // The SDK default is an English « An error occurred. »; the cause is in the logs above.
-      onError: () => COACH_STREAM_ERROR_COPY,
-    }),
+    stream,
     headers: withAiBudgetWarningHeader({}, input.budgetWarning),
   });
 }
 
+/**
+ * Chunk by chunk rather than `writer.merge`: merged streams are piped concurrently, and the
+ * turn's finish must not overtake the first attempt's last words.
+ */
+async function pipeAttempt(
+  writer: UIMessageStreamWriter,
+  stream: ReadableStream<TextStreamPart<ToolSet>>,
+  options: { sendStart?: boolean; sendFinish?: boolean },
+): Promise<void> {
+  // The SDK default is an English « An error occurred. »; the cause is in the logs.
+  const chunks = toUIMessageStream({ stream, onError: () => COACH_STREAM_ERROR_COPY, ...options });
+  const reader = chunks.getReader();
+  for (let next = await reader.read(); !next.done; next = await reader.read()) {
+    writer.write(next.value);
+  }
+}
+
+/** The shared parts of every attempt of this turn, built once: history, tools, logging. */
+async function coachGenerator(input: CoachReplyInput) {
+  const { athleteId, timing, scope } = input;
+  // A tool call a stream left without result (a cut connection) is dropped rather than sent:
+  // the provider would reject the whole request.
+  const messages = await convertToModelMessages(input.messages, {
+    ignoreIncompleteToolCalls: true,
+  });
+  const tools = createCoachTools(athleteId, { practicedSports: input.practicedSports });
+  return (attempt: CoachAttempt) => {
+    let end: CoachAttemptEnd | undefined;
+    const result = streamText({
+      model: attempt.model,
+      system: input.system,
+      messages,
+      tools,
+      ...coachChatGenerationSettings(scope),
+      reasoning: attempt.reasoning,
+      telemetry: { functionId: 'coach-chat' },
+      onChunk: ({ chunk }) => {
+        if (chunk.type === 'text-delta') {
+          timing.firstText();
+        }
+      },
+      onError: ({ error }) => {
+        console.error('[coach-chat] stream error', {
+          attempt: attempt.name,
+          ...describeCoachChatError(error),
+          ...timing.summary(),
+        });
+      },
+      onAbort: () => {
+        console.info('[coach-chat] aborted', { attempt: attempt.name, ...timing.summary() });
+      },
+      onEnd: (event) => {
+        const { usage, steps } = event;
+        void recordAiUsage(athleteId, 'coach', usage);
+        timing.note('steps', steps.length);
+        timing.note('inputTokens', usage.inputTokens ?? 0);
+        timing.note('outputTokens', usage.outputTokens ?? 0);
+        timing.note('reasoningTokens', usage.outputTokenDetails?.reasoningTokens ?? 0);
+        end = { outcome: describeCoachChatOutcome(event), finishReason: event.finishReason };
+        logCoachChatEnd(end.outcome, timing, attempt.name);
+      },
+    });
+    return { stream: result.stream, end: () => end };
+  };
+}
+
 /** An empty answer is logged as a warning so the log level alone finds it. */
-function logCoachChatEnd(outcome: CoachChatOutcome, timing: CoachChatTiming): void {
-  const line = { ...timing.summary(), ...outcome };
+function logCoachChatEnd(
+  outcome: CoachChatOutcome,
+  timing: CoachChatTiming,
+  attempt: CoachAttempt['name'],
+): void {
+  const line = { attempt, ...timing.summary(), ...outcome };
   if (outcome.emptyAnswer) {
     console.warn('[coach-chat] empty answer', line);
     return;

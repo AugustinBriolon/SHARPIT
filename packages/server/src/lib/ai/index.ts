@@ -25,6 +25,12 @@ export const COACH_STRUCTURED_MODEL = process.env.COACH_STRUCTURED_MODEL ?? 'goo
 export const COACH_FALLBACK_MODELS = ['anthropic/claude-haiku-4.5', 'openai/gpt-5-mini'];
 
 /**
+ * Model of the chat's one retry when an answer comes back with no text (asked without reasoning).
+ * Another provider than the default model: the empty answer came from that model's reasoning.
+ */
+export const COACH_EMPTY_ANSWER_RETRY_MODEL = 'anthropic/claude-haiku-4.5';
+
+/**
  * Profondeur de réflexion, par type de charge de travail.
  *
  * Les modèles Flash de Gemini 3 sont à `high` par défaut : mesuré sur
