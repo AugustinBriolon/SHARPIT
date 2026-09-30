@@ -238,15 +238,23 @@ export function useMessageScrollerRail(options: UseMessageScrollerRailOptions) {
     [scrollToEnd],
   );
 
-  const handleScroll = useCallback(() => {
+  /** Whether the end of the content is in view — what shows or hides a way down. */
+  const measureFollowing = useCallback(() => {
     const viewport = viewportRef.current;
-    if (!viewport || programmaticScrollRef.current) {
+    if (!viewport) {
       return;
     }
     const distance = viewport.scrollHeight - viewport.scrollTop - viewport.clientHeight;
     setFollowing(distance <= followThreshold);
+  }, [followThreshold, setFollowing]);
+
+  const handleScroll = useCallback(() => {
+    if (!viewportRef.current || programmaticScrollRef.current) {
+      return;
+    }
+    measureFollowing();
     updateActiveRailItem();
-  }, [followThreshold, setFollowing, updateActiveRailItem]);
+  }, [measureFollowing, updateActiveRailItem]);
 
   const leaveLiveEdge = useCallback(() => {
     programmaticScrollRef.current = false;
@@ -302,14 +310,20 @@ export function useMessageScrollerRail(options: UseMessageScrollerRailOptions) {
     }
     const observer = new ResizeObserver(() => {
       scheduleRailSync();
-      if (!followOutput || !followingRef.current) {
+      // Not following: the view stays put while content grows, and only says whether the end
+      // has left the screen.
+      if (!followOutput) {
+        measureFollowing();
+        return;
+      }
+      if (!followingRef.current) {
         return;
       }
       scheduleScrollToEnd('auto');
     });
     observer.observe(content);
     return () => observer.disconnect();
-  }, [followOutput, scheduleRailSync, scheduleScrollToEnd]);
+  }, [followOutput, measureFollowing, scheduleRailSync, scheduleScrollToEnd]);
 
   useEffect(
     () =>

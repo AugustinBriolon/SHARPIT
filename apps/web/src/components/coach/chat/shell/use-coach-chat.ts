@@ -10,6 +10,10 @@ import {
 } from 'ai';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { queryKeys } from '@/client/query/keys';
+import {
+  COACH_CURRENT_TURN_SLOT,
+  scrollTopToReveal,
+} from '@/components/coach/chat/transcript/coach-current-turn';
 import { serverHistoryRequestBody } from '@sharpit/app/lib/coach/chat/shell/coach-chat-server-history';
 import { coachBeuiCopy } from '@/components/coach/beui/coach-beui-copy';
 import {
@@ -296,28 +300,44 @@ export function useCoachChat({
   );
   const lastAssistantRowKey = useMemo(() => findLastAssistantRowKey(mappedRows), [mappedRows]);
 
-  const prevStatusRef = useRef(status);
+  // A conversation opens at its end; after that, the view only moves when the athlete asks.
   useEffect(() => {
-    const previous = prevStatusRef.current;
-    prevStatusRef.current = status;
-    if (previous !== 'streaming' && previous !== 'submitted') {
-      return;
-    }
-    if (status !== 'ready') {
-      return;
-    }
     requestAnimationFrame(() => {
       viewportRef.current?.scrollTo({ top: viewportRef.current.scrollHeight, behavior: 'auto' });
     });
-  }, [status]);
+  }, [conversationId]);
+
+  // A question just sent rises to the top of the view; its answer unrolls below without moving it.
+  const risesOnSend = useRef(false);
+  const lastQuestionId = useMemo(
+    () => messages.findLast((message) => message.role === 'user')?.id ?? null,
+    [messages],
+  );
+  useEffect(() => {
+    if (!risesOnSend.current || !lastQuestionId) {
+      return;
+    }
+    risesOnSend.current = false;
+    // Two frames: the turn under way is laid out at its full height before the view moves.
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() => {
+        const viewport = viewportRef.current;
+        const turn = viewport?.querySelector(`[data-slot="${COACH_CURRENT_TURN_SLOT}"]`);
+        if (viewport && turn) {
+          viewport.scrollTo({ top: scrollTopToReveal(viewport, turn), behavior: 'smooth' });
+        }
+      }),
+    );
+  }, [lastQuestionId]);
 
   useEffect(() => {
     invalidateCompletedCoachTools(queryClient, messages, invalidatedToolPartKeys.current);
   }, [messages, queryClient]);
 
   const submit = useCallback(
-    (text: string) =>
-      submitCoachChatMessage({
+    (text: string) => {
+      risesOnSend.current = true;
+      return submitCoachChatMessage({
         text,
         inputLocked,
         guardDisabled,
@@ -326,7 +346,6 @@ export function useCoachChat({
         conversationId,
         attachedContext,
         setShowJumpToLatest,
-        viewportRef,
         setMessages,
         saveMessages,
         createConversation,
@@ -334,7 +353,8 @@ export function useCoachChat({
         setInput,
         onDetachContext,
         onConversationCreated,
-      }),
+      });
+    },
     [
       attachedContext,
       conversationId,

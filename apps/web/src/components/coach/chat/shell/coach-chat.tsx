@@ -126,10 +126,12 @@ export function CoachChat(props: CoachChatProps) {
           busy={chat.isBusy}
           className={coachBeuiTheme.scrollerViewport}
           contentClassName={coachBeuiTheme.scrollerContent}
+          followOutput={false}
           followThreshold={56}
           label={coachBeuiCopy.transcriptLabel}
+          // A size container, so the turn under way can fill the visible height (`cqh`).
+          viewportClassName="[container-type:size]"
           viewportRef={chat.viewportRef}
-          followOutput
           smooth
           onFollowChange={(following) => {
             chat.setShowJumpToLatest(!following && chat.messagesRef.current.length > 0);

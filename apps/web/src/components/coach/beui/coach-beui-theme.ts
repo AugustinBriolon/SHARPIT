@@ -59,7 +59,7 @@ export const coachBeuiTheme = {
 
   /** Jump-to-latest floating control. */
   jumpButton:
-    'ring-border pointer-events-auto rounded-full p-2.5 size-9 shrink-0 shadow-none ring-1 bg-analysis-surface-alt',
+    'ring-border/60 pointer-events-auto rounded-full p-0 size-7 shrink-0 shadow-sm ring-1 bg-background/60 backdrop-blur-md supports-backdrop-filter:bg-background/40',
 
   /** Pending approvals region — compact BEUI-style question strip. */
   approvalsRegion: 'space-y-1.5 max-w-2xl',

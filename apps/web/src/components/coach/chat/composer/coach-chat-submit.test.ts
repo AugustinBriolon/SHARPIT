@@ -22,7 +22,6 @@ function submitOptions(overrides: Partial<CoachChatSubmitOptions> = {}): CoachCh
     conversationId: 'conv-1',
     attachedContext: journalChip,
     setShowJumpToLatest: vi.fn(),
-    viewportRef: { current: null },
     setMessages: vi.fn(),
     saveMessages: vi.fn().mockResolvedValue(undefined),
     createConversation: { mutateAsync: vi.fn().mockResolvedValue({ id: 'conv-new' }) },

@@ -95,7 +95,6 @@ export type CoachChatSubmitOptions = {
   conversationId: string;
   attachedContext?: CoachDiscussContext | null;
   setShowJumpToLatest: (show: boolean) => void;
-  viewportRef: React.RefObject<HTMLElement | null>;
   setMessages: (messages: UIMessage[]) => void;
   saveMessages: (args: { id: string; messages: UIMessage[] }) => Promise<unknown>;
   createConversation: {
@@ -113,11 +112,8 @@ export async function submitCoachChatMessage(options: CoachChatSubmitOptions): P
     return;
   }
 
+  // The view moves once the question is in the thread: it rises to the top (use-coach-chat).
   options.setShowJumpToLatest(false);
-  const viewport = options.viewportRef.current;
-  if (viewport) {
-    viewport.scrollTo({ top: viewport.scrollHeight, behavior: 'smooth' });
-  }
 
   dismissCalendarToolsIfNeeded({
     messages: options.messages,

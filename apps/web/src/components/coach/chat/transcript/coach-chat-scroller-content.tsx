@@ -9,11 +9,17 @@ import { CoachToolApprovalCard } from '@/components/coach/beui/coach-tool-approv
 import { CoachChatEmptyState } from '@/components/coach/chat/transcript/coach-chat-empty-state';
 import { CoachChatTranscriptRows } from '@/components/coach/chat/transcript/coach-chat-transcript';
 import { Button } from '@sharpit/ui/components/ui/button';
+import { cn } from '@sharpit/app/lib/utils';
+import {
+  COACH_CURRENT_TURN_SLOT,
+  splitCurrentTurn,
+} from '@/components/coach/chat/transcript/coach-current-turn';
 import type { useCoachChat } from '@/components/coach/chat/shell/use-coach-chat';
 
 type CoachChatState = ReturnType<typeof useCoachChat>;
 
 export function CoachChatScrollerContent({ chat }: { chat: CoachChatState }) {
+  const turns = splitCurrentTurn(chat.mappedRows);
   return (
     <>
       {chat.messages.length === 0 ? (
@@ -25,20 +31,44 @@ export function CoachChatScrollerContent({ chat }: { chat: CoachChatState }) {
 
       <CoachChatTranscriptRows
         lastAssistantRowKey={chat.lastAssistantRowKey}
-        mappedRows={chat.mappedRows}
+        mappedRows={turns.earlier}
         streamIdle={chat.streamIdle}
       />
 
-      {showSubmittedPlaceholder(chat.status, chat.messages) ? (
-        <Message from="assistant">
-          <div className={coachBeuiTheme.typingBubble}>
-            <CoachBeuiLoadingStatus />
-          </div>
-        </Message>
-      ) : null}
+      {/* The turn under way fills at least the viewport, so a question just sent can rise to
+          its top while the answer unrolls below it. */}
+      <div
+        data-slot={COACH_CURRENT_TURN_SLOT}
+        className={cn(
+          'flex flex-col space-y-4',
+          turns.current.length > 0 && 'min-h-[calc(100cqh-2rem)]',
+        )}
+      >
+        <CoachChatTranscriptRows
+          lastAssistantRowKey={chat.lastAssistantRowKey}
+          mappedRows={turns.current}
+          streamIdle={chat.streamIdle}
+        />
 
-      <CoachChatApprovals chat={chat} />
+        {showSubmittedPlaceholder(chat.status, chat.messages) ? (
+          <Message from="assistant">
+            <div className={coachBeuiTheme.typingBubble}>
+              <CoachBeuiLoadingStatus />
+            </div>
+          </Message>
+        ) : null}
 
+        <CoachChatApprovals chat={chat} />
+
+        <CoachChatError chat={chat} />
+      </div>
+    </>
+  );
+}
+
+function CoachChatError({ chat }: { chat: CoachChatState }) {
+  return (
+    <>
       {chat.error ? (
         <div
           className="border-destructive/25 bg-destructive/8 text-destructive max-w-2xl space-y-2 rounded-lg border p-3 text-sm"
