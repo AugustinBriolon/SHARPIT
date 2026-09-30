@@ -3,6 +3,10 @@ import { isSet } from '@sharpit/shared/value';
 import { dayKeyFromDate } from '@sharpit/app/lib/date/day-key';
 import { prisma } from '@sharpit/db/client';
 import {
+  forgetCalendarIds,
+  readableCalendarIds,
+} from '@sharpit/server/lib/integrations/google/calendar-ids-cache';
+import {
   createEvent,
   deleteEvent,
   getFreeBusy,
@@ -63,6 +67,7 @@ export async function revokeGoogleCredentials(athleteId: string) {
   if (!account) {
     return;
   }
+  await forgetCalendarIds(athleteId);
   await prisma.googleAccount.update({
     where: { athleteId },
     data: {
@@ -74,6 +79,7 @@ export async function revokeGoogleCredentials(athleteId: string) {
 }
 
 export async function disconnectGoogle(athleteId: string) {
+  await forgetCalendarIds(athleteId);
   await prisma.googleAccount.deleteMany({ where: { athleteId } });
   // On délie les séances : les events Google restent, mais l'app oublie le lien.
   await prisma.plannedSession.updateMany({
@@ -142,7 +148,14 @@ async function refreshGoogleAccessToken(
 }
 
 export async function getValidAccessToken(athleteId: string) {
-  const account = await getGoogleAccount(athleteId);
+  return validAccessTokenFor(athleteId, await getGoogleAccount(athleteId));
+}
+
+/** The same token, from an account row the caller already read. */
+async function validAccessTokenFor(
+  athleteId: string,
+  account: Awaited<ReturnType<typeof getGoogleAccount>>,
+) {
   if (!account || !isEncryptedSecret(account.refreshTokenEnc)) {
     throw new ProviderAuthError('Session Google expirée. Reconnecte Google dans les paramètres.');
   }
@@ -638,14 +651,13 @@ export async function getUpcomingBusy(
   if (!account) {
     return [];
   }
-  const token = await getValidAccessToken(athleteId);
+  const token = await validAccessTokenFor(athleteId, account);
 
   const now = new Date();
   const to = new Date(now.getTime() + days * 86400_000);
   let calendarIds: string[] = [];
   try {
-    const calendars = await listCalendars(token);
-    calendarIds = calendars.map((c) => c.id);
+    calendarIds = await readableCalendarIds(athleteId, token);
   } catch {
     return [];
   }

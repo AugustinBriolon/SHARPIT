@@ -8,6 +8,7 @@ import { logSafeError } from '@sharpit/server/lib/privacy/safe-log';
 import { accountDeletedEmail } from '@sharpit/app/lib/privacy/account-deleted-email';
 import type { AccountDeletedEmailInput } from '@sharpit/app/lib/privacy/account-deleted-email';
 import { sendTransactionalEmail } from '@sharpit/server/lib/email/transactional-email';
+import { forgetCalendarIds } from '@sharpit/server/lib/integrations/google/calendar-ids-cache';
 
 export type AccountDeletionResult = {
   athleteId: string;
@@ -109,6 +110,8 @@ async function deleteCoachTraces(athleteId: string): Promise<void> {
  */
 export async function hardDeleteAthleteData(athleteId: string): Promise<void> {
   await prisma.athleteProfile.deleteMany({ where: { id: athleteId } });
+  // Calendar ids are often e-mail addresses; the cache would otherwise outlive the account by hours.
+  await forgetCalendarIds(athleteId);
 }
 
 /**

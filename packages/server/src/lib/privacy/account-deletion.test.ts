@@ -43,6 +43,11 @@ vi.mock('@sharpit/server/lib/ai/langfuse-erasure', () => ({
   deleteLangfuseTracesForAthlete: (...args: unknown[]) => deleteTracesMock(...args),
 }));
 
+const forgetCalendarIdsMock = vi.fn();
+vi.mock('@sharpit/server/lib/integrations/google/calendar-ids-cache', () => ({
+  forgetCalendarIds: (...args: unknown[]) => forgetCalendarIdsMock(...args),
+}));
+
 vi.mock('@clerk/nextjs/server', () => ({
   clerkClient: vi.fn(async () => ({ users: { deleteUser: deleteUserMock, getUser: getUserMock } })),
 }));
@@ -119,6 +124,7 @@ describe('deleteAthleteAccount', () => {
     });
 
     expect(order).toEqual(['mark', 'revoke', 'credentials', 'identity', 'traces', 'rows', 'email']);
+    expect(forgetCalendarIdsMock).toHaveBeenCalledWith('athlete-1');
     expect(updateMock).toHaveBeenCalledWith({
       where: { id: 'athlete-1' },
       data: { deletedAt: now },
