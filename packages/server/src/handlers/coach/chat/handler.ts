@@ -28,6 +28,11 @@ import {
   startCoachChatTiming,
   type CoachChatTiming,
 } from '@sharpit/server/lib/coach/chat/coach-chat-timing';
+import {
+  describeCoachChatError,
+  describeCoachChatOutcome,
+  type CoachChatOutcome,
+} from '@sharpit/server/lib/coach/chat/coach-chat-outcome';
 import { withCoachTrace } from '@sharpit/server/lib/ai/coach-trace';
 import { lastCoachDiscussMetadata } from '@sharpit/server/lib/coach/chat/discuss/coach-discuss-metadata-parse';
 import {
@@ -39,6 +44,10 @@ import {
 } from '@sharpit/server/lib/coach/chat/coach-request-scope';
 import { buildCoachSystemPrompt } from '@sharpit/server/lib/coach/chat/coach-system-prompt';
 import { coachChatGenerationSettings } from '@sharpit/server/lib/coach/chat/coach-chat-generation';
+
+/** What the athlete reads when the answer breaks mid-stream. */
+export const COACH_STREAM_ERROR_COPY =
+  "Le coach n'a pas pu terminer sa réponse. Réessaie dans un instant.";
 
 type BudgetWarning = Awaited<ReturnType<typeof ensureFreeAiBudget>>['warning'];
 
@@ -94,20 +103,44 @@ async function streamCoachReply(input: {
         timing.firstText();
       }
     },
-    onFinish: ({ totalUsage, steps }) => {
-      void recordAiUsage(athleteId, 'coach', totalUsage);
+    onError: ({ error }) => {
+      console.error('[coach-chat] stream error', {
+        ...describeCoachChatError(error),
+        ...timing.summary(),
+      });
+    },
+    onAbort: () => {
+      console.info('[coach-chat] aborted', timing.summary());
+    },
+    onEnd: (end) => {
+      const { usage, steps } = end;
+      void recordAiUsage(athleteId, 'coach', usage);
       timing.note('steps', steps.length);
-      timing.note('inputTokens', totalUsage.inputTokens ?? 0);
-      timing.note('outputTokens', totalUsage.outputTokens ?? 0);
-      timing.note('reasoningTokens', totalUsage.outputTokenDetails?.reasoningTokens ?? 0);
-      console.info('[coach-chat] timing', timing.summary());
+      timing.note('inputTokens', usage.inputTokens ?? 0);
+      timing.note('outputTokens', usage.outputTokens ?? 0);
+      timing.note('reasoningTokens', usage.outputTokenDetails?.reasoningTokens ?? 0);
+      logCoachChatEnd(describeCoachChatOutcome(end), timing);
     },
   });
 
   return createUIMessageStreamResponse({
-    stream: toUIMessageStream({ stream: result.stream }),
+    stream: toUIMessageStream({
+      stream: result.stream,
+      // The SDK default is an English « An error occurred. »; the cause is in the logs above.
+      onError: () => COACH_STREAM_ERROR_COPY,
+    }),
     headers: withAiBudgetWarningHeader({}, input.budgetWarning),
   });
+}
+
+/** An empty answer is logged as a warning so the log level alone finds it. */
+function logCoachChatEnd(outcome: CoachChatOutcome, timing: CoachChatTiming): void {
+  const line = { ...timing.summary(), ...outcome };
+  if (outcome.emptyAnswer) {
+    console.warn('[coach-chat] empty answer', line);
+    return;
+  }
+  console.info('[coach-chat] timing', line);
 }
 
 export async function POST(req: Request) {

@@ -214,3 +214,84 @@ describe('POST /api/coach/chat · discuss target context', () => {
     expect(getAthleteProfile).not.toHaveBeenCalled();
   });
 });
+
+describe('POST /api/coach/chat · stream outcome', () => {
+  type EndCallback = (end: Record<string, unknown>) => void;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  async function streamTextOptions() {
+    const { streamText } = await import('ai');
+    const [call] = vi.mocked(streamText).mock.calls;
+    return call?.[0] as unknown as { onEnd: EndCallback; onError: (e: { error: unknown }) => void };
+  }
+
+  function endEvent(text: string) {
+    const usage = { inputTokens: 10, outputTokens: 5, outputTokenDetails: { reasoningTokens: 5 } };
+    return {
+      usage,
+      finishReason: 'length',
+      rawFinishReason: 'MAX_TOKENS',
+      steps: [{ text, toolCalls: [] }],
+      finalStep: { response: { modelId: 'google/gemini-3-flash' } },
+    };
+  }
+
+  it('shows the athlete a French message when the stream breaks', async () => {
+    const { POST } = await importRoute();
+    await POST(chatRequest());
+
+    const { toUIMessageStream } = await import('ai');
+    const [call] = vi.mocked(toUIMessageStream).mock.calls;
+    const { onError } = call?.[0] as { onError: (error: unknown) => string };
+    const { COACH_STREAM_ERROR_COPY } = await importRoute();
+    expect(onError(new Error('upstream 503'))).toBe(COACH_STREAM_ERROR_COPY);
+  });
+
+  it('logs the cause of a stream error on the server', async () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const { POST } = await importRoute();
+    await POST(chatRequest());
+
+    (await streamTextOptions()).onError({
+      error: Object.assign(new Error('Service Unavailable'), { statusCode: 503 }),
+    });
+    expect(error).toHaveBeenCalledWith(
+      '[coach-chat] stream error',
+      expect.objectContaining({ message: 'Service Unavailable', statusCode: 503 }),
+    );
+    error.mockRestore();
+  });
+
+  it('warns when the answer ends without any text', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const { POST } = await importRoute();
+    await POST(chatRequest());
+
+    (await streamTextOptions()).onEnd(endEvent(''));
+    expect(warn).toHaveBeenCalledWith(
+      '[coach-chat] empty answer',
+      expect.objectContaining({
+        emptyAnswer: true,
+        finishReason: 'length',
+        servedModel: 'google/gemini-3-flash',
+      }),
+    );
+    warn.mockRestore();
+  });
+
+  it('logs an answered turn as timing, with the served model', async () => {
+    const info = vi.spyOn(console, 'info').mockImplementation(() => undefined);
+    const { POST } = await importRoute();
+    await POST(chatRequest());
+
+    (await streamTextOptions()).onEnd(endEvent('Ta nuit était courte.'));
+    expect(info).toHaveBeenCalledWith(
+      '[coach-chat] timing',
+      expect.objectContaining({ emptyAnswer: false, servedModel: 'google/gemini-3-flash' }),
+    );
+    info.mockRestore();
+  });
+});
