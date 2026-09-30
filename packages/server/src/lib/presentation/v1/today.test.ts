@@ -196,5 +196,7 @@ describe('projectV1Today · a brick under way', () => {
       },
     ]);
     expect(session!.brickTransitionsSec).toEqual([null]);
+    // Installed apps open a done line as an activity: the first done leg's, never the group.
+    expect(session!.id).toBe('act-bike');
   });
 });

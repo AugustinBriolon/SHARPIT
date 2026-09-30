@@ -226,7 +226,7 @@ function projectSessions(
   lines: V1TodaySource['actionRow']['daySummaryLines'],
 ): V1TodayResponse['sessions'] {
   return lines.map((line, index) => ({
-    id: line.id,
+    id: v1SessionId(line),
     kind: line.kind,
     title: line.primary,
     subtitle: line.secondary ?? null,
@@ -246,6 +246,18 @@ function projectSessions(
       })) ?? null,
     brickTransitionsSec: line.brickTransitionsSec ? [...line.brickTransitionsSec] : null,
   }));
+}
+
+/**
+ * A done brick line's id is its group, yet app versions before brick legs open a done line as the
+ * activity it names: they get the first done leg's activity, a real one. Clients that know
+ * `brickLegs` open the whole brick and do not read this id.
+ */
+function v1SessionId(line: V1TodaySource['actionRow']['daySummaryLines'][number]): string {
+  if (line.kind !== 'done' || !line.brickLegs?.length) {
+    return line.id;
+  }
+  return line.brickLegs.find((leg) => leg.completed && leg.activityId)?.activityId ?? line.id;
 }
 
 function projectOvernightSignals(
