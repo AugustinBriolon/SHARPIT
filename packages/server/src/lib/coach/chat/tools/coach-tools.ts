@@ -6,6 +6,17 @@ import { buildContextCoachTools } from './coach-tools-context';
 import { buildQueryCoachTools } from './coach-tools-query';
 import { buildSessionCoachTools } from './coach-tools-sessions';
 import { coachTypeEnumForSports, travelDisciplineEnumForSports } from './coach-tools-shared';
+import { withCoachToolExecution } from './coach-tool-execution';
+
+/** The tools that write the athlete's plan or context: run one at a time within an answer. */
+const COACH_WRITE_TOOLS: ReadonlySet<string> = new Set([
+  'createPlannedSession',
+  'createBrickSession',
+  'updatePlannedSession',
+  'deletePlannedSession',
+  'setTravelContext',
+  'setTrainingConstraint',
+]);
 
 /**
  * Tous s'exécutent côté serveur et renvoient un résumé compact.
@@ -19,9 +30,12 @@ export function createCoachTools(
   const proposalTypeEnum = coachTypeEnumForSports(practicedSports);
   const proposalTravelEnum = travelDisciplineEnumForSports(practicedSports);
 
-  return {
-    ...buildQueryCoachTools(athleteId),
-    ...buildSessionCoachTools(athleteId, practicedSports, proposalTypeEnum),
-    ...buildContextCoachTools(athleteId, proposalTravelEnum),
-  };
+  return withCoachToolExecution(
+    {
+      ...buildQueryCoachTools(athleteId),
+      ...buildSessionCoachTools(athleteId, practicedSports, proposalTypeEnum),
+      ...buildContextCoachTools(athleteId, proposalTravelEnum),
+    },
+    COACH_WRITE_TOOLS,
+  );
 }
