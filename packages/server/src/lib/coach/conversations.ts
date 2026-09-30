@@ -5,8 +5,6 @@ import { prisma } from '@sharpit/db/client';
 
 const DEFAULT_TITLE = 'Nouvelle conversation';
 const TITLE_MAX = 60;
-const BOOTSTRAP_TTL_MS = 60_000;
-const bootstrapConversationIds = new Map<string, { id: string; createdAtMs: number }>();
 
 function sanitizeAssistantMessageParts(parts: unknown): unknown {
   if (!Array.isArray(parts)) {
@@ -86,34 +84,6 @@ function deriveTitle(messages: unknown): string {
   return DEFAULT_TITLE;
 }
 
-function pruneExpiredBootstrapEntries(now: number): void {
-  for (const [key, value] of bootstrapConversationIds.entries()) {
-    if (now - value.createdAtMs > BOOTSTRAP_TTL_MS) {
-      bootstrapConversationIds.delete(key);
-    }
-  }
-}
-
-async function findCachedBootstrapConversation(athleteId: string, bootstrapKey: string) {
-  const cached = bootstrapConversationIds.get(bootstrapKey);
-  if (!cached) {
-    return null;
-  }
-  const existing = await prisma.conversation.findFirst({
-    where: { id: cached.id, athleteId },
-  });
-  if (!existing) {
-    bootstrapConversationIds.delete(bootstrapKey);
-    return null;
-  }
-  const { messages } = existing;
-  if (!Array.isArray(messages) || messages.length === 0) {
-    bootstrapConversationIds.delete(bootstrapKey);
-    return null;
-  }
-  return existing;
-}
-
 /** Liste des conversations (sans les messages, pour la sidebar). */
 export async function listConversations(athleteId: string) {
   const rows = await prisma.conversation.findMany({
@@ -138,54 +108,19 @@ export async function getConversation(athleteId: string, id: string) {
   };
 }
 
-function createConversationInput(messages?: unknown, bootstrapKey?: string) {
-  const hasMessages = Array.isArray(messages) && messages.length > 0;
-  const hasBootstrapKey = typeof bootstrapKey === 'string' && bootstrapKey.trim().length > 0;
-  if (!hasMessages && !hasBootstrapKey) {
+/** Crée une conversation à partir de ses premiers messages (titre auto). */
+export async function createConversation(athleteId: string, messages: unknown) {
+  if (!Array.isArray(messages) || messages.length === 0) {
     throw new Error('Une conversation doit contenir au moins un message.');
   }
-  return { hasMessages, hasBootstrapKey, bootstrapKey: hasBootstrapKey ? bootstrapKey : undefined };
-}
-
-async function resolveBootstrapConversation(athleteId: string, bootstrapKey: string, now: number) {
-  pruneExpiredBootstrapEntries(now);
-  return findCachedBootstrapConversation(athleteId, bootstrapKey);
-}
-
-function rememberBootstrapConversation(bootstrapKey: string, conversationId: string, now: number) {
-  bootstrapConversationIds.set(bootstrapKey, { id: conversationId, createdAtMs: now });
-}
-
-/** Crée une conversation, en option avec des messages initiaux (titre auto). */
-export async function createConversation(
-  athleteId: string,
-  messages?: unknown,
-  bootstrapKey?: string,
-) {
-  const input = createConversationInput(messages, bootstrapKey);
-  const now = Date.now();
-
-  if (input.bootstrapKey) {
-    const cached = await resolveBootstrapConversation(athleteId, input.bootstrapKey, now);
-    if (cached) {
-      return cached;
-    }
-  }
-
-  const cleanedMessages = input.hasMessages ? sanitizeConversationMessages(messages) : [];
-  const conversation = await prisma.conversation.create({
+  const cleanedMessages = sanitizeConversationMessages(messages);
+  return prisma.conversation.create({
     data: {
       athleteId,
-      title: input.hasMessages ? deriveTitle(cleanedMessages) : DEFAULT_TITLE,
+      title: deriveTitle(cleanedMessages),
       messages: cleanedMessages as Prisma.InputJsonValue,
     },
   });
-
-  if (input.bootstrapKey) {
-    rememberBootstrapConversation(input.bootstrapKey, conversation.id, now);
-  }
-
-  return conversation;
 }
 
 /** Enregistre l'historique complet ; régénère le titre s'il est encore par défaut. */

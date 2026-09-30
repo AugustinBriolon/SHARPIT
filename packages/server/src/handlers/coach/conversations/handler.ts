@@ -17,15 +17,8 @@ export async function POST(request: Request) {
   try {
     const athleteId = await getCurrentAthleteId();
     const body = await request.json().catch(() => ({}));
-    const { messages, bootstrapKey } = body as {
-      messages?: unknown;
-      bootstrapKey?: string;
-    };
-    const conversation = await createConversation(
-      athleteId,
-      messages,
-      typeof bootstrapKey === 'string' && bootstrapKey.trim() ? bootstrapKey.trim() : undefined,
-    );
+    const { messages } = body as { messages?: unknown };
+    const conversation = await createConversation(athleteId, messages);
     return NextResponse.json(conversation, { status: 201 });
   } catch (error) {
     const message =

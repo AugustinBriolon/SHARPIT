@@ -32,24 +32,14 @@ export function useConversation(id: string | null) {
 
 export function useCreateConversation() {
   const queryClient = useQueryClient();
-  return useMutation<
-    ClientConversation,
-    Error,
-    { bootstrapKey?: string; messages?: UIMessage[] } | void
-  >({
+  return useMutation<ClientConversation, Error, { messages: UIMessage[] }>({
     mutationFn: async (input) => {
       if (createConversationPromise) {
         return createConversationPromise;
       }
 
       createConversationPromise = (async () => {
-        const body =
-          input && typeof input === 'object'
-            ? {
-                ...(input.bootstrapKey ? { bootstrapKey: input.bootstrapKey } : {}),
-                ...(input.messages ? { messages: input.messages } : {}),
-              }
-            : {};
+        const body = { messages: input.messages };
         const res = await apiFetch('/api/coach/conversations', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
