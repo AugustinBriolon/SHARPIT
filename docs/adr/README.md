@@ -60,6 +60,7 @@
 | [ADR-055](./ADR-055-cron-sync-rebuilds-state-only-on-new-evidence.md)          | The scheduled sync rebuilds the athlete state only on new evidence or a new training day   | Accepted                          |
 | [ADR-056](./ADR-056-coach-chat-survives-what-breaks-it.md)                     | The coach chat retries empty answers, distrusts client history and logs how each turn ends | Accepted                          |
 | [ADR-057](./ADR-057-the-server-owns-coach-conversations.md)                    | The chat route reads and saves stored coach conversations; clients send one message        | Accepted                          |
+| [ADR-058](./ADR-058-the-coach-moves-sessions-and-bricks-whole.md)              | The coach moves sessions instead of recreating them, and a brick moves whole               | Accepted                          |
 
 **Template:** [ADR-template.md](./ADR-template.md)
 
