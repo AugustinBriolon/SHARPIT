@@ -184,24 +184,59 @@ describe('FoodPortionStep', () => {
   });
 });
 
-describe('NutritionTargetsForm', () => {
-  it('has one field per target, opened on the saved values', () => {
-    const html = renderToStaticMarkup(
-      createElement(NutritionTargetsForm, {
-        targets: { kcal: 2600, proteinG: 150, carbsG: null, fatG: 70 },
-        error: null,
-        onSave: noop,
-      }),
-    );
+const TARGETS = {
+  mode: 'GRAMS' as const,
+  kcal: 2600,
+  proteinG: 150,
+  carbsG: null,
+  fatG: 70,
+  proteinPct: null,
+  carbsPct: null,
+  fatPct: null,
+};
 
-    expect(html).toContain('Calories');
-    expect(html).toContain('Protéines');
-    expect(html).toContain('Glucides');
-    expect(html).toContain('Lipides');
+function targetsForm(editor: Partial<Parameters<typeof NutritionTargetsForm>[0]['editor']>) {
+  return renderToStaticMarkup(
+    createElement(NutritionTargetsForm, {
+      targets: TARGETS,
+      editor: {
+        mode: 'GRAMS',
+        split: { kcal: '2600', proteinPct: '25', carbsPct: '50', fatPct: '20' },
+        reading: {
+          total: 95,
+          balanced: false,
+          grams: { proteinPct: 163, carbsPct: 325, fatPct: 58 },
+        },
+        error: null,
+        canSave: true,
+        setMode: noop,
+        patchSplit: noop,
+        save: noop,
+        ...editor,
+      },
+    }),
+  );
+}
+
+describe('NutritionTargetsForm', () => {
+  it('has one field per target in grams, opened on the saved values', () => {
+    const html = targetsForm({});
+
+    expect(html).toContain('Grammes');
     expect(html).toContain('name="kcal"');
     expect(html).toContain('value="2600"');
     expect(html).toContain('value="150"');
     expect(html).toContain('name="carbsG"');
     expect(html).toContain('Enregistrer');
+  });
+
+  it('in percent, shows the grams each share buys and a total that must reach 100', () => {
+    const html = targetsForm({ mode: 'PERCENT', canSave: false });
+
+    expect(html).toContain('name="proteinPct"');
+    expect(html).toContain('163 g');
+    expect(html).toContain('Total : 95 %');
+    expect(html).toContain('il faut 100 %');
+    expect(html).toMatch(/<button[^>]*type="submit"[^>]*disabled=""/);
   });
 });

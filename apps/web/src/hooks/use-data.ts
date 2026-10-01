@@ -54,16 +54,21 @@ export {
   isSearchableFoodQuery,
   useAddFoodLogEntry,
   useCreateCustomFood,
+  useDeleteCustomFood,
   useDeleteFoodLogEntry,
   useFoodBarcodeLookup,
   useFoodLogDay,
   useFoodSearch,
+  useImportMfpExport,
+  useOwnFoods,
   useSaveNutritionTargets,
+  useUpdateCustomFood,
   useUpdateFoodLogEntry,
 } from '@/hooks/nutrition/use-food-log';
 export type {
   AddFoodLogEntryVars,
   FoodLogEntryPreview,
+  UpdateCustomFoodVars,
   UpdateFoodLogEntryVars,
 } from '@/hooks/nutrition/use-food-log';
 

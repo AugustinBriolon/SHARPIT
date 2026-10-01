@@ -88,6 +88,8 @@ export type FoodLogSectionProps = {
   /** The day could not be read: nothing to edit, and no false « nothing logged ». */
   unavailable?: boolean;
   onTargets: () => void;
+  /** Opens the import of a MyFitnessPal export (ADR-062). */
+  onImport?: () => void;
   /** Only when MyFitnessPal is linked — it then fills the days the log leaves empty. */
   mfpSync?: { syncing: boolean; onSync: () => void } | null;
   /** The first add of a day — the caller picks the meal the hour suggests. */
@@ -114,6 +116,11 @@ export function FoodLogSection(props: FoodLogSectionProps) {
             >
               <RefreshCw aria-hidden />
               MyFitnessPal
+            </Button>
+          ) : null}
+          {props.onImport ? (
+            <Button size="sm" type="button" variant="ghost" onClick={props.onImport}>
+              Importer
             </Button>
           ) : null}
           <Button size="sm" type="button" variant="ghost" onClick={props.onTargets}>

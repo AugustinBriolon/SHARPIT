@@ -75,7 +75,11 @@ export const queryKeys = {
   analysisRuns: ['analysis-runs'] as const,
   /** The in-app food log of one day: entries, targets and recent foods (ADR-061). */
   foodLogDay: (trainingDayId: string) => ['food-log', trainingDayId] as const,
+  foodLogDayAll: ['food-log'] as const,
   foodSearch: (query: string) => ['food-search', query] as const,
+  foodSearchAll: ['food-search'] as const,
+  /** The athlete's own foods, to pick, edit or delete. */
+  ownFoods: ['food-own'] as const,
   hikeTrips: ['hike-trips'] as const,
   hikeTrip: (id: string) => ['hike-trip', id] as const,
 };

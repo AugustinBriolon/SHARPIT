@@ -4,6 +4,7 @@ import {
   foodSearchListing,
   initialFoodAddState,
   lastGramsFor,
+  previousFoodAddStep,
 } from './food-add-flow-state';
 import type { FoodProductPayload } from '@sharpit/app/lib/nutrition/food-log/food-log-day';
 
@@ -71,5 +72,21 @@ describe('lastGramsFor', () => {
   it('finds the weight last logged for a product', () => {
     expect(lastGramsFor(RECENT, 'skyr')).toBe(180);
     expect(lastGramsFor(RECENT, 'other')).toBeNull();
+  });
+});
+
+describe('Mes aliments', () => {
+  it('opens the own foods, edits one, and goes back to the list rather than the search', () => {
+    const open = foodAddReducer(initialFoodAddState(), { type: 'start', meal: 'LUNCH' });
+    const mine = foodAddReducer(open, { type: 'step', step: 'mine' });
+    const editing = foodAddReducer(mine, { type: 'editFood', product: SKYR });
+
+    expect(editing).toMatchObject({ step: 'editFood', editing: SKYR });
+    expect(previousFoodAddStep(editing.step)).toBe('mine');
+    expect(previousFoodAddStep('portion')).toBe('search');
+    expect(foodAddReducer(editing, { type: 'step', step: 'mine' })).toMatchObject({
+      step: 'mine',
+      editing: null,
+    });
   });
 });

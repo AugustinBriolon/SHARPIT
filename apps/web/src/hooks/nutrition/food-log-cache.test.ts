@@ -11,7 +11,16 @@ const DAY_ID = '2026-10-01';
 const DAY: FoodLogDayPayload = {
   trainingDayId: DAY_ID,
   entries: [],
-  targets: { kcal: 2600, proteinG: null, carbsG: null, fatG: null },
+  targets: {
+    mode: 'GRAMS',
+    kcal: 2600,
+    proteinG: null,
+    carbsG: null,
+    fatG: null,
+    proteinPct: null,
+    carbsPct: null,
+    fatPct: null,
+  },
   recent: [],
 };
 
@@ -56,5 +65,42 @@ describe('food log day cache', () => {
     expect(
       queryKeys.presentationDataDays('nutrition', '2026-09-01', '2026-10-01').slice(0, 3),
     ).toEqual([...queryKeys.presentationDataDaysDomain('nutrition')]);
+  });
+});
+
+describe('mergedTargets', () => {
+  it('shows a percent split in grams before the server answers, as the server computes them', async () => {
+    const { mergedTargets } = await import('./use-food-log');
+
+    expect(
+      mergedTargets(DAY.targets, {
+        mode: 'PERCENT',
+        kcal: 2600,
+        proteinPct: 25,
+        carbsPct: 50,
+        fatPct: 25,
+      }),
+    ).toEqual({
+      mode: 'PERCENT',
+      kcal: 2600,
+      proteinPct: 25,
+      carbsPct: 50,
+      fatPct: 25,
+      proteinG: 163,
+      carbsG: 325,
+      fatG: 72,
+    });
+  });
+
+  it('keeps the untouched gram targets and forgets the split', async () => {
+    const { mergedTargets } = await import('./use-food-log');
+    const split = { ...DAY.targets, mode: 'PERCENT' as const, proteinPct: 25 };
+
+    expect(mergedTargets(split, { mode: 'GRAMS', proteinG: 150 })).toMatchObject({
+      mode: 'GRAMS',
+      kcal: 2600,
+      proteinG: 150,
+      proteinPct: null,
+    });
   });
 });

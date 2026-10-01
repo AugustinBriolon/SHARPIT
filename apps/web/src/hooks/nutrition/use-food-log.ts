@@ -1,6 +1,12 @@
 'use client';
 
-import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  keepPreviousData,
+  useMutation,
+  useQuery,
+  useQueryClient,
+  type QueryClient,
+} from '@tanstack/react-query';
 import { formatApiErrorMessage, parseApiErrorBody } from '@/client/query/api-error';
 import { queryKeys } from '@/client/query/keys';
 import { tempId } from '@/client/query/optimistic';
@@ -16,11 +22,15 @@ import {
   type FoodLogEntryPayload,
   type FoodProductPayload,
   type FoodSearchPayload,
+  type MfpImportResultPayload,
   type NutritionTargetsPayload,
+  type OwnFoodsPayload,
 } from '@sharpit/app/lib/nutrition/food-log/food-log-day';
 import type { FoodMealKey } from '@sharpit/app/lib/nutrition/food-log/food-log-math';
+import { gramsFromPercent } from '@sharpit/app/lib/nutrition/food-log/nutrition-targets';
 import type {
   CustomFoodInput,
+  CustomFoodUpdateInput,
   FoodLogEntryCreateInput,
   NutritionTargetsInput,
 } from '@sharpit/app/lib/validators/food-log';
@@ -99,7 +109,30 @@ export function useFoodBarcodeLookup() {
   return useMutation({ mutationFn: fetchProductByBarcode });
 }
 
+export function useOwnFoods(enabled: boolean) {
+  return useQuery({
+    queryKey: queryKeys.ownFoods,
+    enabled,
+    queryFn: async () =>
+      readJsonOrThrow<OwnFoodsPayload>(
+        await apiFetch(`${ENDPOINT}/foods/mine`),
+        'Tes aliments sont indisponibles.',
+      ),
+    staleTime: 60_000,
+  });
+}
+
+/** An own food changed: the list, the searches that showed it and the recent foods follow. */
+function refreshOwnFoods(queryClient: QueryClient) {
+  return Promise.all([
+    queryClient.invalidateQueries({ queryKey: queryKeys.ownFoods }),
+    queryClient.invalidateQueries({ queryKey: queryKeys.foodSearchAll }),
+    queryClient.invalidateQueries({ queryKey: queryKeys.foodLogDayAll }),
+  ]);
+}
+
 export function useCreateCustomFood() {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (input: CustomFoodInput) => {
       const data = (await sendJson(`${ENDPOINT}/foods`, 'POST', input)) as {
@@ -107,6 +140,55 @@ export function useCreateCustomFood() {
       };
       return data.product;
     },
+    onSettled: () => queryClient.invalidateQueries({ queryKey: queryKeys.ownFoods }),
+  });
+}
+
+export type UpdateCustomFoodVars = { id: string; input: CustomFoodUpdateInput };
+
+export function useUpdateCustomFood() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, input }: UpdateCustomFoodVars) => {
+      const url = `${ENDPOINT}/foods/${encodeURIComponent(id)}`;
+      const data = (await sendJson(url, 'PATCH', input)) as { product: FoodProductPayload };
+      return data.product;
+    },
+    onSettled: () => refreshOwnFoods(queryClient),
+  });
+}
+
+export function useDeleteCustomFood() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) =>
+      sendJson(`${ENDPOINT}/foods/${encodeURIComponent(id)}`, 'DELETE'),
+    onSettled: () => refreshOwnFoods(queryClient),
+  });
+}
+
+/** The athlete's MyFitnessPal export, sent as picked: the browser sets the multipart boundary. */
+async function uploadMfpExport(file: File): Promise<MfpImportResultPayload> {
+  const body = new FormData();
+  body.set('file', file);
+  const res = await apiFetch(`${ENDPOINT}/import/myfitnesspal`, { method: 'POST', body });
+  if (res.status === 429) {
+    throw new Error('Trop d’imports d’affilée, réessaie dans une heure.');
+  }
+  return readJsonOrThrow<MfpImportResultPayload>(res, 'Import impossible pour le moment.');
+}
+
+export function useImportMfpExport() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: uploadMfpExport,
+    onSuccess: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: queryKeys.presentationNutritionAll }),
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.presentationDataDaysDomain('nutrition'),
+        }),
+      ]),
   });
 }
 
@@ -197,15 +279,36 @@ export function useDeleteFoodLogEntry(trainingDayId: string) {
   });
 }
 
-function mergedTargets(
+const pick = <T>(next: T | undefined, current: T) => (next === undefined ? current : next);
+
+/** What the dialog shows until the server answers: a split's grams computed as it will. */
+export function mergedTargets(
   current: NutritionTargetsPayload,
   input: NutritionTargetsInput,
 ): NutritionTargetsPayload {
+  if (input.mode === 'PERCENT' && input.kcal) {
+    const { kcal } = input;
+    const [proteinPct, carbsPct, fatPct] = [input.proteinPct!, input.carbsPct!, input.fatPct!];
+    return {
+      mode: 'PERCENT',
+      kcal,
+      proteinPct,
+      carbsPct,
+      fatPct,
+      proteinG: gramsFromPercent(kcal, proteinPct, 'protein'),
+      carbsG: gramsFromPercent(kcal, carbsPct, 'carbs'),
+      fatG: gramsFromPercent(kcal, fatPct, 'fat'),
+    };
+  }
   return {
-    kcal: input.kcal === undefined ? current.kcal : input.kcal,
-    proteinG: input.proteinG === undefined ? current.proteinG : input.proteinG,
-    carbsG: input.carbsG === undefined ? current.carbsG : input.carbsG,
-    fatG: input.fatG === undefined ? current.fatG : input.fatG,
+    mode: 'GRAMS',
+    kcal: pick(input.kcal, current.kcal),
+    proteinG: pick(input.proteinG, current.proteinG),
+    carbsG: pick(input.carbsG, current.carbsG),
+    fatG: pick(input.fatG, current.fatG),
+    proteinPct: null,
+    carbsPct: null,
+    fatPct: null,
   };
 }
 

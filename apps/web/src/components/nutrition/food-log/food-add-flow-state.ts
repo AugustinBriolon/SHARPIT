@@ -7,11 +7,12 @@ import {
 import type { FoodMealKey } from '@sharpit/app/lib/nutrition/food-log/food-log-math';
 
 /**
- * The add-food dialog as a state machine: search (or barcode) → portion, with the quick add and
- * the custom food as side steps. Pure, so every transition is tested without rendering.
+ * The add-food dialog as a state machine: search (or barcode) → portion, with the quick add, the
+ * custom food and the athlete's own foods (« Mes aliments », where one is edited) as side steps.
+ * Pure, so every transition is tested without rendering.
  */
 
-export type FoodAddStep = 'search' | 'portion' | 'quick' | 'custom';
+export type FoodAddStep = 'search' | 'portion' | 'quick' | 'custom' | 'mine' | 'editFood';
 
 export type PickedFood = { product: FoodProductPayload; lastGrams: number | null };
 
@@ -21,6 +22,8 @@ export type FoodAddState = {
   meal: FoodMealKey;
   query: string;
   picked: PickedFood | null;
+  /** The own food being edited, on the `editFood` step. */
+  editing: FoodProductPayload | null;
   grams: string;
   error: string | null;
 };
@@ -32,7 +35,8 @@ export type FoodAddAction =
   | { type: 'pick'; picked: PickedFood }
   | { type: 'grams'; grams: string }
   | { type: 'meal'; meal: FoodMealKey }
-  | { type: 'step'; step: Exclude<FoodAddStep, 'portion'> }
+  | { type: 'step'; step: Exclude<FoodAddStep, 'portion' | 'editFood'> }
+  | { type: 'editFood'; product: FoodProductPayload }
   | { type: 'fail'; message: string };
 
 export function initialFoodAddState(): FoodAddState {
@@ -42,6 +46,7 @@ export function initialFoodAddState(): FoodAddState {
     meal: 'BREAKFAST',
     query: '',
     picked: null,
+    editing: null,
     grams: '',
     error: null,
   };
@@ -73,7 +78,9 @@ export function foodAddReducer(state: FoodAddState, action: FoodAddAction): Food
     case 'meal':
       return { ...state, meal: action.meal };
     case 'step':
-      return { ...state, step: action.step, picked: null, error: null };
+      return { ...state, step: action.step, picked: null, editing: null, error: null };
+    case 'editFood':
+      return { ...state, step: 'editFood', editing: action.product, error: null };
     case 'fail':
       return { ...state, error: action.message };
     default:
@@ -94,6 +101,11 @@ export function foodSearchListing(
     return recent.length > 0 ? 'recent' : 'hint';
   }
   return typed.length >= 2 && results ? 'results' : 'hint';
+}
+
+/** Where « back » leads: an edited food returns to « Mes aliments », every other step to search. */
+export function previousFoodAddStep(step: FoodAddStep): 'search' | 'mine' {
+  return step === 'editFood' ? 'mine' : 'search';
 }
 
 /** The weight last logged for a product, so a search pick offers it like a recent one. */

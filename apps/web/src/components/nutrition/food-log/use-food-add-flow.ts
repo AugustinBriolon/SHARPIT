@@ -11,6 +11,7 @@ import {
 } from '@/components/nutrition/food-log/food-add-flow-state';
 import {
   buildCustomFood,
+  buildCustomFoodUpdate,
   buildPortionEntry,
   buildQuickEntry,
   type FormResult,
@@ -19,9 +20,13 @@ import {
   type AddFoodLogEntryVars,
   useAddFoodLogEntry,
   useCreateCustomFood,
+  useDeleteCustomFood,
   useFoodBarcodeLookup,
   useFoodSearch,
+  useOwnFoods,
+  useUpdateCustomFood,
 } from '@/hooks/use-data';
+import { useConfirmDialog } from '@/components/ui/confirm-dialog';
 import { useDebouncedValue } from '@/hooks/use-debounced-value';
 import type {
   FoodProductPayload,
@@ -84,6 +89,46 @@ function useFoodAddWrites(
   };
 }
 
+/** « Mes aliments »: the list, read when the step opens, and the edit and delete behind it. */
+function useOwnFoodWrites(state: FoodAddState, dispatch: Dispatch) {
+  const own = useOwnFoods(state.open && state.step === 'mine');
+  const update = useUpdateCustomFood();
+  const remove = useDeleteCustomFood();
+  const { confirm, dialog } = useConfirmDialog();
+  const reject = (error: unknown) =>
+    dispatch({ type: 'fail', message: errorMessage(error) ?? 'Saisie invalide.' });
+
+  return {
+    ownFoods: own.data?.foods ?? [],
+    ownFoodsLoading: own.isPending && state.step === 'mine',
+    ownFoodsError: errorMessage(own.error),
+    editPending: update.isPending,
+    confirmDialog: dialog,
+    editFood: (product: FoodProductPayload) => dispatch({ type: 'editFood', product }),
+    saveFood: (form: FormData) => {
+      const result = buildCustomFoodUpdate(form);
+      if (!result.ok || !state.editing) {
+        return result.ok ? undefined : dispatch({ type: 'fail', message: result.message });
+      }
+      update.mutate(
+        { id: state.editing.id, input: result.value },
+        { onSuccess: () => dispatch({ type: 'step', step: 'mine' }), onError: reject },
+      );
+    },
+    deleteFood: async (product: FoodProductPayload) => {
+      const confirmed = await confirm({
+        title: `Supprimer « ${product.name} » ?`,
+        description: 'Tes repas déjà notés gardent leurs valeurs.',
+        confirmLabel: 'Supprimer',
+        variant: 'destructive',
+      });
+      if (confirmed) {
+        remove.mutate(product.id, { onError: reject });
+      }
+    },
+  };
+}
+
 function stateSetters(dispatch: Dispatch) {
   return {
     start: (meal: FoodMealKey) => dispatch({ type: 'start', meal }),
@@ -91,7 +136,7 @@ function stateSetters(dispatch: Dispatch) {
     setQuery: (query: string) => dispatch({ type: 'query', query }),
     setGrams: (grams: string) => dispatch({ type: 'grams', grams }),
     setMeal: (meal: FoodMealKey) => dispatch({ type: 'meal', meal }),
-    showStep: (step: 'search' | 'quick' | 'custom') => dispatch({ type: 'step', step }),
+    showStep: (step: 'search' | 'quick' | 'custom' | 'mine') => dispatch({ type: 'step', step }),
   };
 }
 
@@ -107,6 +152,7 @@ export function useFoodAddFlow(trainingDayId: string, recent: RecentFoodPayload[
     recent,
     ...useFoodAddSearch(state, recent),
     ...writes,
+    ...useOwnFoodWrites(state, dispatch),
     ...stateSetters(dispatch),
     pickProduct,
     logPortion: () =>

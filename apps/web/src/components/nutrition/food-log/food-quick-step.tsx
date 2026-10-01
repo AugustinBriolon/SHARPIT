@@ -9,10 +9,12 @@ import type { FoodMealKey } from '@sharpit/app/lib/nutrition/food-log/food-log-m
 export function FoodTextField({
   name,
   label,
+  defaultValue,
   required = false,
 }: {
   name: string;
   label: string;
+  defaultValue?: string;
   required?: boolean;
 }) {
   const id = `food-field-${name}`;
@@ -21,7 +23,14 @@ export function FoodTextField({
       <label className="text-sm font-medium" htmlFor={id}>
         {label}
       </label>
-      <Input autoComplete="off" id={id} maxLength={120} name={name} required={required} />
+      <Input
+        autoComplete="off"
+        defaultValue={defaultValue}
+        id={id}
+        maxLength={120}
+        name={name}
+        required={required}
+      />
     </div>
   );
 }

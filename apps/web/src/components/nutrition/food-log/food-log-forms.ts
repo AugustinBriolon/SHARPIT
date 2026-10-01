@@ -11,11 +11,20 @@ import {
   type PortionNutrients,
 } from '@sharpit/app/lib/nutrition/food-log/food-log-math';
 import {
+  gramsFromPercent,
+  percentFromGrams,
+  percentTotal,
+  type NutritionTargetMode,
+  type TargetMacro,
+} from '@sharpit/app/lib/nutrition/food-log/nutrition-targets';
+import {
   customFoodSchema,
+  customFoodUpdateSchema,
   foodLogEntryCreateSchema,
   foodLogEntryUpdateSchema,
   nutritionTargetsSchema,
   type CustomFoodInput,
+  type CustomFoodUpdateInput,
   type NutritionTargetsInput,
 } from '@sharpit/app/lib/validators/food-log';
 
@@ -64,15 +73,22 @@ const FIELD_LABELS: Record<string, string> = {
   proteinG: 'Protéines',
   carbsG: 'Glucides',
   fatG: 'Lipides',
+  proteinPct: 'Protéines',
+  carbsPct: 'Glucides',
+  fatPct: 'Lipides',
 };
 
+/** A refinement speaks for itself (« La répartition fait 95 % »); a bad field names the field. */
 function validated<T>(schema: ZodType<T>, raw: unknown): FormResult<T> {
   const parsed = schema.safeParse(raw);
   if (parsed.success) {
     return { ok: true, value: parsed.data };
   }
-  const field = String(parsed.error.issues[0]?.path.at(-1) ?? '');
-  const label = FIELD_LABELS[field];
+  const [issue] = parsed.error.issues;
+  if (issue?.code === 'custom') {
+    return { ok: false, message: issue.message };
+  }
+  const label = FIELD_LABELS[String(issue?.path.at(-1) ?? '')];
   return { ok: false, message: label ? `Vérifie le champ « ${label} ».` : 'Saisie invalide.' };
 }
 
@@ -155,9 +171,8 @@ export function buildEntryUpdate(
   return result.ok ? { ok: true, value: { id: entry.id, ...result.value } } : result;
 }
 
-/** The athlete's own food, per 100 g. */
-export function buildCustomFood(form: FormData): FormResult<CustomFoodInput> {
-  return validated(customFoodSchema, {
+function customFoodFields(form: FormData) {
+  return {
     name: text(form.get('name')),
     brand: text(form.get('brand')) || null,
     kcalPer100g: decimalOrUnset(form.get('kcalPer100g')),
@@ -165,7 +180,17 @@ export function buildCustomFood(form: FormData): FormResult<CustomFoodInput> {
     carbsPer100g: decimalOrUnset(form.get('carbsPer100g')),
     fatPer100g: decimalOrUnset(form.get('fatPer100g')),
     servingGrams: parseDecimal(form.get('servingGrams')),
-  });
+  };
+}
+
+/** The athlete's own food, per 100 g. */
+export function buildCustomFood(form: FormData): FormResult<CustomFoodInput> {
+  return validated(customFoodSchema, customFoodFields(form));
+}
+
+/** An own food edited: every field of the form, a blank serving clearing it. */
+export function buildCustomFoodUpdate(form: FormData): FormResult<CustomFoodUpdateInput> {
+  return validated(customFoodUpdateSchema, customFoodFields(form));
 }
 
 export const TARGET_FIELDS = [
@@ -179,15 +204,75 @@ export const TARGET_FIELDS = [
   unit: string;
 }>;
 
-/** Every target as typed; a blank field clears that target. */
-export function buildTargets(form: FormData): FormResult<NutritionTargetsInput> {
-  return validated(
-    nutritionTargetsSchema,
-    Object.fromEntries(TARGET_FIELDS.map(({ name }) => [name, parseDecimal(form.get(name))])),
-  );
+export const TARGET_SPLIT_FIELDS = [
+  { name: 'proteinPct', macro: 'protein', label: 'Protéines' },
+  { name: 'carbsPct', macro: 'carbs', label: 'Glucides' },
+  { name: 'fatPct', macro: 'fat', label: 'Lipides' },
+] as const satisfies ReadonlyArray<{
+  name: keyof NutritionTargetsPayload;
+  macro: TargetMacro;
+  label: string;
+}>;
+
+export type TargetSplitName = (typeof TARGET_SPLIT_FIELDS)[number]['name'];
+
+/** Grams as typed, a blank field clearing that target — or a percent split of the calories. */
+export function buildTargets(
+  form: FormData,
+  mode: NutritionTargetMode = 'GRAMS',
+): FormResult<NutritionTargetsInput> {
+  if (mode === 'PERCENT') {
+    return validated(nutritionTargetsSchema, {
+      mode,
+      kcal: parseDecimal(form.get('kcal')),
+      ...Object.fromEntries(
+        TARGET_SPLIT_FIELDS.map(({ name }) => [name, decimalOrUnset(form.get(name))]),
+      ),
+    });
+  }
+  return validated(nutritionTargetsSchema, {
+    mode,
+    ...Object.fromEntries(TARGET_FIELDS.map(({ name }) => [name, parseDecimal(form.get(name))])),
+  });
 }
 
 /** The value a target field opens with: blank when unset. */
 export function targetFieldValue(value: number | null | undefined): string {
   return value === null || value === undefined ? '' : String(value);
+}
+
+export type TargetSplitDraft = { kcal: string } & Record<TargetSplitName, string>;
+
+/** The split the « % » mode opens with: the saved one, else the grams read as shares. */
+export function targetSplitDraft(targets: NutritionTargetsPayload | null): TargetSplitDraft {
+  const kcal = targets?.kcal ?? null;
+  const share = (name: TargetSplitName, macro: TargetMacro, grams: number | null) =>
+    targetFieldValue(targets?.[name] ?? percentFromGrams(kcal, grams, macro));
+  return {
+    kcal: targetFieldValue(kcal),
+    proteinPct: share('proteinPct', 'protein', targets?.proteinG ?? null),
+    carbsPct: share('carbsPct', 'carbs', targets?.carbsG ?? null),
+    fatPct: share('fatPct', 'fat', targets?.fatG ?? null),
+  };
+}
+
+export type TargetSplitReading = {
+  total: number;
+  balanced: boolean;
+  grams: Record<TargetSplitName, number | null>;
+};
+
+/** The live total and the grams each share buys, as the « % » fields are typed. */
+export function readTargetSplit(draft: TargetSplitDraft): TargetSplitReading {
+  const kcal = parseDecimal(draft.kcal);
+  const shares = TARGET_SPLIT_FIELDS.map(({ name }) => parseDecimal(draft[name]));
+  const total = percentTotal(shares.map((share) => (Number.isFinite(share) ? share : null)));
+  const grams = Object.fromEntries(
+    TARGET_SPLIT_FIELDS.map(({ name, macro }, index) => {
+      const share = shares[index];
+      const known = kcal && Number.isFinite(kcal) && share !== null && Number.isFinite(share);
+      return [name, known ? gramsFromPercent(kcal, share!, macro) : null];
+    }),
+  ) as Record<TargetSplitName, number | null>;
+  return { total, balanced: total === 100, grams };
 }

@@ -10,10 +10,14 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { FoodCustomStep } from '@/components/nutrition/food-log/food-custom-step';
+import { FoodOwnFoodsStep } from '@/components/nutrition/food-log/food-own-foods-step';
 import { FoodPortionStep } from '@/components/nutrition/food-log/food-portion-step';
 import { FoodQuickStep } from '@/components/nutrition/food-log/food-quick-step';
 import { FoodSearchStep } from '@/components/nutrition/food-log/food-search-step';
-import type { FoodAddStep } from '@/components/nutrition/food-log/food-add-flow-state';
+import {
+  previousFoodAddStep,
+  type FoodAddStep,
+} from '@/components/nutrition/food-log/food-add-flow-state';
 import type { FoodAddFlow } from '@/components/nutrition/food-log/use-food-add-flow';
 import { FOOD_MEAL_LABELS } from '@sharpit/app/lib/nutrition/food-log/food-log-day';
 
@@ -22,6 +26,8 @@ const STEP_TITLES: Record<FoodAddStep, string> = {
   portion: 'Quantité',
   quick: 'Saisie rapide',
   custom: 'Créer un aliment',
+  mine: 'Mes aliments',
+  editFood: 'Modifier l’aliment',
 };
 
 function FoodAddStepBody({ flow }: { flow: FoodAddFlow }) {
@@ -49,6 +55,30 @@ function FoodAddStepBody({ flow }: { flow: FoodAddFlow }) {
       />
     );
   }
+  if (state.step === 'mine') {
+    return (
+      <FoodOwnFoodsStep
+        error={state.error ?? flow.ownFoodsError}
+        foods={flow.ownFoods}
+        loading={flow.ownFoodsLoading}
+        onCreate={() => flow.showStep('custom')}
+        onDelete={flow.deleteFood}
+        onEdit={flow.editFood}
+        onPick={flow.pickProduct}
+      />
+    );
+  }
+  if (state.step === 'editFood' && state.editing) {
+    return (
+      <FoodCustomStep
+        key={state.editing.id}
+        error={state.error}
+        food={state.editing}
+        pending={flow.editPending}
+        onSubmit={flow.saveFood}
+      />
+    );
+  }
   if (state.step === 'custom') {
     return (
       <FoodCustomStep error={state.error} pending={flow.customPending} onSubmit={flow.createFood} />
@@ -64,6 +94,7 @@ function FoodAddStepBody({ flow }: { flow: FoodAddFlow }) {
       searchError={flow.searchError}
       onBarcode={flow.lookupBarcode}
       onCustom={() => flow.showStep('custom')}
+      onMine={() => flow.showStep('mine')}
       onPick={flow.pickProduct}
       onQuery={flow.setQuery}
       onQuick={() => flow.showStep('quick')}
@@ -81,11 +112,11 @@ export function FoodAddDialog({ flow }: { flow: FoodAddFlow }) {
           <div className="flex items-center gap-2">
             {state.step === 'search' ? null : (
               <Button
-                aria-label="Retour à la recherche"
+                aria-label="Retour"
                 size="icon-sm"
                 type="button"
                 variant="ghost"
-                onClick={() => flow.showStep('search')}
+                onClick={() => flow.showStep(previousFoodAddStep(state.step))}
               >
                 <NavArrowLeft className="size-4" aria-hidden />
               </Button>
@@ -98,6 +129,7 @@ export function FoodAddDialog({ flow }: { flow: FoodAddFlow }) {
           <FoodAddStepBody flow={flow} />
         </div>
       </DialogContent>
+      {flow.confirmDialog}
     </Dialog>
   );
 }

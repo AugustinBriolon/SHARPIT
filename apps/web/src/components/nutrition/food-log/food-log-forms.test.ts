@@ -4,10 +4,13 @@ import {
   buildEntryUpdate,
   buildPortionEntry,
   buildQuickEntry,
+  buildCustomFoodUpdate,
   buildTargets,
   parseDecimal,
   portionPreview,
+  readTargetSplit,
   targetFieldValue,
+  targetSplitDraft,
 } from './food-log-forms';
 import type {
   FoodLogEntryPayload,
@@ -150,7 +153,7 @@ describe('buildTargets', () => {
   it('clears a blank target and checks the others', () => {
     expect(buildTargets(form({ kcal: '2600', proteinG: '150', carbsG: '', fatG: '70' }))).toEqual({
       ok: true,
-      value: { kcal: 2600, proteinG: 150, carbsG: null, fatG: 70 },
+      value: { mode: 'GRAMS', kcal: 2600, proteinG: 150, carbsG: null, fatG: 70 },
     });
     expect(buildTargets(form({ kcal: '200', proteinG: '', carbsG: '', fatG: '' }))).toEqual({
       ok: false,
@@ -161,5 +164,78 @@ describe('buildTargets', () => {
   it('opens each field on the saved target, blank when unset', () => {
     expect(targetFieldValue(2600)).toBe('2600');
     expect(targetFieldValue(null)).toBe('');
+  });
+});
+
+describe('targets in percent', () => {
+  it('sends a split of the calories once it adds up to 100', () => {
+    const split = { kcal: '2600', proteinPct: '25', carbsPct: '50', fatPct: '25' };
+    expect(buildTargets(form(split), 'PERCENT')).toEqual({
+      ok: true,
+      value: { mode: 'PERCENT', kcal: 2600, proteinPct: 25, carbsPct: 50, fatPct: 25 },
+    });
+    expect(buildTargets(form({ ...split, fatPct: '20' }), 'PERCENT')).toEqual({
+      ok: false,
+      message: 'La répartition fait 95 %, elle doit faire 100 %.',
+    });
+  });
+
+  it('reads the total and the grams each share buys as it is typed', () => {
+    expect(readTargetSplit({ kcal: '2600', proteinPct: '25', carbsPct: '50', fatPct: '' })).toEqual(
+      {
+        total: 75,
+        balanced: false,
+        grams: { proteinPct: 163, carbsPct: 325, fatPct: null },
+      },
+    );
+  });
+
+  it('opens on the saved split, else on the grams read as shares', () => {
+    const grams = {
+      mode: 'GRAMS' as const,
+      kcal: 2600,
+      proteinG: 163,
+      carbsG: 325,
+      fatG: 72,
+      proteinPct: null,
+      carbsPct: null,
+      fatPct: null,
+    };
+    expect(targetSplitDraft(grams)).toEqual({
+      kcal: '2600',
+      proteinPct: '25',
+      carbsPct: '50',
+      fatPct: '25',
+    });
+    expect(targetSplitDraft(null)).toEqual({ kcal: '', proteinPct: '', carbsPct: '', fatPct: '' });
+  });
+});
+
+describe('buildCustomFoodUpdate', () => {
+  it('sends the edited food, a blank serving clearing it', () => {
+    expect(
+      buildCustomFoodUpdate(
+        form({
+          name: 'Porridge',
+          brand: '',
+          kcalPer100g: '140',
+          proteinPer100g: '5',
+          carbsPer100g: '22',
+          fatPer100g: '3,2',
+          servingGrams: '',
+        }),
+      ),
+    ).toEqual({
+      ok: true,
+      value: {
+        name: 'Porridge',
+        brand: null,
+        kcalPer100g: 140,
+        proteinPer100g: 5,
+        carbsPer100g: 22,
+        fatPer100g: 3.2,
+        servingGrams: null,
+      },
+    });
   });
 });

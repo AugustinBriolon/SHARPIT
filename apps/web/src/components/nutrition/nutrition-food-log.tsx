@@ -3,7 +3,9 @@
 import { FoodAddDialog } from '@/components/nutrition/food-log/food-add-dialog';
 import { FoodEntryEditDialog } from '@/components/nutrition/food-log/food-entry-edit-dialog';
 import { FoodLogSection } from '@/components/nutrition/food-log/food-log-section';
+import { MfpImportDialog } from '@/components/nutrition/food-log/mfp-import-dialog';
 import { NutritionTargetsDialog } from '@/components/nutrition/food-log/nutrition-targets-dialog';
+import { useMfpImport } from '@/components/nutrition/food-log/use-mfp-import';
 import { useFoodAddFlow } from '@/components/nutrition/food-log/use-food-add-flow';
 import { useFoodEntryEditor } from '@/components/nutrition/food-log/use-food-entry-editor';
 import { useNutritionTargetsEditor } from '@/components/nutrition/food-log/use-nutrition-targets-editor';
@@ -25,7 +27,8 @@ function useNutritionFoodLog(trainingDayId: string) {
     groups: groupEntriesByMeal(entries),
     flow: useFoodAddFlow(trainingDayId, day.data?.recent ?? []),
     editor: useFoodEntryEditor(trainingDayId),
-    targets: useNutritionTargetsEditor(trainingDayId),
+    targets: useNutritionTargetsEditor(trainingDayId, day.data?.targets ?? null),
+    mfpImport: useMfpImport(),
   };
 }
 
@@ -39,7 +42,8 @@ export function NutritionFoodLog({
   importedMeals: NutritionMealSummary[];
   mfpConnected: boolean;
 }) {
-  const { day, entries, groups, flow, editor, targets } = useNutritionFoodLog(trainingDayId);
+  const { day, entries, groups, flow, editor, targets, mfpImport } =
+    useNutritionFoodLog(trainingDayId);
   const mfp = useMfpSync();
 
   return (
@@ -53,6 +57,7 @@ export function NutritionFoodLog({
         mfpSync={mfpConnected ? { syncing: mfp.syncing, onSync: mfp.handleSync } : null}
         unavailable={day.isError}
         onAddFirst={() => flow.start(mealForHour(new Date().getHours()))}
+        onImport={() => mfpImport.setOpen(true)}
         onTargets={() => targets.setOpen(true)}
       />
       <FoodAddDialog flow={flow} />
@@ -64,12 +69,11 @@ export function NutritionFoodLog({
         onDraftChange={editor.patchDraft}
         onSave={editor.save}
       />
-      <NutritionTargetsDialog
-        error={targets.error}
-        open={targets.open}
-        targets={day.data?.targets ?? null}
-        onOpenChange={targets.setOpen}
-        onSave={targets.save}
+      <NutritionTargetsDialog editor={targets} targets={day.data?.targets ?? null} />
+      <MfpImportDialog
+        view={mfpImport.view}
+        onFile={mfpImport.send}
+        onOpenChange={mfpImport.setOpen}
       />
     </>
   );

@@ -26,6 +26,7 @@ export type FoodSearchStepProps = {
   onBarcode: (code: string) => void;
   onQuick: () => void;
   onCustom: () => void;
+  onMine: () => void;
 };
 
 function SearchInput({ query, onQuery }: { query: string; onQuery: (query: string) => void }) {
@@ -68,6 +69,9 @@ export function FoodSearchStep(props: FoodSearchStepProps) {
       </div>
       <FoodBarcodeField pending={props.barcodePending} onSubmit={props.onBarcode} />
       <div className="border-border/60 flex flex-wrap gap-2 border-t pt-3">
+        <Button size="sm" type="button" variant="ghost" onClick={props.onMine}>
+          Mes aliments
+        </Button>
         <Button size="sm" type="button" variant="ghost" onClick={props.onQuick}>
           Saisie rapide
         </Button>
