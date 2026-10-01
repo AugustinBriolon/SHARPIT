@@ -1,3 +1,4 @@
+import { pickNutritionRow } from '@sharpit/app/lib/nutrition/food-log/nutrition-source';
 import type { PrismaClient } from '@prisma/client';
 import {
   buildJournalAutoChecklist,
@@ -125,7 +126,7 @@ export async function buildJournalDaySignals(
   const dayDate = toUtcDateOnly(new Date(`${trainingDayId}T00:00:00.000Z`));
   const activityRange = approximateTrainingDayUtcRange(trainingDayId);
 
-  const [health, activities, nutrition] = await Promise.all([
+  const [health, activities, nutritionRows] = await Promise.all([
     prisma.dailyHealth.findUnique({
       where: { athleteId_date: { athleteId, date: dayDate } },
       select: {
@@ -143,9 +144,10 @@ export async function buildJournalDaySignals(
       },
       select: { type: true, duration: true, date: true },
     }),
-    prisma.dailyNutrition.findFirst({
+    prisma.dailyNutrition.findMany({
       where: { athleteId, date: dayDate },
       select: {
+        provider: true,
         calories: true,
         protein: true,
         carbohydrates: true,
@@ -162,6 +164,7 @@ export async function buildJournalDaySignals(
     }),
   ]);
 
+  const nutrition = pickNutritionRow(nutritionRows);
   const dayActivities = activities.filter((activity) =>
     activityMatchesTrainingDay(activity.date, trainingDayId),
   );

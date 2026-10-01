@@ -8,6 +8,7 @@ import { getLatestBodyWeightKg } from '@sharpit/server/lib/nutrition/body-weight
 import { normalizeStoredMeals } from '@sharpit/server/lib/nutrition/meal-display';
 import { getAthleteProfile } from '@sharpit/server/lib/queries';
 import { prisma } from '@sharpit/db/client';
+import { pickNutritionRow } from '@sharpit/app/lib/nutrition/food-log/nutrition-source';
 import type { NutritionAnalysisInput } from './nutrition-analysis-facts';
 
 /** Nutrition days are stored at UTC midnight. */
@@ -16,9 +17,11 @@ export function nutritionDayDate(trainingDayId: string): Date {
 }
 
 async function loadNutritionRow(athleteId: string, trainingDayId: string) {
-  return prisma.dailyNutrition.findFirst({
-    where: { athleteId, date: nutritionDayDate(trainingDayId) },
-  });
+  return pickNutritionRow(
+    await prisma.dailyNutrition.findMany({
+      where: { athleteId, date: nutritionDayDate(trainingDayId) },
+    }),
+  );
 }
 
 async function loadDaySessions(athleteId: string, trainingDayId: string) {

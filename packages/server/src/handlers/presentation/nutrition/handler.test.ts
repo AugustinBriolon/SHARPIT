@@ -25,6 +25,7 @@ vi.mock('@sharpit/server/lib/access/is-pro-athlete', () => ({ isProAthlete }));
 
 const VIEW_MODEL = {
   connected: true,
+  mfpConnected: false,
   diet: { ids: [], labels: [] },
   coachReading: null,
   selectedDay: null,

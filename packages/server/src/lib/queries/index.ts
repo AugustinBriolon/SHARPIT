@@ -15,6 +15,7 @@ import { linkPlannedSessionActivity } from '@sharpit/server/lib/queries/planned-
 import { ActivityType, type AthleteSex, FunctionalImpact, Prisma } from '@prisma/client';
 import { addDays, endOfDay, startOfDay } from 'date-fns';
 import { prisma } from '@sharpit/db/client';
+import { dedupeNutritionRowsByDay } from '@sharpit/app/lib/nutrition/food-log/nutrition-source';
 import type { DisplayMode } from '@sharpit/app/lib/preferences/display-mode';
 
 export {
@@ -392,13 +393,14 @@ export async function getActivityDatesInRange(athleteId: string, from: Date, to:
 
 /** `from` / `to` are `YYYY-MM-DD` — nutrition days are stored at UTC midnight. */
 export async function getNutritionCaloriesInRange(athleteId: string, from: string, to: string) {
-  return prisma.dailyNutrition.findMany({
+  const rows = await prisma.dailyNutrition.findMany({
     where: {
       athleteId,
       date: { gte: new Date(`${from}T00:00:00.000Z`), lte: new Date(`${to}T00:00:00.000Z`) },
     },
-    select: { date: true, calories: true },
+    select: { date: true, calories: true, provider: true },
   });
+  return dedupeNutritionRowsByDay(rows).map(({ date, calories }) => ({ date, calories }));
 }
 
 export async function getBodyCompositionMeasurements(athleteId: string, days?: number) {

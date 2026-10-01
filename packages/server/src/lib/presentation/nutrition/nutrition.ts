@@ -21,9 +21,11 @@ import { fuelFeatureSetToDensity } from '@sharpit/app/lib/nutrition/fuel-density
 import { normalizeStoredMeals } from '@sharpit/server/lib/nutrition/meal-display';
 import { loadDeclaredDiet } from '@sharpit/server/lib/nutrition/analysis/nutrition-analysis-inputs';
 import { prisma } from '@sharpit/db/client';
+import { dedupeNutritionRowsByDay } from '@sharpit/app/lib/nutrition/food-log/nutrition-source';
 
 type NutritionRow = {
   date: Date;
+  provider: string;
   calories: number;
   protein: number;
   carbohydrates: number;
@@ -169,8 +171,8 @@ function buildNutritionEmptyState(
     title: 'Aucune donnée ce jour-là',
     description:
       selectedDayId === todayId
-        ? 'Synchronise MyFitnessPal ou enregistre tes repas pour voir tes apports.'
-        : 'Aucun journal alimentaire synchronisé pour cette date.',
+        ? 'Ajoute ton premier repas : scanne un code-barres ou cherche un aliment.'
+        : 'Aucun repas enregistré pour cette date.',
   };
 }
 
@@ -194,13 +196,15 @@ async function buildConnectedNutritionViewModel(
   const todayId = format(new Date(), 'yyyy-MM-dd');
   const from = subDays(referenceDate, 6);
 
-  const rows = (await prisma.dailyNutrition.findMany({
-    where: {
-      athleteId,
-      date: { gte: new Date(`${format(from, 'yyyy-MM-dd')}T00:00:00Z`) },
-    },
-    orderBy: { date: 'desc' },
-  })) as NutritionRow[];
+  const rows = dedupeNutritionRowsByDay(
+    (await prisma.dailyNutrition.findMany({
+      where: {
+        athleteId,
+        date: { gte: new Date(`${format(from, 'yyyy-MM-dd')}T00:00:00Z`) },
+      },
+      orderBy: { date: 'desc' },
+    })) as NutritionRow[],
+  );
 
   const history: NutritionDaySummary[] = rows.map(mapRow);
   const selectedRow = rows.find((d) => format(d.date, 'yyyy-MM-dd') === selectedDayId);
@@ -216,6 +220,7 @@ async function buildConnectedNutritionViewModel(
 
   return {
     connected: true,
+    mfpConnected: false,
     diet,
     coachReading: null,
     selectedDay,
@@ -225,27 +230,17 @@ async function buildConnectedNutritionViewModel(
   };
 }
 
+/**
+ * The Nutrition page. The log lives in SHARPIT (ADR-061), so every athlete has one and the page
+ * is never a « connect a provider » wall; MyFitnessPal only adds a sync action when linked.
+ */
 export async function buildNutritionViewModel(
   athleteId: string,
   trainingDayId?: string,
 ): Promise<NutritionViewModel> {
-  const account = await getMfpAccount(athleteId).catch(() => null);
-  const connected = Boolean(account);
-
-  if (!connected) {
-    return {
-      connected: false,
-      diet: { ids: [], labels: [] },
-      coachReading: null,
-      selectedDay: null,
-      today: null,
-      history: [],
-      emptyState: {
-        title: 'Nutrition indisponible',
-        description: 'Connecte MyFitnessPal dans les réglages pour suivre tes apports.',
-      },
-    };
-  }
-
-  return buildConnectedNutritionViewModel(athleteId, trainingDayId);
+  const [account, viewModel] = await Promise.all([
+    getMfpAccount(athleteId).catch(() => null),
+    buildConnectedNutritionViewModel(athleteId, trainingDayId),
+  ]);
+  return { ...viewModel, mfpConnected: Boolean(account) };
 }

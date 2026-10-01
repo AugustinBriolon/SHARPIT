@@ -10,6 +10,7 @@ import {
   type V1NutritionHistoryRow,
 } from '@sharpit/server/lib/presentation/v1/nutrition';
 import { prisma } from '@sharpit/db/client';
+import { dedupeNutritionRowsByDay } from '@sharpit/app/lib/nutrition/food-log/nutrition-source';
 
 /** The reading is an extra — a failure there must never take the day down. */
 async function prepareReadingSafely(athleteId: string, dayId: string) {
@@ -28,10 +29,18 @@ async function loadHistoryRows(
 ): Promise<V1NutritionHistoryRow[]> {
   const end = new Date(`${trainingDayId}T00:00:00.000Z`);
   const start = new Date(end.getTime() - (V1_NUTRITION_HISTORY_DAYS - 1) * 24 * 60 * 60 * 1000);
-  const rows = await prisma.dailyNutrition.findMany({
-    where: { athleteId, date: { gte: start, lte: end } },
-    select: { date: true, calories: true, goalCalories: true, exerciseCalories: true },
-  });
+  const rows = dedupeNutritionRowsByDay(
+    await prisma.dailyNutrition.findMany({
+      where: { athleteId, date: { gte: start, lte: end } },
+      select: {
+        date: true,
+        provider: true,
+        calories: true,
+        goalCalories: true,
+        exerciseCalories: true,
+      },
+    }),
+  );
   return rows.map((row) => ({
     date: row.date.toISOString().slice(0, 10),
     calories: row.calories,

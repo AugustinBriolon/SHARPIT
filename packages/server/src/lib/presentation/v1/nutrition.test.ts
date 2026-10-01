@@ -53,6 +53,7 @@ function day(date: string, calories: number, goal: number | null = 2400): Nutrit
 function viewModel(overrides: Partial<NutritionViewModel>): NutritionViewModel {
   return {
     connected: true,
+    mfpConnected: false,
     diet: { ids: ['vegetarian'], labels: ['Végétarien'] },
     coachReading: null,
     selectedDay: null,

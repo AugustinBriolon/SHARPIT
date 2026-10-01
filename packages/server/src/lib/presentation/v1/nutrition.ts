@@ -65,8 +65,10 @@ export type V1NutritionCoachReading = NutritionCoachReadingView | { state: 'pro_
 export type V1NutritionResponse = {
   apiVersion: 1;
   trainingDayId: string;
-  /** A food log is connected (MyFitnessPal today). */
+  /** The athlete keeps a food log — always true since it lives in SHARPIT (ADR-061). */
   connected: boolean;
+  /** MyFitnessPal is linked and can be synced. Absent from servers before the in-app log. */
+  mfpConnected: boolean;
   empty: { title: string; message: string | null } | null;
   day: V1NutritionDay | null;
   /** `pro_required` below SharpIt Pro: the reading is what SHARPIT adds, the log is not. */
@@ -176,6 +178,7 @@ export function projectV1Nutrition(
     apiVersion: 1,
     trainingDayId,
     connected: viewModel.connected,
+    mfpConnected: viewModel.mfpConnected,
     empty: viewModel.selectedDay ? null : empty,
     day: viewModel.selectedDay ? projectDay(viewModel.selectedDay) : null,
     coachReading,

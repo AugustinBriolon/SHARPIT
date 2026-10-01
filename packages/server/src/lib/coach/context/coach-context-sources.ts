@@ -18,6 +18,7 @@ import {
 } from '@sharpit/server/lib/training/pmc/pmc-server';
 import { getOrBuildAthleteSnapshot } from '@sharpit/server/lib/athlete-state/snapshot-service';
 import { prisma } from '@sharpit/db/client';
+import { pickNutritionRow } from '@sharpit/app/lib/nutrition/food-log/nutrition-source';
 import { listTravelContexts } from '@sharpit/server/lib/travel-context/service';
 import { loadScenarioComparisonForCoach } from '@sharpit/server/lib/presentation/scenario/scenario-comparison';
 
@@ -26,9 +27,11 @@ async function loadNutritionSummary(
   trainingDayId: string,
 ): Promise<{ calories: number; protein: number; carbs: number; fat: number } | null> {
   try {
-    const row = await prisma.dailyNutrition.findFirst({
-      where: { athleteId, date: new Date(`${trainingDayId}T00:00:00Z`) },
-    });
+    const row = pickNutritionRow(
+      await prisma.dailyNutrition.findMany({
+        where: { athleteId, date: new Date(`${trainingDayId}T00:00:00Z`) },
+      }),
+    );
     if (!row) {
       return null;
     }

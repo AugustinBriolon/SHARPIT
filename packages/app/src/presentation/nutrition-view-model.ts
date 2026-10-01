@@ -91,7 +91,10 @@ export type NutritionCoachReadingView =
     };
 
 export type NutritionViewModel = {
+  /** The athlete keeps a food log: always true since the log lives in SHARPIT (ADR-061). */
   connected: boolean;
+  /** MyFitnessPal is linked, so it can be synced — a fallback source for unlogged days. */
+  mfpConnected: boolean;
   diet: NutritionDietView;
   coachReading: NutritionCoachReadingView | null;
   selectedDay: NutritionDaySummary | null;
