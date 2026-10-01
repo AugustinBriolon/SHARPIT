@@ -45,6 +45,8 @@ export const rateLimiters = {
   sessionAnalyze: limiter(20, '1 h', 'session-analyze'),
   activityNarrative: limiter(1, '10 m', 'activity-narrative'),
   providerSync: limiter(1, '2 m', 'provider-sync'),
+  /** Open Food Facts lookups go out from our servers: one athlete must not spend everyone's quota. */
+  foodSearch: limiter(20, '1 m', 'food-search'),
   /** Apple Health is sent by the phone in batches — a first import spans a year. */
   appleHealth: limiter(30, '10 m', 'apple-health'),
 };

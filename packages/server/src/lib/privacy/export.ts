@@ -82,6 +82,8 @@ export async function buildAthleteExportJson(athleteId: string) {
     weeklyReviews,
     performanceRecords,
     analysisEvidenceSnapshots,
+    foodLogEntries,
+    customFoods,
   ] = await Promise.all([
     prisma.activity.findMany({
       where: { athleteId },
@@ -127,6 +129,8 @@ export async function buildAthleteExportJson(athleteId: string) {
     }),
     prisma.performanceRecord.findMany({ where: { athleteId } }),
     listAnalysisEvidenceForExport(athleteId),
+    prisma.foodLogEntry.findMany({ where: { athleteId }, orderBy: { date: 'desc' }, take: 20000 }),
+    prisma.foodProduct.findMany({ where: { ownerId: athleteId } }),
   ]);
 
   // Connection status only — never encrypted tokens / passwords.
@@ -175,6 +179,8 @@ export async function buildAthleteExportJson(athleteId: string) {
     activities,
     dailyHealth,
     dailyNutrition,
+    foodLogEntries,
+    customFoods,
     bodyComposition,
     goals,
     plannedSessions,
