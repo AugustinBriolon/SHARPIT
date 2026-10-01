@@ -1,8 +1,11 @@
-name: Presentation Architecture Guard
+name: CI
 
+# Typecheck and every package's tests, on each push and pull request. The presentation
+# architecture guard is one of those tests.
 on:
-  pull_request:
-    paths-ignore:
+  push:
+    branches: [main]
+    paths-ignore: &docs-only
       - 'docs/**'
       - 'README.md'
       - 'ARCHITECTURE.md'
@@ -11,14 +14,16 @@ on:
       - 'CODE_MAP.md'
       - 'FEATURE_EXTRACTION.md'
       - '**/*.md'
+  pull_request:
+    paths-ignore: *docs-only
   workflow_dispatch:
 
 concurrency:
-  group: presentation-architecture-guard-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
-  guard:
+  check:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -63,6 +68,11 @@ jobs:
         env:
           YARN_NODE_LINKER: node-modules
           PRISMA_GENERATE_SKIP_AUTOINSTALL: '1'
+
+      - name: Typecheck
+        run: yarn typecheck
+        env:
+          YARN_NODE_LINKER: node-modules
 
       - name: Run tests
         run: yarn test
