@@ -347,6 +347,16 @@ function formatHealthSection(health: CoachContext['health']): string[] {
   return healthBits.length ? [`\n## Récupération\n${healthBits.join(' · ')}.`] : [];
 }
 
+/** What the athlete logged eating today, so a fuelling question reads the plate (ADR-061). */
+export function formatNutritionSection(nutrition: CoachContext['nutrition']): string[] {
+  if (!nutrition) {
+    return [];
+  }
+  return [
+    `\n## Nutrition du jour\n${nutrition.calories} kcal · ${nutrition.protein} g protéines · ${nutrition.carbs} g glucides · ${nutrition.fat} g lipides (journal à ce stade de la journée).`,
+  ];
+}
+
 function formatPrimaryRaceLine(primaryRace: NonNullable<CoachContext['primaryRace']>): string {
   const extras = [
     primaryRace.priority ? `priorité ${primaryRace.priority}` : null,
@@ -582,6 +592,7 @@ export const COACH_CONTEXT_SECTIONS = [
   'decision',
   'environment',
   'health',
+  'nutrition',
   'availability',
   'goals',
   'recent',
@@ -607,6 +618,7 @@ function coachContextSections(ctx: CoachContext): Array<[CoachContextSection, st
     ['decision', formatDecisionSection(ctx.decision)],
     ['environment', formatEnvironmentSection(ctx.environment)],
     ['health', formatHealthSection(ctx.health)],
+    ['nutrition', formatNutritionSection(ctx.nutrition)],
     ['availability', formatAvailabilitySection(ctx.trainingAvailability, ctx.availableDays)],
     ['goals', formatGoalsSection(ctx)],
     ['recent', formatRecentActivitiesSection(ctx.recent)],

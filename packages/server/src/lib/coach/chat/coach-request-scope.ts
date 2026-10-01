@@ -77,7 +77,7 @@ const SCOPES: Record<CoachIntent, Omit<CoachRequestScope, 'intent'>> = {
     reasoning: COACH_REASONING_LEVEL.answer,
   },
   nutrition: {
-    sections: new Set([...CORE, 'fatigue', 'recent', 'upcoming']),
+    sections: new Set([...CORE, 'nutrition', 'fatigue', 'recent', 'upcoming']),
     readsAgenda: false,
     tools: READ_ONLY_TOOLS,
     reasoning: COACH_REASONING_LEVEL.answer,
