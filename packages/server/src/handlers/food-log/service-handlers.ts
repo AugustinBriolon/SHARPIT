@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import type { ZodType } from 'zod';
 import {
   customFoodSchema,
+  customFoodUpdateSchema,
   foodLogEntryCreateSchema,
   foodLogEntryUpdateSchema,
   nutritionTargetsSchema,
@@ -12,14 +13,17 @@ import {
   addFoodLogEntry,
   cacheSearchResults,
   createCustomFood,
+  deleteCustomFood,
   deleteFoodLogEntry,
   findProductByBarcode,
   FoodLogNotFoundError,
   getNutritionTargets,
   listFoodLogDay,
+  listOwnFoods,
   recentFoods,
   searchOwnFoods,
   setNutritionTargets,
+  updateCustomFood,
   updateFoodLogEntry,
 } from '@sharpit/server/lib/nutrition/food-log/food-log-service';
 import { searchOffProducts } from '@sharpit/server/lib/nutrition/food-log/open-food-facts-client';
@@ -188,6 +192,39 @@ export async function addCustomFood(request: NextRequest) {
     );
   } catch (error) {
     return failure('custom food', error);
+  }
+}
+
+/** `GET /api/v1/food-log/foods/mine` — the athlete's own foods, to pick, edit or delete. */
+export async function getOwnFoods() {
+  try {
+    return NextResponse.json({ foods: await listOwnFoods(await getCurrentAthleteId()) });
+  } catch (error) {
+    return failure('own foods', error);
+  }
+}
+
+/** `PATCH /api/v1/food-log/foods/[id]` — an own food edited; logged entries keep their snapshot. */
+export async function editCustomFood(request: NextRequest, id: string) {
+  try {
+    const athleteId = await getCurrentAthleteId();
+    const body = await parseBody(request, customFoodUpdateSchema);
+    if (!body.ok) {
+      return body.response;
+    }
+    return NextResponse.json({ product: await updateCustomFood(athleteId, id, body.data) });
+  } catch (error) {
+    return failure('edit food', error);
+  }
+}
+
+/** `DELETE /api/v1/food-log/foods/[id]`. */
+export async function removeCustomFood(id: string) {
+  try {
+    await deleteCustomFood(await getCurrentAthleteId(), id);
+    return new NextResponse(null, { status: 204 });
+  } catch (error) {
+    return failure('delete food', error);
   }
 }
 

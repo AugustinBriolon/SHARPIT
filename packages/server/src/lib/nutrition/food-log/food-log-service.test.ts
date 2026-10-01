@@ -9,7 +9,14 @@ vi.mock('@sharpit/db/client', () => ({
       update: vi.fn(),
       delete: vi.fn(),
     },
-    foodProduct: { findFirst: vi.fn(), findUnique: vi.fn(), upsert: vi.fn() },
+    foodProduct: {
+      findFirst: vi.fn(),
+      findUnique: vi.fn(),
+      findMany: vi.fn(),
+      upsert: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
+    },
     dailyNutrition: { upsert: vi.fn(), deleteMany: vi.fn() },
     athleteProfile: { findUnique: vi.fn(), update: vi.fn() },
   },
@@ -175,5 +182,70 @@ describe('food log service', () => {
     vi.mocked(fetchOffProduct).mockRejectedValue(new Error('503'));
 
     expect(await service.findProductByBarcode('5690845000621')).toBe(stale);
+  });
+
+  it('stores a percent split in grams too, so every reader keeps reading grams', async () => {
+    const { prisma, service } = await setup();
+    vi.mocked(prisma.foodLogEntry.findMany).mockResolvedValue([]);
+
+    await service.setNutritionTargets(
+      'athlete-1',
+      { mode: 'PERCENT', kcal: 2600, proteinPct: 25, carbsPct: 50, fatPct: 25 },
+      '2026-10-01',
+    );
+
+    expect(prisma.athleteProfile.update).toHaveBeenCalledWith({
+      where: { id: 'athlete-1' },
+      data: {
+        nutritionTargetMode: 'PERCENT',
+        nutritionTargetKcal: 2600,
+        nutritionTargetProteinPct: 25,
+        nutritionTargetCarbsPct: 50,
+        nutritionTargetFatPct: 25,
+        nutritionTargetProteinG: 163,
+        nutritionTargetCarbsG: 325,
+        nutritionTargetFatG: 72,
+      },
+    });
+  });
+
+  it('forgets the split when the athlete goes back to grams', async () => {
+    const { prisma, service } = await setup();
+    vi.mocked(prisma.foodLogEntry.findMany).mockResolvedValue([]);
+
+    await service.setNutritionTargets('athlete-1', { proteinG: 150 }, '2026-10-01');
+
+    expect(prisma.athleteProfile.update).toHaveBeenCalledWith({
+      where: { id: 'athlete-1' },
+      data: {
+        nutritionTargetMode: 'GRAMS',
+        nutritionTargetProteinPct: null,
+        nutritionTargetCarbsPct: null,
+        nutritionTargetFatPct: null,
+        nutritionTargetProteinG: 150,
+      },
+    });
+  });
+
+  it("edits and deletes only the athlete's own food", async () => {
+    const { prisma, service } = await setup();
+    vi.mocked(prisma.foodProduct.findFirst).mockResolvedValueOnce({ id: 'mine' } as never);
+
+    await service.updateCustomFood('athlete-1', 'mine', { kcalPer100g: 120 });
+
+    expect(prisma.foodProduct.findFirst).toHaveBeenCalledWith({
+      where: { id: 'mine', ownerId: 'athlete-1', source: 'CUSTOM' },
+      select: { id: true },
+    });
+    expect(prisma.foodProduct.update).toHaveBeenCalledWith({
+      where: { id: 'mine' },
+      data: { kcalPer100g: 120 },
+    });
+
+    vi.mocked(prisma.foodProduct.findFirst).mockResolvedValueOnce(null);
+    await expect(service.deleteCustomFood('athlete-1', 'skyr')).rejects.toBeInstanceOf(
+      service.FoodLogNotFoundError,
+    );
+    expect(prisma.foodProduct.delete).not.toHaveBeenCalled();
   });
 });

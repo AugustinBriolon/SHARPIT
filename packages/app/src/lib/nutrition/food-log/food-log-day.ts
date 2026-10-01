@@ -1,4 +1,5 @@
 import { FOOD_MEALS, type FoodMealKey, type FoodPer100g } from './food-log-math';
+import type { NutritionTargetMode } from './nutrition-targets';
 import type { FoodLogEntryCreateInput } from '@sharpit/app/lib/validators/food-log';
 
 /**
@@ -39,11 +40,28 @@ export type FoodProductPayload = FoodPer100g & {
   servingLabel?: string | null;
 };
 
+/** Grams are always set from the split in `PERCENT` mode; the shares are kept to prefill it. */
 export type NutritionTargetsPayload = {
+  mode: NutritionTargetMode;
   kcal: number | null;
   proteinG: number | null;
   carbsG: number | null;
   fatG: number | null;
+  proteinPct: number | null;
+  carbsPct: number | null;
+  fatPct: number | null;
+};
+
+/** `GET /api/food-log/foods/mine`. */
+export type OwnFoodsPayload = { foods: FoodProductPayload[] };
+
+/** `POST /api/food-log/import/myfitnesspal`. */
+export type MfpImportResultPayload = {
+  importedDays: number;
+  firstDay: string | null;
+  lastDay: string | null;
+  /** Rows without a readable date or calories, left out. */
+  skippedRows: number;
 };
 
 export type RecentFoodPayload = { product: FoodProductPayload; lastGrams: number };

@@ -8,10 +8,13 @@ vi.mock('@sharpit/server/lib/auth/current-athlete', () => ({
 vi.mock('@sharpit/server/lib/rate-limit', () => ({
   checkRateLimit: vi.fn().mockResolvedValue({ ok: true }),
   rateLimitJsonResponse: vi.fn(() => ({ body: { error: 'Trop de requêtes' }, status: 429 })),
-  rateLimiters: { foodSearch: {} },
+  rateLimiters: { foodSearch: {}, nutritionImport: {} },
 }));
 vi.mock('@sharpit/server/lib/nutrition/food-log/open-food-facts-client', () => ({
   searchOffProducts: vi.fn(),
+}));
+vi.mock('@sharpit/server/lib/nutrition/import/mfp-export-import', () => ({
+  importMfpExport: vi.fn(),
 }));
 vi.mock('@sharpit/server/lib/nutrition/food-log/food-log-service', () => {
   class FoodLogNotFoundError extends Error {}
@@ -20,13 +23,16 @@ vi.mock('@sharpit/server/lib/nutrition/food-log/food-log-service', () => {
     addFoodLogEntry: vi.fn(),
     cacheSearchResults: vi.fn(),
     createCustomFood: vi.fn(),
+    deleteCustomFood: vi.fn(),
     deleteFoodLogEntry: vi.fn(),
     findProductByBarcode: vi.fn(),
     getNutritionTargets: vi.fn(),
     listFoodLogDay: vi.fn(),
+    listOwnFoods: vi.fn(),
     recentFoods: vi.fn(),
     searchOwnFoods: vi.fn(),
     setNutritionTargets: vi.fn(),
+    updateCustomFood: vi.fn(),
     updateFoodLogEntry: vi.fn(),
   };
 });
@@ -155,5 +161,102 @@ describe('/api/food-log/targets', () => {
 
     expect(response.status).toBe(200);
     expect(log.setNutritionTargets).toHaveBeenCalledWith('athlete-1', { kcal: 2600 }, '2026-10-01');
+  });
+});
+
+describe('/api/food-log/targets in percent', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('refuses a split that does not add up to 100', async () => {
+    const { PUT } = await import('./targets/handler');
+    const log = await service();
+
+    const response = await PUT(
+      json('PUT', '/targets?trainingDayId=2026-10-01', {
+        mode: 'PERCENT',
+        kcal: 2600,
+        proteinPct: 30,
+        carbsPct: 50,
+        fatPct: 25,
+      }),
+    );
+
+    expect(response.status).toBe(400);
+    expect(log.setNutritionTargets).not.toHaveBeenCalled();
+  });
+});
+
+describe('/api/food-log/foods/mine and /foods/[id]', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it("lists the athlete's own foods", async () => {
+    const { GET } = await import('./foods/mine/handler');
+    const log = await service();
+    vi.mocked(log.listOwnFoods).mockResolvedValue([{ id: 'mine' }] as never);
+
+    expect(await (await GET()).json()).toEqual({ foods: [{ id: 'mine' }] });
+    expect(log.listOwnFoods).toHaveBeenCalledWith('athlete-1');
+  });
+
+  it('edits an own food, 404 when it is not the athlete’s, and deletes one', async () => {
+    const { PATCH, DELETE } = await import('./foods/[id]/handler');
+    const log = await service();
+    const params = { params: Promise.resolve({ id: 'mine' }) };
+    vi.mocked(log.updateCustomFood).mockResolvedValueOnce({ id: 'mine' } as never);
+
+    expect((await PATCH(json('PATCH', '/foods/mine', { kcalPer100g: 120 }), params)).status).toBe(
+      200,
+    );
+    expect(log.updateCustomFood).toHaveBeenCalledWith('athlete-1', 'mine', { kcalPer100g: 120 });
+
+    vi.mocked(log.updateCustomFood).mockRejectedValueOnce(new log.FoodLogNotFoundError('x'));
+    expect((await PATCH(json('PATCH', '/foods/x', { name: 'X' }), params)).status).toBe(404);
+    expect((await PATCH(json('PATCH', '/foods/mine', {}), params)).status).toBe(400);
+
+    const deleted = await DELETE(new NextRequest(`${BASE}/foods/mine`), params);
+    expect(deleted.status).toBe(204);
+    expect(log.deleteCustomFood).toHaveBeenCalledWith('athlete-1', 'mine');
+  });
+});
+
+describe('/api/food-log/import/myfitnesspal', () => {
+  const upload = (file?: File) => {
+    const form = new FormData();
+    if (file) {
+      form.set('file', file);
+    }
+    return new NextRequest(`${BASE}/import/myfitnesspal`, { method: 'POST', body: form });
+  };
+
+  it('imports the uploaded export and answers what it read', async () => {
+    const { POST } = await import('./import/myfitnesspal/handler');
+    const { importMfpExport } =
+      await import('@sharpit/server/lib/nutrition/import/mfp-export-import');
+    const result = {
+      importedDays: 2,
+      firstDay: '2026-09-30',
+      lastDay: '2026-10-01',
+      skippedRows: 0,
+    };
+    vi.mocked(importMfpExport).mockResolvedValue(result);
+
+    const response = await POST(upload(new File(['Date,Meal,Calories'], 'Nutrition.csv')));
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual(result);
+    expect(importMfpExport).toHaveBeenCalledWith('athlete-1', expect.any(Uint8Array));
+  });
+
+  it('asks for a file, and says why an unreadable one is refused', async () => {
+    const { POST } = await import('./import/myfitnesspal/handler');
+    const { importMfpExport } =
+      await import('@sharpit/server/lib/nutrition/import/mfp-export-import');
+    const { MfpExportFormatError } = await import('@sharpit/app/lib/nutrition/import/mfp-export');
+    vi.mocked(importMfpExport).mockRejectedValue(new MfpExportFormatError('Pas un export'));
+
+    expect((await POST(upload())).status).toBe(400);
+    const refused = await POST(upload(new File(['x'], 'x.csv')));
+    expect(refused.status).toBe(400);
+    expect(await refused.json()).toEqual({ error: 'Pas un export' });
   });
 });

@@ -16,6 +16,16 @@ describe('pickNutritionRow', () => {
   });
 });
 
+describe('an imported MyFitnessPal export', () => {
+  it('fills a day only when neither SHARPIT nor a live sync has it', () => {
+    const imported = day('2026-10-01', 'myfitnesspal_import');
+    expect(pickNutritionRow([imported, day('2026-10-01', 'myfitnesspal')])?.provider).toBe(
+      'myfitnesspal',
+    );
+    expect(pickNutritionRow([imported])).toEqual(imported);
+  });
+});
+
 describe('dedupeNutritionRowsByDay', () => {
   it('keeps one row per day, in the order given', () => {
     const rows = [

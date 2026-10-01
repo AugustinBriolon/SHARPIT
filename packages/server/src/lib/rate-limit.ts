@@ -47,6 +47,8 @@ export const rateLimiters = {
   providerSync: limiter(1, '2 m', 'provider-sync'),
   /** Open Food Facts lookups go out from our servers: one athlete must not spend everyone's quota. */
   foodSearch: limiter(20, '1 m', 'food-search'),
+  /** A MyFitnessPal export rewrites years of days: a few tries an hour is plenty. */
+  nutritionImport: limiter(5, '1 h', 'nutrition-import'),
   /** Apple Health is sent by the phone in batches — a first import spans a year. */
   appleHealth: limiter(30, '10 m', 'apple-health'),
 };

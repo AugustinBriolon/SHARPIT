@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   customFoodSchema,
+  customFoodUpdateSchema,
   foodLogEntryCreateSchema,
   foodLogEntryUpdateSchema,
   nutritionTargetsSchema,
@@ -61,5 +62,25 @@ describe('nutritionTargetsSchema', () => {
       nutritionTargetsSchema.safeParse({ kcal: 2600, proteinG: 140, fatG: null }).success,
     ).toBe(true);
     expect(nutritionTargetsSchema.safeParse({ kcal: 200 }).success).toBe(false);
+  });
+
+  it('takes a percent split of the calories only when it adds up to exactly 100', () => {
+    const split = { mode: 'PERCENT', kcal: 2600, proteinPct: 25, carbsPct: 50, fatPct: 25 };
+    expect(nutritionTargetsSchema.safeParse(split).success).toBe(true);
+
+    const off = nutritionTargetsSchema.safeParse({ ...split, fatPct: 30 });
+    expect(off.success).toBe(false);
+    expect(off.error?.issues[0]?.message).toBe('La répartition fait 105 %, elle doit faire 100 %.');
+    expect(nutritionTargetsSchema.safeParse({ ...split, kcal: null }).success).toBe(false);
+    expect(nutritionTargetsSchema.safeParse({ ...split, carbsPct: undefined }).success).toBe(false);
+    expect(nutritionTargetsSchema.safeParse({ ...split, proteinPct: 25.5 }).success).toBe(false);
+  });
+});
+
+describe('customFoodUpdateSchema', () => {
+  it('takes any field of an own food, but something', () => {
+    expect(customFoodUpdateSchema.safeParse({ kcalPer100g: 120 }).success).toBe(true);
+    expect(customFoodUpdateSchema.safeParse({}).success).toBe(false);
+    expect(customFoodUpdateSchema.safeParse({ name: '' }).success).toBe(false);
   });
 });

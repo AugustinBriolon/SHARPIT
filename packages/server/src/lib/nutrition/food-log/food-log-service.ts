@@ -8,8 +8,10 @@ import {
 } from '@sharpit/app/lib/nutrition/food-log/food-log-math';
 import type { MappedFood } from '@sharpit/app/lib/nutrition/food-log/open-food-facts';
 import { SHARPIT_NUTRITION_PROVIDER } from '@sharpit/app/lib/nutrition/food-log/nutrition-source';
+import { gramsFromPercent } from '@sharpit/app/lib/nutrition/food-log/nutrition-targets';
 import type {
   CustomFoodInput,
+  CustomFoodUpdateInput,
   FoodLogEntryCreateInput,
   FoodLogEntryUpdateInput,
   NutritionTargetsInput,
@@ -320,6 +322,41 @@ export async function createCustomFood(athleteId: string, input: CustomFoodInput
   });
 }
 
+/** The athlete's own foods, last edited first. */
+export async function listOwnFoods(athleteId: string) {
+  return prisma.foodProduct.findMany({
+    where: { ownerId: athleteId, source: 'CUSTOM' },
+    orderBy: { updatedAt: 'desc' },
+    take: 500,
+  });
+}
+
+async function assertOwnFood(athleteId: string, id: string) {
+  const owned = await prisma.foodProduct.findFirst({
+    where: { id, ownerId: athleteId, source: 'CUSTOM' },
+    select: { id: true },
+  });
+  if (!owned) {
+    throw new FoodLogNotFoundError('Aliment introuvable');
+  }
+}
+
+/** Edits an own food. Entries already logged keep their snapshot; the next portions use this. */
+export async function updateCustomFood(
+  athleteId: string,
+  id: string,
+  input: CustomFoodUpdateInput,
+) {
+  await assertOwnFood(athleteId, id);
+  return prisma.foodProduct.update({ where: { id }, data: input });
+}
+
+/** Deletes an own food; its logged entries stay, unlinked (`onDelete: SetNull`). */
+export async function deleteCustomFood(athleteId: string, id: string): Promise<void> {
+  await assertOwnFood(athleteId, id);
+  await prisma.foodProduct.delete({ where: { id } });
+}
+
 /** The foods the athlete logged lately, newest first, one per food. */
 export async function recentFoods(athleteId: string, limit = 15) {
   const entries = await prisma.foodLogEntry.findMany({
@@ -335,13 +372,62 @@ export async function recentFoods(athleteId: string, limit = 15) {
     .map((entry) => ({ product: entry.product!, lastGrams: entry.grams }));
 }
 
+const TARGET_COLUMNS = {
+  nutritionTargetMode: true,
+  nutritionTargetKcal: true,
+  nutritionTargetProteinG: true,
+  nutritionTargetCarbsG: true,
+  nutritionTargetFatG: true,
+  nutritionTargetProteinPct: true,
+  nutritionTargetCarbsPct: true,
+  nutritionTargetFatPct: true,
+} as const;
+
 export async function getNutritionTargets(athleteId: string) {
-  const targets = await loadTargets(athleteId);
+  const profile = await prisma.athleteProfile.findUnique({
+    where: { id: athleteId },
+    select: TARGET_COLUMNS,
+  });
+  const read = <Key extends keyof typeof TARGET_COLUMNS>(key: Key) => profile?.[key] ?? null;
   return {
-    kcal: targets.goalCalories,
-    proteinG: targets.goalProtein,
-    carbsG: targets.goalCarbohydrates,
-    fatG: targets.goalFat,
+    mode: read('nutritionTargetMode') ?? 'GRAMS',
+    kcal: read('nutritionTargetKcal'),
+    proteinG: read('nutritionTargetProteinG'),
+    carbsG: read('nutritionTargetCarbsG'),
+    fatG: read('nutritionTargetFatG'),
+    proteinPct: read('nutritionTargetProteinPct'),
+    carbsPct: read('nutritionTargetCarbsPct'),
+    fatPct: read('nutritionTargetFatPct'),
+  };
+}
+
+/** A calorie total split in percent, stored in grams too so every reader keeps reading grams. */
+function percentTargetsData(input: NutritionTargetsInput) {
+  const kcal = input.kcal!;
+  const [protein, carbs, fat] = [input.proteinPct!, input.carbsPct!, input.fatPct!];
+  return {
+    nutritionTargetMode: 'PERCENT' as const,
+    nutritionTargetKcal: kcal,
+    nutritionTargetProteinPct: protein,
+    nutritionTargetCarbsPct: carbs,
+    nutritionTargetFatPct: fat,
+    nutritionTargetProteinG: gramsFromPercent(kcal, protein, 'protein'),
+    nutritionTargetCarbsG: gramsFromPercent(kcal, carbs, 'carbs'),
+    nutritionTargetFatG: gramsFromPercent(kcal, fat, 'fat'),
+  };
+}
+
+/** Grams as typed; leaving a split behind forgets its shares. */
+function gramTargetsData(input: NutritionTargetsInput) {
+  return {
+    nutritionTargetMode: 'GRAMS' as const,
+    nutritionTargetProteinPct: null,
+    nutritionTargetCarbsPct: null,
+    nutritionTargetFatPct: null,
+    ...(input.kcal === undefined ? {} : { nutritionTargetKcal: input.kcal }),
+    ...(input.proteinG === undefined ? {} : { nutritionTargetProteinG: input.proteinG }),
+    ...(input.carbsG === undefined ? {} : { nutritionTargetCarbsG: input.carbsG }),
+    ...(input.fatG === undefined ? {} : { nutritionTargetFatG: input.fatG }),
   };
 }
 
@@ -353,12 +439,7 @@ export async function setNutritionTargets(
 ) {
   await prisma.athleteProfile.update({
     where: { id: athleteId },
-    data: {
-      ...(input.kcal === undefined ? {} : { nutritionTargetKcal: input.kcal }),
-      ...(input.proteinG === undefined ? {} : { nutritionTargetProteinG: input.proteinG }),
-      ...(input.carbsG === undefined ? {} : { nutritionTargetCarbsG: input.carbsG }),
-      ...(input.fatG === undefined ? {} : { nutritionTargetFatG: input.fatG }),
-    },
+    data: input.mode === 'PERCENT' ? percentTargetsData(input) : gramTargetsData(input),
   });
   await recomputeFoodLogDay(athleteId, trainingDayId);
   return getNutritionTargets(athleteId);

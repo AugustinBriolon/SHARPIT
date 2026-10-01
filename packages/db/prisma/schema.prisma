@@ -264,6 +264,11 @@ model AthleteProfile {
   nutritionTargetProteinG  Float?
   nutritionTargetCarbsG    Float?
   nutritionTargetFatG      Float?
+  /// PERCENT: the macro targets split `nutritionTargetKcal`; the grams above follow the split.
+  nutritionTargetMode      NutritionTargetMode @default(GRAMS)
+  nutritionTargetProteinPct Int?
+  nutritionTargetCarbsPct  Int?
+  nutritionTargetFatPct    Int?
   birthDate                DateTime?  @db.Date // date de naissance — âge calculé dynamiquement
   sex                      AthleteSex?
   ftpW                     Int? // FTP vélo (W)
@@ -630,6 +635,11 @@ model FoodProduct {
   entries   FoodLogEntry[]
 
   @@index([ownerId])
+}
+
+enum NutritionTargetMode {
+  GRAMS
+  PERCENT
 }
 
 enum FoodProductSource {
