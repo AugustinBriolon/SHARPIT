@@ -61,15 +61,16 @@ If a later need requires the reading to influence training decisions (for exampl
 
 - Any Core engine, nutrition score, or Snapshot / Decision Engine input.
 - Medical or clinical advice. At-risk nutrients are "à surveiller", never a deficiency diagnosis; the physician stays authoritative.
-- Micronutrient amounts MyFitnessPal does not provide. Product-based hints are labelled as probable.
-- Meal photo recognition, and logging food in SHARPIT itself.
+- Micronutrient amounts the food log does not carry. Product-based hints are labelled as probable.
+- Meal photo recognition.
 
 ---
 
 ## Pipeline
 
 ```
-DailyNutrition (totals + meals[].entries[] from MyFitnessPal)
+DailyNutrition (totals + meals[].entries[] from the SHARPIT food log, ADR-061;
+                MyFitnessPal only fills days the log leaves empty)
   + declared diet            (journalPrefs → activeDietLabels)
   + fuel features            (frozen core/features/extractors/fuel-extractor — read only)
   + day load / next session  (existing effort presentation + PlannedSession)
