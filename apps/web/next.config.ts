@@ -52,7 +52,7 @@ const nextConfig: NextConfig = {
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob: https:",
       "font-src 'self' data:",
-      "connect-src 'self' https://clerk.sharpit.app https://*.clerk.accounts.dev https://*.clerk.com https://basemaps.cartocdn.com https://*.basemaps.cartocdn.com",
+      "connect-src 'self' https://clerk.sharpit.app https://*.clerk.accounts.dev https://*.clerk.com https://basemaps.cartocdn.com https://*.basemaps.cartocdn.com https://*.ingest.de.sentry.io",
       "frame-src 'self' https://clerk.sharpit.app https://*.clerk.accounts.dev https://*.clerk.com https://challenges.cloudflare.com https://sso.garmin.com",
       "worker-src 'self' blob:",
       "object-src 'none'",

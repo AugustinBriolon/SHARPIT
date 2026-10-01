@@ -34,6 +34,7 @@
   "dependencies": {
     "@clerk/nextjs": "^7.5.9",
     "@prisma/client": "^6.19.3",
+    "@sentry/nextjs": "^11.1.0",
     "@sharpit/app": "workspace:*",
     "@sharpit/db": "workspace:*",
     "@sharpit/server": "workspace:*",
