@@ -63,6 +63,7 @@
 | [ADR-058](./ADR-058-the-coach-moves-sessions-and-bricks-whole.md)              | The coach moves sessions instead of recreating them, and a brick moves whole               | Accepted                          |
 | [ADR-059](./ADR-059-the-athlete-rates-a-brick-as-one-effort.md)                | The athlete rates a whole brick (RPE, transitions, feeling, notes) in `BrickEvaluation`    | Accepted                          |
 | [ADR-060](./ADR-060-sentry-reports-errors-only.md)                             | Sentry (EU) reports errors only: no tracing, no replay, no body, query or PII              | Accepted                          |
+| [ADR-061](./ADR-061-the-food-log-lives-in-sharpit.md)                          | The food log lives in SHARPIT: entries project into DailyNutrition, OFF cached server-side | Accepted                          |
 
 **Template:** [ADR-template.md](./ADR-template.md)
 
