@@ -27,6 +27,8 @@ Selon votre usage et les connecteurs que vous activez, Sharpit peut traiter :
 | Apple Santé (iPhone)           | Uniquement si vous l’activez : séances et tracés GPS, sommeil, fréquence cardiaque, VFC, FC de repos, pas, poids. Lues sur l’iPhone et envoyées à Sharpit ; **jamais** utilisées à des fins publicitaires ni revendues |
 | Données des services connectés | Selon les services que vous connectez (**Garmin**, **Withings**, **MyFitnessPal**, **Google Agenda**) : activité, récupération, composition corporelle, nutrition, créneaux d’agenda, selon les classes activées       |
 | Saisies de l’athlète           | Ressenti et effort perçu des séances et des bricks, journal du jour (y compris réponses de santé : médicaments, cycle, alcool), notes physiques, messages au coach                                                     |
+| Journal alimentaire            | Repas, aliments, portions et objectifs que vous saisissez dans Sharpit, et vos aliments personnels                                                                                                                     |
+| Appareil photo (iPhone)        | Uniquement quand vous scannez un code-barres : l’image est lue sur l’iPhone et n’est jamais envoyée ; seul le numéro du code-barres l’est                                                                              |
 | Position (iPhone)              | Uniquement si vous l’autorisez, à la précision d’environ 1 km, pour afficher la météo Apple du lieu. Elle n’est pas envoyée à Sharpit : l’iPhone l’adresse à Apple Météo                                               |
 | Micro et dictée (iPhone)       | Uniquement quand vous dictez une question au coach. La transcription se fait sur l’iPhone lorsque c’est possible, sinon par la reconnaissance vocale d’Apple ; seul le texte est envoyé à Sharpit                      |
 | Abonnement                     | Achats intégrés gérés par **Apple** : Sharpit reçoit l’état de l’abonnement et un identifiant de transaction, jamais vos coordonnées bancaires                                                                         |
@@ -85,6 +87,7 @@ Selon la configuration du service, des prestataires techniques peuvent traiter d
 - **Upstash** — limitation de débit / cache opérationnel ;
 - **Sentry** (hébergement UE) — rapports de plantage et d’erreurs, sans métriques corporelles ;
 - **Apple** — notifications (APNs), achats intégrés, météo (WeatherKit), Apple Santé sur votre iPhone ;
+- **Open Food Facts** — base d’aliments ouverte : Sharpit y cherche un produit par nom ou code-barres depuis ses serveurs, sans transmettre qui vous êtes ;
 - **prestataire d’IA** et **Langfuse** — uniquement si vous avez consenti au traitement IA.
 
 Les services que **vous** connectez (Garmin, Withings, MyFitnessPal, Google Agenda) reçoivent ou exposent des données selon **leurs** politiques et le périmètre que vous autorisez.

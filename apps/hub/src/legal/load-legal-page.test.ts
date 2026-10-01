@@ -58,7 +58,16 @@ describe('Privacy policy matches what the iPhone app collects', () => {
   );
 
   it('names every data source the App Store privacy manifest declares', () => {
-    for (const source of ['Apple Santé', 'Position', 'Micro', 'Abonnement', 'Notifications']) {
+    for (const source of [
+      'Apple Santé',
+      'Position',
+      'Micro',
+      'Appareil photo',
+      'Journal alimentaire',
+      'Open Food Facts',
+      'Abonnement',
+      'Notifications',
+    ]) {
       expect(body).toContain(source);
     }
   });
