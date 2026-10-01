@@ -185,8 +185,8 @@ Imports interdits (imports de valeur uniquement) :
 
 Workflow CI :
 
-- fichier: `.github/workflows/presentation-architecture-guard.yml`
-- exécute `yarn install --immutable` puis `yarn test`
+- fichier: `.github/workflows/ci.yml`
+- exécute `yarn install --immutable`, `yarn typecheck` puis `yarn test`, à chaque push sur `main` et chaque PR
 - `paths-ignore` docs/markdown : une PR docs-only ne lance pas le suite lourde
 - `concurrency` + cache Yarn/`node_modules` : voir [`engineering/CI_AND_PREVIEWS.md`](./engineering/CI_AND_PREVIEWS.md)
 

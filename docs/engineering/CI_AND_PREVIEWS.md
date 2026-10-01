@@ -40,9 +40,11 @@ yarn web vitest run src/contracts/vercel-ignore-build.test.ts
 
 ## GitHub Actions
 
-### Presentation Architecture Guard
+### CI
 
-[`.github/workflows/presentation-architecture-guard.yml`](../../.github/workflows/presentation-architecture-guard.yml)
+[`.github/workflows/ci.yml`](../../.github/workflows/ci.yml) — on every push to `main` and every PR: `yarn install
+--immutable`, `prisma generate`, `yarn typecheck`, then `yarn test` (which includes the presentation architecture
+guard test).
 
 - `paths-ignore` for docs / markdown so docs-only PRs skip the heavy install + `yarn test` suite.
 - `yarn test` caps Vitest at 4 workers per package (`turbo run test -- --maxWorkers=4`). Turbo runs every
