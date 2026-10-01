@@ -68,42 +68,16 @@ function MealCard({ meal }: { meal: NutritionMealSummary }) {
   );
 }
 
-export function NutritionMealsSection({
-  meals,
-  loading = false,
-}: {
-  meals: NutritionMealSummary[];
-  loading?: boolean;
-}) {
-  if (loading) {
-    return (
-      <section className="analysis-panel rounded-analysis-lg space-y-3 p-4">
-        <div className="bg-muted h-4 w-24 animate-pulse rounded-full" />
-        <div className="bg-muted h-20 animate-pulse rounded-xl" />
-        <div className="bg-muted h-20 animate-pulse rounded-xl" />
-      </section>
-    );
-  }
-
-  if (meals.length === 0) {
-    return (
-      <section className="analysis-panel rounded-analysis-lg p-4">
-        <p className="text-section-title">Repas</p>
-        <p className="text-muted-foreground mt-2 text-sm">
-          Aucun repas enregistré pour cette journée.
-        </p>
-      </section>
-    );
-  }
-
+/** A day only MyFitnessPal filled: its meals, read-only (ADR-061 — the SHARPIT log wins a day). */
+export function NutritionImportedMeals({ meals }: { meals: NutritionMealSummary[] }) {
   return (
-    <section className="analysis-panel rounded-analysis-lg space-y-3 p-4 sm:p-5">
-      <p className="text-section-title">Repas</p>
-      <div className="space-y-2">
-        {meals.map((meal) => (
-          <MealCard key={meal.name} meal={meal} />
-        ))}
-      </div>
-    </section>
+    <div className="space-y-2">
+      <p className="text-muted-foreground text-xs leading-snug">
+        Importé de MyFitnessPal. Un aliment ajouté ici remplace ce journal pour la journée.
+      </p>
+      {meals.map((meal) => (
+        <MealCard key={meal.name} meal={meal} />
+      ))}
+    </div>
   );
 }

@@ -87,7 +87,7 @@ function NutritionGoalsContent({
   return (
     <section className="analysis-panel rounded-analysis-lg space-y-5 p-4 sm:p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <p className="text-section-title">Objectifs MyFitnessPal</p>
+        <p className="text-section-title">Objectifs du jour</p>
         <div className="text-right">
           <p className="text-data text-sm font-semibold tabular-nums">
             {calories.consumed.toLocaleString('fr-FR')} / {calorieBudget.toLocaleString('fr-FR')}{' '}

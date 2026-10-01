@@ -5,7 +5,7 @@ import { subDays } from 'date-fns';
 import { NutritionCoachReading } from '@/components/nutrition/blocks/nutrition-coach-reading';
 import { NutritionDietTags } from '@/components/nutrition/blocks/nutrition-diet-tags';
 import { NutritionHero } from '@/components/nutrition/blocks/nutrition-hero';
-import { NutritionMealsSection } from '@/components/nutrition/blocks/nutrition-meals-section';
+import { NutritionFoodLog } from '@/components/nutrition/nutrition-food-log';
 import { NutritionMacroBreakdownSection } from '@/components/nutrition/blocks/nutrition-macro-breakdown-section';
 import { MetricDrillDownPage } from '@/components/today/drill-down/metric-drill-down-page';
 import type { NutritionViewModel } from '@sharpit/app/presentation/nutrition-view-model';
@@ -27,11 +27,15 @@ function pickSelectedDayFields(selectedDay: NutritionViewModel['selectedDay']) {
 
 function NutritionPageSections({
   date,
+  trainingDayId,
+  mfpConnected,
   loading,
   selectedDay,
   history,
 }: {
   date: Date;
+  trainingDayId: string;
+  mfpConnected: boolean;
   loading: boolean;
   selectedDay: NutritionViewModel['selectedDay'];
   history: NutritionViewModel['history'];
@@ -45,7 +49,11 @@ function NutritionPageSections({
         loading={loading}
         progress={dayDefaults.goalsProgress}
       />
-      <NutritionMealsSection loading={loading} meals={dayDefaults.meals} />
+      <NutritionFoodLog
+        importedMeals={dayDefaults.meals}
+        mfpConnected={mfpConnected}
+        trainingDayId={trainingDayId}
+      />
       <NutritionMacroBreakdownSection date={date} history={history} loading={loading} />
     </>
   );
@@ -53,6 +61,8 @@ function NutritionPageSections({
 
 export function NutritionPageView({
   date,
+  trainingDayId,
+  mfpConnected = false,
   isToday,
   maxDate,
   minDate,
@@ -67,6 +77,8 @@ export function NutritionPageView({
   emptyState,
 }: {
   date: Date;
+  trainingDayId: string;
+  mfpConnected?: boolean;
   isToday: boolean;
   maxDate: Date;
   minDate?: Date;
@@ -104,7 +116,9 @@ export function NutritionPageView({
         date={date}
         history={history}
         loading={loading}
+        mfpConnected={mfpConnected}
         selectedDay={selectedDay}
+        trainingDayId={trainingDayId}
       />
     </MetricDrillDownPage>
   );

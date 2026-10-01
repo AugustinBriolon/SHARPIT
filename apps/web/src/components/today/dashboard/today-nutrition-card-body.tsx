@@ -32,62 +32,29 @@ type NutritionDay = {
   } | null;
 };
 
-function NutritionBodyFooter({
-  disconnected,
-  isError,
-}: {
-  disconnected: boolean;
-  isError: boolean;
-}) {
-  if (disconnected) {
-    return <NutritionFooterLink label="Connecter" />;
-  }
-  if (isError) {
-    return <NutritionFooterLink label="Ouvrir le journal" />;
-  }
-  return null;
-}
-
-function NutritionBodyContent({
-  day,
-  disconnected,
-  isError,
-}: {
-  day: NutritionDay | null;
-  disconnected: boolean;
-  isError: boolean;
-}) {
-  const goals = day?.goalsProgress ?? null;
+function NutritionBodyContent({ day, empty }: { day: NutritionDay; empty: boolean }) {
+  const goals = day.goalsProgress ?? null;
 
   return (
     <div className="flex min-w-0 flex-1 flex-col justify-between gap-1">
-      <TodayNutritionCardHeader
-        day={day}
-        disconnected={disconnected}
-        goals={goals}
-        isError={isError}
-        isPending={false}
-      />
-      {day ? <NutritionMacroGrid day={day} goals={goals} /> : null}
-      <NutritionBodyFooter disconnected={disconnected} isError={isError} />
+      <TodayNutritionCardHeader day={day} goals={goals} />
+      <NutritionMacroGrid day={day} goals={goals} />
+      {/* Nothing logged yet: the card is the way in to the first meal. */}
+      {empty ? <NutritionFooterLink label="Rien de noté aujourd’hui · Noter un repas" /> : null}
     </div>
   );
 }
 
 export function TodayNutritionCardBody({
   day,
-  disconnected,
-  isError,
-  isPending,
+  empty,
   linkTitle,
 }: {
   day: NutritionDay | null;
-  disconnected: boolean;
-  isError: boolean;
-  isPending: boolean;
+  empty: boolean;
   linkTitle: string;
 }) {
-  if (isPending && !day) {
+  if (!day) {
     return <TodayNutritionPendingShell />;
   }
 
@@ -96,11 +63,11 @@ export function TodayNutritionCardBody({
       className="min-h-0 flex-1"
       href="/nutrition"
       icon={<Utensils className="size-3.5" strokeWidth={2.25} />}
-      subtitle={day ? 'Total aujourd’hui' : null}
+      subtitle="Total aujourd’hui"
       title="Nutrition"
       titleAttr={linkTitle}
     >
-      <NutritionBodyContent day={day} disconnected={disconnected} isError={isError} />
+      <NutritionBodyContent day={day} empty={empty} />
     </TodayInstrumentCard>
   );
 }

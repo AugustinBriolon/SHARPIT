@@ -50,6 +50,23 @@ export type { GoalPayload } from '@/hooks/use-goals';
 
 export { useBodyComposition, useHealthEntries } from '@/hooks/use-health';
 
+export {
+  isSearchableFoodQuery,
+  useAddFoodLogEntry,
+  useCreateCustomFood,
+  useDeleteFoodLogEntry,
+  useFoodBarcodeLookup,
+  useFoodLogDay,
+  useFoodSearch,
+  useSaveNutritionTargets,
+  useUpdateFoodLogEntry,
+} from '@/hooks/nutrition/use-food-log';
+export type {
+  AddFoodLogEntryVars,
+  FoodLogEntryPreview,
+  UpdateFoodLogEntryVars,
+} from '@/hooks/nutrition/use-food-log';
+
 export { useHikeTrip, useHikeTripMutations, useHikeTrips } from '@/hooks/use-hike-trips';
 export type { CreateHikeTripInput, PatchHikeTripInput } from '@/hooks/use-hike-trips';
 

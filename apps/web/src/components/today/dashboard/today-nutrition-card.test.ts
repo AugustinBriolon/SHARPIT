@@ -12,13 +12,13 @@ function render() {
 }
 
 /**
- * Connected + empty day keeps zeros so the layout stays stable.
- * Disconnected / error: the card hides — `/nutrition` owns the connect gate.
+ * Every athlete keeps a log in SharpIt (ADR-061): an empty day keeps zeros so the layout stays
+ * stable, and invites the first meal. Error: the card hides — `/nutrition` owns recovery.
  */
 describe('TodayNutritionCard', () => {
-  it('stays on screen with zeros when nothing is logged', () => {
+  it('stays on screen with zeros and invites a first meal when nothing is logged', () => {
     useQuery.mockReturnValue({
-      data: { connected: true, today: null },
+      data: { connected: true, mfpConnected: false, today: null },
       isPending: false,
       isError: false,
     });
@@ -30,21 +30,25 @@ describe('TodayNutritionCard', () => {
     expect(html).toContain('Protéines');
     expect(html).toContain('Glucides');
     expect(html).toContain('Lipides');
-    expect(html).not.toContain('text-label');
-    expect(html).not.toContain('Rien enregistré');
+    expect(html).toContain('Noter un repas');
+    expect(html).toContain('href="/nutrition"');
+    expect(html).not.toContain('Connecter');
+    expect(html).not.toContain('MyFitnessPal');
     expect(html).not.toContain('Ouvrir le journal');
     expect(html.indexOf('chip-surface-lg')).toBeLessThan(html.indexOf('Nutrition'));
   });
 
-  it('hides when no nutrition journal is connected', () => {
+  it('never asks to connect a provider, MyFitnessPal linked or not', () => {
     useQuery.mockReturnValue({
-      data: { connected: false, today: null },
+      data: { connected: true, mfpConnected: true, today: null },
       isPending: false,
       isError: false,
     });
     const html = render();
 
-    expect(html).toBe('');
+    expect(html).not.toBe('');
+    expect(html).not.toContain('non connecté');
+    expect(html).not.toContain('Connecter');
   });
 
   it('hides on query error — nutrition page owns the recovery path', () => {
@@ -66,7 +70,7 @@ describe('TodayNutritionCard', () => {
     const html = render();
 
     expect(html).toContain('847');
-    expect(html).not.toContain('Rien enregistré');
+    expect(html).not.toContain('Noter un repas');
     expect(html).toContain('Protéines');
     expect(html).toContain('Glucides');
     expect(html).toContain('Lipides');

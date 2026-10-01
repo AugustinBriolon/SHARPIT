@@ -14,8 +14,8 @@ import { trainingDayIdForNow } from '@sharpit/core/training/training-day';
 export { TodayNutritionCardSkeleton };
 
 /**
- * Nutrition on Today only when a nutrition source is connected.
- * Disconnected / error → hide (full `/nutrition` page owns the connect gate).
+ * Today's plate. Every athlete keeps a log in SharpIt (ADR-061): a day with nothing logged
+ * keeps its zeros and invites the first meal; an error hides the card (`/nutrition` owns the recovery path).
  */
 export function TodayNutritionCard() {
   const trainingDayId = trainingDayIdForNow();
@@ -24,13 +24,13 @@ export function TodayNutritionCard() {
     queryFn: () => fetchNutritionPresentation(trainingDayId),
     staleTime: 60_000,
   });
-  const { day, disconnected } = useTodayNutritionDay(query);
+  const { day, empty } = useTodayNutritionDay(query);
 
   if (query.isPending) {
     return <TodayNutritionCardSkeleton />;
   }
 
-  if (disconnected || query.isError) {
+  if (query.isError) {
     return null;
   }
 
@@ -38,10 +38,8 @@ export function TodayNutritionCard() {
     <section className="flex h-full min-w-0 flex-col">
       <TodayNutritionCardBody
         day={day}
-        disconnected={false}
-        isError={false}
-        isPending={false}
-        linkTitle={resolveNutritionLinkTitle({ disconnected: false, isError: false })}
+        empty={empty}
+        linkTitle={resolveNutritionLinkTitle({ empty })}
       />
     </section>
   );
