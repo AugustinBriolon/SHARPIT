@@ -85,6 +85,7 @@ describe('projectV1Today', () => {
         plannedSessionId: null,
         brickLegs: null,
         brickTransitionsSec: null,
+        brickGroupId: null,
       },
     ]);
     expect(json.signals.map((s) => s.key)).toEqual(['sleep', 'recovery']);
@@ -198,5 +199,7 @@ describe('projectV1Today · a brick under way', () => {
     expect(session!.brickTransitionsSec).toEqual([null]);
     // Installed apps open a done line as an activity: the first done leg's, never the group.
     expect(session!.id).toBe('act-bike');
+    // The group still addresses the brick as a whole — its evaluation, its analysis.
+    expect(session!.brickGroupId).toBe('brick-1');
   });
 });

@@ -9,6 +9,7 @@ import {
   plannedSessionCoachSelect,
   plannedSessionInclude,
 } from '@sharpit/app/lib/query/activity-include';
+import type { BrickEvaluationFields } from '@sharpit/app/lib/validators/brick-evaluation';
 import { chainBrickLegStartTimes } from '@sharpit/server/lib/planned-session/brick/brick-schedule';
 
 export async function getPlannedSessions(athleteId: string, params?: { from?: Date; to?: Date }) {
@@ -177,6 +178,22 @@ export async function setBrickAnalysis(
   });
 }
 
+export async function getBrickEvaluation(athleteId: string, brickGroupId: string) {
+  return prisma.brickEvaluation.findFirst({ where: { brickGroupId, athleteId } });
+}
+
+export async function setBrickEvaluation(
+  athleteId: string,
+  brickGroupId: string,
+  fields: BrickEvaluationFields,
+) {
+  return prisma.brickEvaluation.upsert({
+    where: { brickGroupId },
+    create: { brickGroupId, athleteId, ...fields },
+    update: fields,
+  });
+}
+
 export async function updatePlannedSession(
   athleteId: string,
   id: string,
@@ -222,6 +239,9 @@ export async function deletePlannedSession(athleteId: string, id: string) {
     }
 
     await tx.brickAnalysis.deleteMany({
+      where: { brickGroupId: owned.brickGroupId, athleteId },
+    });
+    await tx.brickEvaluation.deleteMany({
       where: { brickGroupId: owned.brickGroupId, athleteId },
     });
 

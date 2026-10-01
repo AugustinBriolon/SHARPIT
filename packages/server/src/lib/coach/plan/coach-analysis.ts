@@ -16,9 +16,11 @@ import {
 import {
   getActivePhysicalNotes,
   getAthleteProfile,
+  getBrickEvaluation,
   getBrickSessions,
   getPlannedSessionById,
 } from '@sharpit/server/lib/queries';
+import { describeBrickEvaluation } from '@sharpit/server/lib/coach/plan/brick-evaluation-prompt';
 import { intensityLabels } from '@sharpit/app/lib/planned-session/sessions';
 import {
   applyStrengthScoringGuards,
@@ -537,6 +539,8 @@ Analyse l'enchaînement DANS SON ENSEMBLE, pas chaque sport isolément :
 - remarks : remarques factuelles et exploitables sur l'ensemble.
 - recommendation : un conseil concret pour mieux réussir les prochains bricks.
 
+Si l'athlète a donné son évaluation (RPE global, note des transitions, ressenti, notes), confronte-la aux chiffres : un ressenti qui contredit les données est une information, pas une erreur.
+
 Réponds en français, sois précis et concis.
 
 ${COACH_COPY_DASH_RULE}`;
@@ -637,8 +641,9 @@ export async function analyzeBrick(
     return null;
   }
 
-  const [profile, descriptions, wattsList] = await Promise.all([
+  const [profile, evaluation, descriptions, wattsList] = await Promise.all([
     getAthleteProfile(athleteId),
+    getBrickEvaluation(athleteId, brickGroupId),
     Promise.all(legs.map((l) => resolveAthleteDescription(athleteId, l.activity!))),
     Promise.all(
       legs.map((l) =>
@@ -668,12 +673,13 @@ export async function analyzeBrick(
   );
 
   const transitions = describeBrickTransitions(legs);
+  const athleteVerdict = describeBrickEvaluation(evaluation);
   const prompt = `${formatAthleteThresholdsLine(profile)}# Brick : ${legs.length} sports enchaînés (${legs.map((l) => TYPE_FR[l.type] ?? l.type).join(' → ')})
 
 ${legBlocks.join('\n\n')}
 
 # Transitions estimées
-${transitions.length ? transitions.join('\n') : 'Aucune donnée de transition exploitable.'}`;
+${transitions.length ? transitions.join('\n') : 'Aucune donnée de transition exploitable.'}${athleteVerdict ? `\n\n${athleteVerdict}` : ''}`;
 
   const { output, usage } = await generateText({
     model: COACH_MODEL,

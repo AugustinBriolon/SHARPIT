@@ -83,5 +83,7 @@ describe('projectV1Today sessions', () => {
 
     expect(brick.brickLegs?.map((leg) => leg.id)).toEqual(['ps-bike', 'ps-run']);
     expect(plain.brickLegs).toBeNull();
+    expect(brick.brickGroupId).toBe('brick-group');
+    expect(plain.brickGroupId).toBeNull();
   });
 });

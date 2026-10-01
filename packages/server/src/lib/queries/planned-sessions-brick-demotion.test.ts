@@ -11,6 +11,9 @@ vi.mock('@sharpit/db/client', () => ({
     brickAnalysis: {
       deleteMany: vi.fn(),
     },
+    brickEvaluation: {
+      deleteMany: vi.fn(),
+    },
     $transaction: vi.fn(),
   },
 }));
@@ -20,7 +23,7 @@ describe('deletePlannedSession brick demotion', () => {
     vi.clearAllMocks();
   });
 
-  it('clears brick metadata on the surviving leg and drops brick analysis', async () => {
+  it('clears brick metadata on the surviving leg and drops brick analysis and evaluation', async () => {
     const { prisma } = await import('@sharpit/db/client');
     const { deletePlannedSession } = await import('@sharpit/server/lib/queries/planned-sessions');
 
@@ -41,6 +44,9 @@ describe('deletePlannedSession brick demotion', () => {
       data: { brickGroupId: null, brickOrder: null },
     });
     expect(prisma.brickAnalysis.deleteMany).toHaveBeenCalledWith({
+      where: { brickGroupId: 'brick-1', athleteId: 'athlete-1' },
+    });
+    expect(prisma.brickEvaluation.deleteMany).toHaveBeenCalledWith({
       where: { brickGroupId: 'brick-1', athleteId: 'athlete-1' },
     });
   });
@@ -64,6 +70,7 @@ describe('deletePlannedSession brick demotion', () => {
 
     expect(prisma.plannedSession.update).not.toHaveBeenCalled();
     expect(prisma.brickAnalysis.deleteMany).not.toHaveBeenCalled();
+    expect(prisma.brickEvaluation.deleteMany).not.toHaveBeenCalled();
   });
 
   it('skips brick logic when deleting a simple session', async () => {
@@ -82,5 +89,6 @@ describe('deletePlannedSession brick demotion', () => {
     expect(prisma.plannedSession.findMany).not.toHaveBeenCalled();
     expect(prisma.plannedSession.update).not.toHaveBeenCalled();
     expect(prisma.brickAnalysis.deleteMany).not.toHaveBeenCalled();
+    expect(prisma.brickEvaluation.deleteMany).not.toHaveBeenCalled();
   });
 });

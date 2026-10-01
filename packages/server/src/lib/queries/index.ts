@@ -22,6 +22,7 @@ export {
   createPlannedSession,
   deletePlannedSession,
   getBrickAnalysis,
+  getBrickEvaluation,
   getBrickSessions,
   getPlannedSessionById,
   getPlannedSessions,
@@ -29,6 +30,7 @@ export {
   linkPlannedSessionActivity,
   rescheduleBrickSessions,
   setBrickAnalysis,
+  setBrickEvaluation,
   setPlannedSessionAnalysis,
   updatePlannedSession,
 } from '@sharpit/server/lib/queries/planned-sessions';

@@ -18,6 +18,7 @@ vi.mock('ai', () => ({
 vi.mock('@sharpit/server/lib/queries', () => ({
   getActivePhysicalNotes: vi.fn(),
   getAthleteProfile: vi.fn(),
+  getBrickEvaluation: vi.fn(),
   getBrickSessions: vi.fn(),
   getPlannedSessionById: vi.fn(),
 }));

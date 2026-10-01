@@ -126,6 +126,11 @@ export type V1TodayResponse = {
      * than its first leg alone. Null on any other line.
      */
     brickLegs: V1TodayBrickLeg[] | null;
+    /**
+     * Set on a brick line: the group that addresses the brick as a whole (its evaluation,
+     * its analysis). `id` cannot carry it — a done brick's `id` is its first activity.
+     */
+    brickGroupId?: string | null;
     /** Set on a brick under way: seconds from each leg's end to the next's start (T2, …). */
     brickTransitionsSec?: Array<number | null> | null;
   }>;
@@ -245,6 +250,7 @@ function projectSessions(
         actual: actual ?? null,
       })) ?? null,
     brickTransitionsSec: line.brickTransitionsSec ? [...line.brickTransitionsSec] : null,
+    brickGroupId: line.brickLegs?.length ? line.id : null,
   }));
 }
 

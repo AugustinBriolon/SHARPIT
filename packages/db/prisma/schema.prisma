@@ -371,6 +371,7 @@ model AthleteProfile {
   activityStatus              AthleteActivityStatus?
   activityStatusHistory       AthleteActivityStatusHistory[]
   brickAnalyses               BrickAnalysis[]
+  brickEvaluations            BrickEvaluation[]
   analysisEvidenceSnapshots   AnalysisEvidenceSnapshot[]
   // Integration accounts (one row per provider per athlete):
   garminAccount               GarminAccount?
@@ -1671,6 +1672,23 @@ model BrickAnalysis {
   athlete      AthleteProfile @relation(fields: [athleteId], references: [id], onDelete: Cascade)
   content      Json // { overallScore, summary, transition, remarks[], recommendation }
   generatedAt  DateTime       @default(now())
+
+  @@index([athleteId])
+}
+
+/// The athlete's own verdict on a whole brick, once every leg is done (ADR-059).
+/// Each leg keeps its own RPE and feeling on Activity; this one rates the
+/// chain as a single effort, transitions included. One per brickGroupId.
+model BrickEvaluation {
+  brickGroupId     String         @id
+  athleteId        String
+  athlete          AthleteProfile @relation(fields: [athleteId], references: [id], onDelete: Cascade)
+  rpe              Int? // 1–10, Foster CR10, whole brick
+  transitionRating Int? // 1–5, how the transitions went
+  feeling          String? // ACTIVITY_FEELING_SCALE label
+  notes            String?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
 
   @@index([athleteId])
 }
