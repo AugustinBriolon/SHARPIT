@@ -51,3 +51,24 @@ describe('Privacy Santé FR drafts consumed by /privacy and /terms', () => {
     );
   });
 });
+
+describe('Privacy policy matches what the iPhone app collects', () => {
+  const body = stripLegalMetaHeader(
+    readFileSync(path.join(process.cwd(), 'content/legal', 'PRIVACY_PAGE_FR_V0.md'), 'utf8'),
+  );
+
+  it('names every data source the App Store privacy manifest declares', () => {
+    for (const source of ['Apple Santé', 'Position', 'Micro', 'Abonnement', 'Notifications']) {
+      expect(body).toContain(source);
+    }
+  });
+
+  it('says Apple Health data never goes to iCloud or advertising', () => {
+    expect(body).toMatch(/Apple Santé[\s\S]*ni stockées dans iCloud/);
+    expect(body).toMatch(/Pas de publicité/);
+  });
+
+  it('no longer lists Renpho, withdrawn before launch', () => {
+    expect(body).not.toContain('Renpho');
+  });
+});

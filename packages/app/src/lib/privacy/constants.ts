@@ -1,5 +1,5 @@
 /** Current Privacy Policy / Terms document version stamped on accept. */
-export const CURRENT_PRIVACY_VERSION = 'v0-2026-09';
+export const CURRENT_PRIVACY_VERSION = 'v1-2026-10';
 
 /**
  * Account deletion is immediate. Kept at 0 so the purge cron finishes any deletion

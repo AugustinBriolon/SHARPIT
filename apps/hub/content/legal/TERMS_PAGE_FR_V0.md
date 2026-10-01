@@ -1,6 +1,6 @@
 ## Conditions générales d’utilisation de Sharpit
 
-**Dernière mise à jour :** 2 septembre 2026
+**Dernière mise à jour :** 1er octobre 2026
 
 ### 1. Objet
 
@@ -39,7 +39,7 @@ Toute décision relative à votre santé ou à votre pratique sportive reste de 
 
 ### 5. Intégrations tierces (y compris non officielles)
 
-Vous pouvez connecter des services tiers (ex. Garmin, Renpho, MyFitnessPal, et autres connecteurs proposés).
+Vous pouvez connecter des services tiers (ex. Garmin, Withings, MyFitnessPal, Google Agenda, et autres connecteurs proposés).
 
 - Ces services sont régis par **leurs propres** conditions et politiques.
 - Certaines intégrations peuvent être **non officielles** : non fournies ou non approuvées par l’éditeur du service, proposées **« en l’état »**, susceptibles de cesser de fonctionner, sans garantie de disponibilité ni de conformité continue aux API du tiers.
