@@ -10,8 +10,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { ScalePicker, StepDots, type ScaleOption } from '@/components/ui/instruments/scale-picker';
-import { ACTIVITY_FEELING_SCALE } from '@sharpit/app/lib/activity/feeling/activity-feeling-scale';
+import { ScalePicker, StepDots } from '@/components/ui/instruments/scale-picker';
+import { FEELING_OPTIONS, RPE_OPTIONS } from '@/components/ui/instruments/session-scales';
 
 /**
  * Session feeling — the same instrument as « Ressenti du matin »: one question
@@ -20,32 +20,6 @@ import { ACTIVITY_FEELING_SCALE } from '@sharpit/app/lib/activity/feeling/activi
  * Picking an answer advances on its own. A tap is the answer; asking for a
  * second tap on « suivant » to confirm it is a step that carries no decision.
  */
-
-const FEELING_OPTIONS: readonly ScaleOption<string>[] = ACTIVITY_FEELING_SCALE.map((option) => ({
-  value: option.value,
-  label: option.label,
-  hint: option.hint,
-}));
-
-/** Foster CR10 anchors — the number alone tells the athlete nothing. */
-const RPE_LABELS = [
-  'Très facile',
-  'Facile',
-  'Modéré',
-  'Assez dur',
-  'Dur',
-  'Plus dur',
-  'Très dur',
-  'Très dur soutenu',
-  'Proche du max',
-  'Maximal',
-];
-
-const RPE_OPTIONS: readonly ScaleOption<number>[] = RPE_LABELS.map((label, index) => ({
-  value: index + 1,
-  label,
-  hint: `${index + 1}/10 · ${label}.`,
-}));
 
 const TOTAL_STEPS = 2;
 

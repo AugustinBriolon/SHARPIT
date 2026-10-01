@@ -18,15 +18,18 @@ import { sendJson } from '@/client/query/send-json';
 export {
   useAnalyzeBrick,
   useBrickAnalysis,
+  useBrickEvaluation,
   usePlannedSessionMutations,
   usePlannedSessionPresentation,
   usePlannedSessions,
+  useSaveBrickEvaluation,
   useSessionRationalePresentation,
   useWeeklyCoachingBriefViewModel,
 } from '@/hooks/use-planned-sessions';
 export type {
   BrickLegPayload,
   ClientBrickAnalysis,
+  ClientBrickEvaluation,
   CreateBrickPayload,
   PlannedSessionBatchOp,
   PlannedSessionPayload,

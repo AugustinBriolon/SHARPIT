@@ -16,3 +16,8 @@ export type {
 export { usePlannedSessionMutations } from '@/hooks/planned-sessions/use-planned-session-mutations';
 export type { ClientBrickAnalysis } from '@/hooks/planned-sessions/use-brick-analysis';
 export { useBrickAnalysis, useAnalyzeBrick } from '@/hooks/planned-sessions/use-brick-analysis';
+export type { ClientBrickEvaluation } from '@/hooks/planned-sessions/use-brick-evaluation';
+export {
+  useBrickEvaluation,
+  useSaveBrickEvaluation,
+} from '@/hooks/planned-sessions/use-brick-evaluation';

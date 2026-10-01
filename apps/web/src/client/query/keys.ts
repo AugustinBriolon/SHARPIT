@@ -7,6 +7,7 @@ export const queryKeys = {
   goalAchievements: (limit?: number) => ['goals', 'achievements', limit ?? 20] as const,
   plannedSessions: ['planned-sessions'] as const,
   brickAnalysis: (groupId: string) => ['brick-analysis', groupId] as const,
+  brickEvaluation: (groupId: string) => ['brick-evaluation', groupId] as const,
   activityStream: (id: string) => ['activity-stream', id] as const,
   /** Batch GPS paths for Activité hub cards — one key for the whole athlete. */
   activityRoutePreviews: ['activity-route-previews'] as const,

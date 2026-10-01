@@ -11,6 +11,7 @@ import { useAnalyzeBrick, useBrickAnalysis, usePlannedSessions } from '@/hooks/u
 import { useOfflineGuard } from '@/hooks/use-offline-guard';
 import type { BrickAnalysis } from '@sharpit/app/lib/validators/coach';
 import type { ClientPlannedSession } from '@sharpit/app/lib/query/types';
+import { BrickEvaluationSection } from './brick-evaluation-section';
 
 function renderAnalyzeButtonContent(isAnalyzing: boolean, offline: boolean, offlineLabel: string) {
   if (isAnalyzing) {
@@ -262,6 +263,9 @@ export function BrickAnalysisPanel({ brickGroupId }: { brickGroupId: string }) {
   return (
     <div className="border-primary/30 bg-primary/5 space-y-3 rounded-lg border p-3">
       <BrickAnalysisPanelHeader legs={panel.legs} />
+      {panel.allLinked ? (
+        <BrickEvaluationSection brickGroupId={brickGroupId} disabled={panel.guardDisabled} />
+      ) : null}
       {renderAnalysisContent({
         allLinked: panel.allLinked,
         analysis: panel.analysis,
