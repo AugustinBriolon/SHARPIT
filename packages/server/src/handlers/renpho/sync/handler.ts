@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { isProviderConnectable } from '@sharpit/app/lib/integrations/provider-catalog';
 import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
 import { syncRenphoHealth } from '@sharpit/server/lib/integrations/renpho/renpho-sync';
 import {
@@ -8,6 +9,9 @@ import {
 } from '@sharpit/server/lib/rate-limit';
 
 export async function POST(request: NextRequest) {
+  if (!isProviderConnectable('renpho')) {
+    return NextResponse.json({ error: 'Renpho est temporairement indisponible.' }, { status: 503 });
+  }
   try {
     const athleteId = await getCurrentAthleteId();
     const rateLimit = await checkRateLimit(rateLimiters.providerSync, `${athleteId}:renpho`, {

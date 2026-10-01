@@ -70,9 +70,14 @@ describe('shouldCronSyncProvider', () => {
     expect(shouldCronSyncProvider('garmin', diGarminAccount())).toBe(true);
   });
 
-  it('syncs Renpho / MyFitnessPal when credentials look like live encrypted secrets', () => {
-    expect(shouldCronSyncProvider('renpho', { email: 'a@b.c', passwordEnc: enc('pw') })).toBe(true);
+  it('syncs MyFitnessPal when credentials look like live encrypted secrets', () => {
     expect(shouldCronSyncProvider('myfitnesspal', { sessionTokenEnc: enc('cookie') })).toBe(true);
+  });
+
+  it('skips Renpho while the catalog marks it coming_soon (withdrawn before launch)', () => {
+    expect(shouldCronSyncProvider('renpho', { email: 'a@b.c', passwordEnc: enc('pw') })).toBe(
+      false,
+    );
   });
 
   it('skips Google without a target calendar even when OAuth tokens look live', () => {

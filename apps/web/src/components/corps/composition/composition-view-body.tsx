@@ -19,7 +19,7 @@ function CompositionViewEmpty({ vm }: { vm: CompositionVm }) {
         title={vm?.emptyState?.title ?? 'Aucune mesure importée'}
         description={
           vm?.emptyState?.description ??
-          'Connecte Withings ou Renpho dans les réglages pour synchroniser ta balance.'
+          'Connecte Withings dans les réglages pour synchroniser ta balance.'
         }
       />
       <CorpsDisclaimer title="Lecture indicative, pas une mesure médicale">

@@ -29,7 +29,7 @@ type AlternativeAction = {
   title: string;
 };
 
-const PRIMARY_DESCRIPTION = 'Garmin, Withings, Renpho — la montre alimente sommeil, VFC et charge.';
+const PRIMARY_DESCRIPTION = 'Garmin, Withings — la montre alimente sommeil, VFC et charge.';
 
 const ALTERNATIVES: AlternativeAction[] = [
   { href: '/plan/semaine', icon: CalendarPlus, title: 'Planifier une séance' },

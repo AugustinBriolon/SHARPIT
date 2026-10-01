@@ -104,11 +104,12 @@ export const PROVIDER_CATALOG: CatalogProvider[] = [
   {
     id: 'renpho',
     name: 'Renpho',
-    tagline: 'Composition corporelle',
-    status: 'available',
+    tagline: 'Temporairement indisponible',
+    /** Unofficial access, withdrawn before the App Store launch; cron and connect stay off. */
+    status: 'coming_soon',
     classes: ['body'],
     integrationId: 'renpho',
-    authKind: 'credentials',
+    authKind: 'none',
     dataTypesByClass: {
       body: ['Poids', 'Masse grasse', 'Muscle'],
     },

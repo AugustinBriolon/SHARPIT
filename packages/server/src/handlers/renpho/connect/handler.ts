@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { isProviderConnectable } from '@sharpit/app/lib/integrations/provider-catalog';
 import { z } from 'zod';
 import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
 import { sanitizeDataClass } from '@sharpit/app/lib/integrations/oauth-public-origin';
@@ -17,6 +18,9 @@ import { logSafeError } from '@sharpit/server/lib/privacy/safe-log';
 import { renphoConnectSchema } from './schema';
 
 export async function POST(request: NextRequest) {
+  if (!isProviderConnectable('renpho')) {
+    return NextResponse.json({ error: 'Renpho est temporairement indisponible.' }, { status: 503 });
+  }
   try {
     const consentBlock = await gateProviderConnect(request, 'renpho', 'json');
     if (consentBlock) {
