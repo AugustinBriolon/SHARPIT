@@ -2,15 +2,14 @@ import type {
   NutritionFoodEntry,
   NutritionMealSummary,
 } from '@sharpit/app/presentation/nutrition-view-model';
+import { FOOD_MEALS } from '@sharpit/app/lib/nutrition/food-log/food-log-math';
+import { FOOD_MEAL_LABELS } from '@sharpit/app/lib/nutrition/food-log/food-log-day';
 
-const MEAL_LABELS: Record<string, string> = {
-  breakfast: 'Petit-déjeuner',
-  lunch: 'Déjeuner',
-  dinner: 'Dîner',
-  snacks: 'Collations',
-};
+const MEAL_ORDER = FOOD_MEALS.map((meal) => meal.toLowerCase());
 
-const MEAL_ORDER = ['breakfast', 'lunch', 'dinner', 'snacks'];
+const MEAL_LABELS: Record<string, string> = Object.fromEntries(
+  FOOD_MEALS.map((meal) => [meal.toLowerCase(), FOOD_MEAL_LABELS[meal]]),
+);
 
 export function formatMealLabel(rawName: string): string {
   const key = rawName.trim().toLowerCase();
