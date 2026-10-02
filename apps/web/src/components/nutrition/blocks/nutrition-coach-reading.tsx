@@ -1,6 +1,7 @@
 'use client';
 
 import { Button } from '@sharpit/ui/components/ui/button';
+import { DiscussWithCoachButton } from '@/components/coach/discuss/discuss-with-coach-button';
 import { Skeleton } from '@sharpit/ui/components/ui/skeleton';
 import type { NutritionCoachReadingView } from '@sharpit/app/presentation/nutrition-view-model';
 import {
@@ -51,7 +52,13 @@ function ReadingNote({ children }: { children: React.ReactNode }) {
   );
 }
 
-function ReadingContent({ reading }: { reading: ReadyReading }) {
+function ReadingContent({
+  reading,
+  trainingDayId,
+}: {
+  reading: ReadyReading;
+  trainingDayId: string;
+}) {
   return (
     <ReadingShell
       aside={
@@ -84,20 +91,28 @@ function ReadingContent({ reading }: { reading: ReadyReading }) {
         <p className="text-label text-muted-foreground">À faire</p>
         <p className="text-sm leading-relaxed font-medium text-pretty">{reading.action.text}</p>
       </div>
+      <DiscussWithCoachButton
+        className="-ml-2"
+        size="sm"
+        target={{ kind: 'nutrition', trainingDayId }}
+        variant="ghost"
+      />
     </ReadingShell>
   );
 }
 
 function ReadingByState({
   reading,
+  trainingDayId,
   onShowPreviousDay,
 }: {
   reading: NutritionCoachReadingView | null;
+  trainingDayId: string;
   onShowPreviousDay: () => void;
 }) {
   switch (reading?.state) {
     case 'ready':
-      return <ReadingContent reading={reading} />;
+      return <ReadingContent reading={reading} trainingDayId={trainingDayId} />;
     case 'pending':
       return <ReadingSkeleton label="Le coach lit ta journée…" />;
     case 'awaiting_day_end':
@@ -133,15 +148,24 @@ function ReadingByState({
 export function NutritionCoachReading({
   reading,
   loading,
+  trainingDayId,
   onShowPreviousDay,
 }: {
   reading: NutritionCoachReadingView | null;
   loading: boolean;
+  /** The day read, which a conversation with the coach is then about. */
+  trainingDayId: string;
   onShowPreviousDay: () => void;
 }) {
   // Keep a ready reading mounted while values revalidate / placeholder — don't wipe the section.
   if (loading && reading?.state !== 'ready') {
     return <ReadingSkeleton />;
   }
-  return <ReadingByState reading={reading} onShowPreviousDay={onShowPreviousDay} />;
+  return (
+    <ReadingByState
+      reading={reading}
+      trainingDayId={trainingDayId}
+      onShowPreviousDay={onShowPreviousDay}
+    />
+  );
 }

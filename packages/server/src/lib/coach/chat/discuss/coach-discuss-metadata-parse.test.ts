@@ -18,6 +18,7 @@ const EVERY_TARGET: CoachDiscussTarget[] = [
   { kind: 'record', categoryKey: 'run-distance' },
   { kind: 'physical-condition', noteId: 'cmnote01' },
   { kind: 'journal-analyses' },
+  { kind: 'nutrition', trainingDayId: '2026-10-01' },
 ];
 
 function userMessage(metadata?: unknown) {
@@ -41,7 +42,8 @@ describe('parseCoachDiscussMetadata', () => {
     ['a non-object', 'goal'],
     ['null', null],
     ['an array', [{ discussKind: 'today' }]],
-    ['an unknown kind', { discussKind: 'nutrition' }],
+    ['an unknown kind', { discussKind: 'sleep' }],
+    ['a nutrition day that is not a date', { discussKind: 'nutrition', trainingDayId: 'today' }],
     ['an inherited property name', { discussKind: 'toString' }],
     ['a missing id', { discussKind: 'goal' }],
     ['a numeric id', { discussKind: 'activity', activityId: 42 }],

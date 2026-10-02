@@ -16,6 +16,7 @@ const NO_INTENT = {
   discussPlanningHorizon: null,
   discussId: null,
   discussActivityId: null,
+  discussNutritionDay: null,
 };
 
 const NOTHING_LOADED = {
@@ -74,6 +75,7 @@ describe('buildDiscussContext', () => {
       { activityId: 'a-1' },
       'activity',
     ],
+    [{ discussNutritionDay: '2026-10-01' }, { trainingDayId: '2026-10-01' }, 'nutrition'],
   ])('keeps the target so the message can carry it (%#)', (params, targetFields, kind) => {
     const context = buildDiscussContext(sources(params));
 
@@ -112,6 +114,13 @@ describe('discuss bootstrap readiness', () => {
     expect(
       isDiscussBootstrapPending({ ...waiting, goals: [{ id: 'g-1' }], goalsPending: false }),
     ).toBe(false);
+  });
+
+  it('opens a nutrition conversation on its own chip, without waiting on anything', () => {
+    const nutrition = { ...sources({ discussNutritionDay: '2026-10-01' }), ...NOTHING_PENDING };
+
+    expect(isDiscussBootstrapPending(nutrition)).toBe(false);
+    expect(buildDiscussContext(nutrition)?.label).toBe('Ta nutrition du jour');
   });
 
   it('does not wait on anything for journal analyses', () => {

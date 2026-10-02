@@ -39,6 +39,8 @@ type DiscussParams = {
   discussPlanningHorizon: ProjectionHorizonDays | null;
   discussId: string | null;
   discussActivityId: string | null;
+  /** The day a nutrition conversation is about (`YYYY-MM-DD`). */
+  discussNutritionDay: string | null;
 };
 
 type DiscussIntent = { key: string; target: CoachDiscussTarget };
@@ -88,6 +90,13 @@ const INTENT_RESOLVERS: readonly IntentResolver[] = [
       ? {
           key: `activity:${p.discussActivityId}`,
           target: { kind: 'activity', activityId: p.discussActivityId },
+        }
+      : null,
+  (p) =>
+    p.discussNutritionDay
+      ? {
+          key: `nutrition:${p.discussNutritionDay}`,
+          target: { kind: 'nutrition', trainingDayId: p.discussNutritionDay },
         }
       : null,
 ];
@@ -153,6 +162,7 @@ const TARGET_DATA_READY: PerKind<boolean> = {
   planning: (s) => s.projectionVisible,
   'planned-session': (s, t) => s.plannedSessions.some((sn) => sn.id === t.sessionId),
   activity: (s, t) => s.activities.some((a) => a.id === t.activityId),
+  nutrition: () => true,
 };
 
 /** Human name of the target for the chip, when the surface has one. */
@@ -168,9 +178,10 @@ const TARGET_NAME: PerKind<string | null | undefined> = {
   planning: () => null,
   'planned-session': (s, t) => s.plannedSessions.find((sn) => sn.id === t.sessionId)?.title,
   activity: (s, t) => s.activities.find((a) => a.id === t.activityId)?.title,
+  nutrition: () => null,
 };
 
-/** Query whose loading state gates the bootstrap; journal analyses needs none. */
+/** Query whose loading state gates the bootstrap; journal analyses and nutrition need none. */
 const TARGET_PENDING_FLAG: Record<CoachDiscussTarget['kind'], keyof DiscussPendingFlags | null> = {
   today: 'todayPending',
   'journal-analyses': null,
@@ -180,6 +191,7 @@ const TARGET_PENDING_FLAG: Record<CoachDiscussTarget['kind'], keyof DiscussPendi
   planning: 'projectionPending',
   'planned-session': 'plannedPending',
   activity: 'activitiesPending',
+  nutrition: null,
 };
 
 export function isDiscussDataReady(sources: DiscussDataSources): boolean {

@@ -25,6 +25,7 @@ export type CoachDiscussParams = {
   discussGoalId: string | null;
   discussRecordKey: string | null;
   discussConditionId: string | null;
+  discussNutritionDay: string | null;
   hasDiscussIntent: boolean;
 };
 

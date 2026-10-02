@@ -6,7 +6,7 @@
  * athlete picture is already in the coach context above them.
  */
 
-import { addDays, differenceInCalendarDays, format } from 'date-fns';
+import { addDays, differenceInCalendarDays, format, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import type { Goal, PhysicalNote, PlannedSession } from '@prisma/client';
 import {
@@ -65,6 +65,17 @@ function truncateProse(text: string | null | undefined): string | null {
 export function formatTodayDiscussBlock(): string {
   return block("## Conversation ouverte depuis Aujourd'hui", [
     "L'athlète parle de son état du jour. Appuie-toi d'abord sur la décision du jour, l'état de forme, la santé et la séance prévue aujourd'hui, déjà présents dans le contexte ci-dessus : ne les recharge pas par outil.",
+  ]);
+}
+
+/** The day's plate is in the context (« Nutrition du jour ») for today; another day is named. */
+export function formatNutritionDiscussBlock(trainingDayId: string, today: Date): string {
+  const isToday = trainingDayId === format(today, 'yyyy-MM-dd');
+  const day = isToday
+    ? "aujourd'hui"
+    : format(parseISO(trainingDayId), 'EEEE d MMMM', { locale: fr });
+  return block('## Conversation ouverte depuis Nutrition', [
+    `L'athlète parle de sa nutrition (${day}) : apports, répartition des macros, objectifs, régime déclaré, carburant autour des séances. Appuie-toi sur « Nutrition du jour », le régime et les séances du contexte ; ne parle de l'état de forme que s'il éclaire l'alimentation.`,
   ]);
 }
 

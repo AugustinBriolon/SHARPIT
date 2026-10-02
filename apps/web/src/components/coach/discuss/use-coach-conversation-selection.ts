@@ -41,6 +41,9 @@ export function useCoachDiscussParams() {
   const discussGoalId = searchParams.get('discussGoal');
   const discussRecordKey = searchParams.get('discussRecord');
   const discussConditionId = searchParams.get('discussCondition');
+  const nutritionDay = searchParams.get('discussNutrition');
+  const discussNutritionDay =
+    nutritionDay && /^\d{4}-\d{2}-\d{2}$/.test(nutritionDay) ? nutritionDay : null;
   const hasDiscussIntent = Boolean(
     discussId ||
     discussActivityId ||
@@ -49,7 +52,8 @@ export function useCoachDiscussParams() {
     discussJournalAnalyses ||
     discussGoalId ||
     discussConditionId ||
-    discussRecordKey,
+    discussRecordKey ||
+    discussNutritionDay,
   );
   return {
     discussId,
@@ -60,6 +64,7 @@ export function useCoachDiscussParams() {
     discussGoalId,
     discussRecordKey,
     discussConditionId,
+    discussNutritionDay,
     hasDiscussIntent,
   };
 }

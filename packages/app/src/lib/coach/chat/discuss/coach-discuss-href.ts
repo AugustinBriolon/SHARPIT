@@ -5,7 +5,7 @@
  *
  * Every athlete surface named in the Information Architecture can start a
  * contextual conversation: Today, a planned session, an activity, the week,
- * a goal, a record, an active physical constraint, and journal analyses.
+ * a goal, a record, an active physical constraint, journal analyses, and a day's nutrition.
  */
 
 export type CoachDiscussTarget =
@@ -16,7 +16,8 @@ export type CoachDiscussTarget =
   | { kind: 'goal'; goalId: string }
   | { kind: 'record'; categoryKey: string }
   | { kind: 'physical-condition'; noteId: string }
-  | { kind: 'journal-analyses' };
+  | { kind: 'journal-analyses' }
+  | { kind: 'nutrition'; trainingDayId: string };
 
 type HrefBuilders = {
   [K in CoachDiscussTarget['kind']]: (target: Extract<CoachDiscussTarget, { kind: K }>) => string;
@@ -31,6 +32,7 @@ const HREF_BUILDERS: HrefBuilders = {
   record: (t) => `/coach?discussRecord=${encodeURIComponent(t.categoryKey)}`,
   'physical-condition': (t) => `/coach?discussCondition=${encodeURIComponent(t.noteId)}`,
   'journal-analyses': () => '/coach?discussJournalAnalyses=1',
+  nutrition: (t) => `/coach?discussNutrition=${encodeURIComponent(t.trainingDayId)}`,
 };
 
 export function coachDiscussHref(target: CoachDiscussTarget): string {

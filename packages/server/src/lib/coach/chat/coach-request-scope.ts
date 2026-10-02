@@ -200,6 +200,7 @@ const DISCUSS_INTENTS: Partial<Record<string, CoachIntent>> = {
   record: 'session',
   'physical-condition': 'recovery',
   'journal-analyses': 'recovery',
+  nutrition: 'nutrition',
 };
 
 export function normalizeCoachText(text: string): string {

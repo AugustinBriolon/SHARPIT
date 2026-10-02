@@ -12,6 +12,7 @@ import { hasProAccess } from '@sharpit/app/lib/access/tier';
 import type { CoachDiscussMetadata } from '@sharpit/app/lib/coach/chat/discuss/coach-discuss-context';
 import { lastCoachDiscussMetadata } from '@sharpit/server/lib/coach/chat/discuss/coach-discuss-metadata-parse';
 import {
+  formatNutritionDiscussBlock,
   formatPlanningDiscussBlock,
   formatTodayDiscussBlock,
   loadActivityDiscussBlock,
@@ -75,6 +76,9 @@ const DISCUSS_HANDLERS: { [K in DiscussKind]: DiscussHandler<K> } = {
   'journal-analyses': {
     authorize: requireJournalAnalysesPro,
     loadBlock: (athleteId) => loadJournalAnalysesCoachBlock(prisma, athleteId),
+  },
+  nutrition: {
+    loadBlock: async (_, metadata, now) => formatNutritionDiscussBlock(metadata.trainingDayId, now),
   },
 };
 

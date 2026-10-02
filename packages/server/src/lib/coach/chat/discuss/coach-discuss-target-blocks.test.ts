@@ -48,6 +48,17 @@ describe('today and planning blocks', () => {
     expect(formatTodayDiscussBlock()).toContain("## Conversation ouverte depuis Aujourd'hui");
   });
 
+  it('opens a nutrition conversation on the plate, naming a day other than today', async () => {
+    const { formatNutritionDiscussBlock } = await blocks();
+
+    expect(formatNutritionDiscussBlock('2026-10-01', new Date('2026-10-01T09:00:00'))).toContain(
+      "sa nutrition (aujourd'hui)",
+    );
+    expect(formatNutritionDiscussBlock('2026-09-28', new Date('2026-10-01T09:00:00'))).toContain(
+      'lundi 28 septembre',
+    );
+  });
+
   it('names the planning window and where it ends', async () => {
     const { formatPlanningDiscussBlock } = await blocks();
 

@@ -33,6 +33,10 @@ describe('classifyCoachIntent', () => {
     expect(classify("Qu'en penses-tu ?", { discussKind: 'planned-session' })).toBe('planning');
   });
 
+  it('scopes a conversation opened from Nutrition on nutrition', () => {
+    expect(classify("Qu'en penses-tu ?", { discussKind: 'nutrition' })).toBe('nutrition');
+  });
+
   it('keeps a follow-up in planning while the thread proposes calendar changes', () => {
     expect(classify('et jeudi ?', { isPlanningThread: true })).toBe('planning');
   });

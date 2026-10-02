@@ -1,7 +1,7 @@
 'use client';
 
 import { NutritionGoalsPanel } from '@/components/nutrition/nutrition-goals-panel';
-import { subDays } from 'date-fns';
+import { format, subDays } from 'date-fns';
 import { NutritionCoachReading } from '@/components/nutrition/blocks/nutrition-coach-reading';
 import { NutritionDietTags } from '@/components/nutrition/blocks/nutrition-diet-tags';
 import { NutritionHero } from '@/components/nutrition/blocks/nutrition-hero';
@@ -110,6 +110,7 @@ export function NutritionPageView({
       <NutritionCoachReading
         loading={loading}
         reading={coachReading}
+        trainingDayId={format(date, 'yyyy-MM-dd')}
         onShowPreviousDay={() => onDateChange(subDays(maxDate, 1))}
       />
       <NutritionPageSections

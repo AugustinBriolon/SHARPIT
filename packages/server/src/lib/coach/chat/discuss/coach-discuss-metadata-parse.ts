@@ -12,6 +12,7 @@ type MetadataParser = (raw: RawObject) => CoachDiscussMetadata | null;
 
 /** cuid ids and record keys (`run-distance`) — nothing else reaches a query. */
 const TARGET_ID_PATTERN = /^[A-Za-z0-9_-]{1,128}$/;
+const TRAINING_DAY_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const PLANNING_HORIZONS: ReadonlySet<unknown> = new Set([1, 3, 7, 14]);
 
 function isObject(value: unknown): value is RawObject {
@@ -40,6 +41,10 @@ const PARSERS: Record<DiscussKind, MetadataParser> = {
   goal: targetIdParser('goal', 'goalId'),
   record: targetIdParser('record', 'categoryKey'),
   'physical-condition': targetIdParser('physical-condition', 'noteId'),
+  nutrition: (raw) =>
+    typeof raw.trainingDayId === 'string' && TRAINING_DAY_PATTERN.test(raw.trainingDayId)
+      ? { discussKind: 'nutrition', trainingDayId: raw.trainingDayId }
+      : null,
 };
 
 function isDiscussKind(value: unknown): value is DiscussKind {

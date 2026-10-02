@@ -77,6 +77,10 @@ function discussChipCopy(target: CoachDiscussTarget, named: string | null): Disc
       label: 'Analyses journal',
       sourceHref: '/journal/analyses',
     }),
+    nutrition: (t) => ({
+      label: 'Ta nutrition du jour',
+      sourceHref: `/nutrition?day=${t.trainingDayId}`,
+    }),
   };
   return handlers[target.kind](target as never, named);
 }
