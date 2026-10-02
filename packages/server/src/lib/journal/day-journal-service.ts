@@ -1,4 +1,5 @@
 import type { PrismaClient } from '@prisma/client';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import {
   emptyDayJournalEntry,
   type DayJournalEntry,
@@ -99,7 +100,30 @@ function mergeDayJournalWrite(
   };
 }
 
+function isUniqueViolation(error: unknown): boolean {
+  return error instanceof PrismaClientKnownRequestError && error.code === 'P2002';
+}
+
+/**
+ * Two writes on a day not yet stored both try to create it; the loser is run again, and now
+ * merges onto the winner's row instead of failing.
+ */
 export async function upsertDayJournalEntryDb(
+  prisma: PrismaClient,
+  athleteId: string,
+  input: DayJournalWriteInput,
+): Promise<DayJournalEntry> {
+  try {
+    return await writeDayJournalEntry(prisma, athleteId, input);
+  } catch (error) {
+    if (!isUniqueViolation(error)) {
+      throw error;
+    }
+    return writeDayJournalEntry(prisma, athleteId, input);
+  }
+}
+
+async function writeDayJournalEntry(
   prisma: PrismaClient,
   athleteId: string,
   input: DayJournalWriteInput,
