@@ -1,6 +1,12 @@
 import { ActivityType } from '@prisma/client';
 import { isDemoSessionLinkPlannedTitle } from '@sharpit/app/lib/demo/demo-session-link-markers';
 import type { ThreadEntry } from '@sharpit/app/lib/training/thread/thread-model';
+import { brickLegSummaries } from '@sharpit/app/lib/planned-session/brick/brick-sessions';
+import type { ClientPlannedSession } from '@sharpit/app/lib/query/types';
+import {
+  brickTransitionsSec,
+  type BrickLegWithActivity,
+} from '@sharpit/app/lib/today/dashboard/today-brick-lines';
 
 /** Four map cards is a rail. A week of six is still a gallery. */
 export const HUB_DONE_PREVIEW_LIMIT = 4;
@@ -42,6 +48,62 @@ export function groupHubDoneByDay(
     groups.push({ dayKey: entry.dayKey, entries: [entry] });
   }
   return groups;
+}
+
+export type HubDoneItem =
+  { kind: 'single'; entry: ThreadEntry } | { kind: 'brick'; id: string; entries: ThreadEntry[] };
+
+function doneBrickId(entry: ThreadEntry): string | null {
+  return entry.planned?.brickGroupId ?? entry.activity?.plannedSession?.brickGroupId ?? null;
+}
+
+/**
+ * A day's done sessions, a brick's realized legs gathered into one item: done as one chained
+ * effort, it reads as one brick, not two activities that happen to follow each other. A brick
+ * with a single leg done stays a plain card.
+ */
+export function groupHubDoneItems(entries: readonly ThreadEntry[]): HubDoneItem[] {
+  const legsByBrick = new Map<string, ThreadEntry[]>();
+  for (const entry of entries) {
+    const brickId = doneBrickId(entry);
+    if (brickId) {
+      legsByBrick.set(brickId, [...(legsByBrick.get(brickId) ?? []), entry]);
+    }
+  }
+  const emitted = new Set<string>();
+  return entries.flatMap((entry): HubDoneItem[] => {
+    const brickId = doneBrickId(entry);
+    const legs = brickId ? legsByBrick.get(brickId)! : [];
+    if (!brickId || legs.length < 2) {
+      return [{ kind: 'single', entry }];
+    }
+    if (emitted.has(brickId)) {
+      return [];
+    }
+    emitted.add(brickId);
+    const order = (leg: ThreadEntry) =>
+      leg.planned?.brickOrder ?? leg.activity?.plannedSession?.brickOrder ?? 0;
+    return [{ kind: 'brick', id: brickId, entries: [...legs].sort((a, b) => order(a) - order(b)) }];
+  });
+}
+
+/** A done brick's legs as Today's brick card reads them, and the measured transitions. */
+export function doneBrickCardInput(entries: readonly ThreadEntry[]) {
+  const legs: BrickLegWithActivity[] = entries.map((entry) => ({
+    session: (entry.planned ?? {
+      ...entry.activity!.plannedSession!,
+      activityId: entry.activity!.id,
+      completed: true,
+    }) as ClientPlannedSession,
+    activity: entry.activity,
+  }));
+  return {
+    legs: brickLegSummaries(
+      legs.map((leg) => leg.session),
+      (session) => legs.find((leg) => leg.session === session)?.activity ?? null,
+    ),
+    transitionsSec: brickTransitionsSec(legs),
+  };
 }
 
 export function hubDoneCardAccessibleName(dayLabel: string, title: string): string {

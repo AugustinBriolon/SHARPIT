@@ -2,6 +2,7 @@ import { ActivityType } from '@prisma/client';
 import { describe, expect, it } from 'vitest';
 import {
   groupHubDoneByDay,
+  groupHubDoneItems,
   hubDoneCardAccessibleName,
   resolveDecisionSessionBlock,
   selectHubDoneEntries,
@@ -258,5 +259,34 @@ describe('selectPlanHubStreamPrefetchIds', () => {
         { id: 'hike', type: ActivityType.HIKE, date: '2026-09-03' },
       ]),
     ).toEqual(['run', 'bike', 'swim', 'hike']);
+  });
+});
+
+describe('groupHubDoneItems', () => {
+  function leg(id: string, order: number, brickGroupId: string | null = 'brick-1'): ThreadEntry {
+    return {
+      ...doneEntry(id),
+      activity: {
+        id,
+        plannedSession: brickGroupId ? { brickGroupId, brickOrder: order } : null,
+      } as unknown as ThreadEntry['activity'],
+    };
+  }
+
+  it('gathers a brick done into one item, its legs in order', () => {
+    const items = groupHubDoneItems([leg('run', 1), leg('bike', 0), leg('swim', 0, null)]);
+
+    expect(items.map((item) => item.kind)).toEqual(['brick', 'single']);
+    expect(items[0]).toMatchObject({ kind: 'brick', id: 'brick-1' });
+    expect(items[0]!.kind === 'brick' && items[0]!.entries.map((entry) => entry.id)).toEqual([
+      'bike',
+      'run',
+    ]);
+  });
+
+  it('keeps a brick with one leg done as a plain card', () => {
+    expect(groupHubDoneItems([leg('bike', 0)])).toEqual([
+      { kind: 'single', entry: leg('bike', 0) },
+    ]);
   });
 });

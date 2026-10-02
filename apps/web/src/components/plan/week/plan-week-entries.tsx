@@ -11,7 +11,9 @@ import { PlannedSessionPreview } from '@/components/today/rich/planned-session-p
 import { LinkButton } from '@/components/ui/link-button';
 import { isHardSessionIntensity } from '@sharpit/app/lib/plan/trajectory/intensity-gate';
 import {
+  doneBrickCardInput,
   groupHubDoneByDay,
+  groupHubDoneItems,
   groupHubRemainingItems,
   hubDoneCardAccessibleName,
   selectHubDoneEntries,
@@ -24,6 +26,7 @@ import { buildPlannedSessionPreview } from '@sharpit/app/lib/today/rich/planned-
 import { TWIN_DRILL_DOWN } from '@sharpit/app/lib/today/navigation/today-twin-navigation';
 import type { ThreadEntry } from '@sharpit/app/lib/training/thread/thread-model';
 import { useAppModal } from '@/providers/app-modal-provider';
+import { useRouter } from 'next/navigation';
 import type { ClientPlannedSession } from '@sharpit/app/lib/query/types';
 
 const HUB_DONE_CARD_CLASS = 'flex min-w-[min(14rem,100cqi)] flex-1';
@@ -106,6 +109,23 @@ function DoneHubPreview({ entry, dayLabel }: { entry: ThreadEntry; dayLabel: str
           hikeMetrics: activity.hikeMetrics,
           strengthSets: activity.strengthSets ?? [],
         })}
+      />
+    </div>
+  );
+}
+
+/** A brick done: one card for the chain, each leg opening its activity. */
+function DoneHubBrickPreview({ entries }: { entries: ThreadEntry[] }) {
+  const router = useRouter();
+  const { openPlannedSession } = useAppModal();
+  const { legs, transitionsSec } = doneBrickCardInput(entries);
+  return (
+    <div className={HUB_DONE_CARD_CLASS}>
+      <BrickOverviewCard
+        legs={legs}
+        transitionsSec={transitionsSec}
+        onOpenActivity={(activityId) => router.push(TWIN_DRILL_DOWN.activity(activityId))}
+        onOpenLeg={(legId) => openPlannedSession({ sessionId: legId })}
       />
     </div>
   );
@@ -212,9 +232,13 @@ export function PlanDoneList({ entries }: { entries: readonly ThreadEntry[] }) {
             <li key={group.dayKey} className="flex flex-1 snap-start flex-col gap-1.5">
               <HubDayCaption label={dayLabel} />
               <div className="flex items-stretch gap-3">
-                {group.entries.map((entry) => (
-                  <DoneHubPreview key={entry.id} dayLabel={dayLabel} entry={entry} />
-                ))}
+                {groupHubDoneItems(group.entries).map((item) =>
+                  item.kind === 'brick' ? (
+                    <DoneHubBrickPreview key={item.id} entries={item.entries} />
+                  ) : (
+                    <DoneHubPreview key={item.entry.id} dayLabel={dayLabel} entry={item.entry} />
+                  ),
+                )}
               </div>
             </li>
           );
