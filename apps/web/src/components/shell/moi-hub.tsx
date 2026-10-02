@@ -19,6 +19,7 @@ import {
   Target,
   User2,
   Wrench,
+  Apple,
 } from 'lucide-react';
 import { StickyHeader } from '@/components/layout/header/sticky-header';
 import { InstallCard } from '@/components/pwa/install-card';
@@ -75,6 +76,7 @@ const MODELE_SECTION: HubSection = {
       icon: Dumbbell,
       meta: <HubStatusValue statusKey="equipment" />,
     },
+    { href: '/settings/foods', title: 'Mes aliments', icon: Apple },
     {
       href: '/settings/memory',
       title: 'Mémoire du coach',
