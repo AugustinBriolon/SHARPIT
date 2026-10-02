@@ -37,6 +37,37 @@ describe('fetchOffProduct', () => {
   it('throws when OFF is down, so the caller can say so', async () => {
     await expect(fetchOffProduct('5690845000621', respond(503, {}))).rejects.toThrow('503');
   });
+
+  it('retries once when OFF times out, then returns the product', async () => {
+    const timeout = Object.assign(new Error('The operation was aborted due to timeout'), {
+      name: 'TimeoutError',
+    });
+    const fetcher = vi
+      .fn()
+      .mockRejectedValueOnce(timeout)
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ status: 1, product: SKYR }), { status: 200 }),
+      );
+
+    const food = await fetchOffProduct('5690845000621', fetcher as unknown as typeof fetch);
+
+    expect(food?.name).toBe('Skyr nature');
+    expect(fetcher).toHaveBeenCalledTimes(2);
+  });
+
+  it('gives up after one retry when OFF keeps timing out', async () => {
+    const timeout = Object.assign(new Error('The operation was aborted due to timeout'), {
+      name: 'TimeoutError',
+    });
+    const fetcher = vi.fn().mockRejectedValue(timeout);
+
+    await expect(
+      fetchOffProduct('5690845000621', fetcher as unknown as typeof fetch),
+    ).rejects.toMatchObject({
+      name: 'TimeoutError',
+    });
+    expect(fetcher).toHaveBeenCalledTimes(2);
+  });
 });
 
 describe('searchOffProducts', () => {
