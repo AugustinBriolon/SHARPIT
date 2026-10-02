@@ -17,19 +17,51 @@ const strengthDescription =
   'Travail en salle : 1. Mobilité bassin/sciatique. 2. Exercices lestés modérés. 3. Travail postural (pied en canard) via des fentes contrôlées.';
 
 describe('evaluateMorningSessionRecalibration', () => {
-  it('stays silent without wellness', () => {
+  it('stays silent while the night verdict is missing or insufficient', () => {
     expect(
       evaluateMorningSessionRecalibration({
-        wellnessCompleted: false,
         session: baseSession,
-        decision: { overallVerdict: 'RECOVER', confidenceTier: 'HIGH' },
+        decision: { overallVerdict: null, confidenceTier: null },
+      }),
+    ).toBeNull();
+    expect(
+      evaluateMorningSessionRecalibration({
+        session: baseSession,
+        decision: { overallVerdict: 'RECOVER', confidenceTier: 'INSUFFICIENT' },
+      }),
+    ).toBeNull();
+  });
+
+  it('eases an endurance outing on a day to protect: recovery, a quarter shorter', () => {
+    const proposal = evaluateMorningSessionRecalibration({
+      session: { ...baseSession, type: 'SWIM', intensity: 'ENDURANCE', durationMin: 60, load: 50 },
+      decision: { overallVerdict: 'RECOVER', confidenceTier: 'HIGH' },
+    });
+    expect(proposal?.direction).toBe('DOWN');
+    expect(proposal?.toIntensity).toBe('RECOVERY');
+    expect(proposal?.toDurationMin).toBe(45);
+    expect(proposal?.toLoad).toBe(35);
+  });
+
+  it('never shortens an endurance outing under 20 minutes', () => {
+    const proposal = evaluateMorningSessionRecalibration({
+      session: { ...baseSession, intensity: 'ENDURANCE', durationMin: 20, load: 15 },
+      decision: { overallVerdict: 'CAUTION', confidenceTier: 'HIGH' },
+    });
+    expect(proposal?.toDurationMin).toBe(20);
+  });
+
+  it('leaves endurance alone on a day that does not call for protection', () => {
+    expect(
+      evaluateMorningSessionRecalibration({
+        session: { ...baseSession, intensity: 'ENDURANCE' },
+        decision: { overallVerdict: 'TRAIN_SMART', confidenceTier: 'HIGH' },
       }),
     ).toBeNull();
   });
 
   it('downgrades high intensity on RECOVER', () => {
     const proposal = evaluateMorningSessionRecalibration({
-      wellnessCompleted: true,
       session: baseSession,
       decision: { overallVerdict: 'RECOVER', confidenceTier: 'HIGH' },
     });
@@ -41,7 +73,6 @@ describe('evaluateMorningSessionRecalibration', () => {
 
   it('upgrades recovery session on TRAIN_HARD', () => {
     const proposal = evaluateMorningSessionRecalibration({
-      wellnessCompleted: true,
       session: { ...baseSession, intensity: 'RECOVERY', load: 20 },
       decision: { overallVerdict: 'TRAIN_HARD', confidenceTier: 'HIGH' },
     });
@@ -52,7 +83,6 @@ describe('evaluateMorningSessionRecalibration', () => {
   it('stays silent when already aligned', () => {
     expect(
       evaluateMorningSessionRecalibration({
-        wellnessCompleted: true,
         session: { ...baseSession, intensity: 'ENDURANCE', load: 50 },
         decision: { overallVerdict: 'TRAIN_SMART', confidenceTier: 'MEDIUM' },
       }),
@@ -62,7 +92,6 @@ describe('evaluateMorningSessionRecalibration', () => {
   it('ignores completed sessions', () => {
     expect(
       evaluateMorningSessionRecalibration({
-        wellnessCompleted: true,
         session: { ...baseSession, completed: true },
         decision: { overallVerdict: 'RECOVER', confidenceTier: 'HIGH' },
       }),
@@ -72,7 +101,6 @@ describe('evaluateMorningSessionRecalibration', () => {
   it('stays silent on insufficient confidence', () => {
     expect(
       evaluateMorningSessionRecalibration({
-        wellnessCompleted: true,
         session: baseSession,
         decision: { overallVerdict: 'RECOVER', confidenceTier: 'INSUFFICIENT' },
       }),
@@ -81,7 +109,6 @@ describe('evaluateMorningSessionRecalibration', () => {
 
   it('forces recovery on REST_ONLY capacity', () => {
     const proposal = evaluateMorningSessionRecalibration({
-      wellnessCompleted: true,
       session: baseSession,
       decision: {
         overallVerdict: 'TRAIN_SMART',
@@ -97,7 +124,6 @@ describe('evaluateMorningSessionRecalibration', () => {
 
   it('soft-upgrades recovery on TRAIN_SMART with HIGH confidence', () => {
     const proposal = evaluateMorningSessionRecalibration({
-      wellnessCompleted: true,
       session: { ...baseSession, intensity: 'RECOVERY', load: 20 },
       decision: { overallVerdict: 'TRAIN_SMART', confidenceTier: 'HIGH' },
     });
@@ -107,7 +133,6 @@ describe('evaluateMorningSessionRecalibration', () => {
 
   it('upgrades STRENGTH with strength wording and adapted structure', () => {
     const proposal = evaluateMorningSessionRecalibration({
-      wellnessCompleted: true,
       session: {
         ...baseSession,
         type: 'STRENGTH',
@@ -129,7 +154,6 @@ describe('evaluateMorningSessionRecalibration', () => {
 
   it('eases STRENGTH on RECOVER by removing loaded work from structure', () => {
     const proposal = evaluateMorningSessionRecalibration({
-      wellnessCompleted: true,
       session: {
         ...baseSession,
         type: 'STRENGTH',
@@ -150,7 +174,6 @@ describe('evaluateMorningSessionRecalibration', () => {
 
   it('upgrades ENDURANCE run to TEMPO on TRAIN_HARD', () => {
     const proposal = evaluateMorningSessionRecalibration({
-      wellnessCompleted: true,
       session: { ...baseSession, intensity: 'ENDURANCE', load: 25 },
       decision: { overallVerdict: 'TRAIN_HARD', confidenceTier: 'HIGH' },
     });

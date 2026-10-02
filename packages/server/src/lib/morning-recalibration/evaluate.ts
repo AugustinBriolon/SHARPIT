@@ -1,7 +1,7 @@
 /**
  * Morning session recalibration — Presentation-layer V1.1.
  *
- * After sleep + recovery + wellness check-in, propose a bidirectional
+ * Once sleep and recovery are read (the check-in refines it), propose a bidirectional
  * adjustment of today's planned session. Never auto-applies.
  * Sport-aware: endurance ladder vs strength-like effort language + structure rewrite.
  * Reads DecisionState / session only — no new Core engine.
@@ -231,22 +231,16 @@ function hasEligibleDecision(
 }
 
 function isEligibleForRecalibration(input: {
-  wellnessCompleted: boolean;
   session: MorningRecalibrationSessionInput | null;
   decision: MorningRecalibrationDecisionInput | null;
 }): input is {
-  wellnessCompleted: true;
   session: MorningRecalibrationSessionInput;
   decision: MorningRecalibrationDecisionInput & {
     overallVerdict: string;
     confidenceTier: string;
   };
 } {
-  return (
-    input.wellnessCompleted &&
-    hasEligibleSession(input.session) &&
-    hasEligibleDecision(input.decision)
-  );
+  return hasEligibleSession(input.session) && hasEligibleDecision(input.decision);
 }
 
 function protectWhy(strengthLike: boolean, verdict: string, _capacity: string | null): string {
@@ -359,6 +353,32 @@ function buildStrengthEnduranceDowngrade(
   });
 }
 
+/** An endurance outing on a day to protect: kept, a quarter shorter, at recovery pace. */
+function buildEnduranceDowngrade(
+  session: MorningRecalibrationSessionInput,
+  verdict: string,
+): MorningRecalibrationProposal | null {
+  if (
+    isStrengthLikeMorningSport(session.type) ||
+    !PROTECT_VERDICTS.has(verdict) ||
+    session.intensity !== 'ENDURANCE'
+  ) {
+    return null;
+  }
+  const toDuration = isSet(session.durationMin)
+    ? Math.max(20, Math.round((session.durationMin * 0.75) / 5) * 5)
+    : session.durationMin;
+  const toLoad = isSet(session.load) ? Math.round(session.load * 0.7) : null;
+  return buildProposal({
+    session,
+    direction: 'DOWN',
+    toIntensity: 'RECOVERY',
+    toDuration,
+    toLoad,
+    why: `Verdict du matin « ${verdict} ». Garder la sortie, un quart plus courte et en récupération, pour récupérer sans perdre le fil.`,
+  });
+}
+
 function buildRecoveryUpgrade(
   session: MorningRecalibrationSessionInput,
   verdict: string,
@@ -440,6 +460,7 @@ function resolveMorningProposal(
     buildHighIntensityDowngrade(session, verdict, capacity) ??
     buildTempoDowngrade(session, verdict) ??
     buildStrengthEnduranceDowngrade(session, verdict) ??
+    buildEnduranceDowngrade(session, verdict) ??
     buildRecoveryUpgrade(session, verdict) ??
     buildEnduranceUpgrade(session, verdict) ??
     buildSmartRecoveryUpgrade(session, decision)
@@ -450,7 +471,6 @@ function resolveMorningProposal(
  * Pure evaluator — returns null when silence is the correct product answer.
  */
 export function evaluateMorningSessionRecalibration(input: {
-  wellnessCompleted: boolean;
   session: MorningRecalibrationSessionInput | null;
   decision: MorningRecalibrationDecisionInput | null;
 }): MorningRecalibrationProposal | null {
