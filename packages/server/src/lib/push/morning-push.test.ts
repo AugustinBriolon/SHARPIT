@@ -1,8 +1,10 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { afterEach, describe, expect, it, vi, beforeEach } from 'vitest';
 import {
   buildMorningPushPayload,
+  morningProposalLine,
   toApnsPayload,
   sendMorningPushForAthlete,
+  sendMorningPushOnceNightIsRead,
   sendMorningVerdictPushes,
 } from './morning-push';
 import type { AthleteSnapshot } from '@sharpit/app/athlete-state/snapshot';
@@ -21,7 +23,19 @@ vi.mock('@sharpit/db/client', () => ({
       update: vi.fn().mockResolvedValue({}),
       deleteMany: vi.fn().mockResolvedValue({ count: 1 }),
     },
+    dailyHealth: {
+      findUnique: vi.fn(),
+    },
   },
+}));
+
+vi.mock('@sharpit/server/lib/morning-recalibration/service', () => ({
+  ensureMorningRecalibration: vi.fn().mockResolvedValue({ presentation: null, created: false }),
+}));
+
+vi.mock('@sharpit/server/lib/athlete-state/freshness-service', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@sharpit/server/lib/athlete-state/freshness-service')>()),
+  trainingDayIdNow: vi.fn().mockReturnValue('2026-10-02'),
 }));
 
 vi.mock('@sharpit/server/infrastructure/athlete-state/snapshot-repository', () => ({
@@ -240,6 +254,83 @@ describe('morning-push', () => {
       expect(summary.totalAthletes).toBe(2);
       expect(summary.sentCount).toBe(2);
       expect(summary.failedCount).toBe(0);
+    });
+  });
+
+  describe('the night’s proposal', () => {
+    const proposal = {
+      decisionId: 'd1',
+      sessionId: 's1',
+      sessionType: 'SWIM',
+      direction: 'DOWN' as const,
+      changeSummary: 'Endurance → Récupération · 40 → 30 min',
+      why: 'RECOVER',
+      status: 'PRESENTED' as const,
+      fromIntensity: 'ENDURANCE',
+      toIntensity: 'RECOVERY',
+      fromDurationMin: 40,
+      toDurationMin: 30,
+      fromLoad: 30,
+      toLoad: 21,
+      fromDescription: null,
+      toDescription: null,
+    };
+
+    it('leads the morning push with the proposal while it waits', () => {
+      const payload = buildMorningPushPayload(dummySnapshot, 'https://sharpit.app', proposal);
+      expect(payload.body).toBe(
+        'Ta nuit propose d’alléger : Endurance → Récupération · 40 → 30 min',
+      );
+    });
+
+    it('says nothing of a proposal already answered', () => {
+      expect(morningProposalLine({ ...proposal, status: 'ACCEPTED' })).toBeNull();
+      expect(morningProposalLine(null)).toBeNull();
+    });
+  });
+
+  describe('sendMorningPushOnceNightIsRead', () => {
+    beforeEach(() => {
+      vi.clearAllMocks();
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date('2026-10-02T08:00:00'));
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('waits for the morning: a night still being written is not a night', async () => {
+      vi.setSystemTime(new Date('2026-10-02T03:00:00'));
+      vi.mocked(prisma.dailyHealth.findUnique).mockResolvedValue({ sleepMinutes: 200 } as never);
+      expect(await sendMorningPushOnceNightIsRead('ath-1')).toBeNull();
+      expect(prisma.dailyHealth.findUnique).not.toHaveBeenCalled();
+    });
+
+    it('waits for last night’s sleep', async () => {
+      vi.mocked(prisma.dailyHealth.findUnique).mockResolvedValue({ sleepMinutes: null } as never);
+      expect(await sendMorningPushOnceNightIsRead('ath-1')).toBeNull();
+      expect(prisma.athleteProfile.findUnique).not.toHaveBeenCalled();
+    });
+
+    it('never sends for a day back-filled later', async () => {
+      expect(await sendMorningPushOnceNightIsRead('ath-1', '2026-09-20')).toBeNull();
+      expect(prisma.dailyHealth.findUnique).not.toHaveBeenCalled();
+    });
+
+    it('goes through the once-a-day send once the night is in', async () => {
+      vi.mocked(prisma.dailyHealth.findUnique).mockResolvedValue({ sleepMinutes: 420 } as never);
+      vi.mocked(prisma.athleteProfile.findUnique).mockResolvedValue({
+        id: 'ath-1',
+        deletedAt: null,
+        lastMorningPushDate: '2026-10-02',
+        notificationPrefs: null,
+        deviceTokens: [{ id: 't1', token: 'x', bundleId: 'b', environment: 'production' }],
+      } as never);
+
+      const result = await sendMorningPushOnceNightIsRead('ath-1');
+
+      expect(result?.skippedReason).toBe('ALREADY_SENT_TODAY');
     });
   });
 });

@@ -3,6 +3,7 @@ import {
   wakeAppForWidgets,
 } from '@sharpit/server/lib/push/athlete-notifications';
 import { NextResponse } from 'next/server';
+import { sendMorningPushOnceNightIsRead } from '@sharpit/server/lib/push/morning-push';
 import { prisma } from '@sharpit/db/client';
 import { mapWithConcurrency } from '@sharpit/server/lib/async/map-with-concurrency';
 import { verifyCronSecret } from '@sharpit/server/lib/cron/verify-cron-secret';
@@ -91,6 +92,12 @@ async function syncOneAthlete(
   // The day was recomputed: the app's widgets show it without the athlete opening the app.
   if (result.briefing) {
     await wakeAppForWidgets(athleteId);
+  }
+  // The night came in with this sync: the morning push goes out now, once a day.
+  if (canRunHealthDerivedAthleteRefresh(hasHealthConsent)) {
+    await sendMorningPushOnceNightIsRead(athleteId).catch((error) =>
+      console.error('[cron/sync] morning push', athleteId, error),
+    );
   }
   // Weekly review loads getHealthEntries — require health consent as well as AI.
   if (hasAiConsent && canRunHealthDerivedAthleteRefresh(hasHealthConsent)) {

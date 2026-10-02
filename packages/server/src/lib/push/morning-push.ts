@@ -12,6 +12,10 @@ import {
   type OverallVerdict,
 } from '@sharpit/app/lib/today/dashboard/today-mapping';
 import type { AthleteSnapshot } from '@sharpit/app/athlete-state/snapshot';
+import {
+  ensureMorningRecalibration,
+  type MorningRecalibrationPresentation,
+} from '@sharpit/server/lib/morning-recalibration/service';
 
 export type MorningPushPayload = {
   title: string;
@@ -49,6 +53,7 @@ const DEFAULT_CONCURRENCY = 5;
 export function buildMorningPushPayload(
   snapshot: AthleteSnapshot,
   origin = appOrigin('https://sharpit.app'),
+  proposal: MorningRecalibrationPresentation | null = null,
 ): MorningPushPayload {
   const verdict = (snapshot.todaysDecision ??
     snapshot.decision?.overallVerdict ??
@@ -60,8 +65,9 @@ export function buildMorningPushPayload(
     title = display?.label ?? title;
   }
 
-  // Briefing excerpt or primary product message
+  // The night's proposal for today's session first — the one thing to act on — else the briefing.
   const rawBody =
+    morningProposalLine(proposal) ||
     snapshot.primaryProductMessage ||
     snapshot.briefing?.content?.split('\n').find((l) => l.trim().length > 0) ||
     snapshot.insufficientDataMessage ||
@@ -78,6 +84,18 @@ export function buildMorningPushPayload(
     verdict,
     trainingDayId: snapshot.trainingDayId,
   };
+}
+
+/** « Ta nuit propose d'alléger : Endurance → Récupération · 40 → 30 min », while it waits. */
+export function morningProposalLine(
+  proposal: MorningRecalibrationPresentation | null,
+): string | null {
+  if (!proposal || proposal.status !== 'PRESENTED') {
+    return null;
+  }
+  const lead =
+    proposal.direction === 'DOWN' ? 'Ta nuit propose d’alléger' : 'Ta nuit permet d’en faire plus';
+  return `${lead} : ${proposal.changeSummary}`;
 }
 
 export function toApnsPayload(morning: MorningPushPayload): ApnsPayload {
@@ -185,7 +203,13 @@ export async function sendMorningPushForAthlete(
     };
   }
 
-  const morningPayload = buildMorningPushPayload(snapshot, options?.origin);
+  const proposal = await ensureMorningRecalibration(athleteId, dayId, { athleteSnapshot: snapshot })
+    .then((result) => result.presentation)
+    .catch((error) => {
+      console.error('[morning-push] proposal', athleteId, error);
+      return null;
+    });
+  const morningPayload = buildMorningPushPayload(snapshot, options?.origin, proposal);
   const apnsPayload = toApnsPayload(morningPayload);
 
   const { sent, failed, deactivated } = await sendPushToDevices(athlete.deviceTokens, apnsPayload);
@@ -209,8 +233,33 @@ export async function sendMorningPushForAthlete(
 }
 
 /**
+ * Last night reached the server — a sync, an Apple Health upload: today's morning push goes out
+ * now rather than at a fixed hour, once a day (`sendMorningPushForAthlete` skips a day already
+ * sent). Nothing for a day back-filled later, or before the night's sleep is in.
+ */
+export async function sendMorningPushOnceNightIsRead(
+  athleteId: string,
+  trainingDayId: string = trainingDayIdNow(),
+): Promise<MorningPushAthleteResult | null> {
+  // Before 5 a.m. a night still being written could pass for a whole one (same rule as the
+  // sync on open, `shouldSyncOnOpen`).
+  if (trainingDayId !== trainingDayIdNow() || new Date().getHours() < 5) {
+    return null;
+  }
+  const night = await prisma.dailyHealth.findUnique({
+    where: { athleteId_date: { athleteId, date: new Date(`${trainingDayId}T00:00:00.000Z`) } },
+    select: { sleepMinutes: true },
+  });
+  if (!night?.sleepMinutes) {
+    return null;
+  }
+  return sendMorningPushForAthlete(athleteId, { trainingDayId });
+}
+
+/**
  * Sends the morning verdict notification to all eligible athletes.
- * Scheduled via cron (06:45 UTC / morning wake moment).
+ * The late fallback (cron): athletes whose night never reached the server still get the day's
+ * verdict; the others had it as soon as their night was read (`sendMorningPushOnceNightIsRead`).
  */
 export async function sendMorningVerdictPushes(options?: {
   trainingDayId?: string;

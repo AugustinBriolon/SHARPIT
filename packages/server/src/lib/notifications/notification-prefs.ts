@@ -4,8 +4,9 @@ import { z } from 'zod';
  * Which pushes the athlete wants (Paramètres → Notifications). Stored versioned on
  * `AthleteProfile.notificationPrefs`; null or anything unreadable means the defaults.
  *
- * Only `morningVerdict` drives a push today. `morningTime` is stored for the day the
- * morning cron runs per athlete time zone — it currently fires once, 06:45 UTC.
+ * Only `morningVerdict` drives a push today: it goes out as soon as the night reaches the
+ * server (a sync, an Apple Health upload), with a 09:30 UTC fallback. `morningTime` is stored,
+ * unused since the push follows the night rather than a clock.
  */
 export type NotificationPrefs = {
   version: 1;

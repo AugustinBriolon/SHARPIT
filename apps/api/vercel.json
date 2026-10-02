@@ -32,7 +32,7 @@
     },
     {
       "path": "/api/cron/morning-push",
-      "schedule": "45 6 * * *"
+      "schedule": "30 9 * * *"
     },
     {
       "path": "/api/cron/privacy-purge",

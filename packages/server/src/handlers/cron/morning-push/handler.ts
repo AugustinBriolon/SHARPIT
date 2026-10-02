@@ -8,8 +8,8 @@ function unauthorized() {
 }
 
 /**
- * Morning push cron (06:45 UTC / Wake moment).
- * Delivers the morning verdict and briefing excerpt to all active athletes with iOS devices.
+ * Morning push fallback (cron, late morning): the verdict for athletes whose night never reached
+ * the server. Everyone else got it as soon as their night was read.
  */
 export async function GET(request: Request) {
   if (!verifyCronSecret(request)) {

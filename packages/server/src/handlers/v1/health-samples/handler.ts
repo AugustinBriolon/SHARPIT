@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse, after } from 'next/server';
+import { sendMorningPushOnceNightIsRead } from '@sharpit/server/lib/push/morning-push';
 import { z } from 'zod';
 import { getCurrentAthleteId } from '@sharpit/server/lib/auth/current-athlete';
 import { refreshAthleteState } from '@sharpit/server/lib/athlete-state/orchestrator';
@@ -110,6 +111,12 @@ export async function POST(request: NextRequest) {
       await refreshAthleteState(athleteId, { source: 'today_refresh' }).catch((error) => {
         console.error('[api/v1/health-samples] refresh', error);
       });
+      // The night may have just arrived — often in the background, as the watch writes it.
+      after(() =>
+        sendMorningPushOnceNightIsRead(athleteId).catch((error) =>
+          console.error('[api/v1/health-samples] morning push', error),
+        ),
+      );
     }
     return NextResponse.json({ apiVersion: 1, updatedDays });
   } catch (error) {
