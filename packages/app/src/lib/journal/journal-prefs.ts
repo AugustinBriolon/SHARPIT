@@ -19,6 +19,7 @@ import {
   canEnableAnotherTrackable,
   enforceJournalPrefsLimits,
 } from '@sharpit/app/lib/journal/journal-limits';
+import { apiFetch } from '@sharpit/app/lib/api/api-fetch';
 
 export type JournalCustomItem = {
   id: string;
@@ -472,7 +473,7 @@ export function writeJournalPrefsCache(
 }
 
 export async function fetchJournalPrefs(): Promise<{ prefs: JournalPrefs; isPro: boolean }> {
-  const response = await fetch('/api/journal-prefs');
+  const response = await apiFetch('/api/journal-prefs');
   if (!response.ok) {
     throw new Error('Impossible de charger les préférences journal');
   }
@@ -486,7 +487,7 @@ export async function fetchJournalPrefs(): Promise<{ prefs: JournalPrefs; isPro:
 export async function putJournalPrefs(
   prefs: JournalPrefs,
 ): Promise<{ prefs: JournalPrefs; isPro: boolean }> {
-  const response = await fetch('/api/journal-prefs', {
+  const response = await apiFetch('/api/journal-prefs', {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ prefs }),

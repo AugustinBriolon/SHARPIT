@@ -10,6 +10,7 @@ import {
   isPriorNightFactor,
 } from '@sharpit/app/lib/journal/day-context-factors';
 import { isCustomTrackableId } from '@sharpit/app/lib/journal/journal-trackables';
+import { apiFetch } from '@sharpit/app/lib/api/api-fetch';
 
 export type DayJournalFactorState = 'unset' | 'no' | 'yes';
 
@@ -161,7 +162,7 @@ export async function fetchDayJournalEntryFromServer(
     return null;
   }
   try {
-    const res = await fetch(`/api/day-journal?day=${encodeURIComponent(trainingDayId)}`);
+    const res = await apiFetch(`/api/day-journal?day=${encodeURIComponent(trainingDayId)}`);
     if (!res.ok) {
       return null;
     }
@@ -181,7 +182,7 @@ export async function persistDayJournalEntryToServer(
     return null;
   }
   try {
-    const res = await fetch('/api/day-journal', {
+    const res = await apiFetch('/api/day-journal', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

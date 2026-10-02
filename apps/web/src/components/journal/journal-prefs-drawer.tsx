@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
+import { toast } from '@/components/ui/toast';
 import {
   addCustomTrackable,
   defaultJournalPrefs,
@@ -40,23 +41,34 @@ function useJournalPrefsPatch(
   prefsRef.current = prefs;
   isProRef.current = isPro;
 
-  function patch(updater: (prev: JournalPrefs) => JournalPrefs) {
-    const next = updater(prefsRef.current);
+  function apply(next: JournalPrefs) {
     prefsRef.current = next;
     writeJournalPrefsCache(next);
     onPrefsChange(next);
+  }
+
+  function patch(updater: (prev: JournalPrefs) => JournalPrefs) {
+    const previous = prefsRef.current;
+    apply(updater(previous));
     const generation = ++writeGeneration.current;
-    void putJournalPrefs(next).then((remote) => {
-      if (generation !== writeGeneration.current) {
-        return;
-      }
-      prefsRef.current = remote.prefs;
-      writeJournalPrefsCache(remote.prefs);
-      onPrefsChange(remote.prefs);
-      onIsProChange(remote.isPro);
-      void queryClient.invalidateQueries({ queryKey: ['journal-day-signals'] });
-      void queryClient.invalidateQueries({ queryKey: queryKeys.journalPrefs });
-    });
+    putJournalPrefs(prefsRef.current)
+      .then((remote) => {
+        if (generation !== writeGeneration.current) {
+          return;
+        }
+        apply(remote.prefs);
+        onIsProChange(remote.isPro);
+        void queryClient.invalidateQueries({ queryKey: ['journal-day-signals'] });
+        void queryClient.invalidateQueries({ queryKey: queryKeys.journalPrefs });
+      })
+      .catch(() => {
+        // Not saved: the choice shown would be a lie — put back what the server still holds.
+        if (generation !== writeGeneration.current) {
+          return;
+        }
+        apply(previous);
+        toast.error('Préférence non enregistrée. Réessaie dans un instant.');
+      });
   }
 
   function createCustomTrackable(label: string): boolean {
@@ -184,14 +196,17 @@ export function useJournalPrefs(): {
     setPrefs(local);
     setReady(true);
     let cancelled = false;
-    void fetchJournalPrefs().then((remote) => {
-      if (cancelled) {
-        return;
-      }
-      writeJournalPrefsCache(remote.prefs);
-      setPrefs(remote.prefs);
-      setIsPro(remote.isPro);
-    });
+    fetchJournalPrefs()
+      .then((remote) => {
+        if (cancelled) {
+          return;
+        }
+        writeJournalPrefsCache(remote.prefs);
+        setPrefs(remote.prefs);
+        setIsPro(remote.isPro);
+      })
+      // Unreachable for now: the cached choices stay on screen and the next open reads again.
+      .catch(() => undefined);
     return () => {
       cancelled = true;
     };

@@ -1,3 +1,4 @@
+import { apiFetch } from '@sharpit/app/lib/api/api-fetch';
 /**
  * Athlete activity status — longer-lived mode, independent of the day journal.
  *
@@ -357,7 +358,7 @@ async function persistActivityStatusToServer(payload: ActivityStatusWriteInput):
     return;
   }
   try {
-    const res = await fetch('/api/activity-status', {
+    const res = await apiFetch('/api/activity-status', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
@@ -379,7 +380,7 @@ export async function hydrateActivityStatusFromServer(): Promise<void> {
     return;
   }
   try {
-    const res = await fetch('/api/activity-status');
+    const res = await apiFetch('/api/activity-status');
     if (!res.ok) {
       return;
     }
