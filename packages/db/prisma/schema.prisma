@@ -624,11 +624,15 @@ model FoodProduct {
   proteinPer100g Float
   carbsPer100g   Float
   fatPer100g     Float
-  fiberPer100g   Float?
-  sugarPer100g   Float?
-  servingGrams   Float?
-  servingLabel   String?
-  fetchedAt      DateTime          @default(now())
+  fiberPer100g         Float?
+  sugarPer100g         Float?
+  saltPer100g          Float?
+  saturatedFatPer100g  Float?
+  servingGrams         Float?
+  servingLabel         String?
+  /// Sharpit health score snapshot (`FoodHealthAssessment`); null when not yet computed.
+  health               Json?
+  fetchedAt            DateTime          @default(now())
 
   createdAt DateTime       @default(now())
   updatedAt DateTime       @updatedAt

@@ -7,6 +7,11 @@ import {
   type LoggedEntry,
 } from '@sharpit/app/lib/nutrition/food-log/food-log-math';
 import type { MappedFood } from '@sharpit/app/lib/nutrition/food-log/open-food-facts';
+import {
+  computeFoodHealth,
+  FOOD_HEALTH_SCORE_VERSION,
+  type FoodHealthAssessment,
+} from '@sharpit/app/lib/nutrition/food-log/food-health-score';
 import { SHARPIT_NUTRITION_PROVIDER } from '@sharpit/app/lib/nutrition/food-log/nutrition-source';
 import { gramsFromPercent } from '@sharpit/app/lib/nutrition/food-log/nutrition-targets';
 import type {
@@ -18,6 +23,7 @@ import type {
 } from '@sharpit/app/lib/validators/food-log';
 import { observationEngine } from '@sharpit/server/lib/engines/observation-engine';
 import { fetchOffProduct } from './open-food-facts-client';
+import type { Prisma } from '@prisma/client';
 
 /**
  * The in-app food log (ADR-061). Entries are the source; the day's `DailyNutrition` row
@@ -130,10 +136,72 @@ export async function recomputeFoodLogDay(athleteId: string, trainingDayId: stri
   await ingestDayObservation(athleteId, trainingDayId, entries);
 }
 
+/**
+ * Fill a missing / outdated Sharpit score so the day's list and search show a number,
+ * not a dash, for foods logged before the score existed.
+ */
+async function ensureProductHealth(product: FoodProduct): Promise<FoodProduct> {
+  const health = healthOf(product);
+  if (health && health.scoreVersion === FOOD_HEALTH_SCORE_VERSION) {
+    return product;
+  }
+  if (product.source === 'OFF' && product.barcode) {
+    const refreshed = await findProductByBarcode(product.barcode).catch(() => null);
+    if (refreshed && healthOf(refreshed)) {
+      return refreshed;
+    }
+    // OFF unavailable: still surface a partial score from stored nutrients when possible.
+    return persistPartialHealth(product);
+  }
+  if (product.source === 'CUSTOM') {
+    return persistPartialHealth(product);
+  }
+  return product;
+}
+
+async function persistPartialHealth(product: FoodProduct): Promise<FoodProduct> {
+  if (
+    product.sugarPer100g === null &&
+    product.saltPer100g === null &&
+    product.saturatedFatPer100g === null
+  ) {
+    return product;
+  }
+  return prisma.foodProduct.update({
+    where: { id: product.id },
+    data: {
+      health: customHealth({
+        sugarPer100g: product.sugarPer100g,
+        saltPer100g: product.saltPer100g,
+        saturatedFatPer100g: product.saturatedFatPer100g,
+      }),
+    },
+  });
+}
+
 export async function listFoodLogDay(athleteId: string, trainingDayId: string) {
-  return prisma.foodLogEntry.findMany({
+  const rows = await prisma.foodLogEntry.findMany({
     where: { athleteId, date: foodLogDayDate(trainingDayId) },
     orderBy: { createdAt: 'asc' },
+    include: { product: true },
+  });
+  const refreshed = new Map<string, FoodProduct>();
+  const uniqueProducts = [
+    ...new Map(
+      rows.flatMap((row) => (row.product ? [[row.product.id, row.product] as const] : [])),
+    ).values(),
+  ];
+  await Promise.all(
+    uniqueProducts.map(async (product) => {
+      refreshed.set(product.id, await ensureProductHealth(product));
+    }),
+  );
+  return rows.map(({ product, ...entry }) => {
+    const resolved = product ? (refreshed.get(product.id) ?? product) : null;
+    return {
+      ...entry,
+      health: resolved ? healthOf(resolved) : null,
+    };
   });
 }
 
@@ -245,6 +313,39 @@ function isStale(product: FoodProduct): boolean {
   return Date.now() - product.fetchedAt.getTime() > OFF_CACHE_DAYS * 24 * 60 * 60 * 1000;
 }
 
+function healthOf(product: FoodProduct): FoodHealthAssessment | null {
+  const value = product.health;
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return null;
+  }
+  return value as FoodHealthAssessment;
+}
+
+/** Age or an outdated Sharpit score formula: re-read OFF (or recompute custom). */
+function needsOffRefresh(product: FoodProduct): boolean {
+  if (product.source !== 'OFF') {
+    return false;
+  }
+  if (isStale(product)) {
+    return true;
+  }
+  const health = healthOf(product);
+  return !health || health.scoreVersion !== FOOD_HEALTH_SCORE_VERSION;
+}
+
+function customHealth(input: {
+  sugarPer100g?: number | null;
+  saltPer100g?: number | null;
+  saturatedFatPer100g?: number | null;
+}): Prisma.InputJsonValue {
+  return computeFoodHealth({
+    kind: 'custom',
+    sugarPer100g: input.sugarPer100g,
+    saltPer100g: input.saltPer100g,
+    saturatedFatPer100g: input.saturatedFatPer100g,
+  }) as unknown as Prisma.InputJsonValue;
+}
+
 function productData(food: MappedFood) {
   return {
     name: food.name,
@@ -255,16 +356,19 @@ function productData(food: MappedFood) {
     fatPer100g: food.fatPer100g,
     fiberPer100g: food.fiberPer100g ?? null,
     sugarPer100g: food.sugarPer100g ?? null,
+    saltPer100g: food.saltPer100g ?? null,
+    saturatedFatPer100g: food.saturatedFatPer100g ?? null,
     servingGrams: food.servingGrams,
     servingLabel: food.servingLabel,
+    health: food.health as unknown as Prisma.InputJsonValue,
     fetchedAt: new Date(),
   };
 }
 
-/** Cached OFF product for a barcode, read from OFF when unknown or stale. */
+/** Cached OFF product for a barcode, read from OFF when unknown, stale, or the score formula moved. */
 export async function findProductByBarcode(barcode: string): Promise<FoodProduct | null> {
   const cached = await prisma.foodProduct.findUnique({ where: { barcode } });
-  if (cached && !isStale(cached)) {
+  if (cached && !needsOffRefresh(cached)) {
     return cached;
   }
   const food = await fetchOffProduct(barcode).catch((error) => {
@@ -317,7 +421,10 @@ export async function createCustomFood(athleteId: string, input: CustomFoodInput
       fatPer100g: input.fatPer100g,
       fiberPer100g: input.fiberPer100g ?? null,
       sugarPer100g: input.sugarPer100g ?? null,
+      saltPer100g: input.saltPer100g ?? null,
+      saturatedFatPer100g: input.saturatedFatPer100g ?? null,
       servingGrams: input.servingGrams ?? null,
+      health: customHealth(input),
     },
   });
 }
@@ -348,7 +455,19 @@ export async function updateCustomFood(
   input: CustomFoodUpdateInput,
 ) {
   await assertOwnFood(athleteId, id);
-  return prisma.foodProduct.update({ where: { id }, data: input });
+  const current = await prisma.foodProduct.findUniqueOrThrow({ where: { id } });
+  const merged = {
+    sugarPer100g: input.sugarPer100g !== undefined ? input.sugarPer100g : current.sugarPer100g,
+    saltPer100g: input.saltPer100g !== undefined ? input.saltPer100g : current.saltPer100g,
+    saturatedFatPer100g:
+      input.saturatedFatPer100g !== undefined
+        ? input.saturatedFatPer100g
+        : current.saturatedFatPer100g,
+  };
+  return prisma.foodProduct.update({
+    where: { id },
+    data: { ...input, health: customHealth(merged) },
+  });
 }
 
 /** Deletes an own food; its logged entries stay, unlinked (`onDelete: SetNull`). */

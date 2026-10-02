@@ -45,6 +45,8 @@ export const customFoodSchema = z.object({
   fatPer100g: per100g,
   fiberPer100g: per100g.nullable().optional(),
   sugarPer100g: per100g.nullable().optional(),
+  saltPer100g: per100g.nullable().optional(),
+  saturatedFatPer100g: per100g.nullable().optional(),
   servingGrams: grams.nullable().optional(),
 });
 

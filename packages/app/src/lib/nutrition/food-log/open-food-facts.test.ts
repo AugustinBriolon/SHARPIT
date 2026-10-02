@@ -29,9 +29,47 @@ describe('mapOffProduct', () => {
       fatPer100g: 30.9,
       fiberPer100g: null,
       sugarPer100g: 56.3,
+      saltPer100g: null,
+      saturatedFatPer100g: null,
       servingGrams: 15,
       servingLabel: '15 g',
+      health: expect.objectContaining({
+        coverage: 'full',
+        nutriScore: null,
+        score: expect.any(Number),
+      }),
     });
+  });
+
+  it('builds the Sharpit health score from Nutri-Score, NOVA, levels and additives', () => {
+    const food = mapOffProduct({
+      code: '3017620422003',
+      product_name: 'Nutella',
+      nutriments: {
+        'energy-kcal_100g': 539,
+        proteins_100g: 6.3,
+        carbohydrates_100g: 57.5,
+        fat_100g: 30.9,
+        sugars_100g: 56.3,
+        salt_100g: 0.107,
+        'saturated-fat_100g': 10.6,
+      },
+      nutriscore_grade: 'e',
+      nova_group: 4,
+      nutrient_levels: {
+        sugars: 'high',
+        salt: 'low',
+        'saturated-fat': 'high',
+      },
+      additives_tags: ['en:e322', 'en:e471'],
+    });
+    expect(food?.saltPer100g).toBe(0.107);
+    expect(food?.saturatedFatPer100g).toBe(10.6);
+    expect(food?.health.nutriScore).toBe('e');
+    expect(food?.health.nova).toBe(4);
+    expect(food?.health.nutrientFlags.sugars).toBe('high');
+    expect(food?.health.coverage).toBe('full');
+    expect(food?.health.score).toBeLessThan(40);
   });
 
   it('reads energy from kJ when kcal is missing', () => {

@@ -12,6 +12,7 @@ vi.mock('@sharpit/db/client', () => ({
     foodProduct: {
       findFirst: vi.fn(),
       findUnique: vi.fn(),
+      findUniqueOrThrow: vi.fn(),
       findMany: vi.fn(),
       upsert: vi.fn(),
       update: vi.fn(),
@@ -38,6 +39,9 @@ const SKYR = {
   fatPer100g: 0.2,
   fiberPer100g: null,
   sugarPer100g: 4,
+  saltPer100g: 0.1,
+  saturatedFatPer100g: 0.1,
+  health: { score: 80, scoreVersion: 1, coverage: 'full' },
   fetchedAt: new Date(),
 };
 
@@ -230,6 +234,12 @@ describe('food log service', () => {
   it("edits and deletes only the athlete's own food", async () => {
     const { prisma, service } = await setup();
     vi.mocked(prisma.foodProduct.findFirst).mockResolvedValueOnce({ id: 'mine' } as never);
+    vi.mocked(prisma.foodProduct.findUniqueOrThrow).mockResolvedValueOnce({
+      id: 'mine',
+      sugarPer100g: 4,
+      saltPer100g: null,
+      saturatedFatPer100g: null,
+    } as never);
 
     await service.updateCustomFood('athlete-1', 'mine', { kcalPer100g: 120 });
 
@@ -239,7 +249,10 @@ describe('food log service', () => {
     });
     expect(prisma.foodProduct.update).toHaveBeenCalledWith({
       where: { id: 'mine' },
-      data: { kcalPer100g: 120 },
+      data: expect.objectContaining({
+        kcalPer100g: 120,
+        health: expect.objectContaining({ coverage: 'partial', scoreVersion: 1 }),
+      }),
     });
 
     vi.mocked(prisma.foodProduct.findFirst).mockResolvedValueOnce(null);
@@ -247,5 +260,46 @@ describe('food log service', () => {
       service.FoodLogNotFoundError,
     );
     expect(prisma.foodProduct.delete).not.toHaveBeenCalled();
+  });
+
+  it('attaches a live Sharpit score to the day, refreshing products that still lack one', async () => {
+    const { prisma, service } = await setup();
+    const { fetchOffProduct } = await import('./open-food-facts-client');
+    const unscored = {
+      ...SKYR,
+      health: null,
+      fetchedAt: new Date('2020-01-01T00:00:00.000Z'),
+    };
+    const scored = { ...SKYR, health: { score: 72, scoreVersion: 1, coverage: 'full' } };
+    vi.mocked(prisma.foodLogEntry.findMany).mockResolvedValue([
+      { ...storedEntry(), product: unscored },
+    ] as never);
+    vi.mocked(prisma.foodProduct.findUnique).mockResolvedValue(unscored as never);
+    vi.mocked(fetchOffProduct).mockResolvedValue({
+      barcode: SKYR.barcode,
+      name: SKYR.name,
+      brand: SKYR.brand,
+      kcalPer100g: SKYR.kcalPer100g,
+      proteinPer100g: SKYR.proteinPer100g,
+      carbsPer100g: SKYR.carbsPer100g,
+      fatPer100g: SKYR.fatPer100g,
+      fiberPer100g: null,
+      sugarPer100g: SKYR.sugarPer100g,
+      saltPer100g: SKYR.saltPer100g,
+      saturatedFatPer100g: SKYR.saturatedFatPer100g,
+      servingGrams: null,
+      servingLabel: null,
+      health: scored.health,
+    } as never);
+    vi.mocked(prisma.foodProduct.upsert).mockResolvedValue(scored as never);
+
+    const day = await service.listFoodLogDay('athlete-1', '2026-10-01');
+
+    expect(day).toEqual([
+      expect.objectContaining({
+        id: 'e1',
+        health: expect.objectContaining({ score: 72, scoreVersion: 1 }),
+      }),
+    ]);
   });
 });
