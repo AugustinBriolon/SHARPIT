@@ -88,9 +88,9 @@ export async function submitMorningWellnessCheckin(
 
   // Best-effort: evaluate morning session recalibration after Twin refresh.
   try {
-    const { ensureMorningRecalibration } =
+    const { refreshMorningRecalibrationAfterCheckIn } =
       await import('@sharpit/server/lib/morning-recalibration/service');
-    await ensureMorningRecalibration(athleteId, trainingDayId);
+    await refreshMorningRecalibrationAfterCheckIn(athleteId, trainingDayId);
   } catch (error) {
     console.error('[wellness-checkin/morning-recalibration]', error);
   }

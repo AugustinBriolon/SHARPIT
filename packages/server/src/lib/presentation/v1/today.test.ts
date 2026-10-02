@@ -243,8 +243,18 @@ describe('projectV1Today · the morning proposal', () => {
       from: { durationMin: 40, description: '3×10 min au seuil' },
       to: { durationMin: 35, description: 'Footing facile' },
     });
+    expect(json.morningProposal?.checkInDone).toBe(true);
     expect(json.morningProposal?.from.intensityLabel).toBeTruthy();
     expect(json.morningProposal?.from.intensityLabel).not.toBe('THRESHOLD');
+  });
+
+  it('says when the check-in is still to do, so the card can invite to it', () => {
+    const json = projectV1Today(withRecalibration('PRESENTED'), {
+      trainingDayId: '2026-10-02',
+      webOrigin: origin,
+      morningCheckInDone: false,
+    });
+    expect(json.morningProposal?.checkInDone).toBe(false);
   });
 
   it('sends nothing once the athlete answered, or without a proposal', () => {

@@ -7,6 +7,8 @@ vi.mock('@sharpit/server/lib/auth/current-athlete', () => ({
 
 vi.mock('@sharpit/server/lib/morning-recalibration/service', () => ({
   getMorningRecalibrationPresentation: vi.fn().mockResolvedValue(null),
+  ensureMorningRecalibration: vi.fn().mockResolvedValue({ presentation: null, created: false }),
+  isMorningCheckInDone: vi.fn().mockResolvedValue(true),
 }));
 
 vi.mock('@sharpit/server/lib/presentation/today/today', () => ({
@@ -156,6 +158,52 @@ describe('GET /api/v1/today', () => {
       const response = await GET(request());
 
       expect(response.status).toBe(200);
+    });
+  });
+
+  describe('morning proposal', () => {
+    const presentation = { decisionId: 'd1', status: 'PRESENTED' };
+
+    it('writes today’s proposal as soon as the night is read, and says the check-in is to do', async () => {
+      const morning = await import('@sharpit/server/lib/morning-recalibration/service');
+      const { buildTodayPresentationViewModel } =
+        await import('@sharpit/server/lib/presentation/today/today');
+      const { projectV1TodayFromViewModel } =
+        await import('@sharpit/server/lib/presentation/v1/today');
+      vi.mocked(morning.ensureMorningRecalibration).mockResolvedValue({
+        presentation: presentation as never,
+        created: true,
+      });
+      vi.mocked(morning.isMorningCheckInDone).mockResolvedValue(false);
+      vi.mocked(buildTodayPresentationViewModel).mockResolvedValue({} as never);
+      const today = new Date().toISOString().slice(0, 10);
+
+      const { GET } = await importRoute();
+      await GET(new NextRequest(`http://localhost/api/v1/today?trainingDayId=${today}`));
+
+      expect(morning.ensureMorningRecalibration).toHaveBeenCalledWith('athlete-1', today);
+      expect(vi.mocked(buildTodayPresentationViewModel).mock.calls[0][2]).toEqual({
+        morningRecalibration: presentation,
+      });
+      expect(vi.mocked(projectV1TodayFromViewModel).mock.calls[0][1]).toMatchObject({
+        morningCheckInDone: false,
+      });
+    });
+
+    it('only reads a proposal on a day long past', async () => {
+      const morning = await import('@sharpit/server/lib/morning-recalibration/service');
+      const { buildTodayPresentationViewModel } =
+        await import('@sharpit/server/lib/presentation/today/today');
+      vi.mocked(buildTodayPresentationViewModel).mockResolvedValue({} as never);
+
+      const { GET } = await importRoute();
+      await GET(new NextRequest('http://localhost/api/v1/today?trainingDayId=2026-01-10'));
+
+      expect(morning.ensureMorningRecalibration).not.toHaveBeenCalled();
+      expect(morning.getMorningRecalibrationPresentation).toHaveBeenCalledWith(
+        'athlete-1',
+        '2026-01-10',
+      );
     });
   });
 });

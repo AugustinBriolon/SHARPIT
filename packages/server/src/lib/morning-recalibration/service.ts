@@ -24,6 +24,7 @@ import { hasMorningWellnessCheckin } from '@sharpit/server/lib/journal/wellness-
 import { prisma } from '@sharpit/db/client';
 import { updatePlannedSession } from '@sharpit/server/lib/queries';
 import { dayKeyFromDate } from '@sharpit/app/lib/date/day-key';
+import { nightEvidenceReady } from '@sharpit/app/lib/today/rich/morning-orientation';
 
 export type MorningRecalibrationPresentation = {
   decisionId: string;
@@ -178,6 +179,11 @@ async function resolveExistingPresentation(
     return { presentation: null, created: false };
   }
 
+  // An expired proposal — replaced after the check-in, or stale — leaves room for a new one.
+  if (existing.status === 'EXPIRED') {
+    return null;
+  }
+
   const sessionType = await loadExistingSessionType(athleteId, sessionId);
   if (existing.status === 'PRESENTED' && isStaleSportProposal(mr, sessionType)) {
     await expireDecision(existing.id);
@@ -270,7 +276,6 @@ async function createMorningRecalibrationDecision(
   snapshot: Awaited<ReturnType<typeof getOrBuildAthleteSnapshot>>,
 ): Promise<EnsureMorningRecalibrationResult | null> {
   const proposal = evaluateMorningSessionRecalibration({
-    wellnessCompleted: true,
     session: {
       id: session.id,
       type: session.type,
@@ -325,17 +330,14 @@ async function createMorningRecalibrationDecision(
 /**
  * Idempotent: evaluate today's primary planned session and create a PRESENTED
  * decision when a meaningful adjustment exists and none is open/settled yet.
+ * The night is enough: once sleep and recovery are read, a verdict that says « ease » comes
+ * with its proposal; the check-in, when it arrives, refines it (refreshMorningRecalibrationAfterCheckIn).
  */
 export async function ensureMorningRecalibration(
   athleteId: string,
   trainingDayId: string,
   options?: { athleteSnapshot?: Awaited<ReturnType<typeof getOrBuildAthleteSnapshot>> },
 ): Promise<EnsureMorningRecalibrationResult> {
-  const wellnessCompleted = await hasMorningWellnessCheckin(athleteId, trainingDayId);
-  if (!wellnessCompleted) {
-    return { presentation: null, created: false };
-  }
-
   const existing = await findMorningRecalibrationDecision(athleteId, trainingDayId);
   if (existing) {
     const resolved = await resolveExistingPresentation(athleteId, existing);
@@ -351,6 +353,9 @@ export async function ensureMorningRecalibration(
 
   const snapshot =
     options?.athleteSnapshot ?? (await getOrBuildAthleteSnapshot(athleteId, trainingDayId));
+  if (!nightEvidenceReady(snapshot)) {
+    return { presentation: null, created: false };
+  }
   const created = await createMorningRecalibrationDecision(
     athleteId,
     trainingDayId,
@@ -358,6 +363,26 @@ export async function ensureMorningRecalibration(
     snapshot,
   );
   return created ?? { presentation: null, created: false };
+}
+
+/**
+ * The check-in changes what the morning knows: a proposal still waiting for an answer is
+ * replaced by one read with it. An answered one stays — the athlete already decided.
+ */
+export async function refreshMorningRecalibrationAfterCheckIn(
+  athleteId: string,
+  trainingDayId: string,
+): Promise<EnsureMorningRecalibrationResult> {
+  const existing = await findMorningRecalibrationDecision(athleteId, trainingDayId);
+  if (existing?.status === 'PRESENTED') {
+    await expireDecision(existing.id);
+  }
+  return ensureMorningRecalibration(athleteId, trainingDayId);
+}
+
+/** Whether the morning check-in is done — the proposal card invites to it until then. */
+export function isMorningCheckInDone(athleteId: string, trainingDayId: string): Promise<boolean> {
+  return hasMorningWellnessCheckin(athleteId, trainingDayId);
 }
 
 function validateAcceptableDecision(

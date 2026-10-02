@@ -7,7 +7,12 @@ import {
   analyzeLinkedPlannedSessions,
   autoLinkActivitiesOfDay,
 } from '@sharpit/server/lib/planned-session/linking/session-linking';
-import { getMorningRecalibrationPresentation } from '@sharpit/server/lib/morning-recalibration/service';
+import { addDays, format } from 'date-fns';
+import {
+  ensureMorningRecalibration,
+  getMorningRecalibrationPresentation,
+  isMorningCheckInDone,
+} from '@sharpit/server/lib/morning-recalibration/service';
 import { buildTodayPresentationViewModel } from '@sharpit/server/lib/presentation/today/today';
 import { projectV1Consistency } from '@sharpit/server/lib/presentation/v1/consistency';
 import { projectV1TodayFromViewModel } from '@sharpit/server/lib/presentation/v1/today';
@@ -35,6 +40,31 @@ async function autoLinkTodayActivities(athleteId: string, trainingDayId: string)
     }
   } catch (error) {
     console.error('[api/v1/today/auto-link]', error);
+  }
+}
+
+/**
+ * The athlete's today, give or take the server's clock: the app asks for its own local day,
+ * which can sit a day either side of UTC around midnight.
+ */
+function isAroundToday(trainingDayId: string, now: Date = new Date()): boolean {
+  return [-1, 0, 1].some((offset) => format(addDays(now, offset), 'yyyy-MM-dd') === trainingDayId);
+}
+
+/**
+ * Today's morning proposal: written as soon as the night is read (the check-in refines it
+ * later), only read for any other day. Best effort: a failure costs the card, not the screen.
+ */
+async function loadMorningProposal(athleteId: string, trainingDayId: string) {
+  try {
+    const presentation = isAroundToday(trainingDayId)
+      ? (await ensureMorningRecalibration(athleteId, trainingDayId)).presentation
+      : await getMorningRecalibrationPresentation(athleteId, trainingDayId);
+    const checkInDone = presentation ? await isMorningCheckInDone(athleteId, trainingDayId) : true;
+    return { presentation, checkInDone };
+  } catch (error) {
+    console.error('[api/v1/today/morning-recalibration]', error);
+    return { presentation: null, checkInDone: true };
   }
 }
 
@@ -70,13 +100,8 @@ export async function GET(request: NextRequest) {
   try {
     const athleteId = await getCurrentAthleteId();
     await autoLinkTodayActivities(athleteId, trainingDayId);
-    const morningRecalibration = await getMorningRecalibrationPresentation(
-      athleteId,
-      trainingDayId,
-    ).catch((error) => {
-      console.error('[api/v1/today/morning-recalibration]', error);
-      return null;
-    });
+    const morning = await loadMorningProposal(athleteId, trainingDayId);
+    const morningRecalibration = morning.presentation;
 
     const [viewModel, garminAccount] = await Promise.all([
       buildTodayPresentationViewModel(athleteId, trainingDayId, { morningRecalibration }),
@@ -88,6 +113,7 @@ export async function GET(request: NextRequest) {
         webOrigin: appOrigin(request.nextUrl.origin),
         garminConnected: Boolean(garminAccount),
         consistency: await loadConsistency(athleteId, trainingDayId),
+        morningCheckInDone: morning.checkInDone,
       }),
     );
   } catch (error) {

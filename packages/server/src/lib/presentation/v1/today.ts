@@ -157,6 +157,8 @@ export type V1TodayMorningSide = {
 };
 
 export type V1TodayMorningProposal = {
+  /** False until the morning check-in: the card then invites to it, to refine the proposal. */
+  checkInDone: boolean;
   decisionId: string;
   sessionId: string;
   direction: 'DOWN' | 'UP';
@@ -311,6 +313,8 @@ export type V1TodayProjectionInput = {
   consistency?: V1TodayConsistency | null;
   /** Decides the empty state's copy and action; unknown reads as not connected. */
   garminConnected?: boolean;
+  /** Whether the morning check-in is done; unknown reads as done (no invitation). */
+  morningCheckInDone?: boolean;
 };
 
 export function projectV1Today(
@@ -327,12 +331,16 @@ export function projectV1Today(
     sessions: projectSessions(source.actionRow.daySummaryLines),
     signals: projectOvernightSignals(source.hero.signalPreviews),
     consistency: input.consistency ?? null,
-    morningProposal: projectMorningProposal(source.actionRow.morningRecalibration ?? null),
+    morningProposal: projectMorningProposal(
+      source.actionRow.morningRecalibration ?? null,
+      input.morningCheckInDone ?? true,
+    ),
   };
 }
 
 function projectMorningProposal(
   recalibration: V1TodaySource['actionRow']['morningRecalibration'] | null,
+  checkInDone: boolean,
 ): V1TodayMorningProposal | null {
   if (!recalibration || recalibration.status !== 'PRESENTED') {
     return null;
@@ -340,6 +348,7 @@ function projectMorningProposal(
   const label = (intensity: string | null) =>
     morningIntensityLabel(recalibration.sessionType, intensity);
   return {
+    checkInDone,
     decisionId: recalibration.decisionId,
     sessionId: recalibration.sessionId,
     direction: recalibration.direction,
