@@ -203,3 +203,58 @@ describe('projectV1Today · a brick under way', () => {
     expect(session!.brickGroupId).toBe('brick-1');
   });
 });
+
+describe('projectV1Today · the morning proposal', () => {
+  const recalibration = {
+    decisionId: 'd1',
+    sessionId: 's1',
+    sessionType: 'RUN',
+    direction: 'DOWN' as const,
+    changeSummary: 'Seuil 40 min → Endurance 35 min',
+    why: 'Nuit courte et VFC sous ta plage',
+    status: 'PRESENTED' as const,
+    fromIntensity: 'THRESHOLD',
+    toIntensity: 'ENDURANCE',
+    fromDurationMin: 40,
+    toDurationMin: 35,
+    fromLoad: 60,
+    toLoad: 35,
+    fromDescription: '3×10 min au seuil',
+    toDescription: 'Footing facile',
+  };
+
+  function withRecalibration(status: typeof recalibration.status | 'ACCEPTED') {
+    const base = source();
+    return source({
+      actionRow: { ...base.actionRow, morningRecalibration: { ...recalibration, status } },
+    });
+  }
+
+  it('sends the proposal while it waits for an answer, intensities in words', () => {
+    const json = projectV1Today(withRecalibration('PRESENTED'), {
+      trainingDayId: '2026-10-02',
+      webOrigin: origin,
+    });
+
+    expect(json.morningProposal).toMatchObject({
+      decisionId: 'd1',
+      sessionId: 's1',
+      direction: 'DOWN',
+      from: { durationMin: 40, description: '3×10 min au seuil' },
+      to: { durationMin: 35, description: 'Footing facile' },
+    });
+    expect(json.morningProposal?.from.intensityLabel).toBeTruthy();
+    expect(json.morningProposal?.from.intensityLabel).not.toBe('THRESHOLD');
+  });
+
+  it('sends nothing once the athlete answered, or without a proposal', () => {
+    const answered = projectV1Today(withRecalibration('ACCEPTED'), {
+      trainingDayId: '2026-10-02',
+      webOrigin: origin,
+    });
+    const none = projectV1Today(source(), { trainingDayId: '2026-10-02', webOrigin: origin });
+
+    expect(answered.morningProposal).toBeNull();
+    expect(none.morningProposal).toBeNull();
+  });
+});

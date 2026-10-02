@@ -3,6 +3,7 @@ import type { V1TodayConsistency } from '@sharpit/server/lib/presentation/v1/con
 import type { PresentationEmptyState } from '@sharpit/app/presentation/types';
 import type { TodayViewModel } from '@sharpit/app/presentation/today-view-model';
 import { activityTypeLabels } from '@sharpit/app/lib/format';
+import { morningIntensityLabel } from '@sharpit/app/lib/morning-recalibration/sport-intensity-labels';
 import { CONNECT_GARMIN_PATH } from '@sharpit/app/lib/integrations/garmin/garmin-connect-handoff';
 
 export type V1TodayPackTier = 'FULL' | 'PARTIAL' | 'LOW' | 'INSUFFICIENT';
@@ -48,6 +49,7 @@ export type V1TodaySource = {
       brickLegs?: ReadonlyArray<BrickLegSource> | null;
       brickTransitionsSec?: ReadonlyArray<number | null> | null;
     }>;
+    morningRecalibration?: TodayViewModel['actionRow']['morningRecalibration'];
   };
 };
 
@@ -141,6 +143,27 @@ export type V1TodayResponse = {
   }>;
   /** Null when the caller could not resolve the athlete's recent activities. */
   consistency: V1TodayConsistency | null;
+  /**
+   * The night's proposal for today's session — eased (`DOWN`) or raised (`UP`) — while it waits
+   * for the athlete's answer (`/api/v1/morning-recalibration/action`); null otherwise.
+   */
+  morningProposal: V1TodayMorningProposal | null;
+};
+
+export type V1TodayMorningSide = {
+  intensityLabel: string | null;
+  durationMin: number | null;
+  description: string | null;
+};
+
+export type V1TodayMorningProposal = {
+  decisionId: string;
+  sessionId: string;
+  direction: 'DOWN' | 'UP';
+  changeSummary: string;
+  why: string;
+  from: V1TodayMorningSide;
+  to: V1TodayMorningSide;
 };
 
 const CONNECT_GARMIN_EMPTY = {
@@ -304,6 +327,34 @@ export function projectV1Today(
     sessions: projectSessions(source.actionRow.daySummaryLines),
     signals: projectOvernightSignals(source.hero.signalPreviews),
     consistency: input.consistency ?? null,
+    morningProposal: projectMorningProposal(source.actionRow.morningRecalibration ?? null),
+  };
+}
+
+function projectMorningProposal(
+  recalibration: V1TodaySource['actionRow']['morningRecalibration'] | null,
+): V1TodayMorningProposal | null {
+  if (!recalibration || recalibration.status !== 'PRESENTED') {
+    return null;
+  }
+  const label = (intensity: string | null) =>
+    morningIntensityLabel(recalibration.sessionType, intensity);
+  return {
+    decisionId: recalibration.decisionId,
+    sessionId: recalibration.sessionId,
+    direction: recalibration.direction,
+    changeSummary: recalibration.changeSummary,
+    why: recalibration.why,
+    from: {
+      intensityLabel: label(recalibration.fromIntensity),
+      durationMin: recalibration.fromDurationMin,
+      description: recalibration.fromDescription,
+    },
+    to: {
+      intensityLabel: label(recalibration.toIntensity),
+      durationMin: recalibration.toDurationMin,
+      description: recalibration.toDescription,
+    },
   };
 }
 
@@ -357,6 +408,7 @@ function sourceFromViewModel(vm: TodayViewModel): V1TodaySource {
         brickLegs: line.brickLegs,
         brickTransitionsSec: line.brickTransitionsSec,
       })),
+      morningRecalibration: vm.actionRow.morningRecalibration,
     },
   };
 }

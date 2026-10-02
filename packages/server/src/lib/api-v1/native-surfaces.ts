@@ -22,6 +22,7 @@ export const NATIVE_V1_SURFACES = [
   { path: 'goals', methods: ['GET', 'POST'] },
   { path: 'goals/[id]', methods: ['PATCH', 'DELETE'] },
   { path: 'day-journal', methods: ['GET', 'PUT'] },
+  { path: 'morning-recalibration/action', methods: ['POST'] },
   { path: 'journal/day-signals', methods: ['GET'] },
   { path: 'journal-prefs', methods: ['GET', 'PUT'] },
   { path: 'wellness-checkin', methods: ['GET', 'POST'] },
